@@ -952,6 +952,22 @@ export type AgentRunOut = {
      */
     initiator_name: string;
     /**
+     * Outcome
+     */
+    outcome?: 'approved' | 'partially_approved' | 'rejected' | null;
+    /**
+     * Record Persisted At
+     */
+    record_persisted_at?: string | null;
+    /**
+     * Record Sha256
+     */
+    record_sha256?: string | null;
+    /**
+     * Stage
+     */
+    stage?: 'shadow' | 'live';
+    /**
      * Started At
      */
     started_at: string;
@@ -959,6 +975,10 @@ export type AgentRunOut = {
      * State
      */
     state: 'queued' | 'running' | 'succeeded' | 'needs_input' | 'failed';
+    /**
+     * State Reason
+     */
+    state_reason?: string | null;
     /**
      * Subject
      */
@@ -30715,10 +30735,6 @@ export type UploadClientImportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UploadClientImportError = UploadClientImportErrors[keyof UploadClientImportErrors];
@@ -30771,10 +30787,6 @@ export type GetClientImportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetClientImportError = GetClientImportErrors[keyof GetClientImportErrors];
@@ -30840,10 +30852,6 @@ export type ClientImportRowsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ClientImportRowsError = ClientImportRowsErrors[keyof ClientImportRowsErrors];
@@ -30904,10 +30912,6 @@ export type DecideImportRowErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DecideImportRowError = DecideImportRowErrors[keyof DecideImportRowErrors];
@@ -30968,10 +30972,6 @@ export type RunClientImportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RunClientImportError = RunClientImportErrors[keyof RunClientImportErrors];
@@ -60832,6 +60832,10 @@ export type PortalRefreshData = {
          * Host
          */
         host?: string | null;
+        /**
+         * X-Abacus-Activity
+         */
+        'X-Abacus-Activity'?: string | null;
     };
     path?: never;
     query?: never;

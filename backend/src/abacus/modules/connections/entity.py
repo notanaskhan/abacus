@@ -507,7 +507,7 @@ async def start_entity(
         )
     connector = connector_for(unsaved_connection(target.provider, entity_id, ctx))
     url = await connector.authorise_url(state, redirect_uri(), code_challenge=challenge)
-    return Started(consent_id, check_sign_in_url(url), expires_at)
+    return Started(consent_id, check_sign_in_url(url, target.provider), expires_at)
 
 
 async def complete_any(ctx: AuthContext, state: str, code: str) -> Completed:

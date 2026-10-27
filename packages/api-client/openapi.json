@@ -2072,6 +2072,58 @@
             "title": "Initiator Name",
             "type": "string"
           },
+          "outcome": {
+            "anyOf": [
+              {
+                "enum": [
+                  "approved",
+                  "partially_approved",
+                  "rejected"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Outcome"
+          },
+          "record_persisted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Record Persisted At"
+          },
+          "record_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Record Sha256"
+          },
+          "stage": {
+            "cls": "internal",
+            "default": "live",
+            "enum": [
+              "shadow",
+              "live"
+            ],
+            "title": "Stage",
+            "type": "string"
+          },
           "started_at": {
             "cls": "internal",
             "format": "date-time",
@@ -2089,6 +2141,18 @@
             ],
             "title": "State",
             "type": "string"
+          },
+          "state_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "State Reason"
           },
           "subject": {
             "anyOf": [
@@ -64946,7 +65010,7 @@
     },
     "/v1/client-imports": {
       "post": {
-        "description": "The file is the raw request body (SPEC-008 D3); refused before it is read while the\nroute is a stub.",
+        "description": "The file is the raw request body (SPEC-008 D3), refused before it is read without the\naction; 422 `import_file_invalid` (`facts.reason`) for a file the import can't read.",
         "operationId": "upload_client_import",
         "parameters": [
           {
@@ -65056,16 +65120,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Upload Client Import Route",
@@ -65172,16 +65226,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Client Import Route",
@@ -65334,16 +65378,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Client Import Rows Route",
@@ -65355,7 +65389,7 @@
     },
     "/v1/client-imports/{import_id}/rows/{row_id}/decision": {
       "put": {
-        "description": "A person's decision on a row (never a merge below 90% without one); 409\n`import_already_run`. TINs masked for an offshore reader (AC9.4).",
+        "description": "A person's decision on a row (never a merge below 90% without one); 409\n`import_already_run`; 422 `import_row_invalid`. TINs masked for an offshore reader (AC9.4).",
         "operationId": "decide_import_row",
         "parameters": [
           {
@@ -65481,16 +65515,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Decide Import Row Route",
@@ -65502,7 +65526,7 @@
     },
     "/v1/client-imports/{import_id}/run": {
       "post": {
-        "description": "Starts `ClientImportWorkflow` (P-07-T52); every row applied idempotently; a replayed key\nanswers the same; 409 `import_already_run`.",
+        "description": "Starts `ClientImportWorkflow`; every row applied idempotently; a replayed key answers the\nsame; 409 `import_already_run`.",
         "operationId": "run_client_import",
         "parameters": [
           {
@@ -65619,16 +65643,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Run Client Import Route",
@@ -130992,7 +131006,7 @@
     },
     "/v1/portal/auth/refresh": {
       "post": {
-        "description": "Cookie-authenticated, with the CSRF header and the portal host's own Origin.",
+        "description": "Cookie-authenticated, with the CSRF header and the portal host's own Origin. Only a\nrefresh marked `X-Abacus-Activity: user` moves the idle clock; an absent mark is never\nactivity (DEC-583).",
         "operationId": "portal_refresh",
         "parameters": [
           {
@@ -131041,6 +131055,23 @@
                 }
               ],
               "title": "Host"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Activity",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 16,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Activity"
             }
           },
           {

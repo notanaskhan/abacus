@@ -2,8 +2,8 @@
 ADR-139, P-36). Contract: `docs/contracts/intake-import.md`; spec: SPEC-332; DEC-374.
 
 Behind `clients.v2` (CLI-06's flag): off, every route here answers 404. Dedupe, the intake
-drafts and the commit are live (P-07-T42, `intake.py`, DEC-430); the client-import routes
-answer 501 `not_implemented` until P-07-T52.
+drafts and the commit are live (P-07-T42, `intake.py`, DEC-430); the client imports are live
+(P-07-T52, `client_import.py`, DEC-643).
 
 - **Dedupe** takes the name in the body, never the URL, and answers scored candidates.
 - **Intake drafts** hold identifiers and typed values only (no TIN, no free text beyond names);
@@ -25,7 +25,7 @@ or a count of walled clients (DEC-43).
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn, cast
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query, Request
@@ -34,11 +34,13 @@ from pydantic import BaseModel, ConfigDict, Field
 from abacus.kernel._flags import CLIENTS_V2
 from abacus.kernel._statuses import EngagementStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.text import SingleLineText
 from abacus.kernel.uow.idempotency import idempotent
+from abacus.modules.engagements import client_import
 from abacus.modules.engagements import intake as intake_model
+from abacus.modules.engagements.client_import_parse import MAX_BYTES as MAX_IMPORT_BYTES
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
@@ -61,6 +63,7 @@ IntakeMode = Literal["new_client", "existing_client"]
 ImportSource = Literal["cch_axcess_tax_export", "csv"]
 ImportStage = Literal["uploaded", "mapped", "reviewing", "importing", "done", "failed"]
 RowDecision = Literal["new", "merge", "keep_both", "skip"]
+TinKind = Literal["ssn", "ein", "itin"]
 MatchBasis = Literal["name", "ein"]
 
 
@@ -323,12 +326,6 @@ async def _gate(ctx: AuthContext, action: str) -> None:
         raise NotFound(CLIENTS_V2.name)
 
 
-async def _stub(ctx: AuthContext, action: str) -> NoReturn:
-    """The gate, then 501 until the implementing task (the import routes, P-07-T52)."""
-    await _gate(ctx, action)
-    raise NotImplementedYet
-
-
 dedupe_router = AbacusRouter(prefix="/v1/clients", tags=["intake"])
 client_intake_drafts_router = AbacusRouter(prefix="/v1/client-intake-drafts", tags=["intake"])
 client_imports_router = AbacusRouter(prefix="/v1/client-imports", tags=["intake"])
@@ -475,30 +472,82 @@ async def commit_intake_draft_route(
     return IntakeCommittedOut.model_validate(stored.body)
 
 
-@client_imports_router.post(
-    "", action=IMPORT, response_model=ClientImportOut, status_code=201, errors=(501,)
-)
+def _import_out(v: client_import.ImportView) -> ClientImportOut:
+    c = v.counts
+    return ClientImportOut(
+        id=v.id,
+        source=cast(ImportSource, v.source),
+        stage=cast(ImportStage, v.stage),
+        file_name=v.file_name,
+        mapping=v.mapping,
+        counts=ClientImportCountsOut(
+            rows=c.rows,
+            matched=c.matched,
+            to_review=c.to_review,
+            new=c.new,
+            skipped=c.skipped,
+            imported=c.imported,
+            failed=c.failed,
+        ),
+        started_by=v.started_by,
+        started_at=v.started_at,
+        completed_at=v.completed_at,
+        allowed_actions=[IMPORT] if v.runnable else [],
+    )
+
+
+def _row_out(r: client_import.RowView) -> ClientImportRowOut:
+    return ClientImportRowOut(
+        id=r.id,
+        row_no=r.row_no,
+        display_name=r.display_name,
+        entity_type=r.entity_type,
+        tin=(
+            MaskedTinOut(kind=cast(TinKind, r.tin_kind), presence="on_file", last4=r.tin_last4)
+            if r.tin_kind is not None
+            else None
+        ),
+        best_match_client_id=r.best_match_client_id,
+        best_match_name=r.best_match_name,
+        score=r.score,
+        decision=cast(RowDecision | None, r.decision),
+        decided_by=r.decided_by,
+        error_code=r.error_code,
+    )
+
+
+async def _file(request: Request) -> bytes:
+    """The raw body, read up to the parser's bound (a larger one is refused before it is all
+    read)."""
+    data = bytearray()
+    async for chunk in request.stream():
+        data += chunk
+        if len(data) > MAX_IMPORT_BYTES:
+            raise client_import.ImportFileRefused(facts={"reason": "file_too_large"})
+    return bytes(data)
+
+
+@client_imports_router.post("", action=IMPORT, response_model=ClientImportOut, status_code=201)
 async def upload_client_import_route(
     request: Request,
     ctx: Ctx,
     source: Annotated[ImportSource, Query()],
-    filename: Annotated[str, Query(min_length=1, max_length=255)],
+    filename: Annotated[SingleLineText, Query(min_length=1, max_length=255)],
 ) -> ClientImportOut:
-    """The file is the raw request body (SPEC-008 D3); refused before it is read while the
-    route is a stub."""
-    await _stub(ctx, IMPORT)
+    """The file is the raw request body (SPEC-008 D3), refused before it is read without the
+    action; 422 `import_file_invalid` (`facts.reason`) for a file the import can't read."""
+    await _gate(ctx, IMPORT)
+    content = await _file(request)
+    return _import_out(await client_import.upload_import(ctx, source, filename, content))
 
 
-@client_imports_router.get(
-    "/{import_id}", action=IMPORT, response_model=ClientImportOut, errors=(501,)
-)
+@client_imports_router.get("/{import_id}", action=IMPORT, response_model=ClientImportOut)
 async def get_client_import_route(import_id: UUID, ctx: Ctx) -> ClientImportOut:
-    await _stub(ctx, IMPORT)
+    await _gate(ctx, IMPORT)
+    return _import_out(await client_import.get_import(ctx, import_id))
 
 
-@client_imports_router.get(
-    "/{import_id}/rows", action=IMPORT, response_model=ClientImportRowsOut, errors=(501,)
-)
+@client_imports_router.get("/{import_id}/rows", action=IMPORT, response_model=ClientImportRowsOut)
 async def client_import_rows_route(
     import_id: UUID,
     ctx: Ctx,
@@ -508,7 +557,13 @@ async def client_import_rows_route(
 ) -> ClientImportRowsOut:
     """CLI-06 g's table; `review` keeps only the rows waiting for a person. TINs masked for an
     offshore reader (AC9.4)."""
-    rows: ClientImportRowsOut = await _stub(ctx, IMPORT)
+    await _gate(ctx, IMPORT)
+    page = await client_import.import_rows(
+        ctx, import_id, cursor=cursor, limit=limit, review=review
+    )
+    rows = ClientImportRowsOut(
+        items=[_row_out(r) for r in page.items], next_cursor=page.next_cursor, total=page.total
+    )
     return await mask_tins_for(ctx, rows)
 
 
@@ -516,15 +571,18 @@ async def client_import_rows_route(
     "/{import_id}/rows/{row_id}/decision",
     action=IMPORT,
     response_model=ClientImportRowOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def decide_import_row_route(
     import_id: UUID, row_id: UUID, body: RowDecisionIn, ctx: Ctx
 ) -> ClientImportRowOut:
     """A person's decision on a row (never a merge below 90% without one); 409
-    `import_already_run`. TINs masked for an offshore reader (AC9.4)."""
-    row: ClientImportRowOut = await _stub(ctx, IMPORT)
-    return await mask_tins_for(ctx, row)
+    `import_already_run`; 422 `import_row_invalid`. TINs masked for an offshore reader (AC9.4)."""
+    await _gate(ctx, IMPORT)
+    row = await client_import.decide_row(
+        ctx, import_id, row_id, body.decision, body.merge_client_id
+    )
+    return await mask_tins_for(ctx, _row_out(row))
 
 
 @client_imports_router.post(
@@ -532,11 +590,24 @@ async def decide_import_row_route(
     action=IMPORT,
     response_model=ClientImportOut,
     status_code=202,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def run_client_import_route(
     import_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ClientImportOut:
-    """Starts `ClientImportWorkflow` (P-07-T52); every row applied idempotently; a replayed key
-    answers the same; 409 `import_already_run`."""
-    await _stub(ctx, IMPORT)
+    """Starts `ClientImportWorkflow`; every row applied idempotently; a replayed key answers the
+    same; 409 `import_already_run`."""
+    await _gate(ctx, IMPORT)
+
+    async def run() -> tuple[int, dict[str, object]]:
+        started = await client_import.run_import(ctx, import_id)
+        return 202, _import_out(started).model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="client_imports.run",
+        key=idempotency_key,
+        body={"import_id": str(import_id)},
+        run=run,
+    )
+    return ClientImportOut.model_validate(stored.body)
