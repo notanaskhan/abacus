@@ -543,12 +543,6 @@ async def test_ac4_no_owner_to_write_a_row_answers_503_and_writes_nothing(world:
     await _nothing_decided(world, proposal, target)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="ED-170: 503 answers 'service unavailable', not the contract's fixed code "
-    "'service_unavailable' (review-grammar.md §6 part 2); recorded in "
-    "work/tasks/TASK-1464-p04t28-independent-ac-tests.md (TASK-1464)",
-)
 async def test_ac4_no_owner_answers_the_fixed_code_service_unavailable(world: World) -> None:
     proposal = await create_proposal(
         await agent(world),
@@ -1041,12 +1035,6 @@ async def _shadow_k1(world: World, target: uuid.UUID) -> uuid.UUID | None:
     return shadow
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="ED-171: a generic proposal from a shadow run, or in a shadow-stage firm, is served "
-    "(200, approve allowed), against SPEC-036 AC-5; recorded in "
-    "work/tasks/TASK-1464-p04t28-independent-ac-tests.md (TASK-1464)",
-)
 async def test_ac4_a_shadow_runs_generic_proposal_is_invisible(world: World) -> None:
     _, target = await _k1(world)
     shadow = await _shadow_k1(world, target)
@@ -1079,12 +1067,6 @@ async def test_ac4_a_shadow_run_never_supersedes_the_live_proposal(world: World)
     assert approved.status_code == 200, approved.text
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="ED-171: a generic proposal from a shadow run, or in a shadow-stage firm, is served "
-    "(200, approve allowed), against SPEC-036 AC-5; recorded in "
-    "work/tasks/TASK-1464-p04t28-independent-ac-tests.md (TASK-1464)",
-)
 async def test_ac4_a_shadow_stage_firm_sees_no_generic_proposal(world: World) -> None:
     proposal, target = await _k1(world)
     await world.seed.run(

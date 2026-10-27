@@ -463,7 +463,13 @@ async def reject_typed(
                     after=Ref(decision=decision_id, version=1),
                     scope=Scope(engagement_id=projected.engagement_id),
                 )
-        except IntegrityError:
+        except IntegrityError as exc:
+            # Re-review L5: only the once-per-match constraint means "already decided".
+            if (
+                getattr(exc.orig, "constraint_name", None)
+                != "inbox_match_decisions_once_per_match"
+            ):
+                raise
             raise ProposalChanged(facts={"version": 1}) from None
         return (await _project(ctx, kind, subject)).view
     written = await decide(

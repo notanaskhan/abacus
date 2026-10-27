@@ -15,7 +15,7 @@ import re
 import sys
 import tokenize
 from collections.abc import Callable, Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from fnmatch import fnmatch
 from pathlib import Path
 
@@ -956,6 +956,40 @@ def _check_named(name: str, message: str) -> Callable[[SourceFile], Iterator[Fin
                 found = name
             if found == name:
                 yield Finding(getattr(node, "lineno", 1), message)
+
+    return check
+
+
+# PROPOSAL-001 (P-04-T24, T25; re-review L4): the top-level scopes that may name a proposal's
+# decision functions, file by file, as `REVIEW_DECIDE_EXEMPT` does for REVIEW-001.
+PROPOSAL_EXEMPT: dict[str, frozenset[str]] = {
+    "src/abacus/modules/agents/proposals.py": frozenset({"__all__"}),
+    "src/abacus/modules/agents/proposal_adapters.py": frozenset({"__all__"}),
+    "src/abacus/modules/agents/contract.py": frozenset(
+        {
+            "<import>",
+            "proposal_approve_route",
+            "proposal_reject_route",
+            "proposal_route_to_route",
+            "suggestion_adopt_route",
+            "suggestion_dismiss_route",
+        }
+    ),
+}
+
+
+def _check_named_scoped(
+    names: tuple[str, ...], message: str, exempt: dict[str, frozenset[str]]
+) -> Callable[[SourceFile], Iterator[Finding]]:
+    """`_check_named_any`, except in the named top-level scopes of the named files."""
+    inner = _check_named_any(names, message)
+
+    def check(src: SourceFile) -> Iterator[Finding]:
+        allowed = exempt.get(src.rel, frozenset[str]())
+        for top in src.tree.body:
+            if _top_scope(top) in allowed:
+                continue
+            yield from inner(replace(src, tree=ast.Module(body=[top], type_ignores=[])))
 
     return check
 
@@ -2430,7 +2464,7 @@ RULES: list[Rule | TreeRule] = [
         description="Only the proposal service, its adapters and its routes reach a proposal's "
         "decision",
         adr="ADR-161",
-        check=_check_named_any(
+        check=_check_named_scoped(
             (
                 "approve_proposal",
                 "reject_proposal",
@@ -2442,15 +2476,11 @@ RULES: list[Rule | TreeRule] = [
             ),
             "only a person approves, rejects, adopts or dismisses the agent's proposal, through "
             "the agents service (INV-1, ADR-160 clause 12, ADR-161)",
+            PROPOSAL_EXEMPT,
         ),
-        # P-04-T24, T25: the definitions, the typed adapters and the routes; any other file
-        # naming one fails (agents' api does not export them).
+        # P-04-T24, T25: only the scopes in `PROPOSAL_EXEMPT` (the definitions' `__all__`, the
+        # routes and their imports); anything else naming one fails.
         include=("src/abacus/*",),
-        exclude=(
-            "src/abacus/modules/agents/proposals.py",
-            "src/abacus/modules/agents/proposal_adapters.py",
-            "src/abacus/modules/agents/contract.py",
-        ),
     ),
     Rule(
         id="ACCEPT-001",

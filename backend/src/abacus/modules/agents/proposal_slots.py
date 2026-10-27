@@ -21,7 +21,7 @@ from typing import Final, Literal
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import DomainInvalid, ServiceUnavailable
+from abacus.kernel.errors import DomainInvalid, DomainUnavailable, ServiceUnavailable
 from abacus.kernel.uow import UnitOfWork
 from abacus.modules.identity.api import AuthContext
 
@@ -29,6 +29,13 @@ _CODE: Final = re.compile(r"[a-z][a-z_]{0,39}")
 ProposalAdapter = Callable[[TenantContext, UUID], Awaitable[None]]
 _TARGETS: set[str] = set()
 _ADAPTERS: dict[str, ProposalAdapter] = {}
+
+
+class OwnerMissing(DomainUnavailable):
+    """No owner is registered to write a proposal's or a suggestion's value (503
+    `service_unavailable`, ED-170)."""
+
+    code = "service_unavailable"
 
 
 class UnregisteredTarget(DomainInvalid):
@@ -162,7 +169,7 @@ def suggestion_applier(target_type: str) -> SuggestionApplier:
     """Fail closed: no owner to write the value answers 503, before anything is written."""
     found = _APPLIERS.get(target_type)
     if found is None:
-        raise ServiceUnavailable
+        raise OwnerMissing
     return found
 
 
@@ -178,7 +185,7 @@ def register_change_set_applier(kind: str, applier: ChangeSetApplier) -> None:
 def change_set_applier(kind: str) -> ChangeSetApplier:
     found = _CHANGE_SETS.get(kind)
     if found is None:
-        raise ServiceUnavailable
+        raise OwnerMissing
     return found
 
 

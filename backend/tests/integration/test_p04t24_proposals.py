@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import json
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Mapping
 from decimal import Decimal
 from typing import cast
 
@@ -41,7 +41,7 @@ from abacus.modules.identity.api import (
     Forbidden,
     agent_context_for_run,
 )
-from abacus.modules.review.api import record_value
+from abacus.modules.review.api import FieldOwner, record_value, register_field_owner
 
 from .agent_tests.support import Role
 from .conftest import MigratedDatabase
@@ -89,12 +89,25 @@ register_suggestion_target(UNOWNED, engagement_of=_engagement_of)
 # a change set whose decimal values sum above the limit needs the named approver, or a person
 # whose own limit covers it.
 POLICY_ID = uuid.uuid4()
+SEEN: list[Mapping[str, object] | None] = []  # the `before` values the policy was handed
+# What the owner holds now (review's field-owner slot), read on the server (re-review M2).
+STORED: dict[tuple[uuid.UUID, str], dict[str, object]] = {}
+
+
+async def _stored_value(
+    _tenant: TenantContext, target: uuid.UUID, field: str
+) -> dict[str, object] | None:
+    return STORED.get((target, field))
+
+
+register_field_owner(FieldOwner(TARGET, _stored_value))
 LIMITS: dict[uuid.UUID, tuple[Decimal, uuid.UUID, frozenset[uuid.UUID]]] = {}
 
 
 async def _evaluate(
     _tenant: TenantContext, engagement: uuid.UUID, _kind: str, values: tuple[ProposedValue, ...]
 ) -> ThresholdEvaluation | None:
+    SEEN.extend(v.before for v in values)
     found = LIMITS.get(engagement)
     if found is None:
         return None
@@ -628,3 +641,96 @@ async def test_ac_agents_and_the_platform_never_decide(team: Cast) -> None:
                     {"id": proposal},
                 )
     assert await team.value("SELECT state FROM proposals WHERE id = $1", proposal) == "pending"
+
+
+async def test_ac_the_policy_weighs_the_owners_value_never_the_agents_before(team: Cast) -> None:
+    """Re-review M2: the owner's stored value is the `before` the policy is handed."""
+    c1 = await _cite(team)
+    target = uuid.uuid4()
+    OWNED[target] = team.engagement
+    STORED[(target, "f1")] = {"t": "decimal", "v": "500"}
+    LIMITS[team.engagement] = (Decimal("1000000"), team["priya"].user_id, frozenset())
+    SEEN.clear()
+    try:
+        row = ProposedRow(
+            TARGET,
+            target,
+            "f1",
+            "Field",
+            {"t": "decimal", "v": "1"},
+            {"t": "decimal", "v": "9"},
+            "schedule_k",
+            (c1,),
+        )
+        await create_proposal(
+            await _agent(team),
+            engagement_id=team.engagement,
+            kind="field_change_set",
+            title="Owner value",
+            rows=[row],
+        )
+        assert {"t": "decimal", "v": "500"} in SEEN
+        assert {"t": "decimal", "v": "1"} not in SEEN
+    finally:
+        del LIMITS[team.engagement]
+
+
+async def test_ac_a_tightened_threshold_applies_to_a_pending_proposal(team: Cast) -> None:
+    """Re-review M3: approval evaluates again, without edits; the stricter answer wins."""
+    proposal, _ = await _k1(team, uncited=False)  # no limits yet: within any threshold
+    LIMITS[team.engagement] = (
+        Decimal("10000"),
+        team["priya"].user_id,
+        frozenset({team["margaret"].user_id}),
+    )
+    try:
+        refused = await team.call("samuel")(
+            "POST", f"/v1/proposals/{proposal}/approve", json={"seen_version": 1}
+        )
+        assert refused.status_code == 403, refused.text
+        assert refused.json()["facts"] == {"routed_to": str(team["priya"].user_id)}
+        covered = await team.call("margaret")(
+            "POST", f"/v1/proposals/{proposal}/approve", json={"seen_version": 1}
+        )
+        assert covered.status_code == 200, covered.text
+    finally:
+        del LIMITS[team.engagement]
+
+
+async def test_ac_a_standalone_suggestion_never_skips_the_threshold(team: Cast) -> None:
+    """Re-review M1: over the limit a standalone suggestion is refused at create; one made
+    before the limit tightened is held to it on adopt (named approver or covered person, never
+    the run's preparer, Hannah)."""
+    agent = await _agent(team)
+    target = uuid.uuid4()
+    OWNED[target] = team.engagement
+
+    async def suggest(value: str) -> uuid.UUID:
+        return await create_suggestion(
+            agent,
+            engagement_id=team.engagement,
+            target_type=TARGET,
+            target_id=target,
+            field_key=LINE_2A,
+            proposed_value={"t": "decimal", "v": value},
+            citation_ids=(await _cite(team),),
+        )
+
+    early = await suggest("50000")
+    LIMITS[team.engagement] = (
+        Decimal("10000"),
+        team["priya"].user_id,
+        frozenset({team["margaret"].user_id}),
+    )
+    try:
+        with pytest.raises(ProposalInvalid):
+            await suggest("60000")
+        path = f"/v1/suggestions/{early}/adopt"
+        for who in ("hannah", "samuel"):
+            refused = await team.call(who)("POST", path, json={"seen_version": 1})
+            assert refused.status_code == 403, who
+            assert refused.json()["facts"] == {"routed_to": str(team["priya"].user_id)}
+        adopted = await team.call("margaret")("POST", path, json={"seen_version": 1})
+        assert adopted.status_code == 200, adopted.text
+    finally:
+        del LIMITS[team.engagement]

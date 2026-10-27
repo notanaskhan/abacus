@@ -76,6 +76,7 @@ from abacus.modules.agents.proposal_store import (
     set_proposal,
     set_suggestion,
 )
+from abacus.modules.agents.stages import starts_in_shadow
 from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.evidence.api import citation_sources, screening_facts, supported_citations
 from abacus.modules.identity.api import (
@@ -91,6 +92,8 @@ from abacus.modules.identity.api import (
 )
 from abacus.modules.review.api import (
     UncitedChange,
+    UnregisteredKind,
+    field_owner,
     open_text,
     record_text_reads,
     seal_text,
@@ -367,37 +370,58 @@ async def _preparer(tenant: TenantContext, proposal: Proposal) -> UUID | None:
     return run.initiator_user_id if run is not None else None
 
 
-def _values(
-    rows: Sequence[ProposalRow], edited: Mapping[int, tuple[dict[str, object], str]]
-) -> tuple[ProposedValue, ...]:
-    return tuple(ProposedValue(*_field(r), r.before, _value_of(r, edited)[0]) for r in rows)
-
-
-async def _over_limit(
-    tenant: TenantContext,
-    proposal: Proposal,
-    user_id: UUID,
-    edited_values: tuple[ProposedValue, ...] | None = None,
-) -> UUID | None:
-    """H (DEC-609): when the firm's threshold policy requires review, only its named approver
-    or a person whose own limit covers the change may approve or be routed it, never the
-    run's preparer. The stored evaluation binds (the editable `routed_to_user_id` does not), and
-    an approval with edits is evaluated again on the edited values. Returns the approver to
-    route to when `user_id` may not, else None. With the kind's policy gone, only the named
-    approver qualifies (fail closed)."""
-    engagement_id = cast(UUID, proposal.engagement_id)
-    policy = threshold_policy(proposal.kind)
-    evaluations = [e for e in (_stored_evaluation(proposal),) if e is not None]
-    if edited_values is not None and policy is not None:
-        again = await policy.evaluate(tenant, engagement_id, proposal.kind, edited_values)
-        if again is not None and again.result == "review_required":
-            evaluations.append(again)
-    if not evaluations:
+async def _current(
+    tenant: TenantContext, target_type: str, target_id: UUID, field_key: str
+) -> Mapping[str, object] | None:
+    """M2 (re-review): the value the target's owner holds now, read on the server through
+    review's field-owner slot; never the agent's `before`. Unknown: None."""
+    try:
+        owner = field_owner(target_type)
+    except UnregisteredKind:
         return None
-    preparer = await _preparer(tenant, proposal)
+    try:
+        return await owner.value_of(tenant, target_id, field_key)
+    except Exception:
+        return None
+
+
+async def _weighed(
+    tenant: TenantContext, changes: Sequence[tuple[str, UUID, str, Mapping[str, object] | None]]
+) -> tuple[ProposedValue, ...]:
+    """The changes as the threshold policy weighs them: the owner's current value before, the
+    value that would be written after."""
+    return tuple(
+        [
+            ProposedValue(t, i, f, await _current(tenant, t, i, f), after)
+            for t, i, f, after in changes
+        ]
+    )
+
+
+def _row_changes(
+    rows: Sequence[ProposalRow], edited: Mapping[int, tuple[dict[str, object], str]]
+) -> list[tuple[str, UUID, str, Mapping[str, object] | None]]:
+    return [(*_field(r), _value_of(r, edited)[0]) for r in rows]
+
+
+async def _refusal(
+    tenant: TenantContext,
+    engagement_id: UUID,
+    kind: str,
+    evaluations: Sequence[ThresholdEvaluation],
+    user_id: UUID,
+    preparer: UUID | None,
+    waiting: UUID | None,
+) -> UUID | None:
+    """H (DEC-609): under `review_required`, only the named approver or a person whose own limit
+    covers it, never the preparer. Every evaluation must pass (the stricter wins). Returns the
+    approver to route to, else None."""
+    policy = threshold_policy(kind)
     for evaluation in evaluations:
+        if evaluation.result != "review_required":
+            continue
         named = evaluation.approver_user_id
-        refused = named or proposal.routed_to_user_id or user_id
+        refused = named or waiting or user_id
         if user_id == preparer:
             return refused
         if user_id == named:
@@ -407,10 +431,63 @@ async def _over_limit(
     return None
 
 
+async def _over_limit(
+    tenant: TenantContext,
+    proposal: Proposal,
+    user_id: UUID,
+    rows: Sequence[ProposalRow],
+    edited: Mapping[int, tuple[dict[str, object], str]] | None = None,
+) -> UUID | None:
+    """H, M3 (DEC-609, re-review): the evaluation stored at create and the policy's evaluation
+    now, on the values that would be written (edits applied) against the owner's current
+    values, must both pass; so a tightened firm threshold applies to a pending proposal. With
+    the kind's policy gone, only the stored named approver qualifies (fail closed)."""
+    engagement_id = cast(UUID, proposal.engagement_id)
+    evaluations = [e for e in (_stored_evaluation(proposal),) if e is not None]
+    policy = threshold_policy(proposal.kind)
+    if policy is not None:
+        now = await policy.evaluate(
+            tenant,
+            engagement_id,
+            proposal.kind,
+            await _weighed(tenant, _row_changes(rows, edited or {})),
+        )
+        if now is not None:
+            evaluations.append(now)
+    if not any(e.result == "review_required" for e in evaluations):
+        return None
+    return await _refusal(
+        tenant,
+        engagement_id,
+        proposal.kind,
+        evaluations,
+        user_id,
+        await _preparer(tenant, proposal),
+        proposal.routed_to_user_id,
+    )
+
+
+async def _rows(ctx: AuthContext, proposal: Proposal) -> list[ProposalRow]:
+    async with tenant_session(ctx.tenant) as session:
+        return list(await rows_of(session, proposal.id))
+
+
+async def _hidden(tenant: TenantContext, run_id: UUID) -> bool:
+    """ED-171 (SPEC-036 AC-5): a shadow run's output, or anything while the firm's stage for
+    that agent is shadow, is never shown to the firm."""
+    async with tenant_session(tenant) as session:
+        run = await run_of(session, run_id)
+        if run is None or run.shadow:
+            return True
+        return await starts_in_shadow(session, tenant, run.agent_id)
+
+
 async def _readable(ctx: AuthContext, proposal_id: UUID) -> tuple[Proposal, Resource]:
     async with tenant_session(ctx.tenant) as session:
         proposal = await get_proposal(session, proposal_id)
     if proposal is None or proposal.engagement_id is None:
+        raise NotFound(SUBJECT)
+    if await _hidden(ctx.tenant, proposal.agent_run_id):  # ED-171: answered as the typed paths
         raise NotFound(SUBJECT)
     ref = await get_ref(ctx, proposal.engagement_id)
     resource = ref.resource()
@@ -504,15 +581,16 @@ async def create_proposal(
             ctx.tenant,
             engagement_id,
             kind,
-            tuple(
-                ProposedValue(r.target_type, r.target_id, r.field_key, r.before, r.after)
-                for r in rows
+            await _weighed(
+                ctx.tenant, [(r.target_type, r.target_id, r.field_key, r.after) for r in rows]
             ),
         )
         if found is not None
         else None
     )
     approver = policy.approver_user_id if policy is not None else None
+    if isinstance(ctx, AgentContext) and approver == ctx.initiator.user_id:
+        approver = None  # L6: never routed to its own preparer, who may not approve it
     if approver is not None and not await member_could(
         ctx.tenant_id, approver, CHANGE_SET, resource, waive_fresh_mfa=True
     ):
@@ -636,6 +714,18 @@ async def create_suggestion(
     await _on_engagement(ctx.tenant, engagement_id, [(target_type, target_id)])
     value = typed_value(proposed_value)
     run_id = cast(AgentContext, ctx).agent_run_id
+    # M1 (re-review): a value the firm's threshold policy would send for review is proposed as a
+    # change set (its named approver, its preparer rules), never as a standalone suggestion.
+    found = threshold_policy(FIELD_CHANGE_SET)
+    if found is not None:
+        evaluation = await found.evaluate(
+            ctx.tenant,
+            engagement_id,
+            FIELD_CHANGE_SET,
+            await _weighed(ctx.tenant, [(target_type, target_id, field_key, value)]),
+        )
+        if evaluation is not None and evaluation.result == "review_required":
+            raise ProposalInvalid(facts={"field": "threshold"})
     async with uow(ctx.tenant) as tx:
         await lock_ref(tx, engagement_id)
         suggestion_id = await insert_suggestion(
@@ -725,14 +815,16 @@ async def _decision_view(
     )
 
 
-async def _allowed(ctx: AuthContext, proposal: Proposal, resource: Resource) -> list[str]:
+async def _allowed(
+    ctx: AuthContext, proposal: Proposal, resource: Resource, rows: Sequence[ProposalRow]
+) -> list[str]:
     if not _live_human(ctx) or proposal.state != "pending":
         return []
     found = await allowed_actions(ctx, resource, (*_PENDING_ACTIONS, CHANGE_SET))
     out = [a for a in _PENDING_ACTIONS if a in found]
     if CHANGE_SET not in found:  # a generic change set is decided by its own action's holders
         out = [a for a in out if a not in (APPROVE, REJECT)]
-    if APPROVE in out and await _over_limit(ctx.tenant, proposal, ctx.user_id) is not None:
+    if APPROVE in out and await _over_limit(ctx.tenant, proposal, ctx.user_id, rows) is not None:
         out.remove(APPROVE)  # SHL-10 d: the CTA becomes "Send to <approver> for approval"
     return out
 
@@ -813,7 +905,7 @@ async def proposal_view(ctx: AuthContext, proposal_id: UUID) -> ProposalView:
         set=set_view,
         checkpoint_id=proposal.checkpoint_id,
         decision=await _decision_view(ctx, proposal, resource),
-        allowed_actions=await _allowed(ctx, proposal, resource),
+        allowed_actions=await _allowed(ctx, proposal, resource, rows),
     )
 
 
@@ -887,9 +979,7 @@ async def approve_proposal(
         locked = await _locked(tx, person, proposal, APPROVE, seen_version)
         rows = list(await rows_of(tx.session, locked.id))
         edited = _edits(rows, edits)
-        elsewhere = await _over_limit(
-            person.tenant, locked, person.user_id, _values(rows, edited) if edited else None
-        )
+        elsewhere = await _over_limit(person.tenant, locked, person.user_id, rows, edited)
         if elsewhere is not None:
             raise RoutedElsewhere(facts={"routed_to": str(elsewhere)})
         await _on_engagement(person.tenant, engagement_id, [_field(r)[:2] for r in rows])
@@ -1086,7 +1176,10 @@ async def route_proposal(
         or not await member_could(
             person.tenant_id, approver_user_id, CHANGE_SET, resource, waive_fresh_mfa=True
         )
-        or await _over_limit(person.tenant, proposal, approver_user_id) is not None
+        or await _over_limit(
+            person.tenant, proposal, approver_user_id, await _rows(person, proposal)
+        )
+        is not None
     ):
         raise ProposalInvalid(facts={"field": "approver_user_id"})
     decision_id = uuid4()
@@ -1187,6 +1280,8 @@ async def _suggestion_readable(
         found = await get_suggestion(session, suggestion_id)
     if found is None or found.engagement_id is None:
         raise NotFound(SUGGESTION)
+    if await _hidden(ctx.tenant, found.agent_run_id):  # ED-171 (SPEC-036 AC-5)
+        raise NotFound(SUGGESTION)
     ref = await get_ref(ctx, found.engagement_id)
     await authorise(ctx, READ, ref.resource())  # a wall answers 404
     return found, ref.resource()
@@ -1271,6 +1366,33 @@ async def adopt_suggestion(
         await _on_engagement(
             person.tenant, engagement_id, [(locked.target_type, locked.target_id)]
         )
+        # M1 (re-review): adopting is held to the firm's threshold policy as a change set is:
+        # evaluated now against the owner's current value; under `review_required` only the
+        # named approver or a covered person, never the run's preparer.
+        found_policy = threshold_policy(FIELD_CHANGE_SET)
+        if found_policy is not None:
+            now = await found_policy.evaluate(
+                person.tenant,
+                engagement_id,
+                FIELD_CHANGE_SET,
+                await _weighed(
+                    person.tenant,
+                    [(locked.target_type, locked.target_id, locked.field_key, value)],
+                ),
+            )
+            async with tenant_session(person.tenant) as session:
+                run = await run_of(session, locked.agent_run_id)
+            elsewhere = await _refusal(
+                person.tenant,
+                engagement_id,
+                FIELD_CHANGE_SET,
+                [now] if now is not None else [],
+                person.user_id,
+                run.initiator_user_id if run is not None else None,
+                None,
+            )
+            if elsewhere is not None:
+                raise RoutedElsewhere(facts={"routed_to": str(elsewhere)})
         supported = await supported_citations(
             person.tenant, engagement_id, list(locked.citation_ids)
         )
