@@ -15,8 +15,8 @@ from sqlalchemy.orm import QueryableAttribute
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.review.models import (
     DecisionCard,
-    HumanGate,
     FieldValueVersion,
+    HumanGate,
     ReviewableNote,
     SignOff,
 )

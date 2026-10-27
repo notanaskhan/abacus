@@ -6,8 +6,12 @@
 `agent` or `policy` actor, whatever the matrix says (I-AGENT-NEVER at the data layer). The full
 register, 57 entries; the downgrade restores the 55 before it.
 
+It also joins the two heads main carried after the S12 batch: 0250-0251 (S12) and 0225 (#559, the
+portal idle clock), both on 0244. Neither touches the other's objects (DEC-06: the later change
+reconciles).
+
 Revision ID: 0252
-Revises: 0251
+Revises: 0251, 0225
 """
 
 from __future__ import annotations
@@ -15,7 +19,7 @@ from __future__ import annotations
 from alembic import op
 
 revision = "0252"
-down_revision = "0251"
+down_revision = ("0251", "0225")
 branch_labels = None
 depends_on = None
 
