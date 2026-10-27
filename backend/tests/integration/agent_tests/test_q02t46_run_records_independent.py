@@ -114,9 +114,13 @@ def record_problems(
         found.append("initiator is not the person the run acted for")
     if record.get("record_sha256") != audited:
         found.append("record_sha256 is not the fingerprint the audit chain carries")
-    for field in ("capability", "spec_version", "prompt_ref", "model", "route", "region"):
+    for field in ("capability", "prompt_ref", "model", "route", "region"):
         if not isinstance(record.get(field), str) or not record.get(field):
             found.append(f"{field} missing")
+    # C6's RunRecordOut carries the spec version as a number (ADR-169 §3 names no type).
+    version = record.get("spec_version")
+    if isinstance(version, bool) or not isinstance(version, int) or version < 1:
+        found.append("spec_version missing")
     if not HEX64.match(str(record.get("prompt_sha256"))):
         found.append("prompt_sha256 is not a SHA-256")
     if record.get("stage") not in ("shadow", "live"):
@@ -223,10 +227,6 @@ async def test_ac45_the_run_reads_give_the_legacy_map_and_run_record_sha256(
     assert len(runs) == 1 and runs[0]["state"] == "succeeded"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1455: waits on Q-02-T45/T47 (Q-02-T45: the C6 v1 run summary of ADR-169 §4)",
-)
 @pytest.mark.usefixtures("fake_model")
 async def test_ac45_c6_v1_the_run_summary_carries_the_record_fingerprint(
     seed: Seeder, world: World, http: httpx.AsyncClient, idp: FakeIdentityProvider

@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from abacus_tools.quality import scope_guards as sg
 from abacus_tools.synthetic.scenarios.brightwater_hale import build
 from abacus_tools.synthetic.scenarios.brightwater_hale.audits import AUDITS
@@ -13,6 +15,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.audits import AUDITS
 GUARDS = sg.load()
 
 
+@pytest.mark.source_scan
 def test_t09_the_scope_guard_scans_the_scenario_package() -> None:
     assert [p.relative_to(sg.REPO).as_posix() for p in sg.SCENARIOS] == [
         "backend/src/abacus_tools/synthetic/scenarios"
