@@ -7640,7 +7640,7 @@ export type DestinationCandidate = {
 /**
  * DestinationNode
  *
- * A picker node: client › work item › request, permanent file, folders, registered kinds.
+ * A picker node: client > work item > request, permanent file, folders, registered kinds.
  */
 export type DestinationNode = {
     /**
@@ -7977,7 +7977,7 @@ export type DraftedOut = {
 /**
  * DrawerOut
  *
- * `GET /v1/evidence-items/{id}/drawer` (O2). Content fields are null without `evidence.read`.
+ * `GET /v1/evidence-items/{id}/drawer` (O2); content fields null without `evidence.read`.
  */
 export type DrawerOut = {
     /**
@@ -27118,7 +27118,7 @@ export type TraceRowOut = {
 /**
  * TreeNode
  *
- * One tree row: client › permanent file or year › work item › folder.
+ * One tree row: client > permanent file or year > work item > folder.
  */
 export type TreeNode = {
     /**

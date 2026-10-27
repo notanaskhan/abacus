@@ -8004,6 +8004,7 @@
         "description": "`POST /v1/inbox/attachments/bulk-file` (INB-01 e).",
         "properties": {
           "attachment_ids": {
+            "cls": "internal",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -8014,6 +8015,7 @@
             "type": "array"
           },
           "seen_proposals": {
+            "cls": "internal",
             "default": [],
             "items": {
               "format": "uuid",
@@ -16344,7 +16346,7 @@
         "type": "object"
       },
       "DestinationNode": {
-        "description": "A picker node: client \u203a work item \u203a request, permanent file, folders, registered kinds.",
+        "description": "A picker node: client > work item > request, permanent file, folders, registered kinds.",
         "properties": {
           "folder_kind": {
             "anyOf": [
@@ -16439,11 +16441,13 @@
         "description": "A chosen destination.",
         "properties": {
           "id": {
+            "cls": "internal",
             "format": "uuid",
             "title": "Id",
             "type": "string"
           },
           "kind": {
+            "cls": "internal",
             "enum": [
               "request",
               "permanent_file",
@@ -16967,7 +16971,7 @@
         "type": "object"
       },
       "DrawerOut": {
-        "description": "`GET /v1/evidence-items/{id}/drawer` (O2). Content fields are null without `evidence.read`.",
+        "description": "`GET /v1/evidence-items/{id}/drawer` (O2); content fields null without `evidence.read`.",
         "properties": {
           "allowed_actions": {
             "cls": "internal",
@@ -27178,9 +27182,11 @@
                 "type": "null"
               }
             ],
+            "cls": "restricted",
             "title": "Note"
           },
           "reason_code": {
+            "cls": "internal",
             "enum": [
               "wrong_year",
               "duplicate",
@@ -29323,10 +29329,12 @@
                 "type": "null"
               }
             ],
+            "cls": "restricted",
             "title": "Note"
           },
           "scope_ref": {
-            "$ref": "#/components/schemas/ScopeRef"
+            "$ref": "#/components/schemas/ScopeRef",
+            "cls": "internal"
           }
         },
         "required": [
@@ -33938,6 +33946,7 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Client Entity Id"
           },
           "client_id": {
@@ -33950,6 +33959,7 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Client Id"
           },
           "from_contact_id": {
@@ -33962,6 +33972,7 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "From Contact Id"
           },
           "from_display": {
@@ -33974,6 +33985,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "From Display"
           },
           "note": {
@@ -33986,14 +33998,17 @@
                 "type": "null"
               }
             ],
+            "cls": "restricted",
             "title": "Note"
           },
           "received_at": {
+            "cls": "internal",
             "format": "date",
             "title": "Received At",
             "type": "string"
           },
           "received_via": {
+            "cls": "internal",
             "enum": [
               "email",
               "mail",
@@ -34006,6 +34021,7 @@
             "type": "string"
           },
           "subject": {
+            "cls": "confidential",
             "maxLength": 300,
             "minLength": 1,
             "title": "Subject",
@@ -34506,19 +34522,23 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Client Entity Id"
           },
           "client_id": {
+            "cls": "internal",
             "format": "uuid",
             "title": "Client Id",
             "type": "string"
           },
           "remember_sender": {
+            "cls": "internal",
             "default": false,
             "title": "Remember Sender",
             "type": "boolean"
           },
           "seen_version": {
+            "cls": "internal",
             "title": "Seen Version",
             "type": "integer"
           }
@@ -48006,11 +48026,13 @@
         "description": "The portal scope the upload is for (one of the principal's grants).",
         "properties": {
           "id": {
+            "cls": "internal",
             "format": "uuid",
             "title": "Id",
             "type": "string"
           },
           "kind": {
+            "cls": "internal",
             "enum": [
               "client",
               "client_entity",
@@ -56899,7 +56921,7 @@
         "type": "object"
       },
       "TreeNode": {
-        "description": "One tree row: client \u203a permanent file or year \u203a work item \u203a folder.",
+        "description": "One tree row: client > permanent file or year > work item > folder.",
         "properties": {
           "children": {
             "cls": "internal",
@@ -56990,6 +57012,7 @@
         "description": "`POST /v1/inbox/messages/{id}/triage/apply`.",
         "properties": {
           "decisions": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/TriageDecisionIn"
             },
@@ -56999,6 +57022,7 @@
             "type": "array"
           },
           "seen_proposals": {
+            "cls": "internal",
             "default": [],
             "items": {
               "format": "uuid",
@@ -57070,11 +57094,13 @@
         "description": "One attachment's decision in an apply.",
         "properties": {
           "attachment_id": {
+            "cls": "internal",
             "format": "uuid",
             "title": "Attachment Id",
             "type": "string"
           },
           "decision": {
+            "cls": "internal",
             "enum": [
               "file",
               "ignore",
@@ -57091,14 +57117,17 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "keep_both": {
+            "cls": "internal",
             "default": false,
             "title": "Keep Both",
             "type": "boolean"
           },
           "reason_codes": {
+            "cls": "internal",
             "default": [],
             "items": {
               "enum": [
@@ -57124,6 +57153,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Rename To"
           },
           "supersede_version_id": {
@@ -57136,9 +57166,11 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Supersede Version Id"
           },
           "tell_client": {
+            "cls": "internal",
             "default": false,
             "title": "Tell Client",
             "type": "boolean"
@@ -57157,6 +57189,7 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Version Mode"
           }
         },

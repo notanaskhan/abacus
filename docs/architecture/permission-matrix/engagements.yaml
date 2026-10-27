@@ -15,6 +15,12 @@ actions:
   # P-07-T05 (DEC-143): agent and system denied; `gates_met(G1)` joins with the live recorded
   # letter (P-07-T15), once the G1 provider's facts are registered (a condition fails closed).
   letter.record:            {engagement_partner: allow, manager: allow, agent: deny, system: deny}
+  # --- ENG-04 letter composer (N-02-T02; N-02 §4.3; C7 letter half). The record path above stays. ---
+  letter.read:              {engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_service: allow, agent: task_scope}   # ENG-04 projection, compare, PDF
+  letter.draft:             {engagement_partner: allow, manager: allow, agent: allow, system: deny}   # draft edits and the approval request; the agent drafts only (ADR-005)
+  letter.approve:           {engagement_partner: allow, agent: deny, system: deny, mfa_recent: required, independence: required}   # against the content hash (AC-13)
+  letter.send:              {engagement_partner: allow, manager: allow, client_service: allow, agent: deny, system: deny}   # C7 draft from the engagement_letter source
+  letter.amend:             {engagement_partner: allow, agent: deny, system: deny}   # addendum version
   engagement.hold:          {engagement_partner: allow, manager: allow, mfa_recent: required}   # F-03-T13: on hold and back, a person with a reason code (§3.1.3)
   setup.read:               {firm_admin: allow, practice_leader: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow}
   engagement.read_metadata:

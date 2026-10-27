@@ -58,6 +58,9 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("decision.decide", "sign_off", "engagement_partner"),
     ("assurance.record_release", "release", "engagement_partner"),
     ("assurance.record_archive", "release", "engagement_partner"),
+    ("signer.reveal_ip", "reveal", "engagement_partner"),
+    ("envelope_policy.manage", "access_control", "security_admin"),
+    ("letter.approve", "release", "engagement_partner"),
 )
 ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/audit-events/exports/{export_id}/download", "audit_event.export"),

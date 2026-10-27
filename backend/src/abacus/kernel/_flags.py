@@ -274,6 +274,11 @@ SECURITY_CENTER_V1 = Flag(
     kind="boolean",
     default="false",
 )
+SIGNATURES_ENVELOPES = Flag(
+    name="signatures.envelopes",
+    kind="boolean",
+    default="false",
+)
 UPLOAD_REVIEW_ENABLED = Flag(
     name="upload_review.enabled",
     kind="boolean",
@@ -339,6 +344,7 @@ FLAGS: dict[str, Flag] = {
     "review.grammar_api": REVIEW_GRAMMAR_API,
     "screening.card": SCREENING_CARD,
     "security_center.v1": SECURITY_CENTER_V1,
+    "signatures.envelopes": SIGNATURES_ENVELOPES,
     "upload_review.enabled": UPLOAD_REVIEW_ENABLED,
     "uploads.processing": UPLOADS_PROCESSING,
 }

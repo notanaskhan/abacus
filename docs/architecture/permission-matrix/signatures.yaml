@@ -1,0 +1,28 @@
+# The signatures module's actions (ADR-027; P-39, F-03-T07). Compiled with every other module's
+# file into identity/authz/_matrix.py by `make regenerate`.
+#
+# C7 envelope service (N-02-T02 protected bundle; N-02 §4.3; ADR-149; SPEC-381 §9). Drafting is
+# the only verb the agent and the system may hold; every final verb (send, remind, void, import,
+# wet signature, countersign, approve, sign) is a person's (I-AGENT-NEVER, AC-16). The plan's
+# `portal.envelopes.*` are spelt `portal_envelopes.*` (one dot, DEC-139). The plan's
+# `is_named_signer` condition on countersign and portal signing is the service's check (the
+# named signer of that envelope), as the portal intake's own-uploads rule is (N-01-T14).
+
+actions:
+  envelope.read:              {firm_admin: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_service: allow, agent: task_scope}   # SIG-01 list, summary, drawer, page previews; firm_admin metadata-only outside an engagement role (ADR-024, the service narrows)
+  envelope.draft:             {engagement_partner: allow, manager: allow, client_service: allow, agent: allow, system: allow}   # SIG-02 draft, edit, validate, resend: the agent may draft only (ADR-005)
+  envelope.send:              {engagement_partner: allow, manager: allow, client_service: allow, agent: deny, system: deny, independence: required}   # human send through a single-use approval grant (+10 s, ADR-161)
+  envelope.remind:            {engagement_partner: allow, manager: allow, client_service: allow, agent: deny, system: deny}   # template-only reminders (DEC-74)
+  envelope.void:              {engagement_partner: allow, manager: allow, client_service: allow, agent: deny, system: deny}   # void with a reason; evidence kept
+  envelope.import_record:     {engagement_partner: allow, manager: allow, client_service: allow, agent: deny, system: deny, independence: required}   # record mode (SIG-01 r, DF-12): a package signed in the firm's own tool, attested
+  envelope.record_wet_signature: {engagement_partner: allow, manager: allow, client_service: allow, agent: deny, system: deny, independence: required}   # DF-11: the hand-signed 8879 with attestation
+  envelope.countersign:       {engagement_partner: allow, manager: allow, agent: deny, system: deny}   # the named firm signer only (the service's check)
+  envelope.evidence_download: {engagement_partner: allow, manager: allow, client_service: allow, agent: deny, system: deny, independence: required, not_offshore: required}   # packages, certificate, manifest; audited
+  signer.reveal_ip:           {engagement_partner: allow, manager: allow, client_service: allow, agent: deny, system: deny, mfa_recent: required, not_offshore: required, requires: reason}   # 10-second reveal, audited
+  envelope_policy.read:       {firm_admin: allow, security_admin: allow, engagement_partner: allow, manager: allow, agent: deny, system: deny}
+  envelope_policy.manage:     {security_admin: allow, agent: deny, system: deny, mfa_recent: required}   # stricter-only PUT (AC-9)
+  # --- portal signing (POR-06; scope_only; the named signer, the service's check) ---
+  portal_envelopes.read:      {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}
+  portal_envelopes.sign:      {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}   # ERSD consent, signing session, return
+  portal_envelopes.decline:   {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}
+  portal_envelopes.download:  {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}   # the signed copy and its evidence page, audited

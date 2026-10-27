@@ -1,0 +1,14 @@
+# The signatures module's flags (ADR-089; P-39, F-03-T07). Compiled with every other module's
+# file into kernel/_flags.py by `make regenerate`. N-02 §4.8: `signatures.envelopes` lands with the
+# protected bundle (N-02-T02); `signatures.docusign`, `signatures.kba_8879` and
+# `engagements.letter_composer` each arrive in their own small change with their tasks.
+
+flags:
+  - name: signatures.envelopes
+    description: 'SIG-01, record-mode import and the portal envelope reads (N-02; C7 v1; docs/contracts/c7-envelopes.md; ADR-149): /v1/envelopes*, /v1/envelope-policies, /v1/portal/envelopes* and the ENG-04 composer routes until engagements.letter_composer exists. Off: 404; SIG-01 and POR-06 render their flag-off states. On: 501 not_implemented until N-02-T08 (import) and T11-T15 (hub). Provider sends stay behind signatures.docusign.'
+    owner: ayushkbhatia
+    created: 2026-10-27
+    expires: 2027-01-25
+    override: DEC-137
+    kind: boolean
+    default: false

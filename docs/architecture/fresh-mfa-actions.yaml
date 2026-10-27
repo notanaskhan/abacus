@@ -105,3 +105,10 @@ actions:
     group: release
   - action: assurance.record_archive
     group: release
+  # Signatures (N-02-T02; SPEC-381 AC-5, AC-9, AC-13)
+  - action: signer.reveal_ip
+    group: reveal
+  - action: envelope_policy.manage
+    group: access_control
+  - action: letter.approve
+    group: release
