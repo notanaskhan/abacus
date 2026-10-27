@@ -12304,6 +12304,10 @@ export type HumanGateCountsOut = {
  */
 export type HumanGateOut = {
     /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
      * Assignee User Id
      */
     assignee_user_id: string | null;
@@ -12319,6 +12323,10 @@ export type HumanGateOut = {
      * Blocked Reason Code
      */
     blocked_reason_code: string | null;
+    /**
+     * Bulk Eligible
+     */
+    bulk_eligible?: boolean;
     /**
      * Client Id
      */
@@ -12340,6 +12348,10 @@ export type HumanGateOut = {
      */
     engagement_id: string | null;
     /**
+     * Glyph
+     */
+    glyph?: string | null;
+    /**
      * Id
      */
     id: string;
@@ -12352,6 +12364,11 @@ export type HumanGateOut = {
      */
     office_id: string | null;
     /**
+     * Overlay
+     */
+    overlay?: string | null;
+    proposed_by?: ProposedByOut | null;
+    /**
      * Role
      */
     role: string | null;
@@ -12361,6 +12378,10 @@ export type HumanGateOut = {
     state: 'open' | 'done' | 'voided';
     subject: ObjectRefOut;
     /**
+     * Subject Route
+     */
+    subject_route?: string | null;
+    /**
      * Subkind
      */
     subkind: string;
@@ -12368,6 +12389,10 @@ export type HumanGateOut = {
      * Title
      */
     title?: string | null;
+    /**
+     * Version
+     */
+    version?: number;
     /**
      * Work Item Id
      */
@@ -19068,6 +19093,27 @@ export type ProposalTotalOut = {
 };
 
 /**
+ * ProposedByOut
+ *
+ * INV-5: the run that proposed a gate and the person it ran for, never the agent as the
+ * decider.
+ */
+export type ProposedByOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Initiator User Id
+     */
+    initiator_user_id: string | null;
+    /**
+     * Run Id
+     */
+    run_id: string;
+};
+
+/**
  * ProposedItemOut
  */
 export type ProposedItemOut = {
@@ -19312,6 +19358,62 @@ export type ReasonOut = {
      * Value
      */
     value?: string | null;
+};
+
+/**
+ * ReassignCandidateOut
+ */
+export type ReassignCandidateOut = {
+    /**
+     * Role
+     */
+    role: string;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * ReassignCandidatesOut
+ */
+export type ReassignCandidatesOut = {
+    /**
+     * Candidates
+     */
+    candidates?: Array<ReassignCandidateOut>;
+};
+
+/**
+ * ReassignIn
+ */
+export type ReassignIn = {
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+    /**
+     * To User Id
+     */
+    to_user_id: string;
+};
+
+/**
+ * ReassignedOut
+ */
+export type ReassignedOut = {
+    /**
+     * Gate Id
+     */
+    gate_id: string;
+    /**
+     * To User Id
+     */
+    to_user_id: string;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
@@ -23464,6 +23566,32 @@ export type SnapshotOut = {
      * Total Debit
      */
     total_debit: string;
+};
+
+/**
+ * SnoozeIn
+ */
+export type SnoozeIn = {
+    /**
+     * Until
+     */
+    until: string;
+};
+
+/**
+ * SnoozedOut
+ *
+ * The caller's snooze of a gate (theirs alone); an unsnooze ends it now.
+ */
+export type SnoozedOut = {
+    /**
+     * Gate Id
+     */
+    gate_id: string;
+    /**
+     * Until
+     */
+    until: string;
 };
 
 /**
@@ -56299,6 +56427,22 @@ export type HumanGateListData = {
          * Limit
          */
         limit?: number | null;
+        /**
+         * State
+         */
+        state?: 'open' | 'done' | 'snoozed';
+        /**
+         * Band
+         */
+        band?: 'decisions' | 'sign_offs' | 'agent_outputs' | 'approvals_sends' | null;
+        /**
+         * Office Id
+         */
+        office_id?: string | null;
+        /**
+         * Sort
+         */
+        sort?: 'created' | 'deadline';
     };
     url: '/v1/human-gates';
 };
@@ -56320,10 +56464,6 @@ export type HumanGateListErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type HumanGateListError = HumanGateListErrors[keyof HumanGateListErrors];
@@ -56392,6 +56532,230 @@ export type HumanGateCountsResponses = {
 };
 
 export type HumanGateCountsResponse = HumanGateCountsResponses[keyof HumanGateCountsResponses];
+
+export type HumanGateReassignData = {
+    body: ReassignIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Gate Id
+         */
+        gate_id: string;
+    };
+    query?: never;
+    url: '/v1/human-gates/{gate_id}/reassign';
+};
+
+export type HumanGateReassignErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type HumanGateReassignError = HumanGateReassignErrors[keyof HumanGateReassignErrors];
+
+export type HumanGateReassignResponses = {
+    /**
+     * Successful Response
+     */
+    200: ReassignedOut;
+};
+
+export type HumanGateReassignResponse = HumanGateReassignResponses[keyof HumanGateReassignResponses];
+
+export type HumanGateCandidatesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Gate Id
+         */
+        gate_id: string;
+    };
+    query?: never;
+    url: '/v1/human-gates/{gate_id}/reassign-candidates';
+};
+
+export type HumanGateCandidatesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type HumanGateCandidatesError = HumanGateCandidatesErrors[keyof HumanGateCandidatesErrors];
+
+export type HumanGateCandidatesResponses = {
+    /**
+     * Successful Response
+     */
+    200: ReassignCandidatesOut;
+};
+
+export type HumanGateCandidatesResponse = HumanGateCandidatesResponses[keyof HumanGateCandidatesResponses];
+
+export type HumanGateSnoozeData = {
+    body: SnoozeIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Gate Id
+         */
+        gate_id: string;
+    };
+    query?: never;
+    url: '/v1/human-gates/{gate_id}/snooze';
+};
+
+export type HumanGateSnoozeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type HumanGateSnoozeError = HumanGateSnoozeErrors[keyof HumanGateSnoozeErrors];
+
+export type HumanGateSnoozeResponses = {
+    /**
+     * Successful Response
+     */
+    200: SnoozedOut;
+};
+
+export type HumanGateSnoozeResponse = HumanGateSnoozeResponses[keyof HumanGateSnoozeResponses];
+
+export type HumanGateUnsnoozeData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Gate Id
+         */
+        gate_id: string;
+    };
+    query?: never;
+    url: '/v1/human-gates/{gate_id}/unsnooze';
+};
+
+export type HumanGateUnsnoozeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type HumanGateUnsnoozeError = HumanGateUnsnoozeErrors[keyof HumanGateUnsnoozeErrors];
+
+export type HumanGateUnsnoozeResponses = {
+    /**
+     * Successful Response
+     */
+    200: SnoozedOut;
+};
+
+export type HumanGateUnsnoozeResponse = HumanGateUnsnoozeResponses[keyof HumanGateUnsnoozeResponses];
 
 export type AcceptInvitationData = {
     body: AcceptInvitationIn;
