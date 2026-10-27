@@ -1692,6 +1692,132 @@ export const STATUS_REGISTRY = {
       "derived": false
     }
   },
+  "envelope_signer": {
+    "waiting": {
+      "label": "Not signed",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "chip": "○ {name}"
+      }
+    },
+    "verified": {
+      "label": "Identity verified",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "signer_band": "identity verified {time} · {n} fields left"
+      }
+    },
+    "signed": {
+      "label": "Signed",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "chip": "✓ {name} · {date}",
+        "signer_band": "✓ Signed {date}, {time} · identity verified"
+      }
+    },
+    "declined": {
+      "label": "Declined",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "verification_failed": {
+      "label": "Identity check failed",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "signing_step": {
+    "verify": {
+      "label": "Verify identity",
+      "variant": null,
+      "terminal": false,
+      "derived": true,
+      "contextLabels": {
+        "chip": "Verify"
+      }
+    },
+    "review": {
+      "label": "Review",
+      "variant": null,
+      "terminal": false,
+      "derived": true
+    },
+    "sign": {
+      "label": "Sign",
+      "variant": null,
+      "terminal": false,
+      "derived": true
+    },
+    "done": {
+      "label": "Done",
+      "variant": null,
+      "terminal": true,
+      "derived": true
+    }
+  },
+  "envelope_purpose": {
+    "e_file_authorization": {
+      "label": "E-file authorization",
+      "variant": "tag",
+      "terminal": false,
+      "derived": false
+    },
+    "engagement_letter": {
+      "label": "Engagement letter",
+      "variant": "tag",
+      "terminal": false,
+      "derived": false
+    },
+    "representation_letter": {
+      "label": "Rep letter",
+      "variant": "tag",
+      "terminal": false,
+      "derived": false
+    },
+    "consent_7216": {
+      "label": "§7216 consent",
+      "variant": "tag",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "generated_document": {
+    "drafting": {
+      "label": "Drafting",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "draft": {
+      "label": "Draft",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "meta_line": "Approved by {actor} · {when}"
+      }
+    },
+    "locked": {
+      "label": "Locked",
+      "variant": "soon",
+      "terminal": true,
+      "derived": false
+    }
+  },
   "notice": {
     "received": {
       "label": "New",

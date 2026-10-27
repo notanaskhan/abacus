@@ -462,6 +462,39 @@ objects:
       expired:   {label: "Expired",   variant: muted, terminal: true, derived: false}
       voided:    {label: "Voided",    variant: soon,  terminal: true, derived: false}
 
+  envelope_signer:   # F-06-T03 (DF-31, DF-11): one signer on an envelope; the T16 document-list chips and signer band, SIG-01's signer rows
+    source: "DF-31; DF-11; TPL-16 b, d, e; blueprint 9.7 signer chips"
+    codes:
+      waiting:             {label: "Not signed", variant: neutral, terminal: false, derived: false, context_labels: {chip: "○ {name}"}}
+      verified:            {label: "Identity verified", variant: neutral, terminal: false, derived: false, context_labels: {signer_band: "identity verified {time} · {n} fields left"}}
+      signed:              {label: "Signed", variant: green-tint, terminal: true, derived: false, context_labels: {chip: "✓ {name} · {date}", signer_band: "✓ Signed {date}, {time} · identity verified"}}
+      declined:            {label: "Declined", variant: red-tint, terminal: true, derived: false}
+      verification_failed: {label: "Identity check failed", variant: red-tint, terminal: true, derived: false}   # DF-11: three failed KBA attempts close remote signing for that form; no retry
+
+  signing_step:   # F-06-T03 (DF-31): the T16 steps pane and the 390 step chips; computed from the signer's state, never stored
+    source: "DF-31; T16, TPL-16 b and g"
+    codes:
+      verify: {label: "Verify identity", variant: null, terminal: false, derived: true, context_labels: {chip: "Verify"}}
+      review: {label: "Review", variant: null, terminal: false, derived: true}
+      sign:   {label: "Sign", variant: null, terminal: false, derived: true}
+      done:   {label: "Done", variant: null, terminal: true, derived: true}
+
+  envelope_purpose:   # F-06-T03 (DF-31, DF-11): what an envelope is for; sets the identity method (8879 family KBA, the rest email code)
+    source: "DF-31; DF-11; blueprint 9.5 and 9.7 (signatures out: 8879 family, engagement letters, rep letters, 7216 consents)"
+    codes:
+      e_file_authorization:  {label: "E-file authorization", variant: tag, terminal: false, derived: false}   # Form 8879 family
+      engagement_letter:     {label: "Engagement letter", variant: tag, terminal: false, derived: false}
+      representation_letter: {label: "Rep letter", variant: tag, terminal: false, derived: false}
+      consent_7216:          {label: "§7216 consent", variant: tag, terminal: false, derived: false}
+
+  generated_document:   # F-06-T03 (DF-31): the T10 document status, computed by P-11 (C11); "Adopted by" is a sub-line, never a status (F-06 Q6); the render status stays a separate field
+    source: "DF-31; T10 a-d; TPL-10 a-c"
+    codes:
+      drafting: {label: "Drafting", variant: null, terminal: false, derived: false}   # header spinner; paper variant only while ADR P-25 is off
+      draft:    {label: "Draft", variant: neutral, terminal: false, derived: false}
+      approved: {label: "Approved", variant: green-tint, terminal: false, derived: false, context_labels: {meta_line: "Approved by {actor} · {when}"}}
+      locked:   {label: "Locked", variant: soon, terminal: true, derived: false}   # with Lock 12 and the locked reason
+
   notice:
     source: "blueprint 3.3.1"
     codes:
