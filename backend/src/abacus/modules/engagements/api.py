@@ -1,6 +1,9 @@
 """Public interface of the engagements module; other modules import only this (ADR-008)."""
 
+from collections.abc import Awaitable, Callable
+
 from abacus.ai_gateway import register_client_data_facts
+from abacus.kernel.uow import OutboxEvent
 from abacus.kernel.uow.placement import register_engagement_placer
 from abacus.modules.engagements.acceptance import (
     NewCondition,
@@ -20,6 +23,11 @@ from abacus.modules.engagements.acceptance_contract import (
 from abacus.modules.engagements.audit_placement import place_engagements
 from abacus.modules.engagements.audit_targets import AUDIT_KINDS, audit_engagements, visible_among
 from abacus.modules.engagements.client_facts import client_engagements, engagements_section
+from abacus.modules.engagements.client_import_activities import (
+    ACTIVITIES,
+    SCHEDULES,
+    WORKFLOWS,
+)
 from abacus.modules.engagements.conditions import (
     functions_on,
     gates_of,
@@ -104,6 +112,7 @@ from abacus.modules.engagements.service import (
     active_engagements,
     add_to_team,
     ai_excluded,
+    all_engagement_ids,
     change_team_role,
     check_facts,
     client_of,
@@ -320,13 +329,21 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     firm_router,
 )
 
+# P-07-T52: the bulk import's workflow, activities and daily erase make engagements a module with
+# worker parts; it subscribes to nothing.
+SUBSCRIPTIONS: dict[str, Callable[[OutboxEvent], Awaitable[None]]] = {}
+
 __all__ = [
     "ACCEPTANCE_DECISION_DUE",
+    "ACTIVITIES",
     "AUDIT_KINDS",
     "EQR_ELIGIBILITY_DUE",
     "INDEPENDENCE_CONCLUSION_DUE",
     "INDEPENDENCE_CONFIRMATION_DUE",
     "ROUTERS",
+    "SCHEDULES",
+    "SUBSCRIPTIONS",
+    "WORKFLOWS",
     "WORK_ITEM_FUNCTIONS",
     "AccountRule",
     "ApprovedGuidance",
@@ -366,6 +383,7 @@ __all__ = [
     "acceptance_record",
     "add_flag",
     "add_to_team",
+    "all_engagement_ids",
     "answer_independence",
     "approve_eqr_eligibility",
     "approve_team",
