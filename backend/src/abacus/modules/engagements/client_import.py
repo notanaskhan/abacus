@@ -486,8 +486,6 @@ async def upload_import(
                 file_sealed=sealed_file,
                 file_sha256=hashlib.sha256(content).hexdigest(),
                 file_bytes=len(content),
-                # From the row's own start (`started_at` is the same clock), so it reads 30 days.
-                erase_after=func.clock_timestamp() + RETENTION,
                 stage=_RUNNABLE,
                 mapping=parsed.mapping,
                 counts={},
