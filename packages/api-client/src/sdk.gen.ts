@@ -5315,7 +5315,8 @@ export const publishEmailTemplate = <ThrowOnError extends boolean = false>(optio
  *
  * POR-20 j, k (R-01-T23): to the acting admin's own address only (from the session, never
  * the request), "[Test]" before the subject, fresh MFA, onshore; the sample contact's items
- * as far as the viewer may read them (DEC-379); 422 `template_lint_failed`. Audited
+ * as far as the viewer may read them (DEC-379); 422 `template_lint_failed`; 429
+ * `test_send_rate_limited` (`retry_after`) after 10 in a rolling hour (DEC-569). Audited
  * `email_template.test_sent`. A retry with the same key sends nothing again.
  */
 export const testSendEmailTemplate = <ThrowOnError extends boolean = false>(options: Options<TestSendEmailTemplateData, ThrowOnError>): RequestResult<TestSendEmailTemplateResponses, TestSendEmailTemplateErrors, ThrowOnError> => (options.client ?? client).post<TestSendEmailTemplateResponses, TestSendEmailTemplateErrors, ThrowOnError>({

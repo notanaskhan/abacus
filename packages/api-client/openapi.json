@@ -110496,7 +110496,7 @@
     },
     "/v1/firm/email-templates/{key}/test-send": {
       "post": {
-        "description": "POR-20 j, k (R-01-T23): to the acting admin's own address only (from the session, never\nthe request), \"[Test]\" before the subject, fresh MFA, onshore; the sample contact's items\nas far as the viewer may read them (DEC-379); 422 `template_lint_failed`. Audited\n`email_template.test_sent`. A retry with the same key sends nothing again.",
+        "description": "POR-20 j, k (R-01-T23): to the acting admin's own address only (from the session, never\nthe request), \"[Test]\" before the subject, fresh MFA, onshore; the sample contact's items\nas far as the viewer may read them (DEC-379); 422 `template_lint_failed`; 429\n`test_send_rate_limited` (`retry_after`) after 10 in a rolling hour (DEC-569). Audited\n`email_template.test_sent`. A retry with the same key sends nothing again.",
         "operationId": "test_send_email_template",
         "parameters": [
           {
