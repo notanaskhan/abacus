@@ -96,11 +96,6 @@ ENGAGEMENTS_V2 = Flag(
     kind="boolean",
     default="false",
 )
-ENGAGEMENTS_WORK_ITEMS_API = Flag(
-    name="engagements.work_items_api",
-    kind="boolean",
-    default="false",
-)
 EVIDENCE_CITATIONS_V2 = Flag(
     name="evidence.citations_v2",
     kind="boolean",
@@ -299,7 +294,6 @@ FLAGS: dict[str, Flag] = {
     "engagement_agent.enabled": ENGAGEMENT_AGENT_ENABLED,
     "engagements.acceptance_v2": ENGAGEMENTS_ACCEPTANCE_V2,
     "engagements.v2": ENGAGEMENTS_V2,
-    "engagements.work_items_api": ENGAGEMENTS_WORK_ITEMS_API,
     "evidence.citations_v2": EVIDENCE_CITATIONS_V2,
     "evidence.pii_reveal": EVIDENCE_PII_REVEAL,
     "evidence.viewer_unlock": EVIDENCE_VIEWER_UNLOCK,
