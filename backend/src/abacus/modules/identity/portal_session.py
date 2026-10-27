@@ -66,12 +66,14 @@ PORTAL_MARK: Final = "pst_"
 _MAX_TOKEN: Final = 64
 _log = get_logger(__name__)
 # ED-132: `portal_sign_in_attempt` (0116) locks the challenge row and then the firm-and-email
-# `sign_in_locks` row; `portal_sign_in_missed` updates the lock row and then the challenge. A guess
-# counted while the previous one's miss was being recorded deadlocked, and one of the two failed
-# with a database error instead of an answer. Both transactions take the challenge's transaction
-# advisory lock first, so they never interleave on one challenge (the cycle needs the same one).
+# `sign_in_locks` row, as do `portal_sign_in_consume` (0116) and `portal_mfa_begin` (0133);
+# `portal_sign_in_missed` updates the lock row and then the challenge. A guess counted, or a right
+# guess spent, while a wrong last guess's miss was being recorded deadlocked, and one of the two
+# failed with a database error instead of an answer. Every transaction that calls one of them
+# takes the challenge's transaction advisory lock first, so they never interleave on one challenge
+# (the cycle needs the same one). The key is prefixed so it can't meet another feature's.
 _CHALLENGE_LOCK: Final = text(
-    "SELECT pg_advisory_xact_lock(hashtextextended(CAST(:id AS text), 0))"
+    "SELECT pg_advisory_xact_lock(hashtextextended('portal_sign_in:' || CAST(:id AS text), 0))"
 )
 
 
@@ -370,14 +372,18 @@ async def open_session(
     previous_cookie: str | None = None,
     mfa: bool = False,
     device: bool = False,
+    challenge_id: UUID | None = None,
 ) -> PortalTokens | None:
     """A portal session for the person, pinned to the firm and host, in the same transaction as
     `claim` (which must answer true: the code's challenge or the second-step token, used once).
-    None when the claim was already spent by a concurrent request."""
+    None when the claim was already spent by a concurrent request. `challenge_id`: the claim
+    spends that sign-in challenge, so the transaction takes its lock first (ED-132)."""
     access, cookie = _access_token(), secrets.token_urlsafe(32)
     # G-02-T14 (AC-19): the firm's portal session length, 8 hours at most.
     absolute = min(ABSOLUTE_SECONDS, await portal_session_seconds(tenant_id))
     async with platform_transaction(f"user:{user_id}") as conn:
+        if challenge_id is not None:
+            await conn.execute(_CHALLENGE_LOCK, {"id": str(challenge_id)})
         if not (await conn.execute(claim, params)).scalar_one():
             return None
         session_id = cast(
@@ -478,6 +484,7 @@ async def verify_code(
     if step is not None and step != "device":
         token = secrets.token_urlsafe(32)
         async with platform_transaction("portal:sign_in") as conn:
+            await conn.execute(_CHALLENGE_LOCK, {"id": str(challenge_id)})
             begun = (
                 await conn.execute(
                     text("SELECT portal_mfa_begin(:id, :token, :kind, :seconds)"),
@@ -500,6 +507,7 @@ async def verify_code(
         {"id": challenge_id},
         previous_cookie=previous_cookie,
         device=step == "device",
+        challenge_id=challenge_id,
     )
     if tokens is None:
         raise CodeExpired  # used by a concurrent verify

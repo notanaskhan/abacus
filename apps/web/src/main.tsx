@@ -26,9 +26,9 @@ if (root === null) {
 }
 
 // Q-01-T23: the router starts only with a valid runtime config; otherwise the plain error state.
-// A promise chain, not a top-level await: an entry module that awaits at the top level makes
-// Rollup split every module it shares with a lazy route into its own chunk (so no route chunk
-// imports from an entry still evaluating), which broke the firm initial bundle budget (TASK-1368).
+// A promise chain, not a top-level await: Rolldown turns its chunk optimizations off when any
+// module awaits at the top level, so every module the entry shares with a lazy route became its
+// own chunk, which broke the firm initial bundle budget (TASK-1368, DEC-464).
 void bootWithRuntimeConfig(root, () => (
   <StrictMode>
     <QueryClientProvider client={queryClient}>

@@ -11,7 +11,7 @@ import { chooseTenant, chosenTenant, endSession, signIn, useSignedIn } from "../
 import { FirmMenu } from "../shell/firm/FirmMenu";
 import { useFirmToolbar } from "../shell/firm/ToolbarData";
 import { useOverlays } from "../app-core/overlay-host";
-import { NOTIFICATIONS_OVERLAY } from "../shell/firm/NotificationsDrawer";
+import { NOTIFICATIONS_OVERLAY } from "../shell/firm/notifications-overlay";
 
 /** The signed-in firm workspace (F-05-T23): the design system's AppShell and Toolbar around the
  * legacy screens, the firm pill's menu (SHL-03), notifications, and the page. */

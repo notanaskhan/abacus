@@ -38,13 +38,14 @@ import {
   useFormat,
 } from "@abacus/ui";
 import { type Query, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
 import { type JSX, useEffect, useState } from "react";
 import { useNow } from "../../app-core/clock";
-import { registerOverlay } from "../../app-core/overlays";
 import { useSession } from "../../app-core/session";
 import { feedHref, firmDayGroup, kindGlyph, notificationText } from "../notifications";
 import { NOTIFICATIONS } from "./copy";
+// The overlay registration lives beside the bell, so this module can be its own chunk; importing
+// the drawer still registers it (TASK-1368).
+export { NOTIFICATIONS_OVERLAY } from "./notifications-overlay";
 
 // SHL-04 · the notifications drawer v2 (P-01-T10): an O2 peek (480, no scrim, the page stays live)
 // opened by the bell and named in the URL as `?ov=notifications`. A white tab row with a
@@ -633,24 +634,3 @@ export function NotificationSettings({ enabled }: { enabled: boolean }): JSX.Ele
     </Popover>
   );
 }
-
-/** The `?ov=notifications` layer: the drawer, open, closed by removing it from the URL. */
-function NotificationsOverlay({ close }: { close: () => void }): JSX.Element {
-  const navigate = useNavigate();
-  return (
-    <NotificationsDrawer
-      open
-      onOpenChange={(next) => {
-        if (!next) close();
-      }}
-      navigate={(to) => void navigate({ to })}
-    />
-  );
-}
-
-export const NOTIFICATIONS_OVERLAY = "notifications";
-
-registerOverlay(NOTIFICATIONS_OVERLAY, {
-  layer: "drawer",
-  render: ({ close }) => <NotificationsOverlay close={close} />,
-});

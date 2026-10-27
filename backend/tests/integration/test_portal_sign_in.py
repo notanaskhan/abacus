@@ -7,7 +7,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 from typing import cast
 
 import httpx
@@ -33,6 +33,7 @@ from abacus.modules.identity.portal_session import (
     verify_code,
 )
 from abacus.modules.portal.branding import activate_portal_host, add_portal_host
+from abacus_tools.quality.schema_check import Database, provisioned_database
 
 from .agent_tests.support import Person, Seeder
 from .conftest import MigratedDatabase
@@ -348,6 +349,83 @@ async def test_ac7_parallel_or_fresh_challenges_never_get_more_than_three_guesse
             await verify_code(host, challenge.challenge_id, "123456")
     with pytest.raises(SignInLocked):
         await verify_code(host, fresh[2].challenge_id, "123456")
+
+
+# ED-132's window, held open: recording a wrong last guess keeps the firm-and-email lock row for a
+# second before it marks the challenge spent. Only in this module's own database.
+_SLOW_MISS = """
+CREATE OR REPLACE FUNCTION portal_sign_in_missed(p_id uuid, p_max integer, p_lock_seconds integer)
+RETURNS timestamptz
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
+DECLARE
+    v_challenge record;
+    v_until timestamptz;
+BEGIN
+    SELECT * INTO v_challenge FROM public.sign_in_challenges WHERE id = p_id;
+    IF NOT FOUND THEN
+        RETURN NULL;
+    END IF;
+    UPDATE public.sign_in_locks
+       SET locked_until = CASE WHEN locked_until > clock_timestamp() THEN locked_until
+           ELSE clock_timestamp() + make_interval(secs => p_lock_seconds) END
+     WHERE host_tenant_id = v_challenge.host_tenant_id
+       AND email_sha256 = v_challenge.email_sha256 AND attempts >= p_max
+    RETURNING locked_until INTO v_until;
+    PERFORM pg_sleep(1);
+    IF v_until IS NOT NULL THEN
+        UPDATE public.sign_in_challenges SET consumed_at = clock_timestamp()
+         WHERE id = p_id AND consumed_at IS NULL;
+    END IF;
+    RETURN v_until;
+END $$
+"""
+
+
+@pytest.fixture(scope="module")
+def slow_miss_db() -> Iterator[Database]:
+    with provisioned_database(roundtrip=False) as database:
+        yield database
+
+
+async def test_ed132_a_right_guess_racing_a_wrong_last_guess_answers_and_never_deadlocks(
+    slow_miss_db: Database, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The right guess is counted first and spends the challenge while the wrong last guess's miss
+    holds the lock row: each gets an answer (a session or `CodeExpired`; `SignInLocked`), never
+    a database error, and the guess limit holds."""
+    monkeypatch.setenv("ABACUS_IDENTITY_DATABASE_URL", slow_miss_db.identity_url)
+    settings.cache_clear()
+    await dispose_engine()
+    configure_engine(slow_miss_db.app_url)
+    seed = Seeder(slow_miss_db.superuser_dsn)
+    await seed.run(_SLOW_MISS)
+    _, host, _, email = await _portal(seed)
+    started = await start_sign_in(host, email)
+    issued = await issue_sign_in_code(started.challenge_id)
+    assert issued is not None
+    wrong = "000000" if issued.code != "000000" else "111111"
+    with pytest.raises(CodeMismatch):  # one of three
+        await verify_code(host, started.challenge_id, wrong)
+
+    # The right guess pauses between being counted and spending the challenge, so the wrong last
+    # guess (counted third) records its miss in between.
+    required = portal_session.mfa_required
+
+    async def slow_required(tenant_id: uuid.UUID, user_id: uuid.UUID) -> bool:
+        await asyncio.sleep(0.3)
+        return await required(tenant_id, user_id)
+
+    monkeypatch.setattr(portal_session, "mfa_required", slow_required)
+
+    async def wrong_last() -> object:
+        await asyncio.sleep(0.1)
+        return await verify_code(host, started.challenge_id, wrong)
+
+    right, last = await asyncio.gather(
+        verify_code(host, started.challenge_id, issued.code), wrong_last(), return_exceptions=True
+    )
+    assert isinstance(right, portal_session.PortalTokens | CodeExpired), repr(right)
+    assert isinstance(last, SignInLocked), repr(last)
 
 
 async def test_ac7_a_revoked_grant_ends_what_the_token_reaches(seed: Seeder) -> None:

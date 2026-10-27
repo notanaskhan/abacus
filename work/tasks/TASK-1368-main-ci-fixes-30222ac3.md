@@ -20,8 +20,8 @@ gallery visual-regression timeout.
 
 ## Plan (red)
 - **Bundle budget** (firm initial 261.9 KB of 250): Q-01-T23 (#460) made `main.tsx` await the
-  runtime config at the top level. An entry with a top-level await makes Rollup split every module
-  it shares with a lazy route into its own chunk (17 initial chunks became 49), so the same code
+  runtime config at the top level. Rolldown turns its chunk optimizations off for a top-level
+  await, so every module shared with a lazy route got its own chunk (17 initial became 49), so the same code
   gzipped 12 KB larger. Boot through a promise chain instead, in both entries (DEC-464).
 - **AC-20 logging** (`too many values to unpack`): `test_a02t19_registry_independent.py` (#478)
   ran the API lifespan to its end, which shut the process-global tracer provider down; every
@@ -50,3 +50,10 @@ gallery visual-regression timeout.
   largest candidate to make lazy. The portal build's POR-04 route chunk is 120.4 KB of 120 KB,
   over before this change too (120.3 KB on 1aed1484); CI does not build the portal, so it is
   reported, not fixed here.
+- 2026-10-27 (review round): the bundler is Rolldown (Vite 8), not Rollup; DEC-464 now records
+  the framework chunk group and the lazy SHL-04 drawer and interim Go…: firm initial 245.1 KB of
+  250 KB (4.9 KB headroom). Lazy-loading the drawer alone saved nothing (the new dynamic chunk
+  split more shared modules into small common chunks); the group removed that fragmentation.
+  ED-132's remaining path (a right guess's consume, and the MFA begin, against a wrong last
+  guess's miss) takes the challenge lock too, the key is prefixed `portal_sign_in:`, and a
+  deterministic race test covers it (deadlocked without the consume lock).
