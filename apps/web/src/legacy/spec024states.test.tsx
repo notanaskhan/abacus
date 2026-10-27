@@ -10,13 +10,6 @@ import { Autonomy } from "./Autonomy";
 import { Onboarding } from "./Onboarding";
 import { Signup } from "./Signup";
 
-const ME = {
-  user_id: "00000000-0000-4000-8000-000000000001",
-  display_name: "Sam Patel",
-  email: "sam@whitfield.example",
-  memberships: [],
-};
-
 beforeEach(async () => {
   sessionStorage.clear();
   await signInForTest();

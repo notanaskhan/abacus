@@ -409,9 +409,18 @@ describe("ADM-02 carries the retired FirmPeople tests (DEC-594)", () => {
     });
   });
 
+  // The unfiltered list hides the Users segment when it fails (by design); the filtered list is
+  // the one whose refusal and failure the page states.
+  const filteredFails =
+    (answer: () => Response): FixtureHandler =>
+    (request) =>
+      request.query.get("q") !== null
+        ? answer()
+        : (scenarios.a.handlers["GET /v1/firm/staff"] as FixtureHandler)(request);
+
   it("a refused list asks for a recent sign-in (spec024 ac4)", async () => {
-    withHandlers("a", "", {
-      "GET /v1/firm/staff": () => json({ detail: "forbidden" }, 403),
+    withHandlers("a", "?q=osei", {
+      "GET /v1/firm/staff": filteredFails(() => json({ detail: "forbidden" }, 403)),
     });
     expect(await screen.findByText("Confirm it's you to change people")).toBeTruthy();
   });
@@ -428,8 +437,8 @@ describe("ADM-02 carries the retired FirmPeople tests (DEC-594)", () => {
   });
 
   it("test_ac8_people_error_state: a list that fails to load says so", async () => {
-    withHandlers("a", "", {
-      "GET /v1/firm/staff": () => json({ detail: "unavailable" }, 503),
+    withHandlers("a", "?q=osei", {
+      "GET /v1/firm/staff": filteredFails(() => json({ detail: "unavailable" }, 503)),
     });
     expect(await screen.findByText("People couldn't be loaded.")).toBeTruthy();
   });

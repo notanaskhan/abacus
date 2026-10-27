@@ -111,11 +111,12 @@ async def test_the_intake_slice_loads_and_the_cch_file_scores_204_8_0(own_db: Da
     )
     assert [tuple(r)[1:] for r in meridian] == [("continuance", "awaiting_partner", "low")]
     flags = await seed.rows(
-        "SELECT severity, title FROM acceptance_flags WHERE tenant_id = $1 AND record_id = $2",
+        "SELECT severity, authored_by FROM acceptance_flags WHERE tenant_id = $1 "
+        "AND record_id = $2",
         TENANT,
         meridian[0]["id"],
     )
-    assert [tuple(r) for r in flags] == [("low", "Prior-year history — one open item")]
+    assert [tuple(r) for r in flags] == [("low", user("HL"))]  # the title is sealed
 
     # CLI-06 g: the CCH export, scored as Grace sees it.
     with client_list.FILE.open(encoding="utf-8", newline="") as handle:
