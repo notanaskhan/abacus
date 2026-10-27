@@ -65,7 +65,7 @@ WINDOW: Final = timedelta(days=7)
 ZIP_MAGIC: Final = b"PK\x03\x04"
 
 
-# --- wiring: the exports store, the tenant key, Temporal ------------------------------------------
+# --- wiring: the exports store, the tenant key, Temporal -----------------------------------------
 
 
 @pytest.fixture(scope="module")
@@ -99,7 +99,10 @@ async def temporal(temporal_target: str) -> AsyncIterator[Client]:
     client = await Client.connect(temporal_target, data_converter=data_converter())
     activities = cast("list[Callable[..., object]]", list(EVIDENCE_ACTIVITIES))
     async with Worker(
-        client, task_queue=queue_for("batch"), workflows=[FirmExportWorkflow], activities=activities
+        client,
+        task_queue=queue_for("batch"),
+        workflows=[FirmExportWorkflow],
+        activities=activities,
     ):
         yield client
 
@@ -214,7 +217,7 @@ def _at(value: object) -> datetime:
     return datetime.fromisoformat(str(value))
 
 
-# --- probes ---------------------------------------------------------------------------------------
+# --- probes --------------------------------------------------------------------------------------
 
 
 def _entries(manifest: object) -> list[Json] | None:
@@ -260,7 +263,9 @@ def manifest_problems(archive: bytes, manifest_sha256: str) -> list[str]:
     return found
 
 
-def window_problems(export: Mapping[str, object], link: Mapping[str, object], now: datetime) -> list[str]:
+def window_problems(
+    export: Mapping[str, object], link: Mapping[str, object], now: datetime
+) -> list[str]:
     """What a ready export and a fresh link get wrong about the two windows (AC-41)."""
     found: list[str] = []
     decided, until = _at(export["decided_at"]), _at(export["available_until"])
@@ -276,7 +281,7 @@ def window_problems(export: Mapping[str, object], link: Mapping[str, object], no
     return found
 
 
-# --- AC-40: dual approval -------------------------------------------------------------------------
+# --- AC-40: dual approval ------------------------------------------------------------------------
 
 
 async def test_ac40_the_requester_approving_is_409_approver_must_differ(firm: Firm) -> None:
@@ -382,7 +387,9 @@ async def test_ac40_the_named_approver_starts_a_sealed_build_with_a_manifest(
 async def test_ac40_another_firm_and_flag_off_answer_404(firm: Firm) -> None:
     requested = await _request(firm)
     other = await _firm(firm.net)
-    response = await _call(firm.net, "POST", f"{EXPORTS}/{requested['id']}/approve", other.margaret)
+    response = await _call(
+        firm.net, "POST", f"{EXPORTS}/{requested['id']}/approve", other.margaret
+    )
     assert response.status_code == 404, response.text
     off = await _firm(firm.net, flag=False)
     for method, path in (("GET", EXPORTS), ("POST", f"{EXPORTS}/{requested['id']}/link")):
@@ -390,10 +397,12 @@ async def test_ac40_another_firm_and_flag_off_answer_404(firm: Firm) -> None:
         assert response.status_code == 404, (path, response.text)
 
 
-# --- AC-41: links, windows and the manifest ---------------------------------------------------------
+# --- AC-41: links, windows and the manifest ------------------------------------------------------
 
 
-async def test_ac41_the_archive_verifies_against_its_manifest(firm: Firm, temporal: Client) -> None:
+async def test_ac41_the_archive_verifies_against_its_manifest(
+    firm: Firm, temporal: Client
+) -> None:
     ready = await _ready(firm, temporal)
     link = await _link(firm, ready["id"])
     assert link.status_code == 200, link.text
@@ -446,13 +455,16 @@ async def test_ac41_each_download_needs_a_fresh_second_factor(
     firm: Firm, temporal: Client
 ) -> None:
     ready = await _ready(firm, temporal)
-    stale_link = await _call(firm.net, "POST", f"{EXPORTS}/{ready['id']}/link", firm.felix, mfa=False)
+    stale_link = await _call(
+        firm.net, "POST", f"{EXPORTS}/{ready['id']}/link", firm.felix, mfa=False
+    )
     assert stale_link.status_code == 403, stale_link.text
     body = cast(Json, (await _link(firm, ready["id"])).json())
     stale = await _call(firm.net, "GET", str(body["url"]), firm.felix, mfa=False)
     assert stale.status_code == 403, stale.text
     downloads = await firm.net.seed.rows(
-        "SELECT action FROM audit_events WHERE tenant_id = $1 AND action = 'firm_export.downloaded'",
+        "SELECT action FROM audit_events WHERE tenant_id = $1 "
+        "AND action = 'firm_export.downloaded'",
         firm.tenant_id,
     )
     assert len(downloads) == 1  # only the fresh link was issued
@@ -477,7 +489,7 @@ async def test_ac41_each_download_leaves_an_access_event(firm: Firm, temporal: C
     assert cast(int, after) > cast(int, before)
 
 
-# --- Q-02-T47: one verified package per engagement (written now, passes unedited once T47 lands) ----
+# --- Q-02-T47: one verified package per engagement (written now, passes unedited once T47 lands) -
 
 
 @pytest.mark.xfail(
@@ -504,7 +516,7 @@ async def test_ac40_t47_the_archive_holds_one_verified_package_per_engagement(
     assert len(bundle.namelist()) > 2
 
 
-# --- the probes and the database catch planted violations -------------------------------------------
+# --- the probes and the database catch planted violations ----------------------------------------
 
 
 def _rezip(archive: bytes, change: Callable[[str, bytes], bytes]) -> bytes:

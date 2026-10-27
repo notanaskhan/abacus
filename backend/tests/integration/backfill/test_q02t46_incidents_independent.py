@@ -94,7 +94,7 @@ async def _record(net: Net, qi: Person, body: Json) -> Json:
     return cast(Json, response.json())
 
 
-# --- probes ---------------------------------------------------------------------------------------
+# --- probes --------------------------------------------------------------------------------------
 
 
 def clock_problems(incident: Mapping[str, object], zone: str) -> list[str]:
@@ -140,7 +140,7 @@ def propagation_problems(
     return found
 
 
-# --- AC-38: the FTC clock (I-CLOCKS) ---------------------------------------------------------------
+# --- AC-38: the FTC clock (I-CLOCKS) -------------------------------------------------------------
 
 
 async def test_ac38_sep_10_with_600_unencrypted_is_an_event_due_sat_oct_10(net: Net) -> None:
@@ -204,7 +204,9 @@ async def test_ac38_a_discovery_in_the_future_is_refused(net: Net) -> None:
         )
     assert response.status_code == 422, response.text
     assert cast(Json, response.json())["detail"] == "discovered_in_future"
-    count = await net.seed.value("SELECT count(*) FROM security_incidents WHERE tenant_id = $1", tenant)
+    count = await net.seed.value(
+        "SELECT count(*) FROM security_incidents WHERE tenant_id = $1", tenant
+    )
     assert count == 0
 
 
@@ -241,11 +243,13 @@ async def test_ac38_the_register_is_behind_its_flag_and_another_firm_gets_404(ne
         "POST", INCIDENTS, qi_off, body=_incident(DISCOVERED, 600, True), tenant=on
     )
     assert response.status_code in (401, 403, 404), response.text
-    count = await net.seed.value("SELECT count(*) FROM security_incidents WHERE tenant_id = $1", on)
+    count = await net.seed.value(
+        "SELECT count(*) FROM security_incidents WHERE tenant_id = $1", on
+    )
     assert count == 0
 
 
-# --- AC-39: propagation of an Accrued incident with Accrued's facts --------------------------------
+# --- AC-39: propagation of an Accrued incident with Accrued's facts ------------------------------
 
 
 def _accrued(confirmed: datetime, consumers: int = 750) -> IncidentFactsInput:
@@ -276,7 +280,9 @@ async def test_ac39_each_affected_firm_gets_accrueds_facts_as_the_system(net: Ne
     facts = _accrued(confirmed)
     staff, reason = str(uuid.uuid4()), "b" * 64
     for tenant in firms:
-        await propagate_into(IncidentPropagationStep(accrued_ref, str(tenant), facts, staff, reason))
+        await propagate_into(
+            IncidentPropagationStep(accrued_ref, str(tenant), facts, staff, reason)
+        )
     for tenant, zone in zip(firms, zones, strict=True):
         entries = await _entries(net.seed, tenant, accrued_ref)
         assert len(entries) == 1, tenant
@@ -308,7 +314,9 @@ async def test_ac39_a_repeat_with_the_same_facts_writes_nothing_more(net: Net) -
     assert len(await _entries(net.seed, tenant, accrued_ref)) == 1
 
 
-async def test_ac39_a_repeat_with_changed_facts_is_refused_and_nothing_is_written(net: Net) -> None:
+async def test_ac39_a_repeat_with_changed_facts_is_refused_and_nothing_is_written(
+    net: Net,
+) -> None:
     tenant = await _firm(net.seed)
     accrued_ref = f"ACC-2026-{uuid.uuid4().hex[:6]}"
     confirmed = datetime.now(UTC) - timedelta(hours=2)
@@ -325,7 +333,7 @@ async def test_ac39_a_repeat_with_changed_facts_is_refused_and_nothing_is_writte
     assert await _entries(net.seed, tenant, accrued_ref) == before
 
 
-# --- the probes catch planted violations ------------------------------------------------------------
+# --- the probes catch planted violations ---------------------------------------------------------
 
 
 async def test_seeded_clock_violations_are_caught(net: Net) -> None:
