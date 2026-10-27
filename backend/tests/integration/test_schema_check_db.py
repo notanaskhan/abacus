@@ -2023,6 +2023,9 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"audit_request_session"}  # 0172 (G-02-T06): the staff session behind a request
         | {"agent_stage_set"}  # 0181 (Q-02-T07): the staff route's stage row
         | {"integration_catalog_rows", "integration_catalog_load"}  # 0194 (A-02-T12)
+        # 0242 (G-02-T20): staff-imported, two-person-published Pub 4557 controls; the firm's read.
+        | {"safeguards_controls_import", "safeguards_controls_publish"}
+        | {"safeguards_controls_published"}
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
 
