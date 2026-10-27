@@ -87,7 +87,7 @@ describe("F-05-T59 acceptance", () => {
     ).toEqual([3, 1, 1]);
     const sum = agentCategories(AGENTS, "Library")
       .slice(1)
-      .reduce((n, c) => n + c.count, 0);
+      .reduce((n, c) => n + (c.count ?? 0), 0);
     expect(sum).toBe(28);
   });
 

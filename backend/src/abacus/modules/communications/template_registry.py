@@ -75,6 +75,7 @@ LintCode = Literal[
     "unregistered_variable",
     "foreign_link",
     "platform_name",
+    "banned_word",  # R-01-T23: the glossary's client-email bans and scope-guards' banned terms
 ]
 FollowUpMode = Literal["draft_for_person", "send_on_schedule"]
 
@@ -252,6 +253,23 @@ async def send_templated(
 
     return await template_send.send(
         ctx, key, recipient, variables, scope=scope, idempotency_key=idempotency_key
+    )
+
+
+async def templated_outcome(
+    ctx: AuthContext,
+    key: str,
+    recipient: RecipientRef,
+    *,
+    scope: SendScope,
+    idempotency_key: str,
+) -> SendOutcome | None:
+    """What `send_templated` recorded for these arguments, or None when it never ran; nothing is
+    sent. A person only, authorised `message.send` on the stored message's engagement."""
+    from abacus.modules.communications import template_send
+
+    return await template_send.templated_outcome(
+        ctx, key, recipient, scope=scope, idempotency_key=idempotency_key
     )
 
 

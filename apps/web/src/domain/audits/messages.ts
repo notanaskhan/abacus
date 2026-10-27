@@ -120,6 +120,7 @@ export const AUDIT_MESSAGES = {
       final_export_required: "Export a final binder first, then record the archive.",
       export_stale: "Evidence changed after that export. Export the final binder again.",
       archived_write: "This audit is archived.",
+      record_out_of_phase: "The audit isn’t at the phase this record needs.",
     } as Readonly<Record<string, string>>,
     problem: "Couldn’t record it",
   },

@@ -7,6 +7,7 @@ import, as before, with `approval_basis = legacy_import`.
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -16,8 +17,10 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from abacus.kernel._flags import METHODOLOGY_LIFECYCLE, METHODOLOGY_PROGRAMS
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
+from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.identity.api import AuthContext, Resource, authorise
 from abacus.modules.methodology.models import MethodologyTemplate, MethodologyVersion
@@ -96,19 +99,29 @@ def _summary(template: MethodologyTemplate, version: MethodologyVersion) -> Temp
     )
 
 
+Family = Literal["ebp", "fs", "ssars"]
+
+
 async def import_template(
     ctx: AuthContext,
     name: str,
     data: bytes,
     engagement_types: Sequence[EngagementType] = ("fs_audit",),
+    family: Family | None = None,
 ) -> TemplateVersionSummary:
     """Parse and store the workbook as the template's next version (AC-1 to AC-3). Raises
-    `TemplateInvalid` with every problem, storing nothing."""
+    `TemplateInvalid` with every problem, storing nothing. K-01-T05: with `methodology.programs`
+    on, the workbook's Programs and Steps sheets come too; with `methodology.lifecycle` on, the
+    version lands in Needs review for a person to approve (K-01-T06) instead of being published
+    on import. `family` (EBP, FS, SSARS) is set with a new template only."""
     await authorise(ctx, "methodology.manage", Resource.firm(ctx.tenant_id))
     name = name.strip()
     if not 1 <= len(name) <= 100:
         raise TemplateNameInvalid(name)
-    methodology = parse_workbook(data)
+    programs = await flag_enabled(ctx.tenant, METHODOLOGY_PROGRAMS)
+    for_review = await flag_enabled(ctx.tenant, METHODOLOGY_LIFECYCLE)
+    # Parsing is CPU-bound and bounded; off the event loop so one upload never stalls the others.
+    methodology = await asyncio.to_thread(parse_workbook, data, programs=programs)
     fingerprint = hashlib.sha256(data).hexdigest()
     async with uow(ctx.tenant) as tx:
         template_id, _ = await lock_or_insert_template(
@@ -117,6 +130,7 @@ async def import_template(
             name=name,
             created_by=ctx.user_id,
             engagement_types=sorted(set(engagement_types)) or ["fs_audit"],
+            family=family,
         )
         version_id, number = await insert_version(
             tx.session,
@@ -125,6 +139,7 @@ async def import_template(
             fingerprint=fingerprint,
             imported_by=ctx.user_id,
             methodology=methodology,
+            for_review=for_review,
         )
         tx.record(
             "methodology.imported",
@@ -136,6 +151,9 @@ async def import_template(
                 areas=len(methodology.areas),
                 items=len(methodology.items),
                 rules=len(methodology.rules),
+                programs=len(methodology.programs),
+                steps=len(methodology.steps),
+                needs_review=1 if for_review else 0,
             ),
         )
     found = await version_detail(ctx.tenant, version_id)

@@ -2,12 +2,12 @@
 
 | Field | Value |
 |---|---|
-| Route and params | `/settings/offices` (G-01 §5.1) behind `firm_settings.v2`. `?expand=<office code>` (CHI · DEN · NYC; a stable firm-scoped key), `?ov=wall:new`, `?ov=wall:<wallId>` (the wall log drawer), `#walls`, `#offshore`. Names, emails and TINs never travel in a URL. Artboards: `/components/screens/ADM-03?st=a…h` |
+| Route and params | `/settings/offices` (G-01 §5.1; `firm_settings.v2` retired by G-01-T17, DEC-594). `?expand=<office code>` (CHI · DEN · NYC; a stable firm-scoped key), `?ov=wall:new`, `?ov=wall:<wallId>` (the wall log drawer), `#walls`, `#offshore`. Names, emails and TINs never travel in a URL. Artboards: `/components/screens/ADM-03?st=a…h` |
 | Template and host frame | T12 `SettingsLayout` (F-05-T45; `bare`; fieldsets 860) with Fieldset, ValueRow, sub-header rows (`--nested`), initials chips, Count pills, a table inside a fieldset, locked Toggles, O3 500 `Sheet` (new wall), O2 480 `Drawer` with `Timeline` (wall log), Toast · `Wave 3 - Admin & Governance.dc.html#adm03` |
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/ADM-03 Offices- teams- walls and offshore/` (README.md, spec.md, revision.md: R2 service lines; revision wins) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | G-01 · contracts G-01-T01 (TASK-1225) · stub T02 · seed and fixtures T06 · offices, teams and groups T08 · walls v2 and offshore T09 (TASK-1207 narrowed offshore) · service-line need-to-know T12 · screen T14 · independent AC tests T15 · Playwright T16 · parity lock T17 |
-| Manifest status | planned with its path (`routes/manifest/adm.ts`; DEC-195's reason, as ADM-02): built by G-01-T14 behind `firm_settings.v2`, `/settings/offices` live in the router and the gallery |
+| Manifest status | planned with its path (`routes/manifest/adm.ts`; DEC-195's reason, as ADM-02): built by G-01-T14 (unflagged since G-01-T17), `/settings/offices` live in the router and the gallery |
 
 Code (G-01-T14, TASK-1268): `src/screens/ADM-03/{index.tsx, walls.tsx, model.ts, copy.ts, scenarios.ts, ADM-03.test.tsx}`, `src/fixtures/scenarios/ADM-03.ts`, `adm03Handlers` in `src/fixtures/handlers/firm-settings.ts`; `e2e/screens/adm-03.spec.ts` is G-01-T16's.
 
@@ -34,7 +34,7 @@ Non-artboard states:
 | Loading | offices, teams or walls pending | skeleton value rows per fieldset |
 | Not allowed | no settings role (overview 404) | "You don't have access to firm settings." |
 | Remy Vidal's own view (d's check) | `remy-vidal` signed in, offshore, no consent provider | CLI-01 lists the clients his roles reach; TINs masked; no reveal offered (AC9.1 as amended by TASK-1207) |
-| Flag off | `firm_settings.v2` off | "This settings section isn't built yet." |
+| Flag off | none since G-01-T17 retired `firm_settings.v2` (DEC-594) | — |
 
 ## API
 | Read or write | Endpoint | Shape | Matrix action | allowed_actions and read-only reasons per role |

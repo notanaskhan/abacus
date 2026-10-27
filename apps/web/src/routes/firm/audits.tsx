@@ -117,6 +117,10 @@ export const auditRoute = createRoute({
           // SHL-14 (P-06-T13) over the work item's PBC binder.
           overlays.open("request", "new", binderId);
         }}
+        onSignOff={(tbId) => {
+          // AUD-06 "Sign off…" (A-02-T24): SHL-12's target (P-04-T48 mounts it).
+          overlays.open("signoff", "trial_balance", tbId, "L2");
+        }}
       />,
     );
   },

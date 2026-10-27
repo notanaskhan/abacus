@@ -20,6 +20,8 @@ TABLES: frozenset[str] = frozenset(
         "secure_links",
         # R-01-T19 (0196): a firm's unpublished template edit, sealed with the firm's key.
         "email_template_drafts",
+        # R-01-T24 (0221): the firm's follow-up policy, one row per firm.
+        "follow_up_policies",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -50,6 +52,12 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"tenant_id", "template_id", "base_version_id", "sealed", "cta_target"}
         | {"draft_version", "updated_by"}
     ),
+    # R-01-T24 (0221): the policy's fields and who set them.
+    "follow_up_policies": frozenset(
+        {"tenant_id", "updated_by"}
+        | {"cadence_days", "max_reminders", "send_local_time", "weekdays_only"}
+        | {"stop_on_binder_done", "notify_preparer_after_max", "cc_assigned_preparer", "mode"}
+    ),
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
@@ -59,5 +67,11 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     # R-01-T19 (0196): a draft save replaces the content and who saved it.
     "email_template_drafts": frozenset(
         {"base_version_id", "sealed", "cta_target", "draft_version", "updated_by", "updated_at"}
+    ),
+    # R-01-T24 (0221): a save replaces the policy and bumps its version.
+    "follow_up_policies": frozenset(
+        {"cadence_days", "max_reminders", "send_local_time", "weekdays_only"}
+        | {"stop_on_binder_done", "notify_preparer_after_max", "cc_assigned_preparer", "mode"}
+        | {"version", "updated_by", "updated_at"}
     ),
 }

@@ -261,7 +261,8 @@ MERIDIAN_DRAFT: Final[dict[str, object]] = {
     "name": "FY2026 FS Audit",
     "fiscal_period_start": "2026-01-01",
     "fiscal_period_end": "2026-12-31",
-    "team": [("MO", "engagement_partner")],
+    # P-07-T50 (DEC-593): Hannah Leclerc prepares the continuance (CLI-07 f), so she is on it.
+    "team": [("MO", "engagement_partner"), ("HL", "manager")],
     "prior_audit": "A20",
     "owner": "MO",
 }

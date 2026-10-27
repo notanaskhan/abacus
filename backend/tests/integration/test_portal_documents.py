@@ -39,7 +39,7 @@ from .conftest import MigratedDatabase
 
 pytestmark = pytest.mark.asyncio
 
-FLAGS = ("binders.engine", "portal.documents_v2")
+FLAGS = ("binders.engine",)
 
 
 @pytest.fixture(autouse=True)

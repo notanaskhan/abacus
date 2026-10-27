@@ -123,3 +123,57 @@ class MethodologyVersionEvent(Base):
     on_behalf_of_user_id: Mapped[UUID | None]
     at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
     facts: Mapped[dict[str, object]] = mapped_column(JSONB, server_default=FetchedValue())
+
+
+class Program(Base):
+    """A version's program (K-01-T05, migration 0224): frozen once the version is published."""
+
+    __tablename__ = "programs"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    version_id: Mapped[UUID]
+    code: Mapped[str]
+    name: Mapped[str]
+    position: Mapped[int]
+    publisher_program_id: Mapped[UUID | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class ProgramStep(Base):
+    """A program's numbered step with its stable lineage key (K-01-T05, migration 0224)."""
+
+    __tablename__ = "program_steps"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    version_id: Mapped[UUID]
+    program_id: Mapped[UUID]
+    step_key: Mapped[str]
+    number: Mapped[int]
+    text: Mapped[str]
+    assertions: Mapped[list[str]] = mapped_column(ARRAY(String))
+    standard_refs: Mapped[list[str]] = mapped_column(ARRAY(String))
+    level: Mapped[str]
+    mandatory: Mapped[bool]
+    lock_note: Mapped[str | None]
+    guidance: Mapped[list[dict[str, object]] | None] = mapped_column(JSONB)
+    prepopulates: Mapped[list[str]] = mapped_column(ARRAY(String))
+    depends_on_step_keys: Mapped[list[str]] = mapped_column(ARRAY(String))
+    publisher_step_id: Mapped[UUID | None]
+    origin: Mapped[str]
+    proposed_by_run_id: Mapped[UUID | None]
+    parse_flag: Mapped[str | None]
+    flag_resolution: Mapped[str | None]
+    row_version: Mapped[int] = mapped_column(server_default=FetchedValue())
+
+
+class ProgramStepPbcLink(Base):
+    """A step's link to one of the version's PBC request items (insert-only)."""
+
+    __tablename__ = "program_step_pbc_links"
+
+    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
+    step_id: Mapped[UUID] = mapped_column(primary_key=True)
+    request_position: Mapped[int] = mapped_column(primary_key=True)
+    version_id: Mapped[UUID]

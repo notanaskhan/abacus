@@ -20,13 +20,13 @@ const STEPS: Record<StepOut["id"], StepCopy> = {
     title: "Connect single sign-on",
     detail:
       "Coming soon. Your team signs in with email and multi-factor authentication until then.",
-    to: "/admin/people",
+    to: "/settings/people",
     action: "",
   },
   team: {
     title: "Invite your team",
     detail: "Give each person a role.",
-    to: "/admin/people",
+    to: "/settings/people",
     action: "Invite people",
   },
   methodology: {
@@ -50,7 +50,7 @@ const STEPS: Record<StepOut["id"], StepCopy> = {
   walls: {
     title: "Add ethical walls",
     detail: "Keep specific people away from specific clients, or confirm none are needed.",
-    to: "/admin/walls",
+    to: "/settings/offices",
     action: "Review",
   },
   engagement: {

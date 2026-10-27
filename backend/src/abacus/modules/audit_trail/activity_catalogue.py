@@ -62,7 +62,15 @@ CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
     "incident.decided": _a("decision", "ok"),
     "firm_export.schedule_requested": _a("export"),
     "firm_export.schedule_approved": _a("export", "ok"),
+    # Q-02-T43 (compliance-kernel §7): the firm export's dual approval, build and links.
+    "firm_export.requested": _a("export"),
+    "firm_export.approved": _a("export", "ok"),
+    "firm_export.declined": _a("export", "no"),
+    "firm_export.ready": _a("export"),
+    "firm_export.failed": _a("export", "no"),
+    "firm_export.expired": _a("export"),
     "firm_export.downloaded": _a("export"),
+    "firm_export.streamed": _a("export"),
     "safeguards.updated": _a("change"),
     "safeguards.control_status_changed": _a("change"),
     "safeguards.wisp_pack_prepared": _a("export"),
@@ -90,8 +98,11 @@ CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
     "connection.reauthorized": _a("change", "pl", "client_actor"),
     "connection.retry_requested": _a("run", "pl", "sync_run_id", "client_actor"),
     "connection.grant_revoked": _a("change", "no", "result"),  # review M1: the provider's revoke
+    "connection.reconnect_requested": _a("change", "pl", "engagement_id"),  # A-02-T23
     # Tie-out checks (A-02-T17)
     "tie_out_check.issue_linked": _a("change", "pl", "issue_id", "version_no"),
+    # Open in Excel (A-02-T22): the version, the layer and the file's fingerprint
+    "trial_balance.exported": _a("export", "pl", "version_no", "layer_no", "file_sha256"),
     # Proposals and suggestions (P-04-T24, T25; ADR-161): a person's verdict on the agent's
     # change set ("Proposal approved by Samuel Ito"); the agent's proposal is a run's output.
     "proposal.created": _a("run", "pl", "version"),

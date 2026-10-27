@@ -61,6 +61,9 @@ error = 5xx handler; empty = a data condition, not a flag.
 
 ## 4. Build
 - Route: lazy entry in routes/<surface>/<area>.tsx or an overlay registry entry; manifest status → fixture.
+- Portal screen (POR-*): the route is a `page(...)` in `routes/portal/index.tsx` (the portal entry,
+  not the firm tree); the manifest keeps `path: null`; fixtures also go into
+  `fixtures/install-portal.ts`; finish with `pnpm build:portal` (the dist check and budget). The steps are in `frontend-feature` "The portal entry" (P-08-T29).
 - screens/<ID>/index.tsx (L4) composes the template; data only via domain/<area> hooks (L3; add them there).
 - copy.ts verbatim; <StatusPill object code>; format.ts for every number and date; AgentText/AgentProse for agent text;
   useGate + ?ov= overlays for human gates; useCan/allowed_actions; FeatureGate; to.<ID>() links; useNow() for time.

@@ -223,6 +223,18 @@ async def _subject_pending(tenant: TenantContext, user_id: UUID, row: Row) -> bo
     return (await subject_state(tenant, user_id, row.subject_type, row.subject_id)).pending
 
 
+async def _firm_export_approver(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """Q-02-T43 (DEC-72): the person a firm export names to approve it, never its requester."""
+    approver, requester = _uuid(payload, "approver_user_id"), _uuid(payload, "requested_by")
+    return [approver] if approver is not None and approver != requester else []
+
+
+async def _firm_export_parties(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """Q-02-T43: the requester and the approver, the only two who may make a link."""
+    people = {_uuid(payload, "requested_by"), _uuid(payload, "approver_user_id")}
+    return sorted(p for p in people if p is not None)
+
+
 @dataclass(frozen=True)
 class Kind:
     kind: str  # the stored code; new codes are undotted (C16); the key is the event type
@@ -292,6 +304,8 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "membership.access_ending": Kind("seasonal_access_ending", _admins, "firm", None, None),
     # R-01-T09: a client's portal drop the code rule could not sort waits for a person.
     "portal.drop_unsorted": Kind("portal_drop_unsorted", _leads, "inbox_file", "inbox_file_id"),
+    # R-01-T24 (DEC-564): the follow-up policy's maximum was reached for a binder's recipient.
+    "follow_up.limit_reached": Kind("follow_up_limit_reached", _leads, "binder", "binder_id"),
     # R-01-T13: a third party uploaded to a request delegated to them (POR-14).
     "third_party.uploaded": Kind(
         "third_party_uploaded", _request_owner, "request_item", "request_item_id"
@@ -334,6 +348,14 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "engagement_export.failed": Kind(
         "export_failed", _export_requester, "engagement_export", "export_id"
     ),
+    # Q-02-T43 (compliance-kernel §7): the named approver is asked; both people are told when the
+    # archive is ready. Firm-level.
+    "firm_export.requested": Kind(
+        "firm_export_approval_requested", _firm_export_approver, "firm_export", "export_id", None
+    ),
+    "firm_export.ready": Kind(
+        "firm_export_ready", _firm_export_parties, "firm_export", "export_id", None
+    ),
 }
 
 # AC-7: fixed English text per kind; placeholders are names the reader can already see.
@@ -365,6 +387,9 @@ TEMPLATES: Final[dict[str, str]] = {
     "wall.approved": "The ethical wall you added was approved.",
     "membership.access_ending": "Seasonal access ends within seven days for some of your people.",
     "portal.drop_unsorted": "A client sent a file for your team to sort on {engagement}.",
+    "follow_up.limit_reached": (
+        "The last reminder on {engagement} went out; nothing more will go automatically."
+    ),
     "third_party.uploaded": "A third party uploaded a file to a request on {engagement}.",
     "sign_off.went_stale": "Work you signed off on {engagement} changed after sign-off.",
     "review_note.raised": "A review note on {engagement} is waiting for you.",
@@ -385,6 +410,8 @@ TEMPLATES: Final[dict[str, str]] = {
     "team.change_proposed": "The team on {engagement} changed and is waiting for your approval.",
     "engagement_export.ready": "Your binder export for {engagement} is ready to download.",
     "engagement_export.failed": "Your binder export for {engagement} could not be built.",
+    "firm_export.requested": "A firm data export is waiting for your approval.",
+    "firm_export.ready": "The firm data export is ready to download for 7 days.",
 }
 
 
@@ -406,6 +433,12 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     ),
     NotificationKind("connection.created", "client_activity", "Plug"),
     NotificationKind("connection.revoked", "client_activity", "Plug"),
+    # A-02 §4.8 (A-02-T23): a connection that needs its client to sign in again (produced by the
+    # daily health tick, A-02-T25), and the firm's reconnect request, whose client email is the
+    # Reconnect request template itself (communications sends it; notification email is staff
+    # only, INV-4), so no catalogue event fans it out, as `follow_up_sent`.
+    NotificationKind("connection_needs_reauth", "client_activity", "Plug"),
+    NotificationKind("connection_reconnect_requested", "client_activity", "Plug"),
     NotificationKind("independence.requested", "approval", "ShieldCheck"),
     NotificationKind("reminders.drafted", "approval", "Send"),
     NotificationKind("follow_up_drafted", "approval", "Send"),  # P-06-T14 (C16)
@@ -430,6 +463,7 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("wall_approved", "system", "ShieldCheck"),
     NotificationKind("seasonal_access_ending", "system", "UserMinus"),  # G-01-T13
     NotificationKind("portal_drop_unsorted", "client_activity", "Inbox"),  # R-01-T09
+    NotificationKind("follow_up_limit_reached", "client_activity", "Send"),  # R-01-T24
     NotificationKind("third_party_uploaded", "client_activity", "Upload"),  # R-01-T13
     # P-04-T19, T21, T23, T26: the review grammar's seven kinds (C16 Approvals), their facts and
     # pending state read from the subject's owner at read time. Email text is database content

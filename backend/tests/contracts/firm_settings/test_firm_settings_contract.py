@@ -1,26 +1,22 @@
 """The firm-settings family contract stub, v1 (G-01-T02) and its consumer tests (G-01-T03):
-every new route declares exactly one matrix action and answers 404 with `firm_settings.v2` off
-and 501 with it on; no schema carries a hidden or hidden-count field or any field derived from
+every new route declares exactly one matrix action and is served for every firm (`firm_settings.v2`
+retired by G-01-T17); no schema carries a hidden or hidden-count field or any field derived from
 walled rows (DEC-43, AC8.7); statuses are the registry's codes; the role grid carries a locked
 row's shape; every write denies the agent and the system (INV-1); region is never writable."""
 
 from __future__ import annotations
 
+import inspect
 import json
 import re
-import uuid
-from collections.abc import Awaitable, Callable
+from types import ModuleType
 from typing import cast
 
 import pytest
 
 from abacus.api.export_openapi import document
-from abacus.kernel._flags import FIRM_SETTINGS_V2
-from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound
-from abacus.kernel.flags import Flag
+from abacus.kernel._flags import FLAGS
 from abacus.modules.identity import settings_contract
-from abacus.modules.identity.api import AuthContext
 from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.organisations import settings_contract as org_settings
 
@@ -122,49 +118,15 @@ def test_g01t02_each_route_declares_its_action_and_is_a_stub(method: str, path: 
     assert ("501" in responses) == ((method, path) not in LIVE)
 
 
-# No stub is left on either half since G-01-T13 (organisations' since G-01-T08): every route
-# keeps the flag (`_gate`), 404 while it is off and through to the route while it is on.
-@pytest.mark.parametrize("module", [settings_contract])
-async def test_g01t02_flag_off_is_404_and_on_reaches_the_route(
-    monkeypatch: pytest.MonkeyPatch, module: object
-) -> None:
-    user = uuid.uuid4()
-    ctx = AuthContext(
-        TenantContext(uuid.uuid4(), "human", str(user)), user, uuid.uuid4(), None, None
-    )
-    seen: list[Flag] = []
-
-    def fake(value: bool):  # noqa: ANN202 - a tiny fake
-        async def flag_enabled(_tenant: object, flag: Flag) -> bool:
-            seen.append(flag)
-            return value
-
-        return flag_enabled
-
-    gate = cast(Callable[[AuthContext], Awaitable[None]], getattr(module, "_gate"))  # noqa: B009
-    monkeypatch.setattr(module, "flag_enabled", fake(False))
-    with pytest.raises(NotFound):
-        await gate(ctx)
-    monkeypatch.setattr(module, "flag_enabled", fake(True))
-    await gate(ctx)
-    assert seen == [FIRM_SETTINGS_V2, FIRM_SETTINGS_V2]
-
-
-async def test_g01t08_offices_and_teams_answer_404_with_the_flag_off(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    user = uuid.uuid4()
-    ctx = AuthContext(
-        TenantContext(uuid.uuid4(), "human", str(user)), user, uuid.uuid4(), None, None
-    )
-
-    async def off(_tenant: object, flag: Flag) -> bool:
-        assert flag == FIRM_SETTINGS_V2
-        return False
-
-    monkeypatch.setattr(org_settings, "flag_enabled", off)
-    with pytest.raises(NotFound):
-        await org_settings._gate(ctx)  # pyright: ignore[reportPrivateUsage] -- the route gate
+# No stub is left on either half since G-01-T13 (organisations' since G-01-T08). G-01-T17 retired
+# `firm_settings.v2` (DEC-594): the flag-off 404 tests became "served without a flag" (the routes
+# no longer consult any flag, and the registry no longer holds it).
+@pytest.mark.parametrize("module", [settings_contract, org_settings])
+def test_g01t17_the_family_is_served_without_a_flag(module: ModuleType) -> None:
+    source = inspect.getsource(module)
+    assert "flag_enabled" not in source
+    assert "_gate(" not in source
+    assert "firm_settings.v2" not in FLAGS
 
 
 @pytest.mark.parametrize("schema", MODELS)
