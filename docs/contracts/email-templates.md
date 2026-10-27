@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C16 in `docs/contracts/README.md` (v1.1, additive; v1 is `notifications.md`, frozen) |
 | Version | v1.1 |
-| Status | stub (R-01-T16, 2026-10-26); list, read, draft, publish and `send_templated` live (R-01-T19, 2026-10-27; DEC-449) |
+| Status | stub (R-01-T16, 2026-10-26); list, read, draft, publish and `send_templated` live (R-01-T19, 2026-10-27; DEC-449); preview, test send and import live (R-01-T23, 2026-10-27; DEC-549, DEC-560 to DEC-562); the follow-up policy read live (R-01-T24, 2026-10-27; DEC-563 to DEC-566); sending domains still 501 (R-01-T27) |
 | Provider epic | R-01 (N the email half, AY the screens); T19 drafts and publish, T23 preview, lint, test send and import, T24 follow-up policy, T27 sending domains |
 | Consumers | POR-20, ADM-10 (R-01-T25, T28); P-06 (`request_sent`, `request_returned`, `reminder`); P-08 (`portal.sign_in_code`, platform-locked, same renderer); N-02 (`signature_request`); A-02 (`reconnect_request`); A-08 (`confirmation_request`); R-02, A-07, T-02 (`deliverable_ready`); R-03, X-01, X-03, A-09 (DF-40 keys); N-03 (sender domains); Q-04 (import) |
 | Freeze sprint | at the R-01 S12 review (with T19) |
@@ -32,7 +32,7 @@ Consumers can rely on one slot to register a firm-editable template key, one fun
 | Revoke | `DELETE /v1/firm/sending-domains/{domain_id}` | `sending_domain.manage` | as add | denied |
 | Follow-up policy and next send | `GET /v1/firm/follow-up-policy?sample_contact_id=` | `portal_settings.read` | firm admin, practice leader | denied |
 
-Flags: template writes 404 with `portal.settings_editor` off; sending-domain writes 404 with `communications.firm_sender_domain` off; reads and the import are never gated (off, the screens show published values read-only and `allowed_actions` is empty). Every route answers 501 `not_implemented` until its task; list, read, draft save and discard and publish are live (R-01-T19): they authorise first, then check the flag, then the key (404 for a key that is not registered firm-editable). Policy edits are saved through the portal-settings draft (`portal-settings.md`), so this contract only reads the policy.
+Flags: template writes 404 with `portal.settings_editor` off; sending-domain writes 404 with `communications.firm_sender_domain` off; reads and the import are never gated (off, the screens show published values read-only and `allowed_actions` is empty). Every route answers 501 `not_implemented` until its task; list, read, draft save and discard and publish are live (R-01-T19), preview, test send and import (R-01-T23) and the follow-up policy (R-01-T24): they authorise first, then check the flag (writes), then the key (404 for a key that is not registered firm-editable). Only the sending-domain routes still answer 501. Policy edits are saved through the portal-settings draft (`portal-settings.md`), so this contract only reads the policy.
 
 ### Module interface (`communications.api`)
 - `register_email_template(key, audience, variables, cta_targets, used_by, *, firm_editable) -> EmailTemplateRegistration`: once per key at import time; variables from the whitelist only; at most one call-to-action target per audience; `used_by` names screen ids; a `staff` template is never firm-editable. `registered_templates()` lists them.
@@ -70,8 +70,8 @@ The kind list is closed (`person_name`, `organisation_name`, `title`, `item_list
 - `TemplateBlock {id, kind: heading | paragraph | item_list | note | footer, text ≤ 2000 (confidential)}`; `cta_target ∈ portal_home, documents, request, room, sign, deliverables, confirm, connections`.
 - `EmailTemplateDraftIn {subject, preheader, blocks ≤ 40, cta_label?, cta_target?, expected_version}`.
 - `EmailPreviewIn {source: draft | published, width: 600 | 390, sample_contact_id?}` → `EmailPreviewOut {subject, html, text, from_display, from_address, reply_to?, findings: LintFindingOut[]}` (deterministic).
-- `LintFindingOut {code, block_id?, variable?}` (`variable` set for a finding on a filled value); codes `amount`, `tin_shape`, `account_number`, `attachment`, `second_button`, `unregistered_variable`, `foreign_link`, `platform_name` (the word "Accrued"). Identifier-only: never the offending text.
-- `EmailTestSendIn {sample_contact_id?}` → `EmailTestSendOut {message_id, sent_to (the admin's own address), subject ("[Test] …")}`.
+- `LintFindingOut {code, block_id?, variable?}` (`variable` set for a finding on a filled value); codes `amount`, `tin_shape`, `account_number`, `attachment`, `second_button`, `unregistered_variable`, `foreign_link`, `platform_name` (the word "Accrued"), `banned_word` (R-01-T23, DEC-562: the glossary's client-email bans and `scope-guards.yaml`'s banned terms). Identifier-only: never the offending text.
+- `EmailTestSendIn {sample_contact_id?}` (no other field: an address in the body is 422) → `EmailTestSendOut {message_id, sent_to (the admin's own account address, from the session), subject ("[Test] …")}`. The draft if there is one, else the version in use; no `messages` row (DEC-549).
 - `FirmEmailTemplateImportIn {bundle: EmailTemplateBundleEntryIn[] 1–50, dry_run = true}` → `FirmEmailTemplateImportOut {dry_run, results: {key, change: add | update | unchanged | refused, findings[]}[]}`. C16 v1's staff `EmailTemplateImportIn` is a different, frozen model.
 - `SendingDomainOut {id, domain, from_local_part, mail_from_domain, status: pending_dns | verified | failed | revoked, records: {type: CNAME | MX | TXT, name, value, status}[], failure_reason?, requested_at, verified_at?, last_checked_at?}`; `SendingDomainIn {domain, from_local_part = "clients"}`.
 - `FollowUpPolicyOut {policy: FollowUpPolicyFields, version, next_send?: NextSendOut}`; `FollowUpPolicyFields {cadence_days 1–30 = 7, max_reminders 1–4 = 4, send_local_time "09:00", weekdays_only, stop_on_binder_done, notify_preparer_after_max, cc_assigned_preparer, mode: draft_for_person | send_on_schedule}`; `NextSendOut {sample_contact_id?, last_sent_at?, next_send_at, shifted_from?}`.
@@ -85,10 +85,10 @@ Every action here is denied to the agent and the system at the matrix (INV-1). S
 ## 6. Errors
 | Status | Body | When |
 |---|---|---|
-| 404 | `{"detail": "not_found"}` | flag off (writes); an unknown key; a sample contact outside `visible()` |
+| 404 | `{"detail": "not_found"}` | flag off (writes); an unknown key; a preview of a draft or version that isn't there; a sample contact that relates to no engagement on the viewer's team, or is unknown (DEC-560) |
 | 409 | `{"detail": "stale_version"}` | a draft save over a newer draft; a publish with no draft, over a newer draft, or of a draft based on a version that is no longer in use |
 | 409 | `{"detail": "sending_domain_exists"}` | a second domain while one is pending or verified |
-| 422 | `{"detail": "template_lint_failed", "facts": {"count": n, "finding_0": "amount:b2", …}}` | test send or publish of a draft with findings (at most 20 `finding_<n>`, each `code:where`, `where` a block id or `subject`, `preheader`, `cta_label`; identifier-only facts, ADR-139) |
+| 422 | `{"detail": "template_lint_failed", "facts": {"count": n, "finding_0": "amount:b2", …}}` | test send or publish of a draft with findings, or an applied import with a refused entry (at most 20 `finding_<n>`, each `code:where`, `where` a block id or `subject`, `preheader`, `cta_label`, `var:<variable>` for a filled value, `<key>.<where>` for an import entry; identifier-only facts, ADR-139) |
 | 422 | `{"detail": "template_invalid"}` | a draft whose call to action the key does not register, a label without a target, a repeated block id, a line break in the subject or a stray brace |
 | 501 | `{"detail": "not_implemented"}` | until the implementing task |
 
@@ -132,4 +132,4 @@ v1.1 is additive to C16 v1 (frozen 2026-10-23): new routes and models only. Brea
 | v1.1 | (planned at the R-01 S12 review) | | stub R-01-T16; T19 built list, read, drafts, publish and `send_templated` |
 
 ## 11. Open points
-Decided in DEC-378; the security review's preview scoping, `send_templated` signature, value lint and test-send conditions in DEC-379. Open, from the screen contracts: the per-key sender display name (POR-20 h, R-01-T19); the "Email preferences" footer link (T23); whether a "••" last-four in a request title is an account number for the lint (T23, fail closed by default).
+Decided in DEC-378; the security review's preview scoping, `send_templated` signature, value lint and test-send conditions in DEC-379; T23's test send, sample contacts, import and lint in DEC-549, DEC-560 to DEC-562 (the "Email preferences" link is the branding footer's, outside the template; a "••" last four stays an account number, fail closed); T24's policy, limit and scheduled send in DEC-563 to DEC-566. Open, from the screen contracts: the per-key sender display name (POR-20 h).

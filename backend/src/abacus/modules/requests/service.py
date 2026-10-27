@@ -1263,15 +1263,38 @@ class OverdueItem:
     description: str
     due_on: date
     client_assignee_user_id: UUID | None
+    # R-01-T24: what the firm's follow-up policy reads about the item's binder (DEC-74).
+    binder_id: UUID | None = None
+    binder_marked_done: bool = False
+    binder_override: dict[str, object] | None = None  # P-06's {every_days, max}
+    # Security review H1: what a client may be written to about: a client-visible, undeleted
+    # request in a Published binder that is not closed (the human path's rule, DEC-560).
+    sendable: bool = False
 
 
 async def overdue_for(
-    tenant: TenantContext, engagement_id: UUID, today: date
+    tenant: TenantContext, engagement_id: UUID, today: date, *, sendable_only: bool = True
 ) -> list[OverdueItem]:
-    """For the engagement agent's reminders (SPEC-027 P-4): open or sent-back items past due."""
+    """For the engagement agent's reminders (SPEC-027 P-4): open or sent-back items past due.
+    By default only what a client may be written to about (`sendable`: client-visible, not
+    deleted, in a Published binder that is not closed; R-01-T24 security review M-b), since
+    every caller but a count drafts or sends a reminder from it."""
     async with tenant_session(tenant) as session:
         rows = await overdue_items(session, engagement_id, today)
-    return [OverdueItem(i.id, i.description, due, i.client_assignee_user_id) for i, due in rows]
+    found = [
+        OverdueItem(
+            i.id,
+            i.description,
+            due,
+            i.client_assignee_user_id,
+            binder_id,
+            marked_done_at is not None,
+            dict(override) if override else None,
+            sendable,
+        )
+        for i, due, binder_id, marked_done_at, override, sendable in rows
+    ]
+    return [i for i in found if i.sendable] if sendable_only else found
 
 
 _STAFF_ROLES: Final = frozenset({"engagement_partner", "manager", "senior", "staff"})

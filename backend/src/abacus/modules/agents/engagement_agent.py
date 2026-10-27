@@ -41,7 +41,13 @@ from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import OutboxEvent, Target, uow
 from abacus.modules.agents.engagement_agent_workflow import HANDLE, NEXT_TICK, EngagementAgent
 from abacus.modules.agents.follow_up_drafts import overdue_email, send_overdue
-from abacus.modules.agents.follow_ups import chase_overdue, draft_now, seconds_to_next_tick
+from abacus.modules.agents.follow_ups import (
+    POLICY_MARKER,
+    POLICY_V1,
+    chase_overdue,
+    draft_now,
+    seconds_to_next_tick,
+)
 from abacus.modules.agents.models import AgentActivity
 from abacus.modules.agents.repository import (
     activity_page,
@@ -226,8 +232,11 @@ async def _self_pause(tenant: TenantContext, engagement_id: UUID) -> _Row | None
     return _Row("P-0", "agent.self_resumed", "done")
 
 
-async def _tick(tenant: TenantContext, engagement_id: UUID, tick_id: UUID) -> list[_Row]:
-    """The daily tick: P-2's daily retrieval, P-4 reminders, P-5 digest (SPEC-027)."""
+async def _tick(
+    tenant: TenantContext, engagement_id: UUID, tick_id: UUID, *, policy_v1: bool = False
+) -> list[_Row]:
+    """The daily tick: P-2's daily retrieval, P-4 reminders, P-5 digest (SPEC-027). `policy_v1`:
+    the tick carries R-01-T24's marker, so P-4 reads the firm's follow-up policy."""
     rows: list[_Row] = []
     changed = await _self_pause(tenant, engagement_id)
     if changed is not None:
@@ -238,7 +247,9 @@ async def _tick(tenant: TenantContext, engagement_id: UUID, tick_id: UUID) -> li
     found = await run_auto_retrieval(tenant.tenant_id, engagement_id, None)
     if found == "done":
         rows.append(_Row("P-2", "retrieval.start", "done"))
-    outcome = await chase_overdue(tenant, engagement_id, await firm_time_zone(tenant), tick_id)
+    outcome = await chase_overdue(
+        tenant, engagement_id, await firm_time_zone(tenant), tick_id, policy_v1=policy_v1
+    )
     if outcome.sent:
         rows.append(_Row("P-4", "reminders.sent", "done", None, None, None, outcome.sent))
     elif outcome.drafted:
@@ -326,7 +337,8 @@ async def apply_policy(given: HandleInput) -> tuple[list[_Row], bool]:
     if kind in ("engagement.created", STARTED):
         return [_Row("P-0", "agent.started", "done")], False
     if kind == TICK:
-        return await _tick(tenant, engagement_id, UUID(given.event_id)), False
+        policy_v1 = given.payload.get(POLICY_MARKER) == POLICY_V1
+        return await _tick(tenant, engagement_id, UUID(given.event_id), policy_v1=policy_v1), False
     if kind == "due_dates.changed":
         return [_Row("P-4", "reminders.restarted", "done")], False
     paused = await _paused(tenant, engagement_id)

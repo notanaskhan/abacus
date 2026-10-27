@@ -18,6 +18,7 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from fnmatch import fnmatch
 from pathlib import Path
+from typing import Final
 
 BACKEND = Path(__file__).resolve().parents[3]
 SCAN_ROOTS = ("src", "tests")
@@ -977,6 +978,55 @@ def _check_messaging(src: SourceFile) -> Iterator[Finding]:
             yield Finding(getattr(node, "lineno", 1), "only communications emits message.ready")
 
 
+def _check_system_send(src: SourceFile) -> Iterator[Finding]:
+    """R-01-T24 security review M2, L-b (DEC-568, DEC-588): the system's scheduled Reminder is
+    built only by communications' scheduled-reminder service, which checks the policy, the flag,
+    the key and the cadence itself. Outside communications the name `SystemSendContext` appears
+    nowhere: not as a name or an attribute (an alias or `module.SystemSendContext`), not as a
+    string (`getattr(module, "SystemSendContext")`), not imported."""
+    name = "SystemSendContext"
+    for node in ast.walk(src.tree):
+        named = (isinstance(node, ast.Name) and node.id == name) or (
+            isinstance(node, ast.Attribute) and node.attr == name
+        )
+        if named:
+            yield Finding(getattr(node, "lineno", 1), "only communications uses the context")
+        elif isinstance(node, ast.Constant) and isinstance(node.value, str) and name in node.value:
+            yield Finding(node.lineno, "only communications names the scheduled send context")
+        elif isinstance(node, ast.ImportFrom) and any(a.name == name for a in node.names):
+            yield Finding(node.lineno, "only communications imports the scheduled send context")
+
+
+_DYNAMIC_IMPORTS: Final = frozenset({"import_module", "__import__"})
+
+
+def _check_dynamic_module_import(src: SourceFile) -> Iterator[Finding]:
+    """R-01-T24 security review L-b (DEC-588): a module never reaches another module's internals
+    by a dynamic import (`importlib.import_module("abacus.modules.x.y")`, `__import__`), which
+    the import contracts cannot see. The app and the worker load each module's `api` this way and
+    sit outside `modules/`."""
+    for node in ast.walk(src.tree):
+        if not isinstance(node, ast.Call) or _terminal_name(node.func) not in _DYNAMIC_IMPORTS:
+            continue
+        first = node.args[0] if node.args else None
+        if first is None:
+            continue
+        text = ""
+        if isinstance(first, ast.Constant) and isinstance(first.value, str):
+            text = first.value
+        elif isinstance(first, ast.JoinedStr):
+            text = "".join(
+                v.value
+                for v in first.values
+                if isinstance(v, ast.Constant) and isinstance(v.value, str)
+            )
+        else:
+            yield Finding(node.lineno, "a dynamic import names its module literally")
+            continue
+        if text.startswith("abacus"):
+            yield Finding(node.lineno, "no dynamic import of an abacus module inside modules/")
+
+
 def _check_resource_archived(src: SourceFile) -> Iterator[Finding]:
     """`archived` comes from the engagement row, never a literal (TASK-008 loads it)."""
     for node in ast.walk(src.tree):
@@ -1095,6 +1145,9 @@ LIST_EXEMPT = frozenset(
         # Methodology templates are firm-wide (SPEC-008): read after `authorise` on the firm
         # (`methodology.read`) or by a caller authorised on the engagement; no engagement rows.
         ("src/abacus/modules/methodology/repository.py", "list_templates"),  # K-01-T02: moved
+        # K-01-T05: the previous version's step keys, inside an authorised import's own unit of
+        # work (`methodology.manage` on the firm); firm-wide rows, no engagement.
+        ("src/abacus/modules/methodology/repository.py", "_prior_keys"),
         # SPEC-025 (TASK-043): the client picker, firm-level after `authorise(client.read)`; the
         # service drops clients the person is walled off from.
         ("src/abacus/modules/organisations/repository.py", "clients_matching"),
@@ -2049,6 +2102,11 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_tie_out_schema.py",
             "tests/integration/test_integrations_schema.py",
             "tests/integration/test_entity_connections_schema.py",
+            # I-01-T04, K-01-T05 (S11): the human-only snooze and reassignment rows, the card's
+            # reassign guard and the frozen methodology content, proved as the app role with the
+            # tenant and actor set by hand, as tenant_session sets them.
+            "tests/integration/backfill/test_i01t04_human_gate_home.py",
+            "tests/integration/backfill/test_k01t05_methodology_programs.py",
             # Records replay fixtures against throwaway containers (seeds as the superuser).
             "src/abacus_tools/workflows/record_retrieval.py",
             "src/abacus_tools/stack.py",  # the recorders' and evals' stack (connect_db)
@@ -2199,6 +2257,11 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_tie_out_schema.py",
             "tests/integration/test_integrations_schema.py",
             "tests/integration/test_entity_connections_schema.py",
+            # I-01-T04, K-01-T05 (S11): the human-only snooze and reassignment rows, the card's
+            # reassign guard and the frozen methodology content, proved as the app role with the
+            # tenant and actor set by hand, as tenant_session sets them.
+            "tests/integration/backfill/test_i01t04_human_gate_home.py",
+            "tests/integration/backfill/test_k01t05_methodology_programs.py",
             # Q-03-T028: plans each list as the app role with the firm's tenant set by hand, as
             # tenant_session sets it, so row-level security adds the tenant predicate.
             "tests/integration/test_q03t028_plan_tests.py",
@@ -2449,6 +2512,21 @@ RULES: list[Rule | TreeRule] = [
         check=_check_messaging,
         include=("src/abacus/*",),
         exclude=("src/abacus/modules/communications/*",),
+    ),
+    Rule(
+        id="COMM-002",
+        description="Only communications' scheduled-reminder service builds a system send",
+        adr="ADR-005, DEC-74",
+        check=_check_system_send,
+        include=("src/abacus/*",),
+        exclude=("src/abacus/modules/communications/*",),
+    ),
+    Rule(
+        id="BOUND-004",
+        description="No dynamic import of an abacus module inside modules/",
+        adr="ADR-008, DEC-588",
+        check=_check_dynamic_module_import,
+        include=("src/abacus/modules/*",),
     ),
     Rule(
         id="AUTHZ-003",

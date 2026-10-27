@@ -104,7 +104,7 @@ def editable(key: str) -> EmailTemplateRegistration:
     return registration
 
 
-async def _editor_on(ctx: AuthContext) -> None:
+async def editor_on(ctx: AuthContext) -> None:
     if not await flag_enabled(ctx.tenant, PORTAL_SETTINGS_EDITOR):
         raise NotFound(PORTAL_SETTINGS_EDITOR.name)
 
@@ -159,7 +159,7 @@ async def save_draft(
     ctx: AuthContext, key: str, content: TemplateContent, expected_version: int
 ) -> StoredDraft:
     await authorise(ctx, "email_template.edit", _firm(ctx))
-    await _editor_on(ctx)
+    await editor_on(ctx)
     registration = editable(key)
     check_content(content, registration)
     async with uow(ctx.tenant) as tx:
@@ -195,7 +195,7 @@ async def save_draft(
 
 async def discard_draft(ctx: AuthContext, key: str) -> TemplateState:
     await authorise(ctx, "email_template.edit", _firm(ctx))
-    await _editor_on(ctx)
+    await editor_on(ctx)
     registration = editable(key)
     async with uow(ctx.tenant) as tx:
         template_id = await template_store.firm_template_id(tx.session, key)
@@ -218,7 +218,7 @@ async def discard_draft(ctx: AuthContext, key: str) -> TemplateState:
 async def check_publish(ctx: AuthContext, key: str) -> None:
     """Authorise a publish before an idempotent replay answers (ED-026's lesson)."""
     await authorise(ctx, "email_template.publish", _firm(ctx))
-    await _editor_on(ctx)
+    await editor_on(ctx)
     editable(key)
 
 
