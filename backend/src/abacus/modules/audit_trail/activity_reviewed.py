@@ -278,6 +278,11 @@ REVIEWED_FALLBACK: Final = frozenset(
         "methodology_version.approved",
         "methodology_version.submitted",
         "methodology_version.superseded",
+        # R-01-T26: ADM-10's settings and the read-only preview (versions and ids only)
+        "portal.preview_viewed",
+        "portal_settings.draft_discarded",
+        "portal_settings.draft_saved",
+        "portal_settings.published",
         "notifications.purged",
         "office.created",
         "office.updated",

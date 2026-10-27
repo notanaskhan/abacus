@@ -52778,10 +52778,6 @@ export type GetPortalSettingsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetPortalSettingsError = GetPortalSettingsErrors[keyof GetPortalSettingsErrors];
@@ -52829,10 +52825,6 @@ export type DiscardPortalSettingsDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DiscardPortalSettingsDraftError = DiscardPortalSettingsDraftErrors[keyof DiscardPortalSettingsDraftErrors];
@@ -52884,10 +52876,6 @@ export type SavePortalSettingsDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SavePortalSettingsDraftError = SavePortalSettingsDraftErrors[keyof SavePortalSettingsDraftErrors];
@@ -52936,21 +52924,9 @@ export type UploadPortalLogoErrors = {
      */
     404: ErrorOut;
     /**
-     * The file is too large
-     */
-    413: ErrorOut;
-    /**
-     * The file type is not accepted
-     */
-    415: ErrorOut;
-    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UploadPortalLogoError = UploadPortalLogoErrors[keyof UploadPortalLogoErrors];
@@ -53011,10 +52987,6 @@ export type PreviewPortalErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PreviewPortalError = PreviewPortalErrors[keyof PreviewPortalErrors];
@@ -53070,10 +53042,6 @@ export type PublishPortalSettingsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PublishPortalSettingsError = PublishPortalSettingsErrors[keyof PublishPortalSettingsErrors];

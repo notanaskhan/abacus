@@ -5580,7 +5580,7 @@ export const acknowledgeStep = <ThrowOnError extends boolean = false>(options: O
 /**
  * Get Portal Settings Route
  *
- * ADM-10 a (R-01-T26).
+ * ADM-10 a (R-01-T26): the published version, the draft and what the viewer may do.
  */
 export const getPortalSettings = <ThrowOnError extends boolean = false>(options?: Options<GetPortalSettingsData, ThrowOnError>): RequestResult<GetPortalSettingsResponses, GetPortalSettingsErrors, ThrowOnError> => (options?.client ?? client).get<GetPortalSettingsResponses, GetPortalSettingsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5602,8 +5602,8 @@ export const discardPortalSettingsDraft = <ThrowOnError extends boolean = false>
 /**
  * Save Portal Settings Draft Route
  *
- * ADM-10 b (R-01-T26): 409 `stale_version` on an old `expected_version`. Audited
- * `portal_settings.draft_saved`.
+ * ADM-10 b (R-01-T26): 409 `stale_version` on an old `expected_version`; 422
+ * `support_contact_invalid`. Audited `portal_settings.draft_saved`.
  */
 export const savePortalSettingsDraft = <ThrowOnError extends boolean = false>(options: Options<SavePortalSettingsDraftData, ThrowOnError>): RequestResult<SavePortalSettingsDraftResponses, SavePortalSettingsDraftErrors, ThrowOnError> => (options.client ?? client).put<SavePortalSettingsDraftResponses, SavePortalSettingsDraftErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5618,8 +5618,8 @@ export const savePortalSettingsDraft = <ThrowOnError extends boolean = false>(op
 /**
  * Upload Portal Logo Route
  *
- * The draft's logo as the raw body, re-encoded server side by P-08's `set_logo`
- * (R-01-T26); 413 too large, 415 a type P-08 does not accept.
+ * The draft's logo as the raw body, checked by P-08's re-encoder now and applied by
+ * `set_logo` on publish (R-01-T26); 422 `logo_unreadable` for one it cannot read.
  */
 export const uploadPortalLogo = <ThrowOnError extends boolean = false>(options: Options<UploadPortalLogoData, ThrowOnError>): RequestResult<UploadPortalLogoResponses, UploadPortalLogoErrors, ThrowOnError> => (options.client ?? client).post<UploadPortalLogoResponses, UploadPortalLogoErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5630,9 +5630,9 @@ export const uploadPortalLogo = <ThrowOnError extends boolean = false>(options: 
 /**
  * Preview Portal Route
  *
- * ADM-10 a, c, g (R-01-T26): 404 for a contact outside `visible()`; only items the viewer
- * may read themselves, else the sample client (DEC-379); audited `portal.preview_viewed` with
- * the contact id or `sample`.
+ * ADM-10 a, c, g (R-01-T26): 404 for a contact outside `visible()`; the contact's home only
+ * when the viewer may read all of it, else the sample client (DEC-379, DEC-653); audited
+ * `portal.preview_viewed` with the contact id or `sample`. `source` picks the brand shown.
  */
 export const previewPortal = <ThrowOnError extends boolean = false>(options?: Options<PreviewPortalData, ThrowOnError>): RequestResult<PreviewPortalResponses, PreviewPortalErrors, ThrowOnError> => (options?.client ?? client).get<PreviewPortalResponses, PreviewPortalErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5645,7 +5645,7 @@ export const previewPortal = <ThrowOnError extends boolean = false>(options?: Op
  *
  * ADM-10 f (R-01-T26): one unit of work, an insert-only version; "Portal settings published
  * · clients see changes on next visit". Audited `portal_settings.published`; outbox
- * `portal_settings.published {version}`.
+ * `portal_settings.published {version}`. 409 `no_draft`.
  */
 export const publishPortalSettings = <ThrowOnError extends boolean = false>(options: Options<PublishPortalSettingsData, ThrowOnError>): RequestResult<PublishPortalSettingsResponses, PublishPortalSettingsErrors, ThrowOnError> => (options.client ?? client).post<PublishPortalSettingsResponses, PublishPortalSettingsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
