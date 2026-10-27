@@ -1390,6 +1390,42 @@ async def verified_citations_of(
     return [(r.id, r.cited_from_id, r.cited_from_ref) for r in rows.all()]
 
 
+async def supported_citations_among(
+    session: AsyncSession, engagement_id: UUID, citation_ids: Sequence[UUID]
+) -> frozenset[UUID]:
+    """P-04-T24 (INV-2): which of these citations still support a value now: verified by code,
+    shown (no shadow run, source not withdrawn), on this engagement, and never moved, broken or
+    relinked since (its state is `valid`; a relinked row's successor is a new id). LIST_EXEMPT:
+    by id, for a caller authorised on the engagement."""
+    if not citation_ids:
+        return frozenset()
+    rows = await session.execute(
+        select(Citation.id).where(
+            Citation.id.in_(list(citation_ids)),
+            Citation.engagement_id == engagement_id,
+            Citation.verified.is_(True),
+            shown_citation(),
+            ~select(CitationEvent.id).where(CitationEvent.citation_id == Citation.id).exists(),
+        )
+    )
+    return frozenset(rows.scalars().all())
+
+
+async def citation_versions_among(
+    session: AsyncSession, citation_ids: Sequence[UUID]
+) -> dict[UUID, UUID]:
+    """P-04-T24: the evidence version each of these citations quotes (other sources are left
+    out). LIST_EXEMPT: by id, for a caller authorised on the citing engagement."""
+    if not citation_ids:
+        return {}
+    rows = await session.execute(
+        select(Citation.id, Citation.source_id).where(
+            Citation.id.in_(list(citation_ids)), Citation.source_type == "evidence_version"
+        )
+    )
+    return {r.id: r.source_id for r in rows.all()}
+
+
 # --- The portal PBC read model (R-01-T07) --------------------------------------------------------
 
 

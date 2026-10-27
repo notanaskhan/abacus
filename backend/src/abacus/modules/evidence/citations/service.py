@@ -22,6 +22,7 @@ from uuid import UUID
 
 from abacus.kernel.db import transaction_context
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork
+from abacus.modules.evidence.citations import ledger_line as _ledger_line  # A-02-T22
 from abacus.modules.evidence.citations import verifiers as _builtin  # registers the built-ins
 from abacus.modules.evidence.citations.matching import MAX_QUOTE
 from abacus.modules.evidence.citations.registry import (
@@ -36,7 +37,7 @@ from abacus.modules.evidence.citations.registry import (
 from abacus.modules.evidence.repository import insert_citation, next_citation_n
 from abacus.modules.identity.api import Actor, AgentContext, AuthContext
 
-_ = _builtin
+_ = (_builtin, _ledger_line)
 MAX_CLAIMS = 200
 
 

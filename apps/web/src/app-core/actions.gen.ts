@@ -209,6 +209,7 @@ export const ACTIONS = [
   "procedure.run",
   "proposal.approve",
   "proposal.create",
+  "proposal.decide_change_set",
   "proposal.follow_up",
   "proposal.read",
   "proposal.reject",

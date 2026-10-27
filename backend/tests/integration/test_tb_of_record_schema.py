@@ -265,7 +265,7 @@ KNOWN_IMPORTS = (
         *[(source, "import") for source in KNOWN_IMPORTS],
         ("fake", "fake"),
         ("import_unknown", "other"),  # an unknown format, whatever its prefix
-        ("import_accrued_template", "other"),  # until A-02-T22 registers the format
+        ("import_accrued_template", "import"),  # A-02-T22 registered the format (0235)
         ("import_qbo_tb_csv ", "other"),
         ("IMPORT_QBO_TB_CSV", "other"),
         ("quickbooks_online", "other"),  # until A-02-T26's connector joins the mapping

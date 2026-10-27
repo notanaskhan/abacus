@@ -41,6 +41,7 @@ from abacus.kernel.listing import ListPage
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
+    Forbidden,
     Resource,
     authorise,
     current_context,
@@ -417,6 +418,11 @@ async def _stub(ctx: AuthContext, action: str) -> NoReturn:
     off 404, on 501 until G-02-T24."""
     if ctx.client:
         raise NotFound("ai_policy")
+    # ED-182: the matrix's `agent: deny` and `system: deny` cells are never reached by a firm-level
+    # role check that reads the person's membership, so a principal that is not a person (or
+    # break-glass support) is refused here first: 403, never the 501 or the flag's 404.
+    if ctx.tenant.actor_kind not in ("human", "support"):
+        raise Forbidden(action, "role")
     await authorise(ctx, action, Resource.firm(ctx.tenant_id))
     if not await flag_enabled(ctx.tenant, AI_POLICY_V1):
         raise NotFound("ai_policy.v1")

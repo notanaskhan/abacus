@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import io
 import re
+import unicodedata
 import zipfile
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
@@ -59,7 +60,16 @@ class TrialBalance:
 
 
 _MAX_CELL = 32_767  # Excel's limit; longer values would corrupt the file
-_FORMULA_LEADS = ("=", "+", "-", "@")
+# A spreadsheet treats these leads as a formula; checked on the NFKC-folded text, so the
+# full-width forms (U+FF1D, U+FF0B, U+FF0D, U+FF20) count too, and a leading tab or carriage
+# return (A-02-T22 security review).
+_FORMULA_LEADS = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _formula_like(value: str) -> bool:
+    return unicodedata.normalize("NFKC", value).startswith(_FORMULA_LEADS) or value.startswith(
+        _FORMULA_LEADS
+    )
 
 
 def _text(sheet: Worksheet, row: int, column: int, value: str) -> None:
@@ -68,7 +78,7 @@ def _text(sheet: Worksheet, row: int, column: int, value: str) -> None:
     cell = cast(Cell, sheet.cell(row=row, column=column))
     cell.value = value
     cell.data_type = "s"  # always a string: a leading "=" never becomes a formula
-    if value.startswith(_FORMULA_LEADS):
+    if _formula_like(value):
         cell.quotePrefix = True  # and stays text if copied or exported elsewhere
 
 
@@ -169,4 +179,116 @@ def _normalised(raw: bytes, pulled_at: datetime) -> bytes:
 def render_trial_balance(tb: TrialBalance) -> bytes:
     buffer = io.BytesIO()
     _workbook(tb).save(buffer)
+    return _normalised(buffer.getvalue(), tb.pulled_at)
+
+
+# --- Open in Excel: the trial balance of record at one layer (A-02-T22; AC-8.1; ADR-042) --------
+
+
+@dataclass(frozen=True)
+class LayerLine:
+    """One line of the export: the amounts the ledger computed for the layer, and the line's
+    review marks and citations already rendered as text by the caller (the screen's words)."""
+
+    account_code: str
+    account_name: str
+    area: str
+    wp_ref: str
+    boy: Decimal | None
+    eoy: Decimal
+    aje: Decimal | None
+    rje: Decimal | None
+    final: Decimal | None
+    ticks: str
+    citations: str
+
+
+@dataclass(frozen=True)
+class LayerExport:
+    """A trial balance of record at one layer and version, as `Open in Excel` writes it. Every
+    total is the caller's (code computes, ADR-050) and is written as given."""
+
+    title: str
+    layer: str  # the layer's word ("Unadjusted", "Final")
+    adjusted: bool  # AJE, RJE and Final columns
+    lines: tuple[LayerLine, ...]
+    total_boy: Decimal | None
+    total_eoy: Decimal
+    debit: Decimal
+    credit: Decimal
+    difference: Decimal
+    pulled_at: datetime  # the file's fixed stamp: the version's snapshot pull time
+    footer: tuple[tuple[str, str], ...]  # provenance rows, in order
+
+
+def _layer_workbook(tb: LayerExport) -> Workbook:
+    stamp = _utc(tb.pulled_at)
+    workbook = Workbook()
+    sheet = cast(Worksheet, workbook.active)
+    sheet.title = "Trial balance"
+    prior = tb.total_boy is not None
+    headers = ["Account", "Name", "Area"]
+    if prior:
+        headers.append("Beginning of Year")
+    headers.append("End of Year" if not tb.adjusted else "Unadjusted")
+    if tb.adjusted:
+        headers += ["AJE", "RJE", "Final"]
+    headers += ["WP Ref", "Ticks", "Citations"]
+    _text(sheet, 1, 1, f"{tb.title} · {tb.layer}")
+    cast(Cell, sheet.cell(row=1, column=1)).font = _BOLD
+    for column, header in enumerate(headers, start=1):
+        _text(sheet, 3, column, header)
+        cast(Cell, sheet.cell(row=3, column=column)).font = _BOLD
+    row = 4
+    for line in tb.lines:
+        values: list[str | Decimal | None] = [line.account_code, line.account_name, line.area]
+        if prior:
+            values.append(line.boy)
+        values.append(line.eoy)
+        if tb.adjusted:
+            values += [line.aje, line.rje, line.final]
+        values += [line.wp_ref, line.ticks, line.citations]
+        for column, value in enumerate(values, start=1):
+            if isinstance(value, Decimal):
+                _amount(sheet, row, column, value)
+            elif value is not None:
+                _text(sheet, row, column, value)
+        row += 1
+    _text(sheet, row, 2, TOTAL_LABEL)
+    column = 4
+    if prior and tb.total_boy is not None:
+        _amount(sheet, row, column, tb.total_boy)
+        column += 1
+    if tb.adjusted:
+        column += 3
+    _amount(sheet, row, column, tb.total_eoy)
+    row += 2
+    balance = (
+        ("Debits", tb.debit),
+        ("Credits", tb.credit),
+        ("Difference", tb.difference),
+    )
+    for label, value in balance:
+        _text(sheet, row, 1, label)
+        _amount(sheet, row, 2, value)
+        row += 1
+    row += 1
+    for label, value in tb.footer:
+        _text(sheet, row, 1, label)
+        _text(sheet, row, 2, value)
+        row += 1
+    for index, width in enumerate((14, 44, 22, 18, 18, 18, 18, 18, 12, 28, 36), start=1):
+        sheet.column_dimensions[chr(ord("A") + index - 1)].width = width
+    properties = workbook.properties
+    properties.creator = "platform"
+    properties.lastModifiedBy = "platform"
+    properties.created = stamp.replace(tzinfo=None)
+    properties.modified = stamp.replace(tzinfo=None)
+    return workbook
+
+
+def render_trial_balance_layers(tb: LayerExport) -> bytes:
+    """AC-8.1: the same export gives the same bytes; client strings stay text (ADR-052)."""
+    buffer = io.BytesIO()
+    _layer_workbook(tb).save(buffer)
     return _normalised(buffer.getvalue(), tb.pulled_at)

@@ -2889,6 +2889,40 @@ export const STATUS_REGISTRY = {
       "derived": false
     }
   },
+  "firm_export_schedule": {
+    "pending_approval": {
+      "label": "Waiting for approval",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "active": {
+      "label": "Active",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "paused": {
+      "label": "Paused",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "safeguards_control": {
+    "evidenced": {
+      "label": "Evidenced",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "open": {
+      "label": "Open",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    }
+  },
   "support_session": {
     "requested": {
       "label": "Awaiting firm approval",

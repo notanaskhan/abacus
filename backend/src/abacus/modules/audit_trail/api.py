@@ -14,6 +14,7 @@ from abacus.modules.audit_trail.explorer import (
     get_event,
     list_events,
 )
+from abacus.modules.audit_trail.exports import SUBSCRIPTIONS
 from abacus.modules.audit_trail.jobs import ACTIVITIES, SCHEDULES, WORKFLOWS
 from abacus.modules.audit_trail.labels import backfill as backfill_labels
 from abacus.modules.audit_trail.labels import index_batch as index_labels
@@ -26,6 +27,10 @@ from abacus.modules.audit_trail.workflows import (
     VERIFY_ID,
     AuditChainVerifyWorkflow,
     AuditCheckpointWorkflow,
+    AuditExportFacts,
+    AuditExportFailure,
+    AuditExportInput,
+    AuditExportWorkflow,
     AuditLabelIndexerWorkflow,
     AuditPartitionsWorkflow,
 )
@@ -46,7 +51,8 @@ register_target_events(events_for_target)
 # export reads the last); modules register catalogue entries with `register_activity_kinds`.
 # G-02-T10: the label index (`index_labels`, `backfill_labels`) for operators, kept current by
 # the `AuditLabelIndexer` Schedule every 60 seconds (DEC-453; a search still catches up first).
-# G-02-T08: importing the live reads registers them on the contract's router.
+# G-02-T08, T17: importing the live routes registers them on the contract's router; G-02-T17's
+# `SUBSCRIPTIONS` start `AuditExportWorkflow` from `audit_export.requested`.
 LIVE_READS = audit_log_routes.router
 
 # Q-02-T20, T21: partitions, checkpoints and the nightly verify on Schedules (the daily anchor is
@@ -59,10 +65,15 @@ __all__ = [
     "PARTITIONS_ID",
     "ROUTERS",
     "SCHEDULES",
+    "SUBSCRIPTIONS",
     "VERIFY_ID",
     "WORKFLOWS",
     "AuditChainVerifyWorkflow",
     "AuditCheckpointWorkflow",
+    "AuditExportFacts",
+    "AuditExportFailure",
+    "AuditExportInput",
+    "AuditExportWorkflow",
     "AuditLabelIndexerWorkflow",
     "AuditPartitionsWorkflow",
     "CatalogueEntry",

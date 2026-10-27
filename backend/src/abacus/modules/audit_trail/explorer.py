@@ -88,6 +88,7 @@ from abacus.modules.audit_trail.audit_log_contract import (
     AuditSessionOut,
     AuditSourceOut,
     AuditTargetOut,
+    AuditValuesOut,
     Fact,
     Mark,
 )
@@ -645,6 +646,27 @@ async def get_event(ctx: AuthContext, seq: int) -> AuditEventDetail:
     )
 
 
+async def export_batch(
+    reader: Reader, where: EventFilter, after_seq: int, limit: int, *, include_values: bool
+) -> list[tuple[AuditEventRow, AuditValuesOut | None]]:
+    """G-02-T17 (AC-12, AC-14): the next `limit` events after `after_seq`, oldest first, exactly
+    as `reader` sees them on screen (the list's narrowing and filters), each with its values as
+    the detail drawer would resolve them for that reader when `include_values` is set."""
+    conditions = await _conditions(reader, where, with_actor_kind=True)
+    conditions.append(t.seq > after_seq)
+    async with tenant_session(reader.ctx.tenant) as session:
+        stmt = _select(conditions).order_by(t.seq).limit(limit)
+        rows = [dict(m) for m in (await session.execute(stmt)).mappings().all()]
+    found = await _labels(reader.ctx, rows)
+    out: list[tuple[AuditEventRow, AuditValuesOut | None]] = []
+    for row in rows:
+        values = (
+            await event_values.values_for(reader.ctx, _event_ref(row)) if include_values else None
+        )
+        out.append((row_of(row, reader, found), values))
+    return out
+
+
 async def events_for_work_item(
     ctx: AuthContext, work_item_id: UUID, *, as_of_seq: int | None = None
 ) -> list[AuditEventRow]:
@@ -668,6 +690,7 @@ __all__ = [
     "EventFilter",
     "Reader",
     "events_for_work_item",
+    "export_batch",
     "get_event",
     "list_events",
     "reader_of",

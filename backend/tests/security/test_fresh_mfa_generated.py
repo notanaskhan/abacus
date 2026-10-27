@@ -60,6 +60,7 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("assurance.record_archive", "release", "engagement_partner"),
 )
 ROUTES: tuple[tuple[str, str, str], ...] = (
+    ("GET", "/v1/audit-events/exports/{export_id}/download", "audit_event.export"),
     (
         "GET",
         "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/export.xlsx",
@@ -69,6 +70,8 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/firm/clients", "wall.create"),
     ("GET", "/v1/firm/data-exports/{export_id}/links/{link_id}", "firm_export.download"),
     ("GET", "/v1/firm/members", "wall.create"),
+    ("GET", "/v1/firm/safeguards/wisp-pack/{pack_id}", "security.manage"),
+    ("GET", "/v1/firm/safeguards/wisp-pack/{pack_id}/download", "security.manage"),
     ("GET", "/v1/walls/preview", "wall.create"),
     ("POST", "/v1/agent-runs/{run_id}/trace-exports", "run_trace.export"),
     ("POST", "/v1/audit-events/exports", "audit_event.export"),

@@ -40,3 +40,4 @@ key returns the stored result.
 - 2026-10-27: security-review fix round (merged origin/main ee7bdf04; 0210 now revises 0197): migration 0213 status guards, fresh MFA on sign_off.create and decision.decide, serialised idempotency keys, decided-card reassess by the decider, suggestion and work-item ownership checks (DEC-505, DEC-506).
 - 2026-10-27: second fix round: idempotency claim rows (0214, DEC-507) in place of the advisory lock; 0213 binds note clear/withdraw/close to their event and a successor card to its reassessment.
 - 2026-10-27: third fix round: claim tokens, commit-aware shielded release, 3600 s reclaim, update guard on idempotency_keys (0214, DEC-507).
+- 2026-10-27: independent ADR-078 suite (P-04-T28): `backend/tests/integration/backfill/test_p04t28_*_independent.py`; see TASK-1464.

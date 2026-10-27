@@ -15,11 +15,13 @@ the records bucket and the audit trail may not depend on it (ADR-008).
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import timedelta
 from typing import Final
 
 from temporalio import workflow
 from temporalio.common import RetryPolicy
+from temporalio.exceptions import ActivityError, ApplicationError
 
 PARTITIONS_ID: Final = "audit_partitions:platform"
 CHECKPOINT_ID: Final = "audit_checkpoint:platform"
@@ -83,4 +85,94 @@ class AuditLabelIndexerWorkflow:
             result_type=int,
             start_to_close_timeout=_LABELS_TIMEOUT,
             retry_policy=_RETRY,
+        )
+
+
+# --- AuditExportWorkflow (G-02-T17; G-02 §4.5). v1, recorded in its histories. ------------------
+
+EXPORT_BUILD_ERROR: Final = "build_error"
+# Decided failures, never retried: the requester left the firm, or nothing signs the manifest.
+EXPORT_DECIDED: Final = ("requester_not_member", "signing_unavailable", "exports_unavailable")
+_EXPORT_TIMEOUT: Final = timedelta(minutes=2)
+_EXPORT_BUILD_TIMEOUT: Final = timedelta(minutes=30)
+_EXPORT_HEARTBEAT: Final = timedelta(minutes=2)
+_EXPORT_BUILD_RETRY: Final = RetryPolicy(
+    maximum_attempts=3, non_retryable_error_types=list(EXPORT_DECIDED)
+)
+_EXPORT_STAMP_RETRY: Final = RetryPolicy(maximum_attempts=10)
+
+
+def audit_export_workflow_id(tenant_id: str, export_id: str) -> str:
+    return f"audit_export:{tenant_id}:{export_id}"
+
+
+@dataclass(frozen=True)
+class AuditExportInput:
+    tenant_id: str
+    export_id: str
+
+
+@dataclass(frozen=True)
+class AuditExportFacts:
+    """What the build stored: digests, counts and the seq range (no content)."""
+
+    tenant_id: str
+    export_id: str
+    row_count: int
+    seq_from: int | None
+    seq_to: int | None
+    csv_sha256: str
+    manifest_sha256: str
+    bundle_bytes: int
+    segment_count: int
+    signature_key_ref: str
+    # Security review: the key Sign used (its ARN); v1 histories predate it, hence the default.
+    signature_key_id: str = ""
+
+
+@dataclass(frozen=True)
+class AuditExportFailure:
+    tenant_id: str
+    export_id: str
+    code: str
+
+
+def _export_failure(error: ActivityError) -> str:
+    cause = error.cause
+    if isinstance(cause, ApplicationError) and cause.type in EXPORT_DECIDED:
+        return cause.type
+    return EXPORT_BUILD_ERROR
+
+
+@workflow.defn(name="audit_export")
+class AuditExportWorkflow:
+    """`audit_export:<tenant>:<export_id>` (reuse rejected): build and store the bundle (CSV,
+    `manifest.json`, `manifest.sig`, sealed in the exports bucket), then mark it ready; a failed
+    build marks it failed with its code. Nothing is downloadable before `mark_ready`."""
+
+    @workflow.run
+    async def run(self, given: AuditExportInput) -> str:
+        try:
+            facts = await workflow.execute_activity(
+                "audit_export.build",
+                given,
+                result_type=AuditExportFacts,
+                start_to_close_timeout=_EXPORT_BUILD_TIMEOUT,
+                heartbeat_timeout=_EXPORT_HEARTBEAT,
+                retry_policy=_EXPORT_BUILD_RETRY,
+            )
+        except ActivityError as error:
+            return await workflow.execute_activity(
+                "audit_export.mark_failed",
+                AuditExportFailure(given.tenant_id, given.export_id, _export_failure(error)),
+                result_type=str,
+                start_to_close_timeout=_EXPORT_TIMEOUT,
+                retry_policy=_EXPORT_STAMP_RETRY,
+            )
+        return await workflow.execute_activity(
+            "audit_export.mark_ready",
+            facts,
+            result_type=str,
+            start_to_close_timeout=_EXPORT_TIMEOUT,
+            retry_policy=_EXPORT_STAMP_RETRY,
         )
