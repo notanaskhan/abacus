@@ -47,6 +47,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel import clock
 from abacus.kernel._flags import COMPLIANCE_FIRM_EXPORT
+from abacus.kernel.access import AccessSubject, record_reads, register_access_kind
 from abacus.kernel.clock import system_now
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
@@ -467,6 +468,12 @@ async def issue_link(ctx: AuthContext, export_id: UUID) -> FirmExportLinkView:
 # --- download --------------------------------------------------------------------------------
 
 
+# SPEC-341 AC-41 (ED-161): every archive request leaves a Q-02 access event before bytes leave;
+# a firm export carries every client's content, so it is always restricted.
+ACCESS_KIND: Final = "firm_export.read"
+register_access_kind(ACCESS_KIND, ["restricted"])
+
+
 async def prepare(
     ctx: AuthContext,
     export_id: UUID,
@@ -547,6 +554,8 @@ async def prepare(
                 else Ref(bytes=sent)
             ),
         )
+    # Recorded before the plan is handed over: an error here means nothing is served.
+    await record_reads(ctx.tenant, ACCESS_KIND, [AccessSubject(SUBJECT, row.id)])
     firm = _firm(ctx)
 
     async def guard() -> None:
