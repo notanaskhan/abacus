@@ -76,6 +76,7 @@ from abacus.modules.identity.routing import (
     current_staff,
     requested_tenant,
 )
+from abacus.modules.identity.security_policies import refused_here
 from abacus.modules.identity.service import SignedIn, firm_members
 from abacus.modules.identity.settings_contract import (
     Band,
@@ -200,11 +201,16 @@ async def me(
     user = str(signed_in.user.id)
     # A firm whose access end has passed for this person is no longer theirs to open (DEC-383),
     # whether or not the access-end job has deactivated the membership yet.
+    # G-02-T14 (DEC-528): neither is a firm this request's session was signed out of; it is left
+    # out, so its facts are not read and it cannot be the active firm.
     memberships = [
         m
         for m in signed_in.memberships
         if m.kind == "client"
-        or not await access_has_ended(TenantContext(m.tenant_id, "human", user), signed_in.user.id)
+        or not (
+            await access_has_ended(TenantContext(m.tenant_id, "human", user), signed_in.user.id)
+            or await refused_here(TenantContext(m.tenant_id, "human", user), signed_in.user.id)
+        )
     ]
     held = {m.tenant_id for m in memberships}
     # The active tenant: the one asked for when the person holds it, or their only one.

@@ -34,7 +34,7 @@ session's `app.tenant_id`, never from an argument):
 - `security_sign_in_methods()`: per active staff member of the session firm, whether they have an
   MFA sign-in, an SSO sign-in through this firm's connection and a passkey sign-in on record;
 - `auth_session_refused_here(cookie, user)`: once the person has been signed out of the session
-  firm, whether this request lacks a live, current, not-signed-out session cookie of theirs;
+  firm, whether this request lacks a cookie of a live, not-signed-out session of theirs;
 - `auth_session_owner(cookie)`: the person behind a refresh cookie (the caller holds it);
 - `auth_session_purge()`: deletes sessions that ended (or expired) more than a year ago, and their
   cookies (P-01 hand-off: security logs are kept a year, the audit log keeps the events).
@@ -521,7 +521,9 @@ def upgrade() -> None:
     # the request's chosen firm, which the caller holds an active membership of). Once the person
     # has been signed out of this firm, a request here needs the BFF cookie of a live session of
     # theirs that has not been: a bearer token alone, a stolen session's cookie or a junk one is
-    # refused. One boolean about the caller's own session.
+    # refused. A just-rotated cookie of such a session still counts (a request in flight during a
+    # refresh is not refused; a retired cookie still cannot refresh). One boolean about the
+    # caller's own session.
     op.execute(
         f"""
         CREATE FUNCTION auth_session_refused_here(p_cookie_sha256 text, p_user_id uuid)
@@ -535,7 +537,7 @@ def upgrade() -> None:
                 SELECT 1 FROM public.auth_session_cookies c
                   JOIN public.auth_sessions s ON s.id = c.session_id
                  WHERE p_cookie_sha256 IS NOT NULL AND c.cookie_sha256 = p_cookie_sha256
-                   AND c.retired_at IS NULL AND s.user_id = p_user_id AND {_LIVE}
+                   AND s.user_id = p_user_id AND {_LIVE}
                    AND NOT EXISTS (
                        SELECT 1 FROM public.auth_session_tenant_revocations r
                         WHERE r.tenant_id = {_TENANT} AND r.session_id = s.id))
