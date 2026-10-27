@@ -10971,7 +10971,7 @@ export const knowledgeChangeLogQueryKey = (options?: Options<KnowledgeChangeLogD
 /**
  * Knowledge Change Log Route
  *
- * KNW-01: lifecycle events across providers (methodology version events first).
+ * KNW-01: lifecycle events across providers, newest last (K-01-T03).
  */
 export const knowledgeChangeLogOptions = (options?: Options<KnowledgeChangeLogData>) => queryOptions<KnowledgeChangeLogResponse, KnowledgeChangeLogError, KnowledgeChangeLogResponse, ReturnType<typeof knowledgeChangeLogQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -10991,7 +10991,7 @@ export const knowledgeChangeLogInfiniteQueryKey = (options?: Options<KnowledgeCh
 /**
  * Knowledge Change Log Route
  *
- * KNW-01: lifecycle events across providers (methodology version events first).
+ * KNW-01: lifecycle events across providers, newest last (K-01-T03).
  */
 export const knowledgeChangeLogInfiniteOptions = (options?: Options<KnowledgeChangeLogData>) => {
     const opts = infiniteQueryOptions<KnowledgeChangeLogResponse, KnowledgeChangeLogError, InfiniteData<KnowledgeChangeLogResponse>, QueryKey<Options<KnowledgeChangeLogData>>, string | null | Pick<QueryKey<Options<KnowledgeChangeLogData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -11093,7 +11093,9 @@ export const knowledgeItemsQueryKey = (options?: Options<KnowledgeItemsData>) =>
 /**
  * Knowledge Items Route
  *
- * KNW-01: catalog cards with category and status facets and match ranges.
+ * KNW-01: catalog cards with category and status facets and match ranges (K-01-T03).
+ * `counts` per status over the category and search; `facets.category` per registered
+ * category only: an unregistered category has no count at all, never 0 (AC1.2).
  */
 export const knowledgeItemsOptions = (options?: Options<KnowledgeItemsData>) => queryOptions<KnowledgeItemsResponse, KnowledgeItemsError, KnowledgeItemsResponse, ReturnType<typeof knowledgeItemsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -11113,7 +11115,9 @@ export const knowledgeItemsInfiniteQueryKey = (options?: Options<KnowledgeItemsD
 /**
  * Knowledge Items Route
  *
- * KNW-01: catalog cards with category and status facets and match ranges.
+ * KNW-01: catalog cards with category and status facets and match ranges (K-01-T03).
+ * `counts` per status over the category and search; `facets.category` per registered
+ * category only: an unregistered category has no count at all, never 0 (AC1.2).
  */
 export const knowledgeItemsInfiniteOptions = (options?: Options<KnowledgeItemsData>) => {
     const opts = infiniteQueryOptions<KnowledgeItemsResponse, KnowledgeItemsError, InfiniteData<KnowledgeItemsResponse>, QueryKey<Options<KnowledgeItemsData>>, string | null | Pick<QueryKey<Options<KnowledgeItemsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -11145,7 +11149,7 @@ export const knowledgeReviewQueueQueryKey = (options?: Options<KnowledgeReviewQu
 /**
  * Knowledge Review Queue Route
  *
- * KNW-01: versions awaiting the viewer's approval, or the viewer's own drafts.
+ * KNW-01: versions awaiting the viewer's approval, or the viewer's own drafts (K-01-T03).
  */
 export const knowledgeReviewQueueOptions = (options?: Options<KnowledgeReviewQueueData>) => queryOptions<KnowledgeReviewQueueResponse, KnowledgeReviewQueueError, KnowledgeReviewQueueResponse, ReturnType<typeof knowledgeReviewQueueQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

@@ -6663,7 +6663,7 @@ export const issueVerify = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * Knowledge Change Log Route
  *
- * KNW-01: lifecycle events across providers (methodology version events first).
+ * KNW-01: lifecycle events across providers, newest last (K-01-T03).
  */
 export const knowledgeChangeLog = <ThrowOnError extends boolean = false>(options?: Options<KnowledgeChangeLogData, ThrowOnError>): RequestResult<KnowledgeChangeLogResponses, KnowledgeChangeLogErrors, ThrowOnError> => (options?.client ?? client).get<KnowledgeChangeLogResponses, KnowledgeChangeLogErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -6714,7 +6714,9 @@ export const withdrawDocument = <ThrowOnError extends boolean = false>(options: 
 /**
  * Knowledge Items Route
  *
- * KNW-01: catalog cards with category and status facets and match ranges.
+ * KNW-01: catalog cards with category and status facets and match ranges (K-01-T03).
+ * `counts` per status over the category and search; `facets.category` per registered
+ * category only: an unregistered category has no count at all, never 0 (AC1.2).
  */
 export const knowledgeItems = <ThrowOnError extends boolean = false>(options?: Options<KnowledgeItemsData, ThrowOnError>): RequestResult<KnowledgeItemsResponses, KnowledgeItemsErrors, ThrowOnError> => (options?.client ?? client).get<KnowledgeItemsResponses, KnowledgeItemsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -6725,7 +6727,7 @@ export const knowledgeItems = <ThrowOnError extends boolean = false>(options?: O
 /**
  * Knowledge Review Queue Route
  *
- * KNW-01: versions awaiting the viewer's approval, or the viewer's own drafts.
+ * KNW-01: versions awaiting the viewer's approval, or the viewer's own drafts (K-01-T03).
  */
 export const knowledgeReviewQueue = <ThrowOnError extends boolean = false>(options?: Options<KnowledgeReviewQueueData, ThrowOnError>): RequestResult<KnowledgeReviewQueueResponses, KnowledgeReviewQueueErrors, ThrowOnError> => (options?.client ?? client).get<KnowledgeReviewQueueResponses, KnowledgeReviewQueueErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

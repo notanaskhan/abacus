@@ -20,14 +20,13 @@ Rules the shapes carry:
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Path, Query
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import (
-    KNOWLEDGE_CATALOG,
     METHODOLOGY_LIFECYCLE,
     METHODOLOGY_PROGRAMS,
 )
@@ -47,6 +46,7 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
 )
+from abacus.modules.methodology.catalog import catalog_items, change_log, review_queue
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 # KNW-01's categories; each is a registered catalog provider's (K-01-T03: methodology versions
@@ -172,9 +172,7 @@ class ChangeLogEntryOut(BaseModel):
 knowledge_router = AbacusRouter(prefix="/v1/knowledge", tags=["knowledge"])
 
 
-@knowledge_router.get(
-    "/items", action="knowledge.read", response_model=ListPage[KnowledgeItemOut], errors=(501,)
-)
+@knowledge_router.get("/items", action="knowledge.read", response_model=ListPage[KnowledgeItemOut])
 async def knowledge_items_route(
     ctx: Ctx,
     category: Annotated[Category | None, Query()] = None,
@@ -183,34 +181,101 @@ async def knowledge_items_route(
     cursor: Annotated[str | None, Query(max_length=2000)] = None,
     limit: Annotated[int | None, Query(ge=1, le=200)] = None,
 ) -> ListPage[KnowledgeItemOut]:
-    """KNW-01: catalog cards with category and status facets and match ranges."""
-    await _stub(ctx, KNOWLEDGE_CATALOG, "knowledge.read")
+    """KNW-01: catalog cards with category and status facets and match ranges (K-01-T03).
+    `counts` per status over the category and search; `facets.category` per registered
+    category only: an unregistered category has no count at all, never 0 (AC1.2)."""
+    found = await catalog_items(
+        ctx, category=category, status=status, q=q, cursor=cursor, limit=limit
+    )
+    return ListPage[KnowledgeItemOut](
+        items=[
+            KnowledgeItemOut(
+                id=c.item.id,
+                category=cast(Category, c.item.category),
+                title=c.item.title,
+                subtitle=c.item.subtitle,
+                status=cast(KnowledgeItemStatus, c.item.status),
+                version_label=c.item.version_label,
+                effective_from=c.item.effective_from,
+                owner_name=c.owner_name,
+                usage_count=c.usage_count,
+                updated_at=c.item.updated_at,
+                match=[MatchRangeOut(start=a, end=b) for a, b in c.match],
+                route=c.item.route,
+            )
+            for c in found.items
+        ],
+        next_cursor=found.next_cursor,
+        total=found.total,
+        total_capped=found.total_capped,
+        counts=found.counts,
+        facets=found.facets,
+    )
 
 
 @knowledge_router.get(
     "/review-queue",
     action="knowledge.read",
     response_model=ListPage[ReviewQueueItemOut],
-    errors=(501,),
 )
 async def knowledge_review_queue_route(ctx: Ctx) -> ListPage[ReviewQueueItemOut]:
-    """KNW-01: versions awaiting the viewer's approval, or the viewer's own drafts."""
-    await _stub(ctx, KNOWLEDGE_CATALOG, "knowledge.read")
+    """KNW-01: versions awaiting the viewer's approval, or the viewer's own drafts (K-01-T03)."""
+    found = await review_queue(ctx)
+    return ListPage[ReviewQueueItemOut](
+        items=[
+            ReviewQueueItemOut(
+                category=cast(Category, r.item.category),
+                object_id=r.item.object_id,
+                title=r.item.title,
+                version_label=r.item.version_label,
+                status=cast(MethodologyVersionStatus, r.item.status),
+                submitted_by_name=r.submitted_by_name,
+                submitted_at=r.item.submitted_at,
+                flags_open=r.item.flags_open,
+                route=r.item.route,
+            )
+            for r in found.items
+        ],
+        total=found.total,
+        counts=found.counts,
+    )
 
 
 @knowledge_router.get(
     "/change-log",
     action="knowledge.read",
     response_model=ListPage[ChangeLogEntryOut],
-    errors=(501,),
 )
 async def knowledge_change_log_route(
     ctx: Ctx,
     cursor: Annotated[str | None, Query(max_length=2000)] = None,
     limit: Annotated[int | None, Query(ge=1, le=200)] = None,
 ) -> ListPage[ChangeLogEntryOut]:
-    """KNW-01: lifecycle events across providers (methodology version events first)."""
-    await _stub(ctx, KNOWLEDGE_CATALOG, "knowledge.read")
+    """KNW-01: lifecycle events across providers, newest last (K-01-T03)."""
+    found = await change_log(ctx, cursor=cursor, limit=limit)
+    return ListPage[ChangeLogEntryOut](
+        items=[
+            ChangeLogEntryOut(
+                id=r.entry.id,
+                at=r.entry.at,
+                category=cast(Category, r.entry.category),
+                object_id=r.entry.object_id,
+                title=r.entry.title,
+                kind=cast(VersionEventKind, r.entry.kind),
+                actor=ChangeActorOut(
+                    kind=cast(Literal["human", "agent", "system"], r.entry.actor_kind),
+                    user_id=r.entry.actor_user_id,
+                    name=r.actor_name,
+                    on_behalf_of_user_id=r.entry.on_behalf_of_user_id,
+                ),
+                facts=dict(r.entry.facts),
+            )
+            for r in found.items
+        ],
+        next_cursor=found.next_cursor,
+        total=found.total,
+        total_capped=found.total_capped,
+    )
 
 
 # --- Methodology lifecycle (KNW-02 e, f) --------------------------------------------------------

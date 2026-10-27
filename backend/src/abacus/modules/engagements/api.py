@@ -75,6 +75,7 @@ from abacus.modules.engagements.index_facts import (
     assurance_index,
     gate_offices,
     letters_sent,
+    methodology_usage,
     work_item_index,
 )
 from abacus.modules.engagements.intake import commit_intake as commit_client_intake
@@ -207,6 +208,7 @@ from abacus.modules.identity.api import (
 )
 from abacus.modules.identity.api import register_gates as register_condition_gates
 from abacus.modules.methodology.api import (
+    METHODOLOGY_USAGE_TYPE,
     AccountRule,
     ApprovedGuidance,
     Area,
@@ -218,6 +220,7 @@ from abacus.modules.methodology.api import (
     area_for,
     methodology_version,
     publish_drafted_version,
+    register_usage_counter,
     version_detail,
 )
 from abacus.modules.organisations.api import (
@@ -259,6 +262,8 @@ register_member_added(request_independence)
 register_independence(confirmed_subquery, confirmed_for)
 
 register_gates()  # C1: G1 to G3 in the fail-closed gate slot
+# K-01-T03: KNW-01's "Used by n engagements", over `visible()` (walls never counted).
+register_usage_counter(METHODOLOGY_USAGE_TYPE, methodology_usage)
 # P-07-T36 review (DEC-375, L4): what a conflict check or screening record may name.
 register_conflict_subject("engagement_draft", draft_visible)
 register_conflict_subject("client_intake_draft", intake_draft_visible)  # P-07-T42

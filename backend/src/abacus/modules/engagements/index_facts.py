@@ -23,6 +23,7 @@ from abacus.modules.engagements.models import (
     EngagementLetter,
     WorkItem,
 )
+from abacus.modules.identity.api import AuthContext, visible
 from abacus.modules.organisations.api import (
     client_name_column,
     entity_name_column,
@@ -221,3 +222,21 @@ async def gate_offices(
         if office is not None:
             found[(engagement, item)] = office
     return found
+
+
+async def methodology_usage(ctx: AuthContext, version_ids: Sequence[UUID]) -> dict[UUID, int]:
+    """KNW-01's "Used by n engagements" (K-01-T03; AC1.3, AC1.9): the engagements pinned to each
+    methodology version that the reader may see (`visible()`, so a walled engagement is never
+    counted). Registered as methodology's usage counter for `methodology_version`."""
+    if not version_ids:
+        return {}
+    async with tenant_session(ctx.tenant) as session:
+        rows = await session.execute(
+            select(Engagement.methodology_version_id, func.count())
+            .where(
+                Engagement.methodology_version_id.in_(list(version_ids)),
+                visible(ctx, "engagement.read_metadata", Engagement.id),
+            )
+            .group_by(Engagement.methodology_version_id)
+        )
+    return {version: int(n) for version, n in rows.tuples().all() if version is not None}

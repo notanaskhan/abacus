@@ -57152,10 +57152,6 @@ export type KnowledgeChangeLogErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type KnowledgeChangeLogError = KnowledgeChangeLogErrors[keyof KnowledgeChangeLogErrors];
@@ -57432,10 +57428,6 @@ export type KnowledgeItemsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type KnowledgeItemsError = KnowledgeItemsErrors[keyof KnowledgeItemsErrors];
@@ -57483,10 +57475,6 @@ export type KnowledgeReviewQueueErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type KnowledgeReviewQueueError = KnowledgeReviewQueueErrors[keyof KnowledgeReviewQueueErrors];
