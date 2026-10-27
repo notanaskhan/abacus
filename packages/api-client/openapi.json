@@ -64779,7 +64779,7 @@
     },
     "/v1/client-imports": {
       "post": {
-        "description": "The file is the raw request body (SPEC-008 D3); refused before it is read while the\nroute is a stub.",
+        "description": "The file is the raw request body (SPEC-008 D3), refused before it is read without the\naction; 422 `import_file_invalid` (`facts.reason`) for a file the import can't read.",
         "operationId": "upload_client_import",
         "parameters": [
           {
@@ -64889,16 +64889,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Upload Client Import Route",
@@ -65005,16 +64995,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Client Import Route",
@@ -65167,16 +65147,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Client Import Rows Route",
@@ -65188,7 +65158,7 @@
     },
     "/v1/client-imports/{import_id}/rows/{row_id}/decision": {
       "put": {
-        "description": "A person's decision on a row (never a merge below 90% without one); 409\n`import_already_run`. TINs masked for an offshore reader (AC9.4).",
+        "description": "A person's decision on a row (never a merge below 90% without one); 409\n`import_already_run`; 422 `import_row_invalid`. TINs masked for an offshore reader (AC9.4).",
         "operationId": "decide_import_row",
         "parameters": [
           {
@@ -65314,16 +65284,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Decide Import Row Route",
@@ -65335,7 +65295,7 @@
     },
     "/v1/client-imports/{import_id}/run": {
       "post": {
-        "description": "Starts `ClientImportWorkflow` (P-07-T52); every row applied idempotently; a replayed key\nanswers the same; 409 `import_already_run`.",
+        "description": "Starts `ClientImportWorkflow`; every row applied idempotently; a replayed key answers the\nsame; 409 `import_already_run`.",
         "operationId": "run_client_import",
         "parameters": [
           {
@@ -65452,16 +65412,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Run Client Import Route",

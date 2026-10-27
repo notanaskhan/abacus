@@ -1275,8 +1275,8 @@ export const revealTinMutation = (options?: Partial<Options<RevealTinData>>): Us
 /**
  * Upload Client Import Route
  *
- * The file is the raw request body (SPEC-008 D3); refused before it is read while the
- * route is a stub.
+ * The file is the raw request body (SPEC-008 D3), refused before it is read without the
+ * action; 422 `import_file_invalid` (`facts.reason`) for a file the import can't read.
  */
 export const uploadClientImportMutation = (options?: Partial<Options<UploadClientImportData>>): UseMutationOptions<UploadClientImportResponse, UploadClientImportError, Options<UploadClientImportData>> => {
     const mutationOptions: UseMutationOptions<UploadClientImportResponse, UploadClientImportError, Options<UploadClientImportData>> = {
@@ -1368,7 +1368,7 @@ export const clientImportRowsInfiniteOptions = (options: Options<ClientImportRow
  * Decide Import Row Route
  *
  * A person's decision on a row (never a merge below 90% without one); 409
- * `import_already_run`. TINs masked for an offshore reader (AC9.4).
+ * `import_already_run`; 422 `import_row_invalid`. TINs masked for an offshore reader (AC9.4).
  */
 export const decideImportRowMutation = (options?: Partial<Options<DecideImportRowData>>): UseMutationOptions<DecideImportRowResponse, DecideImportRowError, Options<DecideImportRowData>> => {
     const mutationOptions: UseMutationOptions<DecideImportRowResponse, DecideImportRowError, Options<DecideImportRowData>> = {
@@ -1387,8 +1387,8 @@ export const decideImportRowMutation = (options?: Partial<Options<DecideImportRo
 /**
  * Run Client Import Route
  *
- * Starts `ClientImportWorkflow` (P-07-T52); every row applied idempotently; a replayed key
- * answers the same; 409 `import_already_run`.
+ * Starts `ClientImportWorkflow`; every row applied idempotently; a replayed key answers the
+ * same; 409 `import_already_run`.
  */
 export const runClientImportMutation = (options?: Partial<Options<RunClientImportData>>): UseMutationOptions<RunClientImportResponse, RunClientImportError, Options<RunClientImportData>> => {
     const mutationOptions: UseMutationOptions<RunClientImportResponse, RunClientImportError, Options<RunClientImportData>> = {

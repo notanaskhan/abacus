@@ -665,8 +665,8 @@ export const revealTin = <ThrowOnError extends boolean = false>(options: Options
 /**
  * Upload Client Import Route
  *
- * The file is the raw request body (SPEC-008 D3); refused before it is read while the
- * route is a stub.
+ * The file is the raw request body (SPEC-008 D3), refused before it is read without the
+ * action; 422 `import_file_invalid` (`facts.reason`) for a file the import can't read.
  */
 export const uploadClientImport = <ThrowOnError extends boolean = false>(options: Options<UploadClientImportData, ThrowOnError>): RequestResult<UploadClientImportResponses, UploadClientImportErrors, ThrowOnError> => (options.client ?? client).post<UploadClientImportResponses, UploadClientImportErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -699,7 +699,7 @@ export const clientImportRows = <ThrowOnError extends boolean = false>(options: 
  * Decide Import Row Route
  *
  * A person's decision on a row (never a merge below 90% without one); 409
- * `import_already_run`. TINs masked for an offshore reader (AC9.4).
+ * `import_already_run`; 422 `import_row_invalid`. TINs masked for an offshore reader (AC9.4).
  */
 export const decideImportRow = <ThrowOnError extends boolean = false>(options: Options<DecideImportRowData, ThrowOnError>): RequestResult<DecideImportRowResponses, DecideImportRowErrors, ThrowOnError> => (options.client ?? client).put<DecideImportRowResponses, DecideImportRowErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -714,8 +714,8 @@ export const decideImportRow = <ThrowOnError extends boolean = false>(options: O
 /**
  * Run Client Import Route
  *
- * Starts `ClientImportWorkflow` (P-07-T52); every row applied idempotently; a replayed key
- * answers the same; 409 `import_already_run`.
+ * Starts `ClientImportWorkflow`; every row applied idempotently; a replayed key answers the
+ * same; 409 `import_already_run`.
  */
 export const runClientImport = <ThrowOnError extends boolean = false>(options: Options<RunClientImportData, ThrowOnError>): RequestResult<RunClientImportResponses, RunClientImportErrors, ThrowOnError> => (options.client ?? client).post<RunClientImportResponses, RunClientImportErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

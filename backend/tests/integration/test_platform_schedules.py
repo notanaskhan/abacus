@@ -33,6 +33,7 @@ IDS = (
     "audit_labels:platform",  # G-02-T10 (DEC-453): the label index, every 60 seconds
     "audit_partitions:platform",  # Q-02-T20: access_events partitions, every 30 days
     "auth_session_purge:platform",  # G-02-T14: staff sessions ended over a year ago, daily
+    "client_import_erase:platform",  # P-07-T52: bulk import files erased after 30 days, daily
     "export_expiry:platform",  # A-01-T22: the daily engagement export expiry sweep
     "incident_reminders:platform",  # G-02-T18: FTC clock reminders, every 6 hours
     "notification_purge:platform",
@@ -46,6 +47,7 @@ BACKGROUND = (
     "audit_labels:platform",
     "audit_partitions:platform",
     "auth_session_purge:platform",
+    "client_import_erase:platform",
     "export_expiry:platform",
     "incident_reminders:platform",
     "notification_purge:platform",
@@ -115,6 +117,8 @@ async def test_ensure_creates_one_schedule_per_job_and_converges_on_a_rerun(
     assert facts["audit_labels:platform"]["every_seconds"] == (60,)
     assert facts["auth_session_purge:platform"]["workflow_type"] == "AuthSessionPurge"
     assert facts["auth_session_purge:platform"]["every_seconds"] == (86400,)
+    assert facts["client_import_erase:platform"]["workflow_type"] == "ClientImportErase"
+    assert facts["client_import_erase:platform"]["every_seconds"] == (86400,)
     assert facts["export_expiry:platform"]["workflow_type"] == "ExportExpirySweep"
     assert facts["export_expiry:platform"]["every_seconds"] == (86400,)
     assert facts["incident_reminders:platform"]["workflow_type"] == "IncidentClockReminders"
