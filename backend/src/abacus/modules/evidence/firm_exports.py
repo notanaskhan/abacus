@@ -37,7 +37,7 @@ from datetime import datetime, timedelta
 from typing import Final
 from uuid import UUID, uuid4
 
-from sqlalchemy import insert, select, text, update
+from sqlalchemy import func, insert, select, text, update
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -409,17 +409,21 @@ async def issue_link(ctx: AuthContext, export_id: UUID) -> FirmExportLinkView:
                     "retry_after": max(1, math.ceil(LINK_WINDOW_SECONDS - elapsed)),
                 }
             )
-        expires_at = min(system_now() + LINK_LIFETIME, available_until)
-        await tx.session.execute(
-            insert(FirmExportLink).values(
+        # The link's 15 minutes run on the database's clock, as its CHECK and its use do.
+        expires_at = await tx.session.scalar(
+            insert(FirmExportLink)
+            .values(
                 id=link_id,
                 tenant_id=ctx.tenant_id,
                 export_id=row.id,
                 user_id=ctx.user_id,
-                expires_at=expires_at,
+                expires_at=func.least(func.clock_timestamp() + LINK_LIFETIME, available_until),
                 mfa_at=ctx.mfa_at,
             )
+            .returning(FirmExportLink.expires_at)
         )
+        if expires_at is None:  # RETURNING always answers; fail closed regardless
+            raise ExportNotReady
         if row.status == "ready":
             await tx.session.execute(
                 update(FirmExport)
@@ -448,6 +452,7 @@ async def prepare(
     async with tenant_session(ctx.tenant) as session:
         link = await session.get(FirmExportLink, link_id)
         row = await session.get(FirmExport, export_id, populate_existing=True)
+        db_now = await session.scalar(select(func.clock_timestamp()))
     if (
         link is None
         or row is None
@@ -460,7 +465,7 @@ async def prepare(
         row.status in LINKABLE and past_window(row.available_until, await clock.now(ctx.tenant))
     ):
         raise ExportExpired
-    if system_now() >= link.expires_at:
+    if db_now is None or db_now >= link.expires_at:  # the database's clock, as at issue
         raise LinkExpired
     if row.status not in LINKABLE:
         raise ExportNotReady

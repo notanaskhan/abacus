@@ -36,6 +36,7 @@ from abacus.kernel.storage import s3_client
 from abacus.kernel.uow import OutboxEvent
 from abacus.modules.evidence import (
     export_storage,
+    exports,
     firm_export_activities,
     firm_export_contract,
     firm_exports,
@@ -288,11 +289,11 @@ async def test_the_approver_must_be_a_security_admin_or_partner(firm: Firm) -> N
 
 async def test_a_stale_second_factor_is_refused_with_mfa_required(firm: Firm) -> None:
     stale = replace(admin_ctx(firm), mfa_at=datetime.now(UTC) - timedelta(hours=1))
-    with pytest.raises(Forbidden) as refused:
+    with pytest.raises(exports.ExportNeedsMfa) as refused:
         await firm_exports.request(
             stale, firm.partner.user_id, idempotency_key=f"key-{uuid.uuid4().hex}"
         )
-    assert getattr(refused.value, "facts", {}).get("reason") == "mfa_required"
+    assert refused.value.facts == {"reason": "mfa_required"}
 
 
 async def test_a_retried_key_returns_the_same_export(firm: Firm) -> None:
@@ -375,21 +376,53 @@ async def test_links_are_the_requesters_and_the_approvers_only(firm: Firm) -> No
         await firm_exports.issue_link(ctx_of(firm.other_admin, "security_admin"), row.id)
     link = await firm_exports.issue_link(admin_ctx(firm), row.id)
     assert link.url == f"/v1/firm/data-exports/{row.id}/links/{_link_id(link.url)}"
-    assert link.expires_at <= datetime.now(UTC) + timedelta(minutes=15)
+    assert row.available_until is not None and link.expires_at <= row.available_until
+    # The database refuses a link longer than 15 minutes.
+    with pytest.raises(asyncpg.CheckViolationError):
+        await firm.seed.as_actor(
+            firm.tenant,
+            ("human", str(firm.admin.user_id)),
+            "INSERT INTO firm_export_links (id, tenant_id, export_id, user_id, expires_at, "
+            "mfa_at) VALUES ($1, $2, $3, $4, clock_timestamp() + interval '16 minutes', now())",
+            uuid.uuid4(),
+            firm.tenant,
+            row.id,
+            firm.admin.user_id,
+        )
+    # Nor a link for a person who is not the requester or approver.
+    with pytest.raises(asyncpg.InsufficientPrivilegeError):
+        await firm.seed.as_actor(
+            firm.tenant,
+            ("human", str(firm.other_admin.user_id)),
+            "INSERT INTO firm_export_links (id, tenant_id, export_id, user_id, expires_at, "
+            "mfa_at) VALUES ($1, $2, $3, $4, clock_timestamp() + interval '5 minutes', now())",
+            uuid.uuid4(),
+            firm.tenant,
+            row.id,
+            firm.other_admin.user_id,
+        )
     # The approver can't open the requester's link: a link opens for its own person only.
     with pytest.raises(NotFound):
         await firm_exports.prepare(partner_ctx(firm), row.id, _link_id(link.url), None, None)
 
 
-async def test_a_link_answers_410_after_its_15_minutes(
-    firm: Firm, monkeypatch: pytest.MonkeyPatch
-) -> None:
+async def test_a_link_answers_410_after_its_15_minutes(firm: Firm) -> None:
     row = await _ready(firm)
-    link = await firm_exports.issue_link(admin_ctx(firm), row.id)
-    later = datetime.now(UTC) + timedelta(minutes=16)
-    monkeypatch.setattr(firm_exports, "system_now", lambda: later)
+    # A link issued 20 minutes ago (the superuser writes `issued_at`; the triggers still run).
+    link_id = uuid.uuid4()
+    await firm.seed.as_actor(
+        firm.tenant,
+        ("human", str(firm.admin.user_id)),
+        "INSERT INTO firm_export_links (id, tenant_id, export_id, user_id, issued_at, "
+        "expires_at, mfa_at) VALUES ($1, $2, $3, $4, clock_timestamp() - interval '20 minutes', "
+        "clock_timestamp() - interval '5 minutes', now())",
+        link_id,
+        firm.tenant,
+        row.id,
+        firm.admin.user_id,
+    )
     gone = await firm_export_contract.firm_export_archive_route(
-        row.id, _link_id(link.url), admin_ctx(firm), range_header=None, if_range=None
+        row.id, link_id, admin_ctx(firm), range_header=None, if_range=None
     )
     assert isinstance(gone, JSONResponse) and gone.status_code == 410
     assert json.loads(bytes(gone.body)) == {"detail": "link_expired"}
