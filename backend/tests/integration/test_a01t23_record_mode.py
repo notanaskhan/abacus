@@ -27,7 +27,9 @@ from abacus.kernel.uow import Ref, Target, uow
 
 # The app imports `assurance.api` at startup, which registers the G8 and G9 providers the phase
 # move computes; run on its own, this file must import it too (the gates read unmet otherwise).
-from abacus.modules.assurance import api as _assurance_api  # noqa: F401  # pyright: ignore[reportUnusedImport]
+from abacus.modules.assurance import (
+    api as _assurance_api,  # noqa: F401  # pyright: ignore[reportUnusedImport]
+)
 from abacus.modules.assurance import archive_gate, phase, release
 from abacus.modules.assurance.record_auth import RecordNeedsMfa
 from abacus.modules.engagements.api import gate_fact
