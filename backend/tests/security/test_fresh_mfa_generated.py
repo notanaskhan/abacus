@@ -53,6 +53,9 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("security.manage", "access_control", "security_admin"),
     ("session.end", "access_control", "security_admin"),
     ("staff.unlock", "access_control", "firm_admin"),
+    ("sign_off.bulk", "sign_off", "engagement_partner"),
+    ("sign_off.create", "sign_off", "engagement_partner"),
+    ("decision.decide", "sign_off", "engagement_partner"),
 )
 ROUTES: tuple[tuple[str, str, str], ...] = (
     (
@@ -71,6 +74,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/clients/{client_id}/contacts/{contact_id}/mfa-reset", "contact.mfa_reset"),
     ("POST", "/v1/clients/{client_id}/contacts/{contact_id}/portal-unlock", "contact.unlock"),
     ("POST", "/v1/contacts/{contact_id}/unlock", "contact.unlock"),
+    ("POST", "/v1/decision-cards/{card_id}/decide", "decision.decide"),
     ("POST", "/v1/engagements/{engagement_id}/acceptance/decision", "acceptance.decide"),
     ("POST", "/v1/engagements/{engagement_id}/acceptance/file", "acceptance.record"),
     (
@@ -84,6 +88,10 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/exports/{export_id}/undo", "export.create"),
     ("POST", "/v1/firm/agents/pause", "firm_agents.pause"),
     ("POST", "/v1/firm/agents/resume", "firm_agents.pause"),
+    ("POST", "/v1/firm/ai-policy/versions", "ai_policy.publish"),
+    ("POST", "/v1/firm/ai-policy/versions/{version_no}/approve", "ai_policy.approve"),
+    ("POST", "/v1/firm/ai-policy/versions/{version_no}/decline", "ai_policy.approve"),
+    ("POST", "/v1/firm/ai-policy/versions/{version_no}/withdraw", "ai_policy.publish"),
     ("POST", "/v1/firm/data-exports", "firm_export.request"),
     ("POST", "/v1/firm/data-exports/schedule/approve", "firm_export.approve"),
     ("POST", "/v1/firm/data-exports/{export_id}/approve", "firm_export.approve"),
@@ -95,6 +103,8 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/firm/staff/{user_id}/unlock", "staff.unlock"),
     ("POST", "/v1/legal-holds", "legal_hold.place"),
     ("POST", "/v1/legal-holds/{hold_id}/release", "legal_hold.lift"),
+    ("POST", "/v1/sign-offs", "sign_off.create"),
+    ("POST", "/v1/sign-offs:bulk", "sign_off.bulk"),
     ("POST", "/v1/walls", "wall.create"),
     ("POST", "/v1/walls/{wall_id}/approve", "wall.approve"),
     ("POST", "/v1/walls/{wall_id}/remove", "wall.remove"),

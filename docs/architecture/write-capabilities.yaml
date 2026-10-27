@@ -1,0 +1,41 @@
+# The write-capability registry (ADR-150, P-17, DEC-46; A-02-T15; C20 v1). PROTECTED: a policy
+# file changed deliberately, in the same change as the code that needs it, never by an agent on
+# its own initiative (docs/architecture/protected-paths.md).
+#
+# Compiled by `python -m abacus_tools.codegen.write_capabilities` into
+# backend/src/abacus/modules/integrations/_capabilities.py (generated: never hand-edited;
+# `make check-generated` fails on drift). The schema is
+# `abacus.modules.integrations.ports.WriteCapabilityRegistry`.
+#
+# - `read_connectors`: every adapter that reaches outside the platform, with the only hosts it may
+#   reach (Q-01's DNS Firewall allowlist is exported from here: `--egress`). Connectors only read
+#   (ADR-040): there is no write scope.
+# - `writes`: reserved writes. v1 enables none: `enabled` is `false` by type, and every
+#   `execute_write` call is refused `write_capability_refused` and audited. Enabling one needs
+#   the decision it names (a plan P-nn or a repo ADR) accepted as an ADR, and a later schema
+#   version; an entry without a decision does not compile. W1 (posting) is refused for an
+#   attest client at registry level whatever this file says (I-POLICY-NOT-ATTEST).
+#
+# Connectors that exist only as fakes (synthetic environments) reach no host and are not listed.
+# The first live ledger read (A-02-T26, DEC-70: QuickBooks Online) adds its entry and hosts.
+version: 1
+read_connectors: []
+writes:
+  - key: ledger_post_journal_entries
+    adapter_key: quickbooks_online
+    shape: W1
+    owner_epic: C-02
+    decision: P-16
+    enabled: false
+  - key: tax_engine_file_bridge
+    adapter_key: cch_file_bridge
+    shape: W2
+    owner_epic: T-01
+    decision: P-18
+    enabled: false
+  - key: esignature_envelope_send
+    adapter_key: docusign
+    shape: W7
+    owner_epic: N-02
+    decision: ADR-149
+    enabled: false

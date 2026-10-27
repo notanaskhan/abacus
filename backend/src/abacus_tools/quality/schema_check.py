@@ -82,7 +82,6 @@ NON_TENANT_TABLES = frozenset(
 # Insert-only tables outside the modules (ADR-004); each module lists its own in registry.py.
 _PLATFORM_INSERT_ONLY: frozenset[str] = frozenset(
     {"audit_events", "eval_case_results", "outbox", "usage_records"}
-    | {"idempotency_keys"}  # P-06-T06
     | {"access_events"}  # Q-02-T20
     | {"audit_checkpoints", "audit_anchors"}  # Q-02-T21
 )
@@ -102,6 +101,7 @@ _PLATFORM_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "idempotency_keys": frozenset(  # P-06-T06 (migration 0099)
         {"tenant_id", "actor_id", "route", "key", "request_sha256", "status_code", "response"}
+        | {"claim_id"}  # 0214 (DEC-507)
     ),
     "usage_records": frozenset(
         {"id", "tenant_id", "engagement_id", "agent_id", "agent_run_id", "prompt_id"}
@@ -141,6 +141,8 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "checkpoint_diffs": "review_rows_immutable",  # 0094 (P-04-T04)
     "checkpoint_decisions": "review_rows_immutable",  # 0094 (P-04-T04)
     "issue_events": "review_rows_immutable",  # 0094 (P-04-T04)
+    "decision_card_versions": "review_rows_immutable",  # 0211 (P-04-T23)
+    "decision_analysis_requests": "review_rows_immutable",  # 0211 (P-04-T23)
     "suggestion_decisions": "agent_decisions_immutable",  # 0095 (P-04-T05)
     "proposal_rows": "agent_decisions_immutable",  # 0095 (P-04-T05)
     "proposal_decisions": "agent_decisions_immutable",  # 0095 (P-04-T05)
@@ -164,6 +166,10 @@ _PLATFORM_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     # SPEC-007 AC-7: a firm admin replaces the firm's budget (upsert).
     "budgets": frozenset({"monthly_soft_usd", "monthly_hard_usd", "updated_by", "updated_at"}),
     "feature_flag_states": frozenset({"value", "set_by", "reason", "set_at"}),  # SPEC-011
+    # P-04-T22 re-review (0214, DEC-507): a key is claimed pending, filled, or released.
+    "idempotency_keys": frozenset(
+        {"request_sha256", "status_code", "response", "created_at", "expires_at", "claim_id"}
+    ),
 }
 # Tables owned outside the modules (ADR-103): migrations, kernel packages, the AI gateway and
 # evaluation tooling. Module tables come from each module's registry.py (P-39; F-03-T07).
@@ -274,6 +280,10 @@ DEFINER_FUNCTIONS = frozenset(
     # 0101 (P-01-T09, ADR-165): the staff session BFF's sign-in state and sessions.
     | {"auth_state_put", "auth_state_take", "auth_session_start", "auth_session_rotate"}
     | {"auth_session_set_refresh", "auth_session_revoke", "auth_session_end"}
+    # 0220 (G-02-T14): the BFF's per-firm limits and sign-outs, ADM-06's sessions and sign-in
+    # facts in the session's firm only, and the one-year purge.
+    | {"security_sessions", "security_session_member", "security_sign_in_methods"}
+    | {"auth_session_refused_here", "auth_session_owner", "auth_session_purge"}
     | {"access_events_partition"}  # 0105 (Q-02-T20): next month's partition, ahead of time
     # 0107 (Q-01-T45): the provisioning workflow's writers, and operators' plan contents.
     | {"apply_plan_entitlements", "invite_first_admin", "set_plan_module"}

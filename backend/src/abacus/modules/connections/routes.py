@@ -16,13 +16,13 @@ from abacus.modules.connections.connect import (
     ConnectionView,
     access_log,
     check,
-    complete,
     connection_of,
     providers,
     revoke,
     start,
 )
 from abacus.modules.connections.connector import Period
+from abacus.modules.connections.entity import complete_any
 from abacus.modules.connections.gl_formats import GL_FORMATS
 from abacus.modules.connections.gl_import import (
     GlImportView,
@@ -212,8 +212,11 @@ async def start_route(engagement_id: UUID, body: StartIn, ctx: Ctx) -> StartOut:
     errors=(409,),
 )
 async def complete_route(body: CompleteIn, ctx: Ctx) -> CompleteOut:
-    """SPEC-020 AC-2 (TASK-036 D1): the SPA hands back the provider's state and code."""
-    return CompleteOut(engagement_id=await complete(ctx, body.state, body.code))
+    """SPEC-020 AC-2 (TASK-036 D1): the SPA hands back the provider's state and code. A-02-T16:
+    a state POR-16 started finishes as an entity-scoped connection (or a reconnect)."""
+    done = await complete_any(ctx, body.state, body.code)
+    # The portal returns to Connections and reads the cards again (A-02-T28).
+    return CompleteOut(engagement_id=done.engagement_id)
 
 
 @connection_router.get("", action="connection.read_log", response_model=ConnectionOut | None)

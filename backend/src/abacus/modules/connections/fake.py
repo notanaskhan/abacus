@@ -60,17 +60,24 @@ class FakeConnector(Connector):
             attachments=False,
         )
 
-    async def authorise_url(self, state: str, redirect_uri: str) -> str:
+    async def authorise_url(
+        self, state: str, redirect_uri: str, *, code_challenge: str | None = None
+    ) -> str:
         # No URL library here (CONN-001): the state is URL-safe by construction
         # (`secrets.token_urlsafe`), and anything else is refused rather than escaped.
         if not state.replace("-", "").replace("_", "").isalnum():
             raise ConnectorError("invalid_state")
         return f"{redirect_uri}?state={state}&code={DEMO_CODE}"
 
-    async def exchange_code(self, code: str, redirect_uri: str) -> Credentials | None:
+    async def exchange_code(
+        self, code: str, redirect_uri: str, *, code_verifier: str | None = None
+    ) -> Credentials | None:
         if code != DEMO_CODE:
             raise ConnectorError("access_denied")
         return DEMO_CREDENTIALS
+
+    async def revoke(self) -> None:
+        return None  # the demo grant ends with its sealed copy
 
     async def refresh(self) -> None:
         return None  # nothing to refresh: no credentials

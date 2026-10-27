@@ -129,13 +129,27 @@ def _ctx() -> AuthContext:
 
 # Live with the flag on (no longer 501): P-04-T16 serves the human gates from the projection
 # (tests/integration/backfill/test_p04t16_human_gate_projector.py); P-04-T18 the ladder,
-# eligibility and sign-off (tests/integration/test_p04t18_sign_off_service.py).
+# eligibility and sign-off (tests/integration/test_p04t18_sign_off_service.py); P-04-T21 the
+# notes, T22 bulk sign-off and T23 decision cards (tests/integration/test_p04t2[123]_*.py).
 LIVE = frozenset(
     {
         "human_gate_list_route",
         "sign_off_ladder_route",
         "sign_off_eligibility_route",
         "sign_off_route",
+        "sign_off_bulk_route",
+        "review_note_list_route",
+        "review_note_route",
+        "review_note_raise_route",
+        "review_note_respond_route",
+        "review_note_clear_route",
+        "review_note_withdraw_route",
+        "decision_card_list_route",
+        "decision_card_route",
+        "decision_card_decide_route",
+        "decision_card_analysis_request_route",
+        "decision_card_notify_route",
+        "decision_card_reassess_route",
     }
 )
 

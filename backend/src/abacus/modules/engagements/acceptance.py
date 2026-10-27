@@ -46,6 +46,7 @@ from abacus.modules.engagements.acceptance_tables import (
     template_versions,
     templates,
 )
+from abacus.modules.engagements.events import AcceptanceReviewRequested
 from abacus.modules.engagements.models import Engagement
 from abacus.modules.engagements.record import GateMet
 from abacus.modules.engagements.service import EngagementRef, get_ref, lock_ref
@@ -958,6 +959,14 @@ async def request_risk_review(
             "acceptance.review_requested",
             target=Target("engagement", engagement_id),
             after=Ref(user_id=partner_id),
+        )
+        tx.emit(  # P-07-T47: the named partner is told (`risk_partner_review_requested`)
+            AcceptanceReviewRequested(
+                engagement_id=engagement_id,
+                record_id=record["id"],
+                partner_id=partner_id,
+                by_user=ctx.user_id,
+            )
         )
     async with tenant_session(ctx.tenant) as session:
         found = await _review(session, cast(UUID, record["id"]))

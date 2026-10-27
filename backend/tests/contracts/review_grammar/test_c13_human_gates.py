@@ -48,6 +48,15 @@ EVENTS: Final = {
     "inbox_file.sorted",
     "evidence_version.withdrawn",
     "fulfilment.voided",
+    # P-07-T47 (DEC-539): acceptance, independence and EQR gates.
+    "acceptance.sent_to_partner",
+    "acceptance.decided",
+    "independence.requested",
+    "independence.confirmed",
+    "independence.declined",
+    "independence.concluded",
+    "engagement_member.added",
+    "eqr.eligibility_approved",
 }
 # Contract §2: firm admin, practice leader (in scope), quality partner, engagement partner,
 # manager, senior, staff, reviewer, EQR reviewer.
@@ -140,7 +149,12 @@ def test_c13_only_firm_people_read_what_waits_on_them() -> None:
 
 # P-04-T19 (DEC-402): review's other consumer, the stale sign-off detector, on the owners'
 # change events. No event is in both sets, so every C13 event still reaches the projector.
-STALE_EVENTS: Final = {"trial_balance.version_created", "workpaper.content_changed"}
+# A-02-T17 (SPEC-333 AC-13): a changed tie-out check also makes its trial balance sign-off stale.
+STALE_EVENTS: Final = {
+    "trial_balance.version_created",
+    "tie_out_check.changed",
+    "workpaper.content_changed",
+}
 
 
 def test_c13_the_event_set_is_fixed() -> None:

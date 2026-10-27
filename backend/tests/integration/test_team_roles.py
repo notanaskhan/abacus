@@ -319,7 +319,16 @@ async def test_confirmation_requests_go_to_open_confirmations_only(firm: _Firm) 
             "AND event_type = 'independence.requested'",
             firm.tenant,
         )
-        == 2  # on joining, and the reminder
+        == 1  # on joining
+    )
+    # P-07-T47 (DEC-540): the reminder is its own event and kind (`independence_reminder`).
+    assert (
+        await firm.count(
+            "SELECT count(*) FROM outbox WHERE tenant_id = $1 "
+            "AND event_type = 'independence.reminded'",
+            firm.tenant,
+        )
+        == 1
     )
     with pytest.raises(DomainInvalid):  # Margaret was never asked (seeded directly)
         await team_model.remind_independence(firm.ctx(firm.hannah), firm.py2025, [firm.margaret])

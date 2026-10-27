@@ -76,6 +76,15 @@ C13_EVENTS: Final = frozenset(
         "inbox_file.sorted",  # evidence: an inbox file assigned or discarded
         "evidence_version.withdrawn",  # evidence: nothing derived from it waits on anyone
         "fulfilment.voided",  # evidence: a voided rule link's version, likewise (R-01 Story 2.2)
+        # P-07-T47 (engagements): acceptance, independence and EQR gates (DEC-539).
+        "acceptance.sent_to_partner",
+        "acceptance.decided",
+        "independence.requested",
+        "independence.confirmed",
+        "independence.declined",
+        "independence.concluded",
+        "engagement_member.added",
+        "eqr.eligibility_approved",
     }
 )
 READ: Final = "human_gate.read"
@@ -107,6 +116,9 @@ class GateSource:
     read_action: str
     events: frozenset[str]
     open_for: OpenFor
+    # P-07-T47 (security review M3, DEC-544): a source whose gates are only ever the named
+    # assignee's; an unassigned row of it is shown to nobody (need to know). Read filter only.
+    assigned_only: bool = False
 
 
 _SOURCES: dict[str, GateSource] = {}
@@ -345,6 +357,7 @@ def _sources_visible(ctx: AuthContext) -> ColumnElement[bool]:
         and_(
             HumanGate.subject_ref["type"].astext == source.subject_type,
             visible(ctx, source.read_action, _engagement()),
+            *([HumanGate.assignee_user_id == ctx.user_id] if source.assigned_only else []),
         )
         for source in gate_sources()
     ]

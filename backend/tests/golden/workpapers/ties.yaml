@@ -1,0 +1,74 @@
+# A-02-T17 (TASK-1417; SPEC-333 AC-10, AC-11; A-02 AC-3.1, AC-3.2): the tie engine's goldens, by
+# exact Decimal. Every amount is quoted text, read as Decimal; a float never appears. The trial
+# balance is Northwind PY2025 from `../ledger/tb_layers.yaml` (case `northwind-py2025`, current and
+# prior lines), so the two goldens cannot drift apart. Expected figures are transcribed from
+# A-02 §3.3 and the AUD-06 handoff (state a: tie · tie · tie; state c: BrokerWindow EOY
+# 1,606,560.00, "off 1,560.00"), never from the code.
+golden: workpapers/ties
+trial_balance: northwind-py2025
+assets: ["1110", "1120", "1130", "1140", "1150", "1160", "1200", "1300"]
+checks:
+  - check: net-assets-trust-report
+    label: Net assets ↔ trust report
+    kind: tie
+    accounts: assets
+    column: eoy
+    negate: false
+    expected: "16812400.00"
+    cited: true
+  - check: boy-py2024-audited-fs
+    label: BOY ↔ PY2024 audited FS
+    kind: tie
+    accounts: assets
+    column: boy
+    negate: false
+    expected: "14228500.00"
+    cited: true
+  - check: loan-rollforward
+    label: Loan rollforward
+    kind: rollforward
+    accounts: ["1300"]
+    column: eoy
+    negate: false
+    components:
+      - ["Beginning balance", 1, "288500.00"]
+      - ["New loans", 1, "96200.00"]
+      - ["Repayments", -1, "57450.00"]
+      - ["Defaulted loans", -1, "14850.00"]
+    cited: true
+  - check: balanced
+    label: Debits equal credits
+    kind: balanced
+    column: eoy
+    cited: false
+cases:
+  - id: aud06a
+    source: AUD-06 state a; A-02 AC-3.1 (three ties, the rollforward tooltip)
+    changes: {}
+    expected:
+      net-assets-trust-report: {status: tie, actual: "16812400.00", difference: "0.00"}
+      boy-py2024-audited-fs: {status: tie, actual: "14228500.00", difference: "0.00"}
+      loan-rollforward:
+        status: tie
+        actual: "312400.00"
+        expected: "312400.00"
+        formula: "288,500.00 + 96,200.00 − 57,450.00 − 14,850.00 = 312,400.00"
+      balanced: {status: tie, actual: "17663450.00", expected: "17663450.00"}
+  - id: aud06c-brokerwindow
+    source: >-
+      AUD-06 state c; A-02 AC-3.2: BrokerWindow EOY pulled at 1,606,560.00; the pull stays
+      balanced because the 1,560.00 sits in net appreciation (DEC-342)
+    changes:
+      # [code, debit, credit] replacing the current line's amounts
+      "1200": ["1606560.00", "0.00"]
+      "4200": ["0.00", "1757550.00"]
+    expected:
+      net-assets-trust-report:
+        status: "off"
+        actual: "16813960.00"
+        expected: "16812400.00"
+        difference: "1560.00"
+        display: "off 1,560.00"
+      boy-py2024-audited-fs: {status: tie, difference: "0.00"}
+      loan-rollforward: {status: tie}
+      balanced: {status: tie, actual: "17665010.00", expected: "17665010.00"}
