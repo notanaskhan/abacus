@@ -164,6 +164,8 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "engagement_export_contents": "engagement_export_rows_immutable",  # 0191 (TASK-1334)
     "firm_export_links": "firm_export_links_immutable",  # 0216 (TASK-1403)
     "firm_export_downloads": "firm_export_links_immutable",  # 0216 (TASK-1403)
+    "assurance_external_releases": "assurance_external_records_immutable",  # 0226 (TASK-1443)
+    "assurance_external_archives": "assurance_external_records_immutable",  # 0226 (TASK-1443)
 }
 # Update columns for tables outside the modules (TASK-008); modules declare theirs.
 _PLATFORM_UPDATE_COLUMNS: dict[str, frozenset[str]] = {

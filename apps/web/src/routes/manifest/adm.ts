@@ -6,10 +6,10 @@ import type { Manifest } from "./types";
 export const admScreens = {
   "ADM-01": {
     name: "Settings home · firm profile",
-    status: "fixture", // G-01-T07: live behind firm_settings.v2 once walked on staging
+    status: "fixture", // G-01-T07; live once walked on staging (`firm_settings.v2` retired, G-01-T17)
     path: "/settings/general",
   },
-  // G-01-T10 built a–g on fixtures at /settings/people behind `firm_settings.v2`. It stays planned
+  // G-01-T10 built a–g on fixtures at /settings/people (unflagged since G-01-T17). It stays planned
   // for the reason CLI-02 does (cli.ts, DEC-195): ADM-01 → ADM-02 is wired in routes/firm
   // (settings.tsx), since `to` carries the manifest's names, which the production dist must not hold.
   "ADM-02": {
@@ -17,7 +17,7 @@ export const admScreens = {
     status: "planned",
     path: "/settings/people",
   },
-  // G-01-T14: built behind `firm_settings.v2`; planned until walked on staging, as ADM-02 is
+  // G-01-T14: built (unflagged since G-01-T17); planned until walked on staging, as ADM-02 is
   // (DEC-195): ADM-01 → ADM-03 is wired in routes/firm (settings.tsx).
   "ADM-03": {
     name: "Offices, teams, walls & offshore",

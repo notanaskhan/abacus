@@ -150,9 +150,11 @@ from abacus_tools.flags import set_flag
 from abacus_tools.local.db_guard import violations
 from abacus_tools.synthetic.scenarios.brightwater_hale.acceptance import (
     CONTACTS,
-    DRAFTS,
     THORNBURY_ANSWERS,
     THORNBURY_FLAGS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.acceptance import (
+    DRAFTS as ACCEPTANCE_DRAFTS,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.acceptance import (
     NEEDS as ACCEPTANCE_NEEDS,
@@ -208,6 +210,15 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.firm_people import (
     Template,
     access_ends_of,
 )
+from abacus_tools.synthetic.scenarios.brightwater_hale.intake import (
+    DRAFTS as INTAKE_DRAFTS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.intake import (
+    MERIDIAN_ANSWERS,
+    MERIDIAN_FLAGS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.intake import NEEDS as INTAKE_NEEDS
+from abacus_tools.synthetic.scenarios.brightwater_hale.intake import SLICE as INTAKE_SLICE
 from abacus_tools.synthetic.scenarios.brightwater_hale.people import (
     FIRM_ROLES,
     SEATS,
@@ -314,6 +325,13 @@ def tenant_of(event: Event) -> UUID:
 
 _SEATS: Final = {s.initials: s for s in SEATS}
 _CLIENTS: Final = {c.name: c for c in build_clients()}
+# The scenario drafts by key: wave 2's (acceptance) and wave 3's (intake, P-07-T50).
+DRAFTS: Final = {**ACCEPTANCE_DRAFTS, **INTAKE_DRAFTS}
+# A prepared acceptance record's answers and human-authored flags, by draft.
+PREPARED: Final = {
+    "thornbury": (THORNBURY_ANSWERS, THORNBURY_FLAGS),
+    "meridian": (MERIDIAN_ANSWERS, MERIDIAN_FLAGS),
+}
 
 
 @contextmanager
@@ -1237,6 +1255,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     PORTAL_SLICE: PORTAL_NEEDS,
     COMPLIANCE_SLICE: COMPLIANCE_NEEDS,
     ACCEPTANCE_SLICE: ACCEPTANCE_NEEDS,
+    INTAKE_SLICE: INTAKE_NEEDS,  # P-07-T50: wave 3 (drafts, the open Harborline hit, Meridian)
     EMAIL_TEMPLATES_SLICE: (),  # R-01-T22: Grace's firm admin role is audit_core's
 }
 
@@ -1424,9 +1443,11 @@ CLIENT_KINDS: Final[dict[str, ClientKind]] = {
 _AUDIT_ENTITIES: Final = frozenset(a.entity for a in AUDITS if a.entity is not None)
 
 
-async def _client_created(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
-    """Through `organisations.api` under the relationship partner, as a person would."""
-    client: Client = _CLIENTS[str(event.client)]
+async def _client_created(_: asyncpg.Connection, scenario: Scenario, event: Event) -> None:
+    """Through `organisations.api` under the relationship partner, as a person would. A client a
+    holdout keeps in an earlier form (P-07-T50) is the scenario's, not the full roster's."""
+    kept = {c.name: c for c in scenario.clients}
+    client: Client = kept.get(str(event.client)) or _CLIENTS[str(event.client)]
     kind, actor = _actor(event)
     # F-04-T31: the ids the fixtures use (`client:<slug>` and `entityIdOf` in the TS seed), so the
     # exported fixtures and the TS seed name the same client.
@@ -1859,7 +1880,7 @@ async def _draft_created(conn: asyncpg.Connection, _: Scenario, event: Event) ->
         client_id=client,
         client_entity_id=entity,
         type_code=str(payload["type_code"]),
-        step="team_independence",
+        step=str(payload.get("step", "team_independence")),  # P-07-T50: ENG-03 a, d at step 1
         payload=body,
     )
 
@@ -1879,6 +1900,8 @@ async def _conflict_check_run(conn: asyncpg.Connection, _: Scenario, event: Even
         subject_id=subject,
         names=names,
     )
+    if data["clear"] is None:  # P-07-T50: CLI-06 h's hit, left for a person's assessment
+        return
     cleared = str(data["clear"])
     for result in check.results:
         if result.redacted or result.matched_name is None:
@@ -1903,11 +1926,13 @@ async def _prospect(conn: asyncpg.Connection, event: Event) -> UUID:
 
 async def _acceptance_prepared(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     """CLI-07b: the preparer's answers, risk rating and three flags (sources wait for the intake
-    documents; the fee section is answered, not a manual check: DEC-412)."""
+    documents; the fee section is answered, not a manual check: DEC-412); CLI-07 f's for Meridian
+    (P-07-T50)."""
     ctx = await _staff_context(conn, event)
     engagement = await _prospect(conn, event)
     rating = str(event.data["risk_rating"])
-    for n, (section, summary) in enumerate(THORNBURY_ANSWERS):
+    answers, flags = PREPARED[str(event.data["draft"])]
+    for n, (section, summary) in enumerate(answers):
         await update_answers(
             ctx,
             engagement,
@@ -1917,7 +1942,7 @@ async def _acceptance_prepared(conn: asyncpg.Connection, _: Scenario, event: Eve
             complete=True,
             risk_rating=rating if n == 0 else None,
         )
-    for severity, title, body in THORNBURY_FLAGS:
+    for severity, title, body in flags:
         await add_flag(ctx, engagement, severity=severity, title=title, body=body, sources=())
 
 

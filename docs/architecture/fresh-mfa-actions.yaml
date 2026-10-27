@@ -100,3 +100,8 @@ actions:
     group: sign_off
   - action: decision.decide
     group: sign_off
+  # Record-mode release and archive (A-01-T23; DEC-83: release and archive carry fresh MFA)
+  - action: assurance.record_release
+    group: release
+  - action: assurance.record_archive
+    group: release

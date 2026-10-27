@@ -2,10 +2,10 @@
 // as a seasonal preparer, walls her from Ashford Manufacturing Co., Margaret Okonkwo approves, a
 // wall on the client's own relationship partner is refused, and the wall log names both people;
 // then, as Lena, the walled client is gone (INV-3). Each step runs on the harness (axe and INV-1 to
-// INV-5 after it). ADM-02 and ADM-03 sit behind `firm_settings.v2`, which E0 leaves off, so in
-// fixture mode a step opens the real route on the screen's own scenario (`?screen=&st=`, DEC-457);
-// the full stack walks them once E0 turns the flag on and the nightly loads the people slice
-// (G-01-T17), and staging and the canary after the batch deploy (G-01-T19).
+// INV-5 after it). In fixture mode a step opens the real route on the screen's own scenario
+// (`?screen=&st=`, DEC-457); the full stack walks them once the nightly loads the people slice,
+// and staging and the canary after the batch deploy (G-01-T19). `firm_settings.v2` is retired
+// (G-01-T17, DEC-594).
 import { DEMO_INSTANT, expect, test } from "../harness";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -31,11 +31,8 @@ test.describe("J14 firm administration", () => {
       hosted && HOSTED_URL[journey.project] === undefined,
       `ABACUS_${journey.project.toUpperCase()}_URL is not set`,
     );
-    // The staging smoke is written and waits for the batch deploy that carries the flag.
-    test.fixme(
-      journey.project !== "fixture",
-      "firm_settings.v2 and the people slice are not in E0",
-    );
+    // The staging smoke is written and waits for the batch deploy (G-01-T19).
+    test.fixme(journey.project !== "fixture", "the people slice is not in E0");
   });
 
   test(

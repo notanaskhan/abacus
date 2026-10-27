@@ -35,19 +35,18 @@ const screens = {
     };
   }),
   Onboarding: lazyScreen(async () => (await import("../../legacy/Onboarding")).Onboarding),
-  FirmPeople: lazyScreen(async () => (await import("../../legacy/FirmPeople")).FirmPeople),
   AuditLog: lazyScreen(async () => (await import("../../legacy/AuditLog")).AuditLog),
   SupportAccess: lazyScreen(
     async () => (await import("../../legacy/SupportAccess")).SupportAccess,
   ),
-  Walls: lazyScreen(async () => (await import("../../legacy/Walls")).Walls),
 };
 
-// G-01-T07: ADM-01 at /settings/general behind `firm_settings.v2`; the other sections are planned
-// (G-01 §5.1) and answer "not built yet" until their screens land. The /admin redirects wait for
-// the People and Offices & teams screens (T10, T14), so they don't point at a planned page.
+// G-01-T07: ADM-01 at /settings/general; the other sections are planned (G-01 §5.1) and answer
+// "not built yet" until their screens land. G-01-T17 retired `firm_settings.v2` and removed the
+// legacy /admin/people and /admin/walls pages: ADM-02 and ADM-03 are the only people and walls
+// screens (DEC-594).
 const FirmSettingsGeneral = lazyScreen(async () => (await import("../../screens/ADM-01")).ADM01);
-// G-01-T10: ADM-02 at /settings/people behind the same flag; its segment, filters, highlighted
+// G-01-T10: ADM-02 at /settings/people; its segment, filters, highlighted
 // template and open overlay live in the URL (G-01 §5.1), never a name or an email.
 const FirmSettingsPeople = lazyScreen(async () => (await import("../../screens/ADM-02")).ADM02);
 interface PeopleSearch {
@@ -124,16 +123,14 @@ const settingsGeneralRoute = createRoute({
     const router = useRouter();
     return (
       <div className="flex min-h-0 flex-1 flex-col">
-        <FeatureGate flag="firm_settings.v2" fallback={<NotBuilt />}>
-          <FirmSettingsGeneral
-            onNavigate={(section) => {
-              void navigate({ to: "/settings/$section", params: { section } });
-            }}
-            onBack={() => {
-              router.history.back();
-            }}
-          />
-        </FeatureGate>
+        <FirmSettingsGeneral
+          onNavigate={(section) => {
+            void navigate({ to: "/settings/$section", params: { section } });
+          }}
+          onBack={() => {
+            router.history.back();
+          }}
+        />
       </div>
     );
   },
@@ -155,20 +152,18 @@ const settingsPeopleRoute = createRoute({
     const search: Record<string, unknown> = useSearch({ strict: false });
     return (
       <div className="flex min-h-0 flex-1 flex-col">
-        <FeatureGate flag="firm_settings.v2" fallback={<NotBuilt />}>
-          <FirmSettingsPeople
-            search={search}
-            onSearch={(next) => {
-              void navigate({ to: ".", search: { ...next }, replace: true });
-            }}
-            onNavigate={(section) => {
-              void navigate({ to: "/settings/$section", params: { section } });
-            }}
-            onBack={() => {
-              router.history.back();
-            }}
-          />
-        </FeatureGate>
+        <FirmSettingsPeople
+          search={search}
+          onSearch={(next) => {
+            void navigate({ to: ".", search: { ...next }, replace: true });
+          }}
+          onNavigate={(section) => {
+            void navigate({ to: "/settings/$section", params: { section } });
+          }}
+          onBack={() => {
+            router.history.back();
+          }}
+        />
       </div>
     );
   },
@@ -190,24 +185,22 @@ const settingsOfficesRoute = createRoute({
     const hash = router.state.location.hash;
     return (
       <div className="flex min-h-0 flex-1 flex-col">
-        <FeatureGate flag="firm_settings.v2" fallback={<NotBuilt />}>
-          <FirmSettingsOffices
-            search={search}
-            {...(hash === "" ? {} : { anchor: hash })}
-            onSearch={(next) => {
-              void navigate({ to: ".", search: { ...next }, replace: true });
-            }}
-            onNavigate={(section) => {
-              void navigate({ to: "/settings/$section", params: { section } });
-            }}
-            onOpenPeople={(filter) => {
-              void navigate({ to: "/settings/people", search: { ...filter } });
-            }}
-            onBack={() => {
-              router.history.back();
-            }}
-          />
-        </FeatureGate>
+        <FirmSettingsOffices
+          search={search}
+          {...(hash === "" ? {} : { anchor: hash })}
+          onSearch={(next) => {
+            void navigate({ to: ".", search: { ...next }, replace: true });
+          }}
+          onNavigate={(section) => {
+            void navigate({ to: "/settings/$section", params: { section } });
+          }}
+          onOpenPeople={(filter) => {
+            void navigate({ to: "/settings/people", search: { ...filter } });
+          }}
+          onBack={() => {
+            router.history.back();
+          }}
+        />
       </div>
     );
   },
@@ -350,9 +343,7 @@ export const settingsRoutes = [
       return <screens.AutonomySettings canSet={canSet} />;
     }),
     section("/admin/setup", () => <screens.Onboarding always />),
-    section("/admin/people", () => <screens.FirmPeople />),
     section("/admin/support", () => <screens.SupportAccess />),
     section("/admin/audit-log", () => <screens.AuditLog />),
-    section("/admin/walls", () => <screens.Walls />),
   ]),
 ] as const;

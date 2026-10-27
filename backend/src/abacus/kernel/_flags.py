@@ -136,11 +136,6 @@ FIELDWORK_PROCEDURES = Flag(
     kind="boolean",
     default="false",
 )
-FIRM_SETTINGS_V2 = Flag(
-    name="firm_settings.v2",
-    kind="boolean",
-    default="false",
-)
 FOLLOW_UPS_SCHEDULED_SEND = Flag(
     name="follow_ups.scheduled_send",
     kind="boolean",
@@ -302,7 +297,6 @@ FLAGS: dict[str, Flag] = {
     "evidence.withdrawal": EVIDENCE_WITHDRAWAL,
     "fieldwork.assessor": FIELDWORK_ASSESSOR,
     "fieldwork.procedures": FIELDWORK_PROCEDURES,
-    "firm_settings.v2": FIRM_SETTINGS_V2,
     "follow_ups.scheduled_send": FOLLOW_UPS_SCHEDULED_SEND,
     "guidance.drafting": GUIDANCE_DRAFTING,
     "home.dashboard": HOME_DASHBOARD,

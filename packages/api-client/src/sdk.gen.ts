@@ -165,7 +165,10 @@ export const auditsIndex = <ThrowOnError extends boolean = false>(options?: Opti
 /**
  * Audit Archive Record Route
  *
- * Interim G9 against a ready final binder export, with fresh MFA (A-01-T23).
+ * Interim G9 against a ready, current final binder export, with fresh MFA (A-01-T23,
+ * DEC-591): 403 `mfa_required` for a stale second factor, 409 `final_export_required`,
+ * `export_stale`, `release_mode_in_app` or `record_out_of_phase`. The work item becomes
+ * archived and read-only; `archive_locked_at` stays NULL (P-43).
  */
 export const auditArchiveRecord = <ThrowOnError extends boolean = false>(options: Options<AuditArchiveRecordData, ThrowOnError>): RequestResult<AuditArchiveRecordResponses, AuditArchiveRecordErrors, ThrowOnError> => (options.client ?? client).post<AuditArchiveRecordResponses, AuditArchiveRecordErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -222,7 +225,9 @@ export const auditProfile = <ThrowOnError extends boolean = false>(options: Opti
 /**
  * Audit Release Record Route
  *
- * Interim G8, the engagement partner with fresh MFA (A-01-T23).
+ * Interim G8, the engagement partner with fresh MFA (A-01-T23, DEC-590): 403 with
+ * `facts.reason = mfa_required` for a stale second factor (DEC-547), 409
+ * `release_mode_in_app` or `record_out_of_phase`, 422 `release_date_future`.
  */
 export const auditReleaseRecord = <ThrowOnError extends boolean = false>(options: Options<AuditReleaseRecordData, ThrowOnError>): RequestResult<AuditReleaseRecordResponses, AuditReleaseRecordErrors, ThrowOnError> => (options.client ?? client).post<AuditReleaseRecordResponses, AuditReleaseRecordErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

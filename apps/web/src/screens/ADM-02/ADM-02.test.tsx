@@ -342,3 +342,129 @@ describe("ADM-02 artboards", () => {
     expect(await screen.findByText("You don't have access to firm settings.")).toBeTruthy();
   });
 });
+
+// G-01-T17 (DEC-594): the retired FirmPeople screen's tests (legacy/spec024people and
+// spec024states "ac8 People"), carried here one for one where ADM-02 has the behaviour.
+describe("ADM-02 carries the retired FirmPeople tests (DEC-594)", () => {
+  function withHandlers(
+    state: Adm02State,
+    initial: string,
+    extra: Record<string, FixtureHandler>,
+  ): Call[] {
+    const base = scenarios[state];
+    return show(state, initial, { ...base, handlers: { ...base.handlers, ...extra } });
+  }
+
+  async function changeKevinTo(template: string): Promise<void> {
+    fireEvent.click(await screen.findByRole("button", { name: "Open Kevin Osei" }));
+    const dialog = await screen.findByRole("dialog", { name: "Kevin Osei" });
+    const trigger = await within(dialog).findByRole("button", { name: "Change role…" });
+    trigger.focus();
+    fireEvent.keyDown(trigger, { key: "ArrowDown" });
+    fireEvent.click(await screen.findByRole("menuitemradio", { name: template }));
+    fireEvent.click(await screen.findByRole("button", { name: "Change role" }));
+  }
+
+  it("invites a person with a role template (spec024 ac3)", async () => {
+    const calls = show("e", "?ov=invite");
+    const dialog = await screen.findByRole("dialog", { name: "Invite user" });
+    fireEvent.change(within(dialog).getByPlaceholderText("First and last name"), {
+      target: { value: "Lee Morgan" },
+    });
+    fireEvent.change(within(dialog).getByPlaceholderText("name@example.com"), {
+      target: { value: "lee.morgan@brightwaterhale.com" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send invite" }));
+    await waitFor(() => {
+      expect(toastStore.list().map((t) => t.text)).toContain("Invite sent");
+    });
+    const post = calls.find((c) => c.method === "POST" && c.path === "/v1/firm/staff/invitations");
+    expect(post?.body).toMatchObject({
+      email: "lee.morgan@brightwaterhale.com",
+      display_name: "Lee Morgan",
+      role_template: "tax_preparer",
+    });
+  });
+
+  it("changes someone to IT / Security (spec024 ac4, P-10)", async () => {
+    const calls = show("a", "?q=osei");
+    await changeKevinTo("IT / Security");
+    await waitFor(() => {
+      expect(calls.some((c) => c.method === "PUT")).toBe(true);
+    });
+    expect(calls.find((c) => c.method === "PUT")?.body).toMatchObject({
+      role_template: "it_security",
+    });
+  });
+
+  it("says the last-admin refusal in words (spec024 ac4)", async () => {
+    withHandlers("a", "?q=osei", {
+      "PUT /v1/firm/staff/{user_id}/role": () => json({ detail: "last_admin" }, 409),
+    });
+    await changeKevinTo("Senior");
+    await waitFor(() => {
+      expect(toastStore.list().map((t) => t.text)).toContain(
+        "The firm must keep at least one active firm administrator.",
+      );
+    });
+  });
+
+  // The unfiltered list hides the Users segment when it fails (by design); the filtered list is
+  // the one whose refusal and failure the page states.
+  const filteredFails =
+    (answer: () => Response): FixtureHandler =>
+    (request) =>
+      request.query.get("q") !== null
+        ? answer()
+        : (
+            (scenarios.a.handlers as Record<string, FixtureHandler>)[
+              "GET /v1/firm/staff"
+            ] as FixtureHandler
+          )(request);
+
+  it("a refused list asks for a recent sign-in (spec024 ac4)", async () => {
+    withHandlers("a", "?q=osei", {
+      "GET /v1/firm/staff": filteredFails(() => json({ detail: "forbidden" }, 403)),
+    });
+    expect(await screen.findByText("Confirm it's you to change people")).toBeTruthy();
+  });
+
+  it("a stale second factor on a write opens the step-up, never a toast", async () => {
+    withHandlers("a", "?q=osei", {
+      "PUT /v1/firm/staff/{user_id}/role": () => json({ detail: "forbidden" }, 403),
+    });
+    await changeKevinTo("Senior");
+    expect(
+      await screen.findByRole("dialog", { name: "Confirm it's you to change people" }),
+    ).toBeTruthy();
+    expect(toastStore.list()).toHaveLength(0);
+  });
+
+  it("test_ac8_people_error_state: a list that fails to load says so", async () => {
+    withHandlers("a", "?q=osei", {
+      "GET /v1/firm/staff": filteredFails(() => json({ detail: "unavailable" }, 503)),
+    });
+    expect(await screen.findByText("People couldn't be loaded.")).toBeTruthy();
+  });
+
+  it("test_ac8_people_empty_state: no match reads as empty, not as an error", async () => {
+    show("a", "?q=zzzz-nobody");
+    expect(await screen.findByText("No people match these filters.")).toBeTruthy();
+  });
+
+  it("test_ac8_people_loading_state: the list shows skeleton rows while it loads", async () => {
+    withHandlers("a", "", {
+      "GET /v1/firm/staff": () => new Promise<Response>(() => undefined),
+    });
+    await waitFor(() => {
+      expect(
+        document.querySelector(".animate-pulse, [role='status'], [aria-busy='true']"),
+      ).not.toBeNull();
+    });
+  });
+
+  it("test_ac8_people_empty_state: no pending invitations reads as such", async () => {
+    show("a", "?segment=invitations");
+    expect(await screen.findByText("No pending invitations.")).toBeTruthy();
+  });
+});

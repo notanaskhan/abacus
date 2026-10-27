@@ -36,9 +36,11 @@ REVIEWED_FALLBACK: Final = frozenset(
         "approval_grant.consumed",
         "approval_grant.voided",
         "archive.locked",
+        "assurance.archive_recorded",  # A-01-T23: export id, manifest digest, never the ref
         "assurance.phase_derived",
         "assurance.phase_recorded",
         "assurance.profile_updated",
+        "assurance.release_recorded",  # A-01-T23: the recorded date and kind, as numbers
         "audit_chain.anchored",
         "auth.sign_in_refused",
         "autonomy_policy.updated",
