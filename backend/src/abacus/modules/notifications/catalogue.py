@@ -169,6 +169,13 @@ async def _signer(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     return [signer] if signer is not None else []
 
 
+async def _export_requester(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """A-01-T22: the person who asked for the export, and only them (walls applied at fan-out
+    and again at read time)."""
+    requester = _uuid(payload, "requested_by")
+    return [requester] if requester is not None else []
+
+
 @dataclass(frozen=True)
 class Kind:
     kind: str  # the stored code; new codes are undotted (C16); the key is the event type
@@ -244,6 +251,13 @@ CATALOGUE: Final[dict[str, Kind]] = {
     ),
     # P-04-T19 (SHL-12 e): the work a person signed changed after their sign-off.
     "sign_off.went_stale": Kind("sign_off_stale", _signer, "sign_off", "sign_off_id"),
+    # A-01-T22 (A-01 §4.7): the requester's binder export is ready, or its build failed.
+    "engagement_export.ready": Kind(
+        "export_ready", _export_requester, "engagement_export", "export_id"
+    ),
+    "engagement_export.failed": Kind(
+        "export_failed", _export_requester, "engagement_export", "export_id"
+    ),
 }
 
 # AC-7: fixed English text per kind; placeholders are names the reader can already see.
@@ -277,6 +291,8 @@ TEMPLATES: Final[dict[str, str]] = {
     "portal.drop_unsorted": "A client sent a file for your team to sort on {engagement}.",
     "third_party.uploaded": "A third party uploaded a file to a request on {engagement}.",
     "sign_off.went_stale": "Work you signed off on {engagement} changed after sign-off.",
+    "engagement_export.ready": "Your binder export for {engagement} is ready to download.",
+    "engagement_export.failed": "Your binder export for {engagement} could not be built.",
 }
 
 
@@ -336,6 +352,10 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     ),
     NotificationKind("audit_export_ready", "system", "Download"),
     NotificationKind("security_policy_changed", "system", "Lock"),
+    # A-01-T22 (A-01 §4.7): in-app; an email, when a person turns it on, deep-links to the
+    # export sheet (`notification.export_ready`, imported content), never to a download.
+    NotificationKind("export_ready", "system", "Download"),
+    NotificationKind("export_failed", "system", "Download"),
 )
 for _kind in _REGISTERED:
     register_kind(_kind)

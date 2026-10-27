@@ -119,12 +119,15 @@ REVIEWED_FALLBACK: Final = frozenset(
         "engagement_draft.saved",
         "engagement_draft.started",
         "engagement_draft.started_acceptance",
+        "engagement_export.downloaded",  # A-01-T22: bytes and range, never content
+        "engagement_export.expired",  # A-01-T22: the 7 days (system)
         "engagement_export.failed",
         "engagement_export.packaged",
         "engagement_export.requested",
         "engagement_export.snapshotted",
         "engagement_export.started",
         "engagement_export.undone",
+        "engagement_export.voided",  # A-01-T22 (P-31): withdrawn content (system)
         "engagement_member.added",
         "engagement_member.hours_changed",
         "engagement_member.removed",

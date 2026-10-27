@@ -4,8 +4,8 @@ fixture rules.
 Run: python -m abacus_tools.workflows.record_platform_jobs <output-directory>
 
 Records the real `SpendAnomalyWorkflow`, `NotificationPurgeWorkflow`, `DrainSesEventsWorkflow`,
-`AccessEndSweepWorkflow` and the audit trail's five jobs against throwaway containers, with their
-activities replaced by stubs (replay never runs activities):
+`AccessEndSweepWorkflow`, the audit trail's five jobs and the export expiry sweep against
+throwaway containers, with their activities replaced by stubs (replay never runs activities):
 - `spend-anomaly-v1-flagged.json`: one pass that flagged one engagement;
 - `notification-purge-v1-purged.json`: one pass that purged three notifications;
 - `ses-drain-v1-drained.json`: one drain that recorded two delivery events (Q-01-T46's workflow,
@@ -15,7 +15,8 @@ activities replaced by stubs (replay never runs activities):
   `audit-chain-verify-v1-verified.json`, `audit-anchor-v1-anchored.json`: one pass of each
   (Q-02-T20, T21);
 - `audit-labels-v1-indexed.json`: one label-index pass that indexed seven events (G-02-T10,
-  DEC-453).
+  DEC-453);
+- `export-expiry-v1-swept.json`: one export expiry sweep that expired four exports (A-01-T22).
 Each run is started the way its Schedule starts it: no argument, its own id. A history already on
 disk is never overwritten: only the missing ones are recorded.
 """
@@ -41,7 +42,12 @@ from abacus.modules.audit_trail.api import (
     AuditPartitionsWorkflow,
 )
 from abacus.modules.communications.api import SES_EVENTS_ID, DrainSesEventsWorkflow
-from abacus.modules.evidence.api import ANCHOR_ID, AuditAnchorWorkflow
+from abacus.modules.evidence.api import (
+    ANCHOR_ID,
+    EXPORT_EXPIRY_ID,
+    AuditAnchorWorkflow,
+    ExportExpirySweepWorkflow,
+)
 from abacus.modules.identity.api import ACCESS_END_ID, AccessEndSweepWorkflow
 from abacus.modules.notifications.api import NOTIFICATION_PURGE_ID, NotificationPurgeWorkflow
 from abacus.modules.platform.api import SPEND_ANOMALY_ID, SpendAnomalyWorkflow
@@ -59,6 +65,7 @@ _FILES = (
     "audit-chain-verify-v1-verified.json",
     "audit-anchor-v1-anchored.json",
     "audit-labels-v1-indexed.json",
+    "export-expiry-v1-swept.json",
 )
 
 
@@ -107,6 +114,11 @@ async def _labels() -> int:
     return 7
 
 
+@activity.defn(name="engagement_export.expire_sweep")
+async def _expire() -> int:
+    return 4
+
+
 async def _run(client: Client, workflow: type, workflow_id: str) -> WorkflowHistory:
     handle: WorkflowHandle[object, int] = await client.start_workflow(
         workflow.run,  # pyright: ignore[reportUnknownArgumentType,reportUnknownMemberType] -- a @workflow.defn class
@@ -132,8 +144,20 @@ async def _record(out: Path, stack: Stack) -> None:
             AuditChainVerifyWorkflow,
             AuditAnchorWorkflow,
             AuditLabelIndexerWorkflow,
+            ExportExpirySweepWorkflow,
         ],
-        activities=[_flag, _purge, _drain, _sweep, _partitions, _seal, _verify, _anchor, _labels],
+        activities=[
+            _flag,
+            _purge,
+            _drain,
+            _sweep,
+            _partitions,
+            _seal,
+            _verify,
+            _anchor,
+            _labels,
+            _expire,
+        ],
     ):
         runs = (
             (SpendAnomalyWorkflow, SPEND_ANOMALY_ID, _FILES[0]),
@@ -145,6 +169,7 @@ async def _record(out: Path, stack: Stack) -> None:
             (AuditChainVerifyWorkflow, VERIFY_ID, _FILES[6]),
             (AuditAnchorWorkflow, ANCHOR_ID, _FILES[7]),
             (AuditLabelIndexerWorkflow, LABELS_ID, _FILES[8]),
+            (ExportExpirySweepWorkflow, EXPORT_EXPIRY_ID, _FILES[9]),
         )
         for workflow, workflow_id, name in runs:
             if (out / name).exists():

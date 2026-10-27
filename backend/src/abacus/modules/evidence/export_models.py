@@ -58,3 +58,19 @@ class EngagementExportContent(Base):
     tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
     export_id: Mapped[UUID] = mapped_column(primary_key=True)
     evidence_version_id: Mapped[UUID] = mapped_column(primary_key=True)
+
+
+class EngagementExportDownload(Base):
+    """One download of a ready export, with the bytes and range served (insert-only; A-01-T22)."""
+
+    __tablename__ = "engagement_export_downloads"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    export_id: Mapped[UUID]
+    user_id: Mapped[UUID]
+    at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    bytes_sent: Mapped[int] = mapped_column(BigInteger)
+    range_start: Mapped[int | None] = mapped_column(BigInteger)
+    range_end: Mapped[int | None] = mapped_column(BigInteger)
+    mfa_at: Mapped[datetime]

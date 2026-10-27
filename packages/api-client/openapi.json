@@ -103445,7 +103445,7 @@
     },
     "/v1/exports/{export_id}/download": {
       "get": {
-        "description": "The ZIP (`application/zip`, `Cache-Control: no-store`, a safe `Content-Disposition`),\nresumable with `Range` (A-01-T22). 409 `export_not_ready`, 410 `export_expired`. Audited\n`engagement_export.downloaded` with bytes and range.",
+        "description": "The ZIP (`application/zip`, `Cache-Control: no-store`, a safe `Content-Disposition`),\nresumable with one `Range` (206; DEC-536), streamed by the API from the sealed segments (no\npresigned link, ADR-104) (A-01-T22). 409 `export_not_ready`, 410 `export_expired` (7 days,\nvoided, or holding a withdrawn file), 416 for a range not served. Audited\n`engagement_export.downloaded` with bytes and range.",
         "operationId": "download_export",
         "parameters": [
           {
@@ -103473,6 +103473,23 @@
                 }
               ],
               "title": "Range"
+            }
+          },
+          {
+            "in": "header",
+            "name": "If-Range",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-Range"
             }
           },
           {
@@ -103571,6 +103588,16 @@
             },
             "description": "Gone: the code, link or window expired or was used"
           },
+          "416": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Range not satisfiable"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -103580,16 +103607,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Download Export Route",

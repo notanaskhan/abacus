@@ -3,7 +3,7 @@
 
 For the export sheet (AUD-02, AUD-03; A-01-T24), Q-04's rollback path, G-02/Q-02's firm export
 and A-07's archive seal. Behind `audits.binder_export` (off: 404). Create, undo and the reads are
-live (A-01-T18, `evidence.exports`); download answers 501 `not_implemented` until A-01-T22. The
+live (A-01-T18, `evidence.exports`); download is live (A-01-T22, `evidence.export_download`). The
 shapes are fixed here so the consumers' tests and fixture mode run against them:
 
 - `POST /v1/work-items/{work_item_id}/exports` (`export.create`: engagement partner or manager,
@@ -19,30 +19,27 @@ shapes are fixed here so the consumers' tests and fixture mode run against them:
 - `GET /v1/exports/{export_id}/download` (`export.download`: fresh MFA, not offshore; the
   requester or an `export.create` holder on the engagement): the decrypted ZIP streamed by the API
   (no presigned link, ADR-104), resumable with `Range`; 409 `export_not_ready` before `ready`,
-  410 `export_expired` after the 7 days or once voided.
+  410 `export_expired` after the 7 days or once voided; one range only, else 416 (DEC-536).
 
 Statuses are C2's `engagement_export` codes. No route is reachable by a client principal (INV-4)
 and the agent holds none of the actions (INV-1). Sizes are bytes; counts and digests exist only
-once the package is built. The download stub checks the flag first, as every stub does; the live
-routes authorise first (404 behind a wall before anything else).
+once the package is built. Every route authorises first (404 behind a wall before anything
+else), then checks the flag.
 """
 
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Literal, NoReturn, cast
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import AUDITS_BINDER_EXPORT
 from abacus.kernel._statuses import EngagementExportStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
-from abacus.kernel.flags import flag_enabled
-from abacus.modules.evidence import exports
+from abacus.modules.evidence import export_download, exports
 from abacus.modules.evidence.export_manifest import ExportKind
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
@@ -159,12 +156,6 @@ def _out(view: exports.ExportView) -> EngagementExportOut:
     )
 
 
-async def _stub(ctx: AuthContext) -> NoReturn:
-    if not await flag_enabled(ctx.tenant, AUDITS_BINDER_EXPORT):
-        raise NotFound(AUDITS_BINDER_EXPORT.name)
-    raise NotImplementedYet
-
-
 work_item_exports_router = AbacusRouter(
     prefix="/v1/work-items/{work_item_id}/exports", tags=["engagement export"]
 )
@@ -233,14 +224,46 @@ async def undo_export_route(export_id: UUID, ctx: Ctx) -> EngagementExportOut:
     "/{export_id}/download",
     action="export.download",
     response_model=bytes,
-    errors=(409, 410, 501),
+    errors=(409, 410, 416),
 )
 async def download_export_route(
     export_id: UUID,
     ctx: Ctx,
     range_header: Annotated[str | None, Header(alias="Range", max_length=100)] = None,
+    if_range: Annotated[str | None, Header(alias="If-Range", max_length=100)] = None,
 ) -> Response:
     """The ZIP (`application/zip`, `Cache-Control: no-store`, a safe `Content-Disposition`),
-    resumable with `Range` (A-01-T22). 409 `export_not_ready`, 410 `export_expired`. Audited
+    resumable with one `Range` (206; DEC-536), streamed by the API from the sealed segments (no
+    presigned link, ADR-104) (A-01-T22). 409 `export_not_ready`, 410 `export_expired` (7 days,
+    voided, or holding a withdrawn file), 416 for a range not served. Audited
     `engagement_export.downloaded` with bytes and range."""
-    await _stub(ctx)
+    try:
+        plan = await export_download.prepare(ctx, export_id, range_header, if_range)
+    except export_download.ExportExpired:
+        return _no_store(JSONResponse({"detail": "export_expired"}, status_code=410))
+    except export_download.RangeNotSatisfiable as unsatisfiable:
+        response = _no_store(JSONResponse({"detail": "range_not_satisfiable"}, status_code=416))
+        response.headers["Content-Range"] = f"bytes */{unsatisfiable.size}"
+        return response
+    name = export_download.file_name(plan.export_id)
+    headers = {
+        "Accept-Ranges": "bytes",
+        "Content-Disposition": f'attachment; filename="{name}"',
+        "Content-Length": str(plan.length),
+        "ETag": plan.etag,
+    }
+    status = 200
+    if plan.range is not None:
+        status = 206
+        headers["Content-Range"] = f"bytes {plan.range.start}-{plan.range.end}/{plan.size}"
+    return _no_store(
+        StreamingResponse(
+            plan.stream(), status_code=status, media_type="application/zip", headers=headers
+        )
+    )
+
+
+def _no_store(response: Response) -> Response:
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response

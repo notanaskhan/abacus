@@ -128,6 +128,8 @@ _OPTIONAL_RESPONSES: dict[int, dict[str, object]] = {
     # R-01-T01 (DEC-58 c): a portal drop over the size limit or of a type the portal refuses.
     413: {"model": ErrorOut, "description": "The file is too large"},
     415: {"model": ErrorOut, "description": "The file type is not accepted"},
+    # A-01-T22 (DEC-536): an export download's `Range` the API does not serve.
+    416: {"model": ErrorOut, "description": "Range not satisfiable"},
     423: {"model": ErrorOut, "description": "Locked: too many wrong codes"},
     429: {"model": ErrorOut, "description": "Too soon or too many: retry after Retry-After"},
     501: {"model": ErrorOut, "description": "Contract stub: not implemented yet"},

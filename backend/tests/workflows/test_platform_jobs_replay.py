@@ -17,7 +17,7 @@ from abacus.modules.audit_trail.api import (
     AuditPartitionsWorkflow,
 )
 from abacus.modules.communications.api import DrainSesEventsWorkflow
-from abacus.modules.evidence.api import AuditAnchorWorkflow
+from abacus.modules.evidence.api import AuditAnchorWorkflow, ExportExpirySweepWorkflow
 from abacus.modules.identity.api import AccessEndSweepWorkflow
 from abacus.modules.notifications.api import NotificationPurgeWorkflow
 from abacus.modules.platform.api import SpendAnomalyWorkflow
@@ -35,6 +35,8 @@ AUDIT_JOBS: dict[str, tuple[str, type]] = {
     "audit-anchor-v1-anchored": ("audit_anchor:platform", AuditAnchorWorkflow),
     # G-02-T10 (DEC-453): the label index's Schedule.
     "audit-labels-v1-indexed": ("audit_labels:platform", AuditLabelIndexerWorkflow),
+    # A-01-T22: the engagement export expiry sweep's Schedule.
+    "export-expiry-v1-swept": ("export_expiry:platform", ExportExpirySweepWorkflow),
 }
 
 

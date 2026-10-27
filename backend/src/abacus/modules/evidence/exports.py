@@ -203,6 +203,11 @@ async def _on_export(ctx: AuthContext, action: str, row: EngagementExport) -> Re
     return resource
 
 
+# The download (A-01-T22, `export_download`) applies the same two checks.
+human = _human
+flag_on = _flag_on
+
+
 # --- create ----------------------------------------------------------------------------------
 
 

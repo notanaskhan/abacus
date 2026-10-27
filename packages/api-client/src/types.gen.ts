@@ -48191,6 +48191,10 @@ export type DownloadExportData = {
          */
         Range?: string | null;
         /**
+         * If-Range
+         */
+        'If-Range'?: string | null;
+        /**
          * Authorization
          */
         authorization?: string | null;
@@ -48231,13 +48235,13 @@ export type DownloadExportErrors = {
      */
     410: ErrorOut;
     /**
+     * Range not satisfiable
+     */
+    416: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DownloadExportError = DownloadExportErrors[keyof DownloadExportErrors];

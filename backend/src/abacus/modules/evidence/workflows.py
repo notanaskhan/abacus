@@ -424,3 +424,26 @@ class EngagementExportWorkflow:
             start_to_close_timeout=_TIMEOUT,
             retry_policy=_EXPORT_STAMP_RETRY,
         )
+
+
+# --- Engagement export expiry (A-01-T22; A-01 §4.5). v1, recorded in its history. --------------
+
+EXPORT_EXPIRY_ID = "export_expiry:platform"
+_EXPIRY_TIMEOUT = timedelta(minutes=10)
+_EXPIRY_RETRY = RetryPolicy(maximum_attempts=3)  # a failed day is retried by the next one
+
+
+@workflow.defn(name="ExportExpirySweep")
+class ExportExpirySweepWorkflow:
+    """v1 (ADR-090): one activity per run, started only by its Schedule (overlap SKIP). A change
+    to what it schedules goes behind `workflow.patched`, so `export-expiry-v1-swept.json` keeps
+    replaying."""
+
+    @workflow.run
+    async def run(self) -> int:
+        return await workflow.execute_activity(
+            "engagement_export.expire_sweep",
+            result_type=int,
+            start_to_close_timeout=_EXPIRY_TIMEOUT,
+            retry_policy=_EXPIRY_RETRY,
+        )
