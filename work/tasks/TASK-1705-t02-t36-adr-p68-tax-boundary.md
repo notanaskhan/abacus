@@ -4,7 +4,7 @@ title: T-02-T36 ADR P-68 tax computation boundary
 spec: SPEC-401
 acceptance_criteria: [AC-1]
 risk_zone: amber
-status: in-review
+status: done
 epic: T-02
 plan_key: T-02-T36
 branch: s14-t02-t36
@@ -30,10 +30,11 @@ draft K-1s never reach the portal (DEC-78).
 
 ## Progress log
 - `2026-10-28` — ADR-231, SPEC-401, README and backlog rows; `validate_docs` clean.
+- `2026-10-28` — ADR-231 accepted (approved by ayushkbhatia in chat); status, README index and backlog row updated.
 
 ## Questions for the human
-- [ ] Accept ADR-231 with the tax CPA by Fri May 28, 2027.
+- [x] Accept ADR-231: acceptance approved by ayushkbhatia on 2026-10-28, for both deciders.
 
 ## Handoff
-- **Current state:** drafted, PR open, held for the S14 batch.
-- **Exact next step:** acceptance; T-02's S16 SPEC cites ADR-231 and supersedes SPEC-401.
+- **Current state:** accepted, PR open, held for the S14 batch.
+- **Exact next step:** T-02's S16 SPEC cites ADR-231 and supersedes SPEC-401.

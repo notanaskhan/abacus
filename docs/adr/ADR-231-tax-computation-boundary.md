@@ -1,7 +1,7 @@
 ---
 id: ADR-231
 title: "Tax computation boundary: the engine of record computes tax, credits and filed forms; Accrued shows engine values only from approved imports"
-status: proposed
+status: accepted
 date: 2026-10-28
 deciders: ayushkbhatia, tax CPA
 risk_zone: amber
@@ -14,8 +14,9 @@ proposal: P-68
 > - Never edit an accepted ADR. Propose a new one that supersedes it.
 
 **Status note.** Drafted by T-02-T36 (TASK-1705) in S14 as a pre-window task, whatever the M8
-go/no-go returns, because T-04 needs it too. Accept by **Fri May 28, 2027** (the builder and the
-tax CPA). T-02-T13 and T-02-T18 merge no engine-summary code before this is accepted on main.
+go/no-go returns, because T-04 needs it too. **Accepted on 2026-10-28**: ayushkbhatia approved the
+acceptance for both deciders (the builder and the tax CPA), ahead of the Fri May 28, 2027
+deadline. T-02-T13 and T-02-T18 may build engine-summary code once this is on main.
 
 ## Context
 Accrued coordinates tax work around an engine of record (CCH Axcess first; DEC-49 and P-18: a file
