@@ -82,7 +82,6 @@ NON_TENANT_TABLES = frozenset(
 # Insert-only tables outside the modules (ADR-004); each module lists its own in registry.py.
 _PLATFORM_INSERT_ONLY: frozenset[str] = frozenset(
     {"audit_events", "eval_case_results", "outbox", "usage_records"}
-    | {"idempotency_keys"}  # P-06-T06
     | {"access_events"}  # Q-02-T20
     | {"audit_checkpoints", "audit_anchors"}  # Q-02-T21
 )
@@ -166,6 +165,10 @@ _PLATFORM_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     # SPEC-007 AC-7: a firm admin replaces the firm's budget (upsert).
     "budgets": frozenset({"monthly_soft_usd", "monthly_hard_usd", "updated_by", "updated_at"}),
     "feature_flag_states": frozenset({"value", "set_by", "reason", "set_at"}),  # SPEC-011
+    # P-04-T22 re-review (0214, DEC-507): a key is claimed pending, filled, or released.
+    "idempotency_keys": frozenset(
+        {"request_sha256", "status_code", "response", "created_at", "expires_at"}
+    ),
 }
 # Tables owned outside the modules (ADR-103): migrations, kernel packages, the AI gateway and
 # evaluation tooling. Module tables come from each module's registry.py (P-39; F-03-T07).

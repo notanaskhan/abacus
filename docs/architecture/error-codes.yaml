@@ -528,6 +528,11 @@ codes:
     raised_by:
     - abacus.modules.engagements.transitions.HoldReasonRequired
     summary: Putting an engagement on hold names a reason from the hold reason codes.
+  idempotency_in_progress:
+    status: 409
+    raised_by:
+    - abacus.kernel.uow.idempotency.IdempotencyInProgress
+    summary: 'A request with this key and body is still running: retry shortly for its answer.'
   idempotency_key_invalid:
     status: 422
     raised_by:

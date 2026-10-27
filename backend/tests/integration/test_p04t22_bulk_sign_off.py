@@ -252,5 +252,11 @@ async def test_concurrent_requests_with_one_key_sign_once(team: Cast) -> None:
         call("POST", "/v1/sign-offs:bulk", json=body, headers=headers),
         call("POST", "/v1/sign-offs:bulk", json=body, headers=headers),
     )
-    assert one.status_code == two.status_code == 200
-    assert one.json() == two.json()
+    # The second either replays the stored answer or, overlapping, is told it is in progress.
+    statuses = sorted([one.status_code, two.status_code])
+    assert statuses in ([200, 200], [200, 409]), (one.text, two.text)
+    if statuses == [200, 200]:
+        assert one.json() == two.json()
+    else:
+        busy = one if one.status_code == 409 else two
+        assert busy.json()["detail"] == "idempotency_in_progress"
