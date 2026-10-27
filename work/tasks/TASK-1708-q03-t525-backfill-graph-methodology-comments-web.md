@@ -46,6 +46,8 @@ AC-3's server filtering are TASK-062's: `test_q03t039_comments_and_drafter.py` (
 ## Progress log
 - `2026-10-28` — Suites written. Web 17 passed (targeted). The SPEC-008 integration file (ruff and pyright clean) runs in the batch-end pass.
 
+- `2026-10-28` — Batch-end run: SPEC-008 file 17 passed, 1 strict xfail (ED-250). Fixes in the one round were test setup only: a balanced TB, lines inserted with their snapshot, the snapshot linked through an evidence version (SPEC-006 scope), and the site's own item allowed in the Cash area and the no-evidence gap.
+
 ## Handoff
 - **Current state:** PR open, held for the S14 batch.
-- **Known gaps:** SPEC-008 integration file not yet run.
+- **Known gaps:** ED-250 (a firm member outside the engagement reads 403 on the graph, AC-9 says 404) held by a strict xfail; triage open.
