@@ -1,7 +1,7 @@
 ---
 id: ADR-230
 title: "Structured agent output (AgentBlocks): a closed block schema, numbers by reference, no model markup (amends ADR-065)"
-status: proposed
+status: accepted
 date: 2026-10-28
 deciders: ayushkbhatia
 risk_zone: red
@@ -13,9 +13,9 @@ proposal: P-24
 > - If a task seems to require breaking an ADR, propose a new ADR that supersedes it. Never work around it silently.
 > - Never edit an accepted ADR. Propose a new one that supersedes it.
 
-**Status note.** Drafted by F-06-T24 (TASK-1704) in S14. Accept by **Fri May 28, 2027** (end of
-S15), before F-06-T15 (S18), I-01 (S22) and K-01-T21 (S23) build on it. If acceptance slips,
-F-06-T15 splits: letter and email blocks first (they carry no agent prose while ADR P-25 is off).
+**Status note.** Drafted by F-06-T24 (TASK-1704) in S14 and **accepted by ayushkbhatia on
+2026-10-28**, ahead of the Fri May 28, 2027 deadline, so F-06-T15 (S18), I-01 (S22) and K-01-T21
+(S23) build on an accepted schema.
 
 ## Context
 ADR-065 says model output is "rendered as sanitised plain text". That was written before the agent
