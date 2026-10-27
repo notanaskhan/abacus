@@ -1,5 +1,5 @@
 import type { ToolbarProps } from "@abacus/ui";
-import { type JSX, useCallback, useState } from "react";
+import { type JSX, Suspense, lazy, useCallback, useState } from "react";
 import { useFlag } from "../../app-core/flags";
 import { NAV } from "../nav";
 import { useUnreadCount } from "../NotificationPanel";
@@ -11,8 +11,10 @@ import {
   isSettings,
 } from "../../app-core/nav-areas";
 import { useGoChords } from "./hotkeys";
-import { InterimGo } from "./InterimGo";
 import { InterimSupport } from "./InterimSupport";
+
+// Go… is its own chunk, loaded the first time it opens, then kept mounted (F-05-T17, TASK-1368).
+const InterimGo = lazy(async () => ({ default: (await import("./InterimGo")).InterimGo }));
 
 // The firm toolbar's data (P-01-T02; SHL-01). The Toolbar (F-05-T18) draws; this decides what it
 // draws: the 13 items of nav.ts in order, the lit item from the manifest's `navArea` (b, g) or
@@ -67,6 +69,8 @@ export function useFirmToolbar({
   // R2's second tooltip line names SHL-02's actions; it shows once they exist (AC 1.1.8).
   const palette = useFlag("palette") === true;
   const [go, setGo] = useState(false);
+  const [goLoaded, setGoLoaded] = useState(false);
+  if (go && !goLoaded) setGoLoaded(true);
   const [support, setSupport] = useState(false);
 
   const goTo = useCallback(
@@ -109,7 +113,11 @@ export function useFirmToolbar({
   };
   const overlay = (
     <>
-      <InterimGo open={go} onOpenChange={setGo} onArea={goTo} />
+      {goLoaded && (
+        <Suspense fallback={null}>
+          <InterimGo open={go} onOpenChange={setGo} onArea={goTo} />
+        </Suspense>
+      )}
       <InterimSupport open={support} onOpenChange={setSupport} />
     </>
   );

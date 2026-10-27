@@ -746,18 +746,22 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
             )
             request = replace(request, model=model)
             try:
-                async with asyncio.timeout(c.timeout_seconds):
-                    basis = await enforce_boundary(  # SPEC-026, SPEC-036
-                        c.attribution.tenant,
-                        route,
-                        found.ref,
-                        agent_id=c.attribution.agent_id,
-                        engagement_id=c.attribution.engagement_id,
-                    )
-                    if not read_recorded:  # Q-02-T20: once per call, as the content leaves
-                        await _record_context_reads(c)
-                        read_recorded = True
-                    response = await route_provider(route).complete(request)
+                basis = await enforce_boundary(  # SPEC-026, SPEC-036
+                    c.attribution.tenant,
+                    route,
+                    found.ref,
+                    agent_id=c.attribution.agent_id,
+                    engagement_id=c.attribution.engagement_id,
+                )
+                if not read_recorded:  # Q-02-T20: once per call, as the content leaves
+                    await _record_context_reads(c)
+                    read_recorded = True
+                # AC-16: the timeout bounds the provider call only. The boundary check and the
+                # access events above are this database's work; inside the timeout, a slow one
+                # was recorded as a provider error and blocked the route's model (ED-133).
+                response = await asyncio.wait_for(
+                    route_provider(route).complete(request), c.timeout_seconds
+                )
                 break
             except (ProviderError, TimeoutError) as exc:
                 error = exc if isinstance(exc, ProviderError) else ProviderError("timeout")

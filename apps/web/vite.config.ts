@@ -90,7 +90,25 @@ export default defineConfig(({ mode, command }) => {
     // dist/.vite/manifest.json: scripts/bundle-budget.mjs (F-05-T17) reads the chunk graph from it.
     build: portal
       ? { manifest: true, outDir: "dist/portal", rollupOptions: { input: "portal.html" } }
-      : { manifest: true },
+      : {
+          manifest: true,
+          // TASK-1368 (DEC-464): the framework every firm page boots with in one chunk. Left to
+          // the default splitting, each lazy chunk that shares a few of these modules with the
+          // entry split them into their own small common chunks, and the firm initial load paid
+          // several KB of gzip for the fragmentation alone. Only modules the shell loads anyway.
+          rolldownOptions: {
+            output: {
+              codeSplitting: {
+                groups: [
+                  {
+                    name: "framework",
+                    test: /node_modules[\\/](react|react-dom|scheduler|@tanstack|@radix-ui|@floating-ui|tailwind-merge)[\\/]/,
+                  },
+                ],
+              },
+            },
+          },
+        },
     server: {
       port: 5173 + offset,
       strictPort: true,
