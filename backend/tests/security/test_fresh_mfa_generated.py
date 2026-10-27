@@ -65,6 +65,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ),
     ("GET", "/v1/exports/{export_id}/download", "export.download"),
     ("GET", "/v1/firm/clients", "wall.create"),
+    ("GET", "/v1/firm/data-exports/{export_id}/links/{link_id}", "firm_export.download"),
     ("GET", "/v1/firm/members", "wall.create"),
     ("GET", "/v1/walls/preview", "wall.create"),
     ("POST", "/v1/agent-runs/{run_id}/trace-exports", "run_trace.export"),

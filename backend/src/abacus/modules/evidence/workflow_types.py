@@ -96,3 +96,27 @@ class ExportFailure:
     tenant_id: str
     export_id: str
     failure_code: str
+
+
+# --- Firm export (Q-02-T43; compliance-kernel §7) -----------------------------------------------
+
+
+@dataclass(frozen=True)
+class FirmExportInput:
+    """`FirmExportWorkflow`: the approved export, by identifier only."""
+
+    tenant_id: str
+    export_id: str
+
+
+@dataclass(frozen=True)
+class FirmExportFacts:
+    """What the package activity built and stored: digests, size and where (no content)."""
+
+    tenant_id: str
+    export_id: str
+    bundle_sha256: str
+    manifest_sha256: str
+    bytes: int
+    segment_count: int
+    object_prefix: str

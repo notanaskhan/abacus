@@ -136,11 +136,17 @@ codes:
     raised_by:
     - abacus.modules.identity.annual_independence.AnnualConfirmationInvalid
     summary: Only the current year can be confirmed, and a decline needs a note.
+  approver_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.evidence.firm_exports.ApproverInvalid
+    summary: The approver is the requester, or holds no security-admin or partner-level membership.
   approver_must_differ:
     status: 409
     raised_by:
     - abacus.modules.agents.ai_policy_errors.ApproverMustDiffer
-    summary: The partner who approves a policy version is not the person who requested it (AC-37, DEC-50).
+    - abacus.modules.evidence.firm_exports.ApproverMustDiffer
+    summary: The person who approves is never the person who asked (AC-37, DEC-50; DEC-72).
   approver_not_partner:
     status: 422
     raised_by:
@@ -456,6 +462,11 @@ codes:
     raised_by:
     - abacus.modules.evidence.exports.ExportKindUnsupported
     summary: Only an audit work item exports a binder (fail closed until C19 and a tax-export review).
+  export_not_awaiting_approval:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.firm_exports.ExportNotAwaitingApproval
+    summary: The export was already approved or declined.
   export_not_ready:
     status: 409
     raised_by:
@@ -1150,6 +1161,11 @@ codes:
     raised_by:
     - abacus.modules.requests.lifecycle.RequestClosed
     summary: 'The request is Received or Not applicable: reopen it before changing it.'
+  requester_not_active:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.firm_exports.RequesterNotActive
+    summary: 'The requester is no longer an active security admin: the export can''t be approved.'
   response_invalid:
     status: 422
     raised_by:
@@ -1334,6 +1350,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.phase.ProfileStale
+    - abacus.modules.communications.follow_up_policy.FollowUpPolicyStale
     - abacus.modules.communications.template_service.TemplateDraftStale
     - abacus.modules.connections.entity.StaleConnection
     - abacus.modules.engagements.acceptance.AcceptanceStale

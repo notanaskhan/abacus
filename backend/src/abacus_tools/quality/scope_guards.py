@@ -32,6 +32,11 @@ BACKEND = Path(__file__).resolve().parents[3]
 REPO = BACKEND.parent
 SOURCE = REPO / "docs" / "architecture" / "scope-guards.yaml"
 GENERATED = REPO / "packages" / "ui" / "scope-guards.gen.json"
+# R-01-T23: the email lint reads the banned terms at runtime (a Python constant holding them would
+# trip this guard), so the backend gets its own generated copy beside the lint.
+EMAIL_TERMS = (
+    BACKEND / "src" / "abacus" / "modules" / "communications" / "scope_guard_terms.gen.json"
+)
 # The seed scenarios are registered with the guard (F-04-T09; F-04.14): their Python is scanned
 # like product code, and their data files (recorded responses, documents' text) like the seed.
 SCENARIOS = (BACKEND / "src" / "abacus_tools" / "synthetic" / "scenarios",)
@@ -150,17 +155,27 @@ def generated(guards: Guards | None = None) -> str:
     return json.dumps({"nav": list(g.nav), "bannedTerms": list(g.terms)}, indent=2) + "\n"
 
 
+def email_terms(guards: Guards | None = None) -> str:
+    g = guards or load()
+    return json.dumps({"terms": sorted({t["term"] for t in g.terms})}, indent=2) + "\n"
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="scope_guards")
     parser.add_argument("--write", action="store_true")
     args = parser.parse_args(argv)
     text = generated()
+    terms = email_terms()
     if args.write:
         GENERATED.parent.mkdir(parents=True, exist_ok=True)
         GENERATED.write_text(text)
+        EMAIL_TERMS.write_text(terms)
     status = 0
     if not GENERATED.exists() or GENERATED.read_text() != text:
         print("packages/ui/scope-guards.gen.json is stale: run with --write", file=sys.stderr)
+        status = 1
+    if not EMAIL_TERMS.exists() or EMAIL_TERMS.read_text() != terms:
+        print(f"{EMAIL_TERMS.relative_to(REPO)} is stale: run with --write", file=sys.stderr)
         status = 1
     for finding in scan():
         print(finding, file=sys.stderr)
