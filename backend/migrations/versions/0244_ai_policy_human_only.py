@@ -3,12 +3,12 @@
 `ai_policy.approved` and `ai_policy.declined` (a second partner approves or declines a published
 version, AC-37) join `abacus_human_only_actions()`: the `audit_events_human_only` trigger refuses
 either from an `agent` or `policy` actor, whatever the matrix says (I-AGENT-NEVER at the data
-layer). 0212's 44 entries plus these two; the downgrade restores 0212's list. The review
-lane's 0231 (P-04-T24) redefines the same function: whichever lands second redefines it with both
-sets, and the register (`docs/architecture/human-only-actions.yaml`) holds every entry.
+layer). The batch merges the review lane first, so this is the last redefinition: the full
+register, 53 entries (0212's 44, the review lane's 0231 seven proposal and suggestion
+verdicts, and these two). The downgrade restores 0231's 51.
 
 Revision ID: 0244
-Revises: 0243
+Revises: 0243 (re-pointed to 0232 at the batch merge)
 """
 
 from __future__ import annotations
@@ -54,6 +54,10 @@ _HUMAN_ONLY = [
     "nas.evaluated",
     "portal_mfa.reset",
     "procedure.concluded",
+    "proposal.approved",
+    "proposal.approved_with_edits",
+    "proposal.rejected",
+    "proposal.routed",
     "report.approved",
     "report.released",
     "retention_policy.updated",
@@ -66,10 +70,16 @@ _HUMAN_ONLY = [
     "service_line_policy.updated",
     "sign_off.recorded",
     "statement.approved",
+    "suggestion.adopted",
+    "suggestion.dismissed",
+    "suggestion.edited",
     "team.approved",
 ]
 
-_HUMAN_ONLY_0212 = [
+# The list 0244 replaces at the batch merge: 0231's (the review lane, P-04-T24), 0212's 44 plus
+# the seven proposal and suggestion verdicts. 0244's down_revision is re-pointed to 0232 at merge
+# (the governance lane runs after the review lane), so the downgrade restores exactly 0231's list.
+_HUMAN_ONLY_0231 = [
     "acceptance.decided",
     "acceptance.review_completed",
     "assurance.phase_recorded",
@@ -101,6 +111,10 @@ _HUMAN_ONLY_0212 = [
     "nas.evaluated",
     "portal_mfa.reset",
     "procedure.concluded",
+    "proposal.approved",
+    "proposal.approved_with_edits",
+    "proposal.rejected",
+    "proposal.routed",
     "report.approved",
     "report.released",
     "retention_policy.updated",
@@ -113,6 +127,9 @@ _HUMAN_ONLY_0212 = [
     "service_line_policy.updated",
     "sign_off.recorded",
     "statement.approved",
+    "suggestion.adopted",
+    "suggestion.dismissed",
+    "suggestion.edited",
     "team.approved",
 ]
 
@@ -131,4 +148,4 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    _human_only(_HUMAN_ONLY_0212)
+    _human_only(_HUMAN_ONLY_0231)
