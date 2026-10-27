@@ -2,8 +2,8 @@
 `docs/contracts/audit-log.md`.
 
 Behind `audit_log.explorer`: off, every route answers 404. The list and the detail are live
-(G-02-T08: `audit_log_routes.py`, `explorer.py`); the export routes here answer 501
-`not_implemented` until G-02-T17. The legacy explorer (`GET
+(G-02-T08: `audit_log_routes.py`, `explorer.py`), and the export routes too (G-02-T17:
+`audit_log_routes.py`, `exports.py`). The legacy explorer (`GET
 /v1/firm/audit-events`, SPEC-304) is unchanged until ADM-07 replaces it.
 
 Rules the shapes carry (DEC-60, DEC-43, INV-1, INV-5):
@@ -36,15 +36,15 @@ Rules the shapes carry (DEC-60, DEC-43, INV-1, INV-5):
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Final, Literal, NoReturn
+from typing import Annotated, Final, Literal
 from uuid import UUID
 
-from fastapi import Depends, Header, Query
+from fastapi import Depends, Header
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import AUDIT_LOG_EXPLORER
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.modules.identity.api import (
@@ -325,49 +325,3 @@ async def _authorised(ctx: AuthContext, action: str) -> None:
 # The family's one gate, for the live routes (`audit_log_routes.py`): the matrix, then the flag.
 authorised = _authorised
 gate = _gate
-
-
-async def _stub(ctx: AuthContext, action: str) -> NoReturn:
-    await _authorised(ctx, action)
-    await _gate(ctx)
-    raise NotImplementedYet
-
-
-Text = Annotated[str | None, Query(max_length=200)]
-
-
-@router.get(
-    "/exports/{export_id}", action="audit_export.read", response_model=AuditExport, errors=(501,)
-)
-async def audit_export_route(export_id: UUID, ctx: Ctx) -> AuditExport:
-    """ADM-07 g: the requester's export; anyone else's answers 404. A status read needs no fresh
-    second factor (L5); the request and the link do."""
-    await _stub(ctx, "audit_export.read")
-
-
-@router.post(
-    "/exports",
-    action="audit_event.export",
-    response_model=AuditExport,
-    status_code=202,
-    errors=(501,),
-)
-async def request_audit_export_route(
-    body: AuditExportRequestIn, ctx: Ctx, idempotency_key: IdempotencyKey
-) -> AuditExport:
-    """ADM-07 e: one person with a fresh second factor (DEC-415 Q8); 202 `requested`. Audited
-    `audit_export.requested`; values only as the requester may see them on screen."""
-    await _stub(ctx, "audit_event.export")
-
-
-@router.post(
-    "/exports/{export_id}/link",
-    action="audit_event.export",
-    response_model=AuditExportLinkOut,
-    errors=(409, 410, 501),
-)
-async def link_audit_export_route(export_id: UUID, ctx: Ctx) -> AuditExportLinkOut:
-    """ADM-07 g: a 15-minute link for the requester while `ready` or `downloaded` (409
-    `export_not_ready` before), 410 `export_expired` after 7 days. Audited
-    `audit_export.downloaded`."""
-    await _stub(ctx, "audit_event.export")
