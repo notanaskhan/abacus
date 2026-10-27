@@ -18,6 +18,13 @@ import { OPENS as ADM06_OPENS, scenarios as adm06 } from "./scenarios/ADM-06";
 import { OPENS as ADM07_OPENS, scenarios as adm07 } from "./scenarios/ADM-07";
 import { scenarios as bnd01 } from "./scenarios/BND-01";
 import { OPENS as BND02_OPENS, scenarios as bnd02 } from "./scenarios/BND-02";
+import { OPENS as CLI04_OPENS, scenarios as cli04 } from "./scenarios/CLI-04";
+import { OPENS as CLI07_OPENS, scenarios as cli07 } from "./scenarios/CLI-07";
+import {
+  CLIENT_ID as CLI08_CLIENT,
+  ENGAGEMENT_ID as CLI08_ENGAGEMENT,
+  scenarios as cli08,
+} from "./scenarios/CLI-08";
 import { scenarios as home01 } from "./scenarios/HOME-01";
 import { scenarios as knw01 } from "./scenarios/KNW-01";
 import { scenarios as shl03 } from "./scenarios/SHL-03";
@@ -25,6 +32,14 @@ import { scenarios as shl04 } from "./scenarios/SHL-04";
 import { OPENS as SHL14_OPENS, scenarios as shl14 } from "./scenarios/SHL-14";
 
 type Ids = Readonly<Record<string, string>>;
+
+/** Per state, the client (and engagement) a P-07 screen opens (P-07-T53's gates and access walk). */
+function idsOf<S extends string>(
+  states: Readonly<Record<S, unknown>>,
+  of: (state: S) => Readonly<Record<string, string>>,
+): Readonly<Record<string, Readonly<Record<string, string>>>> {
+  return Object.fromEntries((Object.keys(states) as S[]).map((s) => [s, of(s)]));
+}
 
 interface ScreenScenarios {
   scenarios: Readonly<Record<string, Scenario>>;
@@ -41,6 +56,18 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
   "ADM-07": { scenarios: adm07, opens: ADM07_OPENS }, // G-02-T13
   "BND-01": { scenarios: bnd01, opens: {} },
   "BND-02": { scenarios: bnd02, opens: {}, ids: BND02_OPENS },
+  // P-07-T53: the gates and access walk opens the live routes on the screens' own states.
+  "CLI-04": {
+    scenarios: cli04,
+    opens: {},
+    ids: idsOf(CLI04_OPENS, (s) => ({ clientId: CLI04_OPENS[s] })),
+  },
+  "CLI-07": { scenarios: cli07, opens: {}, ids: idsOf(CLI07_OPENS, (s) => CLI07_OPENS[s]) },
+  "CLI-08": {
+    scenarios: cli08,
+    opens: {},
+    ids: idsOf(cli08, () => ({ clientId: CLI08_CLIENT, engagementId: CLI08_ENGAGEMENT })),
+  },
   "HOME-01": { scenarios: home01, opens: {} }, // I-01-T05
   "KNW-01": { scenarios: knw01, opens: {} }, // K-01-T04
   "SHL-03": { scenarios: shl03, opens: {} },
