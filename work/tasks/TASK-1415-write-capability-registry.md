@@ -45,6 +45,8 @@ client at registry level."
 - 2026-10-27: plan written.
 - 2026-10-27: built as planned. The compiled registry is read lazily (`registry()`), so the compiler never imports a broken generated file; start-up validates it and refuses undeclared egress. `decision` added to `WriteCapabilityEntry` (optional in the schema, required by the compiler).
 
+- 2026-10-27: targeted pass (foreground, -n 2): unit, contract and golden 3,851 passed; connection integration 99; schema and stale 215; security 5,347 (one fixed: a repeated issue link now answers without a unit of work; ED-155). Security review fix round (DEC-515, DEC-516, DEC-517) applied and re-run green. Gates clean. Playwright not run.
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|

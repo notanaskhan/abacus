@@ -37,6 +37,8 @@ consumer, the field owner. The reviewable is registered by assurance since SPEC-
 - 2026-10-27: plan written.
 - 2026-10-27: built as planned; the golden reads Northwind from `tests/golden/ledger/tb_layers.yaml`. The C9 issue-link route moved from the stub to `assurance/tb_read_model.py`.
 
+- 2026-10-27: targeted pass (foreground, -n 2): unit, contract and golden 3,851 passed; connection integration 99; schema and stale 215; security 5,347 (one fixed: a repeated issue link now answers without a unit of work; ED-155). Security review fix round (DEC-515, DEC-516, DEC-517) applied and re-run green. Gates clean. Playwright not run.
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
