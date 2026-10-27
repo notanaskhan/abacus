@@ -2,7 +2,7 @@
 id: TASK-1622
 title: C6 v1 swap for the Processing pill, popover and audit-bar run time (A-01-T27)
 spec: SPEC-314
-acceptance_criteria: [AUD-01 d]
+acceptance_criteria: [AC-1]
 risk_zone: green
 status: in-review
 epic: A-01

@@ -80,14 +80,18 @@ def load(source: str) -> WriteCapabilityRegistry:
     return registry
 
 
-def _value(value: object) -> str:
+def _value(value: object, indent: int = 8) -> str:
     if isinstance(value, bool):
         return "True" if value else "False"
     if value is None:
         return "None"
     if isinstance(value, list):
         items = cast(list[object], value)
-        return "(" + "".join(f"{_value(v)}, " for v in items).rstrip(" ") + ")"
+        if len(items) < 2:
+            return "(" + "".join(f"{_value(v)}," for v in items) + ")"
+        # Two or more carry ruff's magic trailing comma: one item per line, as ruff formats it.
+        inner = " " * (indent + 4)
+        return "(\n" + "".join(f"{inner}{_value(v)},\n" for v in items) + " " * indent + ")"
     return json.dumps(value)
 
 

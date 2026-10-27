@@ -340,18 +340,18 @@ objects:
   portal_intake_upload:   # N-01-T04; the client words on POR-03's own uploads (portal never renders "Accrued")
     source: "N-01 section 3.1; DEC-58 b"
     codes:
-      sent:      {label: "Sent", variant: null, terminal: false, derived: true, context_labels: {to_firm: "Sent to {firm}"}}   # new or waiting
-      received:  {label: "Received by {firm}", variant: green-tint, terminal: true, derived: true}   # filed, ignored or held: the firm has it
-      withdrawn: {label: "Withdrawn", variant: muted, terminal: true, derived: true}
+      sent:      {label: "Sent", variant: null, terminal: false, derived: false, context_labels: {to_firm: "Sent to {firm}"}}   # new or waiting
+      received:  {label: "Received by {firm}", variant: green-tint, terminal: true, derived: false}   # filed, ignored or held: the firm has it
+      withdrawn: {label: "Withdrawn", variant: muted, terminal: true, derived: false}
 
   file_document:   # N-01-T04; the FIL-01 list and drawer status of one document (a projection over evidence versions and acceptances)
     source: "N-01 section 3.7; FIL-01 a-d; DV-17"
     codes:
-      processing:   {label: "Processing", variant: null, terminal: false, derived: true}   # FIL-01 b: extraction or classification running
-      needs_review: {label: "Uploaded – needs review", variant: amber, terminal: false, derived: true}   # DV-4: filed by someone without evidence.accept
-      accepted:     {label: "Approved", variant: null, disc: check_olive, terminal: false, derived: true}   # DV-17: label plus olive disc
-      superseded:   {label: "Superseded", variant: muted, terminal: true, derived: true, context_labels: {replaced_by: "Superseded · Replaced by {name} · {date}"}}   # FIL-01 c: struck through
-      on_hold:      {label: "On hold", variant: amber, terminal: false, derived: true}   # FIL-01 d legal hold banner; destruction suspended
+      processing:   {label: "Processing", variant: null, terminal: false, derived: false}   # FIL-01 b: extraction or classification running
+      needs_review: {label: "Uploaded – needs review", variant: amber, terminal: false, derived: false}   # DV-4: filed by someone without evidence.accept
+      accepted:     {label: "Approved", variant: null, disc: check_olive, terminal: false, derived: false}   # DV-17: label plus olive disc
+      superseded:   {label: "Superseded", variant: muted, terminal: true, derived: false, context_labels: {replaced_by: "Superseded · Replaced by {name} · {date}"}}   # FIL-01 c: struck through
+      on_hold:      {label: "On hold", variant: amber, terminal: false, derived: false}   # FIL-01 d legal hold banner; destruction suspended
 
   issue:
     source: "blueprint 3.3.1"   # kind lines (Missing information, Action required, Review point, Waiting on client) are labels on an issue, not states
@@ -742,12 +742,12 @@ objects:
   letter:   # DF-31 (N-02-T05): the Letter object of ENG-04 and the engagement rows
     source: "DF-31; ENG-04; N-02 section 4.2 (engagement_letter_versions.status)"
     codes:
-      not_started:      {label: "Not started", variant: neutral, terminal: false, derived: true}
+      not_started:      {label: "Not started", variant: neutral, terminal: false, derived: false}
       draft:            {label: "Draft", variant: neutral, terminal: false, derived: false}
       partner_approved: {label: "Partner approved", variant: green-tint, terminal: false, derived: false}
       sent:             {label: "Sent", variant: amber, terminal: false, derived: false}
       signed:           {label: "Signed", variant: green, terminal: true, derived: false}
-      not_required:     {label: "Not required this year", variant: muted, terminal: true, derived: true}
+      not_required:     {label: "Not required this year", variant: muted, terminal: true, derived: false}
       superseded:       {label: "Superseded", variant: muted, terminal: true, derived: false}   # an amended or re-sent version; the envelope's superseded marker reads the same
 
   letter_record:   # the interim recorded engagement letter (PUT /v1/engagements/{id}/letter; G3) until N-02's envelopes

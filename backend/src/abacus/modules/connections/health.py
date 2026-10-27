@@ -130,12 +130,12 @@ async def check_connection(tenant: TenantContext, connection: Connection) -> str
         tx.record(
             "connection.health_checked",
             target=Target("connection", current.id),
-            after=Ref(outcome=outcome, **({"reason": code} if code else {})),
+            after=Ref(ok=int(outcome == "ok")),  # codes live on the connection row (Ref: ids only)
         )
     return outcome
 
 
-async def _check_firm(tenant_id: UUID) -> int:
+async def check_firm(tenant_id: UUID) -> int:
     tenant = TenantContext(tenant_id, "system", _ACTOR)
     async with tenant_session(tenant) as session:
         connections = (
@@ -162,7 +162,7 @@ async def check_connection_health() -> int:
     total = 0
     for tenant_id in await firm_tenant_ids():
         try:
-            total += await _check_firm(tenant_id)
+            total += await check_firm(tenant_id)
         except Exception:  # one firm's failure never stops the others
             _firm_failures.add(1)
             _log.error("connection_health.firm_failed", tenant_id=tenant_id)

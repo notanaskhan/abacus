@@ -14,7 +14,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Literal, cast
+from typing import Final, Literal, cast
 from uuid import UUID
 
 from sqlalchemy import text
@@ -54,6 +54,14 @@ _ACTIVE = text(
 )
 
 
+BlockedOn = Literal["partner", "manager"]  # the C6 run summary's codes
+_BLOCKED_ON: Final[dict[str, BlockedOn]] = {"partner": "partner", "manager": "manager"}
+
+
+def _blocked_on(code: object) -> BlockedOn | None:
+    return _BLOCKED_ON.get(code) if isinstance(code, str) else None
+
+
 def _int(output: dict[str, object] | None, key: str) -> int:
     value = (output or {}).get(key)
     return value if isinstance(value, int) and value >= 0 else 0
@@ -70,8 +78,8 @@ async def active_engagement_runs(
         rows = await session.execute(
             _ACTIVE,
             {
-                "agents": "{" + ",".join(agents) + "}",
-                "engagements": "{" + ",".join(str(e) for e in engagement_ids) + "}",
+                "agents": agents,
+                "engagements": list(engagement_ids),
             },
         )
         found: dict[UUID, ActiveRun] = {}
@@ -88,6 +96,6 @@ async def active_engagement_runs(
                 r.initiator_user_id,
                 _int(output, "workpapers_complete"),
                 _int(output, "workpapers_total"),
-                role if role in ("partner", "manager") else None,
+                _blocked_on(role),
             )
         return found

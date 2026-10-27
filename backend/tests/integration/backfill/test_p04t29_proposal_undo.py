@@ -27,7 +27,7 @@ PROPOSALS = t28.PROPOSALS
 
 
 async def _rejected(world: World) -> tuple[str, str]:
-    proposal, _ = await t28._k1(world)  # pyright: ignore[reportPrivateUsage]
+    proposal, _ = await t28._k1(world)  # pyright: ignore[reportPrivateUsage] -- the T28 suite's own K-1 fixture
     done = await world.call(
         "POST",
         f"{PROPOSALS}/{proposal}/reject",
@@ -65,7 +65,7 @@ async def test_ac_someone_else_or_after_ten_seconds_is_too_late(
     real_now = clock.now
 
     async def later(tenant: object = None) -> object:
-        return await real_now(tenant) + timedelta(seconds=11)  # type: ignore[arg-type]
+        return await real_now(tenant) + timedelta(seconds=11)  # type: ignore[arg-type] -- the patched clock takes any tenant
 
     monkeypatch.setattr(clock, "now", later)
     late = await world.call(
@@ -75,7 +75,7 @@ async def test_ac_someone_else_or_after_ten_seconds_is_too_late(
 
 
 async def test_ac_an_approval_with_nothing_to_put_back_keeps_its_decision(world: World) -> None:
-    proposal, _ = await t28._k1(world)  # pyright: ignore[reportPrivateUsage]
+    proposal, _ = await t28._k1(world)  # pyright: ignore[reportPrivateUsage] -- the T28 suite's own K-1 fixture
     approved = await world.call(
         "POST", f"{PROPOSALS}/{proposal}/approve", "samuel", {"seen_version": 1, "edits": []}
     )

@@ -1,8 +1,8 @@
 ---
 id: TASK-1620
 title: Audit-trail metric reads for pilot metrics (Q-04-T006)
-spec: none (Q-04 §4)
-acceptance_criteria: [Q-04-T006]
+spec: SPEC-349
+acceptance_criteria: [AC-1]
 risk_zone: red
 status: in-review
 epic: Q-04

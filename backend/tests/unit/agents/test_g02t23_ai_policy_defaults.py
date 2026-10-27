@@ -65,7 +65,6 @@ def test_the_defaults_themselves_pass() -> None:
         ("policy_principal.on", True),
         ("client_data.require_7216_consent", False),
         ("client_data.client_drafts_enabled", True),
-        ("client_data.disclosure_in_letters", False),
         ("auto_mode_defaults.ebp_audit", True),
         ("governance.override_tolerance_pct", 12),
         ("governance.accuracy_sample_n", 10),

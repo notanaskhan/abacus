@@ -179,17 +179,18 @@ async def create_issue(
             else None
         ),
     }
-    async with uow(ctx.tenant) as tx:
-        if source_ref is not None:
-            existing = await tx.session.scalar(
+    if source_ref is not None:
+        async with tenant_session(ctx.tenant) as session:
+            existing = await session.scalar(
                 text(
                     "SELECT id FROM issues WHERE work_item_id IS NOT DISTINCT FROM :w "
                     "AND source_ref = :s"
                 ),
                 {"w": work_item_id, "s": source_ref},
             )
-            if isinstance(existing, UUID):
-                return existing  # an engine diagnostic seen before is the same issue
+        if isinstance(existing, UUID):
+            return existing  # an engine diagnostic seen before is the same issue (no write)
+    async with uow(ctx.tenant) as tx:
         await tx.session.execute(
             text(
                 "INSERT INTO issues (id, tenant_id, engagement_id, work_item_id, record_ref, "
@@ -212,7 +213,7 @@ async def create_issue(
                 "contact": client_contact_id,
                 "wording": sealed["client_wording_sealed"],
                 "note": sealed["internal_note_sealed"],
-                "blocks": "{" + ",".join(sorted(set(blocks))) + "}",
+                "blocks": sorted(set(blocks)),
                 "src": source_ref,
             },
         )
@@ -225,7 +226,7 @@ async def create_issue(
         tx.record(
             "issue.created",
             target=Target(SUBJECT, issue_id),
-            after=Ref(kind=kind, priority=priority, record=record_id),
+            after=Ref(record=record_id),  # kind and priority live on the row (Ref: ids only)
             scope=Scope(engagement_id=engagement_id),
         )
         if assignee_user_id is not None:
@@ -394,7 +395,7 @@ async def open_blocking(tenant: TenantContext, record_id: UUID, block: str) -> l
                 "SELECT id FROM issues WHERE record_ref ->> 'id' = :r AND :b = ANY(blocks) "
                 "AND status = ANY(CAST(:open AS text[])) ORDER BY created_at, id"
             ),
-            {"r": str(record_id), "b": block, "open": "{" + ",".join(sorted(OPEN_STATUSES)) + "}"},
+            {"r": str(record_id), "b": block, "open": sorted(OPEN_STATUSES)},
         )
         return [cast(UUID, r[0]) for r in rows]
 

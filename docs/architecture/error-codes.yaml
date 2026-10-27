@@ -1158,6 +1158,11 @@ codes:
     raised_by:
     - abacus.modules.assurance.phase.PhaseSkip
     summary: 'The target phase is past the next one: a phase cannot be skipped.'
+  pilot_mode_refused:
+    status: 409
+    raised_by:
+    - abacus.modules.platform.pilots.PilotModeRefused
+    summary: The enrolment cannot move to that mode from where it is (or without a confirming person).
   planning_invalid:
     status: 422
     raised_by:

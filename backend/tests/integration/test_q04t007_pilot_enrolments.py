@@ -37,12 +37,13 @@ def test_ac_snapshots_once_insert_only_and_a_named_confirmer(private_db: sc.Data
         entity = await seed.entity(tenant)
         engagement = await seed.engagement(tenant, entity, person.user_id)
         work_item = await seed.value(
-            "SELECT id FROM work_items WHERE tenant_id = $1 AND engagement_id = $2 LIMIT 1",
+            "INSERT INTO work_items (tenant_id, engagement_id, client_id, kind, name, created_by) "
+            "SELECT $1, e.id, e.client_id, 'tax_return', '2026 Form 1120', $3 FROM engagements e "
+            "WHERE e.id = $2 RETURNING id",
             tenant,
             engagement,
+            person.user_id,
         )
-        if work_item is None:
-            pytest.skip("the seeded engagement has no work item")
         enrolment = await seed.value(
             "INSERT INTO pilot_enrolments (tenant_id, work_item_id, window_start, window_end, "
             "created_by) VALUES ($1, $2, '2027-06-01', '2027-07-12', $3) RETURNING id",
@@ -62,7 +63,7 @@ def test_ac_snapshots_once_insert_only_and_a_named_confirmer(private_db: sc.Data
         await seed.run(snap, tenant, enrolment)
         with pytest.raises(asyncpg.UniqueViolationError):
             await seed.run(snap, tenant, enrolment)
-        app = await asyncpg.connect(sc._dsn(private_db.app_url))  # pyright: ignore[reportPrivateUsage]
+        app = await asyncpg.connect(sc._dsn(private_db.app_url))  # pyright: ignore[reportPrivateUsage] -- the stack helper's DSN form
         try:
             await app.execute("SELECT set_config('app.tenant_id', $1, false)", str(tenant))
             for statement in (

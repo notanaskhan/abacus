@@ -1,8 +1,8 @@
 ---
 id: TASK-1621
 title: Pilot enrolments and metric snapshots (Q-04-T007)
-spec: none (Q-04 §4)
-acceptance_criteria: [Q-04-T007]
+spec: SPEC-341
+acceptance_criteria: [AC-1]
 risk_zone: amber
 status: in-review
 epic: Q-04

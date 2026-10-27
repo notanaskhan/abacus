@@ -729,7 +729,8 @@ async def record_events(
     """CLI-02's and ENG-02's Activity lines, newest first, in the actor grammar. The caller has
     already 404'd a record the reader may not read (walls included). An engagement's events are
     shown through `visible(record_activity.read)`; a client's are its own firm-level events
-    (stored `client_id`, no engagement) and its engagements' events the reader may see. Nothing
+    (stored `client_id`, no engagement) for a reader whose firm role holds the read at the
+    client, and its engagements' events the reader may see. Nothing
     from a walled client: a stored walled `client_id`, or a reference naming one, hides the event.
     No request context and no values: identifiers only, as the explorer's rows."""
     if (client_id is None) == (engagement_id is None):
@@ -737,11 +738,18 @@ async def record_events(
     walled = await walled_from(ctx.tenant, ctx.user_id)
     reader = Reader(ctx, firm=False, walled=walled, request_context=False)
     seen = and_(ENGAGEMENT.is_not(None), visible(ctx, RECORD_READ, ENGAGEMENT))
-    conditions: list[ColumnElement[bool]] = (
-        [t.client_id.is_not_distinct_from(client_id), or_(ENGAGEMENT.is_(None), seen)]
-        if client_id is not None
-        else [ENGAGEMENT.is_not_distinct_from(engagement_id), seen]
-    )
+    if client_id is not None:
+        # The client's own (firm-level) events need the read at the client, by firm role;
+        # an engagement-only member sees the client's engagements' events alone (fail closed).
+        at_client = Resource.client(ctx.tenant_id, client_id)
+        firm_level = RECORD_READ in await allowed_actions(ctx, at_client, (RECORD_READ,))
+        own = ENGAGEMENT.is_(None) if firm_level else false()
+        conditions: list[ColumnElement[bool]] = [
+            t.client_id.is_not_distinct_from(client_id),
+            or_(own, seen),
+        ]
+    else:
+        conditions = [ENGAGEMENT.is_not_distinct_from(engagement_id), seen]
     if walled:
         conditions += [
             or_(t.client_id.is_(None), t.client_id.not_in(sorted(walled))),

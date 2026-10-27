@@ -119,9 +119,9 @@ async def _events(world: World, event_type: str) -> int:
 async def test_ac_token_expired_needs_reauth_with_exactly_one_notification(world: World) -> None:
     cid = await _probed(world)
     _Probe.fault = ConnectorError("token_expired")
-    assert await health._check_firm(world.tenant) == 1
+    assert await health.check_firm(world.tenant) == 1
     assert await _row(world, cid) == ("needs_attention", "token_expired")
-    assert await health._check_firm(world.tenant) == 1  # the next day: still expired
+    assert await health.check_firm(world.tenant) == 1  # the next day: still expired
     assert await _events(world, "connection.needs_reauth") == 1
     actions = await world.net.seed.rows(
         "SELECT action FROM audit_events WHERE tenant_id = $1 AND action = "
@@ -134,7 +134,7 @@ async def test_ac_token_expired_needs_reauth_with_exactly_one_notification(world
 async def test_ac_no_pull_runs_on_a_connection_that_needs_attention(world: World) -> None:
     cid = await _probed(world)
     _Probe.fault = ConnectorError("token_expired")
-    await health._check_firm(world.tenant)
+    await health.check_firm(world.tenant)
     response = await world.call("POST", f"/v1/portal/connections/{cid}/retry", world.tess)
     assert response.status_code == 409
     assert response.json()["detail"] == "connection_needs_reauth"
@@ -144,7 +144,7 @@ async def test_ac_no_pull_runs_on_a_connection_that_needs_attention(world: World
 async def test_an_outage_needs_attention_without_the_reauth_event(world: World) -> None:
     cid = await _probed(world)
     _Probe.fault = Unavailable("provider_unavailable")
-    await health._check_firm(world.tenant)
+    await health.check_firm(world.tenant)
     assert await _row(world, cid) == ("needs_attention", "provider_unavailable")
     assert await _events(world, "connection.needs_reauth") == 0
 
@@ -152,9 +152,9 @@ async def test_an_outage_needs_attention_without_the_reauth_event(world: World) 
 async def test_a_healthy_check_restores_active(world: World) -> None:
     cid = await _probed(world)
     _Probe.fault = Unavailable("provider_unavailable")
-    await health._check_firm(world.tenant)
+    await health.check_firm(world.tenant)
     _Probe.fault = None
-    await health._check_firm(world.tenant)
+    await health.check_firm(world.tenant)
     assert await _row(world, cid) == ("active", None)
 
 
@@ -162,19 +162,19 @@ async def test_a_reauth_due_within_seven_days_is_told_once_per_due_date(world: W
     cid = await _probed(world)
     due = system_now() + timedelta(days=3)
     await world.net.seed.run("UPDATE connections SET reauth_due_at = $2 WHERE id = $1", cid, due)
-    await health._check_firm(world.tenant)
-    await health._check_firm(world.tenant)
+    await health.check_firm(world.tenant)
+    await health.check_firm(world.tenant)
     assert await _events(world, "connection.reauth_due") == 1
     await world.net.seed.run(
         "UPDATE connections SET reauth_due_at = $2 WHERE id = $1", cid, due + timedelta(days=1)
     )
-    await health._check_firm(world.tenant)
+    await health.check_firm(world.tenant)
     assert await _events(world, "connection.reauth_due") == 2
 
 
 async def test_the_demo_ledger_is_never_probed(world: World) -> None:
     await world.connected()  # provider `fake`: networkless
-    assert await health._check_firm(world.tenant) == 0
+    assert await health.check_firm(world.tenant) == 0
 
 
 async def test_one_firm_failing_does_not_stop_the_pass(
@@ -191,7 +191,7 @@ async def test_one_firm_failing_does_not_stop_the_pass(
             raise RuntimeError("boom")
         return await original(tenant_id)
 
-    original = health._check_firm
+    original = health.check_firm
     monkeypatch.setattr(health, "firm_tenant_ids", firms)
-    monkeypatch.setattr(health, "_check_firm", check)
+    monkeypatch.setattr(health, "check_firm", check)
     assert await health.check_connection_health() == 1

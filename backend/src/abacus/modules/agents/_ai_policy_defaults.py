@@ -129,7 +129,9 @@ _DOCUMENT: Final[dict[str, object]] = json.loads(
     },
     {
       "actions": [],
-      "approver_roles": [],
+      "approver_roles": [
+        "senior"
+      ],
       "approver_rule": "senior_with_approved_batch",
       "attest": "posting_disabled",
       "gate_key": "post_batch_to_gl",
@@ -141,7 +143,9 @@ _DOCUMENT: Final[dict[str, object]] = json.loads(
     },
     {
       "actions": [],
-      "approver_roles": [],
+      "approver_roles": [
+        "reviewer"
+      ],
       "approver_rule": "reviewer_after_final_approval",
       "gate_key": "export_return_to_engine",
       "log_action": "write_capability.executed",
@@ -173,7 +177,10 @@ _DOCUMENT: Final[dict[str, object]] = json.loads(
     },
     {
       "actions": [],
-      "approver_roles": [],
+      "approver_roles": [
+        "engagement_partner",
+        "manager"
+      ],
       "approver_rule": "manager_or_partner",
       "gate_key": "send_notice_response",
       "log_action": "notice.response_sent",
@@ -265,8 +272,8 @@ _DOCUMENT: Final[dict[str, object]] = json.loads(
     "auto_mode_defaults.preparation": "lower",
     "auto_mode_defaults.review_compilation": "lower",
     "auto_mode_defaults.tax_return": "lower",
+    "autonomy.level": "lower",
     "client_data.client_drafts_enabled": "lower",
-    "client_data.disclosure_in_letters": "higher",
     "governance.accuracy_sample_n": "higher",
     "governance.override_tolerance_pct": "lower",
     "governance.trace_retention_years": "higher"

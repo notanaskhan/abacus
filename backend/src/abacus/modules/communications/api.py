@@ -41,6 +41,7 @@ from abacus.modules.communications.follow_ups import (
     compose_follow_up,
     deliver_follow_up,
 )
+from abacus.modules.communications.intake_contract import destinations_router, intake_router
 from abacus.modules.communications.invitations import deliver_invitation, deliver_staff_invitation
 from abacus.modules.communications.notification_email import (
     NotificationMail,
@@ -53,7 +54,6 @@ from abacus.modules.communications.notification_email import (
 from abacus.modules.communications.preview_scope import PreviewSelection, viewer_scoped
 from abacus.modules.communications.render import Block as TemplateBlockContent
 from abacus.modules.communications.render import TemplateContent
-from abacus.modules.communications.intake_contract import destinations_router, intake_router
 from abacus.modules.communications.routes import router
 from abacus.modules.communications.scheduled_reminders import (
     ScheduledReminder,

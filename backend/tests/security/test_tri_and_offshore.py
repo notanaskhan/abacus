@@ -147,6 +147,7 @@ async def test_i_offshore_only_the_not_offshore_actions_are_refused_at_the_condi
         "email_template.test_send",  # R-01-T16 (DEC-379): firm-level, below
         "run_trace.export",
         "trial_balance.export",
+        "signer.reveal_ip",  # N-02-T02 (SPEC-381): a signer's IP, revealed as a second step
         "firm_export.download",
     } == NOT_OFFSHORE
     assert refused == NOT_OFFSHORE - {"firm_export.download", "email_template.test_send"}

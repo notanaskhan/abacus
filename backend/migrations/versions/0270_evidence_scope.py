@@ -323,7 +323,8 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.execute(
+    # The guard reads every firm's rows: under FORCE RLS the owner would see none (as upgrade).
+    _unforced(
         """
         DO $$
         BEGIN
@@ -335,7 +336,8 @@ def downgrade() -> None:
                     WHERE v.engagement_id IS DISTINCT FROM f.engagement_id)
                OR EXISTS (
                    SELECT 1 FROM evidence_versions
-                    WHERE supersedes_version_id IS NOT NULL OR parent_version_id IS NOT NULL)
+                    WHERE supersedes_version_id IS NOT NULL OR parent_version_id IS NOT NULL
+                       OR engagement_id IS NULL)
             THEN
                 RAISE EXCEPTION 'client-scoped evidence, cross-engagement fulfilments or '
                     'version links exist: 0270 cannot be undone (ADR-004, ADR-158)';

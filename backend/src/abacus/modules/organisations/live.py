@@ -473,13 +473,6 @@ async def _visible_client(session: AsyncSession, ctx: AuthContext, client_id: UU
     return found
 
 
-async def readable_client(ctx: AuthContext, client_id: UUID) -> None:
-    """404 unless the caller may read the client (walls included); for another module's read
-    scoped to one client (P-07-T57: the record's Activity lines)."""
-    async with tenant_session(ctx.tenant) as session:
-        await _visible_client(session, ctx, client_id)
-
-
 def _tin(entity: ClientEntity) -> tuple[str | None, str | None, str | None]:
     if entity.tin_status == "none":
         return None, None, None

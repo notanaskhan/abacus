@@ -1224,14 +1224,8 @@ export type AiPolicyDeclineIn = {
  * One changed cell against the version before: "Override tolerance 8% → 6%".
  */
 export type AiPolicyDiffRowOut = {
-    /**
-     * After
-     */
-    after?: string | null;
-    /**
-     * Before
-     */
-    before?: string | null;
+    after?: JsonValue;
+    before?: JsonValue;
     /**
      * Path
      */
@@ -8111,10 +8105,7 @@ export type DrawerOut = {
      * Size Bytes
      */
     size_bytes: number;
-    /**
-     * FileDocumentStatus
-     */
-    status: never;
+    status: FileDocumentStatus;
     /**
      * Thumbnail Ref
      */
@@ -10971,6 +10962,11 @@ export type FieldVersionOut = {
 };
 
 /**
+ * FileDocumentStatus
+ */
+export type FileDocumentStatus = 'processing' | 'needs_review' | 'accepted' | 'superseded' | 'on_hold';
+
+/**
  * FileMatchOut
  */
 export type FileMatchOut = {
@@ -11048,10 +11044,7 @@ export type FileRow = {
      * Received At
      */
     received_at: string;
-    /**
-     * FileDocumentStatus
-     */
-    status: never;
+    status: FileDocumentStatus;
     /**
      * Superseded By Name
      */
@@ -14447,10 +14440,7 @@ export type IntakeUploadFileOut = {
      * Size Bytes
      */
     size_bytes: number;
-    /**
-     * PortalIntakeUploadStatus
-     */
-    status: never;
+    status: PortalIntakeUploadStatus;
 };
 
 /**
@@ -14496,10 +14486,7 @@ export type IntakeUploadOut = {
      * Sent At
      */
     sent_at: string;
-    /**
-     * PortalIntakeUploadStatus
-     */
-    status: never;
+    status: PortalIntakeUploadStatus;
 };
 
 /**
@@ -15321,6 +15308,8 @@ export type JoinedOut = {
     tenant_id: string;
 };
 
+export type JsonValue = unknown;
+
 /**
  * KindTotalOut
  */
@@ -15926,7 +15915,7 @@ export type LetterSendOut = {
 /**
  * LetterStatus
  */
-export type LetterStatus = 'draft' | 'partner_approved' | 'sent' | 'signed' | 'superseded';
+export type LetterStatus = 'not_started' | 'draft' | 'partner_approved' | 'sent' | 'signed' | 'not_required' | 'superseded';
 
 /**
  * LetterVariable
@@ -19610,6 +19599,11 @@ export type PortalHomeWorkCardOut = {
      */
     work_item_id: string;
 };
+
+/**
+ * PortalIntakeUploadStatus
+ */
+export type PortalIntakeUploadStatus = 'sent' | 'received' | 'withdrawn';
 
 /**
  * PortalLinkRenewIn

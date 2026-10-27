@@ -58,8 +58,10 @@ def validate(document: dict[str, object]) -> None:
     if len(set(keys)) != len(keys):
         raise ValueError("gate keys are unique")
     for gate in gates:
-        if bool(gate.get("actions")) != bool(gate.get("approver_roles")):
-            raise ValueError(f"{gate['gate_key']}: actions and approver roles come together")
+        # AC-32: every gate names its approver, the approver rule's roles until the owning epic
+        # builds the action (then the matrix's roles for it, checked by a generated test).
+        if not gate.get("approver_roles"):
+            raise ValueError(f"{gate['gate_key']}: every gate names its approver roles")
 
 
 def render(text: str) -> str:

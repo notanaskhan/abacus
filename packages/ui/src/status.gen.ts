@@ -1265,7 +1265,7 @@ export const STATUS_REGISTRY = {
       "label": "Sent",
       "variant": null,
       "terminal": false,
-      "derived": true,
+      "derived": false,
       "contextLabels": {
         "to_firm": "Sent to {firm}"
       }
@@ -1274,13 +1274,13 @@ export const STATUS_REGISTRY = {
       "label": "Received by {firm}",
       "variant": "green-tint",
       "terminal": true,
-      "derived": true
+      "derived": false
     },
     "withdrawn": {
       "label": "Withdrawn",
       "variant": "muted",
       "terminal": true,
-      "derived": true
+      "derived": false
     }
   },
   "file_document": {
@@ -1288,26 +1288,26 @@ export const STATUS_REGISTRY = {
       "label": "Processing",
       "variant": null,
       "terminal": false,
-      "derived": true
+      "derived": false
     },
     "needs_review": {
       "label": "Uploaded – needs review",
       "variant": "amber",
       "terminal": false,
-      "derived": true
+      "derived": false
     },
     "accepted": {
       "label": "Approved",
       "variant": null,
       "terminal": false,
-      "derived": true,
+      "derived": false,
       "disc": "check_olive"
     },
     "superseded": {
       "label": "Superseded",
       "variant": "muted",
       "terminal": true,
-      "derived": true,
+      "derived": false,
       "contextLabels": {
         "replaced_by": "Superseded · Replaced by {name} · {date}"
       }
@@ -1316,7 +1316,7 @@ export const STATUS_REGISTRY = {
       "label": "On hold",
       "variant": "amber",
       "terminal": false,
-      "derived": true
+      "derived": false
     }
   },
   "issue": {
@@ -2699,7 +2699,7 @@ export const STATUS_REGISTRY = {
       "label": "Not started",
       "variant": "neutral",
       "terminal": false,
-      "derived": true
+      "derived": false
     },
     "draft": {
       "label": "Draft",
@@ -2729,7 +2729,7 @@ export const STATUS_REGISTRY = {
       "label": "Not required this year",
       "variant": "muted",
       "terminal": true,
-      "derived": true
+      "derived": false
     },
     "superseded": {
       "label": "Superseded",

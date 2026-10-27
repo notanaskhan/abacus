@@ -107,6 +107,18 @@ def _realm(value: str) -> str:
     return value
 
 
+_UNRESERVED: Final = frozenset(
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"
+)
+
+
+def _percent(value: str) -> str:
+    """RFC 3986 percent-encoding of a query value (the redirect URI's `:` and `/` included)."""
+    return "".join(
+        c if c in _UNRESERVED else "".join(f"%{b:02X}" for b in c.encode()) for c in value
+    )
+
+
 def _safe(value: str) -> str:
     """OAuth values are URL-safe by construction; anything else is refused, not escaped."""
     if not value or not value.replace("-", "").replace("_", "").replace(".", "").isalnum():
@@ -140,7 +152,7 @@ class QuickBooksOnlineConnector(Connector):
         if code_challenge is None:
             raise ConnectorError("pkce_required")
         query = "&".join(
-            f"{k}={v}"
+            f"{k}={_percent(v)}"
             for k, v in (
                 ("client_id", _safe(self._app.client_id)),
                 ("response_type", "code"),

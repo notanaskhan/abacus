@@ -2,10 +2,10 @@
 
 `GET /v1/clients/{client_id}/activity` and `GET /v1/engagements/{engagement_id}/record-activity`
 (the engagement's `/activity` is the agent feed's, SPEC-027). Each checks the principal (a client
-principal 404s), the record family's flag, then the record itself (404 for a walled or unknown
-one, DEC-43), and `explorer.record_events` narrows every event. Rows are the explorer's
-`AuditEventRow`: action code, category, mark, actor grammar and identifier facts; the SPA words
-them (P-07-T61)."""
+principal 404s), the record family's flag, then the record itself (a walled client lists nothing,
+exactly as an unknown one, DEC-43), and `explorer.record_events` narrows every event. Rows are
+the explorer's `AuditEventRow`: action code, category, mark, actor grammar and identifier facts;
+the SPA words them (P-07-T61)."""
 
 from __future__ import annotations
 
@@ -21,8 +21,7 @@ from abacus.kernel.listing import ListPage
 from abacus.modules.audit_trail import explorer
 from abacus.modules.audit_trail.audit_log_contract import AuditEventRow, Ctx
 from abacus.modules.engagements import api as engagements
-from abacus.modules.identity.api import AbacusRouter, authorise
-from abacus.modules.organisations.api import readable_client
+from abacus.modules.identity.api import AbacusRouter, Forbidden, Resource, authorise
 
 clients_router = AbacusRouter(prefix="/v1/clients", tags=["activity"])
 engagements_router = AbacusRouter(prefix="/v1/engagements", tags=["activity"])
@@ -40,7 +39,13 @@ async def client_activity_route(
     """The client's own events and its engagements' events the reader may see."""
     if ctx.client or not await flag_enabled(ctx.tenant, CLIENTS_V2):
         raise NotFound("client")
-    await readable_client(ctx, client_id)
+    try:
+        await authorise(ctx, explorer.RECORD_READ, Resource.client(ctx.tenant_id, client_id))
+    except Forbidden as denied:
+        if denied.layer != "wall":
+            raise
+        # A walled client reads exactly as an unknown one: an empty list (DEC-43, D1).
+        return ListPage[AuditEventRow](items=[], next_cursor=None, total=0, total_capped=False)
     return await explorer.record_events(ctx, client_id=client_id, cursor=cursor, limit=limit)
 
 

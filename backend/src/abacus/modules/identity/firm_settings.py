@@ -36,6 +36,7 @@ from abacus.modules.identity.events import FirmAgentsResumed
 from abacus.modules.identity.repository import (
     DemoClockRow,
     acknowledge_onboarding,
+    agents_pause_of,
     agents_paused_since,
     ai_client_data,
     demo_clock_row,
@@ -294,6 +295,12 @@ async def read_letter_policy(ctx: AuthContext) -> bool:
 @dataclass(frozen=True)
 class AgentsState:
     paused_at: datetime | None
+
+
+async def agents_pause(tenant: TenantContext) -> tuple[datetime, UUID] | None:
+    """When the firm paused every engagement agent and who did (ADM-04's band, AC-42)."""
+    async with tenant_session(tenant) as session:
+        return await agents_pause_of(session)
 
 
 async def agents_paused(tenant: TenantContext) -> datetime | None:

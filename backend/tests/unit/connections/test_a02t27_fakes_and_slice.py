@@ -50,7 +50,8 @@ def _connection(provider: str) -> Connection:
 def test_ac_the_fakes_are_refused_outside_synthetic_environments(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    monkeypatch.setattr(settings(), "environment", "production")
+    production = settings().model_copy(update={"environment": "production"})
+    monkeypatch.setattr(fakes, "settings", lambda: production)
     with pytest.raises(fakes.FakeLedgersRefused):
         fakes.install_fake_ledgers(tmp_path)
     assert fakes.FAKE_QBO not in CONNECTORS

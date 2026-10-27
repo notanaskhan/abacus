@@ -52,12 +52,17 @@ async def test_ac36_a_stale_second_factor_cannot_start(world: World) -> None:
 
 
 async def test_ac36_a_state_completes_once_and_only_for_its_starter(world: World) -> None:
+    # Presented by anyone else, the state is spent and refused (A-02-T16: fail closed).
     handed = await world.handed()
     stolen = await world.complete(handed, world.contributor)
     assert stolen.status_code == 409
-    first = await world.complete(handed)
+    assert (await world.complete(handed)).status_code == 409
+    assert await world.count("connections") == 0
+    # The starter's own state completes once; a replay is refused.
+    fresh = await world.handed()
+    first = await world.complete(fresh)
     assert first.status_code == 201
-    replay = await world.complete(handed)
+    replay = await world.complete(fresh)
     assert replay.status_code == 409 and replay.json()["detail"] == "invalid_state"
     assert await world.count("connections") == 1
 

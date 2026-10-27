@@ -26,12 +26,13 @@ Rules the shapes carry (ADR-186, ADR-187):
 
 from __future__ import annotations
 
+import json
 from datetime import date, datetime
 from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Path, Query
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
 from abacus.kernel.classification import classified
 from abacus.kernel.listing import ListPage
@@ -239,8 +240,8 @@ class AiPolicyDiffRowOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     path: Annotated[str, classified("internal")]
-    before: Annotated[str | None, classified("internal")] = None
-    after: Annotated[str | None, classified("internal")] = None
+    before: Annotated[JsonValue, classified("internal")] = None
+    after: Annotated[JsonValue, classified("internal")] = None
 
 
 class AiPolicyVersionDetailOut(AiPolicyVersionOut):
@@ -443,7 +444,13 @@ async def _names(*versions: svc.Version | None) -> dict[UUID, str]:
 def _diff_out(
     before: dict[str, object] | None, after: dict[str, object]
 ) -> list[AiPolicyDiffRowOut]:
-    return [AiPolicyDiffRowOut(path=p, before=b, after=a) for p, b, a in svc.diff(before, after)]
+    def value(text: str | None) -> JsonValue:
+        return cast(JsonValue, json.loads(text)) if text is not None else None
+
+    return [
+        AiPolicyDiffRowOut(path=p, before=value(b), after=value(a))
+        for p, b, a in svc.changed_cells(before, after)
+    ]
 
 
 def _draft_out(d: svc.Draft, effective: svc.Version, names: dict[UUID, str]) -> AiPolicyDraftOut:
@@ -484,6 +491,7 @@ async def ai_policy_route(ctx: Ctx) -> AiPolicyOut:
     AC-35, AC-41 to AC-44)."""
     view = await svc.read_policy(ctx)
     names = await _names(view.effective, view.pending, view.scheduled)
+    names |= await svc.person_names([view.paused_by])
     draft = None
     if view.draft is not None:
         names |= await svc.person_names([view.draft.updated_by])
@@ -499,7 +507,11 @@ async def ai_policy_route(ctx: Ctx) -> AiPolicyOut:
         immediate=ImmediateControlsOut(
             client_data_opt_in=ClientDataOptInOut(on=view.opted_in),
             agent_stages=[],
-            firm_pause=FirmPauseOut(paused=view.paused_at is not None, paused_at=view.paused_at),
+            firm_pause=FirmPauseOut(
+                paused=view.paused_at is not None,
+                paused_at=view.paused_at,
+                paused_by=_person(view.paused_by, names),
+            ),
         ),
         sub_processors=[
             SubProcessorOut(
@@ -512,6 +524,7 @@ async def ai_policy_route(ctx: Ctx) -> AiPolicyOut:
         ],
         model_family=view.model_family,
         real_firm=view.real_firm,
+        actions=sorted(view.actions),
     )
 
 
@@ -572,7 +585,7 @@ async def effective_ai_policy_route(
         autonomy_level=sections.autonomy.level,
         auto_mode=found.auto_mode,
         auto_mode_effective=found.auto_mode_effective,
-        auto_mode_lock="real_firm_season_1" if found.auto_mode and found.real_firm else None,
+        auto_mode_lock="real_firm_season_1" if found.real_firm else None,
         policy_principal_on=sections.policy_principal.on,
         client_data=sections.client_data,
         firm_paused=found.paused,

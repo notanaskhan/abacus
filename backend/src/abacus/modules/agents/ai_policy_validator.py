@@ -45,10 +45,10 @@ def check_stricter_only(draft: Mapping[str, object]) -> None:
             raise _refuse(path)
     for gate in cast(list[Mapping[str, object]], draft.get("gates", [])):
         key = str(gate.get("action_key", ""))
-        if key not in GATE_KEYS:
-            raise _refuse(f"gates.{key}")
         if gate.get("policy_acceptance_on", False) is not False:
             raise _refuse(f"gates.{key}.policy_acceptance_on")
+        if key not in GATE_KEYS:
+            raise _refuse(f"gates.{key}")
     for path, way in STRICTER.items():
         value, floor = _cell(draft, path), _cell(SECTIONS, path)
         if value is None:

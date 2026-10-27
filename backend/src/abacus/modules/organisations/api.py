@@ -48,7 +48,6 @@ from abacus.modules.organisations.live import (
     contacts_section,
     entities_section,
     key_dates_section,
-    readable_client,
 )
 
 # P-06-T11: correlated name columns for another module's list (BND-01's client and office).
@@ -213,7 +212,6 @@ __all__ = [
     "mask_tin",
     "normalise",
     "office_name_column",
-    "readable_client",
     "register_client_engagements",
     "register_conflict_subject",
     "register_conflict_subject_names",

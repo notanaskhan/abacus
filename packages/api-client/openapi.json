@@ -2680,28 +2680,12 @@
         "description": "One changed cell against the version before: \"Override tolerance 8% \u2192 6%\".",
         "properties": {
           "after": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "After"
+            "$ref": "#/components/schemas/JsonValue",
+            "cls": "internal"
           },
           "before": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Before"
+            "$ref": "#/components/schemas/JsonValue",
+            "cls": "internal"
           },
           "path": {
             "cls": "internal",
@@ -17279,9 +17263,8 @@
             "type": "integer"
           },
           "status": {
-            "cls": "internal",
-            "enum": [],
-            "title": "FileDocumentStatus"
+            "$ref": "#/components/schemas/FileDocumentStatus",
+            "cls": "internal"
           },
           "thumbnail_ref": {
             "anyOf": [
@@ -23501,6 +23484,17 @@
         "title": "FieldVersionOut",
         "type": "object"
       },
+      "FileDocumentStatus": {
+        "enum": [
+          "processing",
+          "needs_review",
+          "accepted",
+          "superseded",
+          "on_hold"
+        ],
+        "title": "FileDocumentStatus",
+        "type": "string"
+      },
       "FileMatchOut": {
         "properties": {
           "inbox_file_id": {
@@ -23663,9 +23657,8 @@
             "type": "string"
           },
           "status": {
-            "cls": "internal",
-            "enum": [],
-            "title": "FileDocumentStatus"
+            "$ref": "#/components/schemas/FileDocumentStatus",
+            "cls": "internal"
           },
           "superseded_by_name": {
             "anyOf": [
@@ -30553,9 +30546,8 @@
             "type": "integer"
           },
           "status": {
-            "cls": "internal",
-            "enum": [],
-            "title": "PortalIntakeUploadStatus"
+            "$ref": "#/components/schemas/PortalIntakeUploadStatus",
+            "cls": "internal"
           }
         },
         "required": [
@@ -30640,9 +30632,8 @@
             "type": "string"
           },
           "status": {
-            "cls": "internal",
-            "enum": [],
-            "title": "PortalIntakeUploadStatus"
+            "$ref": "#/components/schemas/PortalIntakeUploadStatus",
+            "cls": "internal"
           }
         },
         "required": [
@@ -32461,6 +32452,7 @@
         "title": "JoinedOut",
         "type": "object"
       },
+      "JsonValue": {},
       "KindTotalOut": {
         "properties": {
           "count": {
@@ -33773,10 +33765,12 @@
       },
       "LetterStatus": {
         "enum": [
+          "not_started",
           "draft",
           "partner_approved",
           "sent",
           "signed",
+          "not_required",
           "superseded"
         ],
         "title": "LetterStatus",
@@ -41153,6 +41147,15 @@
         ],
         "title": "PortalHomeWorkCardOut",
         "type": "object"
+      },
+      "PortalIntakeUploadStatus": {
+        "enum": [
+          "sent",
+          "received",
+          "withdrawn"
+        ],
+        "title": "PortalIntakeUploadStatus",
+        "type": "string"
       },
       "PortalLinkRenewIn": {
         "additionalProperties": false,

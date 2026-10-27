@@ -18,11 +18,12 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Final
+from typing import Any, Final
 
-from sqlalchemy import text
+from sqlalchemy import Select, and_, func, select
 
 from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.uow.explorer import AUDIT_EVENTS
 
 METRIC_ACTIONS: Final = frozenset(
     {
@@ -64,21 +65,46 @@ def _allowed(actions: Sequence[str]) -> list[str]:
     return sorted(set(actions))
 
 
-_COUNTS: Final = text(
-    "SELECT action, count(*) AS n FROM audit_events "
-    "WHERE action = ANY(CAST(:actions AS text[])) AND occurred_at >= :start "
-    "AND occurred_at < :end GROUP BY action"
-)
-_DURATIONS: Final = text(
-    "SELECT s.target_type, s.target_id, "
-    "EXTRACT(EPOCH FROM max(e.occurred_at) - min(s.occurred_at)) AS seconds "
-    "FROM audit_events s JOIN audit_events e "
-    "ON e.tenant_id = s.tenant_id AND e.target_type = s.target_type "
-    "AND e.target_id = s.target_id "
-    "WHERE s.action = :start_action AND e.action = :end_action "
-    "AND s.occurred_at >= :start AND e.occurred_at < :end AND e.occurred_at >= s.occurred_at "
-    "GROUP BY s.target_type, s.target_id ORDER BY s.target_type, s.target_id"
-)
+t = AUDIT_EVENTS.c  # the kernel's composed read surface, as the explorer reads it
+
+
+def _counts(
+    names: Sequence[str], window: Window
+) -> Select[*tuple[Any, ...]]:  # Any: action and count
+    return (
+        select(t.action, func.count().label("n"))
+        .where(t.action.in_(names), t.occurred_at >= window.start, t.occurred_at < window.end)
+        .group_by(t.action)
+    )
+
+
+def _durations(
+    start_action: str, end_action: str, window: Window
+) -> Select[*tuple[Any, ...]]:  # Any: wide
+    s, e = AUDIT_EVENTS.alias("s"), AUDIT_EVENTS.alias("e")
+    seconds = func.extract("epoch", func.max(e.c.occurred_at) - func.min(s.c.occurred_at))
+    return (
+        select(s.c.target_type, s.c.target_id, seconds.label("seconds"))
+        .select_from(
+            s.join(
+                e,
+                and_(
+                    e.c.tenant_id == s.c.tenant_id,
+                    e.c.target_type == s.c.target_type,
+                    e.c.target_id == s.c.target_id,
+                ),
+            )
+        )
+        .where(
+            s.c.action == start_action,
+            e.c.action == end_action,
+            s.c.occurred_at >= window.start,
+            e.c.occurred_at < window.end,
+            e.c.occurred_at >= s.c.occurred_at,
+        )
+        .group_by(s.c.target_type, s.c.target_id)
+        .order_by(s.c.target_type, s.c.target_id)
+    )
 
 
 async def event_counts(
@@ -86,10 +112,7 @@ async def event_counts(
 ) -> dict[str, int]:
     names = _allowed(actions)
     async with tenant_session(tenant) as session:
-        rows = await session.execute(
-            _COUNTS,
-            {"actions": "{" + ",".join(names) + "}", "start": window.start, "end": window.end},
-        )
+        rows = await session.execute(_counts(names, window))
         found = {str(r.action): int(r.n) for r in rows}
     return {name: found.get(name, 0) for name in names}
 
@@ -99,15 +122,7 @@ async def first_to_last_durations(
 ) -> list[TargetDuration]:
     _allowed([start_action, end_action])
     async with tenant_session(tenant) as session:
-        rows = await session.execute(
-            _DURATIONS,
-            {
-                "start_action": start_action,
-                "end_action": end_action,
-                "start": window.start,
-                "end": window.end,
-            },
-        )
+        rows = await session.execute(_durations(start_action, end_action, window))
         return [
             TargetDuration(str(r.target_type), str(r.target_id), float(r.seconds)) for r in rows
         ]

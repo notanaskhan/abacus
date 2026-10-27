@@ -16,8 +16,8 @@ from abacus.modules.portal.branding import (
 )
 from abacus.modules.portal.contract import router
 from abacus.modules.portal.documents_routes import documents_router
-from abacus.modules.portal.notices import SUBSCRIPTIONS
 from abacus.modules.portal.intake_contract import intake_router
+from abacus.modules.portal.notices import SUBSCRIPTIONS
 from abacus.modules.portal.pbc_contract import pbc_router
 from abacus.modules.portal.rooms_routes import rooms_router
 from abacus.modules.portal.settings_contract import settings_router

@@ -280,13 +280,17 @@ class InboxThreadStatus(StrEnum):
 
 
 class PortalIntakeUploadStatus(StrEnum):
-    pass
-    # derived, never stored: sent, received, withdrawn
+    SENT = "sent"
+    RECEIVED = "received"
+    WITHDRAWN = "withdrawn"
 
 
 class FileDocumentStatus(StrEnum):
-    pass
-    # derived, never stored: processing, needs_review, accepted, superseded, on_hold
+    PROCESSING = "processing"
+    NEEDS_REVIEW = "needs_review"
+    ACCEPTED = "accepted"
+    SUPERSEDED = "superseded"
+    ON_HOLD = "on_hold"
 
 
 class IssueStatus(StrEnum):
@@ -616,12 +620,13 @@ class AcceptanceRecordStatus(StrEnum):
 
 
 class LetterStatus(StrEnum):
+    NOT_STARTED = "not_started"
     DRAFT = "draft"
     PARTNER_APPROVED = "partner_approved"
     SENT = "sent"
     SIGNED = "signed"
+    NOT_REQUIRED = "not_required"
     SUPERSEDED = "superseded"
-    # derived, never stored: not_started, not_required
 
 
 class LetterRecordStatus(StrEnum):
@@ -977,8 +982,16 @@ STORED: dict[str, tuple[str, ...]] = {
         "ignored",
     ),
     "portal_intake_upload": (
+        "sent",
+        "received",
+        "withdrawn",
     ),
     "file_document": (
+        "processing",
+        "needs_review",
+        "accepted",
+        "superseded",
+        "on_hold",
     ),
     "issue": (
         "open",
@@ -1252,10 +1265,12 @@ STORED: dict[str, tuple[str, ...]] = {
         "declined",
     ),
     "letter": (
+        "not_started",
         "draft",
         "partner_approved",
         "sent",
         "signed",
+        "not_required",
         "superseded",
     ),
     "letter_record": (

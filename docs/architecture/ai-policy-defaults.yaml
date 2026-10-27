@@ -45,6 +45,7 @@ locks:
   - gates.*.policy_acceptance_on
   - client_data.require_7216_consent
 stricter:
+  autonomy.level: lower
   auto_mode_defaults.ebp_audit: lower
   auto_mode_defaults.fs_audit: lower
   auto_mode_defaults.review_compilation: lower
@@ -53,7 +54,6 @@ stricter:
   auto_mode_defaults.monthly_close: lower
   auto_mode_defaults.notice: lower
   auto_mode_defaults.advisory: lower
-  client_data.disclosure_in_letters: higher
   client_data.client_drafts_enabled: lower
   governance.override_tolerance_pct: lower
   governance.accuracy_sample_n: higher
@@ -113,7 +113,7 @@ gates:
     gate_key: post_batch_to_gl
     actions: []  # C-02 builds the posting write (W1, disabled)
     approver_rule: senior_with_approved_batch
-    approver_roles: []
+    approver_roles: [senior]  # the rule's role until the owning epic builds the action
     attest: posting_disabled
     where_shown: [CLS-07]
     log_action: write_capability.executed
@@ -121,7 +121,7 @@ gates:
     gate_key: export_return_to_engine
     actions: []  # T-01 builds the tax-engine bridge (W2, disabled)
     approver_rule: reviewer_after_final_approval
-    approver_roles: []
+    approver_roles: [reviewer]  # the rule's role until the owning epic builds the action
     where_shown: [TAX-09]
     log_action: write_capability.executed
   - row: 9
@@ -136,7 +136,7 @@ gates:
     gate_key: send_notice_response
     actions: []  # N-04 builds notice responses
     approver_rule: manager_or_partner
-    approver_roles: []
+    approver_roles: [engagement_partner, manager]  # the rule's roles until N-04 builds the action
     where_shown: [NOT-03]
     log_action: notice.response_sent
   - row: 11

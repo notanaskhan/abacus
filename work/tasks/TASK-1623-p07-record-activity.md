@@ -2,7 +2,7 @@
 id: TASK-1623
 title: Activity projection lines for client and engagement records (P-07-T57)
 spec: SPEC-349
-acceptance_criteria: [P-07-T57]
+acceptance_criteria: [AC-1]
 risk_zone: amber
 status: in-review
 epic: P-07

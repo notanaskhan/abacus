@@ -43,6 +43,12 @@ _INSERT_VERSION = (
     "supersedes_version_id) VALUES ($1, $2, $3, $4, $5, $6, $7, 'v1', 10, 'application/pdf', "
     "'portal_drop', 'uploaded', $8)"
 )
+# Before migration 0270 the column does not exist yet.
+_INSERT_LEGACY_VERSION = (
+    "INSERT INTO evidence_versions (id, tenant_id, engagement_id, evidence_item_id, version_no, "
+    "fingerprint, storage_key, storage_version_id, size_bytes, media_type, source, method) "
+    "VALUES ($1, $2, $3, $4, $5, $6, $7, 'v1', 10, 'application/pdf', 'portal_drop', 'uploaded')"
+)
 
 
 async def _version(
@@ -52,20 +58,17 @@ async def _version(
     item: uuid.UUID,
     number: int = 1,
     supersedes_version_id: uuid.UUID | None = None,
+    *,
+    legacy: bool = False,
 ) -> uuid.UUID:
     fingerprint = uuid.uuid4().hex * 2
     version = uuid.uuid4()
-    await seed.run(
-        _INSERT_VERSION,
-        version,
-        tenant,
-        engagement,
-        item,
-        number,
-        fingerprint,
-        f"tenants/{tenant}/sha256/{fingerprint}",
-        supersedes_version_id,
-    )
+    values = (version, tenant, engagement, item, number, fingerprint)
+    key = f"tenants/{tenant}/sha256/{fingerprint}"
+    if legacy:
+        await seed.run(_INSERT_LEGACY_VERSION, *values, key)
+    else:
+        await seed.run(_INSERT_VERSION, *values, key, supersedes_version_id)
     return version
 
 
@@ -119,7 +122,7 @@ def test_ac20_ac21_scope_backfill_fill_trigger_and_same_client_fulfilment(
             tenant,
             engagement,
         )
-        await _version(seed, tenant, engagement, uuid.UUID(str(item)))
+        await _version(seed, tenant, engagement, uuid.UUID(str(item)), legacy=True)
         return tenant, person.user_id, entity, engagement
 
     tenant, user, entity, engagement = asyncio.run(before())
@@ -177,7 +180,8 @@ def test_ac20_ac21_scope_backfill_fill_trigger_and_same_client_fulfilment(
     # Down refuses while client-scoped evidence exists.
     with pytest.raises(Exception, match="cannot be undone"):
         migrate(private_db.owner_url, BEFORE, down=True)
-    assert _revision(private_db) == head
+    # Later migrations may go down first; 0270 itself stays applied.
+    assert _revision(private_db) >= "0270" and head >= "0270"
 
 
 def test_0270_goes_down_and_up_on_a_firm_without_client_scoped_evidence() -> None:

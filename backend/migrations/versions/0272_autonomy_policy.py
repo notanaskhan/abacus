@@ -73,7 +73,7 @@ def upgrade() -> None:
             base_version_no integer NOT NULL CHECK (base_version_no >= 1),
             sections jsonb NOT NULL CHECK (jsonb_typeof(sections) = 'object'),
             schema_version integer NOT NULL DEFAULT 1 CHECK (schema_version >= 1),
-            version integer NOT NULL DEFAULT 0 CHECK (version >= 0),
+            version integer NOT NULL DEFAULT 1 CHECK (version >= 0),
             updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
             updated_by uuid NOT NULL
         )

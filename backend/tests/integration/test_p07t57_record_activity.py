@@ -212,10 +212,10 @@ async def test_ac_the_staffed_manager_reads_thornbury_and_nothing_of_ashford(
         "team.approved",
         "acceptance.decided",
     ]
+    # Her engagement role holds the read at the client, so the client's own events show too;
+    # Ashford's never do (DEC-718).
     client = await call("GET", f"/v1/clients/{world.thornbury_client}/activity")
-    assert all(
-        cast(dict[str, object], r["target"])["id"] != str(world.ashford) for r in _items(client)
-    )
+    assert _actions(client) == ["team.approved", "acceptance.decided", "client_intake.submitted"]
     refused = await call("GET", f"/v1/engagements/{world.ashford}/record-activity")
     assert refused.status_code in (403, 404)
 
@@ -226,10 +226,13 @@ async def test_ac_nothing_from_walled_clients(world: World, as_: Callable[[objec
         world.grace,
         "entity_relationship.created",
         Target("client", world.thornbury_client),
-        after=Ref(other_client_id=str(world.ashford_client)),
+        after=Ref(other_client_id=world.ashford_client),
     )
     ivan = as_(world.ivan)
-    assert (await ivan("GET", f"/v1/clients/{world.ashford_client}/activity")).status_code == 404
+    walled_client = await ivan("GET", f"/v1/clients/{world.ashford_client}/activity")
+    unknown = await ivan("GET", f"/v1/clients/{uuid.uuid4()}/activity")
+    assert walled_client.status_code == unknown.status_code == 200  # as if it never existed
+    assert _items(walled_client) == _items(unknown) == []
     walled_engagement = await ivan("GET", f"/v1/engagements/{world.ashford}/record-activity")
     assert walled_engagement.status_code == 404
     seen = _actions(await ivan("GET", f"/v1/clients/{world.thornbury_client}/activity"))

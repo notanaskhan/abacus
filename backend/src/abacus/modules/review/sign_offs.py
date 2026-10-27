@@ -341,7 +341,8 @@ async def eligibility(
     blocking = await open_blocking(
         ctx.tenant,
         target_id,
-        "final_approval" if level == max(facts.required_levels) else "sign_off",
+        # The final level, or any above it a firm may ask for, is final approval.
+        "final_approval" if level >= max(facts.required_levels) else "sign_off",
     )
     checks = [
         # P-04-T30: open issues that block this level read as one check, however many there are.

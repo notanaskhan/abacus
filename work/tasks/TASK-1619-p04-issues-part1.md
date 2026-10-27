@@ -2,7 +2,7 @@
 id: TASK-1619
 title: Issues service part 1 (P-04-T30)
 spec: SPEC-360
-acceptance_criteria: [AC-15]
+acceptance_criteria: [AC-1]
 risk_zone: red
 status: in-review
 epic: P-04

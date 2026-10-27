@@ -1534,14 +1534,7 @@ async def test_ac45_the_database_refuses_a_policy_decision_written_as_the_agent(
 # --- The legacy autonomy route (ADR-186 item 7) --------------------------------------------------
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "with ai_policy.v1 on, PUT /v1/firm/autonomy still sets the level alone instead of "
-        "answering 409 superseded_by_ai_policy (ADR-186 item 7), which G-02-T24 builds; "
-        "recorded in work/tasks/TASK-1485-g02-ai-policy-ac-suite.md"
-    ),
-)
+# G-02-T24 built the 409 (DEC-712): the strict xfail is lifted.
 async def test_ac38_the_legacy_autonomy_route_is_closed_for_a_flag_on_firm(
     world: World, as_: Callable[[object], Call], seed: Seeder
 ) -> None:

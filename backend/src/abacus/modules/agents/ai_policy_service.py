@@ -38,22 +38,34 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import DomainEvent, Ref, Target, uow
-from abacus.modules.agents._ai_policy_defaults import GATES, LOCKS, SECTIONS
+from abacus.modules.agents._ai_policy_defaults import GATES, LOCKS, SCHEMA_VERSION, SECTIONS
 from abacus.modules.agents.ai_policy_errors import AiPolicyLoosened, ApproverMustDiffer
 from abacus.modules.agents.ai_policy_validator import check_stricter_only
 from abacus.modules.identity.api import (
     AuthContext,
     Forbidden,
     Resource,
+    agents_pause,
     agents_paused,
     ai_client_data_opted_in,
+    allowed_actions,
     authorise,
     firm_tenancy,
+    member_facts,
     names_of,
 )
 
 MODEL_ROUTE: Final = "bedrock"
 _DECLINE_REASONS: Final = frozenset({"needs_changes", "wrong_effective_date", "other"})
+PLATFORM_FLOOR: Final = ("client_data.client_drafts_enabled", "governance.trace_retention_years")
+# The viewer's ADM-04 actions, probed at the firm (AC-33, AC-40): read-only without the draft.
+VIEWER_ACTIONS: Final = (
+    "ai_policy.read",
+    "ai_policy.draft",
+    "ai_policy.publish",
+    "ai_policy.approve",
+    "firm_agents.pause",
+)
 
 
 class StaleDraft(DomainConflict):
@@ -118,9 +130,11 @@ class PolicyView:
     locks: list[tuple[str, str]]
     opted_in: bool
     paused_at: datetime | None
+    paused_by: UUID | None
     sub_processors: list[dict[str, object]]
     model_family: str | None
     real_firm: bool
+    actions: frozenset[str] = frozenset()
 
 
 # --- reading -------------------------------------------------------------------------------------
@@ -156,7 +170,28 @@ async def _versions(tenant: TenantContext) -> list[Version]:
                 text("SELECT * FROM autonomy_policy_versions ORDER BY version_no DESC")
             )
         ).mappings()
-        return [_version(r) for r in rows]
+        found = [_version(r) for r in rows]
+    if all(v.version_no != 1 for v in found):
+        found.append(_IMPLICIT_V1)
+    return found
+
+
+# A firm created after migration 0272's carry-over has no stored version: it reads the compiled
+# defaults as its v1, published and carried over (DEC-711), until it publishes v2.
+_IMPLICIT_V1: Final = Version(
+    1,
+    "published",
+    SECTIONS,
+    SCHEMA_VERSION,
+    datetime(2026, 1, 1, tzinfo=UTC),
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    True,
+)
 
 
 async def _draft(tenant: TenantContext) -> Draft | None:
@@ -193,7 +228,7 @@ def superseded(versions: list[Version], version: Version, at: datetime) -> bool:
     )
 
 
-def diff(
+def changed_cells(
     before: Mapping[str, object] | None, after: Mapping[str, object]
 ) -> list[tuple[str, str | None, str | None]]:
     """Changed cells as (path, before, after), each value its JSON text; code, never a model."""
@@ -223,15 +258,21 @@ def gate_rows(sections: Mapping[str, object]) -> list[dict[str, object]]:
     ]
 
 
-def locks_for(real_firm: bool, security_admin_only: bool) -> list[tuple[str, str]]:
+def locks_for(
+    real_firm: bool, security_admin_only: bool, read_only: bool = False
+) -> list[tuple[str, str]]:
     found = [
         (path, "policy_principal_dormant" if "policy" in path else "platform_floor")
         for path in LOCKS
     ]
+    # Display only: the floor the validator holds (no drafts for clients, seven-year traces).
+    found += [(path, "platform_floor") for path in PLATFORM_FLOOR]
     if real_firm:
         found += [(f"auto_mode_defaults.{k}", "real_firm_season_1") for k in _auto_keys()]
     if security_admin_only:
         found += [(head, "client_data_only") for head in SECTIONS if head != "client_data"]
+    if read_only:  # "Only partners can change the AI policy." (AC-33)
+        found += [(head, "not_a_partner") for head in SECTIONS]
     return found
 
 
@@ -282,18 +323,22 @@ async def read_policy(ctx: AuthContext) -> PolicyView:
     )
     real_firm = await _real_firm(ctx.tenant)
     processors, family = _sub_processors(now.date())
+    actions = await allowed_actions(ctx, Resource.firm(ctx.tenant_id), VIEWER_ACTIONS)
+    # A drafter who may not publish (the security admin) edits fieldset D only (AC-40).
+    security_admin = "ai_policy.draft" in actions and "ai_policy.publish" not in actions
     return PolicyView(
         effective,
         pending,
         scheduled,
-        await _draft(ctx.tenant),
+        await _draft(ctx.tenant) or Draft(effective.version_no, effective.sections, 0, None, None),
         gate_rows(effective.sections),
-        locks_for(real_firm, ctx.firm_role == "security_admin"),
+        locks_for(real_firm, security_admin, "ai_policy.draft" not in actions),
         await ai_client_data_opted_in(ctx.tenant),
-        await agents_paused(ctx.tenant),
+        *(await agents_pause(ctx.tenant) or (None, None)),
         processors,
         family,
         real_firm,
+        actions,
     )
 
 
@@ -370,22 +415,36 @@ async def read_draft(ctx: AuthContext) -> tuple[Draft, Version]:
     return draft, effective
 
 
-def _security_admin_scope(
+async def _security_admin_scope(
     ctx: AuthContext, base: Mapping[str, object], new: Mapping[str, object]
 ) -> None:
-    """AC-40: a security admin changes the client-data section only."""
-    if ctx.firm_role != "security_admin":
+    """AC-40: a security admin changes the client-data section only; a refusal names the first
+    changed cell outside it."""
+    allowed = await allowed_actions(ctx, Resource.firm(ctx.tenant_id), ("ai_policy.publish",))
+    if "ai_policy.publish" in allowed:
         return
-    for head in new:
-        if head != "client_data" and new.get(head) != base.get(head):
-            raise AiPolicyLoosened(head, facts={"field": head})
+    for path, _, _ in changed_cells(base, new):
+        if not path.startswith("client_data"):
+            raise AiPolicyLoosened(path, facts={"field": path})
+
+
+def _real_firm_auto_mode(current: Mapping[str, object], new: Mapping[str, object]) -> None:
+    """AC-35, AC-38: on a real firm Auto mode may be turned off, never on (Season 1)."""
+    was = cast(Mapping[str, object], current.get("auto_mode_defaults", {}))
+    now = cast(Mapping[str, object], new.get("auto_mode_defaults", {}))
+    for kind, on in now.items():
+        if on is True and was.get(kind) is not True:
+            field = f"auto_mode_defaults.{kind}"
+            raise AiPolicyLoosened(field, facts={"field": field})
 
 
 async def save_draft(ctx: AuthContext, sections: dict[str, object], if_match: int) -> Draft:
     await _open(ctx, "ai_policy.draft")
     check_stricter_only(sections)
     current, effective = await read_draft(ctx)
-    _security_admin_scope(ctx, effective.sections, sections)
+    await _security_admin_scope(ctx, current.sections, sections)
+    if await _real_firm(ctx.tenant):
+        _real_firm_auto_mode(current.sections, sections)
     if current.version != if_match:
         raise StaleDraft(facts={"version": current.version})
     async with uow(ctx.tenant) as tx:
@@ -416,7 +475,7 @@ async def save_draft(ctx: AuthContext, sections: dict[str, object], if_match: in
         tx.record(
             "ai_policy.draft_saved",
             target=Target("ai_policy", ctx.tenant_id),
-            after=Ref(changed_cells=len(diff(effective.sections, sections))),
+            after=Ref(changed_cells=len(changed_cells(effective.sections, sections))),
         )
     saved = await _draft(ctx.tenant)
     if saved is None:
@@ -426,44 +485,41 @@ async def save_draft(ctx: AuthContext, sections: dict[str, object], if_match: in
 
 async def discard_draft(ctx: AuthContext, if_match: int) -> None:
     await _open(ctx, "ai_policy.draft")
-    current, _ = await read_draft(ctx)
+    current, effective = await read_draft(ctx)
     if current.version != if_match:
         raise StaleDraft(facts={"version": current.version})
+    if current.updated_at is None:
+        return  # nothing saved: the draft already is the effective version
     async with uow(ctx.tenant) as tx:
-        await tx.session.execute(
+        changed = await tx.session.execute(
             text(
-                "UPDATE autonomy_policy_drafts SET sections = v.sections, base_version_no = "
-                "v.version_no, version = d.version + 1, updated_at = clock_timestamp(), "
-                "updated_by = :u FROM autonomy_policy_drafts d, (SELECT version_no, sections "
-                "FROM autonomy_policy_versions WHERE state = 'published' AND effective_from <= "
-                ":now ORDER BY effective_from DESC, version_no DESC LIMIT 1) v "
-                "WHERE autonomy_policy_drafts.tenant_id = d.tenant_id"
+                "UPDATE autonomy_policy_drafts SET sections = CAST(:s AS jsonb), "
+                "base_version_no = :b, version = version + 1, updated_at = clock_timestamp(), "
+                "updated_by = :u WHERE version = :v"
             ),
-            {"u": ctx.user_id, "now": await clock.now(ctx.tenant)},
+            {
+                "s": json.dumps(effective.sections),
+                "b": effective.version_no,
+                "u": ctx.user_id,
+                "v": if_match,
+            },
         )
+        if cast(int, getattr(changed, "rowcount", 0)) != 1:
+            raise StaleDraft(facts={"version": if_match})
         tx.record("ai_policy.draft_discarded", target=Target("ai_policy", ctx.tenant_id))
 
 
 # --- versions ------------------------------------------------------------------------------------
 
 
-async def _is_partner(ctx: AuthContext, user_id: UUID) -> bool:
-    async with tenant_session(ctx.tenant) as session:
-        found = await session.scalar(
-            text(
-                "SELECT 1 FROM memberships WHERE user_id = :u AND kind = 'staff' "
-                "AND status = 'active' AND level = 'partner'"
-            ),
-            {"u": user_id},
-        )
-    return found is not None
-
-
 async def request_publish(ctx: AuthContext, effective_from: date, approver: UUID) -> Version:
     await _open(ctx, "ai_policy.publish")
     if approver == ctx.user_id:
         raise ApproverMustDiffer
-    if not await _is_partner(ctx, approver):
+    facts = await member_facts(ctx.tenant, approver)
+    if facts is None or facts.client:
+        raise NotFound("approver")  # another firm's person, or nobody: never named here
+    if facts.level != "partner":
         raise ApproverMustDiffer(facts={"reason": "not_a_partner"})
     draft, effective = await read_draft(ctx)
     check_stricter_only(draft.sections)
@@ -471,7 +527,8 @@ async def request_publish(ctx: AuthContext, effective_from: date, approver: UUID
     if any(v.state == "awaiting_approval" for v in versions):
         raise PendingVersionExists
     number = max(v.version_no for v in versions) + 1
-    starts = datetime.combine(effective_from, time.min, tzinfo=UTC)
+    # "Effective Sep 15" is the firm's Sep 15: midnight in `kernel.clock`'s firm zone (AC-39).
+    starts = datetime.combine(effective_from, time.min, clock.FIRM_ZONE)
     async with uow(ctx.tenant) as tx:
         await tx.session.execute(
             text(
@@ -502,7 +559,9 @@ async def _decide(
 ) -> Version:
     await _open(ctx, action)
     found = next((v for v in await _versions(ctx.tenant) if v.version_no == version_no), None)
-    if found is None or found.state != "awaiting_approval":
+    if found is None:
+        raise NotFound("ai_policy_version")
+    if found.state != "awaiting_approval":
         raise NoPendingVersion
     if state in ("published", "declined"):
         if found.requested_by == ctx.user_id:
