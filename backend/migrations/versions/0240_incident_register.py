@@ -14,7 +14,7 @@
   (20, 25 or 29) the FTC clock reminder went out, so a reminder is sent once.
 
 Revision ID: 0240
-Revises: 0220
+Revises: 0232
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, insert_only, tenant_table
 
 revision = "0240"
-down_revision = "0220"
+down_revision = "0232"
 branch_labels = None
 depends_on = None
 
