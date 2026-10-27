@@ -8,9 +8,10 @@ AUD-03 binder export (`export_selection.plan_selection`, `export_activities.sect
 accepted and unaccepted versions, no audit-trail section (the audit export is G-02-T17's).
 
 Nothing is widened for the firm: an engagement the approver may not read (a wall, a role or
-independence), one with no assurance work item and one with no asked PBC binder are left out and named in the firm index's
-`omitted` list with their reason, never silently dropped (DEC-640). A file whose bytes no longer
-match their fingerprint fails the whole export (RB-29), as it fails a binder export.
+independence), one with no assurance work item and one with no asked PBC binder are left out and
+named in the firm index's `omitted` list with their reason, never silently dropped (DEC-640). A
+file whose bytes no longer match their fingerprint fails the whole export (RB-29), as it fails a
+binder export.
 
 Each package is written to its own scratch file and returned with its digests; the firm archive
 (`firm_export_activities.write_archive`) stores it at `packages/<engagement_id>.zip` and its
