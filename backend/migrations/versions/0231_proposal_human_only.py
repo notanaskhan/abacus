@@ -23,7 +23,9 @@ depends_on = None
 _HUMAN_ONLY = [
     "acceptance.decided",
     "acceptance.review_completed",
+    "assurance.archive_recorded",
     "assurance.phase_recorded",
+    "assurance.release_recorded",
     "conflict.cleared",
     "contact.unlocked",
     "decision.decided",
@@ -74,10 +76,14 @@ _HUMAN_ONLY = [
     "team.approved",
 ]
 
+# The list this migration follows in the merged chain: 0226's (S11 lane 8), 0212's 44 plus
+# assurance.archive_recorded and assurance.release_recorded; the downgrade restores it.
 _HUMAN_ONLY_0212 = [
     "acceptance.decided",
     "acceptance.review_completed",
+    "assurance.archive_recorded",
     "assurance.phase_recorded",
+    "assurance.release_recorded",
     "conflict.cleared",
     "contact.unlocked",
     "decision.decided",
