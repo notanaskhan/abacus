@@ -12,7 +12,7 @@ carries that source (none can exist before this revision ships the format). The 
 on the same condition, since those snapshots would read `other` again.
 
 Revision ID: 0235
-Revises: 0220
+Revises: 0226
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ from __future__ import annotations
 from alembic import op
 
 revision = "0235"
-down_revision = "0220"
+down_revision = "0226"
 branch_labels = None
 depends_on = None
 
