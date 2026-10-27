@@ -11001,7 +11001,7 @@ export type FollowUpOut = {
     /**
      * Drafted By Kind
      */
-    drafted_by_kind: 'person' | 'agent';
+    drafted_by_kind: 'person' | 'agent' | 'system';
     /**
      * Edited
      */
@@ -14546,7 +14546,7 @@ export type LintFindingOut = {
     /**
      * Code
      */
-    code: 'amount' | 'tin_shape' | 'account_number' | 'attachment' | 'second_button' | 'unregistered_variable' | 'foreign_link' | 'platform_name';
+    code: 'amount' | 'tin_shape' | 'account_number' | 'attachment' | 'second_button' | 'unregistered_variable' | 'foreign_link' | 'platform_name' | 'banned_word';
     /**
      * Variable
      */
@@ -51246,10 +51246,6 @@ export type ImportEmailTemplatesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ImportEmailTemplatesError = ImportEmailTemplatesErrors[keyof ImportEmailTemplatesErrors];
@@ -51462,10 +51458,6 @@ export type PreviewEmailTemplateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PreviewEmailTemplateError = PreviewEmailTemplateErrors[keyof PreviewEmailTemplateErrors];
@@ -51583,9 +51575,9 @@ export type TestSendEmailTemplateErrors = {
      */
     422: ValidationErrorOut;
     /**
-     * Contract stub: not implemented yet
+     * Too soon or too many: retry after Retry-After
      */
-    501: ErrorOut;
+    429: ErrorOut;
 };
 
 export type TestSendEmailTemplateError = TestSendEmailTemplateErrors[keyof TestSendEmailTemplateErrors];
@@ -51732,10 +51724,6 @@ export type GetFollowUpPolicyErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetFollowUpPolicyError = GetFollowUpPolicyErrors[keyof GetFollowUpPolicyErrors];

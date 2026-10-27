@@ -1210,6 +1210,12 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"base_version_id", "sealed", "cta_target", "draft_version", "updated_by"}
             | {"updated_at"}
         ),
+        # R-01-T24 (0221): the firm's follow-up policy.
+        "follow_up_policies": frozenset(
+            {"cadence_days", "max_reminders", "send_local_time", "weekdays_only"}
+            | {"stop_on_binder_done", "notify_preparer_after_max", "cc_assigned_preparer", "mode"}
+            | {"version", "updated_by", "updated_at"}
+        ),
         "contacts": frozenset(
             {"display_name", "phone", "title", "organisation_name", "user_id", "portal_state"}
             | {"email", "party_kind", "version"}  # P-07-T25 (0146)

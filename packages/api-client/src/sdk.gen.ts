@@ -5237,8 +5237,9 @@ export const listEmailTemplates = <ThrowOnError extends boolean = false>(options
  * Import Email Templates Route
  *
  * Onboarding (R-01-T23): the dry run lints every key and reports changes; applying creates
- * drafts or published versions as database rows. Audited `email_template.imported` (dry runs
- * are not).
+ * drafts or published versions as database rows, all or nothing (422 `template_lint_failed`
+ * or `template_invalid` while any entry is refused). Fresh MFA by the matrix, dry run
+ * included. Audited `email_template.imported` (dry runs are not).
  */
 export const importEmailTemplates = <ThrowOnError extends boolean = false>(options: Options<ImportEmailTemplatesData, ThrowOnError>): RequestResult<ImportEmailTemplatesResponses, ImportEmailTemplatesErrors, ThrowOnError> => (options.client ?? client).post<ImportEmailTemplatesResponses, ImportEmailTemplatesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5296,7 +5297,8 @@ export const saveEmailTemplateDraft = <ThrowOnError extends boolean = false>(opt
  *
  * POR-20 a, c, d (R-01-T23): deterministic HTML and text plus lint findings on the text and
  * the filled values; the sample contact's items only as far as the viewer may read them
- * (DEC-379); creates nothing.
+ * (DEC-379); 404 for a draft or version that isn't there, or a contact the viewer can't see;
+ * creates nothing.
  */
 export const previewEmailTemplate = <ThrowOnError extends boolean = false>(options: Options<PreviewEmailTemplateData, ThrowOnError>): RequestResult<PreviewEmailTemplateResponses, PreviewEmailTemplateErrors, ThrowOnError> => (options.client ?? client).post<PreviewEmailTemplateResponses, PreviewEmailTemplateErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5326,9 +5328,11 @@ export const publishEmailTemplate = <ThrowOnError extends boolean = false>(optio
 /**
  * Test Send Email Template Route
  *
- * POR-20 j, k (R-01-T23): to the acting admin only, fresh MFA, onshore; the sample
- * contact's items as far as the viewer may read them (DEC-379); 422 `template_lint_failed`.
- * Audited `email_template.test_sent`.
+ * POR-20 j, k (R-01-T23): to the acting admin's own address only (from the session, never
+ * the request), "[Test]" before the subject, fresh MFA, onshore; the sample contact's items
+ * as far as the viewer may read them (DEC-379); 422 `template_lint_failed`; 429
+ * `test_send_rate_limited` (`retry_after`) after 10 in a rolling hour (DEC-569). Audited
+ * `email_template.test_sent`. A retry with the same key sends nothing again.
  */
 export const testSendEmailTemplate = <ThrowOnError extends boolean = false>(options: Options<TestSendEmailTemplateData, ThrowOnError>): RequestResult<TestSendEmailTemplateResponses, TestSendEmailTemplateErrors, ThrowOnError> => (options.client ?? client).post<TestSendEmailTemplateResponses, TestSendEmailTemplateErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5367,8 +5371,11 @@ export const setFieldworkSettings = <ThrowOnError extends boolean = false>(optio
 /**
  * Get Follow Up Policy Route
  *
- * The policy and the next send for a sample recipient (R-01-T24): Mon Sep 14 + 7 days is
- * Mon Sep 21; + 5 days is Sat Sep 19, shifted to Mon Sep 21.
+ * The policy and the next send for the sample recipient (R-01-T24): the last send taken as
+ * today's send time, so Mon Sep 14 + 7 days is Mon Sep 21, and + 5 days is Sat Sep 19, moved
+ * to Mon Sep 21. Until contacts carry a time zone the recipient's is the firm's (DEC-563), so
+ * the answer is the sample recipient's whatever `sample_contact_id` names (nothing about a
+ * contact is read or echoed).
  */
 export const getFollowUpPolicy = <ThrowOnError extends boolean = false>(options?: Options<GetFollowUpPolicyData, ThrowOnError>): RequestResult<GetFollowUpPolicyResponses, GetFollowUpPolicyErrors, ThrowOnError> => (options?.client ?? client).get<GetFollowUpPolicyResponses, GetFollowUpPolicyErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
