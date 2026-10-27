@@ -79,7 +79,7 @@ NON_TENANT_TABLES = frozenset(
     # 0194 (A-02-T12): the integration catalogue is platform content; definers only.
     | {"integration_catalog"}
     # 0242 (G-02-T20): the Pub 4557 control definitions are platform content; definers only.
-    | {"safeguards_controls"}
+    | {"safeguards_controls", "safeguards_control_set_log"}
 )
 # Insert-only tables outside the modules (ADR-004); each module lists its own in registry.py.
 _PLATFORM_INSERT_ONLY: frozenset[str] = frozenset(
@@ -242,7 +242,7 @@ GLOBAL_TABLES = frozenset(
     | {"incident_propagations"}  # 0143 (Q-02-T33)
     | {"standards_sets"}  # 0180 (K-01-T02): reference data, K-02's publish path writes it
     | {"integration_catalog"}  # 0194 (A-02-T12)
-    | {"safeguards_controls"}  # 0242 (G-02-T20)
+    | {"safeguards_controls", "safeguards_control_set_log"}  # 0242 (G-02-T20)
 )
 # SECURITY DEFINER functions: each runs as the owner, bypassing grants, so each is reviewed here.
 DEFINER_FUNCTIONS = frozenset(

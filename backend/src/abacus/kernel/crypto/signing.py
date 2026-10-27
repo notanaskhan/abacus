@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+from dataclasses import dataclass
 from functools import lru_cache
 from typing import TYPE_CHECKING, Protocol
 
@@ -44,14 +45,25 @@ class SigningUnavailable(ServiceUnavailable):
     signed with anything else instead (503)."""
 
 
+@dataclass(frozen=True)
+class SignedDigest:
+    """A signature and the key that made it: KMS's `KeyId` (the key's ARN) as `Sign` returns it,
+    not only the alias that pointed at it (security review)."""
+
+    signature: bytes
+    key_id: str
+
+
 class ExportSigner(Protocol):
     """Signs a SHA-256 digest; `key_ref` names the key (the KMS alias, or `local:<fingerprint>`)
-    and is recorded on the export."""
+    and is recorded on the export, beside the key id `resolve_key_id` and `sign_digest` give."""
 
     @property
     def key_ref(self) -> str: ...
 
-    async def sign_digest(self, digest: bytes) -> bytes: ...
+    async def resolve_key_id(self) -> str: ...
+
+    async def sign_digest(self, digest: bytes) -> SignedDigest: ...
 
 
 class LocalExportSigner:
@@ -82,8 +94,13 @@ class LocalExportSigner:
             serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo
         )
 
-    async def sign_digest(self, digest: bytes) -> bytes:
-        return self._key.sign(digest, ec.ECDSA(Prehashed(hashes.SHA256())))
+    async def resolve_key_id(self) -> str:
+        return self._ref
+
+    async def sign_digest(self, digest: bytes) -> SignedDigest:
+        return SignedDigest(
+            self._key.sign(digest, ec.ECDSA(Prehashed(hashes.SHA256()))), self._ref
+        )
 
 
 class KmsExportSigner:
@@ -98,7 +115,21 @@ class KmsExportSigner:
     def key_ref(self) -> str:
         return self._alias
 
-    async def sign_digest(self, digest: bytes) -> bytes:
+    async def resolve_key_id(self) -> str:
+        """The key the alias names now (`DescribeKey`), written into the manifest before it is
+        signed; `sign_digest` then refuses a signature made by any other key."""
+        try:
+            response = await asyncio.to_thread(self._client.describe_key, KeyId=self._alias)
+        except AwsError as exc:
+            code = error_code(exc)
+            _log.warning("kms.describe_failed", kms_error=code, error_type=type(exc).__name__)
+            raise SigningUnavailable("the export-signing key can't be described") from None
+        key_id = response.get("KeyMetadata", {}).get("Arn")
+        if not key_id:
+            raise SigningUnavailable("the export-signing key can't be described")
+        return key_id
+
+    async def sign_digest(self, digest: bytes) -> SignedDigest:
         try:
             response = await asyncio.to_thread(
                 self._client.sign,
@@ -112,9 +143,10 @@ class KmsExportSigner:
             _log.warning("kms.sign_failed", kms_error=code, error_type=type(exc).__name__)
             raise SigningUnavailable("the export can't be signed") from None
         signature = response.get("Signature")
-        if not signature:
+        key_id = response.get("KeyId")
+        if not signature or not key_id:
             raise SigningUnavailable("the export can't be signed")
-        return signature
+        return SignedDigest(signature, key_id)
 
 
 _signer: list[ExportSigner | None] = [None]
@@ -164,6 +196,7 @@ __all__ = [
     "ExportSigner",
     "KmsExportSigner",
     "LocalExportSigner",
+    "SignedDigest",
     "SigningUnavailable",
     "configure_export_signer",
     "export_signer",

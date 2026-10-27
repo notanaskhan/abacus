@@ -126,6 +126,8 @@ class AuditExportFacts:
     bundle_bytes: int
     segment_count: int
     signature_key_ref: str
+    # Security review: the key Sign used (its ARN); v1 histories predate it, hence the default.
+    signature_key_id: str = ""
 
 
 @dataclass(frozen=True)

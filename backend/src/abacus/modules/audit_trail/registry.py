@@ -33,6 +33,6 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "audit_exports": frozenset(
         {"status", "seq_from", "seq_to", "row_count", "csv_key", "manifest_key"}
         | {"manifest_sha256", "signature_key_ref", "expires_at", "updated_at"}
-        | {"segment_count", "bundle_bytes", "failure_code"}  # G-02-T17 (0243)
+        | {"segment_count", "bundle_bytes", "failure_code", "signature_key_id"}  # G-02-T17 (0243)
     ),
 }

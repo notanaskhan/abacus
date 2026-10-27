@@ -287,7 +287,9 @@ class AuditExport(BaseModel):
 
 
 class AuditExportLinkOut(BaseModel):
-    """A 15-minute presigned link; Restricted (it opens the firm's log) and never logged."""
+    """Where the export downloads: the API's own download route, never a presigned object
+    (ADR-104), valid while the second factor stays fresh (at most 15 minutes, never past the
+    export's expiry). Restricted (it opens the firm's log) and never logged."""
 
     model_config = ConfigDict(frozen=True)
 

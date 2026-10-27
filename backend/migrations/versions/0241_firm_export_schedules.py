@@ -5,7 +5,8 @@
 `security_admin` and a partner have each approved it, two distinct people (the CHECK); any change
 to its contents or its pause clears both approvals (the guard trigger), so a change always waits
 for both again. Every write is a live person's own (`updated_by`, bound by the trigger), and an
-approval names that same person (clearing one is a change's). `status` follows from the facts
+approval names that same person (clearing one is a change's, or the system's when a scheduled
+run finds the approver no longer holds the seat). `status` follows from the facts
 (a CHECK): `active` only with both approvals and not paused. Never deleted by the app.
 
 Revision ID: 0241
@@ -75,6 +76,23 @@ def upgrade() -> None:
         CREATE FUNCTION firm_export_schedules_guard() RETURNS trigger
         LANGUAGE plpgsql SET search_path = pg_catalog, public, pg_temp AS $$
         BEGIN
+            -- A scheduled run whose approver no longer holds the seat lapses that approval: the
+            -- system may clear approvals back to waiting, and change nothing else (review).
+            IF TG_OP = 'UPDATE' AND current_setting('app.actor_kind', true) = 'system' THEN
+                IF (NEW.time_zone, NEW.contents, NEW.paused, NEW.version, NEW.updated_by)
+                       IS DISTINCT FROM
+                       (OLD.time_zone, OLD.contents, OLD.paused, OLD.version, OLD.updated_by)
+                   OR NEW.status <> 'pending_approval'
+                   OR (NEW.approved_security_by IS NOT NULL
+                       AND NEW.approved_security_by IS DISTINCT FROM OLD.approved_security_by)
+                   OR (NEW.approved_partner_by IS NOT NULL
+                       AND NEW.approved_partner_by IS DISTINCT FROM OLD.approved_partner_by) THEN
+                    RAISE EXCEPTION 'the system only lapses a firm export schedule''s approvals'
+                        USING ERRCODE = 'insufficient_privilege';
+                END IF;
+                NEW.updated_at := clock_timestamp();
+                RETURN NEW;
+            END IF;
             IF current_setting('app.actor_kind', true) IS DISTINCT FROM 'human'
                OR NEW.updated_by::text IS DISTINCT FROM current_setting('app.actor_id', true) THEN
                 RAISE EXCEPTION 'a firm export schedule is a live person''s own'

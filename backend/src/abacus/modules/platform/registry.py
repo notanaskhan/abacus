@@ -21,6 +21,7 @@ TABLES: frozenset[str] = frozenset(
     # G-02-T20 (0242): Pub 4557 definitions (global, definers only), the firm's record, its
     # control statuses and its WISP pack jobs.
     | {"safeguards_controls", "safeguards_programs", "safeguards_control_statuses"}
+    | {"safeguards_control_set_log"}  # global staff record; definers only
     | {"wisp_packs"}
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -30,6 +31,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
     {"platform_control_changes", "incident_propagations"}
     | {"security_incident_timeline", "security_incident_decisions"}
     | {"security_incident_reminders"}
+    | {"safeguards_control_set_log"}
 )
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {

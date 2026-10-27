@@ -17,7 +17,9 @@ Behind `security_center.v1` (off: 404).
   otherwise. Each run (`FirmExportScheduleWorkflow`) re-reads the schedule and starts Q-02's
   firm export through the starter Q-02-T43 registers (`register_firm_export_starter`), which also
   notifies both approvers; until that lands nothing is exported, and the run records
-  `firm_export_schedule.run_skipped` and notifies nobody (DEC-623).
+  `firm_export_schedule.run_skipped` and notifies nobody (DEC-623). A run first re-checks
+  `security_center.v1` and that each approver still holds their seat; an approval whose person
+  left the firm or the seat lapses (`firm_export_schedule.approval_lapsed`) and nothing runs.
 """
 
 from __future__ import annotations
@@ -315,7 +317,41 @@ async def run_scheduled(tenant_id: UUID) -> str:
     row = await _read_row(system)
     if row is None or row["status"] != "active":
         return "inactive"
+    if not await flag_enabled(system, SECURITY_CENTER_V1):
+        return "inactive"  # the security center was turned off since it was approved
     approvers = (cast(UUID, row["approved_security_by"]), cast(UUID, row["approved_partner_by"]))
+    lapsed = [
+        column
+        for column, user, seat in (
+            ("approved_security_by", approvers[0], "security_admin"),
+            ("approved_partner_by", approvers[1], "partner"),
+        )
+        if seat not in await _seats(tenant_id, user)
+    ]
+    if lapsed:
+        # Security review: an approver who left the firm or the seat no longer stands behind
+        # the export. The approval lapses (back to waiting for both seats), nothing runs.
+        async with uow(system) as tx:
+            await tx.session.execute(
+                text(
+                    "UPDATE firm_export_schedules SET status = 'pending_approval', "
+                    "approved_security_by = CASE WHEN :security THEN NULL "
+                    "ELSE approved_security_by END, "
+                    "approved_partner_by = CASE WHEN :partner THEN NULL "
+                    "ELSE approved_partner_by END"
+                ),
+                {
+                    "security": "approved_security_by" in lapsed,
+                    "partner": "approved_partner_by" in lapsed,
+                },
+            )
+            tx.record(
+                "firm_export_schedule.approval_lapsed",
+                target=Target(SUBJECT, tenant_id),
+                after=Ref(seats=len(lapsed)),
+            )
+            tx.emit(FirmExportScheduleChanged(tenant_id=tenant_id))
+        return "lapsed"
     if not _starter:
         async with uow(system) as tx:
             tx.record("firm_export_schedule.run_skipped", target=Target(SUBJECT, tenant_id))

@@ -139,6 +139,10 @@ def upgrade() -> None:
                 RAISE EXCEPTION 'an incident decision is a live person''s own'
                     USING ERRCODE = 'insufficient_privilege';
             END IF;
+            -- Serialise the two decisions on the incident row (security review), so two first
+            -- decisions can never both see none.
+            PERFORM 1 FROM public.security_incidents
+             WHERE tenant_id = NEW.tenant_id AND id = NEW.incident_id FOR UPDATE;
             SELECT kind, waiting_for INTO v_first FROM public.security_incident_decisions
              WHERE tenant_id = NEW.tenant_id AND incident_id = NEW.incident_id;
             IF FOUND THEN
@@ -181,6 +185,7 @@ def upgrade() -> None:
         DECLARE
             v_kind text;
             v_count integer;
+            v_kinds integer;
         BEGIN
             IF current_user <> 'abacus_app' THEN
                 RETURN NEW;  -- the owner's maintenance; the app is held to the decisions
@@ -189,10 +194,10 @@ def upgrade() -> None:
                 RAISE EXCEPTION 'an incident is decided by people'
                     USING ERRCODE = 'insufficient_privilege';
             END IF;
-            SELECT min(kind), count(*) INTO v_kind, v_count
+            SELECT min(kind), count(*), count(DISTINCT kind) INTO v_kind, v_count, v_kinds
               FROM public.security_incident_decisions
              WHERE tenant_id = OLD.tenant_id AND incident_id = OLD.id;
-            IF v_count IS DISTINCT FROM 2 THEN
+            IF v_count IS DISTINCT FROM 2 OR v_kinds IS DISTINCT FROM 1 THEN
                 RAISE EXCEPTION 'an incident needs both decisions first'
                     USING ERRCODE = 'insufficient_privilege';
             END IF;

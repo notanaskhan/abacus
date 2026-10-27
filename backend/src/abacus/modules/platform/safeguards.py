@@ -492,7 +492,8 @@ class PackDownload:
 
 
 async def download_pack(ctx: AuthContext, pack_id: UUID) -> PackDownload:
-    """The requester's ready pack (409 `export_not_ready`, 410 `export_expired`)."""
+    """The requester's ready pack (409 `export_not_ready`, 410 `export_expired`); audited
+    `wisp_pack.downloaded` before the first byte."""
     await _gate(ctx)
     _human(ctx, "security.manage")
     async with tenant_session(ctx.tenant) as session:
@@ -504,6 +505,14 @@ async def download_pack(ctx: AuthContext, pack_id: UUID) -> PackDownload:
     expires = cast(datetime | None, row["expires_at"])
     if expires is not None and max(await clock.now(ctx.tenant), clock.system_now()) >= expires:
         raise WispPackExpired
+    # M1 (security review): the pack can hold Restricted evidence, so its download is audited,
+    # naming the requester, before the first byte.
+    async with uow(ctx.tenant) as tx:
+        tx.record(
+            "wisp_pack.downloaded",
+            target=Target(PACK, pack_id),
+            after=Ref(bytes=int(row["bundle_bytes"] or 0)),
+        )
     return PackDownload(
         file_name=f"wisp-pack-{cast(datetime, row['created_at']).date().isoformat()}.zip",
         size=int(row["bundle_bytes"] or 0),
@@ -645,7 +654,14 @@ async def mark_pack_failed(failure: WispPackFailure) -> str:
 
 @activity.defn(name="platform.wisp_pack_build")
 async def build_pack_activity(given: WispPackInput) -> WispPackFacts:
-    return await build_pack(given)
+    """A document the requester may not read (walled, withdrawn, unknown) will not become
+    readable on a retry: decided at once, never retried (security review)."""
+    try:
+        return await build_pack(given)
+    except (NotFound, Forbidden):
+        raise ApplicationError(
+            "document_unavailable", type="document_unavailable", non_retryable=True
+        ) from None
 
 
 @activity.defn(name="platform.wisp_pack_ready")

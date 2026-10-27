@@ -77,7 +77,14 @@ from abacus.modules.audit_trail.workflows import (
     AuditExportWorkflow,
     audit_export_workflow_id,
 )
-from abacus.modules.identity.api import AuthContext, Forbidden, member_context, names_of
+from abacus.modules.identity.api import (
+    AuthContext,
+    Forbidden,
+    Resource,
+    authorise,
+    member_context,
+    names_of,
+)
 
 SUBJECT: Final = "audit_export"
 _KIND: Final[BundleKind] = "audit-log"
@@ -479,6 +486,16 @@ def _beat(progress: int) -> None:
         activity.heartbeat(progress)
 
 
+async def _still_allowed(ctx: AuthContext) -> None:
+    """Security review: the requester still holds the export family's rights at build time, not
+    only at the request. `audit_export.read` grants the same roles as `audit_event.export`
+    without the fresh second factor a worker cannot have."""
+    try:
+        await authorise(ctx, "audit_export.read", Resource.firm(ctx.tenant_id))
+    except Forbidden:
+        raise _decided("requester_not_member") from None
+
+
 def _decided(code: str) -> ApplicationError:
     return ApplicationError(code, type=code, non_retryable=True)
 
@@ -527,6 +544,7 @@ async def build(given: AuditExportInput) -> AuditExportFacts:
     ctx = await member_context(tenant_id, row.requested_by)
     if ctx is None:
         raise _decided("requester_not_member")
+    await _still_allowed(ctx)
     try:
         signer = export_signer()
     except SigningUnavailable:
@@ -568,6 +586,10 @@ async def build(given: AuditExportInput) -> AuditExportFacts:
             after = batch[-1][0].seq
         csv_sha256 = digest.hexdigest()
         checkpoint = await latest_checkpoint(tenant_id)
+        try:
+            key_id = await signer.resolve_key_id()
+        except SigningUnavailable:
+            raise _decided("signing_unavailable") from None
         manifest: dict[str, object] = {
             "format": FORMAT,
             "format_version": FORMAT_VERSION,
@@ -600,6 +622,7 @@ async def build(given: AuditExportInput) -> AuditExportFacts:
                 "algorithm": "ECDSA_P256_SHA256",
                 "encoding": "DER",
                 "key_ref": signer.key_ref,
+                "key_id": key_id,
             },
         }
         names = await names_of([row.requested_by])
@@ -608,9 +631,12 @@ async def build(given: AuditExportInput) -> AuditExportFacts:
         )
         body = manifest_bytes(manifest)
         try:
-            signature = await signer.sign_digest(hashlib.sha256(body).digest())
+            signed = await signer.sign_digest(hashlib.sha256(body).digest())
         except SigningUnavailable:
             raise _decided("signing_unavailable") from None
+        if signed.key_id != key_id:  # the alias moved mid-build: the manifest names another key
+            raise _decided("signing_unavailable")
+        signature = signed.signature
         _zip(
             bundle,
             [(f"{stem}.csv", csv_file), ("manifest.json", body), ("manifest.sig", signature)],
@@ -629,13 +655,15 @@ async def build(given: AuditExportInput) -> AuditExportFacts:
         bundle_bytes=size,
         segment_count=segments,
         signature_key_ref=signer.key_ref,
+        signature_key_id=key_id,
     )
 
 
 _READY = text(
     "UPDATE audit_exports SET status = 'ready', seq_from = :seq_from, seq_to = :seq_to, "
     "row_count = :rows, csv_key = :prefix, manifest_key = 'manifest.json', "
-    "manifest_sha256 = :manifest, signature_key_ref = :key_ref, expires_at = :expires, "
+    "manifest_sha256 = :manifest, signature_key_ref = :key_ref, signature_key_id = :key_id, "
+    "expires_at = :expires, "
     "segment_count = :segments, bundle_bytes = :bytes, updated_at = clock_timestamp() "
     "WHERE id = :id AND status = 'requested' RETURNING requested_by"
 )
@@ -667,6 +695,7 @@ async def _mark_ready(facts: AuditExportFacts) -> str:
                 "prefix": export_store.bundle_prefix(_KIND, tenant_id, export_id),
                 "manifest": facts.manifest_sha256,
                 "key_ref": facts.signature_key_ref,
+                "key_id": facts.signature_key_id or None,
                 "expires": expires,
                 "segments": facts.segment_count,
                 "bytes": facts.bundle_bytes,

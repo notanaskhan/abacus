@@ -4,7 +4,9 @@
   content imported by staff as a numbered draft set and published by a second staff member
   (the retention-set pattern of 0112). Nothing here or in the code holds a control.
   `safeguards_controls_import`, `safeguards_controls_publish` (staff routes only) and
-  `safeguards_controls_published()` (any firm reads the published set) are its definers.
+  `safeguards_controls_published()` (any firm reads the published set) are its definers; the
+  importer and publisher are the session's own staff member (`app.actor_id` is `staff:<id>`), and
+  each import and publish is recorded in `safeguards_control_set_log` (global, definers only).
 - `safeguards_programs` (tenant PK, forced RLS): the firm's record (QI, WISP and its approval,
   annual report dates, training, PTIN attestation, the quarterly access review), edited in place
   against `version` by a live person (the trigger); never deleted.
@@ -103,6 +105,21 @@ def upgrade() -> None:
         """
     )
     op.execute("REVOKE ALL ON safeguards_controls FROM abacus_app")
+    # The staff record of every import and publish (security review): global, written only by
+    # the two definers, no app privilege; the staff member is the session's own (`staff:<id>`).
+    op.execute(
+        """
+        CREATE TABLE safeguards_control_set_log (
+            id bigserial PRIMARY KEY,
+            recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+            set_version integer NOT NULL CHECK (set_version >= 1),
+            event text NOT NULL CHECK (event IN ('imported', 'published')),
+            staff_id text NOT NULL CHECK (char_length(staff_id) BETWEEN 1 AND 200),
+            rows integer NOT NULL CHECK (rows >= 0)
+        )
+        """
+    )
+    op.execute("REVOKE ALL ON safeguards_control_set_log FROM abacus_app")
     op.execute(
         """
         CREATE FUNCTION safeguards_controls_import(p_version integer, p_rows jsonb, p_staff text)
@@ -116,6 +133,10 @@ def upgrade() -> None:
                 RAISE EXCEPTION 'platform content is imported outside a firm'
                     USING ERRCODE = 'insufficient_privilege';
             END IF;
+            IF current_setting('app.actor_id', true) IS DISTINCT FROM 'staff:' || p_staff THEN
+                RAISE EXCEPTION 'a control set is the signed-in staff member''s act'
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
             IF EXISTS (SELECT 1 FROM public.safeguards_controls WHERE set_version = p_version) THEN
                 RAISE EXCEPTION 'set_exists' USING ERRCODE = 'unique_violation';
             END IF;
@@ -124,6 +145,8 @@ def upgrade() -> None:
             SELECT p_version, r->>'control_key', r->>'title', (r->>'position')::smallint, p_staff
               FROM jsonb_array_elements(p_rows) r;
             GET DIAGNOSTICS v_rows = ROW_COUNT;
+            INSERT INTO public.safeguards_control_set_log (set_version, event, staff_id, rows)
+            VALUES (p_version, 'imported', p_staff, v_rows);
             RETURN v_rows;
         END $$
         """
@@ -141,6 +164,10 @@ def upgrade() -> None:
                 RAISE EXCEPTION 'platform content is published outside a firm'
                     USING ERRCODE = 'insufficient_privilege';
             END IF;
+            IF current_setting('app.actor_id', true) IS DISTINCT FROM 'staff:' || p_staff THEN
+                RAISE EXCEPTION 'a control set is the signed-in staff member''s act'
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
             IF EXISTS (SELECT 1 FROM public.safeguards_controls
                         WHERE set_version = p_version AND imported_by = p_staff) THEN
                 RAISE EXCEPTION 'same_person' USING ERRCODE = 'insufficient_privilege';
@@ -153,6 +180,10 @@ def upgrade() -> None:
                    published_at = clock_timestamp()
              WHERE set_version = p_version AND status = 'draft';
             GET DIAGNOSTICS v_rows = ROW_COUNT;
+            IF v_rows > 0 THEN
+                INSERT INTO public.safeguards_control_set_log (set_version, event, staff_id, rows)
+                VALUES (p_version, 'published', p_staff, v_rows);
+            END IF;
             RETURN v_rows;
         END $$
         """
@@ -298,4 +329,5 @@ def downgrade() -> None:
     op.execute("DROP FUNCTION safeguards_programs_actor()")
     for signature in _FUNCTIONS:
         op.execute(f"DROP FUNCTION {signature}")
+    op.execute("DROP TABLE safeguards_control_set_log")
     op.execute("DROP TABLE safeguards_controls")

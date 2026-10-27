@@ -44,6 +44,43 @@ data "aws_iam_policy_document" "key" {
     }
   }
 
+  # Security review M2: administration (kms:Create*, kms:Put*) could otherwise grant the account a
+  # signer. An explicit Deny wins over any grant or later Allow: nobody creates a grant on this key,
+  # and nobody but the worker task role signs with it (nobody at all until that role is named).
+  statement {
+    sid       = "DenyGrants"
+    effect    = "Deny"
+    actions   = ["kms:CreateGrant"]
+    resources = ["*"]
+
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+  }
+
+  statement {
+    sid       = "DenySignExceptWorker"
+    effect    = "Deny"
+    actions   = ["kms:Sign"]
+    resources = ["*"]
+
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+
+    dynamic "condition" {
+      for_each = length(local.signer) > 0 ? [1] : []
+
+      content {
+        test     = "StringNotEquals"
+        variable = "aws:PrincipalArn"
+        values   = local.signer
+      }
+    }
+  }
+
   # Sign, only by the worker task role, only ECDSA_SHA_256 over a digest.
   dynamic "statement" {
     for_each = length(local.signer) > 0 ? [1] : []
@@ -99,11 +136,19 @@ data "aws_iam_policy_document" "worker" {
       values   = ["ECDSA_SHA_256"]
     }
   }
+
+  # The manifest names the key that signs it (its ARN, read before signing; security review).
+  # The key policy's administration statement delegates kms:Describe* to IAM.
+  statement {
+    sid       = "DescribeSigningKey"
+    actions   = ["kms:DescribeKey"]
+    resources = [aws_kms_key.export_signing.arn]
+  }
 }
 
 resource "aws_iam_policy" "worker" {
   name        = "abacus-${var.environment}-export-signing-worker"
-  description = "Worker task role: sign audit-log export manifests (kms:Sign, ECDSA_SHA_256)."
+  description = "Worker task role: sign audit-log export manifests (kms:Sign, ECDSA_SHA_256; kms:DescribeKey)."
   policy      = data.aws_iam_policy_document.worker.json
 }
 

@@ -1402,7 +1402,12 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "audit_exports": frozenset(
             {"status", "updated_at", "seq_from", "seq_to", "row_count", "expires_at"}
             | {"csv_key", "manifest_key", "manifest_sha256", "signature_key_ref"}
-            | {"segment_count", "bundle_bytes", "failure_code"}  # G-02-T17 (0243): the bundle
+            | {
+                "segment_count",
+                "bundle_bytes",
+                "failure_code",
+                "signature_key_id",
+            }  # G-02-T17 (0243)
         ),
         # G-02-T18 (0240): an incident's status, only with both decisions (the trigger).
         "security_incidents": frozenset({"status", "closed_at", "notification_started_at"}),
