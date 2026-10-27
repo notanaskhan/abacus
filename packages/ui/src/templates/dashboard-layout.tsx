@@ -42,12 +42,23 @@ export interface DashboardLayoutProps {
   office?: DashboardOffice;
   /** "3 running": the agent sessions running now, from the server. */
   running?: string;
+  /** After the date (HOME-01 R2): "Open Today →" and the Home segmented control. */
+  subbar?: ReactNode;
+  /** Inside the app's own shell (the routed screen): the subbar, tiles and panes without a second
+   * AppShell and toolbar; `toolbar`, `embedded` and `height` are then ignored. */
+  bare?: boolean;
   /** Skeleton tiles and rows while the read model loads (T11f). */
   loading?: boolean;
   /** The tile row: `DashTile`s. */
   tiles?: ReactNode;
   /** The left pane: "Waiting on you" with its queue. */
-  queue: { title: string; count?: number; children: ReactNode };
+  queue: {
+    title: string;
+    count?: number;
+    /** Beside the count in the pane header: "Open queue →". */
+    action?: ReactNode;
+    children: ReactNode;
+  };
   /** The right column, top to bottom: Deadlines, then Client activity. */
   side: readonly { title: string; children: ReactNode }[];
   /** A fixed height for the first right-hand pane (Deadlines): 334 on T11, 360 on TPL-11. */
@@ -373,7 +384,7 @@ function LoadingTiles(): JSX.Element {
 
 function LoadingRows(): JSX.Element {
   return (
-    <div className="flex flex-col">
+    <div aria-busy="true" data-dashboard="loading" className="flex flex-col">
       {SKELETON_ROWS.map((w, i) => (
         <div key={w} className="flex flex-col gap-[7px] px-[14px] py-[12px] hairline-b">
           <Skeleton immediate style={{ width: w }} className="h-[11px]" />
@@ -399,6 +410,8 @@ export function DashboardLayout({
   caption,
   office,
   running,
+  subbar,
+  bare = false,
   loading = false,
   tiles,
   queue,
@@ -412,6 +425,7 @@ export function DashboardLayout({
         {greeting}
       </span>
       <span className="text-body whitespace-nowrap text-ink-3">{date}</span>
+      {subbar}
       <span className="flex-1" />
       {office !== undefined && (
         <FilterChip
@@ -435,36 +449,41 @@ export function DashboardLayout({
       )}
     </div>
   );
-  return (
-    <AppShell
-      {...(embedded ? { embedded: true } : {})}
-      {...(height === undefined ? {} : { height })}
-      toolbar={{ active: "Home", ...toolbar }}
-      record={
-        <>
-          {head}
-          <div
-            data-dashboard="tiles"
-            {...(loading ? { "aria-busy": true } : {})}
-            className="relative flex h-[109px] flex-none gap-[8px] px-(--edge-app) pt-[10px]"
+  const record = (
+    <>
+      {head}
+      <div
+        data-dashboard="tiles"
+        {...(loading ? { "aria-busy": true } : {})}
+        className="relative flex h-[109px] flex-none gap-[8px] px-(--edge-app) pt-[10px]"
+      >
+        {caption !== undefined && (
+          <p
+            data-dashboard="caption"
+            className="absolute top-[-9px] left-[14px] text-dense whitespace-nowrap text-ink-3"
           >
-            {caption !== undefined && (
-              <p
-                data-dashboard="caption"
-                className="absolute top-[-9px] left-[14px] text-dense whitespace-nowrap text-ink-3"
-              >
-                {caption}
-              </p>
-            )}
-            {loading ? <LoadingTiles /> : tiles}
-          </div>
-        </>
-      }
-    >
+            {caption}
+          </p>
+        )}
+        {loading ? <LoadingTiles /> : tiles}
+      </div>
+    </>
+  );
+  const right =
+    queue.count === undefined || loading ? (
+      queue.action
+    ) : (
+      <span className="flex items-center gap-[10px]">
+        <Count value={queue.count} />
+        {queue.action}
+      </span>
+    );
+  const panes = (
+    <>
       <Pane
         title={queue.title}
         scrollLabel={queue.title}
-        {...(queue.count === undefined || loading ? {} : { right: <Count value={queue.count} /> })}
+        {...(right === undefined ? {} : { right })}
       >
         {loading ? <LoadingRows /> : queue.children}
       </Pane>
@@ -487,6 +506,26 @@ export function DashboardLayout({
           );
         })}
       </div>
+    </>
+  );
+  if (bare) {
+    return (
+      <div data-dashboard="bare" className="flex min-h-0 flex-1 flex-col">
+        {record}
+        <div className="flex min-h-0 flex-1 items-stretch gap-(--gutter-pane) px-(--edge-app) pt-(--gutter-pane) pb-(--edge-app)">
+          {panes}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <AppShell
+      {...(embedded ? { embedded: true } : {})}
+      {...(height === undefined ? {} : { height })}
+      toolbar={{ active: "Home", ...toolbar }}
+      record={record}
+    >
+      {panes}
     </AppShell>
   );
 }

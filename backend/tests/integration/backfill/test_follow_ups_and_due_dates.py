@@ -23,7 +23,13 @@ from abacus.kernel.db import TenantContext
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.agents.engagement_agent import TICK, handle
 from abacus.modules.agents.follow_up_drafts import on_follow_up_sent
-from abacus.modules.agents.follow_ups import MAX_PER_ITEM, Outcome, chase_overdue, today_in
+from abacus.modules.agents.follow_ups import (
+    MAX_PER_ITEM,
+    Outcome,
+    chase_overdue,
+    draft_now,
+    today_in,
+)
 from abacus.modules.agents.workflow_types import HandleInput
 from abacus.modules.communications.transport import configure_transport
 
@@ -119,6 +125,12 @@ async def _engagement(net: Net, seed: Seeder, *, opened: bool = True) -> Engagem
     first, second = await seed.client_contact(site), await seed.client_contact(site)
     contributor = await seed.client_contact(site, "client_contributor")
     await seed.run("UPDATE firms SET time_zone = $2 WHERE tenant_id = $1", tenant_id, ZONE)
+    # R-01-T24 review M-b: reminders name only requests in a Published binder (as BND-02's do).
+    await seed.run(
+        "UPDATE request_lists SET status = 'published', published_at = now() "
+        "WHERE engagement_id = $1",
+        site.engagement_id,
+    )
     return Engagement(net, tenant_id, site, admin, team, (first, second), contributor)
 
 
@@ -562,4 +574,36 @@ async def test_review3_a_binder_draft_is_refused_on_the_engagement_route(
         )
         assert refused.status_code == 409, refused.text
         assert refused.json()["detail"] == "follow_up_v2_only"
+    assert mailbox.sent == []
+
+
+# --- R-01-T24 security review M-b: only what a client may be written to about ------------------
+
+
+async def test_mb_internal_requests_and_unpublished_binders_are_never_drafted_or_sent(
+    chase: Engagement, seed: Seeder, mailbox: Mailbox
+) -> None:
+    visible = await seed.item(chase.site, "Bank statement", due_on=chase.days_ago(10))
+    internal = await seed.item(chase.site, "Internal memo", due_on=chase.days_ago(10))
+    await seed.run("UPDATE request_items SET client_visible = false WHERE id = $1", internal)
+    assert visible
+    outcome = await chase.tick()  # the legacy plan (no policy marker)
+    assert outcome.drafted == 2  # one per client admin, naming the visible request only
+    assert {tuple(items) for _, _, items in await chase.follow_ups()} == {("Bank statement",)}
+    # A person asking for drafts now, and the drafts a person sends, leave it out too.
+    await seed.run(
+        "UPDATE follow_up_schedules SET status = 'dismissed' WHERE engagement_id = $1",
+        chase.site.engagement_id,
+    )
+    assert await draft_now(chase.system, chase.site.engagement_id, ZONE) == 2
+    assert {tuple(items) for _, s, items in await chase.follow_ups() if s == "drafted"} == {
+        ("Bank statement",)
+    }
+    for status in ("unpublished", "closed", "draft"):
+        await seed.run(
+            "UPDATE request_lists SET status = $2 WHERE engagement_id = $1",
+            chase.site.engagement_id,
+            status,
+        )
+        assert await draft_now(chase.system, chase.site.engagement_id, ZONE) == 0
     assert mailbox.sent == []

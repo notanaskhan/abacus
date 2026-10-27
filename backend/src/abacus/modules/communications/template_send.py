@@ -36,6 +36,7 @@ from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.communications import template_store
 from abacus.modules.communications.deliveries import deliver, is_suppressed
+from abacus.modules.communications.lint import lint_template
 from abacus.modules.communications.models import Message
 from abacus.modules.communications.render import RenderedEmail, render_email
 from abacus.modules.communications.repository import insert_message
@@ -246,6 +247,13 @@ async def send(
             reason, violations = "template_missing", [{"kind": "template_missing", "ref": ""}]
         else:
             violations = _values_findings(registration, values)
+            if isinstance(ctx, SystemSendContext):
+                # Security review M1: no person reads a scheduled Reminder before it goes, so the
+                # version itself is linted again (a version published before a rule existed).
+                violations += [
+                    {"kind": "template_lint_failed", "ref": f.fact()}
+                    for f in lint_template(version.content, registration)
+                ]
             rendered = None if violations else _render(registration, version, values)
             if violations or rendered is None:
                 reason = "template_lint_failed"

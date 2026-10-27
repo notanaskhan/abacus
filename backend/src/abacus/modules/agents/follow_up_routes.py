@@ -27,7 +27,7 @@ Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
 FollowUpKind = Literal["overdue", "chase", "screening_return"]
 FollowUpStatus = Literal["drafted", "sent", "dismissed"]
-DraftedByKind = Literal["person", "agent"]
+DraftedByKind = Literal["person", "agent", "system"]  # system: a scheduled Reminder (0222)
 
 follow_ups_router = AbacusRouter(prefix="/v1/follow-ups", tags=["follow-ups"])
 
