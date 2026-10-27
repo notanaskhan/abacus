@@ -93,6 +93,10 @@ from abacus.modules.platform.provisioning import (
     WORKFLOWS as PROVISIONING_WORKFLOWS,
 )
 from abacus.modules.platform.routes import router
+from abacus.modules.platform.safeguards import SUBSCRIPTIONS as WISP_SUBSCRIPTIONS
+from abacus.modules.platform.safeguards import open_controls as open_pub4557_controls
+from abacus.modules.platform.safeguards import register_wisp_document_reader
+from abacus.modules.platform.safeguards_routes import controls_platform_router
 from abacus.modules.platform.security_center_contract import (
     incident_reads_router,
     safeguards_router,
@@ -129,16 +133,22 @@ from abacus.modules.platform.workflow_types import (
     ProvisionTenantInput,
     ProvisionTenantResult,
     TenantKeyInput,
+    WispPackFacts,
+    WispPackFailure,
+    WispPackInput,
 )
 from abacus.modules.platform.workflows import (
     CANARY_EVERY,
     G04_PLAN_PATCH,
+    INCIDENT_REMINDERS_ID,
     SPEND_ANOMALY_ID,
     CanaryWorkflow,
+    IncidentClockRemindersWorkflow,
     IncidentPropagationWorkflow,
     SpendAnomalyWorkflow,
     TenantKeyWorkflow,
     TenantProvisioningWorkflow,
+    WispPackWorkflow,
     canary_workflow_id,
     incident_propagation_workflow_id,
     provisioning_workflow_id,
@@ -149,6 +159,8 @@ from abacus.modules.platform.workflows import (
 register_audit_resolvers()
 # G-02-T14 (AC-30): the posture's open incidents are the register's.
 register_posture_source("open_incidents", open_incidents)
+# G-02-T20 (AC-30): the posture's open Pub 4557 items are the safeguards record's.
+register_posture_source("pub4557_open", open_pub4557_controls)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
@@ -157,6 +169,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     incident_reads_router,  # security-center v1 (G-02-T11 stub; G-02-T18 implements it)
     safeguards_router,  # security-center v1 (G-02-T11 stub; G-02-T20 implements it)
     incident_platform_router,  # Q-02-T33 (RB-27): staff propagation
+    controls_platform_router,  # G-02-T20: staff import and publish the Pub 4557 definitions
 )
 
 # Q-01-T45: the worker loads this module for tenant provisioning (ADR-156); Q-02-T33 adds the
@@ -164,7 +177,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 # its Schedule (`SCHEDULES`, ensured by `abacus_tools.schedules`).
 # Q-01-T30: the canary (time_sensitive), on its own Schedule when this environment names one.
 WORKFLOWS = {**PROVISIONING_WORKFLOWS, **INCIDENT_WORKFLOWS, **JOB_WORKFLOWS, **CANARY_WORKFLOWS}
-SUBSCRIPTIONS: dict[str, Handler] = {}
+# G-02-T20: `wisp_pack.requested` starts the WISP pack's build.
+SUBSCRIPTIONS: dict[str, Handler] = {**WISP_SUBSCRIPTIONS}
 ACTIVITIES: tuple[object, ...] = (
     emit_tenant_provisioned_activity,
     set_plan_entitlements_activity,  # Q-01-T45 (0107)
@@ -191,6 +205,7 @@ __all__ = [
     "CLOCK_DAYS",
     "DPA_NOTICE",
     "G04_PLAN_PATCH",
+    "INCIDENT_REMINDERS_ID",
     "MODULES",
     "NOTIFY_THRESHOLD",
     "OPERATOR_HANDLE",
@@ -229,6 +244,7 @@ __all__ = [
     "HomeOfficeCount",
     "HomeStatusCount",
     "InMemoryTenantKeyOps",
+    "IncidentClockRemindersWorkflow",
     "IncidentFacts",
     "IncidentFactsChanged",
     "IncidentFactsInput",
@@ -250,6 +266,10 @@ __all__ = [
     "TenantKeyWorkflow",
     "TenantProvisioned",
     "TenantProvisioningWorkflow",
+    "WispPackFacts",
+    "WispPackFailure",
+    "WispPackInput",
+    "WispPackWorkflow",
     "audit_labels",
     "audit_source",
     "audit_values",
@@ -282,6 +302,7 @@ __all__ = [
     "register_audit_value_resolver",
     "register_home_count",
     "register_search_projection",
+    "register_wisp_document_reader",
     "registered_audit_types",
     "require_entitlement",
     "router",

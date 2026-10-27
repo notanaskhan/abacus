@@ -139,3 +139,29 @@ class CanaryResult:
     code: str | None
     route: str | None
     paged: bool
+
+
+@dataclass(frozen=True)
+class WispPackInput:
+    """`WispPackWorkflow` (G-02-T20): the pack to build."""
+
+    tenant_id: str
+    pack_id: str
+
+
+@dataclass(frozen=True)
+class WispPackFacts:
+    """What the build stored: counts and sizes only (no names, no content)."""
+
+    tenant_id: str
+    pack_id: str
+    document_count: int
+    bundle_bytes: int
+    segment_count: int
+
+
+@dataclass(frozen=True)
+class WispPackFailure:
+    tenant_id: str
+    pack_id: str
+    code: str
