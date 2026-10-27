@@ -7,7 +7,7 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/CLI-06 New client prospect intake - single - bulk import/` (README.md, spec.md; no revision) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | P-07 · contract P-07-T23 · stubs P-07-T37 · TIN P-07-T10 · conflicts and screening P-07-T36 · single commit P-07-T42 · bulk import P-07-T52 · screens P-07-T49 (single), P-07-T54 (bulk) |
-| Manifest status | planned (`routes/manifest/cli.ts`) until P-07-T49 |
+| Manifest status | live (`routes/manifest/cli.ts`, P-07-T49: single intake at `/clients/new`; bulk import P-07-T54) |
 
 Code to come: `src/screens/CLI-06/{index.tsx, scenarios.ts, copy.ts, CLI-06.test.tsx}`, `src/domain/clients/ConflictResults.tsx`, `src/fixtures/handlers/intake.ts`. Flag `clients.v2`. Spec: SPEC-332 AC-23 to AC-26.
 
@@ -88,6 +88,8 @@ Gradients, emoji, saturated blue, heavy shadows, invented colours, lorem ipsum, 
 | intake-toggle | The POR-18 intake send to Paul Thornbury ("portal Invited") is planned; f's toggle is hidden in production until the intake grant kind ships | Intake-scope grants are P-08/OQ-11's | P-07 §3.2 (OQ-11) |
 | redaction | A walled match renders one row without name, link or count | Walls never leak | DEC-43, DEC-64 |
 | d-viewer | The README names Paul Thornbury as d's viewer; the viewer is Grace adding him | A contact never sees the firm wizard | P-07 §5 fixture table |
+| served | The conflict step lists the check's matches (no per-name "No matches" rows, which the check does not serve) and the counterparty words without the relationship ("Counterparty — review"); screening rows recorded earlier are not readable back (no read route), so a's three recorded rows are the scenario's opening state and production shows "Record…" per list until a person records it in this intake; the step-1 values are those the draft holds (type, name, decedent, date of death); the date is entered as YYYY-MM-DD | P-07-T42's shapes | DEC-543 |
+| validation | A problem on another step's field (the services step's `entity.date_of_death`) jumps to that step and says why there | i, "Next validates each step" | DEC-543 |
 
 ## Parity
 | Artboard | Tier (A/B/D) | Diff % | Notes |

@@ -121,6 +121,38 @@ const clientAcceptanceRoute = createRoute({
   },
 });
 
+// CLI-06 (P-07-T49): the single-client intake wizard over CLI-01, behind `clients.v2`. "Create &
+// start acceptance" lands on CLI-07; "Create" on CLI-02; closing returns to CLI-01 (wired here,
+// DEC-195).
+const Intake = lazyScreen(async () => (await import("../../screens/CLI-06")).IntakePage);
+
+const clientIntakeRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/clients/new",
+  component: function ClientIntakePage(): JSX.Element {
+    const navigate = useNavigate();
+    return (
+      <FeatureGate flag="clients.v2">
+        <Intake
+          onClose={() => {
+            void navigate({ to: "/clients" });
+          }}
+          onNavigate={(target) => {
+            if (target.screen === "CLI-07") {
+              void navigate({
+                to: "/clients/$clientId/acceptance/$engagementId",
+                params: { clientId: target.clientId, engagementId: target.engagementId },
+              });
+            } else {
+              void navigate({ to: "/clients/$clientId", params: { clientId: target.clientId } });
+            }
+          }}
+        />
+      </FeatureGate>
+    );
+  },
+});
+
 // CLI-08 (P-07-T48): independence and conflicts of one engagement, behind
 // `engagements.acceptance_v2` (CLI-08 v2). `?check=` names the conflict check its Conflicts tab
 // reads (the intake's, P-07-T42).
@@ -154,4 +186,5 @@ export const clientRoutes = [
   clientContactsRoute,
   clientAcceptanceRoute,
   clientIndependenceRoute,
+  clientIntakeRoute,
 ] as const;

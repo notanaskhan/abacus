@@ -61,6 +61,14 @@ import {
   STATES as CLI07_STATES,
   scenarios as cli07Scenarios,
 } from "./CLI-07/scenarios";
+import { IntakePage } from "./CLI-06";
+import {
+  type Cli06State,
+  DRAFT_ID as CLI06_DRAFT,
+  OPENS as CLI06_OPENS,
+  STATES as CLI06_STATES,
+  scenarios as cli06Scenarios,
+} from "./CLI-06/scenarios";
 import { IndependencePage } from "./CLI-08";
 import {
   CHECK_ID as CLI08_CHECK,
@@ -918,6 +926,36 @@ function Cli07Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("CLI-07", { title: "Acceptance & continuance", Component: Cli07Artboard });
+
+// CLI-06 (P-07-T49): the single-client intake, a–f, h and i (g is P-07-T54's bulk import).
+function Cli06Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Cli06State = CLI06_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      cli06Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  const opens = CLI06_OPENS[state];
+  return ready === state ? (
+    <div data-artboard={state} key={state}>
+      <IntakePage
+        draftId={CLI06_DRAFT}
+        step={opens.step}
+        {...(opens.problems === undefined ? {} : { problems: opens.problems })}
+        screened={opens.screened === true}
+      />
+    </div>
+  ) : null;
+}
+
+registerScreen("CLI-06", { title: "New client / prospect intake", Component: Cli06Artboard });
 
 // CLI-08 (P-07-T48): independence and conflicts, a–g and the declined-note state (DF-06).
 function Cli08Artboard({ params }: { params: FixtureParams }): JSX.Element | null {

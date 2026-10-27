@@ -31,10 +31,13 @@ export const cliScreens = {
     status: "planned",
     path: null,
   },
+  // P-07-T49 built the single-client intake a–f, h and i live over the intake routes (P-07-T42)
+  // at /clients/new behind `clients.v2`; g (bulk import) is P-07-T54's.
   "CLI-06": {
     name: "New client / prospect intake · single + bulk import",
-    status: "planned",
-    path: null,
+    status: "live",
+    path: "/clients/new",
+    navArea: "Clients",
   },
   // P-07-T46 built a, b, d, e and f live over the acceptance routes (P-07-T35) and c and g on
   // fixtures, at /clients/$clientId/acceptance/$engagementId behind `engagements.acceptance_v2`.
