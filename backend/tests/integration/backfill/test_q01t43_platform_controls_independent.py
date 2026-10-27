@@ -36,21 +36,18 @@ AS_ROLE: Final = {
     "abacus_ops": "SET LOCAL ROLE abacus_ops",
 }
 MUTATING: Final = {"POST", "PUT", "PATCH", "DELETE"}
-# The contract's exemptions (§3.7 `read_only`; its as-built note, DEC-338): pre-session sign-in,
-# staff routes, the two sign-outs, browser error telemetry and the support session; and reads
-# sent as POST, which are not "non-read" routes.
+# The exemptions table in the platform-ops contract, §3.7 (`read_only`, as built; DEC-338): sign-in
+# (pre-session routes and the two sign-outs), staff routes, the support session, ending access,
+# browser error reports and reads sent as POST. Anything else that writes answers the 503.
 EXEMPT_PREFIXES: Final = re.compile(
     r"^/v1/(auth/|portal/auth/|portal/links/|invitations/preview$|platform/|support)"
 )
 EXEMPT_ROUTES: Final = {
-    ("POST", "/v1/telemetry/errors"): "browser error telemetry (as-built note)",
-    ("PUT", "/v1/firm/support-access"): "the support session (§3.7 table)",
-    ("POST", "/v1/knowledge/search"): "a read sent as POST (as-built: non-read routes only)",
-    # Spec drift: §3.7 does not name ending access, but Q-01-T37 keeps it working in read-only
-    # mode so a firm can still remove someone (its own suite: "ending access ... still work");
-    # recorded in docs/quality/backfill.md and TASK-1212.
-    ("POST", "/v1/firm/staff/{user_id}/revoke"): "ending a person's access",
-    ("POST", "/v1/firm/staff/invitations/{invitation_id}/revoke"): "revoking an invitation",
+    ("POST", "/v1/telemetry/errors"): "operational: browser error reports",
+    ("PUT", "/v1/firm/support-access"): "the support session",
+    ("POST", "/v1/knowledge/search"): "a read sent as POST",
+    ("POST", "/v1/firm/staff/{user_id}/revoke"): "ending access: a person's",
+    ("POST", "/v1/firm/staff/invitations/{invitation_id}/revoke"): "ending access: an invitation",
 }
 
 
