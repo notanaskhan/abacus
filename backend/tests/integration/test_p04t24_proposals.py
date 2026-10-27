@@ -46,6 +46,7 @@ from .review_support import Cast, make_cast
 pytestmark = pytest.mark.asyncio
 TARGET = "probe_return"
 UNOWNED = "probe_unowned"
+LINE_2A = "f1040.l2a"  # Form 1040 line 2a, tax-exempt interest
 APPLIED: list[AdoptedValue] = []
 
 
@@ -429,7 +430,7 @@ async def test_ac_suggestions_adopt_edit_and_dismiss(team: Cast) -> None:
             engagement_id=team.engagement,
             target_type=TARGET,
             target_id=target,
-            field_key="f1040.l2a",
+            field_key=LINE_2A,
             proposed_value={"t": "decimal", "v": "1550"},
             citation_ids=cites,
         )
