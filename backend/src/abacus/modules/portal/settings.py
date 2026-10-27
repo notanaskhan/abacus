@@ -507,7 +507,7 @@ async def preview(ctx: AuthContext, contact_id: UUID | None) -> Preview:
         tx.record(
             "portal.preview_viewed",
             target=Target(SUBJECT, ctx.tenant_id),
-            after=Ref(contact=str(shown.contact_id) if shown.contact_id else "sample"),
+            after=Ref(contact=shown.contact_id) if shown.contact_id else Ref(sample=1),
         )
     return shown
 
