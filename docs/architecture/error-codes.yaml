@@ -1209,7 +1209,7 @@ codes:
     raised_by:
     - abacus.modules.assurance.release.ReleaseDateBeforePeriodEnd
     summary: 'The release date is on or before the engagement''s fiscal period end: a report on a period
-      is released after it closes (DEC-597''s companion, DEC-598).'
+      is released after it closes (DEC-598).'
   release_date_future:
     status: 422
     raised_by:
