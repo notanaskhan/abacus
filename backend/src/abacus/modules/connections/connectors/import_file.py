@@ -49,11 +49,18 @@ class ImportConnector(Connector):
             attachments=False,
         )
 
-    async def authorise_url(self, state: str, redirect_uri: str) -> str:
+    async def authorise_url(
+        self, state: str, redirect_uri: str, *, code_challenge: str | None = None
+    ) -> str:
         raise NotSupported("oauth")
 
-    async def exchange_code(self, code: str, redirect_uri: str) -> Credentials | None:
+    async def exchange_code(
+        self, code: str, redirect_uri: str, *, code_verifier: str | None = None
+    ) -> Credentials | None:
         raise NotSupported("oauth")
+
+    async def revoke(self) -> None:
+        raise NotSupported("oauth")  # an upload grants nothing to revoke
 
     async def refresh(self) -> None:
         return None  # nothing to refresh: no credentials

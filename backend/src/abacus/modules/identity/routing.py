@@ -41,6 +41,7 @@ from abacus.modules.identity.portal_session import (
     portal_context,
     portal_invitee,
 )
+from abacus.modules.identity.security_policies import refused_here
 from abacus.modules.identity.service import (
     TENANT_HEADER,
     NoActiveTenant,
@@ -234,6 +235,12 @@ async def current_context(
     if not ctx.client and await access_has_ended(ctx.tenant, ctx.user_id):
         _log.info("access_end.refused", tenant_id=ctx.tenant_id, user_id=ctx.user_id)
         raise HTTPException(403, "forbidden")
+    # G-02-T14 (AC-20, DEC-528): once the person was signed out of this firm, a request here needs
+    # the cookie of a live session of theirs that was not: a signed-out session, a bearer token
+    # alone or a junk cookie is refused; the person signs in again, other firms unaffected.
+    if not ctx.client and await refused_here(ctx.tenant, ctx.user_id):
+        _log.info("session.signed_out_refused", tenant_id=ctx.tenant_id, user_id=ctx.user_id)
+        raise HTTPException(401, "session_signed_out", headers={"WWW-Authenticate": "Bearer"})
     # G-02-T06: the MFA time the verified token states; the session comes from the BFF cookie
     # when an event is written (`identity.request_session`).
     note_session(mfa_at=ctx.mfa_at)

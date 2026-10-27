@@ -266,6 +266,14 @@ from abacus.modules.identity.security_center_contract import (
     staff_unlock_router,
     support_access_router,
 )
+from abacus.modules.identity.security_policies import (
+    PostureFact,
+    PostureSource,
+    StaffLockPort,
+    configure_staff_locks,
+    purge_auth_sessions_activity,
+    register_posture_source,
+)
 from abacus.modules.identity.service import (
     EQR_ROLES,
     PARTNER_ROLES,
@@ -372,7 +380,12 @@ from abacus.modules.identity.walls import (
     WallExists,
     end_assignments_for_wall,
 )
-from abacus.modules.identity.workflows import ACCESS_END_ID, AccessEndSweepWorkflow
+from abacus.modules.identity.workflows import (
+    ACCESS_END_ID,
+    AUTH_SESSION_PURGE_ID,
+    AccessEndSweepWorkflow,
+    AuthSessionPurgeWorkflow,
+)
 
 # SPEC-026 (TASK-049): the AI gateway's per-call data boundary asks identity which firms are
 # synthetic.
@@ -419,15 +432,24 @@ SUBSCRIPTIONS = {
     WallCreated.event_type: end_assignments_for_wall,
 }
 # G-01-T13 (AC4.5; DEC-381): the hourly access-end sweep, a platform job on a Schedule.
-WORKFLOWS: dict[type, WorkClass] = {AccessEndSweepWorkflow: "background"}
+WORKFLOWS: dict[type, WorkClass] = {
+    AccessEndSweepWorkflow: "background",
+    AuthSessionPurgeWorkflow: "background",  # G-02-T14
+}
 register_work_classes(WORKFLOWS)
-ACTIVITIES: tuple[object, ...] = (sweep_access_ends_activity,)
+ACTIVITIES: tuple[object, ...] = (sweep_access_ends_activity, purge_auth_sessions_activity)
 SCHEDULES: tuple[PlatformSchedule, ...] = (
     PlatformSchedule(
         id=ACCESS_END_ID,
         workflow=AccessEndSweepWorkflow,
         every=timedelta(hours=1),
         note="G-01-T13 AC4.5: seasonal access ends after the firm's midnight; T-7 notice",
+    ),
+    PlatformSchedule(
+        id=AUTH_SESSION_PURGE_ID,
+        workflow=AuthSessionPurgeWorkflow,
+        every=timedelta(days=1),
+        note="G-02-T14: staff sessions ended more than a year ago are deleted",
     ),
 )
 
@@ -436,6 +458,7 @@ __all__ = [
     "ACTION_KEY",
     "ACTIVITIES",
     "ALLOW_LETTER_EXCEPTIONS",
+    "AUTH_SESSION_PURGE_ID",
     "CODE_DIGITS",
     "DELEGATE_ROLES",
     "EQR_ROLE",
@@ -470,6 +493,7 @@ __all__ = [
     "Assistant",
     "AuditFact",
     "AuthContext",
+    "AuthSessionPurgeWorkflow",
     "AutonomyView",
     "Candidate",
     "ChangedGrants",
@@ -522,6 +546,8 @@ __all__ = [
     "PortalMfaResetNoticeRequested",
     "PortalScopes",
     "PortalSignInCodeRequested",
+    "PostureFact",
+    "PostureSource",
     "RecipientRelation",
     "RelationshipPartner",
     "Resource",
@@ -537,6 +563,7 @@ __all__ = [
     "SsoNotVerified",
     "Staff",
     "StaffInvitationIssued",
+    "StaffLockPort",
     "StaffRole",
     "SupersededByAiPolicy",
     "SupportRequestsDisabled",
@@ -577,6 +604,7 @@ __all__ = [
     "client_admins",
     "clock_view",
     "close_contact_invitations",
+    "configure_staff_locks",
     "configure_staff_verifier",
     "configure_verifier",
     "consent_given",
@@ -686,6 +714,7 @@ __all__ = [
     "register_member_teams",
     "register_mfa_requirement",
     "register_office_list",
+    "register_posture_source",
     "register_scope_resolver",
     "register_scopes_resolver",
     "register_settings_area",

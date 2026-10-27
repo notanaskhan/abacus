@@ -393,6 +393,8 @@ class TieOutCheckOut(BaseModel):
     defined_by_name: Annotated[str, classified("internal")]
     defined_at: Annotated[datetime, classified("internal")]
     result: Annotated[TieResultOut, classified("confidential")]
+    # A-02-T17: the issue a check that does not tie is linked to (AUD-06 c's flag).
+    issue_id: Annotated[UUID | None, classified("internal")] = None
 
 
 def _check_input(body: TieOutCheckBody) -> CheckInput:
@@ -437,6 +439,7 @@ def _checks_out(found: list[CheckView]) -> list[TieOutCheckOut]:
                 formula=c.result.formula,
                 missing=list(c.result.missing),
             ),
+            issue_id=c.issue_id,
         )
         for c in found
     ]

@@ -26,6 +26,7 @@ from abacus.modules.engagements.repository import (
     client_column as _client_column,
 )
 from abacus.modules.engagements.repository import (
+    entity_engagement_ids,
     get_engagement,
     insert_engagement,
     list_engagements,
@@ -367,6 +368,14 @@ async def is_archived(tenant: TenantContext, engagement_id: UUID) -> bool | None
     async with tenant_session(tenant) as session:
         engagement = await get_engagement(session, engagement_id)
     return engagement.status == "archived" if engagement is not None else None
+
+
+async def engagements_of_entity(tenant: TenantContext, client_entity_id: UUID) -> list[UUID]:
+    """A-02-T16 (POR-16): the entity's engagements, newest first, as the candidates an
+    entity-scoped action authorises on, one by one (`connection.read` and the others are
+    authorised on an engagement, never firm-wide: DEC-316)."""
+    async with tenant_session(tenant) as session:
+        return list(await entity_engagement_ids(session, client_entity_id))
 
 
 async def entity_of(tenant: TenantContext, engagement_id: UUID) -> UUID | None:

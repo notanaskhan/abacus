@@ -163,6 +163,13 @@ async def _wall_creator(tenant_id: UUID, payload: dict[str, object]) -> list[UUI
     return [creator] if creator is not None else []
 
 
+async def _listed(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """P-04-T21, T23: the people the owner named (a note's assignee or the target's preparers; a
+    card's reserved person or role holders), never the person who acted."""
+    by = _uuid(payload, "by_user")
+    return sorted({u for u in _uuids(payload, "recipient_user_ids") if u != by})
+
+
 async def _signer(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     """P-04-T19: the person whose sign-off went stale."""
     signer = _uuid(payload, "signed_by")
@@ -263,6 +270,11 @@ CATALOGUE: Final[dict[str, Kind]] = {
     ),
     # P-04-T19 (SHL-12 e): the work a person signed changed after their sign-off.
     "sign_off.went_stale": Kind("sign_off_stale", _signer, "sign_off", "sign_off_id"),
+    # P-04-T21: a note was raised; its assignee (or the target's preparers) is told.
+    "review_note.raised": Kind("review_note_raised", _listed, "reviewable_note", "note_id"),
+    # P-04-T23: a card waits on its reserved person; "Notify" mentions them (SHL-11 b).
+    "decision_card.raised": Kind("decision_assigned", _listed, "decision_card", "card_id"),
+    "decision_card.notify_requested": Kind("mention", _assignee, "decision_card", "card_id"),
     # P-07-T47 (P-07 §4.8): acceptance, risk review, independence and team approval.
     "acceptance.sent_to_partner": Kind(
         "acceptance_awaiting_partner", _partners, "acceptance_record", "record_id"
@@ -317,6 +329,9 @@ TEMPLATES: Final[dict[str, str]] = {
     "portal.drop_unsorted": "A client sent a file for your team to sort on {engagement}.",
     "third_party.uploaded": "A third party uploaded a file to a request on {engagement}.",
     "sign_off.went_stale": "Work you signed off on {engagement} changed after sign-off.",
+    "review_note.raised": "A review note on {engagement} is waiting for you.",
+    "decision_card.raised": "A decision on {engagement} is waiting for you.",
+    "decision_card.notify_requested": "A decision on {engagement} is waiting for you.",
     "acceptance.sent_to_partner": "An acceptance on {engagement} is waiting for your decision.",
     "acceptance.review_requested": (
         "You were asked for a risk review of an acceptance on {engagement}."
@@ -375,6 +390,8 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("portal_drop_unsorted", "client_activity", "Inbox"),  # R-01-T09
     NotificationKind("third_party_uploaded", "client_activity", "Upload"),  # R-01-T13
     NotificationKind("sign_off_stale", "approval", "ClipboardCheck"),  # P-04-T19
+    NotificationKind("review_note_raised", "approval", "MessageSquare"),  # P-04-T21
+    NotificationKind("decision_assigned", "approval", "Scale"),  # P-04-T23
     # G-02-T02 (G-02 section 4.8): firm governance v1. Email text is database rows (C16), loaded
     # as content (G-02-T07); their owners add facts and pending resolvers with their tasks.
     NotificationKind(

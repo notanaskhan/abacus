@@ -2537,6 +2537,639 @@
         "title": "AiExclusionOut",
         "type": "object"
       },
+      "AiPolicyDeclineIn": {
+        "additionalProperties": false,
+        "description": "A decline names why, as a code; a note is optional and Confidential.",
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Note"
+          },
+          "reason_code": {
+            "cls": "internal",
+            "enum": [
+              "needs_changes",
+              "wrong_effective_date",
+              "other"
+            ],
+            "title": "Reason Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason_code"
+        ],
+        "title": "AiPolicyDeclineIn",
+        "type": "object"
+      },
+      "AiPolicyDiffRowOut": {
+        "description": "One changed cell against the version before: \"Override tolerance 8% \u2192 6%\".",
+        "properties": {
+          "after": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "After"
+          },
+          "before": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Before"
+          },
+          "path": {
+            "cls": "internal",
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "title": "AiPolicyDiffRowOut",
+        "type": "object"
+      },
+      "AiPolicyDraftIn": {
+        "additionalProperties": false,
+        "description": "Save the draft (If-Match: the draft's `version`; 409 `stale_version`). A security admin\nmay change `client_data` only (AC-40); any loosening answers 422.",
+        "properties": {
+          "sections": {
+            "$ref": "#/components/schemas/AiPolicySections",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "sections"
+        ],
+        "title": "AiPolicyDraftIn",
+        "type": "object"
+      },
+      "AiPolicyDraftOut": {
+        "description": "The firm's one draft (b): the base version, its sections, whether it differs from the\nbase (\"Unsaved changes\"; \"Save as v4\u2026\" enabled) and its version for If-Match.",
+        "properties": {
+          "base_version_no": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Base Version No",
+            "type": "integer"
+          },
+          "diff": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/AiPolicyDiffRowOut"
+            },
+            "title": "Diff",
+            "type": "array"
+          },
+          "differs": {
+            "cls": "internal",
+            "title": "Differs",
+            "type": "boolean"
+          },
+          "sections": {
+            "$ref": "#/components/schemas/AiPolicySections",
+            "cls": "internal"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Updated At"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PolicyPersonOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "version": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "base_version_no",
+          "sections",
+          "differs",
+          "version"
+        ],
+        "title": "AiPolicyDraftOut",
+        "type": "object"
+      },
+      "AiPolicyOut": {
+        "description": "ADM-04 a, e, g, h: the effective version, a pending one, the draft summary, the sections,\nfieldset A's rows, the locked cells, the immediate controls, the register's sub-processors and\nmodel family, and the viewer's actions (read-only without `ai_policy.draft`, AC-33).",
+        "properties": {
+          "actions": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Actions",
+            "type": "array"
+          },
+          "draft": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AiPolicyDraftOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "effective": {
+            "$ref": "#/components/schemas/AiPolicyVersionOut",
+            "cls": "internal"
+          },
+          "gates": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/GateRowOut"
+            },
+            "title": "Gates",
+            "type": "array"
+          },
+          "immediate": {
+            "$ref": "#/components/schemas/ImmediateControlsOut",
+            "cls": "internal"
+          },
+          "locks": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/CellLockOut"
+            },
+            "title": "Locks",
+            "type": "array"
+          },
+          "model_family": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Model Family"
+          },
+          "pending": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AiPolicyVersionOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "real_firm": {
+            "cls": "internal",
+            "title": "Real Firm",
+            "type": "boolean"
+          },
+          "scheduled": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AiPolicyVersionOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "sections": {
+            "$ref": "#/components/schemas/AiPolicySections",
+            "cls": "internal"
+          },
+          "sub_processors": {
+            "cls": "public",
+            "items": {
+              "$ref": "#/components/schemas/SubProcessorOut"
+            },
+            "title": "Sub Processors",
+            "type": "array"
+          }
+        },
+        "required": [
+          "effective",
+          "sections",
+          "gates",
+          "locks",
+          "immediate",
+          "sub_processors",
+          "real_firm"
+        ],
+        "title": "AiPolicyOut",
+        "type": "object"
+      },
+      "AiPolicyPublishIn": {
+        "additionalProperties": false,
+        "description": "\"Publish v4\": the effective date and the approving partner, who is not the requester\n(AC-37).",
+        "properties": {
+          "approver_user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Approver User Id",
+            "type": "string"
+          },
+          "effective_from": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Effective From",
+            "type": "string"
+          }
+        },
+        "required": [
+          "effective_from",
+          "approver_user_id"
+        ],
+        "title": "AiPolicyPublishIn",
+        "type": "object"
+      },
+      "AiPolicySections": {
+        "additionalProperties": false,
+        "description": "`sections`, schema_version 1 (ADR-186 item 2). Bounds here are shape only: whether a value\nloosens the platform's default is the validator's (422 `policy_loosening_refused`).",
+        "properties": {
+          "auto_mode_defaults": {
+            "$ref": "#/components/schemas/AutoModeDefaults",
+            "cls": "internal"
+          },
+          "autonomy": {
+            "$ref": "#/components/schemas/AutonomySection",
+            "cls": "internal"
+          },
+          "client_data": {
+            "$ref": "#/components/schemas/ClientDataSection",
+            "cls": "internal"
+          },
+          "gates": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/GateOverride"
+            },
+            "maxItems": 40,
+            "title": "Gates",
+            "type": "array"
+          },
+          "governance": {
+            "$ref": "#/components/schemas/GovernanceSection",
+            "cls": "internal"
+          },
+          "policy_principal": {
+            "$ref": "#/components/schemas/PolicyPrincipalSection",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "autonomy",
+          "gates",
+          "policy_principal",
+          "auto_mode_defaults",
+          "client_data",
+          "governance"
+        ],
+        "title": "AiPolicySections",
+        "type": "object"
+      },
+      "AiPolicyVersionDetailOut": {
+        "description": "ADM-04 j: a version with its sections and its diff against the one before.",
+        "properties": {
+          "approver": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PolicyPersonOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "carried_over": {
+            "cls": "internal",
+            "default": false,
+            "title": "Carried Over",
+            "type": "boolean"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Decided At"
+          },
+          "decided_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PolicyPersonOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "diff": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/AiPolicyDiffRowOut"
+            },
+            "title": "Diff",
+            "type": "array"
+          },
+          "effective_from": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Effective From",
+            "type": "string"
+          },
+          "requested_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Requested At"
+          },
+          "requested_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PolicyPersonOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "schema_version": {
+            "cls": "internal",
+            "default": 1,
+            "minimum": 1.0,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "sections": {
+            "$ref": "#/components/schemas/AiPolicySections",
+            "cls": "internal"
+          },
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "awaiting_approval",
+              "published",
+              "declined",
+              "withdrawn"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "superseded": {
+            "cls": "internal",
+            "default": false,
+            "title": "Superseded",
+            "type": "boolean"
+          },
+          "version_no": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version_no",
+          "state",
+          "effective_from",
+          "sections"
+        ],
+        "title": "AiPolicyVersionDetailOut",
+        "type": "object"
+      },
+      "AiPolicyVersionOut": {
+        "description": "A version's metadata: \"v3 \u00b7 published Jan 14, 2026 by Margaret Okonkwo \u00b7 approved by\nDaniel Reyes\", \"Awaiting approval \u00b7 Daniel Reyes\", \"v1 \u00b7 carried over\".",
+        "properties": {
+          "approver": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PolicyPersonOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "carried_over": {
+            "cls": "internal",
+            "default": false,
+            "title": "Carried Over",
+            "type": "boolean"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Decided At"
+          },
+          "decided_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PolicyPersonOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "effective_from": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Effective From",
+            "type": "string"
+          },
+          "requested_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Requested At"
+          },
+          "requested_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PolicyPersonOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "schema_version": {
+            "cls": "internal",
+            "default": 1,
+            "minimum": 1.0,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "awaiting_approval",
+              "published",
+              "declined",
+              "withdrawn"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "superseded": {
+            "cls": "internal",
+            "default": false,
+            "title": "Superseded",
+            "type": "boolean"
+          },
+          "version_no": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version_no",
+          "state",
+          "effective_from"
+        ],
+        "title": "AiPolicyVersionOut",
+        "type": "object"
+      },
+      "AiPolicyVersionPageOut": {
+        "description": "The version history, newest first (the P-36 envelope).",
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "facets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Facet"
+              },
+              "type": "array"
+            },
+            "cls": "internal",
+            "title": "Facets",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/AiPolicyVersionOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_capped": {
+            "cls": "internal",
+            "default": false,
+            "title": "Total Capped",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "AiPolicyVersionPageOut",
+        "type": "object"
+      },
       "AnalysisRequestIn": {
         "additionalProperties": false,
         "properties": {
@@ -5528,6 +6161,62 @@
         "title": "AuthRedirectOut",
         "type": "object"
       },
+      "AutoModeDefaults": {
+        "additionalProperties": false,
+        "description": "Fieldset C: Auto mode per engagement type (a standing plan approval). Stored; forced off\non every real firm until runtime v2 (ADR-186 item 6).",
+        "properties": {
+          "advisory": {
+            "cls": "internal",
+            "default": false,
+            "title": "Advisory",
+            "type": "boolean"
+          },
+          "ebp_audit": {
+            "cls": "internal",
+            "default": false,
+            "title": "Ebp Audit",
+            "type": "boolean"
+          },
+          "fs_audit": {
+            "cls": "internal",
+            "default": false,
+            "title": "Fs Audit",
+            "type": "boolean"
+          },
+          "monthly_close": {
+            "cls": "internal",
+            "default": false,
+            "title": "Monthly Close",
+            "type": "boolean"
+          },
+          "notice": {
+            "cls": "internal",
+            "default": false,
+            "title": "Notice",
+            "type": "boolean"
+          },
+          "preparation": {
+            "cls": "internal",
+            "default": false,
+            "title": "Preparation",
+            "type": "boolean"
+          },
+          "review_compilation": {
+            "cls": "internal",
+            "default": false,
+            "title": "Review Compilation",
+            "type": "boolean"
+          },
+          "tax_return": {
+            "cls": "internal",
+            "default": false,
+            "title": "Tax Return",
+            "type": "boolean"
+          }
+        },
+        "title": "AutoModeDefaults",
+        "type": "object"
+      },
       "AutonomyIn": {
         "additionalProperties": false,
         "properties": {
@@ -5573,6 +6262,24 @@
           "set_at"
         ],
         "title": "AutonomyOut",
+        "type": "object"
+      },
+      "AutonomySection": {
+        "additionalProperties": false,
+        "description": "The firm's autonomy level (0 advise, 1 routine; Season 1 caps it at 1, ADR-186).",
+        "properties": {
+          "level": {
+            "cls": "internal",
+            "maximum": 3.0,
+            "minimum": 0.0,
+            "title": "Level",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "level"
+        ],
+        "title": "AutonomySection",
         "type": "object"
       },
       "BadgePart": {
@@ -7313,7 +8020,10 @@
                   "independence_pending",
                   "incomplete",
                   "uncited_change",
-                  "level_not_permitted"
+                  "level_not_permitted",
+                  "not_prepared",
+                  "already_signed",
+                  "sign_off_invalid"
                 ],
                 "type": "string"
               },
@@ -7791,6 +8501,34 @@
           "added_at"
         ],
         "title": "CellCitationOut",
+        "type": "object"
+      },
+      "CellLockOut": {
+        "description": "A locked cell: its path in `sections` and why (the SPA shows Lock with the reason).",
+        "properties": {
+          "path": {
+            "cls": "internal",
+            "title": "Path",
+            "type": "string"
+          },
+          "reason": {
+            "cls": "internal",
+            "enum": [
+              "policy_principal_dormant",
+              "platform_floor",
+              "real_firm_season_1",
+              "not_a_partner",
+              "client_data_only"
+            ],
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "reason"
+        ],
+        "title": "CellLockOut",
         "type": "object"
       },
       "CellOut": {
@@ -9749,6 +10487,96 @@
           "expires_at"
         ],
         "title": "ClientContactOut",
+        "type": "object"
+      },
+      "ClientDataOptInOut": {
+        "description": "SPEC-036's opt-in (\"AI on your clients' data\"), shown, never re-implemented (AC-41).",
+        "properties": {
+          "changed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Changed At"
+          },
+          "changed_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PolicyPersonOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "on": {
+            "cls": "internal",
+            "title": "On",
+            "type": "boolean"
+          },
+          "register_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Register Version"
+          }
+        },
+        "required": [
+          "on"
+        ],
+        "title": "ClientDataOptInOut",
+        "type": "object"
+      },
+      "ClientDataSection": {
+        "additionalProperties": false,
+        "description": "Fieldset D: \u00a77216 consent (locked on), the consent template, AI-use disclosure in\nengagement letters, model-drafted client text (locked off, ADR P-25).",
+        "properties": {
+          "client_drafts_enabled": {
+            "cls": "internal",
+            "default": false,
+            "title": "Client Drafts Enabled",
+            "type": "boolean"
+          },
+          "consent_template_ref": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Consent Template Ref"
+          },
+          "disclosure_in_letters": {
+            "cls": "internal",
+            "default": true,
+            "title": "Disclosure In Letters",
+            "type": "boolean"
+          },
+          "require_7216_consent": {
+            "cls": "internal",
+            "default": true,
+            "title": "Require 7216 Consent",
+            "type": "boolean"
+          }
+        },
+        "title": "ClientDataSection",
         "type": "object"
       },
       "ClientEngagementBriefOut": {
@@ -12495,6 +13323,34 @@
         "title": "ConflictResultOut",
         "type": "object"
       },
+      "ConnectionActivityOut": {
+        "description": "One line of the connection's activity in the ADM-07 grammar (A-02-T16; INV-5):\n\"Connected by Tess Moreno (client)\", \"Reconnected by \u2026\", \"Disconnected by \u2026\".",
+        "properties": {
+          "action": {
+            "cls": "internal",
+            "title": "Action",
+            "type": "string"
+          },
+          "at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "text": {
+            "cls": "confidential",
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "text",
+          "at"
+        ],
+        "title": "ConnectionActivityOut",
+        "type": "object"
+      },
       "ConnectionDisconnectIn": {
         "additionalProperties": false,
         "properties": {
@@ -12678,6 +13534,19 @@
             "cls": "internal",
             "title": "Authorized",
             "type": "boolean"
+          },
+          "connection_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Connection Id"
           },
           "consent_version": {
             "cls": "internal",
@@ -15637,6 +16506,108 @@
           "due_on"
         ],
         "title": "DueDatesIn",
+        "type": "object"
+      },
+      "EffectiveAiPolicyOut": {
+        "description": "`GET /v1/firm/ai-policy/effective`: the cells a run planner, ENG-03 (P-07) and KNW-04\n(K-02) read for one engagement type at one time (AC-39; `agents.api.effective_ai_policy`).",
+        "properties": {
+          "at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "auto_mode": {
+            "cls": "internal",
+            "title": "Auto Mode",
+            "type": "boolean"
+          },
+          "auto_mode_effective": {
+            "cls": "internal",
+            "title": "Auto Mode Effective",
+            "type": "boolean"
+          },
+          "auto_mode_lock": {
+            "anyOf": [
+              {
+                "enum": [
+                  "policy_principal_dormant",
+                  "platform_floor",
+                  "real_firm_season_1",
+                  "not_a_partner",
+                  "client_data_only"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Auto Mode Lock"
+          },
+          "autonomy_level": {
+            "cls": "internal",
+            "maximum": 3.0,
+            "minimum": 0.0,
+            "title": "Autonomy Level",
+            "type": "integer"
+          },
+          "client_data": {
+            "$ref": "#/components/schemas/ClientDataSection",
+            "cls": "internal"
+          },
+          "effective_from": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Effective From",
+            "type": "string"
+          },
+          "engagement_type": {
+            "cls": "internal",
+            "enum": [
+              "ebp_audit",
+              "fs_audit",
+              "review_compilation",
+              "preparation",
+              "tax_return",
+              "monthly_close",
+              "notice",
+              "advisory"
+            ],
+            "title": "Engagement Type",
+            "type": "string"
+          },
+          "firm_paused": {
+            "cls": "internal",
+            "default": false,
+            "title": "Firm Paused",
+            "type": "boolean"
+          },
+          "policy_principal_on": {
+            "cls": "internal",
+            "default": false,
+            "title": "Policy Principal On",
+            "type": "boolean"
+          },
+          "version_no": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version_no",
+          "effective_from",
+          "engagement_type",
+          "at",
+          "autonomy_level",
+          "auto_mode",
+          "auto_mode_effective",
+          "client_data"
+        ],
+        "title": "EffectiveAiPolicyOut",
         "type": "object"
       },
       "EligibilityCheckOut": {
@@ -21775,6 +22746,45 @@
         "title": "FirmOfficeOut",
         "type": "object"
       },
+      "FirmPauseOut": {
+        "description": "\"Pause all agents\" (ADR-157's per-firm switch): who paused and when (AC-42).",
+        "properties": {
+          "paused": {
+            "cls": "internal",
+            "title": "Paused",
+            "type": "boolean"
+          },
+          "paused_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Paused At"
+          },
+          "paused_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PolicyPersonOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "paused"
+        ],
+        "title": "FirmPauseOut",
+        "type": "object"
+      },
       "FirmRefIn": {
         "additionalProperties": false,
         "properties": {
@@ -23211,6 +24221,136 @@
         "title": "GateOut",
         "type": "object"
       },
+      "GateOverride": {
+        "additionalProperties": false,
+        "description": "Fieldset A: what a firm may change on a gate row (stricter-only; today only policy\nacceptance, stored off and locked under ADR-187).",
+        "properties": {
+          "action_key": {
+            "cls": "internal",
+            "maxLength": 80,
+            "minLength": 3,
+            "title": "Action Key",
+            "type": "string"
+          },
+          "policy_acceptance_on": {
+            "cls": "internal",
+            "default": false,
+            "title": "Policy Acceptance On",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "action_key"
+        ],
+        "title": "GateOverride",
+        "type": "object"
+      },
+      "GateRowOut": {
+        "description": "One of fieldset A's twelve rows (chapter 05 \u00a75.2.13), from the compiled gate catalogue\ncross-checked against the matrix (AC-32). `approver_rule` is the default human approver as a\ncode the SPA words (\"Named human, one batch\"); `default_approver_roles` the matrix roles it\nresolves to.",
+        "properties": {
+          "acceptance_policy_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Acceptance Policy Ref"
+          },
+          "action_keys": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Action Keys",
+            "type": "array"
+          },
+          "approver_rule": {
+            "cls": "internal",
+            "title": "Approver Rule",
+            "type": "string"
+          },
+          "attest": {
+            "anyOf": [
+              {
+                "enum": [
+                  "never",
+                  "never_held_for_client",
+                  "posting_disabled"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Attest"
+          },
+          "default_approver_roles": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Default Approver Roles",
+            "type": "array"
+          },
+          "gate_key": {
+            "cls": "internal",
+            "title": "Gate Key",
+            "type": "string"
+          },
+          "log_action": {
+            "cls": "internal",
+            "title": "Log Action",
+            "type": "string"
+          },
+          "policy_acceptance_available": {
+            "cls": "internal",
+            "default": false,
+            "title": "Policy Acceptance Available",
+            "type": "boolean"
+          },
+          "policy_acceptance_locked": {
+            "cls": "internal",
+            "default": true,
+            "title": "Policy Acceptance Locked",
+            "type": "boolean"
+          },
+          "policy_acceptance_on": {
+            "cls": "internal",
+            "default": false,
+            "title": "Policy Acceptance On",
+            "type": "boolean"
+          },
+          "row": {
+            "cls": "internal",
+            "maximum": 40.0,
+            "minimum": 1.0,
+            "title": "Row",
+            "type": "integer"
+          },
+          "where_shown": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Where Shown",
+            "type": "array"
+          }
+        },
+        "required": [
+          "row",
+          "gate_key",
+          "approver_rule",
+          "log_action"
+        ],
+        "title": "GateRowOut",
+        "type": "object"
+      },
       "GlAccountDifferenceOut": {
         "properties": {
           "code": {
@@ -23474,6 +24614,55 @@
           "display_name"
         ],
         "title": "GovernancePersonOut",
+        "type": "object"
+      },
+      "GovernanceSection": {
+        "additionalProperties": false,
+        "description": "Fieldset E: who installs agents, who approves a publish, the override tolerance, the\nmonthly accuracy sample and run-trace retention (never under 7 years).",
+        "properties": {
+          "accuracy_sample_n": {
+            "cls": "internal",
+            "default": 25,
+            "maximum": 1000.0,
+            "minimum": 1.0,
+            "title": "Accuracy Sample N",
+            "type": "integer"
+          },
+          "install_role": {
+            "cls": "internal",
+            "default": "manager_plus",
+            "enum": [
+              "manager_plus",
+              "partner_only"
+            ],
+            "title": "Install Role",
+            "type": "string"
+          },
+          "override_tolerance_pct": {
+            "cls": "internal",
+            "default": 8,
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Override Tolerance Pct",
+            "type": "integer"
+          },
+          "publish_approver": {
+            "cls": "internal",
+            "const": "methodology_owner",
+            "default": "methodology_owner",
+            "title": "Publish Approver",
+            "type": "string"
+          },
+          "trace_retention_years": {
+            "cls": "internal",
+            "default": 7,
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Trace Retention Years",
+            "type": "integer"
+          }
+        },
+        "title": "GovernanceSection",
         "type": "object"
       },
       "GrantIn": {
@@ -24831,6 +26020,34 @@
           "client_ignored_at"
         ],
         "title": "IgnoredOut",
+        "type": "object"
+      },
+      "ImmediateControlsOut": {
+        "description": "The band outside versioning (ADR-186 item 8).",
+        "properties": {
+          "agent_stages": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/PolicyAgentStageOut"
+            },
+            "title": "Agent Stages",
+            "type": "array"
+          },
+          "client_data_opt_in": {
+            "$ref": "#/components/schemas/ClientDataOptInOut",
+            "cls": "internal"
+          },
+          "firm_pause": {
+            "$ref": "#/components/schemas/FirmPauseOut",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "client_data_opt_in",
+          "agent_stages",
+          "firm_pause"
+        ],
+        "title": "ImmediateControlsOut",
         "type": "object"
       },
       "ImportCountsOut": {
@@ -32856,7 +34073,8 @@
             "enum": [
               "responded",
               "cleared",
-              "reopened"
+              "reopened",
+              "withdrawn"
             ],
             "title": "Kind",
             "type": "string"
@@ -34154,6 +35372,80 @@
         "title": "PlanStepOut",
         "type": "object"
       },
+      "PolicyAgentStageOut": {
+        "description": "An agent's stage, read-only on ADM-04 (\"Shadow since \u2026\", \"Live since \u2026\").",
+        "properties": {
+          "agent_key": {
+            "cls": "internal",
+            "title": "Agent Key",
+            "type": "string"
+          },
+          "since": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Since"
+          },
+          "stage": {
+            "cls": "internal",
+            "enum": [
+              "shadow",
+              "live"
+            ],
+            "title": "Stage",
+            "type": "string"
+          }
+        },
+        "required": [
+          "agent_key",
+          "stage"
+        ],
+        "title": "PolicyAgentStageOut",
+        "type": "object"
+      },
+      "PolicyPersonOut": {
+        "description": "A person named on the policy; the id links to the ADM-02 user drawer.",
+        "properties": {
+          "display_name": {
+            "cls": "confidential",
+            "title": "Display Name",
+            "type": "string"
+          },
+          "user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "display_name"
+        ],
+        "title": "PolicyPersonOut",
+        "type": "object"
+      },
+      "PolicyPrincipalSection": {
+        "additionalProperties": false,
+        "description": "Fieldset B: the dormant policy principal (ADR-187): `on` is false and locked.",
+        "properties": {
+          "on": {
+            "cls": "internal",
+            "default": false,
+            "title": "On",
+            "type": "boolean"
+          }
+        },
+        "title": "PolicyPrincipalSection",
+        "type": "object"
+      },
       "PopulationOut": {
         "properties": {
           "entry_count": {
@@ -34949,6 +36241,16 @@
       "PortalConnectionDetailOut": {
         "description": "The details drawer: scopes, who connected it and when, the last 5 sync runs.",
         "properties": {
+          "activity": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ConnectionActivityOut"
+            },
+            "maxItems": 50,
+            "title": "Activity",
+            "type": "array"
+          },
           "card": {
             "$ref": "#/components/schemas/PortalConnectionCardOut",
             "cls": "confidential"
@@ -49355,6 +50657,51 @@
         "title": "StepResolveOut",
         "type": "object"
       },
+      "SubProcessorOut": {
+        "description": "A sub-processor row, generated from the provider-terms register (DF-16): \"Amazon Web\nServices (Bedrock) \u00b7 model inference \u00b7 US \u00b7 no training\".",
+        "properties": {
+          "name": {
+            "cls": "public",
+            "title": "Name",
+            "type": "string"
+          },
+          "purpose": {
+            "cls": "public",
+            "title": "Purpose",
+            "type": "string"
+          },
+          "region": {
+            "cls": "public",
+            "title": "Region",
+            "type": "string"
+          },
+          "retention_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Retention Days"
+          },
+          "trains_on_data": {
+            "cls": "public",
+            "title": "Trains On Data",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "purpose",
+          "region",
+          "trains_on_data"
+        ],
+        "title": "SubProcessorOut",
+        "type": "object"
+      },
       "SubjectRefIn": {
         "additionalProperties": false,
         "properties": {
@@ -52398,6 +53745,19 @@
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "issue_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Issue Id"
           },
           "key": {
             "cls": "internal",
@@ -59043,7 +60403,7 @@
     },
     "/v1/auth/refresh": {
       "post": {
-        "description": "AC 5.1.4: cookie-authenticated, with the CSRF header and the app's own Origin.",
+        "description": "AC 5.1.4: cookie-authenticated, with the CSRF header and the app's own Origin. Only a\nrefresh marked `X-Abacus-Activity: user` (the person's own input) moves the idle clock; an\nabsent mark is never activity (G-02-T14, DEC-535).",
         "operationId": "refresh",
         "parameters": [
           {
@@ -59076,6 +60436,23 @@
                 }
               ],
               "title": "Origin"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Activity",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 16,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Activity"
             }
           },
           {
@@ -66048,7 +67425,7 @@
     },
     "/v1/connections/complete": {
       "post": {
-        "description": "SPEC-020 AC-2 (TASK-036 D1): the SPA hands back the provider's state and code.",
+        "description": "SPEC-020 AC-2 (TASK-036 D1): the SPA hands back the provider's state and code. A-02-T16:\na state POR-16 started finishes as an entity-scoped connection (or a reconnect).",
         "operationId": "complete",
         "parameters": [
           {
@@ -66907,7 +68284,7 @@
     },
     "/v1/decision-cards": {
       "get": {
-        "description": "Cards on an engagement, on the list envelope with per-status counts.",
+        "description": "Cards on an engagement, on the list envelope with per-status counts (P-04-T23).",
         "operationId": "decision_card_list",
         "parameters": [
           {
@@ -67326,7 +68703,7 @@
     },
     "/v1/decision-cards/{card_id}/decide": {
       "post": {
-        "description": "SHL-11 a to c: the reserved role decides, with a rationale (human only).",
+        "description": "SHL-11 a to c: the reserved role decides, with a rationale (human only; MFA per kind).",
         "operationId": "decision_card_decide",
         "parameters": [
           {
@@ -98579,7 +99956,7 @@
     },
     "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/checks/{check_id}/issue-link": {
       "post": {
-        "description": "AUD-06 c: link an issue raised through C3 to a check that does not tie (A-02-T17);\n409 `tie_out_check_stale` on a stale `seen_version`, audited `tie_out_check.issue_linked`.",
+        "description": "AUD-06 c (A-02-T17): link an issue raised through C3 on this engagement to a check, once;\n409 `tie_out_check_stale` on a stale `seen_version`, 409 `tie_out_check_issue_linked` for a\nsecond issue; audited `tie_out_check.issue_linked`. Authorised first (walls 404), then the\nflag (404 off).",
         "operationId": "tie_issue_link",
         "parameters": [
           {
@@ -98726,16 +100103,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Tie Issue Link Route",
@@ -104848,6 +106215,1392 @@
           "identity"
         ],
         "x-abacus-action": "firm.ai_client_data"
+      }
+    },
+    "/v1/firm/ai-policy": {
+      "get": {
+        "description": "ADM-04 a, e, g, h and the band: the effective policy for every firm member (AC-31 to\nAC-35, AC-41 to AC-44).",
+        "operationId": "ai_policy",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiPolicyOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Ai Policy Route",
+        "tags": [
+          "ai policy"
+        ],
+        "x-abacus-action": "ai_policy.read"
+      }
+    },
+    "/v1/firm/ai-policy/draft": {
+      "delete": {
+        "description": "AC-36 \"Discard\": the draft goes back to the effective version, which comes back. Audited\n`ai_policy.draft_discarded`.",
+        "operationId": "discard_ai_policy_draft",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "minimum": 0,
+              "title": "If-Match",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiPolicyDraftOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Discard Ai Policy Draft Route",
+        "tags": [
+          "ai policy"
+        ],
+        "x-abacus-action": "ai_policy.draft"
+      },
+      "get": {
+        "description": "ADM-04 b: the firm's draft (the effective sections when none is saved).",
+        "operationId": "ai_policy_draft",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiPolicyDraftOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Ai Policy Draft Route",
+        "tags": [
+          "ai policy"
+        ],
+        "x-abacus-action": "ai_policy.draft"
+      },
+      "put": {
+        "description": "AC-36, AC-38, AC-40: save against If-Match (409 `stale_version`); 422\n`policy_loosening_refused` with `facts.field`. Audited `ai_policy.draft_saved`.",
+        "operationId": "put_ai_policy_draft",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "minimum": 0,
+              "title": "If-Match",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiPolicyDraftIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiPolicyDraftOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Put Ai Policy Draft Route",
+        "tags": [
+          "ai policy"
+        ],
+        "x-abacus-action": "ai_policy.draft"
+      }
+    },
+    "/v1/firm/ai-policy/effective": {
+      "get": {
+        "description": "AC-39: the version effective at `at` (now on `kernel.clock` when omitted).",
+        "operationId": "effective_ai_policy",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "engagement_type",
+            "required": true,
+            "schema": {
+              "enum": [
+                "ebp_audit",
+                "fs_audit",
+                "review_compilation",
+                "preparation",
+                "tax_return",
+                "monthly_close",
+                "notice",
+                "advisory"
+              ],
+              "title": "Engagement Type",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "at",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "At"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EffectiveAiPolicyOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Effective Ai Policy Route",
+        "tags": [
+          "ai policy"
+        ],
+        "x-abacus-action": "ai_policy.read"
+      }
+    },
+    "/v1/firm/ai-policy/versions": {
+      "get": {
+        "description": "ADM-04 j: the history, newest first (AC-34).",
+        "operationId": "ai_policy_versions",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 1024,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiPolicyVersionPageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Ai Policy Versions Route",
+        "tags": [
+          "ai policy"
+        ],
+        "x-abacus-action": "ai_policy.read"
+      },
+      "post": {
+        "description": "ADM-04 d: request publication of the draft as the next version, `awaiting_approval`,\nraising the C13 gate for the approver (AC-37); 409 `approver_must_differ` when the approver\nis the requester. Audited `ai_policy.publish_requested`.",
+        "operationId": "publish_ai_policy",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiPolicyPublishIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiPolicyVersionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Publish Ai Policy Route",
+        "tags": [
+          "ai policy"
+        ],
+        "x-abacus-action": "ai_policy.publish"
+      }
+    },
+    "/v1/firm/ai-policy/versions/{version_no}": {
+      "get": {
+        "description": "A version with its sections and its diff against the one before (AC-34).",
+        "operationId": "ai_policy_version",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_no",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "Version No",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiPolicyVersionDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Ai Policy Version Route",
+        "tags": [
+          "ai policy"
+        ],
+        "x-abacus-action": "ai_policy.read"
+      }
+    },
+    "/v1/firm/ai-policy/versions/{version_no}/approve": {
+      "post": {
+        "description": "ADM-04 g: the named partner approves with fresh MFA (409 `approver_must_differ` for the\nrequester). Audited `ai_policy.approved`.",
+        "operationId": "approve_ai_policy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_no",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "Version No",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiPolicyVersionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Approve Ai Policy Route",
+        "tags": [
+          "ai policy"
+        ],
+        "x-abacus-action": "ai_policy.approve"
+      }
+    },
+    "/v1/firm/ai-policy/versions/{version_no}/decline": {
+      "post": {
+        "description": "The named partner declines. Audited `ai_policy.declined`.",
+        "operationId": "decline_ai_policy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_no",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "Version No",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiPolicyDeclineIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiPolicyVersionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Decline Ai Policy Route",
+        "tags": [
+          "ai policy"
+        ],
+        "x-abacus-action": "ai_policy.approve"
+      }
+    },
+    "/v1/firm/ai-policy/versions/{version_no}/withdraw": {
+      "post": {
+        "description": "The requester withdraws a version still awaiting approval. Audited\n`ai_policy.withdrawn`.",
+        "operationId": "withdraw_ai_policy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_no",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "Version No",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiPolicyVersionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Withdraw Ai Policy Route",
+        "tags": [
+          "ai policy"
+        ],
+        "x-abacus-action": "ai_policy.publish"
       }
     },
     "/v1/firm/audit-events": {
@@ -111285,16 +114038,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Security Overview Route",
@@ -112050,16 +114793,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Put Portal Sign In Policy Route",
@@ -112157,16 +114890,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Security Posture Route",
@@ -112293,16 +115016,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Security Sessions Route",
@@ -112410,16 +115123,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Sign Out Session Route",
@@ -112431,7 +115134,7 @@
     },
     "/v1/firm/security/sign-in": {
       "put": {
-        "description": "Fieldset A (AC-15, AC-17): 409 `sso_not_verified` when Require SSO is turned on before an\nadmin's verified SSO sign-in; 422 `policy_loosening_refused` over a platform maximum; 409\n`stale_version`. Audited `security_policy.updated` (and `security_policy.sso_enforced`).",
+        "description": "Fieldset A (AC-15, AC-17): 409 `sso_not_verified` when Require SSO is turned on before an\nadmin's verified SSO sign-in; 422 `policy_loosening_refused` over a platform maximum and\n`session_limit_out_of_range` under the floor; 409 `stale_version`. Audited\n`security_policy.updated` (and `security_policy.sso_enforced`,\n`security_policy.idp_mfa_attested`).",
         "operationId": "put_sign_in_policy",
         "parameters": [
           {
@@ -112537,16 +115240,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Put Sign In Policy Route",
@@ -112558,7 +115251,7 @@
     },
     "/v1/firm/security/sso-exempt-account": {
       "put": {
-        "description": "AC-18: designate (replacing any other) or clear the one SSO-exempt account; 409\n`sso_exempt_needs_hardware_key` without a hardware-key factor, 409 `stale_version`; 404 for\nsomeone who is not a current member. Audited `sso_exempt_account.designated` or `.cleared`.",
+        "description": "AC-18: designate (replacing any other) or clear the one SSO-exempt account; 409\n`sso_exempt_needs_hardware_key` without a hardware-key factor, 409 `sso_exempt_not_self` for\nthe caller, 409 `stale_version`; 404 for someone who is not a current member. Audited\n`sso_exempt_account.designated` or `.cleared`.",
         "operationId": "put_sso_exempt_account",
         "parameters": [
           {
@@ -112664,16 +115357,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Put Sso Exempt Account Route",
@@ -115135,16 +117818,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Unlock Staff Route",
@@ -115242,16 +117915,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Support Access Route",
@@ -115367,16 +118030,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Put Support Access Route",
@@ -127955,7 +130608,7 @@
     },
     "/v1/portal/connections/{connection_id}": {
       "get": {
-        "description": "The details drawer (A-02-T16).",
+        "description": "The details drawer: scopes, who connected it and when, the last 5 syncs, the activity.",
         "operationId": "connection_detail",
         "parameters": [
           {
@@ -128051,16 +130704,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Connection Detail Route",
@@ -128072,7 +130715,7 @@
     },
     "/v1/portal/connections/{connection_id}/disconnect": {
       "post": {
-        "description": "POR-16 f (A-02-T16): \"Disconnected\" (neutral); the secret is crypto-erased and received\ndata stays. 409 `stale_version` on an old `seen_version`. Audited `connection.revoked`.",
+        "description": "POR-16 f: \"Disconnected\" (neutral); the secret is crypto-erased and received data stays.\n409 `stale_version` on an old `seen_version`. Audited `connection.revoked`.",
         "operationId": "disconnect_connection",
         "parameters": [
           {
@@ -128199,16 +130842,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Disconnect Connection Route",
@@ -128220,7 +130853,7 @@
     },
     "/v1/portal/connections/{connection_id}/retry": {
       "post": {
-        "description": "POR-16 g *Try again* (A-02-T16): one run; while it runs the same run is returned; 409\n`connection_needs_reauth` when the client must sign in again. Audited\n`connection.retry_requested`.",
+        "description": "POR-16 g *Try again*: one run; while it runs the same run is returned; 409\n`connection_needs_reauth`, `no_failed_sync`, `retry_unavailable`. Audited\n`connection.retry_requested`.",
         "operationId": "retry_connection",
         "parameters": [
           {
@@ -128337,16 +130970,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Retry Connection Route",
@@ -128475,7 +131098,7 @@
     },
     "/v1/portal/entities/{entity_id}/connections": {
       "get": {
-        "description": "POR-16 a (A-02-T16): cards for the catalogue rows with a registered adapter.",
+        "description": "POR-16 a: cards for the catalogue rows listed here, with the entity's connections.",
         "operationId": "list_entity_connections",
         "parameters": [
           {
@@ -128571,16 +131194,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Entity Connections Route",
@@ -128592,7 +131205,7 @@
     },
     "/v1/portal/entities/{entity_id}/connections/{catalog_key}/start": {
       "post": {
-        "description": "POR-16 b, e, i (A-02-T16): one consent row, then the provider's sign-in. 422\n`authorization_required`; 409 `consent_version_stale`, `ledger_already_connected`,\n`connector_not_available`. Audited `connection.started`, `connection.consent_recorded`.",
+        "description": "POR-16 b, e: one consent row as shown, then the provider's sign-in URL (fresh MFA). 422\n`authorization_required`; 409 `consent_version_stale`, `ledger_already_connected`,\n`connector_not_available`. Audited `connection.consent_recorded`, `connection.started`.",
         "operationId": "start_connection",
         "parameters": [
           {
@@ -128729,16 +131342,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Start Connection Route",
@@ -130767,7 +133370,7 @@
     },
     "/v1/review-notes": {
       "get": {
-        "description": "Notes on a target or an engagement, on the list envelope with per-status counts.",
+        "description": "Notes on a target or an engagement, on the list envelope with per-status counts. Rows\nnever carry a body (P-04-T21).",
         "operationId": "review_note_list",
         "parameters": [
           {
@@ -130974,7 +133577,7 @@
         "x-abacus-action": "review_note.read"
       },
       "post": {
-        "description": "Raise a note on a registered reviewable, optionally on an anchor.",
+        "description": "Raise a note on a registered reviewable, optionally on an anchor; the body is sealed.",
         "operationId": "review_note_raise",
         "parameters": [
           {
@@ -131091,7 +133694,7 @@
     },
     "/v1/review-notes/{note_id}": {
       "get": {
-        "description": "One note with its body and events.",
+        "description": "One note with its body and events (the body read is an access event).",
         "operationId": "review_note",
         "parameters": [
           {
@@ -132237,7 +134840,7 @@
     },
     "/v1/sign-offs:bulk": {
       "post": {
-        "description": "SHL-12 f: sign several targets at one level; reviewers only.",
+        "description": "SHL-12 f: sign several targets at one level; reviewers only, each item atomic, fresh MFA\n(P-04-T22). A replay with the same key returns the stored result.",
         "operationId": "sign_off_bulk",
         "parameters": [
           {

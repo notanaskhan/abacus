@@ -1100,6 +1100,18 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"status", "removed_by", "removed_at"}  # TASK-016
             | {"approved_by", "approved_at", "removed_reason"}  # G-01-T09 (0151): walls v2
         ),
+        # G-02-T14 (0220): the firm's security policies and the portal session length, edited
+        # in place against their versions (never deleted).
+        "security_policies": frozenset(
+            {"require_sso", "sso_enforced_at", "sso_enforced_by", "idp_mfa_attested_at"}
+            | {"idp_mfa_attested_by", "session_absolute_minutes", "session_idle_minutes"}
+            | {"sso_exempt_user_id", "sso_exempt_tested_at", "allow_support_requests"}
+            | {"support_updated_at", "support_updated_by", "version", "support_version"}
+            | {"updated_by", "updated_at"}
+        ),
+        "portal_security_policies": frozenset(
+            {"portal_session_minutes", "version", "updated_by", "updated_at"}
+        ),
         # G-01-T12 (0167): a line's policy, edited in place against its version (never deleted).
         "service_line_policies": frozenset(
             {"enabled", "lead_user_id", "content_visible_to", "cross_line_access", "version"}
@@ -1169,6 +1181,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             # 0195 (A-02-T13): who (re)connected, reauth and sync facts, the reason code
             | {"connected_by_user_id", "connected_at", "reauth_due_at", "last_sync_at"}
             | {"status_reason_code"}
+            | {"version"}  # 0215 (A-02-T16): bumped on every status change
         ),
         "connection_states": frozenset({"used_at"}),
         "reconnect_requests": frozenset({"fulfilled_at"}),  # 0195 (A-02-T13)
@@ -1287,6 +1300,10 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"monthly_soft_usd", "monthly_hard_usd", "updated_by", "updated_at"}
         ),
         "feature_flag_states": frozenset({"value", "set_by", "reason", "set_at"}),  # SPEC-011
+        # P-04-T22 re-review (0214, DEC-507): a key is claimed pending, filled, or released.
+        "idempotency_keys": frozenset(
+            {"request_sha256", "status_code", "response", "created_at", "expires_at", "claim_id"}
+        ),
         "notifications": frozenset({"read_at"}),  # SPEC-013
         "client_invitations": frozenset(  # SPEC-015
             {"status", "accepted_by", "accepted_at", "expires_at"}
@@ -1546,6 +1563,8 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "checkpoint_diffs": "review_rows_immutable",  # 0094 (P-04-T04)
         "checkpoint_decisions": "review_rows_immutable",  # 0094 (P-04-T04)
         "issue_events": "review_rows_immutable",  # 0094 (P-04-T04)
+        "decision_card_versions": "review_rows_immutable",  # 0211 (P-04-T23)
+        "decision_analysis_requests": "review_rows_immutable",  # 0211 (P-04-T23)
         "suggestion_decisions": "agent_decisions_immutable",  # 0095 (P-04-T05)
         "proposal_rows": "agent_decisions_immutable",  # 0095 (P-04-T05)
         "proposal_decisions": "agent_decisions_immutable",  # 0095 (P-04-T05)

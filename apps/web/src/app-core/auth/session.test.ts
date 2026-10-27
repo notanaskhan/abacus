@@ -11,6 +11,7 @@ import {
   ensureSession,
   handleUnauthorised,
   lastRefreshFailure,
+  noteUserActivity,
   refreshSession,
   resetAuthForTest,
   safeReturnTo,
@@ -235,5 +236,18 @@ describe("P-01-T11 sign-out (AC 2.1.6)", () => {
     client.setConfig({ fetch: () => Promise.reject(new Error("offline")) });
     await signOut().catch(() => undefined);
     expect(accessToken()).toBeNull();
+  });
+});
+
+describe("G-02-T14 the idle clock (security review M3)", () => {
+  it("marks a refresh as activity only after the person's own input", async () => {
+    const { calls } = mockApi({ "POST /v1/auth/refresh": () => json(TOKEN) });
+    const marked = (): (string | null)[] =>
+      refreshes(calls).map((c) => c.headers.get("X-Abacus-Activity"));
+    await refreshSession(NOW); // the page's first refresh: a load is the person's act
+    await refreshSession(NOW + 60_000); // a background poll's: no input since
+    noteUserActivity(NOW + 90_000);
+    await refreshSession(NOW + 120_000);
+    expect(marked()).toEqual(["user", null, "user"]);
   });
 });

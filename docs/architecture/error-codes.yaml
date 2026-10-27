@@ -156,6 +156,11 @@ codes:
     raised_by:
     - abacus.modules.identity.service_lines.AuditLocked
     summary: Audit content is visible to the engagement team only; it can never be widened.
+  authorization_required:
+    status: 422
+    raised_by:
+    - abacus.modules.connections.entity.AuthorizationRequired
+    summary: The consent sheet's authorization toggle was not on (AC-36).
   below_floor:
     status: 422
     raised_by:
@@ -236,6 +241,22 @@ codes:
     raised_by:
     - abacus.modules.connections.connect.ConnectionFailed
     summary: The provider refused or failed the exchange (its code, never its text, is logged).
+  connection_flow_moved:
+    status: 409
+    raised_by:
+    - abacus.modules.connections.connect.ConnectionFlowMoved
+    summary: 'POR-16 is on for the firm: a client connects from Connections, with the consent sheet (A-02-T16
+      review M2). The engagement page no longer starts a flow.'
+  connection_needs_reauth:
+    status: 409
+    raised_by:
+    - abacus.modules.connections.entity.ConnectionNeedsReauth
+    summary: The client must sign in again before anything is pulled.
+  connector_not_available:
+    status: 409
+    raised_by:
+    - abacus.modules.connections.entity.ConnectorNotAvailable
+    summary: No adapter for this system is registered here (catalogue honesty, AC-49).
   consent_required:
     status: 409
     raised_by:
@@ -243,6 +264,11 @@ codes:
     summary: '§7216 (ADR P-12, R-01-T13): a request of an engagement that holds a tax return goes to
       a third party only under the client''s `third_party_disclosure` consent (C19). Until T-01 registers
       that consent nobody holds it, so such a delegation is refused (fail closed).'
+  consent_version_stale:
+    status: 409
+    raised_by:
+    - abacus.modules.connections.entity.ConsentVersionStale
+    summary: 'The consent copy shown is older than the catalogue''s: read the cards again.'
   contact_bound:
     status: 409
     raised_by:
@@ -288,6 +314,16 @@ codes:
     raised_by:
     - abacus.modules.platform.governance_errors.DeciderMustDiffer
     summary: An incident decision needs two different people, one partner and the QI (AC-22).
+  decision_card_state:
+    status: 409
+    raised_by:
+    - abacus.modules.review.decisions.DecisionCardState
+    summary: The card is not in a state that takes this (decided, superseded).
+  decision_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.review.decisions.DecisionInvalid
+    summary: An option, factor, subject or provider answer the card can't take.
   decision_locked:
     status: 409
     raised_by:
@@ -523,6 +559,11 @@ codes:
     raised_by:
     - abacus.modules.engagements.transitions.HoldReasonRequired
     summary: Putting an engagement on hold names a reason from the hold reason codes.
+  idempotency_in_progress:
+    status: 409
+    raised_by:
+    - abacus.kernel.uow.idempotency.IdempotencyInProgress
+    summary: 'A request with this key and body is still running: retry shortly for its answer.'
   idempotency_key_invalid:
     status: 422
     raised_by:
@@ -680,6 +721,12 @@ codes:
     raised_by:
     - abacus.modules.ledger.trial_balances.LayerUnbalanced
     summary: A layer whose debits and credits differ (`facts.layer`, `facts.difference`).
+  ledger_already_connected:
+    status: 409
+    raised_by:
+    - abacus.modules.connections.connect.LedgerAlreadyConnected
+    summary: The entity has a live ledger connection already (one per entity, ADR-045); a ledger the
+      client connected with a consent is never replaced by a flow without one.
   ledger_import_off:
     status: 409
     raised_by:
@@ -773,6 +820,11 @@ codes:
     - abacus.modules.connections.connect.NoLiveConnection
     - abacus.modules.connections.service.NoConnection
     summary: The engagement's client entity has no active connection.
+  no_failed_sync:
+    status: 409
+    raised_by:
+    - abacus.modules.connections.entity.NoFailedSync
+    summary: There is no failed sync to try again.
   no_ledger:
     status: 409
     raised_by:
@@ -856,7 +908,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.review.notes.NotTheRaiser
-    summary: Only the reviewer who raised a note, or the engagement partner, clears it.
+    summary: Only the reviewer who raised a note (or, to clear it, the engagement partner).
   not_voidable:
     status: 409
     raised_by:
@@ -1061,6 +1113,7 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.engagements.acceptance.RationaleRequired
+    - abacus.modules.review.decisions.RationaleRequired
     summary: A decision needs a rationale; Accept with conditions needs a condition (`facts.field`).
   read_not_confirmed:
     status: 422
@@ -1072,6 +1125,11 @@ codes:
     raised_by:
     - abacus.modules.requests.binders.ReasonRequired
     summary: Unpublishing a binder needs a reason.
+  recommendation_changed:
+    status: 409
+    raised_by:
+    - abacus.modules.review.decisions.RecommendationChanged
+    summary: The card moved past the version the decider saw (reassessed or superseded).
   relationship_partner:
     status: 409
     raised_by:
@@ -1116,6 +1174,11 @@ codes:
     raised_by:
     - abacus.modules.evidence.retention.SamePerson
     summary: 'The person who imported a set can''t also publish it: a second staff member approves.'
+  retry_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.connections.entity.RetryUnavailable
+    summary: Only a run a request item asked for can be retried until on-demand runs land (A-02-T30).
   review_note_invalid:
     status: 422
     raised_by:
@@ -1195,6 +1258,12 @@ codes:
     raised_by:
     - abacus.modules.identity.service_lines.ServiceLineLeadInvalid
     summary: The lead must be an active staff member of the firm.
+  session_limit_out_of_range:
+    status: 422
+    raised_by:
+    - abacus.modules.identity.security_policies.SessionLimitOutOfRange
+    summary: A session limit under the floor (60 minutes absolute, 5 idle, 15 for the portal), which
+      would leave the firm's people unable to work; `facts.field` names the field.
   setting_invalid:
     status: 422
     raised_by:
@@ -1242,6 +1311,11 @@ codes:
     - abacus.modules.identity.governance_errors.SsoExemptNeedsHardwareKey
     summary: The one SSO-exempt (break-glass) account must hold a hardware-key factor (AC-18; G-02-T11,
       DEC-432). Raised by G-02-T14.
+  sso_exempt_not_self:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.security_policies.SsoExemptNotSelf
+    summary: Nobody designates themselves the SSO-exempt (break-glass) account (AC-18, DEC-525).
   sso_not_verified:
     status: 409
     raised_by:
@@ -1261,6 +1335,7 @@ codes:
     raised_by:
     - abacus.modules.assurance.phase.ProfileStale
     - abacus.modules.communications.template_service.TemplateDraftStale
+    - abacus.modules.connections.entity.StaleConnection
     - abacus.modules.engagements.acceptance.AcceptanceStale
     - abacus.modules.engagements.drafts.DraftStaleVersion
     - abacus.modules.engagements.independence.ConclusionSuperseded
@@ -1268,6 +1343,7 @@ codes:
     - abacus.modules.engagements.team_errors.TeamChanged
     - abacus.modules.identity.annual_independence.StaleStatement
     - abacus.modules.identity.people.StalePerson
+    - abacus.modules.identity.security_policies.StalePolicy
     - abacus.modules.identity.service_lines.StalePolicy
     - abacus.modules.identity.settings_registry.StaleSection
     - abacus.modules.organisations.live.StaleVersion
@@ -1360,14 +1436,20 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.workpapers.tie_out.CheckInvalid
+  tie_out_check_issue_linked:
+    status: 409
+    raised_by:
+    - abacus.modules.workpapers.tie_out.IssueAlreadyLinked
+    summary: 'The check is linked to another issue already: a link is set once (A-02-T17).'
   tie_out_check_key_taken:
     status: 422
     raised_by:
     - abacus.modules.workpapers.tie_out.KeyTaken
   tie_out_check_stale:
-    status: 422
+    status: 409
     raised_by:
     - abacus.modules.workpapers.tie_out.CheckStale
+    summary: 'The check changed since it was read (`seen_version`): 409, as C9 §6 documents (ED-155).'
   tin_conflict:
     status: 409
     raised_by:
@@ -1532,6 +1614,11 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.workpapers.NothingToReview
     summary: No ready version, or it's already reviewed.
+  write_capability_refused:
+    status: 409
+    raised_by:
+    - abacus.modules.integrations.writes.WriteCapabilityRefused
+    summary: 'A write to a client''s system was refused: the registry enables none (ADR-150).'
   wrong_password:
     status: 422
     raised_by:
