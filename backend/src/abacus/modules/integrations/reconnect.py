@@ -13,7 +13,10 @@ rows, POR-20) through `communications.send_templated`, as the person who asked, 
 is recorded `blocked`, never sent from a constant. The values are the owner's first name, the
 firm's name, the system's catalogue name (never the masked account label: the lint refuses an
 account-number shape) and the portal link. Each send's idempotency key names the request, so a
-replay sends nothing twice. A second ask while a request is open answers it and sends nothing.
+replay sends nothing twice. A second ask while a request is open answers it and sends nothing,
+unless that request's email never went out (blocked or failed): then the re-ask sends it once
+more, in the next of a few numbered slots, so it never goes twice (review L1). A per-entity
+cooldown across feeds is a follow-up (DEC-611).
 """
 
 from __future__ import annotations
@@ -27,7 +30,12 @@ from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow.idempotency import idempotent
-from abacus.modules.communications.api import RecipientRef, SendScope, send_templated
+from abacus.modules.communications.api import (
+    RecipientRef,
+    SendScope,
+    send_templated,
+    templated_outcome,
+)
 from abacus.modules.connections.api import (
     ReconnectRequested,
     authorised_engagement,
@@ -40,6 +48,7 @@ from abacus.modules.integrations.contract import ConnectionPersonOut, ReconnectR
 
 TEMPLATE_KEY: Final = "reconnect_request"
 ACTION: Final = "connection.reconnect_request"
+RESEND_SLOTS: Final = 5  # attempts per owner and request (review L1)
 _log = get_logger(__name__)
 
 
@@ -55,8 +64,40 @@ async def _system_name(ctx: AuthContext, provider: str) -> str:
     return "your connected system"
 
 
+async def _send_one(
+    ctx: AuthContext, asked: ReconnectRequested, owner: UUID, values: dict[str, str]
+) -> bool:
+    """One owner's email; True once it is queued (now or before). Attempts are keyed by the
+    request and a slot number: a slot already queued means sent (nothing more), a slot recorded
+    `blocked` (no published template, a lint finding, suppression) moves to the next, the first
+    unused slot is tried once. So a re-ask sends what never went out and never sends twice
+    (review L1); after `RESEND_SLOTS` blocked attempts the request needs a new one."""
+    recipient = RecipientRef("user", owner)
+    scope = SendScope(asked.engagement_id)
+    for slot in range(RESEND_SLOTS):
+        key = f"reconnect_request:{asked.id}" + (f":{slot}" if slot else "")
+        try:
+            recorded = await templated_outcome(
+                ctx, TEMPLATE_KEY, recipient, scope=scope, idempotency_key=key
+            )
+            if recorded is not None:
+                if recorded.status == "queued":
+                    return True
+                continue  # this slot never went out: try the next
+            outcome = await send_templated(
+                ctx, TEMPLATE_KEY, recipient, values, scope=scope, idempotency_key=key
+            )
+        except Exception as exc:  # the request stays recorded; a re-ask may send again
+            _log.warning("reconnect_request.mail_failed", error=type(exc).__name__)
+            return False
+        if outcome.status != "queued":
+            _log.info("reconnect_request.mail_blocked", reason=outcome.blocked_reason)
+        return outcome.status == "queued"
+    return False
+
+
 async def _mail_owners(ctx: AuthContext, asked: ReconnectRequested, client_id: UUID) -> int:
-    """The Reconnect request email to each owner; the number queued."""
+    """The Reconnect request email to each owner of the entity; the number queued."""
     owners = await client_owners(
         ctx.tenant,
         client_id=client_id,
@@ -66,7 +107,7 @@ async def _mail_owners(ctx: AuthContext, asked: ReconnectRequested, client_id: U
     if not owners:
         return 0
     names = await names_of(owners)
-    values = {
+    shared = {
         "firm_name": await firm_name(ctx.tenant_id),
         "connection_name": await _system_name(ctx, asked.provider),
         "portal_link": portal_link(),
@@ -74,18 +115,7 @@ async def _mail_owners(ctx: AuthContext, asked: ReconnectRequested, client_id: U
     queued = 0
     for owner in owners:
         first = (names.get(owner) or "").split(" ")[0] or "there"
-        outcome = await send_templated(
-            ctx,
-            TEMPLATE_KEY,
-            RecipientRef("user", owner),
-            {**values, "client_first_name": first},
-            scope=SendScope(asked.engagement_id),
-            idempotency_key=f"reconnect_request:{asked.id}",
-        )
-        if outcome.status == "queued":
-            queued += 1
-        else:
-            _log.info("reconnect_request.mail_blocked", reason=outcome.blocked_reason)
+        queued += await _send_one(ctx, asked, owner, {**shared, "client_first_name": first})
     return queued
 
 
@@ -101,8 +131,7 @@ async def reconnect_request(
 
     async def run() -> tuple[int, dict[str, object]]:
         asked = await request_reconnect(ctx, ref, connection_id)
-        if asked.created:
-            await _mail_owners(ctx, asked, ref.client_id)
+        await _mail_owners(ctx, asked, ref.client_id)
         names = await names_of([asked.requested_by_user_id])
         out = ReconnectRequestOut(
             id=asked.id,

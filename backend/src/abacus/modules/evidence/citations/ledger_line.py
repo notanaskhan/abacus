@@ -18,8 +18,10 @@ dependency-free. Locator `{ledger_snapshot_id, account_code}`; the match id is
   of the citation's engagement's entity.
 - **Moved** (`on_trial_balance_version_created`, a consumer of `trial_balance.version_created`): a
   re-version that adopts another snapshot supersedes its predecessor's, so every citation to the
-  older snapshot gets a `moved` event naming the new one (`ledger_snapshot:<id>`), once per cause
-  (P-03-T12's detector). The snapshot itself is never touched (ADR-004).
+  older snapshot made on that trial balance's engagement gets a `moved` event naming the new one
+  (`ledger_snapshot:<id>`), once per cause (P-03-T12's detector). Citations another engagement of
+  the entity made stay put: its trial balance did not move (security review M). The snapshot
+  itself is never touched (ADR-004).
 """
 
 from __future__ import annotations
@@ -178,7 +180,13 @@ async def on_trial_balance_version_created(event: OutboxEvent) -> None:
     found = await superseded_snapshot(tenant, tb_id, version_no)
     if found is None:
         return
-    await detect_moved(event.tenant_id, SOURCE, snapshot_cause(found.new), [found.old])
+    await detect_moved(
+        event.tenant_id,
+        SOURCE,
+        snapshot_cause(found.new),
+        [found.old],
+        engagement_id=found.engagement_id,
+    )
 
 
 __all__ = [

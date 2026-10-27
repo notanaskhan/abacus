@@ -10,6 +10,7 @@ import zipfile
 from datetime import UTC, datetime
 from decimal import Decimal
 
+import pytest
 from openpyxl import load_workbook
 
 from abacus.modules.evidence.api import LayerExport, LayerLine, render_trial_balance_layers
@@ -111,3 +112,21 @@ def test_adr052_a_formula_like_account_name_stays_text() -> None:
     assert cell.value == hostile and cell.data_type == "s"
     with zipfile.ZipFile(io.BytesIO(content)) as archive:
         assert b"<f>" not in archive.read("xl/worksheets/sheet1.xml")
+
+
+FULL_WIDTH = [chr(c) for c in (0xFF1D, 0xFF0B, 0xFF0D, 0xFF20)]  # = + - @, full width
+
+
+@pytest.mark.parametrize("lead", ["=", "+", "-", "@", "\t", "\r", *FULL_WIDTH])
+def test_review_l2_every_formula_lead_is_quoted_full_width_tab_and_cr_too(lead: str) -> None:
+    content = render_trial_balance_layers(_export(f"{lead}SUM(A1:A9)"))
+    sheet = load_workbook(io.BytesIO(content)).active
+    assert sheet is not None
+    cell = sheet.cell(row=4, column=2)
+    assert cell.data_type == "s" and cell.quotePrefix is True
+
+
+def test_a_plain_account_name_is_not_quoted() -> None:
+    sheet = load_workbook(io.BytesIO(render_trial_balance_layers(_export()))).active
+    assert sheet is not None
+    assert not sheet.cell(row=4, column=2).quotePrefix

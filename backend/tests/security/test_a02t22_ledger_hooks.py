@@ -15,11 +15,13 @@ import io
 import json
 import uuid
 from collections.abc import Awaitable, Callable
+from dataclasses import replace
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import cast
 
 import asyncpg
+import pytest
 from openpyxl import load_workbook
 
 from abacus.kernel.db import TenantContext
@@ -31,6 +33,7 @@ from abacus.modules.identity.api import AuthContext
 from abacus.modules.ledger.api import adopt_version
 
 from . import test_a02t10_tb_read_model as t10
+from .matrix_harness import Principal, principal_outcome
 from .support import Env, Person, Seeder
 
 # The T10 fixtures: a site's engagement with an adopted trial balance, and the ledger's writer.
@@ -212,3 +215,94 @@ async def test_0235_a_template_snapshot_is_an_import(env: Env) -> None:
     )
     assert "import_accrued_template" in str(expression)
     assert "import_netsuite_tb_csv" in str(expression)
+
+
+# --- security review: the agent and the other engagement ---------------------------------------
+
+
+@pytest.mark.parametrize("principal", ["agent", "system"])
+async def test_the_export_is_denied_to_an_agent_and_the_system(
+    monkeypatch: pytest.MonkeyPatch, principal: Principal
+) -> None:
+    """Even with the action in an agent's task scope and an initiator who may export, the matrix
+    refuses `trial_balance.export` to every non-person principal (A-02 §4.4, INV-1)."""
+    assert await principal_outcome(monkeypatch, "trial_balance.export", principal) == "deny"
+
+
+async def test_a_re_version_moves_only_its_own_engagements_citations(env: Env) -> None:
+    """Security review M: another engagement of the same entity (a prior year, tax, a walled
+    one) cites the same snapshot; A's re-version moves A's citation and leaves B's alone."""
+    manager, tb = await _setup(env)
+    seed = env.net.seed
+    old = await _current_snapshot(seed, tb)
+    other = cast(
+        uuid.UUID,
+        await seed.value(
+            "INSERT INTO engagements (tenant_id, client_id, client_entity_id, name, "
+            "fiscal_period_start, fiscal_period_end, created_by) "
+            "VALUES ($1, $2, $3, 'Prior-year engagement', '2025-01-01', '2025-12-31', $4) "
+            "RETURNING id",
+            env.tenant_id,
+            env.a.client_id,
+            env.a.entity_id,
+            env.admin.user_id,
+        ),
+    )
+    await seed.run(
+        "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
+        "decided_by, documented_at, independence_concluded_by, independence_concluded_at, "
+        "independence_documented_at) VALUES ($1, $2, 'continuance', 'accepted', 'test-seed', "
+        "'Seeded', 'test-seed', clock_timestamp(), 'Seeded')",
+        env.tenant_id,
+        other,
+    )
+    await seed.member(replace(env.a, engagement_id=other), manager, "manager")
+    actor = _ctx(manager)
+    claim = CitationClaim(
+        "ledger_line", {"ledger_snapshot_id": str(old), "account_code": "1000"}, value="500.00"
+    )
+    ids: dict[uuid.UUID, uuid.UUID] = {}
+    for engagement_id in (env.a.engagement_id, other):
+        async with uow(actor.tenant) as tx:
+            recorded = await record_citations(
+                tx,
+                actor=actor,
+                anchor=CitationAnchor("trial_balance", tb, "1000", None, engagement_id),
+                claims=[claim],
+            )
+            tx.record("trial_balance.probed", target=Target("trial_balance", tb))
+        assert [r.verified for r in recorded] == [True]
+        ids[engagement_id] = recorded[0].id
+    repulled = [(c, n, "550.00" if c == "1000" else d, cr) for c, n, d, cr in EOY]
+    repulled = [(c, n, d, "650.00" if c == "3000" else cr) for c, n, d, cr in repulled]
+    new = await _snapshot(
+        env.tenant_id, env.admin.user_id, env.a.entity_id, "2025-12-31", repulled
+    )
+    async with uow(actor.tenant) as tx:
+        await adopt_version(
+            tx,
+            tenant_id=env.tenant_id,
+            engagement_id=env.a.engagement_id,
+            tb_id=tb,
+            snapshot_id=new,
+            prior_snapshot_id=None,
+            reason="Client re-closed the year",
+            seen_version=1,
+            user_id=manager.user_id,
+            actor_kind="human",
+        )
+    await on_trial_balance_version_created(
+        OutboxEvent(
+            uuid.uuid4(),
+            env.tenant_id,
+            "trial_balance.version_created",
+            {"trial_balance_id": str(tb), "version_no": 2, "snapshot_id": str(new)},
+        )
+    )
+
+    async def kinds(citation: uuid.UUID) -> list[str]:
+        rows = await seed.rows("SELECT kind FROM citation_events WHERE citation_id = $1", citation)
+        return [str(r["kind"]) for r in rows]
+
+    assert await kinds(ids[env.a.engagement_id]) == ["moved"]
+    assert await kinds(ids[other]) == []

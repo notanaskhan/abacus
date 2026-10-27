@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import io
 import re
+import unicodedata
 import zipfile
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
@@ -59,7 +60,16 @@ class TrialBalance:
 
 
 _MAX_CELL = 32_767  # Excel's limit; longer values would corrupt the file
-_FORMULA_LEADS = ("=", "+", "-", "@")
+# A spreadsheet treats these leads as a formula; checked on the NFKC-folded text, so the
+# full-width forms (U+FF1D, U+FF0B, U+FF0D, U+FF20) count too, and a leading tab or carriage
+# return (A-02-T22 security review).
+_FORMULA_LEADS = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _formula_like(value: str) -> bool:
+    return unicodedata.normalize("NFKC", value).startswith(_FORMULA_LEADS) or value.startswith(
+        _FORMULA_LEADS
+    )
 
 
 def _text(sheet: Worksheet, row: int, column: int, value: str) -> None:
@@ -68,7 +78,7 @@ def _text(sheet: Worksheet, row: int, column: int, value: str) -> None:
     cell = cast(Cell, sheet.cell(row=row, column=column))
     cell.value = value
     cell.data_type = "s"  # always a string: a leading "=" never becomes a formula
-    if value.startswith(_FORMULA_LEADS):
+    if _formula_like(value):
         cell.quotePrefix = True  # and stays text if copied or exported elsewhere
 
 

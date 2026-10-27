@@ -181,7 +181,7 @@ async def test_a_second_ask_answers_the_open_request_and_sends_nothing(
     assert len(recorder.sent) == 1
 
 
-async def test_without_a_published_template_the_send_is_blocked_not_composed(
+async def test_without_a_published_template_the_send_is_blocked_then_sent_on_a_re_ask(
     world: World, recorder: Recorder
 ) -> None:
     connection_id = str((await world.connected())["connection_id"])
@@ -192,6 +192,20 @@ async def test_without_a_published_template_the_send_is_blocked_not_composed(
         "SELECT status FROM messages WHERE tenant_id = $1", world.tenant
     )
     assert [r["status"] for r in statuses] == ["blocked"]
+    # Security review L1: the request is not stuck. Once the firm publishes the template, a
+    # re-ask sends the email it never sent; a further re-ask sends nothing more.
+    await _publish_reconnect_template(world)
+    again = await _ask(world, world.manager, connection_id)
+    assert again.status_code == 201 and again.json()["id"] == response.json()["id"]
+    assert len(recorder.sent) == 1
+    third = await _ask(world, world.partner, connection_id)
+    assert third.status_code == 201 and len(recorder.sent) == 1
+    assert (
+        await world.net.seed.value(
+            "SELECT count(*) FROM reconnect_requests WHERE tenant_id = $1", world.tenant
+        )
+        == 1
+    )
 
 
 async def test_who_may_ask(world: World, recorder: Recorder) -> None:

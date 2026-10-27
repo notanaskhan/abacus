@@ -255,6 +255,23 @@ async def send_templated(
     )
 
 
+async def templated_outcome(
+    ctx: AuthContext,
+    key: str,
+    recipient: RecipientRef,
+    *,
+    scope: SendScope,
+    idempotency_key: str,
+) -> SendOutcome | None:
+    """What `send_templated` recorded for these arguments, or None when it never ran; nothing is
+    sent. A person only, authorised `message.send` on the stored message's engagement."""
+    from abacus.modules.communications import template_send
+
+    return await template_send.templated_outcome(
+        ctx, key, recipient, scope=scope, idempotency_key=idempotency_key
+    )
+
+
 # --- the value lint (DEC-379): client-written values never carry these shapes ------------------
 
 _AMOUNT_VALUE: Final = re.compile(

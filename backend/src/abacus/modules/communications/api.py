@@ -91,6 +91,7 @@ from abacus.modules.communications.template_registry import (
     registered_templates,
     scheduled_send_enabled,
     send_templated,
+    templated_outcome,
 )
 from abacus.modules.communications.template_service import (
     discard_draft as discard_email_template_draft,
@@ -239,5 +240,6 @@ __all__ = [
     "sink_address",
     "sink_domain",
     "template_key",
+    "templated_outcome",
     "viewer_scoped",
 ]
