@@ -44,6 +44,11 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "membership.access_ending",  # G-01-T13 (C16 `seasonal_access_ending`, to firm admins)
         "third_party.uploaded",  # R-01-T13 (C16 `third_party_uploaded`, to the request owner)
         "sign_off.went_stale",  # P-04-T19 (C16 `sign_off_stale`, to the signer)
+        "acceptance.sent_to_partner",  # P-07-T47 (C16 `acceptance_awaiting_partner`, to the EP)
+        "acceptance.review_requested",  # P-07-T47 (`risk_partner_review_requested`)
+        "independence.reminded",  # P-07-T47 (`independence_reminder`, to the member)
+        "independence.conclusion_due",  # P-07-T47 (`independence_conclusion_due`, to the EP)
+        "team.change_proposed",  # P-07-T47 (`team_change_awaiting_approval`, to the EP)
         "engagement_export.ready",  # A-01-T22 (C16 `export_ready`, to the requester)
         "engagement_export.failed",  # A-01-T22 (C16 `export_failed`, to the requester)
     }

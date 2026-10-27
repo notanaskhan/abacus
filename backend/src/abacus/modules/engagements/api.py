@@ -56,6 +56,17 @@ from abacus.modules.engagements.hold_scope import (
     engagements_in_hold_scope,
     work_item_engagement,
 )
+from abacus.modules.engagements.human_gates import (
+    ACCEPTANCE_DECISION_DUE,
+    EQR_ELIGIBILITY_DUE,
+    INDEPENDENCE_CONCLUSION_DUE,
+    INDEPENDENCE_CONFIRMATION_DUE,
+    DueGate,
+    acceptance_decisions_due,
+    eqr_eligibility_due,
+    independence_conclusions_due,
+    independence_confirmations_due,
+)
 from abacus.modules.engagements.independence import (
     conclude_independence,
     confirm_independence,
@@ -298,7 +309,11 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 )
 
 __all__ = [
+    "ACCEPTANCE_DECISION_DUE",
     "AUDIT_KINDS",
+    "EQR_ELIGIBILITY_DUE",
+    "INDEPENDENCE_CONCLUSION_DUE",
+    "INDEPENDENCE_CONFIRMATION_DUE",
     "ROUTERS",
     "WORK_ITEM_FUNCTIONS",
     "AccountRule",
@@ -307,6 +322,7 @@ __all__ = [
     "AssuranceItem",
     "CheckFacts",
     "Designation",
+    "DueGate",
     "Effort",
     "EngagementContact",
     "EngagementCreated",
@@ -334,6 +350,7 @@ __all__ = [
     "VersionNotLatest",
     "WorkItemExists",
     "WorkItemProvider",
+    "acceptance_decisions_due",
     "acceptance_record",
     "add_flag",
     "add_to_team",
@@ -369,6 +386,7 @@ __all__ = [
     "engagement_metadata",
     "engagements_in_hold_scope",
     "entity_of",
+    "eqr_eligibility_due",
     "firm_router",
     "g2_blocks",
     "gate_client_data",
@@ -377,6 +395,8 @@ __all__ = [
     "get_ref",
     "holds_tax_return",
     "independence_cleared",
+    "independence_conclusions_due",
+    "independence_confirmations_due",
     "is_archived",
     "judgments_of",
     "letters_sent",

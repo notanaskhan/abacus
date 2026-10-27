@@ -20,7 +20,7 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Target, UnitOfWork, uow
-from abacus.modules.engagements.events import EngagementCreated
+from abacus.modules.engagements.events import EngagementCreated, TeamChangeProposed
 from abacus.modules.engagements.models import Engagement
 from abacus.modules.engagements.repository import (
     client_column as _client_column,
@@ -487,6 +487,10 @@ async def add_to_team(
         await add_member(tx, ctx, engagement_id, ref.client_id, user_id, role)
         if budget_hours is not None:  # P-07-T30: ENG-05's hours
             await set_member_hours(tx, engagement_id, user_id, budget_hours)
+        # P-07-T47: a changed team waits for the engagement partner's approval (ENG-05).
+        tx.emit(
+            TeamChangeProposed(engagement_id=engagement_id, user_id=user_id, by_user=ctx.user_id)
+        )
 
 
 async def change_team_role(
@@ -505,6 +509,11 @@ async def change_team_role(
             raise EqrOnTeam(facts={"user_id": str(user_id)})
         if role is not None:
             await change_role(tx, ctx, engagement_id, user_id, role)
+            tx.emit(
+                TeamChangeProposed(
+                    engagement_id=engagement_id, user_id=user_id, by_user=ctx.user_id
+                )
+            )
         if not isinstance(budget_hours, _Keep):
             await set_member_hours(tx, engagement_id, user_id, budget_hours)
 
