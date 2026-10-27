@@ -80,6 +80,14 @@ The 55 tasks that merged without an independent acceptance-test suite, and how e
 
 M8 (Fri May 28, 2027) needs 44 back-filled (tranche 0 included) and 11 superseded, each with an independent AC suite (Q-03 §3.2 B3).
 
+## Q-03-T011: the 2027 Q1 catch-up lane
+
+These are independent suites for amber epic rows that an epic deferred. Each row lists the suite and its first run.
+
+| Row | Spec | Status | Suite |
+|---|---|---|---|
+| F-04-T16 (TASK-392) | SPEC-307 AC-7 | back-filled | `backfill/test_f04t16_clock_adoption.py` (4 passed, 2026-10-27): independence conclusion in business time; mail sink, signup-code expiry and access review in system time. The static half is CLOCK-001 (F-04-T17). |
+
 ## QD-3: the superseded list
 
 Recorded at the S6 Contract Monday (Mon Jan 11, 2027; pulled forward to 2026-10-23 with Q-03-T002). The eleven tasks above marked `superseded` are not back-filled on their old code paths, because a later epic rebuilds them against the migrated contracts; each closes when that epic's AC suite merges. The four whose replacement lands after M8 (023, 053, 061, 063) get black-box suites on their legacy paths by M8 (T524, T525), retired only when the replacing suite merges.
