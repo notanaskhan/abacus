@@ -168,6 +168,13 @@ CONNECTORS: dict[str, Callable[[Connection, Credentials | None], Connector]] = {
 # write-capability registry declares, with its hosts; the API and the worker refuse to start
 # otherwise (`integrations.assert_egress_declared`).
 NETWORKLESS_PROVIDERS: frozenset[str] = frozenset({"fake", "import"})
+# A-02-T27: tooling's fakes (`abacus_tools.fakes.ledgers`) register under this prefix, only in
+# synthetic environments, and reach no host either.
+FAKE_PREFIX = "fake_"
+
+
+def is_networkless(provider: str) -> bool:
+    return provider in NETWORKLESS_PROVIDERS or provider.startswith(FAKE_PREFIX)
 
 
 def connector_for(connection: Connection, credentials: Credentials | None = None) -> Connector:

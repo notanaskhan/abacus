@@ -1,0 +1,20 @@
+"Granite Peak Outdoor Supply, Inc. (inferred)"
+Trial Balance
+End of Jun 2025
+
+Account,Debit,Credit
+1000 - Cash and cash equivalents,"1,880,000.00",
+"1200 - Accounts receivable, net","5,120,000.00",
+1400 - Inventories,"10,150,000.00",
+"1600 - Property, plant and equipment, net","5,500,000.00",
+1900 - Other assets,"550,000.00",
+2000 - Accounts payable,,"3,700,000.00"
+2100 - Accrued liabilities,,"1,450,000.00"
+2300 - Revolving line of credit,,"5,900,000.00"
+2500 - Term loan,,"3,600,000.00"
+"3000 - Stockholders' equity, beginning of year",,"6,300,000.00"
+4000 - Net sales,,"44,100,000.00"
+5000 - Cost of goods sold,"26,460,000.00",
+6000 - Operating expenses,"14,900,000.00",
+7000 - Interest expense,"490,000.00",
+Total,"65,050,000.00","65,050,000.00"

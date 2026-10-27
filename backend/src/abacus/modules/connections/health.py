@@ -40,7 +40,11 @@ from abacus.modules.connections.entity import REAUTH_REASONS
 from abacus.modules.connections.events import ConnectionNeedsReauth, ConnectionReauthDue
 from abacus.modules.connections.models import Connection
 from abacus.modules.connections.repository import LIVE, lock_connection, set_connection
-from abacus.modules.connections.service import NETWORKLESS_PROVIDERS, connector_for
+from abacus.modules.connections.service import (
+    FAKE_PREFIX,
+    NETWORKLESS_PROVIDERS,
+    connector_for,
+)
 from abacus.modules.identity.api import firm_tenant_ids
 
 REAUTH_NOTICE_DAYS: Final = 7
@@ -140,6 +144,7 @@ async def _check_firm(tenant_id: UUID) -> int:
                     select(Connection)
                     .where(Connection.status.in_(LIVE))
                     .where(Connection.provider.not_in(NETWORKLESS_PROVIDERS))
+                    .where(Connection.provider.not_like(f"{FAKE_PREFIX}%"))
                     .order_by(Connection.created_at, Connection.id)
                 )
             )

@@ -25,7 +25,7 @@ from __future__ import annotations
 from functools import cache
 from typing import Final, Literal
 
-from abacus.modules.connections.api import CONNECTORS, NETWORKLESS_PROVIDERS
+from abacus.modules.connections.api import CONNECTORS, is_networkless
 from abacus.modules.integrations import _capabilities as compiled
 from abacus.modules.integrations.adapters import registered_adapter, registered_keys
 from abacus.modules.integrations.ports import WriteCapabilityEntry, WriteCapabilityRegistry
@@ -92,7 +92,7 @@ def undeclared_egress() -> dict[str, tuple[str, ...]]:
         if extra:
             out[key] = extra
     declared = {r.adapter_key for r in registry().read_connectors}
-    for provider in sorted(set(CONNECTORS) - NETWORKLESS_PROVIDERS - declared):
+    for provider in sorted(p for p in set(CONNECTORS) - declared if not is_networkless(p)):
         out[f"connector:{provider}"] = ("(no read_connectors entry)",)
     return out
 

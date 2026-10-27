@@ -23,6 +23,7 @@ from abacus.modules.connections.connector import (
     RawPayload,
     Unavailable,
 )
+from abacus.modules.connections.connectors import quickbooks_online
 from abacus.modules.connections.entity import (
     ActivityLine,
     AuthorizationRequired,
@@ -60,6 +61,7 @@ from abacus.modules.connections.gl_import import WORKFLOWS as GL_WORKFLOWS
 from abacus.modules.connections.gl_import import on_ledger_snapshot_recorded
 from abacus.modules.connections.grants import GrantRevocationRequested, revoke_retired
 from abacus.modules.connections.health import check_connection_health_activity
+from abacus.modules.connections.models import Connection
 from abacus.modules.connections.pipeline import (
     RunFailed,
     RunResult,
@@ -93,11 +95,13 @@ from abacus.modules.connections.service import (
     RunNotRunning,
     StartedRun,
     connector_for,
+    is_networkless,
     load_system_context,
     qbo_app,
     retrieval_status,
     start_retrieval,
 )
+from abacus.modules.connections.synthetic import SyntheticSeedRefused, seed_synthetic_connection
 from abacus.modules.connections.workflow_types import (
     FailInput,
     GlImportInput,
@@ -168,6 +172,7 @@ __all__ = [
     "Capabilities",
     "Completed",
     "ConnectTarget",
+    "Connection",
     "ConnectionCreated",
     "ConnectionDetail",
     "ConnectionNeedsReauth",
@@ -203,6 +208,7 @@ __all__ = [
     "RunSummary",
     "Started",
     "StartedRun",
+    "SyntheticSeedRefused",
     "Unavailable",
     "WorkflowUnavailable",
     "authorised_engagement",
@@ -217,12 +223,14 @@ __all__ = [
     "entity_of_connection",
     "fail_run",
     "fixture_path",
+    "is_networkless",
     "is_retryable",
     "load_system_context",
     "normalise_raw",
     "parse_trial_balance",
     "pull_raw",
     "qbo_app",
+    "quickbooks_online",
     "reconnect_todo_count",
     "render",
     "request_reconnect",
@@ -231,6 +239,7 @@ __all__ = [
     "revoke_retired",
     "router",
     "run_pipeline",
+    "seed_synthetic_connection",
     "snapshot",
     "start_entity",
     "start_retrieval",
