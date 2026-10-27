@@ -168,7 +168,10 @@ test.describe("J12-core", () => {
         if (width === 390) return;
         await page.getByRole("button", { name: /^Ignore Form 1095-C/ }).click();
         const menu = page.getByRole("menu", { name: "Ignore" });
-        await menu.getByRole("textbox").fill("No 1095-C this year.");
+        // The note field sits beside the menu, not in it: a menu holds menu items only (ARIA).
+        await page
+          .getByRole("textbox", { name: "Add a note (optional)" })
+          .fill("No 1095-C this year.");
         await menu.getByRole("menuitem", { name: "Already sent another way" }).click();
         await journey.step("J12 step 4: the 1095-C ignored, with Undo (POR-03f)", async () => {
           const row = page.locator("[data-request]", {
@@ -226,7 +229,10 @@ test.describe("J12-core", () => {
           "J12 step 15: Sam's room, 4 of 9 (POR-14a)",
           async () => {
             await expect(page.getByText("4 of 9 uploaded").first()).toBeVisible();
-            await expect(page.getByText("Sam Ortiz · Keystone").first()).toBeVisible();
+            // The chip at 1400, the avatar at 390 (POR-14: header with brand and avatar): one name.
+            await expect(
+              page.getByRole("button", { name: "Sam Ortiz · Keystone" }).first(),
+            ).toBeVisible();
             await expect(page.getByText(/accrued/i)).toHaveCount(0);
           },
           // INV-4: the third party never sees the client's own documents or home.

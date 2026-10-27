@@ -156,6 +156,18 @@ describe("update and act", () => {
     expect(live(store)).toHaveLength(0);
   });
 
+  it("reset drops every toast at once, leaving ones included, and stops their timers", () => {
+    const store = createToastStore();
+    store.show("One");
+    store.clear();
+    store.show({ kind: "error", text: "Two" });
+    store.reset();
+    expect(store.list()).toHaveLength(0);
+    store.show("Three");
+    vi.advanceTimersByTime(LEAVE_MS);
+    expect(store.list().map((t) => t.text)).toEqual(["Three"]);
+  });
+
   it("returns the same snapshot until something changes", () => {
     const store = createToastStore();
     store.show("One");

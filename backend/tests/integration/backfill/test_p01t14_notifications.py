@@ -603,6 +603,8 @@ async def test_ac4_1_1_every_registered_kind_with_its_default(world: World) -> N
         "ai_policy_approval_requested",
         "incident_decision_requested",
         "incident_deadline_approaching",
+        # P-07-T47 (DEC-540): the independence reminder goes by email by default.
+        "independence_reminder",
     }
     assert {k: choices[k] for k in emailed} == dict.fromkeys(emailed, (True, True))
     assert {k: v for k, v in choices.items() if k not in emailed} == dict.fromkeys(

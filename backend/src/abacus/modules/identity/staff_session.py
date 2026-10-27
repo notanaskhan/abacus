@@ -66,12 +66,12 @@ REFUSALS: Final = {
     "sso_required": 4,
 }
 # How WorkOS names the method a person used (its authenticate response), as `auth_sessions`
-# records it; anything else is unknown (None), which never passes an SSO requirement.
+# records it, keyed lower-case without underscores; anything else is unknown (None), which never
+# passes an SSO requirement. The portal-IdP contract bans the Magic Auth call names in the source.
 _PROVIDER_METHODS: Final = {
     "sso": "sso",
     "magicauth": "email_code",
-    "magic_auth": "email_code",
-    "email_code": "email_code",
+    "emailcode": "email_code",
     "passkey": "passkey",
     "totp": "totp",
 }
@@ -118,7 +118,7 @@ def auth_method_of(reported: object) -> str | None:
     """The provider's method name as `auth_sessions.auth_method`, or None when unknown."""
     if not isinstance(reported, str):
         return None
-    method = _PROVIDER_METHODS.get(reported.strip().lower())
+    method = _PROVIDER_METHODS.get(reported.strip().lower().replace("_", ""))
     return method if method in AUTH_METHODS else None
 
 

@@ -112,7 +112,13 @@ describe("SHL-03 artboards", () => {
       "Sign out",
     ]);
     expect(adminLabels(menu)).toEqual(["Firm settings", "Users & roles", "Audit log"]);
-    expect(within(menu).getByRole("img", { name: "Accrued" })).toBeTruthy();
+    // The wordmark is decorative inside the menu (an img is not a child a menu may own; axe
+    // aria-required-children, P-07-T22): present, but hidden from assistive technology.
+    expect(
+      within(menu)
+        .getByRole("img", { name: "Accrued", hidden: true })
+        .closest("[aria-hidden='true']"),
+    ).toBeTruthy();
     // The pill reads pressed while the tray is open.
     const pill = screen.getByRole("button", { name: "Brightwater Hale" });
     expect(pill.dataset.pressed).toBe("true");
@@ -245,6 +251,13 @@ describe("SHL-03 behaviour (P-01 AC 2.1)", () => {
       "developer_api",
       "audit_log",
     ]);
+  });
+
+  it("DEC-463: Firm settings opens ADM-01 while firm_settings.v2 is on, the legacy page otherwise", () => {
+    const nav = { firm_settings: "write", audit_log: "read" } as const;
+    const path = (on: boolean): (string | null)[] => adminRows(nav, on).map((r) => r.path);
+    expect(path(false)).toEqual(["/admin/methodology", "/admin/audit-log"]);
+    expect(path(true)).toEqual(["/settings/general", "/admin/audit-log"]);
   });
 
   it("AC 2.1.2: the firm menu names no role code", () => {

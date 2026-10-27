@@ -93,6 +93,8 @@ export interface ToastStore {
   pause: (id: string) => void;
   resume: (id: string) => void;
   clear: () => void;
+  /** Tests only: drop every toast now, without the 180 ms leave, so none outlives its test. */
+  reset: () => void;
   list: () => readonly Toast[];
   subscribe: (listener: () => void) => () => void;
 }
@@ -217,6 +219,11 @@ export function createToastStore(): ToastStore {
     },
     clear() {
       for (const e of [...entries]) store.dismiss(e.id);
+    },
+    reset() {
+      for (const id of [...timers.keys()]) stop(id);
+      entries = [];
+      emit();
     },
     list() {
       return snapshot;

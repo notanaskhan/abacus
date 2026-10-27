@@ -39,7 +39,8 @@ make_rule = matrix._rule  # pyright: ignore[reportPrivateUsage] -- contract test
 
 DOCUMENT = cast(dict[str, object], yaml.safe_load(pm.source()))
 YAML_ACTIONS = cast(dict[str, dict[str, str]], DOCUMENT["actions"])
-READ_VERBS = {"read", "read_metadata", "read_log"}
+# DEC-462: the firm-level audit read is a read (SPEC-012: support holds reads only).
+READ_VERBS = {"read", "read_metadata", "read_log", "read_firm_level"}
 CONTRACT_ALLOWED = {
     "connection.pull",
     "evidence.upload",

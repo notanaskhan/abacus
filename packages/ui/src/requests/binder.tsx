@@ -1,4 +1,4 @@
-import { type DragEvent, type JSX, useMemo, useRef, useState } from "react";
+import { type DragEvent, type JSX, type ReactNode, useMemo, useRef, useState } from "react";
 import type { Actor } from "../attribution";
 import { cn } from "../cn";
 import { PRESS } from "../components/control-classes";
@@ -527,6 +527,39 @@ export function RequestDocuments({
 
 /** The binder at 390 (TPL-07-M): the binder picker with "n to do" (or "All in"), the 96 tap-to-upload
  * card, and the sections with 56 rows and a 32 "Upload…" pill on each open request. */
+/** A 390 row's title and status line; with `onOpen` the pair is one tap target, the row's full
+ * height (≥ 44), that opens the request full screen (POR-04's sheet at 390, R-01-T12; DEC-463),
+ * as the title does at 1400. */
+function MobileRowText({
+  title,
+  onOpen,
+  children,
+}: {
+  title: string;
+  onOpen?: () => void;
+  children: ReactNode;
+}): JSX.Element {
+  const text = (
+    <>
+      <span className="truncate text-body leading-[1.3] font-medium">{title}</span>
+      {children}
+    </>
+  );
+  if (onOpen === undefined) {
+    return <span className="flex min-w-0 flex-1 flex-col gap-[3px]">{text}</span>;
+  }
+  return (
+    <button
+      type="button"
+      data-open-title=""
+      onClick={onOpen}
+      className="-my-[8px] flex min-w-0 flex-1 flex-col justify-center gap-[3px] self-stretch py-[8px] text-left"
+    >
+      {text}
+    </button>
+  );
+}
+
 export function RequestMobile({ binder }: { binder: RequestBinder }): JSX.Element {
   const { props, items } = binder;
   const uploads = props.uploads ?? [];
@@ -574,6 +607,8 @@ export function RequestMobile({ binder }: { binder: RequestBinder }): JSX.Elemen
           </span>
         </span>
       </button>
+      {/* R-01 Story 1.2 at 390 (Story 1.3; DEC-463): the other-parties note names organisations. */}
+      {props.note !== undefined && <p className="px-[4px] text-dense text-ink-3">{props.note}</p>}
       {groups.map(({ section, rows }) => (
         <section
           key={section.key}
@@ -593,8 +628,16 @@ export function RequestMobile({ binder }: { binder: RequestBinder }): JSX.Elemen
                 data-request={r.id}
                 className="flex min-h-[56px] items-center gap-[10px] py-[8px] pr-[10px] pl-[14px] hairline-t"
               >
-                <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
-                  <span className="truncate text-body leading-[1.3] font-medium">{r.title}</span>
+                <MobileRowText
+                  title={r.title}
+                  {...(props.onOpen === undefined
+                    ? {}
+                    : {
+                        onOpen: () => {
+                          props.onOpen?.(r.id);
+                        },
+                      })}
+                >
                   {l.ok ? (
                     <span className="flex items-center gap-[5px] text-pill text-green-ink">
                       <StatusDisc state="done" size={13} />
@@ -605,7 +648,7 @@ export function RequestMobile({ binder }: { binder: RequestBinder }): JSX.Elemen
                       {l.text}
                     </span>
                   )}
-                </span>
+                </MobileRowText>
                 {isOpen && r.st === "req" && (
                   <button
                     type="button"

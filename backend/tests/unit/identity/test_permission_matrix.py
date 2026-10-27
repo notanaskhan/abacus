@@ -52,7 +52,8 @@ ENGAGEMENT_ROLES = (
 CLIENT_ROLES = ("client_admin", "client_contributor")
 MEMBER_ROLES = (*ENGAGEMENT_ROLES, *CLIENT_ROLES)
 HUMAN_ROLES = (*FIRM_ROLES, *ENGAGEMENT_ROLES)
-READ_VERBS = {"read", "read_metadata", "read_log"}
+# DEC-462: the firm-level audit read is a read (SPEC-012: support holds reads only).
+READ_VERBS = {"read", "read_metadata", "read_log", "read_firm_level"}
 MODIFIERS = {"mfa_recent", "requires", "notify", "independence"}
 
 # Reached by the contract's `matrix._rule` / `matrix._decision` validators, which are private by

@@ -13,6 +13,11 @@ Code: `apps/web/src/screens/POR-16/{index.tsx, copy.ts, scenarios.ts, POR16.test
 
 **White label and read-only (AGENTS frontend rule 7, DEC-01, ADR-040, DF-19).** No "Accrued", no posting scope or copy ("post entries you approve", "post approved entries", the Approvals note are masked until P-16), no password field (sign-in happens on the provider's site), no vendor logo or brand colour (Lucide glyph tiles on the category colour: olive ledger, espresso bank and payroll, clay card, ochre sales).
 
+## Links
+| From | To (manifest builder) | Planned or live |
+|---|---|---|
+| Back chip "‹ Account" | POR-12 (N-03) | planned; reads "‹ Home" to the portal home until POR-12 lands (A-02 §11.2 Q4) |
+
 ## States
 
 | Artboard | Scenario | What it shows |

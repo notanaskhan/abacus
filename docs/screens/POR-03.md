@@ -160,6 +160,7 @@ Inbound: POR-02 ("Go to Documents →", "Open binder"), POR-20 Reminder CTA, BND
 - POR-03 acceptance: the audit variant uses the `bento-audit-client` band and disc grammar and shows only Dana's own requests.
 - R-01 Story 1.1: the closed 2024 binder opens read-only with no upload, ignore or Mark as Done control.
 - R-01 Story 1.2: the other-parties note lists organisation names only, never delegated request titles; a contributor-equivalent grant has no note.
+- At 390 (Story 1.3; DEC-463): the other-parties note shows above the bands too, and a row's title and status line open POR-04's full-screen sheet when the route passes `onOpen`.
 - R-01 Story 3.1: Ignore with a reason and note shows "Marked not applicable · Sep 14" with Undo; Undo returns the row to "To do"; after the firm acts, Undo is absent.
 - R-01 Story 3.3: Withdraw asks with the DF-15 copy and renders only on the contact's own unaccepted uploads.
 - R-01 Story 4.1: Mark as Done is tonal while requests are open and olive when none remain; after it, the banner with Undo.

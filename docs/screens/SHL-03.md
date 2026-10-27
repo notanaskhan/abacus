@@ -41,7 +41,7 @@ Derived lines: the firm row's "US · Central Time · 46 seats" is `region · zon
 ## Links
 | From | To (manifest builder) | Planned or live |
 |---|---|---|
-| Firm settings | ADM-01 | planned; goes to the legacy `/admin/methodology` settings until G-01 routes `/settings/general` (DEC-113) |
+| Firm settings | ADM-01 | `/settings/general` while `firm_settings.v2` is on (G-01-T07; DEC-463); the legacy `/admin/methodology` settings otherwise, until G-01-T17 retires the flag (DEC-113) |
 | Users & roles | ADM-02 | planned; legacy `/admin/people` |
 | Audit log | ADM-07 | planned; legacy `/admin/audit-log` |
 | Security center | ADM-06 | planned; the row only closes the tray |
