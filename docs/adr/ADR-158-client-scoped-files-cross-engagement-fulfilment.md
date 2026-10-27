@@ -1,8 +1,8 @@
 ---
 id: ADR-158
 title: Client-scoped files and cross-engagement fulfilment
-status: proposed
-date: 2026-10-22
+status: accepted
+date: 2026-10-27
 deciders: ayushkbhatia, notanaskhan
 risk_zone: red
 ---
