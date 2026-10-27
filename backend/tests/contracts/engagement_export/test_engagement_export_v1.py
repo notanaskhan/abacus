@@ -1,7 +1,7 @@
 """Engagement export v1 (A-01-T17; SPEC-344 AC-1 to AC-5; ADR-036 "a versioned schema with
 tests"): the format's manifest and its generated JSON schema, the section slot, and the routes
-stub behind `audits.binder_export` (404 off, 501 on until A-01-T18 and T22; A-01-T18 made
-create, undo and the reads live, so only download still declares 501). Expectations come
+behind `audits.binder_export` (404 off; A-01-T18 made create, undo and the reads live and
+A-01-T22 the download, so no route declares 501 any more). Expectations come
 from A-01 §3.6, §4.3 and §4.4. The Northwind example is Story 6.2's: 24 requests, 12 accepted
 files (3 + 5 + 3 + 1)."""
 
@@ -21,8 +21,8 @@ from abacus.api.export_openapi import document
 from abacus.kernel._flags import AUDITS_BINDER_EXPORT
 from abacus.kernel.classification import unclassified_fields
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound, NotImplementedYet
-from abacus.modules.evidence import export_contract, export_package
+from abacus.kernel.errors import NotFound
+from abacus.modules.evidence import export_contract, export_package, exports
 from abacus.modules.evidence.export_manifest import (
     FORMAT,
     FORMAT_VERSION,
@@ -58,12 +58,13 @@ CLIENT_ROLES = ("client_admin", "client_contributor")
 # --- AC-1 the routes -----------------------------------------------------------------------------
 
 
-# A-01-T18 (TASK-1334) made these live; download stays the stub until A-01-T22.
+# A-01-T18 (TASK-1334) made these live; A-01-T22 (TASK-1445) the download.
 LIVE = {
     ("post", WI),
     ("get", WI),
     ("get", "/v1/exports/{export_id}"),
     ("post", "/v1/exports/{export_id}/undo"),
+    ("get", "/v1/exports/{export_id}/download"),
 }
 
 
@@ -98,7 +99,7 @@ def test_ac1_download_is_resumable_and_answers_expired_and_not_ready() -> None:
     op = PATHS["/v1/exports/{export_id}/download"]["get"]
     params = cast(list[Json], op.get("parameters", []))
     assert any(p["name"] == "Range" and p["in"] == "header" for p in params)
-    assert {"409", "410"} <= set(cast(Json, op["responses"]))
+    assert {"409", "410", "416"} <= set(cast(Json, op["responses"]))  # 416: DEC-536
 
 
 # --- AC-2 the shapes -----------------------------------------------------------------------------
@@ -170,7 +171,9 @@ def _ctx() -> AuthContext:
     )
 
 
-async def test_ac4_flag_off_is_404_and_flag_on_is_501(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_ac4_flag_off_is_404_and_flag_on_passes(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Every route is live (A-01-T22): each authorises first, then checks the flag through the
+    one gate `exports.flag_on`, which answers 404 while `audits.binder_export` is off."""
     seen: list[object] = []
 
     async def off(_tenant: object, flag: object) -> bool:
@@ -180,13 +183,12 @@ async def test_ac4_flag_off_is_404_and_flag_on_is_501(monkeypatch: pytest.Monkey
     async def on(_tenant: object, _flag: object) -> bool:
         return True
 
-    monkeypatch.setattr(export_contract, "flag_enabled", off)
+    monkeypatch.setattr(exports, "flag_enabled", off)
     with pytest.raises(NotFound):
-        await export_contract._stub(_ctx())  # pyright: ignore[reportPrivateUsage] -- the gate
+        await exports.flag_on(_ctx())
     assert seen == [AUDITS_BINDER_EXPORT]
-    monkeypatch.setattr(export_contract, "flag_enabled", on)
-    with pytest.raises(NotImplementedYet):
-        await export_contract._stub(_ctx())  # pyright: ignore[reportPrivateUsage] -- the gate
+    monkeypatch.setattr(exports, "flag_enabled", on)
+    await exports.flag_on(_ctx())
 
 
 def test_ac4_the_flag_is_off_by_default() -> None:

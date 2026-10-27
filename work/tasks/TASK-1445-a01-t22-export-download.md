@@ -52,3 +52,5 @@ bundle." Builds on A-01-T18/T19 (#450, migration 0191).
 ## Progress log
 - 2026-10-27: built the download, sweep, void, kinds; recorded the sweep's history; DEC-536 to
   DEC-538.
+- 2026-10-27: targeted test pass green (see the S11 lane 4 report); gates run once (ruff, pyright, lint-imports, quality modules, check-generated, tsc, eslint, prettier). Playwright skipped (chromium mismatch).
+- 2026-10-27: fix round in the test pass: audit refs carry no free text (the voided/expired action names the reason); the 416 response registered in identity routing.

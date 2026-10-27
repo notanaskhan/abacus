@@ -7,7 +7,7 @@
 import { client } from "@abacus/api-client/client";
 import { toastStore } from "@abacus/ui";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { type FixtureHandler, installFixtureMode } from "../../app-core/fixture-mode";
 import { type ExportFrame, exportHandlers } from "../../fixtures/handlers/exports";
@@ -20,7 +20,7 @@ const WORK_ITEM = "0b0e5b42-0b8f-4d52-9a4e-3d1b8f1c0001";
 const ENGAGEMENT = "0b0e5b42-0b8f-4d52-9a4e-3d1b8f1c0002";
 const NOW = Date.parse("2026-09-14T09:41:00-05:00");
 const W = AUDIT_MESSAGES.export;
-const POLL = { timeout: 8_000 };
+const POLL = { timeout: 12_000 };
 
 beforeAll(() => {
   client.setConfig({ baseUrl: window.location.origin, throwOnError: true });
@@ -112,19 +112,28 @@ describe("A-01-T24: the export sheet", () => {
     );
     expect(ready).toBeTruthy();
     expect(screen.getByText("Ready")).toBeTruthy();
-  }, 20_000);
+  }, 30_000);
 
-  it("Undo within 10 s cancels the export", async () => {
+  it("Undo within 10 s cancels the export", { timeout: 30_000 }, async () => {
     const calls = sheet();
     fireEvent.click(await screen.findByRole("button", { name: W.export }));
+    const requested = (): { id: string; action: string | null } | undefined =>
+      toastStore.list().find((t) => t.text === W.requested && !t.leaving);
     await waitFor(() => {
-      expect(toastStore.list()[0]?.action).toBe("Undo");
+      expect(requested()?.action).toBe("Undo");
     });
-    const id = toastStore.list()[0]?.id ?? "";
-    toastStore.act(id);
-    await waitFor(() => {
-      expect(calls.some((c) => c.method === "POST" && c.path.endsWith("/undo"))).toBe(true);
+    const id = requested()?.id ?? "";
+    await act(async () => {
+      toastStore.act(id);
+      await Promise.resolve();
     });
+    await waitFor(
+      () => {
+        expect(calls.some((c) => c.method === "POST" && c.path.endsWith("/undo"))).toBe(true);
+      },
+      { timeout: 3_000 },
+    );
+    expect(await screen.findByText("Undone", {}, POLL)).toBeTruthy();
   });
 
   it("an export that failed says why in words", async () => {

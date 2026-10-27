@@ -82,6 +82,7 @@ export function exportHandlers(options: ExportFixtureOptions): Record<string, Fi
   const exports = new Map<string, EngagementExportOut>();
   let refusedOnce = options.stepUp !== true;
   let n = 0;
+  const reads = new Map<string, number>();
   if (options.existing !== undefined) {
     const id = stableId(`export:${options.workItemId}:existing`);
     exports.set(id, moved(base(options, id), options.existing, options.now));
@@ -108,10 +109,15 @@ export function exportHandlers(options: ExportFixtureOptions): Record<string, Fi
     "GET /v1/exports/{export_id}": (request) => {
       const view = exports.get(request.params.export_id ?? "");
       if (view === undefined) return json(NOT_FOUND, 404);
-      // Each read is the next moment of the build: Queued → Packaging… → Ready.
+      // Each read is the next moment of the build: Queued (for two reads: the Undo window) →
+      // Packaging… → Ready.
+      const read = (reads.get(view.id) ?? 0) + 1;
+      reads.set(view.id, read);
       const next =
         view.status === "queued"
-          ? moved(view, "packaging", options.now)
+          ? read < 2
+            ? view
+            : moved(view, "packaging", options.now)
           : view.status === "packaging"
             ? moved(view, "ready", options.now)
             : view;

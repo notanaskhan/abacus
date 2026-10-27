@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from typing import Final
 from uuid import UUID
 
-from sqlalchemy import exists, select
+from sqlalchemy import exists, or_, select
 from sqlalchemy.orm import aliased
 
 from abacus.kernel.db import TenantContext, tenant_session
@@ -105,9 +105,11 @@ async def independence_conclusions_due(
 ) -> list[DueGate]:
     outer = IndependenceConfirmation
     other = aliased(IndependenceConfirmation)
+    # Every member's confirmation is a v2 three-statement one (`statements`, P-07-T41) and none
+    # is still requested or declined; a pre-v2 confirmation (SPEC-025) opens no conclusion gate.
     still_open = select(other.user_id).where(
         other.engagement_id == outer.engagement_id,
-        other.status.in_(("requested", "declined")),
+        or_(other.status.in_(("requested", "declined")), other.statements.is_(None)),
     )
     concluded = select(independence.conclusions.c.id).where(
         independence.conclusions.c.engagement_id == outer.engagement_id

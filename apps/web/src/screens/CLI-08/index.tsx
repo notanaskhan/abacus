@@ -685,7 +685,6 @@ export function CLI08({
           size="sm"
           {...(me === undefined ? { icon: "check" as const } : {})}
           disabled={me === undefined}
-          opensDialog={me !== undefined}
           onClick={() => {
             setSelfOpen(true);
           }}

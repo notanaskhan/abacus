@@ -32,10 +32,12 @@ export const cliScreens = {
     path: null,
   },
   // P-07-T49 built the single-client intake a–f, h and i live over the intake routes (P-07-T42)
-  // at /clients/new behind `clients.v2`; g (bulk import) is P-07-T54's.
+  // at /clients/new behind `clients.v2`; g (bulk import) is P-07-T54's. Like CLI-02 it stays
+  // planned until its inbound links (CLI-01 "+ New client", "Bulk import") are wired with
+  // to.<ID>() by CLI-01's owner; the route and its outbound links are wired in routes/firm.
   "CLI-06": {
     name: "New client / prospect intake · single + bulk import",
-    status: "live",
+    status: "planned",
     path: "/clients/new",
     navArea: "Clients",
   },
@@ -52,10 +54,11 @@ export const cliScreens = {
   },
   // P-07-T48 built a–g and the declined-note state live over the independence routes (P-07-T41)
   // at /clients/$clientId/independence/$engagementId behind `engagements.acceptance_v2`. Its
-  // designed targets (SHL-11, ENG-02, ENG-05, CLI-02) stay planned links.
+  // designed targets (SHL-11, ENG-02, ENG-05, CLI-02) stay planned links. Planned for CLI-02's
+  // reason until CLI-07's "Independence" link is wired with to.<ID>() (CLI-07 → CLI-08).
   "CLI-08": {
     name: "Independence & conflicts · PY2025 EBP Audit · Northwind Robotics 401(k) Plan",
-    status: "live",
+    status: "planned",
     path: "/clients/$clientId/independence/$engagementId",
     navArea: "Clients",
   },

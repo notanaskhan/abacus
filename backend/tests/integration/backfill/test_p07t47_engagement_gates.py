@@ -55,10 +55,15 @@ async def _replay(seed: Seeder, tenant: uuid.UUID, kinds: frozenset[str]) -> Non
             await NOTIFY[event.event_type](event)
 
 
-async def _gates(tb: t38.Thornbury, who: Person) -> list[Json]:
+async def _gates(
+    tb: t38.Thornbury, who: Person, kind: str = "acceptance_decision_due"
+) -> list[Json]:
+    """The open gates of one registered kind waiting on `who` (each joiner also has an
+    `independence_confirmation_due` row of their own until they confirm)."""
     response = await tb.call("GET", "/v1/human-gates", who)
     assert response.status_code == 200, response.text
-    return cast(list[Json], response.json()["items"])
+    items = cast(list[Json], response.json()["items"])
+    return [g for g in items if cast(Json, g["subject"])["type"] == kind]
 
 
 async def _flag(seed: Seeder, tenant: uuid.UUID) -> None:
@@ -81,14 +86,14 @@ async def test_ac_daniels_row_appears_when_sent_and_goes_when_decided(net: Net) 
     assert sent.status_code == 200, sent.text
     await _replay(tb.seed, tb.tenant, C13_EVENTS | frozenset(CATALOGUE))
     rows = await _gates(tb, tb.daniel)
-    assert [(r["kind"], r["subject_type"]) for r in rows] == [
-        ("decision", "acceptance_decision_due")
-    ]
+    assert [r["kind"] for r in rows] == ["decision"]
     assert rows[0]["engagement_id"] == str(tb.engagement_id)
     assert rows[0]["assignee_user_id"] == str(tb.daniel.user_id)
     # The row is Daniel's: Samuel, who prepared it, has nothing waiting; Kira neither.
     assert await _gates(tb, tb.samuel) == []
     assert await _gates(tb, tb.kira) == []
+    # Each team member was asked to confirm independence on joining: their own sign-off gate.
+    assert len(await _gates(tb, tb.kira, "independence_confirmation_due")) == 1
     # C16: Daniel was told, by identifiers only (no text is stored on a notification).
     told = await tb.seed.rows(
         "SELECT recipient_user_id, kind, subject_type FROM notifications "
@@ -99,7 +104,7 @@ async def test_ac_daniels_row_appears_when_sent_and_goes_when_decided(net: Net) 
         (tb.daniel.user_id, "acceptance_record")
     ]
     decided = await tb.decide("accept")
-    assert decided.status_code == 200, decided.text
+    assert decided.status_code == 201, decided.text
     await _replay(tb.seed, tb.tenant, C13_EVENTS)
     assert await _gates(tb, tb.daniel) == []
     state = await tb.seed.value(
@@ -118,11 +123,7 @@ def test_the_four_gate_kinds_are_registered_and_no_agent_can_act_through_them() 
         "eqr_eligibility_due": "decision",
     }
     # A gate only says that something waits; its read actions are reads.
-    assert {s.read_action for s in SOURCES} == {
-        "acceptance.read",
-        "independence.read",
-        "eqr.approve_eligibility",
-    }
+    assert {s.read_action for s in SOURCES} == {"acceptance.read", "independence.read"}
     for source in SOURCES:
         assert source.events <= C13_EVENTS
 

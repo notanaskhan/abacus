@@ -7,7 +7,7 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/CLI-08 Independence and conflicts - PY2025 EBP Audit - Northwind Roboti/` (README.md, spec.md; no revision) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | P-07 · contract P-07-T23 · G2 v2 P-07-T24 · stub P-07-T29 · conflicts P-07-T36 · live P-07-T41 · AC suites P-07-T26, T43 · screen P-07-T48 |
-| Manifest status | live (`routes/manifest/cli.ts`, P-07-T48) |
+| Manifest status | built (P-07-T48, route `/clients/$clientId/independence/$engagementId`); `planned` in `routes/manifest/cli.ts` until CLI-07 wires its link with `to.CLI08()` (CLI-02's precedent) |
 
 Code to come: `src/screens/CLI-08/{index.tsx, scenarios.ts, copy.ts, CLI-08.test.tsx}`, `src/domain/engagements/IndependenceChip.tsx`, `src/fixtures/handlers/independence.ts`. Flags `engagements.v2` (G2 v2), `engagements.acceptance_v2` (CLI-08 v2). Spec: SPEC-332 AC-13 to AC-28; ADR-164.
 

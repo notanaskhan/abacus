@@ -2,7 +2,7 @@
 id: TASK-1447
 title: Export sheet design follow-up and UI, record-mode dialogs (phase, release, archive) with MFA step-up, 10-s Undo toast and status polling (A-01-T24)
 spec: SPEC-344
-acceptance_criteria: [A-01-T24]
+acceptance_criteria: [AC-6, AC-14]
 risk_zone: green
 status: in-review
 epic: A-01
@@ -27,3 +27,4 @@ updated: 2026-10-27
 
 ## Progress log
 - 2026-10-27: built; Playwright skipped (chromium mismatch).
+- 2026-10-27: targeted test pass green (see the S11 lane 4 report); gates run once (ruff, pyright, lint-imports, quality modules, check-generated, tsc, eslint, prettier). Playwright skipped (chromium mismatch).

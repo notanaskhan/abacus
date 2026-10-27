@@ -420,6 +420,11 @@ codes:
     raised_by:
     - abacus.modules.evidence.exports.ExportKindUnsupported
     summary: Only an audit work item exports a binder (fail closed until C19 and a tax-export review).
+  export_not_ready:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.export_download.ExportNotReady
+    summary: The export is not `ready` yet (queued, packaging), or never will be (undone, failed).
   export_section_missing:
     status: 422
     raised_by:

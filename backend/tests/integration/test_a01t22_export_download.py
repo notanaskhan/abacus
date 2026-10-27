@@ -11,16 +11,20 @@ from __future__ import annotations
 
 import hashlib
 import uuid
+from collections.abc import Iterator
+from contextlib import suppress
 from datetime import timedelta
 
 import pytest
 from botocore.exceptions import ClientError
 from fastapi.responses import StreamingResponse
 from starlette.responses import Response
+from types_boto3_s3 import S3Client
 
 from abacus.kernel import clock
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
+from abacus.kernel.storage import s3_client
 from abacus.kernel.uow import OutboxEvent
 from abacus.modules.evidence import (
     export_activities,
@@ -36,10 +40,25 @@ from abacus.modules.identity.api import AuthContext, Forbidden
 from . import test_a01t19_engagement_export_package as t19
 from .test_a01t19_engagement_export_package import EXPORTS, Northwind
 
-# A-01-T19's Northwind binder, its buckets and its wiring, as this module's fixtures.
-raw = t19.raw
+# A-01-T19's Northwind binder and its wiring, as this module's fixtures. The buckets are made
+# here when this module runs first on a worker, and reused when A-01-T19's made them already.
 wired = t19.wired
 northwind = t19.northwind
+
+
+@pytest.fixture(scope="module")
+def raw(s3_settings: dict[str, str]) -> Iterator[S3Client]:
+    made = s3_client(
+        endpoint_url=s3_settings["endpoint_url"],
+        access_key=s3_settings["access_key"],
+        secret_key=s3_settings["secret_key"],
+        region=s3_settings["region"],
+    )
+    with suppress(ClientError):
+        made.create_bucket(Bucket=t19.EVIDENCE, ObjectLockEnabledForBucket=True)
+    with suppress(ClientError):
+        made.create_bucket(Bucket=EXPORTS)
+    yield made
 
 
 async def _requested(world: Northwind) -> EngagementExport:

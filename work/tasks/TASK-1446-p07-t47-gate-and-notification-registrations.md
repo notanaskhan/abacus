@@ -1,8 +1,8 @@
 ---
 id: TASK-1446
-title: Human-gate and notification registrations (P-07-T47): C13 gate kinds and C16 kinds and database templates for acceptance, risk review, independence reminders, team approval and invitation expiry
+title: "Human-gate and notification registrations (P-07-T47): C13 gate kinds and C16 kinds and database templates for acceptance, risk review, independence reminders, team approval and invitation expiry"
 spec: SPEC-332
-acceptance_criteria: [P-07-T47]
+acceptance_criteria: [AC-3, AC-9]
 risk_zone: amber
 status: in-review
 epic: P-07
@@ -38,3 +38,5 @@ decision is recorded."
 ## Progress log
 - 2026-10-27: built and registered; DEC-539, DEC-540. The I-01 lane's `subkind` (I-01-T04) should
   map these subject types to its column when it lands.
+- 2026-10-27: targeted test pass green (see the S11 lane 4 report); gates run once (ruff, pyright, lint-imports, quality modules, check-generated, tsc, eslint, prettier). Playwright skipped (chromium mismatch).
+- 2026-10-27: fix round: the EQR gate reads under `independence.read` (visible() takes reads only); the conclusion gate needs v2 three-statement confirmations, so pre-v2 rows open none (kept P-04-T17's independent suite green).

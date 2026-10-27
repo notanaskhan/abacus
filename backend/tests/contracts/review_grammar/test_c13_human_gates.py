@@ -48,6 +48,15 @@ EVENTS: Final = {
     "inbox_file.sorted",
     "evidence_version.withdrawn",
     "fulfilment.voided",
+    # P-07-T47 (DEC-539): acceptance, independence and EQR gates.
+    "acceptance.sent_to_partner",
+    "acceptance.decided",
+    "independence.requested",
+    "independence.confirmed",
+    "independence.declined",
+    "independence.concluded",
+    "engagement_member.added",
+    "eqr.eligibility_approved",
 }
 # Contract §2: firm admin, practice leader (in scope), quality partner, engagement partner,
 # manager, senior, staff, reviewer, EQR reviewer.

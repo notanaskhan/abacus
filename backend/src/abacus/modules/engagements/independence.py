@@ -35,7 +35,7 @@ from datetime import datetime
 from typing import Annotated, ClassVar, Final, Literal, cast
 from uuid import UUID, uuid4
 
-from sqlalchemy import func, insert, select, update
+from sqlalchemy import func, insert, or_, select, update
 from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -688,7 +688,10 @@ async def _conclusion_due(session: AsyncSession, engagement_id: UUID) -> bool:
         .select_from(IndependenceConfirmation)
         .where(
             IndependenceConfirmation.engagement_id == engagement_id,
-            IndependenceConfirmation.status.in_(("requested", "declined")),
+            or_(
+                IndependenceConfirmation.status.in_(("requested", "declined")),
+                IndependenceConfirmation.statements.is_(None),
+            ),
         )
     )
     concluded = await session.scalar(

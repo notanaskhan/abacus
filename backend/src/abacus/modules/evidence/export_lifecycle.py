@@ -83,7 +83,6 @@ async def _close(tx: UnitOfWork, row: EngagementExport, reason: str) -> None:
         tx.record(
             "engagement_export.voided",
             target=Target(SUBJECT, row.id),
-            after=Ref(reason=reason),
             scope=_scope(row),
         )
         tx.emit(EngagementExportVoided(**_fields(row)))
@@ -91,7 +90,6 @@ async def _close(tx: UnitOfWork, row: EngagementExport, reason: str) -> None:
         tx.record(
             "engagement_export.expired",
             target=Target(SUBJECT, row.id),
-            after=Ref(reason=reason),
             scope=_scope(row),
         )
         tx.emit(EngagementExportExpired(**_fields(row)))

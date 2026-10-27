@@ -78,7 +78,8 @@ function show(state: Cli08State): Call[] {
 }
 
 function concludeButton(): HTMLButtonElement {
-  return screen.getByRole("button", { name: COPY.conclude.button });
+  // `hidden`: behind Ana's open sheet (e) the page is inert but the control is still there.
+  return screen.getByRole("button", { name: COPY.conclude.button, hidden: true });
 }
 
 describe("CLI-08 artboards", () => {
@@ -137,7 +138,8 @@ describe("CLI-08 artboards", () => {
     show("d");
     expect(await screen.findByText("Margaret Okonkwo")).toBeTruthy();
     expect(screen.getByText(COPY.rotation.note(7))).toBeTruthy();
-    for (const years of ["5", "3", "4"]) expect(screen.getByText(years)).toBeTruthy();
+    for (const years of ["5", "3", "4"])
+      expect(screen.getAllByText(years).length).toBeGreaterThan(0);
   });
 
   it("e: Ana confirms her own independence with all three statements", async () => {

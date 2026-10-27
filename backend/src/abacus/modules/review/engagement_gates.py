@@ -10,7 +10,7 @@ depend on engagements and never the reverse, so the registration lives here, thr
 | `acceptance_decision_due` | `decision` | `acceptance.read` | the engagement partner |
 | `independence_conclusion_due` | `decision` | `independence.read` | the engagement partner |
 | `independence_confirmation_due` | `sign_off_request` | `independence.read` | the member |
-| `eqr_eligibility_due` | `decision` | `eqr.approve_eligibility` | the quality owner (role) |
+| `eqr_eligibility_due` | `decision` | `independence.read` | the quality owner (role) |
 
 The projection only says that something waits: deciding, concluding, confirming and approving
 stay the owners' human-only routes (INV-1), and nothing here can act.
@@ -92,7 +92,7 @@ SOURCES: Final = (
     GateSource(
         EQR_ELIGIBILITY_DUE,
         "decision",
-        "eqr.approve_eligibility",
+        "independence.read",  # the quality owner reads it in scope; approving is its own route
         _EQR,
         _open(eqr_eligibility_due),
     ),

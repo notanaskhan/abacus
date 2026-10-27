@@ -103,6 +103,21 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "guidance_draft.decided",
         "review_decision.recorded",
         "inbox_file.sorted",
+        # On main since S10 but missing from this list (ED-165): the export build's start
+        # (A-01-T19), the TB and workpaper staleness subscribers, the AI boundary facts.
+        "engagement_export.requested",
+        "trial_balance.version_created",
+        "workpaper.content_changed",
+        "ai_boundary.facts_changed",
+        # A-01-T22: an expired or voided export's segments are deleted.
+        "engagement_export.expired",
+        "engagement_export.voided",
+        # P-07-T47 (DEC-539): the C13 projector's engagement gates.
+        "acceptance.decided",
+        "independence.confirmed",
+        "independence.declined",
+        "independence.concluded",
+        "eqr.eligibility_approved",
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert (

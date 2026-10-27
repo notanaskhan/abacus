@@ -7,7 +7,7 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/CLI-06 New client prospect intake - single - bulk import/` (README.md, spec.md; no revision) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | P-07 · contract P-07-T23 · stubs P-07-T37 · TIN P-07-T10 · conflicts and screening P-07-T36 · single commit P-07-T42 · bulk import P-07-T52 · screens P-07-T49 (single), P-07-T54 (bulk) |
-| Manifest status | live (`routes/manifest/cli.ts`, P-07-T49: single intake at `/clients/new`; bulk import P-07-T54) |
+| Manifest status | built (P-07-T49: single intake at `/clients/new`; bulk import P-07-T54); `planned` in `routes/manifest/cli.ts` until CLI-01 wires its "+ New client" and "Bulk import" links with `to.CLI06()` |
 
 Code to come: `src/screens/CLI-06/{index.tsx, scenarios.ts, copy.ts, CLI-06.test.tsx}`, `src/domain/clients/ConflictResults.tsx`, `src/fixtures/handlers/intake.ts`. Flag `clients.v2`. Spec: SPEC-332 AC-23 to AC-26.
 
