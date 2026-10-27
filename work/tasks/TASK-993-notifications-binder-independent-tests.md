@@ -109,3 +109,6 @@ The facts and pending resolvers (P-01 AC 3.1.2/3.1.3) are not a defect: TASK-406
 
 ## Progress log
 - 2026-10-23: both suites written in clean sessions; 3 notification defects fixed with their tests; 7 strict xfails recorded; TASK-028 closed as superseded.
+- 2026-10-27 (S10 gap build, Q-03-T009): ED-015 and ED-016 fixed on `s10-gaps2-ed015-016`, and their two strict xfails are removed.
+  - ED-015: `notifications.api.register_kind_source(code, event, recipients, subject, *, engagement_key)` adds a producing event to an existing kind and subscribes the relay to it. An unknown kind or an event that already produces a kind fails at startup. Tests: `tests/unit/notifications/test_kind_source.py`.
+  - ED-016: `purge_once` runs the existing definer once per firm inside that firm's own session, so forced RLS lets the DELETE through. No migration was needed. The run is audited in each firm that lost rows, and a failing firm is logged without stopping the others.
