@@ -70,3 +70,5 @@ marked-done binder gets no further draft, and the pre-change P-4 history replays
   communications (`scheduled_reminders.py`, COMM-002), sendable-only planning, the version linted on
   system sends, migration 0222 (`system` kind), limit-reached dedupe. DEC-568, DEC-569. Targeted
   pass and gates green.
+- 2026-10-27: re-review round (M-a, M-b, L-b): the sequence recomputed in communications from a
+  history slot, overdue_for sendable-only by default, COMM-002 widened and BOUND-004 added. DEC-588.

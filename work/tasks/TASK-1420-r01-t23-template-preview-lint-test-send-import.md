@@ -73,3 +73,5 @@ the lint (Story 7.2).
   DEC-560, DEC-561, DEC-562. The gates caught a real-SSN-shaped probe in a test (now a 9xx fake).
 - 2026-10-27: security review fix round (L3, L4, walls): scope-guard terms in any case as whole
   words, a 10-per-hour test-send cap (429), walled engagements skipped in sample scoping. DEC-569.
+- 2026-10-27: re-review L-a: sample contacts count only through engagements the viewer may read
+  (authorise engagement.read); a walled team member gets 404 (wall test). DEC-588.
