@@ -32,3 +32,4 @@ access review), Pub 4557 control status rows over imported platform content, and
 
 ## Progress log
 - 2026-10-27: plan written; built.
+- 2026-10-27: built and tested. Migration 0242 (control sets as platform content, staff import and two-person publish); `platform/safeguards.py`; WISP pack through evidence's item download (DEC-627); status words `evidenced`, `pending_approval` added to the vocabulary and their findings removed. The seed's 20 controls and the 14-document pack load through the staff import and the firm's own documents (DEC-626), not in this change.

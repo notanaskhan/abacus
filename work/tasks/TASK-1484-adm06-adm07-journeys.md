@@ -24,3 +24,4 @@ b, c, e, f, g.
 
 ## Progress log
 - 2026-10-27: plan written.
+- 2026-10-27: j01 2 and j14 7 written and passed in the fixture project on the cached chromium (untracked local config); ADM-06 and ADM-07 registered in the gallery with screen specs (a–h; a, b, c, e, f, g), all passing with axe clean; parity rows locked at Tier C. Not run: full stack and staging (flags off in E0; staging not up), the pixel parity report (baselines not fetched), the F-04 harness INV-5 switch to `audit_event.read` on staging (staging work).

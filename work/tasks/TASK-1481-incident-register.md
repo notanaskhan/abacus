@@ -38,3 +38,4 @@ The register's read side, the append-only timeline and the two-person decisions 
 
 ## Progress log
 - 2026-10-27: plan written; built.
+- 2026-10-27: built and tested. Migration 0240; `platform/incident_register.py`; `IncidentClockReminders` every 6 hours (DEC-625); notifications `incident_decision_requested` and `incident_deadline_approaching`. The G-02-T12 suite's incident routes are LIVE and pass.

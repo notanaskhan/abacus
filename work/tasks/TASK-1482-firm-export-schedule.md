@@ -32,3 +32,4 @@ partner, distinct (DEC-72), running on a Temporal Schedule through `kernel.dispa
 
 ## Progress log
 - 2026-10-27: plan written; built.
+- 2026-10-27: built and tested, partial: the schedule, its dual approval and the firm's calendar Schedule (`kernel.dispatch.firm_schedule`) are live; each run records `run_skipped` until Q-02-T43 registers the firm export starter (DEC-623), so per-run notifications and the History tray (Q-02's list, still a 501 stub) wait for Q-02-T43.

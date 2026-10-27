@@ -52,3 +52,4 @@ three in one ZIP in the exports bucket, and marks the job ready with a 7-day exp
 
 ## Progress log
 - 2026-10-27: plan written; built.
+- 2026-10-27: built and tested. Routes live (request, status, link, download); `AuditExportWorkflow` with v1 histories (`record_security_center`); `kernel.crypto.signing` and `kernel.export_bundles`; migration 0243 (bundle columns, forward-only status trigger); Terraform `kms-export-signing` written, not applied. `test_g02t17_audit_export.py` 11 passed; the G-02-T05 suite now runs every export assertion (STUBBED emptied). DEC-620 to DEC-622. Not done (needs the builder): apply the key, publish its public key, set `ABACUS_AUDIT_EXPORT_SIGNING_KEY_ALIAS` on the worker. Mistake made twice: a `return` or `continue` inside a unit of work that recorded nothing commits it and fails `MissingAuditEvent`; roll back with an exception instead.
