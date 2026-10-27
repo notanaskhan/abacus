@@ -143,6 +143,8 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "issue_events": "review_rows_immutable",  # 0094 (P-04-T04)
     "decision_card_versions": "review_rows_immutable",  # 0211 (P-04-T23)
     "decision_analysis_requests": "review_rows_immutable",  # 0211 (P-04-T23)
+    "human_gate_snoozes": "human_gate_acts_immutable",  # 0223 (I-01-T04)
+    "human_gate_reassignments": "human_gate_acts_immutable",  # 0223 (I-01-T04)
     "suggestion_decisions": "agent_decisions_immutable",  # 0095 (P-04-T05)
     "proposal_rows": "agent_decisions_immutable",  # 0095 (P-04-T05)
     "proposal_decisions": "agent_decisions_immutable",  # 0095 (P-04-T05)

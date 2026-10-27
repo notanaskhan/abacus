@@ -24167,6 +24167,39 @@
         "title": "GapOut",
         "type": "object"
       },
+      "GateBandsOut": {
+        "description": "Open gates per DF-25 band, in the fixed band order.",
+        "properties": {
+          "agent_outputs": {
+            "cls": "internal",
+            "title": "Agent Outputs",
+            "type": "integer"
+          },
+          "approvals_sends": {
+            "cls": "internal",
+            "title": "Approvals Sends",
+            "type": "integer"
+          },
+          "decisions": {
+            "cls": "internal",
+            "title": "Decisions",
+            "type": "integer"
+          },
+          "sign_offs": {
+            "cls": "internal",
+            "title": "Sign Offs",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "decisions",
+          "sign_offs",
+          "agent_outputs",
+          "approvals_sends"
+        ],
+        "title": "GateBandsOut",
+        "type": "object"
+      },
       "GateBlockerRefOut": {
         "description": "What blocks a gate: an opaque reference and a registered reason code, never prose.",
         "properties": {
@@ -25826,6 +25859,38 @@
         "title": "HomeTileOut",
         "type": "object"
       },
+      "HumanGateCountsOut": {
+        "description": "The one count source (C13; I-01-T04): the HOME-01 header and Approvals badge, the\nHOME-02 bands, SHL-04's Approvals tab and I-02 read `total` and `bands` from here.",
+        "properties": {
+          "bands": {
+            "$ref": "#/components/schemas/GateBandsOut",
+            "cls": "internal"
+          },
+          "overdue": {
+            "cls": "internal",
+            "title": "Overdue",
+            "type": "integer"
+          },
+          "snoozed": {
+            "cls": "internal",
+            "title": "Snoozed",
+            "type": "integer"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "bands",
+          "overdue",
+          "snoozed"
+        ],
+        "title": "HumanGateCountsOut",
+        "type": "object"
+      },
       "HumanGateOut": {
         "description": "One row of the rebuildable projection. Labels come from the subject's owner at read time.",
         "properties": {
@@ -25902,10 +25967,24 @@
               "send",
               "final_approval",
               "export",
-              "release"
+              "release",
+              "evidence_review"
             ],
             "title": "Kind",
             "type": "string"
+          },
+          "office_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Office Id"
           },
           "role": {
             "anyOf": [
@@ -25933,6 +26012,11 @@
             "$ref": "#/components/schemas/ObjectRefOut",
             "cls": "internal"
           },
+          "subkind": {
+            "cls": "internal",
+            "title": "Subkind",
+            "type": "string"
+          },
           "work_item_id": {
             "anyOf": [
               {
@@ -25958,7 +26042,9 @@
           "role",
           "due_on",
           "state",
-          "created_at"
+          "created_at",
+          "subkind",
+          "office_id"
         ],
         "title": "HumanGateOut",
         "type": "object"
@@ -120349,7 +120435,8 @@
                     "send",
                     "final_approval",
                     "export",
-                    "release"
+                    "release",
+                    "evidence_review"
                   ],
                   "type": "string"
                 },
@@ -120508,6 +120595,130 @@
           }
         },
         "summary": "Human Gate List Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "human_gate.read"
+      }
+    },
+    "/v1/human-gates/counts": {
+      "get": {
+        "description": "The one count source (I-01-T04): open gates waiting on the caller by DF-25 band, how many\nof them are overdue, and how many the caller snoozed (left out of `total`). A walled client's\ngates are never counted, and nothing says any were left out (DEC-43); `office_id` narrows and\nnever authorises (DEC-30). Behind `review.grammar_api`, like the list.",
+        "operationId": "human_gate_counts",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "office_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Office Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HumanGateCountsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Human Gate Counts Route",
         "tags": [
           "review"
         ],

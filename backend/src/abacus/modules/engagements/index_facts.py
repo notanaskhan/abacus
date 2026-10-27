@@ -177,3 +177,47 @@ async def letters_sent(tenant: TenantContext, engagement_ids: Sequence[UUID]) ->
             )
         )
     return {eid: on or at.date() for eid, on, at in rows.all()}
+
+
+async def gate_offices(
+    tenant: TenantContext, keys: Sequence[tuple[UUID, UUID | None]]
+) -> dict[tuple[UUID, UUID | None], UUID]:
+    """The office a human gate files under (I-01-T04; DEC-30: a filter, never a boundary): the
+    work item's office, else the engagement's. Keyed by (engagement, work item or None); a key
+    with no office is absent. For the gate projector, under its tenant session (RLS)."""
+    wanted = {k for k in keys}
+    if not wanted:
+        return {}
+    engagement_ids = sorted({e for e, _ in wanted}, key=str)
+    item_ids = sorted({w for _, w in wanted if w is not None}, key=str)
+    found: dict[tuple[UUID, UUID | None], UUID] = {}
+    async with tenant_session(tenant) as session:
+        by_engagement = dict(
+            (
+                await session.execute(
+                    select(Engagement.id, Engagement.office_id).where(
+                        Engagement.id.in_(engagement_ids)
+                    )
+                )
+            )
+            .tuples()
+            .all()
+        )
+        by_item: dict[UUID, tuple[UUID, UUID | None]] = {}
+        if item_ids:
+            for item, engagement, office in (
+                await session.execute(
+                    select(WorkItem.id, WorkItem.engagement_id, WorkItem.office_id).where(
+                        WorkItem.id.in_(item_ids)
+                    )
+                )
+            ).tuples():
+                by_item[item] = (engagement, office)
+    for engagement, item in wanted:
+        office = None
+        if item is not None and item in by_item and by_item[item][0] == engagement:
+            office = by_item[item][1]
+        office = office or by_engagement.get(engagement)
+        if office is not None:
+            found[(engagement, item)] = office
+    return found

@@ -74,10 +74,9 @@ async def test_inv3_a_walled_person_is_listed_nothing_of_the_walled_client(firm:
     assert page["total"] == 1
 
 
-# --- I-01-T04: the one count source ------------------------------------------------------------
+# --- I-01-T04 (landed, TASK-1425): the one count source ------------------------------------------------------------
 
 
-@GATE_HALF
 async def test_ac_f1_one_count_source_reads_eleven_as_three_six_two_by_band(firm: Firm) -> None:
     await _daniels_eleven(firm)
     status, counts = await _get(firm, COUNTS, firm.daniel)
@@ -93,7 +92,6 @@ async def test_ac_f1_one_count_source_reads_eleven_as_three_six_two_by_band(firm
     assert page["total"] == counts["total"]  # the list and the badge agree
 
 
-@GATE_HALF
 async def test_inv3_walls_leave_a_client_out_of_every_count(firm: Firm) -> None:
     await _daniels_eleven(firm)
     await firm.net.wall(firm.admin, firm.daniel, firm.ashford)
@@ -110,7 +108,6 @@ async def test_inv3_walls_leave_a_client_out_of_every_count(firm: Firm) -> None:
     assert set(counts) <= {"total", "bands", "overdue", "snoozed"}
 
 
-@GATE_HALF
 async def test_dec30_an_office_narrows_the_counts_and_never_authorises(firm: Firm) -> None:
     await _daniels_eleven(firm)
     unknown_office = uuid.uuid4()

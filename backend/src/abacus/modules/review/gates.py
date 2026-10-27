@@ -23,6 +23,12 @@ while a person still has to act, `done` once nobody does. It is never the record
   events produced.
 - **Read** (`gates_waiting_on`): open rows assigned to the caller or unassigned, through
   `visible(human_gate.read)` and the source's own read action; `counts` per kind.
+- **The one count source** (`gate_counts`, I-01-T04): the same rows, by DF-25 band, with what is
+  overdue and what the caller snoozed. An unassigned gate naming a role waits on that role's
+  holders only; a gate the caller snoozed leaves the list and the counts until its time.
+- **Home columns** (I-01-T04, 0223): each row carries its source's registered name (`subkind`),
+  its office (the owner's, else the work item's or engagement's, from `engagements.api`), and
+  the owner's `blocked` reason code and `sort_hint`, reconciled like the rest.
 
 `register_gate_kind` (P-04-T06, `slots`) is a different slot: a computed gate's check (G1 to G5).
 """
@@ -32,15 +38,16 @@ from __future__ import annotations
 import re
 import uuid
 from collections.abc import Awaitable, Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime
 from typing import Final, cast
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, and_, false, or_, select, text, update
+from sqlalchemy import ColumnElement, and_, false, func, or_, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from abacus.kernel import clock
 from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.listing import (
@@ -57,15 +64,31 @@ from abacus.kernel.listing import (
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.kernel.uow.relay import OutboxEvent
-from abacus.modules.identity.api import AuthContext, visible
-from abacus.modules.review.models import HumanGate
+from abacus.modules.engagements.api import gate_offices
+from abacus.modules.identity.api import AuthContext, holds_engagement_role, visible
+from abacus.modules.review.models import HumanGate, HumanGateSnooze
 
 _log = get_logger(__name__)
 
-# DF-25: the one taxonomy (human_gates.kind CHECK, 0093).
+# DF-25: the one taxonomy (human_gates.kind CHECK, 0093; `evidence_review` 0223, DEC-403).
 GATE_KINDS: Final = frozenset(
     {"decision", "sign_off_request", "proposal", "send", "final_approval", "export", "release"}
+    | {"evidence_review"}
 )
+# The band rule (DF-25; `docs/contracts/home-and-gates.md` §4), in its fixed order. Every other
+# kind is Approvals & sends (countersignatures are `send`).
+BANDS: Final = ("decisions", "sign_offs", "agent_outputs", "approvals_sends")
+_BAND_OF: Final = {
+    "decision": "decisions",
+    "sign_off_request": "sign_offs",
+    "proposal": "agent_outputs",
+}
+
+
+def band_of(kind: str) -> str:
+    return _BAND_OF.get(kind, "approvals_sends")
+
+
 # The outbox events the projector subscribes to (C13). A source may only name these: the worker's
 # subscriptions are fixed at import, before every owner has registered.
 C13_EVENTS: Final = frozenset(
@@ -104,6 +127,11 @@ class OpenGate:
     due_on: date | None = None
     work_item_id: UUID | None = None
     client_id: UUID | None = None
+    # I-01-T04: the owner's office (else the work item's or engagement's), and what Home shows.
+    office_id: UUID | None = None
+    blocked: bool = False
+    blocked_reason_code: str | None = None  # a code, never text (0223 CHECK)
+    sort_hint: int | None = None
 
 
 OpenFor = Callable[[TenantContext, UUID | None], Awaitable[Sequence[OpenGate]]]
@@ -157,19 +185,61 @@ def gate_sources() -> tuple[GateSource, ...]:
 
 
 @dataclass(frozen=True)
+class RowValues:
+    """The values the projector keeps in step with the owner (state, assignment, Home facts)."""
+
+    state: str
+    assignee_user_id: UUID | None
+    due_on: date | None
+    office_id: UUID | None = None
+    blocked: bool = False
+    blocked_reason_code: str | None = None
+    sort_hint: int | None = None
+
+
+@dataclass(frozen=True)
 class Existing:
     id: UUID
     subject_id: UUID
     state: str
     assignee_user_id: UUID | None
     due_on: date | None
+    office_id: UUID | None = None
+    blocked: bool = False
+    blocked_reason_code: str | None = None
+    sort_hint: int | None = None
+
+    @property
+    def values(self) -> RowValues:
+        return RowValues(
+            self.state,
+            self.assignee_user_id,
+            self.due_on,
+            self.office_id,
+            self.blocked,
+            self.blocked_reason_code,
+            self.sort_hint,
+        )
+
+
+def _wanted(gate: OpenGate) -> RowValues:
+    reason = gate.blocked_reason_code
+    return RowValues(
+        "open",
+        gate.assignee_user_id,
+        gate.due_on,
+        gate.office_id,
+        gate.blocked or reason is not None,
+        reason,
+        gate.sort_hint,
+    )
 
 
 @dataclass(frozen=True)
 class Plan:
     inserts: tuple[OpenGate, ...]
-    # (row id, state, assignee, due on): rows whose stored values differ from the owner's.
-    updates: tuple[tuple[UUID, str, UUID | None, date | None], ...]
+    # (row id, values): rows whose stored values differ from the owner's.
+    updates: tuple[tuple[UUID, RowValues], ...]
 
     @property
     def empty(self) -> bool:
@@ -177,24 +247,25 @@ class Plan:
 
 
 def plan(existing: Sequence[Existing], open_now: Sequence[OpenGate]) -> Plan:
-    """What makes the stored rows say what the owner says. A voided row stays voided."""
+    """What makes the stored rows say what the owner says. A voided row stays voided; a row no
+    longer waiting goes done and keeps the rest of what it said."""
     waiting = {g.subject_id: g for g in open_now}
     stored = {e.subject_id: e for e in existing}
     inserts = tuple(
         g for s, g in sorted(waiting.items(), key=lambda i: str(i[0])) if s not in stored
     )
-    updates: list[tuple[UUID, str, UUID | None, date | None]] = []
+    updates: list[tuple[UUID, RowValues]] = []
     for subject, row in sorted(stored.items(), key=lambda i: str(i[0])):
         if row.state == "voided":
             continue
         gate = waiting.get(subject)
         if gate is None:
             if row.state != "done":
-                updates.append((row.id, "done", row.assignee_user_id, row.due_on))
+                updates.append((row.id, replace(row.values, state="done")))
             continue
-        wanted = ("open", gate.assignee_user_id, gate.due_on)
-        if (row.state, row.assignee_user_id, row.due_on) != wanted:
-            updates.append((row.id, *wanted))
+        wanted = _wanted(gate)
+        if row.values != wanted:
+            updates.append((row.id, wanted))
     return Plan(inserts, tuple(updates))
 
 
@@ -229,8 +300,30 @@ async def _stored(
         stmt = stmt.where(HumanGate.engagement_id == engagement_id)
     rows = (await session.execute(stmt)).scalars().all()
     return [
-        Existing(r.id, UUID(r.subject_ref["id"]), r.state, r.assignee_user_id, r.due_on)
+        Existing(
+            r.id,
+            UUID(r.subject_ref["id"]),
+            r.state,
+            r.assignee_user_id,
+            r.due_on,
+            r.office_id,
+            r.blocked,
+            r.blocked_reason_code,
+            r.sort_hint,
+        )
         for r in rows
+    ]
+
+
+async def _with_offices(tenant: TenantContext, gates: Sequence[OpenGate]) -> list[OpenGate]:
+    """Each gate's office: the owner's, else the work item's or engagement's (DEC-30)."""
+    keys = [(g.engagement_id, g.work_item_id) for g in gates if g.office_id is None]
+    offices = await gate_offices(tenant, keys) if keys else {}
+    return [
+        g
+        if g.office_id is not None
+        else replace(g, office_id=offices.get((g.engagement_id, g.work_item_id)))
+        for g in gates
     ]
 
 
@@ -249,11 +342,13 @@ async def _reconcile(
             open_now = await source.open_for(tenant, engagement_id)
             if engagement_id is not None:
                 open_now = [g for g in open_now if g.engagement_id == engagement_id]
+            open_now = await _with_offices(tenant, open_now)
             todo = plan(await _stored(tx.session, source, engagement_id), open_now)
             if todo.empty:
                 raise _Unchanged
             added = 0
             for gate in todo.inserts:
+                values = _wanted(gate)
                 found = await tx.session.execute(
                     pg_insert(HumanGate)
                     .values(
@@ -270,23 +365,32 @@ async def _reconcile(
                         source_event_id=source_event_id(
                             event_id, source.subject_type, gate.subject_id
                         ),
+                        subkind=source.subject_type,
+                        office_id=values.office_id,
+                        blocked=values.blocked,
+                        blocked_reason_code=values.blocked_reason_code,
+                        sort_hint=values.sort_hint,
                     )
                     .on_conflict_do_nothing()
                     .returning(HumanGate.id)
                 )
                 added += len(found.scalars().all())
-            for row_id, state, assignee, due_on in todo.updates:
+            for row_id, values in todo.updates:
                 await tx.session.execute(
                     update(HumanGate)
                     .where(HumanGate.id == row_id)
                     .values(
-                        state=state,
-                        assignee_user_id=assignee,
-                        due_on=due_on,
+                        state=values.state,
+                        assignee_user_id=values.assignee_user_id,
+                        due_on=values.due_on,
+                        office_id=values.office_id,
+                        blocked=values.blocked,
+                        blocked_reason_code=values.blocked_reason_code,
+                        sort_hint=values.sort_hint,
                         updated_at=system_now(),
                     )
                 )
-            closed = sum(1 for u in todo.updates if u[1] == "done")
+            closed = sum(1 for _row, v in todo.updates if v.state == "done")
             tx.record(
                 "human_gate.projected",
                 target=(
@@ -345,6 +449,8 @@ class GateView:
     due_on: date | None
     state: str
     created_at: datetime
+    subkind: str = ""
+    office_id: UUID | None = None
 
 
 def _engagement() -> ColumnElement[UUID]:
@@ -364,6 +470,49 @@ def _sources_visible(ctx: AuthContext) -> ColumnElement[bool]:
     return or_(*clauses) if clauses else false()
 
 
+def _waits_on(ctx: AuthContext) -> ColumnElement[bool]:
+    """Assigned to the caller, or to nobody: then to everyone who may read it, or, when the row
+    names a role, to that role's holders on the engagement (I-01-T04)."""
+    return or_(
+        HumanGate.assignee_user_id == ctx.user_id,
+        and_(
+            HumanGate.assignee_user_id.is_(None),
+            or_(
+                HumanGate.role.is_(None),
+                holds_engagement_role(ctx, _engagement(), HumanGate.role),
+            ),
+        ),
+    )
+
+
+def _snoozed(ctx: AuthContext, now: datetime) -> ColumnElement[bool]:
+    """Rows the caller snoozed until after `now`: their latest snooze of the gate wins."""
+    latest = (
+        select(HumanGateSnooze.until)
+        .where(
+            HumanGateSnooze.tenant_id == ctx.tenant_id,
+            HumanGateSnooze.gate_id == HumanGate.id,
+            HumanGateSnooze.user_id == ctx.user_id,
+        )
+        .order_by(HumanGateSnooze.created_at.desc(), HumanGateSnooze.id.desc())
+        .limit(1)
+        .correlate(HumanGate)
+        .scalar_subquery()
+    )
+    return func.coalesce(latest > now, false())
+
+
+def _open_for_caller(ctx: AuthContext) -> list[ColumnElement[bool]]:
+    """The open gates that wait on the caller, in engagements they may read them in (walls
+    excluded through `visible()` and each source's read action; nothing counts what's left out)."""
+    return [
+        HumanGate.state == "open",
+        _waits_on(ctx),
+        visible(ctx, READ, _engagement()),
+        _sources_visible(ctx),
+    ]
+
+
 async def gates_waiting_on(
     ctx: AuthContext,
     *,
@@ -372,8 +521,9 @@ async def gates_waiting_on(
     cursor: str | None,
     limit: int | None,
 ) -> ListPage[GateView]:
-    """Open gates assigned to the caller or to nobody, in engagements the caller may read them
-    in, oldest first; `counts` per kind over the same filters without `kind`."""
+    """Open gates waiting on the caller (assigned to them, or to nobody under `_waits_on`) and
+    not snoozed by them, in engagements the caller may read them in, oldest first; `counts` per
+    kind over the same filters without `kind`."""
     size = clamp_limit(limit)
     query = query_hash(kind=kind, engagement_id=engagement_id)
     after = (
@@ -381,12 +531,8 @@ async def gates_waiting_on(
         if cursor
         else None
     )
-    base = select(HumanGate).where(
-        HumanGate.state == "open",
-        or_(HumanGate.assignee_user_id == ctx.user_id, HumanGate.assignee_user_id.is_(None)),
-        visible(ctx, READ, _engagement()),
-        _sources_visible(ctx),
-    )
+    now = await clock.now(ctx.tenant)
+    base = select(HumanGate).where(*_open_for_caller(ctx), ~_snoozed(ctx, now))
     if engagement_id is not None:
         base = base.where(HumanGate.engagement_id == engagement_id)
     stmt = base.where(HumanGate.kind == kind) if kind is not None else base
@@ -425,6 +571,8 @@ async def gates_waiting_on(
                 r.due_on,
                 r.state,
                 r.updated_at,
+                r.subkind,
+                r.office_id,
             )
             for r in rows
         ],
@@ -437,16 +585,69 @@ async def gates_waiting_on(
     )
 
 
+@dataclass(frozen=True)
+class GateCounts:
+    """The one count source (C13; I-01-T04): what waits on the caller now, by band."""
+
+    total: int
+    bands: dict[str, int]
+    overdue: int
+    snoozed: int
+
+
+async def gate_counts(ctx: AuthContext, *, office_id: UUID | None = None) -> GateCounts:
+    """`GET /v1/human-gates/counts`: the rows `gates_waiting_on` lists, counted by DF-25 band;
+    `overdue` among them (due before the firm's today), and `snoozed`: the open gates the caller
+    snoozed until later, which the total leaves out. `office_id` narrows, never authorises
+    (DEC-30): an office nobody files under counts nothing."""
+    now = await clock.now(ctx.tenant)
+    today = await clock.today(ctx.tenant)
+    snoozed = _snoozed(ctx, now)
+    overdue = and_(HumanGate.due_on.is_not(None), HumanGate.due_on < today)
+    where = _open_for_caller(ctx)
+    if office_id is not None:
+        where.append(HumanGate.office_id == office_id)
+    facts = (
+        select(
+            HumanGate.kind.label("kind"),
+            snoozed.label("snoozed"),
+            func.coalesce(overdue, false()).label("overdue"),
+        )
+        .where(*where)
+        .subquery()
+    )
+    stmt = select(facts.c.kind, facts.c.snoozed, facts.c.overdue, func.count()).group_by(
+        facts.c.kind, facts.c.snoozed, facts.c.overdue
+    )
+    async with tenant_session(ctx.tenant) as session:
+        rows = (await session.execute(stmt)).all()
+    bands: dict[str, int] = dict.fromkeys(BANDS, 0)
+    late = paused = 0
+    for kind, is_snoozed, is_overdue, n in rows:
+        if is_snoozed:
+            paused += int(n)
+            continue
+        bands[band_of(str(kind))] += int(n)
+        if is_overdue:
+            late += int(n)
+    return GateCounts(sum(bands.values()), bands, late, paused)
+
+
 __all__ = [
+    "BANDS",
     "C13_EVENTS",
     "GATE_KINDS",
     "SUBSCRIPTIONS",
     "Existing",
+    "GateCounts",
     "GateSource",
     "GateView",
     "OpenGate",
     "Plan",
+    "RowValues",
     "apply_event",
+    "band_of",
+    "gate_counts",
     "gate_sources",
     "gates_waiting_on",
     "plan",

@@ -71,7 +71,12 @@ from abacus.modules.engagements.independence import (
     conclude_independence,
     confirm_independence,
 )
-from abacus.modules.engagements.index_facts import assurance_index, letters_sent, work_item_index
+from abacus.modules.engagements.index_facts import (
+    assurance_index,
+    gate_offices,
+    letters_sent,
+    work_item_index,
+)
 from abacus.modules.engagements.intake import commit_intake as commit_client_intake
 from abacus.modules.engagements.intake import draft_visible as intake_draft_visible
 from abacus.modules.engagements.intake import subject_names as intake_subject_names
@@ -393,6 +398,7 @@ __all__ = [
     "g2_blocks",
     "gate_client_data",
     "gate_fact",
+    "gate_offices",
     "gate_registered",
     "get_ref",
     "holds_tax_return",

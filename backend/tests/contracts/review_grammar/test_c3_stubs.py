@@ -276,7 +276,11 @@ def test_c3_schema_v1_migrations_agree_with_the_wire() -> None:
     )
     assert "CHECK (status IN ('open', 'responded', 'cleared', 'closed', 'withdrawn'))" in m93
     assert stored_codes("review_note") == ["open", "responded", "cleared", "closed", "withdrawn"]
-    assert check_list(m93, "kind", "human_gates") == list(get_args(review_contract.GateKind))
+    # I-01-T04 (0223, DEC-403) adds `evidence_review` to 0093's list, nothing else.
+    assert [*check_list(m93, "kind", "human_gates"), "evidence_review"] == list(
+        get_args(review_contract.GateKind)
+    )
+    assert "'evidence_review'" in migration("0223_human_gate_home.py")
     assert check_list(m93, "state", "human_gates") == list(get_args(review_contract.GateState))
 
 

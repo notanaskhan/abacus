@@ -49,7 +49,7 @@ from abacus.modules.review.decisions import (
     reassess,
     request_analysis,
 )
-from abacus.modules.review.gates import gates_waiting_on
+from abacus.modules.review.gates import gate_counts, gates_waiting_on
 from abacus.modules.review.notes import (
     NoteDetail,
     NoteItem,
@@ -105,8 +105,16 @@ ExclusionCode = Literal[
 AnchorKind = Literal["cell", "field", "section", "region"]
 NoteEvent = Literal["raised", "responded", "cleared", "closed", "withdrawn", "reopened"]
 GateKind = Literal[
-    "decision", "sign_off_request", "proposal", "send", "final_approval", "export", "release"
+    "decision",
+    "sign_off_request",
+    "proposal",
+    "send",
+    "final_approval",
+    "export",
+    "release",
+    "evidence_review",  # DEC-403 (I-01-T04)
 ]
+GateBand = Literal["decisions", "sign_offs", "agent_outputs", "approvals_sends"]
 GateState = Literal["open", "done", "voided"]
 
 
@@ -673,9 +681,56 @@ class HumanGateOut(BaseModel):
     due_on: Annotated[date | None, classified("internal")]
     state: Annotated[GateState, classified("internal")]
     created_at: Annotated[datetime, classified("internal")]
+    # I-01-T04: the owner's registered gate name, and the office it files under (a filter).
+    subkind: Annotated[str, classified("internal")]
+    office_id: Annotated[UUID | None, classified("internal")]
+
+
+class GateBandsOut(BaseModel):
+    """Open gates per DF-25 band, in the fixed band order."""
+
+    model_config = ConfigDict(frozen=True)
+
+    decisions: Annotated[int, classified("internal")]
+    sign_offs: Annotated[int, classified("internal")]
+    agent_outputs: Annotated[int, classified("internal")]
+    approvals_sends: Annotated[int, classified("internal")]
+
+
+class HumanGateCountsOut(BaseModel):
+    """The one count source (C13; I-01-T04): the HOME-01 header and Approvals badge, the
+    HOME-02 bands, SHL-04's Approvals tab and I-02 read `total` and `bands` from here."""
+
+    model_config = ConfigDict(frozen=True)
+
+    total: Annotated[int, classified("internal")]
+    bands: Annotated[GateBandsOut, classified("internal")]
+    overdue: Annotated[int, classified("internal")]
+    snoozed: Annotated[int, classified("internal")]
 
 
 human_gates_router = AbacusRouter(prefix="/v1/human-gates", tags=["review"])
+
+
+@human_gates_router.get(
+    "/counts", action="human_gate.read", response_model=HumanGateCountsOut, errors=(501,)
+)
+async def human_gate_counts_route(
+    ctx: Ctx, office_id: Annotated[UUID | None, Query()] = None
+) -> HumanGateCountsOut:
+    """The one count source (I-01-T04): open gates waiting on the caller by DF-25 band, how many
+    of them are overdue, and how many the caller snoozed (left out of `total`). A walled client's
+    gates are never counted, and nothing says any were left out (DEC-43); `office_id` narrows and
+    never authorises (DEC-30). Behind `review.grammar_api`, like the list."""
+    if not await flag_enabled(ctx.tenant, REVIEW_GRAMMAR_API):
+        raise NotFound("review.grammar_api")
+    found = await gate_counts(ctx, office_id=office_id)
+    return HumanGateCountsOut(
+        total=found.total,
+        bands=GateBandsOut.model_validate(found.bands),
+        overdue=found.overdue,
+        snoozed=found.snoozed,
+    )
 
 
 @human_gates_router.get(
@@ -711,6 +766,8 @@ async def human_gate_list_route(
                 due_on=g.due_on,
                 state=cast(GateState, g.state),
                 created_at=g.created_at,
+                subkind=g.subkind,
+                office_id=g.office_id,
             )
             for g in found.items
         ],

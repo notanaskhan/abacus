@@ -38,6 +38,7 @@ DF25: Final = [
     "final_approval",
     "export",
     "release",
+    "evidence_review",  # DEC-403, additive with I-01-T04 (0223)
 ]
 # DEC-320's fixed set, plus `fulfilment.voided` (R-01 Story 2.2: a voided rule link's version
 # leaves nothing waiting, as a withdrawal does).
@@ -100,9 +101,10 @@ def test_c13_the_table_checks_the_same_kinds_and_states() -> None:
     m93 = migration("0093_review_core.py")
     table = m93[m93.index("CREATE TABLE human_gates") :]
     table = table[: table.index('"""')]
-    for kind in DF25:
+    for kind in DF25[:-1]:
         assert f"'{kind}'" in table, kind
     assert "state IN ('open', 'done', 'voided')" in table
+    assert "'evidence_review'" in migration("0223_human_gate_home.py")  # DEC-403
 
 
 def test_c13_one_row_per_subject_is_a_database_rule() -> None:
@@ -127,6 +129,8 @@ def test_c13_the_row_carries_identifiers_not_labels() -> None:
         "due_on",
         "state",
         "created_at",
+        "subkind",  # I-01-T04: the owner's registered gate name (a code)
+        "office_id",  # I-01-T04: an identifier, a filter (DEC-30)
     }
 
 
