@@ -138,6 +138,7 @@ Gradients in product UI, emoji, saturated blue, heavy shadows, invented colors, 
 | DV-T24-1 | d: Category reads the seed's "Bank & Cash Accounts", not the spec's "Bank account"; the header meta reads the binder's seed name "Requests", not "Copperleaf · August 2026" | the backend seed (P-06-T08, `binders.py`) wins over a board's sample words (DEC-354 precedent) | TASK-1273 |
 | DV-T24-2 | d: Request and Category are read-only rows, not ⇕ pickers; the header carries no status pill (the screenshot draws none; the status lives in "Uploaded Document"); the Activity tab draws no count | the close variant reviews an upload, it does not compose; the drawer's Segmented has no count yet | TASK-1273 |
 | DV-T24-3 | d: "Mark incorporated" does not toast and the CLS-03 log is the server's audit event only | no copy for either in the handoff; CLS-03 is C-01's | TASK-1273 |
+| DEC-348 (seed) | f on the live seed: the SURL Draft sits in the Granite Peak list's "Payables & accruals" category (the handoff's band reads "Payables & accrued"); it is created Thu Sep 24 10:40 AM, due Oct 2 (the TS seed's figures), and loads from the 2026-10-01 snapshot; its run id has no procedure-session run behind it | The PBC list's categories are the FS catalogue's; no source gives the Draft's own instant or due date; AUD-36's session is not seeded | TASK-993 (P-06-T08 remainder) |
 
 ### Contract gaps (P-06-T13)
 | Gap | What the handoff draws | What the drawer does until the contract carries it | Owner |

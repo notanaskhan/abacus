@@ -21,6 +21,7 @@ from abacus.kernel.clock import system_now
 from abacus.kernel.dispatch import PlatformSchedule, WorkClass, register_work_classes
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow.chain import seal_checkpoint, verify_chain
+from abacus.modules.audit_trail.exports import ACTIVITIES as EXPORT_ACTIVITIES
 from abacus.modules.audit_trail.labels import BATCH, IndexBusy, index_batch
 from abacus.modules.audit_trail.workflows import (
     CHECKPOINT_ID,
@@ -29,6 +30,7 @@ from abacus.modules.audit_trail.workflows import (
     VERIFY_ID,
     AuditChainVerifyWorkflow,
     AuditCheckpointWorkflow,
+    AuditExportWorkflow,
     AuditLabelIndexerWorkflow,
     AuditPartitionsWorkflow,
 )
@@ -140,6 +142,7 @@ WORKFLOWS: dict[type, WorkClass] = {
     AuditCheckpointWorkflow: "background",
     AuditChainVerifyWorkflow: "batch",
     AuditLabelIndexerWorkflow: "background",  # G-02-T10 (DEC-453)
+    AuditExportWorkflow: "batch",  # G-02-T17: a person's export of the firm's log
 }
 register_work_classes(WORKFLOWS)
 ACTIVITIES: tuple[object, ...] = (
@@ -147,6 +150,7 @@ ACTIVITIES: tuple[object, ...] = (
     seal_checkpoints_activity,
     verify_chains_activity,
     index_labels_activity,
+    *EXPORT_ACTIVITIES,  # G-02-T17
 )
 SCHEDULES: tuple[PlatformSchedule, ...] = (
     PlatformSchedule(

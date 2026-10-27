@@ -117,8 +117,24 @@ export function tbHandlers(f: TbFixture): Record<string, FixtureHandler> {
         : json(NOT_FOUND, 404),
     [`GET ${P}/{tb_id}/candidates`]: (r) =>
       tb(r) ? json(f.candidates ?? []) : json(NOT_FOUND, 404),
+    // A-02-T24: the live actions. Adoption and re-version answer 201 (the screen reads again);
+    // Open in Excel answers a file named as the server names it.
+    [`POST ${P}`]: (r) => (mine(r) ? json({}, 201) : json(NOT_FOUND, 404)),
+    [`POST ${P}/{tb_id}/versions`]: (r) => (tb(r) ? json({}, 201) : json(NOT_FOUND, 404)),
+    [`GET ${P}/{tb_id}/export.xlsx`]: (r) =>
+      tb(r)
+        ? new Response(new Blob(["PK"]), {
+            status: 200,
+            headers: {
+              "Content-Type": XLSX,
+              "Content-Disposition": `attachment; filename="trial-balance-v${r.query.get("version") ?? "1"}-${r.query.get("layer") ?? "unadjusted"}.xlsx"`,
+            },
+          })
+        : json(NOT_FOUND, 404),
   };
 }
+
+const XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 /** The scenario instants (CT; Nov 9 is CST). */
 export const AUD06_CLOCKS = {
@@ -258,7 +274,11 @@ export const scenarios = defineScenarios({
   }),
   newer: granite("newer", "simone-baptiste", {
     list: graniteList(),
-    view: viewNewer,
+    // Simone may adopt the newer pull as v2 (A-02-T24: "Use v2…").
+    view: {
+      ...viewNewer,
+      allowed_actions: [...(viewNewer.allowed_actions ?? []), "trial_balance.adopt"],
+    },
     checks: [],
     candidates: [snapshotOf(PULL_2, GRANITE_FY2026_REPULL, REPULLED, GRANITE_FY2026)],
   }),

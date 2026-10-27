@@ -138,6 +138,30 @@ FORMATS: Final[dict[str, Format]] = {
                 "Upload the CSV file here.",
             ),
         ),
+        # A-02-T22 (R-7, DEC-610): the Accrued trial balance template, for plans and entities
+        # without a ledger; human-keyed and footed by code like any export. The template file and
+        # its guided steps are the product's own format, not firm content. Its `system` words
+        # never say "Accrued": a client may upload it in the portal (DEC-01, ADR-133).
+        Format(
+            id="accrued_template",
+            system="Trial balance template",
+            system_key="accrued_template",
+            file_type="xlsx",
+            account_header="Account name",
+            debit_headers=("Debit",),
+            credit_headers=("Credit",),
+            code_style="column",
+            code_header="Account",
+            total_labels=("Total",),
+            period_prefixes=("Period end:", "Period end"),
+            steps=(
+                "Download the trial balance template.",
+                "Key one row per account: its number, its name, and its debit or credit balance "
+                "at the engagement's year end. Totals are computed when you upload.",
+                "Set Period end to the engagement's year end, then save the workbook (.xlsx).",
+                "Upload the workbook here. Debits must equal credits.",
+            ),
+        ),
     )
 }
 
