@@ -24,6 +24,21 @@ import {
   OPENS as ADM03_OPENS,
   scenarios as adm03Scenarios,
 } from "./ADM-03/scenarios";
+import { ADM06 } from "./ADM-06";
+import {
+  type Adm06State,
+  STATES as ADM06_STATES,
+  ENTERPRISE as ADM06_ENTERPRISE,
+  OPENS as ADM06_OPENS,
+  scenarios as adm06Scenarios,
+} from "./ADM-06/scenarios";
+import { ADM07 } from "./ADM-07";
+import {
+  type Adm07State,
+  STATES as ADM07_STATES,
+  OPENS as ADM07_OPENS,
+  scenarios as adm07Scenarios,
+} from "./ADM-07/scenarios";
 import { BindersIndex } from "./BND-01";
 import {
   STATES as BND01_STATES,
@@ -502,6 +517,111 @@ function Adm03Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("ADM-03", { title: "Offices, teams, walls & offshore", Component: Adm03Artboard });
+
+/** A state's opening search (`?export=history`) as the screen's search object. */
+function searchOf(query: string): Record<string, string> {
+  return Object.fromEntries(new URLSearchParams(query.replace(/^\?/, "")).entries());
+}
+
+// ADM-06 a–j (G-02-T16; G-02-T21 screen spec): Security on the T12 frame; each state opens with its
+// search, and i and j pass revision R2's fixture-only rows (the route never does).
+function Adm06Frame({ state }: { state: Adm06State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/settings/security" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  const [search, setSearch] = useState(() => searchOf(ADM06_OPENS[state]));
+  const enterprise = ADM06_ENTERPRISE[state];
+  return (
+    <div data-artboard={state}>
+      <AppShell
+        frame
+        height={860}
+        toolbar={{ ...bar.toolbar, active: "", firmPressed: true }}
+        overlay={bar.overlay}
+      >
+        <ADM06
+          search={search}
+          onSearch={(next) => {
+            setSearch({ ...next });
+          }}
+          {...(enterprise === undefined ? {} : { enterprise })}
+        />
+      </AppShell>
+    </div>
+  );
+}
+
+function Adm06Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Adm06State = ADM06_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      adm06Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Adm06Frame key={state} state={state} /> : null;
+}
+
+registerScreen("ADM-06", { title: "Security center & data residency", Component: Adm06Artboard });
+
+// ADM-07 a–g (G-02-T13; G-02-T21 screen spec): the audit log on the T12 frame; each state opens
+// with its search.
+function Adm07Frame({ state }: { state: Adm07State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/settings/audit-log" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  const [search, setSearch] = useState(() => searchOf(ADM07_OPENS[state]));
+  return (
+    <div data-artboard={state}>
+      <AppShell
+        frame
+        height={860}
+        toolbar={{ ...bar.toolbar, active: "", firmPressed: true }}
+        overlay={bar.overlay}
+      >
+        <ADM07
+          search={search}
+          onSearch={(next) => {
+            setSearch({ ...next });
+          }}
+        />
+      </AppShell>
+    </div>
+  );
+}
+
+function Adm07Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Adm07State = ADM07_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      adm07Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Adm07Frame key={state} state={state} /> : null;
+}
+
+registerScreen("ADM-07", { title: "Audit log explorer", Component: Adm07Artboard });
 
 function Cli01Frame({ state }: { state: Cli01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";

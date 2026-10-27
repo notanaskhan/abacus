@@ -15,6 +15,8 @@ const HOSTED_URL: Readonly<Record<string, string | undefined>> = {
   canary: process.env.ABACUS_CANARY_URL,
 };
 const WALLED = "Ashford Manufacturing Co."; // ADM-03's wall for Lena Park (INV-3)
+// ADM-07 (G-02-T13) sits behind this flag, which E0 leaves off (G-02-T21).
+const AUDIT_LOG = ["audit_log.explorer"];
 // ADM-03b and f (fixtures/scenarios/ADM-03.ts CLOCK_920): 9:20 AM, when Grace adds the wall.
 const AT_920 = "2026-09-14T09:20:00-05:00";
 const LIVE_LATER =
@@ -109,4 +111,41 @@ test.describe("J14 firm administration", () => {
       { outOfScope: [WALLED] },
     );
   });
+
+  test(
+    "j14 7: Felix reviews via-Agent events and exports after fresh MFA",
+    owner(
+      "G-02 · G-02-T21 fixture; full stack once E0 turns audit_log.explorer on, staging and the canary after the batch deploy · M7, Fri Apr 16, 2027",
+    ),
+    async ({ journey }) => {
+      await journey.as("felix-andersen", "/settings/audit-log?screen=ADM-07&st=b", {
+        clock: DEMO_INSTANT,
+        flags: AUDIT_LOG,
+      });
+      await journey.step("J14 step 7: the via Agent events as Felix Andersen", async (page) => {
+        const feed = page.getByRole("list", { name: "Audit log" });
+        await expect(feed.getByRole("listitem")).toHaveCount(4);
+        await expect(page.getByText("Showing 4 of 1,962")).toBeVisible();
+        // INV-5: the agent acts for a named person, never as an actor of its own.
+        await expect(page.getByText("Accrued Agent")).toHaveCount(0);
+      });
+      await journey.as("felix-andersen", "/settings/audit-log?screen=ADM-07&st=e", {
+        clock: DEMO_INSTANT,
+        flags: AUDIT_LOG,
+      });
+      await journey.step(
+        "J14 step 7: Export… with values, and the ready manifest",
+        async (page) => {
+          await page.getByRole("button", { name: /Export…/ }).click();
+          const dialog = page.getByRole("dialog");
+          await expect(dialog.getByText("CSV + signed JSON manifest")).toBeVisible();
+          await expect(
+            dialog.getByRole("switch", { name: "Include before/after values" }),
+          ).toBeVisible();
+          await dialog.getByRole("button", { name: "Export", exact: true }).click();
+          await expect(page.getByText("Export ready · SHA-256 manifest included")).toBeVisible();
+        },
+      );
+    },
+  );
 });
