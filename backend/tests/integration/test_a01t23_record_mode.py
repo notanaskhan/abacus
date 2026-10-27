@@ -259,6 +259,14 @@ async def test_release_date_phase_and_mode_refusals(meridian: Meridian) -> None:
     future = date.today() + timedelta(days=400)
     with pytest.raises(release.ReleaseDateFuture):
         await release.record_release(meridian.hannah, meridian.work_item, future, "opinion")
+    # DEC-598: a report on a period is released after the period ends.
+    period_end = await meridian.world.seed.value(
+        "SELECT fiscal_period_end FROM engagements WHERE id = $1", meridian.engagement
+    )
+    assert isinstance(period_end, date)
+    with pytest.raises(release.ReleaseDateBeforePeriodEnd):
+        await release.record_release(meridian.hannah, meridian.work_item, period_end, "opinion")
+    assert (await meridian.item_row())["phase"] == "in_review"
     final_too_early = await _export(meridian, "final_binder")
     with pytest.raises(release.RecordOutOfPhase):  # not released yet
         await archive_gate.record_archive(
