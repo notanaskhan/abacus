@@ -54,6 +54,8 @@ C2 `engagement_export` (`docs/product/status-vocabulary.yaml`): `queued` "Queued
 | 409 | `{"detail": "effect_started"}` | Undo once the build consumed the grant |
 | 409 | `{"detail": "export_not_ready"}` | download before `ready` |
 | 410 | `{"detail": "export_expired"}` | download after 7 days on the business clock (before the sweep runs too), once voided, or while it holds a version withdrawn since (DEC-537) |
+| 403 | `{"detail": "forbidden", "facts": {"reason": "mfa_required"}}` | create, undo, reads or download with a stale second factor: the sheet's step-up (DEC-547) |
+| 429 | `{"detail": "download_rate_limited", "facts": {"limit", "retry_after"}}` + `Retry-After` | more than 2 open streams or 60 requests a minute for one person (DEC-545) |
 | 416 | `{"detail": "range_not_satisfiable"}` + `Content-Range: bytes */<size>` | several ranges, a malformed `Range`, a start at or past the end, an empty suffix (DEC-536) |
 | 422 | `{"detail": "export_kind_unsupported"}` | a work item that is not an audit (fail closed until C19) |
 | 422 | `{"detail": "binder_not_in_work_item"}` | a scope binder id that is not one of the work item's PBC binders (DEC-379) |
@@ -71,7 +73,7 @@ C2 `engagement_export` (`docs/product/status-vocabulary.yaml`): `queued` "Queued
 
 Outbox: `engagement_export.requested`, `.ready`, `.failed`, `.expired`, `.voided`, `.undone` (identifiers only); notifications consumes `ready` (`export_ready`) and `failed` (`export_failed`), to the requester only; evidence consumes `.expired` and `.voided` to delete that export's segments.
 
-**Download (A-01-T22).** `200` (whole) or `206` (one range) `application/zip`, `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, `Accept-Ranges: bytes`, `ETag: "<bundle_sha256>"`, `Content-Disposition: attachment; filename="accrued-binder-<export_id>.zip"` (ASCII, no names). `If-Range` other than the ETag serves the whole bundle. The API decrypts the sealed segments itself under the export's tenant: no presigned URL and no object key appears in any answer (ADR-104).
+**Download (A-01-T22).** `200` (whole) or `206` (one range) `application/zip`, `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, `Accept-Ranges: bytes`, `ETag: "<bundle_sha256>"`, `Content-Disposition: attachment; filename="accrued-binder-<export_id>.zip"` (ASCII, no names). `If-Range` other than the ETag serves the whole bundle. The API decrypts the sealed segments itself under the export's tenant: no presigned URL and no object key appears in any answer (ADR-104). Before every segment after the first it re-checks the export and the person's `export.download`, and stops the stream if either changed or after 30 minutes (DEC-545); expiry counts on the later of the business and system clocks (DEC-546).
 
 **Expiry and void (A-01-T22).** The Schedule `export_expiry:platform` (`ExportExpirySweep`, daily, background) marks ready exports past `expires_at` `expired` (`void_reason = expired`) firm by firm; the `evidence_version.withdrawn` subscriber voids every ready export holding that version (`expired`, `withdrawn_content`); a build finishing at the same time is voided at `mark_ready` (DEC-538). Then the export's own segments, and nothing else, are deleted.
 

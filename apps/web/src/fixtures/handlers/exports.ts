@@ -94,7 +94,7 @@ export function exportHandlers(options: ExportFixtureOptions): Record<string, Fi
       if (!mine(request)) return json(NOT_FOUND, 404);
       if (!refusedOnce) {
         refusedOnce = true;
-        return json({ detail: "forbidden", facts: { reason: "mfa_required" } }, 403);
+        return json({ detail: "forbidden", facts: { reason: "mfa_required" } }, 403); // DEC-547
       }
       n += 1;
       const id = stableId(`export:${options.workItemId}:${String(n)}`);

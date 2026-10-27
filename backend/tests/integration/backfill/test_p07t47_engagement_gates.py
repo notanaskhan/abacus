@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import uuid
+from dataclasses import dataclass
 from typing import cast
 
 import pytest
@@ -161,3 +162,84 @@ async def test_the_risk_review_tells_the_named_partner_only(net: Net) -> None:
         tb.tenant,
     )
     assert [r["recipient_user_id"] for r in told] == [tb.rita.user_id]
+
+
+# --- need to know (security review M3, DEC-544) --------------------------------------------
+
+
+async def test_m3_two_partners_each_get_their_own_gate_and_nobody_else_sees_one(net: Net) -> None:
+    tb = await t38._world(net)  # pyright: ignore[reportPrivateUsage] -- P-07-T38's Thornbury
+    await _flag(tb.seed, tb.tenant)
+    await tb.start()
+    await tb.seed.run(
+        "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
+        "VALUES ($1, $2, $3, 'engagement_partner')",
+        tb.tenant,
+        tb.engagement_id,
+        tb.rita.user_id,
+    )
+    await tb.ready()
+    await _replay(tb.seed, tb.tenant, C13_EVENTS)
+    daniel, rita = await _gates(tb, tb.daniel), await _gates(tb, tb.rita)
+    assert len(daniel) == 1 and len(rita) == 1
+    assert daniel[0]["assignee_user_id"] == str(tb.daniel.user_id)
+    assert rita[0]["assignee_user_id"] == str(tb.rita.user_id)
+    for other in (tb.samuel, tb.kira, tb.grace):
+        assert await _gates(tb, other) == []
+    # An unassigned row of these kinds (from before DEC-544) is shown to nobody.
+    await tb.seed.run(
+        "UPDATE human_gates SET assignee_user_id = NULL WHERE tenant_id = $1 "
+        "AND subject_ref->>'type' = 'acceptance_decision_due'",
+        tb.tenant,
+    )
+    for anyone in (tb.daniel, tb.rita, tb.samuel, tb.kira):
+        assert await _gates(tb, anyone) == []
+
+
+async def test_m3_the_eqr_gate_goes_to_each_quality_owner_never_the_candidate(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from abacus.kernel.db import TenantContext
+    from abacus.modules.engagements import human_gates
+
+    engagement, candidate, owner, owner_on_team, partner = (uuid.uuid4() for _ in range(5))
+
+    @dataclass(frozen=True)
+    class _Detail:
+        user_id: uuid.UUID
+        role: str
+
+    async def owners(_tenant: uuid.UUID) -> list[uuid.UUID]:
+        return [owner, candidate, owner_on_team]
+
+    async def details(_tenant: object, _engagement: uuid.UUID) -> list[_Detail]:
+        return [
+            _Detail(partner, "engagement_partner"),
+            _Detail(owner_on_team, "manager"),
+            _Detail(candidate, human_gates.EQR_ROLE),
+        ]
+
+    async def nothing(*_: object, **__: object) -> object:
+        return None
+
+    async def none_approved(*_: object) -> bool:
+        return False
+
+    async def clients(_tenant: object, ids: list[uuid.UUID]) -> dict[uuid.UUID, uuid.UUID]:
+        return dict.fromkeys(ids, uuid.uuid4())
+
+    monkeypatch.setattr(human_gates, "quality_partners", owners)
+    monkeypatch.setattr(human_gates, "member_details", details)
+    monkeypatch.setattr(human_gates, "eqr_target", nothing)
+    monkeypatch.setattr(human_gates, "eligibility_checks", nothing)
+
+    def needs(_checks: object) -> bool:
+        return True
+
+    monkeypatch.setattr(human_gates, "needs_eqr_approval", needs)
+    monkeypatch.setattr(human_gates, "eqr_approved", none_approved)
+    monkeypatch.setattr(human_gates, "_clients", clients)
+    found = await human_gates.eqr_eligibility_due(
+        TenantContext(uuid.uuid4(), "system", "test"), engagement
+    )
+    assert [g.assignee_user_id for g in found] == [owner]

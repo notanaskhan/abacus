@@ -170,7 +170,7 @@ async def test_ac14_who_may_download(northwind: Northwind) -> None:
         firm_role=None,
         mfa_at=hannah.mfa_at - timedelta(hours=2) if hannah.mfa_at else None,
     )
-    with pytest.raises(Forbidden):
+    with pytest.raises(exports.ExportNeedsMfa):  # the step-up's own 403 (DEC-547)
         await _download(stale, row.id)
     agent = AuthContext(
         tenant=TenantContext(northwind.tenant, "agent", "engagement_agent"),
@@ -285,3 +285,95 @@ async def test_ac15_a_file_withdrawn_while_packaging_voids_the_bundle_at_ready(
     actions = await northwind.seed.actions(northwind.tenant)
     assert "engagement_export.voided" in actions
     assert EXPORTS  # the bundle bucket of A-01-T19's fixture
+
+
+# --- security review fix round (M1, M2, L4, L5; DEC-545, DEC-546) --------------------------------
+
+
+async def test_m1_a_withdrawal_mid_stream_stops_the_download(
+    northwind: Northwind, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    row = await _ready(northwind)
+    assert row.segment_count is not None and row.segment_count > 2
+    plan = await export_download.prepare(northwind.hannah.context(), row.id, None, None)
+    stream = plan.stream()
+    first = await anext(stream)  # the first segment needs no re-check
+    assert first
+    version = next(iter(northwind.versions))
+
+    async def withdrawn(_tenant: object, ids: list[uuid.UUID]) -> frozenset[uuid.UUID]:
+        return frozenset(ids) & {version}
+
+    monkeypatch.setattr(export_download, "withdrawn_among", withdrawn)
+    with pytest.raises(export_download.DownloadRevoked):
+        async for _ in stream:
+            pass
+
+
+async def test_m1_losing_the_engagement_mid_stream_stops_the_download(
+    northwind: Northwind,
+) -> None:
+    row = await _ready(northwind)
+    plan = await export_download.prepare(northwind.hannah.context(), row.id, None, None)
+    stream = plan.stream()
+    await anext(stream)
+    await northwind.seed.run(
+        "DELETE FROM engagement_members WHERE engagement_id = $1 AND user_id = $2",
+        row.engagement_id,
+        northwind.hannah.user_id,
+    )
+    with pytest.raises(export_download.DownloadRevoked):
+        async for _ in stream:
+            pass
+
+
+async def test_m2_bytes_leave_in_bounded_chunks_and_requests_are_capped(
+    northwind: Northwind, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    row = await _ready(northwind)
+    monkeypatch.setattr(export_download, "CHUNK_BYTES", 100)
+    plan = await export_download.prepare(northwind.hannah.context(), row.id, None, None)
+    parts = [p async for p in plan.stream()]
+    assert max(len(p) for p in parts) <= 100
+    assert sum(len(p) for p in parts) == row.bytes
+    monkeypatch.setattr(export_download, "DOWNLOAD_LIMIT", 2)
+    await export_download.prepare(northwind.hannah.context(), row.id, "bytes=0-9", None)
+    with pytest.raises(export_download.DownloadRateLimited):
+        await export_download.prepare(northwind.hannah.context(), row.id, "bytes=0-9", None)
+
+
+async def test_l5_the_system_clock_expires_a_bundle_whatever_the_business_clock(
+    northwind: Northwind,
+) -> None:
+    row = await _ready(northwind)
+    assert row.expires_at is not None
+    # A business clock held a week back does not keep the bundle once real time passed it.
+    with clock.frozen(row.expires_at - timedelta(days=7, seconds=1)):
+        assert not export_download._expired(  # pyright: ignore[reportPrivateUsage] -- the rule
+            row.expires_at, await clock.now(TenantContext(northwind.tenant, "system", "t"))
+        )
+    assert export_download._expired(  # pyright: ignore[reportPrivateUsage] -- the rule
+        row.expires_at - timedelta(days=30), row.expires_at - timedelta(days=31)
+    )
+
+
+async def test_l4_a_voided_rule_link_voids_the_ready_bundle(
+    northwind: Northwind, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    row = await _ready(northwind)
+    version = next(iter(northwind.versions))
+
+    async def retired(_tenant: object, ids: list[uuid.UUID]) -> frozenset[uuid.UUID]:
+        return frozenset(ids) & {version}
+
+    monkeypatch.setattr(export_lifecycle, "withdrawn_among", retired)
+    await export_lifecycle.on_fulfilment_voided(
+        OutboxEvent(
+            event_id=uuid.uuid4(),
+            tenant_id=northwind.tenant,
+            event_type="fulfilment.voided",
+            payload={"evidence_version_id": str(version), "engagement_id": str(row.engagement_id)},
+        )
+    )
+    voided = await _row(northwind, row.id)
+    assert (voided.status, voided.void_reason) == ("expired", "withdrawn_content")

@@ -136,6 +136,25 @@ describe("A-01-T24: the export sheet", () => {
     expect(await screen.findByText("Undone", {}, POLL)).toBeTruthy();
   });
 
+  it("a role refusal (a plain 403) reads as a problem, never as the step-up (DEC-547)", async () => {
+    install({
+      ...exportHandlers({ workItemId: WORK_ITEM, engagementId: ENGAGEMENT, now: NOW }),
+      "POST /v1/work-items/{work_item_id}/exports": () =>
+        new Response(JSON.stringify({ detail: "forbidden" }), {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        }),
+    });
+    render(
+      <QueryClientProvider client={newQueryClient()}>
+        <ExportSheet workItemId={WORK_ITEM} open onOpenChange={() => undefined} canExport />
+      </QueryClientProvider>,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: W.export }));
+    expect((await screen.findByRole("alert")).textContent).toBe(W.problem("forbidden"));
+    expect(screen.queryByText("Confirm it's you")).toBeNull();
+  });
+
   it("an export that failed says why in words", async () => {
     sheet({ existing: "failed" });
     expect(await screen.findByText("Export failed")).toBeTruthy();

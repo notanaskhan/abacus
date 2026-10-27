@@ -32,10 +32,12 @@ from sqlalchemy import select, update
 from temporalio import activity
 
 from abacus.kernel import clock
+from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.dispatch import PlatformSchedule, WorkClass, register_work_classes
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Handler, OutboxEvent, Ref, Scope, Target, UnitOfWork, uow
+from abacus.modules.evidence.events import FulfilmentVoided
 from abacus.modules.evidence.export_events import (
     EngagementExportExpired,
     EngagementExportReady,
@@ -198,6 +200,15 @@ async def on_version_withdrawn(event: OutboxEvent) -> None:
     await void_holding(event.tenant_id, UUID(str(event.payload["evidence_version_id"])))
 
 
+async def on_fulfilment_voided(event: OutboxEvent) -> None:
+    """L4: a voided rule link retires its version (`EvidenceVersionVoid`, R-01 Story 2.2) just
+    as a withdrawal does; a ready bundle holding a retired version is voided the same way."""
+    tenant = TenantContext(event.tenant_id, "system", "engagement_export:void")
+    version = UUID(str(event.payload["evidence_version_id"]))
+    if version in await withdrawn_among(tenant, [version]):
+        await void_holding(event.tenant_id, version)
+
+
 # --- expiry --------------------------------------------------------------------------------------
 
 
@@ -207,7 +218,9 @@ async def expire_due(tenant_id: UUID) -> int:
     system = TenantContext(tenant_id, "system", "engagement_export:sweep")
     expired = 0
     while True:
-        now: datetime = await clock.now(system)
+        # L5 (DEC-546): whichever clock is later, so a business clock held behind never keeps
+        # a bundle past the real 7 days.
+        now: datetime = max(await clock.now(system), system_now())
         try:
             async with uow(system) as tx:
                 rows: Sequence[EngagementExport] = (
@@ -242,6 +255,7 @@ async def expire_sweep_activity() -> int:
     """Every firm; one firm's failure is logged by id and the others still run."""
     total = 0
     for tenant in await firm_tenant_ids():
+        activity.heartbeat(str(tenant))  # L6: a long run reports progress per firm
         try:
             total += await expire_due(tenant)
         except Exception as exc:
@@ -268,6 +282,7 @@ async def on_closed(event: OutboxEvent) -> None:
 SUBSCRIPTIONS: dict[str, Handler] = {
     EngagementExportExpired.event_type: on_closed,
     EngagementExportVoided.event_type: on_closed,
+    FulfilmentVoided.event_type: on_fulfilment_voided,  # L4
 }
 WORKFLOWS: dict[type, WorkClass] = {ExportExpirySweepWorkflow: "background"}
 register_work_classes(WORKFLOWS)

@@ -39,6 +39,13 @@ function phaseWord(code: AuditEngagementStatus): string {
   return status("audit_engagement", code).label;
 }
 
+/** The assurance record routes answer a stale second factor with a plain 403 (no
+ * `mfa_required` yet), so a plain 403 there opens the step-up, whose words say a role refusal
+ * stays refused (DEC-547; the routes' `mfa_required` is a follow-up for A-01-T23's owner). */
+function recordStepUp(error: unknown): boolean {
+  return needsStepUp(error) || errorCode(error) === "forbidden";
+}
+
 function refusal(error: unknown): string {
   const code = errorCode(error);
   return (code === null ? undefined : R.refusals[code]) ?? R.problem;
@@ -136,7 +143,7 @@ export function PhaseRecordDialog({
       onOpenChange(false);
       toast.show({ text: R.recorded });
     } catch (error) {
-      if (needsStepUp(error)) setStepUp(true);
+      if (recordStepUp(error)) setStepUp(true);
       else setProblem(refusal(error));
     }
   };
@@ -186,7 +193,7 @@ export function ReleaseRecordDialog({ workItemId, open, onOpenChange }: DialogPr
       onOpenChange(false);
       toast.show({ text: R.recorded });
     } catch (error) {
-      if (needsStepUp(error)) setStepUp(true);
+      if (recordStepUp(error)) setStepUp(true);
       else setProblem(refusal(error));
     }
   };
@@ -254,7 +261,7 @@ export function ArchiveRecordDialog({ workItemId, open, onOpenChange }: DialogPr
       onOpenChange(false);
       toast.show({ text: R.recorded });
     } catch (error) {
-      if (needsStepUp(error)) setStepUp(true);
+      if (recordStepUp(error)) setStepUp(true);
       else setProblem(refusal(error));
     }
   };

@@ -27,11 +27,12 @@ export function isMoving(view: Pick<EngagementExportOut, "status"> | undefined):
   return view !== undefined && MOVING.has(view.status);
 }
 
-/** A 403 that asks for a fresh sign-in (ADR-030): `mfa_required`, or the plain `forbidden` the
- * matrix's `mfa_recent` answers for someone who otherwise holds the action. */
+/** A 403 that asks for a fresh sign-in (ADR-030): only the server's `mfa_required` refusal
+ * (DEC-547). A role or independence refusal is a plain 403 and reads as a problem, never as a
+ * step-up. */
 export function needsStepUp(error: unknown): boolean {
-  const e = error as { detail?: unknown; facts?: { reason?: unknown }; status?: unknown } | null;
-  return e?.facts?.reason === "mfa_required" || e?.detail === "forbidden" || e?.status === 403;
+  const e = error as { facts?: { reason?: unknown } } | null;
+  return e?.facts?.reason === "mfa_required";
 }
 
 export function errorCode(error: unknown): string | null {
@@ -93,7 +94,12 @@ export function useExportActions(workItemId: string): ExportActions {
   };
 }
 
-/** `GET /v1/exports/{id}/download`: the ZIP as a file named by the server (ASCII, no names). */
+/** How long the downloaded ZIP's object URL stays valid after the click. */
+export const REVOKE_AFTER_MS = 60_000;
+
+/** `GET /v1/exports/{id}/download`: the ZIP as a file named by the server (ASCII, no names).
+ * The request carries the bearer token, so it can't be a plain link: the bytes come through the
+ * generated client as a Blob (DEC-547; a service-worker stream is a follow-up). */
 export async function downloadBundle(exportId: string): Promise<void> {
   const { data, response } = await downloadExport({
     path: { export_id: exportId },
@@ -107,7 +113,10 @@ export async function downloadBundle(exportId: string): Promise<void> {
   link.href = url;
   link.download = name;
   link.click();
-  URL.revokeObjectURL(url);
+  // L9 (DEC-547): the browser reads the object URL after the click returns; free it later.
+  window.setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, REVOKE_AFTER_MS);
 }
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;

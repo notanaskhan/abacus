@@ -431,6 +431,7 @@ class EngagementExportWorkflow:
 EXPORT_EXPIRY_ID = "export_expiry:platform"
 _EXPIRY_TIMEOUT = timedelta(minutes=10)
 _EXPIRY_RETRY = RetryPolicy(maximum_attempts=3)  # a failed day is retried by the next one
+_EXPIRY_HEARTBEAT = timedelta(minutes=2)
 
 
 @workflow.defn(name="ExportExpirySweep")
@@ -445,5 +446,7 @@ class ExportExpirySweepWorkflow:
             "engagement_export.expire_sweep",
             result_type=int,
             start_to_close_timeout=_EXPIRY_TIMEOUT,
+            # L6: the activity heartbeats per firm; a stuck firm fails the run, not the window.
+            heartbeat_timeout=_EXPIRY_HEARTBEAT,
             retry_policy=_EXPIRY_RETRY,
         )

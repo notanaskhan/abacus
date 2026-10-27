@@ -10,7 +10,10 @@ depend on engagements and never the reverse, so the registration lives here, thr
 | `acceptance_decision_due` | `decision` | `acceptance.read` | the engagement partner |
 | `independence_conclusion_due` | `decision` | `independence.read` | the engagement partner |
 | `independence_confirmation_due` | `sign_off_request` | `independence.read` | the member |
-| `eqr_eligibility_due` | `decision` | `independence.read` | the quality owner (role) |
+| `eqr_eligibility_due` | `decision` | `independence.read` | each quality owner not on it |
+
+Every gate here is the named assignee's alone (`assigned_only`, DEC-544): the owner assigns each
+one to a person, and an unassigned row of these kinds is shown to nobody.
 
 The projection only says that something waits: deciding, concluding, confirming and approving
 stay the owners' human-only routes (INV-1), and nothing here can act.
@@ -74,6 +77,7 @@ SOURCES: Final = (
         "acceptance.read",
         _ACCEPTANCE,
         _open(acceptance_decisions_due),
+        assigned_only=True,
     ),
     GateSource(
         INDEPENDENCE_CONCLUSION_DUE,
@@ -81,6 +85,7 @@ SOURCES: Final = (
         "independence.read",
         _INDEPENDENCE,
         _open(independence_conclusions_due),
+        assigned_only=True,
     ),
     GateSource(
         INDEPENDENCE_CONFIRMATION_DUE,
@@ -88,6 +93,7 @@ SOURCES: Final = (
         "independence.read",
         _INDEPENDENCE,
         _open(independence_confirmations_due),
+        assigned_only=True,
     ),
     GateSource(
         EQR_ELIGIBILITY_DUE,
@@ -95,6 +101,7 @@ SOURCES: Final = (
         "independence.read",  # the quality owner reads it in scope; approving is its own route
         _EQR,
         _open(eqr_eligibility_due),
+        assigned_only=True,
     ),
 )
 

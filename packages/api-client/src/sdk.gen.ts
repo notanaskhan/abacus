@@ -4724,7 +4724,8 @@ export const getExport = <ThrowOnError extends boolean = false>(options: Options
  * The ZIP (`application/zip`, `Cache-Control: no-store`, a safe `Content-Disposition`),
  * resumable with one `Range` (206; DEC-536), streamed by the API from the sealed segments (no
  * presigned link, ADR-104) (A-01-T22). 409 `export_not_ready`, 410 `export_expired` (7 days,
- * voided, or holding a withdrawn file), 416 for a range not served. Audited
+ * voided, or holding a withdrawn file), 416 for a range not served, 429
+ * `download_rate_limited` (DEC-545). Audited
  * `engagement_export.downloaded` with bytes and range.
  */
 export const downloadExport = <ThrowOnError extends boolean = false>(options: Options<DownloadExportData, ThrowOnError>): RequestResult<DownloadExportResponses, DownloadExportErrors, ThrowOnError> => (options.client ?? client).get<DownloadExportResponses, DownloadExportErrors, ThrowOnError>({

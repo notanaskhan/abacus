@@ -116,6 +116,9 @@ class GateSource:
     read_action: str
     events: frozenset[str]
     open_for: OpenFor
+    # P-07-T47 (security review M3, DEC-544): a source whose gates are only ever the named
+    # assignee's; an unassigned row of it is shown to nobody (need to know). Read filter only.
+    assigned_only: bool = False
 
 
 _SOURCES: dict[str, GateSource] = {}
@@ -354,6 +357,7 @@ def _sources_visible(ctx: AuthContext) -> ColumnElement[bool]:
         and_(
             HumanGate.subject_ref["type"].astext == source.subject_type,
             visible(ctx, source.read_action, _engagement()),
+            *([HumanGate.assignee_user_id == ctx.user_id] if source.assigned_only else []),
         )
         for source in gate_sources()
     ]

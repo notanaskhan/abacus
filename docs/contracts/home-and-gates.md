@@ -96,6 +96,6 @@ Additive changes in place. Breaking changes ship as v2 with one sprint of overla
 | v1 | (S10 freeze, 2027-03-08) | — | home half stubbed 2026-10-26 (I-01-T02) |
 
 ## 11. Open points
-- P-07-T47 (DEC-539) registers `acceptance_decision_due`, `independence_conclusion_due`, `independence_confirmation_due` and `eqr_eligibility_due` through `register_gate_source` (`review/engagement_gates.py`); until `subkind` lands (I-01-T04) the subject type carries the registered name.
+- P-07-T47 (DEC-539) registers `acceptance_decision_due`, `independence_conclusion_due`, `independence_confirmation_due` and `eqr_eligibility_due` through `register_gate_source` (`review/engagement_gates.py`); until `subkind` lands (I-01-T04) the subject type carries the registered name. Each of these gates is assigned to a named person and shown only to them (`GateSource.assigned_only`, DEC-544).
 - DEC-404 records the stub's choices (one `home.read` cell per firm role, the slot's fail-closed answer, the `due_risk` thresholds).
 - OQ-2 is decided (DEC-403): an `evidence_review` class for SPEC-004 review assignments and uploads awaiting review, band Approvals & sends, added to the kind set additively with I-01-T04. The four bands are unchanged.

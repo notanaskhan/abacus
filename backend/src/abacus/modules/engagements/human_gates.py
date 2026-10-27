@@ -11,8 +11,13 @@ concluding and approving stay the owners' human-only routes (INV-1).
   declined) and which has no conclusion yet, for the engagement partner.
 - `independence_confirmation_due`: a member's confirmation still `requested`, for that member.
 - `eqr_eligibility_due`: an engagement's EQR whose competence the history cannot show and whom
-  the quality owner has not approved eligible, for the quality owner (unassigned, role
-  `quality_partner`).
+  the quality owner has not approved eligible, for each quality owner.
+
+Need to know (security review M3, DEC-544): every gate is assigned to a named person, never left
+to a role. A decision with several engagement partners is one gate per partner (each its own
+subject, all closing together); with none, nobody is told (nobody may decide). An EQR gate goes to
+each quality owner except the candidate themself and anyone on the engagement (who may not
+approve it); the candidate never sees their own eligibility gate.
 """
 
 from __future__ import annotations
@@ -36,7 +41,12 @@ from abacus.modules.engagements.team import (
     eqr_target,
     needs_eqr_approval,
 )
-from abacus.modules.identity.api import EQR_ROLE, engagement_partners, member_details
+from abacus.modules.identity.api import (
+    EQR_ROLE,
+    engagement_partners,
+    member_details,
+    quality_partners,
+)
 
 _NAMESPACE: Final = uuid.UUID("2a4d0f6e-8b1c-4f3a-9e7d-5c6b8a1f2e47")
 ACCEPTANCE_DECISION_DUE: Final = "acceptance_decision_due"
@@ -57,10 +67,20 @@ class DueGate:
     role: str | None
 
 
-async def _partner(tenant: TenantContext, engagement_id: UUID) -> UUID | None:
-    """The engagement partner when there is exactly one; else nobody named (the role holds it)."""
-    partners = await engagement_partners(tenant.tenant_id, engagement_id)
-    return partners[0] if len(partners) == 1 else None
+async def _per_partner(
+    tenant: TenantContext, kind: str, subject: UUID, engagement_id: UUID, client_id: UUID | None
+) -> list[DueGate]:
+    """One gate per engagement partner, each its own subject; none without a partner."""
+    return [
+        DueGate(
+            uuid.uuid5(_NAMESPACE, f"{kind}:{subject}:{partner}"),
+            engagement_id,
+            client_id,
+            partner,
+            "engagement_partner",
+        )
+        for partner in await engagement_partners(tenant.tenant_id, engagement_id)
+    ]
 
 
 def confirmation_subject(engagement_id: UUID, user_id: UUID) -> UUID:
@@ -78,16 +98,12 @@ async def acceptance_decisions_due(
         stmt = stmt.where(acceptance.records.c.engagement_id == engagement_id)
     async with tenant_session(tenant) as session:
         rows = (await session.execute(stmt)).all()
-    return [
-        DueGate(
-            r.id,
-            r.engagement_id,
-            r.client_id,
-            await _partner(tenant, r.engagement_id),
-            "engagement_partner",
+    out: list[DueGate] = []
+    for r in rows:
+        out.extend(
+            await _per_partner(tenant, ACCEPTANCE_DECISION_DUE, r.id, r.engagement_id, r.client_id)
         )
-        for r in rows
-    ]
+    return out
 
 
 async def _clients(tenant: TenantContext, engagement_ids: Sequence[UUID]) -> dict[UUID, UUID]:
@@ -120,10 +136,10 @@ async def independence_conclusions_due(
     async with tenant_session(tenant) as session:
         engagement_ids = list((await session.execute(stmt)).scalars().all())
     clients = await _clients(tenant, engagement_ids)
-    return [
-        DueGate(e, e, clients.get(e), await _partner(tenant, e), "engagement_partner")
-        for e in engagement_ids
-    ]
+    out: list[DueGate] = []
+    for e in engagement_ids:
+        out.extend(await _per_partner(tenant, INDEPENDENCE_CONCLUSION_DUE, e, e, clients.get(e)))
+    return out
 
 
 async def independence_confirmations_due(
@@ -150,6 +166,11 @@ async def independence_confirmations_due(
 
 
 async def eqr_eligibility_due(tenant: TenantContext, engagement_id: UUID | None) -> list[DueGate]:
+    """Per engagement (the reconcile after an event is one engagement; the operator's rebuild
+    walks them all: DEC-548)."""
+    owners = await quality_partners(tenant.tenant_id)
+    if not owners:
+        return []
     if engagement_id is not None:
         engagement_ids = [engagement_id]
     else:
@@ -158,19 +179,26 @@ async def eqr_eligibility_due(tenant: TenantContext, engagement_id: UUID | None)
     clients = await _clients(tenant, engagement_ids)
     out: list[DueGate] = []
     for engagement in engagement_ids:
-        eqrs = [d.user_id for d in await member_details(tenant, engagement) if d.role == EQR_ROLE]
+        details = await member_details(tenant, engagement)
+        eqrs = [d.user_id for d in details if d.role == EQR_ROLE]
         if not eqrs:
             continue
+        on_engagement = {d.user_id for d in details}
         target = await eqr_target(tenant, engagement)
         for eqr in eqrs:
             checks = await eligibility_checks(tenant, target, eqr, confirmation=None)
-            if needs_eqr_approval(checks) and not await eqr_approved(tenant, engagement, eqr):
+            if not needs_eqr_approval(checks) or await eqr_approved(tenant, engagement, eqr):
+                continue
+            # Never the candidate, never anyone on the engagement (they may not approve it).
+            for owner in owners:
+                if owner == eqr or owner in on_engagement:
+                    continue
                 out.append(
                     DueGate(
-                        uuid.uuid5(_NAMESPACE, f"eqr_eligibility:{engagement}:{eqr}"),
+                        uuid.uuid5(_NAMESPACE, f"eqr_eligibility:{engagement}:{eqr}:{owner}"),
                         engagement,
                         clients.get(engagement),
-                        None,
+                        owner,
                         "quality_partner",
                     )
                 )

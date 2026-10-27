@@ -103445,7 +103445,7 @@
     },
     "/v1/exports/{export_id}/download": {
       "get": {
-        "description": "The ZIP (`application/zip`, `Cache-Control: no-store`, a safe `Content-Disposition`),\nresumable with one `Range` (206; DEC-536), streamed by the API from the sealed segments (no\npresigned link, ADR-104) (A-01-T22). 409 `export_not_ready`, 410 `export_expired` (7 days,\nvoided, or holding a withdrawn file), 416 for a range not served. Audited\n`engagement_export.downloaded` with bytes and range.",
+        "description": "The ZIP (`application/zip`, `Cache-Control: no-store`, a safe `Content-Disposition`),\nresumable with one `Range` (206; DEC-536), streamed by the API from the sealed segments (no\npresigned link, ADR-104) (A-01-T22). 409 `export_not_ready`, 410 `export_expired` (7 days,\nvoided, or holding a withdrawn file), 416 for a range not served, 429\n`download_rate_limited` (DEC-545). Audited\n`engagement_export.downloaded` with bytes and range.",
         "operationId": "download_export",
         "parameters": [
           {
@@ -103607,6 +103607,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too soon or too many: retry after Retry-After"
           }
         },
         "summary": "Download Export Route",

@@ -28,3 +28,4 @@ updated: 2026-10-27
 ## Progress log
 - 2026-10-27: built; Playwright skipped (chromium mismatch).
 - 2026-10-27: targeted test pass green (see the S11 lane 4 report); gates run once (ruff, pyright, lint-imports, quality modules, check-generated, tsc, eslint, prettier). Playwright skipped (chromium mismatch).
+- 2026-10-27 security review fix round: L8 step-up only on `mfa_required` for the export routes, plain 403 kept for the record routes until A-01-T23's say it; L9 object URL revoked 60 s after the click (DEC-547).

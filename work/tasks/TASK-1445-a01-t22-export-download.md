@@ -54,3 +54,4 @@ bundle." Builds on A-01-T18/T19 (#450, migration 0191).
   DEC-538.
 - 2026-10-27: targeted test pass green (see the S11 lane 4 report); gates run once (ruff, pyright, lint-imports, quality modules, check-generated, tsc, eslint, prettier). Playwright skipped (chromium mismatch).
 - 2026-10-27: fix round in the test pass: audit refs carry no free text (the voided/expired action names the reason); the 416 response registered in identity routing.
+- 2026-10-27 security review fix round: M1 in-flight re-checks and 30-minute cap, M2 1 MiB chunks and per-person limits (DEC-545), L5/L6 (DEC-546), L8 stale MFA as `mfa_required` (DEC-547), L4 voided rule links (DEC-548). Human to-do: import `notification.export_ready` / `export_failed` templates per environment if their email is to be offered.
