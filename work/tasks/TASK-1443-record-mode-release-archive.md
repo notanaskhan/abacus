@@ -71,3 +71,5 @@ the step-up only on that.
 
 ## Progress log
 - 2026-10-27: planned and built (see the report for test and gate results).
+
+- 2026-10-28: security-review Lows fixed (DEC-598): release date after the fiscal period end (422 `release_date_before_period_end`); `mfa_required` only when the stale factor is the sole blocker. Tests: `tests/unit/assurance/test_record_auth.py`, the period-end case in `test_a01t23_record_mode.py`.

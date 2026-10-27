@@ -117,6 +117,27 @@ MODELS: dict[str, tuple[str, ...]] = {
         "PortalSignInPolicyOut",
         "PortalBrandingOut",
     ),
+    # C6 v1, agent runs (Q-02-T45; ADR-169 §4; DEC-595, the owner change; frozen 2026-10-27):
+    # the run list and view, trace, items, writes, records read, export and the run record.
+    "c06_agent_runs": (
+        "AgentRunOut",
+        "TraceRowOut",
+        "RecordsReadOut",
+        "OutputCountOut",
+        "RunTraceOut",
+        "RunViewOut",
+        "RunWriteOut",
+        "RunItemOut",
+        "RunItemsOut",
+        "TraceExportIn",
+        "TraceExportOut",
+        "RecordRefOut",
+        "CitationLocatorOut",
+        "RecordCitationOut",
+        "RecordInputHashesOut",
+        "RecordOutcomeOut",
+        "RunRecordOut",
+    ),
     # C3 v1, the review grammar's services (P-04-T27, DEC-606; frozen 2026-10-27): every request
     # and response model of `review/contract.py` (parts 1 and 3, decision cards) and
     # `agents/contract.py` (proposals and suggestions), and the status enums they carry.
@@ -237,6 +258,19 @@ def _shape(schema: Schema) -> str:
     return json.dumps(keep, sort_keys=True)
 
 
+def _field_breaks(where: str, before: Schema, after: Schema) -> list[str]:
+    """A field's breaks. An inline enum follows the same rule as a named one (README, "The
+    frozen-contract rule"; DEC-597): a member added is additive, a member removed breaks."""
+    old_enum = cast(list[object] | None, before.get("enum"))
+    new_enum = cast(list[object] | None, after.get("enum"))
+    if old_enum is not None and new_enum is not None:
+        rest_before = {k: v for k, v in before.items() if k != "enum"}
+        rest_after = {k: v for k, v in after.items() if k != "enum"}
+        if _shape(rest_before) == _shape(rest_after):
+            return [f"{where}: enum member {m!r} removed" for m in old_enum if m not in new_enum]
+    return [f"{where}: type changed"] if _shape(before) != _shape(after) else []
+
+
 def breaking(frozen: dict[str, Schema], now: dict[str, Schema]) -> list[str]:
     """What today's schemas break of a frozen snapshot."""
     problems: list[str] = []
@@ -256,8 +290,8 @@ def breaking(frozen: dict[str, Schema], now: dict[str, Schema]) -> list[str]:
         for field, spec in old_props.items():
             if field not in new_props:
                 problems.append(f"{name}.{field}: removed or renamed")
-            elif _shape(spec) != _shape(new_props[field]):
-                problems.append(f"{name}.{field}: type changed")
+                continue
+            problems += _field_breaks(f"{name}.{field}", spec, new_props[field])
         newly_required = set(cast(list[str], after.get("required") or [])) - set(
             cast(list[str], before.get("required") or [])
         )
