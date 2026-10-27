@@ -55,6 +55,9 @@ ROUTES: dict[tuple[str, str], tuple[str, Flag]] = {
     ),
 }
 IDEMPOTENT = {path for (method, path) in ROUTES if method == "post"}
+# Live since A-02-T16 (TASK-1416): POR-16's routes answer 404 (flag off, another entity) and
+# their own codes, never 501. The two firm routes stay stubs (A-02-T23, A-02-T30).
+LIVE = {(m, p) for (m, p) in ROUTES if p.startswith("/v1/portal/")}
 MODELS: tuple[type[BaseModel], ...] = (
     contract.PortalConnectionsOut,
     contract.PortalConnectionCardOut,
@@ -73,7 +76,12 @@ MODELS: tuple[type[BaseModel], ...] = (
 def test_each_route_declares_its_action_and_answers_404_and_501(method: str, path: str) -> None:
     op = PATHS[path][method]
     assert op["x-abacus-action"] == ROUTES[(method, path)][0]
-    assert {"404", "501"} <= set(cast(Json, op["responses"]))
+    responses = set(cast(Json, op["responses"]))
+    assert "404" in responses
+    if (method, path) in LIVE:
+        assert "501" not in responses
+    else:
+        assert "501" in responses
 
 
 @pytest.mark.parametrize("path", sorted(IDEMPOTENT))

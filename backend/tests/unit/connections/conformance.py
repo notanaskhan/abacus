@@ -42,6 +42,7 @@ CONTRACT_METHODS = frozenset(
         "changes_since",
         "fetch_attachment",
         "health",
+        "revoke",  # A-02-T16 review M1 (DEC-515): the grant's end, not a write to the books
     }
 )
 UNDECLARED = cast(Dataset, "dataset-no-connector-declares")

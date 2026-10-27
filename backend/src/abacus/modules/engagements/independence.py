@@ -35,7 +35,7 @@ from datetime import datetime
 from typing import Annotated, ClassVar, Final, Literal, cast
 from uuid import UUID, uuid4
 
-from sqlalchemy import insert, select, update
+from sqlalchemy import func, insert, or_, select, update
 from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -46,6 +46,7 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import DomainEvent, Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.contacts import attest_of, designations_of
+from abacus.modules.engagements.events import IndependenceConclusionDue
 from abacus.modules.engagements.gate_policy import FAMILY
 from abacus.modules.engagements.independence_tables import (
     BREACH_STEPS,
@@ -674,7 +675,31 @@ async def confirm_independence(
             after=Ref(user_id=ctx.user_id),
         )
         tx.emit(IndependenceConfirmed(engagement_id=engagement_id, user_id=ctx.user_id))
+        # P-07-T47: the last confirmation makes the conclusion the engagement partner's.
+        if await _conclusion_due(tx.session, engagement_id):
+            tx.emit(IndependenceConclusionDue(engagement_id=engagement_id))
     return ConfirmationView(engagement_id, ctx.user_id, "confirmed", answered)
+
+
+async def _conclusion_due(session: AsyncSession, engagement_id: UUID) -> bool:
+    """Every member confirmed (none requested or declined) and no conclusion yet."""
+    still_open = await session.scalar(
+        select(func.count())
+        .select_from(IndependenceConfirmation)
+        .where(
+            IndependenceConfirmation.engagement_id == engagement_id,
+            or_(
+                IndependenceConfirmation.status.in_(("requested", "declined")),
+                IndependenceConfirmation.statements.is_(None),
+            ),
+        )
+    )
+    concluded = await session.scalar(
+        select(func.count())
+        .select_from(conclusions)
+        .where(conclusions.c.engagement_id == engagement_id)
+    )
+    return not still_open and not concluded
 
 
 async def decline_independence(

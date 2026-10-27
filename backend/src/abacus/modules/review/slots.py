@@ -6,8 +6,8 @@ provider that raises makes the gate unmet."""
 from __future__ import annotations
 
 import re
-from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
+from collections.abc import Awaitable, Callable, Mapping
+from dataclasses import dataclass, field
 from typing import Final
 from uuid import UUID
 
@@ -127,20 +127,93 @@ class UnregisteredKind(DomainInvalid):
     code = "unregistered_kind"
 
 
-DecisionOptions = Callable[[TenantContext, UUID], Awaitable[list[str]]]
 GateCheck = Callable[[TenantContext, UUID], Awaitable[bool]]
 FieldValue = Callable[[TenantContext, UUID, str], Awaitable[dict[str, object] | None]]
 FixRunner = Callable[[TenantContext, UUID], Awaitable[None]]
 
 
+# --- P-04-T23 (ADR-160 clause 8): what a decision kind's provider computes, in code.
+
+
+@dataclass(frozen=True)
+class CardOption:
+    """One option, computed by the kind's provider (never a model, ADR-050). Money is a decimal
+    string in `figures`; `label` and `detail` are the provider's fixed copy over those figures."""
+
+    key: str
+    label: str
+    figures: Mapping[str, str] = field(default_factory=dict[str, str])
+    detail: str | None = None
+
+
+@dataclass(frozen=True)
+class CardContext:
+    """A context row ("Benchmark", "Amount", "Firm range", "Prior year")."""
+
+    key: str
+    label: str
+    value: str
+    citation_id: UUID | None = None
+
+
+@dataclass(frozen=True)
+class CardFactor:
+    key: str
+    label: str
+    applicable: bool = True
+
+
+@dataclass(frozen=True)
+class ComputedCard:
+    options: tuple[CardOption, ...]
+    context: tuple[CardContext, ...] = ()
+    factors: tuple[CardFactor, ...] = ()
+    blocking_refs: tuple[tuple[str, UUID], ...] = ()
+
+
+@dataclass(frozen=True)
+class CardSubject:
+    """What a card is about: the provider reads its own records for it."""
+
+    engagement_id: UUID
+    work_item_id: UUID | None
+    question_key: str
+
+
+@dataclass(frozen=True)
+class Reassessment:
+    """The provider's recompute: `changed` False is "No change" (a new version of the same card);
+    True raises a superseding card from `card`. `figures` are what the history row shows (the
+    new amount, the difference)."""
+
+    changed: bool
+    figures: Mapping[str, str] = field(default_factory=dict[str, str])
+    card: ComputedCard | None = None
+
+
+CardCompute = Callable[[TenantContext, CardSubject], Awaitable[ComputedCard]]
+# (tenant, subject, the decided option or None, the card as computed when raised)
+CardReassess = Callable[
+    [TenantContext, CardSubject, str | None, ComputedCard], Awaitable[Reassessment]
+]
+# The fresh-MFA window for deciding: the matrix's `mfa_recent` (15 minutes) is the floor every
+# kind gets; a kind may only tighten it (DEC-505; no kind opts out).
+DECIDE_MFA_MAX_AGE_S: Final = 900
+
+
 @dataclass(frozen=True)
 class DecisionKind:
-    """A decision card's kind (A-04 materiality, T-04 treatment, ...): who it is reserved to
-    and how its options are computed (by code, never a model: ADR-050)."""
+    """A decision card's kind (A-04 materiality, T-04 treatment, ...): who it is reserved to,
+    how its options are computed (by code, never a model: ADR-050), its questions' copy, how it
+    is reassessed, and how recent the decider's second factor must be (ADR-160 clause 8: the
+    kind declares it, within the matrix's 15 minutes; DEC-505 removed the opt-out)."""
 
     code: str
     reserved_role: str
-    options: DecisionOptions
+    options: CardCompute
+    questions: Mapping[str, str] = field(default_factory=dict[str, str])
+    reassess: CardReassess | None = None
+    mfa_max_age_s: int = DECIDE_MFA_MAX_AGE_S
 
 
 @dataclass(frozen=True)
@@ -176,6 +249,8 @@ def _register[T](registry: dict[str, T], what: str, code: str, value: T, same: b
 def register_decision_kind(kind: DecisionKind) -> None:
     if kind.reserved_role not in _RESERVED_ROLES:
         raise ValueError(f"decision kind {kind.code!r}: unknown reserved role")
+    if not 0 < kind.mfa_max_age_s <= DECIDE_MFA_MAX_AGE_S:
+        raise ValueError(f"decision kind {kind.code!r}: MFA window must be 1 to 900 seconds")
     known = _DECISION_KINDS.get(kind.code)
     same = known is not None and (known.reserved_role, _name(known.options)) == (
         kind.reserved_role,
@@ -189,6 +264,26 @@ def decision_kind(code: str) -> DecisionKind:
     if found is None:
         raise UnregisteredKind
     return found
+
+
+# P-04-T23 (security review L8): who owns an agent suggestion, so a card's recommendation can be
+# checked against the card's engagement. The agents module registers it (review never imports
+# agents); unregistered, every suggestion is unknown (fail closed).
+SuggestionOwner = Callable[[TenantContext, UUID], Awaitable[UUID | None]]
+_SUGGESTION_OWNER: list[SuggestionOwner] = []
+
+
+def register_suggestion_owner(owner: SuggestionOwner) -> None:
+    if _SUGGESTION_OWNER and _name(_SUGGESTION_OWNER[0]) != _name(owner):
+        raise ValueError("the suggestion owner is already registered")
+    _SUGGESTION_OWNER[:] = [owner]
+
+
+async def suggestion_engagement(tenant: TenantContext, suggestion_id: UUID) -> UUID | None:
+    """The suggestion's engagement, or None (unknown, another firm's, or no owner registered)."""
+    if not _SUGGESTION_OWNER:
+        return None
+    return await _SUGGESTION_OWNER[0](tenant, suggestion_id)
 
 
 def register_gate_kind(code: str, check: GateCheck) -> None:

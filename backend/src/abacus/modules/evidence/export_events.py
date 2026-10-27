@@ -36,3 +36,16 @@ class EngagementExportReady(_ExportEvent):
 
 class EngagementExportFailed(_ExportEvent):
     event_type: ClassVar[str] = "engagement_export.failed"
+
+
+class EngagementExportExpired(_ExportEvent):
+    """A-01-T22: the 7 days passed (the sweep); its subscriber deletes the segments."""
+
+    event_type: ClassVar[str] = "engagement_export.expired"
+
+
+class EngagementExportVoided(_ExportEvent):
+    """A-01-T22 (P-31): a version the package holds was withdrawn; the bundle is voided
+    (`expired`, `withdrawn_content`) and its subscriber deletes the segments."""
+
+    event_type: ClassVar[str] = "engagement_export.voided"

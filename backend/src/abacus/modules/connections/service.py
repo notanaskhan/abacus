@@ -103,6 +103,11 @@ CONNECTORS: dict[str, Callable[[Connection, Credentials | None], Connector]] = {
     "fake": _fake,
     "import": _import,
 }
+# Providers whose connector reaches no host (A-02-T16 review M3): the demo ledger reads local
+# files, an import reads uploads. Every other provider must be a read connector the
+# write-capability registry declares, with its hosts; the API and the worker refuse to start
+# otherwise (`integrations.assert_egress_declared`).
+NETWORKLESS_PROVIDERS: frozenset[str] = frozenset({"fake", "import"})
 
 
 def connector_for(connection: Connection, credentials: Credentials | None = None) -> Connector:

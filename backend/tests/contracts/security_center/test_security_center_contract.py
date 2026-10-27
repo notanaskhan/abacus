@@ -3,7 +3,10 @@ route declares exactly one matrix action and answers 404 with `security_center.v
 with it on, after the matrix (security review L1); the family is exactly these routes and repeats
 none of Q-02's; no input can turn a locked floor off; the bounds are the service's refusal, not a
 validation error; every field is classified; request context and the pack link are personal or
-Restricted; the schedule is mounted before Q-02's export router."""
+Restricted; the schedule is mounted before Q-02's export router.
+
+G-02-T14 made identity's routes live (DEC-530): they still answer 404 with the flag off, after
+the matrix, and no longer declare the 501 (`IDENTITY_LIVE`, `_gate`)."""
 
 from __future__ import annotations
 
@@ -59,6 +62,21 @@ ROUTES: dict[tuple[str, str], str] = {
     ("put", "/v1/firm/safeguards/controls/{control_key}"): "security.manage",
     ("post", "/v1/firm/safeguards/wisp-pack"): "security.manage",
 }
+# G-02-T14: identity's routes are live; the stubs are platform's (T18, T20) and evidence's (T19).
+IDENTITY_LIVE: frozenset[tuple[str, str]] = frozenset(
+    {
+        ("get", "/v1/firm/security"),
+        ("put", "/v1/firm/security/sign-in"),
+        ("put", "/v1/firm/security/portal-sign-in"),
+        ("put", "/v1/firm/security/sso-exempt-account"),
+        ("get", "/v1/firm/security/sessions"),
+        ("post", "/v1/firm/security/sessions/{session_id}/sign-out"),
+        ("get", "/v1/firm/security/posture"),
+        ("post", "/v1/firm/staff/{user_id}/unlock"),
+        ("get", "/v1/firm/support-access"),
+        ("put", "/v1/firm/support-access"),
+    }
+)
 # Q-02's routes in the same paths: incident create and the on-demand export (unchanged here).
 Q02: frozenset[tuple[str, str]] = frozenset(
     {
@@ -77,6 +95,7 @@ PREFIXES = (
     "/v1/firm/data-exports",
 )
 CONTRACTS: tuple[ModuleType, ...] = (identity_contract, platform_contract, schedule)
+STUB_CONTRACTS: tuple[ModuleType, ...] = (platform_contract, schedule)
 NAMED = (
     "SecurityOverviewOut",
     "SignInPolicyOut",
@@ -105,7 +124,12 @@ WRITES = (
 def test_g02t11_each_route_declares_its_one_action_and_is_a_stub(method: str, path: str) -> None:
     op = PATHS[path][method]
     assert op["x-abacus-action"] == ROUTES[(method, path)]
-    assert {"404", "501"} <= set(cast(Json, op["responses"]))
+    responses = set(cast(Json, op["responses"]))
+    assert "404" in responses
+    if (method, path) in IDENTITY_LIVE:
+        assert "501" not in responses  # G-02-T14: live
+    else:
+        assert "501" in responses
 
 
 def test_g02t11_the_family_is_these_routes_and_q02s_untouched() -> None:
@@ -261,7 +285,7 @@ def _stub_of(contract: ModuleType) -> Gate:
     return cast(Gate, contract._stub)
 
 
-@pytest.mark.parametrize("contract", CONTRACTS, ids=lambda c: c.__name__.split(".")[2])
+@pytest.mark.parametrize("contract", STUB_CONTRACTS, ids=lambda c: c.__name__.split(".")[2])
 async def test_g02t11_flag_off_is_404_and_on_is_501(
     monkeypatch: pytest.MonkeyPatch, contract: ModuleType
 ) -> None:
@@ -276,11 +300,29 @@ async def test_g02t11_flag_off_is_404_and_on_is_501(
     assert seen == [SECURITY_CENTER_V1]
 
 
+def _gate_of(contract: ModuleType) -> Gate:
+    """Identity's live gate (G-02-T14) or a module's stub: both answer the matrix first."""
+    return cast(Gate, contract._gate if contract is identity_contract else contract._stub)
+
+
+async def test_g02t14_identity_flag_off_is_404_and_on_passes_to_the_service(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _authorise(monkeypatch, identity_contract, allow=True)
+    gate = _gate_of(identity_contract)
+    _flags(monkeypatch, identity_contract, False)
+    with pytest.raises(NotFound):
+        await gate(_ctx("security_admin"), "security.read")
+    seen = _flags(monkeypatch, identity_contract, True)
+    await gate(_ctx("security_admin"), "security.read")
+    assert seen == [SECURITY_CENTER_V1]
+
+
 @pytest.mark.parametrize("contract", CONTRACTS, ids=lambda c: c.__name__.split(".")[2])
 async def test_l1_the_matrix_answers_before_the_flag_is_read(
     monkeypatch: pytest.MonkeyPatch, contract: ModuleType
 ) -> None:
-    stub = _stub_of(contract)
+    stub = _gate_of(contract)
     seen = _flags(monkeypatch, contract, True)
     _authorise(monkeypatch, contract, allow=False)
     with pytest.raises(Forbidden):  # the agent, a person without the action, a stale factor

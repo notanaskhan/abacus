@@ -163,10 +163,36 @@ async def _wall_creator(tenant_id: UUID, payload: dict[str, object]) -> list[UUI
     return [creator] if creator is not None else []
 
 
+async def _listed(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """P-04-T21, T23: the people the owner named (a note's assignee or the target's preparers; a
+    card's reserved person or role holders), never the person who acted."""
+    by = _uuid(payload, "by_user")
+    return sorted({u for u in _uuids(payload, "recipient_user_ids") if u != by})
+
+
 async def _signer(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     """P-04-T19: the person whose sign-off went stale."""
     signer = _uuid(payload, "signed_by")
     return [signer] if signer is not None else []
+
+
+async def _named_partner(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """P-07-T47: the partner asked for the acceptance risk review, never the asker."""
+    partner, by = _uuid(payload, "partner_id"), _uuid(payload, "by_user")
+    return [partner] if partner is not None and partner != by else []
+
+
+async def _member(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """P-07-T47: the member a reminder is about."""
+    member = _uuid(payload, "user_id")
+    return [member] if member is not None else []
+
+
+async def _export_requester(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """A-01-T22: the person who asked for the export, and only them (walls applied at fan-out
+    and again at read time)."""
+    requester = _uuid(payload, "requested_by")
+    return [requester] if requester is not None else []
 
 
 @dataclass(frozen=True)
@@ -244,6 +270,32 @@ CATALOGUE: Final[dict[str, Kind]] = {
     ),
     # P-04-T19 (SHL-12 e): the work a person signed changed after their sign-off.
     "sign_off.went_stale": Kind("sign_off_stale", _signer, "sign_off", "sign_off_id"),
+    # P-04-T21: a note was raised; its assignee (or the target's preparers) is told.
+    "review_note.raised": Kind("review_note_raised", _listed, "reviewable_note", "note_id"),
+    # P-04-T23: a card waits on its reserved person; "Notify" mentions them (SHL-11 b).
+    "decision_card.raised": Kind("decision_assigned", _listed, "decision_card", "card_id"),
+    "decision_card.notify_requested": Kind("mention", _assignee, "decision_card", "card_id"),
+    # P-07-T47 (P-07 §4.8): acceptance, risk review, independence and team approval.
+    "acceptance.sent_to_partner": Kind(
+        "acceptance_awaiting_partner", _partners, "acceptance_record", "record_id"
+    ),
+    "acceptance.review_requested": Kind(
+        "risk_partner_review_requested", _named_partner, "acceptance_record", "record_id"
+    ),
+    "independence.reminded": Kind("independence_reminder", _member, "engagement", "engagement_id"),
+    "independence.conclusion_due": Kind(
+        "independence_conclusion_due", _partners, "engagement", "engagement_id"
+    ),
+    "team.change_proposed": Kind(
+        "team_change_awaiting_approval", _partners, "engagement", "engagement_id"
+    ),
+    # A-01-T22 (A-01 §4.7): the requester's binder export is ready, or its build failed.
+    "engagement_export.ready": Kind(
+        "export_ready", _export_requester, "engagement_export", "export_id"
+    ),
+    "engagement_export.failed": Kind(
+        "export_failed", _export_requester, "engagement_export", "export_id"
+    ),
 }
 
 # AC-7: fixed English text per kind; placeholders are names the reader can already see.
@@ -277,6 +329,20 @@ TEMPLATES: Final[dict[str, str]] = {
     "portal.drop_unsorted": "A client sent a file for your team to sort on {engagement}.",
     "third_party.uploaded": "A third party uploaded a file to a request on {engagement}.",
     "sign_off.went_stale": "Work you signed off on {engagement} changed after sign-off.",
+    "review_note.raised": "A review note on {engagement} is waiting for you.",
+    "decision_card.raised": "A decision on {engagement} is waiting for you.",
+    "decision_card.notify_requested": "A decision on {engagement} is waiting for you.",
+    "acceptance.sent_to_partner": "An acceptance on {engagement} is waiting for your decision.",
+    "acceptance.review_requested": (
+        "You were asked for a risk review of an acceptance on {engagement}."
+    ),
+    "independence.reminded": "Reminder: confirm your independence for {engagement}.",
+    "independence.conclusion_due": (
+        "Every member confirmed independence on {engagement}: it is ready for your conclusion."
+    ),
+    "team.change_proposed": "The team on {engagement} changed and is waiting for your approval.",
+    "engagement_export.ready": "Your binder export for {engagement} is ready to download.",
+    "engagement_export.failed": "Your binder export for {engagement} could not be built.",
 }
 
 
@@ -324,6 +390,8 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("portal_drop_unsorted", "client_activity", "Inbox"),  # R-01-T09
     NotificationKind("third_party_uploaded", "client_activity", "Upload"),  # R-01-T13
     NotificationKind("sign_off_stale", "approval", "ClipboardCheck"),  # P-04-T19
+    NotificationKind("review_note_raised", "approval", "MessageSquare"),  # P-04-T21
+    NotificationKind("decision_assigned", "approval", "Scale"),  # P-04-T23
     # G-02-T02 (G-02 section 4.8): firm governance v1. Email text is database rows (C16), loaded
     # as content (G-02-T07); their owners add facts and pending resolvers with their tasks.
     NotificationKind(
@@ -336,6 +404,20 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     ),
     NotificationKind("audit_export_ready", "system", "Download"),
     NotificationKind("security_policy_changed", "system", "Lock"),
+    # P-07-T47 (P-07 §4.8): email text is `notification.<kind>` content (staff import). The
+    # independence reminder emails by default: it is the staff reminder a person sends.
+    NotificationKind("acceptance_awaiting_partner", "approval", "Scale"),
+    NotificationKind("risk_partner_review_requested", "approval", "TriangleAlert"),
+    NotificationKind("independence_reminder", "approval", "ShieldCheck", email_default=True),
+    NotificationKind("independence_conclusion_due", "approval", "ShieldCheck"),
+    NotificationKind("team_change_awaiting_approval", "approval", "UserPlus"),
+    # Day 12 of a 14-day client invitation, to the firm admins; registered for the drawer and
+    # preferences now, produced once an expiry pass exists (P-07 §4.5 has no schedule; DEC-540).
+    NotificationKind("invitation_expiring", "deadline", "Clock"),
+    # A-01-T22 (A-01 §4.7): in-app; an email, when a person turns it on, deep-links to the
+    # export sheet (`notification.export_ready`, imported content), never to a download.
+    NotificationKind("export_ready", "system", "Download"),
+    NotificationKind("export_failed", "system", "Download"),
 )
 for _kind in _REGISTERED:
     register_kind(_kind)
