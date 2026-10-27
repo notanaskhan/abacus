@@ -26,8 +26,14 @@ export const admScreens = {
   },
   "ADM-04": { name: "AI policy & approval gates", status: "planned", path: null },
   "ADM-05": { name: "Consent registry (§7216)", status: "planned", path: null },
-  "ADM-06": { name: "Security center & data residency", status: "planned", path: null },
-  "ADM-07": { name: "Audit log explorer", status: "planned", path: null },
+  // G-02-T16 / T13: built behind `security_center.v1` and `audit_log.explorer`; planned until
+  // walked on staging (DEC-195), as ADM-02 and ADM-03 are.
+  "ADM-06": {
+    name: "Security center & data residency",
+    status: "planned",
+    path: "/settings/security",
+  },
+  "ADM-07": { name: "Audit log explorer", status: "planned", path: "/settings/audit-log" },
   "ADM-08": { name: "Integration settings", status: "planned", path: null },
   "ADM-09": { name: "Developer (API, webhooks, MCP)", status: "planned", path: null },
   "ADM-10": { name: "Portal branding & client experience", status: "planned", path: null },

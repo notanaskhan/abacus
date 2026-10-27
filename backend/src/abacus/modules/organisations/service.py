@@ -459,6 +459,14 @@ async def attest_client_of(tenant: TenantContext, client_id: UUID) -> bool | Non
     return None if client is None else client.is_attest_client
 
 
+async def entity_display_name(tenant: TenantContext, entity_id: UUID) -> str | None:
+    """A-02-T16 (POR-16's heading): the client entity's name, or None outside the firm. Client
+    content: rendered as text, never logged. For callers that authorised on the entity."""
+    async with tenant_session(tenant) as session:
+        entity = await get_entity(session, entity_id)
+    return None if entity is None else entity.name
+
+
 async def client_exists(tenant: TenantContext, client_id: UUID) -> bool:
     """Whether the client is the firm's (for the `client` scope resolver, F-03-T26)."""
     async with tenant_session(tenant) as session:

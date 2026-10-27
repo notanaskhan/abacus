@@ -2914,6 +2914,32 @@ export const STATUS_REGISTRY = {
       "terminal": true,
       "derived": false
     }
+  },
+  "client_invitation": {
+    "pending": {
+      "label": "Pending",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "accepted": {
+      "label": "Accepted",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "revoked": {
+      "label": "Revoked",
+      "variant": null,
+      "terminal": true,
+      "derived": false
+    },
+    "expired": {
+      "label": "Expired",
+      "variant": null,
+      "terminal": true,
+      "derived": false
+    }
   }
 } as const;
 

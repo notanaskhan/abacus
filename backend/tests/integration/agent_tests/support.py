@@ -50,6 +50,9 @@ COUNTS = {
     "evidence_versions": "SELECT count(*) FROM evidence_versions WHERE tenant_id = $1",
     # A-01-T18, T19 (0191)
     "engagement_exports": "SELECT count(*) FROM engagement_exports WHERE tenant_id = $1",
+    "engagement_export_downloads": (  # A-01-T22
+        "SELECT count(*) FROM engagement_export_downloads WHERE tenant_id = $1"
+    ),
     "engagement_export_contents": (
         "SELECT count(*) FROM engagement_export_contents WHERE tenant_id = $1"
     ),

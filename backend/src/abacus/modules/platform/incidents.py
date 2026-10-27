@@ -214,6 +214,15 @@ async def _view(tenant: TenantContext, incident_id: UUID) -> IncidentView:
 # --- writing ---------------------------------------------------------------------------------
 
 
+async def open_incidents(tenant: TenantContext) -> int:
+    """G-02-T14 (AC-30): the firm's incidents still under investigation, for the posture."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text("SELECT count(*) FROM security_incidents WHERE status = 'investigating'")
+        )
+    return int(found or 0)
+
+
 async def _next_ref(session: AsyncSession, tenant_id: UUID, year: int) -> str:
     """The firm's next `INC-<year>-NNN`, under a transaction lock per firm and year so two
     entries recorded at once never take the same number."""

@@ -30,6 +30,7 @@ from abacus.modules.identity.repository import (
     active_firm_admins,
     active_memberships,
     active_partner_members,
+    active_quality_partners,
     active_security_admins,
     active_staff_ids,
     client_admin_ids,
@@ -240,6 +241,11 @@ async def firm_admins(tenant_id: UUID) -> list[UUID]:
 async def security_admins(tenant_id: UUID) -> list[UUID]:
     """Q-02-T33: recipients for the incident register's notifications (the firm's QI)."""
     return await active_security_admins(TenantContext(tenant_id, "system", "notifications"))
+
+
+async def quality_partners(tenant_id: UUID) -> list[UUID]:
+    """P-07-T47: the firm's quality owners, each assigned an EQR eligibility gate (M3)."""
+    return await active_quality_partners(TenantContext(tenant_id, "system", "human_gates"))
 
 
 async def partner_members(tenant_id: UUID) -> list[UUID]:

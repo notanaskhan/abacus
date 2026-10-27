@@ -29,6 +29,17 @@ class ConnectionRevoked(DomainEvent):
     by: Annotated[UUID, classified("internal")]
 
 
+class ConnectionReauthorized(DomainEvent):
+    """A client signed in again on a connection that needed it (A-02-T16; POR-16 d): the same
+    connection is active again; consumers resume what waited on it."""
+
+    event_type: ClassVar[str] = "connection.reauthorized"
+
+    connection_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    by: Annotated[UUID, classified("internal")]
+
+
 class LedgerSnapshotRecorded(DomainEvent):
     """A trial balance snapshot was recorded (SPEC-034; TASK-069): general ledgers waiting for
     it are checked."""

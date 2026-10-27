@@ -222,7 +222,9 @@ async def test_another_firms_members_are_untouched(firm: Firm, seed: Seeder) -> 
 
 
 def test_the_job_is_an_hourly_background_schedule() -> None:
-    [job] = SCHEDULES
+    # G-02-T14 adds identity's second Schedule, the daily staff-session purge.
+    assert [j.id for j in SCHEDULES] == ["access_end:platform", "auth_session_purge:platform"]
+    [job] = [j for j in SCHEDULES if j.id == "access_end:platform"]
     assert (job.id, job.every, job.workflow) == (
         "access_end:platform",
         timedelta(hours=1),
