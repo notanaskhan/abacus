@@ -31,7 +31,7 @@ from uuid import UUID
 from sqlalchemy import Insert, func, insert, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from abacus.kernel.db import tenant_session
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.identity.api import AuthContext, Forbidden, Resource, authorise, names_of
@@ -232,8 +232,20 @@ async def submit_version(ctx: AuthContext, version_id: UUID, row_version: int) -
 
 
 async def _refused(ctx: AuthContext, version_id: UUID, action: str) -> None:
-    """Keep the refusal: its own unit of work, so the raise that follows rolls nothing back."""
-    async with uow(ctx.tenant) as tx:
+    """Keep the refusal: its own unit of work, so the raise that follows rolls nothing back. A
+    non-human's attempt is recorded by the system for the person it ran for (an agent's audit
+    row must name its person; the database's check)."""
+    tenant = (
+        ctx.tenant
+        if ctx.tenant.actor_kind == "human"
+        else TenantContext(
+            ctx.tenant_id,
+            "system",
+            f"methodology:refusal:{version_id}",
+            on_behalf_of_user_id=ctx.tenant.on_behalf_of_user_id or ctx.user_id,
+        )
+    )
+    async with uow(tenant) as tx:
         tx.record(action, target=Target(SUBJECT, version_id), after=Ref(version=version_id))
 
 
