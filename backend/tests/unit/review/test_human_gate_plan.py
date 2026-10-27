@@ -16,6 +16,7 @@ from abacus.modules.review.gates import (
     Existing,
     GateSource,
     OpenGate,
+    RowValues,
     gate_sources,
     plan,
     register_gate_source,
@@ -34,7 +35,7 @@ def test_a_new_subject_is_inserted_and_a_gone_one_closes() -> None:
     rows = [_row(kept), _row(gone)]
     todo = plan(rows, [OpenGate(kept, E), OpenGate(new, E)])
     assert [g.subject_id for g in todo.inserts] == [new]
-    assert todo.updates == ((rows[1].id, "done", None, None),)
+    assert todo.updates == ((rows[1].id, RowValues("done", None, None)),)
 
 
 def test_the_same_answer_twice_plans_nothing() -> None:
@@ -47,7 +48,7 @@ def test_a_subject_waiting_again_reopens_with_its_assignee_and_due_date() -> Non
     a, who = uuid.uuid4(), uuid.uuid4()
     row = _row(a, "done")
     todo = plan([row], [OpenGate(a, E, assignee_user_id=who, due_on=date(2027, 1, 4))])
-    assert todo.updates == ((row.id, "open", who, date(2027, 1, 4)),)
+    assert todo.updates == ((row.id, RowValues("open", who, date(2027, 1, 4))),)
 
 
 def test_a_voided_gate_stays_voided() -> None:
