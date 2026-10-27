@@ -103,6 +103,7 @@ from abacus.ai_gateway.providers import (
     ProviderError,
     Tier,
     configure_provider,
+    fake_responds,
 )
 from abacus.ai_gateway.routes import configure_route, model_id, route_enabled, route_provider
 from abacus.ai_gateway.sanitise import sanitise_text
@@ -905,6 +906,7 @@ __all__ = [
     "embed",
     "estimate_tokens",
     "evaluation",
+    "fake_responds",
     "forget_boundary_facts",
     "hold_boundary_facts_for",
     "is_synthetic",

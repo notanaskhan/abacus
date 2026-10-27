@@ -23,3 +23,13 @@ updated: 2026-10-25
 
 ## Progress log
 - 2026-10-25: built; `vitest run src/screens/POR-02` 26 passed (12 new for d, e, g, h, M and the acceptance); footing tests extended for g and h (Tessellate 26 / 3 / Sep 12). DEC-346 recorded.
+- 2026-10-27 (S10 gap build, P-08-T26; no task file of its own and the TASK block is used up, so it is logged here, beside T23 which it depends on). The `J12-client-portal.spec.ts` steps walk in the fixture project on POR-01's own scenarios (`?st=`):
+  - 2b: Tess signs in with the emailed code and her authenticator, then lands on POR-02 d.
+  - 1e: an expired link is renewed by email.
+  - 1g: the last wrong code shows Too many attempts.
+  - Role union: Meera's home and her scopes. The account menu is closed before axe because the modal menu sets `aria-hidden` on `#root`.
+  - The other projects keep these fixme until the sink mailbox reader exists (F-04-T22).
+- Fixed a dev-only bug the 1e step found. `takeLinkFromFragment` and `takeInvitationFromFragment` ran inside `useState` initializers, which StrictMode calls twice; the second call found the fragment already cleared, so the emailed link or invitation token was lost under `make dev` and fixture mode. The pages now read the fragment purely and clear it in an effect (`useFragmentToken`).
+- The harness keeps a path's `#fragment` after the added query, and the `tess-moreno` persona is added.
+- Not done: j02 5 (Tess accepts and sees the Copperleaf first visit), the `por-01-sign-in` and `por-02-home` screen specs at 1400 and 390 with `assertInvariants`, and the full-stack nightly.
+- Results: J12 fixture 6 passed, 2 fixme; portal, routes and POR-01 vitest pass except `link-contract.test.ts` rule 5 (ADM-04's links), which fails without this change.

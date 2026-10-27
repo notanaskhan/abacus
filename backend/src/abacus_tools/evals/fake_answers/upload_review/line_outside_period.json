@@ -1,0 +1,21 @@
+{
+  "case": "line_outside_period",
+  "prompt_ref": "evidence.upload_review@v3",
+  "content_sha256": "3814fc7949a9a160d442590529f8a1623949e2f7e72a37b9c35a8396af2e9a1c",
+  "response": {
+    "no_concerns": false,
+    "flags": [
+      {
+        "category": "altered",
+        "confidence": 0.85,
+        "rationale": "A transaction dated in November sits among December lines on a December statement.",
+        "citations": [
+          {
+            "page": 1,
+            "quote": "11/13 ACH payroll ($1,405.50) $10,274.50"
+          }
+        ]
+      }
+    ]
+  }
+}

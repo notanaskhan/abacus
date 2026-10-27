@@ -9,7 +9,7 @@ epic: P-07
 plan_key: P-07-T21; P-07-T22
 branch: s6-eng03-journey
 created: 2026-10-23
-updated: 2026-10-23
+updated: 2026-10-27
 ---
 
 ## Objective
@@ -53,6 +53,13 @@ and no serious axe finding."
 ## Progress log
 - 2026-10-23: built and tested; vitest, typecheck, lint, Playwright with axe for every scenario,
   the journey listed in the fixture project, `make check-fast`.
+- 2026-10-27 (S10 gap build, P-07-T22): the J02 record steps walk in the fixture project.
+  - The fixture app gains `?flags=` (`install.ts`), which turns a flag on in `/v1/me/capabilities`; the seed answers capabilities only when it is given. The harness gains `journey.as(..., { flags })`, used in the fixture project only.
+  - The seed scenario now mounts the CLI-02 and ENG-02 record handlers.
+  - J02 3b (CLI-02 from its row) and J02 5 (ENG-02b, G1–G3 met, opened from ENG-01) are live in fixture and fixme elsewhere. J02 4 stays fixme because the draft routes answer only in ENG-03's own scenarios.
+  - New `e2e/journeys/eng-cli-core.spec.ts`: CLI-01 → CLI-02 and ENG-01 → ENG-02b, with axe and INV-1 to INV-5.
+  - Results: fixture project 6 passed, 5 fixme; `src/fixtures` and `src/app-core` vitest 510 passed.
+  - Not done: the staging walk (needs the live swaps P-07-T15/T16 and staging).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

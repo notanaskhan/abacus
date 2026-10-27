@@ -32,6 +32,24 @@ P-06-T27: "Docs: requests, evidence and agents READMEs, final SPEC, C5 v1 frozen
 - 2026-10-26: READMEs. requests: lifecycle v2, what follow-ups chase, the withdrawal's requests side, and "Not built". evidence: withdraw refusals, the purge step by step (statuses of `evidence_key_destroy`, retries, continue-as-new), the API for other modules, staff accept. agents: the stale P-4 line ("Routine sends as the agent") corrected to draft-only (DEC-220), follow-ups v2, withdrawn versions.
 - 2026-10-26: SPEC-319 final (approved). C5: `c5.test.ts` passed (12 tests); the pytest half not run; the freeze recorded as ready, not done. C5's header expiries corrected to 2027-04-21 (DEC-137).
 - 2026-10-26: RB-32 written (number: the README's next free; RB-33 onward now owed to Q-02-T51). Skill section added. Flag rows added. Capacity ledger updated (26 of 29 rows delivered, 23.75 of 26.0 te).
+- 2026-10-27 (S10 gap build): C5 binders and requests half recorded frozen. `MODELS["c5_requests_binders"]` lists 32 models. `--freeze c5_requests_binders v1` wrote `backend/tests/contracts/c5_requests_binders/v1.json`; `--check` exit 0. Consumer suites green: pytest 197 passed, 3 xfailed; `c5.test.ts` 12 passed. Register row, §10 and both freeze notes updated. C3 is not frozen: finding #285's strict xfail is still open.
+- 2026-10-27 (S10 gap build, P-06-T25; no task file of its own and the TASK block is used up, so it is logged here). The journey specs are built and walk in the fixture project:
+  - `J06-individual-1040.spec.ts`, j06 2: BND-02 b → publish, then Claire's POR-03 a.
+  - `J16-daily-practice.spec.ts`, j16 5: BND-01 b → the Request Chaser's draft → Grace sends.
+  - `J03-ebp-audit.spec.ts`, j03 4 (SHL-14 a compose and send) and j03 10 (SHL-14 b → Sam Ortiz).
+  - `J22-unrecorded-liabilities.spec.ts`, j22 3: SHL-14 f, Approve & send.
+- Still fixme, each with an owner:
+  - j03 4's publish half: no fixture holds a Northwind PBC Draft.
+  - `J10-month-end-close.spec.ts` j10 2: SHL-14 d is the post-add state and serves no binder rows.
+  - j22 4: the SHL-20 card sits in BND-02's dock, and no fixture serves Granite Peak's rows.
+  - Every non-fixture project, until `binders.engine` is on in E0 and the P-06-T16 live swaps land.
+- Fixture switches added:
+  - `?scenario=<SCREEN>:<state>` lays a screen's fixture scenario over the seed, in the app (`install.ts`) and the portal (`install-portal.ts`, POR-* only).
+  - `_key_` tokens in the path or query resolve from the scenario's `OPENS`.
+  - The harness gains `journey.as(..., { scenario, flags })`, and the `cole-hart` persona is added.
+- Results: fixture project 15 passed, 19 fixme. Unit tests for the switches are in `handlers.test.ts`. `src/fixtures`, `app-core` and `gallery` vitest: 547 passed.
+- I made one mistake: widening the token regex to cover the query dropped `?` from its lookahead. The unit test now pins it.
+- Staging is not judged.
 
 ## Hand-off (P-06 close-out)
 **State of the epic.** 23 rows done, 3 in review (T22, T26, T27), 2 in progress (T16, T21), T25 not started (`docs/product/capacity-ledger.md`). The epic's DoD (§10) is not met yet.

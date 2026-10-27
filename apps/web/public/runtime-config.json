@@ -1,0 +1,7 @@
+{
+  "environment": "local",
+  "oidc": { "authority": "https://identity.abacus.local", "client_id": "abacus-local" },
+  "sentry": {},
+  "release": "local",
+  "portal_base_domain": "portal.localhost"
+}

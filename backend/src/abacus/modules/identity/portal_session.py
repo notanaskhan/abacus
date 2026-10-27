@@ -46,6 +46,7 @@ from abacus.modules.identity.events import PortalSignInCodeRequested
 from abacus.modules.identity.mfa_floor import mfa_required, portal_security_policy
 from abacus.modules.identity.portal_idp import email_code_matches, issue_email_code
 from abacus.modules.identity.repository import active_memberships
+from abacus.modules.identity.security_policies import portal_session_seconds
 from abacus.modules.identity.service import portal_member_context
 from abacus.modules.identity.slots import claim_link
 from abacus.modules.identity.staff_session import ABSOLUTE_SECONDS, IDLE_SECONDS, end_session
@@ -366,6 +367,8 @@ async def open_session(
     `claim` (which must answer true: the code's challenge or the second-step token, used once).
     None when the claim was already spent by a concurrent request."""
     access, cookie = _access_token(), secrets.token_urlsafe(32)
+    # G-02-T14 (AC-19): the firm's portal session length, 8 hours at most.
+    absolute = min(ABSOLUTE_SECONDS, await portal_session_seconds(tenant_id))
     async with platform_transaction(f"user:{user_id}") as conn:
         if not (await conn.execute(claim, params)).scalar_one():
             return None
@@ -385,7 +388,7 @@ async def open_session(
                         "access_seconds": ACCESS_SECONDS,
                         "cookie": sha256_hex(cookie),
                         "idle": IDLE_SECONDS,
-                        "absolute": ABSOLUTE_SECONDS,
+                        "absolute": absolute,
                     },
                 )
             ).scalar_one(),

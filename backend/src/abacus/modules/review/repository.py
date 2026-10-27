@@ -3,16 +3,27 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from datetime import datetime
+from typing import cast
 from uuid import UUID
 
-from sqlalchemy import Text, func, insert, select, update
+from sqlalchemy import ColumnElement, Select, Text, func, insert, select, update
 from sqlalchemy import cast as sql_cast
 from sqlalchemy.dialects.postgresql import ARRAY, distinct_on
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
-from abacus.modules.review.models import ReviewableNote, ReviewableNoteEvent, SignOff
+from abacus.modules.identity.api import Actor, visible
+from abacus.modules.review.models import (
+    Decision,
+    DecisionAnalysisRequest,
+    DecisionCard,
+    DecisionCardVersion,
+    ReviewableNote,
+    ReviewableNoteEvent,
+    SignOff,
+)
 
 
 async def sign_offs_of(
@@ -160,3 +171,159 @@ async def notes_of_target(session: AsyncSession, target_id: UUID) -> Sequence[Re
         .scalars()
         .all()
     )
+
+
+# --- P-04-T21: the C3 notes list ---------------------------------------------------------------
+
+
+def note_list_query(
+    ctx: Actor,
+    *,
+    engagement_id: UUID | None,
+    target_type: str | None,
+    target_id: UUID | None,
+) -> tuple[
+    Select[ReviewableNote],
+    Select[ReviewableNote],
+    ColumnElement[object],
+    ColumnElement[object],
+]:
+    """Notes on engagements where the caller may read them (`visible()`, walls excluded), with
+    the filters: (the base for per-status counts, the statement, its sort, its id column)."""
+    engagement = ReviewableNote.engagement_id.expression
+    base = select(ReviewableNote).where(visible(ctx, "review_note.read", engagement))
+    if engagement_id is not None:
+        base = base.where(ReviewableNote.engagement_id == engagement_id)
+    if target_type is not None:
+        base = base.where(ReviewableNote.target_type == target_type)
+    if target_id is not None:
+        base = base.where(ReviewableNote.target_id == target_id)
+    return (
+        base,
+        base,
+        cast(ColumnElement[object], ReviewableNote.created_at.expression),
+        cast(ColumnElement[object], ReviewableNote.id.expression),
+    )
+
+
+# --- P-04-T23: decision cards ------------------------------------------------------------------
+
+
+def card_list_query(
+    ctx: Actor, *, engagement_id: UUID | None
+) -> tuple[Select[DecisionCard], ColumnElement[object], ColumnElement[object]]:
+    """Cards on engagements where the caller may read them (`visible()`, walls excluded)."""
+    engagement = DecisionCard.engagement_id.expression
+    base = select(DecisionCard).where(visible(ctx, "decision.read", engagement))
+    if engagement_id is not None:
+        base = base.where(DecisionCard.engagement_id == engagement_id)
+    return (
+        base,
+        cast(ColumnElement[object], DecisionCard.created_at.expression),
+        cast(ColumnElement[object], DecisionCard.id.expression),
+    )
+
+
+async def get_card(session: AsyncSession, card_id: UUID) -> DecisionCard | None:
+    return await session.get(DecisionCard, card_id)
+
+
+async def lock_card(session: AsyncSession, card_id: UUID) -> DecisionCard | None:
+    """The card, locked for its status change (two decides can't race)."""
+    return (
+        await session.execute(
+            select(DecisionCard).where(DecisionCard.id == card_id).with_for_update()
+        )
+    ).scalar_one_or_none()
+
+
+async def cards_by_id(session: AsyncSession, card_ids: Sequence[UUID]) -> Sequence[DecisionCard]:
+    """LIST_EXEMPT: a card's own chain, after authorising on its engagement."""
+    if not card_ids:
+        return []
+    return (
+        (await session.execute(select(DecisionCard).where(DecisionCard.id.in_(card_ids))))
+        .scalars()
+        .all()
+    )
+
+
+async def successors_of(session: AsyncSession, card_ids: Sequence[UUID]) -> Sequence[DecisionCard]:
+    """LIST_EXEMPT: the cards that supersede these (callers authorised on their engagement)."""
+    if not card_ids:
+        return []
+    return (
+        (
+            await session.execute(
+                select(DecisionCard).where(DecisionCard.supersedes_id.in_(card_ids))
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def set_card_status(session: AsyncSession, card_id: UUID, status: str) -> None:
+    await session.execute(
+        update(DecisionCard).where(DecisionCard.id == card_id).values(status=status)
+    )
+
+
+async def insert_card(session: AsyncSession, **values: object) -> UUID:
+    return (
+        await session.execute(insert(DecisionCard).values(**values).returning(DecisionCard.id))
+    ).scalar_one()
+
+
+async def versions_of(
+    session: AsyncSession, card_ids: Sequence[UUID]
+) -> Sequence[DecisionCardVersion]:
+    """LIST_EXEMPT: the history of cards read after authorising on their engagement."""
+    if not card_ids:
+        return []
+    return (
+        (
+            await session.execute(
+                select(DecisionCardVersion)
+                .where(DecisionCardVersion.card_id.in_(card_ids))
+                .order_by(DecisionCardVersion.version_no, DecisionCardVersion.created_at)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def current_version(session: AsyncSession, card_id: UUID) -> int:
+    found = (
+        await session.execute(
+            select(func.max(DecisionCardVersion.version_no)).where(
+                DecisionCardVersion.card_id == card_id
+            )
+        )
+    ).scalar_one_or_none()
+    return int(found or 0)
+
+
+async def insert_version(session: AsyncSession, **values: object) -> None:
+    await session.execute(insert(DecisionCardVersion).values(**values))
+
+
+async def decision_of(session: AsyncSession, card_id: UUID) -> Decision | None:
+    return (
+        await session.execute(select(Decision).where(Decision.card_id == card_id))
+    ).scalar_one_or_none()
+
+
+async def insert_decision(session: AsyncSession, **values: object) -> None:
+    await session.execute(insert(Decision).values(**values))
+
+
+async def insert_analysis_request(session: AsyncSession, **values: object) -> datetime:
+    return (
+        await session.execute(
+            insert(DecisionAnalysisRequest)
+            .values(**values)
+            .returning(DecisionAnalysisRequest.created_at)
+        )
+    ).scalar_one()

@@ -71,12 +71,28 @@ function NotBuilt(): JSX.Element {
 
 const rootRoute = createRootRoute({ component: Root, notFoundComponent: NotBuilt });
 
+const FRAGMENT = {
+  link: /(?:^#|&)link=([\w-]{20,200})/,
+  token: /(?:^#|&)token=([\w-]{20,200})/,
+} as const;
+
+/** The fragment's `#<name>=<token>`, read only: it leaves the address bar as it is. */
+function fragmentValue(
+  name: keyof typeof FRAGMENT,
+  location: Location = window.location,
+): string | undefined {
+  return FRAGMENT[name].exec(location.hash)?.[1];
+}
+
+function clearFragment(location: Location = window.location): void {
+  window.history.replaceState(null, "", location.pathname + location.search);
+}
+
 /** `#link=<token>` from a reminder email: into the page's memory, out of the address bar. */
 export function takeLinkFromFragment(location: Location = window.location): string | undefined {
-  const match = /(?:^#|&)link=([\w-]{20,200})/.exec(location.hash);
-  if (match?.[1] === undefined) return undefined;
-  window.history.replaceState(null, "", location.pathname + location.search);
-  return match[1];
+  const link = fragmentValue("link", location);
+  if (link !== undefined) clearFragment(location);
+  return link;
 }
 
 /** `#token=<token>` from an invitation email (POR-01 d): into the page's memory, out of the
@@ -84,10 +100,20 @@ export function takeLinkFromFragment(location: Location = window.location): stri
 export function takeInvitationFromFragment(
   location: Location = window.location,
 ): string | undefined {
-  const match = /(?:^#|&)token=([\w-]{20,200})/.exec(location.hash);
-  if (match?.[1] === undefined) return undefined;
-  window.history.replaceState(null, "", location.pathname + location.search);
-  return match[1];
+  const token = fragmentValue("token", location);
+  if (token !== undefined) clearFragment(location);
+  return token;
+}
+
+/** A page's fragment token, taken once: read in the state initializer, which must stay pure
+ * (StrictMode calls it twice and keeps one answer, so clearing there lost the token in dev), and
+ * cleared from the address bar by an effect. */
+function useFragmentToken(name: keyof typeof FRAGMENT): string | undefined {
+  const [value] = useState(() => fragmentValue(name));
+  useEffect(() => {
+    if (value !== undefined) clearFragment();
+  }, [value]);
+  return value;
 }
 
 // The portal's paths are not the firm router's registered ones, so it moves through the router's
@@ -95,7 +121,7 @@ export function takeInvitationFromFragment(
 // `?return=` an expired session left (P-08-T11), else to their role's landing.
 function SignInPage(): JSX.Element {
   const { history } = useRouter();
-  const [link] = useState(() => takeLinkFromFragment());
+  const link = useFragmentToken("link");
   return (
     <SignIn
       {...(link === undefined ? {} : { opening: { email: "", linkToken: link } })}
@@ -109,7 +135,7 @@ function SignInPage(): JSX.Element {
 /** POR-01 d: the invitation's preview, the code, then acceptance and the person's landing. */
 function AcceptPage(): JSX.Element {
   const { history } = useRouter();
-  const [token] = useState(() => takeInvitationFromFragment());
+  const token = useFragmentToken("token");
   return (
     <SignIn
       opening={{ email: "", invitationToken: token ?? "" }}

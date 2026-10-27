@@ -2,9 +2,9 @@
 // beside the SPA on each host, so one bundle is promoted unchanged (ADR-088). Every value in it is
 // Public: it holds no secret and no tenant data. Unknown keys are ignored.
 //
-// Q-01-T50 reads it for browser error reporting only. Q-01-T23 makes it required before router
-// boot (a missing or malformed file becomes a plain error state) and moves the OIDC authority and
-// client ID onto it; until then a missing file simply leaves reporting off.
+// Required before router boot (Q-01-T23, `app-core/boot.tsx`): a missing or malformed file renders
+// a plain error state. Q-01-T50 reads it for browser error reporting. Sign-in goes through the
+// session BFF, so the OIDC authority and client ID here are the deployed bundle's only copy.
 
 export type RuntimeEnvironment = "local" | "staging" | "production";
 

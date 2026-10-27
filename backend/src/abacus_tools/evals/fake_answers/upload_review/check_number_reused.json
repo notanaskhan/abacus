@@ -1,0 +1,25 @@
+{
+  "case": "check_number_reused",
+  "prompt_ref": "evidence.upload_review@v3",
+  "content_sha256": "c50c412260f96cc01cacb91ff09220804e03cf347403a52d81dbcee5c514ab41",
+  "response": {
+    "no_concerns": false,
+    "flags": [
+      {
+        "category": "altered",
+        "confidence": 0.85,
+        "rationale": "Check 1041 appears twice with different amounts.",
+        "citations": [
+          {
+            "page": 1,
+            "quote": "12/09 Check 1041 ($820.00) $11,680.00"
+          },
+          {
+            "page": 1,
+            "quote": "12/21 Check 1041 ($900.00) $12,124.50"
+          }
+        ]
+      }
+    ]
+  }
+}

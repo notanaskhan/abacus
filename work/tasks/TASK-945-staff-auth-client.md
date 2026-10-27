@@ -67,6 +67,15 @@ the firm.
 - `2026-10-23 13:40` — Built and green: apps/web typecheck (no new errors), lint, vitest
   113 files / 1107 tests; packages/ui auth-card tests; Playwright `e2e/screens/SHL-06.spec.ts` 3/3
   with axe; parity `shl-06g.window` passes Tier C locally at 0.23 %.
+- 2026-10-27 (S10 gap build, P-01-T16; no task file of its own and the TASK block is used up, so it is logged here). The journey steps walk in the fixture project:
+  - j01 2 (Felix): fixme in fixture, which presets the session; it runs on the full stack and staging through the WorkOS fake's email code and TOTP adapter.
+  - j01 3: Grace reaches Firm settings from the firm pill, using SHL-03 a's capabilities.
+  - j13 1-2: Daniel's bell is lit and the drawer opens, using SHL-04 a's rows.
+  - j16 1-2: Grace is in the toolbar; Chicago becomes her default office (SHL-03 f's offices); then Firm settings.
+  - j11 a3: Hannah's "Unrecorded liabilities tester finished" row (SHL-04 g). Fixture only, as the plan says.
+- Fixed an axe finding the journeys caught (critical `aria-required-children`): the firm menu's footer wordmark (`role="img"`) was a child of `role="menu"`. It is now `aria-hidden`, and the version line stays readable.
+- Not built here: flags on for synthetic firms, manifest `live`, the Tier C locks for SHL-03/04/06g, axe on every scenario, and the shell specs on staging.
+- Results: fixture project 21 passed, 19 fixme.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

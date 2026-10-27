@@ -95,7 +95,12 @@ ROUTES: Final[tuple[Route, ...]] = (
     WISP_PACK,
 )
 # Routes still answering 501 (the stubs); remove each as its task makes it live.
-STUBBED: Final = frozenset({*ROUTES, EXPORTS, EXPORT_REQUEST, EXPORT_APPROVE})
+# G-02-T14 (TASK-1430) made identity's live: the overview, sign-in, portal, exempt account,
+# sessions, sign-out, posture, unlock and the support switch.
+LIVE: Final = frozenset(
+    {OVERVIEW, SIGN_IN, PORTAL, EXEMPT, SESSIONS, SIGN_OUT, POSTURE, UNLOCK, SUPPORT, SUPPORT_PUT}
+)
+STUBBED: Final = frozenset({*ROUTES, EXPORTS, EXPORT_REQUEST, EXPORT_APPROVE}) - LIVE
 
 FRESH_MFA_REGISTER: Final = (
     Path(__file__).resolve().parents[3] / "docs" / "architecture" / "fresh-mfa-actions.yaml"
@@ -891,7 +896,8 @@ async def test_ac26_residency_comes_from_the_firm_and_is_locked(
     if stubbed(OVERVIEW, response):
         return
     residency = response.json()["residency"]
-    region = await seed.value("SELECT region FROM firms WHERE id = $1", world.tenant)
+    # ED-160: `firms` is keyed by `tenant_id` (the suite was written against the stub).
+    region = await seed.value("SELECT region FROM firms WHERE tenant_id = $1", world.tenant)
     assert residency["region"] == region
     assert residency["ai_inference"] == "us_only"
     assert residency["locked"] is True
@@ -1061,7 +1067,7 @@ async def test_ac29_margaret_reads_the_screen_and_may_approve_exports_but_not_ma
 
 
 async def test_ac30_posture_agrees_with_the_fieldsets(
-    world: World, as_: Callable[[object], Call]
+    world: World, as_: Callable[[object], Call], seed: Seeder
 ) -> None:
     await _incident(world, as_)
     posture = await as_(world.felix)(*POSTURE)
@@ -1069,18 +1075,34 @@ async def test_ac30_posture_agrees_with_the_fieldsets(
         return
     facts = posture.json()
     overview = (await as_(world.felix)(*OVERVIEW)).json()
-    incidents = (await as_(world.felix)(*INCIDENTS)).json()
-    safeguards = (await as_(world.felix)(*SAFEGUARDS)).json()
     assert facts["sso_enforced"] == overview["sign_in"]["require_sso"]
     assert (facts["mfa_enrolled"], facts["mfa_seats"]) == (
         overview["mfa"]["enrolled"],
         overview["mfa"]["seats"],
     )
     assert facts["residency_region"] == overview["residency"]["region"]
-    assert facts["open_incidents"] == sum(
-        1 for i in incidents["items"] if i["status"] == "investigating"
-    )
-    assert facts["pub4557_open"] == safeguards["controls_total"] - safeguards["controls_evidenced"]
+    # DEC-530: while the register's read (T18) and the safeguards record (T20) are stubs, the
+    # posture is held to the register's rows themselves; each fact meets its route once live.
+    if INCIDENTS in STUBBED:
+        investigating = await seed.value(
+            "SELECT count(*) FROM security_incidents WHERE tenant_id = $1 "
+            "AND status = 'investigating'",
+            world.tenant,
+        )
+        assert facts["open_incidents"] == investigating == 1
+    else:
+        incidents = (await as_(world.felix)(*INCIDENTS)).json()
+        assert facts["open_incidents"] == sum(
+            1 for i in incidents["items"] if i["status"] == "investigating"
+        )
+    if SAFEGUARDS in STUBBED:
+        assert facts["pub4557_open"] == 0  # nothing recorded until T20's safeguards record
+    else:
+        safeguards = (await as_(world.felix)(*SAFEGUARDS)).json()
+        assert (
+            facts["pub4557_open"]
+            == safeguards["controls_total"] - safeguards["controls_evidenced"]
+        )
 
 
 # --- AC-45, AC-46: the agent, the system and client principals ----------------------------------

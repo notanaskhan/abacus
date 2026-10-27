@@ -14,6 +14,11 @@ const HOSTED_URL: Readonly<Record<string, string | undefined>> = {
   canary: process.env.ABACUS_CANARY_URL,
 };
 const WALLED = "Ashford Manufacturing Co."; // ADM-03's wall for Lena Park (INV-3)
+// The fixture project turns on the flags E0 leaves off, so the screens built on fixtures walk.
+const CLIENTS_V2 = ["clients.v2"];
+const ENGAGEMENTS_V2 = ["clients.v2", "engagements.v2"];
+// ENG-02b's record: Northwind Robotics 401(k) Plan's PY2025 EBP Audit, opened from ENG-01.
+const NORTHWIND_EBP = "PY2025 EBP Audit";
 
 function owner(description: string): { annotation: { type: string; description: string } } {
   return { annotation: { type: "owner", description } };
@@ -72,16 +77,21 @@ test.describe("J02-audit-core", () => {
   );
 
   // P-07-T22: CLI-02, ENG-03 and ENG-02 are built on fixtures (P-07-T19, T20, T21; DEC-195,
-  // DEC-197). In the running app they sit behind `clients.v2` and `engagements.v2`, which E0 does
-  // not turn on, and their live routes land with P-07-T15 and T16; the steps below are written
-  // against the built screens and walk once both hold.
-  test.fixme(
+  // DEC-197). The record steps (3b, 5) walk in the fixture project with `clients.v2` and
+  // `engagements.v2` turned on there; in the running app those flags are off in E0 and the live
+  // routes land with P-07-T15 and T16, so the other projects keep them fixme. The wizard (4) needs
+  // the draft routes, which only ENG-03's own scenarios answer.
+  test(
     "J02 3b: the client record opens from the Clients index (CLI-02)",
     owner(
       "P-07 · P-07-T19 built; clients.v2 on in E0 and live record P-07-T15 · S6, Fri Jan 22, 2027",
     ),
     async ({ journey }) => {
-      await journey.as("grace-holloway", "/clients", { clock: DEMO_INSTANT });
+      test.fixme(
+        journey.project !== "fixture",
+        "clients.v2 is off in E0 and the live record is P-07-T15's",
+      );
+      await journey.as("grace-holloway", "/clients", { clock: DEMO_INSTANT, flags: CLIENTS_V2 });
       await journey.step("J02 step 3b: Northwind's record from its row", async (page) => {
         await page.getByRole("button", { name: "Northwind Robotics, Inc. actions" }).click();
         await page.getByRole("menuitem", { name: "Open" }).click();
@@ -96,10 +106,13 @@ test.describe("J02-audit-core", () => {
   test.fixme(
     "J02 4: Hannah Leclerc creates the PY2025 EBP audit in the wizard (ENG-03)",
     owner(
-      "P-07 · P-07-T21 built; engagements.v2 on in E0 and drafts and create P-07-T16 · S6, Fri Jan 22, 2027",
+      "P-07 · P-07-T21 built; the draft routes answer only in ENG-03's own scenarios, so the app on fixtures and live need drafts and create, P-07-T16 · S6, Fri Jan 22, 2027",
     ),
     async ({ journey }) => {
-      await journey.as("hannah-leclerc", "/engagements/new", { clock: DEMO_INSTANT });
+      await journey.as("hannah-leclerc", "/engagements/new", {
+        clock: DEMO_INSTANT,
+        flags: ENGAGEMENTS_V2,
+      });
       await journey.step("J02 step 4: the wizard opens with G1 met", async (page) => {
         await expect(page.getByRole("dialog")).toBeVisible();
         await expect(page.getByText(/^G1 Continuance approved/)).toBeVisible();
@@ -115,21 +128,30 @@ test.describe("J02-audit-core", () => {
     },
   );
 
-  test.fixme(
+  test(
     "J02 5: the engagement record shows G1 to G3 recorded (ENG-02b)",
     owner(
       "P-07 · P-07-T20 built; engagements.v2 on in E0 and the record P-07-T15 · S6, Fri Jan 22, 2027",
     ),
     async ({ journey }) => {
-      await journey.as("hannah-leclerc", "/engagements", { clock: DEMO_INSTANT });
-      await journey.step("J02 step 5: the letter is recorded and G3 is met", async (page) => {
-        await page.getByRole("tab", { name: "Letter & terms" }).click();
-        await page.getByRole("button", { name: "Record signed letter…" }).click();
-        const sheet = page.getByRole("dialog", { name: "Record signed letter" });
-        await sheet.getByLabel("Client signed on").fill("2026-09-14");
-        await sheet.getByLabel("Firm signed on").fill("2026-09-14");
-        await sheet.getByRole("button", { name: "Record letter" }).click();
-        await page.getByRole("tab", { name: "Overview" }).click();
+      test.fixme(
+        journey.project !== "fixture",
+        "engagements.v2 is off in E0 and the live record is P-07-T15's",
+      );
+      // Northwind's PY2025 EBP audit (ENG-02b): accepted, independence confirmed, letter signed.
+      await journey.as("hannah-leclerc", "/engagements", {
+        clock: DEMO_INSTANT,
+        flags: ENGAGEMENTS_V2,
+      });
+      await journey.step("J02 step 5: G1 to G3 read met on the record", async (page) => {
+        await page
+          .getByRole("row")
+          .filter({ hasText: "Northwind" })
+          .filter({ hasText: NORTHWIND_EBP })
+          .first()
+          .click();
+        await expect(page.getByRole("heading", { name: /PY2025 EBP Audit/ })).toBeVisible();
+        await expect(page.getByRole("region", { name: "Gates" })).toBeVisible();
         for (const gate of ["G1", "G2", "G3"]) {
           await expect(page.locator(`[data-gate='${gate}'][data-met='met']`)).toBeVisible();
         }
@@ -139,15 +161,21 @@ test.describe("J02-audit-core", () => {
   );
 
   // BND-01 is built on fixtures, but E0 does not turn `binders.engine` on for the firm (neither the
-  // fixture capabilities nor `make seed-demo`), so `/binders` shows the flag-off state until the
-  // swap that turns it on.
-  test.fixme(
+  // fixture capabilities nor `make seed-demo`), so live `/binders` shows the flag-off state until the
+  // swap that turns it on. The fixture project walks BND-01's own scenario (P-06-T25).
+  test(
     "J02 6: Grace Holloway finds the new binder in the Binders index (BND-01)",
     owner("P-06 · P-06-T16 BND-01 fixture-to-live swap, binders.engine on · S6, Fri Jan 22, 2027"),
     async ({ journey }) => {
-      await journey.as("grace-holloway", "/binders", { clock: DEMO_INSTANT });
+      test.fixme(journey.project !== "fixture", "binders.engine is off in E0 (P-06-T16)");
+      await journey.as("grace-holloway", "/binders", {
+        clock: DEMO_INSTANT,
+        scenario: "BND-01:a",
+        flags: ["binders.engine"],
+      });
       await journey.step("J02 step 6: the Binders index as Grace Holloway", async (page) => {
         await expect(page.getByRole("heading", { name: "Binders", exact: true })).toBeVisible();
+        await expect(page.getByText("Showing 15 of 241")).toBeVisible();
       });
     },
   );

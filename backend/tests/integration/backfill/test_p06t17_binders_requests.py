@@ -173,8 +173,8 @@ async def firm(net: Net, seed: Seeder) -> Firm:
 
 async def test_t07_a_pbc_binder_publishes_only_after_g3_and_nothing_leaves(firm: Firm) -> None:
     """The firm requires a letter and none is recorded, so G3 is unmet. (DEC-39 (b) makes G3
-    strict whatever the firm's letter policy; that gap is ED-010, held in
-    `test_acceptance_independence_letter.py`.)"""
+    strict whatever the firm's letter policy, ED-010; `test_acceptance_independence_letter.py`
+    holds that.)"""
     await firm.seed.run(
         "UPDATE firms SET require_letter = true WHERE tenant_id = $1", firm.tenant_id
     )

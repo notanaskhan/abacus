@@ -475,7 +475,11 @@ export function FirmMenu({
       </Section>
 
       <div className="flex items-center justify-between px-[8px] pt-[8px] pb-[2px]">
-        <Wordmark size={12} />
+        {/* Decorative here: an img is not a child a menu may own (axe aria-required-children,
+            found by the J01 and J16 journeys); the version line stays readable. */}
+        <span aria-hidden="true">
+          <Wordmark size={12} />
+        </span>
         {version !== undefined && version !== "" && (
           <span className="text-meta text-ink-4">{FIRM_MENU.version(version)}</span>
         )}

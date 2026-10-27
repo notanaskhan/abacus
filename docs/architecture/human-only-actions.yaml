@@ -93,3 +93,7 @@ actions:
     verb: decide  # P-07-T41 (DEC-428, 0175): the engagement partner concludes independence (SPEC-332 AC-18)
   - action: nas.evaluated
     verb: decide  # P-07-T41 (DEC-428, 0175): a NAS evaluation, decided by the engagement partner (AC-21)
+  - action: decision.decided
+    verb: decide  # P-04-T23 (DEC-503, 0212): the card's reserved person decides (ADR-160 clause 8)
+  - action: decision.reassessed
+    verb: decide  # P-04-T23 (DEC-503, 0212): No change, or a superseding card (SHL-11 d, h)

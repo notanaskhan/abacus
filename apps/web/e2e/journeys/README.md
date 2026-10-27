@@ -8,6 +8,8 @@ Each spec runs in four Playwright projects: `fixture` (`make journeys`, no Docke
 URL in `ABACUS_STAGING_URL` / `ABACUS_CANARY_URL`; they skip while it is unset).
 
 - `J02-client-onboarding.spec.ts`: J02-audit-core (F-04-T26).
+- `eng-cli-core.spec.ts`: the P-07 screens in the app on fixtures, CLI-01 → CLI-02 and ENG-01 → ENG-02b (P-07-T22).
+- `J03-ebp-audit.spec.ts`, `J06-individual-1040.spec.ts`, `J10-month-end-close.spec.ts`, `J16-daily-practice.spec.ts`, `J22-unrecorded-liabilities.spec.ts`: the P-06 steps (P-06-T25).
 - `J12-client-portal.spec.ts`: J12-core (F-04-T26).
 - `J04-fs-audit.spec.ts`: J04-fs-audit's PBC slice at the Sep 24 snapshot (F-04-T32; M6).
 - `J01-firm-onboarding.spec.ts`: J01-core skeleton (F-04-T32; M8); step 3 and 3f live in fixture mode (G-01-T16).
@@ -15,6 +17,13 @@ URL in `ABACUS_STAGING_URL` / `ABACUS_CANARY_URL`; they skip while it is unset).
 - `J16-daily-practice.spec.ts`: j16 2, Firm settings from the firm pill (G-01-T16).
 
 A step on a screen behind a flag E0 leaves off may open the real route on the screen's own fixture scenario with `?screen=<ID>&st=<state>` (fixture project only; DEC-457).
+
+In the fixture project, `journey.as(persona, path, { flags, scenario })` adds two switches:
+
+- `flags` turns on flags E0 leaves off (`?flags=`).
+- `scenario` is the `?screen=` choice above, written `BND-02:b`.
+
+A `_key_` segment or query value in the path (`/binders/_binderId_?ov=request:new:_binderId_`) resolves to the id the state opens (`ids` in `screen-scenarios.ts`).
 
 A step whose screen is still planned is `test.fixme` with an `owner` annotation: the epic, the task
 and its sprint end date. CI (F-04-T28): pull requests run the `fixture` project when the SPA, the

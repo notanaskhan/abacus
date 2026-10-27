@@ -37,6 +37,7 @@ class SignOff(Base):
     statement_version: Mapped[str | None]
     adopted_run_id: Mapped[UUID | None]
     independence_checked_at: Mapped[datetime | None]
+    bulk_request_id: Mapped[UUID | None]  # P-04-T22: the bulk request that wrote it
 
 
 class ReviewableNote(Base):
@@ -50,11 +51,15 @@ class ReviewableNote(Base):
     target_type: Mapped[str]
     target_id: Mapped[UUID]
     anchor: Mapped[str | None]
-    body: Mapped[str]
+    # SPEC-313 rows hold `body`; from P-04-T21 (migration 0210) a note holds `body_sealed`.
+    body: Mapped[str | None]
     raised_by: Mapped[UUID]
     # P-04-T03 (migration 0093; ADR-160 clause 6): authoritative, written with each event.
     status: Mapped[str] = mapped_column(server_default=FetchedValue())
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    assignee_user_id: Mapped[UUID | None]
+    anchor_ref: Mapped[dict[str, str] | None] = mapped_column(JSONB)
+    body_sealed: Mapped[bytes | None]
 
 
 class ReviewableNoteEvent(Base):
@@ -67,6 +72,7 @@ class ReviewableNoteEvent(Base):
     body: Mapped[str | None]
     by_user: Mapped[UUID]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    body_sealed: Mapped[bytes | None]  # P-04-T21 (migration 0210)
 
 
 class HumanGate(Base):
@@ -88,3 +94,81 @@ class HumanGate(Base):
     state: Mapped[str] = mapped_column(server_default=FetchedValue())
     source_event_id: Mapped[UUID]
     updated_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class DecisionCard(Base):
+    """One question reserved to a role (P-04-T04 table, T23 service; ADR-160 clause 8). Only
+    `status` changes; a new card supersedes the last."""
+
+    __tablename__ = "decision_cards"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    work_item_id: Mapped[UUID | None]
+    kind: Mapped[str]
+    version_no: Mapped[int]
+    question_key: Mapped[str]
+    reserved_role: Mapped[str]
+    reserved_user_id: Mapped[UUID | None]
+    options: Mapped[list[dict[str, object]]] = mapped_column(JSONB)
+    context: Mapped[list[dict[str, object]]] = mapped_column(JSONB)
+    factors: Mapped[list[dict[str, object]]] = mapped_column(JSONB)
+    recommendation_suggestion_id: Mapped[UUID | None]
+    blocking_refs: Mapped[list[dict[str, str]]] = mapped_column(JSONB)
+    status: Mapped[str] = mapped_column(server_default=FetchedValue())
+    supersedes_id: Mapped[UUID | None]
+    raised_by_kind: Mapped[str]
+    raised_by_id: Mapped[str]
+    run_id: Mapped[UUID | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class Decision(Base):
+    """The one decision on a card: insert-only and human-only; the rationale is sealed."""
+
+    __tablename__ = "decisions"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    card_id: Mapped[UUID]
+    option_key: Mapped[str]
+    rationale_sealed: Mapped[bytes]
+    factors: Mapped[list[str]] = mapped_column(JSONB)
+    seen_card_version: Mapped[int]
+    decided_by: Mapped[UUID]
+    mfa_at: Mapped[datetime | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class DecisionCardVersion(Base):
+    """A card's numbered history (P-04-T23, migration 0211): proposed, decided, reassessed."""
+
+    __tablename__ = "decision_card_versions"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    card_id: Mapped[UUID]
+    version_no: Mapped[int]
+    event: Mapped[str]
+    option_key: Mapped[str | None]
+    changed: Mapped[bool | None]
+    figures: Mapped[dict[str, str]] = mapped_column(JSONB)
+    decision_id: Mapped[UUID | None]
+    superseded_by_card_id: Mapped[UUID | None]
+    actor_user_id: Mapped[UUID | None]
+    actor_kind: Mapped[str] = mapped_column(server_default=FetchedValue())
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class DecisionAnalysisRequest(Base):
+    """ "Request more analysis" on a card (P-04-T23): a person's, sealed."""
+
+    __tablename__ = "decision_analysis_requests"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    card_id: Mapped[UUID]
+    text_sealed: Mapped[bytes]
+    requested_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

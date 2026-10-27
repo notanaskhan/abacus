@@ -1,0 +1,6 @@
+# The integrations module's actions (ADR-027; P-39, F-03-T07). Compiled with every other
+# module's file into identity/authz/_matrix.py by `make regenerate`.
+
+actions:
+  # --- Write capabilities (A-02-T15; ADR-150, P-17, DEC-46; SPEC-333 AC-50) ---
+  write_capability.execute: {agent: deny, system: deny}   # no role holds it: every write to a client's system is refused and audited (registry v1 enables none); declared so the generated tests prove every principal, the agent included, is refused (I-AGENT-NEVER)
