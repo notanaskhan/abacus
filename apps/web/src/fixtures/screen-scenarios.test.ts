@@ -18,8 +18,14 @@ describe("screen scenarios on the firm entry", () => {
     expect(screenScenario("?screen=ADM-03&st=z")).toBeNull();
   });
 
-  it("registers the three firm-settings screens", () => {
-    expect(Object.keys(SCREEN_SCENARIOS)).toEqual(["ADM-01", "ADM-02", "ADM-03"]);
+  it("registers the built firm-settings screens", () => {
+    expect(Object.keys(SCREEN_SCENARIOS)).toEqual([
+      "ADM-01",
+      "ADM-02",
+      "ADM-03",
+      "ADM-06",
+      "ADM-07",
+    ]);
   });
 
   it("applies the opening search and anchor when the URL names only fixture params", () => {

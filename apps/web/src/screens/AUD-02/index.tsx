@@ -22,11 +22,13 @@ import {
   AgentActivityTab,
   AgentDockMenu,
   AuditCockpit,
+  type AuditOverlay,
   type AutoModeStep,
   BlockedSectionCard,
   DockViewer,
   isNotFound,
   useAgentTab,
+  useAuditActions,
   useAuditCockpit,
   useAutoMode,
   useSourceDocuments,
@@ -78,6 +80,9 @@ export interface AUD02Props {
   trialBalance?: TrialBalanceOptions["initial"];
   /** The Auto mode confirm's opening step (AUD-02 f opens it asking). */
   autoMode?: AutoModeStep;
+  /** `?ov=export[:<id>]` or a record dialog (A-01-T24): the overlay it opens on. */
+  overlay?: AuditOverlay;
+  onOverlay?: (overlay: AuditOverlay) => void;
 }
 
 /** The rail row whose canvas is AUD-06 (A-02-T09). */
@@ -167,7 +172,11 @@ function Cockpit({
   embedded,
   trialBalance,
   autoMode: autoModeStep,
+  overlay,
+  onOverlay,
 }: Omit<AUD02Props, "auditId"> & { cockpit: AuditCockpitOut }): JSX.Element {
+  // A-01-T24: "Export binder…" and the record-mode entries (DV-9, DV-4).
+  const audit = useAuditActions(cockpit, overlay ?? null, onOverlay);
   const [query, setQuery] = useState("");
   // AUD-02 f (A-01-T31): the switch renders only with `engagement_run.auto_mode` from `/v1/me`.
   const autoMode = useAutoMode(cockpit, autoModeStep);
@@ -212,6 +221,7 @@ function Cockpit({
       actions: (
         <>
           <PaneAction kind="icon" icon="list-filter" label={COPY.canvas.filter} />
+          {audit.menu}
           {onAdd !== undefined && binderId !== undefined && (
             <PaneAction
               icon="file-plus"
@@ -299,6 +309,7 @@ function Cockpit({
         }}
         {...(embedded === undefined ? {} : { embedded })}
       />
+      {audit.overlays}
       <ConfirmDialog
         open={autoMode.allowed && autoMode.step !== "idle"}
         onOpenChange={(open) => {
@@ -370,6 +381,7 @@ export function AuditCockpitPage({
     doc?: string | null;
     trialBalance?: TrialBalanceOptions["initial"];
     autoMode?: AutoModeStep;
+    overlay?: AuditOverlay;
   };
   onBack?: () => void;
 }): JSX.Element {
@@ -390,6 +402,7 @@ export function AuditCockpitPage({
       {...(onBack === undefined ? {} : { onBack })}
       {...(initial.trialBalance === undefined ? {} : { trialBalance: initial.trialBalance })}
       {...(initial.autoMode === undefined ? {} : { autoMode: initial.autoMode })}
+      {...(initial.overlay === undefined ? {} : { overlay: initial.overlay })}
     />
   );
 }

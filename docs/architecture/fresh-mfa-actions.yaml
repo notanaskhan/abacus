@@ -92,3 +92,11 @@ actions:
     group: access_control
   - action: staff.unlock
     group: access_control
+  # Sign-offs and decisions (P-04-T22, T23; DEC-501, DEC-505): every verdict of the review
+  # grammar, one at a time or in bulk
+  - action: sign_off.bulk
+    group: sign_off
+  - action: sign_off.create
+    group: sign_off
+  - action: decision.decide
+    group: sign_off
