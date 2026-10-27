@@ -24,6 +24,8 @@ import {
 import { SURFACES, colorRows, parseTokens } from "./tokens";
 // The built screens register themselves for /components/screens/<ID> (P-01-T02: SHL-01).
 import "../screens/gallery";
+// The F-06 tier-3 specimens register the same way (F-06-T04: TPL-16).
+import "./specimens";
 
 // The /components subtree (SPEC-048 AC-10, AC-11): one lazy chunk that only gallery builds
 // compile. Everything here renders from fixtures; nothing calls the API.
