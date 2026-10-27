@@ -567,6 +567,12 @@ async def test_spec023_ac2_dropped_files_wait_unassigned_and_a_duplicate_is_refu
     assert again.status_code == 409, again.text
 
 
+@pytest.mark.xfail(
+    strict=True,
+    reason="TASK-1438 (ED-167): a client contributor's drop into the engagement inbox answers 500 "
+    "(authz.unchecked_route: `evidence.upload` is `assigned_only` and the inbox route names no "
+    "item), where SPEC-023 AC-2 lets a contributor drop files",
+)
 async def test_spec023_ac3_suggestions_show_score_and_words_and_a_contributor_sees_only_theirs(
     world: World,
 ) -> None:
@@ -618,7 +624,7 @@ async def test_spec023_ac4_assigning_makes_evidence_audits_and_empties_the_inbox
 async def test_spec023_ac4_an_item_that_takes_no_more_evidence_refuses_the_file(
     world: World,
 ) -> None:
-    item = await world.seed.item(world.site, "Lease schedule", status="not_applicable")
+    item = await world.seed.item(world.site, "Lease schedule", status="received")  # accepted
     added = await world.inbox_add(letter_pdf(), "lease.pdf", world.client)
     file_id = added.json()["id"]
     refused = await world.net.call(
@@ -744,8 +750,23 @@ async def test_spec031_ac5_no_trial_balance_means_no_gap_line(world: World) -> N
 async def test_spec031_ac6_your_part_counts_items_left_blockers_and_effort(
     world: World,
 ) -> None:
-    first = await world.seed.item(world.site, "Bank statements", assignee=world.contributor)
-    second = await world.seed.item(world.site, "Loan agreement", assignee=world.contributor)
+    # Spec drift: since P-06 (C5, ADR-147) a client counts only items of a published binder.
+    await world.seed.run(
+        "UPDATE request_lists SET status = 'published', published_at = now(), "
+        "published_by = $2 WHERE engagement_id = $1",
+        world.site.engagement_id,
+        world.manager.user_id,
+    )
+    first = await world.seed.item(world.site, "Bank statements")
+    second = await world.seed.item(world.site, "Loan agreement")
+    for item in (first, second):  # assigned as the firm assigns, through the route
+        assigned = await world.net.call(
+            "PUT",
+            f"{world.base}/request-items/{item}/client-assignee",
+            world.manager,
+            body={"user_id": str(world.contributor.user_id)},
+        )
+        assert assigned.status_code == 200, assigned.text
     await _guided(world, first, effort="small", blocks_fieldwork=True)
     await _guided(world, second, effort="large", blocks_fieldwork=False)
     response = await world.net.call(

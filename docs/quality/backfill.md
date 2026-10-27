@@ -50,12 +50,12 @@ The 55 tasks that merged without an independent acceptance-test suite, and how e
 | 072 | red | Drafted guidance, part 1 | SPEC-035 | S10 | T039 | back-filled | `backfill/test_q03t039_comments_and_drafter.py` (TASK-1308); AC-1, AC-7 need a model and stay with `evals/guidance_drafting` |
 | 073 | red | Drafted guidance, part 2 | SPEC-035 | S10 | T040 | back-filled | `backfill/test_q03t040_drafted_guidance.py` (TASK-1309); ADR-111 on a real firm asserted with the setting forced on underneath |
 | 074 | red | Drafted guidance, part 3 | SPEC-035 | S10 | T040 | back-filled | `backfill/test_q03t040_drafted_guidance.py` (TASK-1309); template drafting refusals |
-| 033 | amber | Request list import from Excel | SPEC-018 | S11 | T047 | scheduled | |
-| 037 | amber | Request item detail | SPEC-021 | S11 | T047 | scheduled | |
-| 039 | amber | Uploads on the client's behalf, inbox, matching | SPEC-023 | S11 | T047 | scheduled | |
-| 060 | amber | Client hub, part 1 (backend) | SPEC-031 | S11 | T047 | scheduled | |
-| 024 | red | Knowledge retrieval infrastructure | SPEC-009 | S11 | T048 | scheduled | |
-| 026 | amber | Feature flag registry | SPEC-011 | S11 | T050 | scheduled | |
+| 033 | amber | Request list import from Excel | SPEC-018 | S11 | T047 | back-filled | `backend/tests/integration/backfill/test_q03t047_requests_client_hub.py` |
+| 037 | amber | Request item detail | SPEC-021 | S11 | T047 | back-filled | `backend/tests/integration/backfill/test_q03t047_requests_client_hub.py` |
+| 039 | amber | Uploads on the client's behalf, inbox, matching | SPEC-023 | S11 | T047 | back-filled | `backend/tests/integration/backfill/test_q03t047_requests_client_hub.py` |
+| 060 | amber | Client hub, part 1 (backend) | SPEC-031 | S11 | T047 | back-filled | `backend/tests/integration/backfill/test_q03t047_requests_client_hub.py` |
+| 024 | red | Knowledge retrieval infrastructure | SPEC-009 | S11 | T048 | back-filled | `backend/tests/integration/backfill/test_q03t048_knowledge_retrieval.py` |
+| 026 | amber | Feature flag registry | SPEC-011 | S11 | T050 | back-filled | `backend/tests/integration/backfill/test_q03t050_feature_flags.py` |
 | 023 | amber | Engagement graph and methodology v1 | SPEC-008 | S10–S26 | T065, T525 | superseded | **K-01**'s AC suite; legacy path back-filled by M8 (T525) |
 | 028 | amber | In-app notifications | SPEC-013 | S6 | T065 | superseded | **P-01**: P-01-T14, closed: `backfill/test_p01t14_notifications.py`, `contracts/c16_notifications/test_c16_kinds.py` (TASK-993) |
 | 034 | amber | Knowledge, budget, support access and walls screens | SPEC-019 | S6–S14 | T065 | superseded | **G-01**, **G-02**, **K-01** AC suites; walls and support backend by T012 and tranche 0 |
