@@ -95,25 +95,8 @@ LEGACY_AUTONOMY_PUT: Final = ("PUT", "/v1/firm/autonomy")
 LIVE: Final[frozenset[Route]] = frozenset()
 STUBBED: Final = frozenset(ROUTES) - LIVE
 READS: Final = (POLICY, VERSIONS, VERSION, EFFECTIVE)
-# ED-182: the agent and the system principals pass `ai_policy.read` (the stub answers them 501,
-# or 404 with the flag off) although its matrix row denies both and the contract says 403.
-REFUSED_ROUTES: Final = [
-    pytest.param(
-        route,
-        id=f"{route[0]} {route[1]}",
-        marks=pytest.mark.xfail(
-            strict=True,
-            reason=(
-                "ED-182: the agent and system principals reach the ai_policy.read routes "
-                "(501 or 404, not 403) although the matrix row denies them; recorded in "
-                "work/tasks/TASK-1485-g02-ai-policy-ac-suite.md"
-            ),
-        ),
-    )
-    if route in READS
-    else pytest.param(route, id=f"{route[0]} {route[1]}")
-    for route in ROUTES
-]
+# ED-182 (fixed): the agent and the system principals are refused `ai_policy.read` (403).
+REFUSED_ROUTES: Final = [pytest.param(route, id=f"{route[0]} {route[1]}") for route in ROUTES]
 
 FRESH_MFA_REGISTER: Final = (
     Path(__file__).resolve().parents[3] / "docs" / "architecture" / "fresh-mfa-actions.yaml"
@@ -515,17 +498,7 @@ async def test_ac38_a_draft_naming_a_gate_approver_is_refused(
         "daniel",
         "felix",
         "grace",
-        pytest.param(
-            "hannah",
-            marks=pytest.mark.xfail(
-                strict=True,
-                reason=(
-                    "ED-181: a manager-level member with no firm role is refused ai_policy.read "
-                    "(403): the matrix row names the engagement role manager, not the derived "
-                    "firm_manager; recorded in work/tasks/TASK-1485-g02-ai-policy-ac-suite.md"
-                ),
-            ),
-        ),
+        "hannah",  # ED-181 (fixed): the derived firm_manager reads the policy
     ],
 )
 async def test_ac33_every_firm_member_reads_the_policy_its_history_and_its_effective_cells(
@@ -544,13 +517,6 @@ async def test_ac33_every_firm_member_reads_the_policy_its_history_and_its_effec
         assert response.status_code == 200, (who, route, response.text)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "ED-181: Hannah (manager level, no firm role) is refused ai_policy.read at the firm; "
-        "recorded in work/tasks/TASK-1485-g02-ai-policy-ac-suite.md"
-    ),
-)
 async def test_ac33_a_manager_reads_only_with_the_partners_lock(
     world: World, as_: Callable[[object], Call]
 ) -> None:
@@ -1555,15 +1521,6 @@ def test_ac37_ac42_fresh_mfa_is_asked_and_registered(action: str) -> None:
     assert action in {entry["action"] for entry in register["actions"]}
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "ED-180: ai_policy.approved and ai_policy.declined are approvals and decisions but are "
-        "not in docs/architecture/human-only-actions.yaml, so the audit_events human-only "
-        "trigger accepts them from the agent; needs a protected register edit and a migration; "
-        "recorded in work/tasks/TASK-1485-g02-ai-policy-ac-suite.md"
-    ),
-)
 @pytest.mark.parametrize("action", ["ai_policy.approved", "ai_policy.declined"])
 async def test_ac45_the_database_refuses_a_policy_decision_written_as_the_agent(
     world: World, action: str

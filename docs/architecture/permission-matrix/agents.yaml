@@ -63,8 +63,8 @@ actions:
     quality_partner: allow
     security_admin: allow
     firm_partner: allow
+    firm_manager: allow   # ED-181 (AC-33): the firm-level manager, derived from the membership level
     engagement_partner: allow
-    manager: allow
     senior: allow
     staff: allow
     reviewer: allow

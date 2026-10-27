@@ -33,6 +33,7 @@ from abacus.modules.evidence.firm_export_contract import FirmExportPersonOut
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
+    Forbidden,
     Resource,
     authorise,
     current_context,
@@ -96,6 +97,8 @@ async def _gate(ctx: AuthContext, action: str) -> None:
     the flag."""
     if ctx.client:
         raise NotFound("security_center")
+    if ctx.tenant.actor_kind not in ("human", "support"):
+        raise Forbidden(action, "role")  # ED-182's pattern: the agent and the system, first
     await authorise(ctx, action, Resource.firm(ctx.tenant_id))
     if not await flag_enabled(ctx.tenant, SECURITY_CENTER_V1):
         raise NotFound("security_center.v1")

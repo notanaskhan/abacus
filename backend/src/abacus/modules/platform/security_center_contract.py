@@ -42,6 +42,7 @@ from abacus.kernel.text import SingleLineText
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
+    Forbidden,
     Resource,
     authorise,
     current_context,
@@ -329,6 +330,8 @@ async def _authorised(ctx: AuthContext, action: str) -> None:
     are refused (403) whatever the flag."""
     if ctx.client:
         raise NotFound("security_center")
+    if ctx.tenant.actor_kind not in ("human", "support"):
+        raise Forbidden(action, "role")  # ED-182's pattern: the agent and the system, first
     await authorise(ctx, action, Resource.firm(ctx.tenant_id))
 
 

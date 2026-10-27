@@ -240,7 +240,7 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("ai_policy.read", "quality_partner", "allow"),
     ("ai_policy.read", "security_admin", "allow"),
     ("ai_policy.read", "engagement_partner", "allow"),
-    ("ai_policy.read", "manager", "allow"),
+    ("ai_policy.read", "manager", "deny"),
     ("ai_policy.read", "senior", "allow"),
     ("ai_policy.read", "staff", "allow"),
     ("ai_policy.read", "reviewer", "allow"),
