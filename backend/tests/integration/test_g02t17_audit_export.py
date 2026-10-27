@@ -232,6 +232,8 @@ async def test_ac12_ac13_ac47_felix_exports_verifies_and_downloads(
         signer.public_key_pem(), manifest_bytes + b" ", archive.read("manifest.sig")
     )
     assert hashlib.sha256(manifest_bytes).hexdigest() == status["manifest_sha256"]
+    # Security review: the manifest names the key that signed it, not only its alias.
+    assert manifest["signature"]["key_id"] == signer.key_ref
     assert (manifest["seq_from"], manifest["seq_to"]) == (status["seq_from"], status["seq_to"])
     assert manifest["requested_by"] == {
         "user_id": str(felix.user_id),

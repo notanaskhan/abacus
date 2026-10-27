@@ -285,6 +285,16 @@ async def test_ac25_a_paused_schedule_is_not_approved_and_a_run_without_a_starte
         world.tenant,
     )
     assert skipped == 1
+    # Security review: an approver who left the partner seat no longer stands behind the run.
+    await seed.run(
+        "UPDATE memberships SET level = 'manager' WHERE tenant_id = $1 AND user_id = $2",
+        world.tenant,
+        world.margaret.user_id,
+    )
+    assert await firm_export_schedule.run_scheduled(world.tenant) == "lapsed"
+    lapsed = (await bind(world.felix)("GET", "/v1/firm/data-exports/schedule")).json()
+    assert lapsed["status"] == "pending_approval"
+    assert [a["seat"] for a in lapsed["approvals"]] == ["security_admin"]
 
 
 # --- T20 -----------------------------------------------------------------------------------------
@@ -392,3 +402,11 @@ async def test_ac27_the_wisp_pack_zips_the_linked_documents(
         str(world.felix.user_id),
     )
     assert prepared == 1
+    # Security review M1: the download names the requester before the first byte.
+    downloaded_events = await seed.value(
+        "SELECT count(*) FROM audit_events WHERE tenant_id = $1 "
+        "AND action = 'wisp_pack.downloaded' AND actor_id = $2",
+        world.tenant,
+        str(world.felix.user_id),
+    )
+    assert downloaded_events == 1
