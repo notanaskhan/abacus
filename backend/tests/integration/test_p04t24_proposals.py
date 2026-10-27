@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import uuid
 from collections.abc import AsyncIterator
+from decimal import Decimal
 from typing import cast
 
 import pytest
@@ -23,14 +24,17 @@ from abacus.kernel.db import TenantContext, configure_engine, dispose_engine, te
 from abacus.kernel.uow import UnitOfWork
 from abacus.modules.agents.api import (
     AdoptedValue,
-    PolicyEval,
     ProposedRow,
+    ProposedValue,
+    ThresholdEvaluation,
+    ThresholdPolicy,
     create_proposal,
     create_suggestion,
     register_suggestion_applier,
     register_suggestion_target,
+    register_threshold_policy,
 )
-from abacus.modules.agents.proposals import approve_proposal, reject_proposal
+from abacus.modules.agents.proposals import ProposalInvalid, approve_proposal, reject_proposal
 from abacus.modules.identity.api import (
     AgentContext,
     AuthContext,
@@ -69,8 +73,57 @@ async def _apply(tx: UnitOfWork, _ctx: AuthContext, value: AdoptedValue) -> None
     )
 
 
-register_suggestion_applier(TARGET, _apply)
-register_suggestion_target(UNOWNED)  # accepts suggestions, but nobody writes them (503)
+# Each test target's engagement, as its owner would say (review M4).
+OWNED: dict[uuid.UUID, uuid.UUID] = {}
+
+
+async def _engagement_of(_tenant: TenantContext, target_id: uuid.UUID) -> uuid.UUID | None:
+    return OWNED.get(target_id)
+
+
+register_suggestion_applier(TARGET, _apply, engagement_of=_engagement_of)
+# accepts suggestions, but nobody writes them (503)
+register_suggestion_target(UNOWNED, engagement_of=_engagement_of)
+
+# The firm's threshold policy (K-02's later; here a test policy on the engagements that set one):
+# a change set whose decimal values sum above the limit needs the named approver, or a person
+# whose own limit covers it.
+POLICY_ID = uuid.uuid4()
+LIMITS: dict[uuid.UUID, tuple[Decimal, uuid.UUID, frozenset[uuid.UUID]]] = {}
+
+
+async def _evaluate(
+    _tenant: TenantContext, engagement: uuid.UUID, _kind: str, values: tuple[ProposedValue, ...]
+) -> ThresholdEvaluation | None:
+    found = LIMITS.get(engagement)
+    if found is None:
+        return None
+    total = sum(
+        (
+            Decimal(str(v.after["v"]))
+            for v in values
+            if v.after and v.after.get("t") == "decimal" and v.after.get("v") is not None
+        ),
+        Decimal(0),
+    )
+    over = total > found[0]
+    return ThresholdEvaluation(
+        POLICY_ID,
+        "BH AJE thresholds v2",
+        2,
+        "review_required" if over else "within_threshold",
+        found[1] if over else None,
+    )
+
+
+async def _covers(
+    _tenant: TenantContext, engagement: uuid.UUID, user: uuid.UUID, _e: ThresholdEvaluation
+) -> bool:
+    found = LIMITS.get(engagement)
+    return found is not None and user in found[2]
+
+
+register_threshold_policy(ThresholdPolicy("field_change_set", _evaluate, _covers))
 
 
 @pytest.fixture(autouse=True)
@@ -159,12 +212,11 @@ def _row(
     )
 
 
-async def _k1(
-    team: Cast, *, uncited: bool, policy: PolicyEval | None = None
-) -> tuple[uuid.UUID, uuid.UUID]:
+async def _k1(team: Cast, *, uncited: bool) -> tuple[uuid.UUID, uuid.UUID]:
     """SHL-10 a's Feld K-1 treatment as four rows (and, with `uncited`, SHL-10 c's fifth)."""
     c1, c2, c3 = await _cite(team), await _cite(team), await _cite(team)
     target = uuid.uuid4()
+    OWNED[target] = team.engagement
     rows = [
         _row("sch_e.p2.28a_k", None, (c1,), target),
         _row("sch_e.p2.28a_h", "307900", (c1,), target),
@@ -180,7 +232,7 @@ async def _k1(
         title="K-1 treatment: Ridgeline",
         rows=rows,
         reasoning_ref="reasoning",
-        policy=policy,
+        policy_note_ref="policy_note",
     )
     return proposal, target
 
@@ -325,86 +377,153 @@ async def test_ac_reject_with_a_reason_dismisses_its_suggestions(team: Cast) -> 
 
 
 async def test_ac_over_threshold_routes_to_a_named_approver(team: Cast) -> None:
-    policy = PolicyEval(
-        policy_id=uuid.uuid4(),
-        policy_name="BH AJE thresholds v2",
-        version=2,
-        result="review_required",
-        routed_to_user_id=team["priya"].user_id,
-        note_ref="policy_note",
+    """Review H: the server's evaluation binds. Raj, over his limit, can't approve, can't route
+    around the named approver to someone else over the limit, nor back to himself; the run's
+    preparer (Hannah) never approves it; only Priya, or Margaret whose limit covers it, may."""
+    LIMITS[team.engagement] = (
+        Decimal("10000"),
+        team["priya"].user_id,
+        frozenset({team["margaret"].user_id}),
     )
-    proposal, _ = await _k1(team, uncited=False, policy=policy)
+    proposal, _ = await _k1(team, uncited=False)
     path = f"/v1/proposals/{proposal}"
     shown = (await team.call("raj")("GET", path)).json()
     assert shown["policy"]["policy_name"] == "BH AJE thresholds v2"
+    assert shown["policy"]["result"] == "review_required"
     assert shown["policy"]["routed_to_name"] == "Priya Raman"
     assert shown["policy"]["note"] == "Return proposals need a Tax Reviewer."
     assert "proposal.approve" not in shown["allowed_actions"]
     refused = await team.call("raj")("POST", f"{path}/approve", json={"seen_version": 1})
     assert refused.status_code == 403, refused.text
     assert refused.json()["facts"] == {"routed_to": str(team["priya"].user_id)}
-    # The agent's routing told Priya (agent-originated); Raj sends it on to Margaret.
-    routed = await team.call("raj")(
-        "POST",
-        f"{path}/route",
-        json={"seen_version": 1, "approver_user_id": str(team["margaret"].user_id)},
-    )
-    assert routed.status_code == 200, routed.text
-    assert routed.json()["version"] == 2 and routed.json()["state"] == "pending"
-    assert routed.json()["decision"]["decision"] == "routed"
+
+    async def route(who: str, to: str, seen: int) -> int:
+        answer = await team.call(who)(
+            "POST",
+            f"{path}/route",
+            json={"seen_version": seen, "approver_user_id": str(team[to].user_id)},
+        )
+        return answer.status_code
+
+    assert await route("raj", "samuel", 1) == 422  # around the limit: Samuel is over it too
+    assert await route("raj", "raj", 1) == 422  # back to himself
+    assert await route("raj", "hannah", 1) == 422  # the run's preparer
+    assert await route("raj", "ana", 1) == 422  # staff decide no change set
+    assert await route("raj", "margaret", 1) == 200  # her limit covers it
+    # Routing moved the waiting person, not the policy: Raj and Hannah still can't approve.
+    for who in ("raj", "hannah", "samuel"):
+        again = await team.call(who)("POST", f"{path}/approve", json={"seen_version": 2})
+        assert again.status_code == 403, who
     events = await team.seed.rows(
-        "SELECT payload->>'approver_user_id', payload->>'by_user' FROM outbox "
+        "SELECT payload->>'approver_user_id', payload->>'actor_kind' FROM outbox "
         "WHERE tenant_id = $1 AND event_type = 'proposal.routed' ORDER BY seq",
         team.tenant,
     )
     assert [tuple(e) for e in events] == [
-        (str(team["priya"].user_id), None),
-        (str(team["margaret"].user_id), str(team["raj"].user_id)),
+        (str(team["priya"].user_id), "agent"),
+        (str(team["margaret"].user_id), "human"),
     ]
     priya = await team.call("priya")("POST", f"{path}/approve", json={"seen_version": 2})
-    assert priya.status_code == 403
-    margaret = await team.call("margaret")("POST", f"{path}/approve", json={"seen_version": 2})
-    assert margaret.status_code == 200, margaret.text
-    assert margaret.json()["decision"]["decided_by_name"] == "Margaret Okonkwo"
-    # Routing to yourself, or to someone who may not approve, is refused.
-    other, _ = await _k1(team, uncited=False)
-    self_route = await team.call("raj")(
-        "POST",
-        f"/v1/proposals/{other}/route",
-        json={"seen_version": 1, "approver_user_id": str(team["raj"].user_id)},
+    assert priya.status_code == 200, priya.text
+    assert priya.json()["decision"]["decided_by_name"] == "Priya Raman"
+    del LIMITS[team.engagement]
+
+
+async def test_ac_an_edit_over_the_limit_is_evaluated_again(team: Cast) -> None:
+    """Review M2: within the threshold as proposed, over it once Samuel's edit is applied."""
+    LIMITS[team.engagement] = (
+        Decimal("1000000"),
+        team["priya"].user_id,
+        frozenset({team["margaret"].user_id}),
     )
-    assert self_route.status_code == 422
+    try:
+        proposal, _ = await _k1(team, uncited=False)
+        shown = (await team.call("samuel")("GET", f"/v1/proposals/{proposal}")).json()
+        assert shown["policy"]["result"] == "within_threshold"
+        edit = {"n": 2, "after": "9999999", "citation_note": "Final K-1"}
+        over = await team.call("samuel")(
+            "POST", f"/v1/proposals/{proposal}/approve", json={"seen_version": 1, "edits": [edit]}
+        )
+        assert over.status_code == 403
+        assert over.json()["facts"] == {"routed_to": str(team["priya"].user_id)}
+        covered = await team.call("margaret")(
+            "POST", f"/v1/proposals/{proposal}/approve", json={"seen_version": 1, "edits": [edit]}
+        )
+        assert covered.status_code == 200, covered.text
+    finally:
+        del LIMITS[team.engagement]
+
+
+async def test_ac_staff_never_decide_a_generic_change_set(team: Cast) -> None:
+    """Review M1: the firm's `staff_can_accept_evidence` covers the typed evidence adapters
+    only; a generic change set needs `proposal.decide_change_set`."""
+    await team.seed.run(
+        "INSERT INTO firm_setting_values (tenant_id, key, value, set_by) "
+        "VALUES ($1, 'staff_can_accept_evidence', true, $2)",
+        team.tenant,
+        uuid.uuid4(),
+    )
+    proposal, _ = await _k1(team, uncited=False)
+    shown = (await team.call("ana")("GET", f"/v1/proposals/{proposal}")).json()
+    assert "proposal.approve" not in shown["allowed_actions"]
+    assert "proposal.reject" not in shown["allowed_actions"]
+    refused = await team.call("ana")(
+        "POST", f"/v1/proposals/{proposal}/approve", json={"seen_version": 1}
+    )
+    assert refused.status_code == 403
+    assert await team.value("SELECT state FROM proposals WHERE id = $1", proposal) == "pending"
+
+
+async def test_ac_a_target_of_another_engagement_is_refused(team: Cast) -> None:
+    """Review M4: the target's owner says which engagement it is on."""
+    c1 = await _cite(team)
+    elsewhere = uuid.uuid4()
+    OWNED[elsewhere] = uuid.uuid4()
+    with pytest.raises(ProposalInvalid):
+        await create_proposal(
+            await _agent(team),
+            engagement_id=team.engagement,
+            kind="field_change_set",
+            title="Elsewhere",
+            rows=[_row("f1", "1", (c1,), elsewhere)],
+        )
 
 
 async def test_ac_ask_follow_up_records_a_sealed_note_and_leaves_it_pending(team: Cast) -> None:
     proposal, _ = await _k1(team, uncited=True)
-    asked = await team.call("ana")(
-        "POST",
-        f"/v1/proposals/{proposal}/follow-up",
-        json={"text": "Which statement supports the co-op share?"},
-    )
-    assert asked.status_code == 200, asked.text
+    key = {"Idempotency-Key": str(uuid.uuid4())}
+    answers = [
+        await team.call("ana")(
+            "POST",
+            f"/v1/proposals/{proposal}/follow-up",
+            json={"text": "Which statement supports the co-op share?"},
+            headers=key,
+        )
+        for _ in range(2)  # a retry with the same key records nothing again (review low)
+    ]
+    assert [a.status_code for a in answers] == [200, 200], answers[0].text
+    asked = answers[1]
     body = asked.json()
     assert body["state"] == "pending" and body["version"] == 1
     assert body["decision"]["decision"] == "follow_up"
     assert body["decision"]["note"] == "Which statement supports the co-op share?"
     sealed = await team.value(
         "SELECT note_sealed FROM proposal_decisions WHERE proposal_id = $1", proposal
-    )
+    )  # one row: `value` reads the only one
     assert b"co-op share" not in cast(bytes, sealed)
 
 
 async def test_ac_no_owner_to_write_answers_503_and_writes_nothing(team: Cast) -> None:
     c1 = await _cite(team)
+    unowned = uuid.uuid4()
+    OWNED[unowned] = team.engagement
     proposal = await create_proposal(
         await _agent(team),
         engagement_id=team.engagement,
         kind="field_change_set",
         title="Unowned",
         rows=[
-            ProposedRow(
-                UNOWNED, uuid.uuid4(), "f1", "Field", None, {"t": "text", "v": "x"}, "k", (c1,)
-            )
+            ProposedRow(UNOWNED, unowned, "f1", "Field", None, {"t": "text", "v": "x"}, "k", (c1,))
         ],
     )
     refused = await team.call("samuel")(
@@ -423,6 +542,7 @@ async def test_ac_no_owner_to_write_answers_503_and_writes_nothing(team: Cast) -
 async def test_ac_suggestions_adopt_edit_and_dismiss(team: Cast) -> None:
     agent = await _agent(team)
     target = uuid.uuid4()
+    OWNED[target] = team.engagement
 
     async def suggest(cites: tuple[uuid.UUID, ...]) -> uuid.UUID:
         return await create_suggestion(

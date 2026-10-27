@@ -260,3 +260,69 @@ async def test_ac_a_walled_person_gets_404_and_edits_are_refused_on_a_typed_ref(
         body={"seen_version": 1, "edits": [{"n": 1, "after": "x", "citation_note": "y"}]},
     )
     assert edits.status_code == 422
+
+
+async def test_ac_a_rejected_match_is_stored_once_and_reads_rejected(firm: Firm) -> None:
+    """Review M6: the verdict is a row (with its reason and sealed note), the projection reads
+    `rejected`, and neither a second rejection nor a later approval is taken."""
+    site = await _site(firm, "Granite Peak inbox")
+    seed = firm.seed
+    fingerprint = uuid.uuid4().hex * 2
+    inbox_file = await seed.value(
+        "INSERT INTO inbox_files (tenant_id, engagement_id, file_name, media_type, size_bytes, "
+        "fingerprint, storage_key, storage_version_id, uploaded_by, uploaded_by_staff, status) "
+        "VALUES ($1, $2, 'trust.pdf', 'application/pdf', 10, $3, $4, 'v1', $5, true, "
+        "'waiting') RETURNING id",
+        firm.tenant_id,
+        site.engagement_id,
+        fingerprint,
+        f"tenants/{firm.tenant_id}/sha256/{fingerprint}",
+        firm.hannah.user_id,
+    )
+    run = await seed.value(
+        "INSERT INTO agent_runs (tenant_id, agent_id, spec_version, engagement_id, inbox_file_id, "
+        "initiator_user_id, task_scope, status, finished_at) VALUES ($1, 'evidence.matcher', "
+        "1, $2, $3, $4, ARRAY['evidence.read'], 'completed', now()) RETURNING id",
+        firm.tenant_id,
+        site.engagement_id,
+        inbox_file,
+        firm.hannah.user_id,
+    )
+    match = await seed.value(
+        "INSERT INTO inbox_match_runs (tenant_id, engagement_id, inbox_file_id, agent_run_id, "
+        "prompt_ref, none_fit) VALUES ($1, $2, $3, $4, 'evidence.inbox_match@v2', false) "
+        "RETURNING id",
+        firm.tenant_id,
+        site.engagement_id,
+        inbox_file,
+        run,
+    )
+    await seed.run(
+        "INSERT INTO inbox_match_proposals (tenant_id, match_id, rank, request_item_id, "
+        "confidence, rationale, citations, shown) VALUES ($1, $2, 1, $3, 0.94, 'Trust report', "
+        "'[]'::jsonb, true)",
+        firm.tenant_id,
+        match,
+        site.item_id,
+    )
+    path = f"/v1/proposals/inbox_match:{match}"
+    assert (await firm.net.call("GET", path, firm.hannah)).json()["state"] == "pending"
+    body = {"seen_version": 1, "reason_code": "other", "note": "Not this request"}
+    rejected = await firm.net.call("POST", f"{path}/reject", firm.hannah, body=body)
+    assert rejected.status_code == 200, rejected.text
+    assert rejected.json()["state"] == "rejected"
+    assert rejected.json()["decision"]["reason_code"] == "other"
+    assert rejected.json()["decision"]["note"] == "Not this request"
+    again = await firm.net.call("POST", f"{path}/reject", firm.hannah, body=body)
+    assert again.status_code == 409
+    approve = await firm.net.call("POST", f"{path}/approve", firm.hannah, body={"seen_version": 1})
+    assert approve.status_code == 409
+    rows = await seed.rows(
+        "SELECT reason_code, note_sealed IS NOT NULL, decided_by FROM inbox_match_decisions "
+        "WHERE match_id = $1",
+        match,
+    )
+    assert [tuple(r) for r in rows] == [("other", True, firm.hannah.user_id)]
+    assert (
+        await seed.value("SELECT status FROM inbox_files WHERE id = $1", inbox_file) == "waiting"
+    )

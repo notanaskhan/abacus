@@ -542,3 +542,21 @@ class ProposalDecision(Base):
     actor_kind: Mapped[str] = mapped_column(server_default=FetchedValue())
     actor_id: Mapped[str] = mapped_column(server_default=FetchedValue())
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class InboxMatchDecision(Base):
+    """A person's rejection of a matcher's proposal (P-04-T25 review M6, migration 0232):
+    insert-only, human-only, one per match."""
+
+    __tablename__ = "inbox_match_decisions"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    match_id: Mapped[UUID]
+    decision: Mapped[str]
+    reason_code: Mapped[str]
+    note_sealed: Mapped[bytes | None]
+    decided_by: Mapped[UUID]
+    actor_kind: Mapped[str] = mapped_column(server_default=FetchedValue())
+    actor_id: Mapped[str] = mapped_column(server_default=FetchedValue())
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

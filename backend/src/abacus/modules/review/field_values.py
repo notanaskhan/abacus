@@ -22,7 +22,7 @@ from sqlalchemy import text
 
 from abacus.kernel.db import transaction_context
 from abacus.kernel.errors import DomainInvalid
-from abacus.kernel.uow import UnitOfWork
+from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork
 from abacus.modules.review.events import FieldValueRecorded
 from abacus.modules.review.sealing import seal_text
 
@@ -120,13 +120,14 @@ async def record_value(
         if note
         else None
     )
-    await session.execute(
+    found = await session.execute(
         text(
             "INSERT INTO field_value_versions (tenant_id, engagement_id, target_type, target_id, "
             "field_key, seq, value, value_kind, value_source, cause, on_behalf_of_user_id, "
             "suggestion_id, checkpoint_id, citation_ids, citation_note_sealed, issue_id) VALUES "
             "(:tenant, :engagement, :t, :i, :f, :seq, CAST(:value AS jsonb), :kind, :source, "
-            ":cause, :obo, :suggestion, :checkpoint, CAST(:citations AS uuid[]), :note, :issue)"
+            ":cause, :obo, :suggestion, :checkpoint, CAST(:citations AS uuid[]), :note, :issue) "
+            "RETURNING id"
         ),
         {
             "tenant": tenant.tenant_id,
@@ -146,6 +147,13 @@ async def record_value(
             "note": sealed,
             "issue": issue_id,
         },
+    )
+    # Review low (DEC-609): every field write is its own audit event, by the transaction's actor.
+    tx.record(
+        "field.value_recorded",
+        target=Target("field_value_version", found.scalar_one()),
+        after=Ref(seq=seq, citations=len(citation_ids)),
+        scope=Scope(engagement_id=engagement_id),
     )
     tx.emit(
         FieldValueRecorded(

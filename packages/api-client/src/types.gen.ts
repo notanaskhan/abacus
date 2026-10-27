@@ -61475,7 +61475,11 @@ export type ProposalApproveResponse = ProposalApproveResponses[keyof ProposalApp
 
 export type ProposalFollowUpData = {
     body: FollowUpIn;
-    headers?: {
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
         /**
          * Authorization
          */

@@ -12660,7 +12660,8 @@ export const proposalApproveMutation = (options?: Partial<Options<ProposalApprov
 /**
  * Proposal Follow Up Route
  *
- * "Ask follow-up": a follow-up recorded for the originating thread or run.
+ * "Ask follow-up": a follow-up recorded for the originating thread or run. A retry with
+ * the same `Idempotency-Key` records nothing again.
  */
 export const proposalFollowUpMutation = (options?: Partial<Options<ProposalFollowUpData>>): UseMutationOptions<ProposalFollowUpResponse, ProposalFollowUpError, Options<ProposalFollowUpData>> => {
     const mutationOptions: UseMutationOptions<ProposalFollowUpResponse, ProposalFollowUpError, Options<ProposalFollowUpData>> = {

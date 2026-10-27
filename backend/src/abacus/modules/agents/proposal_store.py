@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.modules.agents.models import (
     AgentRun,
+    InboxMatchDecision,
     InboxMatchProposal,
     InboxMatchRun,
     Proposal,
@@ -26,6 +27,7 @@ from abacus.modules.agents.models import (
     UploadReview,
     UploadReviewFlag,
 )
+from abacus.modules.agents.repository import shown_run
 
 
 async def get_proposal(session: AsyncSession, proposal_id: UUID) -> Proposal | None:
@@ -189,7 +191,10 @@ async def upload_review_with_flags(
 async def newest_upload_review(session: AsyncSession, version_id: UUID) -> UUID | None:
     found = await session.execute(
         select(UploadReview.id)
-        .where(UploadReview.evidence_version_id == version_id)
+        .where(
+            UploadReview.evidence_version_id == version_id,
+            shown_run(UploadReview.agent_run_id),  # a shadow run never supersedes (review M5)
+        )
         .order_by(UploadReview.created_at.desc(), UploadReview.id.desc())
         .limit(1)
     )
@@ -213,8 +218,22 @@ async def match_with_proposals(
 async def newest_match(session: AsyncSession, inbox_file_id: UUID) -> UUID | None:
     found = await session.execute(
         select(InboxMatchRun.id)
-        .where(InboxMatchRun.inbox_file_id == inbox_file_id)
+        .where(
+            InboxMatchRun.inbox_file_id == inbox_file_id,
+            shown_run(InboxMatchRun.agent_run_id),  # a shadow run never supersedes (review M5)
+        )
         .order_by(InboxMatchRun.created_at.desc(), InboxMatchRun.id.desc())
         .limit(1)
     )
     return found.scalar_one_or_none()
+
+
+async def match_decision(session: AsyncSession, match_id: UUID) -> InboxMatchDecision | None:
+    found = await session.execute(
+        select(InboxMatchDecision).where(InboxMatchDecision.match_id == match_id)
+    )
+    return found.scalar_one_or_none()
+
+
+async def insert_match_decision(session: AsyncSession, values: dict[str, object]) -> None:
+    await session.execute(insert(InboxMatchDecision).values(values))

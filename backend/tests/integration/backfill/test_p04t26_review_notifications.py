@@ -138,6 +138,7 @@ async def test_ac_a_routed_proposal_reads_its_facts_and_waits_in_approvals(net: 
                 "proposal_id": str(proposal),
                 "approver_user_id": str(priya.user_id),
                 "by_user": str(raj.user_id),
+                "actor_kind": "human",
             },
         )
     )
@@ -147,10 +148,29 @@ async def test_ac_a_routed_proposal_reads_its_facts_and_waits_in_approvals(net: 
         site.tenant_id,
     )
     assert [tuple(a) for a in actor] == [("human", raj.user_id)]
+    # A named user alone never makes an agent kind a person's (review low, DEC-609).
+    await notifications.SUBSCRIPTIONS["proposal.routed"](
+        OutboxEvent(
+            uuid.uuid4(),
+            site.tenant_id,
+            "proposal.routed",
+            {
+                "engagement_id": str(site.engagement_id),
+                "proposal_id": str(proposal),
+                "approver_user_id": str(priya.user_id),
+                "by_user": str(raj.user_id),
+            },
+        )
+    )
+    kinds = await seed.rows(
+        "SELECT actor_kind FROM notifications WHERE tenant_id = $1 ORDER BY created_at",
+        site.tenant_id,
+    )
+    assert [k[0] for k in kinds] == ["human", "agent"]
     response = await net.call("GET", f"{FEED}?tab=approvals", priya)
     assert response.status_code == 200, response.text
     items = response.json()["items"]
-    assert len(items) == 1 and items[0]["kind"] == "proposal_routed" and items[0]["pending"]
+    assert len(items) == 2 and all(i["kind"] == "proposal_routed" and i["pending"] for i in items)
     assert items[0]["facts"] == {
         "proposal_kind": "field_change_set",
         "state": "pending",

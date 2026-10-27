@@ -146,6 +146,7 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "suggestion_decisions": "agent_decisions_immutable",  # 0095 (P-04-T05)
     "proposal_rows": "agent_decisions_immutable",  # 0095 (P-04-T05)
     "proposal_decisions": "agent_decisions_immutable",  # 0095 (P-04-T05)
+    "inbox_match_decisions": "agent_decisions_immutable",  # 0232 (P-04-T25)
     "evidence_versions": "evidence_versions_immutable",
     "review_decisions": "review_decisions_immutable",
     "eval_case_results": "eval_case_results_immutable",

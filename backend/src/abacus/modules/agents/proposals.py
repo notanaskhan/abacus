@@ -22,6 +22,7 @@ a named approver, or record a follow-up; or adopt or dismiss a single suggestion
 
 from __future__ import annotations
 
+import hashlib
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -34,6 +35,7 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainForbidden, DomainInvalid, NotFound
 from abacus.kernel.subject_states import SubjectState, register_subject_state
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
+from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.agents.events import (
     ProposalCreated,
     ProposalDecided,
@@ -46,10 +48,14 @@ from abacus.modules.agents.proposal_slots import (
     AdoptedValue,
     ApprovedChangeSet,
     ChangeSetApplier,
+    ProposedValue,
     SuggestionApplier,
+    ThresholdEvaluation,
     change_set_applier,
     check_suggestion_target,
     suggestion_applier,
+    target_on_engagement,
+    threshold_policy,
 )
 from abacus.modules.agents.proposal_store import (
     get_proposal,
@@ -65,6 +71,7 @@ from abacus.modules.agents.proposal_store import (
     lock_suggestion,
     lock_suggestions,
     rows_of,
+    run_of,
     run_output_text,
     set_proposal,
     set_suggestion,
@@ -100,6 +107,10 @@ ROUTE: Final = "proposal.route"
 FOLLOW_UP: Final = "proposal.follow_up"
 CREATE: Final = "proposal.create"
 RESOLVE: Final = "suggestion.resolve"
+# P-04-T24 security review M1 (DEC-609): a generic change set is decided, and routed, only by
+# those holding this action too; staff's firm setting on `proposal.approve` covers the typed
+# evidence adapters alone.
+CHANGE_SET: Final = "proposal.decide_change_set"
 _PENDING_ACTIONS: Final = (APPROVE, REJECT, ROUTE, FOLLOW_UP)
 _CODE: Final = re.compile(r"[a-z][a-z_]{0,39}")
 _FIELD: Final = re.compile(r"[A-Za-z0-9_.!:-]{1,80}")
@@ -153,19 +164,6 @@ class ProposedRow:
     citation_ids: tuple[UUID, ...] = ()
     rationale_ref: str | None = None
     confidence: Decimal | None = None
-
-
-@dataclass(frozen=True)
-class PolicyEval:
-    """The threshold policy's evaluation, computed by code (P-08 dormant: the approver it names
-    is always a person, never "Policy")."""
-
-    policy_id: UUID
-    policy_name: str
-    version: int
-    result: Literal["within_threshold", "review_required"]
-    routed_to_user_id: UUID | None = None
-    note_ref: str | None = None
 
 
 # --- Views (the C3 projection; `agents/contract.py` serialises them) ---------------------------
@@ -298,6 +296,11 @@ def _human(ctx: Actor, action: str) -> AuthContext:
     return cast(AuthContext, ctx)
 
 
+def as_person(ctx: Actor, action: str) -> AuthContext:
+    """The typed adapters' first line, as every decision function's (INV-1)."""
+    return _human(ctx, action)
+
+
 def _text(value: Mapping[str, object] | None) -> str | None:
     """A typed value as the wire's string: decimals as their string, bools as true or false."""
     if value is None:
@@ -342,12 +345,66 @@ async def _may(ctx: AuthContext, action: str, resource: Resource) -> bool:
     return True
 
 
-def _routed_elsewhere(proposal: Proposal, user_id: UUID) -> UUID | None:
-    """The approver the threshold policy named, when it is not `user_id` (SHL-10 d)."""
-    policy = proposal.policy_eval or {}
-    if policy.get("result") != "review_required" or proposal.routed_to_user_id is None:
+def _stored_evaluation(proposal: Proposal) -> ThresholdEvaluation | None:
+    """The evaluation the server stored at create (`policy_eval` is not updatable: 0095)."""
+    raw = proposal.policy_eval or {}
+    if raw.get("result") != "review_required":
         return None
-    return proposal.routed_to_user_id if proposal.routed_to_user_id != user_id else None
+    approver = raw.get("approver_user_id")
+    return ThresholdEvaluation(
+        policy_id=UUID(str(raw["policy_id"])),
+        policy_name=str(raw.get("policy_name") or ""),
+        version=int(cast(int, raw.get("version") or 0)),
+        result="review_required",
+        approver_user_id=UUID(str(approver)) if approver else None,
+    )
+
+
+async def _preparer(tenant: TenantContext, proposal: Proposal) -> UUID | None:
+    """The person the agent's run acted for: never the approver of an over-limit change."""
+    async with tenant_session(tenant) as session:
+        run = await run_of(session, proposal.agent_run_id)
+    return run.initiator_user_id if run is not None else None
+
+
+def _values(
+    rows: Sequence[ProposalRow], edited: Mapping[int, tuple[dict[str, object], str]]
+) -> tuple[ProposedValue, ...]:
+    return tuple(ProposedValue(*_field(r), r.before, _value_of(r, edited)[0]) for r in rows)
+
+
+async def _over_limit(
+    tenant: TenantContext,
+    proposal: Proposal,
+    user_id: UUID,
+    edited_values: tuple[ProposedValue, ...] | None = None,
+) -> UUID | None:
+    """H (DEC-609): when the firm's threshold policy requires review, only its named approver
+    or a person whose own limit covers the change may approve or be routed it, never the
+    run's preparer. The stored evaluation binds (the editable `routed_to_user_id` does not), and
+    an approval with edits is evaluated again on the edited values. Returns the approver to
+    route to when `user_id` may not, else None. With the kind's policy gone, only the named
+    approver qualifies (fail closed)."""
+    engagement_id = cast(UUID, proposal.engagement_id)
+    policy = threshold_policy(proposal.kind)
+    evaluations = [e for e in (_stored_evaluation(proposal),) if e is not None]
+    if edited_values is not None and policy is not None:
+        again = await policy.evaluate(tenant, engagement_id, proposal.kind, edited_values)
+        if again is not None and again.result == "review_required":
+            evaluations.append(again)
+    if not evaluations:
+        return None
+    preparer = await _preparer(tenant, proposal)
+    for evaluation in evaluations:
+        named = evaluation.approver_user_id
+        refused = named or proposal.routed_to_user_id or user_id
+        if user_id == preparer:
+            return refused
+        if user_id == named:
+            continue
+        if policy is None or not await policy.covers(tenant, engagement_id, user_id, evaluation):
+            return refused
+    return None
 
 
 async def _readable(ctx: AuthContext, proposal_id: UUID) -> tuple[Proposal, Resource]:
@@ -361,18 +418,18 @@ async def _readable(ctx: AuthContext, proposal_id: UUID) -> tuple[Proposal, Reso
     return proposal, resource
 
 
-async def _unsupported(
+async def _supported(
     tenant: TenantContext, engagement_id: UUID, rows: Sequence[ProposalRow]
-) -> list[int]:
+) -> tuple[list[int], frozenset[UUID]]:
     """INV-2: the rows with no citation that C4 still verifies on the engagement now (the agent's
-    stored `unsupported` flag counts too)."""
+    stored `unsupported` flag counts too), and the citations that do verify."""
     cited = sorted({c for r in rows for c in r.citation_ids})
     supported = await supported_citations(tenant, engagement_id, cited)
     return [
         r.n
         for r in rows
         if r.unsupported or not r.citation_ids or not set(r.citation_ids) <= supported
-    ]
+    ], supported
 
 
 # --- Create (the agent, through its task scope) ------------------------------------------------
@@ -389,6 +446,15 @@ def _checked_row(row: ProposedRow) -> None:
         if value is not None:
             typed_value(value)
     check_suggestion_target(row.target_type)  # 422 unregistered_target (fail closed)
+
+
+async def _on_engagement(
+    tenant: TenantContext, engagement_id: UUID, targets: Sequence[tuple[str, UUID]]
+) -> None:
+    """M4 (DEC-609): every target is the engagement's, as its owner says (fail closed)."""
+    for target_type, target_id in dict.fromkeys(targets):
+        if not await target_on_engagement(tenant, target_type, target_id, engagement_id):
+            raise ProposalInvalid(facts={"field": "target_id"})
 
 
 async def _creator(ctx: Actor, action: str, engagement_id: UUID) -> tuple[Resource, UUID]:
@@ -411,13 +477,15 @@ async def create_proposal(
     title: str,
     rows: Sequence[ProposedRow],
     reasoning_ref: str | None = None,
-    policy: PolicyEval | None = None,
+    policy_note_ref: str | None = None,
     set_ref: Mapping[str, object] | None = None,
     checkpoint_id: UUID | None = None,
 ) -> UUID:
     """`agents.api.create_proposal` (`proposal.create`, the agent through `task_scope`): a change
-    set with one suggestion per row. Code marks each row `unsupported` unless every citation it
-    claims is verified on the engagement now (C4)."""
+    set with one suggestion per row, on targets of the engagement. Code marks each row
+    `unsupported` unless every citation it claims is verified on the engagement now (C4), and the
+    server evaluates the kind's threshold policy (M2, DEC-609): the agent never states it.
+    `policy_note_ref` names the agent's note on the policy in its run output."""
     resource, run_id = await _creator(ctx, CREATE, engagement_id)
     if not _CODE.fullmatch(kind) or not 1 <= len(title) <= 200:
         raise ProposalInvalid(facts={"field": "kind"})
@@ -425,14 +493,28 @@ async def create_proposal(
         raise ProposalInvalid(facts={"field": "rows"})
     if reasoning_ref is not None and not _REF.fullmatch(reasoning_ref):
         raise ProposalInvalid(facts={"field": "reasoning_ref"})
+    if policy_note_ref is not None and not _REF.fullmatch(policy_note_ref):
+        raise ProposalInvalid(facts={"field": "policy_note_ref"})
     for row in rows:
         _checked_row(row)
-    if (
-        policy is not None
-        and policy.routed_to_user_id is not None
-        and not await member_could(
-            ctx.tenant_id, policy.routed_to_user_id, APPROVE, resource, waive_fresh_mfa=True
+    await _on_engagement(ctx.tenant, engagement_id, [(r.target_type, r.target_id) for r in rows])
+    found = threshold_policy(kind)
+    policy = (
+        await found.evaluate(
+            ctx.tenant,
+            engagement_id,
+            kind,
+            tuple(
+                ProposedValue(r.target_type, r.target_id, r.field_key, r.before, r.after)
+                for r in rows
+            ),
         )
+        if found is not None
+        else None
+    )
+    approver = policy.approver_user_id if policy is not None else None
+    if approver is not None and not await member_could(
+        ctx.tenant_id, approver, CHANGE_SET, resource, waive_fresh_mfa=True
     ):
         raise ProposalInvalid(facts={"field": "routed_to_user_id"})
     cited = sorted({c for r in rows for c in r.citation_ids})
@@ -443,10 +525,8 @@ async def create_proposal(
             "policy_name": policy.policy_name,
             "version": policy.version,
             "result": policy.result,
-            "routed_to_user_id": str(policy.routed_to_user_id)
-            if policy.routed_to_user_id
-            else None,
-            "note_ref": policy.note_ref,
+            "approver_user_id": str(approver) if approver else None,
+            "note_ref": policy_note_ref,
         }
         if policy is not None
         else None
@@ -462,7 +542,7 @@ async def create_proposal(
                 "title": title,
                 "reasoning_ref": reasoning_ref,
                 "policy_eval": policy_json,
-                "routed_to_user_id": policy.routed_to_user_id if policy else None,
+                "routed_to_user_id": approver,
                 "set_ref": dict(set_ref) if set_ref is not None else None,
                 "checkpoint_id": checkpoint_id,
                 "agent_run_id": run_id,
@@ -521,12 +601,13 @@ async def create_proposal(
                 agent_run_id=run_id,
             )
         )
-        if policy is not None and policy.routed_to_user_id is not None:
+        if approver is not None:
             tx.emit(
                 ProposalRouted(
                     proposal_id=proposal_id,
                     engagement_id=engagement_id,
-                    approver_user_id=policy.routed_to_user_id,
+                    approver_user_id=approver,
+                    actor_kind="agent",
                 )
             )
     return proposal_id
@@ -552,6 +633,7 @@ async def create_suggestion(
     if rationale_ref is not None and not _REF.fullmatch(rationale_ref):
         raise ProposalInvalid(facts={"field": "rationale_ref"})
     check_suggestion_target(target_type)
+    await _on_engagement(ctx.tenant, engagement_id, [(target_type, target_id)])
     value = typed_value(proposed_value)
     run_id = cast(AgentContext, ctx).agent_run_id
     async with uow(ctx.tenant) as tx:
@@ -646,9 +728,11 @@ async def _decision_view(
 async def _allowed(ctx: AuthContext, proposal: Proposal, resource: Resource) -> list[str]:
     if not _live_human(ctx) or proposal.state != "pending":
         return []
-    found = await allowed_actions(ctx, resource, _PENDING_ACTIONS)
+    found = await allowed_actions(ctx, resource, (*_PENDING_ACTIONS, CHANGE_SET))
     out = [a for a in _PENDING_ACTIONS if a in found]
-    if APPROVE in out and _routed_elsewhere(proposal, ctx.user_id) is not None:
+    if CHANGE_SET not in found:  # a generic change set is decided by its own action's holders
+        out = [a for a in out if a not in (APPROVE, REJECT)]
+    if APPROVE in out and await _over_limit(ctx.tenant, proposal, ctx.user_id) is not None:
         out.remove(APPROVE)  # SHL-10 d: the CTA becomes "Send to <approver> for approval"
     return out
 
@@ -672,7 +756,7 @@ async def proposal_view(ctx: AuthContext, proposal_id: UUID) -> ProposalView:
             else None
         )
     unsupported = (
-        set(await _unsupported(ctx.tenant, engagement_id, rows))
+        set((await _supported(ctx.tenant, engagement_id, rows))[0])
         if proposal.state == "pending"
         else {r.n for r in rows if r.unsupported}
     )
@@ -744,6 +828,8 @@ async def _locked(
     engagement_id = cast(UUID, proposal.engagement_id)
     ref = await lock_ref(tx, engagement_id)
     await authorise(ctx, action, ref.resource())
+    if action in (APPROVE, REJECT):
+        await authorise(ctx, CHANGE_SET, ref.resource())
     locked = await lock_proposal(tx.session, proposal.id)
     if locked is None or locked.engagement_id != engagement_id:
         raise NotFound(SUBJECT)
@@ -799,14 +885,16 @@ async def approve_proposal(
     decision_id = uuid4()
     async with uow(person.tenant) as tx:
         locked = await _locked(tx, person, proposal, APPROVE, seen_version)
-        elsewhere = _routed_elsewhere(locked, person.user_id)
-        if elsewhere is not None:
-            raise RoutedElsewhere(facts={"routed_to": str(elsewhere)})
         rows = list(await rows_of(tx.session, locked.id))
         edited = _edits(rows, edits)
-        uncited = [
-            n for n in await _unsupported(person.tenant, engagement_id, rows) if n not in edited
-        ]
+        elsewhere = await _over_limit(
+            person.tenant, locked, person.user_id, _values(rows, edited) if edited else None
+        )
+        if elsewhere is not None:
+            raise RoutedElsewhere(facts={"routed_to": str(elsewhere)})
+        await _on_engagement(person.tenant, engagement_id, [_field(r)[:2] for r in rows])
+        unsupported, supported = await _supported(person.tenant, engagement_id, rows)
+        uncited = [n for n in unsupported if n not in edited]
         if uncited:
             raise UncitedChange(facts={"count": len(uncited), "row": uncited[0]})
         appliers, set_applier = await _appliers(locked.kind, rows)
@@ -852,7 +940,8 @@ async def approve_proposal(
                     value_source="human" if note is not None else "agent_suggested",
                     cause="edit" if note is not None else "suggestion_adopted",
                     suggestion_id=row.suggestion_id,
-                    citation_ids=tuple(row.citation_ids),
+                    # M3 (DEC-609): only the citations C4 verifies now reach the history.
+                    citation_ids=tuple(c for c in row.citation_ids if c in supported),
                     citation_note=note,
                     checkpoint_id=locked.checkpoint_id,
                     proposal_id=locked.id,
@@ -984,13 +1073,20 @@ async def route_proposal(
     ctx: Actor, proposal_id: UUID, *, seen_version: int, approver_user_id: UUID
 ) -> ProposalView:
     """`POST /v1/proposals/{id}/route` (SHL-10 d): "Send to <approver> for approval". The
-    approver is another person who may approve it on this engagement; they are told
-    (`proposal_routed`). The proposal stays pending."""
+    approver is another person who may decide the change set on this engagement, never the
+    run's preparer, and, when the threshold policy requires review, its named approver or a
+    person whose limit covers it (H, DEC-609); they are told (`proposal_routed`). The proposal
+    stays pending."""
     person = _human(ctx, ROUTE)
     proposal, resource = await _readable(person, proposal_id)
     engagement_id = cast(UUID, proposal.engagement_id)
-    if approver_user_id == person.user_id or not await member_could(
-        person.tenant_id, approver_user_id, APPROVE, resource, waive_fresh_mfa=True
+    if (
+        approver_user_id == person.user_id
+        or approver_user_id == await _preparer(person.tenant, proposal)
+        or not await member_could(
+            person.tenant_id, approver_user_id, CHANGE_SET, resource, waive_fresh_mfa=True
+        )
+        or await _over_limit(person.tenant, proposal, approver_user_id) is not None
     ):
         raise ProposalInvalid(facts={"field": "approver_user_id"})
     decision_id = uuid4()
@@ -1021,19 +1117,40 @@ async def route_proposal(
                 engagement_id=engagement_id,
                 approver_user_id=approver_user_id,
                 by_user=person.user_id,
+                actor_kind="human",
             )
         )
     return await proposal_view(person, proposal_id)
 
 
-async def record_follow_up(ctx: Actor, proposal_id: UUID, *, text: str) -> ProposalView:
+async def record_follow_up(
+    ctx: Actor, proposal_id: UUID, *, text: str, idempotency_key: str
+) -> ProposalView:
     """`POST /v1/proposals/{id}/follow-up` ("Ask follow-up"): a sealed follow-up recorded for
-    the originating run (P-10 delivers it). The proposal is unchanged."""
+    the originating run (P-10 delivers it). The proposal is unchanged. A retry with the same
+    `Idempotency-Key` writes nothing again (DEC-507's claim row; DEC-609)."""
     person = _human(ctx, FOLLOW_UP)
     body = (text or "").strip()
     if not body or len(body) > _NOTE_LIMIT:
         raise ProposalInvalid(facts={"field": "text"})
-    proposal, _ = await _readable(person, proposal_id)
+    proposal, resource = await _readable(person, proposal_id)
+    await authorise(person, FOLLOW_UP, resource)  # also for a replay, which writes nothing
+
+    async def run() -> tuple[int, dict[str, object]]:
+        await _write_follow_up(person, proposal, body)
+        return 200, {"proposal_id": str(proposal_id)}
+
+    await idempotent(
+        person.tenant,
+        route=FOLLOW_UP,
+        key=idempotency_key,
+        body={"proposal_id": str(proposal_id), "text": hashlib.sha256(body.encode()).hexdigest()},
+        run=run,
+    )
+    return await proposal_view(person, proposal_id)
+
+
+async def _write_follow_up(person: AuthContext, proposal: Proposal, body: str) -> None:
     engagement_id = cast(UUID, proposal.engagement_id)
     decision_id = uuid4()
     async with uow(person.tenant) as tx:
@@ -1058,7 +1175,6 @@ async def record_follow_up(ctx: Actor, proposal_id: UUID, *, text: str) -> Propo
             after=Ref(decision=decision_id),
             scope=Scope(engagement_id=engagement_id),
         )
-    return await proposal_view(person, proposal_id)
 
 
 # --- Suggestions (C-31 Adopt) ------------------------------------------------------------------
@@ -1152,12 +1268,16 @@ async def adopt_suggestion(
             if edited_value is not None
             else typed_value(locked.proposed_value)
         )
-        if edited_value is None:
-            supported = await supported_citations(
-                person.tenant, engagement_id, list(locked.citation_ids)
-            )
-            if not locked.citation_ids or not set(locked.citation_ids) <= supported:
-                raise UncitedChange(facts={"count": 1})
+        await _on_engagement(
+            person.tenant, engagement_id, [(locked.target_type, locked.target_id)]
+        )
+        supported = await supported_citations(
+            person.tenant, engagement_id, list(locked.citation_ids)
+        )
+        if edited_value is None and (
+            not locked.citation_ids or not set(locked.citation_ids) <= supported
+        ):
+            raise UncitedChange(facts={"count": 1})
         decision: Literal["adopted", "edited"] = (
             "edited" if edited_value is not None else "adopted"
         )
@@ -1181,7 +1301,8 @@ async def adopt_suggestion(
                 value_source="human" if edited_value is not None else "agent_suggested",
                 cause="edit" if edited_value is not None else "suggestion_adopted",
                 suggestion_id=locked.id,
-                citation_ids=tuple(locked.citation_ids),
+                # M3 (DEC-609): only the citations C4 verifies now reach the history.
+                citation_ids=tuple(c for c in locked.citation_ids if c in supported),
                 citation_note=note or None,
                 checkpoint_id=None,
                 proposal_id=None,
@@ -1259,7 +1380,6 @@ def register_proposal_state() -> None:
 
 __all__ = [
     "Edit",
-    "PolicyEval",
     "ProposalChanged",
     "ProposalInvalid",
     "ProposalView",
@@ -1269,6 +1389,7 @@ __all__ = [
     "SuggestionView",
     "adopt_suggestion",
     "approve_proposal",
+    "as_person",
     "create_proposal",
     "create_suggestion",
     "dismiss_suggestion",

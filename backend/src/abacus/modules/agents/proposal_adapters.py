@@ -29,7 +29,9 @@ import re
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from typing import Final, Literal
-from uuid import UUID
+from uuid import UUID, uuid4
+
+from sqlalchemy.exc import IntegrityError
 
 from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext, tenant_session
@@ -37,6 +39,8 @@ from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Ref, Scope, Target, uow
 from abacus.modules.agents.models import AgentRun
 from abacus.modules.agents.proposal_store import (
+    insert_match_decision,
+    match_decision,
     match_with_proposals,
     newest_match,
     newest_upload_review,
@@ -55,6 +59,7 @@ from abacus.modules.agents.proposals import (
     ProposalInvalid,
     ProposalView,
     RowView,
+    as_person,
 )
 from abacus.modules.agents.service import proposal_of
 from abacus.modules.agents.stages import starts_in_shadow
@@ -75,7 +80,7 @@ from abacus.modules.identity.api import (
     authorise,
     names_of,
 )
-from abacus.modules.review.api import UncitedChange
+from abacus.modules.review.api import UncitedChange, open_text, record_text_reads, seal_text
 
 KINDS: Final = ("screening_result", "upload_review", "inbox_match")
 _REF: Final = re.compile(
@@ -269,11 +274,44 @@ async def _project_match(ctx: AuthContext, subject: UUID) -> _Projected:
         match, picks = found
         run = await run_of(session, match.agent_run_id)
         current = await newest_match(session, match.inbox_file_id) == match.id
+        rejected = await match_decision(session, match.id)
     await _visible_run(ctx, run)
     resource = await _resource(ctx, match.engagement_id)
     cited = await verified_citation_ids(ctx.tenant, "inbox_match", [match.id])
     waiting = match.inbox_file_id in await waiting_among(ctx.tenant, [match.inbox_file_id])
-    state = "pending" if waiting and current and picks else "superseded"
+    state = (
+        "rejected"
+        if rejected is not None
+        else "pending"
+        if waiting and current and picks
+        else "superseded"
+    )
+    decision: DecisionView | None = None
+    if rejected is not None:  # review M6: the verdict is stored, and shown with its reason
+        note: str | None = None
+        if rejected.note_sealed is not None:
+            await record_text_reads(
+                ctx.tenant,
+                "inbox_match_decision",
+                [rejected.id],
+                engagement_id=match.engagement_id,
+                client_id=resource.client_id,
+            )
+            note = await open_text(
+                ctx.tenant, rejected.note_sealed, "inbox_match_decision", rejected.id, "note"
+            )
+        names = await names_of([rejected.decided_by])
+        decision = DecisionView(
+            id=rejected.id,
+            decision="rejected",
+            reason_code=rejected.reason_code,
+            note=note,
+            decided_by_user_id=rejected.decided_by,
+            decided_by_name=names.get(rejected.decided_by, "Former member"),
+            decided_at=rejected.created_at,
+            routed_to_user_id=None,
+            undo_until=None,
+        )
     rows = [
         RowView(
             n=p.rank,
@@ -305,7 +343,7 @@ async def _project_match(ctx: AuthContext, subject: UUID) -> _Projected:
         policy=None,
         set=None,
         checkpoint_id=None,
-        decision=None,
+        decision=decision,
         allowed_actions=await _allowed(ctx, resource, state),
     )
     first = picks[0].request_item_id if picks else None
@@ -344,6 +382,7 @@ async def approve_typed(
     ctx: AuthContext, kind: str, subject: UUID, *, seen_version: int
 ) -> ProposalView:
     """Approve a typed proposal through the path that exists today (ADR-161 clause 3)."""
+    as_person(ctx, APPROVE)
     projected = await _project(ctx, kind, subject)
     await authorise(ctx, APPROVE, projected.resource)
     _pending(projected, seen_version)
@@ -386,21 +425,47 @@ async def reject_typed(
 ) -> ProposalView:
     """Reject a typed proposal: a send-back with the mapped reason (DEC-603), or, for a match,
     the verdict recorded with the file left waiting."""
+    as_person(ctx, REJECT)
     if reason_code not in REASONS:
         raise ProposalInvalid(facts={"field": "reason_code"})
+    text = (note or "").strip()
+    if len(text) > 2000 or (reason_code == "other" and not text):
+        raise ProposalInvalid(facts={"field": "note"})
     projected = await _project(ctx, kind, subject)
     await authorise(ctx, REJECT, projected.resource)
     _pending(projected, seen_version)
     if kind == "inbox_match":
-        async with uow(ctx.tenant) as tx:
-            await lock_ref(tx, projected.engagement_id)
-            tx.record(
-                "proposal.rejected",
-                target=Target("inbox_match", subject),
-                after=Ref(version=1),
-                scope=Scope(engagement_id=projected.engagement_id),
-            )
-        return await _decided(ctx, kind, subject, "rejected", subject, reason_code)
+        # Review M6: the verdict is stored, once per match (a retry or a race is refused by
+        # `inbox_match_decisions_once_per_match`), with its reason and sealed note.
+        decision_id = uuid4()
+        try:
+            async with uow(ctx.tenant) as tx:
+                await lock_ref(tx, projected.engagement_id)
+                await insert_match_decision(
+                    tx.session,
+                    {
+                        "id": decision_id,
+                        "tenant_id": ctx.tenant_id,
+                        "match_id": subject,
+                        "decision": "rejected",
+                        "reason_code": reason_code,
+                        "note_sealed": await seal_text(
+                            ctx.tenant, text, "inbox_match_decision", decision_id, "note"
+                        )
+                        if text
+                        else None,
+                        "decided_by": ctx.user_id,
+                    },
+                )
+                tx.record(
+                    "proposal.rejected",
+                    target=Target("inbox_match", subject),
+                    after=Ref(decision=decision_id, version=1),
+                    scope=Scope(engagement_id=projected.engagement_id),
+                )
+        except IntegrityError:
+            raise ProposalChanged(facts={"version": 1}) from None
+        return (await _project(ctx, kind, subject)).view
     written = await decide(
         ctx,
         projected.engagement_id,

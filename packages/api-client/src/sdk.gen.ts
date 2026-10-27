@@ -7690,7 +7690,8 @@ export const proposalApprove = <ThrowOnError extends boolean = false>(options: O
 /**
  * Proposal Follow Up Route
  *
- * "Ask follow-up": a follow-up recorded for the originating thread or run.
+ * "Ask follow-up": a follow-up recorded for the originating thread or run. A retry with
+ * the same `Idempotency-Key` records nothing again.
  */
 export const proposalFollowUp = <ThrowOnError extends boolean = false>(options: Options<ProposalFollowUpData, ThrowOnError>): RequestResult<ProposalFollowUpResponses, ProposalFollowUpErrors, ThrowOnError> => (options.client ?? client).post<ProposalFollowUpResponses, ProposalFollowUpErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

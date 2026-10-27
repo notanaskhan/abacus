@@ -120,6 +120,9 @@ class ProposalRouted(DomainEvent):
     engagement_id: Annotated[UUID | None, classified("internal")]
     approver_user_id: Annotated[UUID, classified("internal")]
     by_user: Annotated[UUID | None, classified("internal")] = None
+    # Who acted, as the transaction's actor kind: the notification reads as a person only when
+    # a person did (security review, DEC-609).
+    actor_kind: Annotated[Literal["human", "agent"], classified("internal")] = "agent"
 
 
 class SuggestionCreated(DomainEvent):

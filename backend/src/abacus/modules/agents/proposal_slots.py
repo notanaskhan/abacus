@@ -15,7 +15,7 @@ refused, and approving a proposal whose adapter isn't registered answers 503.
 from __future__ import annotations
 
 import re
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from typing import Final, Literal
 from uuid import UUID
@@ -37,15 +37,39 @@ class UnregisteredTarget(DomainInvalid):
     code = "unregistered_target"
 
 
-def register_suggestion_target(target_type: str) -> None:
+# P-04-T24 security review M4: which engagement a target belongs to, from its owner. A target
+# whose owner states none can't receive a suggestion (fail closed).
+TargetEngagement = Callable[[TenantContext, UUID], Awaitable[UUID | None]]
+_ENGAGEMENT_OF: dict[str, TargetEngagement] = {}
+
+
+def register_suggestion_target(
+    target_type: str, *, engagement_of: TargetEngagement | None = None
+) -> None:
     if not _CODE.fullmatch(target_type):
         raise ValueError(f"suggestion target {target_type!r} must be snake_case")
     _TARGETS.add(target_type)
+    if engagement_of is not None:
+        _ENGAGEMENT_OF[target_type] = engagement_of
 
 
 def check_suggestion_target(target_type: str) -> None:
     if target_type not in _TARGETS:
         raise UnregisteredTarget
+
+
+async def target_on_engagement(
+    tenant: TenantContext, target_type: str, target_id: UUID, engagement_id: UUID
+) -> bool:
+    """Whether the target's owner says `target_id` belongs to `engagement_id`; False when the
+    target type is unregistered, its owner states no engagement lookup, or the owner raises."""
+    owner = _ENGAGEMENT_OF.get(target_type)
+    if target_type not in _TARGETS or owner is None:
+        return False
+    try:
+        return await owner(tenant, target_id) == engagement_id
+    except Exception:
+        return False
 
 
 def register_proposal_adapter(kind: str, adapter: ProposalAdapter) -> None:
@@ -118,9 +142,12 @@ def _same(a: object, b: object) -> bool:
     )
 
 
-def register_suggestion_applier(target_type: str, applier: SuggestionApplier) -> None:
+def register_suggestion_applier(
+    target_type: str, applier: SuggestionApplier, *, engagement_of: TargetEngagement
+) -> None:
     """The target's owner: adopting a suggestion on `target_type` (alone or in an approved
-    change set) calls `applier`. Registering also accepts the target for suggestions."""
+    change set) calls `applier`; `engagement_of` says which engagement a target belongs to.
+    Registering also accepts the target for suggestions."""
     if not _CODE.fullmatch(target_type):
         raise ValueError(f"suggestion target {target_type!r} must be snake_case")
     known = _APPLIERS.get(target_type)
@@ -128,6 +155,7 @@ def register_suggestion_applier(target_type: str, applier: SuggestionApplier) ->
         raise ValueError(f"suggestion applier {target_type!r} is already registered")
     _APPLIERS[target_type] = applier
     _TARGETS.add(target_type)
+    _ENGAGEMENT_OF[target_type] = engagement_of
 
 
 def suggestion_applier(target_type: str) -> SuggestionApplier:
@@ -152,3 +180,65 @@ def change_set_applier(kind: str) -> ChangeSetApplier:
     if found is None:
         raise ServiceUnavailable
     return found
+
+
+# --- P-04-T24 security review H, M2: the firm's threshold policy, computed on the server -------
+
+
+@dataclass(frozen=True)
+class ProposedValue:
+    """One value a threshold policy weighs (before and after, typed `{t, v}`)."""
+
+    target_type: str
+    target_id: UUID
+    field_key: str
+    before: Mapping[str, object] | None
+    after: Mapping[str, object] | None
+
+
+@dataclass(frozen=True)
+class ThresholdEvaluation:
+    """What the firm's threshold policy says about a change set, computed by code (ADR-050).
+    `review_required` names the approver the policy routes it to (P-08 dormant: a person)."""
+
+    policy_id: UUID
+    policy_name: str
+    version: int
+    result: Literal["within_threshold", "review_required"]
+    approver_user_id: UUID | None = None
+
+
+ThresholdEvaluate = Callable[
+    [TenantContext, UUID, str, tuple[ProposedValue, ...]], Awaitable[ThresholdEvaluation | None]
+]
+# (tenant, engagement, person, evaluation): whether the person's own limit covers it.
+ThresholdCovers = Callable[[TenantContext, UUID, UUID, ThresholdEvaluation], Awaitable[bool]]
+
+
+@dataclass(frozen=True)
+class ThresholdPolicy:
+    """A proposal kind's threshold policy (K-02 and A-06 register theirs as firm content): the
+    evaluation of a change set, and whether a person's approval limit covers an evaluation."""
+
+    kind: str
+    evaluate: ThresholdEvaluate
+    covers: ThresholdCovers
+
+
+_POLICIES: dict[str, ThresholdPolicy] = {}
+
+
+def register_threshold_policy(policy: ThresholdPolicy) -> None:
+    if not _CODE.fullmatch(policy.kind):
+        raise ValueError(f"proposal kind {policy.kind!r} must be snake_case")
+    known = _POLICIES.get(policy.kind)
+    if known is not None and not (
+        _same(known.evaluate, policy.evaluate) and _same(known.covers, policy.covers)
+    ):
+        raise ValueError(f"threshold policy {policy.kind!r} is already registered")
+    _POLICIES[policy.kind] = policy
+
+
+def threshold_policy(kind: str) -> ThresholdPolicy | None:
+    """None: no threshold applies to the kind (no firm has thresholds before K-02)."""
+    return _POLICIES.get(kind)

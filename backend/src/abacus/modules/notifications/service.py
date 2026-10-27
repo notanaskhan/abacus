@@ -128,12 +128,17 @@ async def notify(event: OutboxEvent) -> None:
             "category": kind.category,
             "actor_user_id": actor,
             # INV-5 (P-01-T14): an agent-originated kind's row reads as the agent's, unless the
-            # event names the person who acted (P-04-T26, DEC-605: a person routed a proposal).
+            # event says a person acted (P-04-T26, DEC-605, DEC-609: a person routed a
+            # proposal); a named user alone never makes an agent kind a person's.
             "actor_kind": (
-                "human"
-                if actor is not None
-                else "agent"
+                (
+                    "human"
+                    if actor is not None and payload.get("actor_kind") == "human"
+                    else "agent"
+                )
                 if entry.kind in AGENT_KINDS
+                else "human"
+                if actor is not None
                 else "system"
             ),
             "client_id": _uuid(payload.get("client_id")),

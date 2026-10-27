@@ -132551,7 +132551,7 @@
     },
     "/v1/proposals/{proposal_id}/follow-up": {
       "post": {
-        "description": "\"Ask follow-up\": a follow-up recorded for the originating thread or run.",
+        "description": "\"Ask follow-up\": a follow-up recorded for the originating thread or run. A retry with\nthe same `Idempotency-Key` records nothing again.",
         "operationId": "proposal_follow_up",
         "parameters": [
           {
@@ -132561,6 +132561,16 @@
             "schema": {
               "format": "uuid",
               "title": "Proposal Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idempotency-Key",
               "type": "string"
             }
           },

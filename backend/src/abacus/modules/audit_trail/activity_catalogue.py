@@ -104,6 +104,7 @@ CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
     "suggestion.adopted": _a("decision", "ok", "decision", "version"),
     "suggestion.edited": _a("decision", "ok", "decision", "version"),
     "suggestion.dismissed": _a("decision", "no", "decision", "version"),
+    "field.value_recorded": _a("change", "pl", "seq", "citations"),
 }
 
 _REGISTERED: dict[str, CatalogueEntry] = {}

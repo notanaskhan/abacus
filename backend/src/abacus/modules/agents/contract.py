@@ -14,7 +14,7 @@ from datetime import datetime
 from typing import Annotated, Literal, NoReturn
 from uuid import UUID
 
-from fastapi import Depends, Path
+from fastapi import Depends, Header, Path
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import REVIEW_GRAMMAR_API
@@ -346,11 +346,19 @@ async def proposal_route_to_route(
     errors=(409, 501),
 )
 async def proposal_follow_up_route(
-    proposal_id: UUID, body: FollowUpIn, ctx: Ctx
+    proposal_id: UUID,
+    body: FollowUpIn,
+    ctx: Ctx,
+    idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
 ) -> AgentProposalOut:
-    """ "Ask follow-up": a follow-up recorded for the originating thread or run."""
+    """ "Ask follow-up": a follow-up recorded for the originating thread or run. A retry with
+    the same `Idempotency-Key` records nothing again."""
     await _live(ctx)
-    return _proposal_out(await record_follow_up(ctx, proposal_id, text=body.text))
+    return _proposal_out(
+        await record_follow_up(
+            ctx, proposal_id, text=body.text, idempotency_key=str(idempotency_key)
+        )
+    )
 
 
 @proposals_router.post(

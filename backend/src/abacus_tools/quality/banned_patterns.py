@@ -889,10 +889,41 @@ def _check_dispatch(src: SourceFile) -> Iterator[Finding]:
             )
 
 
+# P-04-T25 (DEC-604, narrowed by the security review, DEC-609): outside the evidence service and
+# routes, only these top-level scopes may name `decide`: the module's imports (`<import>`), its
+# `__all__`, or the named functions; anywhere else in the same file still fails.
+REVIEW_DECIDE_EXEMPT: dict[str, frozenset[str]] = {
+    "src/abacus/modules/evidence/api.py": frozenset({"<import>", "__all__"}),
+    "src/abacus/modules/agents/proposal_adapters.py": frozenset(
+        {"<import>", "approve_typed", "reject_typed"}
+    ),
+}
+
+
+def _top_scope(node: ast.stmt) -> str | None:
+    if isinstance(node, ast.Import | ast.ImportFrom):
+        return "<import>"
+    if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef):
+        return node.name
+    if isinstance(node, ast.Assign) and any(
+        isinstance(t, ast.Name) and t.id == "__all__" for t in node.targets
+    ):
+        return "__all__"
+    return None
+
+
 def _check_review_decide(src: SourceFile) -> Iterator[Finding]:
     """ADR-005: agents propose, humans decide. Nothing but the evidence routes reaches the review
     decision (`decide`), whatever it is called through (TASK-019 D4, security review H2)."""
-    for node in ast.walk(src.tree):
+    allowed = REVIEW_DECIDE_EXEMPT.get(src.rel, frozenset[str]())
+    for top in src.tree.body:
+        if _top_scope(top) in allowed:
+            continue
+        yield from _decide_named(top)
+
+
+def _decide_named(tree: ast.AST) -> Iterator[Finding]:
+    for node in ast.walk(tree):
         name = None
         if isinstance(node, ast.Name):
             name = node.id
@@ -2348,15 +2379,12 @@ RULES: list[Rule | TreeRule] = [
         adr="ADR-005",
         check=_check_review_decide,
         # An allowlist (TASK-019 security review H2): any other file naming `decide` fails.
-        # P-04-T25 (DEC-604; ADR-161 clause 3): the typed proposal adapters approve a screener's
-        # or upload reviewer's proposal through the same call the AUD-03 routes make, so the
-        # evidence module's public interface and the one adapter file are named here too.
+        # P-04-T25 (DEC-604, DEC-609; ADR-161 clause 3): the typed adapters approve through the
+        # same call the AUD-03 routes make; `REVIEW_DECIDE_EXEMPT` names the scopes that may.
         include=("src/abacus/*",),
         exclude=(
             "src/abacus/modules/evidence/service.py",
             "src/abacus/modules/evidence/routes.py",
-            "src/abacus/modules/evidence/api.py",
-            "src/abacus/modules/agents/proposal_adapters.py",
         ),
     ),
     Rule(
@@ -2409,6 +2437,8 @@ RULES: list[Rule | TreeRule] = [
                 "route_proposal",
                 "adopt_suggestion",
                 "dismiss_suggestion",
+                "approve_typed",
+                "reject_typed",
             ),
             "only a person approves, rejects, adopts or dismisses the agent's proposal, through "
             "the agents service (INV-1, ADR-160 clause 12, ADR-161)",
