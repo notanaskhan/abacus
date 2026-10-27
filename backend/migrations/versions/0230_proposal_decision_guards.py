@@ -19,7 +19,7 @@ The trigger functions are SECURITY INVOKER (the default) with a pinned search pa
 writes the row and the state in one unit of work with no savepoint, and must keep it so.
 
 Revision ID: 0230
-Revises: 0220
+Revises: 0235
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ from __future__ import annotations
 from alembic import op
 
 revision = "0230"
-down_revision = "0220"
+down_revision = "0235"
 branch_labels = None
 depends_on = None
 
