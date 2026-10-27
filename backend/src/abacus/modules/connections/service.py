@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -11,19 +11,28 @@ from uuid import UUID
 
 from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
+from abacus.kernel.crypto import seal
 from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.egress import EgressClient
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.connections.connector import Connector, ConnectorError, Credentials, Period
 from abacus.modules.connections.connectors.import_file import ImportConnector
+from abacus.modules.connections.connectors.quickbooks_online import PROVIDER as QBO_PROVIDER
+from abacus.modules.connections.connectors.quickbooks_online import (
+    QboApp,
+    QuickBooksOnlineConnector,
+)
 from abacus.modules.connections.fake import FakeConnector
 from abacus.modules.connections.models import Connection, SyncRun
 from abacus.modules.connections.repository import (
     active_connection_for,
     active_run,
+    destroy_secret,
     get_gl_import,
     get_run,
     insert_run,
+    insert_secret,
     runs_since,
 )
 from abacus.modules.engagements.api import get_ref, lock_ref
@@ -99,9 +108,60 @@ def _import(connection: Connection, credentials: Credentials | None) -> Connecto
     return ImportConnector(connection.tenant_id, connection.client_entity_id)
 
 
+_egress: EgressClient | None = None
+
+
+def _egress_client() -> EgressClient:
+    """One shared outbound client for live connectors (the kernel's allowlisted reads)."""
+    global _egress
+    if _egress is None:
+        _egress = EgressClient()
+    return _egress
+
+
+def qbo_app() -> QboApp | None:
+    """The QuickBooks Online app registration, if this environment has one (A-02-T26)."""
+    config = settings()
+    if config.qbo_client_id is None or config.qbo_client_secret is None:
+        return None
+    return QboApp(
+        config.qbo_client_id, config.qbo_client_secret.get_secret_value(), config.qbo_environment
+    )
+
+
+def _resealer(connection: Connection) -> Callable[[Credentials], Awaitable[None]]:
+    """A rotated refresh token replaces the sealed credentials, in one unit of work (ADR-035)."""
+
+    async def reseal(credentials: Credentials) -> None:
+        system = TenantContext(connection.tenant_id, "system", "connections:refresh")
+        sealed = await seal(connection.tenant_id, credentials, str(connection.id))
+        async with uow(system) as tx:
+            await destroy_secret(tx.session, connection.id)
+            await insert_secret(
+                tx.session,
+                tenant_id=connection.tenant_id,
+                connection_id=connection.id,
+                sealed=sealed,
+            )
+            tx.record("connection.credentials_rotated", target=Target("connection", connection.id))
+
+    return reseal
+
+
+def _quickbooks_online(connection: Connection, credentials: Credentials | None) -> Connector:
+    """A-02-T26 (DEC-70, DEC-709): the first live ledger read."""
+    app = qbo_app()
+    if app is None:
+        raise ConnectorError("connector_unavailable")
+    return QuickBooksOnlineConnector(
+        app, _egress_client(), credentials, on_rotate=_resealer(connection)
+    )
+
+
 CONNECTORS: dict[str, Callable[[Connection, Credentials | None], Connector]] = {
     "fake": _fake,
     "import": _import,
+    QBO_PROVIDER: _quickbooks_online,
 }
 # Providers whose connector reaches no host (A-02-T16 review M3): the demo ledger reads local
 # files, an import reads uploads. Every other provider must be a read connector the

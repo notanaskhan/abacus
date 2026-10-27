@@ -67,6 +67,11 @@ def egress_allowlist() -> frozenset[str]:
     return registry().egress_hosts()
 
 
+def egress_read_posts() -> frozenset[tuple[str, str]]:
+    """The provider POSTs declared as reads (token exchange, refresh, revoke)."""
+    return registry().read_posts()
+
+
 def declared_hosts(adapter_key: str) -> frozenset[str]:
     return frozenset(
         h

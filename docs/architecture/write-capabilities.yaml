@@ -17,12 +17,31 @@
 #   attest client at registry level whatever this file says (I-POLICY-NOT-ATTEST).
 #
 # Connectors that exist only as fakes (synthetic environments) reach no host and are not listed.
-# The first live ledger read (A-02-T26, DEC-70: QuickBooks Online) adds its entry and hosts.
+# - `read_posts` (A-02-T26, DEC-709): the provider POSTs that are reads of the platform's own
+#   grant (the OAuth token exchange and refresh, the revoke), on a declared host. `kernel.egress`
+#   refuses every other POST.
 version: 1
-read_connectors: []
+read_connectors:
+  # A-02-T26 (DEC-70, DEC-709): the first live ledger read. The sign-in host is the browser's
+  # (`check_sign_in_url`), the token and revoke hosts are OAuth, the two API hosts read reports.
+  - adapter_key: quickbooks_online
+    category: ledger
+    egress_hosts:
+      - appcenter.intuit.com
+      - oauth.platform.intuit.com
+      - developer.api.intuit.com
+      - sandbox-quickbooks.api.intuit.com
+      - quickbooks.api.intuit.com
+    read_scopes:
+      - ledger.trial_balance
+      - ledger.company_info
+    read_posts:
+      - {host: oauth.platform.intuit.com, path: /oauth2/v1/tokens/bearer}
+      - {host: developer.api.intuit.com, path: /v2/oauth2/tokens/revoke}
 writes:
   - key: ledger_post_journal_entries
-    adapter_key: quickbooks_online
+    # A-02-T26 (DEC-709): its own adapter key; the QuickBooks Online read connector never writes.
+    adapter_key: quickbooks_online_poster
     shape: W1
     owner_epic: C-02
     decision: P-16

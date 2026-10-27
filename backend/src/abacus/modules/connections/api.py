@@ -5,7 +5,7 @@ from datetime import timedelta
 from abacus.kernel.audit_owners import register_engagement_owners, register_entity_owners
 from abacus.kernel.dispatch import PlatformSchedule, register_work_classes
 from abacus.kernel.uow import Handler
-from abacus.modules.connections.activities import ACTIVITIES
+from abacus.modules.connections.activities import ACTIVITIES as RUN_ACTIVITIES
 from abacus.modules.connections.audit_targets import AUDIT_KINDS, audit_entities, audit_owners
 from abacus.modules.connections.auto_retrieval import (
     auto_retrieve,
@@ -94,6 +94,7 @@ from abacus.modules.connections.service import (
     StartedRun,
     connector_for,
     load_system_context,
+    qbo_app,
     retrieval_status,
     start_retrieval,
 )
@@ -127,7 +128,7 @@ WORKFLOWS.update(GL_WORKFLOWS)
 # A-02-T25 (DEC-708): the daily health pass, a platform job.
 WORKFLOWS[ConnectionHealthWorkflow] = "background"
 register_work_classes({ConnectionHealthWorkflow: "background"})
-ACTIVITIES = (*ACTIVITIES, check_connection_health_activity)
+ACTIVITIES = (*RUN_ACTIVITIES, check_connection_health_activity)
 SCHEDULES: tuple[PlatformSchedule, ...] = (
     PlatformSchedule(
         id=CONNECTION_HEALTH_ID,
@@ -221,6 +222,7 @@ __all__ = [
     "normalise_raw",
     "parse_trial_balance",
     "pull_raw",
+    "qbo_app",
     "reconnect_todo_count",
     "render",
     "request_reconnect",

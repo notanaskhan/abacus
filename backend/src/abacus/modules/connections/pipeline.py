@@ -24,11 +24,13 @@ from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
 from abacus.modules.connections.connect import credentials_of
 from abacus.modules.connections.connector import ConnectorError, Dataset, Period, Unavailable
+from abacus.modules.connections.connectors.quickbooks_online import PROVIDER as QBO_PROVIDER
 from abacus.modules.connections.events import LedgerSnapshotRecorded
 from abacus.modules.connections.fake_format import parse_trial_balance
 from abacus.modules.connections.import_formats import source_format
 from abacus.modules.connections.import_parse import parse_isolated
 from abacus.modules.connections.models import SyncRun
+from abacus.modules.connections.qbo_format import parse_qbo_trial_balance
 from abacus.modules.connections.repository import (
     finish,
     get_connection,
@@ -233,6 +235,9 @@ async def _normalised(sys: SystemContext, run: SyncRun) -> NormalisedTrialBalanc
         raise await fail_run(sys, "failed", "unprocessable") from None
     fmt = source_format(run.source or "")
     try:
+        if run.source == QBO_PROVIDER:
+            # A-02-T26: the QuickBooks Online TrialBalance report (DEC-709).
+            return parse_qbo_trial_balance(content)
         if fmt is None:
             return parse_trial_balance(content)
         # SPEC-028 (TASK-052): an uploaded export, parsed by its format in an isolated child

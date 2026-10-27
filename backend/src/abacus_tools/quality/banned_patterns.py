@@ -2384,6 +2384,9 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/modules/identity/service.py",
             # SPEC-012: the staff token, verified by the staff issuer (break-glass).
             "src/abacus/modules/identity/support.py",
+            # A-02-T26 (DEC-709): a live connector sets the provider's Authorization on its own
+            # outbound reads through `kernel.egress`; it never reads an inbound request.
+            "src/abacus/modules/connections/connectors/quickbooks_online.py",
         ),
     ),
     Rule(

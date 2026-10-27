@@ -263,6 +263,14 @@ class Settings(BaseSettings):
     local_master_key: Annotated[SecretStr | None, classified("restricted")] = None
     # The fake connector serves provider-shaped JSON from here (TASK-010; local and test only).
     fake_connector_dir: Annotated[str | None, classified("internal")] = None
+    # A-02-T26 (DEC-70, DEC-709): the QuickBooks Online read connector's app credentials. Unset,
+    # the connector and its adapter are not registered (the catalogue row reads Coming soon).
+    # `sandbox` reads the Intuit sandbox company host; `production` the live one.
+    qbo_client_id: Annotated[str | None, classified("internal")] = None
+    qbo_client_secret: Annotated[SecretStr | None, classified("restricted")] = None
+    qbo_environment: Annotated[Literal["sandbox", "production"], classified("internal")] = (
+        "sandbox"
+    )
     temporal_target: Annotated[str | None, classified("internal")] = None
     temporal_namespace: Annotated[str, classified("internal")] = "default"
     # The base name of the task queues: one per work class, `<base>-<class>` (ADR-071, SPEC-003).

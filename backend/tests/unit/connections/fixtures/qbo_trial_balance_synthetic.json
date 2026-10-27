@@ -1,0 +1,34 @@
+{
+  "Header": {
+    "Time": "2026-09-14T09:24:00-07:00",
+    "ReportName": "TrialBalance",
+    "DateMacro": "",
+    "StartPeriod": "2026-01-01",
+    "EndPeriod": "2026-08-31",
+    "Currency": "USD",
+    "Option": [{"Name": "NoReportData", "Value": "false"}]
+  },
+  "Columns": {
+    "Column": [
+      {"ColTitle": "", "ColType": "Account"},
+      {"ColTitle": "Debit", "ColType": "Money"},
+      {"ColTitle": "Credit", "ColType": "Money"}
+    ]
+  },
+  "Rows": {
+    "Row": [
+      {"ColData": [{"value": "Operating Checking", "id": "35"}, {"value": "84210.55"}, {"value": ""}]},
+      {"ColData": [{"value": "Accounts Receivable (A/R)", "id": "84"}, {"value": "12450.00"}, {"value": ""}]},
+      {"ColData": [{"value": "Inventory Asset", "id": "81"}, {"value": "30115.40"}, {"value": ""}]},
+      {"ColData": [{"value": "Accumulated Depreciation", "id": "40"}, {"value": "-4200.00"}, {"value": ""}]},
+      {"ColData": [{"value": "Amex 1009", "id": "41"}, {"value": ""}, {"value": "6340.25"}]},
+      {"ColData": [{"value": "Accounts Payable (A/P)", "id": "33"}, {"value": ""}, {"value": "9875.10"}]},
+      {"ColData": [{"value": "Owner's Equity", "id": "30"}, {"value": ""}, {"value": "40000.00"}]},
+      {"ColData": [{"value": "Sales of Product Income", "id": "79"}, {"value": ""}, {"value": "214300.00"}]},
+      {"ColData": [{"value": "Cost of Goods Sold", "id": "80"}, {"value": "118940.60"}, {"value": ""}]},
+      {"ColData": [{"value": "Rent or Lease", "id": "17"}, {"value": "24000.00"}, {"value": ""}]},
+      {"ColData": [{"value": "Wages", "id": "18"}, {"value": "4998.80"}, {"value": ""}]},
+      {"Summary": {"ColData": [{"value": "TOTAL"}, {"value": "274715.35"}, {"value": "274715.35"}]}, "type": "Section", "group": "GrandTotal"}
+    ]
+  }
+}
