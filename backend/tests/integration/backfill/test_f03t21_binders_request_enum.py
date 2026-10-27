@@ -397,7 +397,11 @@ async def test_ac3_3_no_table_is_named_reminder(seed: Seeder) -> None:
         "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' "
         "AND table_name LIKE '%reminder%'"
     )
-    assert [r["table_name"] for r in rows] == []
+    # DEC-74 renamed the PBC reminders to follow-ups; G-02-T18's security-incident clock
+    # reminders are another thing (the FTC notice clock), named for what they are.
+    assert [
+        r["table_name"] for r in rows if r["table_name"] != "security_incident_reminders"
+    ] == []
     follow_ups = await seed.rows(
         "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' "
         "AND table_name LIKE 'follow_up%'"

@@ -107,5 +107,6 @@ Additive changes in place. Breaking changes ship as v2 with one sprint of overla
 
 ## 11. Open points
 - P-07-T47 (DEC-539) registers `acceptance_decision_due`, `independence_conclusion_due`, `independence_confirmation_due` and `eqr_eligibility_due` through `register_gate_source` (`review/engagement_gates.py`); `subkind` (I-01-T04) carries that name. Each of these gates is assigned to a named person and shown only to them (`GateSource.assigned_only`, DEC-544).
+- I-01-T08 (DEC-647) registers SPEC-004's review queue as `evidence_review` gates (subject `evidence_version`) and the home counts `agent_runs_running`, `audits` and `binders`; `portal_invites_pending` and the follow-up and invite-resend gates wait for their state.
 - DEC-404 records the stub's choices (one `home.read` cell per firm role, the slot's fail-closed answer, the `due_risk` thresholds).
 - OQ-2 is decided (DEC-403): an `evidence_review` class for SPEC-004 review assignments and uploads awaiting review, band Approvals & sends, added to the kind set additively with I-01-T04. The four bands are unchanged.
