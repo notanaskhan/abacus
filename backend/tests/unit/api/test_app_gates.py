@@ -100,6 +100,11 @@ NOT_CREATING = {
     "/v1/firm/security/incidents/{incident_id}/decisions",
     "/v1/firm/security/sessions/{session_id}/sign-out",
     "/v1/firm/staff/{user_id}/unlock",
+    # G-02-T15 (AI-policy stub): a partner's decision and the requester's withdrawal change a
+    # version's state and return it, so 200.
+    "/v1/firm/ai-policy/versions/{version_no}/approve",
+    "/v1/firm/ai-policy/versions/{version_no}/decline",
+    "/v1/firm/ai-policy/versions/{version_no}/withdraw",
     # G-01-T02: deactivating and approving change a person or a wall and return it, so 200.
     "/v1/firm/staff/{user_id}/deactivate",
     "/v1/walls/{wall_id}/approve",
