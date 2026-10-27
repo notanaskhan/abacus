@@ -31,3 +31,7 @@ total assets 26,410,000 from live routes."
 - 2026-10-27: plan written.
 - 2026-10-27: built (DEC-612); `TbLive.tsx` lazy-loaded; `Live.test.tsx` covers adopt, newer
   banner, Open in Excel, source menu and Sign off… in fixture mode. Staging acceptance not run here.
+- 2026-10-27: vitest AUD-06, AUD-02, C9/C20 fixtures, routes 120 passed; tsc clean for the app
+  (12 pre-existing errors in the generated `packages/api-client/src/client/*`, untouched);
+  eslint and prettier clean; vite build ok; bundle-budget: firm initial 245.8 of 250 KB, TbLive
+  60.7 KB lazy chunk. Playwright not run (chromium mismatch).

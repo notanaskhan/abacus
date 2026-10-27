@@ -14,7 +14,7 @@ import {
   tbCandidatesOptions,
 } from "@abacus/api-client/query";
 import { tbExport } from "@abacus/api-client";
-import { Button, PaneAction, useFormat } from "@abacus/ui";
+import { Button, PaneAction, Picker, useFormat } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { COPY } from "./copy";
@@ -40,7 +40,7 @@ export async function downloadExport(
   });
   const header = response.headers.get("Content-Disposition") ?? "";
   const name = /filename="([^"]+)"/u.exec(header)?.[1] ?? "trial-balance.xlsx";
-  const url = URL.createObjectURL(data as Blob);
+  const url = URL.createObjectURL(data);
   const link = document.createElement("a");
   link.href = url;
   link.download = name;
@@ -75,22 +75,12 @@ export function AdoptAction({
     <div data-aud06="adopt" className="flex flex-col items-center gap-[8px]">
       <p className="text-meta text-ink-3">{COPY.adoptBody}</p>
       {snapshots.length > 1 ? (
-        <label className="flex flex-col gap-[4px] text-meta text-ink-2">
-          {COPY.snapshotChoice}
-          <select
-            value={chosen}
-            onChange={(e) => {
-              setChosen(e.target.value);
-            }}
-            className="h-[28px] rounded-tile bg-nested px-[8px] text-body text-ink"
-          >
-            {snapshots.map((s) => (
-              <option key={s.id} value={s.id}>
-                {describe(s)}
-              </option>
-            ))}
-          </select>
-        </label>
+        <Picker
+          label={COPY.snapshotChoice}
+          options={snapshots.map((s) => ({ value: s.id, label: describe(s) }))}
+          value={chosen}
+          onChange={setChosen}
+        />
       ) : snapshots[0] !== undefined ? (
         <p className="text-meta text-ink-2">{describe(snapshots[0])}</p>
       ) : null}

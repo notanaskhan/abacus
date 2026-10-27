@@ -51,3 +51,6 @@ one POR-02 to-do that clears when Tess Moreno reconnects."
 - 2026-10-27: built as planned (DEC-611). Any live connection may be asked about; the email goes
   after the request commits (not relayed). No outbox event yet (no consumer). LIST-001 exempts
   `identity.repository.owner_holders`.
+- 2026-10-27: T23 integration 5 passed; T16 suite 28 passed alone (one run under load hit a
+  Postgres connection reset in `test_a_state_is_bound_to_the_person_who_started_it`, green alone
+  and on rerun). c20 stub test marks the route live.

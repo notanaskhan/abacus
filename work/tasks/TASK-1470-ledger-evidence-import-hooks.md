@@ -57,3 +57,8 @@ byte-identical, and a template that does not foot is refused unbalanced with its
 - 2026-10-27: built as planned (DEC-610). The C9 stub gate stays as `tb_contract.stub_gate`
   (no C9 stub left); the export route moved to `tb_read_model.py`. The template's client-visible
   words say "Trial balance template", never "Accrued" (DEC-01). Targeted tests and gates below.
+- 2026-10-27: targeted pass green: unit and contract set 3,649 (incl. the new unit files), T22
+  security file and T10 (16), ledger/portal/schema integration 198, schema-check subset 18, C9
+  authz 2 (control updated: the export is live, so a missing TB answers 404), route introspection
+  and fresh-MFA subset 87, tenant isolation subset 7. `test_tb_of_record_schema` expectation for
+  `import_accrued_template` moved from `other` to `import` as its comment foresaw. Gates clean.

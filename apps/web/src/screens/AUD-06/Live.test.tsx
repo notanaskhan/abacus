@@ -128,7 +128,10 @@ describe("AUD-06 newer: the newer-TB banner (A-02-T24, AC-7.1, AC-7.2)", () => {
 describe("AUD-06 Open in Excel (A-02-T24, AC-8.1)", () => {
   it("downloads the server's file for the shown layer and version", async () => {
     const created = vi.fn(() => "blob:tb");
-    vi.stubGlobal("URL", Object.assign(URL, { createObjectURL: created, revokeObjectURL: vi.fn() }));
+    vi.stubGlobal(
+      "URL",
+      Object.assign(URL, { createObjectURL: created, revokeObjectURL: vi.fn() }),
+    );
     const { scenario, seen } = spying(scenarios.h);
     frame(scenario, "h");
     const button = await screen.findByRole("button", { name: "Open in Excel" }, { timeout: 4000 });
@@ -168,7 +171,10 @@ function withActions(base: Scenario, actions: TbLayerViewOut["allowed_actions"])
       [layers]: async (r) => {
         const answered = await (original as FixtureHandler)(r);
         const view = (await answered.json()) as TbLayerViewOut;
-        return json({ ...view, allowed_actions: [...(view.allowed_actions ?? []), ...(actions ?? [])] });
+        return json({
+          ...view,
+          allowed_actions: [...(view.allowed_actions ?? []), ...(actions ?? [])],
+        });
       },
     },
   };

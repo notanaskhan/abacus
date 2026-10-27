@@ -659,9 +659,7 @@ export function useTrialBalancePane(
     if (v === undefined) return;
     setExporting(true);
     void import("./TbLive")
-      .then(async (m) =>
-        m.downloadExport(engagementId, v.trial_balance_id, v.layer, v.version_no),
-      )
+      .then(async (m) => m.downloadExport(engagementId, v.trial_balance_id, v.layer, v.version_no))
       .catch(() => undefined)
       .finally(() => {
         setExporting(false);

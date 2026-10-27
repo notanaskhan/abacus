@@ -275,7 +275,10 @@ export const scenarios = defineScenarios({
   newer: granite("newer", "simone-baptiste", {
     list: graniteList(),
     // Simone may adopt the newer pull as v2 (A-02-T24: "Use v2…").
-    view: { ...viewNewer, allowed_actions: [...(viewNewer.allowed_actions ?? []), "trial_balance.adopt"] },
+    view: {
+      ...viewNewer,
+      allowed_actions: [...(viewNewer.allowed_actions ?? []), "trial_balance.adopt"],
+    },
     checks: [],
     candidates: [snapshotOf(PULL_2, GRANITE_FY2026_REPULL, REPULLED, GRANITE_FY2026)],
   }),
