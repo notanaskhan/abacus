@@ -1334,6 +1334,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.phase.ProfileStale
+    - abacus.modules.communications.follow_up_policy.FollowUpPolicyStale
     - abacus.modules.communications.template_service.TemplateDraftStale
     - abacus.modules.connections.entity.StaleConnection
     - abacus.modules.engagements.acceptance.AcceptanceStale

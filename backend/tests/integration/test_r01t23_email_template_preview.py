@@ -197,7 +197,7 @@ async def test_preview_lists_findings_by_block_and_writes_nothing(
     firm: Firm, seed: Seeder
 ) -> None:
     await _publish_clean(firm)
-    await _draft(firm, "See the attached file, click here, or ask the agent about 123-45-6789")
+    await _draft(firm, "See the attached file, click here, or ask the agent about 912-34-5678")
     before = await seed.count("audit_events", firm.tenant)
     found = await template_preview.preview(
         firm.admin, "reminder", source="draft", width=390, sample_contact_id=None

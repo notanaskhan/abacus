@@ -62,3 +62,7 @@ marked-done binder gets no further draft, and the pre-change P-4 history replays
 
 ## Progress log
 - 2026-10-27: planned (S11 lane 5).
+- 2026-10-27: built (0221, policy service, GET, policy-driven P-4, limit-reached kind, scheduled
+  send), v3 EngagementAgent histories recorded; the workflow unit fake learned the new patch;
+  targeted pass and gates green. DEC-563 to DEC-566. `security_tests` codegen regenerated for
+  the new table.

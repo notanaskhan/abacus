@@ -589,7 +589,7 @@ async def set_default_due_on(
 
 async def overdue_items(
     session: AsyncSession, engagement_id: UUID, today: date
-) -> Sequence[tuple[RequestItem, date, UUID, datetime | None, dict[str, Any] | None]]:
+) -> Sequence[tuple[RequestItem, date, UUID, datetime | None, dict[str, Any] | None]]:  # Any: JSON
     """Open or sent-back items past their due date (their own, else the list's), for the
     engagement agent's reminders (LIST_EXEMPT: the platform, not a person, reads them), with
     their binder's id, client "Mark as Done" stamp and follow-up override (R-01-T24)."""

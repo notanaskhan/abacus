@@ -33,3 +33,6 @@ not possible from this lane (no staging access): said in the report.
 
 ## Progress log
 - 2026-10-27: planned (S11 lane 5).
+- 2026-10-27: built on fixtures; 15 vitest cases green (a–l, the lint acceptance, sandbox, avoid).
+  The manifest keeps a null path: link-contract's rule 2 holds every POR- id to the portal tree
+  (DEC-567). Not done here: the staging full-stack run, Playwright, gallery registration.
