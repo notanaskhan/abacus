@@ -22,8 +22,7 @@ from decimal import Decimal
 from typing import Annotated, Literal, NoReturn
 from uuid import UUID
 
-from fastapi import Depends, Header, Path, Query
-from fastapi.responses import Response
+from fastapi import Depends, Header, Path
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import LEDGER_TB_WORKPAPER
@@ -250,9 +249,10 @@ class TieIssueLinkOut(BaseModel):
 # --- routes -------------------------------------------------------------------------------------
 
 
-async def _stub(ctx: AuthContext, action: str, engagement_id: UUID) -> NoReturn:
-    """Authorise the route's one action on the engagement (404 outside the tenant or behind a
-    wall, 403 by role or independence), then the flag (404 off), then 501 (DEC-314, DEC-261)."""
+async def stub_gate(ctx: AuthContext, action: str, engagement_id: UUID) -> NoReturn:
+    """The C9 stub gate: authorise the route's one action on the engagement (404 outside the
+    tenant or behind a wall, 403 by role or independence), then the flag (404 off), then 501
+    (DEC-314, DEC-261). No C9 v1 route is a stub since A-02-T22; kept for the next one."""
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, action, ref.resource())
     if not await flag_enabled(ctx.tenant, LEDGER_TB_WORKPAPER):
@@ -264,21 +264,3 @@ tb_router = AbacusRouter(
     prefix="/v1/engagements/{engagement_id}/trial-balances", tags=["trial balance"]
 )
 AreaKey = Annotated[str, Path(min_length=1, max_length=120)]
-
-
-@tb_router.get(
-    "/{tb_id}/export.xlsx",
-    action="trial_balance.export",
-    response_model=bytes,
-    errors=(409, 501),
-)
-async def tb_export_route(
-    engagement_id: UUID,
-    tb_id: UUID,
-    ctx: Ctx,
-    layer: TrialBalanceLayerStatus = TrialBalanceLayerStatus.UNADJUSTED,
-    version: Annotated[int | None, Query(ge=1)] = None,
-) -> Response:
-    """Open in Excel (A-02-T22): a deterministic XLSX of the layer with ticks, citations and a
-    provenance footer, audited `trial_balance.exported`; formula-like text is neutralised."""
-    await _stub(ctx, "trial_balance.export", engagement_id)

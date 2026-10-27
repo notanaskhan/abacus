@@ -46,7 +46,6 @@ function capabilities(persona: string | undefined): CapabilitiesOut {
   return {
     ...base,
     capabilities: [...base.capabilities, ...(ACTIONS[slug] ?? [])],
-    flags: { ...base.flags, "firm_settings.v2": true },
   };
 }
 export const CLOCK_E = "2026-11-02T09:24:00-06:00";

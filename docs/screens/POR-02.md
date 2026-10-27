@@ -7,7 +7,7 @@
 | Surface | portal (white-labelled: the firm's mark, name and people; nowhere "Accrued") |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/POR-02 Portal home - Feld household/` (README.md, spec.md, revision.md R2; revision wins) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | P-08 · contract P-08-T03; contract stub P-08-T01; stage projection P-08-T12; home read model P-08-T13; portal entry and shell data P-08-T07; data P-08-T08; a, b, c, f P-08-T15; d, e, g, h, M P-08-T23; parity and accessibility P-08-T27 |
-| Manifest status | fixture (`routes/manifest/por.ts`): a, b, c, f built by P-08-T15 (TASK-989); d, e, g, h and M by P-08-T23 (TASK-1219); the portal route renders it for Home with `?scope=` and T7-M below 768 px |
+| Manifest status | **live** (P-08-T29, 2026-10-27; `routes/manifest/por.ts`): it reads `GET /v1/portal/home` (P-08-T13) behind `portal.home_v2`, on for synthetic firms (P-08-T28); g and h stay fixture-only until their sources register (Deviations). a, b, c, f built by P-08-T15 (TASK-989); d, e, g, h and M by P-08-T23 (TASK-1219); the portal route renders it for Home with `?scope=` and T7-M below 768 px |
 
 Code to come (P-08 §5.2): `src/routes/portal/{root,home}.tsx`, `src/shell/portal/{PortalToolbarData,EntitySwitcher}.tsx`, `src/domain/portal/{queries,mutations,messages}.ts`, `src/screens/POR-02/{index.tsx, scenarios.ts, copy.ts, POR-02.test.tsx}`.
 
@@ -191,6 +191,8 @@ Each becomes a test in `POR-02.test.tsx` ("POR-02 avoid: …"): gradients in pro
 | DEC-348 | On E0 the binder reads the load's 5 of 7 with 0 sorted, not the handoff's "19 of 21 · 37 sorted"; the fixture keeps the handoff's figures | Only 7 of the 21 requests are named anywhere (BND-02 a), and the 37 sorted files are never named; the seed loads only what is named | decision-log DEC-348 |
 | — | Planned to-do kinds, cards and nav items are hidden in production and render in fixture builds | Chapter 04 §2.1 rule 4 | P-08 §2.2 |
 
+**Deviations closed (P-08-T29, 2026-10-27).** Every row above is a recorded decision (DEC-58, DEC-59, DEC-35, DEC-348, DEC-45 through P-08 §0.1 DF-03, ADR P-28, P-08 §2.1 and §2.2); none is open. The g and h rows close when A-10/R-02 and X-01 register their home sources, which is their epics' work, not a deviation of this screen.
+
 ### Part 1 notes (P-08-T15)
 - The skeleton (f) and the error are drawn by the screen from tokens: the kit's ViewState module carries the firm's product words, which the portal bundle may not hold (DEC-196). Error strings: "Couldn’t load your home." · "We could not reach the server. Nothing was lost; try again in a moment." (the kit's portal line) · "Retry"; the skeleton's status label "Loading".
 - A first visit's to-do cards read the request in full (`detail`) as the title, with b's line under it ("Read and sign before we start on your 2025 return." · "Drop files in your 2025 binder and they're sorted for you.").
@@ -208,9 +210,9 @@ Each becomes a test in `POR-02.test.tsx` ("POR-02 avoid: …"): gradients in pro
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a–f | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (unbuilt) | locked (blocking) at P-08 exit (T27); mask the skeleton pulse in f |
-| g, h | C | not run | report-only (their sources are later epics) |
-| M | C | not run | POR-02-M board uses the 940 × 1800 crop rule; locked at exit |
+| a–f | C (threshold 0.20, maxDiffPixelRatio 3 %) | not measured in a builder session (no browser); all built | the lock is set by a person after the first `pnpm visual` run passes (`docs/design/parity.md`; T27); mask the skeleton pulse in f |
+| g, h | C | not measured | report-only (their sources are later epics) |
+| M | C | not measured | POR-02-M board uses the 940 × 1800 crop rule; locked by the same sign-off |
 | host | D | — | toolbar 46, rail 336, main 1030, pane header 46 with a 14.5/500 title, TodoCard 243×116 r12, pill 21, StatusDisc 15, progress 3 px, tab bar 64 |
 
 Tier B for T7 and T7-M is F-05's (F-05-T49).

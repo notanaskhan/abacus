@@ -126,7 +126,8 @@ export function CatalogGrid({
 export interface CatalogCategory {
   key: string;
   label: string;
-  count: number;
+  /** No count at all (KNW-01: a category no provider has registered yet), never 0. */
+  count?: number;
   /** The 11.5 ink-3 line under the label: the row grows from 33 to 46. */
   description?: string;
 }
@@ -218,15 +219,17 @@ export function CategoryList({
                   </span>
                 )}
               </span>
-              <span
-                data-count=""
-                className={cn(
-                  "inline-flex h-[20px] min-w-[20px] flex-none items-center justify-center rounded-pill px-[6px] text-count font-medium text-ink-2",
-                  on ? "bg-card shadow-e1" : "bg-chip",
-                )}
-              >
-                {c.count}
-              </span>
+              {c.count !== undefined && (
+                <span
+                  data-count=""
+                  className={cn(
+                    "inline-flex h-[20px] min-w-[20px] flex-none items-center justify-center rounded-pill px-[6px] text-count font-medium text-ink-2",
+                    on ? "bg-card shadow-e1" : "bg-chip",
+                  )}
+                >
+                  {c.count}
+                </span>
+              )}
             </div>
           );
         })}

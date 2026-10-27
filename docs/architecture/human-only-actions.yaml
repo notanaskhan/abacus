@@ -115,3 +115,7 @@ actions:
     verb: approve  # G-02-T24 (ED-180, 0244): a second partner approves an AI policy version (AC-37)
   - action: ai_policy.declined
     verb: reject  # G-02-T24 (ED-180, 0244): a second partner declines it
+  - action: assurance.release_recorded
+    verb: release  # A-01-T23 (DEC-590, 0226): the engagement partner records the external release
+  - action: assurance.archive_recorded
+    verb: decide  # A-01-T23 (DEC-591, 0226): a manager or the partner records the external archive

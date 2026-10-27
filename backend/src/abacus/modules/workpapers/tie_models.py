@@ -43,7 +43,8 @@ class TieOutCheckVersion(Base):
     version_no: Mapped[int]
     label: Mapped[str]
     actual_selector: Mapped[dict[str, Any]] = mapped_column(JSONB)  # Any: JSON
-    expected: Mapped[dict[str, Any] | None] = mapped_column(JSONB)  # Any: JSON
+    # ED-175: Python None is SQL NULL, not JSON null (a balanced check has no expected value).
+    expected: Mapped[dict[str, Any] | None] = mapped_column(JSONB(none_as_null=True))  # Any: JSON
     citation_ids: Mapped[list[UUID]] = mapped_column(ARRAY(Uuid[UUID](as_uuid=True)))
     tolerance: Mapped[Decimal] = mapped_column(Numeric(20, 2))
     reason: Mapped[str | None]

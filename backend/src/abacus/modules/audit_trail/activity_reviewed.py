@@ -36,9 +36,11 @@ REVIEWED_FALLBACK: Final = frozenset(
         "approval_grant.consumed",
         "approval_grant.voided",
         "archive.locked",
+        "assurance.archive_recorded",  # A-01-T23: export id, manifest digest, never the ref
         "assurance.phase_derived",
         "assurance.phase_recorded",
         "assurance.profile_updated",
+        "assurance.release_recorded",  # A-01-T23: the recorded date and kind, as numbers
         "audit_chain.anchored",
         "auth.sign_in_refused",
         "autonomy_policy.updated",
@@ -107,7 +109,9 @@ REVIEWED_FALLBACK: Final = frozenset(
         "decision_card.superseded",
         "email_template.draft_discarded",  # R-01-T19
         "email_template.draft_saved",  # R-01-T19
+        "email_template.imported",  # R-01-T23
         "email_template.published",  # R-01-T19
+        "email_template.test_sent",  # R-01-T23
         "engagement.acceptance_file_attached",
         "engagement.acceptance_recorded",
         "engagement.ai_excluded",
@@ -176,8 +180,11 @@ REVIEWED_FALLBACK: Final = frozenset(
         "follow_up.dismissed",
         "follow_up.drafted",
         "follow_up.edited",
+        "follow_up.limit_reached",  # R-01-T24
+        "follow_up.scheduled_sent",  # R-01-T24 (DEC-74): the system's scheduled Reminder
         "follow_up.sent",
         "follow_up.undone",
+        "follow_up_policy.saved",  # R-01-T24
         "fulfilment.created",
         "fulfilment.voided",
         "fulfilment.withdrawn",
@@ -372,8 +379,8 @@ REVIEWED_FALLBACK: Final = frozenset(
         "tenant.provisioned",
         "tenant_key.recorded",
         "third_party.upload_noticed",
-        "tie_out_check.changed",
         "tie_out_check.defined",
+        "tie_out_check.updated",  # ED-176: C9 §7's name for an edit (was `.changed`)
         "tin.reveal_throttled",
         "tin.revealed",
         "trial_balance.annotated",

@@ -10343,8 +10343,9 @@ export type FirmExportDeclineIn = {
 /**
  * FirmExportLinkOut
  *
- * A presigned download link for 15 minutes; Restricted (it opens the firm's whole archive)
- * and never logged.
+ * A download link for 15 minutes: the API path of the archive for the signed-in person it
+ * was issued to (DEC-509: no presigned URL). Restricted (it opens the firm's whole archive) and
+ * never logged.
  */
 export type FirmExportLinkOut = {
     /**
@@ -11002,7 +11003,7 @@ export type FollowUpOut = {
     /**
      * Drafted By Kind
      */
-    drafted_by_kind: 'person' | 'agent';
+    drafted_by_kind: 'person' | 'agent' | 'system';
     /**
      * Edited
      */
@@ -11383,6 +11384,30 @@ export type GapOut = {
      * Needed
      */
     needed: Array<string>;
+};
+
+/**
+ * GateBandsOut
+ *
+ * Open gates per DF-25 band, in the fixed band order.
+ */
+export type GateBandsOut = {
+    /**
+     * Agent Outputs
+     */
+    agent_outputs: number;
+    /**
+     * Approvals Sends
+     */
+    approvals_sends: number;
+    /**
+     * Decisions
+     */
+    decisions: number;
+    /**
+     * Sign Offs
+     */
+    sign_offs: number;
 };
 
 /**
@@ -12251,6 +12276,28 @@ export type HomeTileOut = {
 };
 
 /**
+ * HumanGateCountsOut
+ *
+ * The one count source (C13; I-01-T04): the HOME-01 header and Approvals badge, the
+ * HOME-02 bands, SHL-04's Approvals tab and I-02 read `total` and `bands` from here.
+ */
+export type HumanGateCountsOut = {
+    bands: GateBandsOut;
+    /**
+     * Overdue
+     */
+    overdue: number;
+    /**
+     * Snoozed
+     */
+    snoozed: number;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
  * HumanGateOut
  *
  * One row of the rebuildable projection. Labels come from the subject's owner at read time.
@@ -12261,9 +12308,25 @@ export type HumanGateOut = {
      */
     assignee_user_id: string | null;
     /**
+     * Band
+     */
+    band: 'decisions' | 'sign_offs' | 'agent_outputs' | 'approvals_sends';
+    /**
+     * Blocked
+     */
+    blocked: boolean;
+    /**
+     * Blocked Reason Code
+     */
+    blocked_reason_code: string | null;
+    /**
      * Client Id
      */
     client_id: string | null;
+    /**
+     * Context
+     */
+    context?: string | null;
     /**
      * Created At
      */
@@ -12283,7 +12346,11 @@ export type HumanGateOut = {
     /**
      * Kind
      */
-    kind: 'decision' | 'sign_off_request' | 'proposal' | 'send' | 'final_approval' | 'export' | 'release';
+    kind: 'decision' | 'sign_off_request' | 'proposal' | 'send' | 'final_approval' | 'export' | 'release' | 'evidence_review';
+    /**
+     * Office Id
+     */
+    office_id: string | null;
     /**
      * Role
      */
@@ -12293,6 +12360,14 @@ export type HumanGateOut = {
      */
     state: 'open' | 'done' | 'voided';
     subject: ObjectRefOut;
+    /**
+     * Subkind
+     */
+    subkind: string;
+    /**
+     * Title
+     */
+    title?: string | null;
     /**
      * Work Item Id
      */
@@ -14056,6 +14131,10 @@ export type KnowledgeItemOut = {
      */
     usage_count: number | null;
     /**
+     * Usage Kind
+     */
+    usage_kind?: 'engagements' | 'returns' | 'closes' | 'audits' | 'agents' | null;
+    /**
      * Version Label
      */
     version_label: string | null;
@@ -14547,7 +14626,7 @@ export type LintFindingOut = {
     /**
      * Code
      */
-    code: 'amount' | 'tin_shape' | 'account_number' | 'attachment' | 'second_button' | 'unregistered_variable' | 'foreign_link' | 'platform_name';
+    code: 'amount' | 'tin_shape' | 'account_number' | 'attachment' | 'second_button' | 'unregistered_variable' | 'foreign_link' | 'platform_name' | 'banned_word';
     /**
      * Variable
      */
@@ -31947,10 +32026,6 @@ export type ReconnectRequestErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ReconnectRequestError = ReconnectRequestErrors[keyof ReconnectRequestErrors];
@@ -46883,10 +46958,6 @@ export type TbExportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TbExportError = TbExportErrors[keyof TbExportErrors];
@@ -50689,10 +50760,6 @@ export type ListFirmExportsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListFirmExportsError = ListFirmExportsErrors[keyof ListFirmExportsErrors];
@@ -50744,10 +50811,6 @@ export type RequestFirmExportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RequestFirmExportError = RequestFirmExportErrors[keyof RequestFirmExportErrors];
@@ -50953,10 +51016,6 @@ export type ApproveFirmExportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ApproveFirmExportError = ApproveFirmExportErrors[keyof ApproveFirmExportErrors];
@@ -51013,10 +51072,6 @@ export type DeclineFirmExportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DeclineFirmExportError = DeclineFirmExportErrors[keyof DeclineFirmExportErrors];
@@ -51078,9 +51133,9 @@ export type LinkFirmExportErrors = {
      */
     422: ValidationErrorOut;
     /**
-     * Contract stub: not implemented yet
+     * Too soon or too many: retry after Retry-After
      */
-    501: ErrorOut;
+    429: ErrorOut;
 };
 
 export type LinkFirmExportError = LinkFirmExportErrors[keyof LinkFirmExportErrors];
@@ -51093,6 +51148,88 @@ export type LinkFirmExportResponses = {
 };
 
 export type LinkFirmExportResponse = LinkFirmExportResponses[keyof LinkFirmExportResponses];
+
+export type FirmExportArchiveData = {
+    body?: never;
+    headers?: {
+        /**
+         * Range
+         */
+        Range?: string | null;
+        /**
+         * If-Range
+         */
+        'If-Range'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Export Id
+         */
+        export_id: string;
+        /**
+         * Link Id
+         */
+        link_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/data-exports/{export_id}/links/{link_id}';
+};
+
+export type FirmExportArchiveErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Gone: the code, link or window expired or was used
+     */
+    410: ErrorOut;
+    /**
+     * Range not satisfiable
+     */
+    416: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Too soon or too many: retry after Retry-After
+     */
+    429: ErrorOut;
+};
+
+export type FirmExportArchiveError = FirmExportArchiveErrors[keyof FirmExportArchiveErrors];
+
+export type FirmExportArchiveResponses = {
+    /**
+     * Response Firm Export Archive
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type FirmExportArchiveResponse = FirmExportArchiveResponses[keyof FirmExportArchiveResponses];
 
 export type DraftedGuidanceData = {
     body?: never;
@@ -51273,10 +51410,6 @@ export type ImportEmailTemplatesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ImportEmailTemplatesError = ImportEmailTemplatesErrors[keyof ImportEmailTemplatesErrors];
@@ -51489,10 +51622,6 @@ export type PreviewEmailTemplateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PreviewEmailTemplateError = PreviewEmailTemplateErrors[keyof PreviewEmailTemplateErrors];
@@ -51610,9 +51739,9 @@ export type TestSendEmailTemplateErrors = {
      */
     422: ValidationErrorOut;
     /**
-     * Contract stub: not implemented yet
+     * Too soon or too many: retry after Retry-After
      */
-    501: ErrorOut;
+    429: ErrorOut;
 };
 
 export type TestSendEmailTemplateError = TestSendEmailTemplateErrors[keyof TestSendEmailTemplateErrors];
@@ -51759,10 +51888,6 @@ export type GetFollowUpPolicyErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetFollowUpPolicyError = GetFollowUpPolicyErrors[keyof GetFollowUpPolicyErrors];
@@ -56161,7 +56286,7 @@ export type HumanGateListData = {
         /**
          * Kind
          */
-        kind?: 'decision' | 'sign_off_request' | 'proposal' | 'send' | 'final_approval' | 'export' | 'release' | null;
+        kind?: 'decision' | 'sign_off_request' | 'proposal' | 'send' | 'final_approval' | 'export' | 'release' | 'evidence_review' | null;
         /**
          * Engagement Id
          */
@@ -56211,6 +56336,62 @@ export type HumanGateListResponses = {
 };
 
 export type HumanGateListResponse = HumanGateListResponses[keyof HumanGateListResponses];
+
+export type HumanGateCountsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Office Id
+         */
+        office_id?: string | null;
+    };
+    url: '/v1/human-gates/counts';
+};
+
+export type HumanGateCountsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type HumanGateCountsError = HumanGateCountsErrors[keyof HumanGateCountsErrors];
+
+export type HumanGateCountsResponses = {
+    /**
+     * Successful Response
+     */
+    200: HumanGateCountsOut;
+};
+
+export type HumanGateCountsResponse = HumanGateCountsResponses[keyof HumanGateCountsResponses];
 
 export type AcceptInvitationData = {
     body: AcceptInvitationIn;
@@ -57222,10 +57403,6 @@ export type KnowledgeChangeLogErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type KnowledgeChangeLogError = KnowledgeChangeLogErrors[keyof KnowledgeChangeLogErrors];
@@ -57502,10 +57679,6 @@ export type KnowledgeItemsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type KnowledgeItemsError = KnowledgeItemsErrors[keyof KnowledgeItemsErrors];
@@ -57553,10 +57726,6 @@ export type KnowledgeReviewQueueErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type KnowledgeReviewQueueError = KnowledgeReviewQueueErrors[keyof KnowledgeReviewQueueErrors];
@@ -58417,6 +58586,10 @@ export type ImportTemplateData = {
          * Engagement Type
          */
         engagement_type?: Array<'fs_audit' | 'ebp_audit' | 'review' | 'compilation' | 'preparation' | 'agreed_upon_procedures' | 'soc1' | 'soc2' | 'readiness' | 'internal_audit' | 'tax_compliance' | 'cas_monthly_close' | 'notice_response' | 'advisory'> | null;
+        /**
+         * Family
+         */
+        family?: 'ebp' | 'fs' | 'ssars' | null;
     };
     url: '/v1/methodology/templates/{name}/versions';
 };
@@ -59346,6 +59519,55 @@ export type SubmitVersionResponses = {
 };
 
 export type SubmitVersionResponse = SubmitVersionResponses[keyof SubmitVersionResponses];
+
+export type WorkbookTemplateData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/methodology/workbook-template.xlsx';
+};
+
+export type WorkbookTemplateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type WorkbookTemplateError = WorkbookTemplateErrors[keyof WorkbookTemplateErrors];
+
+export type WorkbookTemplateResponses = {
+    /**
+     * Response Workbook Template
+     *
+     * Successful Response
+     */
+    200: string;
+};
+
+export type WorkbookTemplateResponse = WorkbookTemplateResponses[keyof WorkbookTemplateResponses];
 
 export type ListNotificationsData = {
     body?: never;
@@ -61735,6 +61957,10 @@ export type ProposalApproveErrors = {
      * Contract stub: not implemented yet
      */
     501: ErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
 };
 
 export type ProposalApproveError = ProposalApproveErrors[keyof ProposalApproveErrors];
@@ -61750,7 +61976,11 @@ export type ProposalApproveResponse = ProposalApproveResponses[keyof ProposalApp
 
 export type ProposalFollowUpData = {
     body: FollowUpIn;
-    headers?: {
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
         /**
          * Authorization
          */
@@ -62932,6 +63162,10 @@ export type SuggestionAdoptErrors = {
      * Contract stub: not implemented yet
      */
     501: ErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
 };
 
 export type SuggestionAdoptError = SuggestionAdoptErrors[keyof SuggestionAdoptErrors];

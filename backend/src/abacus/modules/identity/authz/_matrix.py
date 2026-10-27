@@ -1551,6 +1551,14 @@ ACTIONS: dict[str, dict[str, str]] = {
     "proposal.create": {
         "agent": "task_scope",
     },
+    "proposal.decide_change_set": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "independence": "required",
+    },
     "proposal.follow_up": {
         "engagement_partner": "allow",
         "manager": "allow",

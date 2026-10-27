@@ -15,9 +15,10 @@ import re
 import sys
 import tokenize
 from collections.abc import Callable, Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from fnmatch import fnmatch
 from pathlib import Path
+from typing import Final
 
 BACKEND = Path(__file__).resolve().parents[3]
 SCAN_ROOTS = ("src", "tests")
@@ -889,10 +890,41 @@ def _check_dispatch(src: SourceFile) -> Iterator[Finding]:
             )
 
 
+# P-04-T25 (DEC-604, narrowed by the security review, DEC-609): outside the evidence service and
+# routes, only these top-level scopes may name `decide`: the module's imports (`<import>`), its
+# `__all__`, or the named functions; anywhere else in the same file still fails.
+REVIEW_DECIDE_EXEMPT: dict[str, frozenset[str]] = {
+    "src/abacus/modules/evidence/api.py": frozenset({"<import>", "__all__"}),
+    "src/abacus/modules/agents/proposal_adapters.py": frozenset(
+        {"<import>", "approve_typed", "reject_typed"}
+    ),
+}
+
+
+def _top_scope(node: ast.stmt) -> str | None:
+    if isinstance(node, ast.Import | ast.ImportFrom):
+        return "<import>"
+    if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef):
+        return node.name
+    if isinstance(node, ast.Assign) and any(
+        isinstance(t, ast.Name) and t.id == "__all__" for t in node.targets
+    ):
+        return "__all__"
+    return None
+
+
 def _check_review_decide(src: SourceFile) -> Iterator[Finding]:
     """ADR-005: agents propose, humans decide. Nothing but the evidence routes reaches the review
     decision (`decide`), whatever it is called through (TASK-019 D4, security review H2)."""
-    for node in ast.walk(src.tree):
+    allowed = REVIEW_DECIDE_EXEMPT.get(src.rel, frozenset[str]())
+    for top in src.tree.body:
+        if _top_scope(top) in allowed:
+            continue
+        yield from _decide_named(top)
+
+
+def _decide_named(tree: ast.AST) -> Iterator[Finding]:
+    for node in ast.walk(tree):
         name = None
         if isinstance(node, ast.Name):
             name = node.id
@@ -925,6 +957,40 @@ def _check_named(name: str, message: str) -> Callable[[SourceFile], Iterator[Fin
                 found = name
             if found == name:
                 yield Finding(getattr(node, "lineno", 1), message)
+
+    return check
+
+
+# PROPOSAL-001 (P-04-T24, T25; re-review L4): the top-level scopes that may name a proposal's
+# decision functions, file by file, as `REVIEW_DECIDE_EXEMPT` does for REVIEW-001.
+PROPOSAL_EXEMPT: dict[str, frozenset[str]] = {
+    "src/abacus/modules/agents/proposals.py": frozenset({"__all__"}),
+    "src/abacus/modules/agents/proposal_adapters.py": frozenset({"__all__"}),
+    "src/abacus/modules/agents/contract.py": frozenset(
+        {
+            "<import>",
+            "proposal_approve_route",
+            "proposal_reject_route",
+            "proposal_route_to_route",
+            "suggestion_adopt_route",
+            "suggestion_dismiss_route",
+        }
+    ),
+}
+
+
+def _check_named_scoped(
+    names: tuple[str, ...], message: str, exempt: dict[str, frozenset[str]]
+) -> Callable[[SourceFile], Iterator[Finding]]:
+    """`_check_named_any`, except in the named top-level scopes of the named files."""
+    inner = _check_named_any(names, message)
+
+    def check(src: SourceFile) -> Iterator[Finding]:
+        allowed = exempt.get(src.rel, frozenset[str]())
+        for top in src.tree.body:
+            if _top_scope(top) in allowed:
+                continue
+            yield from inner(replace(src, tree=ast.Module(body=[top], type_ignores=[])))
 
     return check
 
@@ -977,6 +1043,55 @@ def _check_messaging(src: SourceFile) -> Iterator[Finding]:
             yield Finding(getattr(node, "lineno", 1), "only communications emits message.ready")
 
 
+def _check_system_send(src: SourceFile) -> Iterator[Finding]:
+    """R-01-T24 security review M2, L-b (DEC-568, DEC-588): the system's scheduled Reminder is
+    built only by communications' scheduled-reminder service, which checks the policy, the flag,
+    the key and the cadence itself. Outside communications the name `SystemSendContext` appears
+    nowhere: not as a name or an attribute (an alias or `module.SystemSendContext`), not as a
+    string (`getattr(module, "SystemSendContext")`), not imported."""
+    name = "SystemSendContext"
+    for node in ast.walk(src.tree):
+        named = (isinstance(node, ast.Name) and node.id == name) or (
+            isinstance(node, ast.Attribute) and node.attr == name
+        )
+        if named:
+            yield Finding(getattr(node, "lineno", 1), "only communications uses the context")
+        elif isinstance(node, ast.Constant) and isinstance(node.value, str) and name in node.value:
+            yield Finding(node.lineno, "only communications names the scheduled send context")
+        elif isinstance(node, ast.ImportFrom) and any(a.name == name for a in node.names):
+            yield Finding(node.lineno, "only communications imports the scheduled send context")
+
+
+_DYNAMIC_IMPORTS: Final = frozenset({"import_module", "__import__"})
+
+
+def _check_dynamic_module_import(src: SourceFile) -> Iterator[Finding]:
+    """R-01-T24 security review L-b (DEC-588): a module never reaches another module's internals
+    by a dynamic import (`importlib.import_module("abacus.modules.x.y")`, `__import__`), which
+    the import contracts cannot see. The app and the worker load each module's `api` this way and
+    sit outside `modules/`."""
+    for node in ast.walk(src.tree):
+        if not isinstance(node, ast.Call) or _terminal_name(node.func) not in _DYNAMIC_IMPORTS:
+            continue
+        first = node.args[0] if node.args else None
+        if first is None:
+            continue
+        text = ""
+        if isinstance(first, ast.Constant) and isinstance(first.value, str):
+            text = first.value
+        elif isinstance(first, ast.JoinedStr):
+            text = "".join(
+                v.value
+                for v in first.values
+                if isinstance(v, ast.Constant) and isinstance(v.value, str)
+            )
+        else:
+            yield Finding(node.lineno, "a dynamic import names its module literally")
+            continue
+        if text.startswith("abacus"):
+            yield Finding(node.lineno, "no dynamic import of an abacus module inside modules/")
+
+
 def _check_resource_archived(src: SourceFile) -> Iterator[Finding]:
     """`archived` comes from the engagement row, never a literal (TASK-008 loads it)."""
     for node in ast.walk(src.tree):
@@ -1014,6 +1129,9 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/requests/repository.py", "live_item_engagements"),
         ("src/abacus/modules/identity/repository.py", "delegate_grant_holders"),
         ("src/abacus/modules/identity/repository.py", "delegate_holders"),
+        # A-02-T23: an entity's Owner grants, for the firm's reconnect request email (recipients
+        # are then held to `recipient_relations`; the asker authorised on the engagement first).
+        ("src/abacus/modules/identity/repository.py", "owner_holders"),
         ("src/abacus/modules/evidence/repository.py", "ever_accepted"),
         ("src/abacus/modules/evidence/repository.py", "client_problem_codes"),
         # P-07-T25 (DEC-302): one contact's delegations, read for CLI-04 after the contact's
@@ -1046,6 +1164,10 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/agents/repository.py", "version_results_of"),
         ("src/abacus/modules/agents/repository.py", "items_screened_with"),
         ("src/abacus/modules/evidence/repository.py", "verified_citations_of"),
+        # P-04-T24 (C4, INV-2): citations by id, for a caller authorised on the citing
+        # engagement (a proposal's rows, re-verified at approval; SHL-10's evidence list).
+        ("src/abacus/modules/evidence/repository.py", "supported_citations_among"),
+        ("src/abacus/modules/evidence/repository.py", "citation_versions_among"),
         ("src/abacus/modules/evidence/repository.py", "decisions_for_screenings"),
         # SPEC-035 Q3 (TASK-074): a template version's drafts are firm-wide, read after
         # `authorise(template_guidance.read)` on the firm; no engagement rows.
@@ -1095,6 +1217,9 @@ LIST_EXEMPT = frozenset(
         # Methodology templates are firm-wide (SPEC-008): read after `authorise` on the firm
         # (`methodology.read`) or by a caller authorised on the engagement; no engagement rows.
         ("src/abacus/modules/methodology/repository.py", "list_templates"),  # K-01-T02: moved
+        # K-01-T05: the previous version's step keys, inside an authorised import's own unit of
+        # work (`methodology.manage` on the firm); firm-wide rows, no engagement.
+        ("src/abacus/modules/methodology/repository.py", "_prior_keys"),
         # SPEC-025 (TASK-043): the client picker, firm-level after `authorise(client.read)`; the
         # service drops clients the person is walled off from.
         ("src/abacus/modules/organisations/repository.py", "clients_matching"),
@@ -1412,7 +1537,9 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     "communications": _BASE | {"engagements", "organisations", "ledger", "evidence", "requests"},
     # A-02 §4.1 (A-02-T16): POR-16's cards and start compose `connections` (which never imports
     # integrations, so the edge stays acyclic; W-01 relies on the same rule).
-    "integrations": _BASE | {"organisations", "engagements", "evidence", "ledger", "connections"},
+    # A-02-T23 (DEC-611): the reconnect request mails the owners through communications.
+    "integrations": _BASE
+    | {"organisations", "engagements", "evidence", "ledger", "connections", "communications"},
     # The engagement graph reads the latest snapshot's accounts (SPEC-008, TASK-023 D1).
     # SPEC-027 (TASK-051 D3): the engagement agent works out overdue reminders; communications
     # sends them (the only sender, COMM-001).
@@ -1451,9 +1578,11 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     | {"communications", "agents", "tax"},
     "workbench": _BASE | {"organisations", "engagements", "methodology", "agents", "integrations"},
     "practice": _BASE | {"organisations", "engagements", "integrations"},
+    # A-02-T23 (DEC-517, DEC-611): the home's reconnect to-do reads connections.
     "portal": _BASE
     | {"organisations", "engagements", "requests", "evidence", "signatures", "communications"}
-    | {"collaboration", "review", "assurance", "attest", "tax", "closes", "notices"},
+    | {"collaboration", "review", "assurance", "attest", "tax", "closes", "notices"}
+    | {"connections"},
 }
 
 
@@ -2049,6 +2178,11 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_tie_out_schema.py",
             "tests/integration/test_integrations_schema.py",
             "tests/integration/test_entity_connections_schema.py",
+            # I-01-T04, K-01-T05 (S11): the human-only snooze and reassignment rows, the card's
+            # reassign guard and the frozen methodology content, proved as the app role with the
+            # tenant and actor set by hand, as tenant_session sets them.
+            "tests/integration/backfill/test_i01t04_human_gate_home.py",
+            "tests/integration/backfill/test_k01t05_methodology_programs.py",
             # Records replay fixtures against throwaway containers (seeds as the superuser).
             "src/abacus_tools/workflows/record_retrieval.py",
             "src/abacus_tools/stack.py",  # the recorders' and evals' stack (connect_db)
@@ -2199,6 +2333,11 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_tie_out_schema.py",
             "tests/integration/test_integrations_schema.py",
             "tests/integration/test_entity_connections_schema.py",
+            # I-01-T04, K-01-T05 (S11): the human-only snooze and reassignment rows, the card's
+            # reassign guard and the frozen methodology content, proved as the app role with the
+            # tenant and actor set by hand, as tenant_session sets them.
+            "tests/integration/backfill/test_i01t04_human_gate_home.py",
+            "tests/integration/backfill/test_k01t05_methodology_programs.py",
             # Q-03-T028: plans each list as the app role with the firm's tenant set by hand, as
             # tenant_session sets it, so row-level security adds the tenant predicate.
             "tests/integration/test_q03t028_plan_tests.py",
@@ -2344,6 +2483,8 @@ RULES: list[Rule | TreeRule] = [
         adr="ADR-005",
         check=_check_review_decide,
         # An allowlist (TASK-019 security review H2): any other file naming `decide` fails.
+        # P-04-T25 (DEC-604, DEC-609; ADR-161 clause 3): the typed adapters approve through the
+        # same call the AUD-03 routes make; `REVIEW_DECIDE_EXEMPT` names the scopes that may.
         include=("src/abacus/*",),
         exclude=(
             "src/abacus/modules/evidence/service.py",
@@ -2387,6 +2528,29 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/modules/review/decisions.py",
             "src/abacus/modules/review/contract.py",
         ),
+    ),
+    Rule(
+        id="PROPOSAL-001",
+        description="Only the proposal service, its adapters and its routes reach a proposal's "
+        "decision",
+        adr="ADR-161",
+        check=_check_named_scoped(
+            (
+                "approve_proposal",
+                "reject_proposal",
+                "route_proposal",
+                "adopt_suggestion",
+                "dismiss_suggestion",
+                "approve_typed",
+                "reject_typed",
+            ),
+            "only a person approves, rejects, adopts or dismisses the agent's proposal, through "
+            "the agents service (INV-1, ADR-160 clause 12, ADR-161)",
+            PROPOSAL_EXEMPT,
+        ),
+        # P-04-T24, T25: only the scopes in `PROPOSAL_EXEMPT` (the definitions' `__all__`, the
+        # routes and their imports); anything else naming one fails.
+        include=("src/abacus/*",),
     ),
     Rule(
         id="ACCEPT-001",
@@ -2449,6 +2613,21 @@ RULES: list[Rule | TreeRule] = [
         check=_check_messaging,
         include=("src/abacus/*",),
         exclude=("src/abacus/modules/communications/*",),
+    ),
+    Rule(
+        id="COMM-002",
+        description="Only communications' scheduled-reminder service builds a system send",
+        adr="ADR-005, DEC-74",
+        check=_check_system_send,
+        include=("src/abacus/*",),
+        exclude=("src/abacus/modules/communications/*",),
+    ),
+    Rule(
+        id="BOUND-004",
+        description="No dynamic import of an abacus module inside modules/",
+        adr="ADR-008, DEC-588",
+        check=_check_dynamic_module_import,
+        include=("src/abacus/modules/*",),
     ),
     Rule(
         id="AUTHZ-003",

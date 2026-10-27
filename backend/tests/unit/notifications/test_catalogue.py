@@ -50,12 +50,17 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "wall.created",  # G-01-T09 (C16 `wall_approval_requested`, to the named partner)
         "wall.approved",  # G-01-T09 (C16 `wall_approved`, to the wall's creator)
         "portal.drop_unsorted",  # R-01-T09 (C16 `portal_drop_unsorted`)
+        "follow_up.limit_reached",  # R-01-T24 (C16 `follow_up_limit_reached`, to the leads)
         "membership.access_ending",  # G-01-T13 (C16 `seasonal_access_ending`, to firm admins)
         "third_party.uploaded",  # R-01-T13 (C16 `third_party_uploaded`, to the request owner)
         "sign_off.went_stale",  # P-04-T19 (C16 `sign_off_stale`, to the signer)
         "review_note.raised",  # P-04-T21 (C16 `review_note_raised`, to the assignee)
         "decision_card.raised",  # P-04-T23 (C16 `decision_assigned`, to the reserved person)
         "decision_card.notify_requested",  # P-04-T23 (C16 `mention`, SHL-11 b Notify)
+        "proposal.routed",  # P-04-T26 (C16 `proposal_routed`, to the named approver)
+        "sign_off.requested",  # P-04-T26 (`sign_off_requested`, to the people named)
+        "issue.assigned",  # P-04-T26 (`issue_assigned`, to the assignee; P-04-T30 emits it)
+        "checkpoint.created",  # P-04-T26 (`import_pending_approval`, an import's reviewers)
         "acceptance.sent_to_partner",  # P-07-T47 (C16 `acceptance_awaiting_partner`, to the EP)
         "acceptance.review_requested",  # P-07-T47 (`risk_partner_review_requested`)
         "independence.reminded",  # P-07-T47 (`independence_reminder`, to the member)
@@ -66,6 +71,8 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "audit_export.ready",  # G-02-T17 (C16 `audit_export_ready`, to the requester)
         "incident.decision_requested",  # G-02-T18 (to the named second decider)
         "incident.deadline_approaching",  # G-02-T18 (days 20, 25, 29: the QI and partners)
+        "firm_export.requested",  # Q-02-T43 (C16 `firm_export_approval_requested`, the approver)
+        "firm_export.ready",  # Q-02-T43 (C16 `firm_export_ready`, requester and approver)
     }
 
 

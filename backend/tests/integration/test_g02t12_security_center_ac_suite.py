@@ -105,7 +105,8 @@ LIVE: Final = frozenset(
     | {SCHEDULE, SCHEDULE_PUT, SCHEDULE_APPROVE}
     | {SAFEGUARDS, SAFEGUARDS_PUT, CONTROL_PUT, WISP_PACK}
 )
-STUBBED: Final = frozenset({*ROUTES, EXPORTS, EXPORT_REQUEST, EXPORT_APPROVE}) - LIVE
+# Q-02-T43 (TASK-1403) made the on-demand export live: the list, the request and the approval.
+STUBBED: Final = frozenset(ROUTES) - LIVE
 
 FRESH_MFA_REGISTER: Final = (
     Path(__file__).resolve().parents[3] / "docs" / "architecture" / "fresh-mfa-actions.yaml"
@@ -799,7 +800,9 @@ async def test_ac24_ac47_felix_requests_and_only_another_person_approves(
     requested = await as_(world.felix)(
         *EXPORT_REQUEST,
         json={"approver_user_id": str(world.margaret.user_id)},
-        headers={"Idempotency-Key": "k1"},
+        # The kernel takes 8 to 200 of [A-Za-z0-9_.:-] (`kernel/uow/idempotency.py`); "k1" was
+        # never a valid key and only went unnoticed while the stub answered 501 (TASK-1403).
+        headers={"Idempotency-Key": str(uuid.uuid4())},
     )
     if stubbed(EXPORT_REQUEST, requested):
         return

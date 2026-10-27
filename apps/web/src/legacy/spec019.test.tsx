@@ -8,7 +8,6 @@ import { Budget } from "./Budget";
 import { Knowledge } from "./Knowledge";
 import { KnowledgeDocuments } from "./KnowledgeDocuments";
 import { SupportAccess } from "./SupportAccess";
-import { Walls } from "./Walls";
 
 function me(role: "firm_admin" | "practice_leader" | null): MeOut {
   return {
@@ -284,55 +283,8 @@ describe("ac5 support access", () => {
   });
 });
 
-describe("ac6 walls", () => {
-  it("asks for a fresh sign-in before showing walls", async () => {
-    mockApi({ "GET /v1/walls": forbidden });
-    renderRoutes([{ path: "/", component: Walls }]);
-    expect(await screen.findByRole("dialog", { name: "Confirm it's you" })).toBeTruthy();
-  });
-
-  it("creates a wall from the pickers, removes one with confirmation, and explains refusals", async () => {
-    const { calls } = mockApi({
-      "GET /v1/walls": () =>
-        json([
-          {
-            id: "w1",
-            user_id: "u-s",
-            client_id: "c1",
-            status: "active",
-            created_at: "2026-10-01T00:00:00Z",
-            created_by: "u-a",
-            removed_at: null,
-            removed_by: null,
-          },
-        ]),
-      "GET /v1/firm/members": () =>
-        json([
-          { user_id: "u-s", display_name: "Sam Staff" },
-          { user_id: "u-a", display_name: "Ada Admin" },
-        ]),
-      "GET /v1/firm/clients": () => json([{ client_id: "c1", name: "Northwind" }]),
-      "POST /v1/walls": () => json({ detail: "wall_exists" }, 409),
-      "POST /v1/walls/w1/remove": () => json({ detail: "own_wall" }, 409),
-    });
-    renderRoutes([{ path: "/", component: Walls }]);
-    expect(await screen.findByRole("cell", { name: "Sam Staff" })).toBeTruthy();
-    fireEvent.change(screen.getByLabelText("Person"), { target: { value: "u-s" } });
-    fireEvent.change(screen.getByLabelText("Client"), { target: { value: "c1" } });
-    fireEvent.click(screen.getByRole("button", { name: "Add wall" }));
-    expect(
-      await screen.findByText("That person is already walled off from this client."),
-    ).toBeTruthy();
-    expect(calls.find((c) => c.path === "/v1/walls" && c.method === "POST")?.body).toEqual({
-      user_id: "u-s",
-      client_id: "c1",
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Remove" }));
-    const dialog = await screen.findByRole("dialog", { name: "Remove wall" });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Remove" }));
-    expect(await screen.findByText(/can't lift a wall on yourself/)).toBeTruthy();
-  });
-});
+// G-01-T17 (DEC-594): "ac6 walls" (the retired Walls screen) is ADM-03's: the step-up, the new
+// wall sheet (b), the refusal row (c), lifting with a confirm (e) and a refused lift.
 
 describe("ac7 loading and error states", () => {
   it("shows an error state when a list fails to load", async () => {
@@ -340,14 +292,5 @@ describe("ac7 loading and error states", () => {
     renderRoutes([{ path: "/", component: SupportAccess }]);
     expect(await screen.findByText("Couldn't load support sessions")).toBeTruthy();
   });
-
-  it("shows an empty state with no walls", async () => {
-    mockApi({
-      "GET /v1/walls": () => json([]),
-      "GET /v1/firm/members": () => json([]),
-      "GET /v1/firm/clients": () => json([]),
-    });
-    renderRoutes([{ path: "/", component: Walls }]);
-    expect(await screen.findByText(/No walls/)).toBeTruthy();
-  });
+  // "shows an empty state with no walls" moved to ADM-03 (DEC-594).
 });

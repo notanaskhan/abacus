@@ -14,7 +14,7 @@ import { type ExportFrame, exportHandlers } from "../../fixtures/handlers/export
 import { newQueryClient } from "../../testing/support";
 import { ExportSheet } from "./ExportSheet";
 import { AUDIT_MESSAGES } from "./messages";
-import { PhaseRecordDialog } from "./RecordDialogs";
+import { PhaseRecordDialog, ReleaseRecordDialog } from "./RecordDialogs";
 
 const WORK_ITEM = "0b0e5b42-0b8f-4d52-9a4e-3d1b8f1c0001";
 const ENGAGEMENT = "0b0e5b42-0b8f-4d52-9a4e-3d1b8f1c0002";
@@ -244,5 +244,41 @@ describe("A-01-T24: the record-mode dialogs", () => {
     expect((await screen.findByRole("alert")).textContent).toBe(
       AUDIT_MESSAGES.record.refusals.phase_skip,
     );
+  });
+
+  function releaseRefusedWith(body: Record<string, unknown>): void {
+    install({
+      "POST /v1/audits/{work_item_id}/release-record": () =>
+        new Response(JSON.stringify(body), {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        }),
+    });
+    render(
+      <QueryClientProvider client={newQueryClient()}>
+        <ReleaseRecordDialog workItemId={WORK_ITEM} open onOpenChange={() => undefined} />
+      </QueryClientProvider>,
+    );
+  }
+
+  async function recordRelease(): Promise<void> {
+    fireEvent.change(await screen.findByLabelText(AUDIT_MESSAGES.record.release.on), {
+      target: { value: "2026-07-29" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: AUDIT_MESSAGES.record.release.confirm }));
+  }
+
+  it("A-01-T23: a stale second factor (mfa_required) opens the step-up", async () => {
+    releaseRefusedWith({ detail: "forbidden", facts: { reason: "mfa_required" } });
+    await recordRelease();
+    expect(await screen.findByText("Confirm it's you")).toBeTruthy();
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("A-01-T23: a plain 403 on a record reads as a problem, never as the step-up", async () => {
+    releaseRefusedWith({ detail: "forbidden" });
+    await recordRelease();
+    expect((await screen.findByRole("alert")).textContent).toBe(AUDIT_MESSAGES.record.problem);
+    expect(screen.queryByText("Confirm it's you")).toBeNull();
   });
 });

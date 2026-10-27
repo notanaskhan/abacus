@@ -140,3 +140,19 @@ class DecisionNotifyRequested(DomainEvent):
     engagement_id: Annotated[UUID, classified("internal")]
     by_user: Annotated[UUID, classified("internal")]
     assignee_user_id: Annotated[UUID, classified("internal")]
+
+
+# --- Field values (P-04-T24 write path; ADR-160 clause 10) -------------------------------------
+
+
+class FieldValueRecorded(DomainEvent):
+    """A field's new version (`review.api.record_value`). Never the value."""
+
+    event_type: ClassVar[str] = "field.value_recorded"
+
+    engagement_id: Annotated[UUID | None, classified("internal")]
+    target_type: Annotated[str, classified("internal")]
+    target_id: Annotated[UUID, classified("internal")]
+    field_key: Annotated[str, classified("internal")]
+    seq: Annotated[int, classified("internal")]
+    cause: Annotated[str, classified("internal")]

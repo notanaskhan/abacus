@@ -6,7 +6,8 @@ visible effects carry an `Idempotency-Key`; publish, import and the settings wri
 second factor; the agent and system hold none of the actions; every field is classified. The
 `register_email_template` slot refuses what the whitelist does not allow. R-01-T19 built the list,
 read, draft and publish routes and `send_templated` (their behaviour:
-`tests/integration/test_r01t19_email_template_versions.py`): those routes no longer answer 501,
+`tests/integration/test_r01t19_email_template_versions.py`), R-01-T23 preview, test send and
+the import, R-01-T24 the follow-up policy: those routes no longer answer 501,
 and `send_templated` refuses an agent or any system send but the scheduled reminder before it
 reads anything. C16 v1 stays frozen (`test_c16_frozen.py`)."""
 
@@ -74,6 +75,11 @@ BUILT = {
     ("put", f"{T}/{{key}}/draft"),
     ("delete", f"{T}/{{key}}/draft"),
     ("post", f"{T}/{{key}}/publish"),
+    # R-01-T23: preview, test send and the import; R-01-T24: the follow-up policy.
+    ("post", f"{T}/{{key}}/preview"),
+    ("post", f"{T}/{{key}}/test-send"),
+    ("post", f"{T}/import"),
+    ("get", "/v1/firm/follow-up-policy"),
 }
 IDEMPOTENT = {f"{T}/{{key}}/test-send", f"{T}/{{key}}/publish", D, f"{S}/publish"}
 FRESH_MFA = {"email_template.publish", "email_template.import", "sending_domain.manage"} | {

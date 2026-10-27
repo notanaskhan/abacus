@@ -21,7 +21,7 @@ connections, A-02-T13) and the catalogue (A-02-T12):
   their grant covers, fresh MFA; `Idempotency-Key`): crypto-erases the secret, keeps what was
   received (AC-39).
 - `POST /v1/connections/{connection_id}/reconnect-requests` (`connection.reconnect_request`): the
-  firm asks the client to reconnect (AC-44).
+  firm asks the client to reconnect (AC-44); live since A-02-T23 (`routes.py`).
 - `POST /v1/engagements/{engagement_id}/connection/pulls` (`ledger.pull`): an on-demand pull
   through a live ledger (AC-46), behind `connections.live_ledger`.
 
@@ -246,22 +246,6 @@ async def _stub(ctx: AuthContext, flag: Flag = CONNECTIONS_PORTAL_V2) -> NoRetur
 
 portal_router = AbacusRouter(prefix="/v1/portal", tags=["connections"])
 firm_router = AbacusRouter(prefix="/v1", tags=["connections"])
-
-
-@firm_router.post(
-    "/connections/{connection_id}/reconnect-requests",
-    action="connection.reconnect_request",
-    response_model=ReconnectRequestOut,
-    status_code=201,
-    errors=(409, 501),
-)
-async def reconnect_request_route(
-    connection_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
-) -> ReconnectRequestOut:
-    """AUD-06's *Ask client to reconnect* (A-02-T23): at most one open request per connection
-    (a second ask returns the open one and sends nothing), the POR-20 Reconnect request email from
-    its database template, a POR-02 to-do. Audited `connection.reconnect_requested`."""
-    await _stub(ctx)
 
 
 @firm_router.post(
