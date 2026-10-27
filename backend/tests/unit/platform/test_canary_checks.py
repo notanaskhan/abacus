@@ -79,7 +79,10 @@ def canary_firm(monkeypatch: pytest.MonkeyPatch) -> Iterator[uuid.UUID]:
 
 
 def test_no_canary_schedule_without_a_canary_firm() -> None:
-    assert [job.id for job in platform.schedules()] == ["spend_anomaly:platform"]
+    assert [job.id for job in platform.schedules()] == [
+        "spend_anomaly:platform",
+        "incident_reminders:platform",  # G-02-T18: the incident register's FTC clock reminders
+    ]
 
 
 def test_the_canary_runs_every_15_minutes_on_the_time_sensitive_queue(
@@ -100,6 +103,7 @@ def test_the_canary_runs_every_15_minutes_on_the_time_sensitive_queue(
         "audit_partitions:platform",  # Q-02-T20
         "auth_session_purge:platform",  # G-02-T14
         "export_expiry:platform",  # A-01-T22: the daily engagement export expiry sweep
+        "incident_reminders:platform",  # G-02-T18: the incident register's FTC clock reminders
         "notification_purge:platform",
         "ses_events:platform",
         "spend_anomaly:platform",
