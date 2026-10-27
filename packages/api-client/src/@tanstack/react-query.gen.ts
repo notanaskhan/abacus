@@ -9173,7 +9173,7 @@ export const getPortalSettingsQueryKey = (options?: Options<GetPortalSettingsDat
 /**
  * Get Portal Settings Route
  *
- * ADM-10 a (R-01-T26).
+ * ADM-10 a (R-01-T26): the published version, the draft and what the viewer may do.
  */
 export const getPortalSettingsOptions = (options?: Options<GetPortalSettingsData>) => queryOptions<GetPortalSettingsResponse, GetPortalSettingsError, GetPortalSettingsResponse, ReturnType<typeof getPortalSettingsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -9210,8 +9210,8 @@ export const discardPortalSettingsDraftMutation = (options?: Partial<Options<Dis
 /**
  * Save Portal Settings Draft Route
  *
- * ADM-10 b (R-01-T26): 409 `stale_version` on an old `expected_version`. Audited
- * `portal_settings.draft_saved`.
+ * ADM-10 b (R-01-T26): 409 `stale_version` on an old `expected_version`; 422
+ * `support_contact_invalid`. Audited `portal_settings.draft_saved`.
  */
 export const savePortalSettingsDraftMutation = (options?: Partial<Options<SavePortalSettingsDraftData>>): UseMutationOptions<SavePortalSettingsDraftResponse, SavePortalSettingsDraftError, Options<SavePortalSettingsDraftData>> => {
     const mutationOptions: UseMutationOptions<SavePortalSettingsDraftResponse, SavePortalSettingsDraftError, Options<SavePortalSettingsDraftData>> = {
@@ -9230,8 +9230,8 @@ export const savePortalSettingsDraftMutation = (options?: Partial<Options<SavePo
 /**
  * Upload Portal Logo Route
  *
- * The draft's logo as the raw body, re-encoded server side by P-08's `set_logo`
- * (R-01-T26); 413 too large, 415 a type P-08 does not accept.
+ * The draft's logo as the raw body, checked by P-08's re-encoder now and applied by
+ * `set_logo` on publish (R-01-T26); 422 `logo_unreadable` for one it cannot read.
  */
 export const uploadPortalLogoMutation = (options?: Partial<Options<UploadPortalLogoData>>): UseMutationOptions<UploadPortalLogoResponse, UploadPortalLogoError, Options<UploadPortalLogoData>> => {
     const mutationOptions: UseMutationOptions<UploadPortalLogoResponse, UploadPortalLogoError, Options<UploadPortalLogoData>> = {
@@ -9252,9 +9252,9 @@ export const previewPortalQueryKey = (options?: Options<PreviewPortalData>) => c
 /**
  * Preview Portal Route
  *
- * ADM-10 a, c, g (R-01-T26): 404 for a contact outside `visible()`; only items the viewer
- * may read themselves, else the sample client (DEC-379); audited `portal.preview_viewed` with
- * the contact id or `sample`.
+ * ADM-10 a, c, g (R-01-T26): 404 for a contact outside `visible()`; the contact's home only
+ * when the viewer may read all of it, else the sample client (DEC-379, DEC-653); audited
+ * `portal.preview_viewed` with the contact id or `sample`. `source` picks the brand shown.
  */
 export const previewPortalOptions = (options?: Options<PreviewPortalData>) => queryOptions<PreviewPortalResponse, PreviewPortalError, PreviewPortalResponse, ReturnType<typeof previewPortalQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -9274,7 +9274,7 @@ export const previewPortalOptions = (options?: Options<PreviewPortalData>) => qu
  *
  * ADM-10 f (R-01-T26): one unit of work, an insert-only version; "Portal settings published
  * · clients see changes on next visit". Audited `portal_settings.published`; outbox
- * `portal_settings.published {version}`.
+ * `portal_settings.published {version}`. 409 `no_draft`.
  */
 export const publishPortalSettingsMutation = (options?: Partial<Options<PublishPortalSettingsData>>): UseMutationOptions<PublishPortalSettingsResponse, PublishPortalSettingsError, Options<PublishPortalSettingsData>> => {
     const mutationOptions: UseMutationOptions<PublishPortalSettingsResponse, PublishPortalSettingsError, Options<PublishPortalSettingsData>> = {

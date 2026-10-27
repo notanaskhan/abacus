@@ -112946,7 +112946,7 @@
     },
     "/v1/firm/portal-settings": {
       "get": {
-        "description": "ADM-10 a (R-01-T26).",
+        "description": "ADM-10 a (R-01-T26): the published version, the draft and what the viewer may do.",
         "operationId": "get_portal_settings",
         "parameters": [
           {
@@ -113032,16 +113032,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Portal Settings Route",
@@ -113139,16 +113129,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Discard Portal Settings Draft Route",
@@ -113158,7 +113138,7 @@
         "x-abacus-action": "portal_settings.manage"
       },
       "put": {
-        "description": "ADM-10 b (R-01-T26): 409 `stale_version` on an old `expected_version`. Audited\n`portal_settings.draft_saved`.",
+        "description": "ADM-10 b (R-01-T26): 409 `stale_version` on an old `expected_version`; 422\n`support_contact_invalid`. Audited `portal_settings.draft_saved`.",
         "operationId": "save_portal_settings_draft",
         "parameters": [
           {
@@ -113264,16 +113244,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Save Portal Settings Draft Route",
@@ -113285,7 +113255,7 @@
     },
     "/v1/firm/portal-settings/logo": {
       "post": {
-        "description": "The draft's logo as the raw body, re-encoded server side by P-08's `set_logo`\n(R-01-T26); 413 too large, 415 a type P-08 does not accept.",
+        "description": "The draft's logo as the raw body, checked by P-08's re-encoder now and applied by\n`set_logo` on publish (R-01-T26); 422 `logo_unreadable` for one it cannot read.",
         "operationId": "upload_portal_logo",
         "parameters": [
           {
@@ -113372,26 +113342,6 @@
             },
             "description": "Not found"
           },
-          "413": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "The file is too large"
-          },
-          "415": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "The file type is not accepted"
-          },
           "422": {
             "content": {
               "application/json": {
@@ -113401,16 +113351,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Upload Portal Logo Route",
@@ -113422,7 +113362,7 @@
     },
     "/v1/firm/portal-settings/preview": {
       "get": {
-        "description": "ADM-10 a, c, g (R-01-T26): 404 for a contact outside `visible()`; only items the viewer\nmay read themselves, else the sample client (DEC-379); audited `portal.preview_viewed` with\nthe contact id or `sample`.",
+        "description": "ADM-10 a, c, g (R-01-T26): 404 for a contact outside `visible()`; the contact's home only\nwhen the viewer may read all of it, else the sample client (DEC-379, DEC-653); audited\n`portal.preview_viewed` with the contact id or `sample`. `source` picks the brand shown.",
         "operationId": "preview_portal",
         "parameters": [
           {
@@ -113553,16 +113493,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Preview Portal Route",
@@ -113574,7 +113504,7 @@
     },
     "/v1/firm/portal-settings/publish": {
       "post": {
-        "description": "ADM-10 f (R-01-T26): one unit of work, an insert-only version; \"Portal settings published\n\u00b7 clients see changes on next visit\". Audited `portal_settings.published`; outbox\n`portal_settings.published {version}`.",
+        "description": "ADM-10 f (R-01-T26): one unit of work, an insert-only version; \"Portal settings published\n\u00b7 clients see changes on next visit\". Audited `portal_settings.published`; outbox\n`portal_settings.published {version}`. 409 `no_draft`.",
         "operationId": "publish_portal_settings",
         "parameters": [
           {
@@ -113681,16 +113611,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Publish Portal Settings Route",
