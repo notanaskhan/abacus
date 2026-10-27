@@ -12300,7 +12300,9 @@ export const portalMfaSetupVerifyMutation = (options?: Partial<Options<PortalMfa
 /**
  * Portal Refresh Route
  *
- * Cookie-authenticated, with the CSRF header and the portal host's own Origin.
+ * Cookie-authenticated, with the CSRF header and the portal host's own Origin. Only a
+ * refresh marked `X-Abacus-Activity: user` moves the idle clock; an absent mark is never
+ * activity (DEC-583).
  */
 export const portalRefreshMutation = (options?: Partial<Options<PortalRefreshData>>): UseMutationOptions<PortalRefreshResponse, PortalRefreshError, Options<PortalRefreshData>> => {
     const mutationOptions: UseMutationOptions<PortalRefreshResponse, PortalRefreshError, Options<PortalRefreshData>> = {

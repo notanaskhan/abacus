@@ -594,8 +594,12 @@ async def portal_invitee(token: str, host: str | None) -> PortalInvitee | None:
     )
 
 
-async def refresh_portal_session(cookie: str | None, host: str | None) -> PortalTokens:
-    """Rotate the cookie and mint a new access token, on the session's own host only."""
+async def refresh_portal_session(
+    cookie: str | None, host: str | None, *, active: bool = False
+) -> PortalTokens:
+    """Rotate the cookie and mint a new access token, on the session's own host only. Only a
+    refresh the person's own activity caused (`active`) moves the idle clock (DEC-583, as staff
+    sessions since G-02-T14)."""
     if not cookie or len(cookie) > 256:
         raise PortalSessionEnded
     access, next_cookie = _access_token(), secrets.token_urlsafe(32)
@@ -604,7 +608,7 @@ async def refresh_portal_session(cookie: str | None, host: str | None) -> Portal
             await conn.execute(
                 text(
                     "SELECT * FROM portal_session_rotate(:cookie, :next, :host, :access, "
-                    ":access_seconds, :idle)"
+                    ":access_seconds, :idle, :active)"
                 ),
                 {
                     "cookie": sha256_hex(cookie),
@@ -613,6 +617,7 @@ async def refresh_portal_session(cookie: str | None, host: str | None) -> Portal
                     "access": sha256_hex(access),
                     "access_seconds": ACCESS_SECONDS,
                     "idle": IDLE_SECONDS,
+                    "active": active,
                 },
             )
         ).one()
