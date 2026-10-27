@@ -97,3 +97,8 @@ updated: 2026-10-22
   - `apps/web` tsc is now clean.
   - ruff, pyright, eslint, prettier, banned_patterns and validate_docs: clean.
 - 2026-10-22: fixed #285. `DecisionContextOut.value`, `DecisionOptionOut.figures`, `DecisionCardVersionOut.figures` and `DecisionRecommendationOut.reasons` are now Restricted (client figures; return information on SHL-11 g). The strict xfail is removed and the test passes.
+- 2026-10-27 (S10 gap build): C3 schema v1 recorded frozen on `s10-small-gaps`.
+  - #285 had been fixed earlier (`199c1ede`), so no strict xfail was left.
+  - `MODELS["review_grammar"]` lists the 93 models of `review/contract.py` and `agents/contract.py` plus 4 list envelopes. `--freeze review_grammar v1` wrote `v1.json`, and `--check` exits 0.
+  - Consumer suites: `backend/tests/contracts/review_grammar/` 784 passed; `review-grammar.test.ts` 44 passed.
+  - The register row, the C3 note and review-grammar.md §10 now say frozen 2026-10-27.
