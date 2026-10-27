@@ -40,7 +40,7 @@ describe("ac7 onboarding checklist", () => {
     expect(within(steps).getAllByRole("listitem")).toHaveLength(7);
     expect(within(steps).getByText(/Upload your methodology/).textContent).toContain("(done)");
     expect(within(steps).getByRole("link", { name: "Invite people" }).getAttribute("href")).toBe(
-      "/admin/people",
+      "/settings/people", // G-01-T17 (DEC-594): the invite step opens ADM-02
     );
     fireEvent.click(within(steps).getByRole("button", { name: "Skip for now" }));
     await waitFor(() => {

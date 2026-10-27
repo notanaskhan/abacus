@@ -29,3 +29,11 @@ In read-only mode every mutating route answers 503 `read_only` while reads and s
   - With platform `read_only` on, every mutating route in the OpenAPI route table answers 503 `read_only`, except the exemptions the contract and its as-built note name.
   - Control history (`platform_control_changes`) refuses UPDATE and DELETE from `abacus_app` and `abacus_ops`, and each switch adds a row.
   - Spec drift recorded in `backfill.md`: the access-ending routes and reads sent as POST stay open in read-only mode, which §3.7's text does not say.
+- 2026-10-27 (S10 gap build): the read-only drift is resolved in the contract. Platform-ops §3.7 (its table row and the as-built note) now lists every route that keeps working in read-only mode, with why, matching `identity.routing.stays_writable`:
+  - sign-in: pre-session routes and both sign-outs;
+  - staff routes;
+  - the support-session controls;
+  - ending access: revoking a person and revoking an invitation (DEC-338);
+  - browser error reports;
+  - reads sent as POST.
+  The Q-01-T43 suite cites that table, and `backfill.md` marks the drift resolved. No code changed.

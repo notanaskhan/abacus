@@ -55,13 +55,15 @@ class _Fake:
         self.suggested = False
         self.logger = SimpleNamespace(warning=_ignore)
         self.v2 = False  # `patched("daily-tick")`: v1 histories replay without the tick
+        self.v3 = False  # `patched("follow_up_policy_v1")` (R-01-T24): v2 histories replay without
+        self.payloads: list[dict[str, str]] = []
         self.ticks_left = 1  # how many idle waits time out into a tick before going idle
         self.asked_tick = 0
         self.clock = datetime(2026, 10, 12, 12, 0, tzinfo=UTC)
 
     def patched(self, name: str) -> bool:
-        assert name == "daily-tick"
-        return self.v2
+        assert name in ("daily-tick", "follow_up_policy_v1")
+        return self.v2 if name == "daily-tick" else self.v3
 
     def now(self) -> datetime:
         return self.clock
@@ -91,6 +93,7 @@ class _Fake:
         assert isinstance(given, HandleInput)
         assert (given.tenant_id, given.engagement_id) == (GIVEN.tenant_id, GIVEN.engagement_id)
         self.handled.append(given.event_type)
+        self.payloads.append(dict(given.payload))
         found = self.results.get(given.event_type, HandleResult(False))
         if isinstance(found, Exception):
             raise found
@@ -179,10 +182,11 @@ def test_the_history_is_bounded() -> None:
 # --- v2: the daily tick (SPEC-027; TASK-051) -----------------------------------------------------
 
 
-def _v2(monkeypatch: pytest.MonkeyPatch, events: list[str]) -> _Fake:
+def _v2(monkeypatch: pytest.MonkeyPatch, events: list[str], *, v3: bool = False) -> _Fake:
     agent = EngagementAgent()
     fake = _Fake(agent, {})
     fake.v2 = True
+    fake.v3 = v3
     for n, name in enumerate(events):
         agent.event(AgentEvent(name, str(n), {}))
     monkeypatch.setattr(module, "workflow", fake)
@@ -205,6 +209,19 @@ def test_v2_events_are_handled_before_the_tick_and_keep_its_time(
     fake = _v2(monkeypatch, ["evidence_version.created", "inbox_file.added"])
     assert fake.handled == ["evidence_version.created", "inbox_file.added", TICK]
     assert fake.asked_tick == 2  # once before the first wait, once after the tick
+
+
+def test_v2_ticks_carry_no_policy_marker(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake = _v2(monkeypatch, [])
+    assert fake.handled == [TICK] and fake.payloads == [{}]  # P-4 keeps the old constants
+
+
+def test_v3_the_tick_asks_p4_to_read_the_firms_follow_up_policy(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake = _v2(monkeypatch, ["evidence_version.created"], v3=True)
+    assert fake.handled == ["evidence_version.created", TICK]
+    assert fake.payloads == [{}, {"follow_up_policy": "v1"}]  # R-01-T24: only the tick
 
 
 def test_v1_never_asks_for_a_tick(monkeypatch: pytest.MonkeyPatch) -> None:

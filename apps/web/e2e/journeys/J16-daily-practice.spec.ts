@@ -1,9 +1,9 @@
 // J16 daily practice (P-01-T16 wrote steps 1-2 against the shell; G-01-T16 makes the ADM-01
 // assertion live): Grace Holloway opens Firm settings from the firm pill and lands on the firm
-// profile. The step runs on the harness (axe and INV-1 to INV-5 after it). ADM-01 sits behind
-// `firm_settings.v2`, which E0 leaves off, so in fixture mode the journey starts on the firm
-// settings fixtures (`?screen=ADM-02&st=a`, which turn the flag on; DEC-457) and clicks through the
-// real shell; the full stack and staging walk it once E0 turns the flag on (G-01-T17, T19).
+// profile. The step runs on the harness (axe and INV-1 to INV-5 after it). In fixture mode the
+// journey starts on the firm settings fixtures (`?screen=ADM-02&st=a`; DEC-457) and clicks through
+// the real shell; the full stack and staging walk it after the batch deploy (G-01-T19).
+// `firm_settings.v2` is retired (G-01-T17, DEC-594).
 // P-01-T16 adds step 1 (Grace inside the toolbar) and the default-office half of step 2 (SHL-03 f);
 // P-06-T25 adds step 5, the morning chase: Grace filters Binders to clients silent for 30 days and
 // sends the Request Chaser's drafted follow-up (the agent drafts, a person sends; DEC-74), on
@@ -36,7 +36,7 @@ test.describe("J16 daily practice", () => {
     "j16 2: Grace opens Firm settings from the firm pill (SHL-03a, ADM-01)",
     owner("G-01 · G-01-T16 fixture; full stack and staging after G-01-T17 · S11, Thu Apr 1, 2027"),
     async ({ journey }) => {
-      test.fixme(journey.project !== "fixture", "firm_settings.v2 is not on in E0 (G-01-T17)");
+      test.fixme(journey.project !== "fixture", "walked full stack after the batch (G-01-T19)");
       await journey.as("grace-holloway", "/?screen=ADM-02&st=a", { clock: DEMO_INSTANT });
       await journey.step("J16 step 2: Firm settings from the firm pill", async (page) => {
         await page.getByRole("button", { name: "Brightwater Hale" }).first().click();

@@ -332,6 +332,12 @@ class Settings(BaseSettings):
     # content only once a decrypt has been verified in this region (ADR-156).
     kms_replica_region: Annotated[str, classified("internal")] = "us-west-2"
     kms_platform_key_alias: Annotated[str | None, classified("internal")] = None
+    # G-02-T17 (G-02 §4.9): the environment's asymmetric export-signing key (`ECC_NIST_P256`,
+    # `SIGN_VERIFY`), whose public key is published in `docs/operations/export-signing-keys.md`.
+    # Unset in staging or production: an audit export is refused (503) before anything is written.
+    audit_export_signing_key_alias: Annotated[
+        str | None, Field(pattern=r"^alias/[A-Za-z0-9/_-]{1,250}$"), classified("internal")
+    ] = None
     # The ClamAV scanner service, `host:port` (P4). Unset: the local scanner (synthetic only).
     scanner_endpoint: Annotated[str | None, classified("internal")] = None
     scanner_timeout_seconds: Annotated[int, Field(ge=1, le=120), classified("internal")] = 30

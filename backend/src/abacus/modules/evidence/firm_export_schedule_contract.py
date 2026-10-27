@@ -1,8 +1,8 @@
 """The firm export's monthly schedule: the security-center contract, v1 (G-02-T11 stub; SPEC-349
 AC-25; DEC-72). Contract: `docs/contracts/security-center.md` §3.
 
-Behind `security_center.v1`: off, every route here answers 404; on, 501 `not_implemented` until
-G-02-T19 builds the schedule on Q-02's firm export. Q-02's routes (`compliance-kernel.md` §4:
+Behind `security_center.v1`: off, every route here answers 404. Live since G-02-T19
+(`firm_export_schedule.py`). Q-02's routes (`compliance-kernel.md` §4:
 the on-demand request, approve, decline, link, and `GET /v1/firm/data-exports`, whose last 12
 exports with `origin: scheduled` are the History tray) are unchanged and not repeated here.
 
@@ -20,19 +20,20 @@ the system and anyone without the action get 403, before the flag is read.
 from __future__ import annotations
 
 from datetime import date
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal
 
 from fastapi import Depends
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import SECURITY_CENTER_V1
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.evidence.firm_export_contract import FirmExportPersonOut
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
+    Forbidden,
     Resource,
     authorise,
     current_context,
@@ -91,44 +92,53 @@ class FirmExportScheduleIn(BaseModel):
 schedule_router = AbacusRouter(prefix="/v1/firm/data-exports/schedule", tags=["firm export"])
 
 
-async def _stub(ctx: AuthContext, action: str) -> NoReturn:
+async def _gate(ctx: AuthContext, action: str) -> None:
     """L1: the matrix first (client 404; agent, system, no right or a stale factor 403), then
     the flag."""
     if ctx.client:
         raise NotFound("security_center")
+    if ctx.tenant.actor_kind not in ("human", "support"):
+        raise Forbidden(action, "role")  # ED-182's pattern: the agent and the system, first
     await authorise(ctx, action, Resource.firm(ctx.tenant_id))
     if not await flag_enabled(ctx.tenant, SECURITY_CENTER_V1):
         raise NotFound("security_center.v1")
-    raise NotImplementedYet
 
 
-@schedule_router.get(
-    "", action="firm_export.read", response_model=FirmExportScheduleOut, errors=(501,)
-)
+@schedule_router.get("", action="firm_export.read", response_model=FirmExportScheduleOut)
 async def firm_export_schedule_route(ctx: Ctx) -> FirmExportScheduleOut:
     """The card; read by everyone who reads the export history (Margaret approves from it). 404
     when the firm has no schedule."""
-    await _stub(ctx, "firm_export.read")
+    from abacus.modules.evidence import firm_export_schedule
+
+    await _gate(ctx, "firm_export.read")
+    return await firm_export_schedule.read(ctx)
 
 
 @schedule_router.put(
-    "", action="firm_export.schedule", response_model=FirmExportScheduleOut, errors=(409, 501)
+    "", action="firm_export.schedule", response_model=FirmExportScheduleOut, errors=(409,)
 )
 async def put_firm_export_schedule_route(
     body: FirmExportScheduleIn, ctx: Ctx
 ) -> FirmExportScheduleOut:
-    """`pending_approval` until both seats approve. Audited `firm_export_schedule.updated`."""
-    await _stub(ctx, "firm_export.schedule")
+    """`pending_approval` (or `paused`) until both seats approve again; 409 `stale_version`.
+    Audited `firm_export_schedule.updated`."""
+    from abacus.modules.evidence import firm_export_schedule
+
+    await _gate(ctx, "firm_export.schedule")
+    return await firm_export_schedule.put(ctx, body)
 
 
 @schedule_router.post(
     "/approve",
     action="firm_export.approve",
     response_model=FirmExportScheduleOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def approve_firm_export_schedule_route(ctx: Ctx) -> FirmExportScheduleOut:
     """A `security_admin` or a partner approves once; the second distinct approver in the other
-    seat makes it `active` (a Temporal Schedule through `kernel.dispatch`). 409
-    `approver_must_differ`. Audited `firm_export_schedule.approved`."""
-    await _stub(ctx, "firm_export.approve")
+    seat makes it `active` (the firm's Temporal Schedule through `kernel.dispatch`). 409
+    `approver_must_differ`, `schedule_paused`. Audited `firm_export_schedule.approved`."""
+    from abacus.modules.evidence import firm_export_schedule
+
+    await _gate(ctx, "firm_export.approve")
+    return await firm_export_schedule.approve(ctx)

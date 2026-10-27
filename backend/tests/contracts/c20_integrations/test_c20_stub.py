@@ -57,7 +57,9 @@ ROUTES: dict[tuple[str, str], tuple[str, Flag]] = {
 IDEMPOTENT = {path for (method, path) in ROUTES if method == "post"}
 # Live since A-02-T16 (TASK-1416): POR-16's routes answer 404 (flag off, another entity) and
 # their own codes, never 501. The two firm routes stay stubs (A-02-T23, A-02-T30).
-LIVE = {(m, p) for (m, p) in ROUTES if p.startswith("/v1/portal/")}
+LIVE = {(m, p) for (m, p) in ROUTES if p.startswith("/v1/portal/")} | {
+    ("post", "/v1/connections/{connection_id}/reconnect-requests"),  # A-02-T23 (TASK-1471)
+}
 MODELS: tuple[type[BaseModel], ...] = (
     contract.PortalConnectionsOut,
     contract.PortalConnectionCardOut,

@@ -14,6 +14,7 @@ TABLES: frozenset[str] = frozenset(
         "upload_reviews",  # SPEC-030 (TASK-058)
         "upload_review_flags",
         "inbox_match_runs",  # SPEC-033 (TASK-065)
+        "inbox_match_decisions",  # P-04-T25 review M6 (migration 0232): a person's rejection
         "guidance_drafts",  # SPEC-035 (TASK-072)
         "guidance_draft_decisions",  # SPEC-035 (TASK-073)
         "template_guidance_drafts",  # SPEC-035 Q3 (TASK-074)
@@ -46,6 +47,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "upload_reviews",  # SPEC-030 (TASK-058): proposals, as made
         "upload_review_flags",  # SPEC-030 (TASK-058): proposals, as made
         "inbox_match_runs",  # SPEC-033 (TASK-065): proposals, as made
+        "inbox_match_decisions",  # P-04-T25 review M6 (migration 0232)
         "guidance_drafts",  # SPEC-035 (TASK-072): proposals, as made
         "guidance_draft_decisions",  # SPEC-035 (TASK-073): people's decisions, as made
         "template_guidance_drafts",  # SPEC-035 Q3 (TASK-074)
@@ -89,6 +91,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "suggestion_decisions": frozenset(
         {"tenant_id", "suggestion_id", "decision", "edited_value", "citation_note_sealed"}
         | {"reason_code", "undoes_decision_id", "decided_by"}
+        | {"id"}  # P-04-T24 (migration 0230): a sealed note is bound to its row
     ),
     "proposals": frozenset(
         {"tenant_id", "engagement_id", "kind", "title", "reasoning_ref", "policy_eval"}
@@ -102,6 +105,11 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"tenant_id", "proposal_id", "decision", "reason_code", "note_sealed", "edits"}
         | {"seen_version", "routed_to_user_id", "undoes_decision_id", "approval_grant_id"}
         | {"decided_by"}
+        | {"id"}  # P-04-T24 (migration 0230): a sealed note is bound to its row
+    ),
+    # P-04-T25 security review M6 (migration 0232): a person's rejection of a match.
+    "inbox_match_decisions": frozenset(
+        {"id", "tenant_id", "match_id", "decision", "reason_code", "note_sealed", "decided_by"}
     ),
     # Inbox match proposals (SPEC-033; TASK-065): the matcher's, as made.
     "inbox_match_runs": frozenset(

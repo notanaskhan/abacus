@@ -12,6 +12,8 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from uuid import UUID
 
+from sqlalchemy import text
+
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.logging import get_logger
@@ -192,3 +194,20 @@ async def download(ctx: AuthContext, engagement_id: UUID, version_id: UUID) -> D
         version.media_type,
         download_name(title, version.version_no, version.period_end, version.media_type),
     )
+
+
+_LATEST_VERSION = text(
+    "SELECT id, engagement_id FROM evidence_versions WHERE evidence_item_id = :item "
+    "ORDER BY version_no DESC LIMIT 1"
+)
+
+
+async def latest_document(ctx: AuthContext, item_id: UUID) -> Download:
+    """G-02-T20 (Export WISP pack): an evidence item's latest version, through `download` (the
+    same authorisation, audit and fingerprint check as the item page). 404 for an item the
+    person cannot see or that has no version."""
+    async with tenant_session(ctx.tenant) as session:
+        found = (await session.execute(_LATEST_VERSION, {"item": item_id})).mappings().first()
+    if found is None:
+        raise NotFound("evidence_item")
+    return await download(ctx, found["engagement_id"], found["id"])

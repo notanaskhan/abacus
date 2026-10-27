@@ -258,16 +258,12 @@ async def test_adr111_a_real_firm_never_shows_model_drafted_guidance_to_a_client
     )
     assert WHY not in response.text and GOOD not in response.text
     # The portal's own reads resolve guidance separately (security review M): the binder list,
-    # the binder and the request, with the binder published and the portal's documents on.
+    # the binder and the request, with the binder published (the portal's documents are served
+    # to every firm since R-01-T18 retired `portal.documents_v2`).
     binder = await real.seed.value(
         "SELECT request_list_id FROM request_items WHERE id = $1", real.site.item_id
     )
     await real.seed.run("UPDATE request_lists SET status = 'published' WHERE id = $1", binder)
-    await real.seed.run(
-        "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
-        "VALUES ($1, 'portal.documents_v2', 'true', 'q03t040', 'TASK-1309')",
-        real.tenant_id,
-    )
     for path in (
         "/v1/portal/binders",
         f"/v1/portal/binders/{binder}",

@@ -11,6 +11,8 @@ from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from abacus.kernel.db import TenantContext, tenant_session, transaction_context
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork
@@ -21,6 +23,7 @@ from abacus.modules.ledger.repository import (
     get_snapshot,
     insert_lines,
     insert_snapshot,
+    line_of,
     lines_of,
     lines_of_snapshots,
     totals_of_snapshots,
@@ -161,3 +164,44 @@ async def firm_accounts(tenant: TenantContext) -> list[tuple[str, str]]:
     """Every account code and name in the firm's ledger snapshots."""
     async with tenant_session(tenant) as session:
         return list(await accounts_in_firm(session))
+
+
+# --- A-02-T22: the `ledger_line` citable's reads (evidence verifies; ledger stays dependency-free)
+
+
+@dataclass(frozen=True)
+class CitedLine:
+    """One snapshot line as a `ledger_line` citation reads it, with its snapshot's entity so the
+    verifier can hold it to the anchor's engagement."""
+
+    snapshot_id: UUID
+    client_entity_id: UUID
+    period_end: date
+    account_code: str
+    account_name: str
+    debit: Decimal
+    credit: Decimal
+
+
+async def snapshot_line(
+    session: AsyncSession, snapshot_id: UUID, account_code: str
+) -> tuple[UUID, CitedLine | None] | None:
+    """The snapshot's entity and the named line (None when the snapshot has no such account),
+    read in the caller's session (a verifier's unit of work, a reader's session). None when the
+    snapshot is not visible here. The caller authorised on an engagement first and must compare
+    the entity to that engagement's."""
+    snapshot = await get_snapshot(session, snapshot_id)
+    if snapshot is None:
+        return None
+    line = await line_of(session, snapshot_id, account_code)
+    if line is None:
+        return snapshot.client_entity_id, None
+    return snapshot.client_entity_id, CitedLine(
+        snapshot.id,
+        snapshot.client_entity_id,
+        snapshot.period_end,
+        line.account_code,
+        line.account_name,
+        line.debit,
+        line.credit,
+    )

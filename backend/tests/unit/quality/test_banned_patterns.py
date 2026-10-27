@@ -2233,12 +2233,15 @@ def test_ac20_bound_002_only_named_modules_may_depend_on_ledger() -> None:
 
 
 def test_ac20_bound_002_nothing_depends_on_connections() -> None:
-    """Only the plan's one edge (A-02 §4.1, DEC-517): integrations composes POR-16 over
-    connections, which never imports integrations."""
+    """Only the plan's two edges (A-02 §4.1, DEC-517): integrations composes POR-16 over
+    connections, and the portal home reads its reconnect to-do (A-02-T23, DEC-611); connections
+    imports neither."""
     assert [m for m, deps in bp.MODULE_DEPENDENCIES.items() if "connections" in deps] == [
-        "integrations"
+        "integrations",
+        "portal",
     ]
     assert "integrations" not in bp.MODULE_DEPENDENCIES["connections"]
+    assert "portal" not in bp.MODULE_DEPENDENCIES["connections"]
 
 
 # LIST-001: the ledger exemption ------------------------------------------------------------
@@ -2642,3 +2645,46 @@ def test_tls001_exempts_only_the_local_stack_tools(tmp_path: Path, rel: str) -> 
 def test_tls001_every_other_tool_connection_is_checked(tmp_path: Path) -> None:
     _write(tmp_path, "src/abacus_tools/signup_codes.py", 'import asyncpg\nasyncpg.connect("x")\n')
     assert "TLS-001" in _rule_ids(tmp_path)
+
+
+# --- COMM-002 and BOUND-004 (R-01-T24 security review M2, L-b; DEC-568, DEC-588) ---------------
+
+AGENTS_FOLLOW_UPS = "src/abacus/modules/agents/follow_ups.py"
+SCHEDULED = "src/abacus/modules/communications/scheduled_reminders.py"
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "from abacus.modules.communications.template_registry import SystemSendContext\n",
+        "from abacus.modules.communications.template_registry import SystemSendContext as S\n",
+        "import abacus.modules.communications.template_registry as r\n"
+        "r.SystemSendContext(t, 'x', 1)\n",
+        "ctx = getattr(registry, 'SystemSendContext')\n",
+        "x = SystemSendContext\n",
+    ],
+)
+def test_comm002_no_module_but_communications_names_the_system_send_context(
+    tmp_path: Path, source: str
+) -> None:
+    assert _flags(tmp_path, "COMM-002", AGENTS_FOLLOW_UPS, source)
+    assert not _flags(tmp_path, "COMM-002", SCHEDULED, source)
+
+
+@pytest.mark.parametrize(
+    ("source", "flagged"),
+    [
+        ("import importlib\nimportlib.import_module('abacus.modules.communications.x')\n", True),
+        (
+            "from importlib import import_module\nimport_module(f'abacus.modules.{name}.api')\n",
+            True,
+        ),
+        ("__import__('abacus.modules.communications.template_registry')\n", True),
+        ("from importlib import import_module\nimport_module(name)\n", True),
+        ("from importlib import import_module\nimport_module('pypdfium2.raw')\n", False),
+    ],
+)
+def test_bound004_no_dynamic_import_of_an_abacus_module_inside_modules(
+    tmp_path: Path, source: str, flagged: bool
+) -> None:
+    assert _flags(tmp_path, "BOUND-004", AGENTS_FOLLOW_UPS, source) is flagged

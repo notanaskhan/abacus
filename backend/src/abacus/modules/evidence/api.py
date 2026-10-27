@@ -10,6 +10,7 @@ from abacus.modules.evidence.anchor_job import SCHEDULES as ANCHOR_SCHEDULES
 from abacus.modules.evidence.anchor_job import WORKFLOWS as ANCHOR_WORKFLOWS
 from abacus.modules.evidence.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.evidence.audit_values import evidence_version_values, pii_reveal_values
+from abacus.modules.evidence.citations.ledger_line import on_trial_balance_version_created
 from abacus.modules.evidence.citations.matching import (
     cell_reason as citation_cell_reason,
 )
@@ -50,6 +51,12 @@ from abacus.modules.evidence.export_activities import ACTIVITIES as EXPORT_ACTIV
 from abacus.modules.evidence.export_activities import SUBSCRIPTIONS as EXPORT_SUBSCRIPTIONS
 from abacus.modules.evidence.export_activities import WORKFLOWS as EXPORT_WORKFLOWS
 from abacus.modules.evidence.export_contract import exports_router, work_item_exports_router
+from abacus.modules.evidence.export_currency import (
+    ExportStale,
+    FinalExport,
+    FinalExportRequired,
+    final_export_for_archive,
+)
 from abacus.modules.evidence.export_lifecycle import ACTIVITIES as EXPIRY_ACTIVITIES
 from abacus.modules.evidence.export_lifecycle import SCHEDULES as EXPIRY_SCHEDULES
 from abacus.modules.evidence.export_lifecycle import SUBSCRIPTIONS as EXPORT_CLOSE_SUBSCRIPTIONS
@@ -83,11 +90,20 @@ from abacus.modules.evidence.export_sections import (
 from abacus.modules.evidence.export_sections import (
     section_csv as export_section_csv,
 )
+from abacus.modules.evidence.firm_export_activities import ACTIVITIES as FIRM_EXPORT_ACTIVITIES
+from abacus.modules.evidence.firm_export_activities import (
+    SUBSCRIPTIONS as FIRM_EXPORT_SUBSCRIPTIONS,
+)
+from abacus.modules.evidence.firm_export_activities import WORKFLOWS as FIRM_EXPORT_WORKFLOWS
 from abacus.modules.evidence.firm_export_contract import router as firm_export_router
+from abacus.modules.evidence.firm_export_schedule import ACTIVITIES as SCHEDULE_ACTIVITIES
+from abacus.modules.evidence.firm_export_schedule import SUBSCRIPTIONS as SCHEDULE_SUBSCRIPTIONS
+from abacus.modules.evidence.firm_export_schedule import WORKFLOWS as SCHEDULE_WORKFLOWS
+from abacus.modules.evidence.firm_export_schedule import register_firm_export_starter
 from abacus.modules.evidence.firm_export_schedule_contract import (
     schedule_router as firm_export_schedule_router,
 )
-from abacus.modules.evidence.gate_facts import decided_among, waiting_among
+from abacus.modules.evidence.gate_facts import decided_among, effective_decisions, waiting_among
 from abacus.modules.evidence.hold_activities import ACTIVITIES as HOLD_ACTIVITIES
 from abacus.modules.evidence.hold_routes import router as legal_hold_router
 from abacus.modules.evidence.hold_runs import SUBSCRIPTIONS as HOLD_SUBSCRIPTIONS
@@ -103,6 +119,9 @@ from abacus.modules.evidence.holds import (
 from abacus.modules.evidence.holds import activate as legal_hold_activate
 from abacus.modules.evidence.holds import apply_batch as legal_hold_apply_batch
 from abacus.modules.evidence.inbox import add_to_inbox, register_match_picks
+from abacus.modules.evidence.inbox import assign as assign_inbox_file
+from abacus.modules.evidence.item_detail import Download as DocumentDownload
+from abacus.modules.evidence.item_detail import latest_document
 from abacus.modules.evidence.masked_previews import masked_preview_upload
 from abacus.modules.evidence.match_material import (
     Candidate,
@@ -140,9 +159,12 @@ from abacus.modules.evidence.render import (
     FIRST_LINE_ROW,
     NAME_COLUMN,
     TOTAL_LABEL,
+    LayerExport,
+    LayerLine,
     TrialBalance,
     TrialBalanceLine,
     render_trial_balance,
+    render_trial_balance_layers,
 )
 from abacus.modules.evidence.render import (
     MEDIA_TYPE as XLSX_MEDIA_TYPE,
@@ -170,7 +192,9 @@ from abacus.modules.evidence.routes import firm_router, router
 # The routers the API mounts, in order (P-39; F-03-T07).
 from abacus.modules.evidence.screening_facts import (
     ScreeningFacts,
+    citation_sources,
     screening_facts,
+    supported_citations,
     verified_citation_ids,
 )
 from abacus.modules.evidence.service import (
@@ -180,12 +204,14 @@ from abacus.modules.evidence.service import (
     EvidenceVersionView,
     NewItem,
     Proposal,
+    ProposalChanged,
     Provenance,
     ScreeningDecision,
     StoredObject,
     UndoneView,
     UndoWindowClosed,
     add_version,
+    decide,
     decisions_on_screenings,
     engagement_snapshots,
     evidence_versions_for,
@@ -226,6 +252,8 @@ from abacus.modules.evidence.workflow_types import (
     BackfillInput,
     EngagementExportInput,
     ExportPackageFacts,
+    FirmExportFacts,
+    FirmExportInput,
     LegalHoldInput,
     UploadInput,
     WithdrawalPurgeInput,
@@ -238,13 +266,20 @@ from abacus.modules.evidence.workflows import (
     EngagementExportWorkflow,
     EvidenceWithdrawalPurge,
     ExportExpirySweepWorkflow,
+    FirmExportScheduleWorkflow,
+    FirmExportWorkflow,
     LegalHoldApply,
     LegalHoldRelease,
     TrustLayerBackfill,
     UploadProcessing,
+    firm_export_schedule_id,
 )
 from abacus.modules.identity.api import AbacusRouter, register_member_removed
-from abacus.modules.platform.api import register_audit_value_resolver
+from abacus.modules.ledger.api import TrialBalanceVersionCreated
+from abacus.modules.platform.api import (
+    register_audit_value_resolver,
+    register_wisp_document_reader,
+)
 from abacus.modules.requests.api import register_upload_facts
 
 ROUTERS: tuple[AbacusRouter, ...] = (
@@ -257,10 +292,10 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     retention_router,  # Q-02-T23: a firm's retention policies
     retention_platform_router,  # Q-02-T23: staff floor and default sets
     legal_hold_router,  # Q-02-T29: legal holds
-    # G-02-T11 (security-center v1 stub; G-02-T19 implements it): before Q-02's router, whose
+    # G-02-T11 (security-center v1; G-02-T19 live): before Q-02's router, whose
     # `POST /{export_id}/approve` would otherwise take `schedule/approve`.
     firm_export_schedule_router,
-    firm_export_router,  # Q-02-T38: the firm-export contract stub (Q-02-T43 implements it)
+    firm_export_router,  # Q-02-T38 contract, live since Q-02-T43
     work_item_exports_router,  # A-01-T17 stub; A-01-T18 create, undo, reads (T22: download)
     exports_router,  # A-01-T17
 )
@@ -278,6 +313,8 @@ WORKFLOWS: dict[type, str] = {
     **ANCHOR_WORKFLOWS,
     **EXPORT_WORKFLOWS,
     **EXPIRY_WORKFLOWS,  # A-01-T22: the daily export expiry sweep
+    **SCHEDULE_WORKFLOWS,  # G-02-T19: the firm export's monthly run, on the firm's Schedule
+    **FIRM_EXPORT_WORKFLOWS,  # Q-02-T43: the firm export, started by `firm_export.approved`
 }
 ACTIVITIES: tuple[object, ...] = (
     *UPLOAD_ACTIVITIES,
@@ -286,6 +323,8 @@ ACTIVITIES: tuple[object, ...] = (
     *ANCHOR_ACTIVITIES,
     *EXPORT_ACTIVITIES,
     *EXPIRY_ACTIVITIES,  # A-01-T22
+    *SCHEDULE_ACTIVITIES,  # G-02-T19
+    *FIRM_EXPORT_ACTIVITIES,  # Q-02-T43
 )
 
 
@@ -312,6 +351,8 @@ _SUBSCRIPTIONS: dict[str, Handler] = {
     **WITHDRAWAL_SUBSCRIPTIONS,
     **EXPORT_SUBSCRIPTIONS,
     **EXPORT_CLOSE_SUBSCRIPTIONS,  # A-01-T22: an expired or voided export's segments go
+    **SCHEDULE_SUBSCRIPTIONS,  # G-02-T19: converge the firm's export Schedule on its record
+    **FIRM_EXPORT_SUBSCRIPTIONS,  # Q-02-T43: the build starts; an expired archive's segments go
 }
 # P-03-T12: the moved and broken detector follows each (both idempotent; a failure retries both).
 SUBSCRIPTIONS = {
@@ -319,6 +360,8 @@ SUBSCRIPTIONS = {
     EvidenceVersionCreated.event_type: in_turn(
         _SUBSCRIPTIONS[EvidenceVersionCreated.event_type], on_version_created
     ),
+    # A-02-T22: a trial balance re-version moves citations to the snapshot it replaced.
+    TrialBalanceVersionCreated.event_type: on_trial_balance_version_created,
     # A-01-T22 (P-31): a withdrawn version voids every ready export holding it.
     # First, so a later subscriber's failure never holds the void back.
     EvidenceVersionWithdrawn.event_type: in_turn(
@@ -370,6 +413,7 @@ __all__ = [
     "CitationLabel",
     "CitationVerdict",
     "ContentTooLarge",
+    "DocumentDownload",  # G-02-T20: the WISP pack's documents
     "EffectivePolicy",
     "EngagementArchived",
     "EngagementExportInput",
@@ -384,6 +428,13 @@ __all__ = [
     "ExportBuildFailure",
     "ExportExpirySweepWorkflow",
     "ExportPackageFacts",
+    "ExportStale",
+    "FinalExport",
+    "FinalExportRequired",
+    "FirmExportFacts",
+    "FirmExportInput",
+    "FirmExportScheduleWorkflow",
+    "FirmExportWorkflow",
     "GlBalanceRow",
     "GlHeader",
     "GlRenderEntry",
@@ -392,6 +443,8 @@ __all__ = [
     "InboxFileAdded",
     "InboxFileExtracted",
     "IntegrityError",
+    "LayerExport",
+    "LayerLine",
     "LegalHoldApply",
     "LegalHoldInput",
     "LegalHoldRelease",
@@ -400,6 +453,7 @@ __all__ = [
     "PolicyChange",
     "PortalFile",
     "Proposal",
+    "ProposalChanged",
     "Provenance",
     "RecordClass",
     "RecordedCitation",
@@ -424,16 +478,20 @@ __all__ = [
     "add_to_inbox",
     "add_version",
     "anchor_chain",
+    "assign_inbox_file",
     "check_ready",
     "check_upload_content",
     "citation_cell_reason",
     "citation_cell_text",
+    "citation_sources",
     "client_pre_checks",
     "column_letters",
     "configure_storage",
+    "decide",
     "decided_among",
     "decisions_on_screenings",
     "drop_batch",
+    "effective_decisions",
     "effective_policies",
     "engagement_snapshots",
     "evidence_versions_for",
@@ -441,10 +499,13 @@ __all__ = [
     "export_requester",
     "export_section_csv",
     "extend_retention_for",
+    "final_export_for_archive",
+    "firm_export_schedule_id",
     "firm_router",
     "holds_covering",
     "included_export_versions",
     "is_version_withdrawn",
+    "latest_document",
     "legal_hold_activate",
     "legal_hold_apply_batch",
     "list_holds",
@@ -465,11 +526,13 @@ __all__ = [
     "register_citable",
     "register_export_audit_trail",
     "register_export_section",
+    "register_firm_export_starter",
     "register_match_picks",
     "register_proposal_source",
     "render_general_ledger",
     "render_journal_listing",
     "render_trial_balance",
+    "render_trial_balance_layers",
     "retain_until_for",
     "return_files",
     "review_material",
@@ -480,6 +543,7 @@ __all__ = [
     "stale_pdfs",
     "start_trust_layer_backfill",
     "suggest_by_name",
+    "supported_citations",
     "undo_returned_files",
     "undo_review_decision",
     "upload",
@@ -496,3 +560,5 @@ __all__ = [
 register_member_removed(release_member_assignments)
 # P-07-T36 review (DEC-375): a screening record's evidence link must be a file the person reads.
 register_evidence_readable(readable_version)
+# G-02-T20: the WISP pack reads each document through the item download, as its requester.
+register_wisp_document_reader(latest_document)

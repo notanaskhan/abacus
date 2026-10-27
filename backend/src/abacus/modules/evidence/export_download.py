@@ -54,7 +54,7 @@ from abacus.modules.evidence.export_models import (
     EngagementExportContent,
     EngagementExportDownload,
 )
-from abacus.modules.evidence.export_storage import SEGMENT_BYTES, get_segment
+from abacus.modules.evidence.export_storage import SEGMENT_BYTES, StoredKind, get_segment
 from abacus.modules.evidence.exports import SUBJECT, authorise_fresh, flag_on, human
 from abacus.modules.evidence.withdrawals import withdrawn_among
 from abacus.modules.identity.api import AuthContext, Forbidden, allowed_actions
@@ -156,6 +156,7 @@ class DownloadPlan:
     user_id: UUID
     # Re-checked before every segment after the first (M1): raises `DownloadRevoked`.
     guard: Guard | None = None
+    kind: StoredKind = "engagement_export"  # Q-02-T43: a firm archive streams the same way
 
     @property
     def length(self) -> int:
@@ -173,6 +174,7 @@ class DownloadPlan:
                 start,
                 self.length,
                 guard=self.guard,
+                kind=self.kind,
             ),
         )
 
@@ -198,6 +200,7 @@ async def stream_bytes(
     length: int,
     *,
     guard: Guard | None = None,
+    kind: StoredKind = "engagement_export",
 ) -> AsyncIterator[bytes]:
     """`length` bytes from `start`, decrypted segment by segment (one in memory at a time),
     yielded in `CHUNK_BYTES` slices of a memoryview (no copy of the segment). Before every
@@ -217,7 +220,7 @@ async def stream_bytes(
                 raise DownloadRevoked("stream lifetime")
             if guard is not None:
                 await guard()
-        chunk = await get_segment(tenant_id, export_id, n)
+        chunk = await get_segment(tenant_id, export_id, n, kind=kind)
         opened += 1
         if segment_size is not None:
             want = segment_size if n < segment_count - 1 else size - segment_size * n
@@ -240,6 +243,11 @@ async def stream_bytes(
 # `DOWNLOAD_LIMIT` download requests per person per `DOWNLOAD_WINDOW` across processes (counted
 # over `engagement_export_downloads`).
 _active: dict[tuple[UUID, UUID], int] = {}
+
+
+def streams_open(tenant_id: UUID, user_id: UUID) -> int:
+    """How many streams the person has open in this process (the firm export shares the cap)."""
+    return _active.get((tenant_id, user_id), 0)
 
 
 async def _counted(key: tuple[UUID, UUID], inner: AsyncIterator[bytes]) -> AsyncIterator[bytes]:
@@ -385,4 +393,5 @@ __all__ = [
     "parse_range",
     "prepare",
     "stream_bytes",
+    "streams_open",
 ]

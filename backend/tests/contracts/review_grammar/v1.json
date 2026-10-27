@@ -1442,6 +1442,16 @@
     "title": "CheckpointRestoreIn",
     "type": "object"
   },
+  "CheckpointStatus": {
+    "enum": [
+      "proposed",
+      "approved",
+      "rejected",
+      "saved"
+    ],
+    "title": "CheckpointStatus",
+    "type": "string"
+  },
   "CheckpointStepOut": {
     "description": "One step of the run that made the checkpoint (C6 run steps, read through review).",
     "properties": {
@@ -1779,6 +1789,15 @@
     ],
     "title": "DecisionCardOut",
     "type": "object"
+  },
+  "DecisionCardStatus": {
+    "enum": [
+      "awaiting_role",
+      "decided",
+      "superseded"
+    ],
+    "title": "DecisionCardStatus",
+    "type": "string"
   },
   "DecisionCardVersionOut": {
     "description": "One history row: v1 proposed, v2 decided, v3 reassessed with no change (SHL-11 d).",
@@ -3953,6 +3972,27 @@
     "title": "IssueSendToClientIn",
     "type": "object"
   },
+  "IssueSeverityStatus": {
+    "enum": [
+      "high",
+      "medium",
+      "low"
+    ],
+    "title": "IssueSeverityStatus",
+    "type": "string"
+  },
+  "IssueStatus": {
+    "enum": [
+      "open",
+      "in_progress",
+      "resolved",
+      "verified",
+      "reopened",
+      "not_applicable"
+    ],
+    "title": "IssueStatus",
+    "type": "string"
+  },
   "IssueUpdateIn": {
     "additionalProperties": false,
     "description": "`PATCH /v1/issues/{id}`: title, class, priority and assignee. A stale `seen_version`\nanswers 409 `issue_changed`.",
@@ -4106,246 +4146,6 @@
     "title": "LadderLevelOut",
     "type": "object"
   },
-  "ListPage_DecisionCardItemOut_": {
-    "properties": {
-      "counts": {
-        "additionalProperties": {
-          "type": "integer"
-        },
-        "cls": "internal",
-        "title": "Counts",
-        "type": "object"
-      },
-      "facets": {
-        "additionalProperties": {
-          "items": {
-            "$ref": "#/components/schemas/Facet"
-          },
-          "type": "array"
-        },
-        "cls": "internal",
-        "title": "Facets",
-        "type": "object"
-      },
-      "items": {
-        "cls": "internal",
-        "items": {
-          "$ref": "#/components/schemas/DecisionCardItemOut"
-        },
-        "title": "Items",
-        "type": "array"
-      },
-      "next_cursor": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
-        ],
-        "cls": "internal",
-        "title": "Next Cursor"
-      },
-      "total": {
-        "cls": "internal",
-        "title": "Total",
-        "type": "integer"
-      },
-      "total_capped": {
-        "cls": "internal",
-        "default": false,
-        "title": "Total Capped",
-        "type": "boolean"
-      }
-    },
-    "required": [
-      "items",
-      "total"
-    ],
-    "title": "ListPage[DecisionCardItemOut]",
-    "type": "object"
-  },
-  "ListPage_HumanGateOut_": {
-    "properties": {
-      "counts": {
-        "additionalProperties": {
-          "type": "integer"
-        },
-        "cls": "internal",
-        "title": "Counts",
-        "type": "object"
-      },
-      "facets": {
-        "additionalProperties": {
-          "items": {
-            "$ref": "#/components/schemas/Facet"
-          },
-          "type": "array"
-        },
-        "cls": "internal",
-        "title": "Facets",
-        "type": "object"
-      },
-      "items": {
-        "cls": "internal",
-        "items": {
-          "$ref": "#/components/schemas/HumanGateOut"
-        },
-        "title": "Items",
-        "type": "array"
-      },
-      "next_cursor": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
-        ],
-        "cls": "internal",
-        "title": "Next Cursor"
-      },
-      "total": {
-        "cls": "internal",
-        "title": "Total",
-        "type": "integer"
-      },
-      "total_capped": {
-        "cls": "internal",
-        "default": false,
-        "title": "Total Capped",
-        "type": "boolean"
-      }
-    },
-    "required": [
-      "items",
-      "total"
-    ],
-    "title": "ListPage[HumanGateOut]",
-    "type": "object"
-  },
-  "ListPage_IssueItemOut_": {
-    "properties": {
-      "counts": {
-        "additionalProperties": {
-          "type": "integer"
-        },
-        "cls": "internal",
-        "title": "Counts",
-        "type": "object"
-      },
-      "facets": {
-        "additionalProperties": {
-          "items": {
-            "$ref": "#/components/schemas/Facet"
-          },
-          "type": "array"
-        },
-        "cls": "internal",
-        "title": "Facets",
-        "type": "object"
-      },
-      "items": {
-        "cls": "internal",
-        "items": {
-          "$ref": "#/components/schemas/IssueItemOut"
-        },
-        "title": "Items",
-        "type": "array"
-      },
-      "next_cursor": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
-        ],
-        "cls": "internal",
-        "title": "Next Cursor"
-      },
-      "total": {
-        "cls": "internal",
-        "title": "Total",
-        "type": "integer"
-      },
-      "total_capped": {
-        "cls": "internal",
-        "default": false,
-        "title": "Total Capped",
-        "type": "boolean"
-      }
-    },
-    "required": [
-      "items",
-      "total"
-    ],
-    "title": "ListPage[IssueItemOut]",
-    "type": "object"
-  },
-  "ListPage_ReviewNoteItemOut_": {
-    "properties": {
-      "counts": {
-        "additionalProperties": {
-          "type": "integer"
-        },
-        "cls": "internal",
-        "title": "Counts",
-        "type": "object"
-      },
-      "facets": {
-        "additionalProperties": {
-          "items": {
-            "$ref": "#/components/schemas/Facet"
-          },
-          "type": "array"
-        },
-        "cls": "internal",
-        "title": "Facets",
-        "type": "object"
-      },
-      "items": {
-        "cls": "internal",
-        "items": {
-          "$ref": "#/components/schemas/ReviewNoteItemOut"
-        },
-        "title": "Items",
-        "type": "array"
-      },
-      "next_cursor": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
-        ],
-        "cls": "internal",
-        "title": "Next Cursor"
-      },
-      "total": {
-        "cls": "internal",
-        "title": "Total",
-        "type": "integer"
-      },
-      "total_capped": {
-        "cls": "internal",
-        "default": false,
-        "title": "Total Capped",
-        "type": "boolean"
-      }
-    },
-    "required": [
-      "items",
-      "total"
-    ],
-    "title": "ListPage[ReviewNoteItemOut]",
-    "type": "object"
-  },
   "NoteAnchorIn": {
     "additionalProperties": false,
     "properties": {
@@ -4399,27 +4199,6 @@
       "ref"
     ],
     "title": "NoteAnchorOut",
-    "type": "object"
-  },
-  "ObjectRefOut": {
-    "properties": {
-      "id": {
-        "cls": "internal",
-        "format": "uuid",
-        "title": "Id",
-        "type": "string"
-      },
-      "type": {
-        "cls": "internal",
-        "title": "Type",
-        "type": "string"
-      }
-    },
-    "required": [
-      "type",
-      "id"
-    ],
-    "title": "ObjectRefOut",
     "type": "object"
   },
   "ProposalDecisionOut": {
@@ -4806,6 +4585,17 @@
     "title": "ProposalSetOut",
     "type": "object"
   },
+  "ProposalStatus": {
+    "enum": [
+      "pending",
+      "approved",
+      "approved_with_edits",
+      "rejected",
+      "superseded"
+    ],
+    "title": "ProposalStatus",
+    "type": "string"
+  },
   "ProposalTotalOut": {
     "description": "A totals row computed by code (\"Net change to Form 1040 total income \u00b7 0 \u00b7 tie\").",
     "properties": {
@@ -5128,6 +4918,17 @@
     ],
     "title": "ReviewNoteItemOut",
     "type": "object"
+  },
+  "ReviewNoteStatus": {
+    "enum": [
+      "open",
+      "responded",
+      "cleared",
+      "closed",
+      "withdrawn"
+    ],
+    "title": "ReviewNoteStatus",
+    "type": "string"
   },
   "RouteProposalIn": {
     "additionalProperties": false,
@@ -5525,6 +5326,18 @@
     ],
     "title": "SignOffTargetOut",
     "type": "object"
+  },
+  "SuggestionStatus": {
+    "enum": [
+      "pending",
+      "adopted",
+      "edited",
+      "dismissed",
+      "superseded",
+      "expired"
+    ],
+    "title": "SuggestionStatus",
+    "type": "string"
   },
   "UndoProposalIn": {
     "additionalProperties": false,

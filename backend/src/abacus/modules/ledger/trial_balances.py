@@ -872,3 +872,35 @@ async def review_digests(tenant: TenantContext, engagement_id: UUID) -> list[TbD
             text = current.content_fingerprint + "|" + "|".join(":".join(n) for n in notes)
             out.append(TbDigest(_tb_summary(tb), hashlib.sha256(text.encode()).hexdigest()))
     return out
+
+
+@dataclass(frozen=True)
+class SnapshotSuperseded:
+    """A version that replaced its predecessor's snapshot (A-02-T22): citations to `old` move to
+    `new`. Read for the system detector; nothing here is shown to a person."""
+
+    trial_balance_id: UUID
+    engagement_id: UUID
+    version_no: int
+    old: UUID
+    new: UUID
+
+
+async def superseded_snapshot(
+    tenant: TenantContext, tb_id: UUID, version_no: int
+) -> SnapshotSuperseded | None:
+    """Version `version_no`'s snapshot against version `version_no - 1`'s: None for version 1, an
+    unknown version, or a re-version that kept the same snapshot (a new prior only)."""
+    if version_no < 2:
+        return None
+    async with tenant_session(tenant) as session:
+        tb = await get_trial_balance(session, tb_id)
+        if tb is None:
+            return None
+        by_no = {v.version_no: v for v in await versions_of(session, tb.id)}
+    new, old = by_no.get(version_no), by_no.get(version_no - 1)
+    if new is None or old is None or new.snapshot_id == old.snapshot_id:
+        return None
+    return SnapshotSuperseded(
+        tb.id, tb.engagement_id, version_no, old.snapshot_id, new.snapshot_id
+    )

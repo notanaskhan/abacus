@@ -34,6 +34,7 @@ IDS = (
     "audit_partitions:platform",  # Q-02-T20: access_events partitions, every 30 days
     "auth_session_purge:platform",  # G-02-T14: staff sessions ended over a year ago, daily
     "export_expiry:platform",  # A-01-T22: the daily engagement export expiry sweep
+    "incident_reminders:platform",  # G-02-T18: FTC clock reminders, every 6 hours
     "notification_purge:platform",
     "ses_events:platform",
     "spend_anomaly:platform",
@@ -46,6 +47,7 @@ BACKGROUND = (
     "audit_partitions:platform",
     "auth_session_purge:platform",
     "export_expiry:platform",
+    "incident_reminders:platform",
     "notification_purge:platform",
     "spend_anomaly:platform",
 )
@@ -115,6 +117,8 @@ async def test_ensure_creates_one_schedule_per_job_and_converges_on_a_rerun(
     assert facts["auth_session_purge:platform"]["every_seconds"] == (86400,)
     assert facts["export_expiry:platform"]["workflow_type"] == "ExportExpirySweep"
     assert facts["export_expiry:platform"]["every_seconds"] == (86400,)
+    assert facts["incident_reminders:platform"]["workflow_type"] == "IncidentClockReminders"
+    assert facts["incident_reminders:platform"]["every_seconds"] == (6 * 3600,)
     for fact in (facts[i] for i in BACKGROUND):
         assert fact["task_queue"] == queue_for("background")
     for fact in facts.values():

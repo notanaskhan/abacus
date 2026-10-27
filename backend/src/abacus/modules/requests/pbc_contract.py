@@ -7,8 +7,9 @@ returns the dropped file to the inbox in the same unit of work. The Ignore itsel
 Done are P-06's (`contract.py`); R-01's additive note on the Ignore is P-06's `IgnoreIn.note`,
 stored as a shared comment with origin `ignore_note` (R-01-T08).
 
-Behind `portal.documents_v2` (the two undos, live since R-01-T08): off, each route answers 404.
-An undo after the firm has acted on the request or the binder answers 409 `firm_already_acted`.
+The two undos are live since R-01-T08 and served to every firm since `portal.documents_v2`
+retired (R-01-T18, DEC-510). An undo after the firm has acted on the request or the binder
+answers 409 `firm_already_acted`.
 """
 
 from __future__ import annotations
@@ -20,10 +21,7 @@ from uuid import UUID
 from fastapi import Depends, Header
 from pydantic import BaseModel, ConfigDict
 
-from abacus.kernel._flags import PORTAL_DOCUMENTS_V2
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound
-from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 from abacus.modules.requests import binders, lifecycle
@@ -59,12 +57,6 @@ class MarkDoneUndoneOut(BaseModel):
     undone_at: Annotated[datetime, classified("internal")]
 
 
-async def _documents_on(ctx: AuthContext) -> None:
-    """`portal.documents_v2` off: the undos answer 404."""
-    if not await flag_enabled(ctx.tenant, PORTAL_DOCUMENTS_V2):
-        raise NotFound(PORTAL_DOCUMENTS_V2.name)
-
-
 pbc_portal_router = AbacusRouter(prefix="/v1/portal", tags=["portal"])
 
 
@@ -80,7 +72,6 @@ async def undo_ignore_route(
     """The client's Undo of an Ignore (POR-03 f, POR-04 b): a compensating event, allowed until
     the firm acts on the request (409 `firm_already_acted`, DEC-24, DEC-334). A retry with the
     same key is authorised again, then answers what the first answered."""
-    await _documents_on(ctx)
     await lifecycle.check_ignore(ctx, item_id)
 
     async def run() -> tuple[int, dict[str, object]]:
@@ -109,7 +100,6 @@ async def undo_mark_done_route(
 ) -> MarkDoneUndoneOut:
     """The client's Undo of Mark as Done (POR-03 e), until the firm returns a request or sends a
     new one (409 `firm_already_acted`, DEC-334)."""
-    await _documents_on(ctx)
     await binders.check_action(ctx, binder_id, "binder.mark_done")
 
     async def run() -> tuple[int, dict[str, object]]:

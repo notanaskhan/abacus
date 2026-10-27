@@ -5,7 +5,7 @@ to `AUD-03.md`.
 `$auditId` is the assurance work item (P-04). Behind `audits.cockpit`: off, every route here
 answers 404; on, 501 `not_implemented` until the task that implements it (profile and phase
 are live since A-01-T05; the index, cockpit and source documents since A-01-T08 to T10; release
-and archive records A-01-T23). Firm routes resolve the work item through `engagements.api`:
+and archive records since A-01-T23). Firm routes resolve the work item through `engagements.api`:
 outside the tenant or behind a wall it answers 404, and no response carries a count of hidden
 rows (INV-3, DEC-43). No `/v1/audits` route serves a client principal (INV-4): the index refuses
 portal sessions before it reads, although `engagement.read_metadata` holds client cells for
@@ -37,7 +37,8 @@ from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.kernel.text import SingleLineText
 from abacus.kernel.uow.idempotency import idempotent
-from abacus.modules.assurance import cockpit, index, phase
+from abacus.modules.assurance import archive_gate, cockpit, index, phase, release
+from abacus.modules.assurance.record_auth import authorise_record
 from abacus.modules.assurance.sections import Band, Grammar, Segment, TagClassification
 from abacus.modules.engagements.api import assurance_item, get_ref
 from abacus.modules.identity.api import (
@@ -447,10 +448,25 @@ async def _allowed(ctx: AuthContext, action: str, work_item_id: UUID | None) -> 
         await _authorise_on_item(ctx, action, work_item_id)
 
 
-async def _stub(ctx: AuthContext, action: str, work_item_id: UUID | None = None) -> NoReturn:
+async def _stub(  # pyright: ignore[reportUnusedFunction] -- the stub's own test (AC-4)
+    ctx: AuthContext, action: str, work_item_id: UUID | None = None
+) -> NoReturn:
+    """The family's stub answer (A-01-T02): every route is live since A-01-T23; kept for a
+    later route of the family and the stub's own test (authorise, then 404 or 501)."""
     await _allowed(ctx, action, work_item_id)
     await _flag_on(ctx)
     raise NotImplementedYet
+
+
+async def _record_allowed(ctx: AuthContext, action: str, work_item_id: UUID) -> None:
+    """The release and archive records: as `_allowed`, but a stale second factor is told apart
+    from every other refusal (403 `facts.reason = mfa_required`, DEC-547), so the shell's
+    step-up opens for that alone. The service authorises again under its lock."""
+    if ctx.client or ctx.tenant.actor_kind != "human":
+        raise Forbidden(action, "role")
+    item = await assurance_item(ctx.tenant, work_item_id)
+    ref = await get_ref(ctx, item.engagement_id)
+    await authorise_record(ctx, action, ref.resource())
 
 
 audits_router = AbacusRouter(prefix="/v1/audits", tags=["audits"])
@@ -582,8 +598,34 @@ async def audit_phase_route(
 async def audit_release_record_route(
     work_item_id: UUID, body: ReleaseRecordIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ReleaseRecordOut:
-    """Interim G8, the engagement partner with fresh MFA (A-01-T23)."""
-    await _stub(ctx, "assurance.record_release", work_item_id)
+    """Interim G8, the engagement partner with fresh MFA (A-01-T23, DEC-590): 403 with
+    `facts.reason = mfa_required` for a stale second factor (DEC-547), 409
+    `release_mode_in_app` or `record_out_of_phase`, 422 `release_date_future`."""
+    await _record_allowed(ctx, "assurance.record_release", work_item_id)
+    await _flag_on(ctx)
+
+    async def run() -> tuple[int, dict[str, object]]:
+        made = await release.record_release(
+            ctx, work_item_id, body.report_released_on, body.report_kind
+        )
+        out = ReleaseRecordOut(
+            work_item_id=made.work_item_id,
+            report_released_on=made.report_released_on,
+            report_kind=cast(ReportKind, made.report_kind),
+            phase=AuditEngagementStatus(made.phase),
+            archive_due_on=made.archive_due_on,
+            recorded_at=made.recorded_at,
+        )
+        return 201, out.model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="audits.record_release",
+        key=idempotency_key,
+        body={"work_item_id": str(work_item_id), **body.model_dump(mode="json")},
+        run=run,
+    )
+    return ReleaseRecordOut.model_validate(stored.body)
 
 
 @audits_router.post(
@@ -596,8 +638,34 @@ async def audit_release_record_route(
 async def audit_archive_record_route(
     work_item_id: UUID, body: ArchiveRecordIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ArchiveRecordOut:
-    """Interim G9 against a ready final binder export, with fresh MFA (A-01-T23)."""
-    await _stub(ctx, "assurance.record_archive", work_item_id)
+    """Interim G9 against a ready, current final binder export, with fresh MFA (A-01-T23,
+    DEC-591): 403 `mfa_required` for a stale second factor, 409 `final_export_required`,
+    `export_stale`, `release_mode_in_app` or `record_out_of_phase`. The work item becomes
+    archived and read-only; `archive_locked_at` stays NULL (P-43)."""
+    await _record_allowed(ctx, "assurance.record_archive", work_item_id)
+    await _flag_on(ctx)
+
+    async def run() -> tuple[int, dict[str, object]]:
+        made = await archive_gate.record_archive(
+            ctx, work_item_id, body.export_id, body.firm_tool_ref
+        )
+        out = ArchiveRecordOut(
+            work_item_id=made.work_item_id,
+            export_id=made.export_id,
+            manifest_sha256=made.manifest_sha256,
+            phase=AuditEngagementStatus(made.phase),
+            recorded_at=made.recorded_at,
+        )
+        return 201, out.model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="audits.record_archive",
+        key=idempotency_key,
+        body={"work_item_id": str(work_item_id), **body.model_dump(mode="json")},
+        run=run,
+    )
+    return ArchiveRecordOut.model_validate(stored.body)
 
 
 @audits_router.get(

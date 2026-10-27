@@ -407,6 +407,12 @@ async def test_inv1_at_routine_the_tick_drafts_and_nothing_leaves_without_a_pers
     await world.seed.run(
         "UPDATE request_items SET due_on = $2 WHERE id = $1", world.site.item_id, due
     )
+    # R-01-T24 review M-b: reminders name only requests in a Published binder (DEC-588).
+    await world.seed.run(
+        "UPDATE request_lists SET status = 'published', published_at = now() "
+        "WHERE engagement_id = $1",
+        world.site.engagement_id,
+    )
     await world.relay("engagement.created", {"engagement_id": str(world.site.engagement_id)})
     await world.run_agent()
     await handle(  # the tick, as the workflow's timer sends it

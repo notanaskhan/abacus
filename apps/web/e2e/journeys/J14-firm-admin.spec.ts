@@ -2,10 +2,10 @@
 // as a seasonal preparer, walls her from Ashford Manufacturing Co., Margaret Okonkwo approves, a
 // wall on the client's own relationship partner is refused, and the wall log names both people;
 // then, as Lena, the walled client is gone (INV-3). Each step runs on the harness (axe and INV-1 to
-// INV-5 after it). ADM-02 and ADM-03 sit behind `firm_settings.v2`, which E0 leaves off, so in
-// fixture mode a step opens the real route on the screen's own scenario (`?screen=&st=`, DEC-457);
-// the full stack walks them once E0 turns the flag on and the nightly loads the people slice
-// (G-01-T17), and staging and the canary after the batch deploy (G-01-T19).
+// INV-5 after it). In fixture mode a step opens the real route on the screen's own scenario
+// (`?screen=&st=`, DEC-457); the full stack walks them once the nightly loads the people slice,
+// and staging and the canary after the batch deploy (G-01-T19). `firm_settings.v2` is retired
+// (G-01-T17, DEC-594).
 import { DEMO_INSTANT, expect, test } from "../harness";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -15,6 +15,8 @@ const HOSTED_URL: Readonly<Record<string, string | undefined>> = {
   canary: process.env.ABACUS_CANARY_URL,
 };
 const WALLED = "Ashford Manufacturing Co."; // ADM-03's wall for Lena Park (INV-3)
+// ADM-07 (G-02-T13) sits behind this flag, which E0 leaves off (G-02-T21).
+const AUDIT_LOG = ["audit_log.explorer"];
 // ADM-03b and f (fixtures/scenarios/ADM-03.ts CLOCK_920): 9:20 AM, when Grace adds the wall.
 const AT_920 = "2026-09-14T09:20:00-05:00";
 const LIVE_LATER =
@@ -31,11 +33,8 @@ test.describe("J14 firm administration", () => {
       hosted && HOSTED_URL[journey.project] === undefined,
       `ABACUS_${journey.project.toUpperCase()}_URL is not set`,
     );
-    // The staging smoke is written and waits for the batch deploy that carries the flag.
-    test.fixme(
-      journey.project !== "fixture",
-      "firm_settings.v2 and the people slice are not in E0",
-    );
+    // The staging smoke is written and waits for the batch deploy (G-01-T19).
+    test.fixme(journey.project !== "fixture", "the people slice is not in E0");
   });
 
   test(
@@ -109,4 +108,41 @@ test.describe("J14 firm administration", () => {
       { outOfScope: [WALLED] },
     );
   });
+
+  test(
+    "j14 7: Felix reviews via-Agent events and exports after fresh MFA",
+    owner(
+      "G-02 · G-02-T21 fixture; full stack once E0 turns audit_log.explorer on, staging and the canary after the batch deploy · M7, Fri Apr 16, 2027",
+    ),
+    async ({ journey }) => {
+      await journey.as("felix-andersen", "/settings/audit-log?screen=ADM-07&st=b", {
+        clock: DEMO_INSTANT,
+        flags: AUDIT_LOG,
+      });
+      await journey.step("J14 step 7: the via Agent events as Felix Andersen", async (page) => {
+        const feed = page.getByRole("list", { name: "Audit log" });
+        await expect(feed.getByRole("listitem")).toHaveCount(4);
+        await expect(page.getByText("Showing 4 of 1,962")).toBeVisible();
+        // INV-5: the agent acts for a named person, never as an actor of its own.
+        await expect(page.getByText("Accrued Agent")).toHaveCount(0);
+      });
+      await journey.as("felix-andersen", "/settings/audit-log?screen=ADM-07&st=e", {
+        clock: DEMO_INSTANT,
+        flags: AUDIT_LOG,
+      });
+      await journey.step(
+        "J14 step 7: Export… with values, and the ready manifest",
+        async (page) => {
+          await page.getByRole("button", { name: /Export…/ }).click();
+          const dialog = page.getByRole("dialog");
+          await expect(dialog.getByText("CSV + signed JSON manifest")).toBeVisible();
+          await expect(
+            dialog.getByRole("switch", { name: "Include before/after values" }),
+          ).toBeVisible();
+          await dialog.getByRole("button", { name: "Export", exact: true }).click();
+          await expect(page.getByText("Export ready · SHA-256 manifest included")).toBeVisible();
+        },
+      );
+    },
+  );
 });

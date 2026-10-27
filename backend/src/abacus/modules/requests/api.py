@@ -53,12 +53,14 @@ from abacus.modules.requests.follow_up_reads import (
 )
 from abacus.modules.requests.lifecycle import (
     ConsentRequired,
+    ItemPatch,
     contact_delegations,
     end_contact_delegations,
     record_contact_delegations,
     register_live_facts,
     request_item_scope,
     request_item_scopes,
+    update_item,
 )
 from abacus.modules.requests.pbc_contract import pbc_portal_router
 from abacus.modules.requests.portal_documents import (
@@ -182,6 +184,7 @@ __all__ = [
     "FulfilmentRef",
     "ItemKind",
     "ItemNotFulfillable",
+    "ItemPatch",
     "NewRequestItem",
     "OverdueItem",
     "PortalBinder",
@@ -258,6 +261,7 @@ __all__ = [
     "selection_engagements",
     "source_documents",
     "third_party_consented",
+    "update_item",
     "upload_item_of",
     "void_rule_link_in",
     "withdraw_upload",

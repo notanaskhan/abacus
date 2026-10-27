@@ -111,6 +111,8 @@ NOT_CREATING = {
     # Q-02-T23: publishing changes a draft set's status, so 200.
     "/v1/platform/retention/floors/{set_version}/publish",
     "/v1/platform/retention/defaults/{set_version}/publish",
+    # G-02-T20: publishing a Pub 4557 control set changes a draft's status, so 200.
+    "/v1/platform/safeguards-controls/{set_version}/publish",
     "/v1/walls/{wall_id}/remove",  # TASK-016: returns the removed wall, so 200
     REVIEW_QUEUE + "/take",
     REVIEW_QUEUE + "/release",
@@ -334,6 +336,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         # Q-02-T23: a draft retention floor set and a draft default-policy set.
         "/v1/platform/retention/floors",
         "/v1/platform/retention/defaults",
+        # G-02-T20: a draft Pub 4557 control set.
+        "/v1/platform/safeguards-controls",
         # P-03-T02 (C4 v1 stub): a citation, a re-linked citation and a logged reveal.
         "/v1/citations",
         "/v1/citations/{citation_id}/relink",

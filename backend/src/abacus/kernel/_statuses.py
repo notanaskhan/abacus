@@ -678,6 +678,17 @@ class FirmExportStatus(StrEnum):
     EXPIRED = "expired"
 
 
+class FirmExportScheduleStatus(StrEnum):
+    PENDING_APPROVAL = "pending_approval"
+    ACTIVE = "active"
+    PAUSED = "paused"
+
+
+class SafeguardsControlStatus(StrEnum):
+    EVIDENCED = "evidenced"
+    OPEN = "open"
+
+
 class SupportSessionStatus(StrEnum):
     REQUESTED = "requested"
     ACTIVE = "active"
@@ -1258,6 +1269,15 @@ STORED: dict[str, tuple[str, ...]] = {
         "ready",
         "downloaded",
         "expired",
+    ),
+    "firm_export_schedule": (
+        "pending_approval",
+        "active",
+        "paused",
+    ),
+    "safeguards_control": (
+        "evidenced",
+        "open",
     ),
     "support_session": (
         "requested",

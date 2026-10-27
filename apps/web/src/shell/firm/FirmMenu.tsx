@@ -37,7 +37,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { useFlag } from "../../app-core/flags";
 import { type NavAccess, useSession } from "../../app-core/session";
 import { FIRM_MENU, PROFILE } from "./copy";
 
@@ -56,8 +55,8 @@ import { FIRM_MENU, PROFILE } from "./copy";
  * developer, log). `path` is the legacy route that serves the row today, or null while its ADM
  * screen is planned (the row then only closes the menu). */
 export const ADMIN_ROWS = [
-  { key: "firm_settings", icon: "settings", path: "/admin/methodology" },
-  { key: "users_roles", icon: "users-round", path: "/admin/people" },
+  { key: "firm_settings", icon: "settings", path: "/settings/general" },
+  { key: "users_roles", icon: "users-round", path: "/settings/people" },
   { key: "security_center", icon: "lock", path: null },
   { key: "developer_api", icon: "code", path: null },
   { key: "audit_log", icon: "scroll-text", path: "/admin/audit-log" },
@@ -73,23 +72,10 @@ export interface AdminRow {
   viewOnly: boolean;
 }
 
-/** ADM-01's route (G-01 §5.1): Firm settings opens it while `firm_settings.v2` is on, the legacy
- * settings otherwise (SHL-03's inbound row; DEC-463). */
-export const SETTINGS_V2_PATH = "/settings/general";
-/** ADM-02's route: Users & roles opens it under the same flag (G-01-T07's legacy moves). */
-export const PEOPLE_V2_PATH = "/settings/people";
-
-const V2_PATHS: Partial<Record<AdminKey, string>> = {
-  firm_settings: SETTINGS_V2_PATH,
-  users_roles: PEOPLE_V2_PATH,
-};
-
 /** The admin section for a capabilities `nav` (AC 2.1.2): empty hides the section. Firm settings
- * at `read` carries "View only" (SHL-03c). `settingsV2` is the `firm_settings.v2` flag. */
-export function adminRows(
-  nav: Readonly<Record<string, NavAccess>>,
-  settingsV2 = false,
-): AdminRow[] {
+ * at `read` carries "View only" (SHL-03c). Firm settings opens ADM-01 and Users & roles ADM-02
+ * (SHL-03's inbound rows; DEC-463, `firm_settings.v2` retired by G-01-T17, DEC-594). */
+export function adminRows(nav: Readonly<Record<string, NavAccess>>): AdminRow[] {
   return ADMIN_ROWS.flatMap((row) => {
     const access = nav[row.key] ?? "none";
     if (access === "none") return [];
@@ -98,7 +84,7 @@ export function adminRows(
         key: row.key,
         label: FIRM_MENU.admin[row.key],
         icon: row.icon,
-        path: (settingsV2 ? V2_PATHS[row.key] : undefined) ?? row.path,
+        path: row.path,
         // The canvas notes only the settings row: the audit log is read-only for everyone.
         viewOnly: row.key === "firm_settings" && access === "read",
       },
@@ -276,8 +262,7 @@ export function FirmMenu({
   const active = staff.find((m) => m.tenant_id === activeTenantId) ?? staff[0];
   const office = officeName(me, me?.default_office_id) ?? FIRM_MENU.allOffices;
   const homeOffice = officeName(me, session.officeId);
-  const settingsV2 = useFlag("firm_settings.v2") === true;
-  const admin = adminRows(session.nav, settingsV2);
+  const admin = adminRows(session.nav);
   const version = import.meta.env.VITE_APP_VERSION;
   const offices: { id: string | null; name: string }[] = [
     { id: null, name: FIRM_MENU.allOffices },

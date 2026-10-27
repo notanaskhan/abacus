@@ -73,6 +73,7 @@ SPEC-031 AC-1 to AC-8.
 ## Progress log
 - `2026-10-12` — Design written for founder review after SPEC-031 merged (#108).
 - `2026-10-12` — Built (D1–D5): migration 0047; template columns (validated, stored, carried on apply and roll-forward); `requests/guidance.py` with the D3 copy; `PUT …/guidance` (audited); `GET …/request-items/your-part`; evidence `GET …/client-view` (provided, bank statement gap, history). Unit tests (9,913) and gates pass. Local smoke on the Dev firm: kind default applied, firm edit audited, your part counted the blocking item, gap named the payroll account, history showed the client's upload in review.
+- 2026-10-27: ADR-078 back-fill suite `backend/tests/integration/backfill/test_q03t047_requests_client_hub.py`; see `work/tasks/TASK-1438-*.md` (S11 lane 7).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

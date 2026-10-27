@@ -70,6 +70,7 @@ from abacus.modules.ledger.normalise import (
     validate,
 )
 from abacus.modules.ledger.service import (
+    CitedLine,
     ScopeFacts,
     SnapshotLine,
     SnapshotRef,
@@ -78,6 +79,7 @@ from abacus.modules.ledger.service import (
     firm_accounts,
     record_snapshot,
     scope_facts,
+    snapshot_line,
     snapshot_view,
 )
 from abacus.modules.ledger.trial_balances import (
@@ -95,6 +97,7 @@ from abacus.modules.ledger.trial_balances import (
     SameSnapshot,
     SnapshotEntityMismatch,
     SnapshotSummary,
+    SnapshotSuperseded,
     TbAuthors,
     TbDigest,
     TbLine,
@@ -118,6 +121,7 @@ from abacus.modules.ledger.trial_balances import (
     register_adjustment_source,
     require_balanced,
     review_digests,
+    superseded_snapshot,
     trial_balance_authors,
     trial_balance_view,
 )
@@ -138,6 +142,7 @@ __all__ = [
     "AreaRule",
     "Balance",
     "Candidate",
+    "CitedLine",
     "EntryLine",
     "EntrySet",
     "FsLineView",
@@ -170,6 +175,7 @@ __all__ = [
     "SnapshotLine",
     "SnapshotRef",
     "SnapshotSummary",
+    "SnapshotSuperseded",
     "SnapshotView",
     "StatementGroup",
     "Statements",
@@ -225,8 +231,10 @@ __all__ = [
     "review_digests",
     "rule_line",
     "scope_facts",
+    "snapshot_line",
     "snapshot_view",
     "statements_for",
+    "superseded_snapshot",
     "trial_balance_authors",
     "trial_balance_view",
     "validate",

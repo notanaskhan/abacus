@@ -51,6 +51,7 @@ actions:
   proposal.approve:         {engagement_partner: allow, manager: allow, senior: allow, staff: firm_setting(staff_can_accept_evidence), agent: deny, system: deny, independence: required}   # as suggestion.resolve; staff for evidence adapters by firm setting (DEC-37)
   proposal.reject:          {engagement_partner: allow, manager: allow, senior: allow, staff: firm_setting(staff_can_accept_evidence), agent: deny, system: deny, independence: required}   # SHL-10 f
   proposal.route:           {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, independence: required}   # SHL-10 d: send to a named approver
+  proposal.decide_change_set: {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, independence: required}   # P-04-T24 security review M1 (DEC-609): approving or rejecting the agent's own change set (generic proposals), and being routed one; staff's firm setting covers only the typed evidence adapters
   proposal.follow_up:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny, independence: required}   # SHL-10: "Ask follow-up"
   proposal.undo:            {engagement_partner: allow, manager: allow, senior: allow, staff: firm_setting(staff_can_accept_evidence), agent: deny, system: deny, independence: required}   # ADR-161 clause 6: the decider, inside 10 s (the service checks)
   # --- Follow-ups ---
@@ -63,8 +64,8 @@ actions:
     quality_partner: allow
     security_admin: allow
     firm_partner: allow
+    firm_manager: allow   # ED-181 (AC-33): the firm-level manager, derived from the membership level
     engagement_partner: allow
-    manager: allow
     senior: allow
     staff: allow
     reviewer: allow

@@ -25,7 +25,13 @@ goes through `organisations.client_with_entity`; see the section comment and DEC
 
 The `binders` slice (P-06-T08: the 241 TY2025 binders on 224 return work items over 214 tax
 engagements, Copperleaf's close intake, and the client people binders name) is opt-in
-(`--slice binders`) and bootstrapped the same way; see DEC-146.
+(`--slice binders`) and bootstrapped the same way; see DEC-146. Granite Peak's agent-drafted SURL
+request (Sep 24, so from the 2026-10-01 snapshot) is bootstrapped too, with the agent's audit row
+on behalf of its firm owner: no service writes a drafted request outside a procedure session.
+
+The `portal_pbc` slice (R-01-T11: Dana Kowalski's client titles on AUD-03's rows) is opt-in
+(`--slice portal_pbc`, which brings `binders` and `portal`) and goes through `requests.api` as
+Marcus Delaney; see DEC-348 and the slice's gaps in TASK-1221.
 
 The `portal` slice (P-08-T14: Brightwater Hale's portal branding and host, the portal people and
 their grants, Sam Ortiz's pending invitation) is opt-in (`--slice portal`, which brings `binders`
@@ -80,11 +86,12 @@ from uuid import UUID
 import asyncpg
 from opentelemetry import trace
 from opentelemetry.trace import NonRecordingSpan, SpanContext, TraceFlags
+from sqlalchemy import text
 
 from abacus.kernel.clock import frozen, system_now
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext
-from abacus.kernel.uow import uow
+from abacus.kernel.uow import Target, uow
 from abacus.modules.assurance.api import record_phase, update_profile
 from abacus.modules.communications.api import (
     TemplateContent,
@@ -113,11 +120,15 @@ from abacus.modules.engagements.api import (
 )
 from abacus.modules.evidence.api import (
     HoldScope,
+    NewItem,
     PolicyChange,
+    Provenance,
+    add_version,
     legal_hold_activate,
     legal_hold_apply_batch,
     place_hold,
     set_policy,
+    stage_content,
 )
 from abacus.modules.identity.api import (
     AuthContext,
@@ -144,15 +155,24 @@ from abacus.modules.portal.api import (
     add_portal_host,
     set_branding,
 )
+from abacus.modules.requests.api import (
+    ItemPatch,
+    fulfil_by_upload,
+    latest_version_of,
+    move_after_review,
+    update_item,
+)
 from abacus_tools.db_connect import connect as connect_db
 from abacus_tools.fakes.identity import ISSUER
 from abacus_tools.flags import set_flag
 from abacus_tools.local.db_guard import violations
 from abacus_tools.synthetic.scenarios.brightwater_hale.acceptance import (
     CONTACTS,
-    DRAFTS,
     THORNBURY_ANSWERS,
     THORNBURY_FLAGS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.acceptance import (
+    DRAFTS as ACCEPTANCE_DRAFTS,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.acceptance import (
     NEEDS as ACCEPTANCE_NEEDS,
@@ -181,6 +201,9 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.binders import (
     COPPERLEAF_CLOSE_ITEM,
     ENGAGEMENT_BY_LABEL,
     RETURN_BY_LABEL,
+    SURL_DRAFT,
+    SURL_FILES,
+    SURL_UPLOADED_BY,
     TAX_YEAR,
     Binder,
     person_email,
@@ -208,6 +231,15 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.firm_people import (
     Template,
     access_ends_of,
 )
+from abacus_tools.synthetic.scenarios.brightwater_hale.intake import (
+    DRAFTS as INTAKE_DRAFTS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.intake import (
+    MERIDIAN_ANSWERS,
+    MERIDIAN_FLAGS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.intake import NEEDS as INTAKE_NEEDS
+from abacus_tools.synthetic.scenarios.brightwater_hale.intake import SLICE as INTAKE_SLICE
 from abacus_tools.synthetic.scenarios.brightwater_hale.people import (
     FIRM_ROLES,
     SEATS,
@@ -225,6 +257,21 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.portal import (
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.portal import NEEDS as PORTAL_NEEDS
 from abacus_tools.synthetic.scenarios.brightwater_hale.portal import SLICE as PORTAL_SLICE
+from abacus_tools.synthetic.scenarios.brightwater_hale.portal_pbc import (
+    BINDER_NAME,
+    CLIENT_FILE_BY_KEY,
+    DELEGATION_BY_ORG,
+    FELD_1095C_REQUEST,
+    FELD_RETURN,
+    KEYSTONE,
+    RETURNED_SLICE,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.portal_pbc import (
+    NEEDS as PORTAL_PBC_NEEDS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.portal_pbc import (
+    SLICE as PORTAL_PBC_SLICE,
+)
 from abacus_tools.synthetic.scenarios.brightwater_hale.prng import stable_id
 from abacus_tools.synthetic.scenarios.brightwater_hale.scenario import (
     FIRM_ID,
@@ -314,6 +361,13 @@ def tenant_of(event: Event) -> UUID:
 
 _SEATS: Final = {s.initials: s for s in SEATS}
 _CLIENTS: Final = {c.name: c for c in build_clients()}
+# The scenario drafts by key: wave 2's (acceptance) and wave 3's (intake, P-07-T50).
+DRAFTS: Final = {**ACCEPTANCE_DRAFTS, **INTAKE_DRAFTS}
+# A prepared acceptance record's answers and human-authored flags, by draft.
+PREPARED: Final = {
+    "thornbury": (THORNBURY_ANSWERS, THORNBURY_FLAGS),
+    "meridian": (MERIDIAN_ANSWERS, MERIDIAN_FLAGS),
+}
 
 
 @contextmanager
@@ -426,6 +480,7 @@ async def bootstrap_write(
     at: datetime,
     trace: str,
     write: Write,
+    on_behalf_of: UUID | None = None,
 ) -> None:
     """One owner transaction carrying the tenant, actor and business time, ending with the audit
     row the missing service would have written (the scenario loader's and the load profiles'
@@ -436,12 +491,13 @@ async def bootstrap_write(
             ("app.actor_kind", actor_kind),
             ("app.actor_id", actor_id),
             ("app.now", at.isoformat()),
+            ("app.on_behalf_of", str(on_behalf_of) if on_behalf_of is not None else ""),
         ):
             await conn.execute("SELECT set_config($1, $2, true)", name, value)
         action, target_type, target_id = await write()
         await conn.execute(
             "INSERT INTO audit_events (tenant_id, actor_kind, actor_id, action, target_type, "
-            "target_id, trace_id) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+            "target_id, trace_id, on_behalf_of_user_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
             tenant,
             actor_kind,
             actor_id,
@@ -449,6 +505,7 @@ async def bootstrap_write(
             target_type,
             target_id,
             trace,
+            on_behalf_of,
         )
 
 
@@ -1226,6 +1283,55 @@ async def _binder_created(conn: asyncpg.Connection, _: Scenario, event: Event) -
     await _bootstrap(conn, event, write)
 
 
+async def _request_drafted(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """An agent-drafted request (SHL-14 f): a Draft, Owners only, with its run and the
+    fingerprint of the wording it was drafted with. No service writes a drafted request outside
+    a procedure session's run, so it is bootstrapped with the audit row the run would write: the
+    agent, for the firm owner whose procedure session it ran in."""
+    draft = SURL_DRAFT
+    pbc = _PBC[draft.list_key]
+    engagement = engagement_id_of(BY_LABEL[pbc.engagement])
+    owner = user_id_of(_SEATS[draft.owner])
+    item = UUID(draft.id)
+
+    async def write() -> tuple[str, str, str]:
+        await conn.execute(
+            "INSERT INTO request_items (id, tenant_id, engagement_id, request_list_id, "
+            "description, title, audit_area, category_id, status, created_by, created_at, "
+            "client_visible, client_assignee_user_id, firm_owner_user_id, due_on, period_start, "
+            "period_end, drafted_by_run_id, drafted_wording_source, drafted_wording_fingerprint) "
+            "VALUES ($1, $2, $3, $4, $5, $5, $6, $7, 'draft', $8, $9, false, $10, $8, $11, $12, "
+            "$13, $14, 'template', $15) ON CONFLICT DO NOTHING",
+            item,
+            TENANT,
+            engagement,
+            UUID(pbc.id),
+            draft.title,
+            draft.category,
+            UUID(pbc.category_id(draft.category)),
+            owner,
+            event.at,
+            UUID(_PORTAL[draft.assignee].id),
+            draft.due_on,
+            draft.period[0],
+            draft.period[1],
+            UUID(draft.run_id),
+            hashlib.sha256(draft.title.encode()).hexdigest(),
+        )
+        return "request_item.created", "request_item", str(item)
+
+    await bootstrap_write(
+        conn,
+        tenant=TENANT,
+        actor_kind="agent",
+        actor_id=draft.run_id,
+        at=event.at,
+        trace=trace_hex(event),
+        write=write,
+        on_behalf_of=owner,
+    )
+
+
 # --- the portal slice (P-08-T14; DEC-213) --------------------------------------------------------
 # Branding and the host have services (`portal.api`), called in a unit of work under Grace
 # Holloway. Client users, memberships and grants have none a loader can call (granting wants a
@@ -1235,8 +1341,11 @@ async def _binder_created(conn: asyncpg.Connection, _: Scenario, event: Event) -
 
 SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     PORTAL_SLICE: PORTAL_NEEDS,
+    PORTAL_PBC_SLICE: PORTAL_PBC_NEEDS,
+    RETURNED_SLICE: PORTAL_PBC_NEEDS,  # POR-03 g's alternate path (DEC-471)
     COMPLIANCE_SLICE: COMPLIANCE_NEEDS,
     ACCEPTANCE_SLICE: ACCEPTANCE_NEEDS,
+    INTAKE_SLICE: INTAKE_NEEDS,  # P-07-T50: wave 3 (drafts, the open Harborline hit, Meridian)
     EMAIL_TEMPLATES_SLICE: (),  # R-01-T22: Grace's firm admin role is audit_core's
 }
 
@@ -1406,6 +1515,224 @@ async def _client_invitation_created(conn: asyncpg.Connection, _: Scenario, even
     await _bootstrap(conn, event, write)
 
 
+# --- the portal PBC slice (R-01-T11; DEC-348, DEC-471) ------------------------------------------
+# Titles go through `requests.api` as Marcus Delaney, with MFA just verified. DEC-471 fills what
+# no service writes for a loader: a received row's title, the list's name, delegations without a
+# grant, Claire's file in the Feld Inbox (the client-data gate refuses it: no Feld acceptance) and
+# Kevin Osei's return (ADR-005: `evidence.decide` only serves a request). Each is bootstrapped
+# with the audit row its service writes; files go through `evidence.api` (`stage_content`,
+# `add_version`) in a unit of work as the person who sent them.
+_PDF: Final = "application/pdf"
+
+
+async def _item_retitled(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    pbc = _PBC[str(event.data["list"])]
+    engagement = engagement_id_of(BY_LABEL[pbc.engagement])
+    item = UUID(pbc.request_id(int(cast(int, event.data["position"]))))
+    title = str(event.data["title"])
+    status = await conn.fetchval(
+        "SELECT status FROM request_items WHERE tenant_id = $1 AND id = $2", TENANT, item
+    )
+    if status != "received":
+        ctx = await _staff_context(conn, event)
+        await update_item(ctx, engagement, item, ItemPatch({"title": title}))
+        return
+
+    async def write() -> tuple[str, str, str]:  # DEC-471: a received request is not editable
+        await conn.execute(
+            "UPDATE request_items SET title = $3 WHERE tenant_id = $1 AND id = $2",
+            TENANT,
+            item,
+            title,
+        )
+        return "request_item.updated", "request_item", str(item)
+
+    await _bootstrap(conn, event, write)
+
+
+async def _list_named(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    pbc = _PBC[str(event.data["list"])]
+    list_id = UUID(pbc.id)
+
+    async def write() -> tuple[str, str, str]:
+        await conn.execute(
+            "UPDATE request_lists SET name = $3 WHERE tenant_id = $1 AND id = $2",
+            TENANT,
+            list_id,
+            BINDER_NAME,
+        )
+        return "request_list.updated", "request_list", str(list_id)
+
+    await _bootstrap(conn, event, write)
+
+
+async def _items_delegated(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """One organisation's delegated requests, without a grant (nobody has signed in yet)."""
+    pbc = _PBC[str(event.data["list"])]
+    engagement = engagement_id_of(BY_LABEL[pbc.engagement])
+    delegation = DELEGATION_BY_ORG[str(event.data["org"])]
+    contact = UUID(delegation.contact_id)
+    by = user_id_of(_SEATS[event.actor])
+
+    async def write() -> tuple[str, str, str]:
+        if delegation.org != KEYSTONE:  # Keystone's is Sam Ortiz's contact (`portal`)
+            client = await conn.fetchval(
+                "SELECT client_id FROM engagements WHERE tenant_id = $1 AND id = $2",
+                TENANT,
+                engagement,
+            )
+            await conn.execute(
+                "INSERT INTO contacts (id, tenant_id, client_id, display_name, "
+                "organisation_name, contact_kind, created_at) VALUES ($1, $2, $3, $4, $4, "
+                "'third_party', $5) ON CONFLICT DO NOTHING",
+                contact,
+                TENANT,
+                client,
+                delegation.org,
+                event.at,
+            )
+        for position in delegation.positions:
+            await conn.execute(
+                "INSERT INTO request_delegations (id, tenant_id, request_item_id, contact_id, "
+                "granted_by, granted_at) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING",
+                UUID(stable_id(f"delegation:{pbc.key}:{position}")),
+                TENANT,
+                UUID(pbc.request_id(position)),
+                contact,
+                by,
+                event.at,
+            )
+        return "request_item.delegated", "contact", str(contact)
+
+    await _bootstrap(conn, event, write)
+
+
+def _feld_engagement() -> UUID:
+    ret = next(r for r in RETURN_BY_LABEL.values() if r.client == "Jonah & Claire Feld")
+    return UUID(ENGAGEMENT_BY_LABEL[ret.engagement].id)
+
+
+def _feld_request(title: str) -> UUID:
+    binder = BINDER_BY_LABEL["jonah-and-claire-feld:1"]
+    position = next(n for n, r in enumerate(binder.requests, 1) if r.title == title)
+    return UUID(binder.request_id(position))
+
+
+async def _inbox_file_added(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Claire's email in the Feld Inbox, waiting to be filed (POR-03 c; DEC-471)."""
+    found = CLIENT_FILE_BY_KEY[str(event.data["file"])]
+    sender = UUID(PERSON_BY_NAME[found.sender].id)
+    content = found.content()
+    stored = await stage_content(TENANT, content)
+    file_id = UUID(stable_id(f"inbox-file:{found.key}"))
+
+    async def write() -> tuple[str, str, str]:
+        await conn.execute(
+            "INSERT INTO inbox_files (id, tenant_id, engagement_id, file_name, media_type, "
+            "size_bytes, fingerprint, storage_key, storage_version_id, uploaded_by, "
+            "uploaded_by_staff, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, "
+            "false, $11) ON CONFLICT DO NOTHING",
+            file_id,
+            TENANT,
+            _feld_engagement(),
+            found.file_name,
+            _PDF,
+            len(content),
+            stored.fingerprint,
+            stored.key,
+            stored.version_id,
+            sender,
+            event.at,
+        )
+        return "inbox_file.added", "inbox_file", str(file_id)
+
+    await bootstrap_write(
+        conn,
+        tenant=TENANT,
+        actor_kind="human",
+        actor_id=str(sender),
+        at=event.at,
+        trace=trace_hex(event),
+        write=write,
+    )
+
+
+async def _client_file_uploaded(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
+    """Claire's portal upload to a Feld request (POR-03 g; DEC-471), through `evidence.api`."""
+    found = CLIENT_FILE_BY_KEY[str(event.data["file"])]
+    sender = UUID(PERSON_BY_NAME[found.sender].id)
+    item = _feld_request(str(event.data["request"]))
+    stored = await stage_content(TENANT, found.content())
+    async with uow(TenantContext(TENANT, "human", str(sender))) as tx:
+        version = await add_version(
+            tx,
+            engagement_id=_feld_engagement(),
+            item=NewItem(title=found.file_name),
+            stored=stored,
+            media_type=_PDF,
+            provenance=Provenance(source="client_upload", method="uploaded"),
+            requested_by=sender,
+        )
+        await fulfil_by_upload(tx, request_item_id=item, evidence_version_id=version.id)
+
+
+async def _file_returned(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
+    """Kevin Osei's send-back of Claire's file (POR-03 g; DEC-471): the decision row as
+    `evidence.decide` writes it, then the request moves to returned."""
+    returned = FELD_RETURN
+    item = _feld_request(FELD_1095C_REQUEST)
+    engagement = _feld_engagement()
+    kevin = user_id_of(_SEATS[returned.by])
+    tenant = TenantContext(TENANT, "human", str(kevin))
+    version = await latest_version_of(tenant, item)
+    if version is None:
+        raise LookupError("no upload to return")
+    decision = UUID(stable_id(f"review-decision:{returned.file}"))
+    async with uow(tenant) as tx:
+        await tx.session.execute(
+            text(
+                "INSERT INTO review_decisions (id, tenant_id, engagement_id, "
+                "evidence_version_id, request_item_id, decision, reason_code, note, "
+                "corrects_proposal, actor_kind, actor_id, decision_seq, prior_item_statuses) "
+                "VALUES (:id, :tenant, :engagement, :version, :item, 'send_back', :reason, "
+                ":note, false, 'human', :actor, 1, CAST(:prior AS jsonb))"
+            ),
+            {
+                "id": decision,
+                "tenant": TENANT,
+                "engagement": engagement,
+                "version": version,
+                "item": item,
+                "reason": returned.reason_code,
+                "note": returned.note,
+                "actor": str(kevin),
+                "prior": json.dumps({str(item): "uploaded"}),
+            },
+        )
+        await move_after_review(tx, item, "returned")
+        tx.record("review_decision.created", target=Target("review_decision", decision))
+
+
+async def _engagement_files_uploaded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """The SURL request's 31 files on the Granite Peak engagement, from Luis Ferrante (DEC-471),
+    through `evidence.api` in one unit of work."""
+    luis = UUID(_PORTAL[SURL_UPLOADED_BY].id)
+    pbc = _PBC[SURL_DRAFT.list_key]
+    engagement = engagement_id_of(BY_LABEL[pbc.engagement])
+    staged = [(f.file_name, await stage_content(TENANT, f.content())) for f in SURL_FILES]
+    async with uow(TenantContext(TENANT, "human", str(luis))) as tx:
+        for name, stored in staged:
+            await add_version(
+                tx,
+                engagement_id=engagement,
+                item=NewItem(title=name),
+                stored=stored,
+                media_type=_PDF,
+                provenance=Provenance(source="client_upload", method="uploaded"),
+                requested_by=luis,
+            )
+
+
 # --- service-backed events ---------------------------------------------------------------------
 
 
@@ -1424,9 +1751,11 @@ CLIENT_KINDS: Final[dict[str, ClientKind]] = {
 _AUDIT_ENTITIES: Final = frozenset(a.entity for a in AUDITS if a.entity is not None)
 
 
-async def _client_created(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
-    """Through `organisations.api` under the relationship partner, as a person would."""
-    client: Client = _CLIENTS[str(event.client)]
+async def _client_created(_: asyncpg.Connection, scenario: Scenario, event: Event) -> None:
+    """Through `organisations.api` under the relationship partner, as a person would. A client a
+    holdout keeps in an earlier form (P-07-T50) is the scenario's, not the full roster's."""
+    kept = {c.name: c for c in scenario.clients}
+    client: Client = kept.get(str(event.client)) or _CLIENTS[str(event.client)]
     kind, actor = _actor(event)
     # F-04-T31: the ids the fixtures use (`client:<slug>` and `entityIdOf` in the TS seed), so the
     # exported fixtures and the TS seed name the same client.
@@ -1859,7 +2188,7 @@ async def _draft_created(conn: asyncpg.Connection, _: Scenario, event: Event) ->
         client_id=client,
         client_entity_id=entity,
         type_code=str(payload["type_code"]),
-        step="team_independence",
+        step=str(payload.get("step", "team_independence")),  # P-07-T50: ENG-03 a, d at step 1
         payload=body,
     )
 
@@ -1879,6 +2208,8 @@ async def _conflict_check_run(conn: asyncpg.Connection, _: Scenario, event: Even
         subject_id=subject,
         names=names,
     )
+    if data["clear"] is None:  # P-07-T50: CLI-06 h's hit, left for a person's assessment
+        return
     cleared = str(data["clear"])
     for result in check.results:
         if result.redacted or result.matched_name is None:
@@ -1903,11 +2234,13 @@ async def _prospect(conn: asyncpg.Connection, event: Event) -> UUID:
 
 async def _acceptance_prepared(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     """CLI-07b: the preparer's answers, risk rating and three flags (sources wait for the intake
-    documents; the fee section is answered, not a manual check: DEC-412)."""
+    documents; the fee section is answered, not a manual check: DEC-412); CLI-07 f's for Meridian
+    (P-07-T50)."""
     ctx = await _staff_context(conn, event)
     engagement = await _prospect(conn, event)
     rating = str(event.data["risk_rating"])
-    for n, (section, summary) in enumerate(THORNBURY_ANSWERS):
+    answers, flags = PREPARED[str(event.data["draft"])]
+    for n, (section, summary) in enumerate(answers):
         await update_answers(
             ctx,
             engagement,
@@ -1917,7 +2250,7 @@ async def _acceptance_prepared(conn: asyncpg.Connection, _: Scenario, event: Eve
             complete=True,
             risk_rating=rating if n == 0 else None,
         )
-    for severity, title, body in THORNBURY_FLAGS:
+    for severity, title, body in flags:
         await add_flag(ctx, engagement, severity=severity, title=title, body=body, sources=())
 
 
@@ -1967,6 +2300,9 @@ HANDLERS: Final[dict[str, Handler]] = {
     "engagements.tax_engagement_created": _tax_engagement_created,
     "engagements.close_engagement_created": _close_engagement_created,
     "requests.binder_created": _binder_created,
+    # P-06-T08 remainder: Granite Peak's agent-drafted SURL request, after its PBC list.
+    "requests.request_drafted": _request_drafted,
+    "evidence.engagement_files_uploaded": _engagement_files_uploaded,
     # P-08-T14 (`--slice portal`): branding before its host; people after the work items they name.
     "portal.branding_set": _branding_set,
     "portal.host_added": _host_added,
@@ -2007,6 +2343,14 @@ HANDLERS: Final[dict[str, Handler]] = {
     # R-01-T22 (`--slice email_templates`): the editor flag (above), then versions, then drafts.
     "communications.email_template_published": _email_template_published,
     "communications.email_template_draft_saved": _email_template_draft_saved,
+    # R-01-T11 (`--slice portal_pbc`): Dana's titles and binder name (DEC-348), the delegations,
+    # Claire's 9:12 AM email; `--slice portal_pbc_returned`: the 2024 upload and its return.
+    "requests.item_retitled": _item_retitled,
+    "requests.list_named": _list_named,
+    "requests.items_delegated": _items_delegated,
+    "evidence.inbox_file_added": _inbox_file_added,
+    "evidence.client_file_uploaded": _client_file_uploaded,
+    "evidence.file_returned": _file_returned,
 }
 # Within one instant the timeline orders by label; the loader orders by dependency first.
 _ORDER: Final = {kind: n for n, kind in enumerate(HANDLERS)}

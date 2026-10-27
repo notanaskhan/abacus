@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C3 in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | stub. Part 1 (sign-offs, review notes, human gates) is P-04-T07. Part 2 (decision cards, proposals, suggestions) is P-04-T08. Part 3 (issues and fix instructions, checkpoints, field provenance) is P-04-T11, an additive extension of the schema |
+| Status | live; services v1 **frozen 2026-10-27** (P-04-T27, DEC-606: `backend/tests/contracts/review_grammar/v1.json`). Stubs: part 1 (sign-offs, review notes, human gates) is P-04-T07. Part 2 (decision cards, proposals, suggestions) is P-04-T08. Part 3 (issues and fix instructions, checkpoints, field provenance) is P-04-T11, an additive extension of the schema |
 | Provider epic | P-04 (`review` module; `agents` for suggestions and proposals, ADR-161) |
 | Consumers | SHL-09, SHL-10, SHL-11, SHL-12, SHL-15, SHL-16 (P-04 UI); AUD-17 (A-06); HOME-01/02 (I-01); A-04, A-05, A-07, T-01, T-02, T-04, C-01, C-02, K-03, K-04 |
 | Freeze sprint | Schema S3: recorded frozen by Fri Dec 11, 2026 (P-04-T09). Services S12: Fri Apr 16, 2027 (P-04-T27) |
@@ -44,6 +44,16 @@ The SPEC-313 routes under `/v1/engagements/{engagement_id}/review-notes` stay li
 
 **Live (P-04-T23; DEC-502, DEC-503).** The decision-card routes are served by `review.decisions`. A card is raised only through `review.api.raise_decision_card` (`decision_card.raise`, the agent through `task_scope`); its options are the kind's provider's, computed in code. `version_no` on a card is its newest history number (v1 proposed, then decided, then each reassessment), and `seen_version` must equal it. Decide answers, in order: 403 outside the reserved role and person; 403 `mfa_required` `{max_age_s}` without a recent second factor (`decision.decide` holds `mfa_recent`; a kind may tighten the 900 s window, DEC-505); 409 `decision_card_state` once decided or superseded; 409 `recommendation_changed`; 422 `decision_invalid` for an unknown option or factor; 422 `rationale_required`. Reassess records No change as a new version with the provider's figures, or raises a superseding card whose first version is the reassessment; on a decided card it is the reserved person's act with a fresh factor (DEC-505). The database holds the note and card status transitions (0213, DEC-506). Notify is a `mention` to the named person (409 `decision_card_state` when nobody is named or the card is not awaiting); an analysis request is sealed. A rationale read is an access event.
 
+**Live (P-04-T24, T25; DEC-600 to DEC-604, DEC-607, DEC-608).** The proposal and suggestion routes are served by `agents.proposals` and, for a typed ref, `agents.proposal_adapters`; Undo still answers 501 until P-04-T29, so `decision.undo_until` stays null.
+- **Callers.** The agent creates proposals and suggestions only through `agents.api.create_proposal` and `create_suggestion` (`proposal.create`, `suggestion.create`: its own engagement, through `task_scope`). A `field_change_set` proposal holds one suggestion per row, and code marks a row `unsupported` unless every citation it claims is verified on the engagement now (C4: verified, shown, and never moved, broken or relinked; `evidence.api.supported_citations`). A threshold evaluation may name the approver (`policy_eval.routed_to_user_id`), who is told (`proposal_routed`, agent-originated).
+- **Approve** answers, in order: 403 for anything but a live person (agent, system, client principal, support); the matrix row; 409 `proposal_changed` `{version}` when the proposal is not pending or `seen_version` is not its version; 403 `forbidden` `{routed_to}` when the policy routed it to someone else; 422 `proposal_invalid` for an edit on an unknown row, twice on one row, without a citation note or not reading in the row's type; 422 `uncited_change` `{count, row}` (the first unsupported row, re-verified now) unless the person edited that row with a citation note; 503 when no owner is registered to write a row. One `proposal_decisions` row (`approved`, or `approved_with_edits` with the edited values), one `suggestion_decisions` row per pending row (`adopted`, or `edited` with the sealed citation note), and one field value per row through the target owner's applier (`agents.api.register_suggestion_applier`), which writes `field_value_versions` through `review.api.record_value`: cause `suggestion_adopted` and source `agent_suggested`, or cause `edit` and source `human` with the note, linked to the proposal's `checkpoint_id`. A kind other than `field_change_set` goes to its own `register_change_set_applier`. Audited `proposal.approved` / `proposal.approved_with_edits` ("Proposal approved by Samuel Ito"); outbox `proposal.decided`.
+- **Reject** takes a reason code (`other` needs a note, sealed); its pending suggestions are dismissed with that reason and no field is written. **Route** names another person who may approve on the engagement (422 `proposal_invalid` for oneself or anyone else); the proposal stays pending, its version moves and the approver is told. **Follow-up** records a sealed note for the run (P-10 delivers it) and changes nothing else. Each is audited (`proposal.rejected`, `.routed`, `.follow_up_recorded`).
+- **Suggestions.** Adopt as proposed (422 `uncited_change` `{count}` unless its citations verify now) or with `edited_value` and a citation note (decision `edited`; an edit without a note is 422 `proposal_invalid`); dismiss with an optional reason. 409 `suggestion_changed` on a stale `seen_version` or a suggestion no longer pending; a change set's suggestion is decided with its proposal (422 `proposal_invalid`). 503 with no applier. Audited `suggestion.adopted` / `.edited` / `.dismissed`; outbox `suggestion.resolved`.
+- **Typed adapters (P-04-T25).** `GET /v1/proposals/screening_result:<id>`, `upload_review:<id>` and `inbox_match:<id>` project the specialists' own rows (never migrated) with the citations C4 verified on their anchors; `version` is 1 and `state` comes from the file (pending while undecided and newest; `approved` or `rejected` from its standing review decision; `superseded` otherwise). Approve and reject take the same ref (DEC-600). A screening result or an upload review is approved through AUD-03's Accept, `evidence.api.decide(..., "accept", seen_proposal=<the screener's latest result>)`, so the same `review_decisions` row is written and the request reads "Received"; it is rejected through Send back with the reason mapped to a platform code (`needs_client_input` -> `incomplete`, `unsupported_value` -> `does_not_agree`, `wrong_treatment` and `other` -> `other`, which needs the note; DEC-603). An inbox match is approved by assigning the file to the matcher's first shown request (a followed `matcher` suggestion); a rejection is audited (`proposal.rejected` on the match) and the file keeps waiting. A typed approve takes no edits (422). A run in shadow, or a firm whose stage for that agent is shadow, shows no proposal: 404 for every route (DEC-608). The response's `decision` names the person and the row the owner wrote.
+- **Security review fixes (DEC-609).** The threshold policy is the server's, evaluated at create by the kind's registered `ThresholdPolicy` (none is registered before K-02) and again on edited values; under `review_required` only the policy's named approver or a person it covers approves, never the run's preparer, and a route goes only to such a person who also holds `proposal.decide_change_set`. A generic change set is approved, rejected and routed to only by holders of `proposal.decide_change_set` (staff's evidence firm setting reaches the typed adapters alone). Field versions keep only the citations C4 verifies; every target is the engagement's, as its owner says (422 `proposal_invalid` `{field: target_id}`). Follow-up requires an `Idempotency-Key` header (a retry with the same key and body records nothing again; the same key with another body is 422 `idempotency_key_reused`). A rejected inbox match is stored (`inbox_match_decisions`, 0232) and reads `rejected` with its reason and note; a second verdict is 409 `proposal_changed`.
+- **Re-review fixes (DEC-609 round 2).** The threshold is evaluated again on every approval and adoption, against the target owner's current value (review's field-owner slot, never the agent's `before`), and the stored and current evaluations must both pass; a value over the limit is never a standalone suggestion (422 `proposal_invalid` `{field: threshold}`) and adopting one made before the limit tightened is held to the same named-approver and preparer rules; a policy never routes to the run's preparer. A generic proposal or suggestion from a shadow run, or in a firm whose stage for the agent is shadow, is 404 (ED-171). No owner to write answers 503 `{"detail": "service_unavailable"}` (ED-170).
+- **The data layer (0230, 0231).** The app changes a proposal or a suggestion only as a person, and moves its state only with that person's decision row written in the same transaction (a routing only with its `routed` row); `decided_by` is the transaction's actor on both decision tables. The verdicts are on the human-only audit list.
+
 Part 2 (P-04-T08) has the same flag and the same 404 and 501 behaviour. The services land in P-04-T23 (decision cards), P-04-T24 (proposals and suggestions) and P-04-T29 (Undo). Decision cards are `review`'s. Proposals and suggestions are `agents`' (ADR-161), and their matrix rows are in `agents.yaml`.
 
 | Operation | Method and path | Matrix action | Roles allowed | Agent or system principal |
@@ -58,7 +68,7 @@ Part 2 (P-04-T08) has the same flag and the same 404 and 501 behaviour. The serv
 | Approve, or approve with edits | `POST /v1/proposals/{proposal_id}/approve` | `proposal.approve` | engagement partner, manager, senior; staff by `firm_setting(staff_can_accept_evidence)` (DEC-37) | denied at every layer |
 | Reject | `POST /v1/proposals/{proposal_id}/reject` | `proposal.reject` | as approve | denied |
 | Route to an approver | `POST /v1/proposals/{proposal_id}/route` | `proposal.route` | engagement partner, manager, senior | denied |
-| Ask follow-up | `POST /v1/proposals/{proposal_id}/follow-up` | `proposal.follow_up` | engagement partner, manager, senior, staff | denied |
+| Ask follow-up | `POST /v1/proposals/{proposal_id}/follow-up` with `Idempotency-Key` | `proposal.follow_up` | engagement partner, manager, senior, staff | denied |
 | Undo | `POST /v1/proposals/{proposal_id}/undo` | `proposal.undo` | as approve; only the decider, inside 10 s (service) | denied |
 | Adopt or dismiss a suggestion | `POST /v1/suggestions/{suggestion_id}/adopt`, `.../dismiss` | `suggestion.resolve` (existing; conditions extended: `system: deny`, `independence: required`) | engagement partner, manager, senior | denied |
 | Create a proposal (no route) | `agents.api.create_proposal` | `proposal.create` | none | agent: `task_scope` |
@@ -299,7 +309,7 @@ Part 2 adds more resolution actions, each denying `agent` and `system` at the ma
 
 The agent holds only `proposal.create` and the existing `suggestion.create`, both through `task_scope`. Decision cards are raised through `review.api.raise_decision_card`.
 
-The data layer adds the human-only CHECKs on `decisions`, `proposal_decisions` and `suggestion_decisions` (migrations 0094 and 0095), the 10-second Undo trigger, and the `DECISION-001` and `PROPOSAL-001` static rules (P-04-T23, T24). The agent is only ever "Recommended by Accrued Agent" or "proposed by Accrued Agent", never the decider or approver.
+The data layer adds the human-only CHECKs on `decisions`, `proposal_decisions` and `suggestion_decisions` (migrations 0094 and 0095), the 10-second Undo trigger, the state guards on `proposals` and `suggestions` (0230), the human-only audit list (`decision.decided` and `.reassessed`, 0212; `proposal.approved`, `.approved_with_edits`, `.rejected`, `.routed` and `suggestion.adopted`, `.edited`, `.dismissed`, 0231), and the `DECISION-001` and `PROPOSAL-001` static rules (P-04-T23, T24). `PROPOSAL-001` names `agents/proposals.py`, `agents/proposal_adapters.py` and `agents/contract.py` as the only files reaching `approve_proposal`, `reject_proposal`, `route_proposal`, `adopt_suggestion` and `dismiss_suggestion`; `REVIEW-001` names `evidence/api.py` and `agents/proposal_adapters.py` beside the evidence routes (DEC-604). The agent is only ever "Recommended by Accrued Agent" or "proposed by Accrued Agent", never the decider or approver.
 
 
 Part 3 adds more actions that deny `agent` and `system` at the matrix:
@@ -340,8 +350,11 @@ Part 2:
 | 409 | `{"detail": "recommendation_changed"}` | decide or reassess on a stale card version |
 | 403 | `{"detail": "mfa_required", "facts": {"max_age_s": 900}}` | the kind requires recent MFA (through `ConfirmItsYou`) |
 | 403 | `{"detail": "forbidden"}` | a decide by anyone outside the card's reserved role |
-| 409 | `{"detail": "proposal_changed"}` | approve, reject or route on a stale `seen_version` (existing evidence semantics) |
-| 422 | `{"detail": "uncited_change", "facts": {"rows": [5]}}` | approve while a row has no verified citation |
+| 409 | `{"detail": "proposal_changed", "facts": {"version": 2}}` | approve, reject or route on a stale `seen_version`, or a proposal no longer pending (existing evidence semantics) |
+| 422 | `{"detail": "uncited_change", "facts": {"count": 1, "row": 5}}` | approve while a row has no verified citation; facts are identifiers only (ADR-139), so the count and the first row, and the projection's `unsupported` flags name every row (DEC-602) |
+| 422 | `{"detail": "proposal_invalid", "facts": {"field": "edits"}}` | an edit, approver, reason, note or follow-up the proposal can't take |
+| 409 | `{"detail": "suggestion_changed", "facts": {"version": 2}}` | adopt or dismiss on a stale `seen_version`, or a suggestion no longer pending |
+| 503 | `{"detail": "service_unavailable"}` | no owner registered to write a row's value (fail closed, before anything is written) |
 | 403 | `{"detail": "forbidden", "facts": {"routed_to": "<user id>"}}` | approve above the viewer's threshold limit |
 | 409 | `{"detail": "undo_window_closed"}` | Undo after 10 s or by another person |
 | 409 | `{"detail": "effect_started"}` | Undo after the held effect started |
@@ -378,7 +391,21 @@ Bulk fix-instruction items carry `issue_changed`, `fix_runner_unavailable` or `l
 | `checkpoint.proposed`, `.created`, `.approved`, `.rejected`, `.restored`, `.renamed` (audit); `checkpoint.created`, `.approved`, `.rejected`, `.restored` (outbox) | each checkpoint event; `checkpoint.approved` carries the amount deltas (DEC-85) | checkpoint id, target, decision id, delta facts |
 | `field.value_edited`, `.reference_added` (audit); `field.value_recorded` (outbox); a tick writes `sign_off.recorded` | each field write | target, field key, seq |
 
-Reads of sealed note bodies, decision rationales and issue texts are access events (Q-02 `access_events`). The notification kinds come from P-04-T26 (C16): `sign_off_requested`, `sign_off_stale`, `review_note_raised`, `decision_assigned` and `proposal_routed`.
+Reads of sealed note bodies, decision rationales, proposal notes and issue texts are access events (Q-02 `access_events`).
+
+**Notification kinds (P-04-T26, C16; DEC-605).** Seven kinds in the Approvals category, each read at read time from its subject's owner (`kernel.subject_states`: identifier-only facts, and whether the subject still waits on the reader, which puts the row in the Approvals tab). Email text is database content (`notification.<kind>`), never committed.
+
+| Kind | Event | Recipients | Subject (facts) |
+|---|---|---|---|
+| `sign_off_stale` | `sign_off.went_stale` | the signer | `sign_off` (`level`, `target_type`); pending while newest at its level and stale |
+| `review_note_raised` | `review_note.raised` | the assignee, else the target's preparers | `reviewable_note` (`status`, `target_type`) |
+| `decision_assigned` | `decision_card.raised` | the reserved person, else the role's holders | `decision_card` (`card_kind`, `status`, `version_no`) |
+| `proposal_routed` | `proposal.routed` | the named approver, never the router | `proposal` (`proposal_kind`, `state`, `version`) |
+| `sign_off_requested` | `sign_off.requested` | the people the owner names | `reviewable` |
+| `issue_assigned` | `issue.assigned` (P-04-T30 emits it) | the assignee | `issue` |
+| `import_pending_approval` | `checkpoint.created` with `author_kind = 'import'` (P-04-T32) | the return's reviewers the owner names | `checkpoint` |
+
+Codes are undotted and pass 0090's kind CHECK; fan-out is once per recipient (redelivery writes nothing) and re-checks walls, and read time checks them again. `proposal_routed` is agent-originated (no inline action); a row reads as the person when the event names one (Raj routed it), and as the agent's when the threshold evaluation routed it at creation.
 
 ## 8. Example payloads
 Brightwater Hale E0: Northwind Robotics 401(k) Plan, PY2025, Mon Sep 14, 2026, 9:41 AM CT. Viewer Hannah Leclerc. Ids are placeholders, and the seed fixes them when P-04-T36 loads the scenario.
@@ -557,7 +584,7 @@ Errors:
 ```json
 {"n": 5, "label": "Sch A line 5b Real estate taxes (co-op share)", "before": null, "after": "18240", "cause": null, "citation_ids": [], "unsupported": true}
 ```
-Approve answers `422 {"detail": "uncited_change", "facts": {"rows": [5]}}` until the row is removed or cited.
+Approve answers `422 {"detail": "uncited_change", "facts": {"count": 1, "row": 5}}` until the row is removed or cited (or the person edits it with a citation note: "Approve with edits").
 
 **SHL-10 d. Over threshold** (Copperleaf, viewer Raj Malhotra). AJE-05 is 12,600.00 + 1,480.00 + 820.00 = 14,900.00. Its policy is:
 ```json
@@ -770,7 +797,7 @@ P-04-T09 (2026-10-22). Both suites run in the provider's stage 2 (`make check`: 
   - The figures foot as `Decimal`: Trial Balance v1 14 of 14 cited; Northwind materiality 168,100 / 252,200 / PM 189,150 / CT 12,610 and v3 252,900 ($700); Feld K-1 net change 0; AJE-05 14,900.00.
 - `apps/web/src/fixtures/contracts/review-grammar.test.ts` (vitest): one frame per artboard, typed with the generated client and checked against `openapi.json` at run time; figures foot in bigint.
 - Unique names: the operation ids and the C3 component names (`AgentProposalOut`, `AgentSuggestionOut`, `ReviewNoteDetailOut`, `CardDecisionOut`, `CardDecideIn`, TASK-422) are asserted, so a collision cannot rename a frozen type again (#284).
-- #285 (decision-card figures and the agent's reasons are Restricted) was fixed before the freeze (`199c1ede`); its strict xfail is gone. v1 was frozen on 2026-10-27 (`backend/tests/contracts/review_grammar/v1.json`).
+- One strict xfail, to clear before the freeze: #285 (decision-card figures and the agent's reasons should be Restricted).
 
 Part 3 (P-04-T12, 2026-10-23), in the same two suites:
 
@@ -799,7 +826,7 @@ Additive changes go in place. Breaking changes ship as v2 with one sprint of ove
 
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
-| v1 | 2026-10-27 | | 2026-10-22: part 1 stub (P-04-T07): sign-offs, review notes and human gates. 2026-10-22: part 2 stub (P-04-T08): decision cards (`review`), proposals and suggestions (`agents`). 2026-10-22: consumer tests (P-04-T09); the schema freeze is scheduled for Fri Dec 11, 2026 with them as the gate. 2026-10-23: part 3 stub (P-04-T11): issues and fix instructions, checkpoints and field provenance, additive (new models and routes beside the old; no part 1 or 2 shape changed). 2026-10-23: part 3 consumer tests (P-04-T12); the QC `reviewer` cells on part 3 writes were narrowed (DEC-145) |
+| v1 | 2026-10-27 (services, P-04-T27; due Fri Apr 16, 2027) | | 2026-10-22: part 1 stub (P-04-T07): sign-offs, review notes and human gates. 2026-10-22: part 2 stub (P-04-T08): decision cards (`review`), proposals and suggestions (`agents`). 2026-10-22: consumer tests (P-04-T09); the schema freeze is scheduled for Fri Dec 11, 2026 with them as the gate. 2026-10-23: part 3 stub (P-04-T11): issues and fix instructions, checkpoints and field provenance, additive (new models and routes beside the old; no part 1 or 2 shape changed). 2026-10-23: part 3 consumer tests (P-04-T12); the QC `reviewer` cells on part 3 writes were narrowed (DEC-145). 2026-10-27: services frozen (P-04-T27, DEC-606): proposals, suggestions and the typed adapters live (P-04-T24, T25), the approve and reject path parameter takes a typed ref (additive: a UUID still matches), `uncited_change` facts are `{count, row}`; the snapshot is `review_grammar/v1.json` |
 
 ## 11. Open points
 - **Level actions.** The level actions keep their SPEC-308 names rather than `sign_off.l1` to `l5` (DEC-135).
@@ -808,7 +835,9 @@ Additive changes go in place. Breaking changes ship as v2 with one sprint of ove
 - **Flag expiry.** `review.grammar_api` was renewed on 2026-10-23 to expire 2027-04-21 under DEC-137 (F-03-T37), after the Jan 1 to Apr 20 window. Part 3 reuses it, so it covers every C3 route.
 - **Part 2 module split.** Decision cards are `review`'s (`review/contract.py`, `review.yaml`). Proposals and suggestions are `agents`' (`agents/contract.py`, `agents.yaml`), per ADR-160 clause 1 and ADR-161. One flag, `review.grammar_api`, covers both, and the agents routes read it from the kernel flag registry.
 - **`proposal.create`.** It is added for the agent through `task_scope` (as `suggestion.create`), for `agents.api.create_proposal`. `decision_card.raise` arrives with its service function in P-04-T23.
-- **Human-only audit register (Q-02-T17).** `decision.decided`, `proposal.approved` and `suggestion.adopted` join `docs/architecture/human-only-actions.yaml` with their services (P-04-T23, T24). That change needs its migration.
+- **Human-only audit register (Q-02-T17).** `decision.decided` and `.reassessed` joined with 0212 (P-04-T23); the proposal and suggestion verdicts with 0231 (P-04-T24).
+- **Generic proposals and Home.** The typed tables project into `human_gates` (P-04-T16); a generic proposal does not yet (its gate source needs C13's subscribed events). Its routed approver is told through `proposal_routed` meanwhile.
+- **Typed adapters' history.** A typed proposal's verdict lives in its owner's row (the review decision, the inbox assignment) or, for a rejected match, in its audit event; `GET` shows the state but not that decision, and `totals` and `context_label` are empty for every kind until the owners provide them.
 - **Part 3 matrix (DEC-145).** The rows carry role cells now. The reviewer and preparer function conditions arrive with P-04-T15, because a condition only narrows a row (DEC-132). None of the part 3 rows is marked `independence: required`: the plan names independence only for the sign-off levels, and SHL-15 and SHL-16 are mostly tax returns, where it does not apply. P-04-T15 revisits this for attest targets with the generated tests.
 - **Part 3 lists.** Issue titles are sealed and Restricted, so `GET /v1/issues` rows carry no title. The queue screens (TAX-06, TXP-10, AUD-15) read the detail, or ask their own contract for a queue read. A checkpoint's summary may carry return figures, so the checkpoints of one target are a history read (`CheckpointHistoryOut`), not the list envelope.
 - **Explain.** `POST /v1/issues/{issue_id}/explanations` (`issue.explain`) is added beyond the plan's table for SHL-15 d. It answers `fix_runner_unavailable` when no runner is registered, because the fix runner slot also explains.

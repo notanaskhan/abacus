@@ -24,6 +24,21 @@ import {
   OPENS as ADM03_OPENS,
   scenarios as adm03Scenarios,
 } from "./ADM-03/scenarios";
+import { ADM06 } from "./ADM-06";
+import {
+  type Adm06State,
+  STATES as ADM06_STATES,
+  ENTERPRISE as ADM06_ENTERPRISE,
+  OPENS as ADM06_OPENS,
+  scenarios as adm06Scenarios,
+} from "./ADM-06/scenarios";
+import { ADM07 } from "./ADM-07";
+import {
+  type Adm07State,
+  STATES as ADM07_STATES,
+  OPENS as ADM07_OPENS,
+  scenarios as adm07Scenarios,
+} from "./ADM-07/scenarios";
 import { BindersIndex } from "./BND-01";
 import {
   STATES as BND01_STATES,
@@ -79,6 +94,20 @@ import {
   STATES as CLI08_STATES,
   scenarios as cli08Scenarios,
 } from "./CLI-08/scenarios";
+import { HOME01 } from "./HOME-01";
+import {
+  type Home01State,
+  OFFICE as HOME01_OFFICE,
+  STATES as HOME01_STATES,
+  scenarios as home01Scenarios,
+} from "./HOME-01/scenarios";
+import { KNW01 } from "./KNW-01";
+import {
+  type Knw01State,
+  OPENS as KNW01_OPENS,
+  STATES as KNW01_STATES,
+  scenarios as knw01Scenarios,
+} from "./KNW-01/scenarios";
 import { AuditsIndex } from "./AUD-01";
 import {
   STATES as AUD01_STATES,
@@ -503,6 +532,111 @@ function Adm03Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("ADM-03", { title: "Offices, teams, walls & offshore", Component: Adm03Artboard });
 
+/** A state's opening search (`?export=history`) as the screen's search object. */
+function searchOf(query: string): Record<string, string> {
+  return Object.fromEntries(new URLSearchParams(query.replace(/^\?/, "")).entries());
+}
+
+// ADM-06 a–j (G-02-T16; G-02-T21 screen spec): Security on the T12 frame; each state opens with its
+// search, and i and j pass revision R2's fixture-only rows (the route never does).
+function Adm06Frame({ state }: { state: Adm06State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/settings/security" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  const [search, setSearch] = useState(() => searchOf(ADM06_OPENS[state]));
+  const enterprise = ADM06_ENTERPRISE[state];
+  return (
+    <div data-artboard={state}>
+      <AppShell
+        frame
+        height={860}
+        toolbar={{ ...bar.toolbar, active: "", firmPressed: true }}
+        overlay={bar.overlay}
+      >
+        <ADM06
+          search={search}
+          onSearch={(next) => {
+            setSearch({ ...next });
+          }}
+          {...(enterprise === undefined ? {} : { enterprise })}
+        />
+      </AppShell>
+    </div>
+  );
+}
+
+function Adm06Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Adm06State = ADM06_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      adm06Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Adm06Frame key={state} state={state} /> : null;
+}
+
+registerScreen("ADM-06", { title: "Security center & data residency", Component: Adm06Artboard });
+
+// ADM-07 a–g (G-02-T13; G-02-T21 screen spec): the audit log on the T12 frame; each state opens
+// with its search.
+function Adm07Frame({ state }: { state: Adm07State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/settings/audit-log" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  const [search, setSearch] = useState(() => searchOf(ADM07_OPENS[state]));
+  return (
+    <div data-artboard={state}>
+      <AppShell
+        frame
+        height={860}
+        toolbar={{ ...bar.toolbar, active: "", firmPressed: true }}
+        overlay={bar.overlay}
+      >
+        <ADM07
+          search={search}
+          onSearch={(next) => {
+            setSearch({ ...next });
+          }}
+        />
+      </AppShell>
+    </div>
+  );
+}
+
+function Adm07Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Adm07State = ADM07_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      adm07Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Adm07Frame key={state} state={state} /> : null;
+}
+
+registerScreen("ADM-07", { title: "Audit log explorer", Component: Adm07Artboard });
+
 function Cli01Frame({ state }: { state: Cli01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
   const bar = useFirmToolbar({
@@ -612,6 +746,74 @@ function Aud01Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("AUD-01", { title: "Audits index · All Audits", Component: Aud01Artboard });
+
+function Home01Frame({ state }: { state: Home01State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/home" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <HOME01 toolbar={bar.toolbar} height={860} initialOffice={HOME01_OFFICE[state] ?? null} />
+    </div>
+  );
+}
+
+function Home01Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Home01State = HOME01_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      home01Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Home01Frame key={state} state={state} /> : null;
+}
+
+registerScreen("HOME-01", { title: "Home dashboard", Component: Home01Artboard });
+
+function Knw01Frame({ state }: { state: Knw01State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/knowledge" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <KNW01 toolbar={bar.toolbar} height={860} initial={KNW01_OPENS[state]} />
+    </div>
+  );
+}
+
+function Knw01Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Knw01State = KNW01_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      knw01Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Knw01Frame key={state} state={state} /> : null;
+}
+
+registerScreen("KNW-01", { title: "Knowledge library", Component: Knw01Artboard });
 
 function Aud02Frame({ state }: { state: Aud02State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";

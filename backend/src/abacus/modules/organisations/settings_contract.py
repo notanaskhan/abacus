@@ -2,9 +2,9 @@
 live since G-01-T08; ADR-139, P-36). Contract: `docs/contracts/firm-settings.md`; the identity
 half is `identity/settings_contract.py`.
 
-Behind `firm_settings.v2`: off, every route here answers 404. Offices and teams are filters and
-review pools, never an access boundary (DEC-30): no value here takes part in an authorisation
-decision. The service is `org_structure.py`.
+Live for every firm (`firm_settings.v2` retired by G-01-T17, DEC-594). Offices and teams are
+filters and review pools, never an access boundary (DEC-30): no value here takes part in an
+authorisation decision. The service is `org_structure.py`.
 """
 
 from __future__ import annotations
@@ -18,11 +18,8 @@ from fastapi import Depends
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import text
 
-from abacus.kernel._flags import FIRM_SETTINGS_V2
 from abacus.kernel.classification import classified
 from abacus.kernel.db import tenant_session
-from abacus.kernel.errors import NotFound
-from abacus.kernel.flags import flag_enabled
 from abacus.kernel.text import SingleLineText
 from abacus.modules.identity.api import (
     AbacusRouter,
@@ -148,11 +145,6 @@ class SeasonalAccessEndsOut(BaseModel):
     members: Annotated[int, classified("internal")]
 
 
-async def _gate(ctx: AuthContext) -> None:
-    if not await flag_enabled(ctx.tenant, FIRM_SETTINGS_V2):
-        raise NotFound("firm_settings.v2")
-
-
 def _office_out(view: org_structure.OfficeView) -> FirmOfficeOut:
     return FirmOfficeOut.model_validate(asdict(view))
 
@@ -177,7 +169,6 @@ org_settings_router = AbacusRouter(prefix="/v1/firm", tags=["firm-settings"])
 )
 async def offices_route(ctx: Ctx) -> list[FirmOfficeOut]:
     """ADM-03a: the HQ first, then by name, with derived seats and registered facts."""
-    await _gate(ctx)
     return [_office_out(o) for o in await org_structure.list_offices(ctx)]
 
 
@@ -190,7 +181,6 @@ async def offices_route(ctx: Ctx) -> list[FirmOfficeOut]:
 )
 async def create_office_route(body: FirmOfficeIn, ctx: Ctx) -> FirmOfficeOut:
     """Fresh MFA."""
-    await _gate(ctx)
     return _office_out(await org_structure.create_office(ctx, _office_values(body)))
 
 
@@ -201,7 +191,6 @@ async def create_office_route(body: FirmOfficeIn, ctx: Ctx) -> FirmOfficeOut:
     errors=(409,),
 )
 async def update_office_route(office_id: UUID, body: FirmOfficeIn, ctx: Ctx) -> FirmOfficeOut:
-    await _gate(ctx)
     return _office_out(
         await org_structure.update_office(ctx, office_id, body.version, _office_values(body))
     )
@@ -209,7 +198,6 @@ async def update_office_route(office_id: UUID, body: FirmOfficeIn, ctx: Ctx) -> 
 
 @org_settings_router.get("/teams", action="org_structure.read", response_model=list[FirmTeamOut])
 async def teams_route(ctx: Ctx) -> list[FirmTeamOut]:
-    await _gate(ctx)
     return [_team_out(t) for t in await org_structure.list_teams(ctx)]
 
 
@@ -221,7 +209,6 @@ async def teams_route(ctx: Ctx) -> list[FirmTeamOut]:
     errors=(409,),
 )
 async def create_team_route(body: FirmTeamIn, ctx: Ctx) -> FirmTeamOut:
-    await _gate(ctx)
     return _team_out(await org_structure.create_team(ctx, _team_values(body)))
 
 
@@ -229,7 +216,6 @@ async def create_team_route(body: FirmTeamIn, ctx: Ctx) -> FirmTeamOut:
     "/teams/{team_id}", action="org_structure.manage", response_model=FirmTeamOut, errors=(409,)
 )
 async def update_team_route(team_id: UUID, body: FirmTeamIn, ctx: Ctx) -> FirmTeamOut:
-    await _gate(ctx)
     return _team_out(
         await org_structure.update_team(ctx, team_id, body.version, _team_values(body))
     )
@@ -239,7 +225,6 @@ async def update_team_route(team_id: UUID, body: FirmTeamIn, ctx: Ctx) -> FirmTe
     "/teams/{team_id}/members", action="org_structure.manage", response_model=FirmTeamOut
 )
 async def set_team_members_route(team_id: UUID, body: FirmTeamMembersIn, ctx: Ctx) -> FirmTeamOut:
-    await _gate(ctx)
     return _team_out(await org_structure.set_team_members(ctx, team_id, list(body.member_ids)))
 
 
@@ -252,7 +237,6 @@ async def set_seasonal_access_ends_route(
     body: SeasonalAccessEndsIn, ctx: Ctx
 ) -> SeasonalAccessEndsOut:
     """Fresh MFA; one audit row per seasonal member."""
-    await _gate(ctx)
     done = await org_structure.set_seasonal_group_date(ctx, body.access_ends_on)
     return SeasonalAccessEndsOut(access_ends_on=done.access_ends_on, members=done.members)
 

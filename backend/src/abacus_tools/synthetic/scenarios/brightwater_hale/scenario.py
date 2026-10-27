@@ -10,14 +10,18 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from typing import Final
 
 from abacus_tools.synthetic.scenarios.brightwater_hale.audits import audit_events
-from abacus_tools.synthetic.scenarios.brightwater_hale.clients import Client, build_clients
+from abacus_tools.synthetic.scenarios.brightwater_hale.clients import (
+    Client,
+    build_clients,
+    slug_of_client,
+)
 from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import CT, Snapshot, snapshot
-from abacus_tools.synthetic.scenarios.brightwater_hale.holdouts import held_out
+from abacus_tools.synthetic.scenarios.brightwater_hale.holdouts import held_out, replacements
 from abacus_tools.synthetic.scenarios.brightwater_hale.people import (
     FIRM_NAME,
     FIRM_ROLES,
@@ -59,19 +63,20 @@ def _audit_core() -> list[Event]:
         )
         for s in SEATS
     ]
-    events += [
-        Event(
-            f"client:{c.slug}",
-            SETUP_AT,
-            "organisations.client_created",
-            c.partner,
-            "audit_core",
-            {"kind": c.kind, "office": c.office, "entities": list(c.entities)},
-            client=c.name,
-        )
-        for c in build_clients()
-    ]
+    events += [_client_created(c) for c in build_clients()]
     return events + audit_events(SETUP_AT)
+
+
+def _client_created(c: Client) -> Event:
+    return Event(
+        f"client:{c.slug}",
+        SETUP_AT,
+        "organisations.client_created",
+        c.partner,
+        "audit_core",
+        {"kind": c.kind, "office": c.office, "entities": list(c.entities)},
+        client=c.name,
+    )
 
 
 @dataclass(frozen=True)
@@ -113,12 +118,28 @@ def build(
     """The scenario at a named snapshot, less the holdouts, with the given slices' events."""
     when = snapshot(at)
     out = held_out(holdouts)
-    clients = tuple(c for c in build_clients() if c.name not in out)
+    earlier = replacements(holdouts)
+    clients: list[Client] = []
+    for c in build_clients():
+        if c.name in earlier:
+            name, entities = earlier[c.name]
+            kind = "individual" if c.kind == "estate" else c.kind
+            clients.append(
+                replace(c, slug=slug_of_client(name), name=name, kind=kind, entities=entities)
+            )
+        elif c.name not in out:
+            clients.append(c)
+    kept = [c for c in clients if c.name in {n for n, _ in earlier.values()}]
     events = ordered(
-        e
-        for name in slices
-        for e in slice_events(name)
-        if e.at <= when.at and (e.client is None or e.client not in out)
+        [
+            e
+            for name in slices
+            for e in slice_events(name)
+            if e.at <= when.at
+            and (e.client is None or e.client not in out)
+            and e.data.get("holdout") in (None, *holdouts)
+        ]
+        + [_client_created(c) for c in kept if "audit_core" in slices]
     )
     return Scenario(
         SCENARIO_VERSION,
@@ -128,6 +149,6 @@ def build(
         FIRM_NAME,
         OFFICES,
         SEATS,
-        clients,
+        tuple(clients),
         tuple(events),
     )

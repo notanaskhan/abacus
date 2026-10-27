@@ -49,6 +49,11 @@ from abacus.kernel.listing import (
     query_hash,
 )
 from abacus.kernel.logging import get_logger
+from abacus.modules.assurance.external_models import (
+    external_archives_by_item,
+    external_releases_by_item,
+    firm_tool_ref,
+)
 from abacus.modules.assurance.sections import (
     IndexTag,
     RunSummary,
@@ -369,8 +374,20 @@ async def audits_index(
         ctx.tenant, [r.work_item_id for r in page if r.engagement_id in readable]
     )
     tags = await _tags(ctx, page, readable)
+    recorded, refs = await _external_records(
+        ctx, ids, [r.work_item_id for r in page if r.engagement_id in readable]
+    )
     items = [
-        _row(r, now, leads.get(r.engagement_id, {}), pbc.get(r.work_item_id), runs, tags)
+        _row(
+            r,
+            now,
+            leads.get(r.engagement_id, {}),
+            pbc.get(r.work_item_id),
+            runs,
+            tags,
+            recorded.get(r.work_item_id),
+            refs.get(r.work_item_id),
+        )
         for r in page
     ]
     found = envelope(
@@ -426,6 +443,19 @@ async def _tags(
     return out
 
 
+async def _external_records(
+    ctx: AuthContext, ids: list[UUID], readable: list[UUID]
+) -> tuple[dict[UUID, date], dict[UUID, str]]:
+    """A-01-T23: each row's recorded external release date, and the firm-tool reference of an
+    externally archived row the reader may read in content ("Archived in the firm's tool ·
+    CaseWare BH-2025-031"; the reference is confidential, opened only for those rows)."""
+    async with tenant_session(ctx.tenant) as session:
+        recorded = await external_releases_by_item(session, ids)
+        sealed = await external_archives_by_item(session, readable)
+    refs = {wid: await firm_tool_ref(ctx.tenant, wid, s) for wid, s in sealed.items()}
+    return recorded, refs
+
+
 def _tag(source: str, tag: IndexTag, classification: str) -> TagView:
     return TagView(source, tag.code, tag.text, classification)
 
@@ -437,6 +467,8 @@ def _row(
     pbc: tuple[int, int] | None,
     runs: Mapping[UUID, RunSummary],
     tags: dict[UUID, list[TagView]],
+    recorded_release: date | None = None,
+    firm_tool_ref: str | None = None,
 ) -> IndexRow:
     archived = (
         r.archived_at is not None
@@ -451,9 +483,11 @@ def _row(
         if r.phase == "released" and r.phase_changed_at is not None
         else None
     )
+    if r.phase == "released" and recorded_release is not None:
+        released_on = recorded_release  # A-01-T23: the date the report left the firm's tool
     archive: Archive | None = None
     if archived:
-        archive = Archive("archived")
+        archive = Archive("archived", firm_tool_ref=firm_tool_ref)
     elif released_on is not None:
         archive = Archive("archiving", (released_on + timedelta(days=ARCHIVE_DAYS) - now).days)
     return IndexRow(

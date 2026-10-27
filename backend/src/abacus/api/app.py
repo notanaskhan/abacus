@@ -38,6 +38,7 @@ from abacus.kernel.errors import (
     DomainInvalid,
     DomainRateLimited,
     DomainTooLarge,
+    DomainUnavailable,
     DomainUnsupported,
     NotFound,
     NotImplementedYet,
@@ -130,7 +131,9 @@ async def _unsupported(_request: Request, exc: Exception) -> JSONResponse:
     return JSONResponse(_coded(cast(DomainUnsupported, exc)), status_code=415)
 
 
-async def _unavailable(_request: Request, _exc: Exception) -> JSONResponse:
+async def _unavailable(_request: Request, exc: Exception) -> JSONResponse:
+    if isinstance(exc, DomainUnavailable):  # ED-170: a contract's fixed code
+        return JSONResponse({"detail": exc.code}, status_code=503)
     return JSONResponse({"detail": "service unavailable"}, status_code=503)
 
 

@@ -6,8 +6,9 @@ code-only suggest, and the poll of a drop batch. The writes of the family live w
 ignore and mark-done undo and the firm's void of a rule fulfilment in `requests/pbc_contract.py`,
 the drop itself in `evidence/drops_contract.py`.
 
-Behind `portal.documents_v2` (binders, request), `portal.third_party_room` (room, suggest) and
-`portal.drop_sort` (drop batches): off, each route answers 404. Every route is live: the
+The binders and the request are served to every firm (`portal.documents_v2` retired, R-01-T18,
+DEC-510); behind `portal.third_party_room` (room, suggest) and `portal.drop_sort` (drop
+batches): off, each route answers 404. Every route is live: the
 documents routes since R-01-T07 (`documents_routes.py` over `documents.py`), the drop poll here
 since R-01-T09, the room and its suggest since R-01-T13 (`rooms_routes.py` over `rooms.py`).
 
