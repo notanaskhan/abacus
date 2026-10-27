@@ -103,8 +103,9 @@ export const listAuditEvents = <ThrowOnError extends boolean = false>(options?: 
  * Request Audit Export Route
  *
  * ADM-07 e (AC-12): one person with a fresh second factor (DEC-415 Q8); 202 `requested`,
- * the same job again for a repeated `Idempotency-Key`. 422 `export_range_invalid` past 92 days;
- * 503 where no export-signing key or exports bucket is configured. Audited
+ * the same job again for a repeated `Idempotency-Key`. 422 `export_range_invalid` past 92 days.
+ * Where no export-signing key or exports bucket is configured the job fails
+ * (`signing_unavailable`, `exports_unavailable`), never signing or storing elsewhere. Audited
  * `audit_export.requested`; values only as the requester may see them on screen (AC-14).
  */
 export const requestAuditExport = <ThrowOnError extends boolean = false>(options: Options<RequestAuditExportData, ThrowOnError>): RequestResult<RequestAuditExportResponses, RequestAuditExportErrors, ThrowOnError> => (options.client ?? client).post<RequestAuditExportResponses, RequestAuditExportErrors, ThrowOnError>({

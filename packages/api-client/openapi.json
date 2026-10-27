@@ -4930,7 +4930,7 @@
         "type": "object"
       },
       "AuditExportLinkOut": {
-        "description": "A 15-minute presigned link; Restricted (it opens the firm's log) and never logged.",
+        "description": "Where the export downloads: the API's own download route, never a presigned object\n(ADR-104), valid while the second factor stays fresh (at most 15 minutes, never past the\nexport's expiry). Restricted (it opens the firm's log) and never logged.",
         "properties": {
           "expires_at": {
             "cls": "internal",
@@ -58778,7 +58778,7 @@
     },
     "/v1/audit-events/exports": {
       "post": {
-        "description": "ADM-07 e (AC-12): one person with a fresh second factor (DEC-415 Q8); 202 `requested`,\nthe same job again for a repeated `Idempotency-Key`. 422 `export_range_invalid` past 92 days;\n503 where no export-signing key or exports bucket is configured. Audited\n`audit_export.requested`; values only as the requester may see them on screen (AC-14).",
+        "description": "ADM-07 e (AC-12): one person with a fresh second factor (DEC-415 Q8); 202 `requested`,\nthe same job again for a repeated `Idempotency-Key`. 422 `export_range_invalid` past 92 days.\nWhere no export-signing key or exports bucket is configured the job fails\n(`signing_unavailable`, `exports_unavailable`), never signing or storing elsewhere. Audited\n`audit_export.requested`; values only as the requester may see them on screen (AC-14).",
         "operationId": "request_audit_export",
         "parameters": [
           {
@@ -58885,16 +58885,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Service unavailable"
           }
         },
         "summary": "Request Audit Export Route",
