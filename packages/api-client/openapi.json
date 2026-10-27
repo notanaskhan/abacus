@@ -25959,6 +25959,15 @@
       "HumanGateOut": {
         "description": "One row of the rebuildable projection. Labels come from the subject's owner at read time.",
         "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
           "assignee_user_id": {
             "anyOf": [
               {
@@ -25999,6 +26008,12 @@
             ],
             "cls": "internal",
             "title": "Blocked Reason Code"
+          },
+          "bulk_eligible": {
+            "cls": "internal",
+            "default": false,
+            "title": "Bulk Eligible",
+            "type": "boolean"
           },
           "client_id": {
             "anyOf": [
@@ -26057,6 +26072,18 @@
             "cls": "internal",
             "title": "Engagement Id"
           },
+          "glyph": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Glyph"
+          },
           "id": {
             "cls": "internal",
             "format": "uuid",
@@ -26091,6 +26118,29 @@
             "cls": "internal",
             "title": "Office Id"
           },
+          "overlay": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Overlay"
+          },
+          "proposed_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposedByOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
           "role": {
             "anyOf": [
               {
@@ -26117,6 +26167,18 @@
             "$ref": "#/components/schemas/ObjectRefOut",
             "cls": "internal"
           },
+          "subject_route": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Subject Route"
+          },
           "subkind": {
             "cls": "internal",
             "title": "Subkind",
@@ -26133,6 +26195,12 @@
             ],
             "cls": "confidential",
             "title": "Title"
+          },
+          "version": {
+            "cls": "internal",
+            "default": 1,
+            "title": "Version",
+            "type": "integer"
           },
           "work_item_id": {
             "anyOf": [
@@ -39908,6 +39976,43 @@
         "title": "ProposalTotalOut",
         "type": "object"
       },
+      "ProposedByOut": {
+        "description": "INV-5: the run that proposed a gate and the person it ran for, never the agent as the\ndecider.",
+        "properties": {
+          "at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "initiator_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Initiator User Id"
+          },
+          "run_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "initiator_user_id",
+          "at"
+        ],
+        "title": "ProposedByOut",
+        "type": "object"
+      },
       "ProposedItemOut": {
         "properties": {
           "audit_area": {
@@ -40380,6 +40485,93 @@
           "code"
         ],
         "title": "ReasonOut",
+        "type": "object"
+      },
+      "ReassignCandidateOut": {
+        "properties": {
+          "role": {
+            "cls": "internal",
+            "title": "Role",
+            "type": "string"
+          },
+          "user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "role"
+        ],
+        "title": "ReassignCandidateOut",
+        "type": "object"
+      },
+      "ReassignCandidatesOut": {
+        "properties": {
+          "candidates": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ReassignCandidateOut"
+            },
+            "title": "Candidates",
+            "type": "array"
+          }
+        },
+        "title": "ReassignCandidatesOut",
+        "type": "object"
+      },
+      "ReassignIn": {
+        "additionalProperties": false,
+        "properties": {
+          "seen_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Seen Version",
+            "type": "integer"
+          },
+          "to_user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "To User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "to_user_id",
+          "seen_version"
+        ],
+        "title": "ReassignIn",
+        "type": "object"
+      },
+      "ReassignedOut": {
+        "properties": {
+          "gate_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Gate Id",
+            "type": "string"
+          },
+          "to_user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "To User Id",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "gate_id",
+          "to_user_id",
+          "version"
+        ],
+        "title": "ReassignedOut",
         "type": "object"
       },
       "RecipientsIn": {
@@ -49220,6 +49412,45 @@
           "net_change"
         ],
         "title": "SnapshotOut",
+        "type": "object"
+      },
+      "SnoozeIn": {
+        "additionalProperties": false,
+        "properties": {
+          "until": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Until",
+            "type": "string"
+          }
+        },
+        "required": [
+          "until"
+        ],
+        "title": "SnoozeIn",
+        "type": "object"
+      },
+      "SnoozedOut": {
+        "description": "The caller's snooze of a gate (theirs alone); an unsnooze ends it now.",
+        "properties": {
+          "gate_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Gate Id",
+            "type": "string"
+          },
+          "until": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Until",
+            "type": "string"
+          }
+        },
+        "required": [
+          "gate_id",
+          "until"
+        ],
+        "title": "SnoozedOut",
         "type": "object"
       },
       "SourceDocumentGroupOut": {
@@ -120937,7 +121168,7 @@
     },
     "/v1/human-gates": {
       "get": {
-        "description": "What waits on the caller; `counts` are per kind (\"3 decisions, 6 sign-offs, 2 exports\").\nP-04-T16: served from the projection behind `review.grammar_api`; a walled client's gates\nare never listed or counted.",
+        "description": "What waits on the caller; `counts` are per kind (\"3 decisions, 6 sign-offs, 2 exports\").\nP-04-T16: served from the projection behind `review.grammar_api`; a walled client's gates\nare never listed or counted. I-01-T07: `state` (open, snoozed by the caller, done), `band`,\n`office_id` (narrows, never authorises), `sort=deadline`, and each row's presentation facts.",
         "operationId": "human_gate_list",
         "parameters": [
           {
@@ -121030,6 +121261,74 @@
             }
           },
           {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "default": "open",
+              "enum": [
+                "open",
+                "done",
+                "snoozed"
+              ],
+              "title": "State",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "band",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "decisions",
+                    "sign_offs",
+                    "agent_outputs",
+                    "approvals_sends"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Band"
+            }
+          },
+          {
+            "in": "query",
+            "name": "office_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Office Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "created",
+              "enum": [
+                "created",
+                "deadline"
+              ],
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
             "in": "header",
             "name": "authorization",
             "required": false,
@@ -121112,16 +121411,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Human Gate List Route",
@@ -121253,6 +121542,493 @@
           "review"
         ],
         "x-abacus-action": "human_gate.read"
+      }
+    },
+    "/v1/human-gates/{gate_id}/reassign": {
+      "post": {
+        "description": "Through the owner's hook only (409 `not_reassignable`); 409 `stale_version`; 422\n`candidate_not_eligible`.",
+        "operationId": "human_gate_reassign",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "gate_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Gate Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReassignIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReassignedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Human Gate Reassign Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "human_gate.reassign"
+      }
+    },
+    "/v1/human-gates/{gate_id}/reassign-candidates": {
+      "get": {
+        "description": "Who the gate may move to now (the owner's hook; walls applied); 409 `not_reassignable`.",
+        "operationId": "human_gate_candidates",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "gate_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Gate Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReassignCandidatesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Human Gate Candidates Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "human_gate.reassign"
+      }
+    },
+    "/v1/human-gates/{gate_id}/snooze": {
+      "post": {
+        "description": "The caller's own snooze, until a moment after now and no later than the gate's due date\n(422 `snooze_in_past`, `snooze_past_due`); 409 `gate_not_open`, `gate_overdue`.",
+        "operationId": "human_gate_snooze",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "gate_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Gate Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SnoozeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SnoozedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Human Gate Snooze Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "human_gate.snooze"
+      }
+    },
+    "/v1/human-gates/{gate_id}/unsnooze": {
+      "post": {
+        "operationId": "human_gate_unsnooze",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "gate_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Gate Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SnoozedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Human Gate Unsnooze Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "human_gate.snooze"
       }
     },
     "/v1/invitations/accept": {

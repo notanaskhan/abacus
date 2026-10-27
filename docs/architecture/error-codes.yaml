@@ -211,6 +211,11 @@ codes:
     raised_by:
     - abacus.modules.platform.service.BudgetInvalid
     summary: Soft must be positive and at most hard; hard at most the plan's limit (Q3).
+  candidate_not_eligible:
+    status: 422
+    raised_by:
+    - abacus.modules.review.gate_actions.CandidateNotEligible
+    summary: The person can't take this gate (not a holder of its role, or walled off).
   citation_required:
     status: 422
     raised_by:
@@ -578,6 +583,16 @@ codes:
     raised_by:
     - abacus.modules.agents.follow_up_drafts.FollowUpV2Only
     summary: 'This follow-up was drafted from a binder: send it from the binder''s follow-up sheet.'
+  gate_not_open:
+    status: 409
+    raised_by:
+    - abacus.modules.review.gate_actions.GateNotOpen
+    summary: 'The gate is done or voided: nothing to snooze or move.'
+  gate_overdue:
+    status: 409
+    raised_by:
+    - abacus.modules.review.gate_actions.GateOverdue
+    summary: An overdue gate is never snoozed.
   gate_unmet:
     status: 409
     raised_by:
@@ -963,6 +978,11 @@ codes:
     raised_by:
     - abacus.modules.review.service.NotPrepared
     summary: L2 and above need a current preparer sign-off.
+  not_reassignable:
+    status: 409
+    raised_by:
+    - abacus.modules.review.gate_actions.NotReassignable
+    summary: The gate's owner registered no way to move it to someone else.
   not_self:
     status: 409
     raised_by:
@@ -1428,6 +1448,16 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.ledger.trial_balances.SnapshotEntityMismatch
+  snooze_in_past:
+    status: 422
+    raised_by:
+    - abacus.modules.review.gate_actions.SnoozeInPast
+    summary: A snooze ends after now.
+  snooze_past_due:
+    status: 422
+    raised_by:
+    - abacus.modules.review.gate_actions.SnoozePastDue
+    summary: A snooze ends no later than the gate's due date (and within 30 days).
   sso_exempt_needs_hardware_key:
     status: 409
     raised_by:
@@ -1474,6 +1504,7 @@ codes:
     - abacus.modules.organisations.live.StaleVersion
     - abacus.modules.organisations.org_structure.StaleOrgStructure
     - abacus.modules.platform.safeguards.SafeguardsStale
+    - abacus.modules.review.gate_actions.GateStaleVersion
     summary: 'The record changed since it was read: read it again (409).'
   statement_already_approved:
     status: 409

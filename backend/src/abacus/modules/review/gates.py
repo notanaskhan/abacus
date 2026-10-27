@@ -66,7 +66,7 @@ from abacus.kernel.uow import Ref, Target, uow
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.engagements.api import gate_offices
 from abacus.modules.identity.api import AuthContext, holds_engagement_role, visible
-from abacus.modules.review.models import HumanGate, HumanGateSnooze
+from abacus.modules.review.models import HumanGate, HumanGateReassignment, HumanGateSnooze
 
 _log = get_logger(__name__)
 
@@ -113,6 +113,7 @@ C13_EVENTS: Final = frozenset(
 READ: Final = "human_gate.read"
 RESOURCE: Final = "human_gates"
 _CODE: Final = re.compile(r"[a-z][a-z_]{0,39}")
+_NO_DUE: Final = date(9999, 12, 31)  # `sort=deadline`: an undated gate sorts last
 _NAMESPACE: Final = uuid.UUID("6f1b7a52-3c8e-4f0b-9a57-2f6c1d0e8b13")
 
 
@@ -453,6 +454,48 @@ class GateView:
     office_id: UUID | None = None
     blocked: bool = False
     blocked_reason_code: str | None = None
+    # I-01-T07: one more than the gate's reassignments, so a reassign names what it saw.
+    version: int = 1
+
+
+def gate_view(r: HumanGate, version: int = 1) -> GateView:
+    return GateView(
+        r.id,
+        r.kind,
+        r.subject_ref["type"],
+        UUID(r.subject_ref["id"]),
+        r.engagement_id,
+        r.work_item_id,
+        r.client_id,
+        r.assignee_user_id,
+        r.role,
+        r.due_on,
+        r.state,
+        r.updated_at,
+        r.subkind,
+        r.office_id,
+        r.blocked,
+        r.blocked_reason_code,
+        version,
+    )
+
+
+def kinds_of(band: str) -> list[str]:
+    """The DF-25 kinds a band holds."""
+    return sorted(k for k in GATE_KINDS if band_of(k) == band)
+
+
+async def versions_of(session: AsyncSession, gate_ids: Sequence[UUID]) -> dict[UUID, int]:
+    """Each gate's version: one more than its reassignments (I-01-T07)."""
+    if not gate_ids:
+        return {}
+    found = await session.execute(
+        select(HumanGateReassignment.gate_id, func.count())
+        .where(HumanGateReassignment.gate_id.in_(list(gate_ids)))
+        .group_by(HumanGateReassignment.gate_id)
+    )
+    moved = {g: int(n) for g, n in found.all()}
+    return {g: 1 + moved.get(g, 0) for g in gate_ids}
 
 
 def _engagement() -> ColumnElement[UUID]:
@@ -504,15 +547,16 @@ def _snoozed(ctx: AuthContext, now: datetime) -> ColumnElement[bool]:
     return func.coalesce(latest > now, false())
 
 
+def open_for_caller(ctx: AuthContext, *, state: str | None = "open") -> list[ColumnElement[bool]]:
+    """The gates in `state` (any, with None) that wait on the caller, in engagements they may
+    read them in (walls excluded through `visible()` and each source's read action; nothing
+    counts what's left out)."""
+    where = [_waits_on(ctx), visible(ctx, READ, _engagement()), _sources_visible(ctx)]
+    return [HumanGate.state == state, *where] if state is not None else where
+
+
 def _open_for_caller(ctx: AuthContext) -> list[ColumnElement[bool]]:
-    """The open gates that wait on the caller, in engagements they may read them in (walls
-    excluded through `visible()` and each source's read action; nothing counts what's left out)."""
-    return [
-        HumanGate.state == "open",
-        _waits_on(ctx),
-        visible(ctx, READ, _engagement()),
-        _sources_visible(ctx),
-    ]
+    return open_for_caller(ctx)
 
 
 async def gates_waiting_on(
@@ -522,23 +566,51 @@ async def gates_waiting_on(
     engagement_id: UUID | None,
     cursor: str | None,
     limit: int | None,
+    state: str = "open",
+    band: str | None = None,
+    office_id: UUID | None = None,
+    sort: str = "created",
 ) -> ListPage[GateView]:
-    """Open gates waiting on the caller (assigned to them, or to nobody under `_waits_on`) and
-    not snoozed by them, in engagements the caller may read them in, oldest first; `counts` per
-    kind over the same filters without `kind`."""
+    """Gates waiting on the caller (assigned to them, or to nobody under `_waits_on`), in
+    engagements the caller may read them in. `state`: `open` (not snoozed by them; the default),
+    `snoozed` (open, snoozed by them until later) or `done`. I-01-T07 adds `band`, `office_id`
+    (narrows, never authorises; DEC-30) and `sort` (`created`, oldest first, or `deadline`, due
+    first and undated last). `counts` per kind over the same filters without `kind`."""
     size = clamp_limit(limit)
-    query = query_hash(kind=kind, engagement_id=engagement_id)
+    query = query_hash(
+        kind=kind,
+        engagement_id=engagement_id,
+        state=state,
+        band=band,
+        office_id=office_id,
+        sort=sort,
+    )
     after = (
         decode_cursor(cursor, tenant_id=ctx.tenant_id, resource=RESOURCE, query=query)
         if cursor
         else None
     )
     now = await clock.now(ctx.tenant)
-    base = select(HumanGate).where(*_open_for_caller(ctx), ~_snoozed(ctx, now))
+    snoozed = _snoozed(ctx, now)
+    if state == "done":
+        base = select(HumanGate).where(*open_for_caller(ctx, state="done"))
+    else:
+        base = select(HumanGate).where(
+            *_open_for_caller(ctx), snoozed if state == "snoozed" else ~snoozed
+        )
     if engagement_id is not None:
         base = base.where(HumanGate.engagement_id == engagement_id)
+    if band is not None:
+        base = base.where(HumanGate.kind.in_(kinds_of(band)))
+    if office_id is not None:
+        base = base.where(HumanGate.office_id == office_id)
     stmt = base.where(HumanGate.kind == kind) if kind is not None else base
-    sort = cast(ColumnElement[object], HumanGate.updated_at.expression)
+    if sort == "deadline":
+        order = cast(ColumnElement[object], func.coalesce(HumanGate.due_on, _NO_DUE))
+        key: Callable[[HumanGate], object] = lambda r: r.due_on or _NO_DUE  # noqa: E731
+    else:
+        order = cast(ColumnElement[object], HumanGate.updated_at.expression)
+        key = lambda r: r.updated_at  # noqa: E731
     async with tenant_session(ctx.tenant) as session:
         counts = await status_counts(session, base, cast(ColumnElement[str], HumanGate.kind))
         total = await capped_total(session, stmt)
@@ -547,7 +619,7 @@ async def gates_waiting_on(
                 await session.execute(
                     keyset(
                         stmt,
-                        sort=sort,
+                        sort=order,
                         id_column=cast(ColumnElement[object], HumanGate.id.expression),
                         after=after,
                         limit=size,
@@ -557,29 +629,10 @@ async def gates_waiting_on(
             .scalars()
             .all()
         )
-    rows, position = page_of(fetched, limit=size, key=lambda r: r.updated_at, id_of=lambda r: r.id)
+        rows, position = page_of(fetched, limit=size, key=key, id_of=lambda r: r.id)
+        versions = await versions_of(session, [r.id for r in rows])
     return envelope(
-        [
-            GateView(
-                r.id,
-                r.kind,
-                r.subject_ref["type"],
-                UUID(r.subject_ref["id"]),
-                r.engagement_id,
-                r.work_item_id,
-                r.client_id,
-                r.assignee_user_id,
-                r.role,
-                r.due_on,
-                r.state,
-                r.updated_at,
-                r.subkind,
-                r.office_id,
-                r.blocked,
-                r.blocked_reason_code,
-            )
-            for r in rows
-        ],
+        [gate_view(r, versions.get(r.id, 1)) for r in rows],
         next_position=position,
         tenant_id=ctx.tenant_id,
         resource=RESOURCE,
@@ -653,7 +706,10 @@ __all__ = [
     "band_of",
     "gate_counts",
     "gate_sources",
+    "gate_view",
     "gates_waiting_on",
+    "kinds_of",
+    "open_for_caller",
     "plan",
     "rebuild_human_gates",
     "register_gate_source",
