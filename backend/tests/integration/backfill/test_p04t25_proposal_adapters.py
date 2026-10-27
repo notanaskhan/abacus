@@ -20,9 +20,9 @@ from .support import Net, Person, Seeder, Site
 pytestmark = pytest.mark.asyncio
 _RUN: Final = (
     "INSERT INTO agent_runs (tenant_id, agent_id, spec_version, engagement_id, "
-    "evidence_version_id, initiator_user_id, task_scope, status, finished_at) "
+    "evidence_version_id, initiator_user_id, task_scope, status, finished_at, shadow) "
     "VALUES ($1, 'evidence.screener', 1, $2, $3, $4, ARRAY['evidence.read'], 'completed', "
-    "now()) RETURNING id"
+    "now(), $5) RETURNING id"
 )
 
 
@@ -70,11 +70,11 @@ async def _site(firm: Firm, label: str) -> Site:
     return site
 
 
-async def _flag(firm: Firm, site: Site, *, cited: int = 2) -> uuid.UUID:
+async def _flag(firm: Firm, site: Site, *, cited: int = 2, shadow: bool = False) -> uuid.UUID:
     """The screener's result on the site's version, with `cited` verified citations (C4)."""
     seed = firm.seed
     run = await seed.value(
-        _RUN, firm.tenant_id, site.engagement_id, site.version_id, firm.hannah.user_id
+        _RUN, firm.tenant_id, site.engagement_id, site.version_id, firm.hannah.user_id, shadow
     )
     result = cast(
         uuid.UUID,
@@ -194,12 +194,7 @@ async def test_ac_a_shadow_stage_firm_sees_no_proposal(firm: Firm) -> None:
 
 async def test_ac_a_shadow_runs_flag_is_never_a_proposal(firm: Firm) -> None:
     granite = await _site(firm, "Granite Peak")
-    flag = await _flag(firm, granite)
-    await firm.seed.run(
-        "UPDATE agent_runs SET shadow = true WHERE id = "
-        "(SELECT agent_run_id FROM screening_results WHERE id = $1)",
-        flag,
-    )
+    flag = await _flag(firm, granite, shadow=True)  # a run that started in shadow
     shown = await firm.net.call("GET", f"/v1/proposals/screening_result:{flag}", firm.hannah)
     assert shown.status_code == 404
 
