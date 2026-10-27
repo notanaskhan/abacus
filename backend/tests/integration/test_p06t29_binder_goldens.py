@@ -12,8 +12,8 @@ figure, so the suite fails under a seeded change to any §5.4 figure.
 
 Figures the seed does not carry yet are asserted for real and marked `xfail(strict=True)` with
 the task file that records them:
-- Granite Peak's SURL Draft, its 31 files and the later SHL-20 states, and Claire's two BND-02 g
-  files, wait for F-04-T25's scenario documents.
+- Claire's two BND-02 g files wait for scenario documents. (Granite Peak's SURL Draft and its 31
+  files are Sep 24-26, so their test loads its own 2026-10-01 snapshot; DEC-471.)
 - Thornbury's "6 of 15 · 3 overdue" and the other named rows' "n of m" stay declared data:
   DEC-146 writes requests only for Feld and the close intake, and no source lists the rest.
 
@@ -487,14 +487,26 @@ async def test_bnd01a_named_rows_n_of_m_foot_from_their_requests(
     assert await progress(conn) == {"progress": PROGRESS}
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="the binders slice writes no Granite Peak SURL Draft or files yet; P-06 §5.4 has "
-    "them use F-04-T25's documents, which (TASK-996) do not include them; recorded in "
-    "work/tasks/TASK-993-notifications-binder-independent-tests.md (#380)",
-)
-async def test_shl20a_granite_peak_surl_draft_with_31_files(conn: asyncpg.Connection) -> None:
-    assert await granite_peak(conn) == {"surl": ("draft", True), "files": 31}
+@pytest.fixture(scope="module")
+def surl_db(migrated_db: MigratedDatabase) -> Iterator[Database]:
+    """SHL-14 f and SHL-20 a are Thu Sep 24 and Sat Sep 26: the 2026-10-01 snapshot holds both."""
+    with provisioned_database(roundtrip=False) as database:
+        yield database
+    configure_engine(migrated_db.app_url)
+
+
+async def test_shl20a_granite_peak_surl_draft_with_31_files(
+    surl_db: Database, migrated_db: MigratedDatabase
+) -> None:
+    await dispose_engine()
+    configure_engine(surl_db.app_url)
+    try:
+        await loader.load(surl_db.superuser_dsn, "2026-10-01", slices=("binders",), wait=False)
+    finally:
+        await dispose_engine()
+        configure_engine(migrated_db.app_url)
+    async with Seeder(surl_db.superuser_dsn).held() as connection:
+        assert await granite_peak(connection) == {"surl": ("draft", True), "files": 31}
 
 
 @pytest.mark.xfail(

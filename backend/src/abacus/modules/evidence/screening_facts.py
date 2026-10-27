@@ -15,10 +15,12 @@ from uuid import UUID
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.evidence.repository import (
+    citation_versions_among,
     get_item,
     get_version,
     latest_checks,
     newest_extraction,
+    supported_citations_among,
     verified_citations_of,
 )
 
@@ -69,3 +71,21 @@ async def verified_citation_ids(
     for citation_id, anchor, ref in rows:
         out.setdefault((anchor, ref), []).append(citation_id)
     return out
+
+
+async def supported_citations(
+    tenant: TenantContext, engagement_id: UUID, citation_ids: Sequence[UUID]
+) -> frozenset[UUID]:
+    """P-04-T24 (C4, INV-2): the citations among `citation_ids` that are verified by code and
+    still valid on `engagement_id` now. A proposal row or a suggestion whose citations are not
+    all here is unsupported (`uncited_change`). For a caller authorised on the engagement."""
+    async with tenant_session(tenant) as session:
+        return await supported_citations_among(session, engagement_id, citation_ids)
+
+
+async def citation_sources(
+    tenant: TenantContext, citation_ids: Sequence[UUID]
+) -> dict[UUID, UUID]:
+    """P-04-T24: citation id -> the evidence version it quotes, for SHL-10's evidence list."""
+    async with tenant_session(tenant) as session:
+        return await citation_versions_among(session, citation_ids)

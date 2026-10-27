@@ -40,7 +40,7 @@ from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.modules.identity import security_policies as service
-from abacus.modules.identity.authz import Resource, authorise
+from abacus.modules.identity.authz import Forbidden, Resource, authorise
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.routing import AbacusRouter, current_context
 from abacus.modules.identity.security_policies import (
@@ -300,6 +300,8 @@ async def _authorised(ctx: AuthContext, action: str) -> None:
     are refused (403) whatever the flag."""
     if ctx.client:
         raise NotFound("security_center")
+    if ctx.tenant.actor_kind not in ("human", "support"):
+        raise Forbidden(action, "role")  # ED-182's pattern: the agent and the system, first
     await authorise(ctx, action, Resource.firm(ctx.tenant_id))
 
 

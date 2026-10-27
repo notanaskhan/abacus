@@ -78,6 +78,8 @@ NON_TENANT_TABLES = frozenset(
     | {"incident_propagations"}
     # 0194 (A-02-T12): the integration catalogue is platform content; definers only.
     | {"integration_catalog"}
+    # 0242 (G-02-T20): the Pub 4557 control definitions are platform content; definers only.
+    | {"safeguards_controls", "safeguards_control_set_log"}
 )
 # Insert-only tables outside the modules (ADR-004); each module lists its own in registry.py.
 _PLATFORM_INSERT_ONLY: frozenset[str] = frozenset(
@@ -148,6 +150,7 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "suggestion_decisions": "agent_decisions_immutable",  # 0095 (P-04-T05)
     "proposal_rows": "agent_decisions_immutable",  # 0095 (P-04-T05)
     "proposal_decisions": "agent_decisions_immutable",  # 0095 (P-04-T05)
+    "inbox_match_decisions": "agent_decisions_immutable",  # 0232 (P-04-T25)
     "evidence_versions": "evidence_versions_immutable",
     "review_decisions": "review_decisions_immutable",
     "eval_case_results": "eval_case_results_immutable",
@@ -246,6 +249,7 @@ GLOBAL_TABLES = frozenset(
     | {"incident_propagations"}  # 0143 (Q-02-T33)
     | {"standards_sets"}  # 0180 (K-01-T02): reference data, K-02's publish path writes it
     | {"integration_catalog"}  # 0194 (A-02-T12)
+    | {"safeguards_controls", "safeguards_control_set_log"}  # 0242 (G-02-T20)
 )
 # SECURITY DEFINER functions: each runs as the owner, bypassing grants, so each is reviewed here.
 DEFINER_FUNCTIONS = frozenset(
@@ -328,6 +332,9 @@ DEFINER_FUNCTIONS = frozenset(
     | {"agent_stage_set"}
     # 0194 (A-02-T12): the catalogue's read (app and operators) and the operator's load.
     | {"integration_catalog_rows", "integration_catalog_load"}
+    # 0242 (G-02-T20): staff-imported, two-person-published Pub 4557 controls; the firm's read.
+    | {"safeguards_controls_import", "safeguards_controls_publish"}
+    | {"safeguards_controls_published"}
 )
 # Definer functions for operator tooling only (TASK-027 D4): the application role must NOT be able
 # to execute them (they read across firms).

@@ -1,10 +1,10 @@
 """The security-center contract, v1: ADM-06's platform half (G-02-T11 stub; SPEC-349 §5.7, §5.9;
 ADR-139, P-36). Contract: `docs/contracts/security-center.md`.
 
-Behind `security_center.v1`: off, every route here answers 404; on, 501 `not_implemented` until
-G-02-T18 (the incident register's read side, timeline and decisions, on Q-02's kernel) and
-G-02-T20 (the safeguards program). Q-02's `POST /v1/firm/security/incidents` (record an
-incident, `compliance.incidents`) is unchanged and not repeated here.
+Behind `security_center.v1`: off, every route here answers 404. Live: the incident register's
+read side, timeline and decisions on Q-02's kernel (G-02-T18, `incident_register.py`, also behind
+`compliance.incidents`) and the safeguards program (G-02-T20, `safeguards.py`). Q-02's
+`POST /v1/firm/security/incidents` (record an incident) is unchanged and not repeated here.
 
 Rules the shapes carry (INV-1, INV-5, DEC-72):
 
@@ -25,22 +25,24 @@ Rules the shapes carry (INV-1, INV-5, DEC-72):
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import Depends, Path, Query
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import SECURITY_CENTER_V1
 from abacus.kernel._statuses import SecurityIncidentStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.kernel.text import SingleLineText
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
+    Forbidden,
     Resource,
     authorise,
     current_context,
@@ -266,6 +268,10 @@ class SafeguardsIn(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     qualified_individual_user_id: Annotated[UUID | None, classified("internal")] = None
+    # "BH WISP v4": the document's name as the firm calls it (G-02-T20, additive).
+    wisp_name: Annotated[
+        SingleLineText | None, Field(default=None, max_length=200), classified("confidential")
+    ]
     wisp_evidence_item_id: Annotated[UUID | None, classified("internal")] = None
     wisp_approved_by_user_id: Annotated[UUID | None, classified("internal")] = None
     wisp_approved_on: Annotated[date | None, classified("internal")] = None
@@ -324,19 +330,25 @@ async def _authorised(ctx: AuthContext, action: str) -> None:
     are refused (403) whatever the flag."""
     if ctx.client:
         raise NotFound("security_center")
+    if ctx.tenant.actor_kind not in ("human", "support"):
+        raise Forbidden(action, "role")  # ED-182's pattern: the agent and the system, first
     await authorise(ctx, action, Resource.firm(ctx.tenant_id))
 
 
-async def _stub(ctx: AuthContext, action: str) -> NoReturn:
+async def _gate(ctx: AuthContext, action: str) -> None:
+    """The matrix, then the flag (the services check their own flags too)."""
     await _authorised(ctx, action)
     if not await flag_enabled(ctx.tenant, SECURITY_CENTER_V1):
         raise NotFound("security_center.v1")
-    raise NotImplementedYet
 
 
-@incident_reads_router.get(
-    "", action="incident.read", response_model=SecurityIncidentPageOut, errors=(501,)
-)
+def _no_store(response: Response) -> Response:
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
+@incident_reads_router.get("", action="incident.read", response_model=SecurityIncidentPageOut)
 async def list_security_incidents_route(
     ctx: Ctx,
     status: Annotated[SecurityIncidentStatus | None, Query()] = None,
@@ -344,19 +356,22 @@ async def list_security_incidents_route(
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
 ) -> SecurityIncidentPageOut:
     """ADM-06 a fieldset C (AC-21): newest discovery first, each with its clock at today's date
-    in the firm's time zone."""
-    await _stub(ctx, "incident.read")
+    in the firm's time zone; `counts` holds `open` and `closed`."""
+    from abacus.modules.platform import incident_register
+
+    await _gate(ctx, "incident.read")
+    return await incident_register.list_incidents(ctx, status, cursor, limit)
 
 
 @incident_reads_router.get(
-    "/{incident_id}",
-    action="incident.read",
-    response_model=SecurityIncidentDetailOut,
-    errors=(501,),
+    "/{incident_id}", action="incident.read", response_model=SecurityIncidentDetailOut
 )
 async def security_incident_route(incident_id: UUID, ctx: Ctx) -> SecurityIncidentDetailOut:
     """ADM-06 d: the drawer; 404 for another firm's or an unknown incident."""
-    await _stub(ctx, "incident.read")
+    from abacus.modules.platform import incident_register
+
+    await _gate(ctx, "incident.read")
+    return await incident_register.get_incident(ctx, incident_id)
 
 
 @incident_reads_router.post(
@@ -364,20 +379,22 @@ async def security_incident_route(incident_id: UUID, ctx: Ctx) -> SecurityIncide
     action="incident.manage",
     response_model=IncidentTimelineEntryOut,
     status_code=201,
-    errors=(501,),
 )
 async def append_incident_timeline_route(
     incident_id: UUID, body: IncidentTimelineEntryIn, ctx: Ctx
 ) -> IncidentTimelineEntryOut:
     """AC-23: append one attributed entry (the QI). Audited `incident.timeline_appended`."""
-    await _stub(ctx, "incident.manage")
+    from abacus.modules.platform import incident_register
+
+    await _gate(ctx, "incident.manage")
+    return await incident_register.append_entry(ctx, incident_id, body)
 
 
 @incident_reads_router.post(
     "/{incident_id}/decisions",
     action="incident.decide",
     response_model=SecurityIncidentOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def decide_security_incident_route(
     incident_id: UUID, body: IncidentDecisionIn, ctx: Ctx
@@ -385,38 +402,47 @@ async def decide_security_incident_route(
     """AC-22: the first decider's call leaves `pending_decision` waiting for the person named;
     that person's same call completes it (`close_not_reportable` closes the incident;
     `start_notification` starts the notification). 409 `decider_must_differ` for the same
-    person, the same seat or anyone not named; 409 `already_decided`; 422 when the first call
-    names no second decider or names someone who cannot fill the other seat. Audited
+    person, the same seat or anyone not named; 409 `already_decided`; 409
+    `decision_kind_differs`; 422 `second_decider_invalid` when the first call names no second
+    decider or names someone who cannot fill the other seat. Audited
     `incident.decision_recorded` per decider and `incident.decided` once complete."""
-    await _stub(ctx, "incident.decide")
+    from abacus.modules.platform import incident_register
+
+    await _gate(ctx, "incident.decide")
+    return await incident_register.record_decision(ctx, incident_id, body)
 
 
-@safeguards_router.get("", action="security.read", response_model=SafeguardsOut, errors=(501,))
+@safeguards_router.get("", action="security.read", response_model=SafeguardsOut)
 async def safeguards_route(ctx: Ctx) -> SafeguardsOut:
     """ADM-06 h fieldset D (AC-27)."""
-    await _stub(ctx, "security.read")
+    from abacus.modules.platform import safeguards
+
+    await _gate(ctx, "security.read")
+    return await safeguards.read(ctx)
 
 
-@safeguards_router.put(
-    "", action="security.manage", response_model=SafeguardsOut, errors=(409, 501)
-)
+@safeguards_router.put("", action="security.manage", response_model=SafeguardsOut, errors=(409,))
 async def put_safeguards_route(body: SafeguardsIn, ctx: Ctx) -> SafeguardsOut:
-    """The QI saves the record; 409 `stale_version`. Audited `safeguards.updated`."""
-    await _stub(ctx, "security.manage")
+    """The QI saves the record against the `version` read (0 before the first save); 409
+    `stale_version`; 422 `safeguards_person_invalid`. Audited `safeguards.updated`."""
+    from abacus.modules.platform import safeguards
+
+    await _gate(ctx, "security.manage")
+    return await safeguards.save(ctx, body)
 
 
 @safeguards_router.put(
-    "/controls/{control_key}",
-    action="security.manage",
-    response_model=SafeguardsControlOut,
-    errors=(501,),
+    "/controls/{control_key}", action="security.manage", response_model=SafeguardsControlOut
 )
 async def put_safeguards_control_route(
     control_key: ControlKey, body: SafeguardsControlIn, ctx: Ctx
 ) -> SafeguardsControlOut:
-    """One Pub 4557 control's status; 404 for a key the imported definitions don't have.
+    """One Pub 4557 control's status; 404 for a key the published definitions don't have.
     Audited `safeguards_control.updated`."""
-    await _stub(ctx, "security.manage")
+    from abacus.modules.platform import safeguards
+
+    await _gate(ctx, "security.manage")
+    return await safeguards.put_control(ctx, control_key, body)
 
 
 @safeguards_router.post(
@@ -424,9 +450,48 @@ async def put_safeguards_control_route(
     action="security.manage",
     response_model=WispPackOut,
     status_code=202,
-    errors=(501,),
+    errors=(503,),
 )
 async def wisp_pack_route(ctx: Ctx) -> WispPackOut:
-    """ "Export WISP pack": a zip of the WISP and its linked evidence (202). Audited
+    """ "Export WISP pack": a zip of the WISP and its linked evidence (202, `preparing`). Audited
     `wisp_pack.prepared`."""
-    await _stub(ctx, "security.manage")
+    from abacus.modules.platform import safeguards
+
+    await _gate(ctx, "security.manage")
+    return await safeguards.request_pack(ctx)
+
+
+@safeguards_router.get(
+    "/wisp-pack/{pack_id}", action="security.manage", response_model=WispPackOut
+)
+async def wisp_pack_status_route(pack_id: UUID, ctx: Ctx) -> WispPackOut:
+    """The requester's pack: `preparing`, then `ready` with its `download_url` and expiry."""
+    from abacus.modules.platform import safeguards
+
+    await _gate(ctx, "security.manage")
+    return await safeguards.read_pack(ctx, pack_id)
+
+
+@safeguards_router.get(
+    "/wisp-pack/{pack_id}/download",
+    action="security.manage",
+    response_model=bytes,
+    errors=(409, 410),
+)
+async def wisp_pack_download_route(pack_id: UUID, ctx: Ctx) -> Response:
+    """The pack's ZIP, streamed by the API from the sealed bundle (ADR-104; `no-store`). The
+    requester only, with a fresh second factor; 409 `export_not_ready`, 410 `export_expired`."""
+    from abacus.modules.platform import safeguards
+
+    await _gate(ctx, "security.manage")
+    try:
+        plan = await safeguards.download_pack(ctx, pack_id)
+    except safeguards.WispPackExpired:
+        return _no_store(JSONResponse({"detail": "export_expired"}, status_code=410))
+    headers = {
+        "Content-Disposition": f'attachment; filename="{plan.file_name}"',
+        "Content-Length": str(plan.size),
+    }
+    return _no_store(
+        StreamingResponse(plan.stream(), media_type="application/zip", headers=headers)
+    )

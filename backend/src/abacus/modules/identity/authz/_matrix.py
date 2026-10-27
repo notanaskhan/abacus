@@ -136,8 +136,8 @@ ACTIONS: dict[str, dict[str, str]] = {
         "quality_partner": "allow",
         "security_admin": "allow",
         "firm_partner": "allow",
+        "firm_manager": "allow",
         "engagement_partner": "allow",
-        "manager": "allow",
         "senior": "allow",
         "staff": "allow",
         "reviewer": "allow",
@@ -1550,6 +1550,14 @@ ACTIONS: dict[str, dict[str, str]] = {
     },
     "proposal.create": {
         "agent": "task_scope",
+    },
+    "proposal.decide_change_set": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "independence": "required",
     },
     "proposal.follow_up": {
         "engagement_partner": "allow",

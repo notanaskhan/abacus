@@ -1,5 +1,5 @@
 import * as PopoverPrimitive from "@radix-ui/react-popover";
-import { type JSX, type ReactNode, useMemo } from "react";
+import { type JSX, type ReactNode, useEffect, useMemo, useRef } from "react";
 import { cn } from "../cn";
 import { useMotion } from "../motion";
 import { useOverlayLayer } from "../overlays/stack-react";
@@ -58,6 +58,18 @@ export function AnchoredPopoverHost({
     },
   });
   const anchored = open ? store.anchorFor() : null;
+  // A pinned popover takes focus (P-03 §5.6, ED-166), so its stepper and Re-link come next from
+  // the keyboard; a hover preview never does. Escape still returns focus to the cell.
+  const content = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!state.pinned || state.payload === null) return;
+    const frame = requestAnimationFrame(() => {
+      content.current?.focus();
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+    };
+  }, [state.pinned, state.id, state.payload]);
   return (
     <PopoverPrimitive.Root open={open} onOpenChange={layer.onRootOpenChange}>
       <PopoverPrimitive.Anchor virtualRef={anchor} />
@@ -66,6 +78,8 @@ export function AnchoredPopoverHost({
           <PopoverPrimitive.Content
             // A new anchor (a step to the next source) measures afresh.
             key={state.id ?? "origin"}
+            ref={content}
+            tabIndex={-1}
             data-overlay="popover"
             data-popover="anchored"
             data-anchored={anchored === state.origin ? "origin" : "match"}

@@ -116,6 +116,7 @@ Gradients in product UI, emoji, saturated blue, heavy shadows, invented colours,
 | DV-2 | a, d: check 2's answer is code-generated on live data; fixture mode shows the handoff copy verbatim | Code computes the period (ADR-050) | P-06 §2.4 |
 | DV-8 | e: "Link to request…" is disabled with its tooltip until INB-02 exists | N-01 | P-06 §2.4 |
 | DV-10 | "View" opens the existing page preview (`evidence/previews.py`) without the lit region if P-03's viewer is not on staging by S8 | P-03 S5–S12 | P-06 §2.4 |
+| DEC-471 (seed) | a's 31 files exist on the live seed from the 2026-10-01 snapshot (uploaded Fri Sep 25, 3:00 PM, not linked to the Draft): 16 TPL-20 invoices, the two flagged files and 13 synthetic invoices | No source names 13 of the files; the user chose to fill them | decision-log DEC-471; TASK-993 |
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
