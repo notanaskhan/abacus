@@ -405,6 +405,25 @@ async def link_issue(
     otherwise); linking the same issue again answers the link; another issue 409
     `tie_out_check_issue_linked`; an issue elsewhere 404."""
     issue_of = await issue_engagement(ctx.tenant, issue_id)
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "tie_out_check.define", ref.resource())
+    async with tenant_session(ctx.tenant) as session:
+        seen = await session.get(TieOutCheck, check_id)
+    if (
+        seen is not None
+        and seen.target_id == tb_id
+        and seen.engagement_id == engagement_id
+        and seen.issue_id == issue_id
+        and seen.current_version_no == seen_version
+    ):
+        # The same link again: answered as it stands, nothing written (no unit of work).
+        return IssueLink(
+            seen.id,
+            issue_id,
+            seen.current_version_no,
+            seen.issue_linked_by or ctx.user_id,
+            seen.issue_linked_at or system_now(),
+        )
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "tie_out_check.define", ref.resource())
@@ -416,15 +435,7 @@ async def link_issue(
         if check.current_version_no != seen_version:
             raise CheckStale(str(check_id))
         if check.issue_id is not None:
-            if check.issue_id != issue_id:
-                raise IssueAlreadyLinked(str(check_id))
-            return IssueLink(
-                check.id,
-                check.issue_id,
-                check.current_version_no,
-                check.issue_linked_by or ctx.user_id,
-                check.issue_linked_at or system_now(),
-            )
+            raise IssueAlreadyLinked(str(check_id))  # the same issue is answered above
         at = system_now()
         await set_issue_link(tx.session, check.id, issue_id, ctx.user_id, at)
         tx.record(

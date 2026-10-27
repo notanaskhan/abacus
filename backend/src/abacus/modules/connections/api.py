@@ -55,6 +55,7 @@ from abacus.modules.connections.fake import FakeConnector, fixture_path
 from abacus.modules.connections.fake_format import parse_trial_balance
 from abacus.modules.connections.gl_import import WORKFLOWS as GL_WORKFLOWS
 from abacus.modules.connections.gl_import import on_ledger_snapshot_recorded
+from abacus.modules.connections.grants import GrantRevocationRequested, revoke_retired
 from abacus.modules.connections.pipeline import (
     RunFailed,
     RunResult,
@@ -76,6 +77,7 @@ from abacus.modules.connections.retrievals import (
 from abacus.modules.connections.routes import complete_router, connection_router, router
 from abacus.modules.connections.service import (
     CONNECTORS,
+    NETWORKLESS_PROVIDERS,
     ActionCapReached,
     NoConnection,
     RetrievalView,
@@ -100,6 +102,8 @@ from abacus.modules.requests.api import register_available_datasets
 # Outbox events this module handles (the worker's relay routes them): automatic retrieval when a
 # client connects or an item becomes retrievable (SPEC-022 AC-4).
 SUBSCRIPTIONS: dict[str, Handler] = {
+    # A-02-T16 review M1: a retired grant is revoked at the provider after commit.
+    GrantRevocationRequested.event_type: revoke_retired,
     "connection.created": on_connection_created,
     "request_item.classified": on_item_classified,
     # SPEC-034 (TASK-069): a trial balance arrived; general ledgers waiting for it follow.
@@ -126,6 +130,7 @@ register_entity_owners({"connection"}, audit_entities)
 __all__ = [
     "ACTIVITIES",
     "CONNECTORS",
+    "NETWORKLESS_PROVIDERS",
     "ROUTERS",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
@@ -191,6 +196,7 @@ __all__ = [
     "render",
     "retrieval_status",
     "retry",
+    "revoke_retired",
     "router",
     "run_pipeline",
     "snapshot",

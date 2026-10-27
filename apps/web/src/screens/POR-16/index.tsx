@@ -95,6 +95,17 @@ export function glyphOf(icon: string): IconName {
   return KNOWN.has(kebab) ? (kebab as IconName) : "store";
 }
 
+/** The provider's sign-in URL may only be HTTPS, or this app's own origin (the server also
+ * holds it to the egress allowlist). Never a `javascript:` or other scheme. */
+export function safeSignIn(url: string): boolean {
+  try {
+    const parsed = new URL(url, window.location.origin);
+    return parsed.protocol === "https:" || parsed.origin === window.location.origin;
+  } catch {
+    return false;
+  }
+}
+
 function key(card: PortalConnectionCardOut): string {
   return card.connection_id ?? card.catalog_key;
 }
@@ -559,7 +570,9 @@ export function POR16({
           setConsentFor(null);
           setConnecting((s) => new Set([...s, key(card)]));
           if (onAuthorise) onAuthorise(started.authorise_url, card);
-          else window.location.assign(started.authorise_url);
+          else if (safeSignIn(started.authorise_url))
+            window.location.assign(started.authorise_url);
+          else failed();
         },
         onError: failed,
       },

@@ -91,7 +91,7 @@ async def retry_connection_route(
     """POR-16 g *Try again*: one run; while it runs the same run is returned; 409
     `connection_needs_reauth`, `no_failed_sync`, `retry_unavailable`. Audited
     `connection.retry_requested`."""
-    return await retry_card(ctx, connection_id)
+    return await retry_card(ctx, connection_id, idempotency_key)
 
 
 @portal_router.post(
@@ -105,4 +105,4 @@ async def disconnect_connection_route(
 ) -> PortalConnectionCardOut:
     """POR-16 f: "Disconnected" (neutral); the secret is crypto-erased and received data stays.
     409 `stale_version` on an old `seen_version`. Audited `connection.revoked`."""
-    return await disconnect_card(ctx, connection_id, body.seen_version)
+    return await disconnect_card(ctx, connection_id, body.seen_version, idempotency_key)

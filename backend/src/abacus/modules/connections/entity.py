@@ -37,20 +37,27 @@ from typing import Final
 from uuid import UUID
 
 from abacus.kernel import request_context
+from abacus.kernel._flags import CONNECTIONS_PORTAL_V2
 from abacus.kernel.clock import system_now
 from abacus.kernel.crypto import seal
 from abacus.kernel.db import tenant_session
+from abacus.kernel.egress import check_sign_in_url
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
+from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import Ref, Target, UnitOfWork, audit_of_targets, uow
 from abacus.modules.connections.connect import (
     STATE_TTL,
     ConnectionFailed,
     InvalidState,
+    LedgerAlreadyConnected,
     code_ref,
     finish_legacy,
     hash_state,
     oauth_providers,
+    open_verifier,
+    pkce_pair,
     redirect_uri,
+    seal_verifier,
     spend,
     unsaved_connection,
 )
@@ -60,10 +67,11 @@ from abacus.modules.connections.events import (
     ConnectionReauthorized,
     ConnectionRevoked,
 )
+from abacus.modules.connections.grants import RESULTS as REVOKE_RESULTS
+from abacus.modules.connections.grants import retire_grant
 from abacus.modules.connections.models import Connection, ConnectionState, SyncRun
 from abacus.modules.connections.repository import (
     LIVE,
-    destroy_secret,
     fulfil_reconnect_requests,
     get_connection,
     insert_consent,
@@ -73,7 +81,7 @@ from abacus.modules.connections.repository import (
     insert_secret,
     insert_state,
     last_failures,
-    last_success,
+    last_success_on,
     latest_failed_run,
     live_connections_of,
     lock_connection,
@@ -91,7 +99,13 @@ from abacus.modules.engagements.api import (
     get_ref,
     lock_ref,
 )
-from abacus.modules.identity.api import AuthContext, Forbidden, authorise, names_of
+from abacus.modules.identity.api import (
+    AuthContext,
+    Forbidden,
+    allowed_actions,
+    authorise,
+    names_of,
+)
 from abacus.modules.requests.api import ItemNotFulfillable, item_ref
 
 # Reasons a connection needs its client to sign in again (A-02 §3.11); any other failure is
@@ -119,12 +133,6 @@ class ConsentVersionStale(DomainConflict):
     """The consent copy shown is older than the catalogue's: read the cards again."""
 
     code = "consent_version_stale"
-
-
-class LedgerAlreadyConnected(DomainConflict):
-    """The entity has a live ledger connection already (one per entity, ADR-045)."""
-
-    code = "ledger_already_connected"
 
 
 class ConnectorNotAvailable(DomainConflict):
@@ -318,12 +326,30 @@ def _view(
     )
 
 
+async def readable_engagements(
+    ctx: AuthContext, entity_id: UUID, action: str = "connection.read"
+) -> list[UUID]:
+    """The entity's engagements whose runs the person may read (`connection.read` on each,
+    probed without recording or logging a denial): a wall on one engagement of the entity hides
+    its runs while another engagement's stay readable (review L7)."""
+    out: list[UUID] = []
+    for engagement_id in await engagements_of_entity(ctx.tenant, entity_id):
+        ref = await get_ref(ctx, engagement_id)
+        if action in await allowed_actions(ctx, ref.resource(), [action]):
+            out.append(engagement_id)
+    return out
+
+
 async def _views(ctx: AuthContext, rows: Sequence[Connection]) -> list[EntityConnectionView]:
     ids = [c.id for c in rows]
+    entities = {c.client_entity_id for c in rows}
+    readable = [
+        e for entity in sorted(entities, key=str) for e in await readable_engagements(ctx, entity)
+    ]
     async with tenant_session(ctx.tenant) as session:
-        failures = await last_failures(session, ids)
+        failures = await last_failures(session, ids, readable)
         requests = await open_reconnect_requests(session, ids)
-        pulled = {c.id: await last_success(session, c.id) for c in rows}
+        pulled = {c.id: await last_success_on(session, c.id, readable) for c in rows}
     people = sorted({c.connected_by_user_id for c in rows if c.connected_by_user_id}, key=str)
     names = await names_of(people) if people else {}
     return [_view(c, names, failures, requests, pulled[c.id]) for c in rows]
@@ -377,7 +403,12 @@ async def connection_detail(ctx: AuthContext, connection_id: UUID) -> Connection
     found = await _connection(ctx, connection_id)
     ref = await authorised_engagement(ctx, found.client_entity_id, "connection.read")
     async with tenant_session(ctx.tenant) as session:
-        runs = await recent_runs(session, connection_id, RECENT_RUNS)
+        runs = await recent_runs(
+            session,
+            connection_id,
+            await readable_engagements(ctx, found.client_entity_id),
+            RECENT_RUNS,
+        )
     view = (await _views(ctx, [found]))[0]
     return ConnectionDetail(
         view,
@@ -431,6 +462,7 @@ async def start_entity(
         raise ConnectorNotAvailable(consent.catalog_key)
     await gate_client_data(ctx, ref.id, "connection.create")  # SPEC-025 AC-7
     state = secrets.token_urlsafe(32)
+    verifier, challenge = pkce_pair()
     expires_at = system_now() + STATE_TTL
     async with uow(ctx.tenant) as tx:
         await _relock(tx, ctx, ref, "connection.create")
@@ -460,6 +492,7 @@ async def start_entity(
             consent_id=consent_id,
             connection_id=reconnect.id if reconnect is not None else None,
             category=target.category,
+            verifier_sealed=await seal_verifier(ctx.tenant_id, hash_state(state), verifier),
         )
         tx.record(
             "connection.consent_recorded",
@@ -474,8 +507,8 @@ async def start_entity(
             after=Ref(engagement_id=ref.id, **_client_actor(ctx)),
         )
     connector = connector_for(unsaved_connection(target.provider, entity_id, ctx))
-    url = await connector.authorise_url(state, redirect_uri())
-    return Started(consent_id, url, expires_at)
+    url = await connector.authorise_url(state, redirect_uri(), code_challenge=challenge)
+    return Started(consent_id, check_sign_in_url(url), expires_at)
 
 
 async def complete_any(ctx: AuthContext, state: str, code: str) -> Completed:
@@ -493,8 +526,9 @@ async def complete_any(ctx: AuthContext, state: str, code: str) -> Completed:
 async def _exchange(ctx: AuthContext, found: ConnectionState, code: str) -> bytes | None:
     await gate_client_data(ctx, found.engagement_id, "connection.create")  # SPEC-025 AC-7
     connector = connector_for(unsaved_connection(found.provider, found.client_entity_id, ctx))
+    verifier = await open_verifier(ctx.tenant_id, found)
     try:
-        return await connector.exchange_code(code, redirect_uri())
+        return await connector.exchange_code(code, redirect_uri(), code_verifier=verifier)
     except ConnectorError as exc:
         async with uow(ctx.tenant) as tx:
             tx.record(
@@ -508,7 +542,8 @@ async def _exchange(ctx: AuthContext, found: ConnectionState, code: str) -> byte
 async def _store_secret(
     tx: UnitOfWork, ctx: AuthContext, connection_id: UUID, credentials: bytes | None
 ) -> None:
-    await destroy_secret(tx.session, connection_id)  # the old grant's, on a reconnect
+    # The old grant's, on a reconnect: revoked at the provider after commit (review M1).
+    await retire_grant(tx, ctx.tenant_id, connection_id, "replaced")
     if credentials is not None:
         sealed = await seal(ctx.tenant_id, credentials, str(connection_id))
         await insert_secret(
@@ -516,8 +551,53 @@ async def _store_secret(
         )
 
 
+def _failure_code(exc: BaseException) -> str:
+    if isinstance(exc, Forbidden):
+        return "forbidden"
+    found = getattr(exc, "code", None)
+    return found if isinstance(found, str) else "error"
+
+
+async def _abandon(
+    ctx: AuthContext, found: ConnectionState, credentials: bytes | None, exc: BaseException
+) -> None:
+    """Review L5: a completion refused after the code exchange revokes the fresh grant at the
+    provider (best effort: nothing holds it) and records `connection.failed` with its code."""
+    result = "not_supported"
+    if credentials is not None:
+        connection = unsaved_connection(found.provider, found.client_entity_id, ctx)
+        try:
+            await connector_for(connection, credentials).revoke()
+            result = "revoked"
+        except ConnectorError as refused:
+            result = "not_supported" if refused.code == "oauth" else "refused"
+    async with uow(ctx.tenant) as tx:
+        tx.record(
+            "connection.failed",
+            target=Target("connection_state", found.id),
+            after=Ref(
+                code=code_ref(_failure_code(exc)),
+                revoke=REVOKE_RESULTS.index(result),
+                **_client_actor(ctx),
+            ),
+        )
+
+
 async def _complete_entity(ctx: AuthContext, found: ConnectionState, code: str) -> Completed:
+    """Review L9: the flag holds here too (the state was spent first, so a replay is refused)."""
+    if not await flag_enabled(ctx.tenant, CONNECTIONS_PORTAL_V2):
+        raise NotFound(CONNECTIONS_PORTAL_V2.name)
     credentials = await _exchange(ctx, found, code)
+    try:
+        return await _record_entity(ctx, found, credentials)
+    except Exception as exc:
+        await _abandon(ctx, found, credentials, exc)
+        raise
+
+
+async def _record_entity(
+    ctx: AuthContext, found: ConnectionState, credentials: bytes | None
+) -> Completed:
     entity_id = found.client_entity_id
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, found.engagement_id)
@@ -621,6 +701,7 @@ async def _record_retry(ctx: AuthContext, connection_id: UUID) -> tuple[RunRef, 
         raise NotFound("connection")
     if found.status_reason_code in REAUTH_REASONS:
         raise ConnectionNeedsReauth(str(connection_id))
+    retryable = await readable_engagements(ctx, found.client_entity_id, "connection.retry")
     async with uow(ctx.tenant) as tx:
         await _relock(tx, ctx, ref, "connection.retry")
         locked = await lock_connection(tx.session, connection_id)
@@ -634,7 +715,7 @@ async def _record_retry(ctx: AuthContext, connection_id: UUID) -> tuple[RunRef, 
                 after=Ref(sync_run_id=running.id, **_client_actor(ctx)),
             )
             return _summary(running), False
-        failed = await latest_failed_run(tx.session, connection_id)
+        failed = await latest_failed_run(tx.session, connection_id, retryable)
         if failed is None:
             raise NoFailedSync(str(connection_id))
         if failed.trigger != "request_item" or failed.request_item_id is None:
@@ -696,7 +777,8 @@ async def disconnect(
             revoked_at=system_now(),
             revoked_by=str(ctx.user_id),
         )
-        await destroy_secret(tx.session, connection_id)
+        # The secret goes now; the provider revokes the grant after commit (review M1).
+        await retire_grant(tx, ctx.tenant_id, connection_id, "disconnected")
         tx.record(
             "connection.revoked",
             target=Target("connection", connection_id),

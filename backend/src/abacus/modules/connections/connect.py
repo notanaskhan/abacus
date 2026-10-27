@@ -9,6 +9,7 @@ deleted on revoke. Provider text is never kept or shown: only codes (ADR-052).
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import secrets
 from dataclasses import dataclass
@@ -16,17 +17,21 @@ from datetime import datetime, timedelta
 from typing import Final
 from uuid import UUID
 
+from abacus.kernel._flags import CONNECTIONS_PORTAL_V2
 from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 from abacus.kernel.crypto import open_sealed, seal
 from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.egress import check_sign_in_url
 from abacus.kernel.errors import DomainConflict, DomainInvalid
+from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.connections.connector import ConnectorError
 from abacus.modules.connections.events import ConnectionCreated, ConnectionRevoked
+from abacus.modules.connections.grants import retire_grant
 from abacus.modules.connections.models import Connection, ConnectionState, SyncRun
 from abacus.modules.connections.repository import (
-    destroy_secret,
+    has_consent_link,
     insert_connection,
     insert_secret,
     insert_state,
@@ -67,6 +72,20 @@ class ConnectionFailed(DomainConflict):
 
 class NoLiveConnection(DomainConflict):
     code = "no_connection"
+
+
+class ConnectionFlowMoved(DomainConflict):
+    """POR-16 is on for the firm: a client connects from Connections, with the consent sheet
+    (A-02-T16 review M2). The engagement page no longer starts a flow."""
+
+    code = "connection_flow_moved"
+
+
+class LedgerAlreadyConnected(DomainConflict):
+    """The entity has a live ledger connection already (one per entity, ADR-045); a ledger the
+    client connected with a consent is never replaced by a flow without one."""
+
+    code = "ledger_already_connected"
 
 
 @dataclass(frozen=True)
@@ -126,15 +145,43 @@ async def providers(ctx: AuthContext, engagement_id: UUID) -> list[ProviderView]
     return [ProviderView(p, PROVIDER_NAMES[p], ("trial_balance",)) for p in _available()]
 
 
+def pkce_pair() -> tuple[str, str]:
+    """A PKCE verifier and its S256 challenge (RFC 7636; review L6)."""
+    verifier = secrets.token_urlsafe(64)
+    digest = hashlib.sha256(verifier.encode("ascii")).digest()
+    return verifier, base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
+
+
+def _verifier_binding(state_hash: str) -> str:
+    return f"connection_state:{state_hash}"
+
+
+async def seal_verifier(tenant_id: UUID, state_hash: str, verifier: str) -> bytes:
+    return await seal(tenant_id, verifier.encode("ascii"), _verifier_binding(state_hash))
+
+
+async def open_verifier(tenant_id: UUID, found: ConnectionState) -> str | None:
+    if found.verifier_sealed is None:
+        return None
+    opened = await open_sealed(
+        tenant_id, found.verifier_sealed, _verifier_binding(found.state_hash)
+    )
+    return opened.decode("ascii")
+
+
 async def start(ctx: AuthContext, engagement_id: UUID, provider: str) -> Started:
-    """AC-2, AC-3: authorise (fresh MFA), keep the hashed state, return the provider's URL."""
+    """AC-2, AC-3: authorise (fresh MFA), keep the hashed state, return the provider's URL.
+    A-02-T16 review M2: refused once POR-16 is on for the firm (the consent sheet is there)."""
     if provider not in _available():
         raise UnknownProvider
     await gate_client_data(ctx, engagement_id, "connection.create")  # SPEC-025 AC-7
     state = secrets.token_urlsafe(32)
+    verifier, challenge = pkce_pair()
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "connection.create", ref.resource())
+        if await flag_enabled(ctx.tenant, CONNECTIONS_PORTAL_V2):
+            raise ConnectionFlowMoved(str(engagement_id))
         state_id = await insert_state(
             tx.session,
             tenant_id=ctx.tenant_id,
@@ -144,6 +191,7 @@ async def start(ctx: AuthContext, engagement_id: UUID, provider: str) -> Started
             provider=provider,
             state_hash=_hash(state),
             expires_at=system_now() + STATE_TTL,
+            verifier_sealed=await seal_verifier(ctx.tenant_id, _hash(state), verifier),
         )
         tx.record(
             "connection.started",
@@ -151,7 +199,8 @@ async def start(ctx: AuthContext, engagement_id: UUID, provider: str) -> Started
             after=Ref(engagement_id=engagement_id),
         )
     connector = connector_for(_unsaved(provider, ref.client_entity_id, ctx))
-    return Started(await connector.authorise_url(state, _redirect_uri()))
+    url = await connector.authorise_url(state, _redirect_uri(), code_challenge=challenge)
+    return Started(check_sign_in_url(url))
 
 
 def _unsaved(provider: str, client_entity_id: UUID, ctx: AuthContext) -> Connection:
@@ -187,8 +236,9 @@ async def finish_legacy(ctx: AuthContext, found: ConnectionState, code: str) -> 
     )
     await gate_client_data(ctx, engagement_id, "connection.create")  # SPEC-025 AC-7
     connector = connector_for(_unsaved(provider, client_entity_id, ctx))
+    verifier = await open_verifier(ctx.tenant_id, found)
     try:
-        credentials = await connector.exchange_code(code, _redirect_uri())
+        credentials = await connector.exchange_code(code, _redirect_uri(), code_verifier=verifier)
     except ConnectorError as exc:
         async with uow(ctx.tenant) as tx:
             tx.record(
@@ -201,6 +251,8 @@ async def finish_legacy(ctx: AuthContext, found: ConnectionState, code: str) -> 
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "connection.create", ref.resource())
         old = await live_connection_for(tx.session, client_entity_id, lock=True)
+        if old is not None and await has_consent_link(tx.session, old.id):
+            raise LedgerAlreadyConnected(provider)  # review M2: a consented ledger stays
         if old is not None:
             await _revoke(tx, ctx, old, engagement_id)
         connection = await insert_connection(
@@ -271,7 +323,7 @@ async def _revoke(
         revoked_at=system_now(),
         revoked_by=str(ctx.user_id),
     )
-    await destroy_secret(tx.session, connection.id)
+    await retire_grant(tx, ctx.tenant_id, connection.id, "disconnected")  # review M1
     tx.record(
         "connection.revoked",
         target=Target("connection", connection.id),

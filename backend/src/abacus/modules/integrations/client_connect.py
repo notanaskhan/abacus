@@ -31,6 +31,7 @@ from abacus.kernel._flags import CONNECTIONS_PORTAL_V2
 from abacus.kernel._statuses import IntegrationStatus
 from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
+from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.connections.api import (
     AuthorizationRequired,
     ConnectionDetail,
@@ -296,24 +297,51 @@ async def detail_of(ctx: AuthContext, connection_id: UUID) -> PortalConnectionDe
     )
 
 
-async def retry_card(ctx: AuthContext, connection_id: UUID) -> SyncRunRefOut:
-    """POR-16 g *Try again* (AC-40)."""
+async def retry_card(
+    ctx: AuthContext, connection_id: UUID, idempotency_key: str | None = None
+) -> SyncRunRefOut:
+    """POR-16 g *Try again* (AC-40); a repeated `Idempotency-Key` answers the first response."""
     entity_id = await entity_of_connection(ctx, connection_id)
     await authorised_engagement(ctx, entity_id, "connection.retry")
     await _flag(ctx)
-    run = await retry(ctx, connection_id)
-    return SyncRunRefOut(sync_run_id=run.id, status=cast(SyncStatus, run.status))
+
+    async def run() -> tuple[int, dict[str, object]]:
+        found = await retry(ctx, connection_id)
+        out = SyncRunRefOut(sync_run_id=found.id, status=cast(SyncStatus, found.status))
+        return 202, out.model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="connection.retry",
+        key=idempotency_key,
+        body={"connection_id": str(connection_id)},
+        run=run,
+    )
+    return SyncRunRefOut.model_validate(stored.body)
 
 
 async def disconnect_card(
-    ctx: AuthContext, connection_id: UUID, seen_version: int
+    ctx: AuthContext, connection_id: UUID, seen_version: int, idempotency_key: str | None = None
 ) -> PortalConnectionCardOut:
-    """POR-16 f (AC-39): the card after the disconnect, "Disconnected"."""
+    """POR-16 f (AC-39): the card after the disconnect, "Disconnected"; a repeated
+    `Idempotency-Key` answers the first response."""
     entity_id = await entity_of_connection(ctx, connection_id)
     await authorised_engagement(ctx, entity_id, "connection.disconnect")
     await _flag(ctx)
-    view = await disconnect(ctx, connection_id, seen_version)
-    entry = await _entry(ctx, provider=view.provider)
-    if entry is None:
-        raise NotFound("connection")
-    return _card(entry, view, client=ctx.client, may_retry=False)
+
+    async def run() -> tuple[int, dict[str, object]]:
+        view = await disconnect(ctx, connection_id, seen_version)
+        entry = await _entry(ctx, provider=view.provider)
+        if entry is None:
+            raise NotFound("connection")
+        card = _card(entry, view, client=ctx.client, may_retry=False)
+        return 200, card.model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="connection.disconnect",
+        key=idempotency_key,
+        body={"connection_id": str(connection_id), "seen_version": seen_version},
+        run=run,
+    )
+    return PortalConnectionCardOut.model_validate(stored.body)

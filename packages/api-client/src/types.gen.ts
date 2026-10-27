@@ -5471,21 +5471,9 @@ export type CompleteIn = {
  */
 export type CompleteOut = {
     /**
-     * Client Entity Id
-     */
-    client_entity_id?: string | null;
-    /**
-     * Connection Id
-     */
-    connection_id?: string | null;
-    /**
      * Engagement Id
      */
     engagement_id: string;
-    /**
-     * Reconnected
-     */
-    reconnected?: boolean;
 };
 
 /**

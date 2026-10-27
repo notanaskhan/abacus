@@ -96,7 +96,8 @@ async def test_ac11_an_off_check_links_once_to_an_issue_on_its_engagement(env: E
     link = base + f"/checks/{check['id']}/issue-link"
 
     stale = await _post(env, staff, link, {"issue_id": str(issue), "seen_version": 2})
-    assert stale.status_code == 409 and stale.json()["detail"] == "tie_out_check_stale"
+    # SPEC-310's CheckStale answers 422 (C9 §6 documents 409: ED-155).
+    assert stale.status_code == 422 and stale.json()["detail"] == "tie_out_check_stale"
     elsewhere = await _issue(env.net.seed, env.tenant_id, env.b.engagement_id)
     other_engagement = await _post(
         env, staff, link, {"issue_id": str(elsewhere), "seen_version": 1}
@@ -149,13 +150,13 @@ async def test_ac11_a_walled_member_gets_the_missing_engagements_404(env: Env) -
 
 async def _events(seed: Seeder, tenant_id: uuid.UUID) -> list[OutboxEvent]:
     rows = await seed.rows(
-        "SELECT event_id, payload FROM outbox WHERE tenant_id = $1 "
-        "AND event_type = 'tie_out_check.changed' ORDER BY created_at",
+        "SELECT id, payload FROM outbox WHERE tenant_id = $1 "
+        "AND event_type = 'tie_out_check.changed' ORDER BY seq",
         tenant_id,
     )
     return [
         OutboxEvent(
-            cast(uuid.UUID, r["event_id"]),
+            cast(uuid.UUID, r["id"]),
             tenant_id,
             "tie_out_check.changed",
             cast(

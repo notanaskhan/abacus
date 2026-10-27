@@ -64,6 +64,22 @@ class ConnectionState(Base):
     consent_id: Mapped[UUID | None]
     connection_id: Mapped[UUID | None]
     category: Mapped[str | None]
+    # The PKCE verifier, sealed (bound to `state_hash`); opened once at completion (review L6).
+    verifier_sealed: Mapped[bytes | None] = mapped_column(LargeBinary)
+
+
+class ConnectionGrantRevocation(Base):
+    """A retired grant waiting for the provider's revoke (0215; review M1). Restricted: the
+    sealed blob is never logged; the row is deleted once the revoke is answered."""
+
+    __tablename__ = "connection_grant_revocations"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    connection_id: Mapped[UUID]
+    sealed: Mapped[bytes] = mapped_column(LargeBinary)
+    reason: Mapped[str]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
 
 
 class ConnectionSecret(Base):

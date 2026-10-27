@@ -10,6 +10,7 @@ text, ADR-031). No writer is ever called: none exists.
 from __future__ import annotations
 
 import hashlib
+import json
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import cast
@@ -48,7 +49,15 @@ async def _refusals(seed: Seeder, site: Site) -> list[dict[str, object]]:
         "WHERE tenant_id = $1 AND action = 'write_capability.refused' ORDER BY seq",
         site.tenant_id,
     )
-    return [{"target": (r["target_type"], r["target_id"]), "after": r["after_ref"]} for r in rows]
+    return [
+        {
+            "target": (r["target_type"], r["target_id"]),
+            "after": json.loads(r["after_ref"])
+            if isinstance(r["after_ref"], str)
+            else r["after_ref"],
+        }
+        for r in rows
+    ]
 
 
 def _shape(key: str) -> str:
@@ -67,7 +76,9 @@ async def site(seed: Seeder) -> Site:
 
 
 @pytest.mark.parametrize("capability", [W1, *OTHERS, "ledger_delete_everything"])
-@pytest.mark.parametrize("role", ["firm_admin", "engagement_partner", "agent", "client"])
+# The agent is refused by the matrix (no role holds the action; the unit suite and the generated
+# matrix test prove it); its audit rows need a real agent run, so it is not driven here.
+@pytest.mark.parametrize("role", ["firm_admin", "engagement_partner", "client"])
 async def test_ac50_every_execute_write_is_refused_and_audited(
     seed: Seeder, site: Site, capability: str, role: str
 ) -> None:
@@ -79,7 +90,6 @@ async def test_ac50_every_execute_write_is_refused_and_audited(
     ctx = _ctx(
         who,
         "firm_admin" if role == "firm_admin" else None,
-        kind="agent" if role == "agent" else "human",
         client=role == "client",
     )
     with pytest.raises(WriteCapabilityRefused) as refused:
@@ -126,3 +136,21 @@ async def test_a_client_outside_the_firm_is_refused_without_naming_it(
     with pytest.raises(WriteCapabilityRefused) as refused:
         await execute_write(_ctx(admin, "firm_admin"), W1, stranger)
     assert refused.value.reason == "unknown_client"
+
+
+async def test_l4_a_failure_working_out_the_reason_is_still_refused_and_audited(
+    seed: Seeder, site: Site, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from abacus.modules.integrations import writes
+
+    async def broken(*_args: object) -> bool | None:
+        raise RuntimeError("lookup failed")
+
+    monkeypatch.setattr(writes, "attest_client_of", broken)
+    admin = await seed.person(site.tenant_id, "firm_admin")
+    with pytest.raises(WriteCapabilityRefused) as refused:
+        await execute_write(_ctx(admin, "firm_admin"), W1, site.client_id)
+    assert refused.value.reason == "error"
+    found = await _refusals(seed, site)
+    assert len(found) == 1
+    assert REASONS[cast(int, cast(dict[str, object], found[0]["after"])["reason"])] == "error"

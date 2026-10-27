@@ -27,7 +27,9 @@ import pytest
 from abacus.kernel.config import settings
 from abacus.kernel.crypto import LocalKeyService, configure_key_service, reset_key_service
 from abacus.kernel.flags import forget_flags
+from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.connections import retrievals
+from abacus.modules.connections.api import revoke_retired
 from abacus.modules.integrations.api import register_adapter, unregister_adapter
 
 from .support import Json, Net, Person, Site
@@ -42,6 +44,9 @@ COUNTS: Final = {
     ),
     "connection_secrets": "SELECT count(*) FROM connection_secrets WHERE tenant_id = $1",
     "sync_runs": "SELECT count(*) FROM sync_runs WHERE tenant_id = $1",
+    "connection_grant_revocations": (
+        "SELECT count(*) FROM connection_grant_revocations WHERE tenant_id = $1"
+    ),
 }
 MASTER: Final = b"a02t16-master-key-0123456789abcdef"
 LEDGER: Final = "probe_t16_demo_ledger"  # the catalogue row whose system is the demo ledger
@@ -175,9 +180,11 @@ class World:
         return await self.call("POST", "/v1/connections/complete", who or self.tess, dict(handed))
 
     async def connected(self) -> Card:
+        """Connect (or reconnect) the demo ledger; its card, as the portal reads it after."""
         done = await self.complete(await self.handed())
         assert done.status_code == 201, done.text
-        return cast(Card, done.json())
+        assert done.json() == {"engagement_id": str(self.site.engagement_id)}
+        return await self.card()
 
     async def count(self, table: str) -> int:
         return cast(int, await self.net.seed.value(COUNTS[table], self.tenant))
@@ -326,8 +333,7 @@ async def test_ac36_a_reused_oauth_state_is_refused_and_nothing_more_is_created(
     handed = await world.handed()
     first = await world.complete(handed)
     assert first.status_code == 201, first.text
-    done = first.json()
-    assert done["client_entity_id"] == str(world.site.entity_id) and done["reconnected"] is False
+    assert (await world.card())["reconnected"] is False
     before = await world.count("connections")
     again = await world.complete(handed)
     assert again.status_code == 409 and again.json()["detail"] == "invalid_state"
@@ -477,7 +483,8 @@ async def test_ac40_retry_needs_reauth_first_then_runs_once(
     assert first.status_code == 202, first.text
     second = await world.call("POST", retry, world.tess)
     assert second.status_code == 202 and second.json() == first.json()
-    assert no_temporal == [uuid.UUID(first.json()["sync_run_id"])]  # one workflow, once
+    # One run; its workflow is ensured on each click (the start attaches to a running one).
+    assert set(no_temporal) == {uuid.UUID(first.json()["sync_run_id"])}
     assert await world.count("sync_runs") == 2
     assert (await world.actions("connection.retry_requested")) == [
         "connection.retry_requested"
@@ -507,3 +514,177 @@ async def test_ac39_disconnect_erases_the_secret_and_keeps_what_was_received(
     assert detail.json()["activity"][0]["text"] == "Disconnected by Tess Moreno (client)"
     again = await world.call("POST", path, world.tess, {"seen_version": version + 1})
     assert again.status_code == 404
+
+
+# --- security review fix round (DEC-515) ---------------------------------------------------------
+
+
+async def _revocation_events(world: World) -> list[OutboxEvent]:
+    rows = await world.net.seed.rows(
+        "SELECT id, payload FROM outbox WHERE tenant_id = $1 "
+        "AND event_type = 'connection_grant.revocation_requested' ORDER BY seq",
+        world.tenant,
+    )
+    return [
+        OutboxEvent(
+            cast(uuid.UUID, r["id"]),
+            world.tenant,
+            "connection_grant.revocation_requested",
+            cast(
+                dict[str, object],
+                json.loads(r["payload"]) if isinstance(r["payload"], str) else r["payload"],
+            ),
+        )
+        for r in rows
+    ]
+
+
+async def test_m1_disconnect_and_reconnect_revoke_the_grant_at_the_provider(world: World) -> None:
+    done = await world.connected()
+    cid = uuid.UUID(str(done["connection_id"]))
+    await _needs(world, cid, "token_expired")
+    await world.connected()  # the reconnect replaces the grant
+    version = (await world.card())["version"]
+    gone = await world.call(
+        "POST", f"/v1/portal/connections/{cid}/disconnect", world.tess, {"seen_version": version}
+    )
+    assert gone.status_code == 200, gone.text
+    reasons = await world.net.seed.rows(
+        "SELECT reason FROM connection_grant_revocations WHERE tenant_id = $1 ORDER BY created_at",
+        world.tenant,
+    )
+    assert [r["reason"] for r in reasons] == ["replaced", "disconnected"]
+    assert await world.count("connection_secrets") == 0
+    events = await _revocation_events(world)
+    assert len(events) == 2
+    for event in events:
+        await revoke_retired(event)
+        await revoke_retired(event)  # a replay finds nothing left to do
+    assert await world.count("connection_grant_revocations") == 0  # crypto-erased
+    revoked = await world.net.seed.rows(
+        "SELECT after_ref FROM audit_events WHERE tenant_id = $1 "
+        "AND action = 'connection.grant_revoked'",
+        world.tenant,
+    )
+    assert len(revoked) == 2
+    for r in revoked:
+        after = r["after_ref"]
+        assert (json.loads(after) if isinstance(after, str) else after)["result"] == 0
+
+
+async def test_l6_the_state_keeps_a_sealed_pkce_verifier(world: World) -> None:
+    started = await world.start()
+    assert started.status_code == 201, started.text
+    row = await world.net.seed.rows(
+        "SELECT verifier_sealed FROM connection_states WHERE tenant_id = $1", world.tenant
+    )
+    assert row[0]["verifier_sealed"] is not None
+    assert b"demo" not in bytes(row[0]["verifier_sealed"])
+
+
+async def test_m2_the_legacy_start_is_closed_once_por16_is_on(world: World) -> None:
+    refused = await world.call(
+        "POST",
+        f"/v1/engagements/{world.site.engagement_id}/connection/start",
+        world.tess,
+        {"provider": "fake"},
+    )
+    assert refused.status_code == 409 and refused.json()["detail"] == "connection_flow_moved"
+
+
+async def _flag(world: World, on: bool) -> None:
+    await world.net.seed.run(
+        "UPDATE feature_flag_states SET value = $2 WHERE tenant_id = $1 "
+        "AND flag = 'connections.portal_v2'",
+        world.tenant,
+        "true" if on else "false",
+    )
+    forget_flags()
+
+
+async def test_m2_a_legacy_flow_never_replaces_a_consented_ledger(world: World) -> None:
+    done = await world.connected()
+    await _flag(world, False)
+    started = await world.call(
+        "POST",
+        f"/v1/engagements/{world.site.engagement_id}/connection/start",
+        world.tess,
+        {"provider": "fake"},
+    )
+    assert started.status_code == 200, started.text
+    query = parse_qs(urlsplit(str(started.json()["authorise_url"])).query)
+    refused = await world.complete({"state": query["state"][0], "code": query["code"][0]})
+    assert refused.status_code == 409 and refused.json()["detail"] == "ledger_already_connected"
+    legacy = await world.call(
+        "GET", f"/v1/engagements/{world.site.engagement_id}/connection", world.tess
+    )
+    assert legacy.json()["id"] == done["connection_id"]  # the consented ledger stays
+
+
+async def test_l9_a_portal_state_does_not_complete_with_the_flag_off(world: World) -> None:
+    handed = await world.handed()
+    await _flag(world, False)
+    off = await world.complete(handed)
+    assert off.status_code == 404
+    assert await world.count("connections") == 0
+
+
+async def test_l5_a_completion_refused_after_the_exchange_is_recorded(world: World) -> None:
+    handed = await world.handed()
+    await world.net.seed.run(
+        "INSERT INTO connections (id, tenant_id, client_entity_id, provider, status, scopes, "
+        "created_by, category) VALUES ($1, $2, $3, 'import', 'active', '{}', 'seed', 'ledger')",
+        uuid.uuid4(),
+        world.tenant,
+        world.site.entity_id,
+    )
+    refused = await world.complete(handed)
+    assert refused.status_code == 409 and refused.json()["detail"] == "ledger_already_connected"
+    failed = await world.net.seed.rows(
+        "SELECT after_ref FROM audit_events WHERE tenant_id = $1 AND action = 'connection.failed'",
+        world.tenant,
+    )
+    assert len(failed) == 1
+    after = failed[0]["after_ref"]
+    assert (json.loads(after) if isinstance(after, str) else after)["revoke"] == 0  # demo revoke
+
+
+async def test_l7_runs_of_an_engagement_the_reader_is_not_on_stay_hidden(world: World) -> None:
+    done = await world.connected()
+    cid = uuid.UUID(str(done["connection_id"]))
+    hidden = await world.net.seed.value(
+        "INSERT INTO engagements (tenant_id, client_id, client_entity_id, name, "
+        "fiscal_period_start, fiscal_period_end, created_by) VALUES ($1, $2, $3, 'Other year', "
+        "'2024-01-01', '2024-12-31', $4) RETURNING id",
+        world.tenant,
+        world.site.client_id,
+        world.site.entity_id,
+        world.manager.user_id,
+    )
+    await world.net.seed.run(
+        "INSERT INTO sync_runs (id, tenant_id, client_entity_id, connection_id, engagement_id, "
+        "trigger, dataset, period_start, period_end, started_by, status, failure_code, "
+        "finished_at) VALUES ($1, $2, $3, $4, $5, 'on_demand', 'trial_balance', '2024-01-01', "
+        "'2024-12-31', 'seed', 'failed', 'provider_unavailable', clock_timestamp())",
+        uuid.uuid4(),
+        world.tenant,
+        world.site.entity_id,
+        cid,
+        hidden,
+    )
+    detail = await world.call("GET", f"/v1/portal/connections/{cid}", world.manager)
+    assert detail.status_code == 200, detail.text
+    assert detail.json()["recent_syncs"] == []
+    assert detail.json()["card"]["last_failed_at"] is None
+
+
+async def test_l11_a_repeated_idempotency_key_answers_the_first_disconnect(world: World) -> None:
+    done = await world.connected()
+    version = (await world.card())["version"]
+    path = f"/v1/portal/connections/{done['connection_id']}/disconnect"
+    headers = world.net.headers(world.tess)
+    headers["Idempotency-Key"] = f"a02t16-{uuid.uuid4().hex}"
+    first = await world.net.http.post(path, json={"seen_version": version}, headers=headers)
+    again = await world.net.http.post(path, json={"seen_version": version}, headers=headers)
+    assert first.status_code == again.status_code == 200
+    assert first.json() == again.json()

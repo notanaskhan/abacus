@@ -295,6 +295,7 @@ async def insert_state(
     consent_id: UUID | None = None,
     connection_id: UUID | None = None,
     category: str | None = None,
+    verifier_sealed: bytes | None = None,
 ) -> UUID:
     return (
         await session.execute(
@@ -310,6 +311,7 @@ async def insert_state(
                 consent_id=consent_id,
                 connection_id=connection_id,
                 category=category,
+                verifier_sealed=verifier_sealed,
             )
             .returning(ConnectionState.id)
         )
@@ -555,14 +557,19 @@ async def lock_connection(session: AsyncSession, connection_id: UUID) -> Connect
 
 
 async def last_failures(
-    session: AsyncSession, connection_ids: Sequence[UUID]
+    session: AsyncSession, connection_ids: Sequence[UUID], engagement_ids: Sequence[UUID]
 ) -> dict[UUID, datetime]:
-    """Per connection, when its newest run failed, if its newest finished run failed."""
-    if not connection_ids:
+    """Per connection, when its newest run failed, if its newest finished run failed; only runs
+    of the engagements the caller may read (review L7: walls hold across an entity)."""
+    if not connection_ids or not engagement_ids:
         return {}
     rows = await session.execute(
         select(SyncRun.connection_id, SyncRun.status, SyncRun.finished_at)
-        .where(SyncRun.connection_id.in_(list(connection_ids)), SyncRun.finished_at.is_not(None))
+        .where(
+            SyncRun.connection_id.in_(list(connection_ids)),
+            SyncRun.engagement_id.in_(list(engagement_ids)),
+            SyncRun.finished_at.is_not(None),
+        )
         .distinct(SyncRun.connection_id)
         .order_by(SyncRun.connection_id, SyncRun.finished_at.desc())
     )
@@ -573,13 +580,21 @@ async def last_failures(
     }
 
 
-async def recent_runs(session: AsyncSession, connection_id: UUID, limit: int) -> Sequence[SyncRun]:
-    """The connection's newest runs (LIST_EXEMPT: the caller authorised `connection.read`)."""
+async def recent_runs(
+    session: AsyncSession, connection_id: UUID, engagement_ids: Sequence[UUID], limit: int
+) -> Sequence[SyncRun]:
+    """The connection's newest runs on the engagements the caller may read (LIST_EXEMPT: the
+    caller authorised `connection.read` on each of `engagement_ids`; review L7)."""
+    if not engagement_ids:
+        return []
     return (
         (
             await session.execute(
                 select(SyncRun)
-                .where(SyncRun.connection_id == connection_id)
+                .where(
+                    SyncRun.connection_id == connection_id,
+                    SyncRun.engagement_id.in_(list(engagement_ids)),
+                )
                 .order_by(SyncRun.started_at.desc(), SyncRun.id)
                 .limit(limit)
             )
@@ -600,12 +615,18 @@ async def running_run_of(session: AsyncSession, connection_id: UUID) -> SyncRun 
     ).scalar_one_or_none()
 
 
-async def latest_failed_run(session: AsyncSession, connection_id: UUID) -> SyncRun | None:
+async def latest_failed_run(
+    session: AsyncSession, connection_id: UUID, engagement_ids: Sequence[UUID]
+) -> SyncRun | None:
+    """The newest failed run on the engagements the caller may retry on (review L7)."""
+    if not engagement_ids:
+        return None
     return (
         await session.execute(
             select(SyncRun)
             .where(
                 SyncRun.connection_id == connection_id,
+                SyncRun.engagement_id.in_(list(engagement_ids)),
                 SyncRun.status.in_(("failed", "failed_validation")),
             )
             .order_by(SyncRun.started_at.desc())
@@ -675,3 +696,28 @@ async def insert_retry_run(session: AsyncSession, **values: object) -> SyncRun |
             .returning(SyncRun)
         )
     ).scalar_one_or_none()
+
+
+async def has_consent_link(session: AsyncSession, connection_id: UUID) -> bool:
+    """Whether a client's consent produced (or re-authorised) this connection (POR-16)."""
+    found = await session.scalar(
+        select(ConnectionConsentLink.consent_id)
+        .where(ConnectionConsentLink.connection_id == connection_id)
+        .limit(1)
+    )
+    return found is not None
+
+
+async def last_success_on(
+    session: AsyncSession, connection_id: UUID, engagement_ids: Sequence[UUID]
+) -> datetime | None:
+    """When the connection last delivered on one of these engagements (review L7)."""
+    if not engagement_ids:
+        return None
+    return await session.scalar(
+        select(func.max(SyncRun.finished_at)).where(
+            SyncRun.connection_id == connection_id,
+            SyncRun.engagement_id.in_(list(engagement_ids)),
+            SyncRun.status == "succeeded",
+        )
+    )

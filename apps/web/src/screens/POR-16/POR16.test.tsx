@@ -12,7 +12,7 @@ import { connectionsHandlers } from "../../fixtures/handlers/connections";
 import { portalHandlers } from "../../fixtures/handlers/portal";
 import { POR16_CLOCKS } from "../../fixtures/seed/connections";
 import { renderRoutes } from "../../testing/support";
-import { PortalConnections, glyphOf } from ".";
+import { PortalConnections, glyphOf, safeSignIn } from ".";
 import { ARTBOARD, type Por16State, STATES, scenarios } from "./scenarios";
 
 beforeAll(() => {
@@ -256,5 +256,12 @@ describe("POR-16 artboards", () => {
     expect(glyphOf("CreditCard")).toBe("credit-card");
     expect(glyphOf("landmark")).toBe("landmark");
     expect(glyphOf("SomeVendorLogo")).toBe("store");
+  });
+
+  it("sends the browser only to an HTTPS sign-in or this app's own origin", () => {
+    expect(safeSignIn("https://appcenter.example.test/connect?state=x")).toBe(true);
+    expect(safeSignIn("/connect/callback?fixture=quickbooks_online")).toBe(true);
+    expect(safeSignIn("javascript:alert(1)")).toBe(false);
+    expect(safeSignIn("http://evil.example.test/")).toBe(false);
   });
 });

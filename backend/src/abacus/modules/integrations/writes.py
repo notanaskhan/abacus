@@ -84,8 +84,13 @@ async def _refuse(ctx: Actor, capability: str, client_id: UUID, reason: RefusalR
 
 
 async def authorise_write(ctx: Actor, capability: str, client_id: UUID) -> None:
-    """Whether `ctx` may run `capability` against the client's system: never, in v1."""
-    await _refuse(ctx, capability, client_id, await _reason(ctx, capability, client_id))
+    """Whether `ctx` may run `capability` against the client's system: never, in v1. If working
+    out why fails, the call is refused (`error`) and audited all the same (review L4)."""
+    reason: RefusalReason = "error"
+    try:
+        reason = await _reason(ctx, capability, client_id)
+    finally:
+        await _refuse(ctx, capability, client_id, reason)
 
 
 async def execute_write(

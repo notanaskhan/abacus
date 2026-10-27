@@ -146,11 +146,21 @@ Decided in DEC-377 (flags, status codes per route, the reconnect request's idemp
   `connections.version`). Optional `connection_id` on the start names the card being reconnected.
   `POST /v1/connections/complete` finishes both flows: a reconnect re-authorises the same
   connection (`connection.reauthorized`, open reconnect requests fulfilled), a new one is
-  `connection.created`; the response adds `client_entity_id`, `connection_id`, `reconnected` for a
-  portal flow. The details drawer adds `activity[]` `{action, text, at}`: "Connected by Tess Moreno
+  `connection.created`; the response stays `{engagement_id}` and the portal reads its cards again. The details drawer adds `activity[]` `{action, text, at}`: "Connected by Tess Moreno
   (client)", "Reconnected by …", "Disconnected by …" (`client_actor=1` on the events a client
   causes). Try again re-runs the newest failed request-item run (one live run: a second click
   answers it). Disconnect needs `seen_version` and fresh MFA, erases the secret, keeps every
   received snapshot and evidence. *Export instead* is on every ledger card with no target yet
   (`{request_item_id: null, binder_id: null}`: "the team will ask"); A-02-T28 resolves the open
   trial-balance request.
+
+### Security review fix round (2026-10-27; DEC-515, DEC-516)
+
+The connector port adds PKCE (`authorise_url(…, code_challenge)`, `exchange_code(…, code_verifier)`)
+and `revoke()`; retired grants are revoked at the provider after commit
+(`connection_grant.revocation_requested`, audited `connection.grant_revoked`). The legacy
+engagement start answers 409 `connection_flow_moved` once `connections.portal_v2` is on. Every
+connection provider that reaches a host must be a registry read connector; `kernel.egress` is the
+connectors' only HTTP client. Sign-in URLs are HTTPS to an allowlisted host or the app's origin.
+Retry and disconnect replay a repeated `Idempotency-Key`; the start does not (its answer is
+Restricted). Runs and failures are shown only for engagements the reader may read.

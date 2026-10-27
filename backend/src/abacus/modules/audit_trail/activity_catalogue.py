@@ -81,6 +81,7 @@ CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
     "connection.consent_recorded": _a("decision", "ok", "consent_version", "client_actor"),
     "connection.reauthorized": _a("change", "pl", "client_actor"),
     "connection.retry_requested": _a("run", "pl", "sync_run_id", "client_actor"),
+    "connection.grant_revoked": _a("change", "no", "result"),  # review M1: the provider's revoke
     # Tie-out checks (A-02-T17)
     "tie_out_check.issue_linked": _a("change", "pl", "issue_id", "version_no"),
 }

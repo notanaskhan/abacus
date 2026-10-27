@@ -175,3 +175,67 @@ def test_ac50_w1_is_refused_for_an_attest_client_at_registry_level() -> None:
 def test_unknown_capabilities_are_not_found_and_the_refusal_has_its_code() -> None:
     assert write_capability("ledger_delete_everything") is None
     assert WriteCapabilityRefused.code == "write_capability_refused"
+
+
+# --- security review M3, L10: every connector's egress, and the browser's sign-in URL ----------
+
+
+def test_m3_a_connection_provider_outside_the_registry_blocks_start_up(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from abacus.modules.connections import api as connections
+
+    monkeypatch.setitem(connections.CONNECTORS, "probe_networked", connections.CONNECTORS["fake"])
+    found = undeclared_egress()
+    assert "connector:probe_networked" in found
+    with pytest.raises(UndeclaredEgress, match=r"connector:probe_networked"):
+        assert_egress_declared()
+    # The demo ledger and uploads reach no host: they are never reported.
+    assert not any(k in found for k in ("connector:fake", "connector:import"))
+
+
+def test_m3_the_egress_client_admits_only_https_to_allowlisted_hosts() -> None:
+    from abacus.kernel.egress import EgressRefused, check_egress, configure_egress
+
+    configure_egress(frozenset({"api.probe.example"}))
+    try:
+        check_egress("https://api.probe.example/v3/reports")
+        for bad in (
+            "http://api.probe.example/v3",  # not HTTPS
+            "https://other.example/v3",  # not allowlisted
+            "https://user:pw@api.probe.example/",  # credentials in the URL
+        ):
+            with pytest.raises(EgressRefused):
+                check_egress(bad)
+    finally:
+        configure_egress(frozenset())
+    with pytest.raises(EgressRefused):  # unconfigured: everything is refused
+        check_egress("https://api.probe.example/v3/reports")
+
+
+def test_l10_a_sign_in_url_is_https_to_an_allowlisted_host_or_the_apps_own() -> None:
+    from abacus.kernel.config import settings
+    from abacus.kernel.egress import EgressRefused, check_sign_in_url, configure_egress
+
+    own = f"{settings().app_base_url}/client/connect/callback?state=s&code=demo"
+    assert check_sign_in_url(own) == own
+    configure_egress(frozenset({"appcenter.probe.example"}))
+    try:
+        assert check_sign_in_url("https://appcenter.probe.example/connect?x=1")
+        for bad in (
+            "javascript:alert(1)",
+            "https://evil.example/",
+            "http://appcenter.probe.example/",
+        ):
+            with pytest.raises(EgressRefused):
+                check_sign_in_url(bad)
+    finally:
+        configure_egress(frozenset())
+
+
+def test_ac50_no_principal_holds_write_capability_execute() -> None:
+    from abacus.modules.identity.authz.matrix import RULES
+
+    rule = RULES["write_capability.execute"]
+    assert [r for r, d in rule.decisions.items() if d != "deny"] == []
+    assert rule.decisions.get("agent") == "deny" and rule.decisions.get("system") == "deny"

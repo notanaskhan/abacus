@@ -241,6 +241,12 @@ codes:
     raised_by:
     - abacus.modules.connections.connect.ConnectionFailed
     summary: The provider refused or failed the exchange (its code, never its text, is logged).
+  connection_flow_moved:
+    status: 409
+    raised_by:
+    - abacus.modules.connections.connect.ConnectionFlowMoved
+    summary: 'POR-16 is on for the firm: a client connects from Connections, with the consent sheet (A-02-T16
+      review M2). The engagement page no longer starts a flow.'
   connection_needs_reauth:
     status: 409
     raised_by:
@@ -698,8 +704,9 @@ codes:
   ledger_already_connected:
     status: 409
     raised_by:
-    - abacus.modules.connections.entity.LedgerAlreadyConnected
-    summary: The entity has a live ledger connection already (one per entity, ADR-045).
+    - abacus.modules.connections.connect.LedgerAlreadyConnected
+    summary: The entity has a live ledger connection already (one per entity, ADR-045); a ledger the
+      client connected with a consent is never replaced by a flow without one.
   ledger_import_off:
     status: 409
     raised_by:

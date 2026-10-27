@@ -1555,6 +1555,7 @@ _NETWORK_ROOTS = frozenset(
 _CONNECTOR_METHODS = frozenset(
     {"capabilities", "authorise_url", "exchange_code", "refresh", "pull", "changes_since"}
     | {"fetch_attachment", "health"}
+    | {"revoke"}  # A-02-T16 review M1: the read-only grant's end, never a write to the books
 )
 _WRITE_VERBS = ("create", "update", "delete", "write", "post", "put", "patch", "upload", "send")
 
