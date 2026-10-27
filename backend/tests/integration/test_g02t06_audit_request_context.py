@@ -92,7 +92,8 @@ async def _session(seed: Seeder, user_id: uuid.UUID, mfa_at: datetime) -> tuple[
     cookie = uuid.uuid4().hex
     digest = hashlib.sha256(cookie.encode()).hexdigest()
     session_id = await seed.value(
-        "SELECT auth_session_start($1, 'workos', NULL, $2, $3, 1800, 43200)",
+        # G-02-T14 (0220): the 9-argument start; no method or organisation reported.
+        "SELECT auth_session_start($1, 'workos', NULL, $2, $3, 1800, 43200, NULL, NULL)",
         user_id,
         mfa_at,
         digest,

@@ -1,0 +1,25 @@
+{
+  "case": "receipt_for_statement",
+  "prompt_ref": "evidence.upload_review@v3",
+  "content_sha256": "8f52443f4690729dfa08ba4a128ed99546736bdf64c9e8d73aca79378bdd71c5",
+  "response": {
+    "no_concerns": false,
+    "flags": [
+      {
+        "category": "irrelevant",
+        "confidence": 0.95,
+        "rationale": "The request asks for the operating account's December bank statement; this is a store receipt for printer paper.",
+        "citations": [
+          {
+            "page": 1,
+            "quote": "OFFICE DEPOT STORE 2231"
+          },
+          {
+            "page": 1,
+            "quote": "Thank you for shopping with us"
+          }
+        ]
+      }
+    ]
+  }
+}

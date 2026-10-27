@@ -3,9 +3,9 @@
 The goldens are transcribed from the epic and the blueprint, not from the code; this test reads
 them from `tests/golden/scenario/brightwater_hale/` and holds the loaded rows to them:
 
-- `clients.json`: every client by name with its primary entity, and nothing else (the client
-  facts — kind, office, partner, attest, portal, further entities — are a strict xfail until the
-  loader writes them, TASK-393);
+- `clients.json`: every client by name and nothing else, with its kind (in the record's
+  vocabulary), office, relationship partner, portal status and every entity (TASK-393); attest is
+  derived from the client's engagements (DEC-128), so it is not compared here;
 - `practice_counts.yaml`: 184 clients, 46 staff seats by office (22 / 14 / 10), 3 offices, and a
   holdout (Fairhaven, Copperleaf) loading 183;
 - `audits.yaml`: the 27 roster rows (engagement entity, type group, phase, engagement partner).
@@ -45,6 +45,17 @@ PHASES = {
     "In review": "in_review",
     "Ready to release": "ready_to_release",
     "Released": "released",
+}
+# CLI-01's client kinds (clients.json) in the client record's vocabulary (organisations, 0082).
+RECORD_KINDS = {
+    "individual": "household",
+    "household": "household",
+    "business": "business",
+    "partnership": "business",
+    "exempt_org": "nonprofit",
+    "trust": "trust_family",
+    "estate": "trust_family",
+    "plan": "plan_sponsor",
 }
 # The F-04.10 type groups as the engagement type codes.
 TYPE_GROUPS = {
@@ -129,11 +140,6 @@ async def test_the_loaded_e0_matches_the_practice_count_and_client_goldens(
         assert cast(list[str], client["entities"])[0] in loaded[str(client["name"])], client
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-393: the loader writes a client's name and primary entity only; kind, office, "
-    "relationship partner, attest, portal status and further entities are not loaded yet",
-)
 async def test_the_loaded_clients_carry_the_goldens_facts(own_db: Database) -> None:
     seed = Seeder(own_db.superuser_dsn)  # loaded by the first test, in this module's database
     configure_engine(own_db.app_url)
@@ -155,14 +161,12 @@ async def test_the_loaded_clients_carry_the_goldens_facts(own_db: Database) -> N
             row["kind"],
             row["office"],
             row["partner"],
-            row["is_attest_client"],
             row["portal_status"],
             set(cast(list[str], client["entities"])) <= set(row["entities"]),
         ) == (
-            client["kind"],
+            RECORD_KINDS[str(client["kind"])],
             client["office"],
             client["partner"],
-            client["attest"],
             client["portal"],
             True,
         ), client["name"]

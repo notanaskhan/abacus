@@ -182,14 +182,6 @@ async def test_ac4_g1_and_g2_are_unmet_until_the_partner_records_each_fact(
     assert (await eng.gates())["G2"] == (False, ["independence_conclusion"])
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="DEC-39 (b) makes G3 strict (a signed letter, or not_required_this_year for the "
-    "engagement), but C1's G3 reads met with no letter whenever the firm's letter policy is off "
-    "(SPEC-025 Q4's older 'warn, don't block'); tightening it moves binder publishing and every "
-    "G3 consumer, beyond a small fix; "
-    "recorded in work/tasks/TASK-992-s6-backfill-suites.md (#378)",
-)
 async def test_ac6_g3_is_unmet_until_the_letter_is_recorded_whatever_the_firm_policy(
     eng: Engagement,
 ) -> None:

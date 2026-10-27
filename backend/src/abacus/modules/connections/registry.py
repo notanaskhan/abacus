@@ -19,6 +19,8 @@ TABLES: frozenset[str] = frozenset(
         "connection_consents",
         "connection_consent_links",
         "reconnect_requests",
+        # 0215 (A-02-T16 review M1): retired grants until the provider's revoke answers.
+        "connection_grant_revocations",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -52,6 +54,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "connection_states": frozenset(
         {"tenant_id", "engagement_id", "client_entity_id", "user_id", "provider"}
         | {"state_hash", "expires_at"}
+        | {"consent_id", "connection_id", "category", "verifier_sealed"}  # 0215 (A-02-T16)
     ),
     "connection_secrets": frozenset({"connection_id", "tenant_id", "sealed"}),
     "connection_consents": frozenset(
@@ -63,6 +66,10 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "reconnect_requests": frozenset(
         {"tenant_id", "connection_id", "requested_by_user_id", "engagement_id"}
+    ),
+    "connection_grant_revocations": frozenset(
+        {"tenant_id", "client_entity_id", "provider", "connection_id", "state_id", "sealed"}
+        | {"reason"}
     ),
 }
 # Columns the app may update; tables not listed keep what their migration grants.
@@ -76,6 +83,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         # 0195 (A-02-T13): who (re)connected, reauth and sync facts, the reason code
         | {"connected_by_user_id", "connected_at", "reauth_due_at", "last_sync_at"}
         | {"status_reason_code"}
+        | {"version"}  # 0215 (A-02-T16): bumped on every status change
     ),
     "sync_runs": frozenset(
         {"status", "raw_storage_key", "raw_version_id", "raw_fingerprint", "snapshot_id"}

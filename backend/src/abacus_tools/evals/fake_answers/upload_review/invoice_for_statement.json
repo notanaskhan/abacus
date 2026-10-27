@@ -1,0 +1,25 @@
+{
+  "case": "invoice_for_statement",
+  "prompt_ref": "evidence.upload_review@v3",
+  "content_sha256": "7f939ce763abd9c0679a2c37f3908c6a9bbb3dbbba02d77c58736ade5ff0a47b",
+  "response": {
+    "no_concerns": false,
+    "flags": [
+      {
+        "category": "irrelevant",
+        "confidence": 0.95,
+        "rationale": "The request asks for the operating account's December bank statement; this is a supplier's invoice for office chairs.",
+        "citations": [
+          {
+            "page": 1,
+            "quote": "INVOICE Northwind Supplies LLC"
+          },
+          {
+            "page": 1,
+            "quote": "Payment terms: Net 30"
+          }
+        ]
+      }
+    ]
+  }
+}

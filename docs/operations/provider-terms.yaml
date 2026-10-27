@@ -16,6 +16,8 @@
 #   region: us-east-1                   # US only (ADR-021, ADR-113)
 #   subprocessors: ["..."]
 #   breach_notice: "..."                # the provider's commitment (ADR-097)
+#   second_approver: counsel           # reviews it first (ADR-114 Q3; Q-02-T18)
+#   second_approved_on: YYYY-MM-DD      # on or before approved_on
 #   approved_by: founder
 #   approved_on: YYYY-MM-DD
 #   review_by: YYYY-MM-DD               # at most 12 months after approved_on

@@ -4,10 +4,17 @@
 // Fixture mode serves them for the reads they cover; the rest of the TS seed is interim until
 // each read is exported.
 
-import type { FirmClientOut, RequestItemOut } from "@abacus/api-client";
+import type {
+  FirmClientOut,
+  ListPageBinderRowOut,
+  PortalHomeOut,
+  RequestItemOut,
+} from "@abacus/api-client";
+import bindersE0 from "./e0.binders.json";
 import engagementsE0 from "./e0.engagements.json";
 import firmClientsE0 from "./e0.firm-clients.json";
 import northwindRequestsE0 from "./e0.northwind-request-items.json";
+import portalHomeE0 from "./e0.portal-home.json";
 
 export interface ExportedRead<T> {
   scenario: { version: string; hash: string; snapshot: string };
@@ -21,4 +28,6 @@ export const EXPORTED_E0 = {
   firmClients: firmClientsE0 as ExportedRead<FirmClientOut[]>,
   engagements: engagementsE0 as ExportedRead<Record<string, unknown>[]>,
   northwindRequestItems: northwindRequestsE0 as ExportedRead<RequestItemOut[]>,
+  binders: bindersE0 as ExportedRead<ListPageBinderRowOut>,
+  portalHome: portalHomeE0 as ExportedRead<PortalHomeOut>,
 } as const;

@@ -23,7 +23,9 @@ Ctx = Annotated[AuthContext, Depends(current_context)]
 class NoteEventOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    kind: Annotated[Literal["responded", "cleared", "reopened"], classified("internal")]
+    kind: Annotated[
+        Literal["responded", "cleared", "reopened", "withdrawn"], classified("internal")
+    ]
     body: Annotated[str | None, classified("confidential")]
     by_name: Annotated[str, classified("internal")]
     at: Annotated[datetime, classified("internal")]

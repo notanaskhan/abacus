@@ -23,10 +23,16 @@ from abacus.modules.agents.repository import (
     latest_matches_for_gates,
     latest_screenings_for_gates,
     latest_upload_reviews_for_gates,
+    suggestion_engagement_of,
     undecided_drafts_for_gates,
 )
 from abacus.modules.evidence.api import decided_among, waiting_among, withdrawn_among
-from abacus.modules.review.api import GateSource, OpenGate, register_gate_source
+from abacus.modules.review.api import (
+    GateSource,
+    OpenGate,
+    register_gate_source,
+    register_suggestion_owner,
+)
 
 Rows = Sequence[tuple[UUID, UUID, UUID]]  # (subject, engagement, what it is about)
 
@@ -101,3 +107,14 @@ def register_gate_sources() -> None:
 
 
 __all__ = ["SOURCES", "register_gate_sources"]
+
+
+async def suggestion_owner(tenant: TenantContext, suggestion_id: UUID) -> UUID | None:
+    """P-04-T23: which engagement an agent suggestion belongs to (a decision card's
+    recommendation must be its own engagement's)."""
+    async with tenant_session(tenant) as session:
+        return await suggestion_engagement_of(session, suggestion_id)
+
+
+def register_suggestion_lookup() -> None:
+    register_suggestion_owner(suggestion_owner)

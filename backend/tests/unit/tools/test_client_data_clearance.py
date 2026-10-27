@@ -62,6 +62,8 @@ def _entry(**changes: object) -> dict[str, object]:
         "region": "us-east-1",
         "subprocessors": [],
         "breach_notice": "Without undue delay",
+        "second_approver": "counsel",  # Q-02-T18 (ADR-114 Q3)
+        "second_approved_on": date(2026, 9, 28),
         "approved_by": "founder",
         "approved_on": date(2026, 10, 1),
         "review_by": date(2027, 9, 30),

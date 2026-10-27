@@ -94,7 +94,7 @@ Recorded at the S6 Contract Monday (Mon Jan 11, 2027; pulled forward to 2026-10-
 | 040 | SPEC-024 §4, AC-6 | four engagement types (`audit`, `review`, `compilation`, `agreed_upon_procedures`) | C1 v1's 14 types, `fs_audit` for `audit` | DEC-122, F-03 |
 | 041 | SPEC-024 AC-3, AC-4 | three firm roles | four: `security_admin` added (ED-009, fixed by TASK-1015) | ADR P-10, DEC-21 |
 | 040 | SPEC-024 AC-1 | a second attempt is "refused"; sign-up is "rate-limited" | 409 `signup_code_invalid`, `signup_already_staff`, `signup_rate_limited`; 422 `signup_invalid` | `docs/architecture/error-codes.yaml` |
-| 044 | SPEC-025 Q4 | the letter warns and does not block | G3 is strict (held by ED-010) | DEC-39 (b) |
+| 044 | SPEC-025 Q4 | the letter warns and does not block | G3 is strict (ED-010, fixed) | DEC-39 (b) |
 | 044 | SPEC-025 AC-9 | the roll-forward wizard's states | belongs to TASK-048's suite | Q-03-T023 (S8) |
 | 050 | SPEC-027 §14 | automatic actions audited with actor kind `agent`, policy and version | one `agent.activity` row by the system actor on the engagement; policy and version on the feed row | TASK-050 D2 |
 | 051 | SPEC-027 AC-3, §4.6 | Routine sends; feed outcome `drafted` | the agent drafts at every level and a person sends; outcomes done, skipped, failed | DEC-74, DEC-220 |

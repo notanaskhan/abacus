@@ -17,6 +17,9 @@ from abacus.modules.agents.api import (
     register_suggestion_target,
 )
 from abacus.modules.review.api import (
+    CardOption,
+    CardSubject,
+    ComputedCard,
     DecisionKind,
     FieldOwner,
     UnregisteredKind,
@@ -33,8 +36,9 @@ TENANT = TenantContext(uuid.uuid4(), "human", "probe")
 pytestmark = pytest.mark.asyncio
 
 
-async def _options(_tenant: TenantContext, _card: uuid.UUID) -> list[str]:
-    return ["overall_1_0", "overall_1_5"]
+async def _options(_tenant: TenantContext, _subject: CardSubject) -> ComputedCard:
+    # P-04-T23: a kind's provider computes the card's options (code, never a model).
+    return ComputedCard((CardOption("overall_1_0", "1.0%"), CardOption("overall_1_5", "1.5%")))
 
 
 async def _raises(_tenant: TenantContext, _engagement: uuid.UUID) -> bool:

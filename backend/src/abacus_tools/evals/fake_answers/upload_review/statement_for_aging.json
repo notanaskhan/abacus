@@ -1,0 +1,25 @@
+{
+  "case": "statement_for_aging",
+  "prompt_ref": "evidence.upload_review@v3",
+  "content_sha256": "10a347a09415210d28453df208f7093e6f46a723209b97e8f9fb83f468159051",
+  "response": {
+    "no_concerns": false,
+    "flags": [
+      {
+        "category": "irrelevant",
+        "confidence": 0.9,
+        "rationale": "The request asks for the receivables aging at year end; this is a bank statement.",
+        "citations": [
+          {
+            "page": 1,
+            "quote": "First Example Bank"
+          },
+          {
+            "page": 1,
+            "quote": "Total deposits and other credits $5,250.00"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -73,3 +73,15 @@ async def trigger_retrieval(
             await fail_run(system, "failed", WORKFLOW_UNAVAILABLE)
         raise WorkflowUnavailable("retrieval workflow could not be started") from None
     return view
+
+
+async def ensure_workflow(ctx: AuthContext, run_id: UUID, *, created: bool) -> None:
+    """A-02-T16 (POR-16's *Try again*): make sure a recorded run's workflow is running; a run
+    this request created is ended as failed when its workflow can't be started."""
+    try:
+        await _start(ctx.tenant_id, run_id)
+    except Exception:
+        if created:
+            system = await load_system_context(ctx.tenant_id, run_id)
+            await fail_run(system, "failed", WORKFLOW_UNAVAILABLE)
+        raise WorkflowUnavailable("retrieval workflow could not be started") from None

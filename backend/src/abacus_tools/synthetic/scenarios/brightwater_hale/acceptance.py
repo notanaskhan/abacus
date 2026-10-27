@@ -386,17 +386,9 @@ def acceptance_events() -> list[Event]:
         for i, c in enumerate(CONTACTS)
         if c.client == NORTHWIND
     ]
-    # CLI-06h and CLI-07 a, b, d: Grace adds the estate under the existing client (CLI-06b),
-    # then Thornbury's draft, the Harborline hit and the record.
+    # CLI-06h and CLI-07 a, b, d: Thornbury's draft (on the estate entity audit_core loads with
+    # its client, TASK-393), the Harborline hit and the record.
     events += [
-        event(
-            "entity:thornbury-estate",
-            _at(8, 13, 58),
-            "organisations.client_entity_added",
-            "GH",
-            {"entity": THORNBURY},
-            client=THORNBURY,
-        ),
         event(
             "draft:thornbury",
             _at(8, 14, 0),

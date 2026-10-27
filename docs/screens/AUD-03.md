@@ -151,7 +151,7 @@ Each becomes a test in `AUD-03.test.tsx` ("AUD-03 avoid: …"): gradients in pro
 | DV-3 | Viewer Ana Cruz; c at Sep 9, g at Sep 21 | DEC-15 | A-01 §2.4 |
 | DV-7 | "Linked (n)" shows the count only; Unlink and "Open in Files" are planned links in the row menu; Replace uploads a new version on behalf | SHL-21 is K-04; FIL-01 is N-01 | A-01 §2.4 |
 | DV-8 | "Remind…" opens P-06's FollowUpSheet with a template-composed body; a person sends | ADR-111; DEC-74 | A-01 §2.4 |
-| DV-9 | The export entry in the header "···" and the export sheet are composed from kits | No artboard | A-01 §2.4 |
+| DV-9 | The export entry in the header "···" and the export sheet are composed from kits | No artboard | A-01 §2.4; the design follow-up in docs/screens/AUD-02.md (A-01-T24, DEC-541) |
 | — | The Agent check chip "Agent check: period ✓ · signed ✓ · entity ✓" of the original b is replaced by the C-34 ScreeningCard | revision item 3 | revision.md |
 | DV-13 | The 490 viewer is the cockpit dock widened to `--ev-w`, under its 46 Agent · Viewer header (the artboard draws no header) | One cockpit host for AUD-02 and AUD-03 | DEC-421 |
 | DV-14 | Rows are composed in the screen from kit parts; the bands are the compact SourceDocGroup (no olive count in f); the 12 px glyph is the 13 px disc | C-02 has no Linked cell, glyph, Overdue/Returned pill or menu (a `ui-kit-component` task) | DEC-421 |

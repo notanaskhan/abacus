@@ -1,0 +1,71 @@
+{
+  "scenario": {
+    "version": "bh-2026.10.3",
+    "hash": "2b09e6fb01617c990e6e72feac508159fe5a03c6ff4f80bbb8d4a539c6f8d6a2",
+    "snapshot": "E0",
+    "slices": [
+      "portal"
+    ]
+  },
+  "persona": "claire-feld",
+  "request": "GET /v1/portal/home",
+  "body": {
+    "all_done": false,
+    "binder": {
+      "binder_id": "0d4d161a-5a7d-4ccc-b33a-31acd012168d",
+      "done": 5,
+      "sorted_count": 0,
+      "total": 7
+    },
+    "earlier": [],
+    "first_visit": true,
+    "my_k1s": [],
+    "notices_info": [],
+    "recent_threads": [],
+    "scope": {
+      "id": "a8515410-7743-41d5-9543-d4d534d67d6c",
+      "kind": "client",
+      "label": "Jonah & Claire Feld",
+      "role_label": "Taxpayer",
+      "sub": null
+    },
+    "team": [
+      {
+        "display_name": "Daniel Reyes",
+        "role_code": "partner_signs_return",
+        "user_id": "4ffb03c8-d2e3-4256-8aad-3fc651778a3e"
+      },
+      {
+        "display_name": "Samuel Ito",
+        "role_code": "manager_reviews_return",
+        "user_id": "65d1919f-dd0c-4ae7-b118-6be49b4a11de"
+      },
+      {
+        "display_name": "Olivia Brandt",
+        "role_code": "preparer_day_to_day",
+        "user_id": "c11f48e2-5fdc-4d15-9f63-cda7a514d871"
+      },
+      {
+        "display_name": "Kevin Osei",
+        "role_code": "preparer",
+        "user_id": "de60652d-5fa5-4b5e-97de-c1e84edd71ac"
+      }
+    ],
+    "todos": [
+      {
+        "count": 2,
+        "detail": null,
+        "due_date": "2026-03-15",
+        "facts": {},
+        "kind": "upload",
+        "state": "overdue",
+        "target": {
+          "params": {},
+          "screen": "POR-03"
+        }
+      }
+    ],
+    "welcome_dismissed": false,
+    "work_cards": []
+  }
+}

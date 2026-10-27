@@ -32,8 +32,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel import clock
 from abacus.kernel._flags import AUDITS_BINDER_EXPORT
+from abacus.kernel.clock import system_now
 from abacus.kernel.db import tenant_session
-from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
+from abacus.kernel.errors import DomainConflict, DomainForbidden, DomainInvalid, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import (
     Position,
@@ -54,6 +55,7 @@ from abacus.modules.evidence.export_manifest import FORMAT_VERSION
 from abacus.modules.evidence.export_models import EngagementExport
 from abacus.modules.evidence.export_sections import audit_trail_registered
 from abacus.modules.identity.api import (
+    MFA_RECENT,
     AuthContext,
     Forbidden,
     Resource,
@@ -94,6 +96,26 @@ class ExportSectionUnavailable(DomainInvalid):
     is registered): refused at create, before any grant, rather than failing after the window."""
 
     code = "export_section_missing"
+
+
+class ExportNeedsMfa(DomainForbidden):
+    """L8 (DEC-547): the role allows it, but the last second factor is older than the window:
+    verify again, then retry (the shell's step-up). Answers `facts.reason = mfa_required`, so
+    the sheet opens the step-up only for this and never for a role refusal."""
+
+    code = "forbidden"
+
+
+async def authorise_fresh(ctx: AuthContext, action: str, resource: Resource) -> None:
+    """`authorise`, with a stale second factor told apart from every other refusal."""
+    try:
+        await authorise(ctx, action, resource)
+    except Forbidden as refused:
+        if refused.layer == "attribute" and (
+            ctx.mfa_at is None or system_now() - ctx.mfa_at > MFA_RECENT
+        ):
+            raise ExportNeedsMfa(facts={"reason": "mfa_required"}) from None
+        raise
 
 
 class ExportUndoClosed(DomainConflict):
@@ -192,15 +214,20 @@ async def _on_work_item(ctx: AuthContext, action: str, work_item_id: UUID) -> Re
         raise NotFound("work_item")
     ref = await get_ref(ctx, engagement_id)
     resource = replace(ref.resource(), work_item_id=work_item_id)
-    await authorise(ctx, action, resource)
+    await authorise_fresh(ctx, action, resource)
     return resource
 
 
 async def _on_export(ctx: AuthContext, action: str, row: EngagementExport) -> Resource:
     ref = await get_ref(ctx, row.engagement_id)
     resource = replace(ref.resource(), work_item_id=row.work_item_id)
-    await authorise(ctx, action, resource)
+    await authorise_fresh(ctx, action, resource)
     return resource
+
+
+# The download (A-01-T22, `export_download`) applies the same two checks.
+human = _human
+flag_on = _flag_on
 
 
 # --- create ----------------------------------------------------------------------------------
