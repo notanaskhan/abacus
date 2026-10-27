@@ -134,7 +134,7 @@ async def test_ac_the_live_methodology_cards_with_facet_counts(library: Library)
         "v2",
     )
     assert v2["subtitle"] == "EBP · 2 requests"
-    assert v2["usage_count"] == 2
+    assert (v2["usage_count"], v2["usage_kind"]) == (2, "engagements")
     assert v2["route"] == f"/knowledge/methodology/{library.v2}/programs"
     assert (v1["status"], v1["version_label"]) == ("superseded", "v1")
     assert page["counts"] == {"published": 1, "draft": 0, "superseded": 1}

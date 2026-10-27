@@ -89,6 +89,8 @@ class CatalogItem:
     usage: tuple[str, UUID] | None = None
     # Other words the card is found by (area and program names); never shown, never ranged.
     keywords: tuple[str, ...] = ()
+    # What the usage count counts, for its words ("Used by 14 engagements", K-01-T04).
+    usage_kind: str | None = None
 
 
 @dataclass(frozen=True)

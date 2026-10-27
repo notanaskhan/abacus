@@ -29811,6 +29811,25 @@
             "cls": "internal",
             "title": "Usage Count"
           },
+          "usage_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "engagements",
+                  "returns",
+                  "closes",
+                  "audits",
+                  "agents"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Usage Kind"
+          },
           "version_label": {
             "anyOf": [
               {

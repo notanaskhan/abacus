@@ -14128,6 +14128,10 @@ export type KnowledgeItemOut = {
      */
     usage_count: number | null;
     /**
+     * Usage Kind
+     */
+    usage_kind?: 'engagements' | 'returns' | 'closes' | 'audits' | 'agents' | null;
+    /**
      * Version Label
      */
     version_label: string | null;

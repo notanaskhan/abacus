@@ -167,6 +167,7 @@ async def _items(viewer: Viewer, category: str) -> list[CatalogItem]:
             updated_at=s.updated_at,
             route=_route(category, v.id, s.status),
             usage=(USAGE_TYPE, v.id) if card != "draft" else None,
+            usage_kind="engagements" if card != "draft" else None,
             keywords=areas.get(v.id, ()),
         )
         for t, v, s, card in chosen

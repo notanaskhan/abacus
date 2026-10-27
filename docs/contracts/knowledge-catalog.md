@@ -36,7 +36,7 @@ A client principal answers 404 (INV-4); then `knowledge.read` at the firm (403);
 
 ## 3. Models
 `backend/src/abacus/modules/methodology/contract.py`. Every field is internal (K-01 §4.2: titles and names are internal).
-- **`KnowledgeItemOut`**: `id`, `category` (one of `methodology`, `pbc_templates`, `firm_standards`, `engagement_templates`, `skills`, `notes`, `content_packs`, `frameworks`, `research`, `agent_instructions`), `title`, `subtitle`, `status` (`knowledge_item`), `version_label`, `effective_from`, `owner_name`, `usage_count` (null without a counter), `updated_at`, `match[] {start, end}`, `route`.
+- **`KnowledgeItemOut`**: `id`, `category` (one of `methodology`, `pbc_templates`, `firm_standards`, `engagement_templates`, `skills`, `notes`, `content_packs`, `frameworks`, `research`, `agent_instructions`), `title`, `subtitle`, `status` (`knowledge_item`), `version_label`, `effective_from`, `owner_name`, `usage_count` (null without a counter), `usage_kind` (`engagements`, `returns`, `closes`, `audits`, `agents`: what the count counts, for its words; null with no count; K-01-T04), `updated_at`, `match[] {start, end}`, `route`.
 - **`ReviewQueueItemOut`**: `category`, `object_id`, `title`, `version_label`, `status` (`methodology_version`), `submitted_by_name`, `submitted_at`, `flags_open`, `route`.
 - **`ChangeLogEntryOut`**: `id`, `at`, `category`, `object_id`, `title`, `kind` (a version event kind), `actor {kind, user_id, name, on_behalf_of_user_id}`, `facts` (codes, ids and counts only).
 - Lists use the P-36 envelope (`ListPage`): `counts` per status, `facets.category`.

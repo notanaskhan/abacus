@@ -63,6 +63,7 @@ Category = Literal[
     "research",
     "agent_instructions",
 ]
+UsageKind = Literal["engagements", "returns", "closes", "audits", "agents"]
 StepLevel = Literal["foundation", "planning", "testing", "completion"]
 StepOrigin = Literal["workbook", "importer", "manual"]
 FlagResolution = Literal["confirmed", "edited"]
@@ -123,6 +124,9 @@ class KnowledgeItemOut(BaseModel):
     # The registered usage counter's count over `visible()` (engagements pinned, returns using
     # a checklist); null when no counter is registered for the type.
     usage_count: Annotated[int | None, classified("internal")]
+    # K-01-T04: what the count counts, for its words ("Used by 14 engagements", "Applied to 38
+    # returns"); null with no count.
+    usage_kind: Annotated[UsageKind | None, classified("internal")] = None
     updated_at: Annotated[datetime, classified("internal")]
     match: Annotated[list[MatchRangeOut], classified("internal")]
     route: Annotated[str, classified("internal")]
@@ -199,6 +203,9 @@ async def knowledge_items_route(
                 effective_from=c.item.effective_from,
                 owner_name=c.owner_name,
                 usage_count=c.usage_count,
+                usage_kind=cast(UsageKind | None, c.item.usage_kind)
+                if c.usage_count is not None
+                else None,
                 updated_at=c.item.updated_at,
                 match=[MatchRangeOut(start=a, end=b) for a, b in c.match],
                 route=c.item.route,
