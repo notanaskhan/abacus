@@ -675,8 +675,12 @@ async def test_ac_f9_3_a_rebuild_projects_the_agent_proposals_too(firm: Firm) ->
     before = await _open_rows(firm.net.seed, firm.tenant_id)
     await firm.net.seed.run("DELETE FROM human_gates WHERE tenant_id = $1", firm.tenant_id)
     await rebuild_human_gates(firm.tenant_id)
-    assert await _open_rows(firm.net.seed, firm.tenant_id) == before
+    after = await _open_rows(firm.net.seed, firm.tenant_id)
+    # I-01-T08 (DEC-647): the rebuild also projects the upload's review gate, which the seeded
+    # fulfilment makes and no event here announced; the agent's proposals are unchanged.
+    assert {r for r in after if r[0] == "proposal"} == before
     assert len(before) == 3
+    assert [r[0] for r in after if r[0] != "proposal"] == ["evidence_review"]
 
 
 async def test_ac_f9_3_a_persons_decision_on_the_version_closes_its_proposals(

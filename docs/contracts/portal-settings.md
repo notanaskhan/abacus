@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C16 in `docs/contracts/README.md` (v1.1, additive) |
 | Version | v1.1 |
-| Status | stub (R-01-T16, 2026-10-26) |
+| Status | live (R-01-T26, 2026-10-28; stub R-01-T16) |
 | Provider epic | R-01 (T26 settings and preview; T24 the policy inside them) |
 | Consumers | ADM-10 (R-01-T28); POR-20's Reminder schedule (saved here); P-08 branding (`set_branding`, `set_logo`); R-01-T24 (the published policy); R-02, A-07 (the published client experience) |
 | Freeze sprint | at the R-01 S12 review (with T26) |
@@ -25,7 +25,7 @@ Consumers can rely on one versioned set of portal settings per firm (brand slots
 | Logo (raw body) | `POST /v1/firm/portal-settings/logo` | `portal_settings.manage` | as save | denied |
 | Preview | `GET /v1/firm/portal-settings/preview?as=&device=desktop\|phone&source=draft\|published` | `portal.preview` | firm admin | denied |
 
-The plan's `portal.settings.read` and `portal.settings.manage` are spelt `portal_settings.*` (DEC-139: an action has one dot). The plan's `preview_target_visible` condition is the service's check, not a matrix condition: a contact outside the viewer's `visible()` answers 404 and is never offered (DEC-20). `portal.preview` grants no client content (DEC-379, `communications.api.viewer_scoped`): every projected POR-02 item (to-do, work card, binder, request) is kept only if the viewer could read it themselves (`engagement.read` and the item's read action under `visible()`, walls, independence); dropped items leave no count; with nothing left the preview is the sample client. A firm admin walled off Copperleaf, or without membership on its engagements, previews Tess Moreno as the sample client. Stubs check the flag before anything else, as every stub on main does; the implementing tasks authorise first (a wall answers 404 before the flag or any read). Writes 404 with `portal.settings_editor` off; reads and the preview are not gated. Every route answers 501 until R-01-T26.
+The plan's `portal.settings.read` and `portal.settings.manage` are spelt `portal_settings.*` (DEC-139: an action has one dot). The plan's `preview_target_visible` condition is the service's check, not a matrix condition: a contact outside the viewer's `visible()` answers 404 and is never offered (DEC-20). `portal.preview` grants no client content (DEC-379, `communications.api.viewer_scoped`): every projected POR-02 item (to-do, work card, binder, request) is kept only if the viewer could read it themselves (`engagement.read` and the item's read action under `visible()`, walls, independence); dropped items leave no count; with nothing left the preview is the sample client. A firm admin walled off Copperleaf, or without membership on its engagements, previews Tess Moreno as the sample client. Stubs check the flag before anything else, as every stub on main does; the implementing tasks authorise first (a wall answers 404 before the flag or any read). Writes 404 with `portal.settings_editor` off; reads and the preview are not gated. Live since R-01-T26 (DEC-653): every route authorises first; writes then read `portal.settings_editor`.
 
 ## 3. Models
 Code: `backend/src/abacus/modules/portal/settings_contract.py`; the policy fields are `communications.api.FollowUpPolicyFields`.
@@ -51,12 +51,14 @@ All six routes deny the agent and the system. Preview never widens access (ADR-0
 | 404 | `{"detail": "not_found"}` | flag off (writes); a preview contact outside `visible()` |
 | 409 | `{"detail": "stale_version"}` | a draft save or publish over a newer draft |
 | 413 / 415 | `{"detail": "file_too_large"}` / `{"detail": "type_not_allowed"}` | a logo P-08's re-encoder refuses |
-| 501 | `{"detail": "not_implemented"}` | until R-01-T26 |
+| 409 | `{"detail": "no_draft"}` | publish without a draft (R-01-T26) |
+| 422 | `support_contact_invalid` · `logo_unreadable` | a support contact who is not an active staff member; a logo P-08's re-encoder refuses or above 2 MB (R-01-T26) |
 
 ## 7. Audit and outbox events
 | Event | Written when | Payload |
 |---|---|---|
-| `portal_settings.draft_saved` | draft save | draft version |
+| `portal_settings.draft_saved` | draft save, logo upload | draft version |
+| `portal_settings.draft_discarded` | discard | (none) |
 | `portal_settings.published` | publish (Grace as actor) | version, content SHA-256 |
 | `portal.preview_viewed` | preview | contact id or `sample`, device |
 
@@ -73,7 +75,7 @@ Additive to C16 v1.
 
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
-| v1.1 | (planned with R-01-T26) | | stub R-01-T16 |
+| v1.1 | (planned with R-01-T26) | | stub R-01-T16; live R-01-T26 (the logo answers 422 `logo_unreadable` for 413/415; `no_draft` and `support_contact_invalid` added) |
 
 ## 11. Open points
 Decided in DEC-378 and DEC-379 (preview scoping). POR-20's Reminder schedule edits save into this draft and publish from ADM-10 (`docs/screens/POR-20.md`, Open gaps).

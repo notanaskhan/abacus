@@ -156,3 +156,15 @@ class FieldValueRecorded(DomainEvent):
     field_key: Annotated[str, classified("internal")]
     seq: Annotated[int, classified("internal")]
     cause: Annotated[str, classified("internal")]
+
+
+class HumanGateReassigned(DomainEvent):
+    """A person moved a gate to someone else (I-01-T07): the new person is told
+    (`gate_reassigned`, C16)."""
+
+    event_type: ClassVar[str] = "human_gate.reassigned"
+
+    gate_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")]
+    to_user_id: Annotated[UUID, classified("internal")]
+    by_user: Annotated[UUID, classified("internal")]

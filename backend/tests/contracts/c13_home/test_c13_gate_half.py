@@ -6,7 +6,8 @@ Holds on main now: no agent, system or client principal reads gates (INV-1, INV-
 I-01-T04 (TASK-1425) the counts route and the two insert-only tables. Strict xfails
 citing TASK-1304 name what T04 and T07 add: the counts route and its shape, the list's filters
 and presentation facts, snooze and reassign with their actions (human-only) and error codes, and
-the two insert-only tables, the reassignments one human-only at the database. The DB-backed half
+the two insert-only tables, the reassignments one human-only at the database. Since I-01-T07
+(TASK-1506) none is an xfail. The DB-backed half
 is `tests/integration/backfill/test_i01t03_c13_gate_half_ac.py`.
 """
 
@@ -30,9 +31,6 @@ SCHEMAS = cast(dict[str, Json], cast(Json, DOC["components"])["schemas"])
 ROOT = Path(__file__).resolve().parents[4]
 MIGRATIONS = ROOT / "backend" / "migrations" / "versions"
 NEVER: Final = ("agent", "system", "client_admin", "client_contributor")
-GATE_HALF = pytest.mark.xfail(
-    strict=True, reason="TASK-1304: the C13 gate half lands in I-01-T04 and I-01-T07"
-)
 
 
 def _params(path: str, method: str = "get") -> set[str]:
@@ -63,12 +61,10 @@ def test_f1_the_counts_route_is_the_one_count_source() -> None:
     assert set(props) == {"total", "bands", "overdue", "snoozed"}
 
 
-@GATE_HALF
 def test_f6_the_list_filters_by_state_band_office_and_sorts_by_deadline() -> None:
     assert {"state", "band", "office_id", "sort"} <= _params("/v1/human-gates")
 
 
-@GATE_HALF
 @pytest.mark.parametrize("action", ["human_gate.snooze", "human_gate.reassign"])
 def test_inv1_snooze_and_reassign_are_a_persons_acts(action: str) -> None:
     decisions = RULES[action].decisions
@@ -77,7 +73,6 @@ def test_inv1_snooze_and_reassign_are_a_persons_acts(action: str) -> None:
     assert any(d == "allow" for d in decisions.values())
 
 
-@GATE_HALF
 @pytest.mark.parametrize(
     ("method", "path", "action"),
     [
@@ -93,7 +88,6 @@ def test_f8_snooze_and_reassign_routes_declare_their_action(
     assert PATHS[path][method]["x-abacus-action"] == action
 
 
-@GATE_HALF
 def test_s6_the_gate_half_error_codes_are_catalogued() -> None:
     codes = cast(Json, yaml.safe_load((ROOT / "docs/architecture/error-codes.yaml").read_text()))
     catalogued = set(cast(Json, codes["codes"]))
@@ -117,7 +111,6 @@ def test_s42_snoozes_and_reassignments_are_insert_only_and_reassignment_is_human
     assert "actor_kind" in block and "'human'" in block
 
 
-@GATE_HALF
 def test_s42_gates_carry_the_home_columns() -> None:
     props = cast(Json, SCHEMAS["HumanGateOut"]["properties"])
     assert {"subkind", "band", "blocked", "bulk_eligible", "proposed_by", "version"} <= set(props)

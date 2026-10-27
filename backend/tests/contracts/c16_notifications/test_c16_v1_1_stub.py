@@ -80,6 +80,13 @@ BUILT = {
     ("post", f"{T}/{{key}}/test-send"),
     ("post", f"{T}/import"),
     ("get", "/v1/firm/follow-up-policy"),
+    # R-01-T26 (TASK-1513): portal settings, the logo and the preview.
+    ("get", S),
+    ("put", f"{S}/draft"),
+    ("delete", f"{S}/draft"),
+    ("post", f"{S}/publish"),
+    ("post", f"{S}/logo"),
+    ("get", f"{S}/preview"),
 }
 IDEMPOTENT = {f"{T}/{{key}}/test-send", f"{T}/{{key}}/publish", D, f"{S}/publish"}
 FRESH_MFA = {"email_template.publish", "email_template.import", "sending_domain.manage"} | {
@@ -171,7 +178,25 @@ def _ctx() -> AuthContext:
     )
 
 
-@pytest.mark.parametrize("module", [templates_contract, settings_contract])
+async def test_ac4_portal_settings_writes_404_with_the_editor_off(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """R-01-T26 built the settings routes; their writes still read the editor flag (off: 404)."""
+
+    async def off(_tenant: object, _f: object) -> bool:
+        return False
+
+    async def on(_tenant: object, _f: object) -> bool:
+        return True
+
+    monkeypatch.setattr(settings_contract, "flag_enabled", off)
+    with pytest.raises(NotFound):
+        await settings_contract._editor(_ctx())  # pyright: ignore[reportPrivateUsage] -- the write gate
+    monkeypatch.setattr(settings_contract, "flag_enabled", on)
+    await settings_contract._editor(_ctx())  # pyright: ignore[reportPrivateUsage] -- the write gate
+
+
+@pytest.mark.parametrize("module", [templates_contract])
 @pytest.mark.parametrize("flag", [EDITOR, SENDER, None])
 async def test_ac4_flag_off_is_404_and_on_is_501(
     module: ModuleType, flag: Flag | None, monkeypatch: pytest.MonkeyPatch

@@ -1,6 +1,7 @@
 """The intake and import contract stubs, v1 (P-07-T37; `docs/contracts/intake-import.md`;
 DEC-374): every route exists with its one matrix action and answers 404 with `clients.v2` off
-and 501 with it on (until P-07-T42 and P-07-T52); commit and run require an `Idempotency-Key`;
+(they answered 501 with it on until P-07-T42 and P-07-T52 made them live); commit and run
+require an `Idempotency-Key`;
 the agent and the system are refused before the flag is read; no client role holds an action;
 no schema carries a plain TIN, a hidden-by-wall field or a walled count. The consumer suite is
 P-07-T45's."""
@@ -17,7 +18,7 @@ from abacus.api.export_openapi import document
 from abacus.kernel._flags import CLIENTS_V2
 from abacus.kernel.db import TenantContext
 from abacus.kernel.db.session import ActorKind
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.modules.engagements import intake_contract
 from abacus.modules.identity.api import AuthContext, Forbidden
 from abacus.modules.identity.authz.matrix import RULES
@@ -43,8 +44,9 @@ ROUTES: dict[tuple[str, str], str] = {
     ("put", f"{IMPORTS}/{{import_id}}/rows/{{row_id}}/decision"): "client_import.run",
     ("post", f"{IMPORTS}/{{import_id}}/run"): "client_import.run",
 }
-# P-07-T42 (TASK-1326): dedupe, the intake drafts and the commit are live; imports stay stubs.
-LIVE = {path for (_, path), action in ROUTES.items() if action != "client_import.run"}
+# P-07-T42 (TASK-1326): dedupe, the intake drafts and the commit are live; P-07-T52 (TASK-1503):
+# the imports too. No route answers 501 any more.
+LIVE = {path for (_, path) in ROUTES}
 IDEMPOTENT = {f"{DRAFTS}/{{draft_id}}/commit", f"{IMPORTS}/{{import_id}}/run"}
 PREFIXES = (
     "Dedupe",
@@ -137,7 +139,7 @@ def _ctx(kind: ActorKind = "human", *, client: bool = False) -> AuthContext:
     )
 
 
-async def test_authorise_first_then_the_flag_then_501(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_authorise_first_then_the_flag(monkeypatch: pytest.MonkeyPatch) -> None:
     seen: list[object] = []
 
     async def authorised(_ctx: object, action: str, _resource: object) -> None:
@@ -153,11 +155,11 @@ async def test_authorise_first_then_the_flag_then_501(monkeypatch: pytest.Monkey
     monkeypatch.setattr(intake_contract, "authorise", authorised)
     monkeypatch.setattr(intake_contract, "flag_enabled", off)
     with pytest.raises(NotFound):
-        await intake_contract._stub(_ctx(), "client.intake")  # pyright: ignore[reportPrivateUsage] -- the gate
+        await intake_contract._gate(_ctx(), "client.intake")  # pyright: ignore[reportPrivateUsage] -- the gate
     assert seen == ["client.intake", CLIENTS_V2]
     monkeypatch.setattr(intake_contract, "flag_enabled", on)
-    with pytest.raises(NotImplementedYet):
-        await intake_contract._stub(_ctx(), "client_import.run")  # pyright: ignore[reportPrivateUsage] -- the gate
+    await intake_contract._gate(_ctx(), "client_import.run")  # pyright: ignore[reportPrivateUsage] -- the gate
+    assert seen == ["client.intake", CLIENTS_V2, "client_import.run"]
 
 
 @pytest.mark.parametrize("who", ["agent", "system", "client"])
@@ -173,5 +175,5 @@ async def test_agent_system_and_client_are_refused_before_the_flag(
     monkeypatch.setattr(intake_contract, "flag_enabled", flag)
     ctx = _ctx("human", client=True) if who == "client" else _ctx(cast(ActorKind, who))
     with pytest.raises(Forbidden):
-        await intake_contract._stub(ctx, "client.intake")  # pyright: ignore[reportPrivateUsage] -- the gate
+        await intake_contract._gate(ctx, "client.intake")  # pyright: ignore[reportPrivateUsage] -- the gate
     assert flags == []
