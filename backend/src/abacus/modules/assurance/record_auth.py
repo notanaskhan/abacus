@@ -9,6 +9,7 @@ support session.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime
 
 from abacus.kernel.clock import system_now
@@ -34,9 +35,15 @@ async def authorise_record(ctx: AuthContext, action: str, resource: Resource) ->
     try:
         await authorise(ctx, action, resource)
     except Forbidden as refused:
-        if refused.layer == "attribute" and not resource.archived and _stale(ctx):
-            raise RecordNeedsMfa(facts={"reason": "mfa_required"}) from None
-        raise
+        if refused.layer != "attribute" or resource.archived or not _stale(ctx):
+            raise
+        # Step up only when the stale factor is the sole blocker (DEC-598): the same check with a
+        # fresh factor must pass, so an independence or other attribute refusal reads as itself.
+        try:
+            await authorise(replace(ctx, mfa_at=system_now()), action, resource)
+        except Forbidden:
+            raise refused from None
+        raise RecordNeedsMfa(facts={"reason": "mfa_required"}) from None
 
 
 def fresh_mfa_at(ctx: AuthContext) -> datetime:

@@ -24,6 +24,12 @@ from abacus.kernel import clock
 from abacus.kernel._human_only_actions import HUMAN_ONLY_ACTIONS
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.uow import Ref, Target, uow
+
+# The app imports `assurance.api` at startup, which registers the G8 and G9 providers the phase
+# move computes; run on its own, this file must import it too (the gates read unmet otherwise).
+from abacus.modules.assurance import (
+    api as _assurance_api,  # noqa: F401  # pyright: ignore[reportUnusedImport]
+)
 from abacus.modules.assurance import archive_gate, phase, release
 from abacus.modules.assurance.record_auth import RecordNeedsMfa
 from abacus.modules.engagements.api import gate_fact
@@ -259,6 +265,14 @@ async def test_release_date_phase_and_mode_refusals(meridian: Meridian) -> None:
     future = date.today() + timedelta(days=400)
     with pytest.raises(release.ReleaseDateFuture):
         await release.record_release(meridian.hannah, meridian.work_item, future, "opinion")
+    # DEC-598: a report on a period is released after the period ends.
+    period_end = await meridian.world.seed.value(
+        "SELECT fiscal_period_end FROM engagements WHERE id = $1", meridian.engagement
+    )
+    assert isinstance(period_end, date)
+    with pytest.raises(release.ReleaseDateBeforePeriodEnd):
+        await release.record_release(meridian.hannah, meridian.work_item, period_end, "opinion")
+    assert (await meridian.item_row())["phase"] == "in_review"
     final_too_early = await _export(meridian, "final_binder")
     with pytest.raises(release.RecordOutOfPhase):  # not released yet
         await archive_gate.record_archive(
