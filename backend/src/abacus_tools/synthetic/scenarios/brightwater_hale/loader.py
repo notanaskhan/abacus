@@ -137,6 +137,16 @@ from abacus.modules.identity.api import (
     set_demo_clock,
     set_member_profile,
 )
+from abacus.modules.methodology.api import (
+    EngagementType,
+    import_template,
+)
+from abacus.modules.methodology.api import (
+    approve_version as approve_methodology_version,
+)
+from abacus.modules.methodology.api import (
+    version_state as methodology_version_state,
+)
 from abacus.modules.organisations.api import (
     ClientRecordChange,
     NewClient,
@@ -240,6 +250,18 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.intake import (
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.intake import NEEDS as INTAKE_NEEDS
 from abacus_tools.synthetic.scenarios.brightwater_hale.intake import SLICE as INTAKE_SLICE
+from abacus_tools.synthetic.scenarios.brightwater_hale.methodology import (
+    NEEDS as METHODOLOGY_NEEDS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.methodology import (
+    SLICE as METHODOLOGY_SLICE,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.methodology import (
+    spec_of as methodology_spec,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.methodology import (
+    workbook as methodology_workbook,
+)
 from abacus_tools.synthetic.scenarios.brightwater_hale.people import (
     FIRM_ROLES,
     SEATS,
@@ -1344,6 +1366,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     PORTAL_PBC_SLICE: PORTAL_PBC_NEEDS,
     RETURNED_SLICE: PORTAL_PBC_NEEDS,  # POR-03 g's alternate path (DEC-471)
     COMPLIANCE_SLICE: COMPLIANCE_NEEDS,
+    METHODOLOGY_SLICE: METHODOLOGY_NEEDS,  # K-01-T10: Grace imports, Margaret approves
     ACCEPTANCE_SLICE: ACCEPTANCE_NEEDS,
     INTAKE_SLICE: INTAKE_NEEDS,  # P-07-T50: wave 3 (drafts, the open Harborline hit, Meridian)
     EMAIL_TEMPLATES_SLICE: (),  # R-01-T22: Grace's firm admin role is audit_core's
@@ -1979,6 +2002,41 @@ async def _flag_set(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
     await set_flag(TENANT, str(event.data["flag"]), "true", LOADER, "Brightwater Hale scenario")
 
 
+async def _methodology_imported(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """K-01-T10: the version's workbook through `methodology.api`, as a firm admin imports it."""
+    data = event.data
+    spec = methodology_spec(str(data["family"]), int(cast(int, data["number"])))
+    await import_template(
+        await _staff_context(conn, event),
+        spec.name,
+        methodology_workbook(spec),
+        engagement_types=(cast(EngagementType, spec.engagement_type),),
+        family=cast(Literal["ebp", "fs", "ssars"], spec.family),
+    )
+
+
+async def _methodology_approved(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """K-01-T10: the QM owner approves what she reviewed, with its effective date (K-01-T06)."""
+    data = event.data
+    version_id = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT v.id FROM methodology_versions v JOIN methodology_templates t "
+        "ON t.id = v.template_id WHERE t.name = $1 AND v.version = $2",
+        str(data["name"]),
+        int(cast(int, data["number"])),
+    )
+    ctx = await _staff_context(conn, event)
+    state = await methodology_version_state(ctx, cast(UUID, version_id))
+    await approve_methodology_version(
+        ctx,
+        cast(UUID, version_id),
+        effective_from=date.fromisoformat(str(data["effective_from"])),
+        checklist_hash=state.checklist_hash,
+        row_version=state.row_version,
+    )
+
+
 async def _retention_policy_set(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     data = event.data
     change = PolicyChange(
@@ -2351,6 +2409,9 @@ HANDLERS: Final[dict[str, Handler]] = {
     "evidence.inbox_file_added": _inbox_file_added,
     "evidence.client_file_uploaded": _client_file_uploaded,
     "evidence.file_returned": _file_returned,
+    # K-01-T10 (`--slice methodology`): each version imported, then approved in label order.
+    "methodology.version_imported": _methodology_imported,
+    "methodology.version_approved": _methodology_approved,
 }
 # Within one instant the timeline orders by label; the loader orders by dependency first.
 _ORDER: Final = {kind: n for n, kind in enumerate(HANDLERS)}
