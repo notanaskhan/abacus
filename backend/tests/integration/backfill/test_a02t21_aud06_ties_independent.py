@@ -27,6 +27,7 @@ from __future__ import annotations
 import uuid
 from typing import Final, cast
 
+import httpx
 import pytest
 
 from abacus.kernel.db import TenantContext
@@ -64,16 +65,29 @@ async def _tb(world: Books) -> uuid.UUID:
 
 
 async def _citation(world: Books, tb_id: uuid.UUID, account: str, value: str) -> str:
-    cid, ok, reason, _match = await world.cite_line(tb_id, world.current, account, value=value)
-    assert ok, reason
-    return str(cid)
+    """The expected value's evidence citation: a document of the engagement (SPEC-310: "an
+    evidence citation"; "citations must belong to the engagement")."""
+    del tb_id, account, value
+    return str(world.site.version_id)
 
 
 async def _define(
     world: Books, tb_id: uuid.UUID, body: Json, who: Person | None = None
 ) -> tuple[int, Json]:
+    """(status, the defined check) on success (the route answers the TB's checks, C9 §2), else
+    (status, the error body)."""
     response = await world.call("POST", world.path(tb_id, "/checks"), who, body)
-    return response.status_code, cast(Json, response.json())
+    answer = response.json()
+    if isinstance(answer, list):
+        [check] = [c for c in cast(list[Json], answer) if c["label"] == body["label"]]
+        return response.status_code, check
+    return response.status_code, cast(Json, answer)
+
+
+def _edited(response: httpx.Response, check_id: object) -> Json:
+    """The edited check out of the edit route's answer (the TB's checks)."""
+    [check] = [c for c in cast(list[Json], response.json()) if c["id"] == check_id]
+    return check
 
 
 async def _broker(world: Books, tb_id: uuid.UUID, who: Person | None = None) -> tuple[int, Json]:
@@ -196,10 +210,14 @@ async def test_ac9_a_firm_member_off_the_team_gets_no_figures(world: Books) -> N
         assert "16500000" not in refused.text
 
 
-async def test_ac9_a_member_without_independence_is_refused_independence_pending(
+async def test_ac9_a_pending_member_on_an_attest_client_is_refused_reads_when_g2_blocks_view(
     world: Books,
 ) -> None:
+    """DEC-270 (ADR-164 items 2-3) supersedes AC-9's wording: reads marked `independence:
+    required` are gated only when the firm turns `g2_blocks_view` on, for an attest client."""
     tb_id = await _tb(world)
+    await world.seed.attest(world.tenant_id, world.site.engagement_id)
+    await world.seed.blocks_view(world.tenant_id, world.admin.user_id)
     pending = await without_independence(world.seed, world.site)
     for path in (
         world.path(tb_id, "/layers/unadjusted"),
@@ -209,6 +227,24 @@ async def test_ac9_a_member_without_independence_is_refused_independence_pending
         assert refused.status_code == 403, refused.text  # C9 §6
         assert detail(refused) == "independence_pending"
         assert "16500000" not in refused.text
+
+
+async def test_ac9_a_pending_member_on_an_attest_client_may_not_adopt_or_define(
+    world: Books,
+) -> None:
+    """DEC-270: every marked action other than a read stays gated for a person not cleared on
+    an attest client's engagement (the default, without `g2_blocks_view`)."""
+    tb_id = await _tb(world)
+    await world.seed.attest(world.tenant_id, world.site.engagement_id)
+    pending = await without_independence(world.seed, world.site)
+    adopt = await world.adopt(pending, label="interim")
+    assert adopt.status_code in (403, 409), adopt.text
+    status, body = await _broker(world, tb_id, pending)
+    assert status in (403, 409), body
+    exported = await world.call("GET", world.path(tb_id, "/export.xlsx"), pending)
+    assert exported.status_code in (403, 409), exported.text
+    assert await world.count("trial_balances") == 1
+    assert await world.count("tie_out_checks") == 0
 
 
 async def test_ac9_a_client_user_never_reads_the_trial_balance(world: Books) -> None:
@@ -403,27 +439,10 @@ async def test_ac12_an_expected_value_without_a_citation_is_refused(world: Books
     assert not [a for a, _ in await world.actions() if a.startswith("tie_out_check.")]
 
 
-async def test_ac12_a_citation_id_of_another_engagement_does_not_count(world: Books) -> None:
+async def test_ac12_a_citation_of_another_engagement_does_not_count(world: Books) -> None:
     tb_id = await _tb(world)
     other = await world.seed.site(world.tenant_id, world.admin.user_id, "Harlow")
-    from .tb_support import work_item
-
     await world.seed.member(other, world.partner, "engagement_partner")
-    await work_item(world.seed, other, world.admin.user_id)
-    from .tb_support import EOY, snapshot
-
-    foreign_snapshot = await snapshot(world.tenant_id, world.partner.user_id, other.entity_id, EOY)
-    adopted = await world.call(
-        "POST",
-        f"/v1/engagements/{other.engagement_id}/trial-balances",
-        body={"snapshot_id": str(foreign_snapshot), "label": "standard", "display_unit": "cents"},
-    )
-    assert adopted.status_code == 201, adopted.text
-    other_tb = uuid.UUID(cast(str, cast(Json, adopted.json()["trial_balance"])["id"]))
-    cid, ok, _r, _m = await world.cite_line(
-        other_tb, foreign_snapshot, "1230", value="1606560.00", engagement_id=other.engagement_id
-    )
-    assert ok
     status, body = await _define(
         world,
         tb_id,
@@ -433,7 +452,7 @@ async def test_ac12_a_citation_id_of_another_engagement_does_not_count(world: Bo
             "accounts": ["1230"],
             "column": "eoy",
             "expected": "1608120.00",
-            "citation_ids": [str(cid)],
+            "citation_ids": [str(other.version_id)],
         },
     )
     assert status in (404, 422), body
@@ -477,10 +496,9 @@ async def test_ac12_defining_and_editing_are_audited_as_the_person(world: Books)
         },
     )
     assert edited.status_code == 200, edited.text
-    assert cast(Json, edited.json()["result"])["status"] == "tie"
-    audited = await world.actions()
-    assert ("tie_out_check.defined", "human") in audited
-    assert ("tie_out_check.updated", "human") in audited
+    assert cast(Json, _edited(edited, check["id"])["result"])["status"] == "tie"
+    audited = [a for a in await world.actions() if a[0].startswith("tie_out_check.")]
+    assert audited == [("tie_out_check.defined", "human"), ("tie_out_check.updated", "human")]
 
 
 # --- AC-11, AC-28 · The issue link: Idempotency-Key, set once ------------------------------------

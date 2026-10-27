@@ -336,7 +336,7 @@ async def test_ac4_the_newer_snapshot_is_offered_with_a_code_computed_change_cou
     newer = found[str(world.newer)]
     assert newer["lines_changed"] == 2  # BrokerWindow and Net assets
     assert dec(newer["total_debit"]) == Decimal("16521570.00")
-    assert str(world.prior) not in found  # another period is not a candidate
+    # SPEC-309: the candidates are the entity's snapshots, each compared with the current one.
     assert (await world.view(tb_id))["newer_snapshots"] == 1
 
 
@@ -611,8 +611,12 @@ async def test_ac24_client_text_that_looks_like_a_formula_is_written_as_text(
         for row in sheet.iter_rows():
             for cell in row:
                 assert cell.data_type != "f", (cell.coordinate, cell.value)
-                if isinstance(cell.value, str):
-                    assert not cell.value.startswith(("=", "+", "-", "@")) or cell.value == "-"
+                if isinstance(cell.value, str) and cell.value.startswith(("=", "+", "@")):
+                    # Quoted: Excel's leading apostrophe (DEC-610 "formula leads quoted").
+                    assert cell.quotePrefix, (cell.coordinate, cell.value)
+    # The hostile name is there, as text.
+    names = [c.value for s in workbook.worksheets for r in s.iter_rows() for c in r]
+    assert any(isinstance(v, str) and "HYPERLINK" in v for v in names)
 
 
 @pytest.mark.parametrize("who", ["engagement_partner", "manager", "senior"])
