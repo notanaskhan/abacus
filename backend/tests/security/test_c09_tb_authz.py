@@ -25,16 +25,10 @@ from .support import Env, Person, Seeder
 TBS: Final = "/v1/engagements/{e}/trial-balances/{tb}"
 # (method, path under the trial balance, JSON body) for each C9 v1 stub (DEC-314). The view by
 # layer and the leadsheet by area are live since A-02-T10: their walls, independence and flag
-# are proved on a real trial balance in `test_a02t10_tb_read_model.py`.
-STUBS: Final = (
-    ("GET", "/export.xlsx", None),
-    (
-        "POST",
-        "/checks/{check}/issue-link",
-        {"issue_id": "00000000-0000-4000-8000-000000000001", "seen_version": 1},
-    ),
-)
-IDS: Final = ["export", "issue-link"]
+# are proved on a real trial balance in `test_a02t10_tb_read_model.py`; the issue link since
+# A-02-T17, in `test_a02t17_tie_service.py` (a walled member's 404 is the missing engagement's).
+STUBS: Final = (("GET", "/export.xlsx", None),)
+IDS: Final = ["export"]
 
 
 async def _flag_on(seed: Seeder, tenant_id: uuid.UUID) -> None:

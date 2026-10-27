@@ -67,6 +67,7 @@ TABLES: tuple[str, ...] = (
     "conflict_results",
     "connection_consent_links",
     "connection_consents",
+    "connection_grant_revocations",
     "connection_secrets",
     "connection_states",
     "connections",

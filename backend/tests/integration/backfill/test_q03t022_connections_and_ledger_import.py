@@ -70,6 +70,7 @@ READS: Final = frozenset(
         "changes_since",
         "fetch_attachment",
         "health",
+        "revoke",  # A-02-T16 review M1 (DEC-515): withdraws the platform's own grant
     }
 )
 WRITE_SHAPED: Final = (
@@ -132,13 +133,21 @@ def _spy(inner: connections.Connector, connection: object, calls: Calls) -> conn
             self._note("capabilities")
             return inner.capabilities()
 
-        async def authorise_url(self, state: str, redirect_uri: str) -> str:
+        async def authorise_url(
+            self, state: str, redirect_uri: str, *, code_challenge: str | None = None
+        ) -> str:
             self._note("authorise_url")
-            return await inner.authorise_url(state, redirect_uri)
+            return await inner.authorise_url(state, redirect_uri, code_challenge=code_challenge)
 
-        async def exchange_code(self, code: str, redirect_uri: str) -> Credentials | None:
+        async def exchange_code(
+            self, code: str, redirect_uri: str, *, code_verifier: str | None = None
+        ) -> Credentials | None:
             self._note("exchange_code")
-            return await inner.exchange_code(code, redirect_uri)
+            return await inner.exchange_code(code, redirect_uri, code_verifier=code_verifier)
+
+        async def revoke(self) -> None:
+            self._note("revoke")
+            await inner.revoke()
 
         async def refresh(self) -> None:
             self._note("refresh")

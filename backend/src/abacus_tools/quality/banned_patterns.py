@@ -1185,6 +1185,16 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/ledger/repository.py", "gl_balances_of"),
         ("src/abacus/modules/ledger/repository.py", "gl_entries_of"),
         ("src/abacus/modules/connections/repository.py", "waiting_gl_imports"),
+        # A-02-T16 (DEC-514): facts about connections the caller already authorised
+        # `connection.read` or `.retry` on (an engagement of their entity), keyed by those ids.
+        ("src/abacus/modules/connections/repository.py", "live_connections_of"),
+        ("src/abacus/modules/connections/repository.py", "last_failures"),
+        ("src/abacus/modules/connections/repository.py", "recent_runs"),
+        ("src/abacus/modules/connections/repository.py", "open_reconnect_requests"),
+        ("src/abacus/modules/connections/repository.py", "fulfil_reconnect_requests"),
+        # A-02-T16 (DEC-514): an entity's engagements as candidates `authorise` judges one by one
+        # (`connections.authorised_engagement`); never returned as a list.
+        ("src/abacus/modules/engagements/repository.py", "entity_engagement_ids"),
         ("src/abacus/modules/requests/repository.py", "items_fulfilled_by"),
         # P-06-T07: one binder's sections, requests and recipient history, read after
         # `authorise(binder.*)` on that binder; and the platform's close rule on a C1 fact.
@@ -1398,7 +1408,9 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     # The outbound scope checker reads each owner's facts through its API (SPEC-006, TASK-021 D2).
     # SPEC-032 (TASK-062 D1): it registers itself as the check on comments shared with a client.
     "communications": _BASE | {"engagements", "organisations", "ledger", "evidence", "requests"},
-    "integrations": _BASE | {"organisations", "engagements", "evidence", "ledger"},
+    # A-02 §4.1 (A-02-T16): POR-16's cards and start compose `connections` (which never imports
+    # integrations, so the edge stays acyclic; W-01 relies on the same rule).
+    "integrations": _BASE | {"organisations", "engagements", "evidence", "ledger", "connections"},
     # The engagement graph reads the latest snapshot's accounts (SPEC-008, TASK-023 D1).
     # SPEC-027 (TASK-051 D3): the engagement agent works out overdue reminders; communications
     # sends them (the only sender, COMM-001).
@@ -1549,6 +1561,7 @@ _NETWORK_ROOTS = frozenset(
 _CONNECTOR_METHODS = frozenset(
     {"capabilities", "authorise_url", "exchange_code", "refresh", "pull", "changes_since"}
     | {"fetch_attachment", "health"}
+    | {"revoke"}  # A-02-T16 review M1: the read-only grant's end, never a write to the books
 )
 _WRITE_VERBS = ("create", "update", "delete", "write", "post", "put", "patch", "upload", "send")
 
@@ -2494,7 +2507,12 @@ RULES: list[Rule | TreeRule] = [
         description="Connectors are read-only",
         adr="ADR-040",
         check=_check_connector_read_only,
-        include=("src/abacus/modules/connections/*",),
+        # A-02-T16 review round 2 L5: the integrations adapters and the Writer port too.
+        include=(
+            "src/abacus/modules/connections/*",
+            "src/abacus/modules/integrations/adapters.py",
+            "src/abacus/modules/integrations/writers/*",
+        ),
     ),
     Rule(
         id="WF-001",

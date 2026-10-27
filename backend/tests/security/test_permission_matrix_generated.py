@@ -4420,6 +4420,21 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("workpaper.sign_reviewed", "client_admin", "deny"),
     ("workpaper.sign_reviewed", "client_contributor", "deny"),
     ("workpaper.sign_reviewed", "third_party", "deny"),
+    ("write_capability.execute", "firm_admin", "deny"),
+    ("write_capability.execute", "practice_leader", "deny"),
+    ("write_capability.execute", "quality_partner", "deny"),
+    ("write_capability.execute", "security_admin", "deny"),
+    ("write_capability.execute", "engagement_partner", "deny"),
+    ("write_capability.execute", "manager", "deny"),
+    ("write_capability.execute", "senior", "deny"),
+    ("write_capability.execute", "staff", "deny"),
+    ("write_capability.execute", "reviewer", "deny"),
+    ("write_capability.execute", "eqr_reviewer", "deny"),
+    ("write_capability.execute", "specialist", "deny"),
+    ("write_capability.execute", "client_service", "deny"),
+    ("write_capability.execute", "client_admin", "deny"),
+    ("write_capability.execute", "client_contributor", "deny"),
+    ("write_capability.execute", "third_party", "deny"),
 )
 
 

@@ -32,6 +32,7 @@ from abacus.modules.review.gates import (
 )
 from abacus.modules.review.gates import SUBSCRIPTIONS as GATE_SUBSCRIPTIONS
 from abacus.modules.review.hashing import Json, NotCanonical, canonical_json, content_hash
+from abacus.modules.review.issue_refs import issue_engagement
 from abacus.modules.review.matrix import review_gate
 from abacus.modules.review.mfa import MfaRequired
 from abacus.modules.review.notes import notes_for, open_note_counts
@@ -166,6 +167,7 @@ __all__ = [
     "detect_stale",
     "field_owner",
     "gate_met",
+    "issue_engagement",
     "notes_for",
     "open_note_counts",
     "raise_decision_card",

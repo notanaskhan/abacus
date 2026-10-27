@@ -12498,6 +12498,34 @@
         "title": "ConflictResultOut",
         "type": "object"
       },
+      "ConnectionActivityOut": {
+        "description": "One line of the connection's activity in the ADM-07 grammar (A-02-T16; INV-5):\n\"Connected by Tess Moreno (client)\", \"Reconnected by \u2026\", \"Disconnected by \u2026\".",
+        "properties": {
+          "action": {
+            "cls": "internal",
+            "title": "Action",
+            "type": "string"
+          },
+          "at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "text": {
+            "cls": "confidential",
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "text",
+          "at"
+        ],
+        "title": "ConnectionActivityOut",
+        "type": "object"
+      },
       "ConnectionDisconnectIn": {
         "additionalProperties": false,
         "properties": {
@@ -12681,6 +12709,19 @@
             "cls": "internal",
             "title": "Authorized",
             "type": "boolean"
+          },
+          "connection_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Connection Id"
           },
           "consent_version": {
             "cls": "internal",
@@ -34953,6 +34994,16 @@
       "PortalConnectionDetailOut": {
         "description": "The details drawer: scopes, who connected it and when, the last 5 sync runs.",
         "properties": {
+          "activity": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ConnectionActivityOut"
+            },
+            "maxItems": 50,
+            "title": "Activity",
+            "type": "array"
+          },
           "card": {
             "$ref": "#/components/schemas/PortalConnectionCardOut",
             "cls": "confidential"
@@ -52403,6 +52454,19 @@
             "title": "Id",
             "type": "string"
           },
+          "issue_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Issue Id"
+          },
           "key": {
             "cls": "internal",
             "title": "Key",
@@ -66052,7 +66116,7 @@
     },
     "/v1/connections/complete": {
       "post": {
-        "description": "SPEC-020 AC-2 (TASK-036 D1): the SPA hands back the provider's state and code.",
+        "description": "SPEC-020 AC-2 (TASK-036 D1): the SPA hands back the provider's state and code. A-02-T16:\na state POR-16 started finishes as an entity-scoped connection (or a reconnect).",
         "operationId": "complete",
         "parameters": [
           {
@@ -98583,7 +98647,7 @@
     },
     "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/checks/{check_id}/issue-link": {
       "post": {
-        "description": "AUD-06 c: link an issue raised through C3 to a check that does not tie (A-02-T17);\n409 `tie_out_check_stale` on a stale `seen_version`, audited `tie_out_check.issue_linked`.",
+        "description": "AUD-06 c (A-02-T17): link an issue raised through C3 on this engagement to a check, once;\n409 `tie_out_check_stale` on a stale `seen_version`, 409 `tie_out_check_issue_linked` for a\nsecond issue; audited `tie_out_check.issue_linked`. Authorised first (walls 404), then the\nflag (404 off).",
         "operationId": "tie_issue_link",
         "parameters": [
           {
@@ -98730,16 +98794,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Tie Issue Link Route",
@@ -127932,7 +127986,7 @@
     },
     "/v1/portal/connections/{connection_id}": {
       "get": {
-        "description": "The details drawer (A-02-T16).",
+        "description": "The details drawer: scopes, who connected it and when, the last 5 syncs, the activity.",
         "operationId": "connection_detail",
         "parameters": [
           {
@@ -128028,16 +128082,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Connection Detail Route",
@@ -128049,7 +128093,7 @@
     },
     "/v1/portal/connections/{connection_id}/disconnect": {
       "post": {
-        "description": "POR-16 f (A-02-T16): \"Disconnected\" (neutral); the secret is crypto-erased and received\ndata stays. 409 `stale_version` on an old `seen_version`. Audited `connection.revoked`.",
+        "description": "POR-16 f: \"Disconnected\" (neutral); the secret is crypto-erased and received data stays.\n409 `stale_version` on an old `seen_version`. Audited `connection.revoked`.",
         "operationId": "disconnect_connection",
         "parameters": [
           {
@@ -128176,16 +128220,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Disconnect Connection Route",
@@ -128197,7 +128231,7 @@
     },
     "/v1/portal/connections/{connection_id}/retry": {
       "post": {
-        "description": "POR-16 g *Try again* (A-02-T16): one run; while it runs the same run is returned; 409\n`connection_needs_reauth` when the client must sign in again. Audited\n`connection.retry_requested`.",
+        "description": "POR-16 g *Try again*: one run; while it runs the same run is returned; 409\n`connection_needs_reauth`, `no_failed_sync`, `retry_unavailable`. Audited\n`connection.retry_requested`.",
         "operationId": "retry_connection",
         "parameters": [
           {
@@ -128314,16 +128348,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Retry Connection Route",
@@ -128452,7 +128476,7 @@
     },
     "/v1/portal/entities/{entity_id}/connections": {
       "get": {
-        "description": "POR-16 a (A-02-T16): cards for the catalogue rows with a registered adapter.",
+        "description": "POR-16 a: cards for the catalogue rows listed here, with the entity's connections.",
         "operationId": "list_entity_connections",
         "parameters": [
           {
@@ -128548,16 +128572,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Entity Connections Route",
@@ -128569,7 +128583,7 @@
     },
     "/v1/portal/entities/{entity_id}/connections/{catalog_key}/start": {
       "post": {
-        "description": "POR-16 b, e, i (A-02-T16): one consent row, then the provider's sign-in. 422\n`authorization_required`; 409 `consent_version_stale`, `ledger_already_connected`,\n`connector_not_available`. Audited `connection.started`, `connection.consent_recorded`.",
+        "description": "POR-16 b, e: one consent row as shown, then the provider's sign-in URL (fresh MFA). 422\n`authorization_required`; 409 `consent_version_stale`, `ledger_already_connected`,\n`connector_not_available`. Audited `connection.consent_recorded`, `connection.started`.",
         "operationId": "start_connection",
         "parameters": [
           {
@@ -128706,16 +128720,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Start Connection Route",

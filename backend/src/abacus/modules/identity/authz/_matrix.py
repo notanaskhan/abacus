@@ -2191,4 +2191,8 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "independence": "required",
     },
+    "write_capability.execute": {
+        "agent": "deny",
+        "system": "deny",
+    },
 }

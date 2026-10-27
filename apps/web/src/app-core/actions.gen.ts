@@ -296,6 +296,7 @@ export const ACTIONS = [
   "workpaper.read",
   "workpaper.sign_ready",
   "workpaper.sign_reviewed",
+  "write_capability.execute",
 ] as const;
 
 export type Action = (typeof ACTIONS)[number];

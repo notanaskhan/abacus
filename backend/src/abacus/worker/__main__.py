@@ -51,6 +51,7 @@ from abacus.kernel.config import settings
 from abacus.kernel.crypto import key_service
 from abacus.kernel.db import ping, ping_relay
 from abacus.kernel.dispatch import WORK_CLASSES, WorkClass, queue_for
+from abacus.kernel.egress import configure_egress
 from abacus.kernel.error_tracking import (
     ReportingInterceptor,
     configure_error_tracking,
@@ -66,6 +67,7 @@ from abacus.modules import MODULES as ALL_MODULES
 from abacus.modules.agents import api as agents
 from abacus.modules.audit_trail.api import events_for_work_item
 from abacus.modules.evidence.api import check_ready, register_export_audit_trail
+from abacus.modules.integrations.api import assert_egress_declared, egress_allowlist
 from abacus.modules.platform.api import configure_canary_probe
 from abacus.worker.canary_probe import ServiceProbe
 
@@ -112,6 +114,9 @@ async def build_workers(classes: Sequence[WorkClass] = WORK_CLASSES) -> list[Wor
     """One pool per work class served (ADR-071), plus the legacy single queue while workflows
     started before the class queues may still be open on it (SPEC-003 AC-16)."""
     check_clock()  # F-04-T02: no demo clock in production
+    # A-02-T16 review M3: connectors reach only the registry's hosts, through kernel.egress.
+    assert_egress_declared()
+    configure_egress(egress_allowlist())
     configure_tracing("abacus-worker")
     configure_metrics("abacus-worker")
     configure_error_tracking("abacus-worker")
