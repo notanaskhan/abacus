@@ -191,3 +191,12 @@ class EvidenceVersionUnlocked(DomainEvent):
     engagement_id: Annotated[UUID, classified("internal")]
     derivation_id: Annotated[UUID, classified("internal")]
     unlocked_by: Annotated[UUID, classified("internal")]
+
+
+class FirmExportScheduleChanged(DomainEvent):
+    """G-02-T19: the firm's export schedule was set or approved; its subscriber converges the
+    firm's Temporal Schedule (running only while `active`)."""
+
+    event_type: ClassVar[str] = "firm_export_schedule.changed"
+
+    tenant_id: Annotated[UUID, classified("internal")]

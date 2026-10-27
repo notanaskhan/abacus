@@ -24,6 +24,7 @@ from abacus.modules.review.decisions import (
     raise_decision_card,
 )
 from abacus.modules.review.engagement_gates import register_engagement_gates
+from abacus.modules.review.field_values import FieldValueInvalid, record_value, typed_value
 from abacus.modules.review.gates import (
     C13_EVENTS,
     GateSource,
@@ -37,7 +38,9 @@ from abacus.modules.review.issue_refs import issue_engagement
 from abacus.modules.review.matrix import review_gate
 from abacus.modules.review.mfa import MfaRequired
 from abacus.modules.review.notes import notes_for, open_note_counts
+from abacus.modules.review.notification_states import register_notification_states
 from abacus.modules.review.routes import router
+from abacus.modules.review.sealing import open_text, record_text_reads, seal_text
 from abacus.modules.review.service import (
     LEVELS,
     AlreadySigned,
@@ -112,6 +115,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 register_gate_provider("G5", review_gate)
 register_engagement_gates()  # P-07-T47 (C13): acceptance, independence and EQR gates
 register_engagement_owners(AUDIT_KINDS, audit_owners)  # ED-112: `sign_off.went_stale`
+# P-04-T26 (C16): what a card, note or sign-off says now, for the drawer's facts and Approvals.
+register_notification_states()
 
 # P-04-T16 (C13): the human-gate projector, on the events its sources may change; P-04-T19:
 # the stale sign-off detector, on the owners' change events (no event is in both).
@@ -138,6 +143,7 @@ __all__ = [
     "DecisionCardState",
     "DecisionKind",
     "FieldOwner",
+    "FieldValueInvalid",
     "GateSource",
     "Incomplete",
     "IndependencePending",
@@ -172,9 +178,12 @@ __all__ = [
     "issue_engagement",
     "notes_for",
     "open_note_counts",
+    "open_text",
     "raise_decision_card",
     "rebuild_human_gates",
     "record_sign_off",
+    "record_text_reads",
+    "record_value",
     "register_decision_kind",
     "register_field_owner",
     "register_fix_runner",
@@ -188,7 +197,9 @@ __all__ = [
     "reviewables_of",
     "router",
     "run_fix",
+    "seal_text",
     "sign_off_states",
     "stale_of",
     "states_of",
+    "typed_value",
 ]

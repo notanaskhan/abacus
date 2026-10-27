@@ -99,6 +99,11 @@ ROUTES: Final[tuple[Route, ...]] = (
 # sessions, sign-out, posture, unlock and the support switch.
 LIVE: Final = frozenset(
     {OVERVIEW, SIGN_IN, PORTAL, EXEMPT, SESSIONS, SIGN_OUT, POSTURE, UNLOCK, SUPPORT, SUPPORT_PUT}
+    # G-02-T18 (TASK-1481): the incident register; T19 (TASK-1482): the export schedule; T20
+    # (TASK-1483): the safeguards record and the WISP pack.
+    | {INCIDENTS, INCIDENT, TIMELINE, DECIDE}
+    | {SCHEDULE, SCHEDULE_PUT, SCHEDULE_APPROVE}
+    | {SAFEGUARDS, SAFEGUARDS_PUT, CONTROL_PUT, WISP_PACK}
 )
 # Q-02-T43 (TASK-1403) made the on-demand export live: the list, the request and the approval.
 STUBBED: Final = frozenset(ROUTES) - LIVE

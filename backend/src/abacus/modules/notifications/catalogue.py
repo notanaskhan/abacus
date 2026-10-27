@@ -15,6 +15,7 @@ from typing import Final, cast
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext
+from abacus.kernel.subject_states import subject_state
 from abacus.modules.identity.api import (
     engagement_leads,
     engagement_partners,
@@ -25,7 +26,7 @@ from abacus.modules.identity.api import (
     security_admins,
     team_of,
 )
-from abacus.modules.notifications.kinds import NotificationKind, register_kind
+from abacus.modules.notifications.kinds import Fact, NotificationKind, Row, register_kind
 
 Recipients = Callable[[UUID, dict[str, object]], Awaitable[list[UUID]]]
 
@@ -195,6 +196,44 @@ async def _export_requester(tenant_id: UUID, payload: dict[str, object]) -> list
     return [requester] if requester is not None else []
 
 
+async def _second_decider(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """G-02-T18 (AC-22): the person the first decider named, and only them."""
+    named = _uuid(payload, "waiting_for_user_id")
+    return [named] if named is not None else []
+
+
+async def _qi_and_partners(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """G-02-T18 (AC-23): the firm's QI and its partner-level members, on days 20, 25 and 29."""
+    return sorted(set(await security_admins(tenant_id)) | set(await partner_members(tenant_id)))
+
+
+async def _approver(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """P-04-T26 (SHL-10 d): the person a proposal was routed to, never the person who routed it."""
+    approver, by = _uuid(payload, "approver_user_id"), _uuid(payload, "by_user")
+    return [approver] if approver is not None and approver != by else []
+
+
+async def _import_reviewers(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """P-04-T26 (SHL-16 import variant): an engine import's checkpoint waits on the return's
+    reviewers the owner named; any other checkpoint notifies nobody."""
+    if payload.get("author_kind") != "import":
+        return []
+    return await _listed(tenant_id, payload)
+
+
+# P-04-T26 (C16): the review grammar's kinds read their facts and pending state from the
+# subject's owner at read time (`kernel.subject_states`); facts never depend on the reader.
+_NOBODY: Final = UUID(int=0)
+
+
+async def _subject_facts(tenant: TenantContext, row: Row) -> dict[str, Fact]:
+    return dict((await subject_state(tenant, _NOBODY, row.subject_type, row.subject_id)).facts)
+
+
+async def _subject_pending(tenant: TenantContext, user_id: UUID, row: Row) -> bool:
+    return (await subject_state(tenant, user_id, row.subject_type, row.subject_id)).pending
+
+
 async def _firm_export_approver(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     """Q-02-T43 (DEC-72): the person a firm export names to approve it, never its requester."""
     approver, requester = _uuid(payload, "approver_user_id"), _uuid(payload, "requested_by")
@@ -289,6 +328,16 @@ CATALOGUE: Final[dict[str, Kind]] = {
     # P-04-T23: a card waits on its reserved person; "Notify" mentions them (SHL-11 b).
     "decision_card.raised": Kind("decision_assigned", _listed, "decision_card", "card_id"),
     "decision_card.notify_requested": Kind("mention", _assignee, "decision_card", "card_id"),
+    # P-04-T26: a proposal routed to a named approver (SHL-10 d), by a person or by the firm's
+    # threshold policy when the agent proposed; a person asked to sign off a target (SHL-12); an
+    # issue assigned (SHL-15, its service P-04-T30); an engine import's checkpoint waiting on the
+    # return's reviewers (SHL-16, P-04-T32). The last three fan out once their producers land.
+    "proposal.routed": Kind("proposal_routed", _approver, "proposal", "proposal_id"),
+    "sign_off.requested": Kind("sign_off_requested", _listed, "reviewable", "target_id"),
+    "issue.assigned": Kind("issue_assigned", _assignee, "issue", "issue_id"),
+    "checkpoint.created": Kind(
+        "import_pending_approval", _import_reviewers, "checkpoint", "checkpoint_id"
+    ),
     # P-07-T47 (P-07 §4.8): acceptance, risk review, independence and team approval.
     "acceptance.sent_to_partner": Kind(
         "acceptance_awaiting_partner", _partners, "acceptance_record", "record_id"
@@ -309,6 +358,21 @@ CATALOGUE: Final[dict[str, Kind]] = {
     ),
     "engagement_export.failed": Kind(
         "export_failed", _export_requester, "engagement_export", "export_id"
+    ),
+    # G-02-T17: the requester's audit-log export is ready (firm-level).
+    "audit_export.ready": Kind(
+        "audit_export_ready", _export_requester, "audit_export", "export_id", None
+    ),
+    # G-02-T18: the incident register's two-person decision and its FTC clock (firm-level).
+    "incident.decision_requested": Kind(
+        "incident_decision_requested", _second_decider, "security_incident", "incident_id", None
+    ),
+    "incident.deadline_approaching": Kind(
+        "incident_deadline_approaching",
+        _qi_and_partners,
+        "security_incident",
+        "incident_id",
+        None,
     ),
     # Q-02-T43 (compliance-kernel §7): the named approver is asked; both people are told when the
     # archive is ready. Firm-level.
@@ -357,6 +421,10 @@ TEMPLATES: Final[dict[str, str]] = {
     "review_note.raised": "A review note on {engagement} is waiting for you.",
     "decision_card.raised": "A decision on {engagement} is waiting for you.",
     "decision_card.notify_requested": "A decision on {engagement} is waiting for you.",
+    "proposal.routed": "A proposal on {engagement} was sent to you for approval.",
+    "sign_off.requested": "Work on {engagement} is waiting for your sign-off.",
+    "issue.assigned": "An issue on {engagement} was assigned to you.",
+    "checkpoint.created": "An import on {engagement} is waiting for your approval.",
     "acceptance.sent_to_partner": "An acceptance on {engagement} is waiting for your decision.",
     "acceptance.review_requested": (
         "You were asked for a risk review of an acceptance on {engagement}."
@@ -368,6 +436,11 @@ TEMPLATES: Final[dict[str, str]] = {
     "team.change_proposed": "The team on {engagement} changed and is waiting for your approval.",
     "engagement_export.ready": "Your binder export for {engagement} is ready to download.",
     "engagement_export.failed": "Your binder export for {engagement} could not be built.",
+    "audit_export.ready": "Your audit log export is ready to download.",
+    "incident.decision_requested": "A security incident decision is waiting for you: {subject}.",
+    "incident.deadline_approaching": (
+        "A security incident's FTC notice date is approaching: {subject}."
+    ),
     "firm_export.requested": "A firm data export is waiting for your approval.",
     "firm_export.ready": "The firm data export is ready to download for 7 days.",
 }
@@ -423,9 +496,46 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("portal_drop_unsorted", "client_activity", "Inbox"),  # R-01-T09
     NotificationKind("follow_up_limit_reached", "client_activity", "Send"),  # R-01-T24
     NotificationKind("third_party_uploaded", "client_activity", "Upload"),  # R-01-T13
-    NotificationKind("sign_off_stale", "approval", "ClipboardCheck"),  # P-04-T19
-    NotificationKind("review_note_raised", "approval", "MessageSquare"),  # P-04-T21
-    NotificationKind("decision_assigned", "approval", "Scale"),  # P-04-T23
+    # P-04-T19, T21, T23, T26: the review grammar's seven kinds (C16 Approvals), their facts and
+    # pending state read from the subject's owner at read time. Email text is database content
+    # (`notification.<kind>`, imported), never committed.
+    NotificationKind(
+        "sign_off_stale",
+        "approval",
+        "ClipboardCheck",
+        facts=_subject_facts,
+        pending=_subject_pending,
+    ),
+    NotificationKind(
+        "review_note_raised",
+        "approval",
+        "MessageSquare",
+        facts=_subject_facts,
+        pending=_subject_pending,
+    ),
+    NotificationKind(
+        "decision_assigned", "approval", "Scale", facts=_subject_facts, pending=_subject_pending
+    ),
+    NotificationKind(
+        "sign_off_requested",
+        "approval",
+        "ClipboardCheck",
+        facts=_subject_facts,
+        pending=_subject_pending,
+    ),
+    NotificationKind(
+        "proposal_routed", "approval", "Sparkles", facts=_subject_facts, pending=_subject_pending
+    ),
+    NotificationKind(
+        "issue_assigned", "approval", "Flag", facts=_subject_facts, pending=_subject_pending
+    ),
+    NotificationKind(
+        "import_pending_approval",
+        "approval",
+        "Download",
+        facts=_subject_facts,
+        pending=_subject_pending,
+    ),
     # G-02-T02 (G-02 section 4.8): firm governance v1. Email text is database rows (C16), loaded
     # as content (G-02-T07); their owners add facts and pending resolvers with their tasks.
     NotificationKind(

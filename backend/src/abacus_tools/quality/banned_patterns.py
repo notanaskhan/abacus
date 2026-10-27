@@ -15,7 +15,7 @@ import re
 import sys
 import tokenize
 from collections.abc import Callable, Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from fnmatch import fnmatch
 from pathlib import Path
 from typing import Final
@@ -890,10 +890,41 @@ def _check_dispatch(src: SourceFile) -> Iterator[Finding]:
             )
 
 
+# P-04-T25 (DEC-604, narrowed by the security review, DEC-609): outside the evidence service and
+# routes, only these top-level scopes may name `decide`: the module's imports (`<import>`), its
+# `__all__`, or the named functions; anywhere else in the same file still fails.
+REVIEW_DECIDE_EXEMPT: dict[str, frozenset[str]] = {
+    "src/abacus/modules/evidence/api.py": frozenset({"<import>", "__all__"}),
+    "src/abacus/modules/agents/proposal_adapters.py": frozenset(
+        {"<import>", "approve_typed", "reject_typed"}
+    ),
+}
+
+
+def _top_scope(node: ast.stmt) -> str | None:
+    if isinstance(node, ast.Import | ast.ImportFrom):
+        return "<import>"
+    if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef):
+        return node.name
+    if isinstance(node, ast.Assign) and any(
+        isinstance(t, ast.Name) and t.id == "__all__" for t in node.targets
+    ):
+        return "__all__"
+    return None
+
+
 def _check_review_decide(src: SourceFile) -> Iterator[Finding]:
     """ADR-005: agents propose, humans decide. Nothing but the evidence routes reaches the review
     decision (`decide`), whatever it is called through (TASK-019 D4, security review H2)."""
-    for node in ast.walk(src.tree):
+    allowed = REVIEW_DECIDE_EXEMPT.get(src.rel, frozenset[str]())
+    for top in src.tree.body:
+        if _top_scope(top) in allowed:
+            continue
+        yield from _decide_named(top)
+
+
+def _decide_named(tree: ast.AST) -> Iterator[Finding]:
+    for node in ast.walk(tree):
         name = None
         if isinstance(node, ast.Name):
             name = node.id
@@ -926,6 +957,40 @@ def _check_named(name: str, message: str) -> Callable[[SourceFile], Iterator[Fin
                 found = name
             if found == name:
                 yield Finding(getattr(node, "lineno", 1), message)
+
+    return check
+
+
+# PROPOSAL-001 (P-04-T24, T25; re-review L4): the top-level scopes that may name a proposal's
+# decision functions, file by file, as `REVIEW_DECIDE_EXEMPT` does for REVIEW-001.
+PROPOSAL_EXEMPT: dict[str, frozenset[str]] = {
+    "src/abacus/modules/agents/proposals.py": frozenset({"__all__"}),
+    "src/abacus/modules/agents/proposal_adapters.py": frozenset({"__all__"}),
+    "src/abacus/modules/agents/contract.py": frozenset(
+        {
+            "<import>",
+            "proposal_approve_route",
+            "proposal_reject_route",
+            "proposal_route_to_route",
+            "suggestion_adopt_route",
+            "suggestion_dismiss_route",
+        }
+    ),
+}
+
+
+def _check_named_scoped(
+    names: tuple[str, ...], message: str, exempt: dict[str, frozenset[str]]
+) -> Callable[[SourceFile], Iterator[Finding]]:
+    """`_check_named_any`, except in the named top-level scopes of the named files."""
+    inner = _check_named_any(names, message)
+
+    def check(src: SourceFile) -> Iterator[Finding]:
+        allowed = exempt.get(src.rel, frozenset[str]())
+        for top in src.tree.body:
+            if _top_scope(top) in allowed:
+                continue
+            yield from inner(replace(src, tree=ast.Module(body=[top], type_ignores=[])))
 
     return check
 
@@ -1099,6 +1164,10 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/agents/repository.py", "version_results_of"),
         ("src/abacus/modules/agents/repository.py", "items_screened_with"),
         ("src/abacus/modules/evidence/repository.py", "verified_citations_of"),
+        # P-04-T24 (C4, INV-2): citations by id, for a caller authorised on the citing
+        # engagement (a proposal's rows, re-verified at approval; SHL-10's evidence list).
+        ("src/abacus/modules/evidence/repository.py", "supported_citations_among"),
+        ("src/abacus/modules/evidence/repository.py", "citation_versions_among"),
         ("src/abacus/modules/evidence/repository.py", "decisions_for_screenings"),
         # SPEC-035 Q3 (TASK-074): a template version's drafts are firm-wide, read after
         # `authorise(template_guidance.read)` on the firm; no engagement rows.
@@ -2414,6 +2483,8 @@ RULES: list[Rule | TreeRule] = [
         adr="ADR-005",
         check=_check_review_decide,
         # An allowlist (TASK-019 security review H2): any other file naming `decide` fails.
+        # P-04-T25 (DEC-604, DEC-609; ADR-161 clause 3): the typed adapters approve through the
+        # same call the AUD-03 routes make; `REVIEW_DECIDE_EXEMPT` names the scopes that may.
         include=("src/abacus/*",),
         exclude=(
             "src/abacus/modules/evidence/service.py",
@@ -2457,6 +2528,29 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/modules/review/decisions.py",
             "src/abacus/modules/review/contract.py",
         ),
+    ),
+    Rule(
+        id="PROPOSAL-001",
+        description="Only the proposal service, its adapters and its routes reach a proposal's "
+        "decision",
+        adr="ADR-161",
+        check=_check_named_scoped(
+            (
+                "approve_proposal",
+                "reject_proposal",
+                "route_proposal",
+                "adopt_suggestion",
+                "dismiss_suggestion",
+                "approve_typed",
+                "reject_typed",
+            ),
+            "only a person approves, rejects, adopts or dismisses the agent's proposal, through "
+            "the agents service (INV-1, ADR-160 clause 12, ADR-161)",
+            PROPOSAL_EXEMPT,
+        ),
+        # P-04-T24, T25: only the scopes in `PROPOSAL_EXEMPT` (the definitions' `__all__`, the
+        # routes and their imports); anything else naming one fails.
+        include=("src/abacus/*",),
     ),
     Rule(
         id="ACCEPT-001",

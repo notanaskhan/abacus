@@ -96,11 +96,6 @@ test("SHL-07a: by keyboard, Enter pins a named dialog and Escape returns focus t
 });
 
 test("SHL-07a: a popover pinned by keyboard takes focus", async ({ page }) => {
-  test.fail(
-    true,
-    "TASK-1441 (ED-167): pinning from the keyboard leaves focus on the cell; P-03 §5.6 says the " +
-      "pinned popover takes focus, so its stepper and Re-link are not reached next",
-  );
   await open(page, "a");
   await page.keyboard.press("Escape");
   const cell = page.locator("[data-cited]").first();
@@ -120,11 +115,6 @@ test("SHL-07a: a popover pinned by keyboard takes focus", async ({ page }) => {
 });
 
 test("SHL-07b: the stepper is named and announces Source 2 of 3", async ({ page }) => {
-  test.fail(
-    true,
-    "TASK-1441 (ED-166): the stepper's 'Source 2 of 3' is an aria-label on the static counter, " +
-      "not a live region, so a screen reader is never told the source changed (P-03 §5.6)",
-  );
   const popover = await open(page, "b");
   const next = popover.getByRole("button", { name: "Next source" });
   await expect(popover.getByRole("button", { name: "Previous source" })).toBeVisible();

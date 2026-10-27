@@ -169,7 +169,11 @@ def test_the_ses_drain_runs_every_minute_on_the_time_sensitive_queue() -> None:
 
 def test_the_two_moved_jobs_are_declared_as_background_schedules() -> None:
     declared = {job.id: job for job in (*platform.SCHEDULES, *notifications.SCHEDULES)}
-    assert set(declared) == {"spend_anomaly:platform", "notification_purge:platform"}
+    assert set(declared) == {
+        "spend_anomaly:platform",
+        "notification_purge:platform",
+        "incident_reminders:platform",  # G-02-T18: the FTC clock reminders
+    }
     assert declared["spend_anomaly:platform"].every == timedelta(hours=1)
     assert declared["spend_anomaly:platform"].workflow is platform.SpendAnomalyWorkflow
     assert declared["notification_purge:platform"].every == timedelta(days=1)
@@ -178,3 +182,29 @@ def test_the_two_moved_jobs_are_declared_as_background_schedules() -> None:
     )
     assert platform.WORKFLOWS[platform.SpendAnomalyWorkflow] == "background"
     assert notifications.WORKFLOWS[notifications.NotificationPurgeWorkflow] == "background"
+
+
+async def test_g02t19_a_firm_schedule_runs_on_the_firms_calendar(client: _Client) -> None:
+    """G-02-T19 (DEC-623): the 1st at 02:00 in the firm's zone, paused as its record says, and
+    converged (not duplicated) on a second call."""
+    job = dispatch.FirmSchedule(
+        id="firm_export_schedule:00000000-0000-4000-8000-000000000001",
+        workflow=_Background,
+        arg="00000000-0000-4000-8000-000000000001",
+        day_of_month=1,
+        hour=2,
+        minute=0,
+        time_zone="America/Chicago",
+        note="n",
+    )
+    assert await dispatch.firm_schedule(job, paused=True) == "created"
+    made = client.schedules[job.id]
+    assert made.spec.time_zone_name == "America/Chicago"
+    [calendar] = made.spec.calendars
+    assert [r.start for r in calendar.day_of_month] == [1]
+    assert [r.start for r in calendar.hour] == [2]
+    assert made.state.paused is True
+    assert made.policy.overlap == ScheduleOverlapPolicy.SKIP
+    assert await dispatch.firm_schedule(job, paused=False) == "updated"
+    assert list(client.schedules) == [job.id]
+    assert client.schedules[job.id].state.paused is False

@@ -332,15 +332,7 @@ async def test_spec018_ac3_duplicates_are_skipped_case_and_space_insensitively(
 @pytest.mark.parametrize(
     "case",
     [
-        pytest.param(
-            "missing_column",
-            marks=pytest.mark.xfail(
-                strict=True,
-                reason="TASK-1438 (ED-167): a mapped column past the sheet's last column is "
-                "read as empty cells, so the import answers 201 with every row counted empty "
-                "instead of 422 naming the missing column (SPEC-018 AC-4)",
-            ),
-        ),
+        "missing_column",
         "not_a_workbook",
         "no_such_sheet",
     ],
@@ -428,12 +420,6 @@ async def test_spec021_ac2_download_is_an_attachment_audited_and_verified(world:
     assert after == before + 1
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1438 (ED-167): a stored object whose row fingerprint no longer matches fails "
-    "decryption (the per-object key binds the fingerprint) and answers 500 internal error, not "
-    "409 integrity_failed (SPEC-021 AC-2, error-codes.yaml)",
-)
 async def test_spec021_ac2_content_whose_fingerprint_does_not_match_is_refused(
     world: World,
 ) -> None:
@@ -568,12 +554,6 @@ async def test_spec023_ac2_dropped_files_wait_unassigned_and_a_duplicate_is_refu
     assert again.status_code == 409, again.text
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1438 (ED-167): a client contributor's drop into the engagement inbox answers 500 "
-    "(authz.unchecked_route: `evidence.upload` is `assigned_only` and the inbox route names no "
-    "item), where SPEC-023 AC-2 lets a contributor drop files",
-)
 async def test_spec023_ac3_suggestions_show_score_and_words_and_a_contributor_sees_only_theirs(
     world: World,
 ) -> None:

@@ -330,12 +330,12 @@ export function CitationCard({
             >
               <Icon name="chevron-left" size={12} />
             </button>
-            <span
-              className="tabular-nums"
-              aria-live="polite"
-              aria-label={COPY.popover.announce(payload.index + 1, count)}
-            >
+            <span className="tabular-nums" aria-hidden="true">
               {COPY.popover.stepper(payload.index + 1, count)}
+            </span>
+            {/* Announced in words when the source changes (P-03 §5.6, ED-166). */}
+            <span role="status" aria-live="polite" className="sr-only">
+              {COPY.popover.announce(payload.index + 1, count)}
             </span>
             <button
               type="button"

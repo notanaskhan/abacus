@@ -6,18 +6,29 @@ itself (ED-112). Follow-up: an `engagement_id` on audit events makes this exact 
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import cast
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.orm import QueryableAttribute
 
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.modules.review.models import DecisionCard, ReviewableNote, SignOff
+from abacus.modules.review.models import (
+    DecisionCard,
+    FieldValueVersion,
+    ReviewableNote,
+    SignOff,
+)
 
 _OWNERS: dict[str, tuple[QueryableAttribute[UUID], QueryableAttribute[UUID]]] = {
     "sign_off": (SignOff.id, SignOff.engagement_id),  # SPEC-308
     "reviewable_note": (ReviewableNote.id, ReviewableNote.engagement_id),  # P-04-T21, ED-150
     "decision_card": (DecisionCard.id, DecisionCard.engagement_id),  # P-04-T23
+    # P-04-T24 (review low, DEC-609): each field write is audited; a firm-level field has none.
+    "field_value_version": (
+        FieldValueVersion.id,
+        cast(QueryableAttribute[UUID], FieldValueVersion.engagement_id),
+    ),
 }
 AUDIT_KINDS = frozenset(_OWNERS)
 
@@ -28,4 +39,5 @@ async def audit_owners(tenant: TenantContext, kind: str, ids: Sequence[UUID]) ->
     key, owner = _OWNERS[kind]
     async with tenant_session(tenant) as session:
         rows = await session.execute(select(key, owner).where(key.in_(list(ids))))
-        return {found: owned for found, owned in rows}
+        # A firm-level field version has no engagement (the outer join of rows on None).
+        return {found: owned for found, owned in rows if cast(UUID | None, owned) is not None}

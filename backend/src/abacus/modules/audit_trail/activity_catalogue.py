@@ -78,6 +78,23 @@ CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
     "audit_export.requested": _a("export"),
     "audit_export.ready": _a("export"),
     "audit_export.downloaded": _a("export"),
+    "audit_export.failed": _a("export", "no"),
+    # The security-center contract's names (security-center.md §5) for T18 to T20 (DEC-624)
+    "incident.timeline_appended": _a("change"),
+    "incident.notification_started": _a("decision", "ok"),
+    "incident.reminder_sent": _a("communication", "pl", "day"),
+    "firm_export_schedule.updated": _a("change"),
+    "firm_export_schedule.approved": _a("decision", "ok"),
+    "firm_export_schedule.run_started": _a("export"),
+    "firm_export_schedule.run_skipped": _a("export", "no"),
+    "firm_export_schedule.approval_lapsed": _a("change", "no"),
+    "safeguards_control.updated": _a("change"),
+    "wisp_pack.prepared": _a("export"),
+    "wisp_pack.ready": _a("export"),
+    "wisp_pack.downloaded": _a("export"),
+    "wisp_pack.failed": _a("export", "no"),
+    "safeguards_controls.imported": _a("change"),
+    "safeguards_controls.published": _a("change", "ok"),
     # AI policy (G-02-T23, T24)
     "ai_policy.draft_saved": _a("change"),
     "ai_policy.draft_discarded": _a("change", "no"),
@@ -103,6 +120,19 @@ CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
     "tie_out_check.issue_linked": _a("change", "pl", "issue_id", "version_no"),
     # Open in Excel (A-02-T22): the version, the layer and the file's fingerprint
     "trial_balance.exported": _a("export", "pl", "version_no", "layer_no", "file_sha256"),
+    # Proposals and suggestions (P-04-T24, T25; ADR-161): a person's verdict on the agent's
+    # change set ("Proposal approved by Samuel Ito"); the agent's proposal is a run's output.
+    "proposal.created": _a("run", "pl", "version"),
+    "proposal.approved": _a("decision", "ok", "decision", "version"),
+    "proposal.approved_with_edits": _a("decision", "ok", "decision", "version", "edits"),
+    "proposal.rejected": _a("decision", "no", "decision", "version"),
+    "proposal.routed": _a("decision", "pl", "decision", "user_id"),
+    "proposal.follow_up_recorded": _a("change", "pl", "decision"),
+    "suggestion.created": _a("run", "pl"),
+    "suggestion.adopted": _a("decision", "ok", "decision", "version"),
+    "suggestion.edited": _a("decision", "ok", "decision", "version"),
+    "suggestion.dismissed": _a("decision", "no", "decision", "version"),
+    "field.value_recorded": _a("change", "pl", "seq", "citations"),
 }
 
 _REGISTERED: dict[str, CatalogueEntry] = {}
