@@ -1,10 +1,11 @@
 """C3 v1, the review grammar: stub PR 2 (P-04-T08), the SHL-10 family. Proposals and suggestions
 are the agents module's (ADR-161); the C3 contract is `docs/contracts/review-grammar.md` part 2.
 
-Behind `review.grammar_api`: off, every route answers 404; on, 501 `not_implemented` until the
-proposals and suggestions service lands (P-04-T24, Undo P-04-T29). The agent proposes; every
-route here is a person's act or read (ADR-005, INV-1). Proposal and suggestion values may be
-return information (§7216) or client figures, so they are Restricted and never in a list.
+Behind `review.grammar_api`: off, every route answers 404. On, the routes are served by
+`agents.proposals` (P-04-T24) and, for a typed ref, `agents.proposal_adapters` (P-04-T25); Undo
+answers 501 until P-04-T29. The agent proposes; every route here is a person's act or read
+(ADR-005, INV-1). Proposal and suggestion values may be return information (§7216) or client
+figures, so they are Restricted and never in a list.
 """
 
 from __future__ import annotations
@@ -22,6 +23,25 @@ from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.text import MultiLineText
+from abacus.modules.agents.proposal_adapters import (
+    adapter_view,
+    approve_typed,
+    parse,
+    reject_typed,
+)
+from abacus.modules.agents.proposals import (
+    Edit,
+    ProposalInvalid,
+    ProposalView,
+    SuggestionView,
+    adopt_suggestion,
+    approve_proposal,
+    dismiss_suggestion,
+    proposal_view,
+    record_follow_up,
+    reject_proposal,
+    route_proposal,
+)
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -48,6 +68,19 @@ async def _stub(ctx: AuthContext) -> NoReturn:
     if not await flag_enabled(ctx.tenant, REVIEW_GRAMMAR_API):
         raise NotFound("review.grammar_api")
     raise NotImplementedYet
+
+
+async def _live(ctx: AuthContext) -> None:
+    """A live route behind the same flag: off, it answers 404 like its stub did."""
+    if not await flag_enabled(ctx.tenant, REVIEW_GRAMMAR_API):
+        raise NotFound("review.grammar_api")
+
+
+def _uuid(ref: str) -> UUID:
+    try:
+        return UUID(ref)
+    except ValueError:
+        raise NotFound("proposal") from None
 
 
 # --- Proposals (SHL-10) ------------------------------------------------------------------------
@@ -204,6 +237,14 @@ class UndoProposalIn(BaseModel):
     decision_id: Annotated[UUID, classified("internal")]
 
 
+def _proposal_out(view: ProposalView) -> AgentProposalOut:
+    return AgentProposalOut.model_validate(view, from_attributes=True)
+
+
+def _suggestion_out(view: SuggestionView) -> AgentSuggestionOut:
+    return AgentSuggestionOut.model_validate(view, from_attributes=True)
+
+
 proposals_router = AbacusRouter(prefix="/v1/proposals", tags=["agents"])
 
 
@@ -212,21 +253,36 @@ proposals_router = AbacusRouter(prefix="/v1/proposals", tags=["agents"])
 )
 async def agent_proposal_route(ref: ProposalRef, ctx: Ctx) -> AgentProposalOut:
     """SHL-10 a to g: the proposal projection with the caller's allowed actions."""
-    await _stub(ctx)
+    await _live(ctx)
+    typed = parse(ref)
+    if typed is not None:
+        return _proposal_out(await adapter_view(ctx, *typed))
+    return _proposal_out(await proposal_view(ctx, _uuid(ref)))
 
 
 @proposals_router.post(
     "/{proposal_id}/approve",
     action="proposal.approve",
     response_model=AgentProposalOut,
-    errors=(409, 501),
+    errors=(409, 501, 503),
 )
 async def proposal_approve_route(
-    proposal_id: UUID, body: ApproveProposalIn, ctx: Ctx
+    proposal_id: ProposalRef, body: ApproveProposalIn, ctx: Ctx
 ) -> AgentProposalOut:
     """Approve, or approve with edits (human only). Over the viewer's limit: 403 with the
-    approver to route to."""
-    await _stub(ctx)
+    approver to route to. A typed ref approves through the specialist's existing path."""
+    await _live(ctx)
+    typed = parse(proposal_id)
+    if typed is not None:
+        if body.edits:
+            raise ProposalInvalid(facts={"field": "edits"})
+        return _proposal_out(await approve_typed(ctx, *typed, seen_version=body.seen_version))
+    edits = [Edit(e.n, e.after, e.citation_note) for e in body.edits]
+    return _proposal_out(
+        await approve_proposal(
+            ctx, _uuid(proposal_id), seen_version=body.seen_version, edits=edits
+        )
+    )
 
 
 @proposals_router.post(
@@ -236,10 +292,30 @@ async def proposal_approve_route(
     errors=(409, 501),
 )
 async def proposal_reject_route(
-    proposal_id: UUID, body: RejectProposalIn, ctx: Ctx
+    proposal_id: ProposalRef, body: RejectProposalIn, ctx: Ctx
 ) -> AgentProposalOut:
     """SHL-10 f: reject with a reason (human only)."""
-    await _stub(ctx)
+    await _live(ctx)
+    typed = parse(proposal_id)
+    if typed is not None:
+        return _proposal_out(
+            await reject_typed(
+                ctx,
+                *typed,
+                seen_version=body.seen_version,
+                reason_code=body.reason_code,
+                note=body.note,
+            )
+        )
+    return _proposal_out(
+        await reject_proposal(
+            ctx,
+            _uuid(proposal_id),
+            seen_version=body.seen_version,
+            reason_code=body.reason_code,
+            note=body.note,
+        )
+    )
 
 
 @proposals_router.post(
@@ -252,7 +328,15 @@ async def proposal_route_to_route(
     proposal_id: UUID, body: RouteProposalIn, ctx: Ctx
 ) -> AgentProposalOut:
     """SHL-10 d: send it to a named approver ("Send to Priya Raman for approval")."""
-    await _stub(ctx)
+    await _live(ctx)
+    return _proposal_out(
+        await route_proposal(
+            ctx,
+            proposal_id,
+            seen_version=body.seen_version,
+            approver_user_id=body.approver_user_id,
+        )
+    )
 
 
 @proposals_router.post(
@@ -265,7 +349,8 @@ async def proposal_follow_up_route(
     proposal_id: UUID, body: FollowUpIn, ctx: Ctx
 ) -> AgentProposalOut:
     """ "Ask follow-up": a follow-up recorded for the originating thread or run."""
-    await _stub(ctx)
+    await _live(ctx)
+    return _proposal_out(await record_follow_up(ctx, proposal_id, text=body.text))
 
 
 @proposals_router.post(
@@ -332,13 +417,22 @@ suggestions_router = AbacusRouter(prefix="/v1/suggestions", tags=["agents"])
     "/{suggestion_id}/adopt",
     action="suggestion.resolve",
     response_model=AgentSuggestionOut,
-    errors=(409, 501),
+    errors=(409, 501, 503),
 )
 async def suggestion_adopt_route(
     suggestion_id: UUID, body: AdoptSuggestionIn, ctx: Ctx
 ) -> AgentSuggestionOut:
     """Adopt through the target's registered applier (human only)."""
-    await _stub(ctx)
+    await _live(ctx)
+    return _suggestion_out(
+        await adopt_suggestion(
+            ctx,
+            suggestion_id,
+            seen_version=body.seen_version,
+            edited_value=body.edited_value,
+            citation_note=body.citation_note,
+        )
+    )
 
 
 @suggestions_router.post(
@@ -351,4 +445,9 @@ async def suggestion_dismiss_route(
     suggestion_id: UUID, body: DismissSuggestionIn, ctx: Ctx
 ) -> AgentSuggestionOut:
     """Dismiss (human only)."""
-    await _stub(ctx)
+    await _live(ctx)
+    return _suggestion_out(
+        await dismiss_suggestion(
+            ctx, suggestion_id, seen_version=body.seen_version, reason_code=body.reason_code
+        )
+    )

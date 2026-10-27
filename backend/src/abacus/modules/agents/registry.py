@@ -89,6 +89,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "suggestion_decisions": frozenset(
         {"tenant_id", "suggestion_id", "decision", "edited_value", "citation_note_sealed"}
         | {"reason_code", "undoes_decision_id", "decided_by"}
+        | {"id"}  # P-04-T24 (migration 0230): a sealed note is bound to its row
     ),
     "proposals": frozenset(
         {"tenant_id", "engagement_id", "kind", "title", "reasoning_ref", "policy_eval"}
@@ -102,6 +103,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"tenant_id", "proposal_id", "decision", "reason_code", "note_sealed", "edits"}
         | {"seen_version", "routed_to_user_id", "undoes_decision_id", "approval_grant_id"}
         | {"decided_by"}
+        | {"id"}  # P-04-T24 (migration 0230): a sealed note is bound to its row
     ),
     # Inbox match proposals (SPEC-033; TASK-065): the matcher's, as made.
     "inbox_match_runs": frozenset(

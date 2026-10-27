@@ -467,6 +467,11 @@ codes:
     - abacus.modules.evidence.exports.ExportSectionUnavailable
     summary: 'The scope asks for a section no provider can write yet (the audit trail until its reader
       is registered): refused at create, before any grant, rather than failing after the window.'
+  field_value_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.review.field_values.FieldValueInvalid
+    summary: A value, field key or citation note the field history can't take.
   fieldwork_unavailable:
     status: 409
     raised_by:
@@ -1106,9 +1111,15 @@ codes:
   proposal_changed:
     status: 409
     raised_by:
+    - abacus.modules.agents.proposals.ProposalChanged
     - abacus.modules.engagements.roll_forward.ProposalChanged
     - abacus.modules.evidence.service.ProposalChanged
     summary: 'The template''s latest version changed since the proposal: ask for it again.'
+  proposal_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.agents.proposals.ProposalInvalid
+    summary: A row, edit, approver, reason or follow-up the proposal can't take.
   rationale_required:
     status: 422
     raised_by:
@@ -1366,6 +1377,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.evidence.statement_review.ReviewInvalid
+  suggestion_changed:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.proposals.SuggestionChanged
+    summary: The suggestion moved past the version the person saw, or is no longer pending.
   superseded:
     status: 409
     raised_by:

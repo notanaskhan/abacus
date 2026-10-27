@@ -1046,6 +1046,10 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/agents/repository.py", "version_results_of"),
         ("src/abacus/modules/agents/repository.py", "items_screened_with"),
         ("src/abacus/modules/evidence/repository.py", "verified_citations_of"),
+        # P-04-T24 (C4, INV-2): citations by id, for a caller authorised on the citing
+        # engagement (a proposal's rows, re-verified at approval; SHL-10's evidence list).
+        ("src/abacus/modules/evidence/repository.py", "supported_citations_among"),
+        ("src/abacus/modules/evidence/repository.py", "citation_versions_among"),
         ("src/abacus/modules/evidence/repository.py", "decisions_for_screenings"),
         # SPEC-035 Q3 (TASK-074): a template version's drafts are firm-wide, read after
         # `authorise(template_guidance.read)` on the firm; no engagement rows.
@@ -2344,10 +2348,15 @@ RULES: list[Rule | TreeRule] = [
         adr="ADR-005",
         check=_check_review_decide,
         # An allowlist (TASK-019 security review H2): any other file naming `decide` fails.
+        # P-04-T25 (DEC-604; ADR-161 clause 3): the typed proposal adapters approve a screener's
+        # or upload reviewer's proposal through the same call the AUD-03 routes make, so the
+        # evidence module's public interface and the one adapter file are named here too.
         include=("src/abacus/*",),
         exclude=(
             "src/abacus/modules/evidence/service.py",
             "src/abacus/modules/evidence/routes.py",
+            "src/abacus/modules/evidence/api.py",
+            "src/abacus/modules/agents/proposal_adapters.py",
         ),
     ),
     Rule(
@@ -2386,6 +2395,31 @@ RULES: list[Rule | TreeRule] = [
         exclude=(
             "src/abacus/modules/review/decisions.py",
             "src/abacus/modules/review/contract.py",
+        ),
+    ),
+    Rule(
+        id="PROPOSAL-001",
+        description="Only the proposal service, its adapters and its routes reach a proposal's "
+        "decision",
+        adr="ADR-161",
+        check=_check_named_any(
+            (
+                "approve_proposal",
+                "reject_proposal",
+                "route_proposal",
+                "adopt_suggestion",
+                "dismiss_suggestion",
+            ),
+            "only a person approves, rejects, adopts or dismisses the agent's proposal, through "
+            "the agents service (INV-1, ADR-160 clause 12, ADR-161)",
+        ),
+        # P-04-T24, T25: the definitions, the typed adapters and the routes; any other file
+        # naming one fails (agents' api does not export them).
+        include=("src/abacus/*",),
+        exclude=(
+            "src/abacus/modules/agents/proposals.py",
+            "src/abacus/modules/agents/proposal_adapters.py",
+            "src/abacus/modules/agents/contract.py",
         ),
     ),
     Rule(

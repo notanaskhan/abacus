@@ -434,3 +434,111 @@ class ScreeningRerunRequest(Base):
     requested_by: Mapped[UUID]
     files: Mapped[int]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+# --- Suggestions and proposals (P-04-T05 schema, migration 0095; P-04-T24 service) -------------
+
+
+class Suggestion(Base):
+    """One proposed value for one target field (ADR-161 clause 1). `status` moves only with a
+    person's `suggestion_decisions` row (0230)."""
+
+    __tablename__ = "suggestions"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID | None]
+    target_type: Mapped[str]
+    target_id: Mapped[UUID]
+    field_key: Mapped[str]
+    proposed_value: Mapped[dict[str, object]] = mapped_column(JSONB)
+    rationale_ref: Mapped[str | None]
+    citation_ids: Mapped[list[UUID]] = mapped_column(ARRAY(PgUUID(as_uuid=True)))
+    confidence: Mapped[Decimal | None] = mapped_column(Numeric(4, 3))
+    agent_run_id: Mapped[UUID]
+    proposal_id: Mapped[UUID | None]
+    status: Mapped[str] = mapped_column(server_default=FetchedValue())
+    version: Mapped[int] = mapped_column(server_default=FetchedValue())
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class SuggestionDecision(Base):
+    """A person's decision on a suggestion: insert-only and human-only (0095, 0230)."""
+
+    __tablename__ = "suggestion_decisions"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    suggestion_id: Mapped[UUID]
+    decision: Mapped[str]
+    edited_value: Mapped[dict[str, object] | None] = mapped_column(JSONB(none_as_null=True))
+    citation_note_sealed: Mapped[bytes | None]
+    reason_code: Mapped[str | None]
+    undoes_decision_id: Mapped[UUID | None]
+    decided_by: Mapped[UUID]
+    actor_kind: Mapped[str] = mapped_column(server_default=FetchedValue())
+    actor_id: Mapped[str] = mapped_column(server_default=FetchedValue())
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class Proposal(Base):
+    """An agent's change set (ADR-161 clause 2). `state` and `routed_to_user_id` move only with a
+    person's `proposal_decisions` row (0230)."""
+
+    __tablename__ = "proposals"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID | None]
+    kind: Mapped[str]
+    title: Mapped[str]
+    reasoning_ref: Mapped[str | None]
+    policy_eval: Mapped[dict[str, object] | None] = mapped_column(JSONB(none_as_null=True))
+    routed_to_user_id: Mapped[UUID | None]
+    set_ref: Mapped[dict[str, object] | None] = mapped_column(JSONB(none_as_null=True))
+    checkpoint_id: Mapped[UUID | None]
+    state: Mapped[str] = mapped_column(server_default=FetchedValue())
+    version: Mapped[int] = mapped_column(server_default=FetchedValue())
+    agent_run_id: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class ProposalRow(Base):
+    """One change of a proposal: insert-only (0095)."""
+
+    __tablename__ = "proposal_rows"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    proposal_id: Mapped[UUID]
+    n: Mapped[int]
+    suggestion_id: Mapped[UUID | None]
+    field_ref: Mapped[dict[str, object]] = mapped_column(JSONB)
+    label: Mapped[str]
+    before: Mapped[dict[str, object] | None] = mapped_column(JSONB(none_as_null=True))
+    after: Mapped[dict[str, object] | None] = mapped_column(JSONB(none_as_null=True))
+    cause: Mapped[str]
+    citation_ids: Mapped[list[UUID]] = mapped_column(ARRAY(PgUUID(as_uuid=True)))
+    unsupported: Mapped[bool]
+
+
+class ProposalDecision(Base):
+    """A person's decision on a proposal: insert-only and human-only (0095, 0230)."""
+
+    __tablename__ = "proposal_decisions"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    proposal_id: Mapped[UUID]
+    decision: Mapped[str]
+    reason_code: Mapped[str | None]
+    note_sealed: Mapped[bytes | None]
+    edits: Mapped[list[dict[str, object]] | None] = mapped_column(JSONB(none_as_null=True))
+    seen_version: Mapped[int]
+    routed_to_user_id: Mapped[UUID | None]
+    undoes_decision_id: Mapped[UUID | None]
+    approval_grant_id: Mapped[UUID | None]
+    decided_by: Mapped[UUID]
+    actor_kind: Mapped[str] = mapped_column(server_default=FetchedValue())
+    actor_id: Mapped[str] = mapped_column(server_default=FetchedValue())
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

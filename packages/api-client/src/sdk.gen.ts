@@ -7675,7 +7675,7 @@ export const suggestRoomRequest = <ThrowOnError extends boolean = false>(options
  * Proposal Approve Route
  *
  * Approve, or approve with edits (human only). Over the viewer's limit: 403 with the
- * approver to route to.
+ * approver to route to. A typed ref approves through the specialist's existing path.
  */
 export const proposalApprove = <ThrowOnError extends boolean = false>(options: Options<ProposalApproveData, ThrowOnError>): RequestResult<ProposalApproveResponses, ProposalApproveErrors, ThrowOnError> => (options.client ?? client).post<ProposalApproveResponses, ProposalApproveErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

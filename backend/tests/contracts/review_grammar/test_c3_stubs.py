@@ -130,7 +130,9 @@ def _ctx() -> AuthContext:
 # Live with the flag on (no longer 501): P-04-T16 serves the human gates from the projection
 # (tests/integration/backfill/test_p04t16_human_gate_projector.py); P-04-T18 the ladder,
 # eligibility and sign-off (tests/integration/test_p04t18_sign_off_service.py); P-04-T21 the
-# notes, T22 bulk sign-off and T23 decision cards (tests/integration/test_p04t2[123]_*.py).
+# notes, T22 bulk sign-off and T23 decision cards (tests/integration/test_p04t2[123]_*.py);
+# P-04-T24 proposals and suggestions and T25 the typed adapters (test_p04t24_proposals.py,
+# backfill/test_p04t25_proposal_adapters.py). Undo stays 501 until P-04-T29.
 LIVE = frozenset(
     {
         "human_gate_list_route",
@@ -150,6 +152,13 @@ LIVE = frozenset(
         "decision_card_analysis_request_route",
         "decision_card_notify_route",
         "decision_card_reassess_route",
+        "agent_proposal_route",
+        "proposal_approve_route",
+        "proposal_reject_route",
+        "proposal_route_to_route",
+        "proposal_follow_up_route",
+        "suggestion_adopt_route",
+        "suggestion_dismiss_route",
     }
 )
 

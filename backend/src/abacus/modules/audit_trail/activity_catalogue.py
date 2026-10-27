@@ -92,6 +92,18 @@ CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
     "connection.grant_revoked": _a("change", "no", "result"),  # review M1: the provider's revoke
     # Tie-out checks (A-02-T17)
     "tie_out_check.issue_linked": _a("change", "pl", "issue_id", "version_no"),
+    # Proposals and suggestions (P-04-T24, T25; ADR-161): a person's verdict on the agent's
+    # change set ("Proposal approved by Samuel Ito"); the agent's proposal is a run's output.
+    "proposal.created": _a("run", "pl", "version"),
+    "proposal.approved": _a("decision", "ok", "decision", "version"),
+    "proposal.approved_with_edits": _a("decision", "ok", "decision", "version", "edits"),
+    "proposal.rejected": _a("decision", "no", "decision", "version"),
+    "proposal.routed": _a("decision", "pl", "decision", "user_id"),
+    "proposal.follow_up_recorded": _a("change", "pl", "decision"),
+    "suggestion.created": _a("run", "pl"),
+    "suggestion.adopted": _a("decision", "ok", "decision", "version"),
+    "suggestion.edited": _a("decision", "ok", "decision", "version"),
+    "suggestion.dismissed": _a("decision", "no", "decision", "version"),
 }
 
 _REGISTERED: dict[str, CatalogueEntry] = {}

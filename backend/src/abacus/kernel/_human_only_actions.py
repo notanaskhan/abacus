@@ -39,6 +39,10 @@ HUMAN_ONLY_ACTIONS: Final[frozenset[str]] = frozenset(
         "nas.evaluated",
         "portal_mfa.reset",
         "procedure.concluded",
+        "proposal.approved",
+        "proposal.approved_with_edits",
+        "proposal.rejected",
+        "proposal.routed",
         "report.approved",
         "report.released",
         "retention_policy.updated",
@@ -51,6 +55,9 @@ HUMAN_ONLY_ACTIONS: Final[frozenset[str]] = frozenset(
         "service_line_policy.updated",
         "sign_off.recorded",
         "statement.approved",
+        "suggestion.adopted",
+        "suggestion.dismissed",
+        "suggestion.edited",
         "team.approved",
     }
 )

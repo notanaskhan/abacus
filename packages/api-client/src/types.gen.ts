@@ -61456,6 +61456,10 @@ export type ProposalApproveErrors = {
      * Contract stub: not implemented yet
      */
     501: ErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
 };
 
 export type ProposalApproveError = ProposalApproveErrors[keyof ProposalApproveErrors];
@@ -62653,6 +62657,10 @@ export type SuggestionAdoptErrors = {
      * Contract stub: not implemented yet
      */
     501: ErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
 };
 
 export type SuggestionAdoptError = SuggestionAdoptErrors[keyof SuggestionAdoptErrors];
