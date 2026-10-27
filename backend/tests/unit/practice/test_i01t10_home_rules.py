@@ -46,4 +46,4 @@ def test_admins_get_the_metadata_tile_set() -> None:
         "portal_invites_pending",
         "binders",
     ]
-    assert [t.key for t in PRACTICE_TILES] == ["tax_returns", "audits", "closes", "notices"]
+    assert [t.key for t in PRACTICE_TILES] == ["returns", "audits", "closes", "notices"]

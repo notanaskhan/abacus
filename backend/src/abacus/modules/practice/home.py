@@ -39,7 +39,7 @@ class TileSpec:
 
 # I-01 §2 HOME-01 a (Daniel) and e (Grace): each present once its owner registers.
 PRACTICE_TILES: Final = (
-    TileSpec("tax_returns", "/tax"),
+    TileSpec("returns", "/tax"),
     TileSpec("audits", "/audits"),
     TileSpec("closes", "/closes"),
     TileSpec("notices", "/notices"),
