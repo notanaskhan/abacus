@@ -18,6 +18,14 @@ from abacus.modules.audit_trail.exports import SUBSCRIPTIONS
 from abacus.modules.audit_trail.jobs import ACTIVITIES, SCHEDULES, WORKFLOWS
 from abacus.modules.audit_trail.labels import backfill as backfill_labels
 from abacus.modules.audit_trail.labels import index_batch as index_labels
+from abacus.modules.audit_trail.metrics import (
+    METRIC_ACTIONS,
+    MetricActionRefused,
+    TargetDuration,
+    Window,
+    event_counts,
+    first_to_last_durations,
+)
 from abacus.modules.audit_trail.routes import router
 from abacus.modules.audit_trail.service import events_for_target
 from abacus.modules.audit_trail.workflows import (
@@ -62,6 +70,7 @@ __all__ = [
     "CHECKPOINT_ID",
     "LABELS_ID",
     "LIVE_READS",
+    "METRIC_ACTIONS",
     "PARTITIONS_ID",
     "ROUTERS",
     "SCHEDULES",
@@ -79,10 +88,15 @@ __all__ = [
     "CatalogueEntry",
     "Checkpoint",
     "EventFilter",
+    "MetricActionRefused",
+    "TargetDuration",
+    "Window",
     "activity_of",
     "backfill_labels",
+    "event_counts",
     "events_for_target",
     "events_for_work_item",
+    "first_to_last_durations",
     "get_event",
     "index_labels",
     "latest_checkpoint",
