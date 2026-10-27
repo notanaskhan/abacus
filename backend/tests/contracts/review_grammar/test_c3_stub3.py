@@ -9,7 +9,7 @@ from __future__ import annotations
 import inspect
 import uuid
 from collections.abc import Awaitable, Callable
-from typing import cast, get_args
+from typing import Final, cast, get_args
 
 import pytest
 from fastapi.routing import APIRoute
@@ -143,7 +143,14 @@ def _ctx() -> AuthContext:
     )
 
 
-@pytest.mark.parametrize("endpoint", _ENDPOINTS, ids=[e.__name__ for e in _ENDPOINTS])
+# P-04-T30: these issue routes are live (their flag-on behaviour is the integration suite's).
+LIVE: Final = frozenset(
+    {"issue_list_route", "issue_route", "issue_create_route", "issue_update_route"}
+)
+_STUBBED = [e for e in _ENDPOINTS if e.__name__ not in LIVE]
+
+
+@pytest.mark.parametrize("endpoint", _STUBBED, ids=[e.__name__ for e in _STUBBED])
 async def test_c3_part3_flag_off_is_404_and_flag_on_is_501(
     endpoint: Callable[..., Awaitable[object]], monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -35,9 +35,10 @@ from abacus.kernel._statuses import (
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
-from abacus.kernel.listing import ListPage
+from abacus.kernel.listing import Facet, ListPage
 from abacus.kernel.text import MultiLineText, SingleLineText
-from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context, names_of
+from abacus.modules.review import issues as issues_svc
 from abacus.modules.review.bulk import BulkTarget, bulk_sign
 from abacus.modules.review.decisions import (
     CardDetail,
@@ -1442,6 +1443,52 @@ class ExplainAcceptedOut(BaseModel):
     agent_run_id: Annotated[UUID, classified("internal")]
 
 
+# --- P-04-T30: issue projections ---------------------------------------------------------------
+
+
+def _issue_item(
+    row: issues_svc.IssueRow, names: dict[UUID, str], allowed: list[str]
+) -> IssueItemOut:
+    return IssueItemOut(
+        id=row.id,
+        engagement_id=row.engagement_id,
+        work_item_id=row.work_item_id,
+        record=ObjectRefOut(type=row.record_type, id=row.record_id),
+        kind=cast(IssueKind, row.kind),
+        priority=IssueSeverityStatus(row.priority),
+        status=IssueStatus(row.status),
+        instructions_required=row.instructions_required,
+        assignee_user_id=row.assignee_user_id,
+        assignee_name=names.get(row.assignee_user_id) if row.assignee_user_id else None,
+        assignee_agent=row.assignee_agent,
+        blocks=[cast(IssueBlock, b) for b in row.blocks],
+        link_count=row.link_count,
+        version=row.version,
+        created_at=row.created_at,
+        allowed_actions=allowed,
+    )
+
+
+async def _issue_detail(ctx: AuthContext, issue_id: UUID) -> IssueDetailOut:
+    row, texts, allowed = await issues_svc.read_issue(ctx, issue_id)
+    names = await names_of([row.assignee_user_id]) if row.assignee_user_id else {}
+    return IssueDetailOut(
+        issue=_issue_item(row, names, allowed),
+        record_label=texts.record_label,
+        title=texts.title,
+        internal_note=texts.internal_note,
+        client_wording=texts.client_wording,
+        client_contact=None,
+        links=[],
+        suggestion=None,
+        fix_instructions=None,
+        fix_run=None,
+        explanations=[],
+        request_item_id=None,
+        events=[],
+    )
+
+
 issues_router = AbacusRouter(prefix="/v1/issues", tags=["review"])
 
 
@@ -1457,7 +1504,22 @@ async def issue_list_route(
     limit: Annotated[int | None, Query(ge=1, le=200)] = None,
 ) -> ListPage[IssueItemOut]:
     """Issues on a record or an engagement; `counts` per status and `facets` by kind."""
-    await _stub(ctx)
+    await _live(ctx)
+    page = await issues_svc.list_issues(
+        ctx,
+        record_type=record_type,
+        record_id=record_id,
+        engagement_id=engagement_id,
+        status=status.value if status is not None else None,
+        kind=kind,
+        limit=limit or 100,
+    )
+    return ListPage[IssueItemOut](
+        items=[_issue_item(r, page.names, page.allowed[r.id]) for r in page.rows],
+        total=sum(page.counts.values()),
+        counts=page.counts,
+        facets={"kind": [Facet(value=k, label=k, n=n) for k, n in sorted(page.by_kind.items())]},
+    )
 
 
 @issues_router.get(
@@ -1465,7 +1527,8 @@ async def issue_list_route(
 )
 async def issue_route(issue_id: UUID, ctx: Ctx) -> IssueDetailOut:
     """One issue with its sealed texts (each read is an access event)."""
-    await _stub(ctx)
+    await _live(ctx)
+    return await _issue_detail(ctx, issue_id)
 
 
 @issues_router.post(
@@ -1473,7 +1536,22 @@ async def issue_route(issue_id: UUID, ctx: Ctx) -> IssueDetailOut:
 )
 async def issue_create_route(body: IssueCreateIn, ctx: Ctx) -> IssueDetailOut:
     """SHL-15 b, c: a new issue, from cells or a field flag."""
-    await _stub(ctx)
+    await _live(ctx)
+    issue_id = await issues_svc.create_issue(
+        ctx,
+        record_type=body.record_type,
+        record_id=body.record_id,
+        kind=body.kind,
+        priority=body.priority.value,
+        title=body.title,
+        internal_note=body.internal_note,
+        client_wording=body.client_wording,
+        client_contact_id=body.client_contact_id,
+        assignee_user_id=body.assignee_user_id,
+        assignee_agent=body.assignee_agent,
+        blocks=body.blocks,
+    )
+    return await _issue_detail(ctx, issue_id)
 
 
 @issues_router.patch(
@@ -1481,7 +1559,18 @@ async def issue_create_route(body: IssueCreateIn, ctx: Ctx) -> IssueDetailOut:
 )
 async def issue_update_route(issue_id: UUID, body: IssueUpdateIn, ctx: Ctx) -> IssueDetailOut:
     """Title, class, priority and assignee."""
-    await _stub(ctx)
+    await _live(ctx)
+    await issues_svc.update_issue(
+        ctx,
+        issue_id,
+        seen_version=body.seen_version,
+        title=body.title,
+        kind=body.kind,
+        priority=body.priority.value if body.priority is not None else None,
+        assignee_user_id=body.assignee_user_id,
+        assignee_agent=body.assignee_agent,
+    )
+    return await _issue_detail(ctx, issue_id)
 
 
 @issues_router.post(

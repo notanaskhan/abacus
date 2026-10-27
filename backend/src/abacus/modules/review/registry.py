@@ -101,7 +101,8 @@ INSERT_COLUMNS["checkpoint_decisions"] = frozenset(
     | {"proposal_decision_id", "decided_by"}
 )
 INSERT_COLUMNS["issues"] = frozenset(
-    {"tenant_id", "engagement_id", "work_item_id", "record_ref", "kind", "priority"}
+    {"id"}  # P-04-T30 (0274): sealed texts bind to the id, minted first
+    | {"tenant_id", "engagement_id", "work_item_id", "record_ref", "kind", "priority"}
     | {"title_sealed", "status", "instructions_required", "assignee_user_id", "assignee_agent"}
     | {"client_contact_id", "client_wording_sealed", "internal_note_sealed", "blocks"}
     | {"source_ref"}

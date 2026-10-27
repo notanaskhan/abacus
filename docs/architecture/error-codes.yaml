@@ -751,6 +751,11 @@ codes:
     raised_by:
     - abacus.modules.organisations.contacts_contract.InvitationUsed
     summary: 'The invitation link was already used: it works once.'
+  issue_changed:
+    status: 409
+    raised_by:
+    - abacus.modules.review.issues.IssueChanged
+    summary: The issue changed since it was read (`seen_version`).
   item_closed:
     status: 409
     raised_by:
