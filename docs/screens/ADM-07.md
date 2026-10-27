@@ -92,7 +92,7 @@ Gradients, emoji, saturated blue, heavy shadows, invented colours, lorem ipsum, 
 
 | Artboard | Tier | Diff % | Notes |
 |---|---|---|---|
-| a, b, c, e, f, g | C | — | locked by Fri Apr 16, 2027 (G-02-T21); mask IP columns on staging, the content-hash text and times; c persona (DV-1) report-only until the board is revised |
+| a, b, c, e, f, g | C (locked) | — | locked 2026-10-27 (G-02-T21; `e2e/screens/ADM-07.spec.ts` renders each with axe clean; the diff is measured by `pnpm parity:screens` once the baselines are fetched); mask IP columns on staging, the content-hash text and times; c persona (DV-1) report-only until the board is revised |
 | d | C report-only | — | fixture mode only |
 
 ## Open gaps

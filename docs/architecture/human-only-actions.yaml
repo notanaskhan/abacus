@@ -111,6 +111,10 @@ actions:
     verb: accept  # P-04-T24 (DEC-601, 0231): adopted with an edit and its citation note
   - action: suggestion.dismissed
     verb: reject  # P-04-T24 (DEC-601, 0231): a person dismisses a suggestion
+  - action: ai_policy.approved
+    verb: approve  # G-02-T24 (ED-180, 0244): a second partner approves an AI policy version (AC-37)
+  - action: ai_policy.declined
+    verb: reject  # G-02-T24 (ED-180, 0244): a second partner declines it
   - action: assurance.release_recorded
     verb: release  # A-01-T23 (DEC-590, 0226): the engagement partner records the external release
   - action: assurance.archive_recorded

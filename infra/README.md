@@ -218,6 +218,18 @@ By hand, in `staging` first, then `production`, with no deploy in flight:
 3. Put the API and worker task role names in the untracked `terraform.tfvars` and apply again: until then nobody can use the bucket's key, so exports fail closed. Until Q-01-T15 renders the task definitions from Terraform, set `ABACUS_EXPORTS_BUCKET=abacus-<env>-exports` and `ABACUS_EXPORTS_BUCKET_OWNER=<the account number, from the vault>` in the API's and the worker's environment the way the other `ABACUS_*` settings are set today.
 4. Check it: an engagement export on the synthetic tenant reaches `ready` and downloads; as the API role, `s3:PutObject` into the bucket is refused; `aws s3api get-bucket-lifecycle-configuration` shows the 6-day rule and the 1-day noncurrent rule.
 
+## Export-signing key (G-02-T17, DEC-621)
+
+`infra/envs/<env>/export_signing.tf` with `modules/kms-export-signing` creates the environment's asymmetric key (`ECC_NIST_P256`, `SIGN_VERIFY`) behind `alias/abacus/<env>/export-signing`, and `abacus-<env>-export-signing-worker` (`kms:Sign` with `ECDSA_SHA_256` on that key only). The account administers the key and cannot sign; only the worker role named in `worker_task_role_name` may, over a digest.
+
+Written in TASK-1480 and **not yet initialised, validated, planned or applied**. By hand, `staging` first, then `production`, with no deploy in flight:
+
+1. `terraform -chdir=infra/envs/<env> init`, `validate`, `plan -out=signing.tfplan`. Expect the key, its alias and the policy (and its attachment once the worker role name is set). Nothing else.
+2. Apply it and record it in the console log below.
+3. Publish the public key: `aws kms get-public-key --key-id alias/abacus/<env>/export-signing`, converted to PEM, into `docs/operations/export-signing-keys.md` with the date. Never commit anything but the public key.
+4. Set `ABACUS_AUDIT_EXPORT_SIGNING_KEY_ALIAS=alias/abacus/<env>/export-signing` in the worker's environment. Until then every audit export fails `signing_unavailable` (fail closed).
+5. Check it: an audit export on the synthetic tenant reaches `ready`; `openssl dgst -sha256 -verify` with the published key accepts its `manifest.sig`.
+
 ## 4. Console log
 
 Every one-time console step, newest last. Operator is the person at the keyboard.

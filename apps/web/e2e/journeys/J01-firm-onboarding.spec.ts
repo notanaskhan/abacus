@@ -12,6 +12,8 @@ const HOSTED_URL: Readonly<Record<string, string | undefined>> = {
   canary: process.env.ABACUS_CANARY_URL,
 };
 
+// ADM-06 (G-02-T16) sits behind this flag, which E0 leaves off (G-02-T21).
+const SECURITY_CENTER = ["security_center.v1"];
 // ADM-02f's clock (fixtures/scenarios/ADM-02.ts CLOCK_F): Mon Jan 5, 2026, 10:12 AM CT.
 const JAN_5 = "2026-01-05T10:12:00-06:00";
 
@@ -140,6 +142,54 @@ test.describe("J01-core firm onboarding", () => {
       });
       await journey.step("J01 step 3f: Lena Park's pending invite", async (page) => {
         await expect(page.getByText("Invite pending · expires Jan 19").first()).toBeVisible();
+      });
+    },
+  );
+
+  test(
+    "j01 2: Felix enforces Microsoft SSO and MFA",
+    owner(
+      "G-02 · G-02-T21 fixture; full stack once E0 turns security_center.v1 on, staging and the canary after the batch deploy · M7, Fri Apr 16, 2027",
+    ),
+    async ({ journey }) => {
+      // ADM-06 sits behind `security_center.v1`, which E0 leaves off: in fixture mode each step
+      // opens the real route on the screen's own scenario (DEC-457).
+      test.fixme(journey.project !== "fixture", "security_center.v1 is not on in E0");
+      await journey.as("felix-andersen", "/settings/security?screen=ADM-06&st=a", {
+        clock: DEMO_INSTANT,
+        flags: SECURITY_CENTER,
+      });
+      await journey.step("j01 step 2: SSO and MFA enforced as Felix Andersen", async (page) => {
+        const signIn = page.getByRole("heading", { name: "Firm sign-in" });
+        await expect(signIn).toBeVisible();
+        await expect(page.getByText("Microsoft Entra ID (SSO)").first()).toBeVisible();
+        await expect(page.getByText("Enforced · 46 of 46 enrolled").first()).toBeVisible();
+        await expect(
+          page.getByRole("switch", { name: "Require SSO for all firm users" }),
+        ).toBeVisible();
+        await expect(page.getByText("Day 4 of 30 · notify by Oct 10 if ≥ 500")).toBeVisible();
+      });
+      await journey.as("felix-andersen", "/settings/security?screen=ADM-06&st=d", {
+        clock: DEMO_INSTANT,
+        flags: SECURITY_CENTER,
+      });
+      await journey.step("j01 step 2: INC-2026-005 and its two-person decision", async (page) => {
+        const drawer = page.getByRole("dialog");
+        await expect(drawer.getByRole("progressbar", { name: "Day 4 of 30" })).toBeVisible();
+        await expect(
+          drawer.getByRole("button", { name: "Close as not reportable…" }),
+        ).toBeVisible();
+        await expect(drawer.getByRole("button", { name: "Start notification…" })).toBeVisible();
+      });
+      await journey.as("felix-andersen", "/settings/security?screen=ADM-06&st=h", {
+        clock: DEMO_INSTANT,
+        flags: SECURITY_CENTER,
+      });
+      await journey.step("j01 step 2: the WISP and the Pub 4557 evidence", async (page) => {
+        await expect(
+          page.getByText(/BH WISP v4 \(IRS Pub 5708 format\) · approved by Margaret Okonkwo/),
+        ).toBeVisible();
+        await expect(page.getByRole("button", { name: "Export WISP pack" })).toBeVisible();
       });
     },
   );

@@ -68,6 +68,9 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "team.change_proposed",  # P-07-T47 (`team_change_awaiting_approval`, to the EP)
         "engagement_export.ready",  # A-01-T22 (C16 `export_ready`, to the requester)
         "engagement_export.failed",  # A-01-T22 (C16 `export_failed`, to the requester)
+        "audit_export.ready",  # G-02-T17 (C16 `audit_export_ready`, to the requester)
+        "incident.decision_requested",  # G-02-T18 (to the named second decider)
+        "incident.deadline_approaching",  # G-02-T18 (days 20, 25, 29: the QI and partners)
         "firm_export.requested",  # Q-02-T43 (C16 `firm_export_approval_requested`, the approver)
         "firm_export.ready",  # Q-02-T43 (C16 `firm_export_ready`, requester and approver)
     }

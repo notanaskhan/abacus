@@ -99,6 +99,8 @@ codes:
     raised_by:
     - abacus.modules.evidence.service.AlreadyDecided
     - abacus.modules.fieldwork.planning.AlreadyDecided
+    - abacus.modules.platform.incident_register.AlreadyDecided
+    summary: 'Both people have decided this incident: nothing more is recorded (AC-22).'
   already_member:
     status: 409
     raised_by:
@@ -145,6 +147,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.ai_policy_errors.ApproverMustDiffer
+    - abacus.modules.evidence.firm_export_schedule.ScheduleApproverMustDiffer
     - abacus.modules.evidence.firm_exports.ApproverMustDiffer
     summary: The person who approves is never the person who asked (AC-37, DEC-50; DEC-72).
   approver_not_partner:
@@ -296,6 +299,19 @@ codes:
     raised_by:
     - abacus.modules.review.sign_offs.ContentChanged
     summary: 'The target changed since the signer saw it: nothing is written.'
+  control_set_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.platform.safeguards.ControlSetExists
+  control_set_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.platform.safeguards.ControlSetInvalid
+  control_set_same_person:
+    status: 409
+    raised_by:
+    - abacus.modules.platform.safeguards.ControlSetSamePerson
+    summary: A second staff member publishes the set its importer imported.
   correction_not_allowed:
     status: 422
     raised_by:
@@ -330,6 +346,12 @@ codes:
     raised_by:
     - abacus.modules.review.decisions.DecisionInvalid
     summary: An option, factor, subject or provider answer the card can't take.
+  decision_kind_differs:
+    status: 409
+    raised_by:
+    - abacus.modules.platform.incident_register.DecisionKindDiffers
+    summary: 'The second decider decides what the first did, or nothing: a different call starts over
+      only once this one is settled.'
   decision_locked:
     status: 409
     raised_by:
@@ -470,8 +492,15 @@ codes:
   export_not_ready:
     status: 409
     raised_by:
+    - abacus.modules.audit_trail.exports.AuditExportNotReady
     - abacus.modules.evidence.export_download.ExportNotReady
-    summary: The export is not `ready` yet (queued, packaging), or never will be (undone, failed).
+    - abacus.modules.platform.safeguards.WispPackNotReady
+    summary: The pack is still being prepared, or failed.
+  export_range_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.audit_trail.exports.ExportRangeInvalid
+    summary: '`to_date` is before `from_date`, or the range is longer than 92 days.'
   export_section_missing:
     status: 422
     raised_by:
@@ -1272,6 +1301,11 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.workpapers.RowsNotReviewed
     summary: 'SPEC-040 AC-10: every row is signed by a reviewer, on its current result, first.'
+  safeguards_person_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.platform.safeguards.SafeguardsPersonInvalid
+    summary: A person the record names is not one of the firm's active staff.
   sample_already_approved:
     status: 409
     raised_by:
@@ -1282,6 +1316,11 @@ codes:
     - abacus.modules.fieldwork.workpapers.SampleNotApproved
     summary: 'SPEC-040 AC-3: a manager or the partner approves the sample before anyone tests it, asks
       the client for support, or signs a row.'
+  schedule_paused:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.firm_export_schedule.SchedulePaused
+    summary: 'A paused schedule is not approved: unpause it (which waits for both again) first.'
   scope_outside_client:
     status: 422
     raised_by:
@@ -1304,6 +1343,12 @@ codes:
     - abacus.modules.identity.people.SeatsNotProvisioned
     summary: 'The firm''s seats aren''t provisioned yet, so nobody can be invited (DEC-285: fails closed
       for a real firm; a synthetic one without seats has no limit).'
+  second_decider_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.platform.incident_register.SecondDeciderInvalid
+    summary: The first decision names nobody, or someone who cannot fill the other seat (a partner if
+      the QI decides first, the QI if a partner does).
   segregation:
     status: 409
     raised_by:
@@ -1398,6 +1443,7 @@ codes:
     - abacus.modules.engagements.independence.ConclusionSuperseded
     - abacus.modules.engagements.intake.IntakeStaleVersion
     - abacus.modules.engagements.team_errors.TeamChanged
+    - abacus.modules.evidence.firm_export_schedule.ScheduleStale
     - abacus.modules.identity.annual_independence.StaleStatement
     - abacus.modules.identity.people.StalePerson
     - abacus.modules.identity.security_policies.StalePolicy
@@ -1405,7 +1451,8 @@ codes:
     - abacus.modules.identity.settings_registry.StaleSection
     - abacus.modules.organisations.live.StaleVersion
     - abacus.modules.organisations.org_structure.StaleOrgStructure
-    summary: 'The client changed since it was read (`seen_version` is behind): read it again.'
+    - abacus.modules.platform.safeguards.SafeguardsStale
+    summary: 'The record changed since it was read: read it again (409).'
   statement_already_approved:
     status: 409
     raised_by:
