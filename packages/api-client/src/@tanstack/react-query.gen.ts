@@ -11707,7 +11707,9 @@ export const getVersionOptions = (options: Options<GetVersionData>) => queryOpti
 /**
  * Approve Version Route
  *
- * KNW-02 e: a quality partner approves with an effective date (human-only, fresh MFA).
+ * KNW-02 e: a quality partner approves with an effective date (human-only, fresh MFA); a
+ * refusal is audited before the flag is read. 409 `stale_version`, `version_frozen`,
+ * `checklist_changed`, `checklist_unmet`; 422 `effective_from_too_early`.
  */
 export const approveVersionMutation = (options?: Partial<Options<ApproveVersionData>>): UseMutationOptions<ApproveVersionResponse, ApproveVersionError, Options<ApproveVersionData>> => {
     const mutationOptions: UseMutationOptions<ApproveVersionResponse, ApproveVersionError, Options<ApproveVersionData>> = {
@@ -11895,6 +11897,26 @@ export const publishDraftedMutation = (options?: Partial<Options<PublishDraftedD
     return mutationOptions;
 };
 
+export const versionStateQueryKey = (options: Options<VersionStateData>) => createQueryKey('versionState', options);
+
+/**
+ * Version State Route
+ *
+ * KNW-02: the lifecycle row, its checklist and what the viewer may do (K-01-T06).
+ */
+export const versionStateOptions = (options: Options<VersionStateData>) => queryOptions<VersionStateResponse, VersionStateError, VersionStateResponse, ReturnType<typeof versionStateQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await versionState({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: versionStateQueryKey(options)
+});
+
 /**
  * Remove Step Route
  *
@@ -11955,7 +11977,7 @@ export const mandatoryStepMutation = (options?: Partial<Options<MandatoryStepDat
 /**
  * Submit Version Route
  *
- * KNW-02: Draft to Needs review.
+ * KNW-02: Draft to Needs review; 409 `stale_version`, `version_frozen`.
  */
 export const submitVersionMutation = (options?: Partial<Options<SubmitVersionData>>): UseMutationOptions<SubmitVersionResponse, SubmitVersionError, Options<SubmitVersionData>> => {
     const mutationOptions: UseMutationOptions<SubmitVersionResponse, SubmitVersionError, Options<SubmitVersionData>> = {

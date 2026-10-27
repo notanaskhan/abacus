@@ -7085,7 +7085,9 @@ export const getVersion = <ThrowOnError extends boolean = false>(options: Option
 /**
  * Approve Version Route
  *
- * KNW-02 e: a quality partner approves with an effective date (human-only, fresh MFA).
+ * KNW-02 e: a quality partner approves with an effective date (human-only, fresh MFA); a
+ * refusal is audited before the flag is read. 409 `stale_version`, `version_frozen`,
+ * `checklist_changed`, `checklist_unmet`; 422 `effective_from_too_early`.
  */
 export const approveVersion = <ThrowOnError extends boolean = false>(options: Options<ApproveVersionData, ThrowOnError>): RequestResult<ApproveVersionResponses, ApproveVersionErrors, ThrowOnError> => (options.client ?? client).post<ApproveVersionResponses, ApproveVersionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -7216,6 +7218,17 @@ export const publishDrafted = <ThrowOnError extends boolean = false>(options: Op
 });
 
 /**
+ * Version State Route
+ *
+ * KNW-02: the lifecycle row, its checklist and what the viewer may do (K-01-T06).
+ */
+export const versionState = <ThrowOnError extends boolean = false>(options: Options<VersionStateData, ThrowOnError>): RequestResult<VersionStateResponses, VersionStateErrors, ThrowOnError> => (options.client ?? client).get<VersionStateResponses, VersionStateErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/methodology/versions/{version_id}/state',
+    ...options
+});
+
+/**
  * Remove Step Route
  *
  * KNW-03 c: remove a non-mandatory draft step (409 `mandatory_locked`).
@@ -7259,7 +7272,7 @@ export const mandatoryStep = <ThrowOnError extends boolean = false>(options: Opt
 /**
  * Submit Version Route
  *
- * KNW-02: Draft to Needs review.
+ * KNW-02: Draft to Needs review; 409 `stale_version`, `version_frozen`.
  */
 export const submitVersion = <ThrowOnError extends boolean = false>(options: Options<SubmitVersionData, ThrowOnError>): RequestResult<SubmitVersionResponses, SubmitVersionErrors, ThrowOnError> => (options.client ?? client).post<SubmitVersionResponses, SubmitVersionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
