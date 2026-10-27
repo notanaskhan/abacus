@@ -10,12 +10,9 @@ import { Artboard, BRIGHTWATER_BRAND } from "./portal";
 // identity runs in the provider's view (DF-11, DF-12). The page is a synthetic blank page image:
 // the form face is the server's render, which no fixture carries yet (DECISIONS.md, F-06-T04).
 
-/** A blank US Letter page as a data URL, the stand-in for the server's page render. */
+/** A blank page image (a white PNG, which E5 allows) as a data URL, the stand-in for the server's page render. */
 export const BLANK_PAGE =
-  "data:image/svg+xml;utf8," +
-  encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" width="612" height="792" viewBox="0 0 612 792"><rect width="612" height="792" fill="white"/></svg>',
-  );
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC";
 
 const page = (alt: string) => ({ n: 1, width_pt: 612, height_pt: 792, src: BLANK_PAGE, alt });
 

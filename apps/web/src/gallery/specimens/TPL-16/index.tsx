@@ -20,10 +20,7 @@ export const TPL16_STATES = ["b", "d"] as const;
 export type Tpl16State = (typeof TPL16_STATES)[number];
 
 const BLANK_PAGE =
-  "data:image/svg+xml;utf8," +
-  encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" width="612" height="792" viewBox="0 0 612 792"><rect width="612" height="792" fill="white"/></svg>',
-  );
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC";
 
 const [DEV, MIRA] = E6_SIGNERS as readonly [
   (typeof E6_SIGNERS)[number],

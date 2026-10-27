@@ -21,7 +21,7 @@ export interface SectionToggle {
 }
 
 export interface SeedLetter {
-  key: string;
+  slug: string;
   title: string;
   context: string;
   sheet: string;
@@ -45,7 +45,7 @@ export const LETTERHEAD = {
 } as const;
 
 export const FELD_TRANSMITTAL: SeedLetter = {
-  key: "feld-transmittal",
+  slug: "feld-transmittal",
   title: "Transmittal Letter",
   context: "Jonah & Claire Feld",
   sheet: "Letters › Transmittal Letter",
@@ -112,7 +112,7 @@ export const FELD_TRANSMITTAL: SeedLetter = {
 };
 
 export const HARBORVIEW_K1_COVER: SeedLetter & { lockedReason: string } = {
-  key: "harborview-k1-cover",
+  slug: "harborview-k1-cover",
   title: "K-1 Cover Letter",
   context: "Harborview Dental Properties, LP",
   sheet: "Letters › K-1 Cover Letter",
@@ -159,7 +159,7 @@ export const HARBORVIEW_K1_COVER: SeedLetter & { lockedReason: string } = {
 };
 
 export const WHITLEY_REMINDER: SeedLetter = {
-  key: "whitley-reminder",
+  slug: "whitley-reminder",
   title: "Document Reminder Email",
   context: "Marcus & Dana Whitley",
   sheet: "Client Email › Document Reminder",
@@ -208,7 +208,7 @@ export const WHITLEY_REMINDER: SeedLetter = {
 };
 
 export const RIDGELINE_ENG04: SeedLetter = {
-  key: "ridgeline-eng04",
+  slug: "ridgeline-eng04",
   title: "Engagement letter",
   context: "Ridgeline Property Partners, LP",
   sheet: "Letters › Engagement Letter",

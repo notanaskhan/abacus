@@ -98,6 +98,22 @@ describe("T16b: signing", () => {
   });
 });
 
+describe("T16 page images (security review, S14 batch)", () => {
+  it("draws only the server's page images: another host or an SVG is refused", () => {
+    for (const src of ["https://evil.example/p.png", "data:image/svg+xml;base64,PHN2Zz4="]) {
+      const env = t16Envelope("b");
+      const doc = env.documents[0];
+      if (doc === undefined) throw new Error("no document");
+      const page = doc.pages[0];
+      if (page === undefined) throw new Error("no page");
+      ceremony({ ...env, documents: [{ ...doc, pages: [{ ...page, src }] }] });
+      expect(document.querySelector('[data-signing="page"] img')).toBeNull();
+      expect(document.querySelector("[data-page-refused]")).not.toBeNull();
+      cleanup();
+    }
+  });
+});
+
 describe("T16c: done", () => {
   it("AC-3: the completion card replaces the steps with the evidence record", () => {
     ceremony(t16Envelope("c"));

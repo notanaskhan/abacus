@@ -34,6 +34,7 @@ None from the kit (`DocumentVM`). Approve memo opens SHL-12 through `onApprove()
 | KV "→" links | CLI-02, ENG-02, BND-02 live; FIL-01 planned (N-01) | mixed |
 | Open items | TPL-09 c / TXP-10 | planned |
 | Approve memo… | SHL-12 (P-04) | live container |
+| Group B "Capital Accounts" sub-tab | TPL-06 | planned (gallery specimen) |
 
 ## Acceptance
 - TPL-10 acceptance: 470 structure pane and a 600 paper on the well.

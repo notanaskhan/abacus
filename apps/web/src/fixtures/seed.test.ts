@@ -1,7 +1,7 @@
 // F-04-T05 · the interim seed: footings from the plan row ("46 of 46 seats, 184 clients, 27
 // audits, Northwind PBC 11 of 24 and the Feld 2025 Binder"), SPEC-307 AC-1 to AC-4, determinism,
 // the generated API types at run time, and the status registry (C2, DEC-122).
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { STATUS_REGISTRY } from "@abacus/ui";
@@ -284,10 +284,18 @@ describe("determinism", () => {
     );
   });
 
+  /** Every file under the seed folder, subfolders included (F-06-T02's tax/). */
+  function seedFiles(folder: string): string[] {
+    return readdirSync(folder).flatMap((name) => {
+      const path = join(folder, name);
+      return statSync(path).isDirectory() ? seedFiles(path) : [path];
+    });
+  }
+
   it("reads neither Math.random nor the wall clock", () => {
     const dir = dirname(fileURLToPath(import.meta.url));
     const sources = [
-      ...readdirSync(join(dir, "seed")).map((f) => join(dir, "seed", f)),
+      ...seedFiles(join(dir, "seed")),
       join(dir, "handlers.ts"),
       join(dir, "scenario.ts"),
       join(dir, "install.ts"),

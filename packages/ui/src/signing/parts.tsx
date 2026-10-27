@@ -160,7 +160,9 @@ export function SigningDocumentList({
             <button
               type="button"
               aria-current={doc.id === selected ? "true" : undefined}
-              onClick={() => { onSelect(doc.id); }}
+              onClick={() => {
+                onSelect(doc.id);
+              }}
               data-document={doc.id}
               className={cn(
                 "flex min-h-[64px] w-full items-start gap-2 border-t-[0.5px] border-hair px-[12px] py-[10px] text-left",

@@ -1,9 +1,11 @@
 import { type JSX, type RefObject, useImperativeHandle, useRef } from "react";
 import { cn } from "../cn";
+import { pageSrcAllowed } from "../viewer/source-viewer";
 import type { SignFieldVM, SigningPage } from "./types";
 
 // SignFieldLayer (F-06-T04; F-06.md §3 Stories 1.2, §5.5): the sign fields over one server-rendered
-// page (E5 pipeline: an image, never a document to parse; ADR-052). Fields are outlined 1.5px
+// page (E5 pipeline: an image, never a document to parse; ADR-052); a src E5 would refuse
+// (another host, an SVG) is not drawn. Fields are outlined 1.5px
 // espresso, radius 6, never yellow. Only fields whose `signerId` is the viewer's are actionable;
 // another signer's field is text ("Dev Kapoor · signed electronically Sep 9, 2026"), never a
 // control, so one spouse can never sign for the other (INV-4). The dark "Sign here" tab sits on
@@ -66,7 +68,12 @@ export function SignFieldLayer({
       className="relative flex-none bg-card shadow-page"
       style={{ width: PAGE_WIDTH_PX, height: Math.round(page.height_pt * scale) }}
     >
-      <img src={page.src} alt={page.alt} className="absolute inset-0 size-full select-none" />
+      {pageSrcAllowed(page.src) ? (
+        <img src={page.src} alt={page.alt} className="absolute inset-0 size-full select-none" />
+      ) : (
+        // Only the server's page images (E5's rule): never another host, never an SVG.
+        <span role="img" aria-label={page.alt} data-page-refused="" className="absolute inset-0" />
+      )}
       {fields
         .filter((f) => f.page === page.n)
         .map((field) => {

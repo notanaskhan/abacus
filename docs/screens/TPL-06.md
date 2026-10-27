@@ -35,6 +35,7 @@ None from the kit (`WorkbookVM`). Every total, tie and difference is a server va
 | "off 6,200", Issues | TXP-10 issue (TPL-09 c) | planned |
 | any number | SHL-09 provenance (P-04) | planned |
 | Sign off… | SHL-12 (P-04) | live container |
+| Group B "Summary" sub-tab | TPL-10 | planned (gallery specimen) |
 
 ## Acceptance
 - TPL-06 acceptance: tally strip with 9.5 px uppercase labels and 17 px tie/off pills.
