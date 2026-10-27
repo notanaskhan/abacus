@@ -36,7 +36,13 @@ async def test_a_stale_factor_alone_asks_for_a_step_up(monkeypatch: pytest.Monke
         if ctx.mfa_at is None or datetime.now(UTC) - ctx.mfa_at > timedelta(minutes=15):
             raise Forbidden(action, "attribute")
 
+    async def every_other_layer_allows(
+        ctx: AuthContext, resource: Resource, candidates: list[str]
+    ) -> frozenset[str]:
+        return frozenset(candidates)
+
     monkeypatch.setattr(record_auth, "authorise", only_mfa)
+    monkeypatch.setattr(record_auth, "allowed_actions", every_other_layer_allows)
     ctx = _ctx(30)
     with pytest.raises(RecordNeedsMfa) as refused:
         await authorise_record(ctx, ACTION, _resource(ctx))
@@ -49,7 +55,13 @@ async def test_another_attribute_refusal_is_not_hidden_behind_a_step_up(
     async def not_independent(ctx: AuthContext, action: str, resource: Resource) -> None:
         raise Forbidden(action, "attribute")  # fails whatever the factor's age
 
+    async def independence_also_refuses(
+        ctx: AuthContext, resource: Resource, candidates: list[str]
+    ) -> frozenset[str]:
+        return frozenset()
+
     monkeypatch.setattr(record_auth, "authorise", not_independent)
+    monkeypatch.setattr(record_auth, "allowed_actions", independence_also_refuses)
     ctx = _ctx(30)
     with pytest.raises(Forbidden) as refused:
         await authorise_record(ctx, ACTION, _resource(ctx))
