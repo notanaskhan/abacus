@@ -180,6 +180,7 @@ def _acceptance(concluded: bool) -> EngagementAcceptance:
         SimpleNamespace(
             decision="accepted",
             independence_concluded_at=datetime.now(UTC) if concluded else None,
+            legacy_g2=True,  # a row from before 0175 (DEC-429)
         ),
     )
 
