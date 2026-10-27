@@ -23,6 +23,8 @@ TABLES: frozenset[str] = frozenset(
         "advisory_projects",  # F-03-T22 (0089)
         "engagement_drafts",  # P-07-T16 (0124): ENG-03's autosaved wizard, own scope
         "client_intake_drafts",  # P-07-T42 (0177): CLI-06's autosaved intake, own scope
+        "client_imports",  # P-07-T52 (0250): CLI-06's bulk import, its sealed file 30 days
+        "client_import_rows",  # P-07-T52 (0250): parsed rows, decisions, what the run applied
         "team_approvals",  # P-07-T30 (0155): the EP's approval of the team
         "eqr_eligibility_approvals",  # P-07-T30 (0155): the quality owner's EQR approvals
         # P-07-T35 (0163): acceptance and continuance in-app (CLI-07)
@@ -140,6 +142,15 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "client_intake_drafts": frozenset(  # P-07-T42 (0177)
         {"tenant_id", "created_by", "step", "payload"}
     ),
+    "client_imports": frozenset(  # P-07-T52 (0250)
+        {"id", "tenant_id", "source", "file_name", "file_sealed", "file_sha256", "file_bytes"}
+        | {"erase_after", "stage", "mapping", "counts", "started_by"}
+    ),
+    "client_import_rows": frozenset(  # P-07-T52 (0250)
+        {"id", "tenant_id", "import_id", "row_no", "parsed", "tin_sealed", "tin_kind"}
+        | {"tin_last4", "tin_fingerprint", "best_match_client_id", "best_match_entity_id"}
+        | {"score", "basis", "decision", "error_code"}
+    ),
     "engagements": frozenset(
         {"id", "tenant_id", "client_id", "client_entity_id", "name", "created_by"}
         | {"fiscal_period_start", "fiscal_period_end"}
@@ -212,5 +223,12 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "client_intake_drafts": frozenset(  # P-07-T42 (0177): autosave, discard, commit
         {"step", "payload", "version", "saved_at", "discarded_at", "committed_at"}
         | {"committed_client_id", "result"}
+    ),
+    # P-07-T52 (0250): the run's claim and end; a person's decision, what the run applied. The
+    # 30-day erase is `client_import_files_erase()`'s, never the app's.
+    "client_imports": frozenset({"stage", "counts", "run_by", "run_at", "completed_at"}),
+    "client_import_rows": frozenset(
+        {"decision", "merge_client_id", "decided_by", "decided_at", "applied_at", "result_ref"}
+        | {"error_code"}
     ),
 }

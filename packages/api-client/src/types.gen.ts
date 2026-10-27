@@ -30587,10 +30587,6 @@ export type UploadClientImportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UploadClientImportError = UploadClientImportErrors[keyof UploadClientImportErrors];
@@ -30643,10 +30639,6 @@ export type GetClientImportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetClientImportError = GetClientImportErrors[keyof GetClientImportErrors];
@@ -30712,10 +30704,6 @@ export type ClientImportRowsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ClientImportRowsError = ClientImportRowsErrors[keyof ClientImportRowsErrors];
@@ -30776,10 +30764,6 @@ export type DecideImportRowErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DecideImportRowError = DecideImportRowErrors[keyof DecideImportRowErrors];
@@ -30840,10 +30824,6 @@ export type RunClientImportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RunClientImportError = RunClientImportErrors[keyof RunClientImportErrors];
