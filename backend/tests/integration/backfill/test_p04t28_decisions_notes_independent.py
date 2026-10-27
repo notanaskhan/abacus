@@ -645,7 +645,7 @@ async def test_inv1_the_matrix_refuses_the_agent_and_the_platform_every_human_ac
                 await authorise(ctx, action, resource)
 
 
-def test_inv1_the_review_api_offers_no_decide_or_sign_for_an_agent_to_call() -> None:
+async def test_inv1_the_review_api_offers_no_decide_or_sign_for_an_agent_to_call() -> None:
     exported = set(dir(review_api))
     for name in ("decide", "decide_card", "reassess", "clear_note", "sign_target", "bulk_sign"):
         assert name not in exported

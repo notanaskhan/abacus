@@ -869,7 +869,7 @@ async def test_inv1_the_matrix_refuses_the_agent_and_the_platform_every_verdict(
     await authorise(acting, "proposal.create", resource)  # what it may do: propose
 
 
-def test_inv1_the_public_service_api_offers_no_verdict_to_call() -> None:
+async def test_inv1_the_public_service_api_offers_no_verdict_to_call() -> None:
     """PROPOSAL-001 (DEC-604): `agents.api` exports none of the verdicts, so no other module
     and no agent activity can reach them except through a person's route."""
     exported = set(dir(agents_api))
