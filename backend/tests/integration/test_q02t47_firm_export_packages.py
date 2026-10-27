@@ -50,7 +50,7 @@ ARCHIVES = "q02t47-archives"
 MASTER = bytes(range(32))
 # Importing agents registers its screening section, a core section of every package.
 SECTION_OWNERS = (agents_api,)
-REASONS = {"not_readable", "not_an_audit", "unsafe_contents"}
+REASONS = {"not_readable", "not_an_audit", "no_binders", "unsafe_contents"}
 
 
 @pytest.fixture(scope="module")
