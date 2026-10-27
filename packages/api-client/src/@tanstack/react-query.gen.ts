@@ -388,7 +388,10 @@ export const auditsIndexInfiniteOptions = (options?: Options<AuditsIndexData>) =
 /**
  * Audit Archive Record Route
  *
- * Interim G9 against a ready final binder export, with fresh MFA (A-01-T23).
+ * Interim G9 against a ready, current final binder export, with fresh MFA (A-01-T23,
+ * DEC-591): 403 `mfa_required` for a stale second factor, 409 `final_export_required`,
+ * `export_stale`, `release_mode_in_app` or `record_out_of_phase`. The work item becomes
+ * archived and read-only; `archive_locked_at` stays NULL (P-43).
  */
 export const auditArchiveRecordMutation = (options?: Partial<Options<AuditArchiveRecordData>>): UseMutationOptions<AuditArchiveRecordResponse, AuditArchiveRecordError, Options<AuditArchiveRecordData>> => {
     const mutationOptions: UseMutationOptions<AuditArchiveRecordResponse, AuditArchiveRecordError, Options<AuditArchiveRecordData>> = {
@@ -466,7 +469,9 @@ export const auditProfileMutation = (options?: Partial<Options<AuditProfileData>
 /**
  * Audit Release Record Route
  *
- * Interim G8, the engagement partner with fresh MFA (A-01-T23).
+ * Interim G8, the engagement partner with fresh MFA (A-01-T23, DEC-590): 403 with
+ * `facts.reason = mfa_required` for a stale second factor (DEC-547), 409
+ * `release_mode_in_app` or `record_out_of_phase`, 422 `release_date_future`.
  */
 export const auditReleaseRecordMutation = (options?: Partial<Options<AuditReleaseRecordData>>): UseMutationOptions<AuditReleaseRecordResponse, AuditReleaseRecordError, Options<AuditReleaseRecordData>> => {
     const mutationOptions: UseMutationOptions<AuditReleaseRecordResponse, AuditReleaseRecordError, Options<AuditReleaseRecordData>> = {

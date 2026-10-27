@@ -59452,7 +59452,7 @@
     },
     "/v1/audits/{work_item_id}/archive-record": {
       "post": {
-        "description": "Interim G9 against a ready final binder export, with fresh MFA (A-01-T23).",
+        "description": "Interim G9 against a ready, current final binder export, with fresh MFA (A-01-T23,\nDEC-591): 403 `mfa_required` for a stale second factor, 409 `final_export_required`,\n`export_stale`, `release_mode_in_app` or `record_out_of_phase`. The work item becomes\narchived and read-only; `archive_locked_at` stays NULL (P-43).",
         "operationId": "audit_archive_record",
         "parameters": [
           {
@@ -60002,7 +60002,7 @@
     },
     "/v1/audits/{work_item_id}/release-record": {
       "post": {
-        "description": "Interim G8, the engagement partner with fresh MFA (A-01-T23).",
+        "description": "Interim G8, the engagement partner with fresh MFA (A-01-T23, DEC-590): 403 with\n`facts.reason = mfa_required` for a stale second factor (DEC-547), 409\n`release_mode_in_app` or `record_out_of_phase`, 422 `release_date_future`.",
         "operationId": "audit_release_record",
         "parameters": [
           {

@@ -1581,6 +1581,8 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "connection_consent_links": "connection_consents_immutable",  # 0195 (A-02-T13)
         "engagement_export_downloads": "engagement_export_rows_immutable",  # 0191 (TASK-1334)
         "engagement_export_contents": "engagement_export_rows_immutable",  # 0191 (TASK-1334)
+        "assurance_external_releases": "assurance_external_records_immutable",  # 0226 (TASK-1443)
+        "assurance_external_archives": "assurance_external_records_immutable",  # 0226 (TASK-1443)
     }
     assert _evidence_problems(evidence) == []
 

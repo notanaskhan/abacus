@@ -56,6 +56,8 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("sign_off.bulk", "sign_off", "engagement_partner"),
     ("sign_off.create", "sign_off", "engagement_partner"),
     ("decision.decide", "sign_off", "engagement_partner"),
+    ("assurance.record_release", "release", "engagement_partner"),
+    ("assurance.record_archive", "release", "engagement_partner"),
 )
 ROUTES: tuple[tuple[str, str, str], ...] = (
     (
@@ -70,6 +72,8 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/agent-runs/{run_id}/trace-exports", "run_trace.export"),
     ("POST", "/v1/audit-events/exports", "audit_event.export"),
     ("POST", "/v1/audit-events/exports/{export_id}/link", "audit_event.export"),
+    ("POST", "/v1/audits/{work_item_id}/archive-record", "assurance.record_archive"),
+    ("POST", "/v1/audits/{work_item_id}/release-record", "assurance.record_release"),
     ("POST", "/v1/client-entities/{entity_id}/tin/reveal", "tin.reveal"),
     ("POST", "/v1/clients/{client_id}/contacts/{contact_id}/mfa-reset", "contact.mfa_reset"),
     ("POST", "/v1/clients/{client_id}/contacts/{contact_id}/portal-unlock", "contact.unlock"),

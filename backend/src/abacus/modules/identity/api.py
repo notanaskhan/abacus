@@ -317,6 +317,7 @@ from abacus.modules.identity.settings_registry import (
     register_firm_setting,
     register_identity_settings,
     register_settings_area,
+    stored_value,
 )
 from abacus.modules.identity.slots import (
     InvitationParties,
@@ -755,6 +756,7 @@ __all__ = [
     "staff_holding_line",
     "staff_router",
     "staff_seats_by_office",
+    "stored_value",
     "support_session_audit_facts",
     "system_context_for_run",
     "team_of",

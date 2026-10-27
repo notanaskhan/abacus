@@ -467,6 +467,12 @@ codes:
     - abacus.modules.evidence.exports.ExportSectionUnavailable
     summary: 'The scope asks for a section no provider can write yet (the audit trail until its reader
       is registered): refused at create, before any grant, rather than failing after the window.'
+  export_stale:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.export_currency.ExportStale
+    summary: 'Evidence or requests changed after the final export''s snapshot: export again, then record
+      the archive (`facts.event_seq` names the newer event).'
   fieldwork_unavailable:
     status: 409
     raised_by:
@@ -482,6 +488,12 @@ codes:
     - abacus.modules.connections.ledger_import.FileRefused
     - abacus.modules.evidence.uploads.UploadRefused
     summary: The malware scanner refused the file (SPEC-029 AC-1; ADR-110). Nothing is stored.
+  final_export_required:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.export_currency.FinalExportRequired
+    summary: 'The archive needs a ready final binder export of this work item: none was named, or the
+      one named is not final, not ready, voided or expired.'
   finding_invalid:
     status: 422
     raised_by:
@@ -1130,11 +1142,28 @@ codes:
     raised_by:
     - abacus.modules.review.decisions.RecommendationChanged
     summary: The card moved past the version the decider saw (reassessed or superseded).
+  record_out_of_phase:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.release.RecordOutOfPhase
+    summary: 'The audit''s phase does not take this record: a release from In review to Ready to release,
+      an archive once Released (`facts.phase`).'
   relationship_partner:
     status: 409
     raised_by:
     - abacus.modules.identity.walls.RelationshipPartner
     summary: 'The person leads the client''s relationship: reassign it first (AC8.3).'
+  release_date_future:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.release.ReleaseDateFuture
+    summary: The release date is after the firm's today.
+  release_mode_in_app:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.release.ReleaseModeInApp
+    summary: 'The firm releases reports in Accrued (`assurance_release_mode = in_app`): record mode is
+      closed for release and archive.'
   relink_unverified:
     status: 422
     raised_by:

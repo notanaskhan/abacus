@@ -50,6 +50,7 @@ from abacus.kernel.uow import (
 )
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.assurance.completion_repository import archive_of, release_of
+from abacus.modules.assurance.external_models import external_archive_of, external_release_of
 from abacus.modules.assurance.phase_models import AssurancePhaseEvent
 from abacus.modules.engagements.api import (
     AssuranceItem,
@@ -354,14 +355,21 @@ async def _gate_met_in(
     tx: UnitOfWork, tenant: TenantContext, engagement_id: UUID, gate: str
 ) -> bool:
     """Whether `gate` is met now, computed: G8 (released) and G9 (archive locked) from SPEC-314's
-    own rows read in the caller's unit, where the act that meets them was just written; any other
-    gate from its registered provider. An unregistered gate is never met."""
+    own rows, or A-01-T23's external release and archive records, read in the caller's unit,
+    where the act that meets them was just written; any other gate from its registered provider.
+    An unregistered gate is never met."""
     if not gate_registered(gate):
         return False
     if gate == "G8":
-        return await release_of(tx.session, engagement_id) is not None
+        return (
+            await release_of(tx.session, engagement_id) is not None
+            or await external_release_of(tx.session, engagement_id) is not None
+        )
     if gate == "G9":
-        return await archive_of(tx.session, engagement_id) is not None
+        return (
+            await archive_of(tx.session, engagement_id) is not None
+            or await external_archive_of(tx.session, engagement_id) is not None
+        )
     return (await gate_fact(tenant, engagement_id, gate)).met
 
 

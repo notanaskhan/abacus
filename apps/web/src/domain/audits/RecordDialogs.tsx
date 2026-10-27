@@ -18,8 +18,8 @@ import { RevealStepUp } from "./reveal";
 // Record mode (A-01-T24; A-01 §3.5, DV-4): O3 confirm dialogs in local state, one per record. A
 // named person records the audit's phase, the report's external release and the archive in the
 // firm's own tool (against a ready final-binder export); none is offered to the agent (the
-// routes refuse it, INV-1). Release and archive need a fresh second factor: a 403 opens the
-// shell's step-up. A refusal from the contract reads in words (audits-cockpit §6).
+// routes refuse it, INV-1). Release and archive need a fresh second factor: a 403 naming
+// `mfa_required` opens the shell's step-up. A refusal from the contract reads in words (audits-cockpit §6).
 
 const R = AUDIT_MESSAGES.record;
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -39,11 +39,11 @@ function phaseWord(code: AuditEngagementStatus): string {
   return status("audit_engagement", code).label;
 }
 
-/** The assurance record routes answer a stale second factor with a plain 403 (no
- * `mfa_required` yet), so a plain 403 there opens the step-up, whose words say a role refusal
- * stays refused (DEC-547; the routes' `mfa_required` is a follow-up for A-01-T23's owner). */
+/** The record routes answer a stale second factor with 403 `facts.reason = mfa_required`
+ * (A-01-T23, DEC-547): only that opens the step-up; a role, independence or archived refusal is
+ * a plain 403 and reads as a problem. */
 function recordStepUp(error: unknown): boolean {
-  return needsStepUp(error) || errorCode(error) === "forbidden";
+  return needsStepUp(error);
 }
 
 function refusal(error: unknown): string {

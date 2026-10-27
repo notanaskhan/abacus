@@ -50,6 +50,12 @@ from abacus.modules.evidence.export_activities import ACTIVITIES as EXPORT_ACTIV
 from abacus.modules.evidence.export_activities import SUBSCRIPTIONS as EXPORT_SUBSCRIPTIONS
 from abacus.modules.evidence.export_activities import WORKFLOWS as EXPORT_WORKFLOWS
 from abacus.modules.evidence.export_contract import exports_router, work_item_exports_router
+from abacus.modules.evidence.export_currency import (
+    ExportStale,
+    FinalExport,
+    FinalExportRequired,
+    final_export_for_archive,
+)
 from abacus.modules.evidence.export_lifecycle import ACTIVITIES as EXPIRY_ACTIVITIES
 from abacus.modules.evidence.export_lifecycle import SCHEDULES as EXPIRY_SCHEDULES
 from abacus.modules.evidence.export_lifecycle import SUBSCRIPTIONS as EXPORT_CLOSE_SUBSCRIPTIONS
@@ -384,6 +390,9 @@ __all__ = [
     "ExportBuildFailure",
     "ExportExpirySweepWorkflow",
     "ExportPackageFacts",
+    "ExportStale",
+    "FinalExport",
+    "FinalExportRequired",
     "GlBalanceRow",
     "GlHeader",
     "GlRenderEntry",
@@ -441,6 +450,7 @@ __all__ = [
     "export_requester",
     "export_section_csv",
     "extend_retention_for",
+    "final_export_for_archive",
     "firm_router",
     "holds_covering",
     "included_export_versions",
