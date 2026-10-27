@@ -402,6 +402,8 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 
 | Term | Meaning | Code name | Don't use |
 |---|---|---|---|
+| Pilot enrolment | One work item's pilot: its window, its mode (shadow, live, system of record, exited) and the baseline days the firm agreed. System of record needs a named confirming person (Q-04-T007). | `pilot_enrolments` (`mode`) | — |
+| Pilot metric snapshot | One computed pilot metric for an enrolment, metric key, optional subject and period; insert-only, one per key. | `pilot_metric_snapshots` | — |
 | Reference set | Platform-published calendars (P-62). | `reference_sets` (+ versions) | — |
 | Agent-minute | Metering unit (P-28). | `agent_minute`; `plan_entitlements` | — |
 | Security incident | A firm's or Accrued's recorded security event, with its discovery time and the FTC clock (notify by discovery + 30 calendar days in the firm's time zone when 500 or more consumers' unencrypted data is involved). An Accrued-side incident is propagated into each affected firm's register. | `security_incidents`, action `incident.manage` | — |

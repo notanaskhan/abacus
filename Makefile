@@ -246,6 +246,13 @@ incident-status:
 entitlement:
 	cd backend && uv run python -m abacus_tools.tenants entitlement --firm $(FIRM) --module $(MODULE) --enabled $(ENABLED) $(if $(SEATS),--seats $(SEATS)) --operator $(OPERATOR) --reason "$(REASON)"
 
+# Q-04-T007: enrol a work item in a pilot window (shadow), or move its mode (operators; audited).
+pilot-enrol:
+	cd backend && uv run python -m abacus_tools.pilots enrol --firm $(FIRM) --work-item $(WORK_ITEM) --start $(START) --end $(END) $(if $(BASELINE_DAYS),--baseline-days $(BASELINE_DAYS)) --operator $(OPERATOR)
+
+pilot-mode:
+	cd backend && uv run python -m abacus_tools.pilots mode --firm $(FIRM) --enrolment $(ENROLMENT) --mode $(MODE) --operator $(OPERATOR) $(if $(CONFIRMED_BY),--confirmed-by $(CONFIRMED_BY))
+
 # Q-01-T26: create or converge the platform-job Schedules (spend anomaly, notification purge) on
 # the local stack's Temporal only (--local-only refuses any other). Idempotent; the deploys run it
 # as an ops task after migrate.

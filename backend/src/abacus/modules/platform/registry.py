@@ -23,12 +23,14 @@ TABLES: frozenset[str] = frozenset(
     | {"safeguards_controls", "safeguards_programs", "safeguards_control_statuses"}
     | {"safeguards_control_set_log"}  # global staff record; definers only
     | {"wisp_packs"}
+    | {"pilot_enrolments", "pilot_metric_snapshots"}  # Q-04-T007 (0276): pilot enrolments
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
 # G-02-T18 (0240): an incident's status changes only with its decisions (column grants and the
 # `security_incidents_decided` trigger), so it is no longer insert-only.
 INSERT_ONLY: frozenset[str] = frozenset(
     {"platform_control_changes", "incident_propagations"}
+    | {"pilot_metric_snapshots"}  # Q-04-T007 (0276): computed, never rewritten
     | {"security_incident_timeline", "security_incident_decisions"}
     | {"security_incident_reminders"}
     | {"safeguards_control_set_log"}
@@ -77,3 +79,15 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         | {"expires_at", "updated_at"}
     ),
 }
+
+# Q-04-T007 (0276): pilot enrolments and their metric snapshots.
+INSERT_COLUMNS["pilot_enrolments"] = frozenset(
+    {"tenant_id", "work_item_id", "window_start", "window_end", "baseline_days", "created_by"}
+)
+INSERT_COLUMNS["pilot_metric_snapshots"] = frozenset(
+    {"tenant_id", "enrolment_id", "metric_key", "subject_id", "period_start", "period_end"}
+    | {"value"}
+)
+UPDATE_COLUMNS["pilot_enrolments"] = frozenset(
+    {"mode", "confirmed_by", "confirmed_at", "updated_at"}
+)
