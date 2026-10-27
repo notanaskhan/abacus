@@ -22,6 +22,11 @@ from abacus.modules.agents.engagement_agent_workflow import (
     NEXT_TICK as ENGAGEMENT_AGENT_NEXT_TICK,
 )
 from abacus.modules.agents.engagement_agent_workflow import EngagementAgent
+from abacus.modules.agents.engagement_runs import (
+    ActiveRun,
+    active_engagement_runs,
+    register_engagement_run_agent,
+)
 from abacus.modules.agents.entry_assess import ASSESSOR, ask, check
 from abacus.modules.agents.events import FollowUpSent
 from abacus.modules.agents.export_screening import screening_section
@@ -209,6 +214,7 @@ __all__ = [
     "SCREEN_PROMPT",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
+    "ActiveRun",
     "AdoptedValue",
     "AgentEvent",
     "AgentInput",
@@ -262,6 +268,7 @@ __all__ = [
     "UnregisteredTarget",
     "UploadReviewWorkflow",
     "VerifiedCitation",
+    "active_engagement_runs",
     "apply_proposal",
     "ask",
     "check",
@@ -284,6 +291,7 @@ __all__ = [
     "load_agent_context",
     "match",
     "register_change_set_applier",
+    "register_engagement_run_agent",
     "register_proposal_adapter",
     "register_suggestion_applier",
     "register_suggestion_target",

@@ -16,6 +16,7 @@ from abacus.modules.assurance.phase import record_phase, update_profile
 from abacus.modules.assurance.providers import register as register_a01_providers
 from abacus.modules.assurance.release import RELEASE_MODE_SETTING, g8
 from abacus.modules.assurance.routes import router
+from abacus.modules.assurance.run_badges import run_badges
 from abacus.modules.assurance.sections import (
     AuditSection,
     IndexTag,
@@ -95,3 +96,6 @@ __all__ = [
     "router",
     "update_profile",
 ]
+
+# A-01-T27 (DEC-717): the Processing pill and audit-bar run time read C6 v1 engagement runs.
+register_run_summary(run_badges)
