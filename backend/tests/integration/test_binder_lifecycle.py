@@ -176,7 +176,9 @@ class World:
         return [str(r["action"]) for r in rows]
 
 
-async def _world(seed: Seeder) -> World:
+async def _world(seed: Seeder, *, letter: bool = True) -> World:
+    """A binder-ready engagement. `letter` records the signed engagement letter, as G3 needs
+    whatever the firm's letter policy (DEC-39 (b), ED-010)."""
     tenant = await seed.firm()
     await seed.run("UPDATE firms SET synthetic = true WHERE tenant_id = $1", tenant)
     await seed.run(
@@ -188,6 +190,13 @@ async def _world(seed: Seeder) -> World:
     entity = await seed.entity(tenant)
     engagement = await seed.engagement(tenant, entity, partner.user_id)
     await seed.member(engagement, partner, "engagement_partner")
+    if letter:
+        await seed.run(
+            "INSERT INTO engagement_letters (tenant_id, engagement_id, status, recorded_by) "
+            "VALUES ($1, $2, 'signed', 'test-seed')",
+            tenant,
+            engagement,
+        )
     work_item = cast(
         uuid.UUID,
         await seed.value("SELECT id FROM work_items WHERE engagement_id = $1", engagement),
@@ -234,7 +243,7 @@ def _published(events: list[OutboxEvent], binder: uuid.UUID) -> list[OutboxEvent
 
 
 async def test_ac5_publishing_before_g3_is_refused_except_an_intake_binder(seed: Seeder) -> None:
-    world = await _world(seed)
+    world = await _world(seed, letter=False)
     await seed.run("UPDATE firms SET require_letter = true WHERE tenant_id = $1", world.tenant)
     pbc, intake = await world.binder("pbc"), await world.binder("intake", "Intake")
     await world.item(pbc)

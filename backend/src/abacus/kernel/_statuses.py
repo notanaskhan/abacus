@@ -685,6 +685,13 @@ class SupportSessionStatus(StrEnum):
     REVOKED = "revoked"
 
 
+class ClientInvitationStatus(StrEnum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REVOKED = "revoked"
+    EXPIRED = "expired"
+
+
 # Each object's stored codes, and their SQL CHECK list.
 STORED: dict[str, tuple[str, ...]] = {
     "engagement": (
@@ -1257,6 +1264,12 @@ STORED: dict[str, tuple[str, ...]] = {
         "active",
         "declined",
         "revoked",
+    ),
+    "client_invitation": (
+        "pending",
+        "accepted",
+        "revoked",
+        "expired",
     ),
 }
 CHECKS: dict[str, str] = {

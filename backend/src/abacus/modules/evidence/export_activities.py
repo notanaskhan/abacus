@@ -61,9 +61,9 @@ from abacus.modules.evidence.export_builder import (
 )
 from abacus.modules.evidence.export_events import (
     EngagementExportFailed,
-    EngagementExportReady,
     EngagementExportRequested,
 )
+from abacus.modules.evidence.export_lifecycle import ReadyStamps, settle_ready
 from abacus.modules.evidence.export_manifest import (
     AUDIT_TRAIL,
     ManifestClient,
@@ -107,6 +107,12 @@ _log = get_logger(__name__)
 
 WORKFLOWS: dict[type, WorkClass] = {EngagementExportWorkflow: "batch"}
 register_work_classes(WORKFLOWS)
+
+
+class _Settled(Exception):
+    def __init__(self, status: str) -> None:
+        super().__init__(status)
+        self.status = status
 
 
 class ExportBuildFailed(Exception):
@@ -460,43 +466,42 @@ async def package_export(
 
 
 async def ready_export(facts: ExportPackageFacts) -> str:
+    """`ready` with its stamps, under a lock on the row; voided at once when a version it holds
+    was withdrawn while it was built (A-01-T22, `export_lifecycle.settle_ready`)."""
     tenant_id, export_id = UUID(facts.tenant_id), UUID(facts.export_id)
     row = await _row(tenant_id, export_id)
     if row.status != "packaging":
         return row.status
     system = _system(row)
     now = await clock.now(system)
-    async with uow(system) as tx:
-        await tx.session.execute(
-            update(EngagementExport)
-            .where(EngagementExport.id == export_id, EngagementExport.status == "packaging")
-            .values(
-                status="ready",
-                bundle_sha256=facts.bundle_sha256,
-                manifest_sha256=facts.manifest_sha256,
-                bytes=facts.bytes,
-                file_count=facts.file_count,
-                request_count=facts.request_count,
-                segment_count=facts.segment_count,
-                object_prefix=facts.object_prefix,
-                ready_at=now,
-                expires_at=now + READY_FOR,
+    try:
+        async with uow(system) as tx:
+            locked = await tx.session.scalar(
+                select(EngagementExport)
+                .where(EngagementExport.id == export_id)
+                .with_for_update()
+                .execution_options(populate_existing=True)
             )
-        )
-        tx.record(
-            "engagement_export.packaged",
-            target=Target(SUBJECT, export_id),
-            after=Ref(
-                files=facts.file_count,
-                requests=facts.request_count,
-                bytes=facts.bytes,
-                bundle=facts.bundle_sha256,
-                manifest=facts.manifest_sha256,
-            ),
-            scope=_scope(row),
-        )
-        tx.emit(EngagementExportReady(**_event_fields(row)))
-    return "ready"
+            if locked is None or locked.status != "packaging":
+                raise _Settled(locked.status if locked is not None else row.status)
+            return await settle_ready(
+                tx,
+                system,
+                locked,
+                ReadyStamps(
+                    bundle_sha256=facts.bundle_sha256,
+                    manifest_sha256=facts.manifest_sha256,
+                    bytes=facts.bytes,
+                    file_count=facts.file_count,
+                    request_count=facts.request_count,
+                    segment_count=facts.segment_count,
+                    object_prefix=facts.object_prefix,
+                    ready_at=now,
+                    expires_at=now + READY_FOR,
+                ),
+            )
+    except _Settled as settled:  # another attempt settled it meanwhile: nothing is written
+        return settled.status
 
 
 async def fail_export(tenant_id: UUID, export_id: UUID, code: str) -> str:

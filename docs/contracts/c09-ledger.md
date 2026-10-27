@@ -46,7 +46,7 @@ authorises its one action (independence required for every action here).
 | **View by layer** | `GET P/{tb_id}/layers/{layer}?version=` (409 `layer_unavailable`, `layer_unbalanced`) | `trial_balance.read` | as read | denied | **live** (A-02-T10, `tb_read_model.py`) |
 | **Leadsheet by area** | `GET P/{tb_id}/leadsheets/{area}?layer=&version=` (404 for an area with no lines; `Unassigned` holds the unplaced accounts) | `trial_balance.read` | as read | denied | **live** (A-02-T10) |
 | **Open in Excel** | `GET P/{tb_id}/export.xlsx?layer=&version=` (XLSX attachment) | `trial_balance.export` | partner, manager, senior; fresh MFA (`mfa_recent`; DEC-316, amended) | **denied** | **stub** → A-02-T22 |
-| **Issue link** | `POST P/{tb_id}/checks/{check_id}/issue-link` `{issue_id, seen_version}` (`Idempotency-Key`; 201; 409) | `tie_out_check.define` | as define | **denied** | **stub** → A-02-T17 |
+| **Issue link** | `POST P/{tb_id}/checks/{check_id}/issue-link` `{issue_id, seen_version}` (`Idempotency-Key`; 201; 409) | `tie_out_check.define` | as define | **denied** | **live** (A-02-T17): set once; the same issue again answers the link, another 409 `tie_out_check_issue_linked`, an issue of another engagement 404 |
 
 A stub authorises first, then answers 404 with `ledger.tb_workpaper` off and 501
 `not_implemented` with it on, so no principal learns the flag state it may not use (DEC-261's
@@ -86,7 +86,7 @@ and total labels); everything else internal. Nothing Restricted.
 | 409 | `tb_version_stale`, `tb_same_snapshot` | Re-versioning on a stale `seen_version`, or with the current snapshot |
 | 409 | `layer_unavailable` | AJE, RJE or Final before an adjustment source registers |
 | 409 | `layer_unbalanced` | A layer whose debits and credits differ (`facts.layer`, `facts.difference`); `ledger.api.require_balanced` (A-02-T07), called by the view-by-layer route (A-02-T10) |
-| 409 | `citation_required`, `tie_out_check_stale` | An expected value without a citation; a stale check `seen_version` (edit, issue link) |
+| 409 | `citation_required`, `tie_out_check_stale`, `tie_out_check_issue_linked` | An expected value without a citation; a stale check `seen_version` (edit, issue link); a check already linked to another issue (A-02-T17) |
 | 501 | `not_implemented` | A stub with the flag on |
 
 ## 7. Audit and outbox events

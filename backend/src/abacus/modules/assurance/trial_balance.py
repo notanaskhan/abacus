@@ -7,6 +7,7 @@ agent; the database CHECK agrees). Names come from the engagement team, never fr
 
 from __future__ import annotations
 
+import hashlib
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -41,6 +42,7 @@ from abacus.modules.review.api import (
     record_sign_off,
     sign_off_states,
 )
+from abacus.modules.workpapers.api import tie_digests
 
 _WP_REF: Final = re.compile(r"^[A-Z0-9][A-Z0-9.-]{0,19}$")
 
@@ -201,6 +203,31 @@ async def set_annotations(
 TARGET = "trial_balance"
 
 
+@dataclass(frozen=True)
+class _Signed:
+    summary: TrialBalanceSummary
+    digest: str
+
+
+async def signed_digests(tenant: TenantContext, engagement_id: UUID) -> list[_Signed]:
+    """What a trial balance's sign-off approves (A-02-T17; SPEC-333 AC-13): the ledger's digest
+    of its current version and annotations, and, when it has tie-out checks, their definitions
+    and issue links (`workpapers.api.tie_digests`). A trial balance without checks keeps the
+    ledger's digest, so its existing sign-offs stay current."""
+    found = await review_digests(tenant, engagement_id)
+    ties = await tie_digests(tenant, [d.summary.id for d in found])
+    out: list[_Signed] = []
+    for d in found:
+        tie = ties.get(d.summary.id)
+        digest = (
+            d.digest
+            if tie is None
+            else hashlib.sha256(f"{d.digest}|ties|{tie}".encode()).hexdigest()
+        )
+        out.append(_Signed(d.summary, digest))
+    return out
+
+
 async def tb_reviewables(tenant: TenantContext, engagement_id: UUID) -> list[Reviewable]:
     """Each trial balance with what a sign-off approves, for the matrix and G5."""
     return [
@@ -212,7 +239,7 @@ async def tb_reviewables(tenant: TenantContext, engagement_id: UUID) -> list[Rev
             d.digest,
             True,
         )
-        for d in await review_digests(tenant, engagement_id)
+        for d in await signed_digests(tenant, engagement_id)
     ]
 
 
@@ -225,7 +252,7 @@ async def tb_facts(tenant: TenantContext, tb_id: UUID) -> ReviewableFacts | None
     digest = next(
         (
             d.digest
-            for d in await review_digests(tenant, authors.engagement_id)
+            for d in await signed_digests(tenant, authors.engagement_id)
             if d.summary.id == tb_id
         ),
         None,
@@ -244,7 +271,7 @@ async def tb_facts(tenant: TenantContext, tb_id: UUID) -> ReviewableFacts | None
 
 
 async def tb_levels(ctx: AuthContext, engagement_id: UUID, tb_id: UUID) -> list[LevelState]:
-    digests = {d.summary.id: d.digest for d in await review_digests(ctx.tenant, engagement_id)}
+    digests = {d.summary.id: d.digest for d in await signed_digests(ctx.tenant, engagement_id)}
     if tb_id not in digests:
         raise NotFound("trial_balance")
     return (await sign_off_states(ctx.tenant, TARGET, [tb_id], {tb_id: digests[tb_id]}))[tb_id]
@@ -254,7 +281,7 @@ async def sign_off_tb(ctx: AuthContext, engagement_id: UUID, tb_id: UUID, level:
     """Sign the trial balance's current version and annotations at a level."""
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
-        digests = {d.summary.id: d.digest for d in await review_digests(ctx.tenant, engagement_id)}
+        digests = {d.summary.id: d.digest for d in await signed_digests(ctx.tenant, engagement_id)}
         if tb_id not in digests:
             raise NotFound("trial_balance")
         await record_sign_off(

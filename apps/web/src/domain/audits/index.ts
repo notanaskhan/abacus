@@ -12,6 +12,25 @@ export {
   useAutoMode,
 } from "./mutations";
 export { AuditCockpit, type AuditCockpitProps } from "./AuditCockpit";
+export { type AuditActions, type AuditOverlay, useAuditActions } from "./AuditActions";
+export { ExportSheet, type ExportSheetProps } from "./ExportSheet";
+export {
+  EXPORT_POLL_MS,
+  downloadBundle,
+  expiryLabel,
+  isMoving,
+  useExportActions,
+  useExportHistory,
+  useExportStatus,
+} from "./exports";
+export {
+  ArchiveRecordDialog,
+  PhaseRecordDialog,
+  RECORDABLE,
+  RecordDialog,
+  type RecordKind,
+  ReleaseRecordDialog,
+} from "./RecordDialogs";
 export { BlockedSectionCard, type BlockedSectionCardProps } from "./BlockedSectionCard";
 export { type DockHostOptions, dockHost } from "./DockHost";
 export { AUDIT_MESSAGES, type BandKey } from "./messages";

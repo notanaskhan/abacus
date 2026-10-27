@@ -7,6 +7,7 @@ from abacus.ai_gateway import (
 )
 from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.agents.activities import ACTIVITIES
+from abacus.modules.agents.ai_policy_contract import ai_policy_router
 from abacus.modules.agents.ai_policy_errors import AiPolicyLoosened, ApproverMustDiffer
 from abacus.modules.agents.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.agents.citations import SheetLayoutError
@@ -30,7 +31,7 @@ from abacus.modules.agents.fake_responses import install as install_fake_respons
 from abacus.modules.agents.fake_responses import install_review as install_fake_reviews
 from abacus.modules.agents.follow_up_drafts import on_follow_up_sent
 from abacus.modules.agents.follow_up_routes import follow_ups_router
-from abacus.modules.agents.gates import register_gate_sources
+from abacus.modules.agents.gates import register_gate_sources, register_suggestion_lookup
 from abacus.modules.agents.graph import EngagementGraph, engagement_graph
 from abacus.modules.agents.guidance_draft import DRAFTER, DraftOutcome, create_draft_run, draft
 from abacus.modules.agents.handoff import Citation, Handoff, ScreeningOutput, VerifiedCitation
@@ -142,6 +143,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     screening_items_router,
     screenings_router,
     platform_stages_router,  # Q-02-T07: platform staff set an agent's stage for a firm
+    ai_policy_router,  # G-02-T15: the AI-policy family stub behind `ai_policy.v1`
 )
 # P-06-T14: a sent follow-up's email leaves when the relay delivers its grant-held event.
 # Q-02-T08: a firm's changed boundary facts are forgotten in the worker too.
@@ -153,6 +155,8 @@ SUBSCRIPTIONS = {
 
 # P-04-T16 (C13): the agent's proposals are `proposal` gates until a person decides.
 register_gate_sources()
+# P-04-T23: review checks a decision card's recommended suggestion against its engagement.
+register_suggestion_lookup()
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)

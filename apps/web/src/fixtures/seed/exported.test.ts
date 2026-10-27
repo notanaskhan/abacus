@@ -12,12 +12,32 @@
 import { describe, expect, it } from "vitest";
 import type { FixtureRequest } from "../../app-core/fixture-mode";
 import { seedHandlers } from "../handlers";
+import { feldOpenUploads } from "../scenarios/POR-02";
+import { BINDER_ROWS, toBinderRow } from "./binders";
 import { EXPORTED_E0, type ExportedRead } from "./exported";
 import { getSeed } from "./index";
+import { claireHome } from "./portal-home";
 
 type Row = Record<string, unknown>;
 
 const THIRD_PARTY_ASSIGNEES = 11;
+// The Feld binder's fields where the BND-01 fixture and the load differ (TASK-1161): ids (slug
+// against label), the preparer (KO in BND-01; none in the load) and the actions (BINDER_ACTIONS
+// against the reader's own).
+const FELD_BINDER_GAPS = ["allowed_actions", "id", "preparer_user_id", "work_item_id"];
+// Claire's home where POR-02 a and the load differ (TASK-1161): every section but the notices
+// and the K-1s, which both leave empty.
+const PORTAL_HOME_GAPS = [
+  "binder",
+  "earlier",
+  "first_visit",
+  "recent_threads",
+  "scope",
+  "team",
+  "todos",
+  "welcome_dismissed",
+  "work_cards",
+];
 
 const seed = getSeed();
 const handlers = seedHandlers(seed);
@@ -95,5 +115,44 @@ describe("the E0 fixtures exported from the scenario", () => {
       new Set(["client_assignee_user_id"]),
     );
     expect(gaps).toHaveLength(THIRD_PARTY_ASSIGNEES);
+  });
+
+  it("GET /v1/binders: Daniel Reyes's one TY2025 binder is BND-01's Feld row", () => {
+    const read = EXPORTED_E0.binders;
+    expect(read.body.total).toBe(1);
+    expect(read.body.counts).toEqual({
+      draft: 0,
+      published: 1,
+      unpublished: 0,
+      complete: 0,
+      closed: 0,
+    });
+    const feld = BINDER_ROWS.find((r) => r.client === "Jonah & Claire Feld");
+    if (feld === undefined) throw new Error("no Feld row in the TS seed");
+    const fixture = JSON.parse(
+      JSON.stringify(toBinderRow(seed, feld)).replace(/\.000Z"/g, 'Z"'),
+    ) as Row;
+    const api = read.body.items[0] as unknown as Row;
+    expect([api.client_name, api.part]).toEqual([fixture.client_name, fixture.part]);
+    const differ = Object.keys(fixture)
+      .filter((key) => JSON.stringify(api[key]) !== JSON.stringify(fixture[key]))
+      .sort();
+    // Known gaps (TASK-1161), pinned so a new drift or a fix both fail: the TS seed derives the
+    // binder's ids from the client slug where the load derives them from the scenario's labels,
+    // and the fixture fields below differ from what the load holds.
+    expect(differ).toEqual(FELD_BINDER_GAPS);
+  });
+
+  it("GET /v1/portal/home: Claire Feld's home is POR-02 a's, field for field where they agree", () => {
+    const read = EXPORTED_E0.portalHome;
+    const fixture = claireHome(feldOpenUploads()) as unknown as Row;
+    const api = read.body as unknown as Row;
+    const differ = Object.keys(fixture)
+      .filter((key) => JSON.stringify(api[key]) !== JSON.stringify(fixture[key]))
+      .sort();
+    // Known gaps (TASK-1161), pinned so a new drift or a fix both fail: POR-02 a reads the Feld
+    // binder as 19 of 21 (SPEC-320 AC-15) where the load holds BND-02's 5 of 7, and the fixture's
+    // scope ids, team, threads and cards are the TS seed's where the load writes its own.
+    expect(differ).toEqual(PORTAL_HOME_GAPS);
   });
 });

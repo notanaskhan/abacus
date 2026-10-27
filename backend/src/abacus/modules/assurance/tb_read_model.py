@@ -26,7 +26,7 @@ from decimal import Decimal
 from typing import Annotated, Final, cast, get_args
 from uuid import UUID
 
-from fastapi import Depends, Query
+from fastapi import Depends, Header, Query
 
 from abacus.kernel._flags import LEDGER_TB_WORKPAPER
 from abacus.kernel._statuses import (
@@ -50,6 +50,8 @@ from abacus.modules.assurance.tb_contract import (
     TbLeadsheetRowOut,
     TbLineFlagOut,
     TbProvenanceOut,
+    TieIssueLinkIn,
+    TieIssueLinkOut,
     tb_router,
 )
 from abacus.modules.engagements.api import EngagementRef, get_ref, version_detail
@@ -71,7 +73,7 @@ from abacus.modules.ledger.api import (
     require_balanced,
     trial_balance_view,
 )
-from abacus.modules.workpapers.api import checks_for
+from abacus.modules.workpapers.api import checks_for, link_issue
 
 UNASSIGNED: Final = "Unassigned"
 _ZERO: Final = Decimal("0.00")
@@ -199,7 +201,7 @@ async def layer_view(
         if check.result.status == "off":
             for code in check.accounts:
                 flags.setdefault(code, []).append(
-                    TbLineFlagOut(kind="does_not_tie", check_id=check.id, issue_id=None)
+                    TbLineFlagOut(kind="does_not_tie", check_id=check.id, issue_id=check.issue_id)
                 )
     statuses = [c.result.status for c in checks]
     worst = next((TieOutTallyStatus(s) for s in ("off", "pending", "tie") if s in statuses), None)
@@ -330,3 +332,44 @@ async def tb_leadsheet_area_route(
     """AUD-06 e: one audit area's leadsheet, PY · CY · Δ · Δ% (A-02-T10); "Unassigned" holds the
     accounts no rule or annotation places."""
     return await leadsheet_area(ctx, engagement_id, tb_id, area, layer, version)
+
+
+IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
+
+
+async def _define_gate(ctx: AuthContext, engagement_id: UUID) -> None:
+    """Authorise `tie_out_check.define` first (walls 404, a role 403), then the flag (404 off)."""
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "tie_out_check.define", ref.resource())
+    if not await flag_enabled(ctx.tenant, LEDGER_TB_WORKPAPER):
+        raise NotFound(LEDGER_TB_WORKPAPER.name)
+
+
+@tb_router.post(
+    "/{tb_id}/checks/{check_id}/issue-link",
+    action="tie_out_check.define",
+    response_model=TieIssueLinkOut,
+    status_code=201,
+    errors=(409,),
+)
+async def tie_issue_link_route(
+    engagement_id: UUID,
+    tb_id: UUID,
+    check_id: UUID,
+    body: TieIssueLinkIn,
+    ctx: Ctx,
+    idempotency_key: IdempotencyKey,
+) -> TieIssueLinkOut:
+    """AUD-06 c (A-02-T17): link an issue raised through C3 on this engagement to a check, once;
+    409 `tie_out_check_stale` on a stale `seen_version`, 409 `tie_out_check_issue_linked` for a
+    second issue; audited `tie_out_check.issue_linked`. Authorised first (walls 404), then the
+    flag (404 off)."""
+    await _define_gate(ctx, engagement_id)
+    link = await link_issue(ctx, engagement_id, tb_id, check_id, body.issue_id, body.seen_version)
+    return TieIssueLinkOut(
+        check_id=link.check_id,
+        issue_id=link.issue_id,
+        version_no=link.version_no,
+        linked_by_user_id=link.linked_by_user_id,
+        linked_at=link.linked_at,
+    )

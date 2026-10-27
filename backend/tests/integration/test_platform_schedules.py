@@ -32,6 +32,8 @@ IDS = (
     "audit_checkpoint:platform",  # Q-02-T21: the checkpoint every 5 minutes
     "audit_labels:platform",  # G-02-T10 (DEC-453): the label index, every 60 seconds
     "audit_partitions:platform",  # Q-02-T20: access_events partitions, every 30 days
+    "auth_session_purge:platform",  # G-02-T14: staff sessions ended over a year ago, daily
+    "export_expiry:platform",  # A-01-T22: the daily engagement export expiry sweep
     "notification_purge:platform",
     "ses_events:platform",
     "spend_anomaly:platform",
@@ -42,6 +44,8 @@ BACKGROUND = (
     "audit_checkpoint:platform",
     "audit_labels:platform",
     "audit_partitions:platform",
+    "auth_session_purge:platform",
+    "export_expiry:platform",
     "notification_purge:platform",
     "spend_anomaly:platform",
 )
@@ -107,6 +111,10 @@ async def test_ensure_creates_one_schedule_per_job_and_converges_on_a_rerun(
     assert facts["audit_partitions:platform"]["every_seconds"] == (30 * 86400,)
     assert facts["audit_labels:platform"]["workflow_type"] == "AuditLabelIndexer"
     assert facts["audit_labels:platform"]["every_seconds"] == (60,)
+    assert facts["auth_session_purge:platform"]["workflow_type"] == "AuthSessionPurge"
+    assert facts["auth_session_purge:platform"]["every_seconds"] == (86400,)
+    assert facts["export_expiry:platform"]["workflow_type"] == "ExportExpirySweep"
+    assert facts["export_expiry:platform"]["every_seconds"] == (86400,)
     for fact in (facts[i] for i in BACKGROUND):
         assert fact["task_queue"] == queue_for("background")
     for fact in facts.values():

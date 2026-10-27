@@ -12,13 +12,12 @@ from collections.abc import Iterator
 
 import pytest
 
-from abacus.kernel.db import configure_engine, dispose_engine
+from abacus.kernel.db import configure_engine
 from abacus_tools.quality.schema_check import Database, provisioned_database
 from abacus_tools.synthetic import fixture_export
 from abacus_tools.synthetic.scenarios.brightwater_hale import (
     SCENARIO_HASH,
     SCENARIO_VERSION,
-    loader,
 )
 
 from .conftest import MigratedDatabase
@@ -36,9 +35,7 @@ def own_db(migrated_db: MigratedDatabase) -> Iterator[Database]:
 async def test_f04_21_the_committed_e0_fixtures_equal_seed_demo_through_the_api(
     own_db: Database,
 ) -> None:
-    await dispose_engine()
-    configure_engine(own_db.app_url)
-    await loader.load(own_db.superuser_dsn, "E0", slices=fixture_export.SLICES, wait=False)
+    await fixture_export.load("E0", own_db.superuser_dsn, own_db.app_url)
     captured = await fixture_export.capture(
         "E0", app_url=own_db.app_url, identity_url=own_db.identity_url
     )
@@ -69,4 +66,6 @@ def test_f04_21_the_exported_reads_are_the_mvp_paths_with_a_persona_each() -> No
         ("firm-clients", "grace-holloway"),
         ("engagements", "hannah-leclerc"),
         ("northwind-request-items", "hannah-leclerc"),
+        ("binders", "daniel-reyes"),
+        ("portal-home", "claire-feld"),
     ]

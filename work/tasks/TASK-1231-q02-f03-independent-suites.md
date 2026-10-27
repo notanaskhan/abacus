@@ -36,3 +36,4 @@ updated: 2026-10-25
 
 ## Progress log
 - 2026-10-25: suites written; no escaped defect; DEC-355 recorded; T18's two tests held for the unbuilt row.
+- 2026-10-26 (S10 code gap, branch `s10-q02-t52-terms`): Q-02-T18's schema half built: `second_approver: counsel` and `second_approved_on` (on or before `approved_on`) are required, so a founder-only entry no longer validates or compiles; the two strict xfails citing this task came off and pass; the register header documents the fields; `_provider_terms.py` regenerated (its hash covers the YAML). The Bedrock entry itself still waits on counsel's review (F-09-T47, human).

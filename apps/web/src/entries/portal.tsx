@@ -1,8 +1,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
 import { configurePortalClient } from "../app-core/auth/bff";
+import { bootWithRuntimeConfig } from "../app-core/boot";
 import "../index.css";
 // `routes/portal/index` by name: `../routes/portal` is the firm bundle's legacy portal.tsx.
 import { createPortalRouter } from "../routes/portal/index";
@@ -27,10 +27,11 @@ const router = createPortalRouter();
 const root = document.getElementById("root");
 if (root === null) throw new Error("Missing #root element");
 
-createRoot(root).render(
+// Q-01-T23: the router starts only with a valid runtime config; otherwise the plain error state.
+await bootWithRuntimeConfig(root, () => (
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
     </QueryClientProvider>
-  </StrictMode>,
-);
+  </StrictMode>
+));
