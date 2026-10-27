@@ -64,6 +64,14 @@ def scope_guard_terms() -> tuple[str, ...]:
     return tuple(raw["terms"])
 
 
+@cache
+def _scope_terms() -> re.Pattern[str]:
+    """Security review L3: the terms in any case ("planner agent" is still the term), as whole
+    words, so a firm's "ACMEs" or "Departmental" is not mistaken for one."""
+    words = "|".join(re.escape(t) for t in scope_guard_terms())
+    return re.compile(rf"(?<!\w)(?:{words})(?!\w)", re.IGNORECASE)
+
+
 @dataclass(frozen=True)
 class LintFinding:
     code: LintCode
@@ -90,7 +98,7 @@ def _text_findings(where: str, text: str) -> list[LintFinding]:
         found.append(LintFinding("attachment", where))
     if where != "cta_label" and _SECOND_BUTTON.search(bare):
         found.append(LintFinding("second_button", where))
-    if _BANNED_WORDS.search(bare) or any(term in bare for term in scope_guard_terms()):
+    if _BANNED_WORDS.search(bare) or _scope_terms().search(bare):
         found.append(LintFinding("banned_word", where))
     return found
 

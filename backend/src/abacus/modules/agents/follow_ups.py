@@ -27,20 +27,20 @@ never goes out this way. Without the marker (recorded histories) the constants a
 
 from __future__ import annotations
 
-import hashlib
 from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from typing import Final
-from uuid import UUID
+from uuid import UUID, uuid5
 from zoneinfo import ZoneInfo
 
+from sqlalchemy.exc import IntegrityError
+
 from abacus.kernel.clock import now
-from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.logging import get_logger
-from abacus.kernel.uow import Target, uow
+from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.agents.events import AgentDigest, FollowUpLimitReached, FollowUpsDrafted
 from abacus.modules.agents.repository import (
     drafted_item_ids,
@@ -49,17 +49,13 @@ from abacus.modules.agents.repository import (
 )
 from abacus.modules.communications.api import (
     FollowUpPolicy,
-    RecipientRef,
-    SendScope,
-    SystemSendContext,
-    engagement_display_name,
     follow_up_policy,
     next_send_on,
     scheduled_send_enabled,
-    send_templated,
+    send_scheduled_reminder,
 )
 from abacus.modules.engagements.api import EngagementNotOpen, require_open
-from abacus.modules.identity.api import client_admins, firm_name, names_of
+from abacus.modules.identity.api import client_admins
 from abacus.modules.requests.api import OverdueItem, overdue_for
 
 CADENCE: Final = 3  # business days between reminders of an item
@@ -173,7 +169,8 @@ def limit_reached_today(sent: Sent, today: date, policy: FollowUpPolicy) -> bool
 @dataclass(frozen=True)
 class PolicyPlan:
     batches: dict[UUID, list[tuple[OverdueItem, int]]]
-    limits: tuple[tuple[UUID, UUID], ...]  # (binder, recipient), once each
+    # (binder, recipient, the last reminder's date), once each: the limit's dedupe key (L2).
+    limits: tuple[tuple[UUID, UUID, date], ...]
 
 
 def plan_by_policy(
@@ -186,8 +183,10 @@ def plan_by_policy(
 ) -> PolicyPlan:
     """`plan` under the firm's policy, each binder's override winning (R-01-T24)."""
     batches: dict[UUID, list[tuple[OverdueItem, int]]] = defaultdict(list)
-    limits: dict[tuple[UUID, UUID], None] = {}
+    limits: dict[tuple[UUID, UUID], date] = {}
     for item in overdue:
+        if not item.sendable:
+            continue  # security review H1: internal, deleted, or not in an open Published binder
         policy = firm.overridden(item.binder_override)
         if policy.stop_on_binder_done and item.binder_marked_done:
             continue  # the client marked the binder done: no further reminder
@@ -198,14 +197,16 @@ def plan_by_policy(
         if limit_reached_today(sent, today, policy):
             if policy.notify_preparer_after_max and item.binder_id is not None:
                 for recipient in recipients:
-                    limits[(item.binder_id, recipient)] = None
+                    key = (item.binder_id, recipient)
+                    last_on = sent.last_on or today
+                    limits[key] = max(limits.get(key, last_on), last_on)
             continue
         sequence = next_sequence_by_policy(item.due_on, sent, today, policy)
         if sequence is None:
             continue
         for recipient in recipients:
             batches[recipient].append((item, sequence))
-    return PolicyPlan(dict(batches), tuple(limits))
+    return PolicyPlan(dict(batches), tuple((b, r, d) for (b, r), d in limits.items()))
 
 
 @dataclass(frozen=True)
@@ -257,15 +258,8 @@ async def _chase_by_policy(
 ) -> Outcome:
     firm = await follow_up_policy(tenant)
     planned = plan_by_policy(overdue, history, admins, today, zone, firm)
-    if planned.limits:
-        async with uow(tenant) as tx:
-            for binder_id, recipient in planned.limits:
-                tx.emit(
-                    FollowUpLimitReached(
-                        engagement_id=engagement_id, binder_id=binder_id, contact_id=recipient
-                    )
-                )
-            tx.record("follow_up.limit_reached", target=Target("engagement", engagement_id))
+    for binder_id, recipient, last_on in planned.limits:
+        await _limit_reached(tenant, engagement_id, binder_id, recipient, last_on)
     if not planned.batches:
         return await _digest(tenant, engagement_id, Outcome(len(overdue), reason="not_due"))
     if firm.mode == "send_on_schedule" and await scheduled_send_enabled(tenant):
@@ -275,16 +269,33 @@ async def _chase_by_policy(
     return await _digest(tenant, engagement_id, Outcome(len(overdue), drafted=drafted))
 
 
-def _long_date(day: date) -> str:
-    return f"{day:%B} {day.day}, {day.year}"
+_LIMIT_NAMESPACE: Final = UUID("5b0f2c4e-9d61-4a8e-8c3b-1f24d0a7e624")
 
 
-def _items_text(titles: Sequence[str]) -> str:
-    lines = [" ".join(t.split()) for t in titles if t.strip()]
-    shown = lines[:10]
-    if len(lines) > 10:
-        shown.append(f"and {len(lines) - 10} more")
-    return "\n".join(shown)
+async def _limit_reached(
+    tenant: TenantContext, engagement_id: UUID, binder_id: UUID, recipient: UUID, last_on: date
+) -> None:
+    """Security review L2: the event's id derives from the binder, the recipient and the last
+    reminder's date, so a retried tick raises it once (a second insert of the same id is a
+    unique violation, and nothing is written)."""
+    event_id = uuid5(_LIMIT_NAMESPACE, f"{binder_id}:{recipient}:{last_on.isoformat()}")
+    try:
+        async with uow(tenant) as tx:
+            tx.emit(
+                FollowUpLimitReached(
+                    event_id=event_id,
+                    engagement_id=engagement_id,
+                    binder_id=binder_id,
+                    contact_id=recipient,
+                )
+            )
+            tx.record(
+                "follow_up.limit_reached",
+                target=Target("engagement", engagement_id),
+                after=Ref(binder_id=binder_id, event_id=event_id),
+            )
+    except IntegrityError:
+        _log.info("follow_up.limit_already_raised", binder_id=binder_id)
 
 
 async def _send_scheduled(
@@ -292,44 +303,25 @@ async def _send_scheduled(
     engagement_id: UUID,
     batches: dict[UUID, list[tuple[OverdueItem, int]]],
 ) -> int:
-    """DEC-74: the system sends the firm's published Reminder (only `send_templated`'s
-    scheduled path: the flag, the `reminder` key, a version the firm published, attributed to
-    its publisher; the client-mail checks apply). Each send is recorded as a sent follow-up so
-    the cadence counts it, audited `follow_up.scheduled_sent` (never `follow_up.sent`, which is
-    a person's). The button opens the portal's sign-in, with no token (DEC-566)."""
-    system = TenantContext(tenant.tenant_id, "system", "follow_up:scheduled")
-    context = SystemSendContext(tenant=system, reason="scheduled_follow_up", policy_version=1)
-    firm = await firm_name(tenant.tenant_id)
-    work_item = await engagement_display_name(tenant.tenant_id, engagement_id)
-    names = await names_of(sorted(batches))
-    link = f"{settings().app_base_url.rstrip('/')}/portal"
+    """DEC-74, DEC-568: the tick only asks communications to send the firm's Reminder for each
+    batch (identifiers only); communications re-reads the requests, checks the policy, the flag
+    and the key, and builds the words itself. What it sent is recorded as a sent follow-up so the
+    cadence counts it, `drafted_by_kind = 'system'` (0222), audited `follow_up.scheduled_sent`
+    (never `follow_up.sent`, which is a person's)."""
     sent = 0
     for recipient, items in sorted(batches.items()):
-        first = " ".join(names.get(recipient, "").split()).partition(" ")[0]
-        values = {
-            "client_first_name": first,
-            "firm_name": firm,
-            "work_item": work_item,
-            "open_items": _items_text([i.description for i, _ in items]),
-            "due_date": _long_date(min(i.due_on for i, _ in items)),
-            "portal_link": link,
-            "staff_name": firm,
-        }
-        key = f"p4:{engagement_id}:{recipient}:" + ",".join(
-            f"{i.id}:{i.due_on.isoformat()}:{n}" for i, n in items
+        done = await send_scheduled_reminder(
+            tenant.tenant_id,
+            engagement_id,
+            recipient,
+            [(i.id, i.due_on, n) for i, n in items],
         )
-        outcome = await send_templated(
-            context,
-            "reminder",
-            RecipientRef("user", recipient),
-            values,
-            scope=SendScope(engagement_id),
-            idempotency_key=hashlib.sha256(key.encode()).hexdigest(),
-        )
-        if outcome.status != "queued":
-            _log.info("follow_up.scheduled_blocked", reason=outcome.blocked_reason)
+        if done is None:
             continue
-        async with uow(system) as tx:
+        if done.outcome.status != "queued":
+            _log.info("follow_up.scheduled_blocked", reason=done.outcome.blocked_reason)
+            continue
+        async with uow(tenant) as tx:
             follow_up_id = await insert_follow_up(
                 tx.session,
                 tenant_id=tenant.tenant_id,
@@ -337,13 +329,14 @@ async def _send_scheduled(
                 recipient_user_id=recipient,
                 status="sent",
                 agent_run_id=None,
-                items=[(i.id, i.due_on, n) for i, n in items],
-                drafted_by_kind="person",
+                items=list(done.items),
+                drafted_by_kind="system",
                 template_key="reminder",
             )
             tx.record(
                 "follow_up.scheduled_sent",
                 target=Target("follow_up", follow_up_id),
+                after=Ref(message_id=done.outcome.message_id),
             )
         sent += 1
     return sent

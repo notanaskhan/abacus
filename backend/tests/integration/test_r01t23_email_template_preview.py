@@ -284,3 +284,20 @@ async def test_staff_a_reader_and_a_stale_second_factor_are_refused(
             dry_run=True,
         )
     assert recorder.sent == []
+
+
+async def test_l4_an_eleventh_test_send_in_an_hour_is_refused_with_retry_after(
+    firm: Firm, recorder: Recorder
+) -> None:
+    await _publish_clean(firm)
+    for n in range(template_preview.TEST_SEND_LIMIT):
+        await template_preview.send_test(
+            firm.admin, "reminder", sample_contact_id=None, idempotency_key=f"cap-{n}"
+        )
+    with pytest.raises(template_preview.TestSendRateLimited) as refused:
+        await template_preview.send_test(
+            firm.admin, "reminder", sample_contact_id=None, idempotency_key="cap-over"
+        )
+    retry = refused.value.facts["retry_after"]
+    assert isinstance(retry, int) and 0 < retry <= 3600
+    assert len(recorder.sent) == template_preview.TEST_SEND_LIMIT

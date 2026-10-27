@@ -54,6 +54,12 @@ async def _firm(seed: Seeder) -> tuple[uuid.UUID, Person, Site, Person]:
     site = await seed.site(tenant, admin.user_id, "policy")
     contact = await seed.client_contact(site)
     await seed.run("UPDATE firms SET time_zone = $2 WHERE tenant_id = $1", tenant, ZONE)
+    # A Published binder: the policy chases nothing else (security review H1).
+    await seed.run(
+        "UPDATE request_lists SET status = 'published', published_at = now() "
+        "WHERE engagement_id = $1",
+        site.engagement_id,
+    )
     return tenant, admin, site, contact
 
 

@@ -40,6 +40,8 @@ def _facts(content: TemplateContent) -> set[str]:
         ("An issue with your return.", "banned_word"),
         ("Your password is safe.", "banned_word"),
         ("Approved by Accrued Agent", "banned_word"),  # a scope-guards term
+        ("ask the planner agent", "banned_word"),  # in any case (security review L3)
+        ("Our TAX EXPORT is done.", "banned_word"),
     ],
 )
 def test_the_new_rules_name_the_block_never_the_text(text: str, code: str) -> None:
@@ -55,6 +57,7 @@ def test_the_new_rules_name_the_block_never_the_text(text: str, code: str) -> No
         "Questions? Message {staff_name} in your portal.",
         "The IRS issued a notice; we will look at it.",  # "issued" is not "issue"
         "Drop the files in your portal and they'll be sorted for you.",
+        "Our departmental team will be in touch.",  # whole words only: not "Departments"
     ],
 )
 def test_ordinary_client_words_pass(text: str) -> None:

@@ -71,3 +71,5 @@ the lint (Story 7.2).
 - 2026-10-27: built (lint rules, preview, test send, import, routes, `make generate`); targeted
   pass green after one test fix (the support seeder counts no `messages`); gates green. DEC-549,
   DEC-560, DEC-561, DEC-562. The gates caught a real-SSN-shaped probe in a test (now a 9xx fake).
+- 2026-10-27: security review fix round (L3, L4, walls): scope-guard terms in any case as whole
+  words, a 10-per-hour test-send cap (429), walled engagements skipped in sample scoping. DEC-569.

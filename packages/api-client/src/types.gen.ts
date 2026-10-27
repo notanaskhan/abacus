@@ -11000,7 +11000,7 @@ export type FollowUpOut = {
     /**
      * Drafted By Kind
      */
-    drafted_by_kind: 'person' | 'agent';
+    drafted_by_kind: 'person' | 'agent' | 'system';
     /**
      * Edited
      */
@@ -51507,6 +51507,10 @@ export type TestSendEmailTemplateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Too soon or too many: retry after Retry-After
+     */
+    429: ErrorOut;
 };
 
 export type TestSendEmailTemplateError = TestSendEmailTemplateErrors[keyof TestSendEmailTemplateErrors];

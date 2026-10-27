@@ -22,17 +22,23 @@ DEC-560).
 
 from __future__ import annotations
 
+import math
 import uuid
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Final, Literal
 from uuid import UUID
 
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from abacus.kernel.clock import now
 from abacus.kernel.config import settings
 from abacus.kernel.db import tenant_session
-from abacus.kernel.errors import NotFound
+from abacus.kernel.errors import DomainRateLimited, NotFound
 from abacus.kernel.logging import get_logger
-from abacus.kernel.uow import Ref, Target, uow
+from abacus.kernel.uow import Ref, Target, UnitOfWork, audit_of_targets, uow
 from abacus.modules.communications import template_store
 from abacus.modules.communications.deliveries import send_email
 from abacus.modules.communications.lint import LintFinding, lint_template
@@ -44,6 +50,7 @@ from abacus.modules.communications.template_registry import (
     EmailTemplateRegistration,
     ValueFinding,
     lint_values,
+    registered_templates,
 )
 from abacus.modules.communications.template_service import (
     TemplateLintFailed,
@@ -52,6 +59,7 @@ from abacus.modules.communications.template_service import (
     editor_on,
 )
 from abacus.modules.communications.templates import TemplateInvalid
+from abacus.modules.engagements.api import get_ref
 from abacus.modules.identity.api import (
     AuthContext,
     Forbidden,
@@ -69,6 +77,8 @@ from abacus.modules.requests.api import request_items_for
 Source = Literal["draft", "published"]
 Width = Literal[600, 390]
 TEST_PREFIX: Final = "[Test] "
+TEST_SEND_LIMIT: Final = 10
+TEST_SEND_WINDOW: Final = timedelta(hours=1)
 _NAMESPACE: Final = uuid.UUID("2c7a3b41-6e1f-4d55-9a0b-7f23c16e0a23")
 _BLOCK_VARIABLES: Final = frozenset(n for n, v in VARIABLES.items() if v.block)
 _OPEN: Final = frozenset({"requested", "returned"})
@@ -150,6 +160,10 @@ async def _contact_values(
     audience = set(registration.audience)
     related: list[UUID] = []
     for engagement_id in sorted(await my_engagements(ctx)):
+        try:  # security review: a team member walled off the engagement does not see it here
+            await get_ref(ctx, engagement_id)
+        except (Forbidden, NotFound):
+            continue
         for person in people:
             if await recipient_relations(ctx.tenant, person, engagement_id) & audience:
                 related.append(engagement_id)
@@ -256,6 +270,60 @@ async def check_test_send(ctx: AuthContext, key: str) -> EmailTemplateRegistrati
     return editable(key)
 
 
+class TestSendRateLimited(DomainRateLimited):
+    """Security review L4: at most `TEST_SEND_LIMIT` test sends per person per firm in a rolling
+    hour; retry after `retry_after` seconds."""
+
+    __test__ = False  # not a pytest class
+    code = "test_send_rate_limited"
+
+
+_LOCK_PERSON: Final = text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))")
+
+
+async def _template_ids(session: AsyncSession, tenant_id: UUID) -> list[UUID]:
+    """Every row a test send's audit event can name: each firm-editable key's firm row and the
+    template in use."""
+    found: set[UUID] = set()
+    for registration in registered_templates():
+        if not registration.firm_editable:
+            continue
+        firm_id = await template_store.firm_template_id(session, registration.key)
+        if firm_id is not None:
+            found.add(firm_id)
+        published = await template_store.resolve(session, tenant_id, registration.key)
+        if published is not None:
+            found.add(published.template_id)
+    return sorted(found)
+
+
+async def _under_cap(tx: UnitOfWork, ctx: AuthContext) -> None:
+    """Counted one at a time per person, so parallel test sends can't pass the cap."""
+    await tx.session.execute(
+        _LOCK_PERSON, {"key": f"email_test_send:{ctx.tenant_id}:{ctx.user_id}"}
+    )
+    ids = await _template_ids(tx.session, ctx.tenant_id)
+    events = await audit_of_targets(
+        tx.session,
+        [("email_template", i) for i in ids],
+        None,
+        500,
+        action="email_template.test_sent",
+    )
+    at = await now(ctx.tenant)
+    mine = sorted(
+        e.at for e in events if e.actor_id == str(ctx.user_id) and at - e.at < TEST_SEND_WINDOW
+    )
+    if len(mine) >= TEST_SEND_LIMIT:
+        retry = TEST_SEND_WINDOW - (at - mine[-TEST_SEND_LIMIT])
+        raise TestSendRateLimited(
+            facts={
+                "limit": TEST_SEND_LIMIT,
+                "retry_after": max(1, math.ceil(retry.total_seconds())),
+            }
+        )
+
+
 def message_id_for_test(tenant_id: UUID, key: str, user_id: UUID, idempotency_key: str) -> UUID:
     return uuid.uuid5(_NAMESPACE, f"{tenant_id}:{key}:{user_id}:{idempotency_key}")
 
@@ -300,6 +368,7 @@ async def send_test(
     if target is None:  # pragma: no cover -- `_content` found a draft or a version
         raise TemplateInvalid
     async with uow(ctx.tenant) as tx:
+        await _under_cap(tx, ctx)
         tx.record(
             "email_template.test_sent",
             target=Target("email_template", target),

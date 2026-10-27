@@ -977,6 +977,20 @@ def _check_messaging(src: SourceFile) -> Iterator[Finding]:
             yield Finding(getattr(node, "lineno", 1), "only communications emits message.ready")
 
 
+def _check_system_send(src: SourceFile) -> Iterator[Finding]:
+    """R-01-T24 security review M2 (DEC-568): the system's scheduled Reminder is built only by
+    communications' own scheduled-reminder service, which checks the policy, the flag and the
+    key itself; no other module (an agent least of all) constructs a `SystemSendContext` or
+    imports it."""
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.Call) and _terminal_name(node.func) == "SystemSendContext":
+            yield Finding(node.lineno, "only communications builds the scheduled send context")
+        if isinstance(node, ast.ImportFrom) and any(
+            a.name == "SystemSendContext" for a in node.names
+        ):
+            yield Finding(node.lineno, "only communications uses the scheduled send context")
+
+
 def _check_resource_archived(src: SourceFile) -> Iterator[Finding]:
     """`archived` comes from the engagement row, never a literal (TASK-008 loads it)."""
     for node in ast.walk(src.tree):
@@ -2449,6 +2463,18 @@ RULES: list[Rule | TreeRule] = [
         check=_check_messaging,
         include=("src/abacus/*",),
         exclude=("src/abacus/modules/communications/*",),
+    ),
+    Rule(
+        id="COMM-002",
+        description="Only communications' scheduled-reminder service builds a system send",
+        adr="ADR-005, DEC-74",
+        check=_check_system_send,
+        include=("src/abacus/*",),
+        exclude=(
+            "src/abacus/modules/communications/scheduled_reminders.py",
+            "src/abacus/modules/communications/template_registry.py",
+            "src/abacus/modules/communications/template_send.py",
+        ),
     ),
     Rule(
         id="AUTHZ-003",

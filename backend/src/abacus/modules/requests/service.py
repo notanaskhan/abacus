@@ -1267,6 +1267,9 @@ class OverdueItem:
     binder_id: UUID | None = None
     binder_marked_done: bool = False
     binder_override: dict[str, object] | None = None  # P-06's {every_days, max}
+    # Security review H1: what a client may be written to about: a client-visible, undeleted
+    # request in a Published binder that is not closed (the human path's rule, DEC-560).
+    sendable: bool = False
 
 
 async def overdue_for(
@@ -1284,8 +1287,9 @@ async def overdue_for(
             binder_id,
             marked_done_at is not None,
             dict(override) if override else None,
+            sendable,
         )
-        for i, due, binder_id, marked_done_at, override in rows
+        for i, due, binder_id, marked_done_at, override, sendable in rows
     ]
 
 

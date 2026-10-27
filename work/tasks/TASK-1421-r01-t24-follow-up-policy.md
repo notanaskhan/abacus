@@ -66,3 +66,7 @@ marked-done binder gets no further draft, and the pre-change P-4 history replays
   send), v3 EngagementAgent histories recorded; the workflow unit fake learned the new patch;
   targeted pass and gates green. DEC-563 to DEC-566. `security_tests` codegen regenerated for
   the new table.
+- 2026-10-27: security review fix round (H1, M1, M2, L1, L2): the scheduled send moved into
+  communications (`scheduled_reminders.py`, COMM-002), sendable-only planning, the version linted on
+  system sends, migration 0222 (`system` kind), limit-reached dedupe. DEC-568, DEC-569. Targeted
+  pass and gates green.

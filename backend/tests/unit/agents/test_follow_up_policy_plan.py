@@ -9,6 +9,7 @@ import uuid
 from datetime import UTC, date, datetime, time
 
 from abacus.modules.agents.follow_ups import (
+    PolicyPlan,
     Sent,
     first_tick_on_or_after,
     limit_reached_today,
@@ -28,9 +29,15 @@ FIVE = FollowUpPolicy(cadence_days=5)
 
 
 def _item(
-    *, done: bool = False, override: dict[str, object] | None = None, binder: uuid.UUID = BINDER
+    *,
+    done: bool = False,
+    override: dict[str, object] | None = None,
+    binder: uuid.UUID = BINDER,
+    sendable: bool = True,
 ) -> OverdueItem:
-    return OverdueItem(uuid.uuid4(), "Bank statements", DUE, ASSIGNEE, binder, done, override)
+    return OverdueItem(
+        uuid.uuid4(), "Bank statements", DUE, ASSIGNEE, binder, done, override, sendable
+    )
 
 
 def _sent_at(item: OverdueItem, *days: date) -> list[tuple[uuid.UUID, date, int, datetime]]:
@@ -61,6 +68,13 @@ def test_ac_a_marked_done_binder_gets_no_further_draft() -> None:
     assert planned.batches == {ASSIGNEE: [(item, 2)]}
 
 
+def test_h1_a_request_no_client_may_be_written_to_about_is_never_planned() -> None:
+    item = _item(sendable=False)  # internal, deleted, or not in an open Published binder
+    four = _sent_at(item, date(2026, 8, 24), date(2026, 8, 31), date(2026, 9, 8), MON_14)
+    assert plan_by_policy([item], [], [ADMIN], MON_21, ZONE, FIVE) == PolicyPlan({}, ())
+    assert plan_by_policy([item], four, [ADMIN], MON_21, ZONE, FollowUpPolicy()).limits == ()
+
+
 def test_the_binders_override_wins_over_the_firms_policy() -> None:
     item = _item(override={"every_days": 14, "max": 2})
     planned = plan_by_policy([item], _sent_at(item, MON_14), [ADMIN], MON_21, ZONE, FIVE)
@@ -76,7 +90,7 @@ def test_after_the_maximum_the_limit_is_raised_once_and_no_fifth_is_drafted() ->
     four = _sent_at(item, date(2026, 8, 24), date(2026, 8, 31), date(2026, 9, 8), MON_14)
     policy = FollowUpPolicy()  # 7 days, at most 4
     on_the_day = plan_by_policy([item], four, [ADMIN], MON_21, ZONE, policy)
-    assert on_the_day.batches == {} and on_the_day.limits == ((BINDER, ASSIGNEE),)
+    assert on_the_day.batches == {} and on_the_day.limits == ((BINDER, ASSIGNEE, MON_14),)
     later = plan_by_policy([item], four, [ADMIN], date(2026, 9, 22), ZONE, policy)
     assert later.batches == {} and later.limits == ()
     quiet = FollowUpPolicy(notify_preparer_after_max=False)

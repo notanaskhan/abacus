@@ -23430,7 +23430,8 @@
             "cls": "internal",
             "enum": [
               "person",
-              "agent"
+              "agent",
+              "system"
             ],
             "title": "Drafted By Kind",
             "type": "string"
@@ -110612,6 +110613,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too soon or too many: retry after Retry-After"
           }
         },
         "summary": "Test Send Email Template Route",

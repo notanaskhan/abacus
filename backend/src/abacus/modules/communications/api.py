@@ -48,6 +48,10 @@ from abacus.modules.communications.preview_scope import PreviewSelection, viewer
 from abacus.modules.communications.render import Block as TemplateBlockContent
 from abacus.modules.communications.render import TemplateContent
 from abacus.modules.communications.routes import router
+from abacus.modules.communications.scheduled_reminders import (
+    ScheduledReminder,
+    send_scheduled_reminder,
+)
 from abacus.modules.communications.scope import Violation, check_scope, comment_scope_kinds
 from abacus.modules.communications.secure_link_routes import router as secure_link_router
 from abacus.modules.communications.secure_links import (
@@ -95,7 +99,6 @@ from abacus.modules.communications.template_registry import (
     SendOutcome,
     SendRefusal,
     SendScope,
-    SystemSendContext,
     TemplateRegistrationInvalid,
     TemplateVariable,
     ValueFinding,
@@ -210,6 +213,7 @@ __all__ = [
     "OutOfScope",
     "PreviewSelection",
     "RecipientRef",
+    "ScheduledReminder",
     "SecureLinkView",
     "SendOutcome",
     "SendRefusal",
@@ -220,7 +224,6 @@ __all__ = [
     "SesIdentityNotFound",
     "SesIdentityPort",
     "SesIdentityUnavailable",
-    "SystemSendContext",
     "TemplateBlockContent",
     "TemplateContent",
     "TemplateRegistrationInvalid",
@@ -256,6 +259,7 @@ __all__ = [
     "send",
     "send_email",
     "send_notification_email",
+    "send_scheduled_reminder",
     "send_templated",
     "ses_identities",
     "sink_address",
