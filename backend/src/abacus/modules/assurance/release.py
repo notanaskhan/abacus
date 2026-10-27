@@ -129,7 +129,6 @@ async def record_release(
             mfa_at=mfa_at,
         )
         tx.session.add(row)
-        await tx.session.flush()
         await advance_by_gate(tx, ctx.tenant, item.engagement_id, "released", "G8", ctx.user_id)
         tx.record(
             "assurance.release_recorded",

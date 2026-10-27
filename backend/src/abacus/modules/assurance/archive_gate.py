@@ -95,7 +95,6 @@ async def record_archive(
             mfa_at=mfa_at,
         )
         tx.session.add(row)
-        await tx.session.flush()
         await advance_by_gate(tx, ctx.tenant, item.engagement_id, "archived", "G9", ctx.user_id)
         engagement_archived = await archive_work_item(
             tx, item.work_item_id, await clock.now(ctx.tenant)
