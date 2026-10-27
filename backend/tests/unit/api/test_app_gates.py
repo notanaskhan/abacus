@@ -509,6 +509,7 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/firm/email-templates/{key}/publish",
         "/v1/firm/sending-domains",
         "/v1/firm/portal-settings/publish",
+        "/v1/firm/ai-policy/versions",  # G-02-T15 (AI-policy stub): a version requested
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING

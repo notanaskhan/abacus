@@ -896,7 +896,8 @@ async def test_ac26_residency_comes_from_the_firm_and_is_locked(
     if stubbed(OVERVIEW, response):
         return
     residency = response.json()["residency"]
-    region = await seed.value("SELECT region FROM firms WHERE id = $1", world.tenant)
+    # ED-160: `firms` is keyed by `tenant_id` (the suite was written against the stub).
+    region = await seed.value("SELECT region FROM firms WHERE tenant_id = $1", world.tenant)
     assert residency["region"] == region
     assert residency["ai_inference"] == "us_only"
     assert residency["locked"] is True

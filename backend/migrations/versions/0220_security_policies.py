@@ -205,9 +205,12 @@ def upgrade() -> None:
         SET search_path = pg_catalog, public, pg_temp
         AS $$
         BEGIN
-            IF current_setting('app.actor_kind', true) IS DISTINCT FROM 'human'
+            -- The app's writes are a live person's (G-02's writer); P-08's floor columns stay
+            -- the platform's and the seed's, which write as the owner.
+            IF current_user = 'abacus_app' AND (
+               current_setting('app.actor_kind', true) IS DISTINCT FROM 'human'
                OR NEW.updated_by IS NULL
-               OR NEW.updated_by::text IS DISTINCT FROM current_setting('app.actor_id', true) THEN
+               OR NEW.updated_by::text IS DISTINCT FROM current_setting('app.actor_id', true)) THEN
                 RAISE EXCEPTION 'a portal security policy is a live person''s own'
                     USING ERRCODE = 'insufficient_privilege';
             END IF;
