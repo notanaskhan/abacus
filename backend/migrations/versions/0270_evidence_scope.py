@@ -56,6 +56,29 @@ _CHANNEL_OF = """
 """
 
 
+# The tables the backfill reads or writes. Each forces row-level security and the migration's
+# role does not bypass it, so an UPDATE here would see no rows (and the NOT NULL that follows
+# would fail on a populated database): FORCE is lifted for the backfill, as the tables' owner, and
+# put back before anything else runs.
+_BACKFILL_TABLES = (
+    "evidence_items",
+    "evidence_versions",
+    "engagements",
+    "fulfilments",
+    "request_items",
+    "request_lists",
+    "work_items",
+)
+
+
+def _unforced(statement: str) -> None:
+    for table in _BACKFILL_TABLES:
+        op.execute(f"ALTER TABLE {table} NO FORCE ROW LEVEL SECURITY")
+    op.execute(statement)
+    for table in _BACKFILL_TABLES:
+        op.execute(f"ALTER TABLE {table} FORCE ROW LEVEL SECURITY")
+
+
 def upgrade() -> None:
     # --- evidence_items ---------------------------------------------------------------------
     op.execute(
@@ -69,14 +92,14 @@ def upgrade() -> None:
                 CHECK (folder_kind IN ({_FOLDER_KINDS}))
         """
     )
-    op.execute(
+    _unforced(
         """
         UPDATE evidence_items i SET client_id = e.client_id
         FROM engagements e
         WHERE e.tenant_id = i.tenant_id AND e.id = i.engagement_id
         """
     )
-    op.execute(
+    _unforced(
         """
         UPDATE evidence_items i SET work_item_id = coalesce(
             (SELECT rl.work_item_id
@@ -198,7 +221,7 @@ def upgrade() -> None:
     op.execute(
         "ALTER TABLE evidence_versions DISABLE TRIGGER evidence_versions_no_update_or_delete"
     )
-    op.execute(
+    _unforced(
         "UPDATE evidence_versions SET channel = "  # noqa: S608 -- fixed SQL, no input
         + _CHANNEL_OF.format(m="method", s="source")
     )
