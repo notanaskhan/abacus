@@ -71,7 +71,9 @@ REVEAL_LIMIT: Final = 20
 REVEAL_WINDOW_SECONDS: Final = 3600
 _UNIQUE_VIOLATION: Final = "23505"
 _TIN_UNIQUE_INDEX: Final = "client_entities_one_tin"
-WriteAction = Literal["client.update", "client.intake"]
+WriteAction = Literal[
+    "client.update", "client.intake", "client_import.run"
+]  # P-07-T52: the import
 # Until C19 (T-01) gates §7216 consent, only a synthetic firm may hold an individual's TIN.
 _GATED_KINDS: Final = frozenset({"ssn", "itin"})
 _SEPARATORS: Final = re.compile(r"[\s-]")

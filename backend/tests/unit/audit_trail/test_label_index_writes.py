@@ -8,6 +8,8 @@ import ast
 from pathlib import Path
 from typing import Final
 
+import pytest
+
 SOURCE: Final = (
     Path(__file__).resolve().parents[3]
     / "src"
@@ -31,6 +33,7 @@ def _name(func: ast.expr) -> str | None:
     return None
 
 
+@pytest.mark.source_scan
 def test_l6_labels_writes_only_audit_event_labels() -> None:
     tree = ast.parse(SOURCE.read_text("utf-8"))
     writes = [c for c in _calls(tree) if _name(c.func) in _WRITES]

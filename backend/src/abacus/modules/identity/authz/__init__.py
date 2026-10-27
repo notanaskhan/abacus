@@ -444,6 +444,12 @@ _LINE_READER_CELL = "staff"
 _METADATA_ONLY_FIRM_ROLES = frozenset({"firm_admin", "security_admin"})
 
 
+def metadata_only(ctx: AuthContext) -> bool:
+    """I-01-T10 (DEC-648): the person's firm role reads metadata only (ADR-024, DEC-20), so Home
+    shows them the admin tile set and no work band. Identity reads firm roles; others ask here."""
+    return ctx.firm_role in _METADATA_ONLY_FIRM_ROLES
+
+
 def _line_reader_cell(rule: Rule) -> Decision | None:
     """The reader's cell: the `staff` engagement role's allow, for a plain read only."""
     if (

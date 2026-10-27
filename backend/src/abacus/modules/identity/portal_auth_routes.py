@@ -311,12 +311,15 @@ async def portal_refresh_route(
     csrf: Annotated[str | None, Header(alias=CSRF_HEADER)] = None,
     origin: Annotated[str | None, Header()] = None,
     host: Annotated[str | None, Header()] = None,
+    activity: Annotated[str | None, Header(alias="X-Abacus-Activity", max_length=16)] = None,
 ) -> Response:
-    """Cookie-authenticated, with the CSRF header and the portal host's own Origin."""
+    """Cookie-authenticated, with the CSRF header and the portal host's own Origin. Only a
+    refresh marked `X-Abacus-Activity: user` moves the idle clock; an absent mark is never
+    activity (DEC-583)."""
     if csrf != "1" or origin is None or host is None or origin.rstrip("/") != f"https://{host}":
         return _error(403, "forbidden")
     try:
-        tokens = await refresh_portal_session(cookie, host)
+        tokens = await refresh_portal_session(cookie, host, active=activity == "user")
     except PortalSessionEnded:
         response = _error(401, "session_expired")
         _clear_cookie(response)
