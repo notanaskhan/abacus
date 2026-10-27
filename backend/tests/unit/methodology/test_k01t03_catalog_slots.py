@@ -27,8 +27,6 @@ from abacus.modules.methodology.catalog import (
     register_catalog_provider,
 )
 
-pytestmark = pytest.mark.asyncio
-
 
 async def _no_queue(_viewer: Viewer) -> Sequence[ReviewItem]:
     return []
@@ -91,6 +89,7 @@ def test_an_unknown_category_or_a_second_provider_is_refused(isolated: None) -> 
         register_catalog_provider("skills", CatalogProvider(other, _no_queue, _no_changes))
 
 
+@pytest.mark.asyncio
 async def test_a_failing_provider_and_counter_show_nothing_rather_than_wrong(
     isolated: None,
 ) -> None:

@@ -20,7 +20,7 @@ from __future__ import annotations
 import json
 import uuid
 from collections.abc import Sequence
-from datetime import date
+from datetime import UTC, date, datetime
 from typing import Final, cast
 
 import asyncpg
@@ -214,9 +214,9 @@ async def test_a_snooze_moves_a_gate_from_total_to_snoozed_for_that_person_only(
     )
     snooze = (
         "INSERT INTO human_gate_snoozes (tenant_id, gate_id, user_id, until, actor_kind, "
-        "actor_id) VALUES ($1, $2, $3, $4::timestamptz, 'human', $5)"
+        "actor_id) VALUES ($1, $2, $3, $4, 'human', $5)"
     )
-    later = "2999-01-01T00:00:00Z"
+    later = datetime(2999, 1, 1, tzinfo=UTC)
     await _as(
         migrated_db,
         firm.tenant_id,
@@ -244,7 +244,7 @@ async def test_a_snooze_moves_a_gate_from_total_to_snoozed_for_that_person_only(
                     firm.tenant_id,
                     gate,
                     firm.daniel.user_id,
-                    "2001-01-01T00:00:00Z",
+                    datetime(2001, 1, 1, tzinfo=UTC),
                     str(firm.daniel.user_id),
                 ),
             )
@@ -385,11 +385,12 @@ async def _card(f: Firm) -> tuple[uuid.UUID, uuid.UUID]:
         "INSERT INTO decision_cards (id, tenant_id, engagement_id, kind, question_key, "
         "reserved_role, reserved_user_id, options, raised_by_kind, raised_by_id) VALUES "
         "($1, $2, $3, 'materiality', 'materiality.overall', 'engagement_partner', $4, '[]', "
-        "'human', $4::text)",
+        "'human', $5)",
         card,
         f.tenant_id,
         f.bayside.engagement_id,
         f.daniel.user_id,
+        str(f.daniel.user_id),
     )
     gate = cast(
         uuid.UUID,

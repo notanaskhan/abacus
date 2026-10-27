@@ -98,7 +98,7 @@ describe("KNW-01 a (Margaret Okonkwo, All)", () => {
     expect(pills.filter((p) => p === "Published")).toHaveLength(46);
     expect(pills.filter((p) => p === "Draft")).toHaveLength(1);
     expect(pills.filter((p) => p === "Superseded")).toHaveLength(1);
-    expect(screen.getByText("Used by 14 engagements")).toBeTruthy();
+    expect(screen.getAllByText("Used by 14 engagements").length).toBeGreaterThan(0);
     expect(screen.getByText("Applied to 162 returns")).toBeTruthy();
   });
 

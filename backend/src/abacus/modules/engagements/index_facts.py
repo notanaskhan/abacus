@@ -200,19 +200,15 @@ async def gate_offices(
                         Engagement.id.in_(engagement_ids)
                     )
                 )
-            )
-            .tuples()
-            .all()
+            ).all()
         )
         by_item: dict[UUID, tuple[UUID, UUID | None]] = {}
         if item_ids:
-            for item, engagement, office in (
-                await session.execute(
-                    select(WorkItem.id, WorkItem.engagement_id, WorkItem.office_id).where(
-                        WorkItem.id.in_(item_ids)
-                    )
+            for item, engagement, office in await session.execute(
+                select(WorkItem.id, WorkItem.engagement_id, WorkItem.office_id).where(
+                    WorkItem.id.in_(item_ids)
                 )
-            ).tuples():
+            ):
                 by_item[item] = (engagement, office)
     for engagement, item in wanted:
         office = None
@@ -239,4 +235,4 @@ async def methodology_usage(ctx: AuthContext, version_ids: Sequence[UUID]) -> di
             )
             .group_by(Engagement.methodology_version_id)
         )
-    return {version: int(n) for version, n in rows.tuples().all() if version is not None}
+    return {version: int(n) for version, n in rows.all() if version is not None}

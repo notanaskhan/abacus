@@ -24,6 +24,7 @@ import {
   useHome,
   useWaitingOnYou,
 } from "../../domain/home";
+import { to } from "../../routes/to";
 import { COPY } from "./copy";
 
 // HOME-01 · Home dashboard, the main region (I-01-T06; docs/screens/HOME-01.md). T11
@@ -53,6 +54,25 @@ export interface HOME01Props {
   initialOffice?: string | null;
   /** Where a Waiting-on-you row goes; undefined while the target is planned (DV-3). */
   hrefOf?: (gate: HumanGateOut) => string | undefined;
+}
+
+function pathOf(target: { to: string; params: Readonly<Record<string, string>> }): string {
+  return target.to.replace(/\$(\w+)/gu, (_m, name: string) =>
+    encodeURIComponent(target.params[name] ?? ""),
+  );
+}
+
+/** Where a row opens while `home.approvals` is off (DV-3): its host gate, when that screen is
+ * built; HOME-02 and the other hosts are planned, so their rows stay plain text. */
+function hostHref(gate: HumanGateOut): string | undefined {
+  if (
+    gate.subkind === "acceptance_decision_due" &&
+    gate.client_id !== null &&
+    gate.engagement_id !== null
+  ) {
+    return pathOf(to.CLI07({ clientId: gate.client_id, engagementId: gate.engagement_id }));
+  }
+  return undefined;
 }
 
 function longDate(iso: string): string {
@@ -239,7 +259,7 @@ export function HOME01({
   toolbar,
   height,
   initialOffice = null,
-  hrefOf,
+  hrefOf = hostHref,
 }: HOME01Props): JSX.Element {
   const [office, setOffice] = useState<string | null>(initialOffice);
   const session = useSession();

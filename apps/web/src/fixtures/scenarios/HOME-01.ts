@@ -30,7 +30,7 @@ import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";
 import { DEMO_INSTANT } from "../seed/clock";
 import { HOME_AFTERNOON } from "../seed/home";
-import { capabilitiesFor } from "../seed/shell";
+import { capabilitiesFor, meV3For } from "../seed/shell";
 
 const E0 = seedScenario();
 const seed = getSeed();
@@ -58,6 +58,8 @@ function at(
       ...homeHandlers(),
       ...humanGateHandlers(seed),
       "GET /v1/me/capabilities": ({ persona: who }) => json(capabilities(who, brief)),
+      // `/v1/me` v3: the firm's offices name the Office chip's options.
+      "GET /v1/me": ({ persona: who }) => json(meV3For(seed, who ?? persona)),
       ...options.handlers,
     },
   };

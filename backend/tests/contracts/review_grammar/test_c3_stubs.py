@@ -40,6 +40,7 @@ ROUTES: dict[tuple[str, str], str] = {
     ("post", "/v1/review-notes/{note_id}/clear"): "review_note.clear",
     ("post", "/v1/review-notes/{note_id}/withdraw"): "review_note.withdraw",
     ("get", "/v1/human-gates"): "human_gate.read",
+    ("get", "/v1/human-gates/counts"): "human_gate.read",  # I-01-T04: the one count source
     ("get", "/v1/decision-cards"): "decision.read",
     ("get", "/v1/decision-cards/{card_id}"): "decision.read",
     ("post", "/v1/decision-cards/{card_id}/decide"): "decision.decide",
@@ -134,6 +135,7 @@ def _ctx() -> AuthContext:
 LIVE = frozenset(
     {
         "human_gate_list_route",
+        "human_gate_counts_route",  # I-01-T04
         "sign_off_ladder_route",
         "sign_off_eligibility_route",
         "sign_off_route",

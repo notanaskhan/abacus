@@ -89,7 +89,7 @@ async def _rows(
             )
             .order_by(MethodologyTemplate.name, MethodologyVersion.version)
         )
-        return [(t, v, s) for t, v, s in found.tuples().all()]
+        return [(t, v, s) for t, v, s in found.all()]
 
 
 async def _details(
@@ -107,26 +107,20 @@ async def _details(
                     .where(MethodologyRequestItem.version_id.in_(list(version_ids)))
                     .group_by(MethodologyRequestItem.version_id)
                 )
-            )
-            .tuples()
-            .all()
+            ).all()
         )
         areas: dict[UUID, list[str]] = {}
-        for version_id, name in (
-            await session.execute(
-                select(MethodologyArea.version_id, MethodologyArea.name)
-                .where(MethodologyArea.version_id.in_(list(version_ids)))
-                .order_by(MethodologyArea.version_id, MethodologyArea.position)
-            )
-        ).tuples():
+        for version_id, name in await session.execute(
+            select(MethodologyArea.version_id, MethodologyArea.name)
+            .where(MethodologyArea.version_id.in_(list(version_ids)))
+            .order_by(MethodologyArea.version_id, MethodologyArea.position)
+        ):
             areas.setdefault(version_id, []).append(name)
-        for version_id, name in (
-            await session.execute(
-                select(Program.version_id, Program.name)
-                .where(Program.version_id.in_(list(version_ids)))
-                .order_by(Program.version_id, Program.position)
-            )
-        ).tuples():
+        for version_id, name in await session.execute(
+            select(Program.version_id, Program.name)
+            .where(Program.version_id.in_(list(version_ids)))
+            .order_by(Program.version_id, Program.position)
+        ):
             areas.setdefault(version_id, []).append(name)
     return {k: int(v) for k, v in counts.items()}, {k: tuple(v) for k, v in areas.items()}
 
@@ -188,7 +182,7 @@ async def _flags_open(viewer: Viewer, version_ids: Sequence[UUID]) -> dict[UUID,
             )
             .group_by(ProgramStep.version_id)
         )
-        return {v: int(n) for v, n in rows.tuples().all()}
+        return {v: int(n) for v, n in rows.all()}
 
 
 async def _queue(viewer: Viewer, category: str) -> list[ReviewItem]:
@@ -235,33 +229,29 @@ async def _changes(viewer: Viewer, category: str) -> list[ChangeEntry]:
     the events of versions that are published or superseded now."""
     async with tenant_session(viewer.ctx.tenant) as session:
         found = (
-            (
-                await session.execute(
-                    select(
-                        MethodologyVersionEvent,
-                        MethodologyTemplate.name,
-                        MethodologyTemplate.family,
-                        MethodologyVersion.label,
-                        MethodologyVersionState.status,
-                    )
-                    .join(
-                        MethodologyVersion,
-                        MethodologyVersion.id == MethodologyVersionEvent.version_id,
-                    )
-                    .join(
-                        MethodologyTemplate,
-                        MethodologyTemplate.id == MethodologyVersion.template_id,
-                    )
-                    .join(
-                        MethodologyVersionState,
-                        MethodologyVersionState.version_id == MethodologyVersion.id,
-                    )
-                    .order_by(MethodologyVersionEvent.at, MethodologyVersionEvent.seq)
+            await session.execute(
+                select(
+                    MethodologyVersionEvent,
+                    MethodologyTemplate.name,
+                    MethodologyTemplate.family,
+                    MethodologyVersion.label,
+                    MethodologyVersionState.status,
                 )
+                .join(
+                    MethodologyVersion,
+                    MethodologyVersion.id == MethodologyVersionEvent.version_id,
+                )
+                .join(
+                    MethodologyTemplate,
+                    MethodologyTemplate.id == MethodologyVersion.template_id,
+                )
+                .join(
+                    MethodologyVersionState,
+                    MethodologyVersionState.version_id == MethodologyVersion.id,
+                )
+                .order_by(MethodologyVersionEvent.at, MethodologyVersionEvent.seq)
             )
-            .tuples()
-            .all()
-        )
+        ).all()
     return [
         ChangeEntry(
             id=e.id,

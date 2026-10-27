@@ -151,7 +151,7 @@ async def import_template(
                 rules=len(methodology.rules),
                 programs=len(methodology.programs),
                 steps=len(methodology.steps),
-                status="needs_review" if for_review else "published",
+                needs_review=1 if for_review else 0,
             ),
         )
     found = await version_detail(ctx.tenant, version_id)

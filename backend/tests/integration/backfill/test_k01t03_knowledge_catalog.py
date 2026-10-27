@@ -18,6 +18,8 @@ from typing import cast
 import pytest
 from openpyxl import Workbook
 
+from abacus.kernel.flags import forget_flags
+
 from .support import Json, Net, Person, Site
 
 pytestmark = pytest.mark.asyncio
@@ -79,6 +81,7 @@ async def _flag(net: Net, tenant: uuid.UUID, flag: str) -> None:
         tenant,
         flag,
     )
+    forget_flags()  # the 30-second flag cache: the next request reads the new value
 
 
 @pytest.fixture
@@ -217,6 +220,7 @@ async def test_ac110_flag_off_and_client_principals_get_nothing(library: Library
         "AND flag = 'knowledge.catalog'",
         library.tenant_id,
     )
+    forget_flags()
     response = await library.net.call("GET", ITEMS, library.daniel)
     assert response.status_code == 404
     contact = await library.net.seed.client_contact(library.bayside)

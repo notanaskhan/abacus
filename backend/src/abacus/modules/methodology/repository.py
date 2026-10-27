@@ -237,7 +237,7 @@ async def _prior_keys(
         .join(Program, Program.id == ProgramStep.program_id)
         .where(ProgramStep.version_id == prior)
     )
-    return {(code, n): key for code, n, key in rows.tuples().all()}
+    return {(code, n): key for code, n, key in rows.all()}
 
 
 def assign_step_keys(steps: Sequence[StepRow], prior: dict[tuple[str, int], str]) -> list[str]:

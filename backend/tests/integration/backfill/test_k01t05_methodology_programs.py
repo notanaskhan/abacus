@@ -19,6 +19,8 @@ import asyncpg
 import pytest
 from openpyxl import Workbook, load_workbook
 
+from abacus.kernel.flags import forget_flags
+
 from .support import Migrated, Net, Person
 
 pytestmark = pytest.mark.asyncio
@@ -76,6 +78,7 @@ async def _flags(net: Net, tenant: uuid.UUID, *flags: str) -> None:
             tenant,
             flag,
         )
+    forget_flags()  # the 30-second flag cache: the next request reads the new value
 
 
 async def _import(net: Net, who: Person, name: str, data: bytes) -> uuid.UUID:

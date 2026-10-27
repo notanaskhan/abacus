@@ -59,15 +59,21 @@ _ACTOR_GUARD = """
     SET search_path = pg_catalog, public, pg_temp
     AS $$
     BEGIN
+        IF NEW.actor_kind IS DISTINCT FROM 'human' THEN
+            RAISE EXCEPTION 'only a person snoozes or reassigns a gate'
+                USING ERRCODE = 'check_violation';
+        END IF;
         IF NEW.actor_kind IS DISTINCT FROM current_setting('app.actor_kind', true)
            OR NEW.actor_id IS DISTINCT FROM current_setting('app.actor_id', true) THEN
             RAISE EXCEPTION 'a gate is snoozed or reassigned by the session''s own person'
                 USING ERRCODE = 'insufficient_privilege';
         END IF;
-        IF TG_TABLE_NAME = 'human_gate_snoozes'
-           AND NEW.user_id::text IS DISTINCT FROM NEW.actor_id THEN
-            RAISE EXCEPTION 'a person snoozes a gate for themselves only'
-                USING ERRCODE = 'insufficient_privilege';
+        -- Nested: plpgsql resolves NEW.user_id only on the table that has it.
+        IF TG_TABLE_NAME = 'human_gate_snoozes' THEN
+            IF NEW.user_id::text IS DISTINCT FROM NEW.actor_id THEN
+                RAISE EXCEPTION 'a person snoozes a gate for themselves only'
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
         END IF;
         RETURN NEW;
     END $$
@@ -131,7 +137,11 @@ def upgrade() -> None:
                 CHECK (blocked_reason_code IS NULL OR blocked)
         """
     )
+    # The backfill reads every firm's rows: forced row-level security binds the owner too, so it
+    # is lifted for this statement only and forced again (0180's precedent).
+    op.execute("ALTER TABLE human_gates NO FORCE ROW LEVEL SECURITY")
     op.execute("UPDATE human_gates SET subkind = subject_ref ->> 'type' WHERE subkind IS NULL")
+    op.execute("ALTER TABLE human_gates FORCE ROW LEVEL SECURITY")
     op.execute("ALTER TABLE human_gates ALTER COLUMN subkind SET NOT NULL")
     op.execute("ALTER TABLE human_gates DROP CONSTRAINT human_gates_kind_check")
     op.execute(
@@ -261,7 +271,9 @@ def downgrade() -> None:
     )
     op.execute("ALTER TABLE human_gates DROP CONSTRAINT human_gates_tenant_id")
     op.execute("DROP INDEX human_gates_by_role")
+    op.execute("ALTER TABLE human_gates NO FORCE ROW LEVEL SECURITY")
     op.execute("DELETE FROM human_gates WHERE kind = 'evidence_review'")
+    op.execute("ALTER TABLE human_gates FORCE ROW LEVEL SECURITY")
     op.execute("ALTER TABLE human_gates DROP CONSTRAINT human_gates_kind_check")
     op.execute(
         f"ALTER TABLE human_gates ADD CONSTRAINT human_gates_kind_check "
