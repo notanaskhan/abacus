@@ -6,9 +6,11 @@ reads the export row under the tenant and acts as the system on behalf of the ap
 
 - `on_approved` (the `firm_export.approved` subscriber): starts `FirmExportWorkflow` once per
   export (reuse rejected), only while the row is `building` and decided by its named approver.
-- `package`: the v1 skeleton archive (DEC-508): a ZIP with `index.json` (format 0.1: the export,
-  the firm, the two people, when it was built, and `packages`, empty until Q-02-T47 adds one A-01
-  package per engagement) and `manifest.json` (each other file's path, size and SHA-256). Built in
+- `package`: the archive (DEC-508; Q-02-T47, DEC-640): a ZIP with `index.json` (format 0.2: the
+  export, the firm, the two people, when it was built, `packages`, one A-01 engagement export
+  package per engagement the approver may read, stored at `packages/<engagement_id>.zip` with its
+  own manifest digest, and `omitted`, every other engagement with its reason), the packages, and
+  `manifest.json` (each other file's path, size and SHA-256). Built in
   worker scratch, off the event loop, and stored sealed under the tenant's key in 64 MiB segments
   (`export_storage`, `kind="firm_export"`). `manifest_sha256` is the manifest file's digest,
   `bundle_sha256` the archive's.
@@ -37,14 +39,14 @@ from uuid import UUID
 from sqlalchemy import select, update
 from temporalio import activity
 from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
-from temporalio.exceptions import WorkflowAlreadyStartedError
+from temporalio.exceptions import ApplicationError, WorkflowAlreadyStartedError
 
 from abacus.kernel import clock
 from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
 from abacus.kernel.logging import get_logger
-from abacus.kernel.uow import Handler, OutboxEvent, Ref, Target, uow
+from abacus.kernel.uow import AuditFilter, Handler, OutboxEvent, Ref, Target, audit_page, uow
 from abacus.modules.evidence.export_storage import delete_segments, export_prefix, put_segments
 from abacus.modules.evidence.firm_export_events import (
     FirmExportApproved,
@@ -52,11 +54,16 @@ from abacus.modules.evidence.firm_export_events import (
     FirmExportReady,
 )
 from abacus.modules.evidence.firm_export_models import FirmExport
+from abacus.modules.evidence.firm_export_packages import (
+    FirmPackageIntegrityError,
+    FirmPackages,
+    engagement_packages,
+)
 from abacus.modules.evidence.firm_exports import SUBJECT, WINDOW
 from abacus.modules.evidence.workflow_types import BUILD_ERROR, FirmExportFacts, FirmExportInput
 from abacus.modules.evidence.workflows import FirmExportWorkflow
 
-FORMAT_VERSION: Final = "0.1"
+FORMAT_VERSION: Final = "0.2"
 SWEEP_BATCH: Final = 200
 _ZIP_TIME: Final = (1980, 1, 1, 0, 0, 0)  # fixed entry times: the same rows give the same bytes
 _log = get_logger(__name__)
@@ -146,13 +153,28 @@ def _entry(archive: zipfile.ZipFile, path: str, data: bytes) -> None:
     archive.writestr(info, data)
 
 
+def _stored(archive: zipfile.ZipFile, path: str, source: IO[bytes]) -> None:
+    """A package as it was built, copied in chunks and stored as is (a ZIP is compressed)."""
+    info = zipfile.ZipInfo(path, date_time=_ZIP_TIME)
+    info.compress_type = zipfile.ZIP_STORED
+    source.seek(0)
+    with archive.open(info, "w", force_zip64=True) as target:
+        while chunk := source.read(1024 * 1024):
+            target.write(chunk)
+
+
 def _iso(at: datetime) -> str:
     return at.isoformat().replace("+00:00", "Z")
 
 
-def write_archive(out: IO[bytes], row: FirmExport, built_at: datetime) -> str:
-    """The v1 skeleton archive into `out`; the manifest's SHA-256. Files: `index.json`, then
-    `manifest.json` naming every other file with its size and digest (DEC-508)."""
+def write_archive(
+    out: IO[bytes], row: FirmExport, built_at: datetime, found: FirmPackages | None = None
+) -> str:
+    """The archive into `out`; the manifest's SHA-256. Files: `index.json`, each package at
+    `packages/<engagement_id>.zip`, then `manifest.json` naming every other file with its size and
+    digest (DEC-508, DEC-640). A package's digest is its stored bytes' (its `bundle_sha256`)."""
+    packages = sorted(found.packages if found else [], key=lambda p: p.path)
+    omitted = sorted(found.omitted if found else [], key=lambda o: str(o.engagement_id))
     index = _json(
         {
             "format": "accrued-firm-export",
@@ -164,24 +186,34 @@ def write_archive(out: IO[bytes], row: FirmExport, built_at: datetime) -> str:
             "approved_by": str(row.decided_by),
             "requested_at": _iso(row.requested_at),
             "built_at": _iso(built_at),
-            # Q-02-T47: one A-01 engagement export package per engagement.
-            "packages": [],
-        }
-    )
-    files = [("index.json", index)]
-    manifest = _json(
-        {
-            "format_version": FORMAT_VERSION,
-            "export_id": str(row.id),
-            "files": [
-                {"path": path, "bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
-                for path, data in files
+            # Q-02-T47: one A-01 engagement export package per engagement the approver reads.
+            "packages": [
+                {
+                    "engagement_id": str(p.engagement_id),
+                    "work_item_id": str(p.work_item_id),
+                    "path": p.path,
+                    "bundle_sha256": p.bundle_sha256,
+                    "manifest_sha256": p.manifest_sha256,
+                    "bytes": p.bytes,
+                    "file_count": p.file_count,
+                    "request_count": p.request_count,
+                }
+                for p in packages
+            ],
+            "omitted": [
+                {"engagement_id": str(o.engagement_id), "reason": o.reason} for o in omitted
             ],
         }
     )
-    with zipfile.ZipFile(out, "w") as archive:
-        for path, data in files:
-            _entry(archive, path, data)
+    listed = [
+        {"path": "index.json", "bytes": len(index), "sha256": hashlib.sha256(index).hexdigest()},
+        *({"path": p.path, "bytes": p.bytes, "sha256": p.bundle_sha256} for p in packages),
+    ]
+    manifest = _json({"format_version": FORMAT_VERSION, "export_id": str(row.id), "files": listed})
+    with zipfile.ZipFile(out, "w", allowZip64=True) as archive:
+        _entry(archive, "index.json", index)
+        for package in packages:
+            _stored(archive, package.path, package.handle)
         _entry(archive, "manifest.json", manifest)
     return hashlib.sha256(manifest).hexdigest()
 
@@ -213,9 +245,24 @@ async def package_export(
     row = await _row(tenant_id, export_id)
     if row is None or row.status != "building" or not _approved(row):
         raise FirmExportNotBuilding(str(export_id))
-    built_at = await clock.now(_system(row))
-    with tempfile.TemporaryFile() as scratch:
-        manifest_sha256 = await asyncio.to_thread(write_archive, scratch, row, built_at)
+    system = _system(row)
+    built_at = await clock.now(system)
+    async with tenant_session(system) as session:
+        newest = await audit_page(session, AuditFilter(), None, 1)  # one sequence for the export
+    as_of_seq = newest[0].seq if newest else 0
+    approver = row.decided_by
+    if approver is None:  # `_approved` above; kept for the type checker
+        raise FirmExportNotBuilding(str(export_id))
+    found = await engagement_packages(
+        system,
+        export_id=row.id,
+        approver_id=approver,
+        as_of_seq=as_of_seq,
+        built_at=built_at,
+        heartbeat=lambda: heartbeat("package"),
+    )
+    with found, tempfile.TemporaryFile() as scratch:
+        manifest_sha256 = await asyncio.to_thread(write_archive, scratch, row, built_at, found)
         bundle_sha256, size = await asyncio.to_thread(_digest, scratch)
         heartbeat("written")
         if segment_bytes is None:
@@ -400,9 +447,13 @@ async def on_expired(event: OutboxEvent) -> None:
 
 @activity.defn(name="firm_export.package")
 async def package_activity(given: FirmExportInput) -> FirmExportFacts:
-    return await package_export(
-        UUID(given.tenant_id), UUID(given.export_id), heartbeat=activity.heartbeat
-    )
+    try:
+        return await package_export(
+            UUID(given.tenant_id), UUID(given.export_id), heartbeat=activity.heartbeat
+        )
+    except FirmPackageIntegrityError:
+        # RB-29: a swapped file never succeeds on retry; the workflow marks the export failed.
+        raise ApplicationError("integrity_mismatch", non_retryable=True) from None
 
 
 @activity.defn(name="firm_export.mark_ready")

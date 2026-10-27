@@ -17,6 +17,10 @@ import { portalRefresh, portalSignOut as endServerSession } from "@abacus/api-cl
 import { client } from "@abacus/api-client/client";
 
 export const CSRF_HEADER = "X-Abacus-CSRF";
+/** DEC-583 (as the staff client, G-02-T14): a refresh the person's own activity caused. Only then
+ * does the BFF move the portal session's idle clock; a refresh a background poll caused leaves
+ * it, so an unattended tab does not keep a session alive. */
+export const ACTIVITY_HEADER = "X-Abacus-Activity";
 /** The portal BFF's routes: never refreshed or replayed on a 401. */
 export const PORTAL_AUTH_PREFIX = "/v1/portal/auth/";
 export const PORTAL_SIGN_OUT_PATH = "/v1/portal/auth/sign-out";
@@ -41,6 +45,29 @@ let inFlight: Promise<boolean> | null = null;
 /** One trip to sign-in for any number of failed refreshes; cleared by the next sign-in. */
 let redirecting = false;
 let lastFailure: string | null = null;
+/** The person's last keyboard or pointer input, and the last refresh: the idle clock's facts. */
+let lastActivity = 0;
+let lastRefresh = 0;
+let tracking = false;
+
+/** The person did something (a key, a click, a touch): the next refresh counts as activity. */
+export function notePortalActivity(now: number = deviceNow()): void {
+  lastActivity = now;
+}
+
+function trackActivity(): void {
+  if (tracking || typeof window === "undefined") return;
+  tracking = true;
+  for (const event of ["pointerdown", "keydown"] as const) {
+    window.addEventListener(
+      event,
+      () => {
+        notePortalActivity();
+      },
+      { capture: true, passive: true },
+    );
+  }
+}
 
 /** The wall clock, for token lifetime only (never business time; that is app-core/clock). */
 function deviceNow(): number {
@@ -86,12 +113,19 @@ export function lastPortalRefreshFailure(): string | null {
  */
 export function refreshPortalSession(now: number = deviceNow()): Promise<boolean> {
   if (inFlight !== null) return inFlight;
+  trackActivity();
+  // The page's first refresh (a load, a sign-in) is the person's own act; later ones count only
+  // when there was input since the one before.
+  const active = lastRefresh === 0 || lastActivity > lastRefresh;
   inFlight = (async () => {
     try {
       const { data, error, response } = await portalRefresh({
-        headers: { [CSRF_HEADER]: "1" },
+        headers: active
+          ? { [CSRF_HEADER]: "1", [ACTIVITY_HEADER]: "user" }
+          : { [CSRF_HEADER]: "1" },
         throwOnError: false,
       });
+      lastRefresh = now;
       if (data?.state === "signed_in" && setPortalSession(data, now)) return true;
       held = null;
       const detail = (error as { detail?: unknown } | undefined)?.detail;
@@ -274,6 +308,8 @@ export function configurePortalClient(): void {
 export function resetPortalAuthForTest(): void {
   held = null;
   inFlight = null;
+  lastActivity = 0;
+  lastRefresh = 0;
   redirecting = false;
   lastFailure = null;
   navigate = (to) => {

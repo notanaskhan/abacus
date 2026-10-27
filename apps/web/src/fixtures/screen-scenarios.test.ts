@@ -27,6 +27,8 @@ describe("screen scenarios on the firm entry", () => {
       "ADM-03",
       "ADM-06",
       "ADM-07",
+      "AUD-01",
+      "AUD-03",
       "BND-01",
       "BND-02",
       "CLI-04", // P-07-T53

@@ -1,0 +1,1204 @@
+{
+  "AgentRunOut": {
+    "properties": {
+      "agent": {
+        "cls": "internal",
+        "title": "Agent",
+        "type": "string"
+      },
+      "agent_label": {
+        "cls": "internal",
+        "title": "Agent Label",
+        "type": "string"
+      },
+      "duration_ms": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Duration Ms"
+      },
+      "finished_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Finished At"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "initiator_name": {
+        "cls": "internal",
+        "title": "Initiator Name",
+        "type": "string"
+      },
+      "outcome": {
+        "anyOf": [
+          {
+            "enum": [
+              "approved",
+              "partially_approved",
+              "rejected"
+            ],
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Outcome"
+      },
+      "record_persisted_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Record Persisted At"
+      },
+      "record_sha256": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Record Sha256"
+      },
+      "stage": {
+        "cls": "internal",
+        "default": "live",
+        "enum": [
+          "shadow",
+          "live"
+        ],
+        "title": "Stage",
+        "type": "string"
+      },
+      "started_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Started At",
+        "type": "string"
+      },
+      "state": {
+        "cls": "internal",
+        "enum": [
+          "queued",
+          "running",
+          "succeeded",
+          "needs_input",
+          "failed"
+        ],
+        "title": "State",
+        "type": "string"
+      },
+      "state_reason": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "State Reason"
+      },
+      "subject": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Subject"
+      }
+    },
+    "required": [
+      "id",
+      "agent",
+      "agent_label",
+      "state",
+      "started_at",
+      "finished_at",
+      "duration_ms",
+      "initiator_name",
+      "subject"
+    ],
+    "title": "AgentRunOut",
+    "type": "object"
+  },
+  "CitationLocatorOut": {
+    "description": "Where a citation points: positions and codes, never the quoted words.",
+    "properties": {
+      "cell": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Cell"
+      },
+      "claim": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Claim"
+      },
+      "document": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Document"
+      },
+      "page": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Page"
+      }
+    },
+    "title": "CitationLocatorOut",
+    "type": "object"
+  },
+  "OutputCountOut": {
+    "properties": {
+      "count": {
+        "cls": "internal",
+        "title": "Count",
+        "type": "integer"
+      },
+      "kind": {
+        "cls": "internal",
+        "title": "Kind",
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "count"
+    ],
+    "title": "OutputCountOut",
+    "type": "object"
+  },
+  "RecordCitationOut": {
+    "description": "A citation of the run's output: its locator, code's verdict and fingerprints only.",
+    "properties": {
+      "amount_matches": {
+        "anyOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Amount Matches"
+      },
+      "locator": {
+        "$ref": "#/components/schemas/CitationLocatorOut",
+        "cls": "internal"
+      },
+      "quote_fingerprint": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Quote Fingerprint"
+      },
+      "reason": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Reason"
+      },
+      "record": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/RecordRefOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal"
+      },
+      "sheet_fingerprint": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Sheet Fingerprint"
+      },
+      "source": {
+        "cls": "internal",
+        "title": "Source",
+        "type": "string"
+      },
+      "verified": {
+        "anyOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Verified"
+      }
+    },
+    "required": [
+      "source",
+      "record",
+      "locator",
+      "quote_fingerprint",
+      "sheet_fingerprint"
+    ],
+    "title": "RecordCitationOut",
+    "type": "object"
+  },
+  "RecordInputHashesOut": {
+    "properties": {
+      "context": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Context"
+      },
+      "model_calls": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "title": "Model Calls",
+        "type": "array"
+      }
+    },
+    "required": [
+      "context",
+      "model_calls"
+    ],
+    "title": "RecordInputHashesOut",
+    "type": "object"
+  },
+  "RecordOutcomeOut": {
+    "properties": {
+      "failure_code": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Failure Code"
+      },
+      "outputs": {
+        "additionalProperties": {
+          "type": "integer"
+        },
+        "cls": "internal",
+        "title": "Outputs",
+        "type": "object"
+      },
+      "state": {
+        "cls": "internal",
+        "enum": [
+          "succeeded",
+          "needs_input",
+          "failed",
+          "cancelled"
+        ],
+        "title": "State",
+        "type": "string"
+      }
+    },
+    "required": [
+      "state",
+      "failure_code",
+      "outputs"
+    ],
+    "title": "RecordOutcomeOut",
+    "type": "object"
+  },
+  "RecordRefOut": {
+    "description": "A record the run read, or a citation points into: its type and id (null in metadata).",
+    "properties": {
+      "id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Id"
+      },
+      "type": {
+        "cls": "internal",
+        "title": "Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "type",
+      "id"
+    ],
+    "title": "RecordRefOut",
+    "type": "object"
+  },
+  "RecordsReadOut": {
+    "properties": {
+      "count": {
+        "cls": "internal",
+        "title": "Count",
+        "type": "integer"
+      },
+      "source": {
+        "cls": "internal",
+        "title": "Source",
+        "type": "string"
+      }
+    },
+    "required": [
+      "source",
+      "count"
+    ],
+    "title": "RecordsReadOut",
+    "type": "object"
+  },
+  "RunItemOut": {
+    "description": "A thread item: code words and references only (P-09 Story 8.1); the client words it.",
+    "properties": {
+      "actor": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Actor"
+      },
+      "at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "At",
+        "type": "string"
+      },
+      "blocks": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/AgentBlocks"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential"
+      },
+      "code": {
+        "cls": "internal",
+        "title": "Code",
+        "type": "string"
+      },
+      "detail": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Detail"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "tool_card",
+          "narration",
+          "decision",
+          "failure"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "outcome": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Outcome"
+      },
+      "ref_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Ref Id"
+      },
+      "ref_type": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Ref Type"
+      },
+      "seq": {
+        "cls": "internal",
+        "title": "Seq",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "seq",
+      "kind",
+      "at",
+      "code",
+      "outcome",
+      "detail",
+      "actor",
+      "ref_type",
+      "ref_id"
+    ],
+    "title": "RunItemOut",
+    "type": "object"
+  },
+  "RunItemsOut": {
+    "description": "The run header plus the items after `after_seq` (P-09 Story 1.3 polling).",
+    "properties": {
+      "items": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/RunItemOut"
+        },
+        "title": "Items",
+        "type": "array"
+      },
+      "last_seq": {
+        "cls": "internal",
+        "title": "Last Seq",
+        "type": "integer"
+      },
+      "resync": {
+        "cls": "internal",
+        "title": "Resync",
+        "type": "boolean"
+      },
+      "run": {
+        "$ref": "#/components/schemas/AgentRunOut",
+        "cls": "internal"
+      }
+    },
+    "required": [
+      "run",
+      "items",
+      "last_seq",
+      "resync"
+    ],
+    "title": "RunItemsOut",
+    "type": "object"
+  },
+  "RunRecordOut": {
+    "description": "ADR-169 \u00a73: the run's durable record as stored. Content-free by construction:\nidentifiers, versions and fingerprints. `record_sha256` is SHA-256 of the canonical JSON\n(sorted keys, UTC instants) of every stored field but `persisted_at`, citations' keyed\nfingerprints included; it is the record's own hash, not the run view's `run_record_sha256`\n(DEC-396).",
+    "properties": {
+      "boundary_basis": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Boundary Basis"
+      },
+      "capability": {
+        "cls": "internal",
+        "title": "Capability",
+        "type": "string"
+      },
+      "citations": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/RecordCitationOut"
+        },
+        "title": "Citations",
+        "type": "array"
+      },
+      "completed_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Completed At",
+        "type": "string"
+      },
+      "engagement_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Engagement Id"
+      },
+      "initiator_user_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Initiator User Id",
+        "type": "string"
+      },
+      "input_hashes": {
+        "$ref": "#/components/schemas/RecordInputHashesOut",
+        "cls": "internal"
+      },
+      "model": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Model"
+      },
+      "outcome": {
+        "$ref": "#/components/schemas/RecordOutcomeOut",
+        "cls": "internal"
+      },
+      "persisted_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Persisted At",
+        "type": "string"
+      },
+      "projection": {
+        "cls": "internal",
+        "enum": [
+          "content",
+          "metadata"
+        ],
+        "title": "Projection",
+        "type": "string"
+      },
+      "prompt_ref": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Prompt Ref"
+      },
+      "prompt_sha256": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Prompt Sha256"
+      },
+      "record_sha256": {
+        "cls": "internal",
+        "title": "Record Sha256",
+        "type": "string"
+      },
+      "records_read": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/RecordRefOut"
+        },
+        "title": "Records Read",
+        "type": "array"
+      },
+      "region": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Region"
+      },
+      "route": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Route"
+      },
+      "run_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Run Id",
+        "type": "string"
+      },
+      "spec_version": {
+        "cls": "internal",
+        "title": "Spec Version",
+        "type": "integer"
+      },
+      "stage": {
+        "cls": "internal",
+        "enum": [
+          "shadow",
+          "live"
+        ],
+        "title": "Stage",
+        "type": "string"
+      },
+      "started_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Started At",
+        "type": "string"
+      },
+      "terms_version": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Terms Version"
+      },
+      "withheld": {
+        "cls": "internal",
+        "title": "Withheld",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "run_id",
+      "engagement_id",
+      "capability",
+      "spec_version",
+      "stage",
+      "prompt_ref",
+      "prompt_sha256",
+      "model",
+      "route",
+      "region",
+      "terms_version",
+      "boundary_basis",
+      "input_hashes",
+      "records_read",
+      "citations",
+      "outcome",
+      "initiator_user_id",
+      "started_at",
+      "completed_at",
+      "record_sha256",
+      "persisted_at",
+      "projection",
+      "withheld"
+    ],
+    "title": "RunRecordOut",
+    "type": "object"
+  },
+  "RunTraceOut": {
+    "properties": {
+      "attempts": {
+        "cls": "internal",
+        "title": "Attempts",
+        "type": "integer"
+      },
+      "model_text": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Model Text"
+      },
+      "output_counts": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/OutputCountOut"
+        },
+        "title": "Output Counts",
+        "type": "array"
+      },
+      "projection": {
+        "cls": "internal",
+        "enum": [
+          "content",
+          "metadata"
+        ],
+        "title": "Projection",
+        "type": "string"
+      },
+      "records_read": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/RecordsReadOut"
+        },
+        "title": "Records Read",
+        "type": "array"
+      },
+      "region": {
+        "cls": "internal",
+        "title": "Region",
+        "type": "string"
+      },
+      "rows": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/TraceRowOut"
+        },
+        "title": "Rows",
+        "type": "array"
+      },
+      "run": {
+        "$ref": "#/components/schemas/AgentRunOut",
+        "cls": "internal"
+      },
+      "runtime": {
+        "cls": "internal",
+        "title": "Runtime",
+        "type": "string"
+      },
+      "tokens_in": {
+        "cls": "internal",
+        "title": "Tokens In",
+        "type": "integer"
+      },
+      "tokens_out": {
+        "cls": "internal",
+        "title": "Tokens Out",
+        "type": "integer"
+      },
+      "training": {
+        "cls": "internal",
+        "title": "Training",
+        "type": "string"
+      }
+    },
+    "required": [
+      "run",
+      "runtime",
+      "region",
+      "training",
+      "attempts",
+      "tokens_in",
+      "tokens_out",
+      "rows",
+      "records_read",
+      "output_counts",
+      "model_text",
+      "projection"
+    ],
+    "title": "RunTraceOut",
+    "type": "object"
+  },
+  "RunViewOut": {
+    "description": "C6 v1 (TASK-5000): one run, its record fingerprint and what the caller may do.",
+    "properties": {
+      "allowed_actions": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "title": "Allowed Actions",
+        "type": "array"
+      },
+      "projection": {
+        "cls": "internal",
+        "enum": [
+          "content",
+          "metadata"
+        ],
+        "title": "Projection",
+        "type": "string"
+      },
+      "run": {
+        "$ref": "#/components/schemas/AgentRunOut",
+        "cls": "internal"
+      },
+      "run_record_sha256": {
+        "cls": "internal",
+        "title": "Run Record Sha256",
+        "type": "string"
+      }
+    },
+    "required": [
+      "run",
+      "run_record_sha256",
+      "allowed_actions",
+      "projection"
+    ],
+    "title": "RunViewOut",
+    "type": "object"
+  },
+  "RunWriteOut": {
+    "description": "What the run proposed to write and what a person decided. Codes and references only.",
+    "properties": {
+      "at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "At",
+        "type": "string"
+      },
+      "decided_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Decided At"
+      },
+      "decided_by_name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Decided By Name"
+      },
+      "decision": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Decision"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "key": {
+        "cls": "internal",
+        "title": "Key",
+        "type": "string"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "suggestion",
+          "proposal",
+          "screening"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "outcome": {
+        "cls": "internal",
+        "title": "Outcome",
+        "type": "string"
+      },
+      "target_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Target Id"
+      },
+      "target_type": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Target Type"
+      }
+    },
+    "required": [
+      "kind",
+      "id",
+      "target_type",
+      "target_id",
+      "key",
+      "outcome",
+      "at",
+      "decision",
+      "decided_by_name",
+      "decided_at"
+    ],
+    "title": "RunWriteOut",
+    "type": "object"
+  },
+  "TraceExportIn": {
+    "additionalProperties": false,
+    "properties": {
+      "format": {
+        "cls": "internal",
+        "const": "json",
+        "default": "json",
+        "title": "Format",
+        "type": "string"
+      }
+    },
+    "title": "TraceExportIn",
+    "type": "object"
+  },
+  "TraceExportOut": {
+    "properties": {
+      "content": {
+        "cls": "confidential",
+        "title": "Content",
+        "type": "string"
+      },
+      "filename": {
+        "cls": "internal",
+        "title": "Filename",
+        "type": "string"
+      },
+      "renderer_version": {
+        "cls": "internal",
+        "title": "Renderer Version",
+        "type": "string"
+      },
+      "rows": {
+        "cls": "internal",
+        "title": "Rows",
+        "type": "integer"
+      },
+      "sha256": {
+        "cls": "internal",
+        "title": "Sha256",
+        "type": "string"
+      }
+    },
+    "required": [
+      "filename",
+      "content",
+      "sha256",
+      "rows",
+      "renderer_version"
+    ],
+    "title": "TraceExportOut",
+    "type": "object"
+  },
+  "TraceRowOut": {
+    "properties": {
+      "actor": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Actor"
+      },
+      "at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "At",
+        "type": "string"
+      },
+      "detail": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Detail"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "start",
+          "queued",
+          "attempt",
+          "output",
+          "decision",
+          "finish"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "seq": {
+        "cls": "internal",
+        "title": "Seq",
+        "type": "integer"
+      },
+      "state": {
+        "cls": "internal",
+        "enum": [
+          "done",
+          "failed",
+          "waiting",
+          "running"
+        ],
+        "title": "State",
+        "type": "string"
+      },
+      "title": {
+        "cls": "internal",
+        "title": "Title",
+        "type": "string"
+      }
+    },
+    "required": [
+      "seq",
+      "at",
+      "kind",
+      "title",
+      "state",
+      "detail",
+      "actor"
+    ],
+    "title": "TraceRowOut",
+    "type": "object"
+  }
+}

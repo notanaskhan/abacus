@@ -138,6 +138,7 @@ def test_s6_the_screening_suite_keeps_its_protected_thresholds() -> None:
     assert suite["dangerous_error"] == "needs_revision_recall"
 
 
+@pytest.mark.source_scan
 def test_s6_the_screener_keeps_its_prompt_and_proposal_vocabulary() -> None:
     spec = cast(
         dict[str, object], yaml.safe_load((SCREENER_SPEC / "evidence.screener.yaml").read_text())
