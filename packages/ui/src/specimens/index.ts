@@ -39,6 +39,7 @@ import {
 } from "./cite";
 import { PortalLayoutSpecimen } from "./portal";
 import { T15Specimen, Tpl15Specimen } from "./auth";
+import { T16Specimen } from "./signing";
 import { RequestRowsSpecimen, T7Specimen, Tpl07Specimen } from "./requests";
 import { ScreeningCardSpecimen } from "./screening";
 import { NestedSplitSpecimen, SplitNarrowSpecimen, SplitPresetsSpecimen } from "./split";
@@ -345,6 +346,14 @@ export const SPECIMENS: readonly Specimen[] = [
     kit: "TPL-15",
     title: "Auth card specimen",
     Component: Tpl15Specimen,
+    surface: "portal",
+  },
+  // T16 SigningCeremony (F-06-T04): b and c; a is a Tier C screenshot (DF-12).
+  {
+    id: "t16-signing-ceremony",
+    kit: "T16",
+    title: "Signing ceremony",
+    Component: T16Specimen,
     surface: "portal",
   },
   // SplitLayout (F-05-T29): C-09

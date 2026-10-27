@@ -380,6 +380,9 @@ export * from "./data";
 // Templates (F-05-T28): T1 IndexList on the list envelope.
 export * from "./templates";
 
+// T16 signing kit L2 parts (F-06-T04): envelope header, signer chips, documents, fields, steps.
+export * from "./signing";
+
 // Attribution and human verbs (F-05-T30).
 export * from "./attribution";
 
