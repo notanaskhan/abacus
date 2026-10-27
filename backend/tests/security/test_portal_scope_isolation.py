@@ -41,7 +41,7 @@ from abacus.modules.portal.api import activate_portal_host, add_portal_host
 from .portal_pbc_support import another_list, new_binder, signed_in
 from .support import Net, Person, Seeder, Site
 
-FLAGS = ("portal.sign_in_v2", "portal.home_v2", "portal.documents_v2")
+FLAGS = ("portal.sign_in_v2", "portal.home_v2")
 REFUSED = (401, 403, 404)
 
 

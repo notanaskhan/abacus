@@ -64,6 +64,9 @@ export const porScreens = {
   },
   "POR-18": { name: "Prospect intake", status: "planned", path: null, entry: true },
   "POR-19": { name: "Mobile capture · IRS notice (Whitley)", status: "planned", path: null },
+  // R-01-T25: built on fixtures and routed at /settings/portal/email-templates/$templateKey (a
+  // firm screen with a POR- id). The path joins the manifest once link-contract's rule 2 admits a
+  // firm-hosted POR screen (DEC-567); "planned" until the staging walk.
   "POR-20": { name: "Transactional email templates · Reminder", status: "planned", path: null },
   "POR-21": {
     name: "SOC 2 requests and responses — Tessellate Health Cloud",

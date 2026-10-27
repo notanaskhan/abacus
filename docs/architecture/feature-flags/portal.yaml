@@ -10,14 +10,6 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
-  - name: portal.documents_v2
-    description: 'Portal documents v2 (C5 section portal-pbc, R-01): POR-03 and POR-04 over GET /v1/portal/binders, binders/{id} and request-items/{id}, with the client Undo of an Ignore and of Mark as Done. Off: those routes answer 404 and /documents renders the legacy ClientEngagement. On: 501 not_implemented until R-01-T07 and T08 land. Off until a founder switches it on per firm; the local seed turns it on for Brightwater Hale. Retired with the legacy page by R-01-T18.'
-    owner: ayushkbhatia
-    created: 2026-10-24
-    expires: 2027-04-21
-    override: DEC-137
-    kind: boolean
-    default: false
   - name: portal.drop_sort
     description: 'Portal drop sort (C5 section portal-pbc, R-01): POST /v1/portal/binders/{id}/drops, GET /v1/portal/drops/{batch} and the firm void of a wrong rule fulfilment; a decisive code match becomes a rule fulfilment a named person accepts (DEC-58 a). Off: those routes answer 404 and every dropped file waits for the firm to sort it. On: 501 not_implemented until R-01-T09 lands. Off until a founder switches it on per firm; the local seed turns it on for Brightwater Hale.'
     owner: notanaskhan

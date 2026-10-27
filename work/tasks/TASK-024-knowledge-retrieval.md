@@ -119,6 +119,7 @@ All of SPEC-009. Excluded: content, PDF and DOCX, ANN indexes, re-embedding, and
 
   Gates, the schema check and unit tests pass. Vector binding was checked against local Postgres. Full test runs deferred by the founder.
 - `2026-10-07` — SPEC-009 approved and merged (#42). Design written for founder review.
+- 2026-10-27: ADR-078 back-fill suite `backend/tests/integration/backfill/test_q03t048_knowledge_retrieval.py`; see `work/tasks/TASK-1439-*.md` (S11 lane 7).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

@@ -88,6 +88,13 @@ const AUDIT_SEARCH = ["actor", "object", "action", "date", "office", "ip", "q", 
 const FirmSettingsSecurity = lazyScreen(async () => (await import("../../screens/ADM-06")).ADM06);
 const SECURITY_SEARCH = ["incident", "sessions", "export"] as const;
 
+// R-01-T25: POR-20 at /settings/portal/email-templates/$templateKey, lazy (the firm entry is at its
+// budget); the width (`w`) and the preview's sample contact (`sample`) live in the URL. Writes are
+// the server's to allow (`allowed_actions`, `portal.settings_editor`); reads are never gated.
+const EmailTemplates = lazyScreen(async () => (await import("../../screens/POR-20")).POR20);
+const TEMPLATE_SEARCH = ["w", "sample"] as const;
+const WIDTHS = new Set(["600", "390", "phone"]);
+
 function pick<const K extends string>(
   keys: readonly K[],
   search: Record<string, unknown>,
@@ -254,6 +261,40 @@ const settingsSecurityRoute = createRoute({
     );
   },
 });
+const settingsEmailTemplatesRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/settings/portal/email-templates/$templateKey",
+  validateSearch: (search: Record<string, unknown>) => pick(TEMPLATE_SEARCH, search),
+  component: function SettingsEmailTemplatesPage(): JSX.Element {
+    const navigate = useNavigate();
+    const router = useRouter();
+    const templateKey = useParam("templateKey");
+    const search = pick(TEMPLATE_SEARCH, useSearch({ strict: false }));
+    const width = WIDTHS.has(search.w ?? "") ? (search.w as "600" | "390" | "phone") : "600";
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <EmailTemplates
+          templateKey={templateKey}
+          width={width}
+          sample={search.sample ?? ""}
+          onWidth={(w) => {
+            void navigate({ to: ".", search: { ...search, w }, replace: true });
+          }}
+          onOpenTemplate={(key) => {
+            void navigate({
+              to: "/settings/portal/email-templates/$templateKey",
+              params: { templateKey: key },
+              search: search.w === undefined ? {} : { w: search.w },
+            });
+          }}
+          onBack={() => {
+            router.history.back();
+          }}
+        />
+      </div>
+    );
+  },
+});
 const settingsSectionRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/settings/$section",
@@ -288,6 +329,7 @@ export const settingsRoutes = [
   settingsOfficesRoute,
   settingsAuditLogRoute,
   settingsSecurityRoute,
+  settingsEmailTemplatesRoute,
   settingsSectionRoute,
   adminRoute.addChildren([
     section("/admin/methodology", () => <screens.Methodology />),

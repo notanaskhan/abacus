@@ -22053,7 +22053,7 @@
         "type": "object"
       },
       "FirmExportLinkOut": {
-        "description": "A presigned download link for 15 minutes; Restricted (it opens the firm's whole archive)\nand never logged.",
+        "description": "A download link for 15 minutes: the API path of the archive for the signed-in person it\nwas issued to (DEC-509: no presigned URL). Restricted (it opens the firm's whole archive) and\nnever logged.",
         "properties": {
           "expires_at": {
             "cls": "internal",
@@ -23430,7 +23430,8 @@
             "cls": "internal",
             "enum": [
               "person",
-              "agent"
+              "agent",
+              "system"
             ],
             "title": "Drafted By Kind",
             "type": "string"
@@ -24165,6 +24166,39 @@
           "needed"
         ],
         "title": "GapOut",
+        "type": "object"
+      },
+      "GateBandsOut": {
+        "description": "Open gates per DF-25 band, in the fixed band order.",
+        "properties": {
+          "agent_outputs": {
+            "cls": "internal",
+            "title": "Agent Outputs",
+            "type": "integer"
+          },
+          "approvals_sends": {
+            "cls": "internal",
+            "title": "Approvals Sends",
+            "type": "integer"
+          },
+          "decisions": {
+            "cls": "internal",
+            "title": "Decisions",
+            "type": "integer"
+          },
+          "sign_offs": {
+            "cls": "internal",
+            "title": "Sign Offs",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "decisions",
+          "sign_offs",
+          "agent_outputs",
+          "approvals_sends"
+        ],
+        "title": "GateBandsOut",
         "type": "object"
       },
       "GateBlockerRefOut": {
@@ -25826,6 +25860,38 @@
         "title": "HomeTileOut",
         "type": "object"
       },
+      "HumanGateCountsOut": {
+        "description": "The one count source (C13; I-01-T04): the HOME-01 header and Approvals badge, the\nHOME-02 bands, SHL-04's Approvals tab and I-02 read `total` and `bands` from here.",
+        "properties": {
+          "bands": {
+            "$ref": "#/components/schemas/GateBandsOut",
+            "cls": "internal"
+          },
+          "overdue": {
+            "cls": "internal",
+            "title": "Overdue",
+            "type": "integer"
+          },
+          "snoozed": {
+            "cls": "internal",
+            "title": "Snoozed",
+            "type": "integer"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "bands",
+          "overdue",
+          "snoozed"
+        ],
+        "title": "HumanGateCountsOut",
+        "type": "object"
+      },
       "HumanGateOut": {
         "description": "One row of the rebuildable projection. Labels come from the subject's owner at read time.",
         "properties": {
@@ -25842,6 +25908,34 @@
             "cls": "internal",
             "title": "Assignee User Id"
           },
+          "band": {
+            "cls": "internal",
+            "enum": [
+              "decisions",
+              "sign_offs",
+              "agent_outputs",
+              "approvals_sends"
+            ],
+            "title": "Band",
+            "type": "string"
+          },
+          "blocked": {
+            "cls": "internal",
+            "title": "Blocked",
+            "type": "boolean"
+          },
+          "blocked_reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Blocked Reason Code"
+          },
           "client_id": {
             "anyOf": [
               {
@@ -25854,6 +25948,18 @@
             ],
             "cls": "internal",
             "title": "Client Id"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Context"
           },
           "created_at": {
             "cls": "internal",
@@ -25902,10 +26008,24 @@
               "send",
               "final_approval",
               "export",
-              "release"
+              "release",
+              "evidence_review"
             ],
             "title": "Kind",
             "type": "string"
+          },
+          "office_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Office Id"
           },
           "role": {
             "anyOf": [
@@ -25933,6 +26053,23 @@
             "$ref": "#/components/schemas/ObjectRefOut",
             "cls": "internal"
           },
+          "subkind": {
+            "cls": "internal",
+            "title": "Subkind",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Title"
+          },
           "work_item_id": {
             "anyOf": [
               {
@@ -25958,7 +26095,12 @@
           "role",
           "due_on",
           "state",
-          "created_at"
+          "created_at",
+          "subkind",
+          "office_id",
+          "band",
+          "blocked",
+          "blocked_reason_code"
         ],
         "title": "HumanGateOut",
         "type": "object"
@@ -29670,6 +29812,25 @@
             "cls": "internal",
             "title": "Usage Count"
           },
+          "usage_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "engagements",
+                  "returns",
+                  "closes",
+                  "audits",
+                  "agents"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Usage Kind"
+          },
           "version_label": {
             "anyOf": [
               {
@@ -30809,7 +30970,8 @@
               "second_button",
               "unregistered_variable",
               "foreign_link",
-              "platform_name"
+              "platform_name",
+              "banned_word"
             ],
             "title": "Code",
             "type": "string"
@@ -108599,16 +108761,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Firm Exports Route",
@@ -108725,16 +108877,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Request Firm Export Route",
@@ -109201,16 +109343,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Approve Firm Export Route",
@@ -109338,16 +109470,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Decline Firm Export Route",
@@ -109476,7 +109598,7 @@
             },
             "description": "Invalid request"
           },
-          "501": {
+          "429": {
             "content": {
               "application/json": {
                 "schema": {
@@ -109484,10 +109606,203 @@
                 }
               }
             },
-            "description": "Contract stub: not implemented yet"
+            "description": "Too soon or too many: retry after Retry-After"
           }
         },
         "summary": "Link Firm Export Route",
+        "tags": [
+          "firm export"
+        ],
+        "x-abacus-action": "firm_export.download"
+      }
+    },
+    "/v1/firm/data-exports/{export_id}/links/{link_id}": {
+      "get": {
+        "description": "The archive (`application/zip`, `Cache-Control: no-store`, a safe `Content-Disposition`)\nfor the person the link was issued to, streamed by the API from the sealed segments,\nresumable with one `Range` (206). 410 `link_expired` after the link's 15 minutes,\n`export_expired` after the 7 days; 416 for a range not served. Audited\n`firm_export.streamed`.",
+        "operationId": "firm_export_archive",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "export_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Export Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Link Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Range",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Range"
+            }
+          },
+          {
+            "in": "header",
+            "name": "If-Range",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-Range"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "contentMediaType": "application/octet-stream",
+                  "title": "Response Firm Export Archive",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Gone: the code, link or window expired or was used"
+          },
+          "416": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Range not satisfiable"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too soon or too many: retry after Retry-After"
+          }
+        },
+        "summary": "Firm Export Archive Route",
         "tags": [
           "firm export"
         ],
@@ -109803,7 +110118,7 @@
     },
     "/v1/firm/email-templates/import": {
       "post": {
-        "description": "Onboarding (R-01-T23): the dry run lints every key and reports changes; applying creates\ndrafts or published versions as database rows. Audited `email_template.imported` (dry runs\nare not).",
+        "description": "Onboarding (R-01-T23): the dry run lints every key and reports changes; applying creates\ndrafts or published versions as database rows, all or nothing (422 `template_lint_failed`\nor `template_invalid` while any entry is refused). Fresh MFA by the matrix, dry run\nincluded. Audited `email_template.imported` (dry runs are not).",
         "operationId": "import_email_templates",
         "parameters": [
           {
@@ -109899,16 +110214,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Import Email Templates Route",
@@ -110259,7 +110564,7 @@
     },
     "/v1/firm/email-templates/{key}/preview": {
       "post": {
-        "description": "POR-20 a, c, d (R-01-T23): deterministic HTML and text plus lint findings on the text and\nthe filled values; the sample contact's items only as far as the viewer may read them\n(DEC-379); creates nothing.",
+        "description": "POR-20 a, c, d (R-01-T23): deterministic HTML and text plus lint findings on the text and\nthe filled values; the sample contact's items only as far as the viewer may read them\n(DEC-379); 404 for a draft or version that isn't there, or a contact the viewer can't see;\ncreates nothing.",
         "operationId": "preview_email_template",
         "parameters": [
           {
@@ -110365,16 +110670,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Preview Email Template Route",
@@ -110514,7 +110809,7 @@
     },
     "/v1/firm/email-templates/{key}/test-send": {
       "post": {
-        "description": "POR-20 j, k (R-01-T23): to the acting admin only, fresh MFA, onshore; the sample\ncontact's items as far as the viewer may read them (DEC-379); 422 `template_lint_failed`.\nAudited `email_template.test_sent`.",
+        "description": "POR-20 j, k (R-01-T23): to the acting admin's own address only (from the session, never\nthe request), \"[Test]\" before the subject, fresh MFA, onshore; the sample contact's items\nas far as the viewer may read them (DEC-379); 422 `template_lint_failed`; 429\n`test_send_rate_limited` (`retry_after`) after 10 in a rolling hour (DEC-569). Audited\n`email_template.test_sent`. A retry with the same key sends nothing again.",
         "operationId": "test_send_email_template",
         "parameters": [
           {
@@ -110632,7 +110927,7 @@
             },
             "description": "Invalid request"
           },
-          "501": {
+          "429": {
             "content": {
               "application/json": {
                 "schema": {
@@ -110640,7 +110935,7 @@
                 }
               }
             },
-            "description": "Contract stub: not implemented yet"
+            "description": "Too soon or too many: retry after Retry-After"
           }
         },
         "summary": "Test Send Email Template Route",
@@ -110853,7 +111148,7 @@
     },
     "/v1/firm/follow-up-policy": {
       "get": {
-        "description": "The policy and the next send for a sample recipient (R-01-T24): Mon Sep 14 + 7 days is\nMon Sep 21; + 5 days is Sat Sep 19, shifted to Mon Sep 21.",
+        "description": "The policy and the next send for the sample recipient (R-01-T24): the last send taken as\ntoday's send time, so Mon Sep 14 + 7 days is Mon Sep 21, and + 5 days is Sat Sep 19, moved\nto Mon Sep 21. Until contacts carry a time zone the recipient's is the firm's (DEC-563), so\nthe answer is the sample recipient's whatever `sample_contact_id` names (nothing about a\ncontact is read or echoed).",
         "operationId": "get_follow_up_policy",
         "parameters": [
           {
@@ -110956,16 +111251,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Follow Up Policy Route",
@@ -120349,7 +120634,8 @@
                     "send",
                     "final_approval",
                     "export",
-                    "release"
+                    "release",
+                    "evidence_review"
                   ],
                   "type": "string"
                 },
@@ -120508,6 +120794,130 @@
           }
         },
         "summary": "Human Gate List Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "human_gate.read"
+      }
+    },
+    "/v1/human-gates/counts": {
+      "get": {
+        "description": "The one count source (I-01-T04): open gates waiting on the caller by DF-25 band, how many\nof them are overdue, and how many the caller snoozed (left out of `total`). A walled client's\ngates are never counted, and nothing says any were left out (DEC-43); `office_id` narrows and\nnever authorises (DEC-30). Behind `review.grammar_api`, like the list.",
+        "operationId": "human_gate_counts",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "office_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Office Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HumanGateCountsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Human Gate Counts Route",
         "tags": [
           "review"
         ],
@@ -122708,7 +123118,7 @@
     },
     "/v1/knowledge/change-log": {
       "get": {
-        "description": "KNW-01: lifecycle events across providers (methodology version events first).",
+        "description": "KNW-01: lifecycle events across providers, newest last (K-01-T03).",
         "operationId": "knowledge_change_log",
         "parameters": [
           {
@@ -122829,16 +123239,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Knowledge Change Log Route",
@@ -123286,7 +123686,7 @@
     },
     "/v1/knowledge/items": {
       "get": {
-        "description": "KNW-01: catalog cards with category and status facets and match ranges.",
+        "description": "KNW-01: catalog cards with category and status facets and match ranges (K-01-T03).\n`counts` per status over the category and search; `facets.category` per registered\ncategory only: an unregistered category has no count at all, never 0 (AC1.2).",
         "operationId": "knowledge_items",
         "parameters": [
           {
@@ -123468,16 +123868,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Knowledge Items Route",
@@ -123489,7 +123879,7 @@
     },
     "/v1/knowledge/review-queue": {
       "get": {
-        "description": "KNW-01: versions awaiting the viewer's approval, or the viewer's own drafts.",
+        "description": "KNW-01: versions awaiting the viewer's approval, or the viewer's own drafts (K-01-T03).",
         "operationId": "knowledge_review_queue",
         "parameters": [
           {
@@ -123575,16 +123965,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Knowledge Review Queue Route",
@@ -125420,6 +125800,27 @@
                 }
               ],
               "title": "Engagement Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "family",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "ebp",
+                    "fs",
+                    "ssars"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Family"
             }
           },
           {
@@ -127489,6 +127890,104 @@
           "methodology"
         ],
         "x-abacus-action": "methodology.manage"
+      }
+    },
+    "/v1/methodology/workbook-template.xlsx": {
+      "get": {
+        "description": "K-01-T05: the blank workbook v2 (headers only) a firm fills in and imports. The body is\nthe `.xlsx` (the model is only the generator's placeholder).",
+        "operationId": "workbook_template",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Workbook Template",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Workbook Template Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "methodology.read"
       }
     },
     "/v1/notifications": {

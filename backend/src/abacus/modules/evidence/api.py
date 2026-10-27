@@ -89,6 +89,11 @@ from abacus.modules.evidence.export_sections import (
 from abacus.modules.evidence.export_sections import (
     section_csv as export_section_csv,
 )
+from abacus.modules.evidence.firm_export_activities import ACTIVITIES as FIRM_EXPORT_ACTIVITIES
+from abacus.modules.evidence.firm_export_activities import (
+    SUBSCRIPTIONS as FIRM_EXPORT_SUBSCRIPTIONS,
+)
+from abacus.modules.evidence.firm_export_activities import WORKFLOWS as FIRM_EXPORT_WORKFLOWS
 from abacus.modules.evidence.firm_export_contract import router as firm_export_router
 from abacus.modules.evidence.firm_export_schedule_contract import (
     schedule_router as firm_export_schedule_router,
@@ -232,6 +237,8 @@ from abacus.modules.evidence.workflow_types import (
     BackfillInput,
     EngagementExportInput,
     ExportPackageFacts,
+    FirmExportFacts,
+    FirmExportInput,
     LegalHoldInput,
     UploadInput,
     WithdrawalPurgeInput,
@@ -244,6 +251,7 @@ from abacus.modules.evidence.workflows import (
     EngagementExportWorkflow,
     EvidenceWithdrawalPurge,
     ExportExpirySweepWorkflow,
+    FirmExportWorkflow,
     LegalHoldApply,
     LegalHoldRelease,
     TrustLayerBackfill,
@@ -266,7 +274,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     # G-02-T11 (security-center v1 stub; G-02-T19 implements it): before Q-02's router, whose
     # `POST /{export_id}/approve` would otherwise take `schedule/approve`.
     firm_export_schedule_router,
-    firm_export_router,  # Q-02-T38: the firm-export contract stub (Q-02-T43 implements it)
+    firm_export_router,  # Q-02-T38 contract, live since Q-02-T43
     work_item_exports_router,  # A-01-T17 stub; A-01-T18 create, undo, reads (T22: download)
     exports_router,  # A-01-T17
 )
@@ -284,6 +292,7 @@ WORKFLOWS: dict[type, str] = {
     **ANCHOR_WORKFLOWS,
     **EXPORT_WORKFLOWS,
     **EXPIRY_WORKFLOWS,  # A-01-T22: the daily export expiry sweep
+    **FIRM_EXPORT_WORKFLOWS,  # Q-02-T43: the firm export, started by `firm_export.approved`
 }
 ACTIVITIES: tuple[object, ...] = (
     *UPLOAD_ACTIVITIES,
@@ -292,6 +301,7 @@ ACTIVITIES: tuple[object, ...] = (
     *ANCHOR_ACTIVITIES,
     *EXPORT_ACTIVITIES,
     *EXPIRY_ACTIVITIES,  # A-01-T22
+    *FIRM_EXPORT_ACTIVITIES,  # Q-02-T43
 )
 
 
@@ -318,6 +328,7 @@ _SUBSCRIPTIONS: dict[str, Handler] = {
     **WITHDRAWAL_SUBSCRIPTIONS,
     **EXPORT_SUBSCRIPTIONS,
     **EXPORT_CLOSE_SUBSCRIPTIONS,  # A-01-T22: an expired or voided export's segments go
+    **FIRM_EXPORT_SUBSCRIPTIONS,  # Q-02-T43: the build starts; an expired archive's segments go
 }
 # P-03-T12: the moved and broken detector follows each (both idempotent; a failure retries both).
 SUBSCRIPTIONS = {
@@ -393,6 +404,9 @@ __all__ = [
     "ExportStale",
     "FinalExport",
     "FinalExportRequired",
+    "FirmExportFacts",
+    "FirmExportInput",
+    "FirmExportWorkflow",
     "GlBalanceRow",
     "GlHeader",
     "GlRenderEntry",

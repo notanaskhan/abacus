@@ -23,6 +23,7 @@ from abacus.modules.engagements.models import (
     EngagementLetter,
     WorkItem,
 )
+from abacus.modules.identity.api import AuthContext, visible
 from abacus.modules.organisations.api import (
     client_name_column,
     entity_name_column,
@@ -177,3 +178,61 @@ async def letters_sent(tenant: TenantContext, engagement_ids: Sequence[UUID]) ->
             )
         )
     return {eid: on or at.date() for eid, on, at in rows.all()}
+
+
+async def gate_offices(
+    tenant: TenantContext, keys: Sequence[tuple[UUID, UUID | None]]
+) -> dict[tuple[UUID, UUID | None], UUID]:
+    """The office a human gate files under (I-01-T04; DEC-30: a filter, never a boundary): the
+    work item's office, else the engagement's. Keyed by (engagement, work item or None); a key
+    with no office is absent. For the gate projector, under its tenant session (RLS)."""
+    wanted = {k for k in keys}
+    if not wanted:
+        return {}
+    engagement_ids = sorted({e for e, _ in wanted}, key=str)
+    item_ids = sorted({w for _, w in wanted if w is not None}, key=str)
+    found: dict[tuple[UUID, UUID | None], UUID] = {}
+    async with tenant_session(tenant) as session:
+        by_engagement = dict(
+            (
+                await session.execute(
+                    select(Engagement.id, Engagement.office_id).where(
+                        Engagement.id.in_(engagement_ids)
+                    )
+                )
+            ).all()
+        )
+        by_item: dict[UUID, tuple[UUID, UUID | None]] = {}
+        if item_ids:
+            for item, engagement, office in await session.execute(
+                select(WorkItem.id, WorkItem.engagement_id, WorkItem.office_id).where(
+                    WorkItem.id.in_(item_ids)
+                )
+            ):
+                by_item[item] = (engagement, office)
+    for engagement, item in wanted:
+        office = None
+        if item is not None and item in by_item and by_item[item][0] == engagement:
+            office = by_item[item][1]
+        office = office or by_engagement.get(engagement)
+        if office is not None:
+            found[(engagement, item)] = office
+    return found
+
+
+async def methodology_usage(ctx: AuthContext, version_ids: Sequence[UUID]) -> dict[UUID, int]:
+    """KNW-01's "Used by n engagements" (K-01-T03; AC1.3, AC1.9): the engagements pinned to each
+    methodology version that the reader may see (`visible()`, so a walled engagement is never
+    counted). Registered as methodology's usage counter for `methodology_version`."""
+    if not version_ids:
+        return {}
+    async with tenant_session(ctx.tenant) as session:
+        rows = await session.execute(
+            select(Engagement.methodology_version_id, func.count())
+            .where(
+                Engagement.methodology_version_id.in_(list(version_ids)),
+                visible(ctx, "engagement.read_metadata", Engagement.id),
+            )
+            .group_by(Engagement.methodology_version_id)
+        )
+    return {version: int(n) for version, n in rows.all() if version is not None}

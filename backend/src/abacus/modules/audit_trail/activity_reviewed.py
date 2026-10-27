@@ -109,7 +109,9 @@ REVIEWED_FALLBACK: Final = frozenset(
         "decision_card.superseded",
         "email_template.draft_discarded",  # R-01-T19
         "email_template.draft_saved",  # R-01-T19
+        "email_template.imported",  # R-01-T23
         "email_template.published",  # R-01-T19
+        "email_template.test_sent",  # R-01-T23
         "engagement.acceptance_file_attached",
         "engagement.acceptance_recorded",
         "engagement.ai_excluded",
@@ -178,8 +180,11 @@ REVIEWED_FALLBACK: Final = frozenset(
         "follow_up.dismissed",
         "follow_up.drafted",
         "follow_up.edited",
+        "follow_up.limit_reached",  # R-01-T24
+        "follow_up.scheduled_sent",  # R-01-T24 (DEC-74): the system's scheduled Reminder
         "follow_up.sent",
         "follow_up.undone",
+        "follow_up_policy.saved",  # R-01-T24
         "fulfilment.created",
         "fulfilment.voided",
         "fulfilment.withdrawn",

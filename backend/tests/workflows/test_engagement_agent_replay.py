@@ -39,6 +39,10 @@ def test_the_histories_are_committed() -> None:
         "engagement-agent-v2-failed-event-skipped",
         "engagement-agent-v2-handled-then-ended",
         "engagement-agent-v2-ticked-then-ended",
+        # v3 (R-01-T24): `patched("follow_up_policy_v1")`; v1's and v2's still replay.
+        "engagement-agent-v3-failed-event-skipped",
+        "engagement-agent-v3-handled-then-ended",
+        "engagement-agent-v3-ticked-then-ended",
     ]
 
 
@@ -57,6 +61,19 @@ def test_v2_ticked_history_waited_then_handled_a_tick() -> None:
     assert "engagement_agent.next_tick" in text
     assert "agent.tick" in text
     assert "daily-tick" in text  # the version marker
+
+
+def test_v3_tick_carries_the_follow_up_policy_marker_and_v2_does_not() -> None:
+    """R-01-T24 (ADR-090): the patched tick asks P-4 to read the firm's policy; a pre-change
+    history's tick carries no marker, so its replay keeps the old constants."""
+    v3 = _decoded(
+        (HISTORIES / "engagement-agent-v3-ticked-then-ended.json").read_text(encoding="utf-8")
+    )
+    v2 = _decoded(
+        (HISTORIES / "engagement-agent-v2-ticked-then-ended.json").read_text(encoding="utf-8")
+    )
+    assert "follow_up_policy_v1" in v3 and '"follow_up_policy":"v1"' in v3
+    assert "follow_up_policy" not in v2
 
 
 @pytest.mark.parametrize("path", ALL, ids=IDS)
