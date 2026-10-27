@@ -18,6 +18,11 @@ an unknown cell), wrong-role and stale-factor refusals (the matrix answers befor
 flag (404 off, 501 on), client 404 and agent and system 403 on every route, the route table, and
 the immediate controls on their own live routes (pause and resume, SPEC-036's opt-in).
 
+**Strict xfails.** ED-180 (the database accepts `ai_policy.approved` and `.declined` written as
+the agent), ED-181 (a manager-level member is refused `ai_policy.read`), ED-182 (the agent and
+the system pass `ai_policy.read`), and the legacy `PUT /v1/firm/autonomy`, which still answers a
+flag-on firm until G-02-T24 makes it 409 `superseded_by_ai_policy` (ADR-186 item 7).
+
 Readings this suite takes where the contract is silent (DEC-552): a `facts.field` path ends with
 the cell's dotted path (`auto_mode_defaults.tax_return`); AC-38's parenthesised list is the whole
 set of locked and default-strict cells; a retried approve, publish or withdraw writes no second
@@ -89,6 +94,26 @@ LEGACY_AUTONOMY_PUT: Final = ("PUT", "/v1/firm/autonomy")
 # Routes still answering 501 (the stubs); G-02-T24 removes each as it makes it live.
 LIVE: Final[frozenset[Route]] = frozenset()
 STUBBED: Final = frozenset(ROUTES) - LIVE
+READS: Final = (POLICY, VERSIONS, VERSION, EFFECTIVE)
+# ED-182: the agent and the system principals pass `ai_policy.read` (the stub answers them 501,
+# or 404 with the flag off) although its matrix row denies both and the contract says 403.
+REFUSED_ROUTES: Final = [
+    pytest.param(
+        route,
+        id=f"{route[0]} {route[1]}",
+        marks=pytest.mark.xfail(
+            strict=True,
+            reason=(
+                "ED-182: the agent and system principals reach the ai_policy.read routes "
+                "(501 or 404, not 403) although the matrix row denies them; recorded in "
+                "work/tasks/TASK-1485-g02-ai-policy-ac-suite.md"
+            ),
+        ),
+    )
+    if route in READS
+    else pytest.param(route, id=f"{route[0]} {route[1]}")
+    for route in ROUTES
+]
 
 FRESH_MFA_REGISTER: Final = (
     Path(__file__).resolve().parents[3] / "docs" / "architecture" / "fresh-mfa-actions.yaml"
@@ -483,7 +508,26 @@ async def test_ac38_a_draft_naming_a_gate_approver_is_refused(
 # --- AC-33, AC-40: who reads and who changes -----------------------------------------------------
 
 
-@pytest.mark.parametrize("who", ["margaret", "daniel", "felix", "grace", "hannah"])
+@pytest.mark.parametrize(
+    "who",
+    [
+        "margaret",
+        "daniel",
+        "felix",
+        "grace",
+        pytest.param(
+            "hannah",
+            marks=pytest.mark.xfail(
+                strict=True,
+                reason=(
+                    "ED-181: a manager-level member with no firm role is refused ai_policy.read "
+                    "(403): the matrix row names the engagement role manager, not the derived "
+                    "firm_manager; recorded in work/tasks/TASK-1485-g02-ai-policy-ac-suite.md"
+                ),
+            ),
+        ),
+    ],
+)
 async def test_ac33_every_firm_member_reads_the_policy_its_history_and_its_effective_cells(
     world: World, as_: Callable[[object], Call], who: str
 ) -> None:
@@ -500,6 +544,13 @@ async def test_ac33_every_firm_member_reads_the_policy_its_history_and_its_effec
         assert response.status_code == 200, (who, route, response.text)
 
 
+@pytest.mark.xfail(
+    strict=True,
+    reason=(
+        "ED-181: Hannah (manager level, no firm role) is refused ai_policy.read at the firm; "
+        "recorded in work/tasks/TASK-1485-g02-ai-policy-ac-suite.md"
+    ),
+)
 async def test_ac33_a_manager_reads_only_with_the_partners_lock(
     world: World, as_: Callable[[object], Call]
 ) -> None:
@@ -631,7 +682,7 @@ async def test_ac34_history_lists_newest_first_with_requester_and_approver(
         approved = await as_(world.daniel)("POST", _path(APPROVE, version_no=no))
         if stubbed(APPROVE, approved):
             return
-        listed = await as_(world.hannah)(*VERSIONS)
+        listed = await as_(world.grace)(*VERSIONS)
         if stubbed(VERSIONS, listed):
             return
     items = cast(list[dict[str, object]], _body(listed)["items"])
@@ -655,7 +706,7 @@ async def test_ac34_a_version_carries_its_diff_against_the_one_before(
         requested = await _request_v_next(as_, world)
         if requested is None:
             return
-        detail = await as_(world.hannah)("GET", _path(VERSION, version_no=requested["version_no"]))
+        detail = await as_(world.grace)("GET", _path(VERSION, version_no=requested["version_no"]))
         if stubbed(VERSION, detail):
             return
     assert detail.status_code == 200
@@ -908,7 +959,9 @@ async def test_ac38_a_stricter_change_is_saved(
 async def test_ac37_ac47_margaret_requests_and_daniel_approves_each_audited(
     world: World, as_: Callable[[object], Call], seed: Seeder
 ) -> None:
+    await _opt_in_flag(seed, world.tenant)
     opt_in_before = await as_(world.grace)(*OPT_IN)
+    assert opt_in_before.status_code == 200, opt_in_before.text
     with frozen(REQUESTED_ON):
         requested = await _request_v_next(as_, world)
         if requested is None:
@@ -1109,7 +1162,7 @@ async def test_ac39_the_earlier_version_holds_until_sep_15_and_the_new_one_after
     world: World, as_: Callable[[object], Call]
 ) -> None:
     with frozen(REQUESTED_ON):
-        before = await _effective_no(as_, world.hannah)
+        before = await _effective_no(as_, world.grace)
         requested = await _request_v_next(as_, world)
         if requested is None:
             return
@@ -1120,10 +1173,10 @@ async def test_ac39_the_earlier_version_holds_until_sep_15_and_the_new_one_after
             return
         assert before is not None
         # Published, but not yet effective: "v4 · effective Sep 15".
-        assert await _effective_no(as_, world.hannah) == before
-        assert await _effective_no(as_, world.hannah, JUST_BEFORE) == before
-        assert await _effective_no(as_, world.hannah, JUST_AFTER) == requested["version_no"]
-        policy = await as_(world.hannah)(*POLICY)
+        assert await _effective_no(as_, world.grace) == before
+        assert await _effective_no(as_, world.grace, JUST_BEFORE) == before
+        assert await _effective_no(as_, world.grace, JUST_AFTER) == requested["version_no"]
+        policy = await as_(world.grace)(*POLICY)
         if not stubbed(POLICY, policy):
             body = _body(policy)
             assert cast(dict[str, object], body["effective"])["version_no"] == before
@@ -1131,7 +1184,7 @@ async def test_ac39_the_earlier_version_holds_until_sep_15_and_the_new_one_after
                 cast(dict[str, object], body["scheduled"])["version_no"] == requested["version_no"]
             )
     with frozen(datetime(2026, 9, 16, 15, 0, tzinfo=UTC)):
-        assert await _effective_no(as_, world.hannah) == requested["version_no"]
+        assert await _effective_no(as_, world.grace) == requested["version_no"]
 
 
 async def test_ac39_superseded_is_derived_from_the_clock(
@@ -1146,11 +1199,11 @@ async def test_ac39_superseded_is_derived_from_the_clock(
         )
         if stubbed(APPROVE, approved):
             return
-        early = await as_(world.hannah)(*VERSIONS)
+        early = await as_(world.grace)(*VERSIONS)
         if stubbed(VERSIONS, early):
             return
     with frozen(datetime(2026, 9, 16, 15, 0, tzinfo=UTC)):
-        late = await as_(world.hannah)(*VERSIONS)
+        late = await as_(world.grace)(*VERSIONS)
 
     def superseded(response: httpx.Response) -> dict[int, bool]:
         return {
@@ -1167,9 +1220,19 @@ async def test_ac39_superseded_is_derived_from_the_clock(
 # --- AC-41: the opt-in and agent stages (SPEC-036 unchanged) -------------------------------------
 
 
+async def _opt_in_flag(seed: Seeder, tenant: uuid.UUID) -> None:
+    """SPEC-036's routes answer 404 until `agents.client_data_optin` is on for the firm."""
+    await seed.run(
+        "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
+        "VALUES ($1, 'agents.client_data_optin', 'true', 'ac-suite', 'G-02-T22')",
+        tenant,
+    )
+
+
 async def test_ac41_only_the_firm_admin_with_a_fresh_factor_opts_in(
-    world: World, as_: Callable[[object], Call]
+    world: World, as_: Callable[[object], Call], seed: Seeder
 ) -> None:
+    await _opt_in_flag(seed, world.tenant)
     for ctx in (world.margaret, world.felix, world.hannah, _stale(world.grace)):
         response = await as_(ctx)(*OPT_IN_PUT, json={"on": True})
         assert response.status_code == 403, (ctx.firm_role, response.text)
@@ -1182,6 +1245,7 @@ async def test_ac41_the_opt_in_records_who_when_and_the_register_version(
 ) -> None:
     """SPEC-036 AC-3 as it stands. The register (DF-16) may hold no entry yet, in which case the
     opt-in is not available and nothing is recorded."""
+    await _opt_in_flag(seed, world.tenant)
     state = await as_(world.grace)(*OPT_IN)
     assert state.status_code == 200, state.text
     response = await as_(world.grace)(*OPT_IN_PUT, json={"on": True})
@@ -1197,7 +1261,7 @@ async def test_ac41_the_opt_in_records_who_when_and_the_register_version(
     assert await _audited(seed, world.tenant, "firm.ai_client_data_opted_in") == [
         _human(world.grace)
     ]
-    policy = await as_(world.hannah)(*POLICY)
+    policy = await as_(world.grace)(*POLICY)
     if not stubbed(POLICY, policy):
         opt_in = cast(dict[str, dict[str, object]], _body(policy)["immediate"])[
             "client_data_opt_in"
@@ -1243,8 +1307,12 @@ async def test_ac42_ac47_the_admins_and_the_qm_owner_pause_and_resume_audited(
     paused = await as_(ctx)(*PAUSE)
     assert paused.status_code == 200, paused.text
     assert _body(paused)["paused_at"] is not None
-    assert await _audited(seed, world.tenant, "firm_agents.paused") == [_human(ctx)]
-    policy = await as_(world.hannah)(*POLICY)
+    # The existing per-firm pause's own action names (SPEC-027, TASK-050); G-02 §4.7 spells them
+    # `firm_agents.paused` / `.resumed` but calls them existing (DEC-552).
+    assert await _audited(seed, world.tenant, "firm.agents_paused") == [_human(ctx)], (
+        await seed.actions(world.tenant)
+    )
+    policy = await as_(world.grace)(*POLICY)
     if not stubbed(POLICY, policy):
         pause = cast(dict[str, dict[str, object]], _body(policy)["immediate"])["firm_pause"]
         assert pause["paused"] is True
@@ -1252,7 +1320,9 @@ async def test_ac42_ac47_the_admins_and_the_qm_owner_pause_and_resume_audited(
     resumed = await as_(ctx)(*RESUME)
     assert resumed.status_code == 200, resumed.text
     assert _body(resumed)["paused_at"] is None
-    assert await _audited(seed, world.tenant, "firm_agents.resumed") == [_human(ctx)]
+    assert await _audited(seed, world.tenant, "firm.agents_resumed") == [_human(ctx)], (
+        await seed.actions(world.tenant)
+    )
 
 
 @pytest.mark.parametrize("who", ["daniel", "hannah"])
@@ -1292,7 +1362,7 @@ async def test_ac43_sub_processors_are_the_registers_and_never_name_the_model_ve
         for e in register["entries"]
         for s in cast(list[object], e.get("subprocessors", []))
     }
-    response = await as_(world.hannah)(*POLICY)
+    response = await as_(world.grace)(*POLICY)
     if stubbed(POLICY, response):
         return
     body = _body(response)
@@ -1312,7 +1382,7 @@ async def test_ac43_sub_processors_are_the_registers_and_never_name_the_model_ve
 async def test_ac44_the_7216_consent_and_the_policy_principal_are_on_and_off_and_locked(
     world: World, as_: Callable[[object], Call]
 ) -> None:
-    response = await as_(world.hannah)(*POLICY)
+    response = await as_(world.grace)(*POLICY)
     if stubbed(POLICY, response):
         return
     body = _body(response)
@@ -1328,7 +1398,7 @@ async def test_ac44_the_7216_consent_and_the_policy_principal_are_on_and_off_and
     assert locks.get("client_data.client_drafts_enabled") == "platform_floor"
     assert locks.get("governance.trace_retention_years") == "platform_floor"
     assert locks.get("policy_principal.on") == "policy_principal_dormant"
-    effective = await as_(world.hannah)(*EFFECTIVE, params={"engagement_type": "fs_audit"})
+    effective = await as_(world.grace)(*EFFECTIVE, params={"engagement_type": "fs_audit"})
     if not stubbed(EFFECTIVE, effective):
         assert _body(effective)["policy_principal_on"] is False
 
@@ -1419,14 +1489,19 @@ async def test_stub_the_flag_off_answers_404_after_the_matrix(
     response = await as_(_holder(off, route))(method, path, **kwargs)
     assert response.status_code == 404, response.text
     # The matrix answers before the flag (security review L1).
-    refused = await as_(
-        off.grace if route not in (POLICY, VERSIONS, VERSION, EFFECTIVE) else off.client
-    )(method, path, **kwargs)
-    assert refused.status_code == (
-        403 if route not in (POLICY, VERSIONS, VERSION, EFFECTIVE) else 404
-    )
-    agent = await as_(_principal(off, "agent"))(method, path, **kwargs)
-    assert agent.status_code == 403
+    refused = await as_(off.grace if route not in READS else off.client)(method, path, **kwargs)
+    assert refused.status_code == (403 if route not in READS else 404)
+
+
+@pytest.mark.parametrize("kind", ["agent", "system"])
+@pytest.mark.parametrize("route", REFUSED_ROUTES)
+async def test_ac45_the_agent_and_the_system_are_refused_with_the_flag_off(
+    seed: Seeder, as_: Callable[[object], Call], route: Route, kind: str
+) -> None:
+    off = await _firm(seed, flag=False)
+    method, path, kwargs = _request(route, off)
+    response = await as_(_principal(off, kind))(method, path, **kwargs)
+    assert response.status_code == 403, response.text
 
 
 # --- AC-45, AC-46: the agent, the system and client principals ----------------------------------
@@ -1442,7 +1517,7 @@ async def test_ac46_a_client_principal_finds_no_policy_route(
 
 
 @pytest.mark.parametrize("kind", ["agent", "system"])
-@pytest.mark.parametrize("route", ROUTES, ids=lambda r: f"{r[0]} {r[1]}")
+@pytest.mark.parametrize("route", REFUSED_ROUTES)
 async def test_ac45_the_agent_and_the_system_are_refused_everywhere(
     world: World, as_: Callable[[object], Call], route: Route, kind: str
 ) -> None:
@@ -1505,8 +1580,8 @@ async def test_ac45_the_database_refuses_a_policy_decision_written_as_the_agent(
 @pytest.mark.xfail(
     strict=True,
     reason=(
-        "ED-181: with ai_policy.v1 on, PUT /v1/firm/autonomy still sets the level alone instead "
-        "of answering 409 superseded_by_ai_policy (ADR-186 item 7; built with G-02-T24); "
+        "with ai_policy.v1 on, PUT /v1/firm/autonomy still sets the level alone instead of "
+        "answering 409 superseded_by_ai_policy (ADR-186 item 7), which G-02-T24 builds; "
         "recorded in work/tasks/TASK-1485-g02-ai-policy-ac-suite.md"
     ),
 )
