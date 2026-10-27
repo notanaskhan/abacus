@@ -176,6 +176,10 @@ describe("rule 1: links between built screens are wired with to.<ID>()", () => {
   });
 });
 
+// POR screens a firm admin edits from settings, not the client portal (DEC-567, DEC-589): they sit
+// inside the firm workspace by design. Named one by one, so no other POR screen may.
+const FIRM_HOSTED_POR = new Set(["POR-20"]);
+
 describe("rule 2: every path resolves in the area route tree", () => {
   it("each manifest path is a route; portal screens sit outside the firm workspace", () => {
     const byPath = new Map(routes.map((r) => [trimSlash(r.fullPath), r]));
@@ -184,7 +188,7 @@ describe("rule 2: every path resolves in the area route tree", () => {
       if (entry.path === null) continue;
       const route = byPath.get(trimSlash(entry.path));
       if (route === undefined) problems.push(`${id}: ${entry.path} is not in the route tree`);
-      else if (id.startsWith("POR-") && inFirmWorkspace(route)) {
+      else if (id.startsWith("POR-") && !FIRM_HOSTED_POR.has(id) && inFirmWorkspace(route)) {
         problems.push(`${id}: ${entry.path} is inside the firm workspace`);
       } else if (entry.status === "live" && route.options.component === undefined) {
         problems.push(`${id}: ${entry.path} has no route component`);

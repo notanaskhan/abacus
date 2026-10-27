@@ -548,15 +548,10 @@ async def test_seeded_manifest_violations_are_caught(firm: Firm, temporal: Clien
     assert manifest_problems(extra.getvalue(), digest)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1455: failing at push, untriaged — the unplanted link reads 15:00.18 "
-    "(likely the test's own `now`, taken before the link was minted)",
-)
 async def test_seeded_window_violations_are_caught(firm: Firm, temporal: Client) -> None:
     ready = await _ready(firm, temporal)
-    now = datetime.now(UTC)
     link = cast(Json, (await _link(firm, ready["id"])).json())
+    now = datetime.now(UTC)  # after the link is minted, so its 15 minutes run from before now
     assert window_problems(ready, link, now) == []
     decided = _at(ready["decided_at"])
     planted: list[tuple[Json, Json]] = [

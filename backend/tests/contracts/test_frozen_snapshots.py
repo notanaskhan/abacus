@@ -77,3 +77,23 @@ def test_t18_a_frozen_version_is_never_rewritten(
     monkeypatch.setattr(contracts, "CONTRACTS", tmp_path)
     with pytest.raises(SystemExit, match="never rewritten"):
         contracts.freeze("c1_work_items", "v1")
+
+
+INLINE = {"Card": {"properties": {"kind": {"type": "string", "enum": ["a", "b"]}}}}
+
+
+def test_t18_an_inline_enum_member_added_passes() -> None:
+    # DEC-597: a field's own enum follows the named-enum rule; a new member is additive.
+    now = {"Card": {"properties": {"kind": {"type": "string", "enum": ["a", "b", "c"]}}}}
+    assert contracts.breaking(INLINE, now) == []  # type: ignore[arg-type]  # test fixtures
+
+
+def test_t18_an_inline_enum_member_removed_breaks() -> None:
+    now = {"Card": {"properties": {"kind": {"type": "string", "enum": ["a"]}}}}
+    assert contracts.breaking(INLINE, now) == ["Card.kind: enum member 'b' removed"]  # type: ignore[arg-type]  # test fixtures
+
+
+def test_t18_an_inline_enum_retyped_still_breaks() -> None:
+    now = {"Card": {"properties": {"kind": {"type": "integer", "enum": [1, 2]}}}}
+    problems = contracts.breaking(INLINE, now)  # type: ignore[arg-type]  # test fixtures
+    assert problems and "Card.kind" in problems[0]
