@@ -37,6 +37,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useFlag } from "../../app-core/flags";
 import { type NavAccess, useSession } from "../../app-core/session";
 import { FIRM_MENU, PROFILE } from "./copy";
 
@@ -72,9 +73,16 @@ export interface AdminRow {
   viewOnly: boolean;
 }
 
+/** ADM-01's route (G-01 §5.1): Firm settings opens it while `firm_settings.v2` is on, the legacy
+ * settings otherwise (SHL-03's inbound row; DEC-463). */
+export const SETTINGS_V2_PATH = "/settings/general";
+
 /** The admin section for a capabilities `nav` (AC 2.1.2): empty hides the section. Firm settings
- * at `read` carries "View only" (SHL-03c). */
-export function adminRows(nav: Readonly<Record<string, NavAccess>>): AdminRow[] {
+ * at `read` carries "View only" (SHL-03c). `settingsV2` is the `firm_settings.v2` flag. */
+export function adminRows(
+  nav: Readonly<Record<string, NavAccess>>,
+  settingsV2 = false,
+): AdminRow[] {
   return ADMIN_ROWS.flatMap((row) => {
     const access = nav[row.key] ?? "none";
     if (access === "none") return [];
@@ -83,7 +91,7 @@ export function adminRows(nav: Readonly<Record<string, NavAccess>>): AdminRow[] 
         key: row.key,
         label: FIRM_MENU.admin[row.key],
         icon: row.icon,
-        path: row.path,
+        path: row.key === "firm_settings" && settingsV2 ? SETTINGS_V2_PATH : row.path,
         // The canvas notes only the settings row: the audit log is read-only for everyone.
         viewOnly: row.key === "firm_settings" && access === "read",
       },
@@ -261,7 +269,8 @@ export function FirmMenu({
   const active = staff.find((m) => m.tenant_id === activeTenantId) ?? staff[0];
   const office = officeName(me, me?.default_office_id) ?? FIRM_MENU.allOffices;
   const homeOffice = officeName(me, session.officeId);
-  const admin = adminRows(session.nav);
+  const settingsV2 = useFlag("firm_settings.v2") === true;
+  const admin = adminRows(session.nav, settingsV2);
   const version = import.meta.env.VITE_APP_VERSION;
   const offices: { id: string | null; name: string }[] = [
     { id: null, name: FIRM_MENU.allOffices },

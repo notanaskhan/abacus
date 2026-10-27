@@ -97,7 +97,9 @@ CONDITION_KEYS: frozenset[str] = frozenset(
 _FLAG_CONDITIONS = ("not_offshore", "scope_only", "not_preparer_of_target", "reserved_role")
 _ACTION = re.compile(r"[a-z][a-z_]*\.[a-z][a-z_]*")
 # Verbs that only read: archived engagements still allow them (`archived_write: deny`).
-READ_VERBS = frozenset({"read", "read_metadata", "read_log"})
+# DEC-462: `read_firm_level` (DEC-434's firm-level audit events) only reads; the break-glass
+# support roles hold it, and they hold reads only (SPEC-012).
+READ_VERBS = frozenset({"read", "read_metadata", "read_log", "read_firm_level"})
 
 
 @dataclass(frozen=True)

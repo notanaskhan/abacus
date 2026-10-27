@@ -79,6 +79,8 @@ def test_ac14_screening_starts_from_evidence_version_created() -> None:
         # P-06-T20: a review recorded, or a withdrawal: the screening aggregate recomposes.
         "upload_review.recorded",
         "evidence_version.withdrawn",
+        # Q-02-T08 (TASK-1367): a firm's changed boundary facts are forgotten in the worker too.
+        "ai_boundary.facts_changed",
     }
     # the reviewer's (SPEC-030), matcher's (033), drafter's (035), entry assessor's (TASK-085)
     assert len(WORKFLOWS) == 7

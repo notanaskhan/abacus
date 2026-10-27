@@ -31,7 +31,8 @@ ENGAGEMENT_ROLES: tuple[Role, ...] = (
     "staff",
     "reviewer",
 )
-READ_VERBS = {"read", "read_metadata", "read_log"}
+# DEC-462: the firm-level audit read is a read (SPEC-012: support holds reads only).
+READ_VERBS = {"read", "read_metadata", "read_log", "read_firm_level"}
 MATRIX = cast(dict[str, dict[str, str]], yaml.safe_load(pm.source())["actions"])
 FIRM_READS = sorted(a for a in MATRIX if a.split(".", 1)[1] in READ_VERBS)
 

@@ -247,6 +247,13 @@ describe("SHL-03 behaviour (P-01 AC 2.1)", () => {
     ]);
   });
 
+  it("DEC-463: Firm settings opens ADM-01 while firm_settings.v2 is on, the legacy page otherwise", () => {
+    const nav = { firm_settings: "write", audit_log: "read" } as const;
+    const path = (on: boolean): (string | null)[] => adminRows(nav, on).map((r) => r.path);
+    expect(path(false)).toEqual(["/admin/methodology", "/admin/audit-log"]);
+    expect(path(true)).toEqual(["/settings/general", "/admin/audit-log"]);
+  });
+
   it("AC 2.1.2: the firm menu names no role code", () => {
     const source = readFileSync(
       join(process.cwd(), "src", "shell", "firm", "FirmMenu.tsx"),

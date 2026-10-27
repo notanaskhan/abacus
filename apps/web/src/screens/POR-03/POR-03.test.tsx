@@ -461,6 +461,34 @@ describe("POR-03 artboards (part 2, R-01-T10)", () => {
     noFirmWords();
   });
 
+  it("DEC-463: at 390 the audit variant keeps its other-parties note and a row opens its request", async () => {
+    restore = installFixtureMode(all.i);
+    const opened: string[] = [];
+    renderRoutes([
+      {
+        path: "/",
+        component: () => (
+          <PortalDocuments
+            binderId={ALL_ARTBOARDS.i.binderId}
+            mobile
+            onOpenRequest={(id) => {
+              opened.push(id);
+            }}
+          />
+        ),
+      },
+    ]);
+    expect(await screen.findByText("Employee census file — 2025")).toBeTruthy();
+    expect(
+      screen.getByText("Some requests go to Keystone, Harborline, PayGrid and Summit directly."),
+    ).toBeTruthy();
+    const open = screen.getByRole("button", { name: /^W-3 for 2025/ });
+    fireEvent.click(open);
+    expect(opened).toEqual([open.closest("[data-request]")?.getAttribute("data-request")]);
+    expect(screen.queryByText(/Keystone Retirement Services/)).toBeNull();
+    noFirmWords();
+  });
+
   it("R-01-T10 acceptance: Claire's three-file drop posts one batch, polls it and announces c and d", async () => {
     const seen = show("a", {
       over: {

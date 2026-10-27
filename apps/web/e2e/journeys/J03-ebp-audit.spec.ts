@@ -97,6 +97,8 @@ test.describe("J03-ebp-audit (R-01's portal steps)", () => {
       await journey.as("sam-ortiz", "/requests", { clock: DEMO_INSTANT });
       const page = journey.page;
       await page.getByText("4 of 9 uploaded").first().waitFor();
+      // /requests opens with every row folded (POR-14: a row click expands it in-screen).
+      await page.getByRole("button", { name: new RegExp(`^${BRIDGE}`) }).click();
       await page
         .getByRole("button", { name: /Drop the letter here or Upload…/ })
         .first()

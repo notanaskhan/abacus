@@ -41,6 +41,8 @@ NEW = {
 # F-03-T22 (TASK-385, migration 0089): tax, closes and notices hold their work-item subtypes.
 # P-08-T01 (TASK-431): the portal module serves the C5 v1.1 home and preferences stubs.
 # A-02-T06 (TASK-1262): the integrations module serves the C20 v1 stub (no tables yet).
+# I-01-T02 (TASK-1303): practice serves the C13 home-half stub. K-01-T01/T02 (TASK-1305,
+# TASK-1306, migration 0180): methodology serves its stubs and re-owns its tables.
 LANDED = {
     "assurance",
     "review",
@@ -50,6 +52,8 @@ LANDED = {
     "notices",
     "portal",
     "integrations",
+    "practice",
+    "methodology",
 }
 TENANT = TenantContext(uuid.uuid4(), "system", "test")
 

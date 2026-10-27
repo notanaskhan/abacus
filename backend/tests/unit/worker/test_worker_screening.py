@@ -103,6 +103,11 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "guidance_draft.decided",
         "review_decision.recorded",
         "inbox_file.sorted",
+        # P-04-T19 (TASK-1367): the stale sign-off detector hears its owners' change events.
+        "workpaper.content_changed",
+        "trial_balance.version_created",
+        "engagement_export.requested",  # A-01-T19: the engagement export workflow starts
+        "ai_boundary.facts_changed",  # Q-02-T08: the worker forgets a firm's boundary facts
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert (

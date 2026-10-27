@@ -447,8 +447,17 @@ def test_ac20_ledger_tables_are_declared_immutable(table: str) -> None:
 
 def test_ac20_the_app_may_update_only_the_declared_connection_and_run_columns() -> None:
     # SPEC-020 (TASK-036, migration 0029): checking and revoking record when and by whom.
+    # A-02-T13 (migration 0195, DEC-439): who connected and when, the re-auth date, the last
+    # sync and C20's status reason (TASK-1367).
     assert sc.APP_UPDATE_COLUMNS["connections"] == frozenset(
         {"status", "last_checked_at", "last_check_ok", "revoked_at", "revoked_by"}
+        | {
+            "connected_by_user_id",
+            "connected_at",
+            "reauth_due_at",
+            "last_sync_at",
+            "status_reason_code",
+        }
     )
     assert sc.APP_UPDATE_COLUMNS["sync_runs"] == frozenset(
         {
@@ -472,8 +481,17 @@ def test_ac20_the_app_may_update_only_the_declared_connection_and_run_columns() 
 def test_ac20_the_app_inserts_only_the_declared_connection_columns() -> None:
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections; the status
     # and the revocation columns are never set on insert.
+    # A-02-T13 (migration 0195, DEC-439): the category, the provider's account, the masked label
+    # and who connected and when (TASK-1367).
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
         {"id", "tenant_id", "client_entity_id", "provider", "scopes", "created_by"}
+        | {
+            "category",
+            "external_account_ref",
+            "display_label",
+            "connected_by_user_id",
+            "connected_at",
+        }
     )
 
 
@@ -881,7 +899,11 @@ async def test_ac20_a_line_must_have_non_negative_amounts_and_bounded_text(
 @pytest.mark.parametrize(
     "overrides",
     [
-        {"provider": "quickbooks"},
+        # Migration 0195 (DEC-439): the provider is a key (`^[a-z][a-z0-9_]{1,49}$`), so any
+        # registered adapter fits and a malformed key does not (TASK-1367).
+        {"provider": "QuickBooks"},
+        {"provider": "quick-books"},
+        {"provider": "q"},
         {"provider": ""},
         {"status": "pending"},
         {"created_by": ""},

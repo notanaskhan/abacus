@@ -38,6 +38,7 @@ from abacus.modules.identity.authz import matrix, recording_checks
 from abacus.modules.identity.authz.matrix import (
     FIRM_SETTING_KEYS,
     G2_BLOCKS_VIEW,
+    POLICY_SETTING_KEYS,
     RULES,
     STORED_SETTING_KEYS,
     STRICTER_SETTING_KEYS,
@@ -471,19 +472,30 @@ async def test_ac15_g2_blocks_view_refuses_reads_on_attest_engagements_only(
 def test_ac15_the_stricter_setting_can_never_grant() -> None:
     assert G2_BLOCKS_VIEW in STRICTER_SETTING_KEYS
     assert not STRICTER_SETTING_KEYS & FIRM_SETTING_KEYS
-    assert STORED_SETTING_KEYS == FIRM_SETTING_KEYS | STRICTER_SETTING_KEYS
-    with pytest.raises(ValueError, match=r"permission matrix: evidence\.read\.staff"):
-        matrix._rule(  # pyright: ignore[reportPrivateUsage] -- the matrix parser under test
-            "evidence.read", {"staff": f"firm_setting({G2_BLOCKS_VIEW})"}
-        )
+    # P-07-T15 (OQ-9; migration 0182): a service's policy setting is stored alongside, never a
+    # condition either (TASK-1367).
+    assert not POLICY_SETTING_KEYS & (FIRM_SETTING_KEYS | STRICTER_SETTING_KEYS)
+    assert STORED_SETTING_KEYS == FIRM_SETTING_KEYS | STRICTER_SETTING_KEYS | POLICY_SETTING_KEYS
+    for key in sorted(STRICTER_SETTING_KEYS | POLICY_SETTING_KEYS):
+        with pytest.raises(ValueError, match=r"permission matrix: evidence\.read\.staff"):
+            matrix._rule(  # pyright: ignore[reportPrivateUsage] -- the matrix parser under test
+                "evidence.read", {"staff": f"firm_setting({key})"}
+            )
 
 
 def test_ac15_the_migration_check_lists_every_stored_key() -> None:
     from pathlib import Path
 
-    migration = Path(__file__).parents[3] / "migrations/versions/0138_g2_blocks_view.py"
-    after = migration.read_text().split("_AFTER = (", 1)[1].split(")\n", 1)[0]
-    assert all(f"'{key}'" in after for key in STORED_SETTING_KEYS)
+    def after(name: str) -> str:
+        migration = Path(__file__).parents[3] / "migrations/versions" / name
+        return migration.read_text().split("_AFTER = (", 1)[1].split(")\n", 1)[0]
+
+    # 0138 widened the CHECK for the stricter setting; 0182 (P-07-T15) for the policy setting,
+    # and its list is the one in force (TASK-1367).
+    g2 = after("0138_g2_blocks_view.py")
+    assert all(f"'{key}'" in g2 for key in FIRM_SETTING_KEYS | STRICTER_SETTING_KEYS)
+    current = after("0182_allow_letter_exceptions.py")
+    assert all(f"'{key}'" in current for key in STORED_SETTING_KEYS)
 
 
 @pytest.mark.parametrize("unknown", ["none", "unregistered"])

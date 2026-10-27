@@ -28,7 +28,8 @@ from abacus.modules.identity.api import (
 from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.identity.repository import FirmRole
 
-READ_VERBS = {"read", "read_metadata", "read_log"}
+# DEC-462: the firm-level audit read is a read (SPEC-012: support holds reads only).
+READ_VERBS = {"read", "read_metadata", "read_log", "read_firm_level"}
 # Firm-level reads an engagement role alone is enough for: allowed to a senior, no MFA, no reason.
 FIRM_READS = sorted(
     action
