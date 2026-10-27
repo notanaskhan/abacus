@@ -416,7 +416,11 @@ describe("ADM-02 carries the retired FirmPeople tests (DEC-594)", () => {
     (request) =>
       request.query.get("q") !== null
         ? answer()
-        : (scenarios.a.handlers["GET /v1/firm/staff"] as FixtureHandler)(request);
+        : (
+            (scenarios.a.handlers as Record<string, FixtureHandler>)[
+              "GET /v1/firm/staff"
+            ] as FixtureHandler
+          )(request);
 
   it("a refused list asks for a recent sign-in (spec024 ac4)", async () => {
     withHandlers("a", "?q=osei", {
