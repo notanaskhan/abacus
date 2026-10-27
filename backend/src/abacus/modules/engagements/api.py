@@ -64,6 +64,7 @@ from abacus.modules.engagements.hold_scope import (
     engagements_in_hold_scope,
     work_item_engagement,
 )
+from abacus.modules.engagements.home_work import AssignedWork, assigned_work
 from abacus.modules.engagements.human_gates import (
     ACCEPTANCE_DECISION_DUE,
     EQR_ELIGIBILITY_DUE,
@@ -348,6 +349,7 @@ __all__ = [
     "AccountRule",
     "ApprovedGuidance",
     "Area",
+    "AssignedWork",
     "AssuranceItem",
     "CheckFacts",
     "Designation",
@@ -391,6 +393,7 @@ __all__ = [
     "area_for",
     "assign_eqr",
     "assign_work_item",
+    "assigned_work",
     "assurance_index",
     "assurance_item",
     "assurance_item_id",
