@@ -10,9 +10,10 @@ report at all (AR-C 70 issues none):
   live person's own act (INV-1; the table's CHECK and insert trigger bind the row to the
   session's human actor; `assurance.release_recorded` is on the human-only register).
 - **When.** `release_mode_in_app` (409) while the firm releases in Accrued; the date may not be
-  after the firm's today (422 `release_date_future`); the phase must be In review, Completion or
-  Ready to release (409 `record_out_of_phase`: SPEC-314's G6 and G7 are registered for every
-  firm, so an external-mode firm cannot record Ready to release, DEC-590), and a work item is
+  after the firm's today (422 `release_date_future`) nor on or before the engagement's fiscal
+  period end (422 `release_date_before_period_end`, DEC-598); the phase must be In review,
+  Completion or Ready to release (409 `record_out_of_phase`: SPEC-314's G6 and G7 are registered
+  for every firm, so an external-mode firm cannot record Ready to release, DEC-590), and a work item is
   released once.
 - **What.** One insert-only row, the derived move to Released naming G8 (`advance_by_gate`, the
   person named), and the audit event, in one unit of work. The 60-day documentation clock reads
@@ -40,6 +41,7 @@ from abacus.modules.assurance.record_auth import authorise_record, fresh_mfa_at
 from abacus.modules.engagements.api import (
     GateFact,
     assurance_item,
+    engagement_metadata,
     lock_assurance_item,
     lock_ref,
 )
@@ -69,6 +71,13 @@ class ReleaseDateFuture(DomainInvalid):
     """The release date is after the firm's today."""
 
     code = "release_date_future"
+
+
+class ReleaseDateBeforePeriodEnd(DomainInvalid):
+    """The release date is on or before the engagement's fiscal period end: a report on a period
+    is released after it closes (DEC-598)."""
+
+    code = "release_date_before_period_end"
 
 
 class RecordOutOfPhase(DomainConflict):
@@ -112,6 +121,11 @@ async def record_release(
         await require_external(ctx.tenant)
         if released_on > await clock.today(ctx.tenant):
             raise ReleaseDateFuture(facts={"report_released_on": released_on.isoformat()})
+        period = (await engagement_metadata(ctx, found.engagement_id)).engagement
+        if released_on <= period.fiscal_period_end:
+            raise ReleaseDateBeforePeriodEnd(
+                facts={"fiscal_period_end": period.fiscal_period_end.isoformat()}
+            )
         item = await lock_assurance_item(tx, work_item_id)
         if item.phase not in _RELEASABLE:
             raise RecordOutOfPhase(facts={"phase": item.phase})
