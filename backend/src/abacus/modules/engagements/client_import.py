@@ -108,6 +108,9 @@ _ROW_ERRORS: Final = (DomainConflict, DomainInvalid, DomainForbidden)
 _log = get_logger(__name__)
 
 Decision = Literal["new", "merge", "keep_both", "skip"]
+# Audit refs carry integers only: a decision or source by its place here.
+DECISIONS: Final[tuple[Decision, ...]] = ("new", "merge", "keep_both", "skip")
+SOURCES: Final[tuple[Source, ...]] = ("cch_axcess_tax_export", "csv")
 
 _meta = MetaData()
 imports = Table(
@@ -519,7 +522,7 @@ async def upload_import(
         tx.record(
             "client_import.uploaded",
             target=Target(SUBJECT, import_id),
-            after=Ref(source=source, rows=counts.rows, to_review=counts.to_review),
+            after=Ref(source=SOURCES.index(source), rows=counts.rows, to_review=counts.to_review),
         )
         found = await _import_row(tx.session, import_id)
     return _view(found, counts)
@@ -606,7 +609,7 @@ async def decide_row(
         tx.record(
             "client_import.row_decided",
             target=Target(SUBJECT, import_id),
-            after=Ref(row_no=cast(int, done["row_no"]), decision=decision),
+            after=Ref(row_no=cast(int, done["row_no"]), decision=DECISIONS.index(decision)),
         )
     return _row_view(done, walled)
 
@@ -748,7 +751,10 @@ async def _apply_row(
             tx.record(
                 "client_import.row_applied",
                 target=Target(SUBJECT, import_id),
-                after=Ref(row_no=cast(int, row["row_no"]), decision=cast(str, decision)),
+                after=Ref(
+                    row_no=cast(int, row["row_no"]),
+                    decision=DECISIONS.index(cast(Decision, decision)),
+                ),
             )
     return result is not None
 
