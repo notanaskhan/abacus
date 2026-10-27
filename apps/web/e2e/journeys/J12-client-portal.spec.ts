@@ -13,6 +13,8 @@ const HOSTED_URL: Readonly<Record<string, string | undefined>> = {
 };
 // POR-01 a renders at 9:22 AM CT on E0's Monday (the handoff's artboard clock).
 const SIGN_IN_CLOCK = "2026-09-14T09:22:00-05:00";
+// POR-01 e's reminder link, issued Aug 20 and past its 14 days (fixtures/scenarios/POR-01.ts).
+const EXPIRED_LINK = "fixture-reminder-link-feld-2026-08-20";
 
 function owner(description: string): { annotation: { type: string; description: string } } {
   return { annotation: { type: "owner", description } };
@@ -62,6 +64,87 @@ test.describe("J12-core", () => {
       });
     },
   );
+
+  // P-08-T26: the sign-in's other paths, in the fixture project on POR-01's own scenarios (`?st=`);
+  // the full stack and staging need the emailed code from the sink mailbox (F-04-T22).
+  test("J12 2b: Tess Moreno signs in with the emailed code and her authenticator (POR-01c, POR-02d)", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", "the codes come from the sink mailbox (F-04-T22)");
+    await journey.as("tess-moreno", "/sign-in?st=c", { clock: SIGN_IN_CLOCK });
+    const page = journey.page;
+    await page.getByLabel("Email").fill("tess.moreno@sink.brightwaterhale.test");
+    await page.getByRole("button", { name: "Continue" }).click();
+    await page.locator("input[autocomplete='one-time-code']").first().focus();
+    await page.keyboard.type("481027");
+    await journey.step("J12 step 2b: the second step (POR-01c)", async () => {
+      await expect(page.getByRole("heading", { name: "Two-step verification" })).toBeVisible();
+    });
+    await page.getByRole("group", { name: "Authenticator code" }).locator("input").first().focus();
+    await page.keyboard.type("481027");
+    await page.getByRole("button", { name: "Verify" }).click();
+    await journey.step("J12 step 2b: Tess's home (POR-02d)", async () => {
+      await expect(page.getByRole("heading", { name: "Good morning, Tess" })).toBeVisible();
+      await expect(page.getByText(/accrued/i)).toHaveCount(0);
+    });
+  });
+
+  test("J12 1e: an expired sign-in link is renewed by email (POR-01e)", async ({ journey }) => {
+    test.fixme(journey.project !== "fixture", "the link comes from the sink mailbox (F-04-T22)");
+    await journey.as("claire-feld", `/sign-in?st=e#link=${EXPIRED_LINK}`, {
+      clock: SIGN_IN_CLOCK,
+    });
+    await journey.step("J12 step 1e: the expired link (POR-01e)", async (page) => {
+      // The emailed link opens the card with its token; Continue asks for it and finds it expired.
+      await page.getByLabel("Email").fill("claire.feld@sink.brightwaterhale.test");
+      await page.getByRole("button", { name: "Continue" }).click();
+      await expect(
+        page.getByRole("heading", { name: "This sign-in link has expired" }),
+      ).toBeVisible();
+      await page.getByRole("button", { name: "Email me a new link" }).click();
+      await expect(
+        page.getByText("New link sent to claire.feld@sink.brightwaterhale.test"),
+      ).toBeVisible();
+    });
+  });
+
+  test("J12 1g: too many wrong codes pause sign-in and name the firm's contact (POR-01g)", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", "the codes come from the sink mailbox (F-04-T22)");
+    await journey.as("claire-feld", "/sign-in?st=g", { clock: SIGN_IN_CLOCK });
+    const page = journey.page;
+    await page.getByLabel("Email").fill("claire.feld@sink.brightwaterhale.test");
+    await page.getByRole("button", { name: "Continue" }).click();
+    await page.locator("input[autocomplete='one-time-code']").first().focus();
+    await page.keyboard.type("481072"); // a mistyped code, on the last try
+    await journey.step("J12 step 1g: Too many attempts (POR-01g)", async () => {
+      await expect(page.getByRole("heading", { name: "Too many attempts" })).toBeVisible();
+      await expect(page.getByText(/contact Grace Holloway at Brightwater Hale/)).toBeVisible();
+    });
+  });
+
+  test("J12 role union: Meera Shah's home and her scopes, each with its role (POR-02e)", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", "the role union's homes are P-08-T23's fixtures");
+    await journey.as("meera-shah", "/", { clock: DEMO_INSTANT });
+    await journey.step("J12 role union: Meera's own 1040 (POR-02e)", async (page) => {
+      await expect(page.getByRole("heading", { name: "Good morning, Meera" })).toBeVisible();
+    });
+    await journey.step("J12 role union: her scopes in the account menu", async (page) => {
+      await page.getByRole("button", { name: /Meera Shah/ }).click();
+      const menu = page.getByRole("menu", { name: "Account" });
+      await expect(menu.getByRole("menuitemradio", { name: /Meera Shah/ })).toBeVisible();
+      await expect(
+        menu.getByRole("menuitemradio", { name: /Ridgeline Property Partners, LP/ }),
+      ).toBeVisible();
+      // Closed before the step's axe pass: the open menu is modal, so it hides the page behind it
+      // (aria-hidden on #root while focus stays in the menu), which axe reads as aria-hidden-focus.
+      await page.keyboard.press("Escape");
+      await expect(menu).toHaveCount(0);
+    });
+  });
 
   // R-01-T21: steps 4, 5 and 15 at 1400 and on the 390 preset. Like 2–3, a signed-in portal step
   // runs on fixtures until the portal BFF answers on the other projects (P-08-T10).

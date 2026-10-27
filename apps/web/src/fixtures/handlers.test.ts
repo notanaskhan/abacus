@@ -8,6 +8,7 @@ import {
   listEngagements,
   listRequestItems,
   me,
+  myCapabilities,
   searchClients,
   staff,
   timeZone,
@@ -217,5 +218,26 @@ describe("personas, clock and latency from the query string", () => {
 describe("handlers", () => {
   it("are keyed by OpenAPI path and METHOD", () => {
     for (const route of Object.keys(seedHandlers())) expect(route).toMatch(/^GET \/v1\//);
+  });
+});
+
+describe("journey switches: ?flags= and ?screen= (P-07-T22, P-06-T25)", () => {
+  it("?flags= turns the named flags on in the persona's capabilities", async () => {
+    restore = installSeedFromSearch("?as=grace-holloway&flags=clients.v2,engagements.v2");
+    const flags = (await myCapabilities()).data?.flags ?? {};
+    expect(flags["clients.v2"]).toBe(true);
+    expect(flags["engagements.v2"]).toBe(true);
+  });
+
+  it("leaves capabilities alone without ?flags=", async () => {
+    restore = installSeedFromSearch("?as=grace-holloway");
+    const caps = await myCapabilities({ throwOnError: false });
+    expect(caps.data?.flags["clients.v2"]).toBeUndefined();
+  });
+
+  it("?screen= serves the screen's scenario as its persona, with ?flags= over it", async () => {
+    restore = installSeedFromSearch("?screen=BND-02&st=b&flags=binders.engine");
+    expect((await me()).data?.display_name).toBe("Kevin Osei");
+    expect((await myCapabilities()).data?.flags["binders.engine"]).toBe(true);
   });
 });

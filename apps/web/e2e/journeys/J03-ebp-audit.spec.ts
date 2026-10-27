@@ -2,10 +2,13 @@
 // audit. This file starts with R-01's portal steps (R-01-T21; R-01 §10): 4c (Dana Kowalski sees only
 // her own requests on POR-03 i; Sam Ortiz, Keystone's contact, sees his room on POR-14 a) and 10
 // (Marcus Delaney delegates the bridge letter to Sam, who uploads it in his room). A-01-T26 adds
-// the firm's steps (4e, 5, 5c). Walkable steps run on the harness in every project (axe and INV-1
+// the firm's steps (4e, 5, 5c). P-06-T25 adds the binder's: 4 (Marcus composes the ERISA fidelity
+// bond request, SHL-14 a) and 10 from the binder (the bridge letter delegated to Sam, SHL-14 b),
+// walked in the fixture project on SHL-14's own scenarios (`?screen=`, G-01-T16). Walkable steps run on the harness in every project (axe and INV-1
 // to INV-5 after each step); a step whose screen or backend is still planned is `test.fixme`
 // naming its owning epic, task and chapter 01 date (journey-e2e skill). The portal is
 // white-labelled: no portal step may show the product's name (INV-4).
+import type { Page } from "@playwright/test";
 import { DEMO_INSTANT, expect, test } from "../harness";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -18,6 +21,9 @@ const BRIDGE = "Bridge letter — Oct 1 to Dec 31, 2025";
 
 // Node's Buffer at run time (the workspace has no @types/node; node-shim.d.ts declares the type).
 const nodeBuffer = (globalThis as unknown as { Buffer: { from(text: string): Buffer } }).Buffer;
+
+const LIVE = "binders.engine is off in E0; the BND-02 and SHL-14 live swap is P-06-T16's";
+const FLAGS = ["binders.engine"];
 
 function owner(description: string): { annotation: { type: string; description: string } } {
   return { annotation: { type: "owner", description } };
@@ -115,4 +121,90 @@ test.describe("J03-ebp-audit (R-01's portal steps)", () => {
       });
     },
   );
+});
+
+/** The composer's menu field (`Category`, `Client assignee`, `Third party`): open it, pick one. */
+async function choose(page: Page, label: RegExp, option: string): Promise<void> {
+  const drawer = page.getByRole("dialog");
+  await drawer.getByRole("button", { name: label }).focus();
+  await page.keyboard.press("ArrowDown");
+  await page.getByRole("menu").getByText(option, { exact: true }).click();
+}
+
+test.describe("J03-ebp-audit (P-06's binder steps)", () => {
+  test.beforeEach(({ journey }) => {
+    test.fixme(journey.project !== "fixture", LIVE);
+  });
+
+  test("j03 4: Marcus composes the ERISA fidelity bond request and Hannah publishes the PBC binder", async ({
+    journey,
+  }) => {
+    await journey.as("marcus-delaney", "/binders/_binderId_?ov=request:new:_binderId_", {
+      scenario: "SHL-14:a",
+      flags: FLAGS,
+    });
+    await journey.step(
+      "J03 step 4: the composer, a new request on the Northwind binder (SHL-14a)",
+      async (page) => {
+        await expect(page.getByRole("heading", { name: "New request" })).toBeVisible();
+        await expect(page.getByRole("dialog").getByLabel("Due")).toHaveValue("2026-09-21");
+      },
+    );
+    await journey.step(
+      "J03 step 4: Marcus writes it and sends, a person's click",
+      async (page) => {
+        const drawer = page.getByRole("dialog");
+        await drawer
+          .getByLabel("Request", { exact: true })
+          .fill("ERISA fidelity bond — 2025 declarations page");
+        await drawer
+          .getByLabel("Description")
+          .fill(
+            "ERISA §412 requires a fidelity bond of at least 10% of plan assets handled, capped at $500,000 for this plan.",
+          );
+        await choose(page, /^Category/, "Plan documents");
+        await choose(page, /^Client assignee/, "Dana Kowalski");
+        await drawer.getByRole("button", { name: "Save & send" }).click();
+        await expect(page.getByText("Request sent to Dana Kowalski").first()).toBeVisible();
+      },
+    );
+  });
+
+  test.fixme(
+    "j03 4 (publish): Hannah publishes the Northwind PBC binder",
+    owner(
+      "P-06 · P-06-T16 BND-02 live swap: the fixtures publish only the Feld binder (BND-02 b → a), not a Northwind PBC Draft · S6, Fri Jan 22, 2027",
+    ),
+    async ({ journey }) => {
+      await journey.as("hannah-leclerc", "/binders", { flags: FLAGS });
+    },
+  );
+
+  test("j03 10: the bridge-letter request is delegated to Sam Ortiz and scoped to one request", async ({
+    journey,
+  }) => {
+    await journey.as("marcus-delaney", "/binders/_binderId_?ov=request:_requestId_:_binderId_", {
+      scenario: "SHL-14:b",
+      flags: FLAGS,
+    });
+    await journey.step(
+      "J03 step 10: the bridge letter, requested Sep 1 (SHL-14b)",
+      async (page) => {
+        const drawer = page.getByRole("dialog");
+        await expect(drawer.getByText("Requested Sep 1 · due Sep 25")).toBeVisible();
+        await expect(drawer.getByLabel("Request", { exact: true })).toHaveValue(
+          "Bridge letter — Keystone, Oct–Dec 2025",
+        );
+      },
+    );
+    await journey.step("J03 step 10: delegated to Sam Ortiz, this request only", async (page) => {
+      const drawer = page.getByRole("dialog");
+      await drawer.getByRole("switch", { name: "Request from a third party" }).click();
+      await choose(page, /^Third party/, "Sam Ortiz");
+      await expect(
+        drawer.getByText("Sam sees only this request (POR-14). Dana is copied."),
+      ).toBeVisible();
+      await expect(drawer.getByRole("button", { name: "Save & send to Sam Ortiz" })).toBeVisible();
+    });
+  });
 });
