@@ -52,6 +52,12 @@ export const COPY = {
   deadlines: { title: "Your deadlines · next 14 days", calendar: "Calendar" },
   next: (on: string, client: string, filing: string) => `Next: ${on} · ${client} · ${filing}`,
   activity: { title: "Client activity" },
+  /** Undesigned (I-01-T11): the tile popover's name and its office rows. */
+  byOffice: {
+    label: (tile: string) => `${tile} by office`,
+    row: (office: string, n: number) => `${office} · ${String(n)}`,
+    unnamed: "Office",
+  },
   /** Undesigned: the region names screen readers announce. */
   error: { tiles: "home", queue: "what waits on you" },
 } as const;

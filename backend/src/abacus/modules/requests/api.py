@@ -51,6 +51,7 @@ from abacus.modules.requests.follow_up_reads import (
     live_files,
     selection_engagements,
 )
+from abacus.modules.requests.home_counts import register_home_counts
 from abacus.modules.requests.lifecycle import (
     ConsentRequired,
     ItemPatch,
@@ -101,6 +102,8 @@ from abacus.modules.requests.service import (
     VoidedRuleLink,
     add_request_item,
     apply_drafted_guidance,
+    awaiting_review,
+    awaiting_review_count,
     drop_items,
     drop_target,
     fulfil_by_rule,
@@ -167,6 +170,9 @@ register_engagement_owners(AUDIT_KINDS, audit_owners)
 # G-02-T09 gap (DEC-459): ADM-07's values for requests.
 register_audit_value_resolver("request_item", request_item_values)
 
+# I-01-T08: this module's HOME-01 tile or pill (platform.register_home_count).
+register_home_counts()
+
 __all__ = [
     "ACTIVITIES",
     "ROUTERS",
@@ -208,6 +214,8 @@ __all__ = [
     "VoidedRuleLink",
     "add_request_item",
     "apply_drafted_guidance",
+    "awaiting_review",
+    "awaiting_review_count",
     "check_return_comment",
     "classify",
     "client_home",

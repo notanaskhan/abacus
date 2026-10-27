@@ -116,6 +116,7 @@ export const AUDIT_MESSAGES = {
       phase_skip: "Phases are recorded one step at a time.",
       phase_follows_gate: "This phase follows its gate and can't be recorded by hand.",
       release_date_future: "The release date can't be in the future.",
+      release_date_before_period_end: "The release date must be after the period end.",
       release_mode_in_app: "Releases are recorded in Accrued for this firm.",
       final_export_required: "Export a final binder first, then record the archive.",
       export_stale: "Evidence changed after that export. Export the final binder again.",

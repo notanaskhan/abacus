@@ -10,6 +10,7 @@ import {
   goToSignIn,
   handlePortalUnauthorised,
   lastPortalRefreshFailure,
+  notePortalActivity,
   portalAccessToken,
   portalSignOut,
   refreshPortalSession,
@@ -155,6 +156,20 @@ describe("P-08-T11 refresh through the host cookie", () => {
     setPortalSession(SIGNED_IN("pst_0"), NOW);
     expect(await ensurePortalSession(NOW + 1000)).toBe(true);
     expect(refreshes(calls)).toHaveLength(0);
+  });
+});
+
+describe("DEC-583 only the person's own activity moves the idle clock", () => {
+  it("marks the first refresh, then only a refresh after input", async () => {
+    const { calls } = portalApi({
+      "POST /v1/portal/auth/refresh": () => json(SIGNED_IN("pst_1")),
+    });
+    await refreshPortalSession(NOW); // the page load: the person's own act
+    await refreshPortalSession(NOW + 60_000); // a background poll, no input since
+    notePortalActivity(NOW + 90_000);
+    await refreshPortalSession(NOW + 120_000); // after a key or click
+    const marks = refreshes(calls).map((c) => c.headers.get("x-abacus-activity"));
+    expect(marks).toEqual(["user", null, "user"]);
   });
 });
 

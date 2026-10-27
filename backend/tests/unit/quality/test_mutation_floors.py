@@ -42,6 +42,7 @@ def _hook_module() -> ModuleType:
 # --- the guard (CI) -------------------------------------------------------------------------
 
 
+@pytest.mark.source_scan
 def test_t027_the_committed_file_lists_every_scope_and_parses_in_both_parsers() -> None:
     text = mutation_floors.FILE.read_text(encoding="utf-8")
     floors = mutation_floors.parse(text)
@@ -100,6 +101,7 @@ def test_t027_ci_refuses_an_unreadable_head_and_checks_format_only_without_a_bas
     assert mutation_floors.check(BASE, None) == []
 
 
+@pytest.mark.source_scan
 def test_t027_an_unreachable_explicit_base_fails(capsys: pytest.CaptureFixture[str]) -> None:
     assert mutation_floors.main(["--base", "0" * 40]) == 1
     assert "not reachable" in capsys.readouterr().out
@@ -227,6 +229,7 @@ pytest_add_cli_args = ["-p", "no:xdist"]
 """
 
 
+@pytest.mark.source_scan
 def test_t027_the_committed_scope_parses_from_source() -> None:
     driver = (REPO / mutation_floors.DRIVER_REL).read_text(encoding="utf-8")
     assert set(mutation_floors.scopes_of(driver)) == set(SCOPES)
@@ -268,6 +271,7 @@ def test_t027_narrowing_the_scope_is_refused(pyproject: str, driver: str, proble
     assert any(problem in line for line in found), found
 
 
+@pytest.mark.source_scan
 def test_t027_the_guard_judges_another_checkout(tmp_path: Path) -> None:
     for rel in (mutation_floors.REL, mutation_floors.PYPROJECT_REL, mutation_floors.DRIVER_REL):
         (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)
@@ -288,6 +292,7 @@ def _with_scope_files(project: tuple[Path, Run]) -> None:
         (root / rel).write_text((REPO / rel).read_text(encoding="utf-8"), encoding="utf-8")
 
 
+@pytest.mark.source_scan
 def test_t027_the_hook_refuses_an_edit_to_the_mutmut_block(project: tuple[Path, Run]) -> None:
     _with_scope_files(project)
     path = str(project[0] / mutation_floors.PYPROJECT_REL)
@@ -305,6 +310,7 @@ def test_t027_the_hook_refuses_an_edit_to_the_mutmut_block(project: tuple[Path, 
     assert project[1]("protect_paths.py", other) == 0
 
 
+@pytest.mark.source_scan
 def test_t027_the_hook_refuses_an_edit_to_scopes(project: tuple[Path, Run]) -> None:
     _with_scope_files(project)
     path = str(project[0] / mutation_floors.DRIVER_REL)
