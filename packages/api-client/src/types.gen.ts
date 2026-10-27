@@ -60488,6 +60488,10 @@ export type PortalRefreshData = {
          * Host
          */
         host?: string | null;
+        /**
+         * X-Abacus-Activity
+         */
+        'X-Abacus-Activity'?: string | null;
     };
     path?: never;
     query?: never;
