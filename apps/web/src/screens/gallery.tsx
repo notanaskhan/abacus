@@ -61,6 +61,16 @@ import {
   STATES as CLI07_STATES,
   scenarios as cli07Scenarios,
 } from "./CLI-07/scenarios";
+import { IndependencePage } from "./CLI-08";
+import {
+  CHECK_ID as CLI08_CHECK,
+  CLIENT_ID as CLI08_CLIENT,
+  type Cli08State,
+  ENGAGEMENT_ID as CLI08_ENGAGEMENT,
+  OPENS as CLI08_OPENS,
+  STATES as CLI08_STATES,
+  scenarios as cli08Scenarios,
+} from "./CLI-08/scenarios";
 import { AuditsIndex } from "./AUD-01";
 import {
   STATES as AUD01_STATES,
@@ -908,6 +918,36 @@ function Cli07Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("CLI-07", { title: "Acceptance & continuance", Component: Cli07Artboard });
+
+// CLI-08 (P-07-T48): independence and conflicts, a–g and the declined-note state (DF-06).
+function Cli08Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Cli08State = CLI08_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      cli08Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? (
+    <div data-artboard={state} key={state}>
+      <IndependencePage
+        clientId={CLI08_CLIENT}
+        engagementId={CLI08_ENGAGEMENT}
+        tab={CLI08_OPENS[state].tab}
+        checkId={CLI08_CHECK}
+        sheet={CLI08_OPENS[state].sheet === true}
+      />
+    </div>
+  ) : null;
+}
+
+registerScreen("CLI-08", { title: "Independence & conflicts", Component: Cli08Artboard });
 
 // SHL-14 (P-06-T13, T24): the request composer drawer, opened over an empty frame.
 function Shl14Artboard({ params }: { params: FixtureParams }): JSX.Element | null {

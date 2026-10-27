@@ -7,7 +7,7 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/CLI-08 Independence and conflicts - PY2025 EBP Audit - Northwind Roboti/` (README.md, spec.md; no revision) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | P-07 · contract P-07-T23 · G2 v2 P-07-T24 · stub P-07-T29 · conflicts P-07-T36 · live P-07-T41 · AC suites P-07-T26, T43 · screen P-07-T48 |
-| Manifest status | planned (`routes/manifest/cli.ts`) until P-07-T48 |
+| Manifest status | live (`routes/manifest/cli.ts`, P-07-T48) |
 
 Code to come: `src/screens/CLI-08/{index.tsx, scenarios.ts, copy.ts, CLI-08.test.tsx}`, `src/domain/engagements/IndependenceChip.tsx`, `src/fixtures/handlers/independence.ts`. Flags `engagements.v2` (G2 v2), `engagements.acceptance_v2` (CLI-08 v2). Spec: SPEC-332 AC-13 to AC-28; ADR-164.
 
@@ -86,6 +86,9 @@ Gradients, emoji, saturated blue, heavy shadows, invented colours, lorem ipsum, 
 | reminder | "Send reminder" is sent by the person clicking from the firm's template, not by a "Confirmation chaser agent" | Reminders are sent by a person; no schedule | P-07 §4.5, §4.8; DEC-64 |
 | g2 | The banner's "no assignment or sign-off until Ana confirms" applies to attest clients only; Ana can still read | G2 v2 | DEC-39, ADR-164 |
 | annual | The drawer's annual confirmation is empty until G-01's ADM-02 section | DEC-91 open; DF-07 | DEC-91 |
+| served | What the live summary does not serve reads in its place: "Annual firm confirmation" is ✓ (a boolean, no date); "Interests check" is "Statements confirmed" (a member's interests are theirs; staff financial details are never shown to others); the requested line is "Requested · 2 reminders" (no requested date); the SKE designee is ✓ (a contact id, no name); the NAS services are named from Northwind's codes; the Conflicts tab lists the check's matches (no per-name searched rows) and reads the check named by `?check=` | P-07-T41's shapes | DEC-542 |
+| pronoun | The pending banner reads "They cannot be assigned … until they do (G2)" (no pronoun data) | Copy for any member | DEC-542 |
+| declined-note | The declined state's note is fixture text (no artboard) | DF-06 | DEC-542 |
 
 ## Parity
 | Artboard | Tier (A/B/D) | Diff % | Notes |

@@ -47,10 +47,14 @@ export const cliScreens = {
     path: "/clients/$clientId/acceptance/$engagementId",
     navArea: "Clients",
   },
+  // P-07-T48 built a–g and the declined-note state live over the independence routes (P-07-T41)
+  // at /clients/$clientId/independence/$engagementId behind `engagements.acceptance_v2`. Its
+  // designed targets (SHL-11, ENG-02, ENG-05, CLI-02) stay planned links.
   "CLI-08": {
     name: "Independence & conflicts · PY2025 EBP Audit · Northwind Robotics 401(k) Plan",
-    status: "planned",
-    path: null,
+    status: "live",
+    path: "/clients/$clientId/independence/$engagementId",
+    navArea: "Clients",
   },
   // seed-manifest: new screens are added above this line
 } as const satisfies Manifest;
