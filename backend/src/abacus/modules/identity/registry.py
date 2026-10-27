@@ -46,6 +46,9 @@ TABLES: frozenset[str] = frozenset(
         "independence_statements",
         "independence_annual_confirmations",
         "access_end_notices",
+        # G-02-T14 (0220): the firm's security policies and per-firm session sign-outs.
+        "security_policies",
+        "auth_session_tenant_revocations",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -54,9 +57,19 @@ INSERT_ONLY: frozenset[str] = frozenset(
     | {"engagement_member_events"}  # P-07-T30 (0155)
     # G-01-T13 (0168)
     | {"independence_statements", "independence_annual_confirmations", "access_end_notices"}
+    | {"auth_session_tenant_revocations"}  # G-02-T14 (0220)
 )
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
+    # G-02-T14 (0220): a live person's policy row (the trigger), and their per-firm sign-out.
+    "security_policies": frozenset(
+        {"tenant_id", "require_sso", "sso_enforced_at", "sso_enforced_by"}
+        | {"idp_mfa_attested_at", "idp_mfa_attested_by", "session_absolute_minutes"}
+        | {"session_idle_minutes", "sso_exempt_user_id", "allow_support_requests"}
+        | {"support_updated_at", "support_updated_by", "support_version", "updated_by"}
+    ),
+    "auth_session_tenant_revocations": frozenset({"tenant_id", "session_id", "revoked_by"}),
+    "portal_security_policies": frozenset({"tenant_id", "portal_session_minutes", "updated_by"}),
     "engagement_members": frozenset({"tenant_id", "engagement_id", "user_id", "role"}),
     # P-07-T30 (0155): written by the `engagement_member_history` trigger as the caller.
     "engagement_member_events": frozenset(
@@ -113,6 +126,17 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
+    # G-02-T14 (0220): edited in place against `version` / `support_version`; never deleted.
+    "security_policies": frozenset(
+        {"require_sso", "sso_enforced_at", "sso_enforced_by", "idp_mfa_attested_at"}
+        | {"idp_mfa_attested_by", "session_absolute_minutes", "session_idle_minutes"}
+        | {"sso_exempt_user_id", "sso_exempt_tested_at", "allow_support_requests"}
+        | {"support_updated_at", "support_updated_by", "version", "support_version"}
+        | {"updated_by", "updated_at"}
+    ),
+    "portal_security_policies": frozenset(
+        {"portal_session_minutes", "version", "updated_by", "updated_at"}
+    ),
     # SPEC-024 (TASK-042): the firm's autonomy level and its onboarding acknowledgements.
     "firms": frozenset(
         {"autonomy_level", "autonomy_set_at", "budget_reviewed_at", "walls_none_needed_at"}

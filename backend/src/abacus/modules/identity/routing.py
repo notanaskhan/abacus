@@ -41,6 +41,7 @@ from abacus.modules.identity.portal_session import (
     portal_context,
     portal_invitee,
 )
+from abacus.modules.identity.security_policies import signed_out_here
 from abacus.modules.identity.service import (
     TENANT_HEADER,
     NoActiveTenant,
@@ -232,6 +233,11 @@ async def current_context(
     if not ctx.client and await access_has_ended(ctx.tenant, ctx.user_id):
         _log.info("access_end.refused", tenant_id=ctx.tenant_id, user_id=ctx.user_id)
         raise HTTPException(403, "forbidden")
+    # G-02-T14 (AC-20, DEC-528): a session signed out of this firm acts here no more; the person
+    # signs in again (a new session), and their other firms are unaffected.
+    if not ctx.client and await signed_out_here(ctx.tenant_id, ctx.user_id):
+        _log.info("session.signed_out_refused", tenant_id=ctx.tenant_id, user_id=ctx.user_id)
+        raise HTTPException(401, "session_signed_out", headers={"WWW-Authenticate": "Bearer"})
     # G-02-T06: the MFA time the verified token states; the session comes from the BFF cookie
     # when an event is written (`identity.request_session`).
     note_session(mfa_at=ctx.mfa_at)

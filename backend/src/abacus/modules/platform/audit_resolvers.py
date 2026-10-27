@@ -13,9 +13,13 @@ which may read `identity.api`, registers for it:
   readers (`identity.api.membership_audit_facts`, `support_session_audit_facts`) say what the
   event pins; the item is the person's display name for a membership.
 
+- `security_policy` and `portal_security_policy` (G-02-T14, DEC-529): the values the event's own
+  references pin (minutes, switches as `true`/`false`, the exempt account's name); nothing is read
+  from the policy's current row, so a value never shows what changed since.
+
 `evidence_version`, `pii_reveal` and `request_item` register from their owners (evidence,
-requests) through `platform.api`. `ai_policy` and `security_policy` wait for G-02-T14/T15; until
-then their values read `unavailable` ("Values not available").
+requests) through `platform.api`. `ai_policy` waits for G-02-T23/T24 (versions do not exist yet);
+until then its values read `unavailable` ("Values not available").
 """
 
 from __future__ import annotations
@@ -116,8 +120,54 @@ async def support_session_values(viewer: AuthContext, event: AuditEventRef) -> A
     return _answer(await support_session_audit_facts(viewer.tenant, event.action, session))
 
 
+# The policy fields an event's references carry: (reference key, field name, kind).
+_POLICY_FIELDS: tuple[tuple[str, str, str], ...] = (
+    ("require_sso", "require_sso", "bool"),
+    ("session_absolute_minutes", "session_absolute_minutes", "int"),
+    ("session_idle_minutes", "session_idle_minutes", "int"),
+    ("idp_mfa_attested", "idp_mfa_attested", "bool"),
+    ("allow", "allow_support_requests", "bool"),
+    ("session_minutes", "portal_session_minutes", "int"),
+)
+
+
+def _ref_text(refs: Mapping[str, str | int], key: str, kind: str) -> str | None:
+    value = refs.get(key)
+    if not isinstance(value, int) or isinstance(value, bool):
+        return None
+    return ("true" if value else "false") if kind == "bool" else str(value)
+
+
+async def security_policy_values(_viewer: AuthContext, event: AuditEventRef) -> AuditValues:
+    """G-02-T14 (DEC-529): a sign-in, portal or support-switch change, or the exempt account's
+    designation, clearing or sign-in: only what the event's references pin."""
+    before, after = event.before_ref or {}, event.after_ref or {}
+    rows: list[AuditValueRow] = []
+    for key, name, kind in _POLICY_FIELDS:
+        old, new = _ref_text(before, key, kind), _ref_text(after, key, kind)
+        if old is not None or new is not None:
+            rows.append(
+                AuditValueRow(field=name, before=old, after=new, classification="internal")
+            )
+    if event.action.startswith("sso_exempt_account."):
+        people = {u for refs in (before, after) if (u := _uuid(refs.get("user_id")))}
+        names = await names_of(sorted(people, key=str)) if people else {}
+        old_user, new_user = _uuid(before.get("user_id")), _uuid(after.get("user_id"))
+        rows.append(
+            AuditValueRow(
+                field="sso_exempt_account",
+                before=names.get(old_user) if old_user is not None else None,
+                after=names.get(new_user) if new_user is not None else None,
+                classification="confidential",
+            )
+        )
+    return AuditValues("resolved", rows=tuple(rows)) if rows else AuditValues("unavailable")
+
+
 def register() -> None:
     register_audit_labeler("user", label_users)
     register_audit_value_resolver("ethical_wall", wall_values)
     register_audit_value_resolver("user", membership_values)
     register_audit_value_resolver("support_session", support_session_values)
+    register_audit_value_resolver("security_policy", security_policy_values)
+    register_audit_value_resolver("portal_security_policy", security_policy_values)

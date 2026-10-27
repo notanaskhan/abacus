@@ -1100,6 +1100,18 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"status", "removed_by", "removed_at"}  # TASK-016
             | {"approved_by", "approved_at", "removed_reason"}  # G-01-T09 (0151): walls v2
         ),
+        # G-02-T14 (0220): the firm's security policies and the portal session length, edited
+        # in place against their versions (never deleted).
+        "security_policies": frozenset(
+            {"require_sso", "sso_enforced_at", "sso_enforced_by", "idp_mfa_attested_at"}
+            | {"idp_mfa_attested_by", "session_absolute_minutes", "session_idle_minutes"}
+            | {"sso_exempt_user_id", "sso_exempt_tested_at", "allow_support_requests"}
+            | {"support_updated_at", "support_updated_by", "version", "support_version"}
+            | {"updated_by", "updated_at"}
+        ),
+        "portal_security_policies": frozenset(
+            {"portal_session_minutes", "version", "updated_by", "updated_at"}
+        ),
         # G-01-T12 (0167): a line's policy, edited in place against its version (never deleted).
         "service_line_policies": frozenset(
             {"enabled", "lead_user_id", "content_visible_to", "cross_line_access", "version"}

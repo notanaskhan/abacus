@@ -37,6 +37,7 @@ from abacus.modules.identity.repository import (
     insert_support_session,
     list_support_sessions,
 )
+from abacus.modules.identity.security_policies import require_support_requests_allowed
 from abacus.modules.identity.tokens import InvalidToken, VerifiedIdentity, staff_verifier
 
 Scope = Literal["metadata", "content"]
@@ -140,6 +141,9 @@ async def request_session(
         async with uow(tenant) as tx:
             if not await firm_exists(tx.session):
                 raise NotFound("firm")
+            # G-02-T14 (AC-28, DEC-72): the firm's "Allow support session requests"; off, a new
+            # request answers 409 and sessions already granted keep their expiry.
+            await require_support_requests_allowed(tx.session)
             await insert_support_session(
                 tx.session,
                 {

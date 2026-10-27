@@ -1,12 +1,12 @@
 """The security-center contract, v1: ADM-06's identity half (G-02-T11 stub; SPEC-349 §5.4 to
 §5.9, §8; ADR-139, P-36). Contract: `docs/contracts/security-center.md`.
 
-Behind `security_center.v1`: off, every route here answers 404; on, 501 `not_implemented` until
-G-02-T14 (sign-in and portal policies, the SSO-exempt account, sessions, unlock, the support
-switch, the overview and the posture). The incident read side and the safeguards program are
-platform's (`platform/security_center_contract.py`, T18 and T20); the export schedule is
-evidence's (`evidence/firm_export_schedule_contract.py`, T19): identity imports no other module,
-so each stub lives where its implementation will (DEC-432).
+Behind `security_center.v1`: off, every route here answers 404; on, G-02-T14 serves them all
+(`identity/security_policies.py`: sign-in and portal policies, the SSO-exempt account, sessions,
+unlock, the support switch, the overview and the posture). The incident read side and the
+safeguards program are platform's (`platform/security_center_contract.py`, T18 and T20); the
+export schedule is evidence's (`evidence/firm_export_schedule_contract.py`, T19): identity
+imports no other module, so each stub lives where its implementation will (DEC-432).
 
 Rules the shapes carry (DEC-22, DEC-34, DEC-35, DEC-72, INV-1, INV-4):
 
@@ -28,7 +28,7 @@ Rules the shapes carry (DEC-22, DEC-34, DEC-35, DEC-72, INV-1, INV-4):
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Final, Literal, NoReturn
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import Depends, Query
@@ -36,35 +36,30 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import SECURITY_CENTER_V1
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
+from abacus.modules.identity import security_policies as service
 from abacus.modules.identity.authz import Resource, authorise
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.routing import AbacusRouter, current_context
+from abacus.modules.identity.security_policies import (
+    PLATFORM_MAX_IDLE_MINUTES,
+    PLATFORM_MAX_PORTAL_SESSION_MINUTES,
+    PLATFORM_MAX_SESSION_MINUTES,
+    PORTAL_FAILED_CODE_LIMIT,
+    PORTAL_LOCKOUT_MINUTES,
+    SECURITY_ACTIONS,
+)
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 
-# The platform maxima the stricter-only check uses (G-02 §4.9 settings; AC-17, AC-19).
-PLATFORM_MAX_SESSION_MINUTES: Final = 720
-PLATFORM_MAX_IDLE_MINUTES: Final = 30
-PLATFORM_MAX_PORTAL_SESSION_MINUTES: Final = 480
-# The actions of the family, for the overview's `actions` (the viewer's, AC-29).
-SECURITY_ACTIONS: Final = (
-    "security.read",
-    "security.manage",
-    "session.end",
-    "staff.unlock",
-    "support_session.read",
-    "support_session.manage",
-    "incident.read",
-    "incident.manage",
-    "incident.decide",
-    "firm_export.read",
-    "firm_export.request",
-    "firm_export.approve",
-    "firm_export.schedule",
-)
+__all__ = [
+    "PLATFORM_MAX_IDLE_MINUTES",
+    "PLATFORM_MAX_PORTAL_SESSION_MINUTES",
+    "PLATFORM_MAX_SESSION_MINUTES",
+    "SECURITY_ACTIONS",
+]
 
 SessionAuthMethod = Literal["sso", "email_code", "passkey", "totp"]
 ExemptFactor = Literal["hardware_key"]
@@ -308,60 +303,155 @@ async def _authorised(ctx: AuthContext, action: str) -> None:
     await authorise(ctx, action, Resource.firm(ctx.tenant_id))
 
 
-async def _stub(ctx: AuthContext, action: str) -> NoReturn:
+async def _gate(ctx: AuthContext, action: str) -> None:
+    """The matrix, then the flag: off, the family answers 404."""
     await _authorised(ctx, action)
     if not await flag_enabled(ctx.tenant, SECURITY_CENTER_V1):
         raise NotFound("security_center.v1")
-    raise NotImplementedYet
 
 
-@security_router.get("", action="security.read", response_model=SecurityOverviewOut, errors=(501,))
+def _person(p: service.Person) -> SecurityPersonOut:
+    return SecurityPersonOut(user_id=p.user_id, display_name=p.display_name)
+
+
+def _maybe(p: service.Person | None) -> SecurityPersonOut | None:
+    return _person(p) if p is not None else None
+
+
+def _sign_in_out(p: service.SignInPolicy) -> SignInPolicyOut:
+    exempt = p.sso_exempt_account
+    return SignInPolicyOut(
+        identity_provider=None,
+        sso_verified=p.sso_verified,
+        require_sso=p.require_sso,
+        sso_enforced_at=p.sso_enforced_at,
+        sso_enforced_by=_maybe(p.sso_enforced_by),
+        idp_mfa_attested_at=p.idp_mfa_attested_at,
+        idp_mfa_attested_by=_maybe(p.idp_mfa_attested_by),
+        session_absolute_minutes=p.session_absolute_minutes,
+        session_idle_minutes=p.session_idle_minutes,
+        sso_exempt_account=(
+            SsoExemptAccountOut(
+                person=_person(exempt.person),
+                factor="hardware_key",
+                last_tested_at=exempt.last_tested_at,
+            )
+            if exempt is not None
+            else None
+        ),
+        version=p.version,
+    )
+
+
+def _portal_out(p: service.PortalFloor) -> PortalSignInFloorOut:
+    return PortalSignInFloorOut(
+        passwordless_email_code=True,
+        passwordless_locked=True,
+        mfa_floor=True,
+        mfa_floor_locked=True,
+        failed_code_limit=PORTAL_FAILED_CODE_LIMIT,
+        lockout_minutes=PORTAL_LOCKOUT_MINUTES,
+        lockout_locked=True,
+        session_minutes=p.session_minutes,
+        version=p.version,
+    )
+
+
+def _support_out(s: service.SupportAccess) -> SupportAccessOut:
+    return SupportAccessOut(
+        allow_support_requests=s.allow_support_requests,
+        updated_at=s.updated_at,
+        updated_by=_maybe(s.updated_by),
+        version=s.version,
+    )
+
+
+@security_router.get("", action="security.read", response_model=SecurityOverviewOut)
 async def security_overview_route(ctx: Ctx) -> SecurityOverviewOut:
     """ADM-06 a, e, f: sign-in, MFA summary, portal floor, residency and the support switch, with
     the viewer's actions (read-only without `security.manage`, AC-29)."""
-    await _stub(ctx, "security.read")
+    await _gate(ctx, "security.read")
+    found = await service.overview(ctx)
+    return SecurityOverviewOut(
+        sign_in=_sign_in_out(found.sign_in),
+        mfa=MfaSummaryOut(
+            enforced=True,
+            locked=True,
+            enrolled=found.mfa.enrolled,
+            seats=found.mfa.seats,
+            idp_claim_counted=found.mfa.idp_claim_counted,
+        ),
+        portal=_portal_out(found.portal),
+        residency=ResidencyOut(
+            region=found.residency.region,
+            storage_primary_region=found.residency.storage_primary_region,
+            storage_backup_region=found.residency.storage_backup_region,
+            ai_inference="us_only",
+            logs_region=found.residency.logs_region,
+            encryption_at_rest="aes_256",
+            encryption_in_transit="tls_1_3",
+            locked=True,
+        ),
+        support=_support_out(found.support),
+        actions=list(found.actions),
+    )
 
 
 @security_router.put(
-    "/sign-in", action="security.manage", response_model=SignInPolicyOut, errors=(409, 501)
+    "/sign-in", action="security.manage", response_model=SignInPolicyOut, errors=(409,)
 )
 async def put_sign_in_policy_route(body: SignInPolicyIn, ctx: Ctx) -> SignInPolicyOut:
     """Fieldset A (AC-15, AC-17): 409 `sso_not_verified` when Require SSO is turned on before an
-    admin's verified SSO sign-in; 422 `policy_loosening_refused` over a platform maximum; 409
-    `stale_version`. Audited `security_policy.updated` (and `security_policy.sso_enforced`)."""
-    await _stub(ctx, "security.manage")
+    admin's verified SSO sign-in; 422 `policy_loosening_refused` over a platform maximum and
+    `session_limit_out_of_range` under the floor; 409 `stale_version`. Audited
+    `security_policy.updated` (and `security_policy.sso_enforced`,
+    `security_policy.idp_mfa_attested`)."""
+    await _gate(ctx, "security.manage")
+    return _sign_in_out(
+        await service.put_sign_in(
+            ctx,
+            require_sso=body.require_sso,
+            session_absolute_minutes=body.session_absolute_minutes,
+            session_idle_minutes=body.session_idle_minutes,
+            idp_mfa_attested=body.idp_mfa_attested,
+            version=body.version,
+        )
+    )
 
 
 @security_router.put(
     "/portal-sign-in",
     action="security.manage",
     response_model=PortalSignInFloorOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def put_portal_sign_in_policy_route(
     body: PortalSignInFloorIn, ctx: Ctx
 ) -> PortalSignInFloorOut:
     """Fieldset B (AC-19): the portal session, shorter only (422 `policy_loosening_refused`); 409
     `stale_version`. Audited `portal_security_policy.updated`."""
-    await _stub(ctx, "security.manage")
+    await _gate(ctx, "security.manage")
+    return _portal_out(
+        await service.put_portal(ctx, session_minutes=body.session_minutes, version=body.version)
+    )
 
 
 @security_router.put(
     "/sso-exempt-account",
     action="security.manage",
     response_model=SignInPolicyOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def put_sso_exempt_account_route(body: SsoExemptAccountIn, ctx: Ctx) -> SignInPolicyOut:
     """AC-18: designate (replacing any other) or clear the one SSO-exempt account; 409
-    `sso_exempt_needs_hardware_key` without a hardware-key factor, 409 `stale_version`; 404 for
-    someone who is not a current member. Audited `sso_exempt_account.designated` or `.cleared`."""
-    await _stub(ctx, "security.manage")
+    `sso_exempt_needs_hardware_key` without a hardware-key factor, 409 `sso_exempt_not_self` for
+    the caller, 409 `stale_version`; 404 for someone who is not a current member. Audited
+    `sso_exempt_account.designated` or `.cleared`."""
+    await _gate(ctx, "security.manage")
+    return _sign_in_out(await service.put_exempt(ctx, user_id=body.user_id, version=body.version))
 
 
-@security_router.get(
-    "/sessions", action="security.read", response_model=SecuritySessionPageOut, errors=(501,)
-)
+@security_router.get("/sessions", action="security.read", response_model=SecuritySessionPageOut)
 async def list_security_sessions_route(
     ctx: Ctx,
     cursor: Annotated[str | None, Query(max_length=1024)] = None,
@@ -369,52 +459,89 @@ async def list_security_sessions_route(
 ) -> SecuritySessionPageOut:
     """AC-20: active sessions of current members only; a former member's or another firm's
     person's session is never listed."""
-    await _stub(ctx, "security.read")
+    await _gate(ctx, "security.read")
+    page = await service.sessions(ctx, cursor=cursor, limit=limit)
+    return SecuritySessionPageOut(
+        items=[
+            SecuritySessionOut(
+                id=s.id,
+                person=_person(s.person),
+                started_at=s.started_at,
+                last_seen_at=s.last_seen_at,
+                mfa_at=s.mfa_at,
+                auth_method=s.auth_method,
+                ip=s.ip,
+                device_label=s.device_label,
+                current=s.current,
+            )
+            for s in page.items
+        ],
+        next_cursor=page.next_cursor,
+        total=page.total,
+    )
 
 
 @security_router.post(
-    "/sessions/{session_id}/sign-out",
-    action="session.end",
-    response_model=SessionSignedOutOut,
-    errors=(501,),
+    "/sessions/{session_id}/sign-out", action="session.end", response_model=SessionSignedOutOut
 )
 async def sign_out_session_route(session_id: UUID, ctx: Ctx) -> SessionSignedOutOut:
     """AC-20: the session can no longer act in this firm (`access.changed` closes its streams and
     caches); its other firms are unaffected. 404 for a session that is not a current member's.
     Audited `session.signed_out`."""
-    await _stub(ctx, "session.end")
+    await _gate(ctx, "session.end")
+    done = await service.sign_out(ctx, session_id)
+    return SessionSignedOutOut(
+        session_id=done.session_id,
+        signed_out_at=done.signed_out_at,
+        signed_out_by=_person(done.signed_out_by),
+    )
 
 
-@security_router.get("/posture", action="security.read", response_model=PostureOut, errors=(501,))
+@security_router.get("/posture", action="security.read", response_model=PostureOut)
 async def security_posture_route(ctx: Ctx) -> PostureOut:
     """AC-30: SSO enforced, MFA enrolled of seats, residency, open incidents and open Pub 4557
     items, as the fieldsets show them."""
-    await _stub(ctx, "security.read")
+    await _gate(ctx, "security.read")
+    p = await service.posture(ctx)
+    return PostureOut(
+        sso_enforced=p.sso_enforced,
+        mfa_enrolled=p.mfa_enrolled,
+        mfa_seats=p.mfa_seats,
+        residency_region=p.residency_region,
+        open_incidents=p.open_incidents,
+        pub4557_open=p.pub4557_open,
+    )
 
 
-@staff_unlock_router.post(
-    "/{user_id}/unlock", action="staff.unlock", response_model=StaffLockOut, errors=(501,)
-)
+@staff_unlock_router.post("/{user_id}/unlock", action="staff.unlock", response_model=StaffLockOut)
 async def unlock_staff_route(user_id: UUID, ctx: Ctx) -> StaffLockOut:
     """AC-20: clear a staff sign-in lock where the identity provider allows it; otherwise the
     lock stands and `unlocks_at` says when it ends. 404 for someone not a current member.
     Audited `staff.unlocked` when cleared."""
-    await _stub(ctx, "staff.unlock")
+    await _gate(ctx, "staff.unlock")
+    lock = await service.unlock(ctx, user_id)
+    return StaffLockOut(
+        user_id=lock.user_id, locked=lock.locked, unlocks_at=lock.unlocks_at, cleared=lock.cleared
+    )
 
 
-@support_access_router.get(
-    "", action="support_session.read", response_model=SupportAccessOut, errors=(501,)
-)
+@support_access_router.get("", action="support_session.read", response_model=SupportAccessOut)
 async def support_access_route(ctx: Ctx) -> SupportAccessOut:
     """The support card's switch."""
-    await _stub(ctx, "support_session.read")
+    await _gate(ctx, "support_session.read")
+    return _support_out(await service.support_access(ctx))
 
 
 @support_access_router.put(
-    "", action="support_session.manage", response_model=SupportAccessOut, errors=(409, 501)
+    "", action="support_session.manage", response_model=SupportAccessOut, errors=(409,)
 )
 async def put_support_access_route(body: SupportAccessIn, ctx: Ctx) -> SupportAccessOut:
     """AC-28: off, a new support-session request answers 409 `support_requests_disabled`;
     sessions already granted keep their expiry. 409 `stale_version`. Audited
     `support_access.updated`."""
-    await _stub(ctx, "support_session.manage")
+    await _gate(ctx, "support_session.manage")
+    return _support_out(
+        await service.put_support_access(
+            ctx, allow=body.allow_support_requests, version=body.version
+        )
+    )

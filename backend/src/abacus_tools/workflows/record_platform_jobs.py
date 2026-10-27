@@ -15,7 +15,8 @@ activities replaced by stubs (replay never runs activities):
   `audit-chain-verify-v1-verified.json`, `audit-anchor-v1-anchored.json`: one pass of each
   (Q-02-T20, T21);
 - `audit-labels-v1-indexed.json`: one label-index pass that indexed seven events (G-02-T10,
-  DEC-453).
+  DEC-453);
+- `auth-session-purge-v1-purged.json`: one purge pass that deleted six staff sessions (G-02-T14).
 Each run is started the way its Schedule starts it: no argument, its own id. A history already on
 disk is never overwritten: only the missing ones are recorded.
 """
@@ -42,7 +43,12 @@ from abacus.modules.audit_trail.api import (
 )
 from abacus.modules.communications.api import SES_EVENTS_ID, DrainSesEventsWorkflow
 from abacus.modules.evidence.api import ANCHOR_ID, AuditAnchorWorkflow
-from abacus.modules.identity.api import ACCESS_END_ID, AccessEndSweepWorkflow
+from abacus.modules.identity.api import (
+    ACCESS_END_ID,
+    AUTH_SESSION_PURGE_ID,
+    AccessEndSweepWorkflow,
+    AuthSessionPurgeWorkflow,
+)
 from abacus.modules.notifications.api import NOTIFICATION_PURGE_ID, NotificationPurgeWorkflow
 from abacus.modules.platform.api import SPEND_ANOMALY_ID, SpendAnomalyWorkflow
 from abacus_tools.stack import Stack, connect, run_with_stack
@@ -59,6 +65,7 @@ _FILES = (
     "audit-chain-verify-v1-verified.json",
     "audit-anchor-v1-anchored.json",
     "audit-labels-v1-indexed.json",
+    "auth-session-purge-v1-purged.json",
 )
 
 
@@ -107,6 +114,11 @@ async def _labels() -> int:
     return 7
 
 
+@activity.defn(name="identity.purge_auth_sessions")
+async def _purge_sessions() -> int:
+    return 6
+
+
 async def _run(client: Client, workflow: type, workflow_id: str) -> WorkflowHistory:
     handle: WorkflowHandle[object, int] = await client.start_workflow(
         workflow.run,  # pyright: ignore[reportUnknownArgumentType,reportUnknownMemberType] -- a @workflow.defn class
@@ -132,8 +144,12 @@ async def _record(out: Path, stack: Stack) -> None:
             AuditChainVerifyWorkflow,
             AuditAnchorWorkflow,
             AuditLabelIndexerWorkflow,
+            AuthSessionPurgeWorkflow,
         ],
-        activities=[_flag, _purge, _drain, _sweep, _partitions, _seal, _verify, _anchor, _labels],
+        activities=[
+            *(_flag, _purge, _drain, _sweep, _partitions, _seal, _verify, _anchor, _labels),
+            _purge_sessions,
+        ],
     ):
         runs = (
             (SpendAnomalyWorkflow, SPEND_ANOMALY_ID, _FILES[0]),
@@ -145,6 +161,7 @@ async def _record(out: Path, stack: Stack) -> None:
             (AuditChainVerifyWorkflow, VERIFY_ID, _FILES[6]),
             (AuditAnchorWorkflow, ANCHOR_ID, _FILES[7]),
             (AuditLabelIndexerWorkflow, LABELS_ID, _FILES[8]),
+            (AuthSessionPurgeWorkflow, AUTH_SESSION_PURGE_ID, _FILES[9]),
         )
         for workflow, workflow_id, name in runs:
             if (out / name).exists():
