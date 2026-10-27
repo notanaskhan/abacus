@@ -1159,6 +1159,286 @@ export type AiExclusionOut = {
 };
 
 /**
+ * AiPolicyDeclineIn
+ *
+ * A decline names why, as a code; a note is optional and Confidential.
+ */
+export type AiPolicyDeclineIn = {
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Reason Code
+     */
+    reason_code: 'needs_changes' | 'wrong_effective_date' | 'other';
+};
+
+/**
+ * AiPolicyDiffRowOut
+ *
+ * One changed cell against the version before: "Override tolerance 8% → 6%".
+ */
+export type AiPolicyDiffRowOut = {
+    /**
+     * After
+     */
+    after?: string | null;
+    /**
+     * Before
+     */
+    before?: string | null;
+    /**
+     * Path
+     */
+    path: string;
+};
+
+/**
+ * AiPolicyDraftIn
+ *
+ * Save the draft (If-Match: the draft's `version`; 409 `stale_version`). A security admin
+ * may change `client_data` only (AC-40); any loosening answers 422.
+ */
+export type AiPolicyDraftIn = {
+    sections: AiPolicySections;
+};
+
+/**
+ * AiPolicyDraftOut
+ *
+ * The firm's one draft (b): the base version, its sections, whether it differs from the
+ * base ("Unsaved changes"; "Save as v4…" enabled) and its version for If-Match.
+ */
+export type AiPolicyDraftOut = {
+    /**
+     * Base Version No
+     */
+    base_version_no: number;
+    /**
+     * Diff
+     */
+    diff?: Array<AiPolicyDiffRowOut>;
+    /**
+     * Differs
+     */
+    differs: boolean;
+    sections: AiPolicySections;
+    /**
+     * Updated At
+     */
+    updated_at?: string | null;
+    updated_by?: PolicyPersonOut | null;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * AiPolicyOut
+ *
+ * ADM-04 a, e, g, h: the effective version, a pending one, the draft summary, the sections,
+ * fieldset A's rows, the locked cells, the immediate controls, the register's sub-processors and
+ * model family, and the viewer's actions (read-only without `ai_policy.draft`, AC-33).
+ */
+export type AiPolicyOut = {
+    /**
+     * Actions
+     */
+    actions?: Array<string>;
+    draft?: AiPolicyDraftOut | null;
+    effective: AiPolicyVersionOut;
+    /**
+     * Gates
+     */
+    gates: Array<GateRowOut>;
+    immediate: ImmediateControlsOut;
+    /**
+     * Locks
+     */
+    locks: Array<CellLockOut>;
+    /**
+     * Model Family
+     */
+    model_family?: string | null;
+    pending?: AiPolicyVersionOut | null;
+    /**
+     * Real Firm
+     */
+    real_firm: boolean;
+    scheduled?: AiPolicyVersionOut | null;
+    sections: AiPolicySections;
+    /**
+     * Sub Processors
+     */
+    sub_processors: Array<SubProcessorOut>;
+};
+
+/**
+ * AiPolicyPublishIn
+ *
+ * "Publish v4": the effective date and the approving partner, who is not the requester
+ * (AC-37).
+ */
+export type AiPolicyPublishIn = {
+    /**
+     * Approver User Id
+     */
+    approver_user_id: string;
+    /**
+     * Effective From
+     */
+    effective_from: string;
+};
+
+/**
+ * AiPolicySections
+ *
+ * `sections`, schema_version 1 (ADR-186 item 2). Bounds here are shape only: whether a value
+ * loosens the platform's default is the validator's (422 `policy_loosening_refused`).
+ */
+export type AiPolicySections = {
+    auto_mode_defaults: AutoModeDefaults;
+    autonomy: AutonomySection;
+    client_data: ClientDataSection;
+    /**
+     * Gates
+     */
+    gates: Array<GateOverride>;
+    governance: GovernanceSection;
+    policy_principal: PolicyPrincipalSection;
+};
+
+/**
+ * AiPolicyVersionDetailOut
+ *
+ * ADM-04 j: a version with its sections and its diff against the one before.
+ */
+export type AiPolicyVersionDetailOut = {
+    approver?: PolicyPersonOut | null;
+    /**
+     * Carried Over
+     */
+    carried_over?: boolean;
+    /**
+     * Decided At
+     */
+    decided_at?: string | null;
+    decided_by?: PolicyPersonOut | null;
+    /**
+     * Diff
+     */
+    diff?: Array<AiPolicyDiffRowOut>;
+    /**
+     * Effective From
+     */
+    effective_from: string;
+    /**
+     * Requested At
+     */
+    requested_at?: string | null;
+    requested_by?: PolicyPersonOut | null;
+    /**
+     * Schema Version
+     */
+    schema_version?: number;
+    sections: AiPolicySections;
+    /**
+     * State
+     */
+    state: 'awaiting_approval' | 'published' | 'declined' | 'withdrawn';
+    /**
+     * Superseded
+     */
+    superseded?: boolean;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
+ * AiPolicyVersionOut
+ *
+ * A version's metadata: "v3 · published Jan 14, 2026 by Margaret Okonkwo · approved by
+ * Daniel Reyes", "Awaiting approval · Daniel Reyes", "v1 · carried over".
+ */
+export type AiPolicyVersionOut = {
+    approver?: PolicyPersonOut | null;
+    /**
+     * Carried Over
+     */
+    carried_over?: boolean;
+    /**
+     * Decided At
+     */
+    decided_at?: string | null;
+    decided_by?: PolicyPersonOut | null;
+    /**
+     * Effective From
+     */
+    effective_from: string;
+    /**
+     * Requested At
+     */
+    requested_at?: string | null;
+    requested_by?: PolicyPersonOut | null;
+    /**
+     * Schema Version
+     */
+    schema_version?: number;
+    /**
+     * State
+     */
+    state: 'awaiting_approval' | 'published' | 'declined' | 'withdrawn';
+    /**
+     * Superseded
+     */
+    superseded?: boolean;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
+ * AiPolicyVersionPageOut
+ *
+ * The version history, newest first (the P-36 envelope).
+ */
+export type AiPolicyVersionPageOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<AiPolicyVersionOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
  * AnalysisRequestIn
  */
 export type AnalysisRequestIn = {
@@ -2610,6 +2890,47 @@ export type AuthRedirectOut = {
 };
 
 /**
+ * AutoModeDefaults
+ *
+ * Fieldset C: Auto mode per engagement type (a standing plan approval). Stored; forced off
+ * on every real firm until runtime v2 (ADR-186 item 6).
+ */
+export type AutoModeDefaults = {
+    /**
+     * Advisory
+     */
+    advisory?: boolean;
+    /**
+     * Ebp Audit
+     */
+    ebp_audit?: boolean;
+    /**
+     * Fs Audit
+     */
+    fs_audit?: boolean;
+    /**
+     * Monthly Close
+     */
+    monthly_close?: boolean;
+    /**
+     * Notice
+     */
+    notice?: boolean;
+    /**
+     * Preparation
+     */
+    preparation?: boolean;
+    /**
+     * Review Compilation
+     */
+    review_compilation?: boolean;
+    /**
+     * Tax Return
+     */
+    tax_return?: boolean;
+};
+
+/**
  * AutonomyIn
  */
 export type AutonomyIn = {
@@ -2631,6 +2952,18 @@ export type AutonomyOut = {
      * Set At
      */
     set_at: string | null;
+};
+
+/**
+ * AutonomySection
+ *
+ * The firm's autonomy level (0 advise, 1 routine; Season 1 caps it at 1, ADR-186).
+ */
+export type AutonomySection = {
+    /**
+     * Level
+     */
+    level: number;
 };
 
 /**
@@ -3634,6 +3967,22 @@ export type CellCitationOut = {
 };
 
 /**
+ * CellLockOut
+ *
+ * A locked cell: its path in `sections` and why (the SPA shows Lock with the reason).
+ */
+export type CellLockOut = {
+    /**
+     * Path
+     */
+    path: string;
+    /**
+     * Reason
+     */
+    reason: 'policy_principal_dormant' | 'platform_floor' | 'real_firm_season_1' | 'not_a_partner' | 'client_data_only';
+};
+
+/**
  * CellOut
  */
 export type CellOut = {
@@ -4538,6 +4887,52 @@ export type ClientContactOut = {
      * Role
      */
     role: string;
+};
+
+/**
+ * ClientDataOptInOut
+ *
+ * SPEC-036's opt-in ("AI on your clients' data"), shown, never re-implemented (AC-41).
+ */
+export type ClientDataOptInOut = {
+    /**
+     * Changed At
+     */
+    changed_at?: string | null;
+    changed_by?: PolicyPersonOut | null;
+    /**
+     * On
+     */
+    on: boolean;
+    /**
+     * Register Version
+     */
+    register_version?: string | null;
+};
+
+/**
+ * ClientDataSection
+ *
+ * Fieldset D: §7216 consent (locked on), the consent template, AI-use disclosure in
+ * engagement letters, model-drafted client text (locked off, ADR P-25).
+ */
+export type ClientDataSection = {
+    /**
+     * Client Drafts Enabled
+     */
+    client_drafts_enabled?: boolean;
+    /**
+     * Consent Template Ref
+     */
+    consent_template_ref?: string | null;
+    /**
+     * Disclosure In Letters
+     */
+    disclosure_in_letters?: boolean;
+    /**
+     * Require 7216 Consent
+     */
+    require_7216_consent?: boolean;
 };
 
 /**
@@ -7388,6 +7783,56 @@ export type DueDatesIn = {
 };
 
 /**
+ * EffectiveAiPolicyOut
+ *
+ * `GET /v1/firm/ai-policy/effective`: the cells a run planner, ENG-03 (P-07) and KNW-04
+ * (K-02) read for one engagement type at one time (AC-39; `agents.api.effective_ai_policy`).
+ */
+export type EffectiveAiPolicyOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Auto Mode
+     */
+    auto_mode: boolean;
+    /**
+     * Auto Mode Effective
+     */
+    auto_mode_effective: boolean;
+    /**
+     * Auto Mode Lock
+     */
+    auto_mode_lock?: 'policy_principal_dormant' | 'platform_floor' | 'real_firm_season_1' | 'not_a_partner' | 'client_data_only' | null;
+    /**
+     * Autonomy Level
+     */
+    autonomy_level: number;
+    client_data: ClientDataSection;
+    /**
+     * Effective From
+     */
+    effective_from: string;
+    /**
+     * Engagement Type
+     */
+    engagement_type: 'ebp_audit' | 'fs_audit' | 'review_compilation' | 'preparation' | 'tax_return' | 'monthly_close' | 'notice' | 'advisory';
+    /**
+     * Firm Paused
+     */
+    firm_paused?: boolean;
+    /**
+     * Policy Principal On
+     */
+    policy_principal_on?: boolean;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
  * EligibilityCheckOut
  *
  * One "Before you sign" row. `facts` are counts, dates and names for the row's sentence;
@@ -10224,6 +10669,23 @@ export type FirmOfficeOut = {
 };
 
 /**
+ * FirmPauseOut
+ *
+ * "Pause all agents" (ADR-157's per-firm switch): who paused and when (AC-42).
+ */
+export type FirmPauseOut = {
+    /**
+     * Paused
+     */
+    paused: boolean;
+    /**
+     * Paused At
+     */
+    paused_at?: string | null;
+    paused_by?: PolicyPersonOut | null;
+};
+
+/**
  * FirmRefIn
  */
 export type FirmRefIn = {
@@ -10956,6 +11418,82 @@ export type GateOut = {
 };
 
 /**
+ * GateOverride
+ *
+ * Fieldset A: what a firm may change on a gate row (stricter-only; today only policy
+ * acceptance, stored off and locked under ADR-187).
+ */
+export type GateOverride = {
+    /**
+     * Action Key
+     */
+    action_key: string;
+    /**
+     * Policy Acceptance On
+     */
+    policy_acceptance_on?: boolean;
+};
+
+/**
+ * GateRowOut
+ *
+ * One of fieldset A's twelve rows (chapter 05 §5.2.13), from the compiled gate catalogue
+ * cross-checked against the matrix (AC-32). `approver_rule` is the default human approver as a
+ * code the SPA words ("Named human, one batch"); `default_approver_roles` the matrix roles it
+ * resolves to.
+ */
+export type GateRowOut = {
+    /**
+     * Acceptance Policy Ref
+     */
+    acceptance_policy_ref?: string | null;
+    /**
+     * Action Keys
+     */
+    action_keys?: Array<string>;
+    /**
+     * Approver Rule
+     */
+    approver_rule: string;
+    /**
+     * Attest
+     */
+    attest?: 'never' | 'never_held_for_client' | 'posting_disabled' | null;
+    /**
+     * Default Approver Roles
+     */
+    default_approver_roles?: Array<string>;
+    /**
+     * Gate Key
+     */
+    gate_key: string;
+    /**
+     * Log Action
+     */
+    log_action: string;
+    /**
+     * Policy Acceptance Available
+     */
+    policy_acceptance_available?: boolean;
+    /**
+     * Policy Acceptance Locked
+     */
+    policy_acceptance_locked?: boolean;
+    /**
+     * Policy Acceptance On
+     */
+    policy_acceptance_on?: boolean;
+    /**
+     * Row
+     */
+    row: number;
+    /**
+     * Where Shown
+     */
+    where_shown?: Array<string>;
+};
+
+/**
  * GlAccountDifferenceOut
  */
 export type GlAccountDifferenceOut = {
@@ -11096,6 +11634,35 @@ export type GovernancePersonOut = {
      * User Id
      */
     user_id: string;
+};
+
+/**
+ * GovernanceSection
+ *
+ * Fieldset E: who installs agents, who approves a publish, the override tolerance, the
+ * monthly accuracy sample and run-trace retention (never under 7 years).
+ */
+export type GovernanceSection = {
+    /**
+     * Accuracy Sample N
+     */
+    accuracy_sample_n?: number;
+    /**
+     * Install Role
+     */
+    install_role?: 'manager_plus' | 'partner_only';
+    /**
+     * Override Tolerance Pct
+     */
+    override_tolerance_pct?: number;
+    /**
+     * Publish Approver
+     */
+    publish_approver?: 'methodology_owner';
+    /**
+     * Trace Retention Years
+     */
+    trace_retention_years?: number;
 };
 
 /**
@@ -11756,6 +12323,20 @@ export type IgnoredOut = {
      */
     request_item_id: string;
     status: RequestStatus;
+};
+
+/**
+ * ImmediateControlsOut
+ *
+ * The band outside versioning (ADR-186 item 8).
+ */
+export type ImmediateControlsOut = {
+    /**
+     * Agent Stages
+     */
+    agent_stages: Array<PolicyAgentStageOut>;
+    client_data_opt_in: ClientDataOptInOut;
+    firm_pause: FirmPauseOut;
 };
 
 /**
@@ -16251,6 +16832,54 @@ export type PlanStepOut = {
      * Text
      */
     text: string;
+};
+
+/**
+ * PolicyAgentStageOut
+ *
+ * An agent's stage, read-only on ADM-04 ("Shadow since …", "Live since …").
+ */
+export type PolicyAgentStageOut = {
+    /**
+     * Agent Key
+     */
+    agent_key: string;
+    /**
+     * Since
+     */
+    since?: string | null;
+    /**
+     * Stage
+     */
+    stage: 'shadow' | 'live';
+};
+
+/**
+ * PolicyPersonOut
+ *
+ * A person named on the policy; the id links to the ADM-02 user drawer.
+ */
+export type PolicyPersonOut = {
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * PolicyPrincipalSection
+ *
+ * Fieldset B: the dormant policy principal (ADR-187): `on` is false and locked.
+ */
+export type PolicyPrincipalSection = {
+    /**
+     * On
+     */
+    on?: boolean;
 };
 
 /**
@@ -23491,6 +24120,35 @@ export type StepResolveOut = {
 };
 
 /**
+ * SubProcessorOut
+ *
+ * A sub-processor row, generated from the provider-terms register (DF-16): "Amazon Web
+ * Services (Bedrock) · model inference · US · no training".
+ */
+export type SubProcessorOut = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Purpose
+     */
+    purpose: string;
+    /**
+     * Region
+     */
+    region: string;
+    /**
+     * Retention Days
+     */
+    retention_days?: number | null;
+    /**
+     * Trains On Data
+     */
+    trains_on_data: boolean;
+};
+
+/**
  * SubjectRefIn
  */
 export type SubjectRefIn = {
@@ -27981,6 +28639,10 @@ export type RefreshData = {
          * Origin
          */
         origin?: string | null;
+        /**
+         * X-Abacus-Activity
+         */
+        'X-Abacus-Activity'?: string | null;
     };
     path?: never;
     query?: never;
@@ -48845,6 +49507,637 @@ export type SetAiClientDataResponses = {
 
 export type SetAiClientDataResponse = SetAiClientDataResponses[keyof SetAiClientDataResponses];
 
+export type AiPolicyData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/ai-policy';
+};
+
+export type AiPolicyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AiPolicyError = AiPolicyErrors[keyof AiPolicyErrors];
+
+export type AiPolicyResponses = {
+    /**
+     * Successful Response
+     */
+    200: AiPolicyOut;
+};
+
+export type AiPolicyResponse = AiPolicyResponses[keyof AiPolicyResponses];
+
+export type DiscardAiPolicyDraftData = {
+    body?: never;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': number;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/ai-policy/draft';
+};
+
+export type DiscardAiPolicyDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DiscardAiPolicyDraftError = DiscardAiPolicyDraftErrors[keyof DiscardAiPolicyDraftErrors];
+
+export type DiscardAiPolicyDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: AiPolicyDraftOut;
+};
+
+export type DiscardAiPolicyDraftResponse = DiscardAiPolicyDraftResponses[keyof DiscardAiPolicyDraftResponses];
+
+export type AiPolicyDraftData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/ai-policy/draft';
+};
+
+export type AiPolicyDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AiPolicyDraftError = AiPolicyDraftErrors[keyof AiPolicyDraftErrors];
+
+export type AiPolicyDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: AiPolicyDraftOut;
+};
+
+export type AiPolicyDraftResponse = AiPolicyDraftResponses[keyof AiPolicyDraftResponses];
+
+export type PutAiPolicyDraftData = {
+    body: AiPolicyDraftIn;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': number;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/ai-policy/draft';
+};
+
+export type PutAiPolicyDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PutAiPolicyDraftError = PutAiPolicyDraftErrors[keyof PutAiPolicyDraftErrors];
+
+export type PutAiPolicyDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: AiPolicyDraftOut;
+};
+
+export type PutAiPolicyDraftResponse = PutAiPolicyDraftResponses[keyof PutAiPolicyDraftResponses];
+
+export type EffectiveAiPolicyData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Engagement Type
+         */
+        engagement_type: 'ebp_audit' | 'fs_audit' | 'review_compilation' | 'preparation' | 'tax_return' | 'monthly_close' | 'notice' | 'advisory';
+        /**
+         * At
+         */
+        at?: string | null;
+    };
+    url: '/v1/firm/ai-policy/effective';
+};
+
+export type EffectiveAiPolicyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EffectiveAiPolicyError = EffectiveAiPolicyErrors[keyof EffectiveAiPolicyErrors];
+
+export type EffectiveAiPolicyResponses = {
+    /**
+     * Successful Response
+     */
+    200: EffectiveAiPolicyOut;
+};
+
+export type EffectiveAiPolicyResponse = EffectiveAiPolicyResponses[keyof EffectiveAiPolicyResponses];
+
+export type AiPolicyVersionsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/v1/firm/ai-policy/versions';
+};
+
+export type AiPolicyVersionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AiPolicyVersionsError = AiPolicyVersionsErrors[keyof AiPolicyVersionsErrors];
+
+export type AiPolicyVersionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: AiPolicyVersionPageOut;
+};
+
+export type AiPolicyVersionsResponse = AiPolicyVersionsResponses[keyof AiPolicyVersionsResponses];
+
+export type PublishAiPolicyData = {
+    body: AiPolicyPublishIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/ai-policy/versions';
+};
+
+export type PublishAiPolicyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PublishAiPolicyError = PublishAiPolicyErrors[keyof PublishAiPolicyErrors];
+
+export type PublishAiPolicyResponses = {
+    /**
+     * Successful Response
+     */
+    201: AiPolicyVersionOut;
+};
+
+export type PublishAiPolicyResponse = PublishAiPolicyResponses[keyof PublishAiPolicyResponses];
+
+export type AiPolicyVersionData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version No
+         */
+        version_no: number;
+    };
+    query?: never;
+    url: '/v1/firm/ai-policy/versions/{version_no}';
+};
+
+export type AiPolicyVersionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AiPolicyVersionError = AiPolicyVersionErrors[keyof AiPolicyVersionErrors];
+
+export type AiPolicyVersionResponses = {
+    /**
+     * Successful Response
+     */
+    200: AiPolicyVersionDetailOut;
+};
+
+export type AiPolicyVersionResponse = AiPolicyVersionResponses[keyof AiPolicyVersionResponses];
+
+export type ApproveAiPolicyData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version No
+         */
+        version_no: number;
+    };
+    query?: never;
+    url: '/v1/firm/ai-policy/versions/{version_no}/approve';
+};
+
+export type ApproveAiPolicyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ApproveAiPolicyError = ApproveAiPolicyErrors[keyof ApproveAiPolicyErrors];
+
+export type ApproveAiPolicyResponses = {
+    /**
+     * Successful Response
+     */
+    200: AiPolicyVersionOut;
+};
+
+export type ApproveAiPolicyResponse = ApproveAiPolicyResponses[keyof ApproveAiPolicyResponses];
+
+export type DeclineAiPolicyData = {
+    body: AiPolicyDeclineIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version No
+         */
+        version_no: number;
+    };
+    query?: never;
+    url: '/v1/firm/ai-policy/versions/{version_no}/decline';
+};
+
+export type DeclineAiPolicyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DeclineAiPolicyError = DeclineAiPolicyErrors[keyof DeclineAiPolicyErrors];
+
+export type DeclineAiPolicyResponses = {
+    /**
+     * Successful Response
+     */
+    200: AiPolicyVersionOut;
+};
+
+export type DeclineAiPolicyResponse = DeclineAiPolicyResponses[keyof DeclineAiPolicyResponses];
+
+export type WithdrawAiPolicyData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version No
+         */
+        version_no: number;
+    };
+    query?: never;
+    url: '/v1/firm/ai-policy/versions/{version_no}/withdraw';
+};
+
+export type WithdrawAiPolicyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type WithdrawAiPolicyError = WithdrawAiPolicyErrors[keyof WithdrawAiPolicyErrors];
+
+export type WithdrawAiPolicyResponses = {
+    /**
+     * Successful Response
+     */
+    200: AiPolicyVersionOut;
+};
+
+export type WithdrawAiPolicyResponse = WithdrawAiPolicyResponses[keyof WithdrawAiPolicyResponses];
+
 export type AuditEventsData = {
     body?: never;
     headers?: {
@@ -51791,10 +53084,6 @@ export type SecurityOverviewErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SecurityOverviewError = SecurityOverviewErrors[keyof SecurityOverviewErrors];
@@ -52129,10 +53418,6 @@ export type PutPortalSignInPolicyErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PutPortalSignInPolicyError = PutPortalSignInPolicyErrors[keyof PutPortalSignInPolicyErrors];
@@ -52180,10 +53465,6 @@ export type SecurityPostureErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SecurityPostureError = SecurityPostureErrors[keyof SecurityPostureErrors];
@@ -52240,10 +53521,6 @@ export type ListSecuritySessionsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListSecuritySessionsError = ListSecuritySessionsErrors[keyof ListSecuritySessionsErrors];
@@ -52296,10 +53573,6 @@ export type SignOutSessionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SignOutSessionError = SignOutSessionErrors[keyof SignOutSessionErrors];
@@ -52351,10 +53624,6 @@ export type PutSignInPolicyErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PutSignInPolicyError = PutSignInPolicyErrors[keyof PutSignInPolicyErrors];
@@ -52406,10 +53675,6 @@ export type PutSsoExemptAccountErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PutSsoExemptAccountError = PutSsoExemptAccountErrors[keyof PutSsoExemptAccountErrors];
@@ -53511,10 +54776,6 @@ export type UnlockStaffErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UnlockStaffError = UnlockStaffErrors[keyof UnlockStaffErrors];
@@ -53562,10 +54823,6 @@ export type SupportAccessErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SupportAccessError = SupportAccessErrors[keyof SupportAccessErrors];
@@ -53617,10 +54874,6 @@ export type PutSupportAccessErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PutSupportAccessError = PutSupportAccessErrors[keyof PutSupportAccessErrors];

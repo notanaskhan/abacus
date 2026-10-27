@@ -80,6 +80,27 @@ interface OfficesSearch {
 }
 const OFFICES_SEARCH = ["expand", "ov"] as const;
 
+// G-02-T13: ADM-07 at /settings/audit-log behind `audit_log.explorer`; filters, search and the
+// open event live in the URL. G-02-T16: ADM-06 at /settings/security behind
+// `security_center.v1`; the open incident, the sessions drawer and the history tray live in the
+// URL. The route never passes ADM-06's R2 rows (fixture only until G-03-T29).
+const FirmSettingsAuditLog = lazyScreen(async () => (await import("../../screens/ADM-07")).ADM07);
+const AUDIT_SEARCH = ["actor", "object", "action", "date", "office", "ip", "q", "event"] as const;
+const FirmSettingsSecurity = lazyScreen(async () => (await import("../../screens/ADM-06")).ADM06);
+const SECURITY_SEARCH = ["incident", "sessions", "export"] as const;
+
+function pick<const K extends string>(
+  keys: readonly K[],
+  search: Record<string, unknown>,
+): Partial<Record<K, string>> {
+  return Object.fromEntries(
+    keys.flatMap((key) => {
+      const value = search[key];
+      return typeof value === "string" && value !== "" ? [[key, value]] : [];
+    }),
+  ) as Partial<Record<K, string>>;
+}
+
 function NotBuilt(): JSX.Element {
   return (
     <div className="flex flex-1 items-center justify-center p-8">
@@ -184,6 +205,62 @@ const settingsOfficesRoute = createRoute({
     );
   },
 });
+const settingsAuditLogRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/settings/audit-log",
+  validateSearch: (search: Record<string, unknown>) => pick(AUDIT_SEARCH, search),
+  component: function SettingsAuditLogPage(): JSX.Element {
+    const navigate = useNavigate();
+    const router = useRouter();
+    const search: Record<string, unknown> = useSearch({ strict: false });
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <FeatureGate flag="audit_log.explorer" fallback={<NotBuilt />}>
+          <FirmSettingsAuditLog
+            search={pick(AUDIT_SEARCH, search)}
+            onSearch={(next) => {
+              void navigate({ to: ".", search: { ...next }, replace: true });
+            }}
+            onNavigate={(section) => {
+              void navigate({ to: "/settings/$section", params: { section } });
+            }}
+            onBack={() => {
+              router.history.back();
+            }}
+          />
+        </FeatureGate>
+      </div>
+    );
+  },
+});
+const settingsSecurityRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/settings/security",
+  validateSearch: (search: Record<string, unknown>) => pick(SECURITY_SEARCH, search),
+  component: function SettingsSecurityPage(): JSX.Element {
+    const navigate = useNavigate();
+    const router = useRouter();
+    const search: Record<string, unknown> = useSearch({ strict: false });
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <FeatureGate flag="security_center.v1" fallback={<NotBuilt />}>
+          <FirmSettingsSecurity
+            search={pick(SECURITY_SEARCH, search)}
+            onSearch={(next) => {
+              void navigate({ to: ".", search: { ...next }, replace: true });
+            }}
+            onNavigate={(section) => {
+              void navigate({ to: "/settings/$section", params: { section } });
+            }}
+            onBack={() => {
+              router.history.back();
+            }}
+          />
+        </FeatureGate>
+      </div>
+    );
+  },
+});
 const settingsSectionRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/settings/$section",
@@ -216,6 +293,8 @@ export const settingsRoutes = [
   settingsGeneralRoute,
   settingsPeopleRoute,
   settingsOfficesRoute,
+  settingsAuditLogRoute,
+  settingsSecurityRoute,
   settingsSectionRoute,
   adminRoute.addChildren([
     section("/admin/methodology", () => <screens.Methodology />),

@@ -1253,6 +1253,12 @@ codes:
     raised_by:
     - abacus.modules.identity.service_lines.ServiceLineLeadInvalid
     summary: The lead must be an active staff member of the firm.
+  session_limit_out_of_range:
+    status: 422
+    raised_by:
+    - abacus.modules.identity.security_policies.SessionLimitOutOfRange
+    summary: A session limit under the floor (60 minutes absolute, 5 idle, 15 for the portal), which
+      would leave the firm's people unable to work; `facts.field` names the field.
   setting_invalid:
     status: 422
     raised_by:
@@ -1300,6 +1306,11 @@ codes:
     - abacus.modules.identity.governance_errors.SsoExemptNeedsHardwareKey
     summary: The one SSO-exempt (break-glass) account must hold a hardware-key factor (AC-18; G-02-T11,
       DEC-432). Raised by G-02-T14.
+  sso_exempt_not_self:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.security_policies.SsoExemptNotSelf
+    summary: Nobody designates themselves the SSO-exempt (break-glass) account (AC-18, DEC-525).
   sso_not_verified:
     status: 409
     raised_by:
@@ -1327,6 +1338,7 @@ codes:
     - abacus.modules.engagements.team_errors.TeamChanged
     - abacus.modules.identity.annual_independence.StaleStatement
     - abacus.modules.identity.people.StalePerson
+    - abacus.modules.identity.security_policies.StalePolicy
     - abacus.modules.identity.service_lines.StalePolicy
     - abacus.modules.identity.settings_registry.StaleSection
     - abacus.modules.organisations.live.StaleVersion

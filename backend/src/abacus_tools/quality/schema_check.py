@@ -280,6 +280,10 @@ DEFINER_FUNCTIONS = frozenset(
     # 0101 (P-01-T09, ADR-165): the staff session BFF's sign-in state and sessions.
     | {"auth_state_put", "auth_state_take", "auth_session_start", "auth_session_rotate"}
     | {"auth_session_set_refresh", "auth_session_revoke", "auth_session_end"}
+    # 0220 (G-02-T14): the BFF's per-firm limits and sign-outs, ADM-06's sessions and sign-in
+    # facts in the session's firm only, and the one-year purge.
+    | {"security_sessions", "security_session_member", "security_sign_in_methods"}
+    | {"auth_session_refused_here", "auth_session_owner", "auth_session_purge"}
     | {"access_events_partition"}  # 0105 (Q-02-T20): next month's partition, ahead of time
     # 0107 (Q-01-T45): the provisioning workflow's writers, and operators' plan contents.
     | {"apply_plan_entitlements", "invite_first_admin", "set_plan_module"}
