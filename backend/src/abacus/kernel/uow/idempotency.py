@@ -8,57 +8,71 @@ an `Idempotency-Key`. Per (tenant, actor, route, key), for 24 hours:
   again; while the first is still running it is told so (409 `idempotency_in_progress`);
 - the same key with a different request is refused (422 `idempotency_key_reused`).
 
-A run that fails releases its claim. A claim left by a crash is reclaimed after
-`PENDING_RECLAIM_S`, and an expired row by the next request (DEC-507), so a key never blocks
-forever. No connection is held while the effect runs (security re-review M1).
+Each claim carries its own `claim_id`: only that claim fills or releases its row (re-review M1),
+so a run whose claim was taken over can't answer for, or release, the one that took it. A run
+that fails before any unit of work reached its commit releases its claim (shielded from
+cancellation); a failure after an effect committed leaves the claim pending, so a retry is told
+409 rather than running the effect again (re-review M2). A claim left pending by a crash is taken
+over, by the same request only, after `PENDING_RECLAIM_S`; an expired row by the next request
+(DEC-507). No connection is held while the effect runs (security re-review M1). The database
+allows only those changes to a row (0214's trigger).
 
 The stored response must not hold Restricted data: store identifiers, as routes return.
 """
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 import re
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from typing import Final, cast
+from uuid import uuid4
 
 from sqlalchemy import TextClause, text
 
 from abacus.kernel.db import TenantContext, tenant_connection, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid
+from abacus.kernel.logging import get_logger
+from abacus.kernel.uow import watching_commits
 
 HEADER: Final = "Idempotency-Key"
-PENDING_RECLAIM_S: Final = 300
+# Far above the slowest keyed effect (a 50-item bulk sign-off, an export request): seconds.
+PENDING_RECLAIM_S: Final = 3600
 _KEY: Final = re.compile(r"[A-Za-z0-9_.:-]{8,200}")
 _FIND = text(
     "SELECT request_sha256, status_code, response FROM idempotency_keys WHERE actor_id = :actor "
     "AND route = :route AND key = :key AND expires_at > clock_timestamp()"
 )
-# Insert the claim, or take over an expired row or a stale pending one; a live row is left alone
-# (no row returned).
+# Insert the claim, or take over an expired row, or a stale pending one of the same request; a
+# live row, or a stale one of another request, is left alone (no row returned).
 _CLAIM = text(
-    "INSERT INTO idempotency_keys (tenant_id, actor_id, route, key, request_sha256) "
-    "VALUES (:tenant, :actor, :route, :key, :sha) "
+    "INSERT INTO idempotency_keys (tenant_id, actor_id, route, key, request_sha256, claim_id) "
+    "VALUES (:tenant, :actor, :route, :key, :sha, :claim) "
     "ON CONFLICT (tenant_id, actor_id, route, key) DO UPDATE SET "
-    "request_sha256 = EXCLUDED.request_sha256, status_code = NULL, response = NULL, "
+    "request_sha256 = EXCLUDED.request_sha256, claim_id = EXCLUDED.claim_id, "
+    "status_code = NULL, response = NULL, "
     "created_at = clock_timestamp(), expires_at = clock_timestamp() + interval '24 hours' "
     "WHERE idempotency_keys.expires_at <= clock_timestamp() "
     "OR (idempotency_keys.status_code IS NULL "
+    "AND idempotency_keys.request_sha256 = EXCLUDED.request_sha256 "
     "AND idempotency_keys.created_at < clock_timestamp() - make_interval(secs => :reclaim)) "
-    "RETURNING 1"
+    "RETURNING claim_id"
 )
 _FILL = text(
     "UPDATE idempotency_keys SET status_code = :status, response = CAST(:response AS jsonb) "
-    "WHERE actor_id = :actor AND route = :route AND key = :key AND request_sha256 = :sha "
+    "WHERE actor_id = :actor AND route = :route AND key = :key AND claim_id = :claim "
     "AND status_code IS NULL"
 )
 _RELEASE = text(
     "UPDATE idempotency_keys SET expires_at = clock_timestamp() "
-    "WHERE actor_id = :actor AND route = :route AND key = :key AND request_sha256 = :sha "
+    "WHERE actor_id = :actor AND route = :route AND key = :key AND claim_id = :claim "
     "AND status_code IS NULL"
 )
+_log = get_logger(__name__)
+_releases: set[asyncio.Task[int]] = set()  # held until done, so a shielded release isn't lost
 
 
 class IdempotencyKeyReused(DomainInvalid):
@@ -112,24 +126,43 @@ async def idempotent(
     if not _KEY.fullmatch(key):
         raise IdempotencyKeyInvalid
     sha = request_hash(body)
-    where = {"actor": ctx.actor_id, "route": route, "key": key, "sha": sha}
+    mine = {"actor": ctx.actor_id, "route": route, "key": key, "claim": uuid4()}
     claimed = await _write(
-        ctx, _CLAIM, {"tenant": ctx.tenant_id, "reclaim": PENDING_RECLAIM_S, **where}
+        ctx,
+        _CLAIM,
+        {"tenant": ctx.tenant_id, "sha": sha, "reclaim": PENDING_RECLAIM_S, **mine},
     )
     if claimed != 1:
         found = await _find(ctx, route, key)
         if found is None:  # expired between the claim and the read: refuse, the retry claims
             raise IdempotencyInProgress
         return _replay(found, sha)
-    try:
-        status, response = await run()
-    except BaseException:
-        await _write(ctx, _RELEASE, where)
-        raise
-    await _write(
-        ctx, _FILL, {**where, "status": status, "response": json.dumps(response, default=str)}
+    with watching_commits() as commits:
+        try:
+            status, response = await run()
+        except BaseException:
+            if not commits:  # nothing committed: the effect never happened, free the key
+                await _release(ctx, mine)
+            else:
+                _log.warning("idempotency.failed_after_commit", route=route)
+            raise
+    filled = await _write(
+        ctx, _FILL, {**mine, "status": status, "response": json.dumps(response, default=str)}
     )
+    if filled != 1:
+        # Our claim was taken over (it outlived PENDING_RECLAIM_S): the effect ran, its answer
+        # stands for this caller, and the row belongs to the run that took it.
+        _log.error("idempotency.claim_lost", route=route)
     return Stored(status, response, replayed=False)
+
+
+async def _release(ctx: TenantContext, mine: Mapping[str, object]) -> None:
+    """Release the claim even if the request is being cancelled: the release runs as its own
+    task, shielded, and is kept referenced until it is done."""
+    task = asyncio.ensure_future(_write(ctx, _RELEASE, mine))
+    _releases.add(task)
+    task.add_done_callback(_releases.discard)
+    await asyncio.shield(task)
 
 
 async def _find(ctx: TenantContext, route: str, key: str) -> tuple[str, int | None, object] | None:

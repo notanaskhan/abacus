@@ -1289,7 +1289,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "feature_flag_states": frozenset({"value", "set_by", "reason", "set_at"}),  # SPEC-011
         # P-04-T22 re-review (0214, DEC-507): a key is claimed pending, filled, or released.
         "idempotency_keys": frozenset(
-            {"request_sha256", "status_code", "response", "created_at", "expires_at"}
+            {"request_sha256", "status_code", "response", "created_at", "expires_at", "claim_id"}
         ),
         "notifications": frozenset({"read_at"}),  # SPEC-013
         "client_invitations": frozenset(  # SPEC-015

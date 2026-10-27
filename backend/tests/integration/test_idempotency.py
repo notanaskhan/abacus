@@ -8,8 +8,15 @@ import uuid
 from datetime import UTC, datetime, timedelta
 
 import pytest
+from sqlalchemy import text
+from sqlalchemy.exc import DBAPIError
 
-from abacus.kernel.db import TenantContext, configure_engine, configure_relay_engine
+from abacus.kernel.db import (
+    TenantContext,
+    configure_engine,
+    configure_relay_engine,
+    tenant_connection,
+)
 from abacus.kernel.uow import DomainEvent, Target, uow
 from abacus.kernel.uow import relay as relay_module
 from abacus.kernel.uow.idempotency import (
@@ -26,6 +33,7 @@ from .conftest import MigratedDatabase
 
 pytestmark = pytest.mark.asyncio
 ATTEMPT = "retry-publish-0001"  # an Idempotency-Key value (not a credential)
+REWRITE = "rewrite-attempt-0001"  # an Idempotency-Key value (not a credential)
 
 
 class ProbeSent(DomainEvent):
@@ -146,3 +154,94 @@ async def test_a_key_in_use_is_in_progress_and_a_failed_run_releases_it(
     other = TenantContext(tenant, "human", str(uuid.uuid4()))
     mine = await idempotent(other, route="binder.publish", key=key, body={"y": 2}, run=works)
     assert mine.replayed is False
+
+
+async def test_a_claim_answers_and_releases_only_for_itself(migrated_db: MigratedDatabase) -> None:
+    """Re-review M1 (0214, DEC-507): a run whose claim was taken over neither writes its answer
+    into the claim that took it nor releases it."""
+    configure_engine(migrated_db.app_url)
+    seed = Seeder(migrated_db.superuser_dsn)
+    tenant = await seed.firm()
+    ctx = TenantContext(tenant, "human", str(uuid.uuid4()))
+    body = {"binder_id": "b-1"}
+    age = "UPDATE idempotency_keys SET created_at = created_at - interval '2 hours' WHERE key = $1"
+
+    async def answer_b() -> tuple[int, dict[str, object]]:
+        return 200, {"by": "b"}
+
+    taken = "claim-token-0001"
+
+    async def stale_a() -> tuple[int, dict[str, object]]:
+        await seed.run(age, taken)  # A outlives the reclaim window; B takes the key over
+        b = await idempotent(ctx, route="binder.publish", key=taken, body=body, run=answer_b)
+        assert b.replayed is False
+        return 200, {"by": "a"}
+
+    await idempotent(ctx, route="binder.publish", key=taken, body=body, run=stale_a)
+    stored = await seed.value("SELECT response->>'by' FROM idempotency_keys WHERE key = $1", taken)
+    assert stored == "b"
+
+    released = "claim-token-0002"
+
+    async def stale_then_fails() -> tuple[int, dict[str, object]]:
+        # Another claim takes the key over (as the claim upsert would) and is still running.
+        await seed.run(
+            "UPDATE idempotency_keys SET claim_id = gen_random_uuid(), "
+            "created_at = clock_timestamp() WHERE key = $1",
+            released,
+        )
+        raise RuntimeError("A fails late")
+
+    with pytest.raises(RuntimeError):
+        await idempotent(
+            ctx, route="binder.publish", key=released, body=body, run=stale_then_fails
+        )
+    with pytest.raises(IdempotencyInProgress):  # the live claim was not released by A
+        await idempotent(ctx, route="binder.publish", key=released, body=body, run=answer_b)
+
+
+async def test_a_failure_after_the_effect_committed_keeps_the_claim(
+    migrated_db: MigratedDatabase,
+) -> None:
+    """Re-review M2: once a unit of work inside the run reached its commit, a later failure
+    doesn't free the key, so a retry can't run the effect again."""
+    configure_engine(migrated_db.app_url)
+    tenant = await Seeder(migrated_db.superuser_dsn).firm()
+    ctx = TenantContext(tenant, "human", str(uuid.uuid4()))
+    body = {"binder_id": "b-1"}
+
+    async def commits_then_fails() -> tuple[int, dict[str, object]]:
+        async with uow(ctx) as tx:
+            tx.record("binder.published", target=Target("firm", tenant))
+        raise RuntimeError("after the commit")
+
+    async def again() -> tuple[int, dict[str, object]]:
+        raise AssertionError("the effect ran twice")
+
+    attempt = "after-commit-0001"
+    with pytest.raises(RuntimeError):
+        await idempotent(
+            ctx, route="binder.publish", key=attempt, body=body, run=commits_then_fails
+        )
+    with pytest.raises(IdempotencyInProgress):
+        await idempotent(ctx, route="binder.publish", key=attempt, body=body, run=again)
+
+
+async def test_a_completed_answer_is_never_rewritten(migrated_db: MigratedDatabase) -> None:
+    """Re-review L1 (0214's trigger): the app role may only claim, fill once or release."""
+    configure_engine(migrated_db.app_url)
+    tenant = await Seeder(migrated_db.superuser_dsn).firm()
+    ctx = TenantContext(tenant, "human", str(uuid.uuid4()))
+
+    async def done() -> tuple[int, dict[str, object]]:
+        return 200, {"ok": True}
+
+    await idempotent(ctx, route="binder.publish", key=REWRITE, body={}, run=done)
+    with pytest.raises(DBAPIError):
+        async with tenant_connection(ctx) as conn:
+            await conn.execute(
+                text(
+                    "UPDATE idempotency_keys SET response = '{\"ok\": false}' WHERE key = :attempt"
+                ),
+                {"attempt": REWRITE},
+            )  # refused at the statement; the connection rolls back on leaving

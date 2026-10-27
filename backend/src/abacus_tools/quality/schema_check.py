@@ -101,6 +101,7 @@ _PLATFORM_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "idempotency_keys": frozenset(  # P-06-T06 (migration 0099)
         {"tenant_id", "actor_id", "route", "key", "request_sha256", "status_code", "response"}
+        | {"claim_id"}  # 0214 (DEC-507)
     ),
     "usage_records": frozenset(
         {"id", "tenant_id", "engagement_id", "agent_id", "agent_run_id", "prompt_id"}
@@ -167,7 +168,7 @@ _PLATFORM_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "feature_flag_states": frozenset({"value", "set_by", "reason", "set_at"}),  # SPEC-011
     # P-04-T22 re-review (0214, DEC-507): a key is claimed pending, filled, or released.
     "idempotency_keys": frozenset(
-        {"request_sha256", "status_code", "response", "created_at", "expires_at"}
+        {"request_sha256", "status_code", "response", "created_at", "expires_at", "claim_id"}
     ),
 }
 # Tables owned outside the modules (ADR-103): migrations, kernel packages, the AI gateway and

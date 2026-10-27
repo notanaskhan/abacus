@@ -67,7 +67,9 @@ _NOTES_GUARD = f"""
                 USING ERRCODE = 'check_violation';
         END IF;
         -- A clear, a withdrawal or a close is the event the same person wrote in this
-        -- transaction (re-review L3): the status is never set on its own.
+        -- transaction (re-review L3): the status is never set on its own. The event's `xmin`
+        -- is the writing transaction's id only outside a savepoint: the service inserts the
+        -- event and sets the status in one unit of work with no savepoint, and must keep it so.
         IF NEW.status IN ('cleared', 'withdrawn', 'closed') AND NOT EXISTS (
             SELECT 1 FROM public.reviewable_note_events e
              WHERE e.tenant_id = NEW.tenant_id AND e.note_id = NEW.id AND e.kind = NEW.status
@@ -107,7 +109,7 @@ _CARDS_GUARD = f"""
             END IF;
         ELSIF OLD.status IN ('awaiting_role', 'decided') AND NEW.status = 'superseded' THEN
             -- The successor is this card's own reassessment (re-review L2): the same engagement
-            -- and kind, its first version a reassessment by the person acting now.
+            -- and kind, carrying a `reassessed` version by the person acting now.
             IF NOT EXISTS (
                 SELECT 1 FROM public.decision_cards c
                  WHERE c.tenant_id = NEW.tenant_id AND c.supersedes_id = NEW.id
