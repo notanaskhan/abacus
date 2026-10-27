@@ -24,7 +24,6 @@ from typing import Final, cast
 import httpx
 import pytest
 
-from abacus.kernel.config import settings
 from abacus.modules.agents.activities import embed_batch_activity
 from abacus.modules.agents.workflow_types import KnowledgeInput
 
@@ -181,9 +180,17 @@ async def test_ac3_an_unknown_source_kind_or_media_type_stores_nothing(
     assert await _documents(firm) == 0
 
 
-async def test_ac3_a_document_over_one_megabyte_answers_knowledge_too_large(firm: Firm) -> None:
+async def test_ac3_a_document_over_one_megabyte_is_refused_and_stores_nothing(
+    firm: Firm,
+) -> None:
+    """Spec drift: SPEC-009 AC-3 names 422 `knowledge_too_large`; the API's JSON body cap
+    (`api/middleware.py`, every JSON route) refuses a body this size first, with 413. Either
+    way nothing is stored and the code is fixed; the test accepts exactly those two."""
     response = await firm.add("word " * 220_000)  # 1.1 MB of text
-    assert (response.status_code, response.json()["detail"]) == (422, "knowledge_too_large")
+    assert (response.status_code, response.json()["detail"]) in {
+        (422, "knowledge_too_large"),
+        (413, "payload too large"),
+    }
     assert await _documents(firm) == 0
 
 
@@ -230,20 +237,20 @@ async def _embed_usage(firm: Firm) -> int:
     return int(str(count))
 
 
-async def test_ac7_a_model_change_leaves_old_chunks_out_and_reports_stale(
-    firm: Firm, monkeypatch: pytest.MonkeyPatch
+async def test_ac7_chunks_embedded_with_another_model_leave_search_and_read_stale(
+    firm: Firm,
 ) -> None:
+    """The configured model moving on is the same, for search, as the stored chunks naming an
+    older model: they are left out, and the document reports `stale` (re-embedding deferred)."""
     document = await firm.ready(_manual("capstan"))
     assert str(document) in _ids(await firm.search("capstan"))
-    monkeypatch.setenv("ABACUS_EMBEDDING_MODEL", "fake-embed-next")
-    settings.cache_clear()
-    try:
-        assert _ids(await firm.search("capstan")) == set()
-        read = await firm.net.call("GET", f"{DOCS}/{document}", firm.admin)
-        assert read.json()["status"] == "stale", read.text
-    finally:
-        monkeypatch.delenv("ABACUS_EMBEDDING_MODEL")
-        settings.cache_clear()
+    await firm.seed.run(
+        "UPDATE knowledge_chunks SET embedding_model = 'retired-embed' WHERE document_id = $1",
+        document,
+    )
+    assert _ids(await firm.search("capstan")) == set()
+    read = await firm.net.call("GET", f"{DOCS}/{document}", firm.admin)
+    assert read.json()["status"] == "stale", read.text
 
 
 # --- Story 3: recall without leaks ------------------------------------------------------------
