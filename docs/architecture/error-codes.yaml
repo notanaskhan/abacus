@@ -136,11 +136,17 @@ codes:
     raised_by:
     - abacus.modules.identity.annual_independence.AnnualConfirmationInvalid
     summary: Only the current year can be confirmed, and a decline needs a note.
+  approver_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.evidence.firm_exports.ApproverInvalid
+    summary: The approver is the requester, or holds no security-admin or partner-level membership.
   approver_must_differ:
     status: 409
     raised_by:
     - abacus.modules.agents.ai_policy_errors.ApproverMustDiffer
-    summary: The partner who approves a policy version is not the person who requested it (AC-37, DEC-50).
+    - abacus.modules.evidence.firm_exports.ApproverMustDiffer
+    summary: The person who approves is never the person who asked (AC-37, DEC-50; DEC-72).
   approver_not_partner:
     status: 422
     raised_by:
@@ -456,6 +462,11 @@ codes:
     raised_by:
     - abacus.modules.evidence.exports.ExportKindUnsupported
     summary: Only an audit work item exports a binder (fail closed until C19 and a tax-export review).
+  export_not_awaiting_approval:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.firm_exports.ExportNotAwaitingApproval
+    summary: The export was already approved or declined.
   export_not_ready:
     status: 409
     raised_by:
@@ -467,6 +478,12 @@ codes:
     - abacus.modules.evidence.exports.ExportSectionUnavailable
     summary: 'The scope asks for a section no provider can write yet (the audit trail until its reader
       is registered): refused at create, before any grant, rather than failing after the window.'
+  export_stale:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.export_currency.ExportStale
+    summary: 'Evidence or requests changed after the final export''s snapshot: export again, then record
+      the archive (`facts.event_seq` names the newer event).'
   field_value_invalid:
     status: 422
     raised_by:
@@ -487,6 +504,12 @@ codes:
     - abacus.modules.connections.ledger_import.FileRefused
     - abacus.modules.evidence.uploads.UploadRefused
     summary: The malware scanner refused the file (SPEC-029 AC-1; ADR-110). Nothing is stored.
+  final_export_required:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.export_currency.FinalExportRequired
+    summary: 'The archive needs a ready final binder export of this work item: none was named, or the
+      one named is not final, not ready, voided or expired.'
   finding_invalid:
     status: 422
     raised_by:
@@ -1141,11 +1164,28 @@ codes:
     raised_by:
     - abacus.modules.review.decisions.RecommendationChanged
     summary: The card moved past the version the decider saw (reassessed or superseded).
+  record_out_of_phase:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.release.RecordOutOfPhase
+    summary: 'The audit''s phase does not take this record: a release from In review to Ready to release,
+      an archive once Released (`facts.phase`).'
   relationship_partner:
     status: 409
     raised_by:
     - abacus.modules.identity.walls.RelationshipPartner
     summary: 'The person leads the client''s relationship: reassign it first (AC8.3).'
+  release_date_future:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.release.ReleaseDateFuture
+    summary: The release date is after the firm's today.
+  release_mode_in_app:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.release.ReleaseModeInApp
+    summary: 'The firm releases reports in Accrued (`assurance_release_mode = in_app`): record mode is
+      closed for release and archive.'
   relink_unverified:
     status: 422
     raised_by:
@@ -1161,6 +1201,11 @@ codes:
     raised_by:
     - abacus.modules.requests.lifecycle.RequestClosed
     summary: 'The request is Received or Not applicable: reopen it before changing it.'
+  requester_not_active:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.firm_exports.RequesterNotActive
+    summary: 'The requester is no longer an active security admin: the export can''t be approved.'
   response_invalid:
     status: 422
     raised_by:
@@ -1345,6 +1390,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.phase.ProfileStale
+    - abacus.modules.communications.follow_up_policy.FollowUpPolicyStale
     - abacus.modules.communications.template_service.TemplateDraftStale
     - abacus.modules.connections.entity.StaleConnection
     - abacus.modules.engagements.acceptance.AcceptanceStale
