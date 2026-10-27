@@ -35,3 +35,7 @@ revert the commit.
 
 ## Progress log
 - 2026-10-22: built per the S3 batch rules (static checks only). ruff and pyright are clean, and `make check-generated` passes.
+- 2026-10-27 (S10 gap build, Q-03-T011): independent suite `backend/tests/integration/backfill/test_f04t16_clock_adoption.py`, 4 passed.
+  - Under `clock.frozen(Mon 14 Sep 2026, 9:24 AM CT)`, the partner's independence conclusion is stored at that instant.
+  - The mail sink's `sent_at`, a signup code's expiry and the access review's `generated_at` follow real time.
+  - Recorded in `docs/quality/backfill.md`.

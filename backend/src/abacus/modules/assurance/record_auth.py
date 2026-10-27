@@ -13,7 +13,14 @@ from datetime import datetime
 
 from abacus.kernel.clock import system_now
 from abacus.kernel.errors import DomainForbidden
-from abacus.modules.identity.api import MFA_RECENT, AuthContext, Forbidden, Resource, authorise
+from abacus.modules.identity.api import (
+    MFA_RECENT,
+    AuthContext,
+    Forbidden,
+    Resource,
+    allowed_actions,
+    authorise,
+)
 
 
 class RecordNeedsMfa(DomainForbidden):
@@ -34,9 +41,14 @@ async def authorise_record(ctx: AuthContext, action: str, resource: Resource) ->
     try:
         await authorise(ctx, action, resource)
     except Forbidden as refused:
-        if refused.layer == "attribute" and not resource.archived and _stale(ctx):
-            raise RecordNeedsMfa(facts={"reason": "mfa_required"}) from None
-        raise
+        if refused.layer != "attribute" or resource.archived or not _stale(ctx):
+            raise
+        # Step up only when the stale factor is the sole blocker (DEC-598): every other layer
+        # must allow it (`allowed_actions` checks all but fresh MFA), so an independence or other
+        # attribute refusal reads as itself.
+        if action not in await allowed_actions(ctx, resource, [action]):
+            raise
+        raise RecordNeedsMfa(facts={"reason": "mfa_required"}) from None
 
 
 def fresh_mfa_at(ctx: AuthContext) -> datetime:
