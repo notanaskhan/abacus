@@ -13,7 +13,7 @@
 No firm content is written here (AGENTS 16): the policy is set through the portal settings.
 
 Revision ID: 0221
-Revises: 0220
+Revises: 0216
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, tenant_table
 
 revision = "0221"
-down_revision = "0220"
+down_revision = "0216"
 branch_labels = None
 depends_on = None
 
