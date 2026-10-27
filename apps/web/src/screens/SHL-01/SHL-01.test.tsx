@@ -264,8 +264,15 @@ describe("SHL-01 behaviour (P-01 AC 1.1)", () => {
     for (const area of AREAS) {
       const landing = entries[area.landing];
       expect(landing?.navArea, area.landing).toBe(area.label);
-      // A routed landing is reached at its manifest path; Home's "/" is the legacy home page.
-      expect(landing?.path ?? area.path, area.landing).toBe(area.path);
+      // A routed landing is reached at its manifest path. Home is the one exception until
+      // I-01-T13: the area still opens "/" (the legacy home page) while HOME-01 lives at "/home"
+      // behind `home.dashboard` (routes/firm/home.tsx).
+      if (area.label === "Home") {
+        expect(area.path, area.landing).toBe("/");
+        expect(landing?.path, area.landing).toBe("/home");
+      } else {
+        expect(landing?.path ?? area.path, area.landing).toBe(area.path);
+      }
       expect(area.routed, area.landing).toBe(landing?.path != null || area.path === "/");
     }
     for (const [id, entry] of Object.entries(entries)) {

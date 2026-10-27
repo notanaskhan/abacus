@@ -8,7 +8,7 @@ export const porScreens = {
   // /accept (routes/portal), outside the firm's tree, so it carries no firm path. Live since
   // P-08-T29: it reads the served pre-session routes (P-08-T10, T11).
   "POR-01": {
-    name: "Portal sign-in · Brightwater Hale",
+    name: "Portal sign-in", // the handoff adds "· Brightwater Hale"; no seed name ships (dist.test.ts)
     status: "live",
     path: null,
     entry: true,
