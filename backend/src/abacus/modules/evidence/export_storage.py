@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import asyncio
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import IO, TYPE_CHECKING, Final, Literal, TypedDict
@@ -105,6 +106,7 @@ async def put_segments(
     *,
     segment_bytes: int = SEGMENT_BYTES,
     kind: StoredKind = ENGAGEMENT,
+    progress: Callable[[int], None] | None = None,
 ) -> int:
     """Seal and store `bundle` (read from its current position) in segments; their count. A
     retry that cuts fewer segments removes the earlier attempt's higher ones."""
@@ -125,6 +127,8 @@ async def put_segments(
             **target.owned(),
         )
         n += 1
+        if progress is not None:  # a long store reports each segment (the firm export's heartbeat)
+            progress(n)
         if len(chunk) < segment_bytes:
             await _drop_from(target, tenant_id, export_id, n, kind)
             return n

@@ -219,10 +219,17 @@ async def package_export(
         bundle_sha256, size = await asyncio.to_thread(_digest, scratch)
         heartbeat("written")
         if segment_bytes is None:
-            segments = await put_segments(tenant_id, export_id, scratch, kind="firm_export")
+            segments = await put_segments(
+                tenant_id, export_id, scratch, kind="firm_export", progress=heartbeat
+            )
         else:
             segments = await put_segments(
-                tenant_id, export_id, scratch, segment_bytes=segment_bytes, kind="firm_export"
+                tenant_id,
+                export_id,
+                scratch,
+                segment_bytes=segment_bytes,
+                kind="firm_export",
+                progress=heartbeat,
             )
     heartbeat("stored")
     return FirmExportFacts(
@@ -259,7 +266,10 @@ async def ready_export(facts: FirmExportFacts) -> str:
             )
             if locked is None or locked.status != "building":
                 raise _Nothing
-            if locked.decided_at is None or locked.decided_at + WINDOW <= now:
+            # A decision stamped after now (a clock moved back) is failed too, never wedged on the
+            # window CHECK.
+            decided = locked.decided_at
+            if decided is None or decided > now or decided + WINDOW <= now:
                 raise _TooLate
             await tx.session.execute(
                 update(FirmExport)
@@ -272,7 +282,7 @@ async def ready_export(facts: FirmExportFacts) -> str:
                     segment_count=facts.segment_count,
                     object_prefix=facts.object_prefix,
                     ready_at=now,
-                    available_until=locked.decided_at + WINDOW,
+                    available_until=decided + WINDOW,
                 )
             )
             tx.record(
@@ -304,13 +314,25 @@ async def fail_export(tenant_id: UUID, export_id: UUID) -> str:
         return "failed"
     if row.status != "building":
         return row.status
-    async with uow(_system(row)) as tx:
-        await tx.session.execute(
-            update(FirmExport)
-            .where(FirmExport.id == export_id, FirmExport.status == "building")
-            .values(status="failed", failure_code=BUILD_ERROR)
-        )
-        tx.record("firm_export.failed", target=Target(SUBJECT, export_id))
+    try:
+        async with uow(_system(row)) as tx:
+            locked = await tx.session.scalar(
+                select(FirmExport)
+                .where(FirmExport.id == export_id)
+                .with_for_update()
+                .execution_options(populate_existing=True)
+            )
+            if locked is None or locked.status != "building":
+                raise _Nothing  # settled meanwhile (ready): nothing is failed or deleted
+            await tx.session.execute(
+                update(FirmExport)
+                .where(FirmExport.id == export_id, FirmExport.status == "building")
+                .values(status="failed", failure_code=BUILD_ERROR)
+            )
+            tx.record("firm_export.failed", target=Target(SUBJECT, export_id))
+    except _Nothing:
+        again = await _row(tenant_id, export_id)
+        return again.status if again is not None else "missing"
     await delete_segments(tenant_id, export_id, kind="firm_export")
     return "failed"
 

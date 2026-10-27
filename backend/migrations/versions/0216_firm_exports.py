@@ -216,11 +216,23 @@ def upgrade() -> None:
                 IF NOT {_APPROVER.format(tenant="OLD.tenant_id", user="OLD.approver_id")} THEN
                     RAISE EXCEPTION 'approver_invalid' USING ERRCODE = 'insufficient_privilege';
                 END IF;
-                -- The requester must still be an active security admin: two current people.
-                IF NOT {_SECURITY_ADMIN.format(tenant="OLD.tenant_id", user="OLD.requested_by")}
+                -- An approval needs the requester still an active security admin: two current
+                -- people. A decline doesn't, so an orphaned request can always be closed.
+                IF NEW.status = 'building' AND NOT
+                    {_SECURITY_ADMIN.format(tenant="OLD.tenant_id", user="OLD.requested_by")}
                 THEN
                     RAISE EXCEPTION 'requester_not_active'
                         USING ERRCODE = 'insufficient_privilege';
+                END IF;
+                -- The decision is stamped now (the business clock), with its fresh factor.
+                IF NEW.decided_at IS NULL
+                    OR NEW.decided_at NOT BETWEEN abacus_now() - interval '5 minutes'
+                        AND abacus_now() + interval '5 minutes'
+                    OR NEW.decided_mfa_at IS NULL
+                    OR NEW.decided_mfa_at > clock_timestamp() + interval '1 minute'
+                THEN
+                    RAISE EXCEPTION 'a decision is stamped when it is made'
+                        USING ERRCODE = 'check_violation';
                 END IF;
                 -- A person's decision writes the decision only, never the system's stamps.
                 IF NEW.bundle_sha256 IS NOT NULL OR NEW.manifest_sha256 IS NOT NULL
@@ -270,7 +282,9 @@ def upgrade() -> None:
             tenant_id uuid NOT NULL,
             export_id uuid NOT NULL,
             user_id uuid NOT NULL,
-            issued_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+            -- The transaction's instant, so a link's 15 minutes are counted from the same instant
+            -- the app computes `expires_at` from (`now() + 15 minutes`).
+            issued_at timestamptz NOT NULL DEFAULT now(),
             expires_at timestamptz NOT NULL,
             mfa_at timestamptz NOT NULL,
             UNIQUE (tenant_id, id),
@@ -292,6 +306,7 @@ def upgrade() -> None:
         BEGIN
             IF current_setting('app.actor_kind', true) IS DISTINCT FROM 'human'
                 OR current_setting('app.actor_id', true) IS DISTINCT FROM NEW.user_id::text
+                OR NEW.mfa_at > clock_timestamp() + interval '1 minute'
             THEN
                 RAISE EXCEPTION 'a firm export link is issued to the person acting'
                     USING ERRCODE = 'insufficient_privilege';
@@ -368,6 +383,7 @@ def upgrade() -> None:
         BEGIN
             IF current_setting('app.actor_kind', true) IS DISTINCT FROM 'human'
                 OR current_setting('app.actor_id', true) IS DISTINCT FROM NEW.user_id::text
+                OR NEW.mfa_at > clock_timestamp() + interval '1 minute'
                 OR NOT EXISTS (
                     SELECT 1 FROM firm_export_links l
                     WHERE l.tenant_id = NEW.tenant_id AND l.id = NEW.link_id

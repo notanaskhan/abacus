@@ -438,7 +438,8 @@ async def issue_link(ctx: AuthContext, export_id: UUID) -> FirmExportLinkView:
                     "retry_after": max(1, math.ceil(LINK_WINDOW_SECONDS - elapsed)),
                 }
             )
-        # The link's 15 minutes run on the database's clock, as its CHECK and its use do.
+        # The link's 15 minutes run on the database's clock, from the transaction's instant (the
+        # row's `issued_at`), as its CHECK and its use do.
         expires_at = await tx.session.scalar(
             insert(FirmExportLink)
             .values(
@@ -446,7 +447,7 @@ async def issue_link(ctx: AuthContext, export_id: UUID) -> FirmExportLinkView:
                 tenant_id=ctx.tenant_id,
                 export_id=row.id,
                 user_id=ctx.user_id,
-                expires_at=func.least(func.clock_timestamp() + LINK_LIFETIME, available_until),
+                expires_at=func.least(func.now() + LINK_LIFETIME, available_until),
                 mfa_at=ctx.mfa_at,
             )
             .returning(FirmExportLink.expires_at)

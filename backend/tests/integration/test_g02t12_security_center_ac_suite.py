@@ -797,7 +797,7 @@ async def test_ac24_ac47_felix_requests_and_only_another_person_approves(
         json={"approver_user_id": str(world.margaret.user_id)},
         # The kernel takes 8 to 200 of [A-Za-z0-9_.:-] (`kernel/uow/idempotency.py`); "k1" was
         # never a valid key and only went unnoticed while the stub answered 501 (TASK-1403).
-        headers={"Idempotency-Key": "felix-export-k1"},
+        headers={"Idempotency-Key": str(uuid.uuid4())},
     )
     if stubbed(EXPORT_REQUEST, requested):
         return

@@ -513,6 +513,9 @@ async def test_review_a_requester_no_longer_security_admin_blocks_the_approval(
             firm.partner.user_id,
         )
     assert (await _row(firm, export_id)).status == "awaiting_approval"
+    # A decline still closes it: an orphaned request never stays open for good.
+    declined = await firm_exports.respond(partner_ctx(firm), export_id, approve=False)
+    assert declined.status == "declined"
 
 
 async def test_review_a_decision_writes_no_build_stamp(firm: Firm) -> None:
@@ -555,3 +558,30 @@ async def test_review_each_archive_request_is_recorded_and_counted(firm: Firm) -
     # The link's id is in the link rows, never in an audit row.
     events = [e for e in await firm.seed.events(firm.tenant) if e.action.startswith("firm_export")]
     assert all("link" not in e.after for e in events)
+
+
+async def test_review_a_late_failure_never_touches_a_ready_archive(
+    firm: Firm, raw: S3Client
+) -> None:
+    row = await _ready(firm)
+    assert await firm_export_activities.fail_export(firm.tenant, row.id) == "ready"
+    prefix = export_storage.export_prefix(firm.tenant, row.id, kind="firm_export")
+    assert raw.list_objects_v2(Bucket=ARCHIVES, Prefix=prefix).get("KeyCount", 0) > 0
+    assert "firm_export.failed" not in await firm.seed.actions(firm.tenant)
+
+
+async def test_review_a_decision_is_stamped_when_it_is_made(firm: Firm) -> None:
+    export_id = await _requested(firm)
+    for days in (-3, 3):
+        with pytest.raises(asyncpg.CheckViolationError, match="stamped when it is made"):
+            await firm.seed.as_actor(
+                firm.tenant,
+                ("human", str(firm.partner.user_id)),
+                "UPDATE firm_exports SET status = 'building', decided_by = $2, "
+                "decided_at = now() + make_interval(days => $3), decided_mfa_at = now() "
+                "WHERE id = $1",
+                export_id,
+                firm.partner.user_id,
+                days,
+            )
+    assert (await _row(firm, export_id)).status == "awaiting_approval"
