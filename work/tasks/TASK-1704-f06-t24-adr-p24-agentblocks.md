@@ -4,7 +4,7 @@ title: F-06-T24 ADR P-24 structured agent output (AgentBlocks)
 spec: SPEC-400
 acceptance_criteria: [AC-39]
 risk_zone: red
-status: in-review
+status: done
 epic: F-06
 plan_key: F-06-T24
 branch: s14-f06-t24
@@ -31,10 +31,11 @@ Checklist (from 05 §5.4.5 and §5.3.10, AG-05, 09 P-24 and DEC-41, ADR-065, ADR
 
 ## Progress log
 - `2026-10-28` — ADR-230 drafted (status proposed), README and backlog rows; `validate_docs` clean on the branch.
+- `2026-10-28` — ADR-230 accepted by ayushkbhatia (in chat); status, README index and backlog row updated.
 
 ## Questions for the human
-- [ ] Accept ADR-230 by Fri May 28, 2027 (red ADR: the decider is ayushkbhatia; it was not accepted on silence).
+- [x] Accept ADR-230: accepted by ayushkbhatia on 2026-10-28.
 
 ## Handoff
-- **Current state:** drafted, PR open (stacked on F-06-T01 for SPEC-400), held for the S14 batch.
-- **Exact next step:** acceptance, then the follow-up schema work (v2 `h`, `ul`, `total` rows) before F-06-T15.
+- **Current state:** accepted, PR open (stacked on F-06-T01 for SPEC-400), held for the S14 batch.
+- **Exact next step:** the follow-up schema work (v2 `h`, `ul`, `total` rows) before F-06-T15.
