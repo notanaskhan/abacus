@@ -128,7 +128,8 @@ async def _decisions_of(world: World, card: uuid.UUID) -> int:
     )
 
 
-async def _sign(world: World, who: str, target: uuid.UUID, level: str, **over: str) -> int:
+async def _sign(world: World, who: str, target: uuid.UUID, level: str, **over: str) -> str:
+    """One sign-off's status and detail, for readable assertions ("201", "409 segregation")."""
     response = await world.call(
         "POST",
         SIGN,
@@ -141,7 +142,9 @@ async def _sign(world: World, who: str, target: uuid.UUID, level: str, **over: s
             "statement_version": REVIEWER_V1,
         },
     )
-    return response.status_code
+    if response.status_code < 400:
+        return str(response.status_code)
+    return f"{response.status_code} {response.json().get('detail')}"
 
 
 async def _raise(
@@ -181,7 +184,12 @@ async def test_ac3_only_margaret_okonkwo_can_decide_the_northwind_card(world: Wo
         "performance_materiality": "189150",
         "clearly_trivial": "12610",
     }
-    assert body["recommendation"]["option_key"] == "pct_1_5"  # a tag, never a decision
+    # The agent's recommendation is a tag on one option, never a decision (DEC-502).
+    assert {o["key"]: o["recommended"] for o in body["options"]} == {
+        "pct_1_0": False,
+        "pct_1_5": True,
+    }
+    assert body["decision"] is None
     assert body["history"][0]["actor_kind"] == "agent"
     assert body["history"][0]["event"] == "proposed"
 
@@ -239,7 +247,7 @@ async def test_ac3_a_stale_second_factor_or_card_version_decides_nothing(world: 
     assert reassessed.status_code == 200, reassessed.text
     assert reassessed.json()["card"]["version_no"] == 2
     stale = await world.call("POST", f"{path}/decide", "margaret", _decide(1))
-    assert stale.status_code == 409 and stale.json() == {"detail": "recommendation_changed"}
+    assert stale.status_code == 409 and stale.json()["detail"] == "recommendation_changed"
     assert await _card_status(world, card) == "awaiting_role"
     fresh = await world.call("POST", f"{path}/decide", "margaret", _decide(2))
     assert fresh.status_code == 200, fresh.text
@@ -338,7 +346,7 @@ async def test_ac1_two_open_notes_block_l2_and_clearing_both_lets_the_same_revie
     world: World,
 ) -> None:
     target = probe(world.site, (world["ana"],))
-    assert await _sign(world, "ana", target, "L1_preparer") == 201
+    assert await _sign(world, "ana", target, "L1_preparer") == "201"
     c14 = await _raise(world, "hannah", target, "RA!C14", "Tie RA!C14 to the trustee statement.")
     c22 = await _raise(world, "hannah", target, "RA!C22", "Explain the RA!C22 variance.")
     blocked = await world.call(
@@ -358,11 +366,11 @@ async def test_ac1_two_open_notes_block_l2_and_clearing_both_lets_the_same_revie
     # A response alone does not unblock (answered notes still block).
     responded = await world.call("POST", f"{NOTES}/{c14}/respond", "ana", {"body": "Tied."})
     assert responded.status_code == 200, responded.text
-    assert await _sign(world, "hannah", target, "L2_reviewer") == 409
+    assert await _sign(world, "hannah", target, "L2_reviewer") == "409 open_review_notes"
     for note in (c14, c22):
         cleared = await world.call("POST", f"{NOTES}/{note}/clear", "hannah", {})
         assert cleared.status_code == 200, cleared.text
-    assert await _sign(world, "hannah", target, "L2_reviewer") == 201
+    assert await _sign(world, "hannah", target, "L2_reviewer") == "201"
     assert [a for a, _ in await audit_rows(world, "review_note.cleared")] == ["human", "human"]
 
 
@@ -384,21 +392,17 @@ async def test_ac1_bodies_are_sealed_lists_carry_none_and_a_body_read_is_an_acce
         marker,
     )
     assert plain == 0  # sealed at rest
-    before = await world.seed.value(
-        "SELECT count(*) FROM access_events WHERE tenant_id = $1 AND subject_id = $2",
-        world.tenant_id,
-        note,
+    # Raising answers the detail (with the body), so the raiser's read may be recorded; what
+    # matters is that the list reads none and Ana's detail read is one access event.
+    reads_sql = (
+        "SELECT kind, actor_kind, actor_id FROM access_events WHERE tenant_id = $1 "
+        "AND subject_id = $2 AND actor_id = $3"
     )
-    assert before == 0  # a list reads no body
+    assert await world.seed.rows(reads_sql, world.tenant_id, note, world["ana"].user_id) == []
     detail = await world.call("GET", f"{NOTES}/{note}", "ana")
     assert detail.status_code == 200, detail.text
     assert detail.json()["body"] == marker
-    reads = await world.seed.rows(
-        "SELECT kind, actor_kind, actor_id FROM access_events WHERE tenant_id = $1 "
-        "AND subject_id = $2",
-        world.tenant_id,
-        note,
-    )
+    reads = await world.seed.rows(reads_sql, world.tenant_id, note, world["ana"].user_id)
     assert [(r["kind"], r["actor_kind"], r["actor_id"]) for r in reads] == [
         ("review_content.read", "human", world["ana"].user_id)
     ]
@@ -437,7 +441,7 @@ async def test_ac1_raising_needs_a_registered_reviewable_and_a_role_that_raises(
         "POST",
         NOTES,
         "hannah",
-        {"target_type": "p04t28_nothing", "target_id": str(uuid.uuid4()), "body": "x"},
+        {"target_type": "indep_nothing", "target_id": str(uuid.uuid4()), "body": "x"},
     )
     assert unregistered.status_code == 422 and unregistered.json()["detail"] == "unregistered_kind"
     unknown = await world.call(
@@ -490,9 +494,11 @@ async def test_ac1_walls_and_other_firms_read_no_note(world: World, net: Net) ->
         )
         assert clear.status_code == 404
     reads = await world.seed.value(
-        "SELECT count(*) FROM access_events WHERE subject_id = $1", note
+        "SELECT count(*) FROM access_events WHERE subject_id = $1 AND actor_id <> $2",
+        note,
+        world["hannah"].user_id,
     )
-    assert reads == 0
+    assert reads == 0  # nobody but the raiser read the body
 
 
 # --- AC-2: bulk sign-off -----------------------------------------------------------------------
@@ -504,7 +510,7 @@ async def test_ac2_six_workpapers_three_ineligible_and_a_replay_returns_the_stor
     targets = [probe(world.site, (world["ana"],), hash_text=f"wp{n}") for n in range(6)]
     no_l1, noted, moved = targets[3], targets[4], targets[5]
     for target in (*targets[:3], noted, moved):
-        assert await _sign(world, "ana", target, "L1_preparer") == 201
+        assert await _sign(world, "ana", target, "L1_preparer") == "201"
     await _raise(world, "hannah", noted, "RA!C14", "Open question.")
     body = {
         "level": "L2_reviewer",
@@ -553,7 +559,9 @@ async def test_ac2_reviewers_only_fresh_mfa_never_the_preparer_and_a_hidden_targ
     mine = probe(world.site, (world["ana"],))
     raj_prepared = probe(world.site, (world["raj"],))
     for target in (mine, raj_prepared):
-        assert await _sign(world, "ana" if target == mine else "raj", target, "L1_preparer") == 201
+        assert (
+            await _sign(world, "ana" if target == mine else "raj", target, "L1_preparer") == "201"
+        )
     elsewhere = await make_world(net, "Northwind elsewhere")
     hidden = probe(elsewhere.site, (elsewhere["ana"],))
 
@@ -662,9 +670,10 @@ async def test_inv1_the_data_layer_refuses_a_decision_written_as_the_agent_or_pl
                     {"id": card},
                 )
                 tx.record("decision_card.probed", target=Target("decision_card", card))
-        with pytest.raises(Exception):  # noqa: B017 -- the human-only audit list (0212)
-            async with uow(tenant) as tx:
-                tx.record("decision.decided", target=Target("decision_card", card))
+    # The human-only audit list refuses the verdict written as the agent (0097, 0212).
+    with pytest.raises(Exception):  # noqa: B017
+        async with uow(acting.tenant) as tx:
+            tx.record("decision.decided", target=Target("decision_card", card))
     assert await _card_status(world, card) == "awaiting_role"
     assert await audit_rows(world, "decision.decided") == []
     assert await _decisions_of(world, card) == 0

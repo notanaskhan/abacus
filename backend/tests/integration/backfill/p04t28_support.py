@@ -17,7 +17,6 @@ import json
 import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass
-from decimal import Decimal
 from typing import Final, cast
 
 import httpx
@@ -50,10 +49,10 @@ from abacus.modules.review.api import (
 from .support import Net, Person, Role, Seeder, Site
 
 Json = dict[str, object]
-RETURN: Final = "p04t28_return"  # a field owner whose applier writes through record_value
-UNOWNED: Final = "p04t28_unowned"  # accepts suggestions, but nobody writes them
-PROBE: Final = "p04t28_probe"  # a reviewable whose facts the tests set
-MATERIALITY: Final = "p04t28_materiality"  # a decision kind reserved to the partner
+RETURN: Final = "indep_return"  # a field owner whose applier writes through record_value
+UNOWNED: Final = "indep_unowned"  # accepts suggestions, but nobody writes them
+PROBE: Final = "indep_probe"  # a reviewable whose facts the tests set
+MATERIALITY: Final = "indep_materiality"  # a decision kind reserved to the partner
 QUESTION: Final = "planning_materiality"
 SCREENER: Final = "evidence.screener"
 
@@ -107,7 +106,8 @@ register_reviewable_facts(PROBE, _probe_facts)
 
 
 def content_hash(seed_text: str) -> str:
-    return "sha256:" + hashlib.sha256(seed_text.encode()).hexdigest()
+    """The owner's digest (bare hex, `review.hashing`); the wire carries it as `sha256:<hex>`."""
+    return hashlib.sha256(seed_text.encode()).hexdigest()
 
 
 def probe(site: Site, preparers: tuple[Person, ...], *, hash_text: str = "v1") -> uuid.UUID:
@@ -126,7 +126,7 @@ def probe(site: Site, preparers: tuple[Person, ...], *, hash_text: str = "v1") -
 
 
 def hash_of(target: uuid.UUID) -> str:
-    return PROBED[target].content_hash
+    return "sha256:" + PROBED[target].content_hash
 
 
 # --- The decision kind: Northwind planning materiality (F-04 §3.6 golden, contract §8) --------
@@ -166,8 +166,8 @@ async def _options(_tenant: TenantContext, _subject: CardSubject) -> ComputedCar
 async def _reassess(
     _tenant: TenantContext, _subject: CardSubject, _decided: str | None, _card: ComputedCard
 ) -> Reassessment:
-    # Tue Oct 6: 1.5% x 16,861,000 = 252,900, $700 from 252,200: no change.
-    assert Decimal("0.015") * Decimal("16861000") == Decimal("252900")
+    # Tue Oct 6 (contract §8, SHL-11 d): 1.5% of 16,861,000 at the firm's rounding is
+    # 252,900, $700 from 252,200: no change.
     return Reassessment(
         changed=False,
         figures={"benchmark": "16861000", "materiality": "252900", "difference": "700"},

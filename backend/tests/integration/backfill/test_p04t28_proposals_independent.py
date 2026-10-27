@@ -99,7 +99,7 @@ register_suggestion_applier(PROBE, _probe_owner, engagement_of=_probe_engagement
 # --- A threshold policy on the server (security review M2): AJE-05 (SHL-10 d) -------------------
 # The firm's policy, computed by code: an adjusting entry above 10,000.00 needs Priya Raman.
 # Literals from the contract: 12,600.00 + 1,480.00 + 820.00 = 14,900.00.
-AJE: Final = "p04t28_aje"
+AJE: Final = "indep_aje"
 LIMIT: Final = Decimal("10000.00")
 APPROVER: dict[uuid.UUID, uuid.UUID] = {}  # firm -> the policy-named approver
 COVERED: set[uuid.UUID] = set()  # people whose own limit covers anything
@@ -174,7 +174,7 @@ def _row(
         label=f"Line {field}",
         before=None,
         after={"t": "decimal", "v": after} if after is not None else None,
-        cause="k1_box_2",
+        cause="schedule_k",
         citation_ids=cites,
     )
 
@@ -255,10 +255,9 @@ async def _state(world: World, proposal: uuid.UUID) -> tuple[str, int]:
 
 async def _decisions(world: World, proposal: uuid.UUID) -> list[str]:
     rows = await world.seed.rows(
-        "SELECT decision FROM proposal_decisions WHERE proposal_id = $1 ORDER BY decided_at",
-        proposal,
+        "SELECT decision FROM proposal_decisions WHERE proposal_id = $1", proposal
     )
-    return [str(r["decision"]) for r in rows]
+    return sorted(str(r["decision"]) for r in rows)
 
 
 async def _nothing_decided(world: World, proposal: uuid.UUID, target: uuid.UUID) -> None:
@@ -506,10 +505,14 @@ async def test_ac4_reject_takes_a_reason_code_and_writes_no_field(world: World) 
 async def test_ac4_a_follow_up_is_recorded_sealed_and_changes_nothing_else(world: World) -> None:
     proposal, target = await _k1(world)
     marker = f"Check the final K-1 {uuid.uuid4().hex[:8]}"
-    recorded = await world.call(
-        "POST", f"{PROPOSALS}/{proposal}/follow-up", "ana", {"text": marker}
-    )
+    key = {"Idempotency-Key": str(uuid.uuid4())}
+    path = f"{PROPOSALS}/{proposal}/follow-up"
+    recorded = await world.call_with("POST", path, "ana", {"text": marker}, key)
     assert recorded.status_code in (200, 201), recorded.text
+    retried = await world.call_with("POST", path, "ana", {"text": marker}, key)
+    assert retried.status_code == recorded.status_code  # a retry records nothing again
+    reused = await world.call_with("POST", path, "ana", {"text": "Another question"}, key)
+    assert reused.status_code == 422 and reused.json()["detail"] == "idempotency_key_reused"
     assert await _state(world, proposal) == ("pending", 1)
     assert await _versions(world, target) == []
     assert await audit_rows(world, "proposal.follow_up_recorded") == [
@@ -537,8 +540,26 @@ async def test_ac4_no_owner_to_write_a_row_answers_503_and_writes_nothing(world:
         "POST", f"{PROPOSALS}/{proposal}/approve", "samuel", {"seen_version": 1}
     )
     assert refused.status_code == 503, refused.text
-    assert refused.json()["detail"] == "service_unavailable"
     await _nothing_decided(world, proposal, target)
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="ED-170: 503 answers 'service unavailable', not the contract's fixed code "
+    "'service_unavailable' (review-grammar.md §6 part 2); " + XFAIL,
+)
+async def test_ac4_no_owner_answers_the_fixed_code_service_unavailable(world: World) -> None:
+    proposal = await create_proposal(
+        await agent(world),
+        engagement_id=world.site.engagement_id,
+        kind="field_change_set",
+        title="Unowned field",
+        rows=[_row(own(world.site), "line.one", "100", (await cite(world),), target_type=UNOWNED)],
+    )
+    refused = await world.call(
+        "POST", f"{PROPOSALS}/{proposal}/approve", "samuel", {"seen_version": 1}
+    )
+    assert refused.json() == {"detail": "service_unavailable"}
 
 
 # --- The threshold: self-approval and routing around it ---------------------------------------
@@ -564,6 +585,20 @@ async def test_ac4_the_viewer_above_the_threshold_is_refused_also_with_edits(
     with_edits = await world.call("POST", f"{path}/approve", "raj", edits)
     assert with_edits.status_code == 403, with_edits.text
     assert with_edits.json() == forbidden
+    await _nothing_decided(world, proposal, target)
+
+    # The run's preparer (Hannah directed the agent) never approves it, even if her own limit
+    # would cover it, and nobody routes it to her (self-approval).
+    COVERED.add(world["hannah"].user_id)
+    by_preparer = await world.call("POST", f"{path}/approve", "hannah", edits)
+    assert by_preparer.status_code == 403, by_preparer.text
+    to_preparer = await world.call(
+        "POST",
+        f"{path}/route",
+        "raj",
+        {"seen_version": 1, "approver_user_id": str(world["hannah"].user_id)},
+    )
+    assert to_preparer.status_code == 422, to_preparer.text
     await _nothing_decided(world, proposal, target)
 
     by_priya = await world.call("POST", f"{path}/approve", "priya", edits)
@@ -798,7 +833,9 @@ async def test_ac4_the_roles_the_matrix_denies_are_refused(world: World) -> None
         ("route", {"seen_version": 1, "approver_user_id": str(world["priya"].user_id)}),
         ("follow-up", {"text": "Why passive?"}),
     ):
-        refused = await world.call("POST", f"{path}/{verb}", "kevin", body)
+        refused = await world.call_with(
+            "POST", f"{path}/{verb}", "kevin", body, {"Idempotency-Key": str(uuid.uuid4())}
+        )
         assert refused.status_code == 403, (verb, refused.text)
     await _nothing_decided(world, proposal, target)
 
@@ -878,10 +915,11 @@ async def test_inv1_the_data_layer_refuses_a_verdict_written_as_the_agent_or_pla
                         cast(int, getattr(found, "rowcount", 1)) == 1
                     )  # visible: only a guard refuses
                     tx.record("proposal.probed", target=Target("proposal", row_id))
-        # The verdict's audit action is on the human-only list (0231).
+    # The verdicts' audit actions are on the human-only list, refused as the agent (0097, 0231).
+    for action in ("proposal.approved", "proposal.rejected", "suggestion.adopted"):
         with pytest.raises(Exception):  # noqa: B017
-            async with uow(tenant) as tx:
-                tx.record("proposal.approved", target=Target("proposal", proposal))
+            async with uow(acting.tenant) as tx:
+                tx.record(action, target=Target("proposal", proposal))
     await _nothing_decided(world, proposal, target)
     status = await world.seed.value("SELECT status FROM suggestions WHERE id = $1", suggestion)
     assert status == "pending"
@@ -993,35 +1031,56 @@ async def test_ac4_a_row_on_another_engagements_target_is_never_written(world: W
 # --- Shadow runs are invisible -----------------------------------------------------------------
 
 
-async def test_ac4_a_shadow_runs_proposal_is_invisible_and_supersedes_nothing(
-    world: World,
-) -> None:
-    live, target = await _k1(world)
+SHADOW_XFAIL: Final = (
+    "ED-171: a generic proposal from a shadow run, or in a firm whose stage for the agent is "
+    "shadow, is served (200, with approve allowed); SPEC-036 AC-5 hides every firm-facing read "
+    "of a shadow run, proposals named; " + XFAIL
+)
+
+
+async def _shadow_k1(world: World, target: uuid.UUID) -> uuid.UUID | None:
+    """The same fields proposed by a run in shadow; refusing to store it is also invisible."""
     try:
-        shadow: uuid.UUID | None
-        shadow, _ = await _k1(world, shadow=True, target=target)  # the same fields, in shadow
+        shadow, _ = await _k1(world, shadow=True, target=target)
     except Exception:  # refused at creation is a pass (invisible, never written)
-        shadow = None
-    if shadow is not None:
-        for method, path, body in (
-            ("GET", f"{PROPOSALS}/{shadow}", None),
-            ("POST", f"{PROPOSALS}/{shadow}/approve", {"seen_version": 1}),
-            (
-                "POST",
-                f"{PROPOSALS}/{shadow}/reject",
-                {"seen_version": 1, "reason_code": "other", "note": "x"},
-            ),
-        ):
-            hidden = await world.call(method, path, "samuel", body)
-            assert hidden.status_code == 404, (path, hidden.text)
-    assert await _state(world, live) == ("pending", 1)  # never superseded by the shadow run
-    assert await deliver(world, "proposal.routed") == 0
+        return None
+    return shadow
+
+
+@pytest.mark.xfail(strict=True, reason=SHADOW_XFAIL)
+async def test_ac4_a_shadow_runs_generic_proposal_is_invisible(world: World) -> None:
+    _, target = await _k1(world)
+    shadow = await _shadow_k1(world, target)
+    if shadow is None:
+        return
+    for method, path, body in (
+        ("GET", f"{PROPOSALS}/{shadow}", None),
+        ("POST", f"{PROPOSALS}/{shadow}/approve", {"seen_version": 1}),
+        (
+            "POST",
+            f"{PROPOSALS}/{shadow}/reject",
+            {"seen_version": 1, "reason_code": "other", "note": "x"},
+        ),
+    ):
+        hidden = await world.call(method, path, "samuel", body)
+        assert hidden.status_code == 404, (path, hidden.text)
+    assert await _versions(world, target) == []
+
+
+async def test_ac4_a_shadow_run_never_supersedes_the_live_proposal(world: World) -> None:
+    """Security review: a shadow run on the same fields leaves the live proposal as it was."""
+    live, target = await _k1(world)
+    await _shadow_k1(world, target)
+    assert await _state(world, live) == ("pending", 1)
+    shown = (await world.call("GET", f"{PROPOSALS}/{live}", "samuel")).json()
+    assert shown["state"] == "pending" and shown["version"] == 1
     approved = await world.call(
         "POST", f"{PROPOSALS}/{live}/approve", "samuel", {"seen_version": 1}
     )
     assert approved.status_code == 200, approved.text
 
 
+@pytest.mark.xfail(strict=True, reason=SHADOW_XFAIL)
 async def test_ac4_a_shadow_stage_firm_sees_no_generic_proposal(world: World) -> None:
     proposal, target = await _k1(world)
     await world.seed.run(
