@@ -86,6 +86,7 @@ from abacus.modules.engagements.intake_contract import (
     client_intake_drafts_router,
     dedupe_router,
 )
+from abacus.modules.engagements.letter_contract import letter_router
 from abacus.modules.engagements.roll_forward import (
     PriorItem,
     TemplateSeed,
@@ -315,6 +316,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     dedupe_router,
     client_intake_drafts_router,
     client_imports_router,
+    letter_router,  # C7 v1 letter half stub (N-02-T03): ENG-04 composer
     router,
     work_items_router,
     firm_router,

@@ -487,6 +487,15 @@ objects:
       expired:   {label: "Expired",   variant: muted, terminal: true, derived: false}
       voided:    {label: "Voided",    variant: soon,  terminal: true, derived: false}
 
+  envelope_signer:   # C7 v1 (N-02-T03); one signer's state on an envelope (SIG-01 drawer, POR-06 "my state")
+    source: "N-02 section 4.2 (envelope_signers.status); DF-11"
+    codes:
+      pending:             {label: "Waiting", variant: neutral, terminal: false, derived: false}
+      viewed:              {label: "Viewed", variant: amber, terminal: false, derived: false}
+      signed:              {label: "Signed", variant: green-tint, terminal: true, derived: false, context_labels: {with_date: "Signed · {date}"}}
+      declined:            {label: "Declined", variant: red-tint, terminal: true, derived: false}
+      verification_failed: {label: "Needs a handwritten signature", variant: amber, terminal: false, derived: false}   # DF-11: three failed KBA attempts; SIG-01 offers "Upload signed 8879…"
+
   notice:
     source: "blueprint 3.3.1"
     codes:
@@ -729,6 +738,17 @@ objects:
       awaiting_partner: {label: "Awaiting partner", variant: amber, terminal: false, derived: false, context_labels: {rail_card: "Blocked on a partner decision"}}   # CLI-07a
       decided:          {label: "Decided", variant: green-tint, terminal: true, derived: false}   # CLI-07d pill "{option} · {person} · {date}", e.g. "Accepted with conditions · Daniel Reyes · Sep 14, 9:46 AM", with a lock
       declined:         {label: "Declined", variant: null, terminal: true, derived: false}   # CLI-07e; the engagement becomes Declined
+
+  letter:   # DF-31 (N-02-T05): the Letter object of ENG-04 and the engagement rows
+    source: "DF-31; ENG-04; N-02 section 4.2 (engagement_letter_versions.status)"
+    codes:
+      not_started:      {label: "Not started", variant: neutral, terminal: false, derived: true}
+      draft:            {label: "Draft", variant: neutral, terminal: false, derived: false}
+      partner_approved: {label: "Partner approved", variant: green-tint, terminal: false, derived: false}
+      sent:             {label: "Sent", variant: amber, terminal: false, derived: false}
+      signed:           {label: "Signed", variant: green, terminal: true, derived: false}
+      not_required:     {label: "Not required this year", variant: muted, terminal: true, derived: true}
+      superseded:       {label: "Superseded", variant: muted, terminal: true, derived: false}   # an amended or re-sent version; the envelope's superseded marker reads the same
 
   letter_record:   # the interim recorded engagement letter (PUT /v1/engagements/{id}/letter; G3) until N-02's envelopes
     source: "ENG-01 b; ENG-02 b, c"

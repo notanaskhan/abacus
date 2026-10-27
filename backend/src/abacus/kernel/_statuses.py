@@ -400,6 +400,14 @@ class EnvelopeStatus(StrEnum):
     VOIDED = "voided"
 
 
+class EnvelopeSignerStatus(StrEnum):
+    PENDING = "pending"
+    VIEWED = "viewed"
+    SIGNED = "signed"
+    DECLINED = "declined"
+    VERIFICATION_FAILED = "verification_failed"
+
+
 class NoticeStatus(StrEnum):
     RECEIVED = "received"
     CLASSIFIED = "classified"
@@ -605,6 +613,15 @@ class AcceptanceRecordStatus(StrEnum):
     AWAITING_PARTNER = "awaiting_partner"
     DECIDED = "decided"
     DECLINED = "declined"
+
+
+class LetterStatus(StrEnum):
+    DRAFT = "draft"
+    PARTNER_APPROVED = "partner_approved"
+    SENT = "sent"
+    SIGNED = "signed"
+    SUPERSEDED = "superseded"
+    # derived, never stored: not_started, not_required
 
 
 class LetterRecordStatus(StrEnum):
@@ -1050,6 +1067,13 @@ STORED: dict[str, tuple[str, ...]] = {
         "expired",
         "voided",
     ),
+    "envelope_signer": (
+        "pending",
+        "viewed",
+        "signed",
+        "declined",
+        "verification_failed",
+    ),
     "notice": (
         "received",
         "classified",
@@ -1226,6 +1250,13 @@ STORED: dict[str, tuple[str, ...]] = {
         "awaiting_partner",
         "decided",
         "declined",
+    ),
+    "letter": (
+        "draft",
+        "partner_approved",
+        "sent",
+        "signed",
+        "superseded",
     ),
     "letter_record": (
         "not_signed",

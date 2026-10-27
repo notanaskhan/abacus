@@ -3,8 +3,8 @@
 | Field | Value |
 |---|---|
 | Register row | C7 |
-| Version | v1 (draft; N-02-T01) |
-| Status | draft (N-02-T01, 2026-10-27); stub with N-02-T03 |
+| Version | v1 |
+| Status | stub (N-02-T03, 2026-10-27): every route 404 with `signatures.envelopes` off, 501 with it on |
 | Provider epic | N-02 |
 | Consumers | F-06 (signatures shell), T-01 (8879 family, consents "1 of 2 signed"), T-02, P-07 (G3 letter gate), A-07 (governance letters), N-04 (notice responses), I-01 (activity, `signatures_out` home count), R-02 |
 | Freeze sprint | S15 Contract Monday (Mon May 17, 2027) |
@@ -52,3 +52,6 @@ The plan's `portal.envelopes.*` are spelt `portal_envelopes.*` (one dot, DEC-139
 
 ## 7. Module API
 `signatures.api.register_envelope_source(kind, resolver)`, `envelope_summary_for(ctx, source_kind, source_id)`, `envelope_gate_facts(ctx, gate_kind, target_ref)` (G3, e-file authorization), `file_signed_copy` through `evidence.api.file_to_folder` (Signed authorizations).
+
+## 8. Stub
+Models and routes: `backend/src/abacus/modules/signatures/contract.py` (`/v1/envelopes*`, `/v1/envelope-policies*`, `/v1/portal/envelopes*`) and `backend/src/abacus/modules/engagements/letter_contract.py` (`/v1/engagements/{id}/letter/composer`, `compare`, `pdf`, `request-approval`, `approve`, `send`, `amend`). `envelope_signer` and `letter` status words are in the vocabulary.

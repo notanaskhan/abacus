@@ -6535,6 +6535,18 @@ export type ConsentCopyOut = {
 };
 
 /**
+ * ConsentIn
+ *
+ * ERSD acceptance.
+ */
+export type ConsentIn = {
+    /**
+     * Disclosure Version Id
+     */
+    disclosure_version_id: string;
+};
+
+/**
  * ContactAccessIn
  *
  * CLI-04 e "Change scope": the contact's whole grant set after the change.
@@ -7421,16 +7433,6 @@ export type DecisionSummaryOut = {
 };
 
 /**
- * DeclineIn
- */
-export type DeclineIn = {
-    /**
-     * Note
-     */
-    note: string;
-};
-
-/**
  * DedupeCandidateOut
  *
  * A client the person may see (walled clients are never candidates), with its score.
@@ -7849,6 +7851,22 @@ export type DraftGuidanceIn = {
 };
 
 /**
+ * DraftIn
+ *
+ * `POST /v1/envelopes`: a draft prefilled by its registered source.
+ */
+export type DraftIn = {
+    /**
+     * Source Id
+     */
+    source_id: string;
+    /**
+     * Source Kind
+     */
+    source_kind: string;
+};
+
+/**
  * DraftItemOut
  */
 export type DraftItemOut = {
@@ -7940,6 +7958,42 @@ export type DraftTemplateGuidanceIn = {
      * Positions
      */
     positions?: Array<number> | null;
+};
+
+/**
+ * DraftUpdateIn
+ *
+ * `PUT /v1/envelopes/{id}` (If-Match).
+ */
+export type DraftUpdateIn = {
+    /**
+     * Date As Of
+     */
+    date_as_of?: string | null;
+    /**
+     * Date As Of Mode
+     */
+    date_as_of_mode?: 'none' | 'fixed_date' | 'report_date';
+    /**
+     * Expires On
+     */
+    expires_on?: string | null;
+    /**
+     * Message
+     */
+    message?: string | null;
+    /**
+     * Reminder Cadence
+     */
+    reminder_cadence?: string | null;
+    /**
+     * Signer Order
+     */
+    signer_order?: 'sequential' | 'parallel';
+    /**
+     * Signers
+     */
+    signers: Array<SignerIn>;
 };
 
 /**
@@ -9727,6 +9781,322 @@ export type EntryCitationOut = {
 };
 
 /**
+ * EnvelopeDocumentOut
+ *
+ * One document of the envelope.
+ */
+export type EnvelopeDocumentOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Order
+     */
+    order: number;
+    /**
+     * Page Count
+     */
+    page_count: number;
+    /**
+     * Read Only
+     */
+    read_only: boolean;
+    /**
+     * Sha256
+     */
+    sha256: string | null;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Tri
+     */
+    tri: boolean;
+};
+
+/**
+ * EnvelopeListRow
+ *
+ * One SIG-01 row.
+ */
+export type EnvelopeListRow = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Due On
+     */
+    due_on: string | null;
+    /**
+     * Form Code
+     */
+    form_code: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Needs Handwritten
+     */
+    needs_handwritten: boolean;
+    /**
+     * Number
+     */
+    number: string;
+    /**
+     * Provider
+     */
+    provider: 'docusign' | 'record' | 'fake';
+    /**
+     * Purpose
+     */
+    purpose: 'engagement_letter' | 'consent_7216' | 'form_8879' | 'form_8879_pe' | 'form_8879_f' | 'form_2848' | 'form_8821' | 'rep_letter' | 'governance_letter' | 'notice_response' | 'confirmation_authorization' | 'system_description_approval' | 'other';
+    /**
+     * Sent At
+     */
+    sent_at: string | null;
+    /**
+     * Sent By Name
+     */
+    sent_by_name: string | null;
+    /**
+     * Signed
+     */
+    signed: number;
+    status: EnvelopeStatus;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string | null;
+};
+
+/**
+ * EnvelopeOut
+ *
+ * The drawer and builder projection.
+ */
+export type EnvelopeOut = {
+    /**
+     * Date As Of
+     */
+    date_as_of: string | null;
+    /**
+     * Date As Of Mode
+     */
+    date_as_of_mode: 'none' | 'fixed_date' | 'report_date';
+    /**
+     * Documents
+     */
+    documents: Array<EnvelopeDocumentOut>;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string | null;
+    /**
+     * Evidence
+     */
+    evidence: Array<EvidenceItem>;
+    /**
+     * Expires At
+     */
+    expires_at: string | null;
+    /**
+     * Fields
+     */
+    fields: Array<FieldOut>;
+    /**
+     * Message
+     */
+    message: string | null;
+    /**
+     * Policy Family
+     */
+    policy_family: 'efile_authorization' | 'engagement_letter' | 'consent' | 'general';
+    /**
+     * Provider Envelope Id
+     */
+    provider_envelope_id: string | null;
+    /**
+     * Reminder Cadence
+     */
+    reminder_cadence: string | null;
+    row: EnvelopeListRow;
+    /**
+     * Signer Order
+     */
+    signer_order: 'sequential' | 'parallel';
+    /**
+     * Signers
+     */
+    signers: Array<SignerOut>;
+    /**
+     * Source Id
+     */
+    source_id: string;
+    /**
+     * Source Kind
+     */
+    source_kind: string;
+    /**
+     * Superseded At
+     */
+    superseded_at: string | null;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Voided Reason
+     */
+    voided_reason: 'wrong_document' | 'wrong_signer' | 'replaced' | 'client_request' | 'other' | null;
+};
+
+/**
+ * EnvelopePolicyIn
+ *
+ * A stricter-only update (AC-9).
+ */
+export type EnvelopePolicyIn = {
+    /**
+     * Allowed Identity Methods
+     */
+    allowed_identity_methods: Array<'kba' | 'email_code' | 'in_person_id' | 'firm_sso'>;
+    /**
+     * Countersign Required
+     */
+    countersign_required: boolean;
+    /**
+     * Default Expiry Days
+     */
+    default_expiry_days: number;
+    /**
+     * Default Identity Method
+     */
+    default_identity_method: 'kba' | 'email_code' | 'in_person_id' | 'firm_sso';
+    /**
+     * Kba Max Attempts
+     */
+    kba_max_attempts: number;
+    /**
+     * Max Reminders
+     */
+    max_reminders: number;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * EnvelopePolicyOut
+ *
+ * One family's policy; data, not code.
+ */
+export type EnvelopePolicyOut = {
+    /**
+     * Allowed Identity Methods
+     */
+    allowed_identity_methods: Array<'kba' | 'email_code' | 'in_person_id' | 'firm_sso'>;
+    /**
+     * Countersign Required
+     */
+    countersign_required: boolean;
+    /**
+     * Default Expiry Days
+     */
+    default_expiry_days: number;
+    /**
+     * Default Identity Method
+     */
+    default_identity_method: 'kba' | 'email_code' | 'in_person_id' | 'firm_sso';
+    /**
+     * Failure Path
+     */
+    failure_path: 'wet_signature';
+    /**
+     * Kba Max Attempts
+     */
+    kba_max_attempts: number;
+    /**
+     * Max Reminders
+     */
+    max_reminders: number;
+    /**
+     * Policy Family
+     */
+    policy_family: 'efile_authorization' | 'engagement_letter' | 'consent' | 'general';
+    /**
+     * Reminder Cadences
+     */
+    reminder_cadences: Array<string>;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * EnvelopeSignerStatus
+ */
+export type EnvelopeSignerStatus = 'pending' | 'viewed' | 'signed' | 'declined' | 'verification_failed';
+
+/**
+ * EnvelopeStatus
+ */
+export type EnvelopeStatus = 'draft' | 'sent' | 'viewed' | 'partially_signed' | 'completed' | 'declined' | 'expired' | 'voided';
+
+/**
+ * EnvelopeSummary
+ *
+ * `GET /v1/envelopes/summary`: tiles, by-type and gate counts (wall-safe, DEC-43).
+ */
+export type EnvelopeSummary = {
+    /**
+     * By Type
+     */
+    by_type: Array<TileCount>;
+    /**
+     * Completed
+     */
+    completed: number;
+    /**
+     * Expired
+     */
+    expired: number;
+    /**
+     * Needs Handwritten
+     */
+    needs_handwritten: number;
+    /**
+     * Out
+     */
+    out: number;
+    /**
+     * To Send
+     */
+    to_send: number;
+};
+
+/**
  * EqrCandidateOut
  *
  * ENG-05 c: a Replace EQR candidate with its eligibility ("Not eligible — cooling-off").
@@ -9910,6 +10280,46 @@ export type EventPageOut = {
      * Next Before
      */
     next_before: number | null;
+};
+
+/**
+ * EvidenceItem
+ *
+ * One signer's evidence row in the drawer (AC-5): IP masked; reveal is its own route.
+ */
+export type EvidenceItem = {
+    /**
+     * Device Label
+     */
+    device_label: string | null;
+    /**
+     * Identity Result
+     */
+    identity_result: string;
+    /**
+     * Ip Masked
+     */
+    ip_masked: string;
+    /**
+     * Package Sha256
+     */
+    package_sha256: string | null;
+    /**
+     * Signature Method
+     */
+    signature_method: 'typed' | 'drawn' | 'provider_adopted' | 'handwritten';
+    /**
+     * Signed At
+     */
+    signed_at: string;
+    /**
+     * Signer Id
+     */
+    signer_id: string;
+    /**
+     * User Agent Family
+     */
+    user_agent_family: string | null;
 };
 
 /**
@@ -10218,6 +10628,54 @@ export type FieldFlagOut = {
      */
     raised_by_user_id: string;
     status: ReviewNoteStatus;
+};
+
+/**
+ * FieldOut
+ *
+ * One placed field, in PDF points.
+ */
+export type FieldOut = {
+    /**
+     * Anchor
+     */
+    anchor: string | null;
+    /**
+     * Document Id
+     */
+    document_id: string;
+    /**
+     * H
+     */
+    h: number;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'signature' | 'date' | 'pin' | 'initial' | 'title_prefill';
+    /**
+     * Page
+     */
+    page: number;
+    /**
+     * Signer Id
+     */
+    signer_id: string;
+    /**
+     * W
+     */
+    w: number;
+    /**
+     * X
+     */
+    x: number;
+    /**
+     * Y
+     */
+    y: number;
 };
 
 /**
@@ -12994,6 +13452,82 @@ export type ImportOut = {
 };
 
 /**
+ * ImportRecordIn
+ *
+ * `POST /v1/envelopes/import`: record mode (SIG-01 r). Files arrive as upload intents.
+ */
+export type ImportRecordIn = {
+    /**
+     * Attested
+     */
+    attested: true;
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Engagement Id
+     */
+    engagement_id?: string | null;
+    /**
+     * Form Code
+     */
+    form_code?: string | null;
+    /**
+     * Provider Name
+     */
+    provider_name: string;
+    /**
+     * Purpose
+     */
+    purpose: 'engagement_letter' | 'consent_7216' | 'form_8879' | 'form_8879_pe' | 'form_8879_f' | 'form_2848' | 'form_8821' | 'rep_letter' | 'governance_letter' | 'notice_response' | 'confirmation_authorization' | 'system_description_approval' | 'other';
+    /**
+     * Signers
+     */
+    signers: Array<ImportSignerIn>;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Upload Ids
+     */
+    upload_ids: Array<string>;
+    /**
+     * Work Item Id
+     */
+    work_item_id?: string | null;
+};
+
+/**
+ * ImportSignerIn
+ *
+ * One signer's facts in a record-mode import.
+ */
+export type ImportSignerIn = {
+    /**
+     * Contact Id
+     */
+    contact_id?: string | null;
+    /**
+     * Identity Method
+     */
+    identity_method: 'kba' | 'email_code' | 'in_person_id' | 'firm_sso';
+    /**
+     * Role
+     */
+    role?: 'signer' | 'countersigner' | 'ero';
+    /**
+     * Signed On
+     */
+    signed_on: string;
+    /**
+     * User Id
+     */
+    user_id?: string | null;
+};
+
+/**
  * InboundMessageOut
  *
  * One received message. `body` is present only with `inbox.read_content`.
@@ -15193,6 +15727,76 @@ export type LegalHoldsOut = {
 };
 
 /**
+ * LetterClause
+ *
+ * One clause of the template version and its state.
+ */
+export type LetterClause = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * State
+     */
+    state: 'on' | 'off' | 'required';
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * LetterCompareOut
+ *
+ * C11 compare against the standard or an earlier version.
+ */
+export type LetterCompareOut = {
+    /**
+     * Against
+     */
+    against: string;
+    /**
+     * Changed Clauses
+     */
+    changed_clauses: Array<string>;
+    /**
+     * Changed Sections
+     */
+    changed_sections: Array<string>;
+};
+
+/**
+ * LetterDraftIn
+ *
+ * `PUT …/letter/composer` (If-Match): draft edits.
+ */
+export type LetterDraftIn = {
+    /**
+     * Clause States
+     */
+    clause_states: {
+        [key: string]: 'on' | 'off' | 'required';
+    };
+    /**
+     * Section Overrides
+     */
+    section_overrides?: {
+        [key: string]: string;
+    };
+    /**
+     * Template Version Id
+     */
+    template_version_id: string;
+    /**
+     * Variables
+     */
+    variables: {
+        [key: string]: string;
+    };
+};
+
+/**
  * LetterIn
  */
 export type LetterIn = {
@@ -15212,36 +15816,6 @@ export type LetterIn = {
      * Status
      */
     status: 'not_started' | 'sent' | 'signed' | 'not_required_this_year';
-};
-
-/**
- * LetterOut
- */
-export type LetterOut = {
-    /**
-     * File Name
-     */
-    file_name: string | null;
-    /**
-     * Letter Date
-     */
-    letter_date: string | null;
-    /**
-     * Link
-     */
-    link: string | null;
-    /**
-     * Reason
-     */
-    reason: string | null;
-    /**
-     * Recorded At
-     */
-    recorded_at: string;
-    /**
-     * Status
-     */
-    status: string;
 };
 
 /**
@@ -15308,6 +15882,43 @@ export type LetterRecordIn = {
  * LetterRecordStatus
  */
 export type LetterRecordStatus = 'not_signed' | 'signed';
+
+/**
+ * LetterSendOut
+ *
+ * The C7 draft the send created, for SIG-02.
+ */
+export type LetterSendOut = {
+    /**
+     * Envelope Id
+     */
+    envelope_id: string;
+};
+
+/**
+ * LetterStatus
+ */
+export type LetterStatus = 'draft' | 'partner_approved' | 'sent' | 'signed' | 'superseded';
+
+/**
+ * LetterVariable
+ *
+ * A typed variable from facts; a person may override it with plain text.
+ */
+export type LetterVariable = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Source
+     */
+    source: 'facts' | 'override';
+    /**
+     * Value
+     */
+    value: string | null;
+};
 
 /**
  * LineBody
@@ -15762,6 +16373,40 @@ export type ListPageDecisionCardItemOut = {
 };
 
 /**
+ * ListPage[EnvelopeListRow]
+ */
+export type ListPageEnvelopeListRow = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<EnvelopeListRow>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
  * ListPage[HumanGateOut]
  */
 export type ListPageHumanGateOut = {
@@ -15917,6 +16562,40 @@ export type ListPageKnowledgeItemOut = {
      * Items
      */
     items: Array<KnowledgeItemOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
+ * ListPage[PortalEnvelopeRow]
+ */
+export type ListPagePortalEnvelopeRow = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<PortalEnvelopeRow>;
     /**
      * Next Cursor
      */
@@ -18403,6 +19082,75 @@ export type PortalEntityOut = {
 };
 
 /**
+ * PortalEnvelopeRow
+ *
+ * One POR-06 list row, in client words.
+ */
+export type PortalEnvelopeRow = {
+    /**
+     * Due On
+     */
+    due_on: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    my_status: EnvelopeSignerStatus;
+    status: EnvelopeStatus;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * PortalEnvelopeView
+ *
+ * `EnvelopeVM`: steps, documents, fields, signers, my state; `signing_session` and `outcome`
+ * reserved (null in record mode and until `signatures.docusign`).
+ */
+export type PortalEnvelopeView = {
+    /**
+     * Date As Of
+     */
+    date_as_of: string | null;
+    /**
+     * Disclosure Version Id
+     */
+    disclosure_version_id: string | null;
+    /**
+     * Documents
+     */
+    documents: Array<EnvelopeDocumentOut>;
+    /**
+     * Esign Consent Needed
+     */
+    esign_consent_needed: boolean;
+    /**
+     * My Fields
+     */
+    my_fields: Array<FieldOut>;
+    /**
+     * Outcome
+     */
+    outcome?: 'signed' | 'declined' | 'abandoned' | null;
+    /**
+     * Paper Form Follows
+     */
+    paper_form_follows: boolean;
+    row: PortalEnvelopeRow;
+    /**
+     * Signers Signed
+     */
+    signers_signed: number;
+    /**
+     * Signers Total
+     */
+    signers_total: number;
+    signing_session?: SigningSessionOut | null;
+};
+
+/**
  * PortalFileOut
  *
  * A file on a request. A withdrawn file is never listed; `withdrawable` only for the
@@ -19824,6 +20572,18 @@ export type ProgramOut = {
 };
 
 /**
+ * ProgressIn
+ *
+ * The last page seen.
+ */
+export type ProgressIn = {
+    /**
+     * Last Page Seen
+     */
+    last_page_seen: number;
+};
+
+/**
  * ProposalDecisionOut
  *
  * The latest insert-only, human-only `proposal_decisions` row. `undo_until` is the end of
@@ -20599,6 +21359,38 @@ export type ReleaseRecordOut = {
      * Work Item Id
      */
     work_item_id: string;
+};
+
+/**
+ * RemindIn
+ *
+ * `POST /v1/envelopes/remind/preview` and `/remind/send`.
+ */
+export type RemindIn = {
+    /**
+     * Envelope Ids
+     */
+    envelope_ids: Array<string>;
+    /**
+     * Template Version Id
+     */
+    template_version_id: string;
+};
+
+/**
+ * RemindOut
+ *
+ * How many reminders would go, or went; no amounts, no model text.
+ */
+export type RemindOut = {
+    /**
+     * Count
+     */
+    count: number;
+    /**
+     * Skipped
+     */
+    skipped: Array<string>;
 };
 
 /**
@@ -21520,6 +22312,34 @@ export type ReturnToClientIn = {
      * Note
      */
     note?: string | null;
+};
+
+/**
+ * RevealIn
+ *
+ * A reveal's reason.
+ */
+export type RevealIn = {
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * RevealOut
+ *
+ * The full IP for 10 seconds.
+ */
+export type RevealOut = {
+    /**
+     * Expires At
+     */
+    expires_at: string;
+    /**
+     * Ip
+     */
+    ip: string;
 };
 
 /**
@@ -23597,6 +24417,26 @@ export type SendDraftIn = {
 };
 
 /**
+ * SendOut
+ *
+ * A send waiting its Undo window (ADR-161).
+ */
+export type SendOut = {
+    /**
+     * Envelope Id
+     */
+    envelope_id: string;
+    /**
+     * Grant Id
+     */
+    grant_id: string;
+    /**
+     * Not Before
+     */
+    not_before: string;
+};
+
+/**
  * SendToPartnerIn
  */
 export type SendToPartnerIn = {
@@ -23930,7 +24770,7 @@ export type SetupOut = {
      * Confirmations
      */
     confirmations: Array<AbacusModulesEngagementsRoutesConfirmationOut>;
-    letter: LetterOut | null;
+    letter: AbacusModulesEngagementsRoutesLetterOut | null;
     /**
      * Letter Required
      */
@@ -24456,6 +25296,119 @@ export type SignedOutOut = {
      * Ended
      */
     ended: boolean;
+};
+
+/**
+ * SignerIn
+ *
+ * A signer in a draft edit.
+ */
+export type SignerIn = {
+    /**
+     * Contact Id
+     */
+    contact_id?: string | null;
+    /**
+     * Identity Method
+     */
+    identity_method: 'kba' | 'email_code' | 'in_person_id' | 'firm_sso';
+    /**
+     * Order
+     */
+    order: number;
+    /**
+     * Role
+     */
+    role?: 'signer' | 'countersigner' | 'ero';
+    /**
+     * Routing Group
+     */
+    routing_group?: number;
+    /**
+     * User Id
+     */
+    user_id?: string | null;
+};
+
+/**
+ * SignerOut
+ *
+ * One signer, with masked evidence only.
+ */
+export type SignerOut = {
+    /**
+     * Decline Reason
+     */
+    decline_reason: 'have_questions' | 'something_wrong' | 'someone_else_should_sign' | 'other' | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Identity Method
+     */
+    identity_method: 'kba' | 'email_code' | 'in_person_id' | 'firm_sso';
+    /**
+     * Kba Failures
+     */
+    kba_failures: number;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Order
+     */
+    order: number;
+    /**
+     * Provider Recipient Id
+     */
+    provider_recipient_id: string | null;
+    /**
+     * Role
+     */
+    role: 'signer' | 'countersigner' | 'ero';
+    /**
+     * Routing Group
+     */
+    routing_group: number;
+    /**
+     * Signature Method
+     */
+    signature_method: 'typed' | 'drawn' | 'provider_adopted' | 'handwritten' | null;
+    /**
+     * Signed At
+     */
+    signed_at: string | null;
+    status: EnvelopeSignerStatus;
+    /**
+     * Viewed At
+     */
+    viewed_at: string | null;
+};
+
+/**
+ * SigningSessionOut
+ *
+ * A one-time, short-lived provider view (reserved until `signatures.docusign`).
+ */
+export type SigningSessionOut = {
+    /**
+     * Expires At
+     */
+    expires_at: string;
+    /**
+     * Presentation
+     */
+    presentation: 'iframe' | 'redirect';
+    /**
+     * Session Id
+     */
+    session_id: string;
+    /**
+     * Url
+     */
+    url: string;
 };
 
 /**
@@ -26918,6 +27871,22 @@ export type TierIn = {
 };
 
 /**
+ * TileCount
+ *
+ * One SIG-01 tile or by-type count, over visible rows only.
+ */
+export type TileCount = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * N
+     */
+    n: number;
+};
+
+/**
  * TileOfficeOut
  */
 export type TileOfficeOut = {
@@ -27544,6 +28513,22 @@ export type ValidationErrorOut = {
 };
 
 /**
+ * ValidationOut
+ *
+ * Code-computed checks before send.
+ */
+export type ValidationOut = {
+    /**
+     * Ok
+     */
+    ok: boolean;
+    /**
+     * Problems
+     */
+    problems: Array<string>;
+};
+
+/**
  * ValueRow
  *
  * One changed item, as the viewer may see it. A Restricted value is only ever masked
@@ -27874,6 +28859,22 @@ export type VirtualChild = {
 };
 
 /**
+ * VoidIn
+ *
+ * `POST /v1/envelopes/{id}/void`.
+ */
+export type VoidIn = {
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Reason
+     */
+    reason: 'wrong_document' | 'wrong_signer' | 'replaced' | 'client_request' | 'other';
+};
+
+/**
  * WaitingOut
  */
 export type WaitingOut = {
@@ -28106,6 +29107,26 @@ export type WallV2Out = {
      * User Id
      */
     user_id: string;
+};
+
+/**
+ * WetSignatureIn
+ *
+ * DF-11: the hand-signed form, uploaded and attested.
+ */
+export type WetSignatureIn = {
+    /**
+     * Attested
+     */
+    attested: true;
+    /**
+     * Signed On
+     */
+    signed_on: string;
+    /**
+     * Upload Id
+     */
+    upload_id: string;
 };
 
 /**
@@ -28613,6 +29634,16 @@ export type AbacusModulesEngagementsAcceptanceContractConfirmationOut = {
 };
 
 /**
+ * DeclineIn
+ */
+export type AbacusModulesEngagementsAcceptanceContractDeclineIn = {
+    /**
+     * Note
+     */
+    note: string;
+};
+
+/**
  * EqrOut
  */
 export type AbacusModulesEngagementsAcceptanceContractEqrOut = {
@@ -28632,6 +29663,63 @@ export type AbacusModulesEngagementsAcceptanceContractEqrOut = {
      * User Id
      */
     user_id: string;
+};
+
+/**
+ * LetterOut
+ *
+ * `GET /v1/engagements/{id}/letter/composer`: the ENG-04 projection.
+ */
+export type AbacusModulesEngagementsLetterContractLetterOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Approval Content Hash
+     */
+    approval_content_hash: string | null;
+    /**
+     * Approved At
+     */
+    approved_at: string | null;
+    /**
+     * Approved By Name
+     */
+    approved_by_name: string | null;
+    /**
+     * Clauses
+     */
+    clauses: Array<LetterClause>;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Envelope Id
+     */
+    envelope_id: string | null;
+    /**
+     * Mode
+     */
+    mode: 'composed' | 'recorded';
+    status: LetterStatus;
+    /**
+     * Template Version Id
+     */
+    template_version_id: string | null;
+    /**
+     * Variables
+     */
+    variables: Array<LetterVariable>;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Version No
+     */
+    version_no: number | null;
 };
 
 /**
@@ -28662,6 +29750,36 @@ export type AbacusModulesEngagementsRoutesConfirmationOut = {
      * User Id
      */
     user_id: string;
+};
+
+/**
+ * LetterOut
+ */
+export type AbacusModulesEngagementsRoutesLetterOut = {
+    /**
+     * File Name
+     */
+    file_name: string | null;
+    /**
+     * Letter Date
+     */
+    letter_date: string | null;
+    /**
+     * Link
+     */
+    link: string | null;
+    /**
+     * Reason
+     */
+    reason: string | null;
+    /**
+     * Recorded At
+     */
+    recorded_at: string;
+    /**
+     * Status
+     */
+    status: string;
 };
 
 /**
@@ -28919,6 +30037,22 @@ export type AbacusModulesMethodologyContractStepOut = {
      * Text
      */
     text: string;
+};
+
+/**
+ * DeclineIn
+ *
+ * Decline with a reason.
+ */
+export type AbacusModulesSignaturesContractDeclineIn = {
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Reason
+     */
+    reason: 'have_questions' | 'something_wrong' | 'someone_else_should_sign' | 'other';
 };
 
 /**
@@ -40410,7 +41544,7 @@ export type ConfirmIndependenceResponses = {
 export type ConfirmIndependenceResponse = ConfirmIndependenceResponses[keyof ConfirmIndependenceResponses];
 
 export type DeclineIndependenceData = {
-    body: DeclineIn;
+    body: AbacusModulesEngagementsAcceptanceContractDeclineIn;
     headers?: {
         /**
          * Authorization
@@ -40733,6 +41867,311 @@ export type LetterResponses = {
 
 export type LetterResponse = LetterResponses[keyof LetterResponses];
 
+export type AmendLetterData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/letter/amend';
+};
+
+export type AmendLetterErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AmendLetterError = AmendLetterErrors[keyof AmendLetterErrors];
+
+export type AmendLetterResponses = {
+    /**
+     * Successful Response
+     */
+    201: AbacusModulesEngagementsLetterContractLetterOut;
+};
+
+export type AmendLetterResponse = AmendLetterResponses[keyof AmendLetterResponses];
+
+export type ApproveLetterData = {
+    body?: never;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/letter/approve';
+};
+
+export type ApproveLetterErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ApproveLetterError = ApproveLetterErrors[keyof ApproveLetterErrors];
+
+export type ApproveLetterResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesEngagementsLetterContractLetterOut;
+};
+
+export type ApproveLetterResponse = ApproveLetterResponses[keyof ApproveLetterResponses];
+
+export type CompareLetterData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: {
+        /**
+         * To
+         */
+        to?: string;
+    };
+    url: '/v1/engagements/{engagement_id}/letter/compare';
+};
+
+export type CompareLetterErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CompareLetterError = CompareLetterErrors[keyof CompareLetterErrors];
+
+export type CompareLetterResponses = {
+    /**
+     * Successful Response
+     */
+    200: LetterCompareOut;
+};
+
+export type CompareLetterResponse = CompareLetterResponses[keyof CompareLetterResponses];
+
+export type GetLetterData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/letter/composer';
+};
+
+export type GetLetterErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetLetterError = GetLetterErrors[keyof GetLetterErrors];
+
+export type GetLetterResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesEngagementsLetterContractLetterOut;
+};
+
+export type GetLetterResponse = GetLetterResponses[keyof GetLetterResponses];
+
+export type DraftLetterData = {
+    body: LetterDraftIn;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/letter/composer';
+};
+
+export type DraftLetterErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DraftLetterError = DraftLetterErrors[keyof DraftLetterErrors];
+
+export type DraftLetterResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesEngagementsLetterContractLetterOut;
+};
+
+export type DraftLetterResponse = DraftLetterResponses[keyof DraftLetterResponses];
+
 export type LetterFileData = {
     body?: never;
     headers?: {
@@ -40794,6 +42233,64 @@ export type LetterFileResponses = {
 
 export type LetterFileResponse = LetterFileResponses[keyof LetterFileResponses];
 
+export type LetterPdfData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/letter/pdf';
+};
+
+export type LetterPdfErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type LetterPdfError = LetterPdfErrors[keyof LetterPdfErrors];
+
+export type LetterPdfResponses = {
+    /**
+     * Response Letter Pdf
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type LetterPdfResponse = LetterPdfResponses[keyof LetterPdfResponses];
+
 export type RecordEngagementLetterData = {
     body: LetterRecordIn;
     headers?: {
@@ -40849,6 +42346,126 @@ export type RecordEngagementLetterResponses = {
 };
 
 export type RecordEngagementLetterResponse = RecordEngagementLetterResponses[keyof RecordEngagementLetterResponses];
+
+export type RequestApprovalData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/letter/request-approval';
+};
+
+export type RequestApprovalErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RequestApprovalError = RequestApprovalErrors[keyof RequestApprovalErrors];
+
+export type RequestApprovalResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesEngagementsLetterContractLetterOut;
+};
+
+export type RequestApprovalResponse = RequestApprovalResponses[keyof RequestApprovalResponses];
+
+export type SendLetterData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/letter/send';
+};
+
+export type SendLetterErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SendLetterError = SendLetterErrors[keyof SendLetterErrors];
+
+export type SendLetterResponses = {
+    /**
+     * Successful Response
+     */
+    200: LetterSendOut;
+};
+
+export type SendLetterResponse = SendLetterResponses[keyof SendLetterResponses];
 
 export type MaterialityData = {
     body?: never;
@@ -50001,6 +51618,1206 @@ export type SetupFileResponses = {
 };
 
 export type SetupFileResponse = SetupFileResponses[keyof SetupFileResponses];
+
+export type ListEnvelopePoliciesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/envelope-policies';
+};
+
+export type ListEnvelopePoliciesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListEnvelopePoliciesError = ListEnvelopePoliciesErrors[keyof ListEnvelopePoliciesErrors];
+
+export type ListEnvelopePoliciesResponses = {
+    /**
+     * Response List Envelope Policies
+     *
+     * Successful Response
+     */
+    200: Array<EnvelopePolicyOut>;
+};
+
+export type ListEnvelopePoliciesResponse = ListEnvelopePoliciesResponses[keyof ListEnvelopePoliciesResponses];
+
+export type UpdateEnvelopePolicyData = {
+    body: EnvelopePolicyIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Family
+         */
+        family: 'efile_authorization' | 'engagement_letter' | 'consent' | 'general';
+    };
+    query?: never;
+    url: '/v1/envelope-policies/{family}';
+};
+
+export type UpdateEnvelopePolicyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type UpdateEnvelopePolicyError = UpdateEnvelopePolicyErrors[keyof UpdateEnvelopePolicyErrors];
+
+export type UpdateEnvelopePolicyResponses = {
+    /**
+     * Successful Response
+     */
+    200: EnvelopePolicyOut;
+};
+
+export type UpdateEnvelopePolicyResponse = UpdateEnvelopePolicyResponses[keyof UpdateEnvelopePolicyResponses];
+
+export type ListEnvelopesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Tab
+         */
+        tab?: 'to_send' | 'out' | 'completed' | 'expired' | null;
+        /**
+         * Purpose
+         */
+        purpose?: 'engagement_letter' | 'consent_7216' | 'form_8879' | 'form_8879_pe' | 'form_8879_f' | 'form_2848' | 'form_8821' | 'rep_letter' | 'governance_letter' | 'notice_response' | 'confirmation_authorization' | 'system_description_approval' | 'other' | null;
+        /**
+         * Status
+         */
+        status?: EnvelopeStatus | null;
+        /**
+         * Client Id
+         */
+        client_id?: string | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/v1/envelopes';
+};
+
+export type ListEnvelopesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListEnvelopesError = ListEnvelopesErrors[keyof ListEnvelopesErrors];
+
+export type ListEnvelopesResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageEnvelopeListRow;
+};
+
+export type ListEnvelopesResponse = ListEnvelopesResponses[keyof ListEnvelopesResponses];
+
+export type CreateEnvelopeDraftData = {
+    body: DraftIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/envelopes';
+};
+
+export type CreateEnvelopeDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CreateEnvelopeDraftError = CreateEnvelopeDraftErrors[keyof CreateEnvelopeDraftErrors];
+
+export type CreateEnvelopeDraftResponses = {
+    /**
+     * Successful Response
+     */
+    201: EnvelopeOut;
+};
+
+export type CreateEnvelopeDraftResponse = CreateEnvelopeDraftResponses[keyof CreateEnvelopeDraftResponses];
+
+export type ImportEnvelopeRecordData = {
+    body: ImportRecordIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/envelopes/import';
+};
+
+export type ImportEnvelopeRecordErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ImportEnvelopeRecordError = ImportEnvelopeRecordErrors[keyof ImportEnvelopeRecordErrors];
+
+export type ImportEnvelopeRecordResponses = {
+    /**
+     * Successful Response
+     */
+    201: EnvelopeOut;
+};
+
+export type ImportEnvelopeRecordResponse = ImportEnvelopeRecordResponses[keyof ImportEnvelopeRecordResponses];
+
+export type RemindEnvelopesPreviewData = {
+    body: RemindIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/envelopes/remind/preview';
+};
+
+export type RemindEnvelopesPreviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RemindEnvelopesPreviewError = RemindEnvelopesPreviewErrors[keyof RemindEnvelopesPreviewErrors];
+
+export type RemindEnvelopesPreviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: RemindOut;
+};
+
+export type RemindEnvelopesPreviewResponse = RemindEnvelopesPreviewResponses[keyof RemindEnvelopesPreviewResponses];
+
+export type RemindEnvelopesSendData = {
+    body: RemindIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/envelopes/remind/send';
+};
+
+export type RemindEnvelopesSendErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RemindEnvelopesSendError = RemindEnvelopesSendErrors[keyof RemindEnvelopesSendErrors];
+
+export type RemindEnvelopesSendResponses = {
+    /**
+     * Successful Response
+     */
+    200: RemindOut;
+};
+
+export type RemindEnvelopesSendResponse = RemindEnvelopesSendResponses[keyof RemindEnvelopesSendResponses];
+
+export type EnvelopeSummaryData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/envelopes/summary';
+};
+
+export type EnvelopeSummaryErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EnvelopeSummaryError = EnvelopeSummaryErrors[keyof EnvelopeSummaryErrors];
+
+export type EnvelopeSummaryResponses = {
+    /**
+     * Successful Response
+     */
+    200: EnvelopeSummary;
+};
+
+export type EnvelopeSummaryResponse = EnvelopeSummaryResponses[keyof EnvelopeSummaryResponses];
+
+export type GetEnvelopeData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Envelope Id
+         */
+        envelope_id: string;
+    };
+    query?: never;
+    url: '/v1/envelopes/{envelope_id}';
+};
+
+export type GetEnvelopeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetEnvelopeError = GetEnvelopeErrors[keyof GetEnvelopeErrors];
+
+export type GetEnvelopeResponses = {
+    /**
+     * Successful Response
+     */
+    200: EnvelopeOut;
+};
+
+export type GetEnvelopeResponse = GetEnvelopeResponses[keyof GetEnvelopeResponses];
+
+export type UpdateEnvelopeDraftData = {
+    body: DraftUpdateIn;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Envelope Id
+         */
+        envelope_id: string;
+    };
+    query?: never;
+    url: '/v1/envelopes/{envelope_id}';
+};
+
+export type UpdateEnvelopeDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type UpdateEnvelopeDraftError = UpdateEnvelopeDraftErrors[keyof UpdateEnvelopeDraftErrors];
+
+export type UpdateEnvelopeDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: EnvelopeOut;
+};
+
+export type UpdateEnvelopeDraftResponse = UpdateEnvelopeDraftResponses[keyof UpdateEnvelopeDraftResponses];
+
+export type CountersignSessionData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Envelope Id
+         */
+        envelope_id: string;
+    };
+    query?: never;
+    url: '/v1/envelopes/{envelope_id}/countersign/session';
+};
+
+export type CountersignSessionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CountersignSessionError = CountersignSessionErrors[keyof CountersignSessionErrors];
+
+export type CountersignSessionResponses = {
+    /**
+     * Successful Response
+     */
+    200: SigningSessionOut;
+};
+
+export type CountersignSessionResponse = CountersignSessionResponses[keyof CountersignSessionResponses];
+
+export type EnvelopePageData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Envelope Id
+         */
+        envelope_id: string;
+        /**
+         * Document Id
+         */
+        document_id: string;
+        /**
+         * Page No
+         */
+        page_no: number;
+    };
+    query?: never;
+    url: '/v1/envelopes/{envelope_id}/documents/{document_id}/pages/{page_no}';
+};
+
+export type EnvelopePageErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EnvelopePageError = EnvelopePageErrors[keyof EnvelopePageErrors];
+
+export type EnvelopePageResponses = {
+    /**
+     * Response Envelope Page
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type EnvelopePageResponse = EnvelopePageResponses[keyof EnvelopePageResponses];
+
+export type EnvelopeEvidenceData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Envelope Id
+         */
+        envelope_id: string;
+    };
+    query?: never;
+    url: '/v1/envelopes/{envelope_id}/evidence.zip';
+};
+
+export type EnvelopeEvidenceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EnvelopeEvidenceError = EnvelopeEvidenceErrors[keyof EnvelopeEvidenceErrors];
+
+export type EnvelopeEvidenceResponses = {
+    /**
+     * Response Envelope Evidence
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type EnvelopeEvidenceResponse = EnvelopeEvidenceResponses[keyof EnvelopeEvidenceResponses];
+
+export type ResendEnvelopeData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Envelope Id
+         */
+        envelope_id: string;
+    };
+    query?: never;
+    url: '/v1/envelopes/{envelope_id}/resend';
+};
+
+export type ResendEnvelopeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ResendEnvelopeError = ResendEnvelopeErrors[keyof ResendEnvelopeErrors];
+
+export type ResendEnvelopeResponses = {
+    /**
+     * Successful Response
+     */
+    201: EnvelopeOut;
+};
+
+export type ResendEnvelopeResponse = ResendEnvelopeResponses[keyof ResendEnvelopeResponses];
+
+export type SendEnvelopeData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Envelope Id
+         */
+        envelope_id: string;
+    };
+    query?: never;
+    url: '/v1/envelopes/{envelope_id}/send';
+};
+
+export type SendEnvelopeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SendEnvelopeError = SendEnvelopeErrors[keyof SendEnvelopeErrors];
+
+export type SendEnvelopeResponses = {
+    /**
+     * Successful Response
+     */
+    200: SendOut;
+};
+
+export type SendEnvelopeResponse = SendEnvelopeResponses[keyof SendEnvelopeResponses];
+
+export type UndoEnvelopeSendData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Envelope Id
+         */
+        envelope_id: string;
+    };
+    query?: never;
+    url: '/v1/envelopes/{envelope_id}/send/undo';
+};
+
+export type UndoEnvelopeSendErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type UndoEnvelopeSendError = UndoEnvelopeSendErrors[keyof UndoEnvelopeSendErrors];
+
+export type UndoEnvelopeSendResponses = {
+    /**
+     * Successful Response
+     */
+    200: EnvelopeOut;
+};
+
+export type UndoEnvelopeSendResponse = UndoEnvelopeSendResponses[keyof UndoEnvelopeSendResponses];
+
+export type RevealSignerIpData = {
+    body: RevealIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Envelope Id
+         */
+        envelope_id: string;
+        /**
+         * Signer Id
+         */
+        signer_id: string;
+    };
+    query?: never;
+    url: '/v1/envelopes/{envelope_id}/signers/{signer_id}/reveal-ip';
+};
+
+export type RevealSignerIpErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RevealSignerIpError = RevealSignerIpErrors[keyof RevealSignerIpErrors];
+
+export type RevealSignerIpResponses = {
+    /**
+     * Successful Response
+     */
+    200: RevealOut;
+};
+
+export type RevealSignerIpResponse = RevealSignerIpResponses[keyof RevealSignerIpResponses];
+
+export type RecordWetSignatureData = {
+    body: WetSignatureIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Envelope Id
+         */
+        envelope_id: string;
+        /**
+         * Signer Id
+         */
+        signer_id: string;
+    };
+    query?: never;
+    url: '/v1/envelopes/{envelope_id}/signers/{signer_id}/wet-signature';
+};
+
+export type RecordWetSignatureErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RecordWetSignatureError = RecordWetSignatureErrors[keyof RecordWetSignatureErrors];
+
+export type RecordWetSignatureResponses = {
+    /**
+     * Successful Response
+     */
+    200: EnvelopeOut;
+};
+
+export type RecordWetSignatureResponse = RecordWetSignatureResponses[keyof RecordWetSignatureResponses];
+
+export type ValidateEnvelopeData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Envelope Id
+         */
+        envelope_id: string;
+    };
+    query?: never;
+    url: '/v1/envelopes/{envelope_id}/validate';
+};
+
+export type ValidateEnvelopeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ValidateEnvelopeError = ValidateEnvelopeErrors[keyof ValidateEnvelopeErrors];
+
+export type ValidateEnvelopeResponses = {
+    /**
+     * Successful Response
+     */
+    200: ValidationOut;
+};
+
+export type ValidateEnvelopeResponse = ValidateEnvelopeResponses[keyof ValidateEnvelopeResponses];
+
+export type VoidEnvelopeData = {
+    body: VoidIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Envelope Id
+         */
+        envelope_id: string;
+    };
+    query?: never;
+    url: '/v1/envelopes/{envelope_id}/void';
+};
+
+export type VoidEnvelopeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type VoidEnvelopeError = VoidEnvelopeErrors[keyof VoidEnvelopeErrors];
+
+export type VoidEnvelopeResponses = {
+    /**
+     * Successful Response
+     */
+    200: EnvelopeOut;
+};
+
+export type VoidEnvelopeResponse = VoidEnvelopeResponses[keyof VoidEnvelopeResponses];
 
 export type AccessLogData = {
     body?: never;
@@ -63926,6 +66743,670 @@ export type StartConnectionResponses = {
 };
 
 export type StartConnectionResponse = StartConnectionResponses[keyof StartConnectionResponses];
+
+export type PortalListData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Status
+         */
+        status?: 'to_sign' | 'signed';
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/v1/portal/envelopes';
+};
+
+export type PortalListErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PortalListError = PortalListErrors[keyof PortalListErrors];
+
+export type PortalListResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPagePortalEnvelopeRow;
+};
+
+export type PortalListResponse = PortalListResponses[keyof PortalListResponses];
+
+export type PortalViewData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Envelope Id
+         */
+        envelope_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/envelopes/{envelope_id}';
+};
+
+export type PortalViewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PortalViewError = PortalViewErrors[keyof PortalViewErrors];
+
+export type PortalViewResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalEnvelopeView;
+};
+
+export type PortalViewResponse = PortalViewResponses[keyof PortalViewResponses];
+
+export type PortalDeclineData = {
+    body: AbacusModulesSignaturesContractDeclineIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Envelope Id
+         */
+        envelope_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/envelopes/{envelope_id}/decline';
+};
+
+export type PortalDeclineErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PortalDeclineError = PortalDeclineErrors[keyof PortalDeclineErrors];
+
+export type PortalDeclineResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalEnvelopeView;
+};
+
+export type PortalDeclineResponse = PortalDeclineResponses[keyof PortalDeclineResponses];
+
+export type PortalDeclineWithdrawData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Envelope Id
+         */
+        envelope_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/envelopes/{envelope_id}/decline/withdraw';
+};
+
+export type PortalDeclineWithdrawErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PortalDeclineWithdrawError = PortalDeclineWithdrawErrors[keyof PortalDeclineWithdrawErrors];
+
+export type PortalDeclineWithdrawResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalEnvelopeView;
+};
+
+export type PortalDeclineWithdrawResponse = PortalDeclineWithdrawResponses[keyof PortalDeclineWithdrawResponses];
+
+export type PortalPageData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Envelope Id
+         */
+        envelope_id: string;
+        /**
+         * Document Id
+         */
+        document_id: string;
+        /**
+         * Page No
+         */
+        page_no: number;
+    };
+    query?: never;
+    url: '/v1/portal/envelopes/{envelope_id}/documents/{document_id}/pages/{page_no}';
+};
+
+export type PortalPageErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PortalPageError = PortalPageErrors[keyof PortalPageErrors];
+
+export type PortalPageResponses = {
+    /**
+     * Response Portal Page
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type PortalPageResponse = PortalPageResponses[keyof PortalPageResponses];
+
+export type PortalDownloadData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Envelope Id
+         */
+        envelope_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/envelopes/{envelope_id}/download';
+};
+
+export type PortalDownloadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PortalDownloadError = PortalDownloadErrors[keyof PortalDownloadErrors];
+
+export type PortalDownloadResponses = {
+    /**
+     * Response Portal Download
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type PortalDownloadResponse = PortalDownloadResponses[keyof PortalDownloadResponses];
+
+export type PortalConsentData = {
+    body: ConsentIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Envelope Id
+         */
+        envelope_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/envelopes/{envelope_id}/esign-consent';
+};
+
+export type PortalConsentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PortalConsentError = PortalConsentErrors[keyof PortalConsentErrors];
+
+export type PortalConsentResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalEnvelopeView;
+};
+
+export type PortalConsentResponse = PortalConsentResponses[keyof PortalConsentResponses];
+
+export type PortalProgressData = {
+    body: ProgressIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Envelope Id
+         */
+        envelope_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/envelopes/{envelope_id}/progress';
+};
+
+export type PortalProgressErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PortalProgressError = PortalProgressErrors[keyof PortalProgressErrors];
+
+export type PortalProgressResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalEnvelopeRow;
+};
+
+export type PortalProgressResponse = PortalProgressResponses[keyof PortalProgressResponses];
+
+export type PortalSigningSessionData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Envelope Id
+         */
+        envelope_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/envelopes/{envelope_id}/signing-session';
+};
+
+export type PortalSigningSessionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PortalSigningSessionError = PortalSigningSessionErrors[keyof PortalSigningSessionErrors];
+
+export type PortalSigningSessionResponses = {
+    /**
+     * Successful Response
+     */
+    200: SigningSessionOut;
+};
+
+export type PortalSigningSessionResponse = PortalSigningSessionResponses[keyof PortalSigningSessionResponses];
+
+export type PortalSigningReturnData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Envelope Id
+         */
+        envelope_id: string;
+        /**
+         * Session Id
+         */
+        session_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/envelopes/{envelope_id}/signing-session/{session_id}/return';
+};
+
+export type PortalSigningReturnErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PortalSigningReturnError = PortalSigningReturnErrors[keyof PortalSigningReturnErrors];
+
+export type PortalSigningReturnResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalEnvelopeView;
+};
+
+export type PortalSigningReturnResponse = PortalSigningReturnResponses[keyof PortalSigningReturnResponses];
+
+export type PortalViewedData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Envelope Id
+         */
+        envelope_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/envelopes/{envelope_id}/viewed';
+};
+
+export type PortalViewedErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PortalViewedError = PortalViewedErrors[keyof PortalViewedErrors];
+
+export type PortalViewedResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalEnvelopeRow;
+};
+
+export type PortalViewedResponse = PortalViewedResponses[keyof PortalViewedResponses];
 
 export type GetPortalHomeData = {
     body?: never;

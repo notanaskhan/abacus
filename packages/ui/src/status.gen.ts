@@ -1787,6 +1787,41 @@ export const STATUS_REGISTRY = {
       "derived": false
     }
   },
+  "envelope_signer": {
+    "pending": {
+      "label": "Waiting",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "viewed": {
+      "label": "Viewed",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "signed": {
+      "label": "Signed",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "with_date": "Signed · {date}"
+      }
+    },
+    "declined": {
+      "label": "Declined",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "verification_failed": {
+      "label": "Needs a handwritten signature",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    }
+  },
   "notice": {
     "received": {
       "label": "New",
@@ -2655,6 +2690,50 @@ export const STATUS_REGISTRY = {
     "declined": {
       "label": "Declined",
       "variant": null,
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "letter": {
+    "not_started": {
+      "label": "Not started",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": true
+    },
+    "draft": {
+      "label": "Draft",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "partner_approved": {
+      "label": "Partner approved",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "sent": {
+      "label": "Sent",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "signed": {
+      "label": "Signed",
+      "variant": "green",
+      "terminal": true,
+      "derived": false
+    },
+    "not_required": {
+      "label": "Not required this year",
+      "variant": "muted",
+      "terminal": true,
+      "derived": true
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "muted",
       "terminal": true,
       "derived": false
     }
