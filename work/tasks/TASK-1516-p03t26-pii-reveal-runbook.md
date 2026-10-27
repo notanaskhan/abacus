@@ -12,7 +12,7 @@ updated: 2026-10-28
 ---
 
 ## Objective
-RB-38, the evidence flags' 90-day expiries, the alarms' thresholds (DEC-656).
+RB-38 and the alarms' thresholds (DEC-656); the flags keep DEC-137's expiry (F-03-T37's Feb 1 floor).
 
 ## Open
 - The alarms' Terraform and the staging drill (next infra batch; DEC-656).
