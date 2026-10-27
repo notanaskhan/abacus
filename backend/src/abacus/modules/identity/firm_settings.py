@@ -88,8 +88,29 @@ class FirmFacts:
     walls: int
 
 
+# G-02-T23 (DEC-711): the AI policy's effective `autonomy.level`, registered by `agents`. It
+# answers None when the policy does not govern the firm (flag off, no published version), and
+# the firm's own setting stands; a provider that raises falls back the same way.
+AutonomyLevelProvider = Callable[[UUID], Awaitable[int | None]]
+_level_provider: list[AutonomyLevelProvider] = []
+
+
+def register_autonomy_level_provider(provider: AutonomyLevelProvider) -> None:
+    if _level_provider:
+        raise RuntimeError("the autonomy level provider is already registered")
+    _level_provider.append(provider)
+
+
 async def autonomy_level(tenant_id: UUID) -> int:
-    """The firm's level now, for the platform's automatic actions (Routine if unreadable)."""
+    """The firm's level now, for the platform's automatic actions (Routine if unreadable): the AI
+    policy's when it governs the firm, else the firm's setting."""
+    if _level_provider:
+        try:
+            level = await _level_provider[0](tenant_id)
+        except Exception:  # fail safe to the firm's own setting, never to a looser level
+            level = None
+        if level is not None:
+            return level
     async with tenant_session(TenantContext(tenant_id, "system", "autonomy")) as session:
         row = await firm_settings(session)
     return int(row["autonomy_level"]) if row is not None else ROUTINE

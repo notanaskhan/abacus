@@ -9,6 +9,7 @@ from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.agents.activities import ACTIVITIES
 from abacus.modules.agents.ai_policy_contract import ai_policy_router
 from abacus.modules.agents.ai_policy_errors import AiPolicyLoosened, ApproverMustDiffer
+from abacus.modules.agents.ai_policy_store import policy_autonomy_level
 from abacus.modules.agents.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.agents.citations import SheetLayoutError
 from abacus.modules.agents.citations import verify as verify_citations
@@ -137,7 +138,11 @@ from abacus.modules.agents.workflows import (
 )
 from abacus.modules.communications.api import register_reminder_history
 from abacus.modules.evidence.api import register_export_section, register_proposal_source
-from abacus.modules.identity.api import AbacusRouter, register_ai_assistants
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    register_ai_assistants,
+    register_autonomy_level_provider,
+)
 
 # Evidence owns review decisions; agents owns what was proposed (TASK-019 D1).
 register_proposal_source(proposals_for, proposal_of)
@@ -147,6 +152,8 @@ register_export_section("screening", screening_section)
 register_client_data_facts(cleared=cleared_for_client_data, stage=stage_for)
 # SPEC-036 (TASK-076): identity's disclosure lists the cleared assistants and their stage.
 register_ai_assistants(assistants)
+# G-02-T23 (DEC-711): the AI policy's level, where the policy governs the firm.
+register_autonomy_level_provider(policy_autonomy_level)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (

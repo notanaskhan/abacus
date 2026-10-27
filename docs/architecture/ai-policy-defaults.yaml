@@ -1,0 +1,156 @@
+# The AI policy's platform defaults and gate catalogue (G-02-T23; ADR-186, ADR-187; SPEC-349
+# AC-32, AC-38; DEC-711). PROTECTED: a policy file changed deliberately, in the same change as the
+# code that needs it, never by an agent on its own initiative (docs/architecture/protected-paths.md).
+#
+# Compiled by `python -m abacus_tools.codegen.ai_policy_defaults` into
+# backend/src/abacus/modules/agents/_ai_policy_defaults.py (generated; `make check-generated` fails
+# on drift). A firm's policy may only be stricter than `sections` (the stricter-only validator):
+#
+# - `locks`: cells no firm may change (the policy principal and every gate's policy acceptance stay
+#   off, ADR-187; the §7216 consent stays required, ADR-167).
+# - `stricter`: for each tunable cell, which way is stricter: `lower` (a smaller number or false),
+#   `higher` (a larger number or true). A draft moving a cell the other way past the default is
+#   refused 422 `policy_loosening_refused` with `facts.field`.
+# - `gates`: the twelve approval gates of ADM-04 fieldset A. `actions` are the permission-matrix
+#   actions a person takes to clear the gate (empty until the owning epic builds them);
+#   `approver_roles` must equal, for every action, the roles the matrix lets decide it (allow or a
+#   firm setting): a generated test fails on any gate that misstates its approver.
+schema_version: 1
+sections:
+  autonomy: {level: 1}
+  gates: []
+  policy_principal: {"on": false}  # quoted: YAML 1.1 reads a bare `on` as true
+  auto_mode_defaults:
+    ebp_audit: false
+    fs_audit: false
+    review_compilation: false
+    preparation: false
+    tax_return: true
+    monthly_close: true
+    notice: false
+    advisory: false
+  client_data:
+    require_7216_consent: true
+    consent_template_ref: null
+    disclosure_in_letters: true
+    client_drafts_enabled: false
+  governance:
+    install_role: manager_plus
+    publish_approver: methodology_owner
+    override_tolerance_pct: 8
+    accuracy_sample_n: 25
+    trace_retention_years: 7
+locks:
+  - policy_principal.on
+  - gates.*.policy_acceptance_on
+  - client_data.require_7216_consent
+stricter:
+  auto_mode_defaults.ebp_audit: lower
+  auto_mode_defaults.fs_audit: lower
+  auto_mode_defaults.review_compilation: lower
+  auto_mode_defaults.preparation: lower
+  auto_mode_defaults.tax_return: lower
+  auto_mode_defaults.monthly_close: lower
+  auto_mode_defaults.notice: lower
+  auto_mode_defaults.advisory: lower
+  client_data.disclosure_in_letters: higher
+  client_data.client_drafts_enabled: lower
+  governance.override_tolerance_pct: lower
+  governance.accuracy_sample_n: higher
+  governance.trace_retention_years: higher
+gates:
+  - row: 1
+    gate_key: classify_file_document
+    actions: [evidence.accept]
+    approver_rule: staff_or_above_approve_document
+    approver_roles: [engagement_partner, manager, senior, staff]
+    policy_acceptance_available: true
+    attest: never
+    where_shown: [SHL-10, SHL-11, AUD-03]
+    log_action: evidence.accepted
+  - row: 2
+    gate_key: adopt_draft
+    actions: [sign_off.prepare]
+    approver_rule: preparer_adopts_l1
+    approver_roles: [manager, senior, staff]
+    attest: never
+    where_shown: [SHL-12, TAX-09, CLS-07]
+    log_action: sign_off.created
+  - row: 3
+    gate_key: change_after_draft
+    actions: [checkpoint.approve]
+    approver_rule: preparer_or_reviewer
+    approver_roles: [engagement_partner, manager, senior]
+    attest: never
+    where_shown: [SHL-09]
+    log_action: checkpoint.approved
+  - row: 4
+    gate_key: resolve_issue
+    actions: [issue.resolve]
+    approver_rule: assignee
+    approver_roles: [engagement_partner, manager, senior, staff]
+    attest: never
+    where_shown: [SHL-13]
+    log_action: issue.resolved
+  - row: 5
+    gate_key: aje_within_threshold
+    actions: [adjustment.approve]
+    approver_rule: named_human_one_batch
+    approver_roles: [engagement_partner, manager]
+    policy_acceptance_available: true
+    attest: never_held_for_client
+    where_shown: [CLS-07, AUD-14]
+    log_action: adjustment.approved
+  - row: 6
+    gate_key: aje_above_threshold
+    actions: [adjustment.approve]
+    approver_rule: manager_or_partner
+    approver_roles: [engagement_partner, manager]
+    attest: never
+    where_shown: [CLS-07, AUD-14]
+    log_action: adjustment.approved
+  - row: 7
+    gate_key: post_batch_to_gl
+    actions: []  # C-02 builds the posting write (W1, disabled)
+    approver_rule: senior_with_approved_batch
+    approver_roles: []
+    attest: posting_disabled
+    where_shown: [CLS-07]
+    log_action: write_capability.executed
+  - row: 8
+    gate_key: export_return_to_engine
+    actions: []  # T-01 builds the tax-engine bridge (W2, disabled)
+    approver_rule: reviewer_after_final_approval
+    approver_roles: []
+    where_shown: [TAX-09]
+    log_action: write_capability.executed
+  - row: 9
+    gate_key: send_client_message
+    actions: [follow_up.send]  # template sends; free-text `message.send` is manager-and-above
+    approver_rule: staff_or_firm_admin_templates
+    approver_roles: [client_service, engagement_partner, manager, senior, staff]
+    attest: never
+    where_shown: [SHL-04, POR-20]
+    log_action: message.sent
+  - row: 10
+    gate_key: send_notice_response
+    actions: []  # N-04 builds notice responses
+    approver_rule: manager_or_partner
+    approver_roles: []
+    where_shown: [NOT-03]
+    log_action: notice.response_sent
+  - row: 11
+    gate_key: partner_decisions
+    actions: [materiality.decide, risk.approve, finding.conclude_severity]
+    approver_rule: engagement_partner_decision_card
+    approver_roles: [engagement_partner]
+    attest: never
+    where_shown: [SHL-11, AUD-07]
+    log_action: decision.decided
+  - row: 12
+    gate_key: agent_instructions_change
+    actions: [methodology.approve]
+    approver_rule: methodology_owner_publishes
+    approver_roles: [quality_partner]
+    where_shown: [KNW-02, WRK-03]
+    log_action: methodology.approved
