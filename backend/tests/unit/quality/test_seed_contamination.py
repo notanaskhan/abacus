@@ -73,6 +73,7 @@ def test_t09_a_finding_names_the_file_line_and_the_fix(tmp_path: Path) -> None:
     assert "Elena Ruiz" in finding.message and "use" in finding.message
 
 
+@pytest.mark.source_scan
 def test_t09_the_lint_covers_the_scenario_the_fixtures_and_the_journeys() -> None:
     roots = {p.relative_to(sc.REPO).as_posix() for p in sc.ROOTS}
     assert roots == {

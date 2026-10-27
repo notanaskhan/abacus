@@ -21,7 +21,8 @@ A methodology version is a firm's audit program: programs, steps with stable anc
 | Templates and versions (live) | `GET /v1/methodology/templates?latest=`, `GET /v1/methodology/versions/{id}`, `POST /v1/methodology/templates/{name}/versions?engagement_type=&family=` | `methodology.read`, `.manage` | — (`methodology.programs` reads the Programs and Steps sheets; `methodology.lifecycle` lands the import in Needs review) | SPEC-008; workbook v2 K-01-T05 |
 | Blank workbook v2 (live) | `GET /v1/methodology/workbook-template.xlsx` | `methodology.read` | — | K-01-T05 |
 | Submit | `POST /v1/methodology/versions/{id}/submit` `{row_version}` | `methodology.manage` | `methodology.lifecycle` | K-01-T06 |
-| Approve | `POST /v1/methodology/versions/{id}/approve` `{effective_from, checklist_hash, row_version}` | **`methodology.approve`** (human-only, fresh MFA) | `methodology.lifecycle` | K-01-T06 |
+| Approve | `POST /v1/methodology/versions/{id}/approve` `{effective_from, checklist_hash, row_version}` | **`methodology.approve`** (human-only, fresh MFA) | `methodology.lifecycle` | K-01-T06 (live) |
+| Lifecycle state | `GET /v1/methodology/versions/{id}/state` → `VersionStateOut` with `checklist [{code, ok, n}]` and `checklist_hash` (additive, K-01-T06) | `methodology.read` | `methodology.lifecycle` | K-01-T06 (live) |
 | New draft | `POST /v1/methodology/versions/{id}/drafts` | `methodology.manage` | `methodology.programs` | K-01-T14 |
 | Discard | `POST /v1/methodology/versions/{id}/discard` `{row_version}` | `methodology.manage` | `methodology.programs` | K-01-T14 |
 | Program | `GET /v1/methodology/programs/{program_id}` | `methodology.read` | `methodology.programs` | K-01-T12 |
@@ -56,7 +57,7 @@ Matrix (`permission-matrix/methodology.yaml`, moved from `engagements.yaml`): `m
 `methodology.approve` (approve a version, change a mandatory lock): the matrix denies agent and system and needs a fresh second factor; the lifecycle row's `approved_actor_kind` CHECK allows only `human`. The agent proposes draft rows for its own import (`methodology.parse`) and never approves.
 
 ## 6. Errors
-404 (client principal, flag off), 501 until each route lands; the import's 422 workbook problems as above. Planned codes: 409 `flags_open`, `unverified_sources`, `checklist_changed`, `version_frozen`, `mandatory_locked`, `stale_version`.
+404 (client principal, flag off), 501 until each route lands; the import's 422 workbook problems as above. Live since K-01-T06: 409 `stale_version`, `version_frozen`, `checklist_changed`, `checklist_unmet` (new); 422 `effective_from_too_early` (new). Planned: 409 `flags_open`, `unverified_sources`, `mandatory_locked`.
 
 ## 7. Audit and outbox events
 Audit (K-01 §4.5): `methodology_version.imported`, `.draft_created`, `.submitted`, `.approved`, `.superseded`, `.discarded`, `.exported`; `methodology_step.added`, `.edited`, `.removed`, `.mandatory_changed`. Outbox: `methodology_version.submitted`, `.approved`, `.superseded {version_id, superseded_by}`. Today's SPEC-008 import keeps `methodology.imported` and writes an `imported` version event.

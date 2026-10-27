@@ -14,7 +14,8 @@ What the gate half must do for Home, tested from outside `review`:
 
 What already holds on main passes now (the list's counts per kind, the walls on the list). What
 I-01-T04 and T07 add is a strict xfail citing TASK-1304, so the suite fails against the stub and
-turns green, unedited, when the gate half lands. The matrix and wire checks are in
+turns green when the gate half lands; I-01-T07 (TASK-1506) removed the last
+xfails. The matrix and wire checks are in
 `tests/contracts/c13_home/test_c13_gate_half.py`.
 """
 
@@ -40,9 +41,6 @@ __all__ = ["firm"]
 pytestmark = pytest.mark.asyncio
 
 COUNTS: Final = "/v1/human-gates/counts"
-GATE_HALF = pytest.mark.xfail(
-    strict=True, reason="TASK-1304: the C13 gate half lands in I-01-T04 and I-01-T07"
-)
 
 
 async def _get(f: Firm, path: str, who: Person) -> tuple[int, Json]:
@@ -121,7 +119,6 @@ async def test_dec30_an_office_narrows_the_counts_and_never_authorises(firm: Fir
 # --- I-01-T07: snooze, reassign, presentation facts ------------------------------------------
 
 
-@GATE_HALF
 async def test_ac83_a_snoozed_gate_leaves_every_surface_until_its_time(firm: Firm) -> None:
     due = date.today() + timedelta(days=9)
     _waiting(
@@ -152,7 +149,6 @@ async def test_ac83_a_snoozed_gate_leaves_every_surface_until_its_time(firm: Fir
     assert hannah["snoozed"] == 0
 
 
-@GATE_HALF
 async def test_oq4_a_snooze_is_never_past_due_or_in_the_past(firm: Firm) -> None:
     due = date.today() + timedelta(days=2)
     _waiting(
@@ -175,7 +171,6 @@ async def test_oq4_a_snooze_is_never_past_due_or_in_the_past(firm: Firm) -> None
         assert (response.status_code, response.json()["detail"]) == (422, code)
 
 
-@GATE_HALF
 async def test_ac_reassign_needs_the_owners_hook(firm: Firm) -> None:
     """The consumer's decision source registered no reassign hook: the gate is not
     reassignable, and nothing changes."""
@@ -194,7 +189,6 @@ async def test_ac_reassign_needs_the_owners_hook(firm: Firm) -> None:
     assert page["total"] == 1
 
 
-@GATE_HALF
 async def test_ac_rows_carry_presentation_facts_and_attribution(firm: Firm) -> None:
     await _daniels_eleven(firm)
     _status, page = await firm.gates(firm.daniel)

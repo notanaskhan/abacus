@@ -420,13 +420,6 @@ async def test_t13_the_room_answers_404_with_its_flag_off(net: Net) -> None:
 # ================================================================================================
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "TASK-1221 (R-01-T11 blocked on DEC-348): the portal_pbc scenario slice is not built, "
-        "so `make seed-demo` cannot load the POR-03, POR-04 and POR-14 persona states"
-    ),
-)
 def test_t11_the_portal_pbc_slice_is_registered_for_seed_demo() -> None:
     slice_module = importlib.import_module(
         "abacus_tools.synthetic.scenarios.brightwater_hale.portal_pbc"
