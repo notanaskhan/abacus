@@ -98,8 +98,11 @@ CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
     "connection.reauthorized": _a("change", "pl", "client_actor"),
     "connection.retry_requested": _a("run", "pl", "sync_run_id", "client_actor"),
     "connection.grant_revoked": _a("change", "no", "result"),  # review M1: the provider's revoke
+    "connection.reconnect_requested": _a("change", "pl", "engagement_id"),  # A-02-T23
     # Tie-out checks (A-02-T17)
     "tie_out_check.issue_linked": _a("change", "pl", "issue_id", "version_no"),
+    # Open in Excel (A-02-T22): the version, the layer and the file's fingerprint
+    "trial_balance.exported": _a("export", "pl", "version_no", "layer_no", "file_sha256"),
 }
 
 _REGISTERED: dict[str, CatalogueEntry] = {}

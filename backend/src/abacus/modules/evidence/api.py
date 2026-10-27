@@ -10,6 +10,7 @@ from abacus.modules.evidence.anchor_job import SCHEDULES as ANCHOR_SCHEDULES
 from abacus.modules.evidence.anchor_job import WORKFLOWS as ANCHOR_WORKFLOWS
 from abacus.modules.evidence.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.evidence.audit_values import evidence_version_values, pii_reveal_values
+from abacus.modules.evidence.citations.ledger_line import on_trial_balance_version_created
 from abacus.modules.evidence.citations.matching import (
     cell_reason as citation_cell_reason,
 )
@@ -151,9 +152,12 @@ from abacus.modules.evidence.render import (
     FIRST_LINE_ROW,
     NAME_COLUMN,
     TOTAL_LABEL,
+    LayerExport,
+    LayerLine,
     TrialBalance,
     TrialBalanceLine,
     render_trial_balance,
+    render_trial_balance_layers,
 )
 from abacus.modules.evidence.render import (
     MEDIA_TYPE as XLSX_MEDIA_TYPE,
@@ -258,6 +262,7 @@ from abacus.modules.evidence.workflows import (
     UploadProcessing,
 )
 from abacus.modules.identity.api import AbacusRouter, register_member_removed
+from abacus.modules.ledger.api import TrialBalanceVersionCreated
 from abacus.modules.platform.api import register_audit_value_resolver
 from abacus.modules.requests.api import register_upload_facts
 
@@ -336,6 +341,8 @@ SUBSCRIPTIONS = {
     EvidenceVersionCreated.event_type: in_turn(
         _SUBSCRIPTIONS[EvidenceVersionCreated.event_type], on_version_created
     ),
+    # A-02-T22: a trial balance re-version moves citations to the snapshot it replaced.
+    TrialBalanceVersionCreated.event_type: on_trial_balance_version_created,
     # A-01-T22 (P-31): a withdrawn version voids every ready export holding it.
     # First, so a later subscriber's failure never holds the void back.
     EvidenceVersionWithdrawn.event_type: in_turn(
@@ -415,6 +422,8 @@ __all__ = [
     "InboxFileAdded",
     "InboxFileExtracted",
     "IntegrityError",
+    "LayerExport",
+    "LayerLine",
     "LegalHoldApply",
     "LegalHoldInput",
     "LegalHoldRelease",
@@ -494,6 +503,7 @@ __all__ = [
     "render_general_ledger",
     "render_journal_listing",
     "render_trial_balance",
+    "render_trial_balance_layers",
     "retain_until_for",
     "return_files",
     "review_material",

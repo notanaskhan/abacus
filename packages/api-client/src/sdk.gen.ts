@@ -980,7 +980,8 @@ export const complete = <ThrowOnError extends boolean = false>(options: Options<
  *
  * AUD-06's *Ask client to reconnect* (A-02-T23): at most one open request per connection
  * (a second ask returns the open one and sends nothing), the POR-20 Reconnect request email from
- * its database template, a POR-02 to-do. Audited `connection.reconnect_requested`.
+ * its database template to the entity's owners, a POR-02 to-do. Audited
+ * `connection.reconnect_requested`.
  */
 export const reconnectRequest = <ThrowOnError extends boolean = false>(options: Options<ReconnectRequestData, ThrowOnError>): RequestResult<ReconnectRequestResponses, ReconnectRequestErrors, ThrowOnError> => (options.client ?? client).post<ReconnectRequestResponses, ReconnectRequestErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4272,6 +4273,7 @@ export const tieIssueLink = <ThrowOnError extends boolean = false>(options: Opti
  *
  * Open in Excel (A-02-T22): a deterministic XLSX of the layer with ticks, citations and a
  * provenance footer, audited `trial_balance.exported`; formula-like text is neutralised.
+ * 409 `layer_unavailable` or `layer_unbalanced`, as the view.
  */
 export const tbExport = <ThrowOnError extends boolean = false>(options: Options<TbExportData, ThrowOnError>): RequestResult<TbExportResponses, TbExportErrors, ThrowOnError> => (options.client ?? client).get<TbExportResponses, TbExportErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

@@ -120,6 +120,20 @@ async def lines_of(session: AsyncSession, snapshot_id: UUID) -> Sequence[TrialBa
     )
 
 
+async def line_of(
+    session: AsyncSession, snapshot_id: UUID, account_code: str
+) -> TrialBalanceLineRow | None:
+    """One account's line of a snapshot the caller resolved under RLS (A-02-T22)."""
+    return (
+        await session.execute(
+            select(TrialBalanceLineRow).where(
+                TrialBalanceLineRow.snapshot_id == snapshot_id,
+                TrialBalanceLineRow.account_code == account_code,
+            )
+        )
+    ).scalar_one_or_none()
+
+
 async def lines_of_snapshots(
     session: AsyncSession, snapshot_ids: Sequence[UUID]
 ) -> Sequence[TrialBalanceLineRow]:

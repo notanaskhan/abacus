@@ -1875,7 +1875,8 @@ export const completeMutation = (options?: Partial<Options<CompleteData>>): UseM
  *
  * AUD-06's *Ask client to reconnect* (A-02-T23): at most one open request per connection
  * (a second ask returns the open one and sends nothing), the POR-20 Reconnect request email from
- * its database template, a POR-02 to-do. Audited `connection.reconnect_requested`.
+ * its database template to the entity's owners, a POR-02 to-do. Audited
+ * `connection.reconnect_requested`.
  */
 export const reconnectRequestMutation = (options?: Partial<Options<ReconnectRequestData>>): UseMutationOptions<ReconnectRequestResponse, ReconnectRequestError, Options<ReconnectRequestData>> => {
     const mutationOptions: UseMutationOptions<ReconnectRequestResponse, ReconnectRequestError, Options<ReconnectRequestData>> = {
@@ -7049,6 +7050,7 @@ export const tbExportQueryKey = (options: Options<TbExportData>) => createQueryK
  *
  * Open in Excel (A-02-T22): a deterministic XLSX of the layer with ticks, citations and a
  * provenance footer, audited `trial_balance.exported`; formula-like text is neutralised.
+ * 409 `layer_unavailable` or `layer_unbalanced`, as the view.
  */
 export const tbExportOptions = (options: Options<TbExportData>) => queryOptions<TbExportResponse, TbExportError, TbExportResponse, ReturnType<typeof tbExportQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

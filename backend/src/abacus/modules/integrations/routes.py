@@ -1,6 +1,6 @@
 """POR-16's live routes (A-02-T16; C20 v1; SPEC-333 AC-35 to AC-42). Declared on C20's
-`portal_router` (`contract.py` keeps the models and the two stubs still waiting: reconnect
-requests, A-02-T23, and on-demand pulls, A-02-T30); `api.py` mounts it from here.
+`portal_router`, and the firm's reconnect request (A-02-T23) on `firm_router` (`contract.py` keeps
+the models and the stub still waiting: on-demand pulls, A-02-T30); `api.py` mounts both.
 
 Each route authorises its one action through `connections` on an engagement of the entity
 first (404 for walls and other clients' entities), then the flag (`connections.portal_v2`, 404
@@ -31,9 +31,12 @@ from abacus.modules.integrations.contract import (
     PortalConnectionCardOut,
     PortalConnectionDetailOut,
     PortalConnectionsOut,
+    ReconnectRequestOut,
     SyncRunRefOut,
+    firm_router,
     portal_router,
 )
+from abacus.modules.integrations.reconnect import reconnect_request
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 
@@ -106,3 +109,20 @@ async def disconnect_connection_route(
     """POR-16 f: "Disconnected" (neutral); the secret is crypto-erased and received data stays.
     409 `stale_version` on an old `seen_version`. Audited `connection.revoked`."""
     return await disconnect_card(ctx, connection_id, body.seen_version, idempotency_key)
+
+
+@firm_router.post(
+    "/connections/{connection_id}/reconnect-requests",
+    action="connection.reconnect_request",
+    response_model=ReconnectRequestOut,
+    status_code=201,
+    errors=(409,),
+)
+async def reconnect_request_route(
+    connection_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> ReconnectRequestOut:
+    """AUD-06's *Ask client to reconnect* (A-02-T23): at most one open request per connection
+    (a second ask returns the open one and sends nothing), the POR-20 Reconnect request email from
+    its database template to the entity's owners, a POR-02 to-do. Audited
+    `connection.reconnect_requested`."""
+    return await reconnect_request(ctx, connection_id, idempotency_key)

@@ -26,9 +26,12 @@ TBS: Final = "/v1/engagements/{e}/trial-balances/{tb}"
 # (method, path under the trial balance, JSON body) for each C9 v1 stub (DEC-314). The view by
 # layer and the leadsheet by area are live since A-02-T10: their walls, independence and flag
 # are proved on a real trial balance in `test_a02t10_tb_read_model.py`; the issue link since
-# A-02-T17, in `test_a02t17_tie_service.py` (a walled member's 404 is the missing engagement's).
+# A-02-T17, in `test_a02t17_tie_service.py` (a walled member's 404 is the missing engagement's);
+# Open in Excel since A-02-T22: still checked here for the same 404, while its control (the route
+# reached on a real trial balance, and the flag's 404) is in `test_a02t22_ledger_hooks.py`.
 STUBS: Final = (("GET", "/export.xlsx", None),)
 IDS: Final = ["export"]
+LIVE: Final = frozenset({"/export.xlsx"})  # A-02-T22
 
 
 async def _flag_on(seed: Seeder, tenant_id: uuid.UUID) -> None:
@@ -61,9 +64,10 @@ async def test_ac26_a_walled_caller_and_a_missing_engagement_get_the_same_404(
     assert walled[0] == 404
     assert walled == missing
     assert str(env.a.engagement_id) not in walled[1] and env.a.marker not in walled[1]
-    # The control: the same caller on an engagement they work on reaches the stub.
+    # The control: the same caller on an engagement they work on passes the gate. A-02-T22 made
+    # the export live, so with no such trial balance it answers the ledger's 404, never a 403.
     control = await _call(env, manager, method, path, body, env.b.engagement_id)
-    assert control[0] == 501, control[1]
+    assert control[0] == (501 if path not in LIVE else 404), control[1]
 
 
 async def _context(seed: Seeder, who: Person) -> AuthContext:

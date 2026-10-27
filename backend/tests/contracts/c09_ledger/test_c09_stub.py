@@ -33,10 +33,9 @@ PATHS = cast(dict[str, dict[str, Json]], DOC["paths"])
 TBS = "/v1/engagements/{engagement_id}/trial-balances"
 TB = f"{TBS}/{{tb_id}}"
 
-# The new C9 v1 operations, stubbed behind the flag (method, path) -> the one matrix action.
-STUBS: dict[tuple[str, str], str] = {
-    ("get", f"{TB}/export.xlsx"): "trial_balance.export",
-}
+# The new C9 v1 operations, stubbed behind the flag (method, path) -> the one matrix action. None
+# since A-02-T22 (TASK-1470) made Open in Excel live.
+STUBS: dict[tuple[str, str], str] = {}
 # C9 v1's operations already live (SPEC-309, SPEC-310, SPEC-311, SPEC-313; DEC-314).
 LIVE: dict[tuple[str, str], str] = {
     ("get", TBS): "trial_balance.read",
@@ -59,13 +58,15 @@ LIVE: dict[tuple[str, str], str] = {
     ("get", f"{TB}/leadsheets/{{area}}"): "trial_balance.read",
     # A-02-T17 (TASK-1417): the issue link is live.
     ("post", f"{TB}/checks/{{check_id}}/issue-link"): "tie_out_check.define",
+    # A-02-T22 (TASK-1470): Open in Excel is live, behind the flag.
+    ("get", f"{TB}/export.xlsx"): "trial_balance.export",
 }
 CLIENT_ROLES = {"client_admin", "client_contributor", "client_service"}
 
 
 # The routes' shared gate, read from the module as the audits stub test reads its own.
 _STUB = cast(
-    Callable[[AuthContext, str, uuid.UUID], Awaitable[object]], vars(tb_contract)["_stub"]
+    Callable[[AuthContext, str, uuid.UUID], Awaitable[object]], vars(tb_contract)["stub_gate"]
 )
 
 
@@ -92,9 +93,12 @@ def test_ac26_each_c9_route_declares_its_one_action(method: str, path: str) -> N
     assert PATHS[path][method]["x-abacus-action"] == (STUBS | LIVE)[(method, path)]
 
 
-@pytest.mark.parametrize(("method", "path"), sorted(STUBS))
-def test_ac26_each_stub_documents_404_and_501(method: str, path: str) -> None:
-    assert {"404", "501"} <= set(cast(Json, PATHS[path][method]["responses"]))
+def test_ac26_each_stub_documents_404_and_501() -> None:
+    for method, path in sorted(STUBS):
+        assert {"404", "501"} <= set(cast(Json, PATHS[path][method]["responses"]))
+    # A-02-T22: the live export keeps the flag's 404 and the view's 409s.
+    export = cast(Json, PATHS[f"{TB}/export.xlsx"]["get"]["responses"])
+    assert {"404", "409"} <= set(export)
 
 
 # A-03's half of C9 (SPEC-316): the account mapping and the draft statements.
