@@ -45201,6 +45201,95 @@
         "title": "SafeguardsControlOut",
         "type": "object"
       },
+      "SafeguardsControlRowIn": {
+        "additionalProperties": false,
+        "properties": {
+          "control_key": {
+            "cls": "internal",
+            "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$",
+            "title": "Control Key",
+            "type": "string"
+          },
+          "position": {
+            "cls": "internal",
+            "maximum": 500.0,
+            "minimum": 1.0,
+            "title": "Position",
+            "type": "integer"
+          },
+          "title": {
+            "cls": "internal",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "control_key",
+          "title",
+          "position"
+        ],
+        "title": "SafeguardsControlRowIn",
+        "type": "object"
+      },
+      "SafeguardsControlSetIn": {
+        "additionalProperties": false,
+        "properties": {
+          "rows": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/SafeguardsControlRowIn"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          },
+          "set_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Set Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "set_version",
+          "rows"
+        ],
+        "title": "SafeguardsControlSetIn",
+        "type": "object"
+      },
+      "SafeguardsControlSetOut": {
+        "properties": {
+          "rows": {
+            "cls": "internal",
+            "title": "Rows",
+            "type": "integer"
+          },
+          "set_version": {
+            "cls": "internal",
+            "title": "Set Version",
+            "type": "integer"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "set_version",
+          "rows",
+          "status"
+        ],
+        "title": "SafeguardsControlSetOut",
+        "type": "object"
+      },
       "SafeguardsIn": {
         "additionalProperties": false,
         "description": "Fieldset D's Save (the QI only); 409 `stale_version`.",
@@ -45370,6 +45459,19 @@
             ],
             "cls": "internal",
             "title": "Wisp Evidence Item Id"
+          },
+          "wisp_name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Wisp Name"
           }
         },
         "required": [
@@ -58676,7 +58778,7 @@
     },
     "/v1/audit-events/exports": {
       "post": {
-        "description": "ADM-07 e: one person with a fresh second factor (DEC-415 Q8); 202 `requested`. Audited\n`audit_export.requested`; values only as the requester may see them on screen.",
+        "description": "ADM-07 e (AC-12): one person with a fresh second factor (DEC-415 Q8); 202 `requested`,\nthe same job again for a repeated `Idempotency-Key`. 422 `export_range_invalid` past 92 days;\n503 where no export-signing key or exports bucket is configured. Audited\n`audit_export.requested`; values only as the requester may see them on screen (AC-14).",
         "operationId": "request_audit_export",
         "parameters": [
           {
@@ -58784,7 +58886,7 @@
             },
             "description": "Invalid request"
           },
-          "501": {
+          "503": {
             "content": {
               "application/json": {
                 "schema": {
@@ -58792,7 +58894,7 @@
                 }
               }
             },
-            "description": "Contract stub: not implemented yet"
+            "description": "Service unavailable"
           }
         },
         "summary": "Request Audit Export Route",
@@ -58804,7 +58906,7 @@
     },
     "/v1/audit-events/exports/{export_id}": {
       "get": {
-        "description": "ADM-07 g: the requester's export; anyone else's answers 404. A status read needs no fresh\nsecond factor (L5); the request and the link do.",
+        "description": "ADM-07 g: the requester's export; anyone else's answers 404. A status read needs no fresh\nsecond factor (L5); the request, the link and the download do.",
         "operationId": "audit_export",
         "parameters": [
           {
@@ -58900,16 +59002,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Audit Export Route",
@@ -58919,9 +59011,138 @@
         "x-abacus-action": "audit_export.read"
       }
     },
+    "/v1/audit-events/exports/{export_id}/download": {
+      "get": {
+        "description": "ADM-07 g (AC-12, AC-13): the ZIP of `audit-log-<from>-<to>.csv`, `manifest.json` and\n`manifest.sig`, streamed by the API from the sealed bundle (`application/zip`,\n`Cache-Control: no-store`). The requester only, with a fresh second factor. Audited\n`audit_export.downloaded` naming the person before the first byte.",
+        "operationId": "download_audit_export",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "export_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Export Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "contentMediaType": "application/octet-stream",
+                  "title": "Response Download Audit Export",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Gone: the code, link or window expired or was used"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Download Audit Export Route",
+        "tags": [
+          "audit log"
+        ],
+        "x-abacus-action": "audit_event.export"
+      }
+    },
     "/v1/audit-events/exports/{export_id}/link": {
       "post": {
-        "description": "ADM-07 g: a 15-minute link for the requester while `ready` or `downloaded` (409\n`export_not_ready` before), 410 `export_expired` after 7 days. Audited\n`audit_export.downloaded`.",
+        "description": "ADM-07 g: where the ZIP downloads (the API's own download route, ADR-104), valid while\nthe second factor stays fresh and never past the export's 7 days. 409 `export_not_ready`\nbefore it is ready, 410 `export_expired` after.",
         "operationId": "link_audit_export",
         "parameters": [
           {
@@ -59037,16 +59258,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Link Audit Export Route",
@@ -108832,16 +109043,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Firm Export Schedule Route",
@@ -108851,7 +109052,7 @@
         "x-abacus-action": "firm_export.read"
       },
       "put": {
-        "description": "`pending_approval` until both seats approve. Audited `firm_export_schedule.updated`.",
+        "description": "`pending_approval` (or `paused`) until both seats approve again; 409 `stale_version`.\nAudited `firm_export_schedule.updated`.",
         "operationId": "put_firm_export_schedule",
         "parameters": [
           {
@@ -108957,16 +109158,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Put Firm Export Schedule Route",
@@ -108978,7 +109169,7 @@
     },
     "/v1/firm/data-exports/schedule/approve": {
       "post": {
-        "description": "A `security_admin` or a partner approves once; the second distinct approver in the other\nseat makes it `active` (a Temporal Schedule through `kernel.dispatch`). 409\n`approver_must_differ`. Audited `firm_export_schedule.approved`.",
+        "description": "A `security_admin` or a partner approves once; the second distinct approver in the other\nseat makes it `active` (the firm's Temporal Schedule through `kernel.dispatch`). 409\n`approver_must_differ`, `schedule_paused`. Audited `firm_export_schedule.approved`.",
         "operationId": "approve_firm_export_schedule",
         "parameters": [
           {
@@ -109074,16 +109265,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Approve Firm Export Schedule Route",
@@ -113385,16 +113566,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Safeguards Route",
@@ -113404,7 +113575,7 @@
         "x-abacus-action": "security.read"
       },
       "put": {
-        "description": "The QI saves the record; 409 `stale_version`. Audited `safeguards.updated`.",
+        "description": "The QI saves the record against the `version` read (0 before the first save); 409\n`stale_version`; 422 `safeguards_person_invalid`. Audited `safeguards.updated`.",
         "operationId": "put_safeguards",
         "parameters": [
           {
@@ -113510,16 +113681,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Put Safeguards Route",
@@ -113531,7 +113692,7 @@
     },
     "/v1/firm/safeguards/controls/{control_key}": {
       "put": {
-        "description": "One Pub 4557 control's status; 404 for a key the imported definitions don't have.\nAudited `safeguards_control.updated`.",
+        "description": "One Pub 4557 control's status; 404 for a key the published definitions don't have.\nAudited `safeguards_control.updated`.",
         "operationId": "put_safeguards_control",
         "parameters": [
           {
@@ -113637,16 +113798,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Put Safeguards Control Route",
@@ -113658,7 +113809,7 @@
     },
     "/v1/firm/safeguards/wisp-pack": {
       "post": {
-        "description": "\"Export WISP pack\": a zip of the WISP and its linked evidence (202). Audited\n`wisp_pack.prepared`.",
+        "description": "\"Export WISP pack\": a zip of the WISP and its linked evidence (202, `preparing`). Audited\n`wisp_pack.prepared`.",
         "operationId": "wisp_pack",
         "parameters": [
           {
@@ -113745,7 +113896,7 @@
             },
             "description": "Invalid request"
           },
-          "501": {
+          "503": {
             "content": {
               "application/json": {
                 "schema": {
@@ -113753,10 +113904,246 @@
                 }
               }
             },
-            "description": "Contract stub: not implemented yet"
+            "description": "Service unavailable"
           }
         },
         "summary": "Wisp Pack Route",
+        "tags": [
+          "security center"
+        ],
+        "x-abacus-action": "security.manage"
+      }
+    },
+    "/v1/firm/safeguards/wisp-pack/{pack_id}": {
+      "get": {
+        "description": "The requester's pack: `preparing`, then `ready` with its `download_url` and expiry.",
+        "operationId": "wisp_pack_status",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pack_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Pack Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WispPackOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Wisp Pack Status Route",
+        "tags": [
+          "security center"
+        ],
+        "x-abacus-action": "security.manage"
+      }
+    },
+    "/v1/firm/safeguards/wisp-pack/{pack_id}/download": {
+      "get": {
+        "description": "The pack's ZIP, streamed by the API from the sealed bundle (ADR-104; `no-store`). The\nrequester only, with a fresh second factor; 409 `export_not_ready`, 410 `export_expired`.",
+        "operationId": "wisp_pack_download",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pack_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Pack Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "contentMediaType": "application/octet-stream",
+                  "title": "Response Wisp Pack Download",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Gone: the code, link or window expired or was used"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Wisp Pack Download Route",
         "tags": [
           "security center"
         ],
@@ -114086,7 +114473,7 @@
     },
     "/v1/firm/security/incidents": {
       "get": {
-        "description": "ADM-06 a fieldset C (AC-21): newest discovery first, each with its clock at today's date\nin the firm's time zone.",
+        "description": "ADM-06 a fieldset C (AC-21): newest discovery first, each with its clock at today's date\nin the firm's time zone; `counts` holds `open` and `closed`.",
         "operationId": "list_security_incidents",
         "parameters": [
           {
@@ -114217,16 +114604,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Security Incidents Route",
@@ -114439,16 +114816,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Security Incident Route",
@@ -114460,7 +114827,7 @@
     },
     "/v1/firm/security/incidents/{incident_id}/decisions": {
       "post": {
-        "description": "AC-22: the first decider's call leaves `pending_decision` waiting for the person named;\nthat person's same call completes it (`close_not_reportable` closes the incident;\n`start_notification` starts the notification). 409 `decider_must_differ` for the same\nperson, the same seat or anyone not named; 409 `already_decided`; 422 when the first call\nnames no second decider or names someone who cannot fill the other seat. Audited\n`incident.decision_recorded` per decider and `incident.decided` once complete.",
+        "description": "AC-22: the first decider's call leaves `pending_decision` waiting for the person named;\nthat person's same call completes it (`close_not_reportable` closes the incident;\n`start_notification` starts the notification). 409 `decider_must_differ` for the same\nperson, the same seat or anyone not named; 409 `already_decided`; 409\n`decision_kind_differs`; 422 `second_decider_invalid` when the first call names no second\ndecider or names someone who cannot fill the other seat. Audited\n`incident.decision_recorded` per decider and `incident.decided` once complete.",
         "operationId": "decide_security_incident",
         "parameters": [
           {
@@ -114576,16 +114943,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Decide Security Incident Route",
@@ -114703,16 +115060,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Append Incident Timeline Route",
@@ -128792,6 +129139,207 @@
         "summary": "Publish Retention Floors Route",
         "tags": [
           "retention"
+        ],
+        "x-abacus-action": "staff"
+      }
+    },
+    "/v1/platform/safeguards-controls": {
+      "post": {
+        "description": "A draft set of control definitions; a second staff member publishes it. 409\n`control_set_exists`; 422 `control_set_invalid`.",
+        "operationId": "import_safeguards_controls",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SafeguardsControlSetIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SafeguardsControlSetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Import Safeguards Controls Route",
+        "tags": [
+          "security center"
+        ],
+        "x-abacus-action": "staff"
+      }
+    },
+    "/v1/platform/safeguards-controls/{set_version}/publish": {
+      "post": {
+        "description": "Publish a draft set as a second staff member; the previous set is superseded.",
+        "operationId": "publish_safeguards_controls",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "set_version",
+            "required": true,
+            "schema": {
+              "title": "Set Version",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SafeguardsControlSetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Publish Safeguards Controls Route",
+        "tags": [
+          "security center"
         ],
         "x-abacus-action": "staff"
       }

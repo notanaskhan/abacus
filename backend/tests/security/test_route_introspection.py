@@ -38,6 +38,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/agent-runs/{run_id}/trace/writes", "agent_run.read"),
     ("GET", "/v1/audit-events", "audit_event.read"),
     ("GET", "/v1/audit-events/exports/{export_id}", "audit_export.read"),
+    ("GET", "/v1/audit-events/exports/{export_id}/download", "audit_event.export"),  # G-02-T17
     ("GET", "/v1/audit-events/{seq}", "audit_event.read"),
     ("GET", "/v1/audits", "engagement.read_metadata"),
     ("GET", "/v1/audits/{work_item_id}/cockpit", "engagement.read_metadata"),
@@ -301,6 +302,8 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/firm/portal-settings/preview", "portal.preview"),
     ("GET", "/v1/firm/role-templates", "firm.read_people"),
     ("GET", "/v1/firm/safeguards", "security.read"),
+    ("GET", "/v1/firm/safeguards/wisp-pack/{pack_id}", "security.manage"),  # G-02-T20
+    ("GET", "/v1/firm/safeguards/wisp-pack/{pack_id}/download", "security.manage"),
     ("GET", "/v1/firm/search/findings", "own"),
     ("GET", "/v1/firm/search/request-items", "own"),
     ("GET", "/v1/firm/security", "security.read"),
@@ -963,6 +966,8 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/platform/retention/defaults/{set_version}/publish", "staff"),
     ("POST", "/v1/platform/retention/floors", "staff"),
     ("POST", "/v1/platform/retention/floors/{set_version}/publish", "staff"),
+    ("POST", "/v1/platform/safeguards-controls", "staff"),  # G-02-T20: Pub 4557 definitions
+    ("POST", "/v1/platform/safeguards-controls/{set_version}/publish", "staff"),
     ("POST", "/v1/portal/auth/mfa", "pre_session"),
     ("POST", "/v1/portal/auth/mfa/setup", "pre_session"),
     ("POST", "/v1/portal/auth/mfa/setup/verify", "pre_session"),

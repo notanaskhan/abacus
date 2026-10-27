@@ -21535,6 +21535,56 @@ export type SafeguardsControlOut = {
 };
 
 /**
+ * SafeguardsControlRowIn
+ */
+export type SafeguardsControlRowIn = {
+    /**
+     * Control Key
+     */
+    control_key: string;
+    /**
+     * Position
+     */
+    position: number;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * SafeguardsControlSetIn
+ */
+export type SafeguardsControlSetIn = {
+    /**
+     * Rows
+     */
+    rows: Array<SafeguardsControlRowIn>;
+    /**
+     * Set Version
+     */
+    set_version: number;
+};
+
+/**
+ * SafeguardsControlSetOut
+ */
+export type SafeguardsControlSetOut = {
+    /**
+     * Rows
+     */
+    rows: number;
+    /**
+     * Set Version
+     */
+    set_version: number;
+    /**
+     * Status
+     */
+    status: 'draft' | 'published';
+};
+
+/**
  * SafeguardsIn
  *
  * Fieldset D's Save (the QI only); 409 `stale_version`.
@@ -21592,6 +21642,10 @@ export type SafeguardsIn = {
      * Wisp Evidence Item Id
      */
     wisp_evidence_item_id?: string | null;
+    /**
+     * Wisp Name
+     */
+    wisp_name?: string | null;
 };
 
 /**
@@ -27952,9 +28006,9 @@ export type RequestAuditExportErrors = {
      */
     422: ValidationErrorOut;
     /**
-     * Contract stub: not implemented yet
+     * Service unavailable
      */
-    501: ErrorOut;
+    503: ErrorOut;
 };
 
 export type RequestAuditExportError = RequestAuditExportErrors[keyof RequestAuditExportErrors];
@@ -28007,10 +28061,6 @@ export type AuditExportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AuditExportError = AuditExportErrors[keyof AuditExportErrors];
@@ -28023,6 +28073,68 @@ export type AuditExportResponses = {
 };
 
 export type AuditExportResponse = AuditExportResponses[keyof AuditExportResponses];
+
+export type DownloadAuditExportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Export Id
+         */
+        export_id: string;
+    };
+    query?: never;
+    url: '/v1/audit-events/exports/{export_id}/download';
+};
+
+export type DownloadAuditExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Gone: the code, link or window expired or was used
+     */
+    410: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type DownloadAuditExportError = DownloadAuditExportErrors[keyof DownloadAuditExportErrors];
+
+export type DownloadAuditExportResponses = {
+    /**
+     * Response Download Audit Export
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type DownloadAuditExportResponse = DownloadAuditExportResponses[keyof DownloadAuditExportResponses];
 
 export type LinkAuditExportData = {
     body?: never;
@@ -28071,10 +28183,6 @@ export type LinkAuditExportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type LinkAuditExportError = LinkAuditExportErrors[keyof LinkAuditExportErrors];
@@ -50689,10 +50797,6 @@ export type FirmExportScheduleErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type FirmExportScheduleError = FirmExportScheduleErrors[keyof FirmExportScheduleErrors];
@@ -50744,10 +50848,6 @@ export type PutFirmExportScheduleErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PutFirmExportScheduleError = PutFirmExportScheduleErrors[keyof PutFirmExportScheduleErrors];
@@ -50799,10 +50899,6 @@ export type ApproveFirmExportScheduleErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ApproveFirmExportScheduleError = ApproveFirmExportScheduleErrors[keyof ApproveFirmExportScheduleErrors];
@@ -52793,10 +52889,6 @@ export type SafeguardsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SafeguardsError = SafeguardsErrors[keyof SafeguardsErrors];
@@ -52848,10 +52940,6 @@ export type PutSafeguardsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PutSafeguardsError = PutSafeguardsErrors[keyof PutSafeguardsErrors];
@@ -52904,10 +52992,6 @@ export type PutSafeguardsControlErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PutSafeguardsControlError = PutSafeguardsControlErrors[keyof PutSafeguardsControlErrors];
@@ -52956,9 +53040,9 @@ export type WispPackErrors = {
      */
     422: ValidationErrorOut;
     /**
-     * Contract stub: not implemented yet
+     * Service unavailable
      */
-    501: ErrorOut;
+    503: ErrorOut;
 };
 
 export type WispPackError = WispPackErrors[keyof WispPackErrors];
@@ -52971,6 +53055,120 @@ export type WispPackResponses = {
 };
 
 export type WispPackResponse = WispPackResponses[keyof WispPackResponses];
+
+export type WispPackStatusData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Pack Id
+         */
+        pack_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/safeguards/wisp-pack/{pack_id}';
+};
+
+export type WispPackStatusErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type WispPackStatusError = WispPackStatusErrors[keyof WispPackStatusErrors];
+
+export type WispPackStatusResponses = {
+    /**
+     * Successful Response
+     */
+    200: WispPackOut;
+};
+
+export type WispPackStatusResponse = WispPackStatusResponses[keyof WispPackStatusResponses];
+
+export type WispPackDownloadData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Pack Id
+         */
+        pack_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/safeguards/wisp-pack/{pack_id}/download';
+};
+
+export type WispPackDownloadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Gone: the code, link or window expired or was used
+     */
+    410: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type WispPackDownloadError = WispPackDownloadErrors[keyof WispPackDownloadErrors];
+
+export type WispPackDownloadResponses = {
+    /**
+     * Response Wisp Pack Download
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type WispPackDownloadResponse = WispPackDownloadResponses[keyof WispPackDownloadResponses];
 
 export type SearchFindingsData = {
     body?: never;
@@ -53174,10 +53372,6 @@ export type ListSecurityIncidentsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListSecurityIncidentsError = ListSecurityIncidentsErrors[keyof ListSecurityIncidentsErrors];
@@ -53277,10 +53471,6 @@ export type SecurityIncidentErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SecurityIncidentError = SecurityIncidentErrors[keyof SecurityIncidentErrors];
@@ -53337,10 +53527,6 @@ export type DecideSecurityIncidentErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DecideSecurityIncidentError = DecideSecurityIncidentErrors[keyof DecideSecurityIncidentErrors];
@@ -53393,10 +53579,6 @@ export type AppendIncidentTimelineErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AppendIncidentTimelineError = AppendIncidentTimelineErrors[keyof AppendIncidentTimelineErrors];
@@ -59786,6 +59968,105 @@ export type PublishRetentionFloorsResponses = {
 };
 
 export type PublishRetentionFloorsResponse = PublishRetentionFloorsResponses[keyof PublishRetentionFloorsResponses];
+
+export type ImportSafeguardsControlsData = {
+    body: SafeguardsControlSetIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/platform/safeguards-controls';
+};
+
+export type ImportSafeguardsControlsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ImportSafeguardsControlsError = ImportSafeguardsControlsErrors[keyof ImportSafeguardsControlsErrors];
+
+export type ImportSafeguardsControlsResponses = {
+    /**
+     * Successful Response
+     */
+    201: SafeguardsControlSetOut;
+};
+
+export type ImportSafeguardsControlsResponse = ImportSafeguardsControlsResponses[keyof ImportSafeguardsControlsResponses];
+
+export type PublishSafeguardsControlsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Set Version
+         */
+        set_version: number;
+    };
+    query?: never;
+    url: '/v1/platform/safeguards-controls/{set_version}/publish';
+};
+
+export type PublishSafeguardsControlsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PublishSafeguardsControlsError = PublishSafeguardsControlsErrors[keyof PublishSafeguardsControlsErrors];
+
+export type PublishSafeguardsControlsResponses = {
+    /**
+     * Successful Response
+     */
+    200: SafeguardsControlSetOut;
+};
+
+export type PublishSafeguardsControlsResponse = PublishSafeguardsControlsResponses[keyof PublishSafeguardsControlsResponses];
 
 export type PortalMfaData = {
     body: PortalMfaIn;

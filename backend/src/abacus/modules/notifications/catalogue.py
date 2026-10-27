@@ -195,6 +195,17 @@ async def _export_requester(tenant_id: UUID, payload: dict[str, object]) -> list
     return [requester] if requester is not None else []
 
 
+async def _second_decider(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """G-02-T18 (AC-22): the person the first decider named, and only them."""
+    named = _uuid(payload, "waiting_for_user_id")
+    return [named] if named is not None else []
+
+
+async def _qi_and_partners(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """G-02-T18 (AC-23): the firm's QI and its partner-level members, on days 20, 25 and 29."""
+    return sorted(set(await security_admins(tenant_id)) | set(await partner_members(tenant_id)))
+
+
 @dataclass(frozen=True)
 class Kind:
     kind: str  # the stored code; new codes are undotted (C16); the key is the event type
@@ -296,6 +307,21 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "engagement_export.failed": Kind(
         "export_failed", _export_requester, "engagement_export", "export_id"
     ),
+    # G-02-T17: the requester's audit-log export is ready (firm-level).
+    "audit_export.ready": Kind(
+        "audit_export_ready", _export_requester, "audit_export", "export_id", None
+    ),
+    # G-02-T18: the incident register's two-person decision and its FTC clock (firm-level).
+    "incident.decision_requested": Kind(
+        "incident_decision_requested", _second_decider, "security_incident", "incident_id", None
+    ),
+    "incident.deadline_approaching": Kind(
+        "incident_deadline_approaching",
+        _qi_and_partners,
+        "security_incident",
+        "incident_id",
+        None,
+    ),
 }
 
 # AC-7: fixed English text per kind; placeholders are names the reader can already see.
@@ -343,6 +369,11 @@ TEMPLATES: Final[dict[str, str]] = {
     "team.change_proposed": "The team on {engagement} changed and is waiting for your approval.",
     "engagement_export.ready": "Your binder export for {engagement} is ready to download.",
     "engagement_export.failed": "Your binder export for {engagement} could not be built.",
+    "audit_export.ready": "Your audit log export is ready to download.",
+    "incident.decision_requested": "A security incident decision is waiting for you: {subject}.",
+    "incident.deadline_approaching": (
+        "A security incident's FTC notice date is approaching: {subject}."
+    ),
 }
 
 

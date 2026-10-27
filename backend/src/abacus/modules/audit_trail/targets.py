@@ -59,6 +59,11 @@ FIRM_LEVEL: Final = frozenset(
         "agent_stage",  # Q-02-T06 (ED-120): a firm's agent stage row, set by platform staff
         "security_policy",  # G-02-T14: the firm's sign-in policy, exempt account, support switch
         "portal_security_policy",  # G-02-T14: the firm's portal session length
+        "audit_export",  # G-02-T17: a person's export of the firm's log (a filter, no client)
+        "firm_export_schedule",  # G-02-T19: the firm's monthly export schedule
+        "safeguards_program",  # G-02-T20: the firm's safeguards record
+        "safeguards_control",  # G-02-T20: one Pub 4557 control's status
+        "wisp_pack",  # G-02-T20: an Export WISP pack job
     }
 )
 # Kinds whose rows may belong to no engagement (a notification about the firm): then firm-level.
