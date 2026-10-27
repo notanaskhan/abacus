@@ -78,6 +78,7 @@ def _error() -> RuntimeError:
 
 
 @pytest.mark.usefixtures("started")
+@pytest.mark.source_scan
 def test_ac20_a_report_inside_a_span_carries_that_traces_ids() -> None:
     with tracer("t").start_as_current_span("work"):
         expected = {"trace_id": current_trace_id(), "span_id": current_span_id()}
