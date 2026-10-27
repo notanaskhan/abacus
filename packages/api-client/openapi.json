@@ -2072,6 +2072,58 @@
             "title": "Initiator Name",
             "type": "string"
           },
+          "outcome": {
+            "anyOf": [
+              {
+                "enum": [
+                  "approved",
+                  "partially_approved",
+                  "rejected"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Outcome"
+          },
+          "record_persisted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Record Persisted At"
+          },
+          "record_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Record Sha256"
+          },
+          "stage": {
+            "cls": "internal",
+            "default": "live",
+            "enum": [
+              "shadow",
+              "live"
+            ],
+            "title": "Stage",
+            "type": "string"
+          },
           "started_at": {
             "cls": "internal",
             "format": "date-time",
@@ -2089,6 +2141,18 @@
             ],
             "title": "State",
             "type": "string"
+          },
+          "state_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "State Reason"
           },
           "subject": {
             "anyOf": [
