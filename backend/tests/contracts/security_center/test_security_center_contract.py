@@ -86,6 +86,7 @@ Q02: frozenset[tuple[str, str]] = frozenset(
         ("post", "/v1/firm/data-exports/{export_id}/approve"),
         ("post", "/v1/firm/data-exports/{export_id}/decline"),
         ("post", "/v1/firm/data-exports/{export_id}/link"),
+        ("get", "/v1/firm/data-exports/{export_id}/links/{link_id}"),  # Q-02-T43: the archive
     }
 )
 PREFIXES = (
