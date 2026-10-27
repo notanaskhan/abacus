@@ -2,12 +2,12 @@
 
 | Field | Value |
 |---|---|
-| Route and params | `/settings/people` (G-01 §5.1) behind `firm_settings.v2`. Search params: `segment` (`users` · `templates` · `invitations` · `independence`), `role` (template key), `office` (office id), `team` (team id), `status` (`active` · `invited` · `deactivated`; absent is every status, which Users opens with: DEC-353), `q`, `template` (the highlighted grid column), `ov` (`invite` · `person:<userId>`). Names, emails and TINs never travel in a path. Artboards: `/components/screens/ADM-02?st=a…g` |
+| Route and params | `/settings/people` (G-01 §5.1; `firm_settings.v2` retired by G-01-T17, DEC-594). Search params: `segment` (`users` · `templates` · `invitations` · `independence`), `role` (template key), `office` (office id), `team` (team id), `status` (`active` · `invited` · `deactivated`; absent is every status, which Users opens with: DEC-353), `q`, `template` (the highlighted grid column), `ov` (`invite` · `person:<userId>`). Names, emails and TINs never travel in a path. Artboards: `/components/screens/ADM-02?st=a…g` |
 | Template and host frame | T12 `SettingsLayout` (F-05-T45; `bare`, `wide` form pane with a centred Segmented in the pane header) with a T1-density people table, `TallyStrip` (C-01), `SearchField` and `FilterChip`s, Tabs Kit `Segmented` + `Count` (C-05), `CategoryList` grammar and the `CapabilityMatrix` grid, O2 480 `Drawer`s, `ConfirmDialog`, `Toast` · `Wave 2 - Intake & Admin.dc.html#adm02` |
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/ADM-02 Users and roles - permission matrix/` (README.md, spec.md; no revision) · HANDOFF_VERSION 2026-10-21. State g has no artboard (DF-07) |
 | Epic and tasks | G-01 · contracts G-01-T01 (TASK-1225) · stub T02, consumer tests T03 · people v2 T05 (TASK-1150, DEC-286) · seed and fixtures T06 (TASK-1151, DEC-287) · screen T10 (TASK-1226) · independent AC tests T11 · annual independence backend T13 · Playwright T16 · parity lock and legacy retirement T17 |
-| Manifest status | planned with its path (`routes/manifest/adm.ts`, `/settings/people`): built on fixtures by G-01-T10 behind `firm_settings.v2`, kept `planned` for CLI-02's reason (DEC-195): ADM-01 → ADM-02 is wired in `routes/firm/settings.tsx`, not with `to.ADM02()`, because `to` carries the manifest's names, which the production dist must not hold. a–f live after the staging walk; g live once G-01-T13 answers `GET /v1/firm/independence/annual` |
+| Manifest status | planned with its path (`routes/manifest/adm.ts`, `/settings/people`): built on fixtures by G-01-T10 (unflagged since G-01-T17), kept `planned` for CLI-02's reason (DEC-195): ADM-01 → ADM-02 is wired in `routes/firm/settings.tsx`, not with `to.ADM02()`, because `to` carries the manifest's names, which the production dist must not hold. a–f live after the staging walk; g live once G-01-T13 answers `GET /v1/firm/independence/annual` |
 
 Code (G-01-T10): `src/routes/firm/settings.tsx` (`/settings/people`), `src/screens/ADM-02/{index.tsx, users.tsx, templates.tsx, drawers.tsx, independence.tsx, model.ts, copy.ts, scenarios.ts, ADM-02.test.tsx}`, `src/fixtures/{handlers/firm-settings.ts, seed/firm-people.ts, scenarios/ADM-02.ts}`, gallery entry in `src/screens/gallery.tsx`. In `packages/ui`: `CapabilityMatrix` (`components/capability-matrix.tsx`), `TallyStrip` pill cards, `PaneHeader` `center`, and `SettingsLayout` `wide`, `headerCenter`, `headerActions` (all additive).
 
@@ -38,7 +38,7 @@ Non-artboard states (data conditions, never an `st` prop):
 | Users not readable | a partner or security admin: `GET /v1/firm/staff` stays on `firm.manage_users` (DEC-286) | the Users and Invitations segments are absent; Role templates (and Independence where `independence.annual_read` holds) remain |
 | Step-up | a role change, deactivation or invite answers 403 (stale second factor) | "Confirm it's you to change people" (the T12 step-up slot) |
 | Invitations empty | no pending invitation | "No pending invitations." |
-| Flag off | `firm_settings.v2` off | "This settings section isn't built yet." |
+| Flag off | none since G-01-T17 retired `firm_settings.v2` (DEC-594) | — |
 
 ## API
 | Read or write | Endpoint | Shape | Matrix action | allowed_actions and read-only reasons per role |

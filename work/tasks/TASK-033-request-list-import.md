@@ -78,6 +78,7 @@ No protected paths (requests, engagements and `apps/web` aren't protected), so n
 
   Backend unit (8,902) and web (120) tests and the gates pass. A local Postgres run passed: column suggestions, an in-file duplicate and an empty row skipped, a re-import creating nothing, a non-workbook refused.
 - `2026-10-08` — SPEC-018 approved and merged (#61). Design written for founder review.
+- 2026-10-27: ADR-078 back-fill suite `backend/tests/integration/backfill/test_q03t047_requests_client_hub.py`; see `work/tasks/TASK-1438-*.md` (S11 lane 7).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

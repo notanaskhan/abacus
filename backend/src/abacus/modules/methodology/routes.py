@@ -8,22 +8,30 @@ from datetime import datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import Depends, Query, Request
+from fastapi import Depends, Query, Request, Response
 from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
 from abacus.kernel.config import settings
 from abacus.kernel.text import SingleLineText
-from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    AuthContext,
+    Resource,
+    authorise,
+    current_context,
+)
 from abacus.modules.methodology.service import (
     EngagementType,
+    Family,
     TemplateVersionSummary,
     import_template,
     methodology_templates,
     methodology_version,
 )
 from abacus.modules.methodology.workbook import Problem, TemplateInvalid
+from abacus.modules.methodology.workbook_template import FILENAME, MEDIA_TYPE, workbook_template
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 
@@ -112,13 +120,18 @@ async def import_template_route(
     request: Request,
     ctx: Ctx,
     engagement_type: Annotated[list[EngagementType] | None, Query()] = None,
+    family: Annotated[Family | None, Query()] = None,
 ) -> TemplateVersionOut:
     """The raw `.xlsx` workbook is the request body (TASK-023 D3: no multipart dependency).
     `engagement_type` (repeatable) tags a new template with the types it serves (SPEC-024);
     an existing template keeps its own."""
     try:
         summary = await import_template(
-            ctx, name, await _body(request), tuple(engagement_type or ("fs_audit",))
+            ctx,
+            name,
+            await _body(request),
+            tuple(engagement_type or ("fs_audit",)),
+            family,
         )
     except TemplateInvalid as invalid:
         # Where and what, never the cell (ADR-052), in the validation error shape.
@@ -170,4 +183,21 @@ async def get_version_route(version_id: UUID, ctx: Ctx) -> MethodologyVersionOut
             )
             for r in view.rules
         ],
+    )
+
+
+@methodology_router.get(
+    "/workbook-template.xlsx", action="methodology.read", response_model=str, status_code=200
+)
+async def workbook_template_route(ctx: Ctx) -> Response:
+    """K-01-T05: the blank workbook v2 (headers only) a firm fills in and imports. The body is
+    the `.xlsx` (the model is only the generator's placeholder)."""
+    await authorise(ctx, "methodology.read", Resource.firm(ctx.tenant_id))
+    return Response(
+        workbook_template(),
+        media_type=MEDIA_TYPE,
+        headers={
+            "Content-Disposition": f'attachment; filename="{FILENAME}"',
+            "X-Content-Type-Options": "nosniff",
+        },
     )

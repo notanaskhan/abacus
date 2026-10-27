@@ -6,7 +6,10 @@ events arrive as `event` signals (`kernel.dispatch.signal_with_start`). Each run
 workflow holds no business state, so replays stay deterministic and redeliveries harmless. It
 continues as new to bound its history, and ends when the engagement is archived. Since v2
 (`patched("daily-tick")`, TASK-051) it also ticks daily at 09:00 on business days in the firm's
-time zone (the delay comes from an activity, so replay stays deterministic). A failing
+time zone (the delay comes from an activity, so replay stays deterministic). Since v3
+(`patched("follow_up_policy_v1")`, R-01-T24) the tick event carries
+`{"follow_up_policy": "v1"}`, and the tick's P-4 reads the firm's follow-up policy (DEC-74);
+histories recorded before it replay with the empty payload and the old constants. A failing
 event is logged and skipped: one bad event never stops the engagement's agent.
 """
 
@@ -31,6 +34,7 @@ with workflow.unsafe.imports_passed_through():
 HANDLE: Final = "engagement_agent.handle"
 NEXT_TICK: Final = "engagement_agent.next_tick"
 TICK: Final = "agent.tick"
+FOLLOW_UP_POLICY_PATCH: Final = "follow_up_policy_v1"
 MAX_HANDLED: Final = 500  # events per run before continuing as new
 
 
@@ -66,7 +70,10 @@ class EngagementAgent:
             )
         except TimeoutError:
             self._tick_at = None
-            self._events.append(AgentEvent(TICK, str(workflow.uuid4()), {}))
+            payload: dict[str, str] = {}
+            if workflow.patched(FOLLOW_UP_POLICY_PATCH):
+                payload = {"follow_up_policy": "v1"}  # R-01-T24: P-4 reads the firm's policy
+            self._events.append(AgentEvent(TICK, str(workflow.uuid4()), payload))
 
     @workflow.run
     async def run(self, given: AgentInput) -> str:

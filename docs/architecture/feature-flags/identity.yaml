@@ -18,14 +18,6 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
-  - name: firm_settings.v2
-    description: 'Firm-settings family v1 (G-01): settings overview and sections, people v2, role templates, annual independence, offices, teams and groups, service-line policies, offshore and walls v2 routes. Off: those routes answer 404 and the existing settings routes are unchanged. On: 501 not_implemented until G-01-T04, T05, T08, T09, T12 and T13 land. Off by default.'
-    owner: notanaskhan
-    created: 2026-10-23
-    expires: 2027-04-21
-    override: DEC-137
-    kind: boolean
-    default: false
   - name: security_center.v1
     description: 'The security center (G-02, SPEC-349; ADM-06): /v1/firm/security* (sign-in and portal policies, sessions, posture), incidents read and decisions, the firm-export schedule, support access and safeguards routes. Off: those routes answer 404 and the legacy support card is unchanged. On: 501 not_implemented until G-02-T14, T18, T19 and T20 land. Renewed or retired in G-02-T27.'
     owner: notanaskhan

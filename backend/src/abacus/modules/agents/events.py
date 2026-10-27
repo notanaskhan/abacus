@@ -28,6 +28,18 @@ class FollowUpsDrafted(DomainEvent):
     count: Annotated[int, classified("internal")]
 
 
+class FollowUpLimitReached(DomainEvent):
+    """The firm's follow-up policy reached its maximum for a binder's recipient (R-01-T24;
+    DEC-74, DEC-564): nothing more goes automatically, so the engagement's leads are told in
+    the app (`follow_up_limit_reached`, C16)."""
+
+    event_type: ClassVar[str] = "follow_up.limit_reached"
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    binder_id: Annotated[UUID, classified("internal")]
+    contact_id: Annotated[UUID, classified("internal")]  # the recipient person's user id
+
+
 class FollowUpSent(DomainEvent):
     """A person sent a follow-up (P-06-T14). Held by an approval grant until the 10-s Undo
     window ends (ADR-161); its delivery sends the email (communications)."""

@@ -143,6 +143,8 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "issue_events": "review_rows_immutable",  # 0094 (P-04-T04)
     "decision_card_versions": "review_rows_immutable",  # 0211 (P-04-T23)
     "decision_analysis_requests": "review_rows_immutable",  # 0211 (P-04-T23)
+    "human_gate_snoozes": "human_gate_acts_immutable",  # 0223 (I-01-T04)
+    "human_gate_reassignments": "human_gate_acts_immutable",  # 0223 (I-01-T04)
     "suggestion_decisions": "agent_decisions_immutable",  # 0095 (P-04-T05)
     "proposal_rows": "agent_decisions_immutable",  # 0095 (P-04-T05)
     "proposal_decisions": "agent_decisions_immutable",  # 0095 (P-04-T05)
@@ -160,6 +162,10 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "connection_consent_links": "connection_consents_immutable",  # 0195 (A-02-T13)
     "engagement_export_downloads": "engagement_export_rows_immutable",  # 0191 (TASK-1334)
     "engagement_export_contents": "engagement_export_rows_immutable",  # 0191 (TASK-1334)
+    "firm_export_links": "firm_export_links_immutable",  # 0216 (TASK-1403)
+    "firm_export_downloads": "firm_export_links_immutable",  # 0216 (TASK-1403)
+    "assurance_external_releases": "assurance_external_records_immutable",  # 0226 (TASK-1443)
+    "assurance_external_archives": "assurance_external_records_immutable",  # 0226 (TASK-1443)
 }
 # Update columns for tables outside the modules (TASK-008); modules declare theirs.
 _PLATFORM_UPDATE_COLUMNS: dict[str, frozenset[str]] = {

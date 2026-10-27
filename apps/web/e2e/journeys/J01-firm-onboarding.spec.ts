@@ -31,11 +31,11 @@ test.describe("J01-core firm onboarding", () => {
 
   test(
     "J01 1: Margaret Okonkwo opens the firm's settings (ADM-01)",
-    owner("G-01 · G-01-T07 ADM-01 live behind firm_settings.v2 · walked on staging by M8"),
+    owner("G-01 · G-01-T07 ADM-01 (flag retired, G-01-T17) · walked on staging by M8"),
     async ({ journey }) => {
-      // ADM-01 is built on fixtures (G-01-T07); the full stack serves it once E0 turns
-      // firm_settings.v2 on for the firm.
-      test.fixme(journey.project !== "fixture", "firm_settings.v2 is not on in E0 (G-01-T07)");
+      // ADM-01 is built on fixtures (G-01-T07) and served to every firm since G-01-T17 retired
+      // `firm_settings.v2` (DEC-594); the full stack walks it after the batch deploy (G-01-T19).
+      test.fixme(journey.project !== "fixture", "walked full stack after the batch (G-01-T19)");
       await journey.as("margaret-okonkwo", "/settings/general", { clock: DEMO_INSTANT });
       await journey.step("J01 step 1: the firm profile as Margaret Okonkwo", async (page) => {
         await expect(page.getByText("Brightwater Hale").first()).toBeVisible();
@@ -88,18 +88,15 @@ test.describe("J01-core firm onboarding", () => {
     },
   );
 
-  // G-01-T16 (DEC-457): ADM-02 and ADM-03 sit behind `firm_settings.v2`, which E0 leaves off and
-  // the nightly load does not seed with the people slice, so in fixture mode the step opens the
-  // real route on the screen's own scenario (`?screen=&st=`); the full stack and staging walk it
-  // once E0 turns the flag on (G-01-T17) and the batch deploy carries it (G-01-T19).
+  // G-01-T16 (DEC-457): the nightly load does not seed the people slice ADM-02 and ADM-03 need, so
+  // in fixture mode the step opens the real route on the screen's own scenario (`?screen=&st=`);
+  // the full stack and staging walk it after the batch deploy (G-01-T19). `firm_settings.v2` is
+  // retired (G-01-T17, DEC-594).
   test(
     "J01 3: Grace creates offices Chicago, Denver and New York (ADM-03)",
     owner("G-01 · G-01-T16 fixture; full stack and staging after G-01-T17 · S11, Thu Apr 1, 2027"),
     async ({ journey }) => {
-      test.fixme(
-        journey.project !== "fixture",
-        "firm_settings.v2 and the people slice are not in E0",
-      );
+      test.fixme(journey.project !== "fixture", "the people slice is not in E0");
       await journey.as("grace-holloway", "/settings/offices?screen=ADM-03&st=a", {
         clock: DEMO_INSTANT,
       });
@@ -119,10 +116,7 @@ test.describe("J01-core firm onboarding", () => {
     "J01 3: Grace invites the seeded staff, and a 47th invite shows seats full (ADM-02c)",
     owner("G-01 · G-01-T16 fixture; full stack and staging after G-01-T17 · S11, Thu Apr 1, 2027"),
     async ({ journey }) => {
-      test.fixme(
-        journey.project !== "fixture",
-        "firm_settings.v2 and the people slice are not in E0",
-      );
+      test.fixme(journey.project !== "fixture", "the people slice is not in E0");
       await journey.as("grace-holloway", "/settings/people?screen=ADM-02&st=c", {
         clock: DEMO_INSTANT,
       });

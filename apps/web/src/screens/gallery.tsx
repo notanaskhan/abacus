@@ -79,6 +79,20 @@ import {
   STATES as CLI08_STATES,
   scenarios as cli08Scenarios,
 } from "./CLI-08/scenarios";
+import { HOME01 } from "./HOME-01";
+import {
+  type Home01State,
+  OFFICE as HOME01_OFFICE,
+  STATES as HOME01_STATES,
+  scenarios as home01Scenarios,
+} from "./HOME-01/scenarios";
+import { KNW01 } from "./KNW-01";
+import {
+  type Knw01State,
+  OPENS as KNW01_OPENS,
+  STATES as KNW01_STATES,
+  scenarios as knw01Scenarios,
+} from "./KNW-01/scenarios";
 import { AuditsIndex } from "./AUD-01";
 import {
   STATES as AUD01_STATES,
@@ -612,6 +626,74 @@ function Aud01Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("AUD-01", { title: "Audits index · All Audits", Component: Aud01Artboard });
+
+function Home01Frame({ state }: { state: Home01State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/home" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <HOME01 toolbar={bar.toolbar} height={860} initialOffice={HOME01_OFFICE[state] ?? null} />
+    </div>
+  );
+}
+
+function Home01Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Home01State = HOME01_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      home01Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Home01Frame key={state} state={state} /> : null;
+}
+
+registerScreen("HOME-01", { title: "Home dashboard", Component: Home01Artboard });
+
+function Knw01Frame({ state }: { state: Knw01State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/knowledge" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <KNW01 toolbar={bar.toolbar} height={860} initial={KNW01_OPENS[state]} />
+    </div>
+  );
+}
+
+function Knw01Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Knw01State = KNW01_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      knw01Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Knw01Frame key={state} state={state} /> : null;
+}
+
+registerScreen("KNW-01", { title: "Knowledge library", Component: Knw01Artboard });
 
 function Aud02Frame({ state }: { state: Aud02State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";

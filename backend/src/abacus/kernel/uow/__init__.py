@@ -21,7 +21,7 @@ from contextlib import asynccontextmanager, contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Annotated, ClassVar, cast
+from typing import Annotated, ClassVar, Final, cast
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -470,6 +470,7 @@ __all__ = [
     "audit_activity",
     "audit_actor_count_since",
     "audit_facets",
+    "audit_newest_change",
     "audit_of_targets",
     "audit_page",
     "audit_total_of_targets",
@@ -593,6 +594,54 @@ async def audit_acted_since(
         },
     )
     return bool(found)
+
+
+# Verbs that only read or refuse: they change nothing a binder export holds.
+_READ_VERBS: Final = (
+    "read",
+    "previewed",
+    "masked_previewed",
+    "downloaded",
+    "revealed",
+    "viewed",
+    "opened",
+    "withdrawal_refused",
+    "refused",
+    "preview_exists",
+    "masked_preview_exists",
+    "words_exist",
+    "extraction_exists",
+    "pii_scan_exists",
+)
+
+
+async def audit_newest_change(
+    session: AsyncSession, targets: Sequence[tuple[str, UUID]], after_seq: int
+) -> tuple[int, str] | None:
+    """The newest event about any of `targets` (type, id) after `after_seq` whose verb changes
+    something (not a read, a preview or a refusal), as `(seq, action)`, or None (A-01-T23: a
+    final binder export is stale once its requests or files changed after its snapshot). The
+    caller has authorised a read of the targets."""
+    if not targets:
+        return None
+    row = (
+        await session.execute(
+            text(
+                "SELECT seq, action FROM audit_events "
+                "WHERE (target_type, target_id) IN (SELECT * FROM unnest("
+                "CAST(:types AS text[]), CAST(:ids AS text[]))) "
+                "AND seq > :after AND NOT (split_part(action, '.', 2) = ANY("
+                "CAST(:reads AS text[]))) ORDER BY seq DESC LIMIT 1"
+            ),
+            {
+                "types": [t for t, _ in targets],
+                "ids": [str(i) for _, i in targets],
+                "after": after_seq,
+                "reads": list(_READ_VERBS),
+            },
+        )
+    ).first()
+    return None if row is None else (int(row[0]), str(row[1]))
 
 
 async def audit_actor_count_since(

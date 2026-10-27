@@ -97,3 +97,7 @@ actions:
     verb: decide  # P-04-T23 (DEC-503, 0212): the card's reserved person decides (ADR-160 clause 8)
   - action: decision.reassessed
     verb: decide  # P-04-T23 (DEC-503, 0212): No change, or a superseding card (SHL-11 d, h)
+  - action: assurance.release_recorded
+    verb: release  # A-01-T23 (DEC-590, 0226): the engagement partner records the external release
+  - action: assurance.archive_recorded
+    verb: decide  # A-01-T23 (DEC-591, 0226): a manager or the partner records the external archive

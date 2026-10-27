@@ -40,6 +40,7 @@ ROUTES: dict[tuple[str, str], str] = {
     ("post", "/v1/review-notes/{note_id}/clear"): "review_note.clear",
     ("post", "/v1/review-notes/{note_id}/withdraw"): "review_note.withdraw",
     ("get", "/v1/human-gates"): "human_gate.read",
+    ("get", "/v1/human-gates/counts"): "human_gate.read",  # I-01-T04: the one count source
     ("get", "/v1/decision-cards"): "decision.read",
     ("get", "/v1/decision-cards/{card_id}"): "decision.read",
     ("post", "/v1/decision-cards/{card_id}/decide"): "decision.decide",
@@ -134,6 +135,7 @@ def _ctx() -> AuthContext:
 LIVE = frozenset(
     {
         "human_gate_list_route",
+        "human_gate_counts_route",  # I-01-T04
         "sign_off_ladder_route",
         "sign_off_eligibility_route",
         "sign_off_route",
@@ -276,7 +278,11 @@ def test_c3_schema_v1_migrations_agree_with_the_wire() -> None:
     )
     assert "CHECK (status IN ('open', 'responded', 'cleared', 'closed', 'withdrawn'))" in m93
     assert stored_codes("review_note") == ["open", "responded", "cleared", "closed", "withdrawn"]
-    assert check_list(m93, "kind", "human_gates") == list(get_args(review_contract.GateKind))
+    # I-01-T04 (0223, DEC-403) adds `evidence_review` to 0093's list, nothing else.
+    assert [*check_list(m93, "kind", "human_gates"), "evidence_review"] == list(
+        get_args(review_contract.GateKind)
+    )
+    assert "'evidence_review'" in migration("0223_human_gate_home.py")
     assert check_list(m93, "state", "human_gates") == list(get_args(review_contract.GateState))
 
 

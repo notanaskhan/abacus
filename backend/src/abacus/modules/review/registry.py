@@ -15,11 +15,14 @@ TABLES: frozenset[str] = frozenset(
     | {"issues", "issue_events", "issue_links"}
     # P-04-T23 (migration 0211): a card's numbered history and its analysis requests.
     | {"decision_card_versions", "decision_analysis_requests"}
+    # I-01-T04 (migration 0223): a person's snoozes and reassignments of gates.
+    | {"human_gate_snoozes", "human_gate_reassignments"}
 )
 INSERT_ONLY: frozenset[str] = frozenset(
     {"sign_offs", "reviewable_note_events", "field_value_versions"}
     | {"decisions", "checkpoint_diffs", "checkpoint_decisions", "issue_events", "issue_links"}
     | {"decision_card_versions", "decision_analysis_requests"}
+    | {"human_gate_snoozes", "human_gate_reassignments"}  # I-01-T04 (0223)
 )
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "sign_offs": frozenset(
@@ -48,10 +51,21 @@ INSERT_COLUMNS["field_value_versions"] = frozenset(
 INSERT_COLUMNS["human_gates"] = frozenset(
     {"tenant_id", "kind", "subject_ref", "engagement_id", "work_item_id", "client_id"}
     | {"assignee_user_id", "role", "due_on", "state", "source_event_id"}
+    | {"subkind", "office_id", "blocked", "blocked_reason_code", "sort_hint"}  # I-01-T04 (0223)
+)
+INSERT_COLUMNS["human_gate_snoozes"] = frozenset(
+    {"tenant_id", "gate_id", "user_id", "until", "actor_kind", "actor_id"}
+)
+INSERT_COLUMNS["human_gate_reassignments"] = frozenset(
+    {"tenant_id", "gate_id", "subject_ref", "from_user_id", "to_user_id", "reason_code"}
+    | {"actor_kind", "actor_id"}
 )
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "reviewable_notes": frozenset({"status", "assignee_user_id"}),  # P-04-T03
-    "human_gates": frozenset({"state", "assignee_user_id", "due_on", "updated_at"}),  # P-04-T03
+    "human_gates": frozenset(
+        {"state", "assignee_user_id", "due_on", "updated_at"}  # P-04-T03
+        | {"office_id", "blocked", "blocked_reason_code", "sort_hint"}  # I-01-T04 (0223)
+    ),
 }
 
 # P-04-T04 (migration 0094, ADR-160): their insert and update columns.
@@ -96,7 +110,10 @@ INSERT_COLUMNS["issue_events"] = frozenset(
     {"tenant_id", "issue_id", "event", "fix_instructions_sealed", "scope"}
 )
 INSERT_COLUMNS["issue_links"] = frozenset({"tenant_id", "issue_id", "link_kind", "ref"})
-UPDATE_COLUMNS["decision_cards"] = frozenset({"status"})
+UPDATE_COLUMNS["decision_cards"] = frozenset(
+    {"status"}
+    | {"reserved_user_id"}  # I-01-T04 (0223): the reassign hook, behind its guard trigger
+)
 UPDATE_COLUMNS["checkpoints"] = frozenset({"name", "starred", "status"})
 UPDATE_COLUMNS["issues"] = frozenset(
     {"status", "assignee_user_id", "assignee_agent", "priority", "kind", "title_sealed"}

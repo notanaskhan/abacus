@@ -27,6 +27,7 @@ from abacus.modules.identity.authz import (
     allowed_actions,
     authorise,
     authorise_items,
+    holds_engagement_role,
     policy_agent_may_hold,
     register_active_engagements,
     register_clients_of_engagements,
@@ -318,6 +319,7 @@ from abacus.modules.identity.settings_registry import (
     register_firm_setting,
     register_identity_settings,
     register_settings_area,
+    stored_value,
 )
 from abacus.modules.identity.slots import (
     InvitationParties,
@@ -650,6 +652,7 @@ __all__ = [
     "grants_of_contacts",
     "has_current_annual_confirmation",
     "hidden_clients",
+    "holds_engagement_role",
     "invitation_contact",
     "invitation_grants",
     "invitation_router",
@@ -757,6 +760,7 @@ __all__ = [
     "staff_holding_line",
     "staff_router",
     "staff_seats_by_office",
+    "stored_value",
     "support_session_audit_facts",
     "system_context_for_run",
     "team_of",

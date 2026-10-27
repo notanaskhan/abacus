@@ -75,6 +75,7 @@ LintCode = Literal[
     "unregistered_variable",
     "foreign_link",
     "platform_name",
+    "banned_word",  # R-01-T23: the glossary's client-email bans and scope-guards' banned terms
 ]
 FollowUpMode = Literal["draft_for_person", "send_on_schedule"]
 

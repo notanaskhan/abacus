@@ -1,9 +1,9 @@
 """The firm-settings family contract, v1: ADM-01, ADM-02 and ADM-03's identity half (G-01-T02
 stub; ADR-139, P-36). Contract: `docs/contracts/firm-settings.md`.
 
-Behind `firm_settings.v2`: off, every route here answers 404; on, 501 `not_implemented` until
-the task that implements it (G-01-T04 settings; T05 people; T09 walls v2; T12 service lines;
-T13 annual independence); all are live now. Offices and teams are organisations' (`organisations/
+Live for every firm: `firm_settings.v2` was retired by G-01-T17 (DEC-594) once every route had
+landed (G-01-T04 settings; T05 people; T09 walls v2; T12 service lines; T13 annual
+independence). Offices and teams are organisations' (`organisations/
 settings_contract.py`).
 
 Routes that already exist keep their paths and grow additively in their tasks:
@@ -27,15 +27,12 @@ from uuid import UUID
 from fastapi import Depends, Query
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import FIRM_SETTINGS_V2
 from abacus.kernel._statuses import (
     AnnualIndependenceStatus,
     MembershipStatus,
     WallApprovalStatus,
 )
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound
-from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import CursorInvalid, ListPage
 from abacus.kernel.text import MultiLineText, SingleLineText
 from abacus.modules.identity import (
@@ -428,11 +425,6 @@ class WallEventOut(BaseModel):
 # --- routes --------------------------------------------------------------------------------------
 
 
-async def _gate(ctx: AuthContext) -> None:
-    if not await flag_enabled(ctx.tenant, FIRM_SETTINGS_V2):
-        raise NotFound("firm_settings.v2")
-
-
 def _section(view: settings_registry.SectionView) -> SettingsSectionValuesOut:
     return SettingsSectionValuesOut(
         section=view.section,
@@ -456,7 +448,6 @@ me_router = AbacusRouter(prefix="/v1/me", tags=["firm-settings"])
 )
 async def settings_overview_route(ctx: Ctx) -> SettingsOverviewOut:
     """ADM-01: sections for the caller and At a glance (each provider within 500 ms)."""
-    await _gate(ctx)
     found = await settings_registry.overview(ctx)
     return SettingsOverviewOut(
         firm_name=found.firm_name,
@@ -478,7 +469,6 @@ async def settings_overview_route(ctx: Ctx) -> SettingsOverviewOut:
     "/settings/{section}", action="firm.read_settings", response_model=SettingsSectionValuesOut
 )
 async def settings_section_route(section: Section, ctx: Ctx) -> SettingsSectionValuesOut:
-    await _gate(ctx)
     return _section(await settings_registry.read_section(ctx, section))
 
 
@@ -492,7 +482,6 @@ async def update_settings_section_route(
     section: Section, body: SettingsPatchIn, ctx: Ctx
 ) -> SettingsSectionValuesOut:
     """Fresh MFA; 422 `unknown_setting`, `display_name_required`; 409 `stale_version`."""
-    await _gate(ctx)
     await settings_registry.save_section(ctx, section, body.version, body.values)
     return _section(await settings_registry.read_section(ctx, section))
 
@@ -550,7 +539,6 @@ async def _person_out(ctx: AuthContext, user_id: UUID) -> PersonOut:
 @settings_router.get("/staff/{user_id}", action="firm.read_people", response_model=PersonOut)
 async def person_route(user_id: UUID, ctx: Ctx) -> PersonOut:
     """ADM-02d: the person's template, attributes, walls, assignments and last sign-ins."""
-    await _gate(ctx)
     return await _person_out(ctx, user_id)
 
 
@@ -560,7 +548,6 @@ async def person_route(user_id: UUID, ctx: Ctx) -> PersonOut:
 async def update_person_route(user_id: UUID, body: PersonPatchIn, ctx: Ctx) -> PersonOut:
     """Fresh MFA; a field sent as null clears it; 409 `stale_version`,
     `offshore_assignment_conflict`; 422 `access_ends_required`."""
-    await _gate(ctx)
     changes = {name: getattr(body, name) for name in body.model_fields_set if name != "version"}
     await people.update_person(ctx, user_id, body.version, changes)
     return await _person_out(ctx, user_id)
@@ -574,7 +561,6 @@ async def update_person_route(user_id: UUID, body: PersonPatchIn, ctx: Ctx) -> P
 )
 async def set_security_role_route(user_id: UUID, body: SecurityRoleIn, ctx: Ctx) -> PersonOut:
     """`security_admin` only; 409 `last_admin`, `firm_role_held`."""
-    await _gate(ctx)
     await people.set_security_role(ctx, user_id, body.security_admin)
     return await _person_out(ctx, user_id)
 
@@ -587,7 +573,6 @@ async def set_security_role_route(user_id: UUID, body: SecurityRoleIn, ctx: Ctx)
 )
 async def deactivate_person_route(user_id: UUID, body: DeactivateIn, ctx: Ctx) -> PersonOut:
     """Ends sessions and frees the seat; 409 `last_admin`. `/revoke` stays an alias."""
-    await _gate(ctx)
     await people.deactivate(ctx, user_id, body.reason)
     return await _person_out(ctx, user_id)
 
@@ -595,7 +580,6 @@ async def deactivate_person_route(user_id: UUID, body: DeactivateIn, ctx: Ctx) -
 @settings_router.get("/role-templates", action="firm.read_people", response_model=RoleTemplatesOut)
 async def role_templates_route(ctx: Ctx) -> RoleTemplatesOut:
     """ADM-02b: eight templates with counts, the grid and the locked agent row."""
-    await _gate(ctx)
     found = await people.role_templates(ctx)
     return RoleTemplatesOut(
         templates=[
@@ -626,7 +610,6 @@ async def annual_independence_route(
 ) -> AnnualIndependenceOut:
     """ADM-02g (AC6.3): every active staff member's status for the year (Confirmed with its
     date, Not yet, Declined with its note); the counts foot to them."""
-    await _gate(ctx)
     found = await annual_independence.annual(ctx, year)
     return AnnualIndependenceOut(
         year=found.year,
@@ -654,7 +637,6 @@ def _statement_out(found: annual_independence.Statement | None) -> AnnualStateme
 )
 async def independence_statement_route(ctx: Ctx) -> AnnualStatementOut | None:
     """The firm's current independence statement, or null before the first (G-01-T13)."""
-    await _gate(ctx)
     return _statement_out(await annual_independence.statement(ctx))
 
 
@@ -668,7 +650,6 @@ async def publish_independence_statement_route(
 ) -> AnnualStatementOut:
     """A new version of the statement (firm admin, fresh MFA); confirmations name the version
     they read (DEC-381)."""
-    await _gate(ctx)
     found = await annual_independence.publish_statement(ctx, body.body)
     return AnnualStatementOut(version=found.version, body=found.body)
 
@@ -692,7 +673,6 @@ def _line_out(policy: service_lines.Policy) -> ServiceLinePolicyOut:
 async def service_lines_route(ctx: Ctx) -> list[ServiceLinePolicyOut]:
     """ADM-03's service lines (AC10.1): the four lines in order; a line never saved reads its
     defaults ("Engagement team only", "Hand-offs only", version 0)."""
-    await _gate(ctx)
     return [_line_out(p) for p in await service_lines.policies(ctx)]
 
 
@@ -707,7 +687,6 @@ async def set_service_line_route(
 ) -> ServiceLinePolicyOut:
     """Fresh MFA; 422 `audit_locked` (Audit is never widened) and `service_line_lead_invalid`;
     409 `stale_version`. Members whose reach changes get `access.changed` (AC10.2)."""
-    await _gate(ctx)
     return _line_out(
         await service_lines.set_policy(
             ctx,
@@ -725,7 +704,6 @@ async def set_service_line_route(
 async def offshore_route(ctx: Ctx) -> OffshoreOut:
     """ADM-03d: the offshore members and the clients a valid offshore-disclosure consent covers
     (0 until T-01 registers the provider; DEC-52). The two policy toggles are always on."""
-    await _gate(ctx)
     found = await offshore.offshore_group(ctx)
     return OffshoreOut(
         member_ids=found.member_ids, consented_client_count=found.consented_client_count
@@ -754,7 +732,6 @@ async def wall_preview_route(
 ) -> WallPreviewOut:
     """AC8.1, AC8.3: what saving would refuse and the assignments it would end; a client the
     caller can't see answers 404 (DEC-43)."""
-    await _gate(ctx)
     found = await walls.preview(ctx, user_id=user_id, client_id=client_id)
     return WallPreviewOut(
         blockers=cast(list[WallBlocker], found.blockers),
@@ -767,7 +744,6 @@ async def wall_preview_route(
 )
 async def approve_wall_route(wall_id: UUID, ctx: Ctx) -> WallV2Out:
     """The named partner only, fresh MFA; 409 `already_approved`; 403 `not_named_approver`."""
-    await _gate(ctx)
     return await _wall_v2(ctx, await walls.approve_wall(ctx, wall_id))
 
 
@@ -778,7 +754,6 @@ async def wall_events_route(
     wall_id: UUID, ctx: Ctx, cursor: Annotated[str | None, Query(max_length=512)] = None
 ) -> ListPage[WallEventOut]:
     """ADM-03g: the wall's log, newest first, from the audit trail (fresh MFA)."""
-    await _gate(ctx)
     before = _cursor(cursor)
     events, next_seq, total = await walls.wall_events(ctx, wall_id, before, _EVENTS_PAGE)
     return ListPage[WallEventOut](
@@ -812,7 +787,6 @@ async def my_annual_independence_route(
 ) -> MyAnnualIndependenceOut:
     """AC6.1: one's own status for the year (the firm's current year by default) and the
     statement to confirm."""
-    await _gate(ctx)
     found = await annual_independence.mine(ctx, year)
     return MyAnnualIndependenceOut(
         year=found.year,
@@ -833,7 +807,6 @@ async def confirm_annual_independence_route(body: AnnualConfirmIn, ctx: Ctx) -> 
     """Oneself only (`independence.annual_confirm`); agents and the system can't confirm. The
     current year only and a note to decline (422 `annual_confirmation_invalid`); the statement
     version read (409 `stale_version`, `independence_statement_missing`)."""
-    await _gate(ctx)
     found = await annual_independence.record(
         ctx,
         year=body.year,
