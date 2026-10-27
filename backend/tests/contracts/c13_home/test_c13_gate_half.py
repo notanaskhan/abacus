@@ -2,7 +2,8 @@
 """I-01-T03 (TASK-1304; ADR-078): the C13 gate half on the wire and in the matrix, written before
 I-01-T04 and T07 open (`docs/contracts/home-and-gates.md` §2, §6; I-01 §4.2, §4.3).
 
-Holds on main now: no agent, system or client principal reads gates (INV-1, INV-4). Strict xfails
+Holds on main now: no agent, system or client principal reads gates (INV-1, INV-4); since
+I-01-T04 (TASK-1425) the counts route and the two insert-only tables. Strict xfails
 citing TASK-1304 name what T04 and T07 add: the counts route and its shape, the list's filters
 and presentation facts, snooze and reassign with their actions (human-only) and error codes, and
 the two insert-only tables, the reassignments one human-only at the database. The DB-backed half
@@ -54,7 +55,6 @@ def test_inv1_inv4_no_agent_system_or_client_reads_gates() -> None:
         assert decisions.get(role, "deny") == "deny", role
 
 
-@GATE_HALF
 def test_f1_the_counts_route_is_the_one_count_source() -> None:
     op = PATHS["/v1/human-gates/counts"]["get"]
     assert op["x-abacus-action"] == "human_gate.read"
@@ -108,7 +108,6 @@ def test_s6_the_gate_half_error_codes_are_catalogued() -> None:
     } <= catalogued
 
 
-@GATE_HALF
 def test_s42_snoozes_and_reassignments_are_insert_only_and_reassignment_is_human_only() -> None:
     assert {"human_gate_snoozes", "human_gate_reassignments"} <= registry.TABLES
     assert {"human_gate_snoozes", "human_gate_reassignments"} <= registry.INSERT_ONLY

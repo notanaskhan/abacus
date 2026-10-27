@@ -7,7 +7,7 @@
 | Surface | portal (white-labelled: the firm's mark, name, address and people; nowhere "Accrued") |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/POR-01 Portal sign-in - Brightwater Hale/` (README.md, spec.md; no revision) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | P-08 · contract P-08-T03; glossary P-08-T04; ADR P-11 P-08-T30; branding P-08-T05; WorkOS port P-08-T06; portal entry P-08-T07; data P-08-T08; a, b, e, f, g P-08-T09; BFF P-08-T10; auth client P-08-T11; c, c′ and d P-08-T19 (over MFA P-08-T17 and invitations v2 P-08-T18; AC suites T20 and T24); parity and accessibility P-08-T27 |
-| Manifest status | fixture (`routes/manifest/por.ts`, `entry: true`, no firm path: the screen is served by the portal entry at `/sign-in`, `routes/portal/index.tsx`; P-08-T09). a, b, e, f, g and 390 are built (T09); c, c′ and d since P-08-T19, d at `/accept` |
+| Manifest status | **live** (P-08-T29, 2026-10-27; `routes/manifest/por.ts`, `entry: true`, no firm path: the screen is served by the portal entry at `/sign-in`, `routes/portal/index.tsx`). It reads the served pre-session routes through the generated client (P-08-T10, T11, T21) behind `portal.sign_in_v2`, on for synthetic firms (P-08-T28). a, b, e, f, g and 390 built by T09; c, c′ and d by P-08-T19, d at `/accept` |
 
 Code (P-08-T07, T08, T09): `portal.html`, `src/entries/portal.tsx`, `src/routes/portal/index.tsx` (the portal's own route tree; P-08 §5.2 named it `public.tsx`), `src/portal/{PortalRoot,PortalShell,EntitySwitcher}.tsx`, `src/app-core/{portal-contracts,portal-session}.ts`, `src/domain/portal/{sign-in,shell,messages,index}.ts`, `src/screens/POR-01/{index.tsx, scenarios.ts, copy.ts, POR-01.test.tsx}`, `src/fixtures/{handlers/portal.ts, seed/portal-home.ts, scenarios/POR-01.ts, scenarios/POR-02.ts, install-portal.ts, portal.foot.test.ts}`, `scripts/portal-dist-check.mjs`, `e2e/screens/POR-01.spec.ts`. `src/app-core/auth/bff.ts` (P-08-T11, DEC-231): the in-memory token, refresh through the host cookie with `X-Abacus-CSRF`, 401 to `/sign-in?return=`, sign-out.
 
@@ -164,10 +164,12 @@ Each becomes a test in `POR-01.test.tsx` ("POR-01 avoid: …"): gradients in pro
 | DF-03 | The 390 layout is built from spec.md MOBILE 390 (card full width minus 16, padding 24 20, boxes 42×50 gap 6, primary pinned 16 px above the safe area); no frame exists | DEC-45 portal responsive scope | P-08 §0.1 DF-03 |
 | — | The canvas's fixture code 481027 exists only in fixtures; real codes are random | Security | P-08 §5.4 |
 
+**Deviations closed (P-08-T29, 2026-10-27).** Every row above is a recorded decision (DEC-35, DEC-58, DEC-59, P-08 §0.1 DF-03, DF-17, DF-24, §5.4); none is open. DF-17 and DF-24 stay builder-decided until their design revisions land; a revision that changes c′ or the lock copy reopens its row here.
+
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a–g | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (a, b, e, f, g built; axe 0 serious at 1400, 720 and 390 in `e2e/screens/POR-01.spec.ts`) | reported, then locked (blocking) at P-08 exit (T27); b masks the countdown; d at the Sep 2 clock |
+| a–g | C (threshold 0.20, maxDiffPixelRatio 3 %) | not measured in a builder session (no browser); every artboard built; axe 0 serious at 1400, 720 and 390 in `e2e/screens/POR-01.spec.ts` | the lock is set by a person after the first `pnpm visual` run passes (`docs/design/parity.md`; P-08-T27); b masks the countdown; d at the Sep 2 clock |
 | c′, 390 | D | — | no PNG; Tier D only |
 | host | D | — | card 400 wide, radius 14, top 196, padding 28 28 24; code boxes 44×52 r10 gap 8 (42×50 gap 6 at 390); button 36 h; mark 34 px; body 13/15.6 Geist |
 

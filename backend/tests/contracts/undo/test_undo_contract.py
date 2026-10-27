@@ -543,7 +543,7 @@ async def _waive(world: World, at: datetime) -> httpx.Response:
 IGNORE: Final = Case(
     "client_ignore",
     "R-01-T08",
-    ("binders.engine", "portal.documents_v2"),
+    ("binders.engine",),
     _client_binder,
     _ignore_decide,
     _ignore_undo,
@@ -578,7 +578,7 @@ async def _done_decided(world: World) -> int:
 MARK_DONE: Final = Case(
     "client_mark_done",
     "R-01-T08",
-    ("binders.engine", "portal.documents_v2"),
+    ("binders.engine",),
     _client_binder,
     _done_decide,
     _done_undo,

@@ -24,7 +24,13 @@ const PAD_H = 22;
 
 export interface CatalogLayoutProps {
   toolbar: ToolbarProps;
-  tabs: { options: readonly Opt[]; active: string; onChange?: (label: string) => void };
+  tabs: {
+    options: readonly Opt[];
+    active: string;
+    onChange?: (label: string) => void;
+    /** The tablist's accessible name: "Workbench" by default, "Knowledge" on KNW-01. */
+    label?: string;
+  };
   /** The 44 sub-row's small Segmented ("Library · My Agents"); Connect has none. */
   subRow?: {
     options: readonly Opt[];
@@ -56,6 +62,9 @@ export interface CatalogLayoutProps {
   embedded?: boolean;
   height?: number;
   className?: string;
+  /** Inside the app's own shell (a routed screen): the tabsbar and columns without a second
+   * AppShell and toolbar; `toolbar`, `frame`, `embedded` and `height` are then ignored. */
+  bare?: boolean;
 }
 
 export function CatalogLayout({
@@ -69,8 +78,85 @@ export function CatalogLayout({
   embedded = false,
   height,
   className,
+  bare = false,
 }: CatalogLayoutProps): JSX.Element {
   const chrome = TOOLBAR_H + TABS_H + (subRow === undefined ? 0 : SUBROW_H) + PAD_H;
+  const tabsbar = (
+    <>
+      <Tabsbar
+        label={tabs.label ?? "Workbench"}
+        options={tabs.options}
+        active={tabs.active}
+        {...(tabs.onChange === undefined ? {} : { onChange: tabs.onChange })}
+      />
+      {subRow !== undefined && (
+        <div
+          data-catalog="sub-row"
+          className="flex h-[44px] flex-none items-center px-(--edge-app)"
+        >
+          <Segmented
+            size="small"
+            label={subRow.label}
+            options={subRow.options}
+            active={subRow.active}
+            {...(subRow.onChange === undefined ? {} : { onChange: subRow.onChange })}
+          />
+        </div>
+      )}
+    </>
+  );
+  const columns = (
+    <div data-catalog="frame" className="flex min-h-0 min-w-0 flex-1">
+      <SplitLayout
+        preset="library"
+        height={height === undefined ? "viewport" : height - chrome}
+        narrow={false}
+        className="w-full bg-transparent p-0"
+      >
+        {[
+          <Pane key="side" header={false} className="min-h-0">
+            <div data-catalog="side" className="flex min-h-0 flex-1 flex-col overflow-auto">
+              {side.search !== undefined && (
+                <div className="flex h-[46px] flex-none items-center gap-[8px] px-[10px] hairline-b">
+                  {side.search}
+                </div>
+              )}
+              {side.about}
+              {side.categories}
+            </div>
+          </Pane>,
+          <Pane
+            key="grid"
+            title={grid.title}
+            {...(grid.left === undefined ? {} : { left: grid.left })}
+            {...(grid.right === undefined ? {} : { right: grid.right })}
+            className="min-h-0"
+          >
+            <div
+              data-catalog="well"
+              className={cn(
+                "min-h-0 flex-1 overflow-auto bg-shell",
+                grid.well === "connect" ? "p-[14px]" : "px-[14px] pt-[10px] pb-[14px]",
+              )}
+            >
+              {grid.body}
+            </div>
+          </Pane>,
+        ]}
+      </SplitLayout>
+    </div>
+  );
+  if (bare) {
+    return (
+      <div data-catalog="bare" className="relative flex min-h-0 flex-1 flex-col">
+        {tabsbar}
+        <div className="flex min-h-0 flex-1 px-(--edge-app) pt-(--gutter-pane) pb-(--edge-app)">
+          {columns}
+        </div>
+        {overlay}
+      </div>
+    );
+  }
   return (
     <AppShell
       toolbar={toolbar}
@@ -79,70 +165,9 @@ export function CatalogLayout({
       {...(height === undefined ? {} : { height })}
       {...(className === undefined ? {} : { className })}
       {...(overlay === undefined ? {} : { overlay })}
-      tabs={
-        <>
-          <Tabsbar
-            label="Workbench"
-            options={tabs.options}
-            active={tabs.active}
-            {...(tabs.onChange === undefined ? {} : { onChange: tabs.onChange })}
-          />
-          {subRow !== undefined && (
-            <div
-              data-catalog="sub-row"
-              className="flex h-[44px] flex-none items-center px-(--edge-app)"
-            >
-              <Segmented
-                size="small"
-                label={subRow.label}
-                options={subRow.options}
-                active={subRow.active}
-                {...(subRow.onChange === undefined ? {} : { onChange: subRow.onChange })}
-              />
-            </div>
-          )}
-        </>
-      }
+      tabs={tabsbar}
     >
-      <div data-catalog="frame" className="flex min-h-0 min-w-0 flex-1">
-        <SplitLayout
-          preset="library"
-          height={height === undefined ? "viewport" : height - chrome}
-          narrow={false}
-          className="w-full bg-transparent p-0"
-        >
-          {[
-            <Pane key="side" header={false} className="min-h-0">
-              <div data-catalog="side" className="flex min-h-0 flex-1 flex-col overflow-auto">
-                {side.search !== undefined && (
-                  <div className="flex h-[46px] flex-none items-center gap-[8px] px-[10px] hairline-b">
-                    {side.search}
-                  </div>
-                )}
-                {side.about}
-                {side.categories}
-              </div>
-            </Pane>,
-            <Pane
-              key="grid"
-              title={grid.title}
-              {...(grid.left === undefined ? {} : { left: grid.left })}
-              {...(grid.right === undefined ? {} : { right: grid.right })}
-              className="min-h-0"
-            >
-              <div
-                data-catalog="well"
-                className={cn(
-                  "min-h-0 flex-1 overflow-auto bg-shell",
-                  grid.well === "connect" ? "p-[14px]" : "px-[14px] pt-[10px] pb-[14px]",
-                )}
-              >
-                {grid.body}
-              </div>
-            </Pane>,
-          ]}
-        </SplitLayout>
-      </div>
+      {columns}
     </AppShell>
   );
 }

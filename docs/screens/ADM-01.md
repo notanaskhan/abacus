@@ -2,12 +2,12 @@
 
 | Field | Value |
 |---|---|
-| Route and params | `/settings/general` (G-01 §5.1) behind `firm_settings.v2`; `?ov=add-seats` (fixture only, the plan dialog until G-04). A section row or an At a glance row opens `/settings/<section>`; leaving a dirty form asks first. Artboards: `/components/screens/ADM-01?st=a…f` |
+| Route and params | `/settings/general` (G-01 §5.1; `firm_settings.v2` retired by G-01-T17, DEC-594); `?ov=add-seats` (fixture only, the plan dialog until G-04). A section row or an At a glance row opens `/settings/<section>`; leaving a dirty form asks first. Artboards: `/components/screens/ADM-01?st=a…f` |
 | Template and host frame | T12 `SettingsLayout` (F-05-T45; `bare` inside the app shell, `aside` for the 330 At a glance column, DEC-288) · `Wave 1 - Workbench & Ops.dc.html#adm01` (the production TPL-12 specimen) |
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/ADM-01 Settings home - firm profile/` (README.md, spec.md; no revision) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | G-01 · contracts G-01-T01 (TASK-1225) · family stub G-01-T02, consumer tests T03 · settings registry T04 · seed and fixtures T06 (TASK-1151) · screen T07 (TASK-1152) · independent AC tests T11 · Playwright T16 · parity lock and legacy retirement T17 |
-| Manifest status | fixture (`routes/manifest/adm.ts`, path `/settings/general`); live behind `firm_settings.v2` once walked on staging |
+| Manifest status | fixture (`routes/manifest/adm.ts`, path `/settings/general`); live once walked on staging (the flag is retired, G-01-T17) |
 
 Code (G-01-T07): `src/routes/firm/settings.tsx`, `src/screens/ADM-01/{index.tsx, copy.ts, scenarios.ts, ADM-01.test.tsx}`, `src/fixtures/{handlers/firm-settings.ts, seed/firm-people.ts, scenarios/ADM-01.ts, firm-people.foot.test.ts}`, gallery entry in `src/screens/gallery.tsx`.
 
@@ -33,7 +33,7 @@ Non-artboard states (data conditions, never an `st` prop):
 | Step-up | a save answers 403 (stale second factor) | T12's step-up slot: "Confirm it's you to save firm settings" (F-05 R10, DEC-288) |
 | Stale version | a save answers `409 stale_version` | toast "Changed by someone else — reload" (AC1.4) |
 | Provider unavailable | an At a glance provider times out (500 ms) | that row reads "Status unavailable" with no disc (AC2.3) |
-| Flag off | `firm_settings.v2` off | "This settings section isn't built yet." |
+| Flag off | none since G-01-T17 retired `firm_settings.v2` (DEC-594) | — |
 
 ## API
 | Read or write | Endpoint | Shape | Matrix action | allowed_actions and read-only reasons per role |

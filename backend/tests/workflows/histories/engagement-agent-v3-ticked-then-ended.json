@@ -1,0 +1,1292 @@
+{
+  "events": [
+    {
+      "eventId": "1",
+      "eventTime": "2026-10-27T10:51:15.394845429Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_EXECUTION_STARTED",
+      "taskId": "1048738",
+      "workflowExecutionStartedEventAttributes": {
+        "workflowType": {
+          "name": "EngagementAgent"
+        },
+        "taskQueue": {
+          "name": "abacus-recorder",
+          "kind": "TASK_QUEUE_KIND_NORMAL"
+        },
+        "input": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "eyJlbmdhZ2VtZW50X2lkIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMGUxIiwidGVuYW50X2lkIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAxIn0="
+            }
+          ]
+        },
+        "workflowTaskTimeout": "10s",
+        "originalExecutionRunId": "5ace3f1f-c4da-4894-be85-5d2eba787e88",
+        "identity": "worker@recorder",
+        "firstExecutionRunId": "5ace3f1f-c4da-4894-be85-5d2eba787e88",
+        "attempt": 1,
+        "firstWorkflowTaskBackoff": "0s",
+        "workflowId": "recorder-engagement-agent-v3-ticked-then-ended",
+        "priority": {}
+      }
+    },
+    {
+      "eventId": "2",
+      "eventTime": "2026-10-27T10:51:15.394924596Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_EXECUTION_SIGNALED",
+      "taskId": "1048739",
+      "workflowExecutionSignaledEventAttributes": {
+        "signalName": "event",
+        "input": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "eyJldmVudF9pZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDEwMSIsImV2ZW50X3R5cGUiOiJlbmdhZ2VtZW50LmNyZWF0ZWQiLCJwYXlsb2FkIjp7fX0="
+            }
+          ]
+        },
+        "identity": "worker@recorder",
+        "requestId": "ed2eb209-e2eb-44a4-b2df-5b911b91fe20"
+      }
+    },
+    {
+      "eventId": "3",
+      "eventTime": "2026-10-27T10:51:15.394928638Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
+      "taskId": "1048740",
+      "workflowTaskScheduledEventAttributes": {
+        "taskQueue": {
+          "name": "abacus-recorder",
+          "kind": "TASK_QUEUE_KIND_NORMAL"
+        },
+        "startToCloseTimeout": "10s",
+        "attempt": 1
+      }
+    },
+    {
+      "eventId": "4",
+      "eventTime": "2026-10-27T10:51:15.397489221Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
+      "taskId": "1048744",
+      "workflowTaskStartedEventAttributes": {
+        "scheduledEventId": "3",
+        "identity": "worker@recorder",
+        "requestId": "543724d9-864a-450e-a357-ee8646a6df03",
+        "historySizeBytes": "829",
+        "workerVersion": {
+          "buildId": "recorder"
+        }
+      }
+    },
+    {
+      "eventId": "5",
+      "eventTime": "2026-10-27T10:51:15.410981471Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
+      "taskId": "1048749",
+      "workflowTaskCompletedEventAttributes": {
+        "scheduledEventId": "3",
+        "startedEventId": "4",
+        "identity": "worker@recorder",
+        "workerVersion": {
+          "buildId": "recorder"
+        },
+        "sdkMetadata": {
+          "coreUsedFlags": [
+            1,
+            2,
+            3
+          ],
+          "sdkName": "temporal-python",
+          "sdkVersion": "1.34.0"
+        },
+        "meteringMetadata": {}
+      }
+    },
+    {
+      "eventId": "6",
+      "eventTime": "2026-10-27T10:51:15.411073721Z",
+      "eventType": "EVENT_TYPE_MARKER_RECORDED",
+      "taskId": "1048750",
+      "markerRecordedEventAttributes": {
+        "markerName": "core_patch",
+        "details": {
+          "patch-data": {
+            "payloads": [
+              {
+                "metadata": {
+                  "encoding": "anNvbi9wbGFpbg=="
+                },
+                "data": "eyJpZCI6ImRhaWx5LXRpY2siLCJkZXByZWNhdGVkIjpmYWxzZX0="
+              }
+            ]
+          }
+        },
+        "workflowTaskCompletedEventId": "5"
+      }
+    },
+    {
+      "eventId": "7",
+      "eventTime": "2026-10-27T10:51:15.411327096Z",
+      "eventType": "EVENT_TYPE_UPSERT_WORKFLOW_SEARCH_ATTRIBUTES",
+      "taskId": "1048751",
+      "upsertWorkflowSearchAttributesEventAttributes": {
+        "workflowTaskCompletedEventId": "5",
+        "searchAttributes": {
+          "indexedFields": {
+            "TemporalChangeVersion": {
+              "metadata": {
+                "type": "S2V5d29yZExpc3Q=",
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "WyJkYWlseS10aWNrIl0="
+            }
+          }
+        }
+      }
+    },
+    {
+      "eventId": "8",
+      "eventTime": "2026-10-27T10:51:15.411351554Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
+      "taskId": "1048752",
+      "activityTaskScheduledEventAttributes": {
+        "activityId": "1",
+        "activityType": {
+          "name": "engagement_agent.next_tick"
+        },
+        "taskQueue": {
+          "name": "abacus-recorder",
+          "kind": "TASK_QUEUE_KIND_NORMAL"
+        },
+        "header": {},
+        "input": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "eyJ0ZW5hbnRfaWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEifQ=="
+            }
+          ]
+        },
+        "scheduleToCloseTimeout": "0s",
+        "scheduleToStartTimeout": "0s",
+        "startToCloseTimeout": "30s",
+        "heartbeatTimeout": "0s",
+        "workflowTaskCompletedEventId": "5",
+        "retryPolicy": {
+          "initialInterval": "1s",
+          "backoffCoefficient": 2.0,
+          "maximumInterval": "100s",
+          "maximumAttempts": 5
+        },
+        "useWorkflowBuildId": true,
+        "priority": {}
+      }
+    },
+    {
+      "eventId": "9",
+      "eventTime": "2026-10-27T10:51:15.411379638Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
+      "taskId": "1048756",
+      "activityTaskStartedEventAttributes": {
+        "scheduledEventId": "8",
+        "identity": "worker@recorder",
+        "requestId": "1de84e6d-e417-4941-83c8-14223d3128a3",
+        "attempt": 1,
+        "workerVersion": {
+          "buildId": "recorder"
+        }
+      }
+    },
+    {
+      "eventId": "10",
+      "eventTime": "2026-10-27T10:51:15.414520179Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
+      "taskId": "1048757",
+      "activityTaskCompletedEventAttributes": {
+        "result": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "Mg=="
+            }
+          ]
+        },
+        "scheduledEventId": "8",
+        "startedEventId": "9",
+        "identity": "worker@recorder"
+      }
+    },
+    {
+      "eventId": "11",
+      "eventTime": "2026-10-27T10:51:15.414534804Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
+      "taskId": "1048758",
+      "workflowTaskScheduledEventAttributes": {
+        "taskQueue": {
+          "name": "sticky@recorder",
+          "kind": "TASK_QUEUE_KIND_STICKY",
+          "normalName": "abacus-recorder"
+        },
+        "startToCloseTimeout": "10s",
+        "attempt": 1
+      }
+    },
+    {
+      "eventId": "12",
+      "eventTime": "2026-10-27T10:51:15.416130929Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
+      "taskId": "1048762",
+      "workflowTaskStartedEventAttributes": {
+        "scheduledEventId": "11",
+        "identity": "worker@recorder",
+        "requestId": "f261f83f-0fc6-4708-8ae1-5fca7df077ca",
+        "historySizeBytes": "1995",
+        "workerVersion": {
+          "buildId": "recorder"
+        }
+      }
+    },
+    {
+      "eventId": "13",
+      "eventTime": "2026-10-27T10:51:15.431907263Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
+      "taskId": "1048767",
+      "workflowTaskCompletedEventAttributes": {
+        "scheduledEventId": "11",
+        "startedEventId": "12",
+        "identity": "worker@recorder",
+        "workerVersion": {
+          "buildId": "recorder"
+        },
+        "sdkMetadata": {},
+        "meteringMetadata": {}
+      }
+    },
+    {
+      "eventId": "14",
+      "eventTime": "2026-10-27T10:51:15.432060013Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
+      "taskId": "1048768",
+      "activityTaskScheduledEventAttributes": {
+        "activityId": "2",
+        "activityType": {
+          "name": "engagement_agent.handle"
+        },
+        "taskQueue": {
+          "name": "abacus-recorder",
+          "kind": "TASK_QUEUE_KIND_NORMAL"
+        },
+        "header": {},
+        "input": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "eyJlbmdhZ2VtZW50X2lkIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMGUxIiwiZXZlbnRfaWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAxMDEiLCJldmVudF90eXBlIjoiZW5nYWdlbWVudC5jcmVhdGVkIiwicGF5bG9hZCI6e30sInRlbmFudF9pZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMSJ9"
+            }
+          ]
+        },
+        "scheduleToCloseTimeout": "0s",
+        "scheduleToStartTimeout": "0s",
+        "startToCloseTimeout": "120s",
+        "heartbeatTimeout": "0s",
+        "workflowTaskCompletedEventId": "13",
+        "retryPolicy": {
+          "initialInterval": "1s",
+          "backoffCoefficient": 2.0,
+          "maximumInterval": "100s",
+          "maximumAttempts": 5
+        },
+        "useWorkflowBuildId": true,
+        "priority": {}
+      }
+    },
+    {
+      "eventId": "15",
+      "eventTime": "2026-10-27T10:51:15.432102763Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
+      "taskId": "1048771",
+      "activityTaskStartedEventAttributes": {
+        "scheduledEventId": "14",
+        "identity": "worker@recorder",
+        "requestId": "6e0b8abe-8831-452d-b1f2-27a88b2e3654",
+        "attempt": 1,
+        "workerVersion": {
+          "buildId": "recorder"
+        }
+      }
+    },
+    {
+      "eventId": "16",
+      "eventTime": "2026-10-27T10:51:15.438434263Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
+      "taskId": "1048772",
+      "activityTaskCompletedEventAttributes": {
+        "result": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "eyJlbmQiOmZhbHNlfQ=="
+            }
+          ]
+        },
+        "scheduledEventId": "14",
+        "startedEventId": "15",
+        "identity": "worker@recorder"
+      }
+    },
+    {
+      "eventId": "17",
+      "eventTime": "2026-10-27T10:51:15.438457388Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
+      "taskId": "1048773",
+      "workflowTaskScheduledEventAttributes": {
+        "taskQueue": {
+          "name": "sticky@recorder",
+          "kind": "TASK_QUEUE_KIND_STICKY",
+          "normalName": "abacus-recorder"
+        },
+        "startToCloseTimeout": "10s",
+        "attempt": 1
+      }
+    },
+    {
+      "eventId": "18",
+      "eventTime": "2026-10-27T10:51:15.442714429Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
+      "taskId": "1048777",
+      "workflowTaskStartedEventAttributes": {
+        "scheduledEventId": "17",
+        "identity": "worker@recorder",
+        "requestId": "1079cdca-934e-4102-ac8b-022d6c64bccc",
+        "historySizeBytes": "3052",
+        "workerVersion": {
+          "buildId": "recorder"
+        }
+      }
+    },
+    {
+      "eventId": "19",
+      "eventTime": "2026-10-27T10:51:15.447313596Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
+      "taskId": "1048781",
+      "workflowTaskCompletedEventAttributes": {
+        "scheduledEventId": "17",
+        "startedEventId": "18",
+        "identity": "worker@recorder",
+        "workerVersion": {
+          "buildId": "recorder"
+        },
+        "sdkMetadata": {},
+        "meteringMetadata": {}
+      }
+    },
+    {
+      "eventId": "20",
+      "eventTime": "2026-10-27T10:51:15.447351346Z",
+      "eventType": "EVENT_TYPE_TIMER_STARTED",
+      "taskId": "1048782",
+      "timerStartedEventAttributes": {
+        "timerId": "2",
+        "startToFireTimeout": "1.973s",
+        "workflowTaskCompletedEventId": "19"
+      }
+    },
+    {
+      "eventId": "21",
+      "eventTime": "2026-10-27T10:51:17.428711597Z",
+      "eventType": "EVENT_TYPE_TIMER_FIRED",
+      "taskId": "1048785",
+      "timerFiredEventAttributes": {
+        "timerId": "2",
+        "startedEventId": "20"
+      }
+    },
+    {
+      "eventId": "22",
+      "eventTime": "2026-10-27T10:51:17.429140347Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
+      "taskId": "1048786",
+      "workflowTaskScheduledEventAttributes": {
+        "taskQueue": {
+          "name": "sticky@recorder",
+          "kind": "TASK_QUEUE_KIND_STICKY",
+          "normalName": "abacus-recorder"
+        },
+        "startToCloseTimeout": "10s",
+        "attempt": 1
+      }
+    },
+    {
+      "eventId": "23",
+      "eventTime": "2026-10-27T10:51:17.443852805Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
+      "taskId": "1048790",
+      "workflowTaskStartedEventAttributes": {
+        "scheduledEventId": "22",
+        "identity": "worker@recorder",
+        "requestId": "821257a9-4f7d-4fb1-871d-91b914844fdc",
+        "historySizeBytes": "3420",
+        "workerVersion": {
+          "buildId": "recorder"
+        }
+      }
+    },
+    {
+      "eventId": "24",
+      "eventTime": "2026-10-27T10:51:17.475007138Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
+      "taskId": "1048795",
+      "workflowTaskCompletedEventAttributes": {
+        "scheduledEventId": "22",
+        "startedEventId": "23",
+        "identity": "worker@recorder",
+        "workerVersion": {
+          "buildId": "recorder"
+        },
+        "sdkMetadata": {},
+        "meteringMetadata": {}
+      }
+    },
+    {
+      "eventId": "25",
+      "eventTime": "2026-10-27T10:51:17.475109013Z",
+      "eventType": "EVENT_TYPE_MARKER_RECORDED",
+      "taskId": "1048796",
+      "markerRecordedEventAttributes": {
+        "markerName": "core_patch",
+        "details": {
+          "patch-data": {
+            "payloads": [
+              {
+                "metadata": {
+                  "encoding": "anNvbi9wbGFpbg=="
+                },
+                "data": "eyJpZCI6ImZvbGxvd191cF9wb2xpY3lfdjEiLCJkZXByZWNhdGVkIjpmYWxzZX0="
+              }
+            ]
+          }
+        },
+        "workflowTaskCompletedEventId": "24"
+      }
+    },
+    {
+      "eventId": "26",
+      "eventTime": "2026-10-27T10:51:17.476059222Z",
+      "eventType": "EVENT_TYPE_UPSERT_WORKFLOW_SEARCH_ATTRIBUTES",
+      "taskId": "1048797",
+      "upsertWorkflowSearchAttributesEventAttributes": {
+        "workflowTaskCompletedEventId": "24",
+        "searchAttributes": {
+          "indexedFields": {
+            "TemporalChangeVersion": {
+              "metadata": {
+                "type": "S2V5d29yZExpc3Q=",
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "WyJkYWlseS10aWNrIiwiZm9sbG93X3VwX3BvbGljeV92MSJd"
+            }
+          }
+        }
+      }
+    },
+    {
+      "eventId": "27",
+      "eventTime": "2026-10-27T10:51:17.476167763Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
+      "taskId": "1048798",
+      "activityTaskScheduledEventAttributes": {
+        "activityId": "3",
+        "activityType": {
+          "name": "engagement_agent.handle"
+        },
+        "taskQueue": {
+          "name": "abacus-recorder",
+          "kind": "TASK_QUEUE_KIND_NORMAL"
+        },
+        "header": {},
+        "input": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "eyJlbmdhZ2VtZW50X2lkIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMGUxIiwiZXZlbnRfaWQiOiJiMGY4ZmIyYy0wNTNhLTQ1MjctOTYwNC1mNmIxNzUyYjE5NDciLCJldmVudF90eXBlIjoiYWdlbnQudGljayIsInBheWxvYWQiOnsiZm9sbG93X3VwX3BvbGljeSI6InYxIn0sInRlbmFudF9pZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMSJ9"
+            }
+          ]
+        },
+        "scheduleToCloseTimeout": "0s",
+        "scheduleToStartTimeout": "0s",
+        "startToCloseTimeout": "120s",
+        "heartbeatTimeout": "0s",
+        "workflowTaskCompletedEventId": "24",
+        "retryPolicy": {
+          "initialInterval": "1s",
+          "backoffCoefficient": 2.0,
+          "maximumInterval": "100s",
+          "maximumAttempts": 5
+        },
+        "useWorkflowBuildId": true,
+        "priority": {}
+      }
+    },
+    {
+      "eventId": "28",
+      "eventTime": "2026-10-27T10:51:17.476301847Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
+      "taskId": "1048802",
+      "activityTaskStartedEventAttributes": {
+        "scheduledEventId": "27",
+        "identity": "worker@recorder",
+        "requestId": "2ac291a8-bf9b-4908-b1d6-843dd41459db",
+        "attempt": 1,
+        "workerVersion": {
+          "buildId": "recorder"
+        }
+      }
+    },
+    {
+      "eventId": "29",
+      "eventTime": "2026-10-27T10:51:17.485167013Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
+      "taskId": "1048803",
+      "activityTaskCompletedEventAttributes": {
+        "result": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "eyJlbmQiOmZhbHNlfQ=="
+            }
+          ]
+        },
+        "scheduledEventId": "27",
+        "startedEventId": "28",
+        "identity": "worker@recorder"
+      }
+    },
+    {
+      "eventId": "30",
+      "eventTime": "2026-10-27T10:51:17.485280722Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
+      "taskId": "1048804",
+      "workflowTaskScheduledEventAttributes": {
+        "taskQueue": {
+          "name": "sticky@recorder",
+          "kind": "TASK_QUEUE_KIND_STICKY",
+          "normalName": "abacus-recorder"
+        },
+        "startToCloseTimeout": "10s",
+        "attempt": 1
+      }
+    },
+    {
+      "eventId": "31",
+      "eventTime": "2026-10-27T10:51:17.493083305Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
+      "taskId": "1048808",
+      "workflowTaskStartedEventAttributes": {
+        "scheduledEventId": "30",
+        "identity": "worker@recorder",
+        "requestId": "5762ec03-c148-4f17-8097-d2f7f94a37ff",
+        "historySizeBytes": "4767",
+        "workerVersion": {
+          "buildId": "recorder"
+        }
+      }
+    },
+    {
+      "eventId": "32",
+      "eventTime": "2026-10-27T10:51:17.506791764Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
+      "taskId": "1048813",
+      "workflowTaskCompletedEventAttributes": {
+        "scheduledEventId": "30",
+        "startedEventId": "31",
+        "identity": "worker@recorder",
+        "workerVersion": {
+          "buildId": "recorder"
+        },
+        "sdkMetadata": {},
+        "meteringMetadata": {}
+      }
+    },
+    {
+      "eventId": "33",
+      "eventTime": "2026-10-27T10:51:17.507005014Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
+      "taskId": "1048814",
+      "activityTaskScheduledEventAttributes": {
+        "activityId": "4",
+        "activityType": {
+          "name": "engagement_agent.next_tick"
+        },
+        "taskQueue": {
+          "name": "abacus-recorder",
+          "kind": "TASK_QUEUE_KIND_NORMAL"
+        },
+        "header": {},
+        "input": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "eyJ0ZW5hbnRfaWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEifQ=="
+            }
+          ]
+        },
+        "scheduleToCloseTimeout": "0s",
+        "scheduleToStartTimeout": "0s",
+        "startToCloseTimeout": "30s",
+        "heartbeatTimeout": "0s",
+        "workflowTaskCompletedEventId": "32",
+        "retryPolicy": {
+          "initialInterval": "1s",
+          "backoffCoefficient": 2.0,
+          "maximumInterval": "100s",
+          "maximumAttempts": 5
+        },
+        "useWorkflowBuildId": true,
+        "priority": {}
+      }
+    },
+    {
+      "eventId": "34",
+      "eventTime": "2026-10-27T10:51:17.511853097Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
+      "taskId": "1048817",
+      "activityTaskStartedEventAttributes": {
+        "scheduledEventId": "33",
+        "identity": "worker@recorder",
+        "requestId": "d15775c1-c049-4fc8-a4e5-5b3073f0d44a",
+        "attempt": 1,
+        "workerVersion": {
+          "buildId": "recorder"
+        }
+      }
+    },
+    {
+      "eventId": "35",
+      "eventTime": "2026-10-27T10:51:17.538277930Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
+      "taskId": "1048818",
+      "activityTaskCompletedEventAttributes": {
+        "result": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "Mg=="
+            }
+          ]
+        },
+        "scheduledEventId": "33",
+        "startedEventId": "34",
+        "identity": "worker@recorder"
+      }
+    },
+    {
+      "eventId": "36",
+      "eventTime": "2026-10-27T10:51:17.538293555Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
+      "taskId": "1048819",
+      "workflowTaskScheduledEventAttributes": {
+        "taskQueue": {
+          "name": "sticky@recorder",
+          "kind": "TASK_QUEUE_KIND_STICKY",
+          "normalName": "abacus-recorder"
+        },
+        "startToCloseTimeout": "10s",
+        "attempt": 1
+      }
+    },
+    {
+      "eventId": "37",
+      "eventTime": "2026-10-27T10:51:17.540924639Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
+      "taskId": "1048823",
+      "workflowTaskStartedEventAttributes": {
+        "scheduledEventId": "36",
+        "identity": "worker@recorder",
+        "requestId": "63b62e03-e496-4a95-87d4-2185fba789a7",
+        "historySizeBytes": "5661",
+        "workerVersion": {
+          "buildId": "recorder"
+        }
+      }
+    },
+    {
+      "eventId": "38",
+      "eventTime": "2026-10-27T10:51:17.548229264Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
+      "taskId": "1048827",
+      "workflowTaskCompletedEventAttributes": {
+        "scheduledEventId": "36",
+        "startedEventId": "37",
+        "identity": "worker@recorder",
+        "workerVersion": {
+          "buildId": "recorder"
+        },
+        "sdkMetadata": {},
+        "meteringMetadata": {}
+      }
+    },
+    {
+      "eventId": "39",
+      "eventTime": "2026-10-27T10:51:17.548261639Z",
+      "eventType": "EVENT_TYPE_TIMER_STARTED",
+      "taskId": "1048828",
+      "timerStartedEventAttributes": {
+        "timerId": "3",
+        "startToFireTimeout": "2s",
+        "workflowTaskCompletedEventId": "38"
+      }
+    },
+    {
+      "eventId": "40",
+      "eventTime": "2026-10-27T10:51:19.553310042Z",
+      "eventType": "EVENT_TYPE_TIMER_FIRED",
+      "taskId": "1048831",
+      "timerFiredEventAttributes": {
+        "timerId": "3",
+        "startedEventId": "39"
+      }
+    },
+    {
+      "eventId": "41",
+      "eventTime": "2026-10-27T10:51:19.553434334Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
+      "taskId": "1048832",
+      "workflowTaskScheduledEventAttributes": {
+        "taskQueue": {
+          "name": "sticky@recorder",
+          "kind": "TASK_QUEUE_KIND_STICKY",
+          "normalName": "abacus-recorder"
+        },
+        "startToCloseTimeout": "10s",
+        "attempt": 1
+      }
+    },
+    {
+      "eventId": "42",
+      "eventTime": "2026-10-27T10:51:19.569631Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
+      "taskId": "1048836",
+      "workflowTaskStartedEventAttributes": {
+        "scheduledEventId": "41",
+        "identity": "worker@recorder",
+        "requestId": "30d225c4-de49-40d3-9378-802936159cfd",
+        "historySizeBytes": "6023",
+        "workerVersion": {
+          "buildId": "recorder"
+        }
+      }
+    },
+    {
+      "eventId": "43",
+      "eventTime": "2026-10-27T10:51:19.620915667Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
+      "taskId": "1048841",
+      "workflowTaskCompletedEventAttributes": {
+        "scheduledEventId": "41",
+        "startedEventId": "42",
+        "identity": "worker@recorder",
+        "workerVersion": {
+          "buildId": "recorder"
+        },
+        "sdkMetadata": {},
+        "meteringMetadata": {}
+      }
+    },
+    {
+      "eventId": "44",
+      "eventTime": "2026-10-27T10:51:19.621225459Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
+      "taskId": "1048842",
+      "activityTaskScheduledEventAttributes": {
+        "activityId": "5",
+        "activityType": {
+          "name": "engagement_agent.handle"
+        },
+        "taskQueue": {
+          "name": "abacus-recorder",
+          "kind": "TASK_QUEUE_KIND_NORMAL"
+        },
+        "header": {},
+        "input": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "eyJlbmdhZ2VtZW50X2lkIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMGUxIiwiZXZlbnRfaWQiOiJlMzQwOThmMy04MjcwLTRjZTYtOThkYy00NDE3OGI4NTQwNjciLCJldmVudF90eXBlIjoiYWdlbnQudGljayIsInBheWxvYWQiOnsiZm9sbG93X3VwX3BvbGljeSI6InYxIn0sInRlbmFudF9pZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMSJ9"
+            }
+          ]
+        },
+        "scheduleToCloseTimeout": "0s",
+        "scheduleToStartTimeout": "0s",
+        "startToCloseTimeout": "120s",
+        "heartbeatTimeout": "0s",
+        "workflowTaskCompletedEventId": "43",
+        "retryPolicy": {
+          "initialInterval": "1s",
+          "backoffCoefficient": 2.0,
+          "maximumInterval": "100s",
+          "maximumAttempts": 5
+        },
+        "useWorkflowBuildId": true,
+        "priority": {}
+      }
+    },
+    {
+      "eventId": "45",
+      "eventTime": "2026-10-27T10:51:19.622565125Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
+      "taskId": "1048845",
+      "activityTaskStartedEventAttributes": {
+        "scheduledEventId": "44",
+        "identity": "worker@recorder",
+        "requestId": "f1bce18e-cd60-4638-ad5d-acdcd9286486",
+        "attempt": 1,
+        "workerVersion": {
+          "buildId": "recorder"
+        }
+      }
+    },
+    {
+      "eventId": "46",
+      "eventTime": "2026-10-27T10:51:19.639457917Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
+      "taskId": "1048846",
+      "activityTaskCompletedEventAttributes": {
+        "result": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "eyJlbmQiOmZhbHNlfQ=="
+            }
+          ]
+        },
+        "scheduledEventId": "44",
+        "startedEventId": "45",
+        "identity": "worker@recorder"
+      }
+    },
+    {
+      "eventId": "47",
+      "eventTime": "2026-10-27T10:51:19.639503459Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
+      "taskId": "1048847",
+      "workflowTaskScheduledEventAttributes": {
+        "taskQueue": {
+          "name": "sticky@recorder",
+          "kind": "TASK_QUEUE_KIND_STICKY",
+          "normalName": "abacus-recorder"
+        },
+        "startToCloseTimeout": "10s",
+        "attempt": 1
+      }
+    },
+    {
+      "eventId": "48",
+      "eventTime": "2026-10-27T10:51:19.644649500Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
+      "taskId": "1048851",
+      "workflowTaskStartedEventAttributes": {
+        "scheduledEventId": "47",
+        "identity": "worker@recorder",
+        "requestId": "f6e1386d-f16d-429d-a8aa-42ca1e2eb207",
+        "historySizeBytes": "7095",
+        "workerVersion": {
+          "buildId": "recorder"
+        }
+      }
+    },
+    {
+      "eventId": "49",
+      "eventTime": "2026-10-27T10:51:19.681343042Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
+      "taskId": "1048856",
+      "workflowTaskCompletedEventAttributes": {
+        "scheduledEventId": "47",
+        "startedEventId": "48",
+        "identity": "worker@recorder",
+        "workerVersion": {
+          "buildId": "recorder"
+        },
+        "sdkMetadata": {},
+        "meteringMetadata": {}
+      }
+    },
+    {
+      "eventId": "50",
+      "eventTime": "2026-10-27T10:51:19.681440292Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
+      "taskId": "1048857",
+      "activityTaskScheduledEventAttributes": {
+        "activityId": "6",
+        "activityType": {
+          "name": "engagement_agent.next_tick"
+        },
+        "taskQueue": {
+          "name": "abacus-recorder",
+          "kind": "TASK_QUEUE_KIND_NORMAL"
+        },
+        "header": {},
+        "input": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "eyJ0ZW5hbnRfaWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEifQ=="
+            }
+          ]
+        },
+        "scheduleToCloseTimeout": "0s",
+        "scheduleToStartTimeout": "0s",
+        "startToCloseTimeout": "30s",
+        "heartbeatTimeout": "0s",
+        "workflowTaskCompletedEventId": "49",
+        "retryPolicy": {
+          "initialInterval": "1s",
+          "backoffCoefficient": 2.0,
+          "maximumInterval": "100s",
+          "maximumAttempts": 5
+        },
+        "useWorkflowBuildId": true,
+        "priority": {}
+      }
+    },
+    {
+      "eventId": "51",
+      "eventTime": "2026-10-27T10:51:19.681474792Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
+      "taskId": "1048860",
+      "activityTaskStartedEventAttributes": {
+        "scheduledEventId": "50",
+        "identity": "worker@recorder",
+        "requestId": "8430de6b-85f4-467a-842a-a72b52760593",
+        "attempt": 1,
+        "workerVersion": {
+          "buildId": "recorder"
+        }
+      }
+    },
+    {
+      "eventId": "52",
+      "eventTime": "2026-10-27T10:51:19.694720625Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
+      "taskId": "1048861",
+      "activityTaskCompletedEventAttributes": {
+        "result": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "Mg=="
+            }
+          ]
+        },
+        "scheduledEventId": "50",
+        "startedEventId": "51",
+        "identity": "worker@recorder"
+      }
+    },
+    {
+      "eventId": "53",
+      "eventTime": "2026-10-27T10:51:19.694849500Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
+      "taskId": "1048862",
+      "workflowTaskScheduledEventAttributes": {
+        "taskQueue": {
+          "name": "sticky@recorder",
+          "kind": "TASK_QUEUE_KIND_STICKY",
+          "normalName": "abacus-recorder"
+        },
+        "startToCloseTimeout": "10s",
+        "attempt": 1
+      }
+    },
+    {
+      "eventId": "54",
+      "eventTime": "2026-10-27T10:51:19.730171667Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
+      "taskId": "1048866",
+      "workflowTaskStartedEventAttributes": {
+        "scheduledEventId": "53",
+        "identity": "worker@recorder",
+        "requestId": "7b8f7449-e7dc-4ca7-b1a7-2d54754c8d31",
+        "historySizeBytes": "7989",
+        "workerVersion": {
+          "buildId": "recorder"
+        }
+      }
+    },
+    {
+      "eventId": "55",
+      "eventTime": "2026-10-27T10:51:19.755892209Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
+      "taskId": "1048870",
+      "workflowTaskCompletedEventAttributes": {
+        "scheduledEventId": "53",
+        "startedEventId": "54",
+        "identity": "worker@recorder",
+        "workerVersion": {
+          "buildId": "recorder"
+        },
+        "sdkMetadata": {},
+        "meteringMetadata": {}
+      }
+    },
+    {
+      "eventId": "56",
+      "eventTime": "2026-10-27T10:51:19.755980292Z",
+      "eventType": "EVENT_TYPE_TIMER_STARTED",
+      "taskId": "1048871",
+      "timerStartedEventAttributes": {
+        "timerId": "4",
+        "startToFireTimeout": "2s",
+        "workflowTaskCompletedEventId": "55"
+      }
+    },
+    {
+      "eventId": "57",
+      "eventTime": "2026-10-27T10:51:20.453607667Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_EXECUTION_SIGNALED",
+      "taskId": "1048874",
+      "workflowExecutionSignaledEventAttributes": {
+        "signalName": "event",
+        "input": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "eyJldmVudF9pZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDEwMiIsImV2ZW50X3R5cGUiOiJlbmRzIiwicGF5bG9hZCI6e319"
+            }
+          ]
+        },
+        "identity": "worker@recorder",
+        "requestId": "43525a8b-bab2-4f4c-be0c-ecbac7a99410"
+      }
+    },
+    {
+      "eventId": "58",
+      "eventTime": "2026-10-27T10:51:20.453698876Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
+      "taskId": "1048875",
+      "workflowTaskScheduledEventAttributes": {
+        "taskQueue": {
+          "name": "sticky@recorder",
+          "kind": "TASK_QUEUE_KIND_STICKY",
+          "normalName": "abacus-recorder"
+        },
+        "startToCloseTimeout": "10s",
+        "attempt": 1
+      }
+    },
+    {
+      "eventId": "59",
+      "eventTime": "2026-10-27T10:51:20.482726709Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
+      "taskId": "1048879",
+      "workflowTaskStartedEventAttributes": {
+        "scheduledEventId": "58",
+        "identity": "worker@recorder",
+        "requestId": "e2708e66-660a-4910-84d5-d87323a46c96",
+        "historySizeBytes": "8622",
+        "workerVersion": {
+          "buildId": "recorder"
+        }
+      }
+    },
+    {
+      "eventId": "60",
+      "eventTime": "2026-10-27T10:51:20.518109876Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
+      "taskId": "1048884",
+      "workflowTaskCompletedEventAttributes": {
+        "scheduledEventId": "58",
+        "startedEventId": "59",
+        "identity": "worker@recorder",
+        "workerVersion": {
+          "buildId": "recorder"
+        },
+        "sdkMetadata": {},
+        "meteringMetadata": {}
+      }
+    },
+    {
+      "eventId": "61",
+      "eventTime": "2026-10-27T10:51:20.518494751Z",
+      "eventType": "EVENT_TYPE_TIMER_CANCELED",
+      "taskId": "1048885",
+      "timerCanceledEventAttributes": {
+        "timerId": "4",
+        "startedEventId": "56",
+        "workflowTaskCompletedEventId": "60",
+        "identity": "worker@recorder"
+      }
+    },
+    {
+      "eventId": "62",
+      "eventTime": "2026-10-27T10:51:20.518852084Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
+      "taskId": "1048886",
+      "activityTaskScheduledEventAttributes": {
+        "activityId": "7",
+        "activityType": {
+          "name": "engagement_agent.handle"
+        },
+        "taskQueue": {
+          "name": "abacus-recorder",
+          "kind": "TASK_QUEUE_KIND_NORMAL"
+        },
+        "header": {},
+        "input": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "eyJlbmdhZ2VtZW50X2lkIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMGUxIiwiZXZlbnRfaWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAxMDIiLCJldmVudF90eXBlIjoiZW5kcyIsInBheWxvYWQiOnt9LCJ0ZW5hbnRfaWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEifQ=="
+            }
+          ]
+        },
+        "scheduleToCloseTimeout": "0s",
+        "scheduleToStartTimeout": "0s",
+        "startToCloseTimeout": "120s",
+        "heartbeatTimeout": "0s",
+        "workflowTaskCompletedEventId": "60",
+        "retryPolicy": {
+          "initialInterval": "1s",
+          "backoffCoefficient": 2.0,
+          "maximumInterval": "100s",
+          "maximumAttempts": 5
+        },
+        "useWorkflowBuildId": true,
+        "priority": {}
+      }
+    },
+    {
+      "eventId": "63",
+      "eventTime": "2026-10-27T10:51:20.522103209Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
+      "taskId": "1048889",
+      "activityTaskStartedEventAttributes": {
+        "scheduledEventId": "62",
+        "identity": "worker@recorder",
+        "requestId": "e44b5348-b731-4f88-9da9-1dbb01e8c37a",
+        "attempt": 1,
+        "workerVersion": {
+          "buildId": "recorder"
+        }
+      }
+    },
+    {
+      "eventId": "64",
+      "eventTime": "2026-10-27T10:51:20.530710501Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
+      "taskId": "1048890",
+      "activityTaskCompletedEventAttributes": {
+        "result": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "eyJlbmQiOnRydWV9"
+            }
+          ]
+        },
+        "scheduledEventId": "62",
+        "startedEventId": "63",
+        "identity": "worker@recorder"
+      }
+    },
+    {
+      "eventId": "65",
+      "eventTime": "2026-10-27T10:51:20.530732959Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
+      "taskId": "1048891",
+      "workflowTaskScheduledEventAttributes": {
+        "taskQueue": {
+          "name": "sticky@recorder",
+          "kind": "TASK_QUEUE_KIND_STICKY",
+          "normalName": "abacus-recorder"
+        },
+        "startToCloseTimeout": "10s",
+        "attempt": 1
+      }
+    },
+    {
+      "eventId": "66",
+      "eventTime": "2026-10-27T10:51:20.535145626Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
+      "taskId": "1048895",
+      "workflowTaskStartedEventAttributes": {
+        "scheduledEventId": "65",
+        "identity": "worker@recorder",
+        "requestId": "911c6b53-0b47-4118-9000-a23cb1882dfa",
+        "historySizeBytes": "9709",
+        "workerVersion": {
+          "buildId": "recorder"
+        }
+      }
+    },
+    {
+      "eventId": "67",
+      "eventTime": "2026-10-27T10:51:20.556206667Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
+      "taskId": "1048899",
+      "workflowTaskCompletedEventAttributes": {
+        "scheduledEventId": "65",
+        "startedEventId": "66",
+        "identity": "worker@recorder",
+        "workerVersion": {
+          "buildId": "recorder"
+        },
+        "sdkMetadata": {},
+        "meteringMetadata": {}
+      }
+    },
+    {
+      "eventId": "68",
+      "eventTime": "2026-10-27T10:51:20.556273667Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_EXECUTION_COMPLETED",
+      "taskId": "1048900",
+      "workflowExecutionCompletedEventAttributes": {
+        "result": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "ImVuZGVkIg=="
+            }
+          ]
+        },
+        "workflowTaskCompletedEventId": "67"
+      }
+    }
+  ]
+}
