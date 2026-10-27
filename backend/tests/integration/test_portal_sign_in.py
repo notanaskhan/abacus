@@ -269,6 +269,40 @@ async def test_ac7_refresh_rotates_and_a_reused_cookie_ends_the_session(seed: Se
         await refresh_portal_session(rotated.cookie, host)
 
 
+async def test_dec583_only_a_marked_refresh_moves_the_idle_clock(seed: Seeder) -> None:
+    """DEC-583 (DEC-535 follow-up): a background poll's refresh rotates the cookie and the token
+    but leaves the idle clock; the person's own activity moves it."""
+    _, host, _, email = await _portal(seed)
+    tokens = await _signed_in(host, email)
+    (session,) = await seed.rows(
+        "SELECT a.id FROM auth_sessions a "
+        "JOIN auth_session_cookies c ON c.session_id = a.id WHERE c.cookie_sha256 = $1",
+        hashlib.sha256(tokens.cookie.encode()).hexdigest(),
+    )
+    await seed.run(
+        "UPDATE auth_sessions SET idle_expires_at = now() + interval '2 minutes', "
+        "last_seen_at = now() - interval '10 minutes' WHERE id = $1",
+        session["id"],
+    )
+    (before,) = await seed.rows(
+        "SELECT idle_expires_at, last_seen_at FROM auth_sessions WHERE id = $1", session["id"]
+    )
+    polled = await refresh_portal_session(tokens.cookie, host)  # unmarked: a background poll
+    (after_poll,) = await seed.rows(
+        "SELECT idle_expires_at, last_seen_at, access_expires_at FROM auth_sessions WHERE id = $1",
+        session["id"],
+    )
+    assert after_poll["idle_expires_at"] == before["idle_expires_at"]
+    assert after_poll["last_seen_at"] == before["last_seen_at"]
+    assert after_poll["access_expires_at"] <= before["idle_expires_at"]  # never outlives it
+    await refresh_portal_session(polled.cookie, host, active=True)
+    (after_activity,) = await seed.rows(
+        "SELECT idle_expires_at, last_seen_at FROM auth_sessions WHERE id = $1", session["id"]
+    )
+    assert after_activity["idle_expires_at"] > before["idle_expires_at"]
+    assert after_activity["last_seen_at"] > before["last_seen_at"]
+
+
 async def test_ac7_refresh_needs_the_csrf_header_and_the_hosts_origin(
     seed: Seeder, client: httpx.AsyncClient
 ) -> None:

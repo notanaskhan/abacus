@@ -260,6 +260,9 @@ DEFINER_FUNCTIONS = frozenset(
     # moves the phase projection, which the app role may not update itself.
     | {"assurance_phase_event_apply"}
     | {"eval_eligible"}  # 0016 (TASK-020): the gateway's evaluation eligibility
+    # 0250 (P-07-T52, DEC-643): the daily erase of bulk-import files past 30 days, across firms,
+    # a count only; search path pinned, revoked from PUBLIC.
+    | {"client_import_files_erase"}
     # 0018 (TASK-022): one platform-wide number, and anomalous engagements' identifiers.
     | {"platform_spend_today", "engagement_spend_anomalies"}
     # 0023 (TASK-027 D4): the quarterly access review, executable by the owner role only.

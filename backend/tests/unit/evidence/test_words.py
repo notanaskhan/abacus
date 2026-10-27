@@ -109,6 +109,7 @@ def test_p03t05_the_layer_object_round_trips_and_is_stable() -> None:
     assert layer_document(parse_layer(document)) == document
 
 
+@pytest.mark.source_scan
 def test_p03t05_adr110_words_are_read_in_the_isolated_child() -> None:
     layer = extract_words_isolated(positioned_pdf([LINE]), PDF)
     assert [w.text for w in layer.pages[0].words][-1] == "16,500,000.00"

@@ -1,10 +1,13 @@
 import type { HomeOut, HomeTileOut, HumanGateCountsOut, HumanGateOut } from "@abacus/api-client";
 import {
+  ActivityRow,
   DashTile,
   DashboardLayout,
   DeadlineRow,
   ErrorState,
   Icon,
+  type IconName,
+  Popover,
   QueueEmpty,
   type ToolbarProps,
   date,
@@ -14,7 +17,7 @@ import {
 } from "@abacus/ui";
 import { meOptions } from "@abacus/api-client/query";
 import { useQuery } from "@tanstack/react-query";
-import { type JSX, useState } from "react";
+import { type JSX, type ReactNode, useState } from "react";
 import { useNow, useToday } from "../../app-core/clock";
 import { useFlag } from "../../app-core/flags";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
@@ -35,8 +38,9 @@ import { COPY } from "./copy";
 // and "Waiting on you" with its summary, bands and rows. The pane header's count, the summary line
 // and the Approvals badge all read the one counts response (`GET /v1/human-gates/counts`); the rows
 // come from the list beside it. No row renders a gate verb: a row opens where its gate is decided.
-// The right column (deadlines, client activity) is I-01-T11's and T12's; it draws the deadlines
-// the home read model already carries.
+// I-01-T11: the right column (deadlines, then client activity rows once I-01-T12 fills them), the
+// your-work band, the Office chip opening on `/v1/me`'s default office, the 266 px by-office
+// popover on a tile (click or keyboard), and the running pill polled every 30 s.
 //
 //   a     Daniel Reyes at E0: 11 = 3 + 6 + 2, four tax tiles, audits, closes, notices, 3 running
 //   a2    a, with "Your returns 6" below the bands
@@ -86,20 +90,64 @@ function statusN(tile: HomeTileOut, code: string): number {
   return tile.by_status.find((s) => s.code === code)?.n ?? 0;
 }
 
+type OfficeName = (id: string) => string;
+
+/** I-01-T11: a tile with an office breakdown opens a 266 px popover listing it, by click or by
+ * keyboard (Enter or Space on the tile; Escape closes it and returns focus). */
+function ByOffice({
+  tile,
+  name,
+  label,
+  children,
+}: {
+  tile: HomeTileOut;
+  name: OfficeName;
+  label: string;
+  children: ReactNode;
+}): JSX.Element {
+  if (tile.by_office.length === 0) return <>{children}</>;
+  return (
+    <Popover
+      width={266}
+      align="start"
+      label={COPY.byOffice.label(label)}
+      trigger={
+        <button
+          type="button"
+          data-home="tile-office"
+          aria-label={COPY.byOffice.label(label)}
+          className="block rounded-dialog text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+        >
+          {children}
+        </button>
+      }
+    >
+      <ul className="flex flex-col gap-[6px]">
+        {tile.by_office.map((o) => (
+          <li key={o.office_id} className="text-body tabular-nums">
+            {COPY.byOffice.row(name(o.office_id), o.n)}
+          </li>
+        ))}
+      </ul>
+    </Popover>
+  );
+}
+
 /** The tile row: one tile per registered home count; an unregistered key has none (AC3.1). */
-function Tiles({ home }: { home: HomeOut }): JSX.Element {
+function Tiles({ home, name }: { home: HomeOut; name: OfficeName }): JSX.Element {
   return (
     <>
       {home.tiles.flatMap((tile) => {
         if (tile.key === "returns") {
           return TAX_TILES.map((code) => (
-            <DashTile
-              key={`returns:${code}`}
-              kind="single"
-              value={String(statusN(tile, code))}
-              label={COPY.tiles.tax[code]}
-              variant={status("return", code).variant ?? "neutral"}
-            />
+            <ByOffice key={`returns:${code}`} tile={tile} name={name} label={COPY.tiles.tax[code]}>
+              <DashTile
+                kind="single"
+                value={String(statusN(tile, code))}
+                label={COPY.tiles.tax[code]}
+                variant={status("return", code).variant ?? "neutral"}
+              />
+            </ByOffice>
           ));
         }
         if (tile.key === "audits") {
@@ -107,16 +155,17 @@ function Tiles({ home }: { home: HomeOut }): JSX.Element {
             COPY.tiles.auditPhases,
           ) as (keyof typeof COPY.tiles.auditPhases)[];
           return [
-            <DashTile
-              key="audits"
-              kind="group"
-              width={360}
-              title={COPY.tiles.audits(tile.total)}
-              counts={phases.map((p) => ({
-                value: String(statusN(tile, p)),
-                label: COPY.tiles.auditPhases[p],
-              }))}
-            />,
+            <ByOffice key="audits" tile={tile} name={name} label={COPY.tiles.audits(tile.total)}>
+              <DashTile
+                kind="group"
+                width={360}
+                title={COPY.tiles.audits(tile.total)}
+                counts={phases.map((p) => ({
+                  value: String(statusN(tile, p)),
+                  label: COPY.tiles.auditPhases[p],
+                }))}
+              />
+            </ByOffice>,
           ];
         }
         if (tile.key === "closes") {
@@ -155,7 +204,11 @@ function Tiles({ home }: { home: HomeOut }): JSX.Element {
         const label = (COPY.tiles.admin as Record<string, string>)[tile.key];
         return label === undefined
           ? []
-          : [<DashTile key={tile.key} kind="stat" value={String(tile.total)} caption={label} />];
+          : [
+              <ByOffice key={tile.key} tile={tile} name={name} label={label}>
+                <DashTile kind="stat" value={String(tile.total)} caption={label} />
+              </ByOffice>,
+            ];
       })}
     </>
   );
@@ -213,6 +266,31 @@ function Deadlines({ home, now }: { home: HomeOut; now: Date }): JSX.Element {
   );
 }
 
+/** The activity glyph by event type (I-01-T11; the allowlist is I-01-T12's). */
+const ACTIVITY_ICON: Readonly<Record<string, IconName>> = {
+  "evidence.uploaded": "upload",
+  "follow_up.sent": "send",
+  "letter.recorded": "file",
+  "agent.prescreened": "bot",
+};
+
+function Activity({ home, tz }: { home: HomeOut; tz: string }): JSX.Element | null {
+  if (home.client_activity.length === 0) return null;
+  return (
+    <ul data-home="activity">
+      {home.client_activity.map((row) => (
+        <ActivityRow
+          key={row.id}
+          icon={ACTIVITY_ICON[row.event_type] ?? "file"}
+          text={row.actor.label ?? row.client_label}
+          context={row.client_label}
+          when={time(new Date(row.occurred_at), { tz })}
+        />
+      ))}
+    </ul>
+  );
+}
+
 export interface HomeQueueProps {
   counts: HumanGateCountsOut;
   gates: readonly HumanGateOut[];
@@ -253,7 +331,15 @@ export function HOME01({
 }: HOME01Props): JSX.Element {
   const [office, setOffice] = useState<string | null>(initialOffice);
   const session = useSession();
-  const offices = useQuery(meOptions()).data?.offices ?? [];
+  const me = useQuery(meOptions()).data;
+  // I-01-T11 (DEC-649): the person's default office (`/v1/me`) heads the chip's list; Home opens
+  // on all offices, as E0 shows it, and the chip's amber state marks a chosen office.
+  const preferred = me?.default_office_id ?? null;
+  const offices = [...(me?.offices ?? [])].sort(
+    (a, b) => Number(b.id === preferred) - Number(a.id === preferred),
+  );
+  const officeLabel = (id: string): string =>
+    offices.find((o) => o.id === id)?.name ?? COPY.byOffice.unnamed;
   const home = useHome(office);
   const counts = useGateCounts(office);
   const list = useWaitingOnYou();
@@ -327,7 +413,7 @@ export function HOME01({
         home.isError ? (
           <ErrorState noun={COPY.error.tiles} onRetry={() => void home.refetch()} />
         ) : view === undefined ? null : (
-          <Tiles home={view} />
+          <Tiles home={view} name={officeLabel} />
         )
       }
       queue={{
@@ -354,7 +440,10 @@ export function HOME01({
           title: COPY.deadlines.title,
           children: view === undefined ? null : <Deadlines home={view} now={now} />,
         },
-        { title: COPY.activity.title, children: null },
+        {
+          title: COPY.activity.title,
+          children: view === undefined ? null : <Activity home={view} tz={tz} />,
+        },
       ]}
       sideTopHeight={334}
     />

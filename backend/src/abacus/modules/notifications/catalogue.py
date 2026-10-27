@@ -183,6 +183,12 @@ async def _named_partner(tenant_id: UUID, payload: dict[str, object]) -> list[UU
     return [partner] if partner is not None and partner != by else []
 
 
+async def _reassigned_to(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """I-01-T07: the person a gate was moved to, never the mover."""
+    to, by = _uuid(payload, "to_user_id"), _uuid(payload, "by_user")
+    return [to] if to is not None and to != by else []
+
+
 async def _member(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     """P-07-T47: the member a reminder is about."""
     member = _uuid(payload, "user_id")
@@ -346,6 +352,9 @@ CATALOGUE: Final[dict[str, Kind]] = {
         "risk_partner_review_requested", _named_partner, "acceptance_record", "record_id"
     ),
     "independence.reminded": Kind("independence_reminder", _member, "engagement", "engagement_id"),
+    "human_gate.reassigned": Kind(
+        "gate_reassigned", _reassigned_to, "engagement", "engagement_id"
+    ),
     "independence.conclusion_due": Kind(
         "independence_conclusion_due", _partners, "engagement", "engagement_id"
     ),
@@ -452,6 +461,7 @@ TEMPLATES: Final[dict[str, str]] = {
         "You were asked for a risk review of an acceptance on {engagement}."
     ),
     "independence.reminded": "Reminder: confirm your independence for {engagement}.",
+    "human_gate.reassigned": "Something on {engagement} was reassigned to you.",
     "independence.conclusion_due": (
         "Every member confirmed independence on {engagement}: it is ready for your conclusion."
     ),
