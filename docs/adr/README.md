@@ -164,4 +164,4 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-187](ADR-187-policy-principal-dormant.md) | Policy principal (dormant): the `policy` actor kind designed, stored off and locked, rendered in fixture mode only | red | accepted |
 | [ADR-190](ADR-190-status-fields-bare-codes.md) | API status fields carry the bare code; the label context is the screen's, a server-known discriminator its own field (amends ADR-138) | amber | accepted |
 | [ADR-230](ADR-230-structured-agent-output.md) | Structured agent output (AgentBlocks): a closed block schema, numbers by reference, no model markup (amends ADR-065) | red | accepted |
-| [ADR-231](ADR-231-tax-computation-boundary.md) | Tax computation boundary: the engine of record computes tax, credits and filed forms; Accrued shows engine values only from approved imports | amber | proposed |
+| [ADR-231](ADR-231-tax-computation-boundary.md) | Tax computation boundary: the engine of record computes tax, credits and filed forms; Accrued shows engine values only from approved imports | amber | accepted |
