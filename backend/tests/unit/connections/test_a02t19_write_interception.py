@@ -55,10 +55,17 @@ async def test_ac12_2_a_declared_read_passes_the_harness(
 async def test_ac12_2_a_write_shaped_request_fails_the_harness(
     egress: EgressClient, monkeypatch: pytest.MonkeyPatch, method: str
 ) -> None:
-    """The seeded violation: a connector sending a write to its own declared host."""
+    """The seeded violation: a write to a declared host. The kernel's client refuses it before
+    sending (ED-156); sent by any other client, the harness catches it."""
+    url = f"https://{HOST}/v3/company/1/journalentry"
     with intercept(monkeypatch, DECLARED) as harness:
-        await egress.request(method, f"https://{HOST}/v3/company/1/journalentry")
+        with pytest.raises(EgressRefused):
+            await egress.request(method, url)
         await egress.close()
+        assert harness.calls == []
+        async with httpx.AsyncClient() as raw:
+            await raw.request(method, url)
+    assert [(c.method, c.host) for c in harness.calls] == [(method, HOST)]
     with pytest.raises(WriteIntercepted, match="write-shaped"):
         harness.assert_read_only()
 
@@ -67,12 +74,18 @@ async def test_ac12_2_only_an_allowlisted_provider_read_post_passes(
     egress: EgressClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     allowed = frozenset({(HOST, READ_POST_PATH)})
+    configure_egress(DECLARED, read_posts=allowed)  # as start-up would for a provider read POST
     with intercept(monkeypatch, DECLARED, read_posts=allowed) as harness:
         await egress.request("POST", f"https://{HOST}{READ_POST_PATH}", data={"grant_type": "x"})
     harness.assert_read_only()
+    bill = f"https://{HOST}/v3/company/1/bill"
     with intercept(monkeypatch, DECLARED, read_posts=allowed) as harness:
-        await egress.request("POST", f"https://{HOST}/v3/company/1/bill")
+        with pytest.raises(EgressRefused):  # any other POST: the kernel's client refuses it
+            await egress.request("POST", bill)
         await egress.close()
+        assert harness.calls == []
+        async with httpx.AsyncClient() as raw:  # and the harness catches it from any other
+            await raw.post(bill)
     with pytest.raises(WriteIntercepted, match="write-shaped"):
         harness.assert_read_only()
 

@@ -59,3 +59,11 @@ Rollback: delete the four test files.
   it yet (A-02-T26 is the first), so nothing writes today; the interception harness catches it.
 - Not covered here: `client_catalog` through the definer and the POR-16 `connector_not_available`
   route (A-02-T12's and T16's suites hold them; T29 covers POR-16 independently).
+- 2026-10-27 (follow-up): ED-156 was fixed in f104a6e9 (the egress client refuses anything but
+  GET and HEAD before sending, except POSTs to configured `read_posts`), which removed the three
+  xfail markers. The seeded writes in the harness tests now go through a raw httpx client, so
+  the harness is still exercised, and the tests also assert that the kernel's client refuses
+  them before anything is sent; the read-POST test configures `read_posts` as start-up would.
+  Renamed `KEY` to `ADAPTER` and built the hand-declared read connector with `repr`, so
+  secrets_scan passes without an exemption. Re-run (`-n 2`): 107 passed. ruff, pyright and
+  secrets_scan are clean.

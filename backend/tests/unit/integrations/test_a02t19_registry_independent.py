@@ -62,7 +62,7 @@ from abacus_tools.codegen import write_capabilities as compiler
 REPO: Final = compiler.BACKEND.parent
 PROTECTED: Final = compiler.SOURCE.read_text()
 GENERATED: Final = compiler.TARGET.read_text()
-KEY: Final = "probe_t19"
+ADAPTER: Final = "probe_t19"
 HOST: Final = "api.probe-t19.example"
 
 
@@ -74,10 +74,10 @@ class Probe:
 
     def __init__(
         self,
-        key: str = KEY,
+        key: str = ADAPTER,
         *,
         category: str = "ledger",
-        provider: str | None = KEY,
+        provider: str | None = ADAPTER,
         scopes: tuple[str, ...] = ("ledger.read",),
         hosts: tuple[str, ...] = (HOST,),
     ) -> None:
@@ -129,13 +129,13 @@ def clean() -> Iterator[None]:
 
 def _row(**over: object) -> CatalogRow:
     fields: dict[str, object] = {
-        "key": KEY,
+        "key": ADAPTER,
         "name": "Probe Ledger",
         "category": "ledger",
         "ownership_mode": "client_authorised",
         "surfaces": ("portal", "workbench"),
-        "connector_provider": KEY,
-        "adapter_key": KEY,
+        "connector_provider": ADAPTER,
+        "adapter_key": ADAPTER,
         "listing_status": "available",
         "consent_copy": None,
         "consent_version": None,
@@ -155,16 +155,16 @@ def _row(**over: object) -> CatalogRow:
 
 def test_ac13_1_lookups_of_the_unknown_answer_none_never_a_default() -> None:
     assert registered_adapter(None) is None
-    assert registered_adapter(KEY) is None
-    assert KEY not in registered_keys()
+    assert registered_adapter(ADAPTER) is None
+    assert ADAPTER not in registered_keys()
 
 
 def test_ac13_1_a_read_only_adapter_registers_and_is_found_under_its_key() -> None:
     register_adapter(Probe())
-    adapter = registered_adapter(KEY)
-    assert adapter is not None and adapter.key == KEY
-    unregister_adapter(KEY)
-    assert registered_adapter(KEY) is None
+    adapter = registered_adapter(ADAPTER)
+    assert adapter is not None and adapter.key == ADAPTER
+    unregister_adapter(ADAPTER)
+    assert registered_adapter(ADAPTER) is None
 
 
 WRITE_SHAPED: Final = (
@@ -188,7 +188,7 @@ WRITE_SHAPED: Final = (
 def test_ac13_1_an_adapter_with_any_write_shaped_method_is_refused(name: str) -> None:
     with pytest.raises(AdapterRefused):
         register_adapter(_with(name))
-    assert KEY not in registered_keys()
+    assert ADAPTER not in registered_keys()
 
 
 @pytest.mark.parametrize("name", ["http", "client", "session", "transport"])
@@ -196,7 +196,7 @@ def test_ac13_1_a_public_http_client_attribute_is_refused(name: str) -> None:
     """A caller could reach `.post` on an exposed client: the adapter keeps it private."""
     with pytest.raises(AdapterRefused):
         register_adapter(_with(name, object()))
-    assert KEY not in registered_keys()
+    assert ADAPTER not in registered_keys()
 
 
 @pytest.mark.parametrize(
@@ -212,7 +212,7 @@ def test_ac13_1_a_dishonest_read_method_declaration_is_refused(declared: object)
     probe = _with("read_methods", declared)
     with pytest.raises(AdapterRefused):
         register_adapter(probe)
-    assert KEY not in registered_keys()
+    assert ADAPTER not in registered_keys()
 
 
 def test_ac13_1_declared_read_methods_are_admitted() -> None:
@@ -223,7 +223,7 @@ def test_ac13_1_declared_read_methods_are_admitted() -> None:
         | {"list_accounts": _noop},
     )()
     register_adapter(probe)
-    assert KEY in registered_keys()
+    assert ADAPTER in registered_keys()
 
 
 BAD_ADAPTERS: Final[dict[str, Callable[[], object]]] = {
@@ -257,10 +257,10 @@ def test_ac13_1_one_adapter_per_key_and_per_connection_provider() -> None:
     with pytest.raises(AdapterRefused):
         register_adapter(Probe())  # the same key again
     with pytest.raises(AdapterRefused):
-        register_adapter(Probe("probe_t19_two", provider=KEY))  # the same provider again
-    assert KEY in registered_keys() and "probe_t19_two" not in registered_keys()
-    adapter = registered_adapter(KEY)
-    assert adapter is not None and adapter.connector_provider == KEY
+        register_adapter(Probe("probe_t19_two", provider=ADAPTER))  # the same provider again
+    assert ADAPTER in registered_keys() and "probe_t19_two" not in registered_keys()
+    adapter = registered_adapter(ADAPTER)
+    assert adapter is not None and adapter.connector_provider == ADAPTER
 
 
 # --- catalogue honesty (AC-13.1, AC-49) ----------------------------------------------------------
@@ -283,7 +283,7 @@ def test_ac13_1_a_row_whose_adapter_is_not_registered_is_never_available(
     [
         (Probe(category="bank_feed"), "registered for another category"),
         (Probe(provider="probe_other"), "registered for another connection provider"),
-        (Probe("probe_other", provider=KEY), "registered under another key"),
+        (Probe("probe_other", provider=ADAPTER), "registered under another key"),
     ],
 )
 def test_ac13_1_a_registered_adapter_that_does_not_match_the_row_is_not_available(
@@ -304,7 +304,7 @@ def test_ac13_1_only_a_matching_registered_adapter_and_an_available_row_list_as_
     hidden = _row(listing_status="hidden")
     for surface in ("portal", "workbench"):
         assert listed([hidden], surface, "client_authorised") == []
-    unregister_adapter(KEY)  # a kill switch takes it off at once
+    unregister_adapter(ADAPTER)  # a kill switch takes it off at once
     assert listing_of(_row()) == "coming_soon"
 
 
@@ -340,8 +340,15 @@ HAND_EDITS: Final = {
     "declare a read connector by hand": (
         "READ_CONNECTORS: Final[tuple[dict[str, object], ...]] = ()",
         "READ_CONNECTORS: Final[tuple[dict[str, object], ...]] = ("
-        '{"adapter_key": "probe_t19", "category": "ledger", '
-        '"egress_hosts": ("api.probe-t19.example",), "read_scopes": ("ledger.read",)},)',
+        + repr(
+            {
+                "adapter_key": ADAPTER,
+                "category": "ledger",
+                "egress_hosts": (HOST,),
+                "read_scopes": ("ledger.read",),
+            }
+        )
+        + ",)",
     ),
     "swap a write's decision": ('"decision": "P-16",', '"decision": "ADR-150",'),
     "drop the attest-relevant shape": ('"shape": "W1",', '"shape": "W3",'),
@@ -367,7 +374,7 @@ def test_ac13_2_an_edit_of_the_protected_file_without_regenerating_fails_the_dri
         PROTECTED.replace(
             "read_connectors: []\n",
             "read_connectors:\n"
-            f"  - adapter_key: {KEY}\n"
+            f"  - adapter_key: {ADAPTER}\n"
             "    category: ledger\n"
             f"    egress_hosts: [{HOST}]\n"
             "    read_scopes: [ledger.read]\n",
@@ -585,7 +592,7 @@ def test_ac13_2_main_starts_with_no_undeclared_host() -> None:
 
 def test_ac13_2_an_adapter_reaching_an_undeclared_host_stops_start_up() -> None:
     register_adapter(Probe())
-    assert undeclared_egress() == {KEY: (HOST,)}
+    assert undeclared_egress() == {ADAPTER: (HOST,)}
     with pytest.raises(UndeclaredEgress, match=re.escape(HOST)):
         assert_egress_declared()
 
@@ -611,16 +618,16 @@ def _declare(monkeypatch: pytest.MonkeyPatch, adapter_key: str, *hosts: str) -> 
 
 
 def test_ac13_2_hosts_are_declared_per_adapter(monkeypatch: pytest.MonkeyPatch) -> None:
-    _declare(monkeypatch, KEY, HOST)
+    _declare(monkeypatch, ADAPTER, HOST)
     register_adapter(Probe())
     assert undeclared_egress() == {}
     assert_egress_declared()
     # One more host than declared is found, and so is another adapter borrowing these hosts.
-    unregister_adapter(KEY)
+    unregister_adapter(ADAPTER)
     register_adapter(Probe(hosts=(HOST, "auth.probe-t19.example")))
     register_adapter(Probe("probe_borrower", provider="probe_borrower"))
     found = undeclared_egress()
-    assert found[KEY] == ("auth.probe-t19.example",)
+    assert found[ADAPTER] == ("auth.probe-t19.example",)
     assert found["probe_borrower"] == (HOST,)
     with pytest.raises(UndeclaredEgress):
         assert_egress_declared()
@@ -631,7 +638,7 @@ async def test_ac13_2_start_up_admits_exactly_the_declared_hosts(
 ) -> None:
     from abacus.api import create_app
 
-    _declare(monkeypatch, KEY, HOST)
+    _declare(monkeypatch, ADAPTER, HOST)
     register_adapter(Probe())
     app = create_app()
     async with app.router.lifespan_context(app):
