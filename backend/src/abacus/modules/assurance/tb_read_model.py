@@ -24,6 +24,7 @@ from __future__ import annotations
 import hashlib
 from collections.abc import Sequence
 from decimal import Decimal
+from types import MappingProxyType
 from typing import Annotated, Final, cast, get_args
 from uuid import UUID
 
@@ -416,8 +417,11 @@ async def tie_issue_link_route(
 
 # --- Open in Excel (A-02-T22; AC-8.1) -----------------------------------------------------------
 
-_LAYER_WORDS: Final = {"unadjusted": "Unadjusted", "aje": "AJE", "rje": "RJE", "final": "Final"}
-_LAYER_NO: Final = {"unadjusted": 0, "aje": 1, "rje": 2, "final": 3}
+# Read-only constants (MappingProxyType), so nothing module-level can hold rules between calls.
+_LAYER_WORDS: Final = MappingProxyType(
+    {"unadjusted": "Unadjusted", "aje": "AJE", "rje": "RJE", "final": "Final"}
+)
+_LAYER_NO: Final = MappingProxyType({"unadjusted": 0, "aje": 1, "rje": 2, "final": 3})
 
 
 def _ticks_text(line: TbLayerLineOut) -> str:

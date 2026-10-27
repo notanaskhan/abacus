@@ -44,6 +44,7 @@ def test_ac14_the_worker_hosts_connections_and_agents() -> None:
     assert tuple(m.__name__.split(".")[2] for m in worker_main.MODULES) == (
         "agents",
         "assurance",  # A-01-T05: a computed gate's `gate.met` derives the phase it opens
+        "audit_trail",  # G-02-T17: `audit_export.requested` starts AuditExportWorkflow
         "communications",  # SPEC-015: invitation emails
         "connections",
         "evidence",  # SPEC-029 (TASK-054): upload processing
@@ -108,6 +109,10 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         # On main since S10 but missing from this list (ED-165): the export build's start
         # (A-01-T19), the TB and workpaper staleness subscribers, the AI boundary facts.
         "engagement_export.requested",
+        # G-02-T17, T19, T20 (#492): the audit export, the firm export schedule and the WISP pack.
+        "audit_export.requested",
+        "firm_export_schedule.changed",
+        "wisp_pack.requested",
         "trial_balance.version_created",
         "workpaper.content_changed",
         "ai_boundary.facts_changed",

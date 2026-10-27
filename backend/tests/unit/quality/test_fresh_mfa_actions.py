@@ -21,6 +21,7 @@ GROUPS = frozenset(
     | {"access_control"}  # P-08-T21 security review: security-role changes
     | {"incident"}  # G-02-T02 (Q-02 AC-42): incident decisions
     | {"sign_off"}  # P-04-T22 (DEC-501): bulk sign-off
+    | {"release"}  # A-01-T23 (DEC-83): record-mode release and archive
 )
 
 
