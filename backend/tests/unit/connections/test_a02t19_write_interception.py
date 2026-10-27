@@ -132,14 +132,6 @@ def test_ac12_2_the_harness_judges_each_rule_on_its_own() -> None:
     assert harness.violations() == [f"write-shaped request: DELETE https://{HOST}/v3/account/7"]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "TASK-1419 (ED-156): kernel.egress.EgressClient.request sends any HTTP method to an "
-        "allowlisted host; ADR-040's enforcement says connector HTTP clients expose only GET "
-        "(and provider read POSTs explicitly allowlisted)"
-    ),
-)
 @pytest.mark.parametrize("method", ["PUT", "PATCH", "DELETE"])
 async def test_adr040_the_connectors_client_refuses_write_methods_before_sending(
     egress: EgressClient, monkeypatch: pytest.MonkeyPatch, method: str

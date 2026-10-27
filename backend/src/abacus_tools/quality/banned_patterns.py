@@ -2484,7 +2484,12 @@ RULES: list[Rule | TreeRule] = [
         description="Connectors are read-only",
         adr="ADR-040",
         check=_check_connector_read_only,
-        include=("src/abacus/modules/connections/*",),
+        # A-02-T16 review round 2 L5: the integrations adapters and the Writer port too.
+        include=(
+            "src/abacus/modules/connections/*",
+            "src/abacus/modules/integrations/adapters.py",
+            "src/abacus/modules/integrations/writers/*",
+        ),
     ),
     Rule(
         id="WF-001",

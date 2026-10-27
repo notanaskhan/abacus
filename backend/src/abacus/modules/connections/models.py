@@ -76,7 +76,10 @@ class ConnectionGrantRevocation(Base):
 
     id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
     tenant_id: Mapped[UUID]
-    connection_id: Mapped[UUID]
+    client_entity_id: Mapped[UUID]
+    provider: Mapped[str]
+    connection_id: Mapped[UUID | None]
+    state_id: Mapped[UUID | None]  # an abandoned grant's state (review round 2, L3)
     sealed: Mapped[bytes] = mapped_column(LargeBinary)
     reason: Mapped[str]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

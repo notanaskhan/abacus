@@ -70,7 +70,9 @@ class CheckInvalid(DomainInvalid):
     code = "tie_out_check_invalid"
 
 
-class CheckStale(DomainInvalid):
+class CheckStale(DomainConflict):
+    """The check changed since it was read (`seen_version`): 409, as C9 §6 documents (ED-155)."""
+
     code = "tie_out_check_stale"
 
 

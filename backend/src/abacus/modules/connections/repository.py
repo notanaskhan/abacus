@@ -604,11 +604,20 @@ async def recent_runs(
     )
 
 
-async def running_run_of(session: AsyncSession, connection_id: UUID) -> SyncRun | None:
+async def running_run_of(
+    session: AsyncSession, connection_id: UUID, engagement_ids: Sequence[UUID]
+) -> SyncRun | None:
+    """The connection's live run on engagements the caller may retry on (review round 2 L6)."""
+    if not engagement_ids:
+        return None
     return (
         await session.execute(
             select(SyncRun)
-            .where(SyncRun.connection_id == connection_id, SyncRun.status == "running")
+            .where(
+                SyncRun.connection_id == connection_id,
+                SyncRun.engagement_id.in_(list(engagement_ids)),
+                SyncRun.status == "running",
+            )
             .order_by(SyncRun.started_at.desc())
             .limit(1)
         )

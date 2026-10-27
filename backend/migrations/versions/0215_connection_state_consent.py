@@ -15,8 +15,10 @@
   409 `stale_version`); every status change bumps it.
 - `connection_grant_revocations` (review M1): a retired grant waiting to be revoked at the
   provider. A disconnect or a replaced grant moves the sealed blob here (the live secret row is
-  deleted at once); the outbox consumer opens it, calls the connector's `revoke`, audits the
-  result and deletes the row (the crypto-erase). Insert and delete only, never updated.
+  deleted at once), as does a grant a refused completion abandoned (bound to its state); the
+  outbox consumer opens it, calls the connector's `revoke`, audits the result and deletes the row
+  (the crypto-erase), giving up as `unreachable` on the relay's last attempt. Insert and delete
+  only, never updated.
 
 The new state columns are insert-only for the app, as the rest of the state is (only `used_at`
 is ever updated). Expand-only; the downgrade drops the columns.
@@ -76,19 +78,38 @@ def upgrade() -> None:
         CREATE TABLE connection_grant_revocations (
             id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
             tenant_id uuid NOT NULL,
-            connection_id uuid NOT NULL,
+            client_entity_id uuid NOT NULL,
+            provider text NOT NULL CHECK (provider ~ '^[a-z][a-z0-9_]{1,49}$'),
+            -- The connection whose grant retired, or, for a grant a refused completion
+            -- abandoned (no connection exists), the state that obtained it.
+            connection_id uuid NULL,
+            state_id uuid NULL,
             sealed bytea NOT NULL CHECK (octet_length(sealed) BETWEEN 1 AND 65536),
-            reason text NOT NULL CHECK (reason IN ('disconnected', 'replaced')),
+            reason text NOT NULL CHECK (reason IN ('disconnected', 'replaced', 'abandoned')),
             created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
             UNIQUE (tenant_id, id),
-            FOREIGN KEY (tenant_id, connection_id) REFERENCES connections (tenant_id, id)
+            CHECK ((connection_id IS NULL) <> (state_id IS NULL)),
+            CHECK ((reason = 'abandoned') = (state_id IS NOT NULL)),
+            FOREIGN KEY (tenant_id, client_entity_id) REFERENCES client_entities (tenant_id, id),
+            FOREIGN KEY (tenant_id, client_entity_id, connection_id)
+                REFERENCES connections (tenant_id, client_entity_id, id)
         )
         """
     )
     tenant_table(op, "connection_grant_revocations")
     op.execute("REVOKE UPDATE ON connection_grant_revocations FROM abacus_app")
     insert_columns(
-        op, "connection_grant_revocations", ("tenant_id", "connection_id", "sealed", "reason")
+        op,
+        "connection_grant_revocations",
+        (
+            "tenant_id",
+            "client_entity_id",
+            "provider",
+            "connection_id",
+            "state_id",
+            "sealed",
+            "reason",
+        ),
     )
 
 

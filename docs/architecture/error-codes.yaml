@@ -1408,9 +1408,10 @@ codes:
     raised_by:
     - abacus.modules.workpapers.tie_out.KeyTaken
   tie_out_check_stale:
-    status: 422
+    status: 409
     raised_by:
     - abacus.modules.workpapers.tie_out.CheckStale
+    summary: 'The check changed since it was read (`seen_version`): 409, as C9 §6 documents (ED-155).'
   tin_conflict:
     status: 409
     raised_by:

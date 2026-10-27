@@ -28,7 +28,7 @@ from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.connections.connector import ConnectorError
 from abacus.modules.connections.events import ConnectionCreated, ConnectionRevoked
-from abacus.modules.connections.grants import retire_grant
+from abacus.modules.connections.grants import abandon_grant, failure_code, retire_grant
 from abacus.modules.connections.models import Connection, ConnectionState, SyncRun
 from abacus.modules.connections.repository import (
     has_consent_link,
@@ -247,6 +247,21 @@ async def finish_legacy(ctx: AuthContext, found: ConnectionState, code: str) -> 
                 after=Ref(code=_code_ref(exc.code)),
             )
         raise ConnectionFailed from None
+    try:
+        return await _record_legacy(ctx, found, credentials)
+    except Exception as exc:  # review round 2 L2: the fresh grant is queued for revocation
+        await abandon_grant(ctx, found, credentials, exc, _code_ref(failure_code(exc)))
+        raise
+
+
+async def _record_legacy(
+    ctx: AuthContext, found: ConnectionState, credentials: bytes | None
+) -> UUID:
+    engagement_id, client_entity_id, provider = (
+        found.engagement_id,
+        found.client_entity_id,
+        found.provider,
+    )
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "connection.create", ref.resource())

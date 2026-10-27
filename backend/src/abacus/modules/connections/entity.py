@@ -67,8 +67,7 @@ from abacus.modules.connections.events import (
     ConnectionReauthorized,
     ConnectionRevoked,
 )
-from abacus.modules.connections.grants import RESULTS as REVOKE_RESULTS
-from abacus.modules.connections.grants import retire_grant
+from abacus.modules.connections.grants import abandon_grant, failure_code, retire_grant
 from abacus.modules.connections.models import Connection, ConnectionState, SyncRun
 from abacus.modules.connections.repository import (
     LIVE,
@@ -551,38 +550,6 @@ async def _store_secret(
         )
 
 
-def _failure_code(exc: BaseException) -> str:
-    if isinstance(exc, Forbidden):
-        return "forbidden"
-    found = getattr(exc, "code", None)
-    return found if isinstance(found, str) else "error"
-
-
-async def _abandon(
-    ctx: AuthContext, found: ConnectionState, credentials: bytes | None, exc: BaseException
-) -> None:
-    """Review L5: a completion refused after the code exchange revokes the fresh grant at the
-    provider (best effort: nothing holds it) and records `connection.failed` with its code."""
-    result = "not_supported"
-    if credentials is not None:
-        connection = unsaved_connection(found.provider, found.client_entity_id, ctx)
-        try:
-            await connector_for(connection, credentials).revoke()
-            result = "revoked"
-        except ConnectorError as refused:
-            result = "not_supported" if refused.code == "oauth" else "refused"
-    async with uow(ctx.tenant) as tx:
-        tx.record(
-            "connection.failed",
-            target=Target("connection_state", found.id),
-            after=Ref(
-                code=code_ref(_failure_code(exc)),
-                revoke=REVOKE_RESULTS.index(result),
-                **_client_actor(ctx),
-            ),
-        )
-
-
 async def _complete_entity(ctx: AuthContext, found: ConnectionState, code: str) -> Completed:
     """Review L9: the flag holds here too (the state was spent first, so a replay is refused)."""
     if not await flag_enabled(ctx.tenant, CONNECTIONS_PORTAL_V2):
@@ -590,8 +557,8 @@ async def _complete_entity(ctx: AuthContext, found: ConnectionState, code: str) 
     credentials = await _exchange(ctx, found, code)
     try:
         return await _record_entity(ctx, found, credentials)
-    except Exception as exc:
-        await _abandon(ctx, found, credentials, exc)
+    except Exception as exc:  # review L5, round 2 L3: the fresh grant is queued for revocation
+        await abandon_grant(ctx, found, credentials, exc, code_ref(failure_code(exc)))
         raise
 
 
@@ -707,7 +674,7 @@ async def _record_retry(ctx: AuthContext, connection_id: UUID) -> tuple[RunRef, 
         locked = await lock_connection(tx.session, connection_id)
         if locked is None or locked.status not in LIVE:
             raise NotFound("connection")
-        running = await running_run_of(tx.session, connection_id)
+        running = await running_run_of(tx.session, connection_id, retryable)
         if running is not None:
             tx.record(
                 "connection.retry_requested",
@@ -739,7 +706,7 @@ async def _record_retry(ctx: AuthContext, connection_id: UUID) -> tuple[RunRef, 
             started_by=str(ctx.user_id),
         )
         if run is None:  # a concurrent click won the unique index: answer that run
-            raced = await running_run_of(tx.session, connection_id)
+            raced = await running_run_of(tx.session, connection_id, retryable)
             if raced is None:
                 raise NotFound("sync_run")
             return _summary(raced), False

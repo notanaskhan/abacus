@@ -26,10 +26,11 @@ import pytest
 
 from abacus.kernel.config import settings
 from abacus.kernel.crypto import LocalKeyService, configure_key_service, reset_key_service
+from abacus.kernel.egress import EgressRefused
 from abacus.kernel.flags import forget_flags
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.connections import retrievals
-from abacus.modules.connections.api import revoke_retired
+from abacus.modules.connections.api import FakeConnector, Unavailable, revoke_retired
 from abacus.modules.integrations.api import register_adapter, unregister_adapter
 
 from .support import Json, Net, Person, Site
@@ -615,6 +616,11 @@ async def test_m2_a_legacy_flow_never_replaces_a_consented_ledger(world: World) 
     query = parse_qs(urlsplit(str(started.json()["authorise_url"])).query)
     refused = await world.complete({"state": query["state"][0], "code": query["code"][0]})
     assert refused.status_code == 409 and refused.json()["detail"] == "ledger_already_connected"
+    # Round 2 L2: the grant the refused legacy completion obtained is queued for revocation.
+    queued = await world.net.seed.rows(
+        "SELECT reason FROM connection_grant_revocations WHERE tenant_id = $1", world.tenant
+    )
+    assert [r["reason"] for r in queued] == ["abandoned"]
     legacy = await world.call(
         "GET", f"/v1/engagements/{world.site.engagement_id}/connection", world.tess
     )
@@ -629,7 +635,7 @@ async def test_l9_a_portal_state_does_not_complete_with_the_flag_off(world: Worl
     assert await world.count("connections") == 0
 
 
-async def test_l5_a_completion_refused_after_the_exchange_is_recorded(world: World) -> None:
+async def test_l5_a_completion_refused_after_the_exchange_queues_its_grant(world: World) -> None:
     handed = await world.handed()
     await world.net.seed.run(
         "INSERT INTO connections (id, tenant_id, client_entity_id, provider, status, scopes, "
@@ -640,13 +646,81 @@ async def test_l5_a_completion_refused_after_the_exchange_is_recorded(world: Wor
     )
     refused = await world.complete(handed)
     assert refused.status_code == 409 and refused.json()["detail"] == "ledger_already_connected"
-    failed = await world.net.seed.rows(
-        "SELECT after_ref FROM audit_events WHERE tenant_id = $1 AND action = 'connection.failed'",
+    assert (await world.actions("connection.failed")) == ["connection.failed"]
+    queued = await world.net.seed.rows(
+        "SELECT reason, state_id, connection_id FROM connection_grant_revocations "
+        "WHERE tenant_id = $1",
         world.tenant,
     )
-    assert len(failed) == 1
-    after = failed[0]["after_ref"]
-    assert (json.loads(after) if isinstance(after, str) else after)["revoke"] == 0  # demo revoke
+    assert len(queued) == 1 and queued[0]["reason"] == "abandoned"
+    assert queued[0]["state_id"] is not None and queued[0]["connection_id"] is None
+    for event in await _revocation_events(world):
+        await revoke_retired(event)
+    assert await world.count("connection_grant_revocations") == 0
+    assert (await world.actions("connection.grant_revoked")) == ["connection.grant_revoked"]
+
+
+async def _queued_revocation(world: World) -> OutboxEvent:
+    done = await world.connected()
+    version = (await world.card())["version"]
+    gone = await world.call(
+        "POST",
+        f"/v1/portal/connections/{done['connection_id']}/disconnect",
+        world.tess,
+        {"seen_version": version},
+    )
+    assert gone.status_code == 200, gone.text
+    (event,) = await _revocation_events(world)
+    return event
+
+
+async def _revoked_results(world: World) -> list[int]:
+    rows = await world.net.seed.rows(
+        "SELECT after_ref FROM audit_events WHERE tenant_id = $1 "
+        "AND action = 'connection.grant_revoked'",
+        world.tenant,
+    )
+    out: list[int] = []
+    for r in rows:
+        after = r["after_ref"]
+        out.append(cast(int, (json.loads(after) if isinstance(after, str) else after)["result"]))
+    return out
+
+
+async def test_m1_round2_an_unreachable_provider_is_given_up_on_the_last_attempt(
+    world: World, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    event = await _queued_revocation(world)
+
+    async def down(_self: object) -> None:
+        raise Unavailable("provider_unavailable")
+
+    monkeypatch.setattr(FakeConnector, "revoke", down)
+    with pytest.raises(Unavailable):  # early: the relay retries
+        await revoke_retired(event)
+    assert await world.count("connection_grant_revocations") == 1
+    await world.net.seed.run(
+        "UPDATE connection_grant_revocations SET created_at = now() - interval '1 day' "
+        "WHERE tenant_id = $1",
+        world.tenant,
+    )
+    await revoke_retired(event)  # the last attempt: recorded and erased, never parked
+    assert await world.count("connection_grant_revocations") == 0
+    assert await _revoked_results(world) == [4]  # unreachable
+
+
+async def test_m1_round2_an_egress_refusal_is_recorded_refused(
+    world: World, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    event = await _queued_revocation(world)
+
+    async def blocked(_self: object) -> None:
+        raise EgressRefused("api.undeclared.example")
+
+    monkeypatch.setattr(FakeConnector, "revoke", blocked)
+    await revoke_retired(event)
+    assert await world.count("connection_grant_revocations") == 0
+    assert await _revoked_results(world) == [2]  # refused
 
 
 async def test_l7_runs_of_an_engagement_the_reader_is_not_on_stay_hidden(world: World) -> None:

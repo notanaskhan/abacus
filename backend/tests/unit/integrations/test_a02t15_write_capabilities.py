@@ -200,10 +200,13 @@ def test_m3_the_egress_client_admits_only_https_to_allowlisted_hosts() -> None:
     configure_egress(frozenset({"api.probe.example"}))
     try:
         check_egress("https://api.probe.example/v3/reports")
+        assert str(check_egress("https://api.probe.example:443/v3")).startswith("https://")
         for bad in (
             "http://api.probe.example/v3",  # not HTTPS
             "https://other.example/v3",  # not allowlisted
             "https://user:pw@api.probe.example/",  # credentials in the URL
+            "https://api.probe.example:8443/v3",  # not port 443
+            "not a url at all",
         ):
             with pytest.raises(EgressRefused):
                 check_egress(bad)

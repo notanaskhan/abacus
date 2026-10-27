@@ -67,7 +67,10 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "reconnect_requests": frozenset(
         {"tenant_id", "connection_id", "requested_by_user_id", "engagement_id"}
     ),
-    "connection_grant_revocations": frozenset({"tenant_id", "connection_id", "sealed", "reason"}),
+    "connection_grant_revocations": frozenset(
+        {"tenant_id", "client_entity_id", "provider", "connection_id", "state_id", "sealed"}
+        | {"reason"}
+    ),
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
