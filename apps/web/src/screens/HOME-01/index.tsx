@@ -9,6 +9,8 @@ import {
   type ToolbarProps,
   date,
   status,
+  time,
+  weekdayDate,
 } from "@abacus/ui";
 import { meOptions } from "@abacus/api-client/query";
 import { useQuery } from "@tanstack/react-query";
@@ -75,21 +77,9 @@ function hostHref(gate: HumanGateOut): string | undefined {
   return undefined;
 }
 
-function longDate(iso: string): string {
-  return new Intl.DateTimeFormat("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(`${iso}T00:00:00Z`));
-}
-
-function hourIn(now: Date, tz: string): number {
-  return Number(
-    new Intl.DateTimeFormat("en-US", { hour: "numeric", hourCycle: "h23", timeZone: tz }).format(
-      now,
-    ),
-  );
+/** Morning until noon in the firm's zone ("Good morning" at 9:24 AM, "Good afternoon" at 12:40 PM). */
+function isMorning(now: Date, tz: string): boolean {
+  return time(now, { tz }).endsWith("AM");
 }
 
 function statusN(tile: HomeTileOut, code: string): number {
@@ -273,10 +263,9 @@ export function HOME01({
   const loading = home.isPending || counts.isPending;
   const view = home.data;
   const greetingName = view?.greeting.first_name ?? "";
-  const greeting =
-    hourIn(now, tz) < 12
-      ? COPY.greeting.morning(greetingName)
-      : COPY.greeting.afternoon(greetingName);
+  const greeting = isMorning(now, tz)
+    ? COPY.greeting.morning(greetingName)
+    : COPY.greeting.afternoon(greetingName);
   const officeName = offices.find((o) => o.id === office)?.name ?? null;
   const returns = view?.tiles.find((t) => t.key === "returns");
   const caption =
@@ -309,7 +298,7 @@ export function HOME01({
       counts={counts.data}
       gates={list.data?.items ?? []}
       office={office}
-      {...(hrefOf === undefined ? {} : { hrefOf })}
+      hrefOf={hrefOf}
       work={view?.your_work}
     />
   );
@@ -320,7 +309,7 @@ export function HOME01({
         : { toolbar, embedded: true })}
       {...(height === undefined ? {} : { height })}
       greeting={greeting}
-      date={view === undefined ? "" : longDate(view.greeting.date)}
+      date={view === undefined ? "" : weekdayDate(view.greeting.date, { now, tz })}
       {...(caption === undefined ? {} : { caption })}
       subbar={subbar}
       office={{

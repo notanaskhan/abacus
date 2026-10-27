@@ -30,3 +30,4 @@ renders a gate verb.
 
 ## Progress log
 - 2026-10-27: built.
+- 2026-10-27: targeted pass green (backend pytest -n 2 on the new and directly covering files, vitest on the touched FE files); gates clean (ruff, pyright, lint-imports, quality tools, check-heads, check-generated, tsc, eslint, prettier, vite build, bundle budget 245.9 of 250 KB). Playwright and axe-in-browser not run in this lane.

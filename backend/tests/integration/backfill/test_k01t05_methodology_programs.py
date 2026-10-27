@@ -279,7 +279,11 @@ async def test_the_new_tables_isolate_firms(net: Net, migrated_db: Migrated) -> 
     try:
         async with conn.transaction():
             await conn.execute("SELECT set_config('app.tenant_id', $1, true)", str(other))
-            for table in ("programs", "program_steps", "program_step_pbc_links"):
-                assert await conn.fetchval(f"SELECT count(*) FROM {table}") == 0  # noqa: S608
+            for sql in (
+                "SELECT count(*) FROM programs",
+                "SELECT count(*) FROM program_steps",
+                "SELECT count(*) FROM program_step_pbc_links",
+            ):
+                assert await conn.fetchval(sql) == 0
     finally:
         await conn.close()

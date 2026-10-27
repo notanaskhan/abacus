@@ -74,7 +74,7 @@ async def test_inv3_a_walled_person_is_listed_nothing_of_the_walled_client(firm:
     assert page["total"] == 1
 
 
-# --- I-01-T04 (landed, TASK-1425): the one count source ------------------------------------------------------------
+# --- I-01-T04 (landed, TASK-1425): the one count source -------------------------------------
 
 
 async def test_ac_f1_one_count_source_reads_eleven_as_three_six_two_by_band(firm: Firm) -> None:

@@ -317,7 +317,8 @@ const GATE_ROWS: Readonly<Record<HomePersona, readonly GateRow[]>> = {
 
 /** The open gates assigned to each persona at E0 (empty context lines read as none). */
 export function homeGates(persona: string): HumanGateOut[] {
-  const rows = GATE_ROWS[persona as HomePersona] ?? [];
+  const rows: readonly GateRow[] =
+    (GATE_ROWS as Partial<Record<string, readonly GateRow[]>>)[persona] ?? [];
   return rows.map((row, i) => {
     const g = gate(persona as HomePersona, i + 1, row);
     return g.context === "" ? { ...g, context: null } : g;
@@ -561,7 +562,10 @@ export function homeView(persona: string, officeName: OfficeName | null = null):
   const who = persona as HomePersona;
   const admin = who === "grace-holloway";
   return {
-    greeting: { first_name: FIRST_NAME[who] ?? "", date: HOME_TODAY },
+    greeting: {
+      first_name: (FIRST_NAME as Partial<Record<string, string>>)[persona] ?? "",
+      date: HOME_TODAY,
+    },
     tiles: admin ? adminTiles() : officeName === "Denver" ? denverTiles() : firmTiles(),
     your_work: YOUR_WORK[who] ?? null,
     deadlines: who === "daniel-reyes" ? danielDeadlines() : { rows: [], next: null },

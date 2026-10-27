@@ -30,3 +30,4 @@ with 2 New, 11 = 3 + 6 + 2.
 ## Progress log
 - 2026-10-27: built. Client activity rows are I-01-T12's projection (empty in the fixture); h and
   i carry Hannah's and Marcus's own (empty) gate sets, their R2 bands are I-01-T24's.
+- 2026-10-27: targeted pass green (backend pytest -n 2 on the new and directly covering files, vitest on the touched FE files); gates clean (ruff, pyright, lint-imports, quality tools, check-heads, check-generated, tsc, eslint, prettier, vite build, bundle budget 245.9 of 250 KB). Playwright and axe-in-browser not run in this lane.

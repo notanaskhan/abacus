@@ -218,7 +218,7 @@ def _facts(raw: object) -> dict[str, str | int | bool | None]:
     if not isinstance(raw, dict):
         return {}
     kept: dict[str, str | int | bool | None] = {}
-    for key, value in raw.items():  # pyright: ignore[reportUnknownVariableType]
+    for key, value in raw.items():  # pyright: ignore[reportUnknownVariableType] -- jsonb facts: object values, narrowed below
         if isinstance(key, str) and (value is None or isinstance(value, str | int | bool)):
             kept[key] = value if not isinstance(value, str) else value[:80]
     return kept

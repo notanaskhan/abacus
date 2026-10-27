@@ -30,7 +30,7 @@ import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";
 import { DEMO_INSTANT } from "../seed/clock";
 import { HOME_AFTERNOON } from "../seed/home";
-import { capabilitiesFor, meV3For } from "../seed/shell";
+import { capabilitiesFor, meV3For, officeIdOf } from "../seed/shell";
 
 const E0 = seedScenario();
 const seed = getSeed();
@@ -87,3 +87,8 @@ export const scenarios = defineScenarios({
   "today-brief-off": at("today-brief-off", "daniel-reyes", { brief: false }),
   walled: at("walled", "lena-park"),
 });
+
+/** The office each state opens on (null: all offices): office-denver opens on Denver. */
+export const OFFICE: Readonly<Partial<Record<keyof typeof scenarios, string>>> = {
+  "office-denver": officeIdOf("Denver"),
+};

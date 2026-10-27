@@ -49,3 +49,5 @@ Lena Park's omit every Ashford gate.
 
 ## Progress log
 - 2026-10-27: built.
+- 2026-10-27: targeted pass green (backend pytest -n 2 on the new and directly covering files, vitest on the touched FE files); gates clean (ruff, pyright, lint-imports, quality tools, check-heads, check-generated, tsc, eslint, prettier, vite build, bundle budget 245.9 of 250 KB). Playwright and axe-in-browser not run in this lane.
+- 2026-10-27: the test pass found the 0223 backfill blocked by forced RLS (the owner is bound by it; lifted for the statement, 0180's precedent) and a plpgsql NEW.user_id resolution on reassignments; both fixed before any merge.

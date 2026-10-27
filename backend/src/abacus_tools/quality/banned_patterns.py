@@ -2052,6 +2052,11 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_tie_out_schema.py",
             "tests/integration/test_integrations_schema.py",
             "tests/integration/test_entity_connections_schema.py",
+            # I-01-T04, K-01-T05 (S11): the human-only snooze and reassignment rows, the card's
+            # reassign guard and the frozen methodology content, proved as the app role with the
+            # tenant and actor set by hand, as tenant_session sets them.
+            "tests/integration/backfill/test_i01t04_human_gate_home.py",
+            "tests/integration/backfill/test_k01t05_methodology_programs.py",
             # Records replay fixtures against throwaway containers (seeds as the superuser).
             "src/abacus_tools/workflows/record_retrieval.py",
             "src/abacus_tools/stack.py",  # the recorders' and evals' stack (connect_db)
@@ -2202,6 +2207,11 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_tie_out_schema.py",
             "tests/integration/test_integrations_schema.py",
             "tests/integration/test_entity_connections_schema.py",
+            # I-01-T04, K-01-T05 (S11): the human-only snooze and reassignment rows, the card's
+            # reassign guard and the frozen methodology content, proved as the app role with the
+            # tenant and actor set by hand, as tenant_session sets them.
+            "tests/integration/backfill/test_i01t04_human_gate_home.py",
+            "tests/integration/backfill/test_k01t05_methodology_programs.py",
             # Q-03-T028: plans each list as the app role with the firm's tenant set by hand, as
             # tenant_session sets it, so row-level security adds the tenant predicate.
             "tests/integration/test_q03t028_plan_tests.py",
