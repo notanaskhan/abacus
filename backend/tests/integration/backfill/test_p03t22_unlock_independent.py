@@ -67,6 +67,7 @@ from abacus_tools.synthetic.documents import password_pdf, w2_pdf
 
 from .support import Net, Person, Seeder, Site
 
+Json = Any  # untyped JSON, YAML and SDK payloads read as data, never trusted
 BUCKET: Final = "task1436-unlock-sentinel"
 MASTER: Final = b"task1436-unlock-sentinel-master-key-0123456"
 PDF: Final = "application/pdf"
@@ -84,6 +85,18 @@ TIN_LAST4: Final = "3456"
 DSN: Final = "https://public@example.invalid/1"
 REPO: Final = Path(__file__).resolve().parents[4]
 DERIVED: Final = ("evidence_pages", "pii_scan_runs", "pii_regions", "upload_previews")
+# Per derived table: rows of this derivation, and rows of any other derivation of the version.
+_COUNT: Final = (
+    "SELECT count(*) FILTER (WHERE derivation_id = $2) AS linked, "
+    "count(*) FILTER (WHERE derivation_id IS NOT NULL AND derivation_id <> $2) AS stray FROM "
+)
+_OF_VERSION: Final = " WHERE evidence_version_id = $1"
+LINKED: Final = {
+    "evidence_pages": _COUNT + "evidence_pages" + _OF_VERSION,
+    "pii_scan_runs": _COUNT + "pii_scan_runs" + _OF_VERSION,
+    "pii_regions": _COUNT + "pii_regions" + _OF_VERSION,
+    "upload_previews": _COUNT + "upload_previews" + _OF_VERSION,
+}
 
 
 def _sentinel(tag: str) -> str:
@@ -109,12 +122,12 @@ class Recorder:
 
 
 class Capture(Transport):
-    events: ClassVar[list[dict[str, Any]]] = []
+    events: ClassVar[list[dict[str, Json]]] = []
 
     def capture_envelope(self, envelope: Envelope) -> None:
         event = envelope.get_event()
         if event is not None:
-            Capture.events.append(cast(dict[str, Any], event))
+            Capture.events.append(cast(dict[str, Json], event))
         for item in envelope.items:  # anything else the client would send
             payload = item.get_bytes()
             Capture.events.append({"raw": payload.decode("utf-8", "replace")})
@@ -149,7 +162,7 @@ def wired(raw: S3Client) -> Iterator[Recorder]:
     configure_key_service(LocalKeyService(MASTER))
     storage.configure_storage(raw, BUCKET)
     recorder = Recorder()
-    configure_temporal_client(cast(Any, recorder))
+    configure_temporal_client(cast(Json, recorder))
     forget_flags()
     yield recorder
     forget_flags()
@@ -267,7 +280,7 @@ def _doc(value: object) -> dict[str, object]:
 
 async def _member(seed: Seeder, site: Site, role: str) -> Person:
     who = await seed.person(site.tenant_id)
-    await seed.member(site, who, cast(Any, role))
+    await seed.member(site, who, cast(Json, role))
     return who
 
 
@@ -334,21 +347,9 @@ async def test_ac32_the_right_password_derives_linked_masked_records(world: Worl
         "SELECT id, evidence_version_id FROM evidence_derivations WHERE id = $1", derivation
     )
     assert [r["evidence_version_id"] for r in linked] == [world.locked]
-    for table in DERIVED:
-        count = await world.seed.value(
-            f"SELECT count(*) FROM {table} WHERE evidence_version_id = $1 "  # noqa: S608 -- fixed names
-            "AND derivation_id = $2",
-            world.locked,
-            derivation,
-        )
-        assert int(str(count)) >= 1, table
-        stray = await world.seed.value(
-            f"SELECT count(*) FROM {table} WHERE evidence_version_id = $1 "  # noqa: S608 -- fixed names
-            "AND derivation_id IS DISTINCT FROM $2 AND derivation_id IS NOT NULL",
-            world.locked,
-            derivation,
-        )
-        assert int(str(stray)) == 0, table
+    for table, sql in LINKED.items():
+        counts = await world.seed.rows(sql, world.locked, derivation)
+        assert (counts[0]["linked"] >= 1, counts[0]["stray"]) == (True, 0), table
     regions = await world.seed.rows(
         "SELECT last4 FROM pii_regions WHERE derivation_id = $1", derivation
     )
@@ -500,7 +501,7 @@ async def test_ac35_an_agent_or_system_principal_is_refused_by_the_matrix_and_th
     matrix = REPO / "docs/architecture/permission-matrix"
     rows: dict[str, dict[str, object]] = {}
     for path in matrix.glob("*.yaml"):
-        loaded = cast(dict[str, Any], yaml.safe_load(path.read_text()) or {})
+        loaded = cast(dict[str, Json], yaml.safe_load(path.read_text()) or {})
         rows.update(cast(dict[str, dict[str, object]], loaded.get("actions", {}) or {}))
     unlock = rows["evidence.unlock"]
     for principal in ("agent", "system", "client_admin", "client_contributor", "client_viewer"):
@@ -556,24 +557,21 @@ async def test_ac35_the_route_is_absent_with_its_flag_off(world: World) -> None:
 
 
 async def _every_row_holding(seed: Seeder, *secrets: str) -> list[str]:
-    """`schema.table` for every table with a row whose text (bytea as hex) holds a secret."""
-    tables = await seed.rows(
-        "SELECT table_schema, table_name FROM information_schema.tables "
-        "WHERE table_type = 'BASE TABLE' AND table_schema NOT IN "
-        "('pg_catalog', 'information_schema') AND table_schema NOT LIKE 'pg_%'"
-    )
+    """`schema.table` for every table with a row whose text (bytea as hex) holds a secret. The
+    per-table query is built by the server (`format` with `%I`), so no SQL is built here."""
     found: list[str] = []
-    for t in tables:
-        name = f'"{t["table_schema"]}"."{t["table_name"]}"'
-        for secret in secrets:
-            hit = await seed.value(
-                f"SELECT EXISTS (SELECT 1 FROM {name} t WHERE t::text LIKE $1 "  # noqa: S608 -- catalogue names
-                "OR lower(t::text) LIKE $2)",
-                f"%{secret}%",
-                f"%{_hex(secret)}%",
-            )
-            if hit:
-                found.append(name)
+    for secret in secrets:
+        rows = await seed.rows(
+            "SELECT table_schema || '.' || table_name AS name FROM information_schema.tables "
+            "WHERE table_type = 'BASE TABLE' AND table_schema NOT IN "
+            "('pg_catalog', 'information_schema') AND table_schema NOT LIKE 'pg_%' "
+            "AND query_to_xml(format('SELECT 1 AS hit FROM %I.%I t WHERE t::text LIKE %L "
+            "OR lower(t::text) LIKE %L LIMIT 1', table_schema, table_name, $1::text, $2::text), "
+            "false, true, '')::text LIKE '%<hit>%'",
+            f"%{secret}%",
+            f"%{_hex(secret)}%",
+        )
+        found.extend(str(r["name"]) for r in rows)
     return found
 
 
@@ -654,14 +652,14 @@ class _NoWrites:
 
 
 @pytest.fixture
-def tracked(monkeypatch: pytest.MonkeyPatch) -> Iterator[list[dict[str, Any]]]:
+def tracked(monkeypatch: pytest.MonkeyPatch) -> Iterator[list[dict[str, Json]]]:
     monkeypatch.setenv("ABACUS_SENTRY_DSN", DSN)
     settings.cache_clear()
     monkeypatch.setattr("abacus.kernel.error_tracking._configured", False)
     real = sentry_sdk.init
 
     def init(**options: object) -> None:
-        real(**cast(dict[str, Any], options), transport=Capture)
+        real(**cast(dict[str, Json], options), transport=Capture)
 
     monkeypatch.setattr(sentry_sdk, "init", init)
     Capture.events = []
@@ -673,7 +671,7 @@ def tracked(monkeypatch: pytest.MonkeyPatch) -> Iterator[list[dict[str, Any]]]:
 
 
 async def test_ac34_an_unlock_that_fails_part_way_sends_no_sentinel_to_error_tracking(
-    world: World, raw: S3Client, tracked: list[dict[str, Any]]
+    world: World, raw: S3Client, tracked: list[dict[str, Json]]
 ) -> None:
     storage.reset_storage()
     storage.configure_storage(cast(S3Client, _NoWrites(raw)), BUCKET)

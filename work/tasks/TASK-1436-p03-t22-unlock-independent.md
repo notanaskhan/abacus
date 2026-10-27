@@ -1,6 +1,6 @@
 ---
 id: TASK-1436
-title: Independent AC tests (ADR-078) for password unlock: the sentinel password nowhere outside the request (P-03-T22)
+title: "Independent AC tests (ADR-078) for password unlock: the sentinel password nowhere outside the request (P-03-T22)"
 spec: SPEC-322
 acceptance_criteria: [AC-31, AC-32, AC-33, AC-34, AC-35]
 risk_zone: red

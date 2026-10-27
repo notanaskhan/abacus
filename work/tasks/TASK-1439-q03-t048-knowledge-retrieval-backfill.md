@@ -1,6 +1,6 @@
 ---
 id: TASK-1439
-title: Back-fill TASK-024, knowledge retrieval on pgvector, from SPEC-009 (Q-03-T048)
+title: "Back-fill TASK-024, knowledge retrieval on pgvector, from SPEC-009 (Q-03-T048)"
 spec: SPEC-009
 acceptance_criteria: [AC-1, AC-3, AC-4, AC-5, AC-7, AC-8, AC-9]
 risk_zone: red

@@ -1,8 +1,8 @@
 ---
 id: TASK-1438
-title: Back-fill TASK-033, TASK-037, TASK-039 and TASK-060 from SPEC-018, -021, -023 and -031 (Q-03-T047)
-spec: SPEC-018; SPEC-021; SPEC-023; SPEC-031
-acceptance_criteria: [SPEC-018 AC-1 to AC-5, SPEC-021 AC-1, AC-2, AC-4, AC-5, SPEC-023 AC-1 to AC-5, SPEC-031 AC-1 to AC-3, AC-5 to AC-7]
+title: "Back-fill TASK-033, TASK-037, TASK-039 and TASK-060 from SPEC-018, -021, -023 and -031 (Q-03-T047)"
+spec: SPEC-031
+acceptance_criteria: [AC-1, AC-2, AC-3, AC-5, AC-6, AC-7]
 risk_zone: amber
 status: in-review
 epic: Q-03
@@ -13,6 +13,9 @@ test_session: 2026-10-27, branch s11-trust-tests (S11 lane 7; a clean session fo
 created: 2026-10-27
 updated: 2026-10-27
 ---
+
+Frontmatter names SPEC-031 (one spec per task file); the suite also covers SPEC-018 AC-1 to
+AC-5, SPEC-021 AC-1, AC-2, AC-4, AC-5 and SPEC-023 AC-1 to AC-5 (TASK-033, TASK-037, TASK-039).
 
 ## Objective
 "Each of the four specs has its ACs covered by named tests and the client hub never returns firm

@@ -42,6 +42,7 @@ from abacus_tools.synthetic.documents import letter_pdf
 
 from .support import Net, Person, Seeder, Site
 
+Json = Any  # untyped JSON, YAML and SDK payloads read as data, never trusted
 BUCKET: Final = "task1438-requests-client-hub"
 MASTER: Final = b"task1438-requests-client-hub-master-key-01"
 PDF: Final = "application/pdf"
@@ -168,10 +169,10 @@ class World:
     def base(self) -> str:
         return f"/v1/engagements/{self.site.engagement_id}"
 
-    async def items(self, who: Person | None = None) -> list[dict[str, Any]]:
+    async def items(self, who: Person | None = None) -> list[dict[str, Json]]:
         response = await self.net.call("GET", f"{self.base}/request-items", who or self.manager)
         assert response.status_code == 200, response.text
-        return cast(list[dict[str, Any]], response.json())
+        return cast(list[dict[str, Json]], response.json())
 
     async def upload(
         self,
@@ -226,7 +227,7 @@ class World:
 
 async def _member(seed: Seeder, site: Site, role: str) -> Person:
     who = await seed.person(site.tenant_id)
-    await seed.member(site, who, cast(Any, role))
+    await seed.member(site, who, cast(Json, role))
     return who
 
 
@@ -838,5 +839,5 @@ async def test_q03t047_the_client_hub_returns_no_firm_status_code_and_no_agent_f
     assert not keys & AGENT_KEYS, keys & AGENT_KEYS
     assert not {k for k in keys if k.startswith(("ai_", "agent_", "screening"))}
     assert not _strings(answers) & FIRM_CODES, _strings(answers) & FIRM_CODES
-    outcomes = {h["outcome"] for h in cast(dict[str, Any], answers[0])["history"]}
+    outcomes = {h["outcome"] for h in cast(dict[str, Json], answers[0])["history"]}
     assert outcomes <= CLIENT_OUTCOMES

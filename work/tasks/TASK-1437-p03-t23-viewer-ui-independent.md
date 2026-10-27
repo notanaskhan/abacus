@@ -1,6 +1,6 @@
 ---
 id: TASK-1437
-title: Independent AC tests (ADR-078) for the amber viewer UI: reveal and unlock leave no copy (P-03-T23)
+title: "Independent AC tests (ADR-078) for the amber viewer UI: reveal and unlock leave no copy (P-03-T23)"
 spec: SPEC-322
 acceptance_criteria: [AC-26, AC-28, AC-31, AC-34, AC-35]
 risk_zone: amber

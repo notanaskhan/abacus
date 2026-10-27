@@ -1,8 +1,8 @@
 ---
 id: TASK-1441
-title: Fixture-mode Playwright specs for SHL-07 and SHL-08 with axe, Tier D, keyboard and reduced motion (P-03-T24)
+title: "Fixture-mode Playwright specs for SHL-07 and SHL-08 with axe, Tier D, keyboard and reduced motion (P-03-T24)"
 spec: SPEC-322
-acceptance_criteria: [AC-6 to AC-22]
+acceptance_criteria: [AC-6, AC-7, AC-8, AC-9, AC-10, AC-11, AC-12, AC-13, AC-14, AC-15, AC-16, AC-17, AC-18, AC-19, AC-20, AC-21, AC-22]
 risk_zone: green
 status: in-review
 epic: P-03

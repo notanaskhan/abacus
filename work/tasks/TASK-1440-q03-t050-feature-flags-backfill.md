@@ -1,6 +1,6 @@
 ---
 id: TASK-1440
-title: Back-fill TASK-026, the feature-flag registry, from SPEC-011 (Q-03-T050)
+title: "Back-fill TASK-026, the feature-flag registry, from SPEC-011 (Q-03-T050)"
 spec: SPEC-011
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-6]
 risk_zone: amber

@@ -38,6 +38,7 @@ from abacus_tools.flags import set_flag
 
 from .support import Net, Person, Seeder
 
+Json = Any  # untyped JSON, YAML and SDK payloads read as data, never trusted
 REGISTRY: Final = Path(__file__).resolve().parents[4] / "docs/architecture/feature-flags"
 NAME: Final = re.compile(r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$")
 # ADR-148 names these; the database's CHECK on tenant_entitlements.module is the fixed list.
@@ -46,13 +47,13 @@ ROLLOUT_FLAG: Final = "evidence.viewer_v1"  # a registered boolean with default 
 ENGAGEMENTS_V2: Final = "engagements.v2"
 
 
-def _registry() -> list[dict[str, Any]]:
-    entries: list[dict[str, Any]] = []
+def _registry() -> list[dict[str, Json]]:
+    entries: list[dict[str, Json]] = []
     for path in sorted(REGISTRY.glob("*.yaml")):
         if path.name.startswith("_"):
             continue
-        loaded = cast(dict[str, Any], yaml.safe_load(path.read_text()) or {})
-        entries.extend(cast(list[dict[str, Any]], loaded.get("flags") or []))
+        loaded = cast(dict[str, Json], yaml.safe_load(path.read_text()) or {})
+        entries.extend(cast(list[dict[str, Json]], loaded.get("flags") or []))
     return entries
 
 
@@ -278,7 +279,7 @@ async def test_t050_every_flag_on_still_leaves_every_module_refused(seed: Seeder
     tenant = TenantContext(tenant_id, "system", "test")
     for module in sorted(await _modules(seed)):
         with pytest.raises(EntitlementRequired):
-            await check_entitlement(tenant, cast(Any, module))
+            await check_entitlement(tenant, cast(Json, module))
     await _entitle(seed, tenant_id, "attest")
     held = await check_entitlement(tenant, "attest")
     assert held is not None
