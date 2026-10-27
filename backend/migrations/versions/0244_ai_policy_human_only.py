@@ -20,12 +20,16 @@ down_revision = "0243"
 branch_labels = None
 depends_on = None
 
+# The full register after the S11 and S12 batches: 0212's 44, S11 0226's two assurance entries,
+# the review lane's seven verdicts (0231) and the AI policy's two (ED-180).
 _HUMAN_ONLY = [
     "acceptance.decided",
     "acceptance.review_completed",
     "ai_policy.approved",
     "ai_policy.declined",
+    "assurance.archive_recorded",
     "assurance.phase_recorded",
+    "assurance.release_recorded",
     "conflict.cleared",
     "contact.unlocked",
     "decision.decided",
@@ -82,7 +86,9 @@ _HUMAN_ONLY = [
 _HUMAN_ONLY_0231 = [
     "acceptance.decided",
     "acceptance.review_completed",
+    "assurance.archive_recorded",
     "assurance.phase_recorded",
+    "assurance.release_recorded",
     "conflict.cleared",
     "contact.unlocked",
     "decision.decided",
