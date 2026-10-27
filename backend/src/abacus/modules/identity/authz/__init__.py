@@ -1259,6 +1259,27 @@ async def authorise_items(ctx: Actor, action: str, resource: Resource) -> None:
         _record(action)
 
 
+async def authorise_on_condition(ctx: Actor, action: str, resource: Resource) -> str | None:
+    """For an engagement-level write whose items the caller checks one by one (SPEC-023 AC-2,
+    ED-167): allowed outright (`None`), or held by a client condition (`assigned_only`,
+    `client_visible_only`, `delegated_only`) on one of the caller's roles here, which is returned
+    for the caller to enforce item by item. Anything else is refused as `authorise` refuses it.
+    Either way the check is recorded, so the route is not an unchecked one."""
+    rule = _rule(action)
+    try:
+        await authorise(ctx, action, resource)
+    except Forbidden as denied:
+        if denied.layer != "role" or not isinstance(ctx, AuthContext):
+            raise
+        roles = await _roles(ctx, resource, rule)
+        held = [d for d in (rule.decisions.get(role) for role in roles) if d in _CLIENT_CONDITIONS]
+        if not held:
+            raise
+        _record(action)
+        return held[0]
+    return None
+
+
 def visible_items(
     ctx: Actor,
     action: str,
@@ -1299,6 +1320,7 @@ __all__ = [
     "UnknownAction",
     "authorise",
     "authorise_items",
+    "authorise_on_condition",
     "authorise_own",
     "holds_engagement_role",
     "policy_agent_may_hold",
