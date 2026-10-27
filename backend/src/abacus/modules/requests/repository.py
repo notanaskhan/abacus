@@ -457,6 +457,23 @@ async def list_fulfilled_versions(
     return [(item, version_id, at, fid) for item, version_id, at, fid in rows.all()]
 
 
+async def awaiting_review_rows(
+    session: AsyncSession, engagement_id: UUID | None
+) -> Sequence[tuple[UUID, UUID, UUID]]:
+    """I-01-T08 (C13, a system reader; LIST_EXEMPT: the projection applies `visible()` on
+    read): each `uploaded` item's newest live fulfilment as (item, version, engagement)."""
+    stmt = (
+        select(RequestItem.id, Fulfilment.evidence_version_id, RequestItem.engagement_id)
+        .join(Fulfilment, Fulfilment.request_item_id == RequestItem.id)
+        .where(RequestItem.status == "uploaded", live_fulfilment())
+        .distinct(RequestItem.id)
+        .order_by(RequestItem.id, Fulfilment.created_at.desc(), Fulfilment.id.desc())
+    )
+    if engagement_id is not None:
+        stmt = stmt.where(RequestItem.engagement_id == engagement_id)
+    return [(i, v, e) for i, v, e in (await session.execute(stmt)).all()]
+
+
 async def set_status(
     session: AsyncSession, item_id: UUID, *, allowed_from: tuple[str, ...], to: str
 ) -> bool:

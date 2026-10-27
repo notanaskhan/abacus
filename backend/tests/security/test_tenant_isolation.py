@@ -54,6 +54,8 @@ TABLES: tuple[str, ...] = (
     "client_access_events",
     "client_access_grants",
     "client_entities",
+    "client_import_rows",
+    "client_imports",
     "client_intake_drafts",
     "client_invitations",
     "client_item_responses",

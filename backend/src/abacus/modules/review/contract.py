@@ -37,7 +37,12 @@ from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.kernel.text import MultiLineText, SingleLineText
-from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    AuthContext,
+    allowed_actions,
+    current_context,
+)
 from abacus.modules.review.bulk import BulkTarget, bulk_sign
 from abacus.modules.review.decisions import (
     CardDetail,
@@ -49,7 +54,18 @@ from abacus.modules.review.decisions import (
     reassess,
     request_analysis,
 )
-from abacus.modules.review.gates import band_of, gate_counts, gates_waiting_on
+from abacus.modules.review.gate_actions import (
+    REASSIGN,
+    SNOOZE,
+    reassign_candidates,
+    reassign_gate,
+    reassignable,
+    resolve_many,
+    resource_of,
+    snooze_gate,
+    unsnooze_gate,
+)
+from abacus.modules.review.gates import GateView, band_of, gate_counts, gates_waiting_on
 from abacus.modules.review.notes import (
     NoteDetail,
     NoteItem,
@@ -665,6 +681,17 @@ async def review_note_withdraw_route(
 # --- Human gates (C13 read; HOME-01/02) --------------------------------------------------------
 
 
+class ProposedByOut(BaseModel):
+    """INV-5: the run that proposed a gate and the person it ran for, never the agent as the
+    decider."""
+
+    model_config = ConfigDict(frozen=True)
+
+    run_id: Annotated[UUID, classified("internal")]
+    initiator_user_id: Annotated[UUID | None, classified("internal")]
+    at: Annotated[datetime, classified("internal")]
+
+
 class HumanGateOut(BaseModel):
     """One row of the rebuildable projection. Labels come from the subject's owner at read time."""
 
@@ -692,6 +719,15 @@ class HumanGateOut(BaseModel):
     blocked_reason_code: Annotated[str | None, classified("internal")]
     title: Annotated[str | None, classified("confidential")] = None
     context: Annotated[str | None, classified("confidential")] = None
+    # I-01-T07: the owner's presentation facts (`resolve_many`, per-row authorised; none when the
+    # owner registered no presenter), review's own actions and version, and who proposed it.
+    bulk_eligible: Annotated[bool, classified("internal")] = False
+    subject_route: Annotated[str | None, classified("internal")] = None
+    overlay: Annotated[str | None, classified("internal")] = None
+    glyph: Annotated[str | None, classified("internal")] = None
+    allowed_actions: Annotated[list[str], classified("internal")] = []
+    version: Annotated[int, classified("internal")] = 1
+    proposed_by: Annotated[ProposedByOut | None, classified("internal")] = None
 
 
 class GateBandsOut(BaseModel):
@@ -741,27 +777,24 @@ async def human_gate_counts_route(
     )
 
 
-@human_gates_router.get(
-    "", action="human_gate.read", response_model=ListPage[HumanGateOut], errors=(501,)
-)
-async def human_gate_list_route(
-    ctx: Ctx,
-    assignee: Annotated[Literal["me"], Query()] = "me",
-    kind: Annotated[GateKind | None, Query()] = None,
-    engagement_id: Annotated[UUID | None, Query()] = None,
-    cursor: Annotated[str | None, Query(max_length=2000)] = None,
-    limit: Annotated[int | None, Query(ge=1, le=200)] = None,
-) -> ListPage[HumanGateOut]:
-    """What waits on the caller; `counts` are per kind ("3 decisions, 6 sign-offs, 2 exports").
-    P-04-T16: served from the projection behind `review.grammar_api`; a walled client's gates
-    are never listed or counted."""
-    if not await flag_enabled(ctx.tenant, REVIEW_GRAMMAR_API):
-        raise NotFound("review.grammar_api")
-    found = await gates_waiting_on(
-        ctx, kind=kind, engagement_id=engagement_id, cursor=cursor, limit=limit
-    )
-    return ListPage[HumanGateOut](
-        items=[
+GateListState = Literal["open", "done", "snoozed"]
+GateSort = Literal["created", "deadline"]
+
+
+async def _gate_rows(ctx: AuthContext, gates: list[GateView]) -> list[HumanGateOut]:
+    facts = await resolve_many(ctx, gates)
+    may_on: dict[UUID | None, set[str]] = {}
+    for engagement in {g.engagement_id for g in gates}:
+        resource = await resource_of(ctx, engagement)
+        may_on[engagement] = set(await allowed_actions(ctx, resource, [SNOOZE, REASSIGN]))
+    out: list[HumanGateOut] = []
+    for g in gates:
+        f = facts.get(g.id)
+        may = may_on.get(g.engagement_id, set())
+        acts = [a for a in (SNOOZE,) if a in may and g.state == "open"]
+        if REASSIGN in may and g.state == "open" and reassignable(g.subject_type):
+            acts.append(REASSIGN)
+        out.append(
             HumanGateOut(
                 id=g.id,
                 kind=cast(GateKind, g.kind),
@@ -779,14 +812,159 @@ async def human_gate_list_route(
                 band=cast(GateBand, band_of(g.kind)),
                 blocked=g.blocked,
                 blocked_reason_code=g.blocked_reason_code,
+                title=f.title if f else None,
+                context=f.context if f else None,
+                bulk_eligible=bool(f and f.bulk_eligible),
+                subject_route=f.subject_route if f else None,
+                overlay=f.overlay if f else None,
+                glyph=f.glyph if f else None,
+                allowed_actions=acts,
+                version=g.version,
+                proposed_by=(
+                    ProposedByOut(
+                        run_id=f.proposed_by.run_id,
+                        initiator_user_id=f.proposed_by.initiator_user_id,
+                        at=f.proposed_by.at,
+                    )
+                    if f and f.proposed_by
+                    else None
+                ),
             )
-            for g in found.items
-        ],
+        )
+    return out
+
+
+@human_gates_router.get("", action="human_gate.read", response_model=ListPage[HumanGateOut])
+async def human_gate_list_route(
+    ctx: Ctx,
+    assignee: Annotated[Literal["me"], Query()] = "me",
+    kind: Annotated[GateKind | None, Query()] = None,
+    engagement_id: Annotated[UUID | None, Query()] = None,
+    cursor: Annotated[str | None, Query(max_length=2000)] = None,
+    limit: Annotated[int | None, Query(ge=1, le=200)] = None,
+    state: Annotated[GateListState, Query()] = "open",
+    band: Annotated[GateBand | None, Query()] = None,
+    office_id: Annotated[UUID | None, Query()] = None,
+    sort: Annotated[GateSort, Query()] = "created",
+) -> ListPage[HumanGateOut]:
+    """What waits on the caller; `counts` are per kind ("3 decisions, 6 sign-offs, 2 exports").
+    P-04-T16: served from the projection behind `review.grammar_api`; a walled client's gates
+    are never listed or counted. I-01-T07: `state` (open, snoozed by the caller, done), `band`,
+    `office_id` (narrows, never authorises), `sort=deadline`, and each row's presentation facts."""
+    if not await flag_enabled(ctx.tenant, REVIEW_GRAMMAR_API):
+        raise NotFound("review.grammar_api")
+    found = await gates_waiting_on(
+        ctx,
+        kind=kind,
+        engagement_id=engagement_id,
+        cursor=cursor,
+        limit=limit,
+        state=state,
+        band=band,
+        office_id=office_id,
+        sort=sort,
+    )
+    return ListPage[HumanGateOut](
+        items=await _gate_rows(ctx, found.items),
         next_cursor=found.next_cursor,
         total=found.total,
         total_capped=found.total_capped,
         counts=found.counts,
     )
+
+
+class SnoozeIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    until: Annotated[datetime, classified("internal")]
+
+
+class SnoozedOut(BaseModel):
+    """The caller's snooze of a gate (theirs alone); an unsnooze ends it now."""
+
+    model_config = ConfigDict(frozen=True)
+
+    gate_id: Annotated[UUID, classified("internal")]
+    until: Annotated[datetime, classified("internal")]
+
+
+class ReassignCandidateOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    user_id: Annotated[UUID, classified("internal")]
+    role: Annotated[str, classified("internal")]
+
+
+class ReassignCandidatesOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    candidates: Annotated[list[ReassignCandidateOut], classified("internal")] = []
+
+
+class ReassignIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    to_user_id: Annotated[UUID, classified("internal")]
+    seen_version: Annotated[int, Field(ge=1), classified("internal")]
+
+
+class ReassignedOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    gate_id: Annotated[UUID, classified("internal")]
+    to_user_id: Annotated[UUID, classified("internal")]
+    version: Annotated[int, classified("internal")]
+
+
+async def _gate_flag(ctx: AuthContext) -> None:
+    if not await flag_enabled(ctx.tenant, REVIEW_GRAMMAR_API):
+        raise NotFound("review.grammar_api")
+
+
+@human_gates_router.post(
+    "/{gate_id}/snooze", action=SNOOZE, response_model=SnoozedOut, errors=(409,)
+)
+async def human_gate_snooze_route(gate_id: UUID, body: SnoozeIn, ctx: Ctx) -> SnoozedOut:
+    """The caller's own snooze, until a moment after now and no later than the gate's due date
+    (422 `snooze_in_past`, `snooze_past_due`); 409 `gate_not_open`, `gate_overdue`."""
+    await _gate_flag(ctx)
+    done = await snooze_gate(ctx, gate_id, body.until)
+    return SnoozedOut(gate_id=done.gate_id, until=done.until)
+
+
+@human_gates_router.post(
+    "/{gate_id}/unsnooze", action=SNOOZE, response_model=SnoozedOut, errors=(409,)
+)
+async def human_gate_unsnooze_route(gate_id: UUID, ctx: Ctx) -> SnoozedOut:
+    await _gate_flag(ctx)
+    done = await unsnooze_gate(ctx, gate_id)
+    return SnoozedOut(gate_id=done.gate_id, until=done.until)
+
+
+@human_gates_router.get(
+    "/{gate_id}/reassign-candidates",
+    action=REASSIGN,
+    response_model=ReassignCandidatesOut,
+    errors=(409,),
+)
+async def human_gate_candidates_route(gate_id: UUID, ctx: Ctx) -> ReassignCandidatesOut:
+    """Who the gate may move to now (the owner's hook; walls applied); 409 `not_reassignable`."""
+    await _gate_flag(ctx)
+    found = await reassign_candidates(ctx, gate_id)
+    return ReassignCandidatesOut(
+        candidates=[ReassignCandidateOut(user_id=c.user_id, role=c.role) for c in found]
+    )
+
+
+@human_gates_router.post(
+    "/{gate_id}/reassign", action=REASSIGN, response_model=ReassignedOut, errors=(409,)
+)
+async def human_gate_reassign_route(gate_id: UUID, body: ReassignIn, ctx: Ctx) -> ReassignedOut:
+    """Through the owner's hook only (409 `not_reassignable`); 409 `stale_version`; 422
+    `candidate_not_eligible`."""
+    await _gate_flag(ctx)
+    done = await reassign_gate(ctx, gate_id, body.to_user_id, body.seen_version)
+    return ReassignedOut(gate_id=done.gate_id, to_user_id=done.to_user_id, version=done.version)
 
 
 # --- Decision cards (SHL-11; ADR-160 clause 8) -------------------------------------------------

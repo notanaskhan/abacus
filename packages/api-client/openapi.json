@@ -9015,66 +9015,6 @@
         "title": "CheckOut",
         "type": "object"
       },
-      "ChecklistItemOut": {
-        "properties": {
-          "applicable": {
-            "cls": "internal",
-            "title": "Applicable",
-            "type": "boolean"
-          },
-          "blockers": {
-            "cls": "internal",
-            "items": {
-              "type": "string"
-            },
-            "title": "Blockers",
-            "type": "array"
-          },
-          "done": {
-            "cls": "internal",
-            "title": "Done",
-            "type": "boolean"
-          },
-          "gate": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Gate"
-          },
-          "key": {
-            "cls": "internal",
-            "enum": [
-              "accepted",
-              "independence",
-              "engagement_letter",
-              "review_complete",
-              "eqr_concurred",
-              "going_concern",
-              "report_approved",
-              "rep_letter",
-              "released",
-              "archived"
-            ],
-            "title": "Key",
-            "type": "string"
-          }
-        },
-        "required": [
-          "key",
-          "done",
-          "applicable",
-          "gate",
-          "blockers"
-        ],
-        "title": "ChecklistItemOut",
-        "type": "object"
-      },
       "CheckpointApproveIn": {
         "additionalProperties": false,
         "description": "A checkpoint that is no longer proposed, or whose hash differs, answers 409\n`checkpoint_changed`; nothing is written.",
@@ -12782,7 +12722,7 @@
           "checklist": {
             "cls": "internal",
             "items": {
-              "$ref": "#/components/schemas/ChecklistItemOut"
+              "$ref": "#/components/schemas/abacus__modules__assurance__completion_routes__ChecklistItemOut"
             },
             "title": "Checklist",
             "type": "array"
@@ -25959,6 +25899,15 @@
       "HumanGateOut": {
         "description": "One row of the rebuildable projection. Labels come from the subject's owner at read time.",
         "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
           "assignee_user_id": {
             "anyOf": [
               {
@@ -25999,6 +25948,12 @@
             ],
             "cls": "internal",
             "title": "Blocked Reason Code"
+          },
+          "bulk_eligible": {
+            "cls": "internal",
+            "default": false,
+            "title": "Bulk Eligible",
+            "type": "boolean"
           },
           "client_id": {
             "anyOf": [
@@ -26057,6 +26012,18 @@
             "cls": "internal",
             "title": "Engagement Id"
           },
+          "glyph": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Glyph"
+          },
           "id": {
             "cls": "internal",
             "format": "uuid",
@@ -26091,6 +26058,29 @@
             "cls": "internal",
             "title": "Office Id"
           },
+          "overlay": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Overlay"
+          },
+          "proposed_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposedByOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
           "role": {
             "anyOf": [
               {
@@ -26117,6 +26107,18 @@
             "$ref": "#/components/schemas/ObjectRefOut",
             "cls": "internal"
           },
+          "subject_route": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Subject Route"
+          },
           "subkind": {
             "cls": "internal",
             "title": "Subkind",
@@ -26133,6 +26135,12 @@
             ],
             "cls": "confidential",
             "title": "Title"
+          },
+          "version": {
+            "cls": "internal",
+            "default": 1,
+            "title": "Version",
+            "type": "integer"
           },
           "work_item_id": {
             "anyOf": [
@@ -39908,6 +39916,43 @@
         "title": "ProposalTotalOut",
         "type": "object"
       },
+      "ProposedByOut": {
+        "description": "INV-5: the run that proposed a gate and the person it ran for, never the agent as the\ndecider.",
+        "properties": {
+          "at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "initiator_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Initiator User Id"
+          },
+          "run_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "initiator_user_id",
+          "at"
+        ],
+        "title": "ProposedByOut",
+        "type": "object"
+      },
       "ProposedItemOut": {
         "properties": {
           "audit_area": {
@@ -40380,6 +40425,93 @@
           "code"
         ],
         "title": "ReasonOut",
+        "type": "object"
+      },
+      "ReassignCandidateOut": {
+        "properties": {
+          "role": {
+            "cls": "internal",
+            "title": "Role",
+            "type": "string"
+          },
+          "user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "role"
+        ],
+        "title": "ReassignCandidateOut",
+        "type": "object"
+      },
+      "ReassignCandidatesOut": {
+        "properties": {
+          "candidates": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ReassignCandidateOut"
+            },
+            "title": "Candidates",
+            "type": "array"
+          }
+        },
+        "title": "ReassignCandidatesOut",
+        "type": "object"
+      },
+      "ReassignIn": {
+        "additionalProperties": false,
+        "properties": {
+          "seen_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Seen Version",
+            "type": "integer"
+          },
+          "to_user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "To User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "to_user_id",
+          "seen_version"
+        ],
+        "title": "ReassignIn",
+        "type": "object"
+      },
+      "ReassignedOut": {
+        "properties": {
+          "gate_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Gate Id",
+            "type": "string"
+          },
+          "to_user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "To User Id",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "gate_id",
+          "to_user_id",
+          "version"
+        ],
+        "title": "ReassignedOut",
         "type": "object"
       },
       "RecipientsIn": {
@@ -49222,6 +49354,45 @@
         "title": "SnapshotOut",
         "type": "object"
       },
+      "SnoozeIn": {
+        "additionalProperties": false,
+        "properties": {
+          "until": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Until",
+            "type": "string"
+          }
+        },
+        "required": [
+          "until"
+        ],
+        "title": "SnoozeIn",
+        "type": "object"
+      },
+      "SnoozedOut": {
+        "description": "The caller's snooze of a gate (theirs alone); an unsnooze ends it now.",
+        "properties": {
+          "gate_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Gate Id",
+            "type": "string"
+          },
+          "until": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Until",
+            "type": "string"
+          }
+        },
+        "required": [
+          "gate_id",
+          "until"
+        ],
+        "title": "SnoozedOut",
+        "type": "object"
+      },
       "SourceDocumentGroupOut": {
         "description": "A category band (\"Plan documents \u00b7 3 of 5\"). `counted` is false for a band outside the\ntotals (\"Sample-driven \u00b7 0\", populated by A-03).",
         "properties": {
@@ -55385,6 +55556,28 @@
             "cls": "internal",
             "title": "Approved By User Id"
           },
+          "checklist": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/abacus__modules__methodology__contract__ChecklistItemOut"
+            },
+            "title": "Checklist",
+            "type": "array"
+          },
+          "checklist_hash": {
+            "anyOf": [
+              {
+                "pattern": "^sha256:[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Checklist Hash"
+          },
           "default_for_new_engagements": {
             "cls": "internal",
             "title": "Default For New Engagements",
@@ -57352,6 +57545,66 @@
         "title": "CitationOut",
         "type": "object"
       },
+      "abacus__modules__assurance__completion_routes__ChecklistItemOut": {
+        "properties": {
+          "applicable": {
+            "cls": "internal",
+            "title": "Applicable",
+            "type": "boolean"
+          },
+          "blockers": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Blockers",
+            "type": "array"
+          },
+          "done": {
+            "cls": "internal",
+            "title": "Done",
+            "type": "boolean"
+          },
+          "gate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Gate"
+          },
+          "key": {
+            "cls": "internal",
+            "enum": [
+              "accepted",
+              "independence",
+              "engagement_letter",
+              "review_complete",
+              "eqr_concurred",
+              "going_concern",
+              "report_approved",
+              "rep_letter",
+              "released",
+              "archived"
+            ],
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "done",
+          "applicable",
+          "gate",
+          "blockers"
+        ],
+        "title": "ChecklistItemOut",
+        "type": "object"
+      },
       "abacus__modules__assurance__completion_routes__EqrOut": {
         "properties": {
           "concurrence": {
@@ -57723,6 +57976,33 @@
           }
         },
         "title": "StartIn",
+        "type": "object"
+      },
+      "abacus__modules__methodology__contract__ChecklistItemOut": {
+        "description": "One approval checklist item (`has_programs`, `has_steps`, `every_program_has_steps`).",
+        "properties": {
+          "code": {
+            "cls": "internal",
+            "title": "Code",
+            "type": "string"
+          },
+          "n": {
+            "cls": "internal",
+            "title": "N",
+            "type": "integer"
+          },
+          "ok": {
+            "cls": "internal",
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "ok",
+          "n"
+        ],
+        "title": "ChecklistItemOut",
         "type": "object"
       },
       "abacus__modules__methodology__contract__StepOut": {
@@ -64779,7 +65059,7 @@
     },
     "/v1/client-imports": {
       "post": {
-        "description": "The file is the raw request body (SPEC-008 D3); refused before it is read while the\nroute is a stub.",
+        "description": "The file is the raw request body (SPEC-008 D3), refused before it is read without the\naction; 422 `import_file_invalid` (`facts.reason`) for a file the import can't read.",
         "operationId": "upload_client_import",
         "parameters": [
           {
@@ -64889,16 +65169,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Upload Client Import Route",
@@ -65005,16 +65275,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Client Import Route",
@@ -65167,16 +65427,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Client Import Rows Route",
@@ -65188,7 +65438,7 @@
     },
     "/v1/client-imports/{import_id}/rows/{row_id}/decision": {
       "put": {
-        "description": "A person's decision on a row (never a merge below 90% without one); 409\n`import_already_run`. TINs masked for an offshore reader (AC9.4).",
+        "description": "A person's decision on a row (never a merge below 90% without one); 409\n`import_already_run`; 422 `import_row_invalid`. TINs masked for an offshore reader (AC9.4).",
         "operationId": "decide_import_row",
         "parameters": [
           {
@@ -65314,16 +65564,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Decide Import Row Route",
@@ -65335,7 +65575,7 @@
     },
     "/v1/client-imports/{import_id}/run": {
       "post": {
-        "description": "Starts `ClientImportWorkflow` (P-07-T52); every row applied idempotently; a replayed key\nanswers the same; 409 `import_already_run`.",
+        "description": "Starts `ClientImportWorkflow`; every row applied idempotently; a replayed key answers the\nsame; 409 `import_already_run`.",
         "operationId": "run_client_import",
         "parameters": [
           {
@@ -65452,16 +65692,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Run Client Import Route",
@@ -120783,7 +121013,7 @@
     },
     "/v1/home": {
       "get": {
-        "description": "HOME-01: the viewer's Home, optionally narrowed to one office (DEC-30).",
+        "description": "HOME-01: the viewer's Home, optionally narrowed to one office (DEC-30). Live since\nI-01-T10 (DEC-648); client activity arrives with I-01-T12.",
         "operationId": "home",
         "parameters": [
           {
@@ -120886,16 +121116,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Home Route",
@@ -120907,7 +121127,7 @@
     },
     "/v1/human-gates": {
       "get": {
-        "description": "What waits on the caller; `counts` are per kind (\"3 decisions, 6 sign-offs, 2 exports\").\nP-04-T16: served from the projection behind `review.grammar_api`; a walled client's gates\nare never listed or counted.",
+        "description": "What waits on the caller; `counts` are per kind (\"3 decisions, 6 sign-offs, 2 exports\").\nP-04-T16: served from the projection behind `review.grammar_api`; a walled client's gates\nare never listed or counted. I-01-T07: `state` (open, snoozed by the caller, done), `band`,\n`office_id` (narrows, never authorises), `sort=deadline`, and each row's presentation facts.",
         "operationId": "human_gate_list",
         "parameters": [
           {
@@ -121000,6 +121220,74 @@
             }
           },
           {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "default": "open",
+              "enum": [
+                "open",
+                "done",
+                "snoozed"
+              ],
+              "title": "State",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "band",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "decisions",
+                    "sign_offs",
+                    "agent_outputs",
+                    "approvals_sends"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Band"
+            }
+          },
+          {
+            "in": "query",
+            "name": "office_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Office Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "created",
+              "enum": [
+                "created",
+                "deadline"
+              ],
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
             "in": "header",
             "name": "authorization",
             "required": false,
@@ -121082,16 +121370,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Human Gate List Route",
@@ -121223,6 +121501,493 @@
           "review"
         ],
         "x-abacus-action": "human_gate.read"
+      }
+    },
+    "/v1/human-gates/{gate_id}/reassign": {
+      "post": {
+        "description": "Through the owner's hook only (409 `not_reassignable`); 409 `stale_version`; 422\n`candidate_not_eligible`.",
+        "operationId": "human_gate_reassign",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "gate_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Gate Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReassignIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReassignedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Human Gate Reassign Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "human_gate.reassign"
+      }
+    },
+    "/v1/human-gates/{gate_id}/reassign-candidates": {
+      "get": {
+        "description": "Who the gate may move to now (the owner's hook; walls applied); 409 `not_reassignable`.",
+        "operationId": "human_gate_candidates",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "gate_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Gate Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReassignCandidatesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Human Gate Candidates Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "human_gate.reassign"
+      }
+    },
+    "/v1/human-gates/{gate_id}/snooze": {
+      "post": {
+        "description": "The caller's own snooze, until a moment after now and no later than the gate's due date\n(422 `snooze_in_past`, `snooze_past_due`); 409 `gate_not_open`, `gate_overdue`.",
+        "operationId": "human_gate_snooze",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "gate_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Gate Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SnoozeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SnoozedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Human Gate Snooze Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "human_gate.snooze"
+      }
+    },
+    "/v1/human-gates/{gate_id}/unsnooze": {
+      "post": {
+        "operationId": "human_gate_unsnooze",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "gate_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Gate Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SnoozedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Human Gate Unsnooze Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "human_gate.snooze"
       }
     },
     "/v1/invitations/accept": {
@@ -126324,7 +127089,7 @@
     },
     "/v1/methodology/versions/{version_id}/approve": {
       "post": {
-        "description": "KNW-02 e: a quality partner approves with an effective date (human-only, fresh MFA).",
+        "description": "KNW-02 e: a quality partner approves with an effective date (human-only, fresh MFA); a\nrefusal is audited before the flag is read. 409 `stale_version`, `version_frozen`,\n`checklist_changed`, `checklist_unmet`; 422 `effective_from_too_early`.",
         "operationId": "approve_version",
         "parameters": [
           {
@@ -126440,16 +127205,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Approve Version Route",
@@ -127597,6 +128352,113 @@
         "x-abacus-action": "methodology.manage"
       }
     },
+    "/v1/methodology/versions/{version_id}/state": {
+      "get": {
+        "description": "KNW-02: the lifecycle row, its checklist and what the viewer may do (K-01-T06).",
+        "operationId": "version_state",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionStateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Version State Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "methodology.read"
+      }
+    },
     "/v1/methodology/versions/{version_id}/steps/{step_id}": {
       "delete": {
         "description": "KNW-03 c: remove a non-mandatory draft step (409 `mandatory_locked`).",
@@ -128058,7 +128920,7 @@
     },
     "/v1/methodology/versions/{version_id}/submit": {
       "post": {
-        "description": "KNW-02: Draft to Needs review.",
+        "description": "KNW-02: Draft to Needs review; 409 `stale_version`, `version_frozen`.",
         "operationId": "submit_version",
         "parameters": [
           {
@@ -128174,16 +129036,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Submit Version Route",
@@ -130200,7 +131052,7 @@
     },
     "/v1/portal/auth/refresh": {
       "post": {
-        "description": "Cookie-authenticated, with the CSRF header and the portal host's own Origin.",
+        "description": "Cookie-authenticated, with the CSRF header and the portal host's own Origin. Only a\nrefresh marked `X-Abacus-Activity: user` moves the idle clock; an absent mark is never\nactivity (DEC-583).",
         "operationId": "portal_refresh",
         "parameters": [
           {
@@ -130249,6 +131101,23 @@
                 }
               ],
               "title": "Host"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Activity",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 16,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Activity"
             }
           },
           {

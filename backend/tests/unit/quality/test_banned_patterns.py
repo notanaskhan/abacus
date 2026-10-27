@@ -313,6 +313,7 @@ def test_ac20_main_exits_0_when_clean(
     assert capsys.readouterr().out == ""
 
 
+@pytest.mark.source_scan
 def test_ac20_repository_backend_is_clean() -> None:
     # Deliberately depends on live repo state: this is the AC-20 claim itself, and duplicates
     # the banned-pattern step of `make check-fast`.
@@ -2409,6 +2410,7 @@ def test_ac20_wf_001_reports_one_finding_per_violation_with_its_line(tmp_path: P
     assert found == [("WF-001", 2), ("WF-001", 3)]
 
 
+@pytest.mark.source_scan
 def test_ac20_wf_001_is_clean_on_the_real_workflows() -> None:
     assert [v for v in bp.scan() if v.rule_id == "WF-001"] == []
 

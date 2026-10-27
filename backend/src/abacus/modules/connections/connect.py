@@ -200,7 +200,7 @@ async def start(ctx: AuthContext, engagement_id: UUID, provider: str) -> Started
         )
     connector = connector_for(_unsaved(provider, ref.client_entity_id, ctx))
     url = await connector.authorise_url(state, _redirect_uri(), code_challenge=challenge)
-    return Started(check_sign_in_url(url))
+    return Started(check_sign_in_url(url, provider))
 
 
 def _unsaved(provider: str, client_entity_id: UUID, ctx: AuthContext) -> Connection:
