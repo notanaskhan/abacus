@@ -32,7 +32,7 @@ FIXTURES = (northwind, raw, wired)
 
 async def _create(world: Northwind, ctx: object | None = None) -> uuid.UUID:
     view = await exports.create(
-        ctx if ctx is not None else world.hannah.context(),  # type: ignore[arg-type]
+        ctx if ctx is not None else world.hannah.context(),  # type: ignore[arg-type] -- an agent or system context under test
         world.work_item,
         kind="binder",
         binder_ids=[],
