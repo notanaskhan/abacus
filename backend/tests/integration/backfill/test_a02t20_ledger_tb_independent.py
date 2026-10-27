@@ -44,7 +44,12 @@ from abacus.kernel.db import TenantContext
 from abacus.kernel.uow import uow
 from abacus.kernel.uow.relay import run_relay
 from abacus.modules.engagements.api import engagement_resource_of
-from abacus.modules.identity.api import Forbidden, agent_context_for_run, authorise
+from abacus.modules.identity.api import (
+    AgentContext,
+    Forbidden,
+    agent_context_for_run,
+    authorise,
+)
 from abacus.modules.ledger import api as ledger_api
 from abacus.worker.__main__ import publisher
 
@@ -110,7 +115,7 @@ async def _frozen(world: Books) -> list[tuple[object, ...]]:
     ]
 
 
-async def _agent(world: Books, scope: frozenset[str]) -> object:
+async def _agent(world: Books, scope: frozenset[str]) -> AgentContext:
     return await agent_context_for_run(
         tenant_id=world.tenant_id,
         run_id=uuid.uuid4(),
@@ -197,7 +202,7 @@ async def test_ac2_an_agent_is_refused_adoption_by_the_matrix(world: Books) -> N
         TenantContext(world.tenant_id, "system", "test"), world.site.engagement_id
     )
     with pytest.raises(Forbidden):
-        await authorise(agent, "trial_balance.adopt", resource)  # type: ignore[arg-type]
+        await authorise(agent, "trial_balance.adopt", resource)
 
 
 async def test_ac2_the_table_refuses_an_agent_version_through_the_public_writer(
@@ -281,8 +286,7 @@ async def test_ac2_truncate_is_refused(world: Books, table: str) -> None:
 async def test_ac3_another_entitys_snapshot_is_refused_and_writes_nothing(world: Books) -> None:
     other = await world.seed.site(world.tenant_id, world.admin.user_id, "Granite")
     foreign = await snapshot(world.tenant_id, world.senior.user_id, other.entity_id, EOY)
-    for kwargs in ({"snapshot_id": foreign}, {"prior": foreign}):
-        refused = await world.adopt(**kwargs)  # type: ignore[arg-type]
+    for refused in (await world.adopt(snapshot_id=foreign), await world.adopt(prior=foreign)):
         assert refused.status_code == 422, refused.text  # error-codes.yaml (C9 §6 says 409)
         assert detail(refused) == "snapshot_entity_mismatch"
     assert await world.count("trial_balances") == 0
@@ -655,7 +659,7 @@ async def test_ac25_the_export_is_denied_to_an_agent(world: Books) -> None:
     )
     for action in ("trial_balance.export", "trial_balance.annotate"):
         with pytest.raises(Forbidden):
-            await authorise(agent, action, resource)  # type: ignore[arg-type]
+            await authorise(agent, action, resource)
 
 
 async def test_ac25_a_walled_partner_and_another_firm_get_404_on_the_export(

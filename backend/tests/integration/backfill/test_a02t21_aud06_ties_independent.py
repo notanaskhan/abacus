@@ -258,7 +258,12 @@ async def test_ac9_a_client_user_never_reads_the_trial_balance(world: Books) -> 
 # --- INV-1 · The agent holds no C9 action --------------------------------------------------------
 
 
-@pytest.mark.parametrize("action", [*HUMAN_ONLY, "trial_balance.read"])
+# AC-30: the agent also holds neither the on-demand ledger pull (a connector read, ADR-040) nor
+# the reconnect request the AUD-06 source menu offers.
+@pytest.mark.parametrize(
+    "action",
+    [*HUMAN_ONLY, "trial_balance.read", "ledger.pull", "connection.reconnect_request"],
+)
 async def test_inv1_the_agent_principal_is_refused_every_c9_action(
     world: Books, action: str
 ) -> None:
@@ -406,6 +411,12 @@ async def test_ac11_results_are_computed_on_read_and_never_stored(world: Books) 
     assert cast(Json, (await world.view(tb_id))["checks"])["off"] == 0
 
 
+@pytest.mark.xfail(
+    strict=True,
+    reason="ED-175: defining a balanced check answers 500 (the version row's CHECK refuses the "
+    "expected value the service writes for a balanced kind); recorded in "
+    "work/tasks/TASK-1474-a02t21-aud06-ties-independent.md",
+)
 async def test_ac10_a_balanced_check_ties_when_debits_equal_credits(world: Books) -> None:
     tb_id = await _tb(world)
     status, check = await _define(
@@ -459,6 +470,12 @@ async def test_ac12_a_citation_of_another_engagement_does_not_count(world: Books
     assert await world.count("tie_out_checks") == 0
 
 
+@pytest.mark.xfail(
+    strict=True,
+    reason="ED-176: an edit is audited tie_out_check.changed (the outbox name), not "
+    "tie_out_check.updated as C9 §7 and the epic §7 name it; recorded in "
+    "work/tasks/TASK-1474-a02t21-aud06-ties-independent.md",
+)
 async def test_ac12_defining_and_editing_are_audited_as_the_person(world: Books) -> None:
     tb_id = await _tb(world)
     status, check = await _broker(world, tb_id, world.senior)
@@ -531,10 +548,6 @@ async def test_ac11_the_issue_link_replays_on_its_key_and_is_set_once(world: Boo
     assert linked["linked_by_user_id"] == str(world.senior.user_id)
     replay = await world.call("POST", path, world.senior, body, headers=key)
     assert replay.status_code == 201 and replay.json() == linked
-    reused = await world.call(
-        "POST", path, world.senior, {**body, "issue_id": str(other)}, headers=key
-    )
-    assert reused.status_code == 422 and detail(reused) == "idempotency_key_reused", reused.text
     again = await world.call(
         "POST",
         path,
@@ -556,6 +569,28 @@ async def test_ac11_the_issue_link_replays_on_its_key_and_is_set_once(world: Boo
     assert (await _checks(world, tb_id))["BrokerWindow ↔ broker statement"]["issue_id"] == str(
         issue
     )
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="ED-177: an Idempotency-Key reused with another issue answers 409 "
+    "tie_out_check_issue_linked instead of 422 idempotency_key_reused; recorded in "
+    "work/tasks/TASK-1474-a02t21-aud06-ties-independent.md",
+)
+async def test_ac28_an_idempotency_key_reused_for_another_issue_is_refused(world: Books) -> None:
+    tb_id = await _tb(world)
+    _, check = await _broker(world, tb_id)
+    issue, other = await _issue(world), await _issue(world)
+    path = world.path(tb_id, f"/checks/{check['id']}/issue-link")
+    key = {"Idempotency-Key": f"a02t21-{uuid.uuid4().hex}"}
+    body: Json = {"issue_id": str(issue), "seen_version": check["version_no"]}
+    first = await world.call("POST", path, world.senior, body, headers=key)
+    assert first.status_code == 201, first.text
+    reused = await world.call(
+        "POST", path, world.senior, {**body, "issue_id": str(other)}, headers=key
+    )
+    assert reused.status_code == 422, reused.text  # error-codes.yaml
+    assert detail(reused) == "idempotency_key_reused"
 
 
 async def test_ac11_an_issue_of_another_engagement_is_404_and_a_stale_version_409(

@@ -42,7 +42,7 @@ from abacus.modules.evidence.api import CitationAnchor, CitationClaim, record_ci
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.ledger.api import LedgerLine, NormalisedTrialBalance, record_snapshot
 
-from .support import Net, Person, Seeder, Site
+from .support import Net, Person, Role, Seeder, Site
 
 Json = dict[str, object]
 Line = tuple[str, str, str, str]  # code, name, debit, credit
@@ -86,6 +86,14 @@ AREAS: Final = {
     "3000": "Net assets",
 }
 FLAGS: Final = ("ledger.tb_workpaper", "evidence.citations_v2")
+# Row counts per table, as literal queries.
+COUNTS: Final = {
+    "trial_balances": "SELECT count(*) FROM trial_balances WHERE tenant_id = $1",
+    "trial_balance_versions": "SELECT count(*) FROM trial_balance_versions WHERE tenant_id = $1",
+    "trial_balance_lines": "SELECT count(*) FROM trial_balance_lines WHERE tenant_id = $1",
+    "ledger_snapshots": "SELECT count(*) FROM ledger_snapshots WHERE tenant_id = $1",
+    "tie_out_checks": "SELECT count(*) FROM tie_out_checks WHERE tenant_id = $1",
+}
 
 
 def tb_path(engagement_id: uuid.UUID, tb_id: uuid.UUID | None = None) -> str:
@@ -209,8 +217,14 @@ class Books:
             body["prior_snapshot_id"] = str(prior)
         return await self.call("POST", self.base, who, body)
 
-    async def adopted(self, **kwargs: object) -> uuid.UUID:
-        response = await self.adopt(**kwargs)  # type: ignore[arg-type]
+    async def adopted(
+        self,
+        *,
+        snapshot_id: uuid.UUID | None = None,
+        prior: uuid.UUID | bool | None = True,
+        label: str = "standard",
+    ) -> uuid.UUID:
+        response = await self.adopt(snapshot_id=snapshot_id, prior=prior, label=label)
         assert response.status_code == 201, response.text
         return uuid.UUID(cast(str, cast(Json, response.json()["trial_balance"])["id"]))
 
@@ -264,16 +278,7 @@ class Books:
         return [(str(r["action"]), str(r["actor_kind"])) for r in rows]
 
     async def count(self, table: str) -> int:
-        assert table.isidentifier()
-        return int(
-            cast(
-                int,
-                await self.seed.value(
-                    f"SELECT count(*) FROM {table} WHERE tenant_id = $1",  # noqa: S608 - literal names
-                    self.tenant_id,
-                ),
-            )
-        )
+        return int(cast(int, await self.seed.value(COUNTS[table], self.tenant_id)))
 
     async def human(self, who: Person) -> AuthContext:
         """`who` as the request would build them, for the public service calls (citations)."""
@@ -383,16 +388,17 @@ async def books(net: Net) -> Books:
     admin = await seed.person(tenant_id, "firm_admin")
     site = await seed.site(tenant_id, admin.user_id, "Northwind")
     people: dict[str, Person] = {}
-    for role, display in (
+    roles: tuple[tuple[Role, str], ...] = (
         ("engagement_partner", "Hannah Leclerc"),
         ("manager", "Paul Okafor"),
         ("senior", "Marcus Delaney"),
         ("staff", "Ivy Chen"),
         ("reviewer", "Rhea Patel"),
-    ):
+    )
+    for role, display in roles:
         who = await seed.person(tenant_id)
         await name(seed, who, display)
-        await seed.member(site, who, role)  # type: ignore[arg-type]
+        await seed.member(site, who, role)
         people[role] = who
     item = await work_item(seed, site, admin.user_id)
     by = people["senior"].user_id
