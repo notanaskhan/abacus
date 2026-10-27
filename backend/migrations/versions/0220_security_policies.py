@@ -40,7 +40,7 @@ session's `app.tenant_id`, never from an argument):
   cookies (P-01 hand-off: security logs are kept a year, the audit log keeps the events).
 
 Revision ID: 0220
-Revises: 0197 (the S11 batch re-points it)
+Revises: 0215
 """
 
 from __future__ import annotations
@@ -50,7 +50,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, insert_only, tenant_table
 
 revision = "0220"
-down_revision = "0197"
+down_revision = "0215"
 branch_labels = None
 depends_on = None
 
