@@ -115,3 +115,6 @@ actions:
   firm_export.download:     {security_admin: allow, firm_partner: allow, agent: deny, system: deny, mfa_recent: required, not_offshore: required}   # TASK-1207 (DEC-52)
   firm_export.read:         {firm_admin: allow, security_admin: allow, firm_partner: allow, agent: deny, system: deny}
   firm_export.schedule:     {security_admin: allow, agent: deny, system: deny, mfa_recent: required}   # G-02-T02 (DEC-72): the monthly schedule; a partner approves it once through firm_export.approve
+  # --- Files browser v1 (N-01-T02 stub; N-01 §4.4; ADR-158; FIL-01 read-only) ---
+  evidence.read_metadata:   {firm_admin: allow, practice_leader: allow, security_admin: allow, quality_partner: in_scope, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, client_service: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny}   # tree, folders, drawer; content fields need evidence.read (DV-11)
+  evidence.read_access_log: {engagement_partner: allow, manager: allow, senior: allow, staff: allow, security_admin: allow, quality_partner: in_scope, agent: deny, system: deny}   # the drawer's access-log card

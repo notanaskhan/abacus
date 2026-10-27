@@ -53,6 +53,7 @@ from abacus.modules.communications.notification_email import (
 from abacus.modules.communications.preview_scope import PreviewSelection, viewer_scoped
 from abacus.modules.communications.render import Block as TemplateBlockContent
 from abacus.modules.communications.render import TemplateContent
+from abacus.modules.communications.intake_contract import destinations_router, intake_router
 from abacus.modules.communications.routes import router
 from abacus.modules.communications.scheduled_reminders import (
     ScheduledReminder,
@@ -179,6 +180,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     templates_router,  # C16 v1.1 stub (R-01-T16): firm email templates
     domains_router,  # C16 v1.1 stub (R-01-T16): sending domains
     policy_router,  # C16 v1.1 stub (R-01-T16): the follow-up policy
+    intake_router,  # C5 v1.2 intake half stub (N-01-T02): firm intake
+    destinations_router,  # C5 v1.2 intake half stub (N-01-T02): the File-to picker
 )
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.

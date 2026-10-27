@@ -34,3 +34,11 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: portal.intake_upload
+    description: 'POR-03 "Upload something else" (N-01 with R-01; docs/contracts/firm-intake.md §portal intake; ADR-162): /v1/portal/intake-uploads*. Off: 404 and POR-03 shows no "Upload something else". On: 501 not_implemented until N-01-T14. On for the synthetic tenant first; per firm from the portal go-live.'
+    owner: ayushkbhatia
+    created: 2026-10-27
+    expires: 2027-01-25
+    override: DEC-137
+    kind: boolean
+    default: false

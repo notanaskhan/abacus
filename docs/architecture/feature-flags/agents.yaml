@@ -59,3 +59,11 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: matching.firm_intake
+    description: 'The evidence.matcher intake mode (N-01-T22; ADR-210 clause 5): the agent proposes a destination for an inbox attachment; a person decides. No route of its own: the triage read shows matcher candidates only with it on. Off: code suggestions only ("Suggested from the file''s name and contents"). On only after clearance and the shadow stage.'
+    owner: ayushkbhatia
+    created: 2026-10-27
+    expires: 2027-01-25
+    override: DEC-137
+    kind: boolean
+    default: false

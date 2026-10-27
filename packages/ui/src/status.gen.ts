@@ -1222,6 +1222,101 @@ export const STATUS_REGISTRY = {
       "terminal": true,
       "derived": false,
       "disc": "x_ink4_15"
+    },
+    "held": {
+      "label": "Waiting",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "sub_line": "Asked the client · {date}"
+      },
+      "disc": "dot_gold_16"
+    },
+    "withdrawn": {
+      "label": "Withdrawn",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "inbox_thread": {
+    "unmatched": {
+      "label": "Unmatched",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "matched": {
+      "label": "Matched",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "ignored": {
+      "label": "Ignored",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "portal_intake_upload": {
+    "sent": {
+      "label": "Sent",
+      "variant": null,
+      "terminal": false,
+      "derived": true,
+      "contextLabels": {
+        "to_firm": "Sent to {firm}"
+      }
+    },
+    "received": {
+      "label": "Received by {firm}",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": true
+    },
+    "withdrawn": {
+      "label": "Withdrawn",
+      "variant": "muted",
+      "terminal": true,
+      "derived": true
+    }
+  },
+  "file_document": {
+    "processing": {
+      "label": "Processing",
+      "variant": null,
+      "terminal": false,
+      "derived": true
+    },
+    "needs_review": {
+      "label": "Uploaded – needs review",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "accepted": {
+      "label": "Approved",
+      "variant": null,
+      "terminal": false,
+      "derived": true,
+      "disc": "check_olive"
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "muted",
+      "terminal": true,
+      "derived": true,
+      "contextLabels": {
+        "replaced_by": "Superseded · Replaced by {name} · {date}"
+      }
+    },
+    "on_hold": {
+      "label": "On hold",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
     }
   },
   "issue": {

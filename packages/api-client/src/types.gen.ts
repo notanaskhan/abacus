@@ -426,6 +426,30 @@ export type AcceptedInvitationOut = {
 };
 
 /**
+ * AccessLogRow
+ *
+ * One audit event targeting the item's versions, in the actor grammar.
+ */
+export type AccessLogRow = {
+    /**
+     * Actor Display
+     */
+    actor_display: string;
+    /**
+     * Occurred At
+     */
+    occurred_at: string;
+    /**
+     * Verb
+     */
+    verb: string;
+    /**
+     * Version No
+     */
+    version_no: number | null;
+};
+
+/**
  * AccessReviewOut
  *
  * "Q3 2026 · due Sep 30, 2026 · in progress".
@@ -1867,6 +1891,51 @@ export type AssistantOut = {
      * Stage
      */
     stage: 'shadow' | 'live' | 'off';
+};
+
+/**
+ * AttachmentFlagOut
+ *
+ * A code-raised flag; `facts` hold identifiers, years and masked last-4 only.
+ */
+export type AttachmentFlagOut = {
+    /**
+     * Facts
+     */
+    facts: {
+        [key: string]: string | number | boolean;
+    };
+    /**
+     * Kind
+     */
+    kind: 'duplicate_hash' | 'wrong_year' | 'tin_mismatch' | 'possible_replacement' | 'corrected_form' | 'unreadable' | 'low_confidence' | 'ambiguous_candidates' | 'duplicate_of_notice';
+    /**
+     * Ref Evidence Version Id
+     */
+    ref_evidence_version_id: string | null;
+    /**
+     * Severity
+     */
+    severity: 'info' | 'block_bulk' | 'force_hold';
+};
+
+/**
+ * AttachmentTriageOut
+ *
+ * One card of INB-02.
+ */
+export type AttachmentTriageOut = {
+    attachment: InboxAttachmentOut;
+    /**
+     * Candidates
+     */
+    candidates: Array<DestinationCandidate>;
+    classification: ClassificationOut | null;
+    defaults: TriageDefaults;
+    /**
+     * Supersede Candidate Version Id
+     */
+    supersede_candidate_version_id: string | null;
 };
 
 /**
@@ -3637,6 +3706,54 @@ export type BudgetOut = {
 };
 
 /**
+ * BulkFileIn
+ *
+ * `POST /v1/inbox/attachments/bulk-file` (INB-01 e).
+ */
+export type BulkFileIn = {
+    /**
+     * Attachment Ids
+     */
+    attachment_ids: Array<string>;
+    /**
+     * Seen Proposals
+     */
+    seen_proposals?: Array<string>;
+};
+
+/**
+ * BulkFileOut
+ *
+ * Per-item outcomes; `ok` items are filed as suggested.
+ */
+export type BulkFileOut = {
+    /**
+     * Notified User Ids
+     */
+    notified_user_ids: Array<string>;
+    /**
+     * Results
+     */
+    results: Array<BulkFileResult>;
+};
+
+/**
+ * BulkFileResult
+ *
+ * One attachment's outcome.
+ */
+export type BulkFileResult = {
+    /**
+     * Attachment Id
+     */
+    attachment_id: string;
+    /**
+     * Outcome
+     */
+    outcome: 'ok' | 'has_flags' | 'low_confidence' | 'proposal_changed';
+};
+
+/**
  * BulkFixInstructionsIn
  *
  * SHL-15 e: one shared editor; the scope is locked to the selection, so each issue gets
@@ -4776,6 +4893,50 @@ export type CitedSourceOut = {
      * Label
      */
     label: string;
+};
+
+/**
+ * ClassificationOut
+ *
+ * What code (or the matcher) says the file is; agent values carry citations or none.
+ */
+export type ClassificationOut = {
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Form Code
+     */
+    form_code: string | null;
+    /**
+     * Form Family
+     */
+    form_family: string | null;
+    /**
+     * Issuer Name
+     */
+    issuer_name: string | null;
+    /**
+     * Page Count
+     */
+    page_count: number | null;
+    /**
+     * Proposed By Kind
+     */
+    proposed_by_kind: 'rule' | 'agent';
+    /**
+     * Tax Year
+     */
+    tax_year: number | null;
+    /**
+     * Taxpayer Tin Last4
+     */
+    taxpayer_tin_last4: string | null;
+    /**
+     * Tin Matches Client
+     */
+    tin_matches_client: boolean | null;
 };
 
 /**
@@ -7437,6 +7598,98 @@ export type DelegationOut = {
 };
 
 /**
+ * DestinationCandidate
+ *
+ * A ranked destination with its code-computed confidence.
+ */
+export type DestinationCandidate = {
+    /**
+     * Confidence
+     */
+    confidence: number;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'request' | 'permanent_file' | 'work_item_folder' | 'notice' | 'close_receipt';
+    /**
+     * Path
+     */
+    path: Array<string>;
+    /**
+     * Proposal Id
+     */
+    proposal_id: string | null;
+    /**
+     * Request State
+     */
+    request_state: string | null;
+    /**
+     * Requested On
+     */
+    requested_on: string | null;
+    /**
+     * Source
+     */
+    source: 'rule' | 'content' | 'matcher' | 'none';
+};
+
+/**
+ * DestinationNode
+ *
+ * A picker node: client › work item › request, permanent file, folders, registered kinds.
+ */
+export type DestinationNode = {
+    /**
+     * Folder Kind
+     */
+    folder_kind: 'source_documents' | 'workpapers' | 'correspondence' | 'deliverables' | 'signed_authorizations' | null;
+    /**
+     * Has Children
+     */
+    has_children: boolean;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'request' | 'permanent_file' | 'work_item_folder' | 'notice' | 'close_receipt' | 'client' | 'work_item';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Reason Code
+     */
+    reason_code: string | null;
+    /**
+     * Selectable
+     */
+    selectable: boolean;
+};
+
+/**
+ * DestinationRef
+ *
+ * A chosen destination.
+ */
+export type DestinationRef = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'request' | 'permanent_file' | 'work_item_folder' | 'notice' | 'close_receipt';
+};
+
+/**
  * DigestCardOut
  */
 export type DigestCardOut = {
@@ -7719,6 +7972,80 @@ export type DraftedOut = {
      * Drafted
      */
     drafted: number;
+};
+
+/**
+ * DrawerOut
+ *
+ * `GET /v1/evidence-items/{id}/drawer` (O2). Content fields are null without `evidence.read`.
+ */
+export type DrawerOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Client Access
+     */
+    client_access: 'off' | 'view' | 'view_download';
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * Evidence Item Id
+     */
+    evidence_item_id: string;
+    /**
+     * Fingerprint
+     */
+    fingerprint: string;
+    /**
+     * Folder Kind
+     */
+    folder_kind: 'source_documents' | 'workpapers' | 'correspondence' | 'deliverables' | 'signed_authorizations';
+    /**
+     * Linked To
+     */
+    linked_to: Array<LinkOut>;
+    /**
+     * Masked Tin
+     */
+    masked_tin: string | null;
+    /**
+     * Page Count
+     */
+    page_count: number | null;
+    retention: RetentionOut;
+    /**
+     * Scope
+     */
+    scope: 'client' | 'engagement';
+    /**
+     * Sign Off Slots
+     */
+    sign_off_slots: Array<SignOffSlotOut>;
+    /**
+     * Size Bytes
+     */
+    size_bytes: number;
+    /**
+     * FileDocumentStatus
+     */
+    status: never;
+    /**
+     * Thumbnail Ref
+     */
+    thumbnail_ref: string | null;
+    tie: TieOut | null;
+    /**
+     * Versions
+     */
+    versions: Array<AbacusModulesEvidenceFilesContractVersionOut>;
+    /**
+     * Virtual Children
+     */
+    virtual_children: Array<VirtualChild>;
 };
 
 /**
@@ -10210,6 +10537,94 @@ export type FilePart = {
 };
 
 /**
+ * FileRow
+ *
+ * One list row of a folder.
+ */
+export type FileRow = {
+    /**
+     * Channel
+     */
+    channel: 'portal' | 'email' | 'firm_upload' | 'retrieval' | 'import' | 'mobile' | 'internal_handoff' | 'generated' | 'confirmation_response' | null;
+    /**
+     * Classification Label
+     */
+    classification_label: string | null;
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * Evidence Item Id
+     */
+    evidence_item_id: string;
+    /**
+     * Received At
+     */
+    received_at: string;
+    /**
+     * FileDocumentStatus
+     */
+    status: never;
+    /**
+     * Superseded By Name
+     */
+    superseded_by_name: string | null;
+    /**
+     * Superseded On
+     */
+    superseded_on: string | null;
+    /**
+     * Supports
+     */
+    supports: string | null;
+    /**
+     * Version Id
+     */
+    version_id: string;
+    /**
+     * Virtual Children
+     */
+    virtual_children: Array<VirtualChild>;
+};
+
+/**
+ * FileTreeOut
+ *
+ * `GET /v1/files/tree`: only clients the viewer's teams and walls allow.
+ */
+export type FileTreeOut = {
+    /**
+     * Nodes
+     */
+    nodes: Array<TreeNode>;
+};
+
+/**
+ * FiledDestinationOut
+ *
+ * Where a person filed an attachment, for the "Filed to …" line.
+ */
+export type FiledDestinationOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'request' | 'permanent_file' | 'work_item_folder' | 'notice' | 'close_receipt';
+    /**
+     * Path
+     */
+    path: Array<string>;
+    /**
+     * Route
+     */
+    route: string;
+};
+
+/**
  * FindingHitOut
  */
 export type FindingHitOut = {
@@ -10906,6 +11321,50 @@ export type FlowStepOut = {
      * State
      */
     state: 'done' | 'current' | 'todo';
+};
+
+/**
+ * FolderItemsOut
+ *
+ * `GET /v1/files/folders/{folder_ref}/items`, with the folder's count line.
+ */
+export type FolderItemsOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Documents
+     */
+    documents: number;
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<FileRow>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+    /**
+     * Virtual
+     */
+    virtual: number;
 };
 
 /**
@@ -12389,6 +12848,22 @@ export type IgnoreIn = {
 };
 
 /**
+ * IgnoreThreadIn
+ *
+ * `POST /v1/inbox/threads/{id}/ignore` for an unmatched sender.
+ */
+export type IgnoreThreadIn = {
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Reason Code
+     */
+    reason_code: 'wrong_year' | 'duplicate' | 'not_ours' | 'spam' | 'unreadable' | 'other';
+};
+
+/**
  * IgnoreUndoneOut
  *
  * `request_item.ignore_undone`: `client_ignored_at` cleared; the client reads "To do" again.
@@ -12519,6 +12994,50 @@ export type ImportOut = {
 };
 
 /**
+ * InboundMessageOut
+ *
+ * One received message. `body` is present only with `inbox.read_content`.
+ */
+export type InboundMessageOut = {
+    /**
+     * Attachments
+     */
+    attachments: Array<InboxAttachmentOut>;
+    /**
+     * Body
+     */
+    body: string | null;
+    /**
+     * Channel
+     */
+    channel: 'email' | 'portal_upload' | 'staff_logged';
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Logged By Name
+     */
+    logged_by_name: string | null;
+    /**
+     * Received At
+     */
+    received_at: string;
+    /**
+     * Received Via
+     */
+    received_via: 'email' | 'mail' | 'fax' | 'in_person' | 'portal' | 'other' | null;
+    /**
+     * Sender Display
+     */
+    sender_display: string;
+    /**
+     * Subject Display
+     */
+    subject_display: string;
+};
+
+/**
  * InboxAssignIn
  */
 export type InboxAssignIn = {
@@ -12538,6 +13057,56 @@ export type InboxAssignIn = {
      * Suggestion Source
      */
     suggestion_source?: 'file_name' | 'content' | 'matcher' | null;
+};
+
+/**
+ * InboxAttachmentOut
+ *
+ * One attachment on a message, with its state and what it may do (`allowed_actions`).
+ */
+export type InboxAttachmentOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * File Name
+     */
+    file_name: string;
+    filed: FiledDestinationOut | null;
+    /**
+     * Fingerprint
+     */
+    fingerprint: string;
+    /**
+     * Flags
+     */
+    flags: Array<AttachmentFlagOut>;
+    /**
+     * Held At
+     */
+    held_at: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Ignored Reason
+     */
+    ignored_reason: 'wrong_year' | 'duplicate' | 'not_ours' | 'spam' | 'unreadable' | 'other' | null;
+    /**
+     * Media Type
+     */
+    media_type: string;
+    /**
+     * Size Bytes
+     */
+    size_bytes: number;
+    status: InboxItemStatus;
+    /**
+     * Thumbnail Ref
+     */
+    thumbnail_ref: string | null;
 };
 
 /**
@@ -12585,6 +13154,115 @@ export type InboxFileOut = {
      */
     uploaded_by_staff: boolean;
 };
+
+/**
+ * InboxItemStatus
+ */
+export type InboxItemStatus = 'new' | 'waiting' | 'filed' | 'ignored' | 'held' | 'withdrawn';
+
+/**
+ * InboxSummaryOut
+ *
+ * `GET /v1/inbox/summary`: counted over rows the viewer can see only (DEC-43).
+ */
+export type InboxSummaryOut = {
+    /**
+     * By Source
+     */
+    by_source: Array<SourceCount>;
+    /**
+     * Unmatched
+     */
+    unmatched: number;
+    /**
+     * Waiting
+     */
+    waiting: number;
+};
+
+/**
+ * InboxThreadDetail
+ *
+ * `GET /v1/inbox/threads/{id}`: messages newest first.
+ */
+export type InboxThreadDetail = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Match Method
+     */
+    match_method: 'contact_email' | 'sender_rule' | 'portal_principal' | 'staff_selected' | 'manual' | 'none';
+    /**
+     * Messages
+     */
+    messages: Array<InboundMessageOut>;
+    thread: InboxThreadRow;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Work Item Label
+     */
+    work_item_label: string | null;
+};
+
+/**
+ * InboxThreadRow
+ *
+ * One rail row (INB-01).
+ */
+export type InboxThreadRow = {
+    /**
+     * Channel
+     */
+    channel: 'email' | 'portal_upload' | 'staff_logged';
+    /**
+     * Client Id
+     */
+    client_id: string | null;
+    /**
+     * Client Name
+     */
+    client_name: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Last Received At
+     */
+    last_received_at: string;
+    match_state: InboxThreadStatus;
+    /**
+     * Message Count
+     */
+    message_count: number;
+    /**
+     * Sender Display
+     */
+    sender_display: string;
+    /**
+     * Source Kind
+     */
+    source_kind: 'mailbox' | 'portal' | 'staff';
+    status: InboxItemStatus;
+    /**
+     * Subject Display
+     */
+    subject_display: string;
+    /**
+     * Waiting
+     */
+    waiting: number;
+};
+
+/**
+ * InboxThreadStatus
+ */
+export type InboxThreadStatus = 'unmatched' | 'matched' | 'ignored';
 
 /**
  * IncidentDecisionIn
@@ -13077,6 +13755,22 @@ export type IntakeContactIn = {
 };
 
 /**
+ * IntakeCreatedOut
+ *
+ * The new thread and the message its files attach to.
+ */
+export type IntakeCreatedOut = {
+    /**
+     * Message Id
+     */
+    message_id: string;
+    /**
+     * Thread Id
+     */
+    thread_id: string;
+};
+
+/**
  * IntakeEntityIn
  */
 export type IntakeEntityIn = {
@@ -13104,6 +13798,23 @@ export type IntakeEntityIn = {
      * Mode
      */
     mode: 'new_client' | 'existing_client';
+};
+
+/**
+ * IntakeFileOut
+ *
+ * One stored file of an intake batch.
+ */
+export type IntakeFileOut = {
+    /**
+     * Attachment Id
+     */
+    attachment_id: string;
+    /**
+     * File Name
+     */
+    file_name: string;
+    status: InboxItemStatus;
 };
 
 /**
@@ -13154,6 +13865,79 @@ export type IntakeServiceIn = {
      * Type Code
      */
     type_code: string;
+};
+
+/**
+ * IntakeUploadFileOut
+ *
+ * One file of an upload, in client words.
+ */
+export type IntakeUploadFileOut = {
+    /**
+     * File Name
+     */
+    file_name: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Size Bytes
+     */
+    size_bytes: number;
+    /**
+     * PortalIntakeUploadStatus
+     */
+    status: never;
+};
+
+/**
+ * IntakeUploadIn
+ *
+ * `POST /v1/portal/intake-uploads`: the batch; files follow.
+ */
+export type IntakeUploadIn = {
+    /**
+     * Note
+     */
+    note?: string | null;
+    scope_ref: ScopeRef;
+};
+
+/**
+ * IntakeUploadOut
+ *
+ * One upload batch; `status` is `sent` until the firm has it.
+ */
+export type IntakeUploadOut = {
+    /**
+     * Can Withdraw
+     */
+    can_withdraw: boolean;
+    /**
+     * Files
+     */
+    files: Array<IntakeUploadFileOut>;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Scope Id
+     */
+    scope_id: string;
+    /**
+     * Scope Kind
+     */
+    scope_kind: 'client' | 'client_entity' | 'engagement';
+    /**
+     * Sent At
+     */
+    sent_at: string;
+    /**
+     * PortalIntakeUploadStatus
+     */
+    status: never;
 };
 
 /**
@@ -14562,6 +15346,26 @@ export type LineOut = {
 };
 
 /**
+ * LinkOut
+ *
+ * What the document supports, as a deep link.
+ */
+export type LinkOut = {
+    /**
+     * Kind
+     */
+    kind: 'request' | 'workpaper_cell' | 'return_line' | 'notice' | 'envelope';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Route
+     */
+    route: string;
+};
+
+/**
  * LinkedAccountOut
  */
 export type LinkedAccountOut = {
@@ -14649,6 +15453,40 @@ export type ListDoneOut = {
      * Name
      */
     name: string;
+};
+
+/**
+ * ListPage[AccessLogRow]
+ */
+export type ListPageAccessLogRow = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<AccessLogRow>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
 };
 
 /**
@@ -14958,6 +15796,74 @@ export type ListPageHumanGateOut = {
 };
 
 /**
+ * ListPage[InboxThreadRow]
+ */
+export type ListPageInboxThreadRow = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<InboxThreadRow>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
+ * ListPage[IntakeUploadOut]
+ */
+export type ListPageIntakeUploadOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<IntakeUploadOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
  * ListPage[IssueItemOut]
  */
 export type ListPageIssueItemOut = {
@@ -15222,6 +16128,46 @@ export type LogEntryOut = {
 };
 
 /**
+ * LogIntakeIn
+ *
+ * `POST /v1/inbox/intake`: a staff-logged batch; files follow, one request each.
+ */
+export type LogIntakeIn = {
+    /**
+     * Client Entity Id
+     */
+    client_entity_id?: string | null;
+    /**
+     * Client Id
+     */
+    client_id?: string | null;
+    /**
+     * From Contact Id
+     */
+    from_contact_id?: string | null;
+    /**
+     * From Display
+     */
+    from_display?: string | null;
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Received At
+     */
+    received_at: string;
+    /**
+     * Received Via
+     */
+    received_via: 'email' | 'mail' | 'fax' | 'in_person' | 'portal' | 'other';
+    /**
+     * Subject
+     */
+    subject: string;
+};
+
+/**
  * MandatoryIn
  */
 export type MandatoryIn = {
@@ -15434,6 +16380,30 @@ export type MaskedTinOut = {
      * Presence
      */
     presence: 'on_file' | 'applied_for';
+};
+
+/**
+ * MatchClientIn
+ *
+ * `POST /v1/inbox/threads/{id}/match-client` (INB-01 b).
+ */
+export type MatchClientIn = {
+    /**
+     * Client Entity Id
+     */
+    client_entity_id?: string | null;
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Remember Sender
+     */
+    remember_sender?: boolean;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
 };
 
 /**
@@ -15886,6 +16856,34 @@ export type MentionCandidateOut = {
      * User Id
      */
     user_id: string;
+};
+
+/**
+ * MessageTriageOut
+ *
+ * `GET /v1/inbox/messages/{id}/triage`.
+ */
+export type MessageTriageOut = {
+    /**
+     * Attachments
+     */
+    attachments: Array<AttachmentTriageOut>;
+    /**
+     * Classified At
+     */
+    classified_at: string | null;
+    /**
+     * Message Id
+     */
+    message_id: string;
+    /**
+     * Notify Names
+     */
+    notify_names: Array<string>;
+    /**
+     * Seen Proposals
+     */
+    seen_proposals: Array<string>;
 };
 
 /**
@@ -20307,6 +21305,34 @@ export type RetentionFloorSetIn = {
 };
 
 /**
+ * RetentionOut
+ *
+ * The retention policy, eligible date and any legal hold (read only).
+ */
+export type RetentionOut = {
+    /**
+     * Eligible On
+     */
+    eligible_on: string | null;
+    /**
+     * Hold Label
+     */
+    hold_label: string | null;
+    /**
+     * Hold Placed By
+     */
+    hold_placed_by: string | null;
+    /**
+     * Hold Placed On
+     */
+    hold_placed_on: string | null;
+    /**
+     * Policy Label
+     */
+    policy_label: string | null;
+};
+
+/**
  * RetentionPoliciesOut
  */
 export type RetentionPoliciesOut = {
@@ -21798,6 +22824,22 @@ export type ScheduleApprovalOut = {
      * Seat
      */
     seat: 'security_admin' | 'partner';
+};
+
+/**
+ * ScopeRef
+ *
+ * The portal scope the upload is for (one of the principal's grants).
+ */
+export type ScopeRef = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'client' | 'client_entity' | 'engagement';
 };
 
 /**
@@ -23297,6 +24339,26 @@ export type SignOffOut = {
 };
 
 /**
+ * SignOffSlotOut
+ *
+ * A P or R slot, read only in N-01.
+ */
+export type SignOffSlotOut = {
+    /**
+     * Initials
+     */
+    initials: string | null;
+    /**
+     * Level
+     */
+    level: 'preparer' | 'reviewer';
+    /**
+     * Signed At
+     */
+    signed_at: string | null;
+};
+
+/**
  * SignOffStatementOut
  */
 export type SignOffStatementOut = {
@@ -23464,6 +24526,26 @@ export type SnapshotOut = {
      * Total Debit
      */
     total_debit: string;
+};
+
+/**
+ * SourceCount
+ *
+ * One intake source's waiting count (the rail pill and its menu).
+ */
+export type SourceCount = {
+    /**
+     * Source Display
+     */
+    source_display: string | null;
+    /**
+     * Source Kind
+     */
+    source_kind: 'mailbox' | 'portal' | 'staff';
+    /**
+     * Waiting
+     */
+    waiting: number;
 };
 
 /**
@@ -25612,6 +26694,26 @@ export type TieIssueLinkOut = {
 };
 
 /**
+ * TieOut
+ *
+ * Virtual documents' total against a mapped TB account; computed by code (ADR-050, DV-13).
+ */
+export type TieOut = {
+    /**
+     * Account Number
+     */
+    account_number: string | null;
+    /**
+     * Ties
+     */
+    ties: boolean | null;
+    /**
+     * Total
+     */
+    total: string;
+};
+
+/**
  * TieOutCheckBody
  */
 export type TieOutCheckBody = {
@@ -26014,6 +27116,171 @@ export type TraceRowOut = {
 };
 
 /**
+ * TreeNode
+ *
+ * One tree row: client › permanent file or year › work item › folder.
+ */
+export type TreeNode = {
+    /**
+     * Children
+     */
+    children: Array<TreeNode>;
+    /**
+     * Count
+     */
+    count: number;
+    /**
+     * Folder Kind
+     */
+    folder_kind: 'source_documents' | 'workpapers' | 'correspondence' | 'deliverables' | 'signed_authorizations' | null;
+    /**
+     * Has Children
+     */
+    has_children: boolean;
+    /**
+     * Kind
+     */
+    kind: 'client' | 'permanent_file' | 'year' | 'work_item' | 'folder';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Locked
+     */
+    locked: boolean;
+    /**
+     * On Hold
+     */
+    on_hold: boolean;
+    /**
+     * Ref
+     */
+    ref: string;
+};
+
+/**
+ * TriageApplyIn
+ *
+ * `POST /v1/inbox/messages/{id}/triage/apply`.
+ */
+export type TriageApplyIn = {
+    /**
+     * Decisions
+     */
+    decisions: Array<TriageDecisionIn>;
+    /**
+     * Seen Proposals
+     */
+    seen_proposals?: Array<string>;
+};
+
+/**
+ * TriageApplyOut
+ *
+ * What the apply wrote; `undo_grant_id` while a client email waits its 10 s (DEC-24).
+ */
+export type TriageApplyOut = {
+    /**
+     * Filed
+     */
+    filed: number;
+    /**
+     * Held
+     */
+    held: number;
+    /**
+     * Ignored
+     */
+    ignored: number;
+    /**
+     * Notified User Ids
+     */
+    notified_user_ids: Array<string>;
+    /**
+     * Undo Grant Id
+     */
+    undo_grant_id: string | null;
+};
+
+/**
+ * TriageDecisionIn
+ *
+ * One attachment's decision in an apply.
+ */
+export type TriageDecisionIn = {
+    /**
+     * Attachment Id
+     */
+    attachment_id: string;
+    /**
+     * Decision
+     */
+    decision: 'file' | 'ignore' | 'hold';
+    destination?: DestinationRef | null;
+    /**
+     * Keep Both
+     */
+    keep_both?: boolean;
+    /**
+     * Reason Codes
+     */
+    reason_codes?: Array<'wrong_year' | 'duplicate' | 'not_ours' | 'spam' | 'unreadable' | 'other'>;
+    /**
+     * Rename To
+     */
+    rename_to?: string | null;
+    /**
+     * Supersede Version Id
+     */
+    supersede_version_id?: string | null;
+    /**
+     * Tell Client
+     */
+    tell_client?: boolean;
+    /**
+     * Version Mode
+     */
+    version_mode?: 'new_document' | 'new_version' | 'new_version_supersede' | null;
+};
+
+/**
+ * TriageDefaults
+ *
+ * What the sheet opens with; a person may change every field before Apply.
+ */
+export type TriageDefaults = {
+    /**
+     * Decision
+     */
+    decision: 'file' | 'ignore' | 'hold';
+    /**
+     * Decision Forced
+     */
+    decision_forced: boolean;
+    /**
+     * Reason Codes
+     */
+    reason_codes: Array<'wrong_year' | 'duplicate' | 'not_ours' | 'spam' | 'unreadable' | 'other'>;
+    /**
+     * Rename To
+     */
+    rename_to: string | null;
+    /**
+     * Tell Client
+     */
+    tell_client: boolean;
+    /**
+     * Template Key
+     */
+    template_key: string | null;
+    /**
+     * Version Mode
+     */
+    version_mode: 'new_document' | 'new_version' | 'new_version_supersede' | null;
+};
+
+/**
  * TrialBalanceDetailOut
  */
 export type TrialBalanceDetailOut = {
@@ -26332,24 +27599,6 @@ export type VersionBody = {
 };
 
 /**
- * VersionOut
- */
-export type VersionOut = {
-    /**
-     * Created At
-     */
-    created_at: string;
-    /**
-     * Signatures
-     */
-    signatures: Array<SignatureOut>;
-    /**
-     * Version
-     */
-    version: number;
-};
-
-/**
  * VersionStateOut
  *
  * A version's lifecycle row and what the viewer may do with it.
@@ -26416,64 +27665,6 @@ export type VersionStateOut = {
      * Version Id
      */
     version_id: string;
-};
-
-/**
- * ViewerManifestOut
- */
-export type ViewerManifestOut = {
-    /**
-     * Allowed Actions
-     */
-    allowed_actions: Array<string>;
-    /**
-     * Derivation Id
-     */
-    derivation_id: string | null;
-    /**
-     * Evidence Version Id
-     */
-    evidence_version_id: string;
-    /**
-     * File Name
-     */
-    file_name: string;
-    /**
-     * Kind
-     */
-    kind: 'pages' | 'image' | 'table' | 'none';
-    /**
-     * Media Type
-     */
-    media_type: string;
-    /**
-     * Page Count
-     */
-    page_count: number;
-    /**
-     * Pages
-     */
-    pages: Array<ViewerPageOut>;
-    /**
-     * Pii Masks
-     */
-    pii_masks: Array<PiiMaskOut>;
-    /**
-     * Reason
-     */
-    reason: string | null;
-    /**
-     * Status
-     */
-    status: 'processing' | 'ready' | 'password_protected' | 'unreadable' | 'not_previewable';
-    /**
-     * Truncated
-     */
-    truncated: boolean;
-    /**
-     * View
-     */
-    view?: 'images' | 'text';
 };
 
 /**
@@ -26652,6 +27843,34 @@ export type ViewerTextSheetOut = {
      * Withheld
      */
     withheld?: boolean;
+};
+
+/**
+ * VirtualChild
+ *
+ * A virtual split of a combined PDF: a page range with a label and an amount, no new bytes.
+ */
+export type VirtualChild = {
+    /**
+     * Amount
+     */
+    amount: string | null;
+    /**
+     * First Page
+     */
+    first_page: number;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Last Page
+     */
+    last_page: number;
 };
 
 /**
@@ -27213,7 +28432,7 @@ export type WorkpaperOut = {
     /**
      * Versions
      */
-    versions: Array<VersionOut>;
+    versions: Array<AbacusModulesFieldworkRoutesVersionOut>;
     /**
      * With Result
      */
@@ -27338,6 +28557,30 @@ export type AbacusModulesAssuranceCompletionRoutesEqrOut = {
 };
 
 /**
+ * ViewerManifestOut
+ *
+ * The C4 viewer manifest over an intake object (masked pages only).
+ */
+export type AbacusModulesCommunicationsIntakeContractViewerManifestOut = {
+    /**
+     * Attachment Id
+     */
+    attachment_id: string;
+    /**
+     * Masked
+     */
+    masked: boolean;
+    /**
+     * Page Count
+     */
+    page_count: number;
+    /**
+     * Page Refs
+     */
+    page_refs: Array<string>;
+};
+
+/**
  * StartIn
  */
 export type AbacusModulesConnectionsRoutesStartIn = {
@@ -27440,6 +28683,38 @@ export type AbacusModulesEngagementsRoutesStepOut = {
 };
 
 /**
+ * VersionOut
+ *
+ * One version of the document; earlier versions stay (ADR-004).
+ */
+export type AbacusModulesEvidenceFilesContractVersionOut = {
+    /**
+     * Channel
+     */
+    channel: 'portal' | 'email' | 'firm_upload' | 'retrieval' | 'import' | 'mobile' | 'internal_handoff' | 'generated' | 'confirmation_response' | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * File Name
+     */
+    file_name: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Superseded
+     */
+    superseded: boolean;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
  * CitationOut
  *
  * A checked citation of the proposal (the same shape as the board's).
@@ -27468,6 +28743,64 @@ export type AbacusModulesEvidenceRoutesCitationOut = {
 };
 
 /**
+ * ViewerManifestOut
+ */
+export type AbacusModulesEvidenceTrustContractViewerManifestOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Derivation Id
+     */
+    derivation_id: string | null;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * File Name
+     */
+    file_name: string;
+    /**
+     * Kind
+     */
+    kind: 'pages' | 'image' | 'table' | 'none';
+    /**
+     * Media Type
+     */
+    media_type: string;
+    /**
+     * Page Count
+     */
+    page_count: number;
+    /**
+     * Pages
+     */
+    pages: Array<ViewerPageOut>;
+    /**
+     * Pii Masks
+     */
+    pii_masks: Array<PiiMaskOut>;
+    /**
+     * Reason
+     */
+    reason: string | null;
+    /**
+     * Status
+     */
+    status: 'processing' | 'ready' | 'password_protected' | 'unreadable' | 'not_previewable';
+    /**
+     * Truncated
+     */
+    truncated: boolean;
+    /**
+     * View
+     */
+    view?: 'images' | 'text';
+};
+
+/**
  * ApprovalIn
  */
 export type AbacusModulesFieldworkRoutesApprovalIn = {
@@ -27485,6 +28818,24 @@ export type AbacusModulesFieldworkRoutesStartIn = {
      * Definition
      */
     definition?: 'journal_entry_testing' | 'unrecorded_liabilities';
+};
+
+/**
+ * VersionOut
+ */
+export type AbacusModulesFieldworkRoutesVersionOut = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Signatures
+     */
+    signatures: Array<SignatureOut>;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
@@ -32670,6 +34021,76 @@ export type DecisionCardReassessResponses = {
 };
 
 export type DecisionCardReassessResponse = DecisionCardReassessResponses[keyof DecisionCardReassessResponses];
+
+export type DestinationsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Client Id
+         */
+        client_id: string;
+        /**
+         * Kind
+         */
+        kind?: 'request' | 'permanent_file' | 'work_item_folder' | 'notice' | 'close_receipt' | null;
+        /**
+         * Parent
+         */
+        parent?: string | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+    };
+    url: '/v1/destinations';
+};
+
+export type DestinationsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DestinationsError = DestinationsErrors[keyof DestinationsErrors];
+
+export type DestinationsResponses = {
+    /**
+     * Response Destinations
+     *
+     * Successful Response
+     */
+    200: Array<DestinationNode>;
+};
+
+export type DestinationsResponse = DestinationsResponses[keyof DestinationsResponses];
 
 export type CreateEngagementDraftData = {
     body: EngagementDraftIn;
@@ -48581,6 +50002,127 @@ export type SetupFileResponses = {
 
 export type SetupFileResponse = SetupFileResponses[keyof SetupFileResponses];
 
+export type AccessLogData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: {
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/v1/evidence-items/{item_id}/access-log';
+};
+
+export type AccessLogErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AccessLogError = AccessLogErrors[keyof AccessLogErrors];
+
+export type AccessLogResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageAccessLogRow;
+};
+
+export type AccessLogResponse = AccessLogResponses[keyof AccessLogResponses];
+
+export type DrawerData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/v1/evidence-items/{item_id}/drawer';
+};
+
+export type DrawerErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DrawerError = DrawerErrors[keyof DrawerErrors];
+
+export type DrawerResponses = {
+    /**
+     * Successful Response
+     */
+    200: DrawerOut;
+};
+
+export type DrawerResponse = DrawerResponses[keyof DrawerResponses];
+
 export type ViewerPageData = {
     body?: never;
     headers?: {
@@ -49016,7 +50558,7 @@ export type ViewerManifestResponses = {
     /**
      * Successful Response
      */
-    200: ViewerManifestOut;
+    200: AbacusModulesEvidenceTrustContractViewerManifestOut;
 };
 
 export type ViewerManifestResponse = ViewerManifestResponses[keyof ViewerManifestResponses];
@@ -49474,6 +51016,135 @@ export type FieldEditResponses = {
 };
 
 export type FieldEditResponse = FieldEditResponses[keyof FieldEditResponses];
+
+export type FolderItemsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Folder Ref
+         */
+        folder_ref: string;
+    };
+    query?: {
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/v1/files/folders/{folder_ref}/items';
+};
+
+export type FolderItemsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type FolderItemsError = FolderItemsErrors[keyof FolderItemsErrors];
+
+export type FolderItemsResponses = {
+    /**
+     * Successful Response
+     */
+    200: FolderItemsOut;
+};
+
+export type FolderItemsResponse = FolderItemsResponses[keyof FolderItemsResponses];
+
+export type FileTreeData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Client Id
+         */
+        client_id?: string | null;
+        /**
+         * Expand
+         */
+        expand?: Array<string> | null;
+    };
+    url: '/v1/files/tree';
+};
+
+export type FileTreeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type FileTreeError = FileTreeErrors[keyof FileTreeErrors];
+
+export type FileTreeResponses = {
+    /**
+     * Successful Response
+     */
+    200: FileTreeOut;
+};
+
+export type FileTreeResponse = FileTreeResponses[keyof FileTreeResponses];
 
 export type FirmAgentsData = {
     body?: never;
@@ -56393,6 +58064,816 @@ export type HumanGateCountsResponses = {
 
 export type HumanGateCountsResponse = HumanGateCountsResponses[keyof HumanGateCountsResponses];
 
+export type BulkFileData = {
+    body: BulkFileIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/inbox/attachments/bulk-file';
+};
+
+export type BulkFileErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type BulkFileError = BulkFileErrors[keyof BulkFileErrors];
+
+export type BulkFileResponses = {
+    /**
+     * Successful Response
+     */
+    200: BulkFileOut;
+};
+
+export type BulkFileResponse = BulkFileResponses[keyof BulkFileResponses];
+
+export type AttachmentContentData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Attachment Id
+         */
+        attachment_id: string;
+    };
+    query?: never;
+    url: '/v1/inbox/attachments/{attachment_id}/content';
+};
+
+export type AttachmentContentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AttachmentContentError = AttachmentContentErrors[keyof AttachmentContentErrors];
+
+export type AttachmentContentResponses = {
+    /**
+     * Response Attachment Content
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type AttachmentContentResponse = AttachmentContentResponses[keyof AttachmentContentResponses];
+
+export type AttachmentViewerData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Attachment Id
+         */
+        attachment_id: string;
+    };
+    query?: never;
+    url: '/v1/inbox/attachments/{attachment_id}/viewer';
+};
+
+export type AttachmentViewerErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AttachmentViewerError = AttachmentViewerErrors[keyof AttachmentViewerErrors];
+
+export type AttachmentViewerResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesCommunicationsIntakeContractViewerManifestOut;
+};
+
+export type AttachmentViewerResponse = AttachmentViewerResponses[keyof AttachmentViewerResponses];
+
+export type LogIntakeData = {
+    body: LogIntakeIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/inbox/intake';
+};
+
+export type LogIntakeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type LogIntakeError = LogIntakeErrors[keyof LogIntakeErrors];
+
+export type LogIntakeResponses = {
+    /**
+     * Successful Response
+     */
+    201: IntakeCreatedOut;
+};
+
+export type LogIntakeResponse = LogIntakeResponses[keyof LogIntakeResponses];
+
+export type LogIntakeFileData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Message Id
+         */
+        message_id: string;
+    };
+    query: {
+        /**
+         * Filename
+         */
+        filename: string;
+    };
+    url: '/v1/inbox/intake/{message_id}/files';
+};
+
+export type LogIntakeFileErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * The file is too large
+     */
+    413: ErrorOut;
+    /**
+     * The file type is not accepted
+     */
+    415: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
+};
+
+export type LogIntakeFileError = LogIntakeFileErrors[keyof LogIntakeFileErrors];
+
+export type LogIntakeFileResponses = {
+    /**
+     * Successful Response
+     */
+    201: IntakeFileOut;
+};
+
+export type LogIntakeFileResponse = LogIntakeFileResponses[keyof LogIntakeFileResponses];
+
+export type MessageZipData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Message Id
+         */
+        message_id: string;
+    };
+    query?: never;
+    url: '/v1/inbox/messages/{message_id}/attachments.zip';
+};
+
+export type MessageZipErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type MessageZipError = MessageZipErrors[keyof MessageZipErrors];
+
+export type MessageZipResponses = {
+    /**
+     * Response Message Zip
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type MessageZipResponse = MessageZipResponses[keyof MessageZipResponses];
+
+export type MessageTriageData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Message Id
+         */
+        message_id: string;
+    };
+    query?: never;
+    url: '/v1/inbox/messages/{message_id}/triage';
+};
+
+export type MessageTriageErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type MessageTriageError = MessageTriageErrors[keyof MessageTriageErrors];
+
+export type MessageTriageResponses = {
+    /**
+     * Successful Response
+     */
+    200: MessageTriageOut;
+};
+
+export type MessageTriageResponse = MessageTriageResponses[keyof MessageTriageResponses];
+
+export type TriageApplyData = {
+    body: TriageApplyIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Message Id
+         */
+        message_id: string;
+    };
+    query?: never;
+    url: '/v1/inbox/messages/{message_id}/triage/apply';
+};
+
+export type TriageApplyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TriageApplyError = TriageApplyErrors[keyof TriageApplyErrors];
+
+export type TriageApplyResponses = {
+    /**
+     * Successful Response
+     */
+    200: TriageApplyOut;
+};
+
+export type TriageApplyResponse = TriageApplyResponses[keyof TriageApplyResponses];
+
+export type InboxSummaryData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/inbox/summary';
+};
+
+export type InboxSummaryErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type InboxSummaryError = InboxSummaryErrors[keyof InboxSummaryErrors];
+
+export type InboxSummaryResponses = {
+    /**
+     * Successful Response
+     */
+    200: InboxSummaryOut;
+};
+
+export type InboxSummaryResponse = InboxSummaryResponses[keyof InboxSummaryResponses];
+
+export type ListThreadsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Source
+         */
+        source?: 'mailbox' | 'portal' | 'staff' | null;
+        /**
+         * Client Id
+         */
+        client_id?: string | null;
+        /**
+         * Status
+         */
+        status?: InboxItemStatus | null;
+        /**
+         * Received Since
+         */
+        received_since?: string | null;
+        /**
+         * Channel
+         */
+        channel?: 'email' | 'portal_upload' | 'staff_logged' | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Show Ignored
+         */
+        show_ignored?: boolean;
+        /**
+         * Show Filed
+         */
+        show_filed?: boolean;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/v1/inbox/threads';
+};
+
+export type ListThreadsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListThreadsError = ListThreadsErrors[keyof ListThreadsErrors];
+
+export type ListThreadsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageInboxThreadRow;
+};
+
+export type ListThreadsResponse = ListThreadsResponses[keyof ListThreadsResponses];
+
+export type GetThreadData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Thread Id
+         */
+        thread_id: string;
+    };
+    query?: never;
+    url: '/v1/inbox/threads/{thread_id}';
+};
+
+export type GetThreadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetThreadError = GetThreadErrors[keyof GetThreadErrors];
+
+export type GetThreadResponses = {
+    /**
+     * Successful Response
+     */
+    200: InboxThreadDetail;
+};
+
+export type GetThreadResponse = GetThreadResponses[keyof GetThreadResponses];
+
+export type IgnoreThreadData = {
+    body: IgnoreThreadIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Thread Id
+         */
+        thread_id: string;
+    };
+    query?: never;
+    url: '/v1/inbox/threads/{thread_id}/ignore';
+};
+
+export type IgnoreThreadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type IgnoreThreadError = IgnoreThreadErrors[keyof IgnoreThreadErrors];
+
+export type IgnoreThreadResponses = {
+    /**
+     * Successful Response
+     */
+    200: InboxThreadDetail;
+};
+
+export type IgnoreThreadResponse = IgnoreThreadResponses[keyof IgnoreThreadResponses];
+
+export type MatchClientData = {
+    body: MatchClientIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Thread Id
+         */
+        thread_id: string;
+    };
+    query?: never;
+    url: '/v1/inbox/threads/{thread_id}/match-client';
+};
+
+export type MatchClientErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type MatchClientError = MatchClientErrors[keyof MatchClientErrors];
+
+export type MatchClientResponses = {
+    /**
+     * Successful Response
+     */
+    200: InboxThreadDetail;
+};
+
+export type MatchClientResponse = MatchClientResponses[keyof MatchClientResponses];
+
 export type AcceptInvitationData = {
     body: AcceptInvitationIn;
     headers?: {
@@ -61497,6 +63978,278 @@ export type GetPortalHomeResponses = {
 };
 
 export type GetPortalHomeResponse = GetPortalHomeResponses[keyof GetPortalHomeResponses];
+
+export type ListIntakeUploadsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Scope Kind
+         */
+        scope_kind: 'client' | 'client_entity' | 'engagement';
+        /**
+         * Scope Id
+         */
+        scope_id: string;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/v1/portal/intake-uploads';
+};
+
+export type ListIntakeUploadsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListIntakeUploadsError = ListIntakeUploadsErrors[keyof ListIntakeUploadsErrors];
+
+export type ListIntakeUploadsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageIntakeUploadOut;
+};
+
+export type ListIntakeUploadsResponse = ListIntakeUploadsResponses[keyof ListIntakeUploadsResponses];
+
+export type CreateIntakeUploadData = {
+    body: IntakeUploadIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/portal/intake-uploads';
+};
+
+export type CreateIntakeUploadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CreateIntakeUploadError = CreateIntakeUploadErrors[keyof CreateIntakeUploadErrors];
+
+export type CreateIntakeUploadResponses = {
+    /**
+     * Successful Response
+     */
+    201: IntakeUploadOut;
+};
+
+export type CreateIntakeUploadResponse = CreateIntakeUploadResponses[keyof CreateIntakeUploadResponses];
+
+export type AddIntakeUploadFileData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Upload Id
+         */
+        upload_id: string;
+    };
+    query: {
+        /**
+         * Filename
+         */
+        filename: string;
+    };
+    url: '/v1/portal/intake-uploads/{upload_id}/files';
+};
+
+export type AddIntakeUploadFileErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * The file is too large
+     */
+    413: ErrorOut;
+    /**
+     * The file type is not accepted
+     */
+    415: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
+};
+
+export type AddIntakeUploadFileError = AddIntakeUploadFileErrors[keyof AddIntakeUploadFileErrors];
+
+export type AddIntakeUploadFileResponses = {
+    /**
+     * Successful Response
+     */
+    201: IntakeUploadFileOut;
+};
+
+export type AddIntakeUploadFileResponse = AddIntakeUploadFileResponses[keyof AddIntakeUploadFileResponses];
+
+export type WithdrawIntakeUploadData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Upload Id
+         */
+        upload_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/intake-uploads/{upload_id}/withdraw';
+};
+
+export type WithdrawIntakeUploadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type WithdrawIntakeUploadError = WithdrawIntakeUploadErrors[keyof WithdrawIntakeUploadErrors];
+
+export type WithdrawIntakeUploadResponses = {
+    /**
+     * Successful Response
+     */
+    200: IntakeUploadOut;
+};
+
+export type WithdrawIntakeUploadResponse = WithdrawIntakeUploadResponses[keyof WithdrawIntakeUploadResponses];
 
 export type PortalLinkRenewData = {
     body: PortalLinkRenewIn;

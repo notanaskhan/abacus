@@ -24,3 +24,8 @@ actions:
   portal_settings.read:     {firm_admin: allow, practice_leader: allow, agent: deny, system: deny}   # ADM-10 a, the follow-up policy and next send
   portal_settings.manage:   {firm_admin: allow, agent: deny, system: deny, mfa_recent: required}   # draft, publish and logo (as firm.manage_settings)
   portal.preview:           {firm_admin: allow, agent: deny, system: deny}   # ADM-10 a, c, g: POR-02 in preview mode, read-only
+  # --- C5 v1.2 intake half: portal intake (N-01-T02 stub; N-01 §4.4; ADR-162, ADR-210) ---
+  # A principal reads and withdraws only its own uploads (INV-4); third parties never upload intake.
+  portal_intake.upload:     {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}   # POR-03 "Upload something else"
+  portal_intake.read_own:   {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}   # the principal's own uploads, client words
+  portal_intake.withdraw:   {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}   # the uploader, or the scope's owner (client_admin); only while unfiled

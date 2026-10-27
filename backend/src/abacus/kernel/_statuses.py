@@ -269,6 +269,24 @@ class InboxItemStatus(StrEnum):
     WAITING = "waiting"
     FILED = "filed"
     IGNORED = "ignored"
+    HELD = "held"
+    WITHDRAWN = "withdrawn"
+
+
+class InboxThreadStatus(StrEnum):
+    UNMATCHED = "unmatched"
+    MATCHED = "matched"
+    IGNORED = "ignored"
+
+
+class PortalIntakeUploadStatus(StrEnum):
+    pass
+    # derived, never stored: sent, received, withdrawn
+
+
+class FileDocumentStatus(StrEnum):
+    pass
+    # derived, never stored: processing, needs_review, accepted, superseded, on_hold
 
 
 class IssueStatus(StrEnum):
@@ -933,6 +951,17 @@ STORED: dict[str, tuple[str, ...]] = {
         "waiting",
         "filed",
         "ignored",
+        "held",
+        "withdrawn",
+    ),
+    "inbox_thread": (
+        "unmatched",
+        "matched",
+        "ignored",
+    ),
+    "portal_intake_upload": (
+    ),
+    "file_document": (
     ),
     "issue": (
         "open",

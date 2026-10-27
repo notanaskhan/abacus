@@ -90,6 +90,7 @@ from abacus.modules.evidence.export_sections import (
 from abacus.modules.evidence.export_sections import (
     section_csv as export_section_csv,
 )
+from abacus.modules.evidence.files_contract import files_router
 from abacus.modules.evidence.firm_export_activities import ACTIVITIES as FIRM_EXPORT_ACTIVITIES
 from abacus.modules.evidence.firm_export_activities import (
     SUBSCRIPTIONS as FIRM_EXPORT_SUBSCRIPTIONS,
@@ -285,6 +286,7 @@ from abacus.modules.requests.api import register_upload_facts
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,
     firm_router,
+    files_router,  # Files browser v1 stub (N-01-T02; ADR-158)
     withdrawal_router,  # C5 v1 stub (P-06-T01; ADR-162)
     drops_router,  # C5 portal-pbc stub (R-01-T01): a portal drop
     void_router,  # C5 portal-pbc (TASK-1248): a person voids a wrong rule link

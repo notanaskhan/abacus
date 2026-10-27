@@ -934,6 +934,47 @@
         "title": "AcceptedInvitationOut",
         "type": "object"
       },
+      "AccessLogRow": {
+        "description": "One audit event targeting the item's versions, in the actor grammar.",
+        "properties": {
+          "actor_display": {
+            "cls": "internal",
+            "title": "Actor Display",
+            "type": "string"
+          },
+          "occurred_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "verb": {
+            "cls": "internal",
+            "title": "Verb",
+            "type": "string"
+          },
+          "version_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Version No"
+          }
+        },
+        "required": [
+          "occurred_at",
+          "actor_display",
+          "verb",
+          "version_no"
+        ],
+        "title": "AccessLogRow",
+        "type": "object"
+      },
       "AccessReviewOut": {
         "description": "\"Q3 2026 \u00b7 due Sep 30, 2026 \u00b7 in progress\".",
         "properties": {
@@ -3926,6 +3967,130 @@
           "stage"
         ],
         "title": "AssistantOut",
+        "type": "object"
+      },
+      "AttachmentFlagOut": {
+        "description": "A code-raised flag; `facts` hold identifiers, years and masked last-4 only.",
+        "properties": {
+          "facts": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            },
+            "cls": "internal",
+            "title": "Facts",
+            "type": "object"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "duplicate_hash",
+              "wrong_year",
+              "tin_mismatch",
+              "possible_replacement",
+              "corrected_form",
+              "unreadable",
+              "low_confidence",
+              "ambiguous_candidates",
+              "duplicate_of_notice"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "ref_evidence_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Ref Evidence Version Id"
+          },
+          "severity": {
+            "cls": "internal",
+            "enum": [
+              "info",
+              "block_bulk",
+              "force_hold"
+            ],
+            "title": "Severity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "severity",
+          "ref_evidence_version_id",
+          "facts"
+        ],
+        "title": "AttachmentFlagOut",
+        "type": "object"
+      },
+      "AttachmentTriageOut": {
+        "description": "One card of INB-02.",
+        "properties": {
+          "attachment": {
+            "$ref": "#/components/schemas/InboxAttachmentOut",
+            "cls": "internal"
+          },
+          "candidates": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/DestinationCandidate"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "classification": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClassificationOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "defaults": {
+            "$ref": "#/components/schemas/TriageDefaults",
+            "cls": "internal"
+          },
+          "supersede_candidate_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Supersede Candidate Version Id"
+          }
+        },
+        "required": [
+          "attachment",
+          "classification",
+          "candidates",
+          "supersede_candidate_version_id",
+          "defaults"
+        ],
+        "title": "AttachmentTriageOut",
         "type": "object"
       },
       "AttestBody": {
@@ -7834,6 +7999,92 @@
         "title": "BudgetOut",
         "type": "object"
       },
+      "BulkFileIn": {
+        "additionalProperties": false,
+        "description": "`POST /v1/inbox/attachments/bulk-file` (INB-01 e).",
+        "properties": {
+          "attachment_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Attachment Ids",
+            "type": "array"
+          },
+          "seen_proposals": {
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Seen Proposals",
+            "type": "array"
+          }
+        },
+        "required": [
+          "attachment_ids"
+        ],
+        "title": "BulkFileIn",
+        "type": "object"
+      },
+      "BulkFileOut": {
+        "description": "Per-item outcomes; `ok` items are filed as suggested.",
+        "properties": {
+          "notified_user_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Notified User Ids",
+            "type": "array"
+          },
+          "results": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/BulkFileResult"
+            },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "results",
+          "notified_user_ids"
+        ],
+        "title": "BulkFileOut",
+        "type": "object"
+      },
+      "BulkFileResult": {
+        "description": "One attachment's outcome.",
+        "properties": {
+          "attachment_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Attachment Id",
+            "type": "string"
+          },
+          "outcome": {
+            "cls": "internal",
+            "enum": [
+              "ok",
+              "has_flags",
+              "low_confidence",
+              "proposal_changed"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          }
+        },
+        "required": [
+          "attachment_id",
+          "outcome"
+        ],
+        "title": "BulkFileResult",
+        "type": "object"
+      },
       "BulkFixInstructionsIn": {
         "additionalProperties": false,
         "description": "SHL-15 e: one shared editor; the scope is locked to the selection, so each issue gets\nits own sealed instruction with scope `this_issue`.",
@@ -10251,6 +10502,126 @@
           "label"
         ],
         "title": "CitedSourceOut",
+        "type": "object"
+      },
+      "ClassificationOut": {
+        "description": "What code (or the matcher) says the file is; agent values carry citations or none.",
+        "properties": {
+          "citation_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "form_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Form Code"
+          },
+          "form_family": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Form Family"
+          },
+          "issuer_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Issuer Name"
+          },
+          "page_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Page Count"
+          },
+          "proposed_by_kind": {
+            "cls": "internal",
+            "enum": [
+              "rule",
+              "agent"
+            ],
+            "title": "Proposed By Kind",
+            "type": "string"
+          },
+          "tax_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Tax Year"
+          },
+          "taxpayer_tin_last4": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Taxpayer Tin Last4"
+          },
+          "tin_matches_client": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Tin Matches Client"
+          }
+        },
+        "required": [
+          "form_family",
+          "form_code",
+          "tax_year",
+          "issuer_name",
+          "page_count",
+          "taxpayer_tin_last4",
+          "tin_matches_client",
+          "proposed_by_kind",
+          "citation_ids"
+        ],
+        "title": "ClassificationOut",
         "type": "object"
       },
       "ClientActivityOut": {
@@ -15875,6 +16246,222 @@
         "title": "DelegationOut",
         "type": "object"
       },
+      "DestinationCandidate": {
+        "description": "A ranked destination with its code-computed confidence.",
+        "properties": {
+          "confidence": {
+            "cls": "internal",
+            "title": "Confidence",
+            "type": "number"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "request",
+              "permanent_file",
+              "work_item_folder",
+              "notice",
+              "close_receipt"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "path": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Path",
+            "type": "array"
+          },
+          "proposal_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Proposal Id"
+          },
+          "request_state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Request State"
+          },
+          "requested_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Requested On"
+          },
+          "source": {
+            "cls": "internal",
+            "enum": [
+              "rule",
+              "content",
+              "matcher",
+              "none"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "path",
+          "confidence",
+          "source",
+          "request_state",
+          "requested_on",
+          "proposal_id"
+        ],
+        "title": "DestinationCandidate",
+        "type": "object"
+      },
+      "DestinationNode": {
+        "description": "A picker node: client \u203a work item \u203a request, permanent file, folders, registered kinds.",
+        "properties": {
+          "folder_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "source_documents",
+                  "workpapers",
+                  "correspondence",
+                  "deliverables",
+                  "signed_authorizations"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Folder Kind"
+          },
+          "has_children": {
+            "cls": "internal",
+            "title": "Has Children",
+            "type": "boolean"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "request",
+                  "permanent_file",
+                  "work_item_folder",
+                  "notice",
+                  "close_receipt"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "client",
+                  "work_item"
+                ],
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Kind"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reason Code"
+          },
+          "selectable": {
+            "cls": "internal",
+            "title": "Selectable",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "label",
+          "folder_kind",
+          "has_children",
+          "selectable",
+          "reason_code"
+        ],
+        "title": "DestinationNode",
+        "type": "object"
+      },
+      "DestinationRef": {
+        "additionalProperties": false,
+        "description": "A chosen destination.",
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "request",
+              "permanent_file",
+              "work_item_folder",
+              "notice",
+              "close_receipt"
+            ],
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id"
+        ],
+        "title": "DestinationRef",
+        "type": "object"
+      },
       "DigestCardOut": {
         "properties": {
           "decided": {
@@ -16377,6 +16964,181 @@
           "drafted"
         ],
         "title": "DraftedOut",
+        "type": "object"
+      },
+      "DrawerOut": {
+        "description": "`GET /v1/evidence-items/{id}/drawer` (O2). Content fields are null without `evidence.read`.",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "client_access": {
+            "cls": "internal",
+            "enum": [
+              "off",
+              "view",
+              "view_download"
+            ],
+            "title": "Client Access",
+            "type": "string"
+          },
+          "display_name": {
+            "cls": "confidential",
+            "title": "Display Name",
+            "type": "string"
+          },
+          "evidence_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Item Id",
+            "type": "string"
+          },
+          "fingerprint": {
+            "cls": "internal",
+            "title": "Fingerprint",
+            "type": "string"
+          },
+          "folder_kind": {
+            "cls": "internal",
+            "enum": [
+              "source_documents",
+              "workpapers",
+              "correspondence",
+              "deliverables",
+              "signed_authorizations"
+            ],
+            "title": "Folder Kind",
+            "type": "string"
+          },
+          "linked_to": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/LinkOut"
+            },
+            "title": "Linked To",
+            "type": "array"
+          },
+          "masked_tin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Masked Tin"
+          },
+          "page_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Page Count"
+          },
+          "retention": {
+            "$ref": "#/components/schemas/RetentionOut",
+            "cls": "internal"
+          },
+          "scope": {
+            "cls": "internal",
+            "enum": [
+              "client",
+              "engagement"
+            ],
+            "title": "Scope",
+            "type": "string"
+          },
+          "sign_off_slots": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/SignOffSlotOut"
+            },
+            "title": "Sign Off Slots",
+            "type": "array"
+          },
+          "size_bytes": {
+            "cls": "internal",
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [],
+            "title": "FileDocumentStatus"
+          },
+          "thumbnail_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Thumbnail Ref"
+          },
+          "tie": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TieOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "versions": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/abacus__modules__evidence__files_contract__VersionOut"
+            },
+            "title": "Versions",
+            "type": "array"
+          },
+          "virtual_children": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/VirtualChild"
+            },
+            "title": "Virtual Children",
+            "type": "array"
+          }
+        },
+        "required": [
+          "evidence_item_id",
+          "display_name",
+          "status",
+          "folder_kind",
+          "scope",
+          "page_count",
+          "size_bytes",
+          "fingerprint",
+          "masked_tin",
+          "thumbnail_ref",
+          "virtual_children",
+          "tie",
+          "linked_to",
+          "versions",
+          "retention",
+          "sign_off_slots",
+          "client_access",
+          "allowed_actions"
+        ],
+        "title": "DrawerOut",
         "type": "object"
       },
       "DropAcceptedOut": {
@@ -21778,6 +22540,196 @@
         "title": "FilePart",
         "type": "object"
       },
+      "FileRow": {
+        "description": "One list row of a folder.",
+        "properties": {
+          "channel": {
+            "anyOf": [
+              {
+                "enum": [
+                  "portal",
+                  "email",
+                  "firm_upload",
+                  "retrieval",
+                  "import",
+                  "mobile",
+                  "internal_handoff",
+                  "generated",
+                  "confirmation_response"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Channel"
+          },
+          "classification_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Classification Label"
+          },
+          "display_name": {
+            "cls": "confidential",
+            "title": "Display Name",
+            "type": "string"
+          },
+          "evidence_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Item Id",
+            "type": "string"
+          },
+          "received_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Received At",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [],
+            "title": "FileDocumentStatus"
+          },
+          "superseded_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Superseded By Name"
+          },
+          "superseded_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Superseded On"
+          },
+          "supports": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Supports"
+          },
+          "version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Version Id",
+            "type": "string"
+          },
+          "virtual_children": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/VirtualChild"
+            },
+            "title": "Virtual Children",
+            "type": "array"
+          }
+        },
+        "required": [
+          "evidence_item_id",
+          "version_id",
+          "display_name",
+          "classification_label",
+          "channel",
+          "status",
+          "superseded_by_name",
+          "superseded_on",
+          "supports",
+          "received_at",
+          "virtual_children"
+        ],
+        "title": "FileRow",
+        "type": "object"
+      },
+      "FileTreeOut": {
+        "description": "`GET /v1/files/tree`: only clients the viewer's teams and walls allow.",
+        "properties": {
+          "nodes": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/TreeNode"
+            },
+            "title": "Nodes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "nodes"
+        ],
+        "title": "FileTreeOut",
+        "type": "object"
+      },
+      "FiledDestinationOut": {
+        "description": "Where a person filed an attachment, for the \"Filed to \u2026\" line.",
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "request",
+              "permanent_file",
+              "work_item_folder",
+              "notice",
+              "close_receipt"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "path": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Path",
+            "type": "array"
+          },
+          "route": {
+            "cls": "internal",
+            "title": "Route",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "path",
+          "route"
+        ],
+        "title": "FiledDestinationOut",
+        "type": "object"
+      },
       "FindingHitOut": {
         "properties": {
           "engagement_id": {
@@ -23267,6 +24219,79 @@
           "state"
         ],
         "title": "FlowStepOut",
+        "type": "object"
+      },
+      "FolderItemsOut": {
+        "description": "`GET /v1/files/folders/{folder_ref}/items`, with the folder's count line.",
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "documents": {
+            "cls": "internal",
+            "title": "Documents",
+            "type": "integer"
+          },
+          "facets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Facet"
+              },
+              "type": "array"
+            },
+            "cls": "internal",
+            "title": "Facets",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/FileRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_capped": {
+            "cls": "internal",
+            "default": false,
+            "title": "Total Capped",
+            "type": "boolean"
+          },
+          "virtual": {
+            "cls": "internal",
+            "title": "Virtual",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "documents",
+          "virtual"
+        ],
+        "title": "FolderItemsOut",
         "type": "object"
       },
       "FollowUpDraftsIn": {
@@ -26139,6 +27164,41 @@
         "title": "IgnoreIn",
         "type": "object"
       },
+      "IgnoreThreadIn": {
+        "additionalProperties": false,
+        "description": "`POST /v1/inbox/threads/{id}/ignore` for an unmatched sender.",
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "reason_code": {
+            "enum": [
+              "wrong_year",
+              "duplicate",
+              "not_ours",
+              "spam",
+              "unreadable",
+              "other"
+            ],
+            "title": "Reason Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason_code"
+        ],
+        "title": "IgnoreThreadIn",
+        "type": "object"
+      },
       "IgnoreUndoneOut": {
         "description": "`request_item.ignore_undone`: `client_ignored_at` cleared; the client reads \"To do\" again.\nThe ignore note stays in the thread (comments are never deleted).",
         "properties": {
@@ -26378,6 +27438,108 @@
         "title": "ImportOut",
         "type": "object"
       },
+      "InboundMessageOut": {
+        "description": "One received message. `body` is present only with `inbox.read_content`.",
+        "properties": {
+          "attachments": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/InboxAttachmentOut"
+            },
+            "title": "Attachments",
+            "type": "array"
+          },
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Body"
+          },
+          "channel": {
+            "cls": "internal",
+            "enum": [
+              "email",
+              "portal_upload",
+              "staff_logged"
+            ],
+            "title": "Channel",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "logged_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Logged By Name"
+          },
+          "received_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Received At",
+            "type": "string"
+          },
+          "received_via": {
+            "anyOf": [
+              {
+                "enum": [
+                  "email",
+                  "mail",
+                  "fax",
+                  "in_person",
+                  "portal",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Received Via"
+          },
+          "sender_display": {
+            "cls": "confidential",
+            "title": "Sender Display",
+            "type": "string"
+          },
+          "subject_display": {
+            "cls": "confidential",
+            "title": "Subject Display",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "channel",
+          "received_via",
+          "sender_display",
+          "logged_by_name",
+          "subject_display",
+          "received_at",
+          "body",
+          "attachments"
+        ],
+        "title": "InboundMessageOut",
+        "type": "object"
+      },
       "InboxAssignIn": {
         "additionalProperties": false,
         "properties": {
@@ -26429,6 +27591,130 @@
           "request_item_id"
         ],
         "title": "InboxAssignIn",
+        "type": "object"
+      },
+      "InboxAttachmentOut": {
+        "description": "One attachment on a message, with its state and what it may do (`allowed_actions`).",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "file_name": {
+            "cls": "confidential",
+            "title": "File Name",
+            "type": "string"
+          },
+          "filed": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FiledDestinationOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "fingerprint": {
+            "cls": "internal",
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "title": "Fingerprint",
+            "type": "string"
+          },
+          "flags": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/AttachmentFlagOut"
+            },
+            "title": "Flags",
+            "type": "array"
+          },
+          "held_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Held At"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "ignored_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "wrong_year",
+                  "duplicate",
+                  "not_ours",
+                  "spam",
+                  "unreadable",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Ignored Reason"
+          },
+          "media_type": {
+            "cls": "internal",
+            "title": "Media Type",
+            "type": "string"
+          },
+          "size_bytes": {
+            "cls": "internal",
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/InboxItemStatus",
+            "cls": "internal"
+          },
+          "thumbnail_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Thumbnail Ref"
+          }
+        },
+        "required": [
+          "id",
+          "file_name",
+          "media_type",
+          "size_bytes",
+          "fingerprint",
+          "status",
+          "flags",
+          "filed",
+          "ignored_reason",
+          "held_at",
+          "thumbnail_ref",
+          "allowed_actions"
+        ],
+        "title": "InboxAttachmentOut",
         "type": "object"
       },
       "InboxFileOut": {
@@ -26511,6 +27797,228 @@
         ],
         "title": "InboxFileOut",
         "type": "object"
+      },
+      "InboxItemStatus": {
+        "enum": [
+          "new",
+          "waiting",
+          "filed",
+          "ignored",
+          "held",
+          "withdrawn"
+        ],
+        "title": "InboxItemStatus",
+        "type": "string"
+      },
+      "InboxSummaryOut": {
+        "description": "`GET /v1/inbox/summary`: counted over rows the viewer can see only (DEC-43).",
+        "properties": {
+          "by_source": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/SourceCount"
+            },
+            "title": "By Source",
+            "type": "array"
+          },
+          "unmatched": {
+            "cls": "internal",
+            "title": "Unmatched",
+            "type": "integer"
+          },
+          "waiting": {
+            "cls": "internal",
+            "title": "Waiting",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "waiting",
+          "unmatched",
+          "by_source"
+        ],
+        "title": "InboxSummaryOut",
+        "type": "object"
+      },
+      "InboxThreadDetail": {
+        "description": "`GET /v1/inbox/threads/{id}`: messages newest first.",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "match_method": {
+            "cls": "internal",
+            "enum": [
+              "contact_email",
+              "sender_rule",
+              "portal_principal",
+              "staff_selected",
+              "manual",
+              "none"
+            ],
+            "title": "Match Method",
+            "type": "string"
+          },
+          "messages": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/InboundMessageOut"
+            },
+            "title": "Messages",
+            "type": "array"
+          },
+          "thread": {
+            "$ref": "#/components/schemas/InboxThreadRow",
+            "cls": "internal"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          },
+          "work_item_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Work Item Label"
+          }
+        },
+        "required": [
+          "thread",
+          "match_method",
+          "work_item_label",
+          "messages",
+          "allowed_actions",
+          "version"
+        ],
+        "title": "InboxThreadDetail",
+        "type": "object"
+      },
+      "InboxThreadRow": {
+        "description": "One rail row (INB-01).",
+        "properties": {
+          "channel": {
+            "cls": "internal",
+            "enum": [
+              "email",
+              "portal_upload",
+              "staff_logged"
+            ],
+            "title": "Channel",
+            "type": "string"
+          },
+          "client_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Client Id"
+          },
+          "client_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Client Name"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "last_received_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Last Received At",
+            "type": "string"
+          },
+          "match_state": {
+            "$ref": "#/components/schemas/InboxThreadStatus",
+            "cls": "internal"
+          },
+          "message_count": {
+            "cls": "internal",
+            "title": "Message Count",
+            "type": "integer"
+          },
+          "sender_display": {
+            "cls": "confidential",
+            "title": "Sender Display",
+            "type": "string"
+          },
+          "source_kind": {
+            "cls": "internal",
+            "enum": [
+              "mailbox",
+              "portal",
+              "staff"
+            ],
+            "title": "Source Kind",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/InboxItemStatus",
+            "cls": "internal"
+          },
+          "subject_display": {
+            "cls": "confidential",
+            "title": "Subject Display",
+            "type": "string"
+          },
+          "waiting": {
+            "cls": "internal",
+            "title": "Waiting",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "source_kind",
+          "channel",
+          "match_state",
+          "client_id",
+          "client_name",
+          "subject_display",
+          "sender_display",
+          "last_received_at",
+          "status",
+          "waiting",
+          "message_count"
+        ],
+        "title": "InboxThreadRow",
+        "type": "object"
+      },
+      "InboxThreadStatus": {
+        "enum": [
+          "unmatched",
+          "matched",
+          "ignored"
+        ],
+        "title": "InboxThreadStatus",
+        "type": "string"
       },
       "IncidentDecisionIn": {
         "additionalProperties": false,
@@ -27529,6 +29037,29 @@
         "title": "IntakeContactIn",
         "type": "object"
       },
+      "IntakeCreatedOut": {
+        "description": "The new thread and the message its files attach to.",
+        "properties": {
+          "message_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Message Id",
+            "type": "string"
+          },
+          "thread_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Thread Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "thread_id",
+          "message_id"
+        ],
+        "title": "IntakeCreatedOut",
+        "type": "object"
+      },
       "IntakeEntityIn": {
         "additionalProperties": false,
         "properties": {
@@ -27613,6 +29144,33 @@
           "mode"
         ],
         "title": "IntakeEntityIn",
+        "type": "object"
+      },
+      "IntakeFileOut": {
+        "description": "One stored file of an intake batch.",
+        "properties": {
+          "attachment_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Attachment Id",
+            "type": "string"
+          },
+          "file_name": {
+            "cls": "confidential",
+            "title": "File Name",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/InboxItemStatus",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "attachment_id",
+          "file_name",
+          "status"
+        ],
+        "title": "IntakeFileOut",
         "type": "object"
       },
       "IntakeProblemOut": {
@@ -27715,6 +29273,128 @@
           "type_code"
         ],
         "title": "IntakeServiceIn",
+        "type": "object"
+      },
+      "IntakeUploadFileOut": {
+        "description": "One file of an upload, in client words.",
+        "properties": {
+          "file_name": {
+            "cls": "confidential",
+            "title": "File Name",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "size_bytes": {
+            "cls": "internal",
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [],
+            "title": "PortalIntakeUploadStatus"
+          }
+        },
+        "required": [
+          "id",
+          "file_name",
+          "size_bytes",
+          "status"
+        ],
+        "title": "IntakeUploadFileOut",
+        "type": "object"
+      },
+      "IntakeUploadIn": {
+        "additionalProperties": false,
+        "description": "`POST /v1/portal/intake-uploads`: the batch; files follow.",
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "scope_ref": {
+            "$ref": "#/components/schemas/ScopeRef"
+          }
+        },
+        "required": [
+          "scope_ref"
+        ],
+        "title": "IntakeUploadIn",
+        "type": "object"
+      },
+      "IntakeUploadOut": {
+        "description": "One upload batch; `status` is `sent` until the firm has it.",
+        "properties": {
+          "can_withdraw": {
+            "cls": "internal",
+            "title": "Can Withdraw",
+            "type": "boolean"
+          },
+          "files": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/IntakeUploadFileOut"
+            },
+            "title": "Files",
+            "type": "array"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "scope_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "scope_kind": {
+            "cls": "internal",
+            "enum": [
+              "client",
+              "client_entity",
+              "engagement"
+            ],
+            "title": "Scope Kind",
+            "type": "string"
+          },
+          "sent_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Sent At",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [],
+            "title": "PortalIntakeUploadStatus"
+          }
+        },
+        "required": [
+          "id",
+          "scope_kind",
+          "scope_id",
+          "status",
+          "sent_at",
+          "files",
+          "can_withdraw"
+        ],
+        "title": "IntakeUploadOut",
         "type": "object"
       },
       "IntakeValidateIn": {
@@ -30849,6 +32529,40 @@
         "title": "LineOut",
         "type": "object"
       },
+      "LinkOut": {
+        "description": "What the document supports, as a deep link.",
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "request",
+              "workpaper_cell",
+              "return_line",
+              "notice",
+              "envelope"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "route": {
+            "cls": "internal",
+            "title": "Route",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "label",
+          "route"
+        ],
+        "title": "LinkOut",
+        "type": "object"
+      },
       "LinkedAccountOut": {
         "properties": {
           "account_code": {
@@ -31021,6 +32735,66 @@
           "at"
         ],
         "title": "ListDoneOut",
+        "type": "object"
+      },
+      "ListPage_AccessLogRow_": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "facets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Facet"
+              },
+              "type": "array"
+            },
+            "cls": "internal",
+            "title": "Facets",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/AccessLogRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_capped": {
+            "cls": "internal",
+            "default": false,
+            "title": "Total Capped",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListPage[AccessLogRow]",
         "type": "object"
       },
       "ListPage_ActivityEventOut_": {
@@ -31563,6 +33337,126 @@
         "title": "ListPage[HumanGateOut]",
         "type": "object"
       },
+      "ListPage_InboxThreadRow_": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "facets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Facet"
+              },
+              "type": "array"
+            },
+            "cls": "internal",
+            "title": "Facets",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/InboxThreadRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_capped": {
+            "cls": "internal",
+            "default": false,
+            "title": "Total Capped",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListPage[InboxThreadRow]",
+        "type": "object"
+      },
+      "ListPage_IntakeUploadOut_": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "facets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Facet"
+              },
+              "type": "array"
+            },
+            "cls": "internal",
+            "title": "Facets",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/IntakeUploadOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_capped": {
+            "cls": "internal",
+            "default": false,
+            "title": "Total Capped",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListPage[IntakeUploadOut]",
+        "type": "object"
+      },
       "ListPage_IssueItemOut_": {
         "properties": {
           "counts": {
@@ -32028,6 +33922,102 @@
           "started_by"
         ],
         "title": "LogEntryOut",
+        "type": "object"
+      },
+      "LogIntakeIn": {
+        "additionalProperties": false,
+        "description": "`POST /v1/inbox/intake`: a staff-logged batch; files follow, one request each.",
+        "properties": {
+          "client_entity_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Entity Id"
+          },
+          "client_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Id"
+          },
+          "from_contact_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Contact Id"
+          },
+          "from_display": {
+            "anyOf": [
+              {
+                "maxLength": 320,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Display"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "received_at": {
+            "format": "date",
+            "title": "Received At",
+            "type": "string"
+          },
+          "received_via": {
+            "enum": [
+              "email",
+              "mail",
+              "fax",
+              "in_person",
+              "portal",
+              "other"
+            ],
+            "title": "Received Via",
+            "type": "string"
+          },
+          "subject": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Subject",
+            "type": "string"
+          }
+        },
+        "required": [
+          "received_via",
+          "received_at",
+          "subject"
+        ],
+        "title": "LogIntakeIn",
         "type": "object"
       },
       "MandatoryIn": {
@@ -32500,6 +34490,44 @@
           "presence"
         ],
         "title": "MaskedTinOut",
+        "type": "object"
+      },
+      "MatchClientIn": {
+        "additionalProperties": false,
+        "description": "`POST /v1/inbox/threads/{id}/match-client` (INB-01 b).",
+        "properties": {
+          "client_entity_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Entity Id"
+          },
+          "client_id": {
+            "format": "uuid",
+            "title": "Client Id",
+            "type": "string"
+          },
+          "remember_sender": {
+            "default": false,
+            "title": "Remember Sender",
+            "type": "boolean"
+          },
+          "seen_version": {
+            "title": "Seen Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "client_id",
+          "seen_version"
+        ],
+        "title": "MatchClientIn",
         "type": "object"
       },
       "MatchProposalOut": {
@@ -33483,6 +35511,64 @@
           "side"
         ],
         "title": "MentionCandidateOut",
+        "type": "object"
+      },
+      "MessageTriageOut": {
+        "description": "`GET /v1/inbox/messages/{id}/triage`.",
+        "properties": {
+          "attachments": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/AttachmentTriageOut"
+            },
+            "title": "Attachments",
+            "type": "array"
+          },
+          "classified_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Classified At"
+          },
+          "message_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Message Id",
+            "type": "string"
+          },
+          "notify_names": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Notify Names",
+            "type": "array"
+          },
+          "seen_proposals": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Seen Proposals",
+            "type": "array"
+          }
+        },
+        "required": [
+          "message_id",
+          "attachments",
+          "seen_proposals",
+          "classified_at",
+          "notify_names"
+        ],
+        "title": "MessageTriageOut",
         "type": "object"
       },
       "MethodologyVersionOut": {
@@ -42584,6 +44670,82 @@
         "title": "RetentionFloorSetIn",
         "type": "object"
       },
+      "RetentionOut": {
+        "description": "The retention policy, eligible date and any legal hold (read only).",
+        "properties": {
+          "eligible_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Eligible On"
+          },
+          "hold_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Hold Label"
+          },
+          "hold_placed_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Hold Placed By"
+          },
+          "hold_placed_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Hold Placed On"
+          },
+          "policy_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Policy Label"
+          }
+        },
+        "required": [
+          "policy_label",
+          "eligible_on",
+          "hold_label",
+          "hold_placed_by",
+          "hold_placed_on"
+        ],
+        "title": "RetentionOut",
+        "type": "object"
+      },
       "RetentionPoliciesOut": {
         "properties": {
           "items": {
@@ -45839,6 +48001,32 @@
         "title": "ScheduleApprovalOut",
         "type": "object"
       },
+      "ScopeRef": {
+        "additionalProperties": false,
+        "description": "The portal scope the upload is for (one of the principal's grants).",
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "client",
+              "client_entity",
+              "engagement"
+            ],
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id"
+        ],
+        "title": "ScopeRef",
+        "type": "object"
+      },
       "ScreenRequestIn": {
         "additionalProperties": false,
         "properties": {
@@ -48879,6 +51067,52 @@
         "title": "SignOffOut",
         "type": "object"
       },
+      "SignOffSlotOut": {
+        "description": "A P or R slot, read only in N-01.",
+        "properties": {
+          "initials": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Initials"
+          },
+          "level": {
+            "cls": "internal",
+            "enum": [
+              "preparer",
+              "reviewer"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "signed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Signed At"
+          }
+        },
+        "required": [
+          "level",
+          "initials",
+          "signed_at"
+        ],
+        "title": "SignOffSlotOut",
+        "type": "object"
+      },
       "SignOffStatementOut": {
         "properties": {
           "text": {
@@ -49156,6 +51390,45 @@
           "net_change"
         ],
         "title": "SnapshotOut",
+        "type": "object"
+      },
+      "SourceCount": {
+        "description": "One intake source's waiting count (the rail pill and its menu).",
+        "properties": {
+          "source_display": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Source Display"
+          },
+          "source_kind": {
+            "cls": "internal",
+            "enum": [
+              "mailbox",
+              "portal",
+              "staff"
+            ],
+            "title": "Source Kind",
+            "type": "string"
+          },
+          "waiting": {
+            "cls": "internal",
+            "title": "Waiting",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "source_kind",
+          "source_display",
+          "waiting"
+        ],
+        "title": "SourceCount",
         "type": "object"
       },
       "SourceDocumentGroupOut": {
@@ -53750,6 +56023,48 @@
         "title": "TieIssueLinkOut",
         "type": "object"
       },
+      "TieOut": {
+        "description": "Virtual documents' total against a mapped TB account; computed by code (ADR-050, DV-13).",
+        "properties": {
+          "account_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Account Number"
+          },
+          "ties": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Ties"
+          },
+          "total": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "total",
+          "account_number",
+          "ties"
+        ],
+        "title": "TieOut",
+        "type": "object"
+      },
       "TieOutCheckBody": {
         "additionalProperties": false,
         "properties": {
@@ -54583,6 +56898,368 @@
         "title": "TraceRowOut",
         "type": "object"
       },
+      "TreeNode": {
+        "description": "One tree row: client \u203a permanent file or year \u203a work item \u203a folder.",
+        "properties": {
+          "children": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/TreeNode"
+            },
+            "title": "Children",
+            "type": "array"
+          },
+          "count": {
+            "cls": "internal",
+            "title": "Count",
+            "type": "integer"
+          },
+          "folder_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "source_documents",
+                  "workpapers",
+                  "correspondence",
+                  "deliverables",
+                  "signed_authorizations"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Folder Kind"
+          },
+          "has_children": {
+            "cls": "internal",
+            "title": "Has Children",
+            "type": "boolean"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "client",
+              "permanent_file",
+              "year",
+              "work_item",
+              "folder"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "locked": {
+            "cls": "internal",
+            "title": "Locked",
+            "type": "boolean"
+          },
+          "on_hold": {
+            "cls": "internal",
+            "title": "On Hold",
+            "type": "boolean"
+          },
+          "ref": {
+            "cls": "internal",
+            "title": "Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ref",
+          "kind",
+          "label",
+          "folder_kind",
+          "count",
+          "has_children",
+          "on_hold",
+          "locked",
+          "children"
+        ],
+        "title": "TreeNode",
+        "type": "object"
+      },
+      "TriageApplyIn": {
+        "additionalProperties": false,
+        "description": "`POST /v1/inbox/messages/{id}/triage/apply`.",
+        "properties": {
+          "decisions": {
+            "items": {
+              "$ref": "#/components/schemas/TriageDecisionIn"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Decisions",
+            "type": "array"
+          },
+          "seen_proposals": {
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Seen Proposals",
+            "type": "array"
+          }
+        },
+        "required": [
+          "decisions"
+        ],
+        "title": "TriageApplyIn",
+        "type": "object"
+      },
+      "TriageApplyOut": {
+        "description": "What the apply wrote; `undo_grant_id` while a client email waits its 10 s (DEC-24).",
+        "properties": {
+          "filed": {
+            "cls": "internal",
+            "title": "Filed",
+            "type": "integer"
+          },
+          "held": {
+            "cls": "internal",
+            "title": "Held",
+            "type": "integer"
+          },
+          "ignored": {
+            "cls": "internal",
+            "title": "Ignored",
+            "type": "integer"
+          },
+          "notified_user_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Notified User Ids",
+            "type": "array"
+          },
+          "undo_grant_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Undo Grant Id"
+          }
+        },
+        "required": [
+          "filed",
+          "ignored",
+          "held",
+          "notified_user_ids",
+          "undo_grant_id"
+        ],
+        "title": "TriageApplyOut",
+        "type": "object"
+      },
+      "TriageDecisionIn": {
+        "additionalProperties": false,
+        "description": "One attachment's decision in an apply.",
+        "properties": {
+          "attachment_id": {
+            "format": "uuid",
+            "title": "Attachment Id",
+            "type": "string"
+          },
+          "decision": {
+            "enum": [
+              "file",
+              "ignore",
+              "hold"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "destination": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DestinationRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "keep_both": {
+            "default": false,
+            "title": "Keep Both",
+            "type": "boolean"
+          },
+          "reason_codes": {
+            "default": [],
+            "items": {
+              "enum": [
+                "wrong_year",
+                "duplicate",
+                "not_ours",
+                "spam",
+                "unreadable",
+                "other"
+              ],
+              "type": "string"
+            },
+            "title": "Reason Codes",
+            "type": "array"
+          },
+          "rename_to": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rename To"
+          },
+          "supersede_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supersede Version Id"
+          },
+          "tell_client": {
+            "default": false,
+            "title": "Tell Client",
+            "type": "boolean"
+          },
+          "version_mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "new_document",
+                  "new_version",
+                  "new_version_supersede"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version Mode"
+          }
+        },
+        "required": [
+          "attachment_id",
+          "decision"
+        ],
+        "title": "TriageDecisionIn",
+        "type": "object"
+      },
+      "TriageDefaults": {
+        "description": "What the sheet opens with; a person may change every field before Apply.",
+        "properties": {
+          "decision": {
+            "cls": "internal",
+            "enum": [
+              "file",
+              "ignore",
+              "hold"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "decision_forced": {
+            "cls": "internal",
+            "title": "Decision Forced",
+            "type": "boolean"
+          },
+          "reason_codes": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "wrong_year",
+                "duplicate",
+                "not_ours",
+                "spam",
+                "unreadable",
+                "other"
+              ],
+              "type": "string"
+            },
+            "title": "Reason Codes",
+            "type": "array"
+          },
+          "rename_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Rename To"
+          },
+          "tell_client": {
+            "cls": "internal",
+            "title": "Tell Client",
+            "type": "boolean"
+          },
+          "template_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Template Key"
+          },
+          "version_mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "new_document",
+                  "new_version",
+                  "new_version_supersede"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Version Mode"
+          }
+        },
+        "required": [
+          "decision",
+          "decision_forced",
+          "reason_codes",
+          "rename_to",
+          "version_mode",
+          "tell_client",
+          "template_key"
+        ],
+        "title": "TriageDefaults",
+        "type": "object"
+      },
       "TrialBalanceDetailOut": {
         "properties": {
           "boy": {
@@ -55226,36 +57903,6 @@
         "title": "VersionBody",
         "type": "object"
       },
-      "VersionOut": {
-        "properties": {
-          "created_at": {
-            "cls": "internal",
-            "format": "date-time",
-            "title": "Created At",
-            "type": "string"
-          },
-          "signatures": {
-            "cls": "internal",
-            "items": {
-              "$ref": "#/components/schemas/SignatureOut"
-            },
-            "title": "Signatures",
-            "type": "array"
-          },
-          "version": {
-            "cls": "internal",
-            "title": "Version",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "version",
-          "created_at",
-          "signatures"
-        ],
-        "title": "VersionOut",
-        "type": "object"
-      },
       "VersionStateOut": {
         "description": "A version's lifecycle row and what the viewer may do with it.",
         "properties": {
@@ -55432,135 +58079,6 @@
           "allowed_actions"
         ],
         "title": "VersionStateOut",
-        "type": "object"
-      },
-      "ViewerManifestOut": {
-        "properties": {
-          "allowed_actions": {
-            "cls": "internal",
-            "items": {
-              "type": "string"
-            },
-            "title": "Allowed Actions",
-            "type": "array"
-          },
-          "derivation_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Derivation Id"
-          },
-          "evidence_version_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Evidence Version Id",
-            "type": "string"
-          },
-          "file_name": {
-            "cls": "confidential",
-            "title": "File Name",
-            "type": "string"
-          },
-          "kind": {
-            "cls": "internal",
-            "enum": [
-              "pages",
-              "image",
-              "table",
-              "none"
-            ],
-            "title": "Kind",
-            "type": "string"
-          },
-          "media_type": {
-            "cls": "internal",
-            "title": "Media Type",
-            "type": "string"
-          },
-          "page_count": {
-            "cls": "internal",
-            "minimum": 0.0,
-            "title": "Page Count",
-            "type": "integer"
-          },
-          "pages": {
-            "cls": "internal",
-            "items": {
-              "$ref": "#/components/schemas/ViewerPageOut"
-            },
-            "title": "Pages",
-            "type": "array"
-          },
-          "pii_masks": {
-            "cls": "confidential",
-            "items": {
-              "$ref": "#/components/schemas/PiiMaskOut"
-            },
-            "title": "Pii Masks",
-            "type": "array"
-          },
-          "reason": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Reason"
-          },
-          "status": {
-            "cls": "internal",
-            "enum": [
-              "processing",
-              "ready",
-              "password_protected",
-              "unreadable",
-              "not_previewable"
-            ],
-            "title": "Status",
-            "type": "string"
-          },
-          "truncated": {
-            "cls": "internal",
-            "title": "Truncated",
-            "type": "boolean"
-          },
-          "view": {
-            "cls": "internal",
-            "default": "images",
-            "enum": [
-              "images",
-              "text"
-            ],
-            "title": "View",
-            "type": "string"
-          }
-        },
-        "required": [
-          "evidence_version_id",
-          "file_name",
-          "media_type",
-          "status",
-          "reason",
-          "kind",
-          "page_count",
-          "truncated",
-          "pages",
-          "pii_masks",
-          "derivation_id",
-          "allowed_actions"
-        ],
-        "title": "ViewerManifestOut",
         "type": "object"
       },
       "ViewerPageOut": {
@@ -55890,6 +58408,54 @@
           "rows"
         ],
         "title": "ViewerTextSheetOut",
+        "type": "object"
+      },
+      "VirtualChild": {
+        "description": "A virtual split of a combined PDF: a page range with a label and an amount, no new bytes.",
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Amount"
+          },
+          "first_page": {
+            "cls": "internal",
+            "title": "First Page",
+            "type": "integer"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "last_page": {
+            "cls": "internal",
+            "title": "Last Page",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "first_page",
+          "last_page",
+          "amount"
+        ],
+        "title": "VirtualChild",
         "type": "object"
       },
       "WaitingOut": {
@@ -57081,7 +59647,7 @@
           "versions": {
             "cls": "internal",
             "items": {
-              "$ref": "#/components/schemas/VersionOut"
+              "$ref": "#/components/schemas/abacus__modules__fieldwork__routes__VersionOut"
             },
             "title": "Versions",
             "type": "array"
@@ -57350,6 +59916,43 @@
         "title": "EqrOut",
         "type": "object"
       },
+      "abacus__modules__communications__intake_contract__ViewerManifestOut": {
+        "description": "The C4 viewer manifest over an intake object (masked pages only).",
+        "properties": {
+          "attachment_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Attachment Id",
+            "type": "string"
+          },
+          "masked": {
+            "cls": "internal",
+            "title": "Masked",
+            "type": "boolean"
+          },
+          "page_count": {
+            "cls": "internal",
+            "title": "Page Count",
+            "type": "integer"
+          },
+          "page_refs": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Page Refs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "attachment_id",
+          "page_count",
+          "masked",
+          "page_refs"
+        ],
+        "title": "ViewerManifestOut",
+        "type": "object"
+      },
       "abacus__modules__connections__routes__StartIn": {
         "additionalProperties": false,
         "properties": {
@@ -57560,6 +60163,71 @@
         "title": "StepOut",
         "type": "object"
       },
+      "abacus__modules__evidence__files_contract__VersionOut": {
+        "description": "One version of the document; earlier versions stay (ADR-004).",
+        "properties": {
+          "channel": {
+            "anyOf": [
+              {
+                "enum": [
+                  "portal",
+                  "email",
+                  "firm_upload",
+                  "retrieval",
+                  "import",
+                  "mobile",
+                  "internal_handoff",
+                  "generated",
+                  "confirmation_response"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Channel"
+          },
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "file_name": {
+            "cls": "confidential",
+            "title": "File Name",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "superseded": {
+            "cls": "internal",
+            "title": "Superseded",
+            "type": "boolean"
+          },
+          "version_no": {
+            "cls": "internal",
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "version_no",
+          "file_name",
+          "channel",
+          "created_at",
+          "superseded"
+        ],
+        "title": "VersionOut",
+        "type": "object"
+      },
       "abacus__modules__evidence__routes__CitationOut": {
         "description": "A checked citation of the proposal (the same shape as the board's).",
         "properties": {
@@ -57624,6 +60292,135 @@
         "title": "CitationOut",
         "type": "object"
       },
+      "abacus__modules__evidence__trust_contract__ViewerManifestOut": {
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "derivation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Derivation Id"
+          },
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "file_name": {
+            "cls": "confidential",
+            "title": "File Name",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "pages",
+              "image",
+              "table",
+              "none"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "media_type": {
+            "cls": "internal",
+            "title": "Media Type",
+            "type": "string"
+          },
+          "page_count": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Page Count",
+            "type": "integer"
+          },
+          "pages": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ViewerPageOut"
+            },
+            "title": "Pages",
+            "type": "array"
+          },
+          "pii_masks": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/PiiMaskOut"
+            },
+            "title": "Pii Masks",
+            "type": "array"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reason"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "processing",
+              "ready",
+              "password_protected",
+              "unreadable",
+              "not_previewable"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "truncated": {
+            "cls": "internal",
+            "title": "Truncated",
+            "type": "boolean"
+          },
+          "view": {
+            "cls": "internal",
+            "default": "images",
+            "enum": [
+              "images",
+              "text"
+            ],
+            "title": "View",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidence_version_id",
+          "file_name",
+          "media_type",
+          "status",
+          "reason",
+          "kind",
+          "page_count",
+          "truncated",
+          "pages",
+          "pii_masks",
+          "derivation_id",
+          "allowed_actions"
+        ],
+        "title": "ViewerManifestOut",
+        "type": "object"
+      },
       "abacus__modules__fieldwork__routes__ApprovalIn": {
         "additionalProperties": false,
         "properties": {
@@ -57659,6 +60456,36 @@
           }
         },
         "title": "StartIn",
+        "type": "object"
+      },
+      "abacus__modules__fieldwork__routes__VersionOut": {
+        "properties": {
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "signatures": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/SignatureOut"
+            },
+            "title": "Signatures",
+            "type": "array"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "created_at",
+          "signatures"
+        ],
+        "title": "VersionOut",
         "type": "object"
       },
       "abacus__modules__methodology__contract__StepOut": {
@@ -69470,6 +72297,184 @@
           "review"
         ],
         "x-abacus-action": "decision.reassess"
+      }
+    },
+    "/v1/destinations": {
+      "get": {
+        "description": "INB-02 path-chip pickers; nodes re-authorised, closed nodes carry a reason (N-01-T18).",
+        "operationId": "destinations",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "request",
+                    "permanent_file",
+                    "work_item_folder",
+                    "notice",
+                    "close_receipt"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "parent",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Parent"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DestinationNode"
+                  },
+                  "title": "Response Destinations",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Destinations Route",
+        "tags": [
+          "inbox"
+        ],
+        "x-abacus-action": "inbox.triage"
       }
     },
     "/v1/engagement-drafts": {
@@ -104120,6 +107125,268 @@
         "x-abacus-action": "setup.read"
       }
     },
+    "/v1/evidence-items/{item_id}/access-log": {
+      "get": {
+        "description": "The drawer's access-log card (N-01-T19).",
+        "operationId": "access_log",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPage_AccessLogRow_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Access Log Route",
+        "tags": [
+          "files"
+        ],
+        "x-abacus-action": "evidence.read_access_log"
+      }
+    },
+    "/v1/evidence-items/{item_id}/drawer": {
+      "get": {
+        "description": "FIL-01 O2 drawer (N-01-T19).",
+        "operationId": "drawer",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DrawerOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Drawer Route",
+        "tags": [
+          "files"
+        ],
+        "x-abacus-action": "evidence.read_metadata"
+      }
+    },
     "/v1/evidence-versions/{version_id}/pages/{page_no}": {
       "get": {
         "description": "AC4.2: the masked PNG (`no-store`, `nosniff`); 409 `preview_outdated` for a preview made\nbefore masking. The read leaves an access event first (Q-02-T20). Never served to a reader who\nmay not read unmasked content: 403 (Ayush, 2026-10-26; DEC-369), whose view is `\u2026/text`.",
@@ -105009,7 +108276,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ViewerManifestOut"
+                  "$ref": "#/components/schemas/abacus__modules__evidence__trust_contract__ViewerManifestOut"
                 }
               }
             },
@@ -106096,6 +109363,311 @@
           "review"
         ],
         "x-abacus-action": "field.edit"
+      }
+    },
+    "/v1/files/folders/{folder_ref}/items": {
+      "get": {
+        "description": "FIL-01 list (N-01-T19).",
+        "operationId": "folder_items",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "folder_ref",
+            "required": true,
+            "schema": {
+              "title": "Folder Ref",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolderItemsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Folder Items Route",
+        "tags": [
+          "files"
+        ],
+        "x-abacus-action": "evidence.read_metadata"
+      }
+    },
+    "/v1/files/tree": {
+      "get": {
+        "description": "FIL-01 tree with counts over visible rows (N-01-T19).",
+        "operationId": "file_tree",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "client_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Client Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "expand",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "maxItems": 20,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expand"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileTreeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "File Tree Route",
+        "tags": [
+          "files"
+        ],
+        "x-abacus-action": "evidence.read_metadata"
       }
     },
     "/v1/firm/agents": {
@@ -121241,6 +124813,1843 @@
         "x-abacus-action": "human_gate.read"
       }
     },
+    "/v1/inbox/attachments/bulk-file": {
+      "post": {
+        "description": "INB-01 e \"File n as suggested\": unflagged, confident, unchanged only (N-01-T18).",
+        "operationId": "bulk_file",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkFileIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkFileOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Bulk File Route",
+        "tags": [
+          "inbox"
+        ],
+        "x-abacus-action": "inbox.file"
+      }
+    },
+    "/v1/inbox/attachments/{attachment_id}/content": {
+      "get": {
+        "description": "Audited download, `no-store` (N-01-T13).",
+        "operationId": "attachment_content",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "attachment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Attachment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "contentMediaType": "application/octet-stream",
+                  "title": "Response Attachment Content",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Attachment Content Route",
+        "tags": [
+          "inbox"
+        ],
+        "x-abacus-action": "inbox.download"
+      }
+    },
+    "/v1/inbox/attachments/{attachment_id}/viewer": {
+      "get": {
+        "description": "SHL-08 over an intake object; masked pages only (N-01-T13).",
+        "operationId": "attachment_viewer",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "attachment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Attachment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/abacus__modules__communications__intake_contract__ViewerManifestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Attachment Viewer Route",
+        "tags": [
+          "inbox"
+        ],
+        "x-abacus-action": "inbox.read_content"
+      }
+    },
+    "/v1/inbox/intake": {
+      "post": {
+        "description": "Log received documents (DV-1): the batch; files follow (N-01-T09).",
+        "operationId": "log_intake",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogIntakeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntakeCreatedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Log Intake Route",
+        "tags": [
+          "inbox"
+        ],
+        "x-abacus-action": "inbox.log_intake"
+      }
+    },
+    "/v1/inbox/intake/{message_id}/files": {
+      "post": {
+        "description": "One file of a staff-logged batch, scanned before storage, fail closed (N-01-T09).",
+        "operationId": "log_intake_file",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "message_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Message Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filename",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Filename",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntakeFileOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "The file is too large"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "The file type is not accepted"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service unavailable"
+          }
+        },
+        "summary": "Log Intake File Route",
+        "tags": [
+          "inbox"
+        ],
+        "x-abacus-action": "inbox.log_intake"
+      }
+    },
+    "/v1/inbox/messages/{message_id}/attachments.zip": {
+      "get": {
+        "description": "\"Download All\": stdlib zip, audited, `no-store` (N-01-T13).",
+        "operationId": "message_zip",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "message_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Message Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "contentMediaType": "application/octet-stream",
+                  "title": "Response Message Zip",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Message Zip Route",
+        "tags": [
+          "inbox"
+        ],
+        "x-abacus-action": "inbox.download"
+      }
+    },
+    "/v1/inbox/messages/{message_id}/triage": {
+      "get": {
+        "description": "INB-02's cards (N-01-T18).",
+        "operationId": "message_triage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "message_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Message Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageTriageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Message Triage Route",
+        "tags": [
+          "inbox"
+        ],
+        "x-abacus-action": "inbox.triage"
+      }
+    },
+    "/v1/inbox/messages/{message_id}/triage/apply": {
+      "post": {
+        "description": "INB-02 \"Apply n\": one insert-only decision per attachment by a live human; Ignore needs\n`inbox.triage` and Hold `inbox.ask_client` too (N-01-T18).",
+        "operationId": "triage_apply",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "message_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Message Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TriageApplyIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TriageApplyOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Triage Apply Route",
+        "tags": [
+          "inbox"
+        ],
+        "x-abacus-action": "inbox.file"
+      }
+    },
+    "/v1/inbox/summary": {
+      "get": {
+        "description": "INB-01 \"23 waiting \u00b7 4 unmatched\", over visible rows only (N-01-T13).",
+        "operationId": "inbox_summary",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxSummaryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Inbox Summary Route",
+        "tags": [
+          "inbox"
+        ],
+        "x-abacus-action": "inbox.read"
+      }
+    },
+    "/v1/inbox/threads": {
+      "get": {
+        "description": "INB-01 rail, `last_received_at` descending (N-01-T13).",
+        "operationId": "list_threads",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "source",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "mailbox",
+                    "portal",
+                    "staff"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source"
+            }
+          },
+          {
+            "in": "query",
+            "name": "client_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Client Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/InboxItemStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "received_since",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Received Since"
+            }
+          },
+          {
+            "in": "query",
+            "name": "channel",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "email",
+                    "portal_upload",
+                    "staff_logged"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Channel"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "show_ignored",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Show Ignored",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "show_filed",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Show Filed",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPage_InboxThreadRow_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "List Threads Route",
+        "tags": [
+          "inbox"
+        ],
+        "x-abacus-action": "inbox.read"
+      }
+    },
+    "/v1/inbox/threads/{thread_id}": {
+      "get": {
+        "description": "INB-01 reading pane; bodies only with `inbox.read_content` (N-01-T13).",
+        "operationId": "get_thread",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "thread_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Thread Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxThreadDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Get Thread Route",
+        "tags": [
+          "inbox"
+        ],
+        "x-abacus-action": "inbox.read"
+      }
+    },
+    "/v1/inbox/threads/{thread_id}/ignore": {
+      "post": {
+        "description": "INB-01 b \"Ignore\" for an unmatched sender (N-01-T18).",
+        "operationId": "ignore_thread",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "thread_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Thread Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IgnoreThreadIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxThreadDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Ignore Thread Route",
+        "tags": [
+          "inbox"
+        ],
+        "x-abacus-action": "inbox.triage"
+      }
+    },
+    "/v1/inbox/threads/{thread_id}/match-client": {
+      "post": {
+        "description": "INB-01 b: attachments New \u2192 Waiting; \"Remember sender\" also needs\n`inbox_sender_rule.create` (N-01-T18).",
+        "operationId": "match_client",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "thread_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Thread Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MatchClientIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxThreadDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Match Client Route",
+        "tags": [
+          "inbox"
+        ],
+        "x-abacus-action": "inbox.match_sender"
+      }
+    },
     "/v1/invitations/accept": {
       "post": {
         "description": "A passwordlessly signed-in person accepts (TASK-030 D2): no account is needed yet. On the\nportal (v2) the invitee's code session accepts, with the invitation's terms version.",
@@ -132517,6 +137926,618 @@
           "portal"
         ],
         "x-abacus-action": "portal_home.read"
+      }
+    },
+    "/v1/portal/intake-uploads": {
+      "get": {
+        "description": "The principal's own uploads for one scope, newest first (N-01-T14).",
+        "operationId": "list_intake_uploads",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "scope_kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "client",
+                "client_entity",
+                "engagement"
+              ],
+              "title": "Scope Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scope_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Scope Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPage_IntakeUploadOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "List Intake Uploads Route",
+        "tags": [
+          "portal"
+        ],
+        "x-abacus-action": "portal_intake.read_own"
+      },
+      "post": {
+        "description": "POR-03 \"Upload something else\": the batch (N-01-T14).",
+        "operationId": "create_intake_upload",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntakeUploadIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntakeUploadOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Create Intake Upload Route",
+        "tags": [
+          "portal"
+        ],
+        "x-abacus-action": "portal_intake.upload"
+      }
+    },
+    "/v1/portal/intake-uploads/{upload_id}/files": {
+      "post": {
+        "description": "One file, scanned before storage under a detached key, fail closed (N-01-T14).",
+        "operationId": "add_intake_upload_file",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "upload_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Upload Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filename",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Filename",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntakeUploadFileOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "The file is too large"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "The file type is not accepted"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service unavailable"
+          }
+        },
+        "summary": "Add Intake Upload File Route",
+        "tags": [
+          "portal"
+        ],
+        "x-abacus-action": "portal_intake.upload"
+      }
+    },
+    "/v1/portal/intake-uploads/{upload_id}/withdraw": {
+      "post": {
+        "description": "Only while every file is New or Waiting; a filed one answers 409 `attachment_filed`\n(ADR-162; N-01-T14).",
+        "operationId": "withdraw_intake_upload",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "upload_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Upload Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntakeUploadOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Withdraw Intake Upload Route",
+        "tags": [
+          "portal"
+        ],
+        "x-abacus-action": "portal_intake.withdraw"
       }
     },
     "/v1/portal/links/renew": {
