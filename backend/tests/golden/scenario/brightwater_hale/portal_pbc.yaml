@@ -1,0 +1,90 @@
+# R-01-T11 (ADR-078; R-01 §5.4; DEC-348): the portal PBC slice's golden figures, typed from the
+# POR-03, POR-04, POR-14 and AUD-03 screen contracts and handoffs and from SHL-14 f, never from the
+# scenario package. `tests/integration/test_r01t11_portal_pbc_goldens.py` holds the loaded tenant
+# to them. DEC-471 fills what no source or service gives; POR-14 a's 4 of 9, which AUD-03's statuses
+# contradict, stays xfail(strict=True) citing TASK-1221.
+golden: brightwater_hale/portal_pbc
+cases:
+  - id: feld-binder-5-of-7
+    kind: footing
+    expected:
+      requests: 7
+      done: 5
+      open: ["Form 1095-C From Mercer Hill Health",
+             "2025 federal (1040-ES) and New York (IT-2105) estimated payment confirmations"]
+    source: "BND-02 a (5 of 7); POR-03 a (exactly 2 open: 1095-C, estimated payments = Intake 2); DEC-348 (E0 keeps 5 of 7)"
+    reviewed_by: pending (AY)
+
+  - id: feld-1095c-emailed-9-12
+    kind: inbox
+    expected:
+      file_name: Feld_1095C_2025.pdf
+      from: Claire Feld
+      at: "2026-09-14 09:12"  # Central
+      by_staff: false
+      waiting: true
+      request: "Form 1095-C From Mercer Hill Health"
+      request_status: requested
+    source: "POR-03 c (Claire emailed it at 9:12 AM; the firm has not filed it yet) and c2 (INB-02 files it); BND-01 ROWS 1 (9:12 AM · Claire emailed)"
+    reviewed_by: pending (AY)
+
+  - id: dana-client-titles
+    kind: titles
+    expected:
+      titles: ["IRS opinion letter on the pre-approved plan document",
+               "Opt-out elections — auto-enrolled employees",
+               "Participant complaints log and support",
+               "Pay rate authorizations",
+               "W-3 for 2025"]
+      w3_due: "2026-09-18"
+    source: "POR-03 i (Dana's own requests; W-3 'Due Sep 18'); AUD-03 due dates; DEC-348 (handoff titles win for the client-facing title)"
+    reviewed_by: pending (AY)
+
+  - id: dana-census-title
+    kind: titles
+    expected:
+      title: "Employee census file — 2025"
+    source: "POR-03 i ('You uploaded Sep 2'); the received row's title is bootstrapped (DEC-471)"
+    reviewed_by: pending (AY)
+
+  - id: aud03-totals-kept
+    kind: footing
+    expected:
+      requests: 24
+      received: 11
+      uploaded: 1
+      requested: 12
+      descriptions: ["W-3 Form", "Opt-Out Elections", "Pay Rate Authorizations",
+                     "Participant Complaints Log and Support"]
+    source: "AUD-03 spec ('Totals: 24 requests; 11 received; 1 needs review; 12 requested'); DEC-348 (AUD-03 keeps its 24 rows and descriptions)"
+    reviewed_by: pending (AY)
+
+  - id: dana-other-parties
+    kind: delegations
+    expected:
+      organisations: ["Harborline Trust Company", "Keystone Retirement Services",
+                      "PayGrid Payroll", "Summit Plan Administrators"]
+    source: "POR-03 i ('Some requests go to Keystone, Harborline, PayGrid and Summit directly'); delegations without a grant (DEC-471)"
+    reviewed_by: pending (AY)
+
+  - id: keystone-4-of-9
+    kind: footing
+    expected:
+      delegated: 9
+      uploaded: 4
+    source: "POR-14 a (Keystone 4 of 9 at E0); contradicts AUD-03's statuses, which read 6 of Keystone's 9 done (TASK-1221)"
+    reviewed_by: pending (AY)
+
+  - id: granite-peak-surl-draft
+    kind: request
+    expected:
+      title: "Support for 40 subsequent disbursements (SURL)"
+      status: draft
+      client_visible: false
+      drafted: true
+      wording_source: template
+      client_assignee: Luis Ferrante
+      firm_owner: Cole Hart
+      period: ["2026-06-01", "2026-09-18"]
+    source: "SHL-14 f (revision: Draft, Owners only, Luis Ferrante · CFO, firm owner Cole Hart, drafted by the agent in the BH-FS-430 procedure session); SHL-20 (expected period Jun 1 – Sep 18, 2026); P-06 DV-11 (seeded with drafted_wording_source = 'template')"
+    reviewed_by: pending (AY)

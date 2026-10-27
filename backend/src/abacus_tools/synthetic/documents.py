@@ -434,6 +434,30 @@ def tax_form_pdf(
     return _pdf([_text_page(lines)])
 
 
+def form_1095c_pdf(
+    *,
+    tax_year: int = 2025,
+    employer: str = "Example Company Inc",
+    employee: str = "Sam Example",
+) -> bytes:
+    """An employer-provided health insurance offer and coverage statement (R-01-T11; J06's
+    1095-C). Identification numbers are masked letters; no coverage figures are printed."""
+    return _pdf(
+        [
+            _text_page(
+                [
+                    f"Form 1095-C {tax_year}",
+                    "Employer-Provided Health Insurance Offer and Coverage",
+                    f"Employer: {employer}",
+                    "Employer identification number: XX-XXXXXXX",
+                    f"Employee: {employee}",
+                    "Employee's social security number: XXX-XX-XXXX",
+                ]
+            )
+        ]
+    )
+
+
 def estimated_payment_pdf(
     *,
     taxpayer: str = "Sam Example",

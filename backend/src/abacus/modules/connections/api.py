@@ -68,6 +68,11 @@ from abacus.modules.connections.pipeline import (
     snapshot,
     validate_run,
 )
+from abacus.modules.connections.reconnect import (
+    ReconnectRequested,
+    reconnect_todo_count,
+    request_reconnect,
+)
 from abacus.modules.connections.retrievals import (
     WORKFLOWS,
     WorkflowUnavailable,
@@ -163,6 +168,7 @@ __all__ = [
     "NotSupported",
     "Period",
     "RawPayload",
+    "ReconnectRequested",
     "RetrievalInput",
     "RetrievalOutcome",
     "RetrievalView",
@@ -193,7 +199,9 @@ __all__ = [
     "normalise_raw",
     "parse_trial_balance",
     "pull_raw",
+    "reconnect_todo_count",
     "render",
+    "request_reconnect",
     "retrieval_status",
     "retry",
     "revoke_retired",

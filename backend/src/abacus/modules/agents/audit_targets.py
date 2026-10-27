@@ -12,13 +12,26 @@ from sqlalchemy import select
 from sqlalchemy.orm import QueryableAttribute
 
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.modules.agents.models import AgentRun, FollowUpSchedule, ScreeningResult
+from abacus.modules.agents.models import (
+    AgentRun,
+    FollowUpSchedule,
+    InboxMatchRun,
+    Proposal,
+    ScreeningResult,
+    Suggestion,
+    UploadReview,
+)
 
 _OWNERS: dict[str, tuple[QueryableAttribute[UUID], QueryableAttribute[UUID | None]]] = {
     "agent_run": (AgentRun.id, AgentRun.engagement_id),
     "reminder": (FollowUpSchedule.id, FollowUpSchedule.engagement_id),  # before P-06-T14
     "follow_up": (FollowUpSchedule.id, FollowUpSchedule.engagement_id),
     "screening_result": (ScreeningResult.id, ScreeningResult.engagement_id),
+    # P-04-T24, T25 (ADR-161): proposals, suggestions and the typed adapters' subjects.
+    "proposal": (Proposal.id, Proposal.engagement_id),
+    "suggestion": (Suggestion.id, Suggestion.engagement_id),
+    "upload_review": (UploadReview.id, UploadReview.engagement_id),
+    "inbox_match": (InboxMatchRun.id, InboxMatchRun.engagement_id),
 }
 AUDIT_KINDS = frozenset(_OWNERS)
 

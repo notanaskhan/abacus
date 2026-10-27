@@ -2,7 +2,10 @@
 declares exactly one matrix action and answers 404 with `audit_log.explorer` off and 501 with it
 on; no route can change or remove an event (AC-8); no shape carries a hidden or hidden-count field
 (DEC-43); the actor grammar has no agent-as-actor slot (INV-5); request context and values are
-classified as personal data; amounts are decimal strings; the link is Restricted."""
+classified as personal data; amounts are decimal strings; the link is Restricted.
+
+G-02-T08 made the list and the detail live; G-02-T17 (TASK-1480) the export family, with its
+download route. Every route still answers 404 with the flag off, after the matrix (L1)."""
 
 from __future__ import annotations
 
@@ -19,7 +22,7 @@ from abacus.api.export_openapi import document
 from abacus.kernel._flags import AUDIT_LOG_EXPLORER
 from abacus.kernel.classification import level_of, unclassified_fields
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag
 from abacus.modules.audit_trail import audit_log_contract as contract
 from abacus.modules.identity.api import AuthContext, Forbidden
@@ -36,6 +39,8 @@ ROUTES: dict[tuple[str, str], str] = {
     ("post", "/v1/audit-events/exports"): "audit_event.export",
     ("get", "/v1/audit-events/exports/{export_id}"): "audit_export.read",  # L5: no fresh MFA
     ("post", "/v1/audit-events/exports/{export_id}/link"): "audit_event.export",
+    # G-02-T17: the ZIP, streamed by the API (ADR-104), with a fresh second factor.
+    ("get", "/v1/audit-events/exports/{export_id}/download"): "audit_event.export",
 }
 NAMED = ("AuditEventRow", "AuditEventDetail", "ValueRow", "AuditExport")
 CONTRACT_DOC = Path(__file__).resolve().parents[4] / "docs" / "contracts" / "audit-log.md"
@@ -57,9 +62,8 @@ def _enum(schema: str, field: str) -> set[str]:
     raise AssertionError(f"{schema}.{field} has no enum")
 
 
-# G-02-T08 (TASK-1329): the list and the detail are live; the export family stays the stub's
-# until G-02-T17.
-LIVE = frozenset({("get", "/v1/audit-events"), ("get", "/v1/audit-events/{seq}")})
+# G-02-T08 (TASK-1329): the list and the detail are live; G-02-T17 (TASK-1480) the exports.
+LIVE = frozenset(ROUTES)
 
 
 @pytest.mark.parametrize(("method", "path"), sorted(ROUTES))
@@ -210,14 +214,19 @@ def _authorise(monkeypatch: pytest.MonkeyPatch, *, allow: bool) -> None:
     monkeypatch.setattr(contract, "authorise", authorise)
 
 
-async def test_g02t04_flag_off_is_404_and_on_is_501(monkeypatch: pytest.MonkeyPatch) -> None:
+async def _gate(ctx: AuthContext, action: str) -> None:
+    """The live routes' gate (G-02-T08, T17): the matrix, then the flag."""
+    await contract.authorised(ctx, action)
+    await contract.gate(ctx)
+
+
+async def test_g02t04_flag_off_is_404_and_on_passes(monkeypatch: pytest.MonkeyPatch) -> None:
     _authorise(monkeypatch, allow=True)
     seen = _flags(monkeypatch, False)
     with pytest.raises(NotFound):
-        await contract._stub(_ctx("security_admin"), "audit_event.read")  # pyright: ignore[reportPrivateUsage] -- the route gate
+        await _gate(_ctx("security_admin"), "audit_event.read")
     seen = _flags(monkeypatch, True)
-    with pytest.raises(NotImplementedYet):
-        await contract._stub(_ctx("security_admin"), "audit_event.read")  # pyright: ignore[reportPrivateUsage] -- the route gate
+    await _gate(_ctx("security_admin"), "audit_event.read")
     assert seen == [AUDIT_LOG_EXPLORER]
 
 
@@ -227,7 +236,7 @@ async def test_l1_the_matrix_answers_before_the_flag_is_read(
     _authorise(monkeypatch, allow=False)
     seen = _flags(monkeypatch, True)
     with pytest.raises(Forbidden):  # no role the export row names
-        await contract._stub(_ctx(None), "audit_event.export")  # pyright: ignore[reportPrivateUsage] -- the route gate
+        await _gate(_ctx(None), "audit_event.export")
     agent = _ctx(None)
     agent = AuthContext(
         TenantContext(agent.tenant_id, "agent", "agent:probe:run", agent.user_id),
@@ -237,12 +246,11 @@ async def test_l1_the_matrix_answers_before_the_flag_is_read(
         None,
     )
     with pytest.raises(Forbidden):  # INV-1: the agent never reads the log
-        await contract._stub(agent, "audit_event.read")  # pyright: ignore[reportPrivateUsage] -- the route gate
+        await _gate(agent, "audit_event.read")
     with pytest.raises(NotFound):  # INV-4: a client principal learns nothing, not even a 403
-        await contract._stub(_ctx(None, client=True), "audit_event.read")  # pyright: ignore[reportPrivateUsage] -- the route gate
+        await _gate(_ctx(None, client=True), "audit_event.read")
     assert seen == []
     # An in-scope or engagement-role reader passes to the gate; the live route narrows per event
     # with visible().
     for role in ("quality_partner", None):
-        with pytest.raises(NotImplementedYet):
-            await contract._stub(_ctx(role), "audit_event.read")  # pyright: ignore[reportPrivateUsage] -- the route gate
+        await _gate(_ctx(role), "audit_event.read")

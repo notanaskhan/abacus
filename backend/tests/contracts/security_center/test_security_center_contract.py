@@ -6,7 +6,8 @@ validation error; every field is classified; request context and the pack link a
 Restricted; the schedule is mounted before Q-02's export router.
 
 G-02-T14 made identity's routes live (DEC-530): they still answer 404 with the flag off, after
-the matrix, and no longer declare the 501 (`IDENTITY_LIVE`, `_gate`)."""
+the matrix, and no longer declare the 501 (`IDENTITY_LIVE`, `_gate`). G-02-T18 to T20 made the
+rest live the same way (`PLATFORM_AND_SCHEDULE_LIVE`, `LIVE_CONTRACTS`)."""
 
 from __future__ import annotations
 
@@ -24,7 +25,7 @@ from abacus.api.export_openapi import document
 from abacus.kernel._flags import SECURITY_CENTER_V1
 from abacus.kernel.classification import level_of, unclassified_fields
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag
 from abacus.modules.evidence import api as evidence_api
 from abacus.modules.evidence import firm_export_schedule_contract as schedule
@@ -61,6 +62,9 @@ ROUTES: dict[tuple[str, str], str] = {
     ("put", "/v1/firm/safeguards"): "security.manage",
     ("put", "/v1/firm/safeguards/controls/{control_key}"): "security.manage",
     ("post", "/v1/firm/safeguards/wisp-pack"): "security.manage",
+    # G-02-T20: the pack's status and its download (the API streams it, ADR-104).
+    ("get", "/v1/firm/safeguards/wisp-pack/{pack_id}"): "security.manage",
+    ("get", "/v1/firm/safeguards/wisp-pack/{pack_id}/download"): "security.manage",
 }
 # G-02-T14: identity's routes are live; the stubs are platform's (T18, T20) and evidence's (T19).
 IDENTITY_LIVE: frozenset[tuple[str, str]] = frozenset(
@@ -77,6 +81,8 @@ IDENTITY_LIVE: frozenset[tuple[str, str]] = frozenset(
         ("put", "/v1/firm/support-access"),
     }
 )
+# G-02-T18 (incidents), T20 (safeguards) and T19 (the export schedule) are live too.
+PLATFORM_AND_SCHEDULE_LIVE: frozenset[tuple[str, str]] = frozenset(ROUTES) - IDENTITY_LIVE
 # Q-02's routes in the same paths: incident create and the on-demand export (unchanged here).
 Q02: frozenset[tuple[str, str]] = frozenset(
     {
@@ -96,7 +102,8 @@ PREFIXES = (
     "/v1/firm/data-exports",
 )
 CONTRACTS: tuple[ModuleType, ...] = (identity_contract, platform_contract, schedule)
-STUB_CONTRACTS: tuple[ModuleType, ...] = (platform_contract, schedule)
+# G-02-T18 to T20: no stubs remain; each contract's live gate answers the matrix, then the flag.
+LIVE_CONTRACTS: tuple[ModuleType, ...] = (platform_contract, schedule)
 NAMED = (
     "SecurityOverviewOut",
     "SignInPolicyOut",
@@ -127,10 +134,9 @@ def test_g02t11_each_route_declares_its_one_action_and_is_a_stub(method: str, pa
     assert op["x-abacus-action"] == ROUTES[(method, path)]
     responses = set(cast(Json, op["responses"]))
     assert "404" in responses
-    if (method, path) in IDENTITY_LIVE:
-        assert "501" not in responses  # G-02-T14: live
-    else:
-        assert "501" in responses
+    # G-02-T14 made identity's routes live; G-02-T18 to T20 the rest (TASK-1481 to TASK-1483).
+    assert "501" not in responses
+    assert (method, path) in IDENTITY_LIVE or (method, path) in PLATFORM_AND_SCHEDULE_LIVE
 
 
 def test_g02t11_the_family_is_these_routes_and_q02s_untouched() -> None:
@@ -282,28 +288,24 @@ def _authorise(monkeypatch: pytest.MonkeyPatch, contract: ModuleType, *, allow: 
 Gate = Callable[[AuthContext, str], Coroutine[object, object, None]]
 
 
-def _stub_of(contract: ModuleType) -> Gate:
-    return cast(Gate, contract._stub)
-
-
-@pytest.mark.parametrize("contract", STUB_CONTRACTS, ids=lambda c: c.__name__.split(".")[2])
-async def test_g02t11_flag_off_is_404_and_on_is_501(
+@pytest.mark.parametrize("contract", LIVE_CONTRACTS, ids=lambda c: c.__name__.split(".")[2])
+async def test_g02t18_t20_flag_off_is_404_and_on_passes_to_the_service(
     monkeypatch: pytest.MonkeyPatch, contract: ModuleType
 ) -> None:
     _authorise(monkeypatch, contract, allow=True)
-    stub = _stub_of(contract)
+    gate = _gate_of(contract)
     _flags(monkeypatch, contract, False)
     with pytest.raises(NotFound):
-        await stub(_ctx("security_admin"), "security.read")
+        await gate(_ctx("security_admin"), "security.read")
     seen = _flags(monkeypatch, contract, True)
-    with pytest.raises(NotImplementedYet):
-        await stub(_ctx("security_admin"), "security.read")
+    await gate(_ctx("security_admin"), "security.read")
     assert seen == [SECURITY_CENTER_V1]
 
 
 def _gate_of(contract: ModuleType) -> Gate:
-    """Identity's live gate (G-02-T14) or a module's stub: both answer the matrix first."""
-    return cast(Gate, contract._gate if contract is identity_contract else contract._stub)
+    """Each contract's live gate (identity's since G-02-T14, the rest since T18 to T20): the
+    matrix first, then the flag."""
+    return cast(Gate, contract._gate)
 
 
 async def test_g02t14_identity_flag_off_is_404_and_on_passes_to_the_service(

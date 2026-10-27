@@ -102,7 +102,7 @@ Gradients, emoji, saturated blue, heavy shadows, invented colours, lorem ipsum, 
 
 | Artboard | Tier | Diff % | Notes |
 |---|---|---|---|
-| a–h | C | — | locked by Fri Apr 16, 2027 (G-02-T21); fieldset B copy (DV-1, DV-2) report-only until the boards are revised |
+| a–h | C (locked) | — | locked 2026-10-27 (G-02-T21; `e2e/screens/ADM-06.spec.ts` renders each with axe clean; the diff is measured by `pnpm parity:screens` once the baselines are fetched); fieldset B copy (DV-1, DV-2) report-only until the boards are revised |
 | i, j | C report-only | — | fixture mode only |
 
 ## Open gaps

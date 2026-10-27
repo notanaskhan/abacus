@@ -816,6 +816,19 @@ objects:
       downloaded:        {label: "Downloaded", variant: null, terminal: false, derived: false}
       expired:           {label: "Expired", variant: null, terminal: true, derived: false}
 
+  firm_export_schedule:
+    source: "G-02-T19 (ADM-06 a Data export card; DEC-72, DEC-623): the monthly schedule's dual approval"
+    codes:
+      pending_approval: {label: "Waiting for approval", variant: null, terminal: false, derived: false}   # until a security admin and a partner have each approved
+      active:           {label: "Active", variant: null, terminal: false, derived: false}
+      paused:           {label: "Paused", variant: null, terminal: false, derived: false}
+
+  safeguards_control:
+    source: "G-02-T20 (ADM-06 h fieldset D; Pub 4557 controls over imported definitions; DEC-626)"
+    codes:
+      evidenced: {label: "Evidenced", variant: null, terminal: false, derived: false}   # "18 of 20 evidenced"
+      open:      {label: "Open", variant: null, terminal: false, derived: false}
+
   support_session:
     source: "DF-31 support session; G-02 section 3.9 (ADM-06 support card); codes of support_sessions (SPEC-012)"
     codes:

@@ -21,12 +21,14 @@ Binding from the #417 security review (DEC-440):
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Sequence
 from decimal import Decimal
 from typing import Annotated, Final, cast, get_args
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
+from fastapi.responses import Response
 
 from abacus.kernel._flags import LEDGER_TB_WORKPAPER
 from abacus.kernel._statuses import (
@@ -36,7 +38,10 @@ from abacus.kernel._statuses import (
 )
 from abacus.kernel.errors import DomainForbidden, NotFound
 from abacus.kernel.flags import flag_enabled
+from abacus.kernel.uow import Ref, Target, uow
+from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.assurance.tb_contract import (
+    XLSX,
     AreaKey,
     DisplayUnit,
     SourceKind,
@@ -55,6 +60,7 @@ from abacus.modules.assurance.tb_contract import (
     tb_router,
 )
 from abacus.modules.engagements.api import EngagementRef, get_ref, version_detail
+from abacus.modules.evidence.api import LayerExport, LayerLine, render_trial_balance_layers
 from abacus.modules.identity.api import (
     AuthContext,
     Forbidden,
@@ -189,6 +195,16 @@ async def layer_view(
     version_no: int | None,
 ) -> TbLayerViewOut:
     """AUD-06 a, c, d, g: the trial balance at one layer and version."""
+    return (await _layer_view(ctx, engagement_id, tb_id, layer, version_no))[0]
+
+
+async def _layer_view(
+    ctx: AuthContext,
+    engagement_id: UUID,
+    tb_id: UUID,
+    layer: TrialBalanceLayerStatus,
+    version_no: int | None,
+) -> tuple[TbLayerViewOut, TrialBalanceView]:
     ref = await _gate(ctx, engagement_id)
     rules = await area_rules(ctx, ref)
     found = await trial_balance_view(
@@ -210,7 +226,7 @@ async def layer_view(
     allowed = await allowed_actions(ctx, ref.resource(), _ACTIONS)
     version = found.version
     kind = version.source_kind if version.source_kind in _SOURCE_KINDS else "other"
-    return TbLayerViewOut(
+    out = TbLayerViewOut(
         trial_balance_id=found.summary.id,
         engagement_id=engagement_id,
         label=TrialBalanceLabelStatus(found.summary.label),
@@ -248,6 +264,7 @@ async def layer_view(
         newer_snapshots=_newer(found, snapshots),
         allowed_actions=[cast(TbAction, a) for a in _ACTIONS if a in allowed],
     )
+    return out, found
 
 
 async def leadsheet_area(
@@ -365,11 +382,155 @@ async def tie_issue_link_route(
     second issue; audited `tie_out_check.issue_linked`. Authorised first (walls 404), then the
     flag (404 off)."""
     await _define_gate(ctx, engagement_id)
-    link = await link_issue(ctx, engagement_id, tb_id, check_id, body.issue_id, body.seen_version)
-    return TieIssueLinkOut(
-        check_id=link.check_id,
-        issue_id=link.issue_id,
-        version_no=link.version_no,
-        linked_by_user_id=link.linked_by_user_id,
-        linked_at=link.linked_at,
+
+    async def run() -> tuple[int, dict[str, object]]:
+        link = await link_issue(
+            ctx, engagement_id, tb_id, check_id, body.issue_id, body.seen_version
+        )
+        out = TieIssueLinkOut(
+            check_id=link.check_id,
+            issue_id=link.issue_id,
+            version_no=link.version_no,
+            linked_by_user_id=link.linked_by_user_id,
+            linked_at=link.linked_at,
+        )
+        return 201, out.model_dump(mode="json")
+
+    # ED-177 (P-36): the key replays its first answer; reused for another request it is 422
+    # `idempotency_key_reused`, before the set-once rule is consulted.
+    stored = await idempotent(
+        ctx.tenant,
+        route="tie_out_check.issue_link",
+        key=idempotency_key,
+        body={
+            "engagement_id": str(engagement_id),
+            "tb_id": str(tb_id),
+            "check_id": str(check_id),
+            "issue_id": str(body.issue_id),
+            "seen_version": body.seen_version,
+        },
+        run=run,
+    )
+    return TieIssueLinkOut.model_validate(stored.body)
+
+
+# --- Open in Excel (A-02-T22; AC-8.1) -----------------------------------------------------------
+
+_LAYER_WORDS: Final = {"unadjusted": "Unadjusted", "aje": "AJE", "rje": "RJE", "final": "Final"}
+_LAYER_NO: Final = {"unadjusted": 0, "aje": 1, "rje": 2, "final": 3}
+
+
+def _ticks_text(line: TbLayerLineOut) -> str:
+    """ "L1 agreed Marcus Delaney 2026-09-14T15:02:00+00:00; …": an agent's tick names the person
+    it acted for, "via Agent" (INV-5)."""
+    out: list[str] = []
+    for t in line.ticks:
+        who = f"{t.by_name} via Agent" if t.actor_kind == "agent" else t.by_name
+        out.append(f"L{t.level} {t.kind} {who} {t.at.isoformat()}")
+    return "; ".join(out)
+
+
+def export_of(view: TbLayerViewOut, found: TrialBalanceView) -> LayerExport:
+    """The export's content from the view the screen shows (the same figures, by code)."""
+    adjusted = view.layer.value != "unadjusted"
+    lines = tuple(
+        LayerLine(
+            account_code=line.account_code,
+            account_name=line.account_name,
+            area=group.label,
+            wp_ref=line.wp_ref or "",
+            boy=line.boy,
+            eoy=line.eoy,
+            aje=line.aje,
+            rje=line.rje,
+            final=line.final,
+            ticks=_ticks_text(line),
+            citations="; ".join(str(c) for c in line.citation_ids),
+        )
+        for group in view.groups
+        for line in group.lines
+    )
+    has_prior = any(line.boy is not None for line in lines)
+    p = view.provenance
+    footer = (
+        ("Trial balance", str(view.trial_balance_id)),
+        ("Label", view.label.value),
+        ("Version", str(view.version_no)),
+        ("Layer", _LAYER_WORDS[view.layer.value]),
+        ("Period", f"{view.period_start.isoformat()} to {view.period_end.isoformat()}"),
+        ("Source", p.source),
+        ("Source kind", p.source_kind),
+        ("Pulled at", p.pulled_at.isoformat()),
+        ("Snapshot ID", str(found.version.snapshot_id)),
+        ("Prior snapshot ID", str(found.version.prior_snapshot_id or "")),
+        ("Adopted by", p.adopted_by_name),
+        ("Adopted at", p.adopted_at.isoformat()),
+        ("Amounts", "computed by Accrued from the snapshot; not edited"),
+    )
+    return LayerExport(
+        title=f"Trial balance {view.period_end.isoformat()}",
+        layer=_LAYER_WORDS[view.layer.value],
+        adjusted=adjusted,
+        lines=lines,
+        total_boy=sum((g.boy or _ZERO for g in view.groups), _ZERO) if has_prior else None,
+        total_eoy=sum((g.eoy for g in view.groups), _ZERO),
+        debit=view.balance.debit,
+        credit=view.balance.credit,
+        difference=view.balance.difference,
+        pulled_at=p.pulled_at,
+        footer=footer,
+    )
+
+
+async def export_layer(
+    ctx: AuthContext,
+    engagement_id: UUID,
+    tb_id: UUID,
+    layer: TrialBalanceLayerStatus,
+    version_no: int | None,
+) -> tuple[bytes, int]:
+    """AC-8.1: authorise `trial_balance.export` first (walls 404), then the flag (404 off), then
+    the layer exactly as AUD-06 shows it; the bytes and the version. Audited
+    `trial_balance.exported` with the file's SHA-256."""
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "trial_balance.export", ref.resource())
+    if not await flag_enabled(ctx.tenant, LEDGER_TB_WORKPAPER):
+        raise NotFound(LEDGER_TB_WORKPAPER.name)
+    view, found = await _layer_view(ctx, engagement_id, tb_id, layer, version_no)
+    content = render_trial_balance_layers(export_of(view, found))
+    async with uow(ctx.tenant) as tx:
+        tx.record(
+            "trial_balance.exported",
+            target=Target("trial_balance", view.trial_balance_id),
+            after=Ref(
+                version_no=view.version_no,
+                layer_no=_LAYER_NO[view.layer.value],
+                file_sha256=hashlib.sha256(content).hexdigest(),
+            ),
+        )
+    return content, view.version_no
+
+
+@tb_router.get(
+    "/{tb_id}/export.xlsx",
+    action="trial_balance.export",
+    response_model=bytes,
+    errors=(409,),
+)
+async def tb_export_route(
+    engagement_id: UUID,
+    tb_id: UUID,
+    ctx: Ctx,
+    layer: TrialBalanceLayerStatus = TrialBalanceLayerStatus.UNADJUSTED,
+    version: Annotated[int | None, Query(ge=1)] = None,
+) -> Response:
+    """Open in Excel (A-02-T22): a deterministic XLSX of the layer with ticks, citations and a
+    provenance footer, audited `trial_balance.exported`; formula-like text is neutralised.
+    409 `layer_unavailable` or `layer_unbalanced`, as the view."""
+    content, version_no = await export_layer(ctx, engagement_id, tb_id, layer, version)
+    name = f"trial-balance-v{version_no}-{layer.value}.xlsx"
+    return Response(
+        content=content,
+        media_type=XLSX,
+        headers={"Content-Disposition": f'attachment; filename="{name}"'},
     )

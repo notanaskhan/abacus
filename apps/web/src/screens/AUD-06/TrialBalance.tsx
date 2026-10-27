@@ -40,11 +40,16 @@ import {
   useFormat,
 } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
-import { type JSX, type ReactNode, useState } from "react";
+import { type JSX, type ReactNode, Suspense, lazy, useState } from "react";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { isNotFound } from "../../domain/audits";
 import type { EvidenceViewerTarget } from "../SHL-08";
 import { COPY } from "./copy";
+
+// A-02-T24: the live actions load on demand (the firm entry is at its budget).
+const AdoptAction = lazy(async () => ({ default: (await import("./TbLive")).AdoptAction }));
+const NewerBanner = lazy(async () => ({ default: (await import("./TbLive")).NewerBanner }));
+const SourceActions = lazy(async () => ({ default: (await import("./TbLive")).SourceActions }));
 
 export type TbTab = "trial_balance" | "leadsheets";
 export type TbLayer = TbLayerViewOut["layer"];
@@ -70,6 +75,8 @@ export interface TrialBalanceOptions {
   planned?: PlannedFacts;
   /** A line was clicked and its citation resolved: the host shows its Viewer. */
   onLink?: () => void;
+  /** "Sign off…": the host opens `?ov=signoff:trial_balance:<tb>:L2` (SHL-12, P-04-T48). */
+  onSignOff?: (tbId: string) => void;
 }
 
 export interface TrialBalancePane {
@@ -589,7 +596,7 @@ function citationOf(line: TbLayerLineOut): string | null {
 
 export function useTrialBalancePane(
   engagementId: string,
-  { enabled = true, initial = {}, onLink, planned = {} }: TrialBalanceOptions = {},
+  { enabled = true, initial = {}, onLink, onSignOff, planned = {} }: TrialBalanceOptions = {},
 ): TrialBalancePane {
   const [tab, setTab] = useState<TbTab>(initial.tab ?? "trial_balance");
   const [layer, setLayer] = useState<TbLayer>(initial.layer ?? "unadjusted");
@@ -646,10 +653,35 @@ export function useTrialBalancePane(
     />
   );
 
+  const snapshots = list.data?.snapshots ?? [];
+  const [exporting, setExporting] = useState(false);
+  const exportExcel = (): void => {
+    if (v === undefined) return;
+    setExporting(true);
+    void import("./TbLive")
+      .then(async (m) => m.downloadExport(engagementId, v.trial_balance_id, v.layer, v.version_no))
+      .catch(() => undefined)
+      .finally(() => {
+        setExporting(false);
+      });
+  };
+
   const canvas: CockpitCanvas = {
     title: COPY.title,
     state,
-    empty: { icon: "file-text", title: COPY.empty },
+    empty: {
+      icon: "file-text",
+      title: COPY.empty,
+      ...(snapshots.length === 0
+        ? {}
+        : {
+            action: (
+              <Suspense fallback={null}>
+                <AdoptAction engagementId={engagementId} snapshots={snapshots} />
+              </Suspense>
+            ),
+          }),
+    },
     actions: (
       <>
         {v !== undefined && isAgentDraft(v) && (
@@ -670,8 +702,20 @@ export function useTrialBalancePane(
         {PLANNED_VISIBLE && allowed.has("trial_balance.annotate") && (
           <PaneAction icon="pencil" label={COPY.edit} disabled />
         )}
-        {PLANNED_VISIBLE && allowed.has("sign_off.review") && (
-          <PaneAction icon="check" label={COPY.signOff} opensDialog disabled />
+        {allowed.has("sign_off.review") && onSignOff !== undefined && v !== undefined ? (
+          <PaneAction
+            icon="check"
+            label={COPY.signOff}
+            opensDialog
+            onClick={() => {
+              onSignOff(v.trial_balance_id);
+            }}
+          />
+        ) : (
+          PLANNED_VISIBLE &&
+          allowed.has("sign_off.review") && (
+            <PaneAction icon="check" label={COPY.signOff} opensDialog disabled />
+          )
         )}
         {PLANNED_VISIBLE && <PaneAction icon="file-text" label={COPY.sourceDocs} disabled />}
       </>
@@ -699,8 +743,16 @@ export function useTrialBalancePane(
           )}
           <PaneAction kind="picker" label={chipOf(v)} />
           <span className="flex-1" />
-          {PLANNED_VISIBLE && allowed.has("trial_balance.export") && (
-            <PaneAction icon="cloud-download" label={COPY.openInExcel} disabled />
+          <Suspense fallback={null}>
+            <SourceActions engagementId={engagementId} view={v} />
+          </Suspense>
+          {allowed.has("trial_balance.export") && (
+            <PaneAction
+              icon="cloud-download"
+              label={COPY.openInExcel}
+              disabled={exporting}
+              onClick={exportExcel}
+            />
           )}
         </>
       ),
@@ -723,6 +775,11 @@ export function useTrialBalancePane(
               />
               <span className="text-meta text-ink-3">{COPY.consolidated}</span>
             </div>
+          )}
+          {v.newer_snapshots > 0 && (
+            <Suspense fallback={null}>
+              <NewerBanner engagementId={engagementId} view={v} />
+            </Suspense>
           )}
           {tab === "leadsheets" ? (
             <Leadsheet

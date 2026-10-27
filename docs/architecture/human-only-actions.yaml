@@ -97,6 +97,24 @@ actions:
     verb: decide  # P-04-T23 (DEC-503, 0212): the card's reserved person decides (ADR-160 clause 8)
   - action: decision.reassessed
     verb: decide  # P-04-T23 (DEC-503, 0212): No change, or a superseding card (SHL-11 d, h)
+  - action: proposal.approved
+    verb: approve  # P-04-T24 (DEC-601, 0231): a person approves the agent's change set (ADR-161 clause 2)
+  - action: proposal.approved_with_edits
+    verb: approve  # P-04-T24 (DEC-601, 0231): approve with edits, each with a citation note
+  - action: proposal.rejected
+    verb: reject  # P-04-T24 (DEC-601, 0231): reject with a reason code (SHL-10 f)
+  - action: proposal.routed
+    verb: decide  # P-04-T24 (DEC-601, 0231): a person sends it to a named approver (SHL-10 d)
+  - action: suggestion.adopted
+    verb: accept  # P-04-T24 (DEC-601, 0231): a person adopts one suggested value (C-31)
+  - action: suggestion.edited
+    verb: accept  # P-04-T24 (DEC-601, 0231): adopted with an edit and its citation note
+  - action: suggestion.dismissed
+    verb: reject  # P-04-T24 (DEC-601, 0231): a person dismisses a suggestion
+  - action: ai_policy.approved
+    verb: approve  # G-02-T24 (ED-180, 0244): a second partner approves an AI policy version (AC-37)
+  - action: ai_policy.declined
+    verb: reject  # G-02-T24 (ED-180, 0244): a second partner declines it
   - action: assurance.release_recorded
     verb: release  # A-01-T23 (DEC-590, 0226): the engagement partner records the external release
   - action: assurance.archive_recorded
