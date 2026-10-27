@@ -770,7 +770,7 @@ P-04-T09 (2026-10-22). Both suites run in the provider's stage 2 (`make check`: 
   - The figures foot as `Decimal`: Trial Balance v1 14 of 14 cited; Northwind materiality 168,100 / 252,200 / PM 189,150 / CT 12,610 and v3 252,900 ($700); Feld K-1 net change 0; AJE-05 14,900.00.
 - `apps/web/src/fixtures/contracts/review-grammar.test.ts` (vitest): one frame per artboard, typed with the generated client and checked against `openapi.json` at run time; figures foot in bigint.
 - Unique names: the operation ids and the C3 component names (`AgentProposalOut`, `AgentSuggestionOut`, `ReviewNoteDetailOut`, `CardDecisionOut`, `CardDecideIn`, TASK-422) are asserted, so a collision cannot rename a frozen type again (#284).
-- One strict xfail, to clear before the freeze: #285 (decision-card figures and the agent's reasons should be Restricted).
+- #285 (decision-card figures and the agent's reasons are Restricted) was fixed before the freeze (`199c1ede`); its strict xfail is gone. v1 was frozen on 2026-10-27 (`backend/tests/contracts/review_grammar/v1.json`).
 
 Part 3 (P-04-T12, 2026-10-23), in the same two suites:
 
@@ -799,7 +799,7 @@ Additive changes go in place. Breaking changes ship as v2 with one sprint of ove
 
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
-| v1 | (S3, Fri Dec 11, 2026) | | 2026-10-22: part 1 stub (P-04-T07): sign-offs, review notes and human gates. 2026-10-22: part 2 stub (P-04-T08): decision cards (`review`), proposals and suggestions (`agents`). 2026-10-22: consumer tests (P-04-T09); the schema freeze is scheduled for Fri Dec 11, 2026 with them as the gate. 2026-10-23: part 3 stub (P-04-T11): issues and fix instructions, checkpoints and field provenance, additive (new models and routes beside the old; no part 1 or 2 shape changed). 2026-10-23: part 3 consumer tests (P-04-T12); the QC `reviewer` cells on part 3 writes were narrowed (DEC-145) |
+| v1 | 2026-10-27 | | 2026-10-22: part 1 stub (P-04-T07): sign-offs, review notes and human gates. 2026-10-22: part 2 stub (P-04-T08): decision cards (`review`), proposals and suggestions (`agents`). 2026-10-22: consumer tests (P-04-T09); the schema freeze is scheduled for Fri Dec 11, 2026 with them as the gate. 2026-10-23: part 3 stub (P-04-T11): issues and fix instructions, checkpoints and field provenance, additive (new models and routes beside the old; no part 1 or 2 shape changed). 2026-10-23: part 3 consumer tests (P-04-T12); the QC `reviewer` cells on part 3 writes were narrowed (DEC-145) |
 
 ## 11. Open points
 - **Level actions.** The level actions keep their SPEC-308 names rather than `sign_off.l1` to `l5` (DEC-135).

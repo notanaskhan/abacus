@@ -1,0 +1,5545 @@
+{
+  "AdoptSuggestionIn": {
+    "additionalProperties": false,
+    "description": "Adopt as proposed, or with an edited value and its citation note (decision `edited`).",
+    "properties": {
+      "citation_note": {
+        "anyOf": [
+          {
+            "maxLength": 2000,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Citation Note"
+      },
+      "edited_value": {
+        "anyOf": [
+          {
+            "maxLength": 200,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Edited Value"
+      },
+      "seen_version": {
+        "cls": "internal",
+        "minimum": 1.0,
+        "title": "Seen Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "seen_version"
+    ],
+    "title": "AdoptSuggestionIn",
+    "type": "object"
+  },
+  "AgentProposalOut": {
+    "description": "`GET /v1/proposals/{ref}`: the C3 projection SHL-10 renders, for a generic proposal or a\ntyped adapter's (screener, upload reviewer, matcher).",
+    "properties": {
+      "agent_run_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Agent Run Id"
+      },
+      "allowed_actions": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "title": "Allowed Actions",
+        "type": "array"
+      },
+      "change_count": {
+        "cls": "internal",
+        "title": "Change Count",
+        "type": "integer"
+      },
+      "checkpoint_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Checkpoint Id"
+      },
+      "context_label": {
+        "cls": "confidential",
+        "title": "Context Label",
+        "type": "string"
+      },
+      "decision": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/ProposalDecisionOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted"
+      },
+      "evidence": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/ProposalEvidenceOut"
+        },
+        "title": "Evidence",
+        "type": "array"
+      },
+      "kind": {
+        "cls": "internal",
+        "title": "Kind",
+        "type": "string"
+      },
+      "policy": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/ProposalPolicyOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted"
+      },
+      "proposed_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Proposed At",
+        "type": "string"
+      },
+      "reasoning": {
+        "cls": "restricted",
+        "title": "Reasoning",
+        "type": "string"
+      },
+      "ref": {
+        "cls": "internal",
+        "title": "Ref",
+        "type": "string"
+      },
+      "rows": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/ProposalRowOut"
+        },
+        "title": "Rows",
+        "type": "array"
+      },
+      "set": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/ProposalSetOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential"
+      },
+      "state": {
+        "$ref": "#/components/schemas/ProposalStatus",
+        "cls": "internal"
+      },
+      "title": {
+        "cls": "confidential",
+        "title": "Title",
+        "type": "string"
+      },
+      "totals": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/ProposalTotalOut"
+        },
+        "title": "Totals",
+        "type": "array"
+      },
+      "version": {
+        "cls": "internal",
+        "title": "Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "ref",
+      "kind",
+      "title",
+      "context_label",
+      "state",
+      "version",
+      "agent_run_id",
+      "proposed_at",
+      "change_count",
+      "reasoning",
+      "rows",
+      "totals",
+      "evidence",
+      "policy",
+      "set",
+      "checkpoint_id",
+      "decision",
+      "allowed_actions"
+    ],
+    "title": "AgentProposalOut",
+    "type": "object"
+  },
+  "AgentSuggestionOut": {
+    "description": "One proposed value for one target, after a person's decision.",
+    "properties": {
+      "agent_run_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Agent Run Id"
+      },
+      "allowed_actions": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "title": "Allowed Actions",
+        "type": "array"
+      },
+      "citation_ids": {
+        "cls": "internal",
+        "items": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "title": "Citation Ids",
+        "type": "array"
+      },
+      "decided_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Decided At"
+      },
+      "decided_by_user_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Decided By User Id"
+      },
+      "decision": {
+        "anyOf": [
+          {
+            "enum": [
+              "adopted",
+              "edited",
+              "dismissed",
+              "undone"
+            ],
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Decision"
+      },
+      "field_key": {
+        "cls": "internal",
+        "title": "Field Key",
+        "type": "string"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "proposed_value": {
+        "cls": "restricted",
+        "title": "Proposed Value",
+        "type": "string"
+      },
+      "rationale": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Rationale"
+      },
+      "status": {
+        "$ref": "#/components/schemas/SuggestionStatus",
+        "cls": "internal"
+      },
+      "target_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Target Id",
+        "type": "string"
+      },
+      "target_type": {
+        "cls": "internal",
+        "title": "Target Type",
+        "type": "string"
+      },
+      "version": {
+        "cls": "internal",
+        "title": "Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "id",
+      "target_type",
+      "target_id",
+      "field_key",
+      "proposed_value",
+      "rationale",
+      "citation_ids",
+      "status",
+      "version",
+      "agent_run_id",
+      "decision",
+      "decided_by_user_id",
+      "decided_at",
+      "allowed_actions"
+    ],
+    "title": "AgentSuggestionOut",
+    "type": "object"
+  },
+  "AnalysisRequestIn": {
+    "additionalProperties": false,
+    "properties": {
+      "text": {
+        "cls": "restricted",
+        "maxLength": 2000,
+        "minLength": 1,
+        "title": "Text",
+        "type": "string"
+      }
+    },
+    "required": [
+      "text"
+    ],
+    "title": "AnalysisRequestIn",
+    "type": "object"
+  },
+  "AnalysisRequestOut": {
+    "description": "A recorded request for the run that raised the card (P-10 delivers it).",
+    "properties": {
+      "card_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Card Id",
+        "type": "string"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "requested_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Requested At",
+        "type": "string"
+      },
+      "requested_by_user_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Requested By User Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "card_id",
+      "requested_by_user_id",
+      "requested_at"
+    ],
+    "title": "AnalysisRequestOut",
+    "type": "object"
+  },
+  "ApproveProposalIn": {
+    "additionalProperties": false,
+    "properties": {
+      "edits": {
+        "cls": "restricted",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/ProposalEditIn"
+        },
+        "maxItems": 100,
+        "title": "Edits",
+        "type": "array"
+      },
+      "seen_version": {
+        "cls": "internal",
+        "minimum": 1.0,
+        "title": "Seen Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "seen_version"
+    ],
+    "title": "ApproveProposalIn",
+    "type": "object"
+  },
+  "BulkFixInstructionsIn": {
+    "additionalProperties": false,
+    "description": "SHL-15 e: one shared editor; the scope is locked to the selection, so each issue gets\nits own sealed instruction with scope `this_issue`.",
+    "properties": {
+      "issues": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/BulkFixIssueIn"
+        },
+        "maxItems": 50,
+        "minItems": 1,
+        "title": "Issues",
+        "type": "array"
+      },
+      "text": {
+        "cls": "restricted",
+        "maxLength": 4000,
+        "minLength": 1,
+        "title": "Text",
+        "type": "string"
+      }
+    },
+    "required": [
+      "issues",
+      "text"
+    ],
+    "title": "BulkFixInstructionsIn",
+    "type": "object"
+  },
+  "BulkFixInstructionsOut": {
+    "properties": {
+      "accepted": {
+        "cls": "internal",
+        "title": "Accepted",
+        "type": "integer"
+      },
+      "excluded": {
+        "cls": "internal",
+        "title": "Excluded",
+        "type": "integer"
+      },
+      "results": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/BulkFixItemOut"
+        },
+        "title": "Results",
+        "type": "array"
+      }
+    },
+    "required": [
+      "results",
+      "accepted",
+      "excluded"
+    ],
+    "title": "BulkFixInstructionsOut",
+    "type": "object"
+  },
+  "BulkFixIssueIn": {
+    "additionalProperties": false,
+    "properties": {
+      "issue_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Issue Id",
+        "type": "string"
+      },
+      "seen_version": {
+        "cls": "internal",
+        "minimum": 1.0,
+        "title": "Seen Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "issue_id",
+      "seen_version"
+    ],
+    "title": "BulkFixIssueIn",
+    "type": "object"
+  },
+  "BulkFixItemOut": {
+    "properties": {
+      "agent_run_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Agent Run Id"
+      },
+      "detail": {
+        "anyOf": [
+          {
+            "enum": [
+              "issue_changed",
+              "fix_runner_unavailable",
+              "level_not_permitted"
+            ],
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Detail"
+      },
+      "issue_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Issue Id",
+        "type": "string"
+      },
+      "ok": {
+        "cls": "internal",
+        "title": "Ok",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "issue_id",
+      "ok",
+      "agent_run_id",
+      "detail"
+    ],
+    "title": "BulkFixItemOut",
+    "type": "object"
+  },
+  "BulkSignOffIn": {
+    "additionalProperties": false,
+    "properties": {
+      "level": {
+        "cls": "internal",
+        "enum": [
+          "L1_preparer",
+          "L2_reviewer",
+          "L3_manager",
+          "L4_partner",
+          "L5_eqr"
+        ],
+        "title": "Level",
+        "type": "string"
+      },
+      "statement_version": {
+        "cls": "internal",
+        "maxLength": 40,
+        "title": "Statement Version",
+        "type": "string"
+      },
+      "targets": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/BulkSignOffTargetIn"
+        },
+        "maxItems": 50,
+        "minItems": 1,
+        "title": "Targets",
+        "type": "array"
+      }
+    },
+    "required": [
+      "targets",
+      "level",
+      "statement_version"
+    ],
+    "title": "BulkSignOffIn",
+    "type": "object"
+  },
+  "BulkSignOffItemOut": {
+    "properties": {
+      "detail": {
+        "anyOf": [
+          {
+            "enum": [
+              "content_changed",
+              "segregation",
+              "open_review_notes",
+              "independence_pending",
+              "incomplete",
+              "uncited_change",
+              "level_not_permitted",
+              "not_prepared",
+              "already_signed",
+              "sign_off_invalid"
+            ],
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Detail"
+      },
+      "ok": {
+        "cls": "internal",
+        "title": "Ok",
+        "type": "boolean"
+      },
+      "sign_off_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Sign Off Id"
+      },
+      "target_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Target Id",
+        "type": "string"
+      },
+      "target_type": {
+        "cls": "internal",
+        "title": "Target Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "target_type",
+      "target_id",
+      "ok",
+      "sign_off_id",
+      "detail"
+    ],
+    "title": "BulkSignOffItemOut",
+    "type": "object"
+  },
+  "BulkSignOffOut": {
+    "description": "Each item decided on its own, atomically (R-SO-7). A replay with the same\n`Idempotency-Key` returns this stored result.",
+    "properties": {
+      "excluded": {
+        "cls": "internal",
+        "title": "Excluded",
+        "type": "integer"
+      },
+      "results": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/BulkSignOffItemOut"
+        },
+        "title": "Results",
+        "type": "array"
+      },
+      "signed": {
+        "cls": "internal",
+        "title": "Signed",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "results",
+      "signed",
+      "excluded"
+    ],
+    "title": "BulkSignOffOut",
+    "type": "object"
+  },
+  "BulkSignOffTargetIn": {
+    "additionalProperties": false,
+    "properties": {
+      "seen_hash": {
+        "cls": "internal",
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "title": "Seen Hash",
+        "type": "string"
+      },
+      "target_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Target Id",
+        "type": "string"
+      },
+      "target_type": {
+        "cls": "internal",
+        "pattern": "^[a-z][a-z_]{0,39}$",
+        "title": "Target Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "target_type",
+      "target_id",
+      "seen_hash"
+    ],
+    "title": "BulkSignOffTargetIn",
+    "type": "object"
+  },
+  "CardDecideIn": {
+    "additionalProperties": false,
+    "description": "`POST /v1/decision-cards/{id}/decide`. No rationale answers 422 `rationale_required`; a\nstale `seen_version` answers 409 `recommendation_changed`.",
+    "properties": {
+      "factors": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "type": "string"
+        },
+        "maxItems": 40,
+        "title": "Factors",
+        "type": "array"
+      },
+      "option_key": {
+        "cls": "internal",
+        "pattern": "^[a-z0-9][a-z0-9_.]{0,39}$",
+        "title": "Option Key",
+        "type": "string"
+      },
+      "rationale": {
+        "anyOf": [
+          {
+            "maxLength": 4000,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Rationale"
+      },
+      "seen_version": {
+        "cls": "internal",
+        "minimum": 1.0,
+        "title": "Seen Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "option_key",
+      "seen_version"
+    ],
+    "title": "CardDecideIn",
+    "type": "object"
+  },
+  "CardDecisionOut": {
+    "description": "The insert-only, human-only `decisions` row. The rationale is sealed.",
+    "properties": {
+      "decided_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Decided At",
+        "type": "string"
+      },
+      "decided_by_name": {
+        "cls": "internal",
+        "title": "Decided By Name",
+        "type": "string"
+      },
+      "decided_by_user_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Decided By User Id",
+        "type": "string"
+      },
+      "factors": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "title": "Factors",
+        "type": "array"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "option_key": {
+        "cls": "internal",
+        "title": "Option Key",
+        "type": "string"
+      },
+      "rationale": {
+        "cls": "restricted",
+        "title": "Rationale",
+        "type": "string"
+      },
+      "seen_card_version": {
+        "cls": "internal",
+        "title": "Seen Card Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "id",
+      "option_key",
+      "factors",
+      "rationale",
+      "seen_card_version",
+      "decided_by_user_id",
+      "decided_by_name",
+      "decided_at"
+    ],
+    "title": "CardDecisionOut",
+    "type": "object"
+  },
+  "CheckpointApproveIn": {
+    "additionalProperties": false,
+    "description": "A checkpoint that is no longer proposed, or whose hash differs, answers 409\n`checkpoint_changed`; nothing is written.",
+    "properties": {
+      "seen_hash": {
+        "cls": "internal",
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "title": "Seen Hash",
+        "type": "string"
+      }
+    },
+    "required": [
+      "seen_hash"
+    ],
+    "title": "CheckpointApproveIn",
+    "type": "object"
+  },
+  "CheckpointCreateIn": {
+    "additionalProperties": false,
+    "description": "\"Save checkpoint\u2026\": a person's named checkpoint of the target as it is.",
+    "properties": {
+      "name": {
+        "anyOf": [
+          {
+            "maxLength": 120,
+            "minLength": 1,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Name"
+      },
+      "target_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Target Id",
+        "type": "string"
+      },
+      "target_type": {
+        "cls": "internal",
+        "pattern": "^[a-z][a-z_]{0,39}$",
+        "title": "Target Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "target_type",
+      "target_id"
+    ],
+    "title": "CheckpointCreateIn",
+    "type": "object"
+  },
+  "CheckpointDecisionOut": {
+    "description": "The insert-only, human-only `checkpoint_decisions` row (SHL-16 b, e).",
+    "properties": {
+      "decided_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Decided At",
+        "type": "string"
+      },
+      "decided_by_name": {
+        "cls": "internal",
+        "title": "Decided By Name",
+        "type": "string"
+      },
+      "decided_by_user_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Decided By User Id",
+        "type": "string"
+      },
+      "decision": {
+        "cls": "internal",
+        "enum": [
+          "approved",
+          "rejected",
+          "restored"
+        ],
+        "title": "Decision",
+        "type": "string"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "proposal_decision_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Proposal Decision Id"
+      },
+      "reason": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Reason"
+      }
+    },
+    "required": [
+      "id",
+      "decision",
+      "reason",
+      "decided_by_user_id",
+      "decided_by_name",
+      "decided_at",
+      "proposal_decision_id"
+    ],
+    "title": "CheckpointDecisionOut",
+    "type": "object"
+  },
+  "CheckpointDetailOut": {
+    "description": "`GET /v1/checkpoints/{id}?compare=`: the card, its steps and the diff against `compare`\n(the previous checkpoint, or current for an older one, SHL-16 c).",
+    "properties": {
+      "checkpoint": {
+        "$ref": "#/components/schemas/CheckpointItemOut",
+        "cls": "restricted"
+      },
+      "compare": {
+        "cls": "internal",
+        "enum": [
+          "current",
+          "previous"
+        ],
+        "title": "Compare",
+        "type": "string"
+      },
+      "compared_to_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Compared To Id"
+      },
+      "diff": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/CheckpointDiffRowOut"
+        },
+        "title": "Diff",
+        "type": "array"
+      },
+      "steps": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/CheckpointStepOut"
+        },
+        "title": "Steps",
+        "type": "array"
+      },
+      "totals": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/CheckpointTotalOut"
+        },
+        "title": "Totals",
+        "type": "array"
+      }
+    },
+    "required": [
+      "checkpoint",
+      "compare",
+      "compared_to_id",
+      "steps",
+      "diff",
+      "totals"
+    ],
+    "title": "CheckpointDetailOut",
+    "type": "object"
+  },
+  "CheckpointDiffRowOut": {
+    "description": "One field's old and new value, computed by code (`checkpoint_diffs`). Values are strings\nand numbers are decimal strings; null is an empty cell (\"\u2014\").",
+    "properties": {
+      "cause": {
+        "cls": "confidential",
+        "title": "Cause",
+        "type": "string"
+      },
+      "citation_ids": {
+        "cls": "internal",
+        "items": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "title": "Citation Ids",
+        "type": "array"
+      },
+      "field_key": {
+        "cls": "internal",
+        "title": "Field Key",
+        "type": "string"
+      },
+      "label": {
+        "cls": "confidential",
+        "title": "Label",
+        "type": "string"
+      },
+      "new": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "New"
+      },
+      "old": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Old"
+      }
+    },
+    "required": [
+      "field_key",
+      "label",
+      "old",
+      "new",
+      "cause",
+      "citation_ids"
+    ],
+    "title": "CheckpointDiffRowOut",
+    "type": "object"
+  },
+  "CheckpointHistoryOut": {
+    "description": "`GET /v1/checkpoints`: one target's checkpoints, newest first, read like the sign-off\nladder (one target, bounded) rather than as a cross-record list.",
+    "properties": {
+      "allowed_actions": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "title": "Allowed Actions",
+        "type": "array"
+      },
+      "current_checkpoint_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Current Checkpoint Id"
+      },
+      "filter": {
+        "cls": "internal",
+        "enum": [
+          "agent",
+          "named",
+          "all"
+        ],
+        "title": "Filter",
+        "type": "string"
+      },
+      "items": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/CheckpointItemOut"
+        },
+        "title": "Items",
+        "type": "array"
+      },
+      "target_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Target Id",
+        "type": "string"
+      },
+      "target_type": {
+        "cls": "internal",
+        "title": "Target Type",
+        "type": "string"
+      },
+      "total": {
+        "cls": "internal",
+        "title": "Total",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "target_type",
+      "target_id",
+      "filter",
+      "items",
+      "current_checkpoint_id",
+      "total",
+      "allowed_actions"
+    ],
+    "title": "CheckpointHistoryOut",
+    "type": "object"
+  },
+  "CheckpointItemOut": {
+    "description": "One checkpoint card. \"Checkpoint {seq}\" is its title unless it is named; `current` is\nderived (ADR-160 clause 9) and never stored. `summary` may carry return figures\n(\"Corrected Halvard 1099-INT (2,190 \u2192 2,310)\"), so it is Restricted and appears only in\none target's history read.",
+    "properties": {
+      "agent_run_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Agent Run Id"
+      },
+      "allowed_actions": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "title": "Allowed Actions",
+        "type": "array"
+      },
+      "author_kind": {
+        "cls": "internal",
+        "enum": [
+          "agent",
+          "person",
+          "import"
+        ],
+        "title": "Author Kind",
+        "type": "string"
+      },
+      "author_name": {
+        "cls": "internal",
+        "title": "Author Name",
+        "type": "string"
+      },
+      "author_user_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Author User Id"
+      },
+      "cause": {
+        "cls": "internal",
+        "enum": [
+          "agent_run",
+          "engine_import",
+          "human_edit",
+          "restore",
+          "amendment",
+          "manual_save"
+        ],
+        "title": "Cause",
+        "type": "string"
+      },
+      "content_hash": {
+        "cls": "internal",
+        "title": "Content Hash",
+        "type": "string"
+      },
+      "created_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Created At",
+        "type": "string"
+      },
+      "current": {
+        "cls": "internal",
+        "title": "Current",
+        "type": "boolean"
+      },
+      "decision": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/CheckpointDecisionOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Name"
+      },
+      "proposal_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Proposal Id"
+      },
+      "restored_from_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Restored From Id"
+      },
+      "seq": {
+        "cls": "internal",
+        "title": "Seq",
+        "type": "integer"
+      },
+      "starred": {
+        "cls": "internal",
+        "title": "Starred",
+        "type": "boolean"
+      },
+      "status": {
+        "$ref": "#/components/schemas/CheckpointStatus",
+        "cls": "internal"
+      },
+      "summary": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Summary"
+      },
+      "target_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Target Id",
+        "type": "string"
+      },
+      "target_type": {
+        "cls": "internal",
+        "title": "Target Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "target_type",
+      "target_id",
+      "seq",
+      "name",
+      "starred",
+      "author_kind",
+      "author_user_id",
+      "author_name",
+      "cause",
+      "status",
+      "current",
+      "summary",
+      "created_at",
+      "content_hash",
+      "proposal_id",
+      "restored_from_id",
+      "agent_run_id",
+      "decision",
+      "allowed_actions"
+    ],
+    "title": "CheckpointItemOut",
+    "type": "object"
+  },
+  "CheckpointRejectIn": {
+    "additionalProperties": false,
+    "properties": {
+      "reason": {
+        "cls": "restricted",
+        "maxLength": 200,
+        "minLength": 1,
+        "title": "Reason",
+        "type": "string"
+      },
+      "seen_hash": {
+        "cls": "internal",
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "title": "Seen Hash",
+        "type": "string"
+      }
+    },
+    "required": [
+      "seen_hash",
+      "reason"
+    ],
+    "title": "CheckpointRejectIn",
+    "type": "object"
+  },
+  "CheckpointRenameIn": {
+    "additionalProperties": false,
+    "description": "Rename and star change only `name` and `starred` (SHL-16 d).",
+    "properties": {
+      "name": {
+        "anyOf": [
+          {
+            "maxLength": 120,
+            "minLength": 1,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Name"
+      },
+      "starred": {
+        "anyOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Starred"
+      }
+    },
+    "title": "CheckpointRenameIn",
+    "type": "object"
+  },
+  "CheckpointRestoreIn": {
+    "additionalProperties": false,
+    "description": "Restore creates a new checkpoint as a copy; nothing is deleted (SHL-16 c).",
+    "properties": {
+      "seen_hash": {
+        "cls": "internal",
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "title": "Seen Hash",
+        "type": "string"
+      }
+    },
+    "required": [
+      "seen_hash"
+    ],
+    "title": "CheckpointRestoreIn",
+    "type": "object"
+  },
+  "CheckpointStepOut": {
+    "description": "One step of the run that made the checkpoint (C6 run steps, read through review).",
+    "properties": {
+      "at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "At",
+        "type": "string"
+      },
+      "detail": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Detail"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "analyzed",
+          "updated_worksheet",
+          "created_worksheet",
+          "skipped_worksheet",
+          "self_check",
+          "imported"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "title": {
+        "cls": "confidential",
+        "title": "Title",
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "title",
+      "detail",
+      "at"
+    ],
+    "title": "CheckpointStepOut",
+    "type": "object"
+  },
+  "CheckpointTotalOut": {
+    "description": "The code-computed totals row (\"Net change to total income \u00b7 0\", a tie).",
+    "properties": {
+      "label": {
+        "cls": "confidential",
+        "title": "Label",
+        "type": "string"
+      },
+      "ties": {
+        "cls": "internal",
+        "title": "Ties",
+        "type": "boolean"
+      },
+      "value": {
+        "cls": "restricted",
+        "title": "Value",
+        "type": "string"
+      }
+    },
+    "required": [
+      "label",
+      "value",
+      "ties"
+    ],
+    "title": "CheckpointTotalOut",
+    "type": "object"
+  },
+  "CitedSourceOut": {
+    "description": "A verified citation (C4) as its chip reads (\"K-1 box 18A\", \"K-1 statement p. 3\").",
+    "properties": {
+      "citation_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Citation Id",
+        "type": "string"
+      },
+      "label": {
+        "cls": "confidential",
+        "title": "Label",
+        "type": "string"
+      }
+    },
+    "required": [
+      "citation_id",
+      "label"
+    ],
+    "title": "CitedSourceOut",
+    "type": "object"
+  },
+  "DecisionCardItemOut": {
+    "description": "A card in a list (HOME-02, the AUD-02 rail). No question text, options or rationale.",
+    "properties": {
+      "allowed_actions": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "title": "Allowed Actions",
+        "type": "array"
+      },
+      "blocking_count": {
+        "cls": "internal",
+        "title": "Blocking Count",
+        "type": "integer"
+      },
+      "engagement_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Engagement Id",
+        "type": "string"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "kind": {
+        "cls": "internal",
+        "title": "Kind",
+        "type": "string"
+      },
+      "requested_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Requested At",
+        "type": "string"
+      },
+      "reserved_role": {
+        "cls": "internal",
+        "enum": [
+          "engagement_partner",
+          "manager",
+          "eqr_reviewer",
+          "signer"
+        ],
+        "title": "Reserved Role",
+        "type": "string"
+      },
+      "reserved_user_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Reserved User Id"
+      },
+      "reserved_user_name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Reserved User Name"
+      },
+      "status": {
+        "$ref": "#/components/schemas/DecisionCardStatus",
+        "cls": "internal"
+      },
+      "superseded_by_version": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Superseded By Version"
+      },
+      "version_no": {
+        "cls": "internal",
+        "title": "Version No",
+        "type": "integer"
+      },
+      "work_item_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Work Item Id"
+      }
+    },
+    "required": [
+      "id",
+      "engagement_id",
+      "work_item_id",
+      "kind",
+      "version_no",
+      "status",
+      "reserved_role",
+      "reserved_user_id",
+      "reserved_user_name",
+      "requested_at",
+      "blocking_count",
+      "superseded_by_version",
+      "allowed_actions"
+    ],
+    "title": "DecisionCardItemOut",
+    "type": "object"
+  },
+  "DecisionCardOut": {
+    "description": "One card: the question, context, code-computed options, factors and, once decided, the\ndecision. A viewer outside the reserved role gets the same card with no decide action.",
+    "properties": {
+      "blocking_refs": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/ObjectRefOut"
+        },
+        "title": "Blocking Refs",
+        "type": "array"
+      },
+      "card": {
+        "$ref": "#/components/schemas/DecisionCardItemOut",
+        "cls": "internal"
+      },
+      "citation_ids": {
+        "cls": "internal",
+        "items": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "title": "Citation Ids",
+        "type": "array"
+      },
+      "context": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/DecisionContextOut"
+        },
+        "title": "Context",
+        "type": "array"
+      },
+      "decision": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/CardDecisionOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted"
+      },
+      "factors": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/DecisionFactorOut"
+        },
+        "title": "Factors",
+        "type": "array"
+      },
+      "history": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/DecisionCardVersionOut"
+        },
+        "title": "History",
+        "type": "array"
+      },
+      "note": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Note"
+      },
+      "options": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/DecisionOptionOut"
+        },
+        "title": "Options",
+        "type": "array"
+      },
+      "question": {
+        "cls": "confidential",
+        "title": "Question",
+        "type": "string"
+      },
+      "recommendation": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/DecisionRecommendationOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential"
+      }
+    },
+    "required": [
+      "card",
+      "question",
+      "context",
+      "options",
+      "factors",
+      "citation_ids",
+      "note",
+      "recommendation",
+      "blocking_refs",
+      "decision",
+      "history"
+    ],
+    "title": "DecisionCardOut",
+    "type": "object"
+  },
+  "DecisionCardVersionOut": {
+    "description": "One history row: v1 proposed, v2 decided, v3 reassessed with no change (SHL-11 d).",
+    "properties": {
+      "actor_initials": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Actor Initials"
+      },
+      "actor_kind": {
+        "cls": "internal",
+        "enum": [
+          "human",
+          "agent",
+          "system"
+        ],
+        "title": "Actor Kind",
+        "type": "string"
+      },
+      "actor_user_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Actor User Id"
+      },
+      "at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "At",
+        "type": "string"
+      },
+      "changed": {
+        "anyOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Changed"
+      },
+      "event": {
+        "cls": "internal",
+        "enum": [
+          "proposed",
+          "decided",
+          "reassessed"
+        ],
+        "title": "Event",
+        "type": "string"
+      },
+      "figures": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "cls": "restricted",
+        "title": "Figures",
+        "type": "object"
+      },
+      "option_key": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Option Key"
+      },
+      "version_no": {
+        "cls": "internal",
+        "title": "Version No",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "version_no",
+      "event",
+      "actor_kind",
+      "actor_user_id",
+      "actor_initials",
+      "at",
+      "option_key",
+      "changed",
+      "figures"
+    ],
+    "title": "DecisionCardVersionOut",
+    "type": "object"
+  },
+  "DecisionContextOut": {
+    "description": "One context row (\"Benchmark\", \"Amount\", \"Firm range\", \"Prior year\"), from the owner.",
+    "properties": {
+      "citation_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Citation Id"
+      },
+      "key": {
+        "cls": "internal",
+        "title": "Key",
+        "type": "string"
+      },
+      "label": {
+        "cls": "internal",
+        "title": "Label",
+        "type": "string"
+      },
+      "value": {
+        "cls": "restricted",
+        "title": "Value",
+        "type": "string"
+      }
+    },
+    "required": [
+      "key",
+      "label",
+      "value",
+      "citation_id"
+    ],
+    "title": "DecisionContextOut",
+    "type": "object"
+  },
+  "DecisionFactorOut": {
+    "properties": {
+      "applicable": {
+        "cls": "internal",
+        "title": "Applicable",
+        "type": "boolean"
+      },
+      "checked": {
+        "cls": "internal",
+        "title": "Checked",
+        "type": "boolean"
+      },
+      "key": {
+        "cls": "internal",
+        "title": "Key",
+        "type": "string"
+      },
+      "label": {
+        "cls": "confidential",
+        "title": "Label",
+        "type": "string"
+      }
+    },
+    "required": [
+      "key",
+      "label",
+      "applicable",
+      "checked"
+    ],
+    "title": "DecisionFactorOut",
+    "type": "object"
+  },
+  "DecisionNotifyOut": {
+    "properties": {
+      "card_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Card Id",
+        "type": "string"
+      },
+      "notified_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Notified At",
+        "type": "string"
+      },
+      "notified_user_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Notified User Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "card_id",
+      "notified_user_id",
+      "notified_at"
+    ],
+    "title": "DecisionNotifyOut",
+    "type": "object"
+  },
+  "DecisionOptionOut": {
+    "description": "An option computed by the kind's provider in code, never by a model (ADR-050). Money is\na decimal string; `figures` are what the label and detail line show.",
+    "properties": {
+      "detail": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Detail"
+      },
+      "figures": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "cls": "restricted",
+        "title": "Figures",
+        "type": "object"
+      },
+      "key": {
+        "cls": "internal",
+        "title": "Key",
+        "type": "string"
+      },
+      "label": {
+        "cls": "confidential",
+        "title": "Label",
+        "type": "string"
+      },
+      "recommended": {
+        "cls": "internal",
+        "title": "Recommended",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "key",
+      "label",
+      "detail",
+      "figures",
+      "recommended"
+    ],
+    "title": "DecisionOptionOut",
+    "type": "object"
+  },
+  "DecisionRecommendationOut": {
+    "description": "The agent's recommendation (`decision_cards.recommendation_suggestion_id`). `reasons` are\nagent text: the web app renders them only through AgentText.",
+    "properties": {
+      "option_key": {
+        "cls": "internal",
+        "title": "Option Key",
+        "type": "string"
+      },
+      "reasons": {
+        "cls": "restricted",
+        "items": {
+          "type": "string"
+        },
+        "title": "Reasons",
+        "type": "array"
+      },
+      "suggestion_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Suggestion Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "suggestion_id",
+      "option_key",
+      "reasons"
+    ],
+    "title": "DecisionRecommendationOut",
+    "type": "object"
+  },
+  "DismissSuggestionIn": {
+    "additionalProperties": false,
+    "properties": {
+      "reason_code": {
+        "anyOf": [
+          {
+            "enum": [
+              "wrong_treatment",
+              "unsupported_value",
+              "needs_client_input",
+              "other"
+            ],
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Reason Code"
+      },
+      "seen_version": {
+        "cls": "internal",
+        "minimum": 1.0,
+        "title": "Seen Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "seen_version"
+    ],
+    "title": "DismissSuggestionIn",
+    "type": "object"
+  },
+  "EligibilityCheckOut": {
+    "description": "One \"Before you sign\" row. `facts` are counts, dates and names for the row's sentence;\n`refs` are what its link opens (the open notes, the issues).",
+    "properties": {
+      "code": {
+        "cls": "internal",
+        "enum": [
+          "open_review_notes",
+          "independence",
+          "segregation",
+          "all_cited",
+          "gate_g4",
+          "open_issues",
+          "eqr_limits"
+        ],
+        "title": "Code",
+        "type": "string"
+      },
+      "facts": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cls": "confidential",
+        "title": "Facts",
+        "type": "object"
+      },
+      "refs": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/ObjectRefOut"
+        },
+        "title": "Refs",
+        "type": "array"
+      },
+      "result": {
+        "cls": "internal",
+        "enum": [
+          "pass",
+          "fail",
+          "warn"
+        ],
+        "title": "Result",
+        "type": "string"
+      }
+    },
+    "required": [
+      "code",
+      "result",
+      "facts",
+      "refs"
+    ],
+    "title": "EligibilityCheckOut",
+    "type": "object"
+  },
+  "ExplainAcceptedOut": {
+    "description": "202: the explanation run started; its text arrives on the issue's detail.",
+    "properties": {
+      "agent_run_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Agent Run Id",
+        "type": "string"
+      },
+      "issue_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Issue Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "issue_id",
+      "agent_run_id"
+    ],
+    "title": "ExplainAcceptedOut",
+    "type": "object"
+  },
+  "FieldEditIn": {
+    "additionalProperties": false,
+    "description": "`PUT \u2026/value`: a person's edit. The citation note is required (the `fvv_human_edits_cite`\nCHECK); a stale `seen_seq` answers 409 `field_changed`.",
+    "properties": {
+      "citation_note": {
+        "cls": "restricted",
+        "maxLength": 4000,
+        "minLength": 1,
+        "title": "Citation Note",
+        "type": "string"
+      },
+      "seen_seq": {
+        "cls": "internal",
+        "minimum": 1.0,
+        "title": "Seen Seq",
+        "type": "integer"
+      },
+      "value": {
+        "$ref": "#/components/schemas/FieldValueIn",
+        "cls": "restricted"
+      },
+      "value_kind": {
+        "cls": "internal",
+        "default": "exact",
+        "enum": [
+          "exact",
+          "estimate"
+        ],
+        "title": "Value Kind",
+        "type": "string"
+      }
+    },
+    "required": [
+      "value",
+      "citation_note",
+      "seen_seq"
+    ],
+    "title": "FieldEditIn",
+    "type": "object"
+  },
+  "FieldFlagOut": {
+    "description": "A field flag (\"\u2691 SI \u00b7 Sep 11\"): a review note anchored on the field.",
+    "properties": {
+      "body": {
+        "cls": "restricted",
+        "title": "Body",
+        "type": "string"
+      },
+      "note_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Note Id",
+        "type": "string"
+      },
+      "raised_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Raised At",
+        "type": "string"
+      },
+      "raised_by_initials": {
+        "cls": "internal",
+        "title": "Raised By Initials",
+        "type": "string"
+      },
+      "raised_by_user_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Raised By User Id",
+        "type": "string"
+      },
+      "status": {
+        "$ref": "#/components/schemas/ReviewNoteStatus",
+        "cls": "internal"
+      }
+    },
+    "required": [
+      "note_id",
+      "raised_by_user_id",
+      "raised_by_initials",
+      "raised_at",
+      "body",
+      "status"
+    ],
+    "title": "FieldFlagOut",
+    "type": "object"
+  },
+  "FieldProvenanceOut": {
+    "description": "`GET /v1/fields/{type}/{id}/{key}/provenance`: the tray behind \u24d8, newest version first.\nEvery field write answers with it too.",
+    "properties": {
+      "allowed_actions": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "title": "Allowed Actions",
+        "type": "array"
+      },
+      "content_hash": {
+        "cls": "internal",
+        "title": "Content Hash",
+        "type": "string"
+      },
+      "current_seq": {
+        "cls": "internal",
+        "title": "Current Seq",
+        "type": "integer"
+      },
+      "field_key": {
+        "cls": "internal",
+        "title": "Field Key",
+        "type": "string"
+      },
+      "flags": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/FieldFlagOut"
+        },
+        "title": "Flags",
+        "type": "array"
+      },
+      "label": {
+        "cls": "confidential",
+        "title": "Label",
+        "type": "string"
+      },
+      "target_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Target Id",
+        "type": "string"
+      },
+      "target_type": {
+        "cls": "internal",
+        "title": "Target Type",
+        "type": "string"
+      },
+      "ticks": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/FieldTickOut"
+        },
+        "title": "Ticks",
+        "type": "array"
+      },
+      "versions": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/FieldVersionOut"
+        },
+        "title": "Versions",
+        "type": "array"
+      }
+    },
+    "required": [
+      "target_type",
+      "target_id",
+      "field_key",
+      "label",
+      "current_seq",
+      "content_hash",
+      "versions",
+      "ticks",
+      "flags",
+      "allowed_actions"
+    ],
+    "title": "FieldProvenanceOut",
+    "type": "object"
+  },
+  "FieldReferenceIn": {
+    "additionalProperties": false,
+    "description": "`POST \u2026/references`: a document in this return; C4 verifies the citation.",
+    "properties": {
+      "document_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Document Id",
+        "type": "string"
+      },
+      "page": {
+        "anyOf": [
+          {
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Page"
+      },
+      "seen_seq": {
+        "cls": "internal",
+        "minimum": 1.0,
+        "title": "Seen Seq",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "document_id",
+      "seen_seq"
+    ],
+    "title": "FieldReferenceIn",
+    "type": "object"
+  },
+  "FieldReferenceOut": {
+    "description": "A reference row: the imported return or the document page that proves the value.",
+    "properties": {
+      "citation_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Citation Id"
+      },
+      "detail": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Detail"
+      },
+      "document_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Document Id"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "document",
+          "engine_import",
+          "workpaper",
+          "prior_return"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "label": {
+        "cls": "confidential",
+        "title": "Label",
+        "type": "string"
+      },
+      "page": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Page"
+      }
+    },
+    "required": [
+      "id",
+      "kind",
+      "label",
+      "detail",
+      "citation_id",
+      "document_id",
+      "page"
+    ],
+    "title": "FieldReferenceOut",
+    "type": "object"
+  },
+  "FieldTickIn": {
+    "additionalProperties": false,
+    "description": "`POST \u2026/ticks`: \"Sign off field\". An unsupported value answers 422 `uncited_change`; a\ndifferent current hash answers 409 `content_changed`.",
+    "properties": {
+      "level": {
+        "cls": "internal",
+        "enum": [
+          "L1_preparer",
+          "L2_reviewer",
+          "L3_manager",
+          "L4_partner",
+          "L5_eqr"
+        ],
+        "title": "Level",
+        "type": "string"
+      },
+      "seen_hash": {
+        "cls": "internal",
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "title": "Seen Hash",
+        "type": "string"
+      }
+    },
+    "required": [
+      "level",
+      "seen_hash"
+    ],
+    "title": "FieldTickIn",
+    "type": "object"
+  },
+  "FieldTickOut": {
+    "description": "A field tick: a `field_tick` sign-off bound to the value's hash. `stale` is computed\n(\"\u2713 KO \u00b7 Sep 8 (before this change)\").",
+    "properties": {
+      "content_hash": {
+        "cls": "internal",
+        "title": "Content Hash",
+        "type": "string"
+      },
+      "initials": {
+        "cls": "internal",
+        "title": "Initials",
+        "type": "string"
+      },
+      "level": {
+        "cls": "internal",
+        "enum": [
+          "L1_preparer",
+          "L2_reviewer",
+          "L3_manager",
+          "L4_partner",
+          "L5_eqr"
+        ],
+        "title": "Level",
+        "type": "string"
+      },
+      "sign_off_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Sign Off Id",
+        "type": "string"
+      },
+      "signed_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Signed At",
+        "type": "string"
+      },
+      "signer_name": {
+        "cls": "internal",
+        "title": "Signer Name",
+        "type": "string"
+      },
+      "signer_user_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Signer User Id",
+        "type": "string"
+      },
+      "stale": {
+        "cls": "internal",
+        "title": "Stale",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "sign_off_id",
+      "level",
+      "signer_user_id",
+      "signer_name",
+      "initials",
+      "signed_at",
+      "content_hash",
+      "stale"
+    ],
+    "title": "FieldTickOut",
+    "type": "object"
+  },
+  "FieldValueIn": {
+    "additionalProperties": false,
+    "properties": {
+      "t": {
+        "cls": "internal",
+        "enum": [
+          "decimal",
+          "text",
+          "date",
+          "bool"
+        ],
+        "title": "T",
+        "type": "string"
+      },
+      "v": {
+        "anyOf": [
+          {
+            "maxLength": 200,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "V"
+      }
+    },
+    "required": [
+      "t",
+      "v"
+    ],
+    "title": "FieldValueIn",
+    "type": "object"
+  },
+  "FieldValueOut": {
+    "description": "A typed value as `field_value_versions.value` stores it: `{t, v}`, decimals as strings.",
+    "properties": {
+      "t": {
+        "cls": "internal",
+        "enum": [
+          "decimal",
+          "text",
+          "date",
+          "bool"
+        ],
+        "title": "T",
+        "type": "string"
+      },
+      "v": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "V"
+      }
+    },
+    "required": [
+      "t",
+      "v"
+    ],
+    "title": "FieldValueOut",
+    "type": "object"
+  },
+  "FieldVersionOut": {
+    "description": "One insert-only `field_value_versions` row. `unsupported` is computed: no verified\ncitation, so the value cannot be ticked or approved. The pill (Updated, Edited, \u2248,\nUnsupported) is derived from these fields and never stored.",
+    "properties": {
+      "actor_kind": {
+        "cls": "internal",
+        "enum": [
+          "human",
+          "agent",
+          "system"
+        ],
+        "title": "Actor Kind",
+        "type": "string"
+      },
+      "actor_name": {
+        "cls": "internal",
+        "title": "Actor Name",
+        "type": "string"
+      },
+      "actor_user_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Actor User Id"
+      },
+      "cause": {
+        "cls": "internal",
+        "enum": [
+          "edit",
+          "suggestion_adopted",
+          "recompute",
+          "import",
+          "restore",
+          "template_update",
+          "relink"
+        ],
+        "title": "Cause",
+        "type": "string"
+      },
+      "checkpoint_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Checkpoint Id"
+      },
+      "citation": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Citation"
+      },
+      "citation_ids": {
+        "cls": "internal",
+        "items": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "title": "Citation Ids",
+        "type": "array"
+      },
+      "issue_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Issue Id"
+      },
+      "recorded_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Recorded At",
+        "type": "string"
+      },
+      "references": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/FieldReferenceOut"
+        },
+        "title": "References",
+        "type": "array"
+      },
+      "seq": {
+        "cls": "internal",
+        "title": "Seq",
+        "type": "integer"
+      },
+      "suggestion_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Suggestion Id"
+      },
+      "unsupported": {
+        "cls": "internal",
+        "title": "Unsupported",
+        "type": "boolean"
+      },
+      "value": {
+        "$ref": "#/components/schemas/FieldValueOut",
+        "cls": "restricted"
+      },
+      "value_kind": {
+        "cls": "internal",
+        "enum": [
+          "exact",
+          "estimate"
+        ],
+        "title": "Value Kind",
+        "type": "string"
+      },
+      "value_source": {
+        "cls": "internal",
+        "enum": [
+          "agent_suggested",
+          "human",
+          "formula",
+          "tb_linked",
+          "engine_import"
+        ],
+        "title": "Value Source",
+        "type": "string"
+      }
+    },
+    "required": [
+      "seq",
+      "value",
+      "value_kind",
+      "value_source",
+      "cause",
+      "actor_kind",
+      "actor_user_id",
+      "actor_name",
+      "recorded_at",
+      "citation",
+      "citation_ids",
+      "references",
+      "unsupported",
+      "suggestion_id",
+      "checkpoint_id",
+      "issue_id"
+    ],
+    "title": "FieldVersionOut",
+    "type": "object"
+  },
+  "FixInstructionsAcceptedOut": {
+    "description": "202: the instructions are recorded and the registered fix runner started a run.",
+    "properties": {
+      "agent_run_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Agent Run Id",
+        "type": "string"
+      },
+      "issue_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Issue Id",
+        "type": "string"
+      },
+      "status": {
+        "$ref": "#/components/schemas/IssueStatus",
+        "cls": "internal"
+      }
+    },
+    "required": [
+      "issue_id",
+      "agent_run_id",
+      "status"
+    ],
+    "title": "FixInstructionsAcceptedOut",
+    "type": "object"
+  },
+  "FixInstructionsIn": {
+    "additionalProperties": false,
+    "properties": {
+      "scope": {
+        "cls": "internal",
+        "default": "this_issue",
+        "enum": [
+          "this_issue",
+          "all_of_class"
+        ],
+        "title": "Scope",
+        "type": "string"
+      },
+      "seen_version": {
+        "cls": "internal",
+        "minimum": 1.0,
+        "title": "Seen Version",
+        "type": "integer"
+      },
+      "text": {
+        "cls": "restricted",
+        "maxLength": 4000,
+        "minLength": 1,
+        "title": "Text",
+        "type": "string"
+      }
+    },
+    "required": [
+      "seen_version",
+      "text"
+    ],
+    "title": "FixInstructionsIn",
+    "type": "object"
+  },
+  "FollowUpIn": {
+    "additionalProperties": false,
+    "properties": {
+      "text": {
+        "cls": "restricted",
+        "maxLength": 2000,
+        "minLength": 1,
+        "title": "Text",
+        "type": "string"
+      }
+    },
+    "required": [
+      "text"
+    ],
+    "title": "FollowUpIn",
+    "type": "object"
+  },
+  "HumanGateOut": {
+    "description": "One row of the rebuildable projection. Labels come from the subject's owner at read time.",
+    "properties": {
+      "assignee_user_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Assignee User Id"
+      },
+      "client_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Client Id"
+      },
+      "created_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Created At",
+        "type": "string"
+      },
+      "due_on": {
+        "anyOf": [
+          {
+            "format": "date",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Due On"
+      },
+      "engagement_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Engagement Id"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "decision",
+          "sign_off_request",
+          "proposal",
+          "send",
+          "final_approval",
+          "export",
+          "release"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "role": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Role"
+      },
+      "state": {
+        "cls": "internal",
+        "enum": [
+          "open",
+          "done",
+          "voided"
+        ],
+        "title": "State",
+        "type": "string"
+      },
+      "subject": {
+        "$ref": "#/components/schemas/ObjectRefOut",
+        "cls": "internal"
+      },
+      "work_item_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Work Item Id"
+      }
+    },
+    "required": [
+      "id",
+      "kind",
+      "subject",
+      "engagement_id",
+      "work_item_id",
+      "client_id",
+      "assignee_user_id",
+      "role",
+      "due_on",
+      "state",
+      "created_at"
+    ],
+    "title": "HumanGateOut",
+    "type": "object"
+  },
+  "IssueClientContactOut": {
+    "properties": {
+      "contact_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Contact Id",
+        "type": "string"
+      },
+      "name": {
+        "cls": "confidential",
+        "title": "Name",
+        "type": "string"
+      },
+      "role_label": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Role Label"
+      }
+    },
+    "required": [
+      "contact_id",
+      "name",
+      "role_label"
+    ],
+    "title": "IssueClientContactOut",
+    "type": "object"
+  },
+  "IssueCreateIn": {
+    "additionalProperties": false,
+    "description": "`POST /v1/issues`. \"Create & send to client\" is this, then `send-to-client`.",
+    "properties": {
+      "assignee_agent": {
+        "cls": "internal",
+        "default": false,
+        "title": "Assignee Agent",
+        "type": "boolean"
+      },
+      "assignee_user_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Assignee User Id"
+      },
+      "blocks": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "enum": [
+            "final_approval",
+            "export",
+            "release",
+            "sign_off"
+          ],
+          "type": "string"
+        },
+        "maxItems": 4,
+        "title": "Blocks",
+        "type": "array"
+      },
+      "client_contact_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Client Contact Id"
+      },
+      "client_wording": {
+        "anyOf": [
+          {
+            "maxLength": 4000,
+            "minLength": 1,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Client Wording"
+      },
+      "internal_note": {
+        "anyOf": [
+          {
+            "maxLength": 4000,
+            "minLength": 1,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Internal Note"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "missing_information",
+          "action_required",
+          "review_point",
+          "waiting_on_client",
+          "exception",
+          "engine_diagnostic"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "links": {
+        "cls": "confidential",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/IssueLinkIn"
+        },
+        "maxItems": 20,
+        "title": "Links",
+        "type": "array"
+      },
+      "priority": {
+        "$ref": "#/components/schemas/IssueSeverityStatus",
+        "cls": "internal",
+        "default": "medium"
+      },
+      "record_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Record Id",
+        "type": "string"
+      },
+      "record_type": {
+        "cls": "internal",
+        "pattern": "^[a-z][a-z_]{0,39}$",
+        "title": "Record Type",
+        "type": "string"
+      },
+      "title": {
+        "cls": "restricted",
+        "maxLength": 400,
+        "minLength": 1,
+        "title": "Title",
+        "type": "string"
+      }
+    },
+    "required": [
+      "record_type",
+      "record_id",
+      "kind",
+      "title"
+    ],
+    "title": "IssueCreateIn",
+    "type": "object"
+  },
+  "IssueDetailOut": {
+    "description": "One issue with its sealed title, internal note and client wording. Only `client_wording`\never reaches the client, as a request item through `send-to-client` (INV-4).",
+    "properties": {
+      "client_contact": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/IssueClientContactOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential"
+      },
+      "client_wording": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Client Wording"
+      },
+      "events": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/IssueEventOut"
+        },
+        "title": "Events",
+        "type": "array"
+      },
+      "explanations": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/IssueExplanationOut"
+        },
+        "title": "Explanations",
+        "type": "array"
+      },
+      "fix_instructions": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/IssueFixInstructionsOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted"
+      },
+      "fix_run": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/IssueFixRunOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted"
+      },
+      "internal_note": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Internal Note"
+      },
+      "issue": {
+        "$ref": "#/components/schemas/IssueItemOut",
+        "cls": "internal"
+      },
+      "links": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/IssueLinkOut"
+        },
+        "title": "Links",
+        "type": "array"
+      },
+      "record_label": {
+        "cls": "confidential",
+        "title": "Record Label",
+        "type": "string"
+      },
+      "request_item_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Request Item Id"
+      },
+      "suggestion": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/IssueFixSuggestionOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted"
+      },
+      "title": {
+        "cls": "restricted",
+        "title": "Title",
+        "type": "string"
+      }
+    },
+    "required": [
+      "issue",
+      "record_label",
+      "title",
+      "internal_note",
+      "client_wording",
+      "client_contact",
+      "links",
+      "suggestion",
+      "fix_instructions",
+      "fix_run",
+      "explanations",
+      "request_item_id",
+      "events"
+    ],
+    "title": "IssueDetailOut",
+    "type": "object"
+  },
+  "IssueEventOut": {
+    "properties": {
+      "actor_kind": {
+        "cls": "internal",
+        "enum": [
+          "human",
+          "agent",
+          "system"
+        ],
+        "title": "Actor Kind",
+        "type": "string"
+      },
+      "actor_name": {
+        "cls": "internal",
+        "title": "Actor Name",
+        "type": "string"
+      },
+      "actor_user_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Actor User Id"
+      },
+      "at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "At",
+        "type": "string"
+      },
+      "event": {
+        "cls": "internal",
+        "enum": [
+          "created",
+          "assigned",
+          "status_changed",
+          "fix_instructions_set",
+          "sent_to_client",
+          "explained",
+          "resolved",
+          "verified",
+          "reopened",
+          "marked_not_applicable"
+        ],
+        "title": "Event",
+        "type": "string"
+      }
+    },
+    "required": [
+      "event",
+      "actor_kind",
+      "actor_user_id",
+      "actor_name",
+      "at"
+    ],
+    "title": "IssueEventOut",
+    "type": "object"
+  },
+  "IssueExplanationOut": {
+    "description": "SHL-15 d, \"Explain\u2026\": read-only agent text with its citations; it decides nothing.",
+    "properties": {
+      "agent_run_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Agent Run Id",
+        "type": "string"
+      },
+      "citations": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/CitedSourceOut"
+        },
+        "title": "Citations",
+        "type": "array"
+      },
+      "explained_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Explained At",
+        "type": "string"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "pinned": {
+        "cls": "internal",
+        "title": "Pinned",
+        "type": "boolean"
+      },
+      "text": {
+        "cls": "restricted",
+        "title": "Text",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "text",
+      "agent_run_id",
+      "explained_at",
+      "citations",
+      "pinned"
+    ],
+    "title": "IssueExplanationOut",
+    "type": "object"
+  },
+  "IssueFixInstructionsOut": {
+    "description": "The sealed instructions a person set. Fix runs always propose (DF-13): there is no\ndirect-edit mode, so the \"Propose changes for my approval\" box is not a wire field.",
+    "properties": {
+      "scope": {
+        "cls": "internal",
+        "enum": [
+          "this_issue",
+          "all_of_class"
+        ],
+        "title": "Scope",
+        "type": "string"
+      },
+      "set_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Set At",
+        "type": "string"
+      },
+      "set_by_name": {
+        "cls": "internal",
+        "title": "Set By Name",
+        "type": "string"
+      },
+      "set_by_user_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Set By User Id",
+        "type": "string"
+      },
+      "text": {
+        "cls": "restricted",
+        "title": "Text",
+        "type": "string"
+      }
+    },
+    "required": [
+      "text",
+      "scope",
+      "set_by_user_id",
+      "set_by_name",
+      "set_at"
+    ],
+    "title": "IssueFixInstructionsOut",
+    "type": "object"
+  },
+  "IssueFixRunOut": {
+    "description": "The run fixing the issue (SHL-15 a-prime: \"Adding 1,550 to Form 1040 line 2a \u00b7 Running\"),\nthen its proposal (a-double-prime: the ghost values; Accept opens SHL-10 b). `label` is\nagent text.",
+    "properties": {
+      "agent_run_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Agent Run Id",
+        "type": "string"
+      },
+      "label": {
+        "cls": "restricted",
+        "title": "Label",
+        "type": "string"
+      },
+      "proposal_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Proposal Id"
+      },
+      "status": {
+        "$ref": "#/components/schemas/AgentRunStatus",
+        "cls": "internal"
+      }
+    },
+    "required": [
+      "agent_run_id",
+      "label",
+      "status",
+      "proposal_id"
+    ],
+    "title": "IssueFixRunOut",
+    "type": "object"
+  },
+  "IssueFixSuggestionOut": {
+    "description": "\"Suggested by Accrued Agent\": agent text, rendered only through AgentText.",
+    "properties": {
+      "agent_run_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Agent Run Id"
+      },
+      "suggested_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Suggested At",
+        "type": "string"
+      },
+      "text": {
+        "cls": "restricted",
+        "title": "Text",
+        "type": "string"
+      }
+    },
+    "required": [
+      "text",
+      "agent_run_id",
+      "suggested_at"
+    ],
+    "title": "IssueFixSuggestionOut",
+    "type": "object"
+  },
+  "IssueItemOut": {
+    "description": "An issue in a list (TAX-06, TXP-10, AUD-15). The title, notes and client wording are\nsealed and Restricted, so lists never carry them; the detail does.",
+    "properties": {
+      "allowed_actions": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "title": "Allowed Actions",
+        "type": "array"
+      },
+      "assignee_agent": {
+        "cls": "internal",
+        "title": "Assignee Agent",
+        "type": "boolean"
+      },
+      "assignee_name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Assignee Name"
+      },
+      "assignee_user_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Assignee User Id"
+      },
+      "blocks": {
+        "cls": "internal",
+        "items": {
+          "enum": [
+            "final_approval",
+            "export",
+            "release",
+            "sign_off"
+          ],
+          "type": "string"
+        },
+        "title": "Blocks",
+        "type": "array"
+      },
+      "created_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Created At",
+        "type": "string"
+      },
+      "engagement_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Engagement Id"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "instructions_required": {
+        "cls": "internal",
+        "title": "Instructions Required",
+        "type": "boolean"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "missing_information",
+          "action_required",
+          "review_point",
+          "waiting_on_client",
+          "exception",
+          "engine_diagnostic"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "link_count": {
+        "cls": "internal",
+        "title": "Link Count",
+        "type": "integer"
+      },
+      "priority": {
+        "$ref": "#/components/schemas/IssueSeverityStatus",
+        "cls": "internal"
+      },
+      "record": {
+        "$ref": "#/components/schemas/ObjectRefOut",
+        "cls": "internal"
+      },
+      "status": {
+        "$ref": "#/components/schemas/IssueStatus",
+        "cls": "internal"
+      },
+      "version": {
+        "cls": "internal",
+        "title": "Version",
+        "type": "integer"
+      },
+      "work_item_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Work Item Id"
+      }
+    },
+    "required": [
+      "id",
+      "engagement_id",
+      "work_item_id",
+      "record",
+      "kind",
+      "priority",
+      "status",
+      "instructions_required",
+      "assignee_user_id",
+      "assignee_name",
+      "assignee_agent",
+      "blocks",
+      "link_count",
+      "version",
+      "created_at",
+      "allowed_actions"
+    ],
+    "title": "IssueItemOut",
+    "type": "object"
+  },
+  "IssueLinkIn": {
+    "additionalProperties": false,
+    "properties": {
+      "anchor": {
+        "anyOf": [
+          {
+            "maxLength": 120,
+            "minLength": 1,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Anchor"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "cell_range",
+          "form_field",
+          "file",
+          "request_item",
+          "finding"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "target_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Target Id"
+      },
+      "target_type": {
+        "anyOf": [
+          {
+            "pattern": "^[a-z][a-z_]{0,39}$",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Target Type"
+      }
+    },
+    "required": [
+      "kind"
+    ],
+    "title": "IssueLinkIn",
+    "type": "object"
+  },
+  "IssueLinkOut": {
+    "description": "A linked target: a cell range (\"EBP-04 Participant data!F12:F15\"), a form field (\"Form\n1040 \u00b7 line 2a\"), a file, a request item or a finding. The chip lights its target.",
+    "properties": {
+      "anchor": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Anchor"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "cell_range",
+          "form_field",
+          "file",
+          "request_item",
+          "finding"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "label": {
+        "cls": "confidential",
+        "title": "Label",
+        "type": "string"
+      },
+      "target_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Target Id"
+      },
+      "target_type": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Target Type"
+      }
+    },
+    "required": [
+      "kind",
+      "label",
+      "target_type",
+      "target_id",
+      "anchor"
+    ],
+    "title": "IssueLinkOut",
+    "type": "object"
+  },
+  "IssueResolutionIn": {
+    "additionalProperties": false,
+    "description": "Resolve, verify, reopen or mark not applicable: a person's act (ISSUE-001).",
+    "properties": {
+      "note": {
+        "anyOf": [
+          {
+            "maxLength": 4000,
+            "minLength": 1,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Note"
+      },
+      "seen_version": {
+        "cls": "internal",
+        "minimum": 1.0,
+        "title": "Seen Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "seen_version"
+    ],
+    "title": "IssueResolutionIn",
+    "type": "object"
+  },
+  "IssueSendToClientIn": {
+    "additionalProperties": false,
+    "description": "One request item through `requests.api` (P-06) carrying only the client wording.",
+    "properties": {
+      "client_wording": {
+        "cls": "restricted",
+        "maxLength": 4000,
+        "minLength": 1,
+        "title": "Client Wording",
+        "type": "string"
+      },
+      "contact_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Contact Id",
+        "type": "string"
+      },
+      "due_on": {
+        "anyOf": [
+          {
+            "format": "date",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Due On"
+      },
+      "seen_version": {
+        "cls": "internal",
+        "minimum": 1.0,
+        "title": "Seen Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "seen_version",
+      "client_wording",
+      "contact_id"
+    ],
+    "title": "IssueSendToClientIn",
+    "type": "object"
+  },
+  "IssueUpdateIn": {
+    "additionalProperties": false,
+    "description": "`PATCH /v1/issues/{id}`: title, class, priority and assignee. A stale `seen_version`\nanswers 409 `issue_changed`.",
+    "properties": {
+      "assignee_agent": {
+        "anyOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Assignee Agent"
+      },
+      "assignee_user_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Assignee User Id"
+      },
+      "kind": {
+        "anyOf": [
+          {
+            "enum": [
+              "missing_information",
+              "action_required",
+              "review_point",
+              "waiting_on_client",
+              "exception",
+              "engine_diagnostic"
+            ],
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Kind"
+      },
+      "priority": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/IssueSeverityStatus"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal"
+      },
+      "seen_version": {
+        "cls": "internal",
+        "minimum": 1.0,
+        "title": "Seen Version",
+        "type": "integer"
+      },
+      "title": {
+        "anyOf": [
+          {
+            "maxLength": 400,
+            "minLength": 1,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Title"
+      }
+    },
+    "required": [
+      "seen_version"
+    ],
+    "title": "IssueUpdateIn",
+    "type": "object"
+  },
+  "LadderLevelOut": {
+    "properties": {
+      "expected_signer_name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Expected Signer Name"
+      },
+      "expected_signer_user_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Expected Signer User Id"
+      },
+      "latest": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/SignOffOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal"
+      },
+      "level": {
+        "cls": "internal",
+        "enum": [
+          "L1_preparer",
+          "L2_reviewer",
+          "L3_manager",
+          "L4_partner",
+          "L5_eqr"
+        ],
+        "title": "Level",
+        "type": "string"
+      },
+      "required": {
+        "cls": "internal",
+        "title": "Required",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "level",
+      "required",
+      "expected_signer_user_id",
+      "expected_signer_name",
+      "latest"
+    ],
+    "title": "LadderLevelOut",
+    "type": "object"
+  },
+  "ListPage_DecisionCardItemOut_": {
+    "properties": {
+      "counts": {
+        "additionalProperties": {
+          "type": "integer"
+        },
+        "cls": "internal",
+        "title": "Counts",
+        "type": "object"
+      },
+      "facets": {
+        "additionalProperties": {
+          "items": {
+            "$ref": "#/components/schemas/Facet"
+          },
+          "type": "array"
+        },
+        "cls": "internal",
+        "title": "Facets",
+        "type": "object"
+      },
+      "items": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/DecisionCardItemOut"
+        },
+        "title": "Items",
+        "type": "array"
+      },
+      "next_cursor": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Next Cursor"
+      },
+      "total": {
+        "cls": "internal",
+        "title": "Total",
+        "type": "integer"
+      },
+      "total_capped": {
+        "cls": "internal",
+        "default": false,
+        "title": "Total Capped",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "items",
+      "total"
+    ],
+    "title": "ListPage[DecisionCardItemOut]",
+    "type": "object"
+  },
+  "ListPage_HumanGateOut_": {
+    "properties": {
+      "counts": {
+        "additionalProperties": {
+          "type": "integer"
+        },
+        "cls": "internal",
+        "title": "Counts",
+        "type": "object"
+      },
+      "facets": {
+        "additionalProperties": {
+          "items": {
+            "$ref": "#/components/schemas/Facet"
+          },
+          "type": "array"
+        },
+        "cls": "internal",
+        "title": "Facets",
+        "type": "object"
+      },
+      "items": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/HumanGateOut"
+        },
+        "title": "Items",
+        "type": "array"
+      },
+      "next_cursor": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Next Cursor"
+      },
+      "total": {
+        "cls": "internal",
+        "title": "Total",
+        "type": "integer"
+      },
+      "total_capped": {
+        "cls": "internal",
+        "default": false,
+        "title": "Total Capped",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "items",
+      "total"
+    ],
+    "title": "ListPage[HumanGateOut]",
+    "type": "object"
+  },
+  "ListPage_IssueItemOut_": {
+    "properties": {
+      "counts": {
+        "additionalProperties": {
+          "type": "integer"
+        },
+        "cls": "internal",
+        "title": "Counts",
+        "type": "object"
+      },
+      "facets": {
+        "additionalProperties": {
+          "items": {
+            "$ref": "#/components/schemas/Facet"
+          },
+          "type": "array"
+        },
+        "cls": "internal",
+        "title": "Facets",
+        "type": "object"
+      },
+      "items": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/IssueItemOut"
+        },
+        "title": "Items",
+        "type": "array"
+      },
+      "next_cursor": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Next Cursor"
+      },
+      "total": {
+        "cls": "internal",
+        "title": "Total",
+        "type": "integer"
+      },
+      "total_capped": {
+        "cls": "internal",
+        "default": false,
+        "title": "Total Capped",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "items",
+      "total"
+    ],
+    "title": "ListPage[IssueItemOut]",
+    "type": "object"
+  },
+  "ListPage_ReviewNoteItemOut_": {
+    "properties": {
+      "counts": {
+        "additionalProperties": {
+          "type": "integer"
+        },
+        "cls": "internal",
+        "title": "Counts",
+        "type": "object"
+      },
+      "facets": {
+        "additionalProperties": {
+          "items": {
+            "$ref": "#/components/schemas/Facet"
+          },
+          "type": "array"
+        },
+        "cls": "internal",
+        "title": "Facets",
+        "type": "object"
+      },
+      "items": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/ReviewNoteItemOut"
+        },
+        "title": "Items",
+        "type": "array"
+      },
+      "next_cursor": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Next Cursor"
+      },
+      "total": {
+        "cls": "internal",
+        "title": "Total",
+        "type": "integer"
+      },
+      "total_capped": {
+        "cls": "internal",
+        "default": false,
+        "title": "Total Capped",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "items",
+      "total"
+    ],
+    "title": "ListPage[ReviewNoteItemOut]",
+    "type": "object"
+  },
+  "NoteAnchorIn": {
+    "additionalProperties": false,
+    "properties": {
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "cell",
+          "field",
+          "section",
+          "region"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "ref": {
+        "cls": "confidential",
+        "maxLength": 120,
+        "minLength": 1,
+        "title": "Ref",
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "ref"
+    ],
+    "title": "NoteAnchorIn",
+    "type": "object"
+  },
+  "NoteAnchorOut": {
+    "properties": {
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "cell",
+          "field",
+          "section",
+          "region"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "ref": {
+        "cls": "confidential",
+        "title": "Ref",
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "ref"
+    ],
+    "title": "NoteAnchorOut",
+    "type": "object"
+  },
+  "ObjectRefOut": {
+    "properties": {
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "type": {
+        "cls": "internal",
+        "title": "Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "type",
+      "id"
+    ],
+    "title": "ObjectRefOut",
+    "type": "object"
+  },
+  "ProposalDecisionOut": {
+    "description": "The latest insert-only, human-only `proposal_decisions` row. `undo_until` is the end of\nthe 10-second window (ADR-161 clause 6); null once an effect has started or for none.",
+    "properties": {
+      "decided_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Decided At",
+        "type": "string"
+      },
+      "decided_by_name": {
+        "cls": "internal",
+        "title": "Decided By Name",
+        "type": "string"
+      },
+      "decided_by_user_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Decided By User Id",
+        "type": "string"
+      },
+      "decision": {
+        "cls": "internal",
+        "enum": [
+          "approved",
+          "approved_with_edits",
+          "rejected",
+          "routed",
+          "follow_up",
+          "undone"
+        ],
+        "title": "Decision",
+        "type": "string"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "note": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Note"
+      },
+      "reason_code": {
+        "anyOf": [
+          {
+            "enum": [
+              "wrong_treatment",
+              "unsupported_value",
+              "needs_client_input",
+              "other"
+            ],
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Reason Code"
+      },
+      "routed_to_user_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Routed To User Id"
+      },
+      "undo_until": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Undo Until"
+      }
+    },
+    "required": [
+      "id",
+      "decision",
+      "reason_code",
+      "note",
+      "decided_by_user_id",
+      "decided_by_name",
+      "decided_at",
+      "routed_to_user_id",
+      "undo_until"
+    ],
+    "title": "ProposalDecisionOut",
+    "type": "object"
+  },
+  "ProposalEditIn": {
+    "additionalProperties": false,
+    "description": "An edited After value with its citation note (SHL-10 \"Approve with edits\").",
+    "properties": {
+      "after": {
+        "cls": "restricted",
+        "maxLength": 200,
+        "title": "After",
+        "type": "string"
+      },
+      "citation_note": {
+        "cls": "restricted",
+        "maxLength": 2000,
+        "minLength": 1,
+        "title": "Citation Note",
+        "type": "string"
+      },
+      "n": {
+        "cls": "internal",
+        "minimum": 1.0,
+        "title": "N",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "n",
+      "after",
+      "citation_note"
+    ],
+    "title": "ProposalEditIn",
+    "type": "object"
+  },
+  "ProposalEvidenceOut": {
+    "properties": {
+      "citation_count": {
+        "cls": "internal",
+        "title": "Citation Count",
+        "type": "integer"
+      },
+      "evidence_version_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Evidence Version Id",
+        "type": "string"
+      },
+      "label": {
+        "cls": "confidential",
+        "title": "Label",
+        "type": "string"
+      }
+    },
+    "required": [
+      "evidence_version_id",
+      "label",
+      "citation_count"
+    ],
+    "title": "ProposalEvidenceOut",
+    "type": "object"
+  },
+  "ProposalPolicyOut": {
+    "description": "`proposals.policy_eval` and the policy note. While P-08 is dormant the approver is always\na named person, never \"Policy\" or the agent (INV-5).",
+    "properties": {
+      "note": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Note"
+      },
+      "policy_name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Policy Name"
+      },
+      "result": {
+        "anyOf": [
+          {
+            "enum": [
+              "within_threshold",
+              "review_required"
+            ],
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Result"
+      },
+      "routed_to_name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Routed To Name"
+      },
+      "routed_to_user_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Routed To User Id"
+      }
+    },
+    "required": [
+      "policy_name",
+      "result",
+      "routed_to_user_id",
+      "routed_to_name",
+      "note"
+    ],
+    "title": "ProposalPolicyOut",
+    "type": "object"
+  },
+  "ProposalRowOut": {
+    "description": "One change: Field \u00b7 Before \u2192 After \u00b7 Cause. A row without a verified citation is\n`unsupported` and blocks approval (422 `uncited_change`).",
+    "properties": {
+      "after": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "After"
+      },
+      "before": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Before"
+      },
+      "cause": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Cause"
+      },
+      "citation_ids": {
+        "cls": "internal",
+        "items": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "title": "Citation Ids",
+        "type": "array"
+      },
+      "field_key": {
+        "cls": "internal",
+        "title": "Field Key",
+        "type": "string"
+      },
+      "label": {
+        "cls": "confidential",
+        "title": "Label",
+        "type": "string"
+      },
+      "n": {
+        "cls": "internal",
+        "title": "N",
+        "type": "integer"
+      },
+      "suggestion_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Suggestion Id"
+      },
+      "unsupported": {
+        "cls": "internal",
+        "title": "Unsupported",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "n",
+      "suggestion_id",
+      "field_key",
+      "label",
+      "before",
+      "after",
+      "cause",
+      "citation_ids",
+      "unsupported"
+    ],
+    "title": "ProposalRowOut",
+    "type": "object"
+  },
+  "ProposalSetOut": {
+    "description": "SHL-10 g: the proposal's set. The link row opens SHL-19 and approves nothing.",
+    "properties": {
+      "exceptions": {
+        "cls": "internal",
+        "title": "Exceptions",
+        "type": "integer"
+      },
+      "label": {
+        "cls": "confidential",
+        "title": "Label",
+        "type": "string"
+      },
+      "results": {
+        "cls": "internal",
+        "title": "Results",
+        "type": "integer"
+      },
+      "set_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Set Id",
+        "type": "string"
+      },
+      "set_type": {
+        "cls": "internal",
+        "title": "Set Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "set_type",
+      "set_id",
+      "label",
+      "results",
+      "exceptions"
+    ],
+    "title": "ProposalSetOut",
+    "type": "object"
+  },
+  "ProposalTotalOut": {
+    "description": "A totals row computed by code (\"Net change to Form 1040 total income \u00b7 0 \u00b7 tie\").",
+    "properties": {
+      "label": {
+        "cls": "confidential",
+        "title": "Label",
+        "type": "string"
+      },
+      "ties": {
+        "cls": "internal",
+        "title": "Ties",
+        "type": "boolean"
+      },
+      "value": {
+        "cls": "restricted",
+        "title": "Value",
+        "type": "string"
+      }
+    },
+    "required": [
+      "label",
+      "value",
+      "ties"
+    ],
+    "title": "ProposalTotalOut",
+    "type": "object"
+  },
+  "RaiseReviewNoteIn": {
+    "additionalProperties": false,
+    "properties": {
+      "anchor": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/NoteAnchorIn"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential"
+      },
+      "assignee_user_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Assignee User Id"
+      },
+      "body": {
+        "cls": "restricted",
+        "maxLength": 2000,
+        "minLength": 1,
+        "title": "Body",
+        "type": "string"
+      },
+      "target_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Target Id",
+        "type": "string"
+      },
+      "target_type": {
+        "cls": "internal",
+        "pattern": "^[a-z][a-z_]{0,39}$",
+        "title": "Target Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "target_type",
+      "target_id",
+      "body"
+    ],
+    "title": "RaiseReviewNoteIn",
+    "type": "object"
+  },
+  "RejectProposalIn": {
+    "additionalProperties": false,
+    "properties": {
+      "note": {
+        "anyOf": [
+          {
+            "maxLength": 2000,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Note"
+      },
+      "reason_code": {
+        "cls": "internal",
+        "enum": [
+          "wrong_treatment",
+          "unsupported_value",
+          "needs_client_input",
+          "other"
+        ],
+        "title": "Reason Code",
+        "type": "string"
+      },
+      "seen_version": {
+        "cls": "internal",
+        "minimum": 1.0,
+        "title": "Seen Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "seen_version",
+      "reason_code"
+    ],
+    "title": "RejectProposalIn",
+    "type": "object"
+  },
+  "ReviewNoteDetailOut": {
+    "description": "One note with its sealed body and its insert-only events.",
+    "properties": {
+      "body": {
+        "cls": "restricted",
+        "title": "Body",
+        "type": "string"
+      },
+      "events": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/ReviewNoteEventOut"
+        },
+        "title": "Events",
+        "type": "array"
+      },
+      "note": {
+        "$ref": "#/components/schemas/ReviewNoteItemOut",
+        "cls": "confidential"
+      }
+    },
+    "required": [
+      "note",
+      "body",
+      "events"
+    ],
+    "title": "ReviewNoteDetailOut",
+    "type": "object"
+  },
+  "ReviewNoteEventIn": {
+    "additionalProperties": false,
+    "properties": {
+      "body": {
+        "anyOf": [
+          {
+            "maxLength": 2000,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Body"
+      }
+    },
+    "title": "ReviewNoteEventIn",
+    "type": "object"
+  },
+  "ReviewNoteEventOut": {
+    "properties": {
+      "actor_name": {
+        "cls": "internal",
+        "title": "Actor Name",
+        "type": "string"
+      },
+      "actor_user_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Actor User Id",
+        "type": "string"
+      },
+      "at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "At",
+        "type": "string"
+      },
+      "body": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Body"
+      },
+      "event": {
+        "cls": "internal",
+        "enum": [
+          "raised",
+          "responded",
+          "cleared",
+          "closed",
+          "withdrawn",
+          "reopened"
+        ],
+        "title": "Event",
+        "type": "string"
+      }
+    },
+    "required": [
+      "event",
+      "body",
+      "actor_user_id",
+      "actor_name",
+      "at"
+    ],
+    "title": "ReviewNoteEventOut",
+    "type": "object"
+  },
+  "ReviewNoteItemOut": {
+    "description": "A note in a list. Bodies are sealed and Restricted, so lists never carry them; the\ndetail read does, as an access event.",
+    "properties": {
+      "allowed_actions": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "title": "Allowed Actions",
+        "type": "array"
+      },
+      "anchor": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/NoteAnchorOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential"
+      },
+      "assignee_user_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Assignee User Id"
+      },
+      "engagement_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Engagement Id",
+        "type": "string"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "raised_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Raised At",
+        "type": "string"
+      },
+      "raised_by_initials": {
+        "cls": "internal",
+        "title": "Raised By Initials",
+        "type": "string"
+      },
+      "raised_by_user_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Raised By User Id",
+        "type": "string"
+      },
+      "status": {
+        "$ref": "#/components/schemas/ReviewNoteStatus",
+        "cls": "internal"
+      },
+      "target_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Target Id",
+        "type": "string"
+      },
+      "target_type": {
+        "cls": "internal",
+        "title": "Target Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "engagement_id",
+      "target_type",
+      "target_id",
+      "anchor",
+      "status",
+      "raised_by_user_id",
+      "raised_by_initials",
+      "raised_at",
+      "assignee_user_id",
+      "allowed_actions"
+    ],
+    "title": "ReviewNoteItemOut",
+    "type": "object"
+  },
+  "RouteProposalIn": {
+    "additionalProperties": false,
+    "properties": {
+      "approver_user_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Approver User Id",
+        "type": "string"
+      },
+      "seen_version": {
+        "cls": "internal",
+        "minimum": 1.0,
+        "title": "Seen Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "seen_version",
+      "approver_user_id"
+    ],
+    "title": "RouteProposalIn",
+    "type": "object"
+  },
+  "SignOffEligibilityOut": {
+    "description": "`GET /v1/sign-offs/eligibility`: the SHL-12 sheet for one level.",
+    "properties": {
+      "checks": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/EligibilityCheckOut"
+        },
+        "title": "Checks",
+        "type": "array"
+      },
+      "eligible": {
+        "cls": "internal",
+        "title": "Eligible",
+        "type": "boolean"
+      },
+      "ladder": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/LadderLevelOut"
+        },
+        "title": "Ladder",
+        "type": "array"
+      },
+      "level": {
+        "cls": "internal",
+        "enum": [
+          "L1_preparer",
+          "L2_reviewer",
+          "L3_manager",
+          "L4_partner",
+          "L5_eqr"
+        ],
+        "title": "Level",
+        "type": "string"
+      },
+      "levels_allowed": {
+        "cls": "internal",
+        "items": {
+          "enum": [
+            "L1_preparer",
+            "L2_reviewer",
+            "L3_manager",
+            "L4_partner",
+            "L5_eqr"
+          ],
+          "type": "string"
+        },
+        "title": "Levels Allowed",
+        "type": "array"
+      },
+      "statement": {
+        "$ref": "#/components/schemas/SignOffStatementOut",
+        "cls": "internal"
+      },
+      "target": {
+        "$ref": "#/components/schemas/SignOffTargetOut",
+        "cls": "confidential"
+      }
+    },
+    "required": [
+      "target",
+      "level",
+      "levels_allowed",
+      "ladder",
+      "checks",
+      "eligible",
+      "statement"
+    ],
+    "title": "SignOffEligibilityOut",
+    "type": "object"
+  },
+  "SignOffIn": {
+    "additionalProperties": false,
+    "description": "`POST /v1/sign-offs`: sign what was seen. A different current hash answers 409\n`content_changed` and nothing is written.",
+    "properties": {
+      "kind": {
+        "cls": "internal",
+        "default": "ladder",
+        "enum": [
+          "ladder",
+          "field_tick",
+          "final_approval"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "level": {
+        "cls": "internal",
+        "enum": [
+          "L1_preparer",
+          "L2_reviewer",
+          "L3_manager",
+          "L4_partner",
+          "L5_eqr"
+        ],
+        "title": "Level",
+        "type": "string"
+      },
+      "seen_hash": {
+        "cls": "internal",
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "title": "Seen Hash",
+        "type": "string"
+      },
+      "statement_version": {
+        "cls": "internal",
+        "maxLength": 40,
+        "title": "Statement Version",
+        "type": "string"
+      },
+      "target_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Target Id",
+        "type": "string"
+      },
+      "target_type": {
+        "cls": "internal",
+        "pattern": "^[a-z][a-z_]{0,39}$",
+        "title": "Target Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "target_type",
+      "target_id",
+      "level",
+      "seen_hash",
+      "statement_version"
+    ],
+    "title": "SignOffIn",
+    "type": "object"
+  },
+  "SignOffLadderOut": {
+    "description": "`GET /v1/sign-offs`: the ladder per level on one target.",
+    "properties": {
+      "allowed_actions": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "title": "Allowed Actions",
+        "type": "array"
+      },
+      "levels": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/LadderLevelOut"
+        },
+        "title": "Levels",
+        "type": "array"
+      },
+      "target": {
+        "$ref": "#/components/schemas/SignOffTargetOut",
+        "cls": "confidential"
+      }
+    },
+    "required": [
+      "target",
+      "levels",
+      "allowed_actions"
+    ],
+    "title": "SignOffLadderOut",
+    "type": "object"
+  },
+  "SignOffOut": {
+    "description": "One insert-only `sign_offs` row. `stale` is computed (its hash differs from the target's);\nno row is ever updated (ADR-160 clause 3).",
+    "properties": {
+      "adopted_run_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Adopted Run Id"
+      },
+      "adopted_run_number": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Adopted Run Number"
+      },
+      "content_hash": {
+        "cls": "internal",
+        "title": "Content Hash",
+        "type": "string"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "initials": {
+        "cls": "internal",
+        "title": "Initials",
+        "type": "string"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "ladder",
+          "field_tick",
+          "final_approval"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "level": {
+        "cls": "internal",
+        "enum": [
+          "L1_preparer",
+          "L2_reviewer",
+          "L3_manager",
+          "L4_partner",
+          "L5_eqr"
+        ],
+        "title": "Level",
+        "type": "string"
+      },
+      "signed_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Signed At",
+        "type": "string"
+      },
+      "signer_name": {
+        "cls": "internal",
+        "title": "Signer Name",
+        "type": "string"
+      },
+      "signer_user_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Signer User Id",
+        "type": "string"
+      },
+      "stale": {
+        "cls": "internal",
+        "title": "Stale",
+        "type": "boolean"
+      },
+      "statement_version": {
+        "cls": "internal",
+        "title": "Statement Version",
+        "type": "string"
+      },
+      "target_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Target Id",
+        "type": "string"
+      },
+      "target_type": {
+        "cls": "internal",
+        "title": "Target Type",
+        "type": "string"
+      },
+      "version_no": {
+        "cls": "internal",
+        "title": "Version No",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "id",
+      "target_type",
+      "target_id",
+      "kind",
+      "level",
+      "signer_user_id",
+      "signer_name",
+      "initials",
+      "signed_at",
+      "content_hash",
+      "version_no",
+      "statement_version",
+      "adopted_run_id",
+      "adopted_run_number",
+      "stale"
+    ],
+    "title": "SignOffOut",
+    "type": "object"
+  },
+  "SignOffStatementOut": {
+    "properties": {
+      "text": {
+        "cls": "internal",
+        "title": "Text",
+        "type": "string"
+      },
+      "version": {
+        "cls": "internal",
+        "title": "Version",
+        "type": "string"
+      }
+    },
+    "required": [
+      "version",
+      "text"
+    ],
+    "title": "SignOffStatementOut",
+    "type": "object"
+  },
+  "SignOffTargetOut": {
+    "description": "What is being signed: the version and hash the signer sees (SHL-12 workpaper card).",
+    "properties": {
+      "cell_count": {
+        "cls": "internal",
+        "title": "Cell Count",
+        "type": "integer"
+      },
+      "citation_count": {
+        "cls": "internal",
+        "title": "Citation Count",
+        "type": "integer"
+      },
+      "content_hash": {
+        "cls": "internal",
+        "title": "Content Hash",
+        "type": "string"
+      },
+      "context_label": {
+        "cls": "confidential",
+        "title": "Context Label",
+        "type": "string"
+      },
+      "label": {
+        "cls": "confidential",
+        "title": "Label",
+        "type": "string"
+      },
+      "target_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Target Id",
+        "type": "string"
+      },
+      "target_type": {
+        "cls": "internal",
+        "title": "Target Type",
+        "type": "string"
+      },
+      "version_no": {
+        "cls": "internal",
+        "title": "Version No",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "target_type",
+      "target_id",
+      "label",
+      "context_label",
+      "version_no",
+      "content_hash",
+      "cell_count",
+      "citation_count"
+    ],
+    "title": "SignOffTargetOut",
+    "type": "object"
+  },
+  "UndoProposalIn": {
+    "additionalProperties": false,
+    "properties": {
+      "decision_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Decision Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "decision_id"
+    ],
+    "title": "UndoProposalIn",
+    "type": "object"
+  }
+}
