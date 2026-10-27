@@ -119,3 +119,7 @@ actions:
     verb: release  # A-01-T23 (DEC-590, 0226): the engagement partner records the external release
   - action: assurance.archive_recorded
     verb: decide  # A-01-T23 (DEC-591, 0226): a manager or the partner records the external archive
+  - action: methodology_version.approved
+    verb: approve  # K-01-T06: the QM owner approves a methodology version (DEC-657)
+  - action: client_import.row_decided
+    verb: decide  # P-07-T52: a person's decision on an imported row (DEC-657)

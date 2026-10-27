@@ -216,6 +216,16 @@ codes:
     raised_by:
     - abacus.modules.review.gate_actions.CandidateNotEligible
     summary: The person can't take this gate (not a holder of its role, or walled off).
+  checklist_changed:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.lifecycle.ChecklistChanged
+    summary: 'The checklist is not the one you approved: review it again.'
+  checklist_unmet:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.lifecycle.ChecklistUnmet
+    summary: An approval checklist item is not met (`facts.item`).
   citation_required:
     status: 422
     raised_by:
@@ -863,6 +873,7 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.portal.branding.LogoUnreadable
+    - abacus.modules.portal.settings.LogoTooLarge
     summary: The logo isn't a PNG or JPEG this server can decode, or is too large.
   mapping_invalid:
     status: 422
@@ -913,6 +924,11 @@ codes:
     - abacus.modules.connections.connect.NoLiveConnection
     - abacus.modules.connections.service.NoConnection
     summary: The engagement's client entity has no active connection.
+  no_draft:
+    status: 409
+    raised_by:
+    - abacus.modules.portal.settings.NothingToPublish
+    summary: There is no draft to publish.
   no_failed_sync:
     status: 409
     raised_by:
@@ -1510,6 +1526,7 @@ codes:
     - abacus.modules.organisations.live.StaleVersion
     - abacus.modules.organisations.org_structure.StaleOrgStructure
     - abacus.modules.platform.safeguards.SafeguardsStale
+    - abacus.modules.portal.settings.SettingsStale
     - abacus.modules.review.gate_actions.GateStaleVersion
     summary: 'The record changed since it was read: read it again (409).'
   statement_already_approved:
@@ -1545,6 +1562,11 @@ codes:
     - abacus.modules.identity.governance_errors.SupersededByAiPolicy
     summary: 'The firm is on the versioned AI policy (`ai_policy.v1`): the autonomy level is changed
       by publishing a policy version, not by `PUT /v1/firm/autonomy` (ADR-186 item 7).'
+  support_contact_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.portal.settings.SupportContactInvalid
+    summary: The support contact must be an active staff member of the firm.
   support_requests_disabled:
     status: 409
     raised_by:

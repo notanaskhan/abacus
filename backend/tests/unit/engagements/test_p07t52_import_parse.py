@@ -58,7 +58,9 @@ def test_hostile_cells_are_inert_and_noted() -> None:
 
 def test_a_tin_in_a_name_is_scrubbed() -> None:
     (row,) = parse_client_list((HEAD + "Ann Lee 912-70-0001,,,,\n").encode(), "csv").rows
-    assert "0001" not in row.client_name
+    assert (
+        "912" not in row.client_name and "70-0001" not in row.client_name
+    )  # masked, last four kept
     assert "tin_in_text" in row.notes
 
 
