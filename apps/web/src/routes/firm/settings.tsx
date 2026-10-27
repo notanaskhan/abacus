@@ -1,13 +1,14 @@
 import { EmptyState } from "@abacus/ui";
-import { createRoute, useNavigate, useRouter, useSearch } from "@tanstack/react-router";
+import { Navigate, createRoute, useNavigate, useRouter, useSearch } from "@tanstack/react-router";
 import type { JSX } from "react";
 import { useCan } from "../../app-core/can";
-import { FeatureGate } from "../../app-core/flags";
+import { FeatureGate, useFlag } from "../../app-core/flags";
 import { useParam } from "../params";
 import { appRoute, lazyScreen } from "../root";
 
 // Firm settings (SPEC-016, SPEC-019 Q1): one section list, a section per page. The /admin paths
-// move to /settings with redirects in G-01-T07 (DEC-113); today's URLs are kept.
+// move to /settings (DEC-113): a legacy path whose new page is built redirects to it while that
+// page's flag is on (G-01-T07), and keeps its legacy page otherwise.
 const screens = {
   Methodology: lazyScreen(async () => (await import("../../legacy/Methodology")).Methodology),
   GroupingSets: lazyScreen(async () => (await import("../../legacy/GroupingSets")).GroupingSets),
@@ -289,6 +290,22 @@ const methodologyVersionRoute = createRoute({
   },
 });
 
+/** G-01-T07 (DEC-113): the legacy page, or a redirect to its /settings page once `flag` is on. */
+export function Moved({
+  flag,
+  to,
+  hash,
+  children,
+}: {
+  flag: string;
+  to: "/settings/people" | "/settings/offices" | "/settings/audit-log";
+  hash?: string;
+  children: JSX.Element;
+}): JSX.Element {
+  if (useFlag(flag) !== true) return children;
+  return <Navigate to={to} replace {...(hash === undefined ? {} : { hash })} />;
+}
+
 export const settingsRoutes = [
   settingsGeneralRoute,
   settingsPeopleRoute,
@@ -308,9 +325,22 @@ export const settingsRoutes = [
       return <screens.AutonomySettings canSet={canSet} />;
     }),
     section("/admin/setup", () => <screens.Onboarding always />),
-    section("/admin/people", () => <screens.FirmPeople />),
+    section("/admin/people", () => (
+      <Moved flag="firm_settings.v2" to="/settings/people">
+        <screens.FirmPeople />
+      </Moved>
+    )),
     section("/admin/support", () => <screens.SupportAccess />),
-    section("/admin/audit-log", () => <screens.AuditLog />),
-    section("/admin/walls", () => <screens.Walls />),
+    section("/admin/audit-log", () => (
+      <Moved flag="audit_log.explorer" to="/settings/audit-log">
+        <screens.AuditLog />
+      </Moved>
+    )),
+    section("/admin/walls", () => (
+      // ADM-03 holds the walls in its own section, scrolled to by `#walls`.
+      <Moved flag="firm_settings.v2" to="/settings/offices" hash="walls">
+        <screens.Walls />
+      </Moved>
+    )),
   ]),
 ] as const;

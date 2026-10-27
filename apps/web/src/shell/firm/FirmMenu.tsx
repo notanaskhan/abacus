@@ -76,6 +76,13 @@ export interface AdminRow {
 /** ADM-01's route (G-01 §5.1): Firm settings opens it while `firm_settings.v2` is on, the legacy
  * settings otherwise (SHL-03's inbound row; DEC-463). */
 export const SETTINGS_V2_PATH = "/settings/general";
+/** ADM-02's route: Users & roles opens it under the same flag (G-01-T07's legacy moves). */
+export const PEOPLE_V2_PATH = "/settings/people";
+
+const V2_PATHS: Partial<Record<AdminKey, string>> = {
+  firm_settings: SETTINGS_V2_PATH,
+  users_roles: PEOPLE_V2_PATH,
+};
 
 /** The admin section for a capabilities `nav` (AC 2.1.2): empty hides the section. Firm settings
  * at `read` carries "View only" (SHL-03c). `settingsV2` is the `firm_settings.v2` flag. */
@@ -91,7 +98,7 @@ export function adminRows(
         key: row.key,
         label: FIRM_MENU.admin[row.key],
         icon: row.icon,
-        path: row.key === "firm_settings" && settingsV2 ? SETTINGS_V2_PATH : row.path,
+        path: (settingsV2 ? V2_PATHS[row.key] : undefined) ?? row.path,
         // The canvas notes only the settings row: the audit log is read-only for everyone.
         viewOnly: row.key === "firm_settings" && access === "read",
       },
