@@ -98,6 +98,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "comment_thread.read",
         "conflict.cleared",
         "decision.refused_non_human",  # K-01-T06: an agent or the platform asked to approve
+        "human_gate.reassigned",  # I-01-T07: a person moved a gate to someone else (user ids)
         "conflict_check.run",
         "connection.checked",
         "connection.created",

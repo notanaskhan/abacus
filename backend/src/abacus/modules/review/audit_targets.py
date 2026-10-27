@@ -15,6 +15,7 @@ from sqlalchemy.orm import QueryableAttribute
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.review.models import (
     DecisionCard,
+    HumanGate,
     FieldValueVersion,
     ReviewableNote,
     SignOff,
@@ -24,6 +25,8 @@ _OWNERS: dict[str, tuple[QueryableAttribute[UUID], QueryableAttribute[UUID]]] = 
     "sign_off": (SignOff.id, SignOff.engagement_id),  # SPEC-308
     "reviewable_note": (ReviewableNote.id, ReviewableNote.engagement_id),  # P-04-T21, ED-150
     "decision_card": (DecisionCard.id, DecisionCard.engagement_id),  # P-04-T23
+    # I-01-T07: a snooze, unsnooze or reassign names its gate; a firm-level gate has none.
+    "human_gate": (HumanGate.id, cast(QueryableAttribute[UUID], HumanGate.engagement_id)),
     # P-04-T24 (review low, DEC-609): each field write is audited; a firm-level field has none.
     "field_value_version": (
         FieldValueVersion.id,

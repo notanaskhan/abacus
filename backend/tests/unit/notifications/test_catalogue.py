@@ -64,6 +64,8 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "acceptance.sent_to_partner",  # P-07-T47 (C16 `acceptance_awaiting_partner`, to the EP)
         "acceptance.review_requested",  # P-07-T47 (`risk_partner_review_requested`)
         "independence.reminded",  # P-07-T47 (`independence_reminder`, to the member)
+        "human_gate.reassigned",  # I-01-T07 (`gate_reassigned`, to the new person)
+        "methodology.review_requested",  # K-01-T06 (`methodology_review_requested`)
         "independence.conclusion_due",  # P-07-T47 (`independence_conclusion_due`, to the EP)
         "team.change_proposed",  # P-07-T47 (`team_change_awaiting_approval`, to the EP)
         "engagement_export.ready",  # A-01-T22 (C16 `export_ready`, to the requester)

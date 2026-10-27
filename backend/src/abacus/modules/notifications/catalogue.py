@@ -602,6 +602,9 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("independence_reminder", "approval", "ShieldCheck", email_default=True),
     NotificationKind("independence_conclusion_due", "approval", "ShieldCheck"),
     NotificationKind("team_change_awaiting_approval", "approval", "UserPlus"),
+    # I-01-T07: a gate moved to you; K-01-T06: a methodology version waits for your review.
+    NotificationKind("gate_reassigned", "approval", "UserPlus"),
+    NotificationKind("methodology_review_requested", "approval", "Scale"),
     # Day 12 of a 14-day client invitation, to the firm admins; registered for the drawer and
     # preferences now, produced once an expiry pass exists (P-07 §4.5 has no schedule; DEC-540).
     NotificationKind("invitation_expiring", "deadline", "Clock"),
