@@ -21,11 +21,11 @@ async def _work(net: Net, site: Site, who: Person, by: Person, due: date) -> uui
         uuid.UUID,
         await net.seed.value(
             "INSERT INTO work_items (tenant_id, engagement_id, client_id, kind, name, due_on, "
-            "created_by) VALUES ($1, $2, $3, 'assurance', $4, $5, $6) RETURNING id",
+            "created_by) VALUES ($1, $2, $3, 'tax_return', $4, $5, $6) RETURNING id",
             site.tenant_id,
             site.engagement_id,
             site.client_id,
-            f"FY2026 audit {site.marker}",
+            f"Form 1065 {site.marker}",
             due,
             by.user_id,
         ),
@@ -64,7 +64,9 @@ async def test_home_lists_my_work_and_deadlines_and_walls_leave_a_client_out(net
     assert response.status_code == 200, response.text
     body = cast(Json, response.json())
     work = cast(Json, body["your_work"])
-    assert work["label"] == "home.your_work.engagements"
+    assert (
+        work["label"] == "home.your_work.returns"
+    )  # the site's engagement holds one assurance item
     assert len(cast(list[Json], work["rows"])) == 2
     deadlines = cast(Json, body["deadlines"])
     rows = cast(list[Json], deadlines["rows"])

@@ -36,6 +36,7 @@ from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
+    Forbidden,
     Resource,
     authorise,
     current_context,
@@ -194,6 +195,10 @@ async def _gate(ctx: AuthContext) -> None:
     non-person are refused at the firm (403, INV-1). Then the flag (off: 404)."""
     if ctx.client:
         raise NotFound("home")
+    if ctx.tenant.actor_kind != "human":
+        raise Forbidden(
+            "home.read", "role"
+        )  # INV-1: a person's Home, never an agent's or the system's
     await authorise(ctx, "home.read", Resource.firm(ctx.tenant_id))
     if not await flag_enabled(ctx.tenant, HOME_DASHBOARD):
         raise NotFound("home.dashboard")
