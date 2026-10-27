@@ -166,6 +166,7 @@ Each becomes a test in `POR-04.test.tsx` ("POR-04 avoid: …"): gradients in pro
 | — | "Add a note for Kevin (optional)" names the newest firm commenter of the thread by first name, else the firm ("Add a note for Brightwater Hale (optional)") | `PortalRequestOut` carries no request owner; no shape change in R-01-T12 | R-01-T12 |
 | — | "Mark not applicable" is a secondary button, not a primary | The header's "Upload…" is the sheet's one primary (AVOID: more than one primary) | R-01-T12 |
 | — | The portal-upload variant's in-flight row shows 0% until the file is stored, then the receipt | The upload is one request with no progress events; g's 46% is the fixture's held frame | R-01-T12 |
+| DEC-471 (seed) | d loads as the opt-in slice `portal_pbc_returned`: Claire's 2024 upload (8:40 AM) and Kevin Osei's bootstrapped `wrong_period` return (9:05 AM) with g's note; the times are synthetic | A loader cannot take a person's review decision (ADR-005); the user chose to fill it | decision-log DEC-471; TASK-1221 |
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |

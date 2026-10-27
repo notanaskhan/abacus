@@ -194,6 +194,7 @@ Each becomes a test in `POR-03.test.tsx` ("POR-03 avoid: …"): gradients in pro
 | — | i has no spec letter in the README auto-check; the spec lists it and the built artboard is canonical | Handoff README rule | R-01 §2.1 |
 | — | c2's clock is 9:12 AM (the time of the email), kept by the fixture | README clock | R-01 §2.1 |
 | — | c2 and "Upload something else" are fixture-only until N-01 files email and ships the intake route (S15–S16) | Upstream order | R-01 §2.2 |
+| DEC-471 (seed) | i, c and g on the live seed carry synthetic fills: the census title and "PY2025 Audit requests" are bootstrapped, delegations to Keystone, Harborline, PayGrid and Summit have no grant, Claire's 9:12 AM file is bootstrapped into the Feld Inbox (the firm channel: no email channel until N-01), and g loads as the opt-in slice `portal_pbc_returned`; a and M's "19 of 21 · 37 sorted" stay fixture figures (the seed reads 5 of 7) | No source or service gives these values; the user chose to fill them | decision-log DEC-471; TASK-1221 |
 
 ### Part 2 notes (R-01-T10)
 - **Mounted at `/documents`** in the portal entry, with `?binder=` and T7-M below 768 px (DEC-346); POR-02's "Go to Documents →" (a request target of POR-03) and "Open binder" open it, and the PortalToolbar's Home and Documents route. The link checker's rule 1 cannot see the portal's tree (manifest paths resolve in the firm's route tree, and a POR path there fails rule 2), so the manifest entry stays `planned` with a null path until the checker learns the portal tree (DEC-347; R-01-T31).
