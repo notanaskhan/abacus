@@ -25,7 +25,13 @@ goes through `organisations.client_with_entity`; see the section comment and DEC
 
 The `binders` slice (P-06-T08: the 241 TY2025 binders on 224 return work items over 214 tax
 engagements, Copperleaf's close intake, and the client people binders name) is opt-in
-(`--slice binders`) and bootstrapped the same way; see DEC-146.
+(`--slice binders`) and bootstrapped the same way; see DEC-146. Granite Peak's agent-drafted SURL
+request (Sep 24, so from the 2026-10-01 snapshot) is bootstrapped too, with the agent's audit row
+on behalf of its firm owner: no service writes a drafted request outside a procedure session.
+
+The `portal_pbc` slice (R-01-T11: Dana Kowalski's client titles on AUD-03's rows) is opt-in
+(`--slice portal_pbc`, which brings `binders` and `portal`) and goes through `requests.api` as
+Marcus Delaney; see DEC-348 and the slice's gaps in TASK-1221.
 
 The `portal` slice (P-08-T14: Brightwater Hale's portal branding and host, the portal people and
 their grants, Sam Ortiz's pending invitation) is opt-in (`--slice portal`, which brings `binders`
@@ -144,6 +150,7 @@ from abacus.modules.portal.api import (
     add_portal_host,
     set_branding,
 )
+from abacus.modules.requests.api import ItemPatch, update_item
 from abacus_tools.db_connect import connect as connect_db
 from abacus_tools.fakes.identity import ISSUER
 from abacus_tools.flags import set_flag
@@ -181,6 +188,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.binders import (
     COPPERLEAF_CLOSE_ITEM,
     ENGAGEMENT_BY_LABEL,
     RETURN_BY_LABEL,
+    SURL_DRAFT,
     TAX_YEAR,
     Binder,
     person_email,
@@ -225,6 +233,12 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.portal import (
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.portal import NEEDS as PORTAL_NEEDS
 from abacus_tools.synthetic.scenarios.brightwater_hale.portal import SLICE as PORTAL_SLICE
+from abacus_tools.synthetic.scenarios.brightwater_hale.portal_pbc import (
+    NEEDS as PORTAL_PBC_NEEDS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.portal_pbc import (
+    SLICE as PORTAL_PBC_SLICE,
+)
 from abacus_tools.synthetic.scenarios.brightwater_hale.prng import stable_id
 from abacus_tools.synthetic.scenarios.brightwater_hale.scenario import (
     FIRM_ID,
@@ -426,6 +440,7 @@ async def bootstrap_write(
     at: datetime,
     trace: str,
     write: Write,
+    on_behalf_of: UUID | None = None,
 ) -> None:
     """One owner transaction carrying the tenant, actor and business time, ending with the audit
     row the missing service would have written (the scenario loader's and the load profiles'
@@ -436,12 +451,13 @@ async def bootstrap_write(
             ("app.actor_kind", actor_kind),
             ("app.actor_id", actor_id),
             ("app.now", at.isoformat()),
+            ("app.on_behalf_of", str(on_behalf_of) if on_behalf_of is not None else ""),
         ):
             await conn.execute("SELECT set_config($1, $2, true)", name, value)
         action, target_type, target_id = await write()
         await conn.execute(
             "INSERT INTO audit_events (tenant_id, actor_kind, actor_id, action, target_type, "
-            "target_id, trace_id) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+            "target_id, trace_id, on_behalf_of_user_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
             tenant,
             actor_kind,
             actor_id,
@@ -449,6 +465,7 @@ async def bootstrap_write(
             target_type,
             target_id,
             trace,
+            on_behalf_of,
         )
 
 
@@ -1226,6 +1243,55 @@ async def _binder_created(conn: asyncpg.Connection, _: Scenario, event: Event) -
     await _bootstrap(conn, event, write)
 
 
+async def _request_drafted(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """An agent-drafted request (SHL-14 f): a Draft, Owners only, with its run and the
+    fingerprint of the wording it was drafted with. No service writes a drafted request outside
+    a procedure session's run, so it is bootstrapped with the audit row the run would write: the
+    agent, for the firm owner whose procedure session it ran in."""
+    draft = SURL_DRAFT
+    pbc = _PBC[draft.list_key]
+    engagement = engagement_id_of(BY_LABEL[pbc.engagement])
+    owner = user_id_of(_SEATS[draft.owner])
+    item = UUID(draft.id)
+
+    async def write() -> tuple[str, str, str]:
+        await conn.execute(
+            "INSERT INTO request_items (id, tenant_id, engagement_id, request_list_id, "
+            "description, title, audit_area, category_id, status, created_by, created_at, "
+            "client_visible, client_assignee_user_id, firm_owner_user_id, due_on, period_start, "
+            "period_end, drafted_by_run_id, drafted_wording_source, drafted_wording_fingerprint) "
+            "VALUES ($1, $2, $3, $4, $5, $5, $6, $7, 'draft', $8, $9, false, $10, $8, $11, $12, "
+            "$13, $14, 'template', $15) ON CONFLICT DO NOTHING",
+            item,
+            TENANT,
+            engagement,
+            UUID(pbc.id),
+            draft.title,
+            draft.category,
+            UUID(pbc.category_id(draft.category)),
+            owner,
+            event.at,
+            UUID(_PORTAL[draft.assignee].id),
+            draft.due_on,
+            draft.period[0],
+            draft.period[1],
+            UUID(draft.run_id),
+            hashlib.sha256(draft.title.encode()).hexdigest(),
+        )
+        return "request_item.created", "request_item", str(item)
+
+    await bootstrap_write(
+        conn,
+        tenant=TENANT,
+        actor_kind="agent",
+        actor_id=draft.run_id,
+        at=event.at,
+        trace=trace_hex(event),
+        write=write,
+        on_behalf_of=owner,
+    )
+
+
 # --- the portal slice (P-08-T14; DEC-213) --------------------------------------------------------
 # Branding and the host have services (`portal.api`), called in a unit of work under Grace
 # Holloway. Client users, memberships and grants have none a loader can call (granting wants a
@@ -1235,6 +1301,7 @@ async def _binder_created(conn: asyncpg.Connection, _: Scenario, event: Event) -
 
 SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     PORTAL_SLICE: PORTAL_NEEDS,
+    PORTAL_PBC_SLICE: PORTAL_PBC_NEEDS,
     COMPLIANCE_SLICE: COMPLIANCE_NEEDS,
     ACCEPTANCE_SLICE: ACCEPTANCE_NEEDS,
     EMAIL_TEMPLATES_SLICE: (),  # R-01-T22: Grace's firm admin role is audit_core's
@@ -1404,6 +1471,18 @@ async def _client_invitation_created(conn: asyncpg.Connection, _: Scenario, even
         return "client_invitation.created", "client_invitation", str(invitation_id)
 
     await _bootstrap(conn, event, write)
+
+
+# --- the portal PBC slice (R-01-T11; DEC-348) ---------------------------------------------------
+# The client titles go through `requests.api` as Marcus Delaney, with MFA just verified.
+
+
+async def _item_retitled(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    pbc = _PBC[str(event.data["list"])]
+    engagement = engagement_id_of(BY_LABEL[pbc.engagement])
+    item = UUID(pbc.request_id(int(cast(int, event.data["position"]))))
+    ctx = await _staff_context(conn, event)
+    await update_item(ctx, engagement, item, ItemPatch({"title": str(event.data["title"])}))
 
 
 # --- service-backed events ---------------------------------------------------------------------
@@ -1967,6 +2046,8 @@ HANDLERS: Final[dict[str, Handler]] = {
     "engagements.tax_engagement_created": _tax_engagement_created,
     "engagements.close_engagement_created": _close_engagement_created,
     "requests.binder_created": _binder_created,
+    # P-06-T08 remainder: Granite Peak's agent-drafted SURL request, after its PBC list.
+    "requests.request_drafted": _request_drafted,
     # P-08-T14 (`--slice portal`): branding before its host; people after the work items they name.
     "portal.branding_set": _branding_set,
     "portal.host_added": _host_added,
@@ -2007,6 +2088,8 @@ HANDLERS: Final[dict[str, Handler]] = {
     # R-01-T22 (`--slice email_templates`): the editor flag (above), then versions, then drafts.
     "communications.email_template_published": _email_template_published,
     "communications.email_template_draft_saved": _email_template_draft_saved,
+    # R-01-T11 (`--slice portal_pbc`): Dana's client titles (DEC-348).
+    "requests.item_retitled": _item_retitled,
 }
 # Within one instant the timeline orders by label; the loader orders by dependency first.
 _ORDER: Final = {kind: n for n, kind in enumerate(HANDLERS)}

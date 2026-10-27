@@ -22,9 +22,17 @@ at E0, the return work items they hang on, and Copperleaf's August close intake.
 - **The client people a binder names as "Marked done by"** (Owen Calder, Eleanor Calloway,
   Dr. Sofia Lindqvist, Elena Varga), as client users on the sink domain.
 
-Not here (DEC-146): the Granite Peak SURL request and its 31 files wait for F-04-T25's scenario
-documents. Northwind's PBC binder is F-04-T20's (`audits.py`). There are no TY2026 binders
-(BND-01d).
+- **Granite Peak's SURL Draft** (SHL-14 f; P-06-T08 remainder, TASK-993): "Support for 40
+  subsequent disbursements (SURL)" on the Granite Peak FY2026 PBC list, drafted by the agent in
+  the BH-FS-430 procedure session on Thu Sep 24 (10:40 AM, the TS seed's instant), Owners only,
+  for Luis Ferrante, firm owner Cole Hart, wording composed from the firm's template
+  (`drafted_wording_source = 'template'`, so J22 step 3 sends it as designed, DV-11). It loads
+  from the 2026-10-01 snapshot on; E0 (Sep 14) predates it.
+
+Not here: the SURL request's 31 files. SHL-20 names two of them ("Granite Rock Logistics —
+August statement.pdf", "Invoice 40117.pdf") and TPL-20 sixteen of the forty payments; no source
+names the rest, or which 31 had files on Sep 26 (TASK-993). Northwind's PBC binder is F-04-T20's
+(`audits.py`). There are no TY2026 binders (BND-01d).
 
 Opt-in, like `shell`: `loader --slice binders`. `build()` keeps its default, so SCENARIO_HASH
 is unchanged.
@@ -636,6 +644,54 @@ COPPERLEAF_CLOSE_ENGAGEMENT: Final = stable_id("engagement:cas:copperleaf-2026")
 COPPERLEAF_CLOSE_ITEM: Final = stable_id(f"work-item:close:{CLOSE_LABEL}")
 
 
+# --- Granite Peak's SURL Draft (SHL-14 f) ------------------------------------------------------
+
+GRANITE_PEAK: Final = "Granite Peak Outdoor Supply, Inc."
+
+
+@dataclass(frozen=True)
+class DraftedRequest:
+    """A request the agent drafted in a procedure session: a Draft, Owners only, until a person
+    approves and sends it (ADR-005)."""
+
+    key: str  # the id's label, as the TS seed derives it
+    list_key: str  # the PBC list it joins (`audits.PBC_LISTS`)
+    category: str  # the list's category it sits in
+    title: str
+    assignee: str  # the client person it is for
+    owner: str  # the firm owner's initials
+    period: tuple[date, date]
+    due_on: date
+    session: str  # the procedure session that drafted it
+    at: datetime
+
+    @property
+    def id(self) -> str:
+        return stable_id(f"request:{self.key}")
+
+    @property
+    def run_id(self) -> str:
+        return stable_id(f"agent-run:{self.key}")
+
+
+SURL_DRAFT: Final = DraftedRequest(
+    "granite-peak:surl",
+    "granite-peak",
+    # SHL-14 f writes the band "Payables & accrued"; the list's category is the catalogue's.
+    "Payables & accruals",
+    "Support for 40 subsequent disbursements (SURL)",
+    "Luis Ferrante",
+    "CH",
+    (
+        date(2026, 6, 1),
+        date(2026, 9, 18),
+    ),  # SHL-20: "Jun 1 – Sep 18, 2026"  # noqa: RUF003 (verbatim)
+    date(2026, 10, 2),  # the TS seed's due date (SHL-14.ts)
+    "BH-FS-430",
+    datetime(2026, 9, 24, 10, 40, tzinfo=CT),  # SHL-14.ts: 2026-09-24T15:40:00Z
+)
+
+
 def tax_binders() -> tuple[Binder, ...]:
     return tuple(b for b in BINDERS if b.kind == "organizer")
 
@@ -688,6 +744,17 @@ def binder_events(setup_at: datetime) -> list[Event]:
         )
         for b in BINDERS
     ]
+    events.append(
+        Event(
+            f"drafted-request:{SURL_DRAFT.key}",
+            SURL_DRAFT.at,
+            "requests.request_drafted",
+            "system",
+            SLICE,
+            {"request": SURL_DRAFT.key, "session": SURL_DRAFT.session},
+            client=GRANITE_PEAK,
+        )
+    )
     return events
 
 

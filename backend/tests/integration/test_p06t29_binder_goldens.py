@@ -12,8 +12,10 @@ figure, so the suite fails under a seeded change to any §5.4 figure.
 
 Figures the seed does not carry yet are asserted for real and marked `xfail(strict=True)` with
 the task file that records them:
-- Granite Peak's SURL Draft, its 31 files and the later SHL-20 states, and Claire's two BND-02 g
-  files, wait for F-04-T25's scenario documents.
+- Granite Peak's SURL Draft loads from the 2026-10-01 snapshot (SHL-14 f is Thu Sep 24; its
+  fields are checked in `test_r01t11_portal_pbc_goldens.py`); its 31 files, of which SHL-20 names
+  two, and the later SHL-20 states are not seeded, and Claire's two BND-02 g files wait for
+  scenario documents.
 - Thornbury's "6 of 15 · 3 overdue" and the other named rows' "n of m" stay declared data:
   DEC-146 writes requests only for Feld and the close intake, and no source lists the rest.
 
@@ -489,8 +491,9 @@ async def test_bnd01a_named_rows_n_of_m_foot_from_their_requests(
 
 @pytest.mark.xfail(
     strict=True,
-    reason="the binders slice writes no Granite Peak SURL Draft or files yet; P-06 §5.4 has "
-    "them use F-04-T25's documents, which (TASK-996) do not include them; recorded in "
+    reason="the SURL Draft is Thu Sep 24 (SHL-14 f), after this E0 load, and no source names 29 "
+    "of its 31 files (SHL-20 names 2) or which payments they support, so the slice seeds no "
+    "files (DEC-348's rule); recorded in "
     "work/tasks/TASK-993-notifications-binder-independent-tests.md (#380)",
 )
 async def test_shl20a_granite_peak_surl_draft_with_31_files(conn: asyncpg.Connection) -> None:

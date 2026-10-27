@@ -166,6 +166,7 @@ Each becomes a test in `POR-04.test.tsx` ("POR-04 avoid: …"): gradients in pro
 | — | "Add a note for Kevin (optional)" names the newest firm commenter of the thread by first name, else the firm ("Add a note for Brightwater Hale (optional)") | `PortalRequestOut` carries no request owner; no shape change in R-01-T12 | R-01-T12 |
 | — | "Mark not applicable" is a secondary button, not a primary | The header's "Upload…" is the sheet's one primary (AVOID: more than one primary) | R-01-T12 |
 | — | The portal-upload variant's in-flight row shows 0% until the file is stored, then the receipt | The upload is one request with no progress events; g's 46% is the fixture's held frame | R-01-T12 |
+| DEC-348 (seed) | d (holdout) is fixture only: the live seed has no returned 2024 form, and the 1095-C has no 9:12 AM email filed | A return is a person's review decision (`evidence.decide`, ADR-005) a loader cannot take; the Feld engagement has no client acceptance in the seed, so client files are refused (SPEC-025 AC-7) | decision-log DEC-348; TASK-1221 gaps 2, 4 |
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |

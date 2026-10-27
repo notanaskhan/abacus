@@ -159,6 +159,7 @@ Each becomes a test in `AUD-03.test.tsx` ("AUD-03 avoid: …"): gradients in pro
 | DV-16 | c's pill reads the status word "Uploaded – needs review", not "Match 62% · needs review"; the 62% is in the sub-line and the strip | Status words come from the vocabulary | DEC-421 |
 | DV-17 | The Return dialog lists the platform's send-back catalogue, not the artboard's five labels | Content belongs to the catalogue | DEC-421 |
 | DV-18 | "Request from third party…" is a dialog over the client contacts with SHL-14's words; the strip and "Request from third party…" follow capabilities (disabled for staff) | No artboard for the picker; C5 grants delegation to senior and above | DEC-422 |
+| DEC-348 (seed) | With `--slice portal_pbc`, four of Northwind's rows carry POR-03 i's client title ("W-3 for 2025", "Opt-out elections — auto-enrolled employees", "Pay rate authorizations", "Participant complaints log and support"); `description` keeps AUD-03's words, and the 24 rows and their totals (11 / 1 / 12) are unchanged | The portal handoffs win for the client-facing title only | decision-log DEC-348; TASK-1221 |
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |

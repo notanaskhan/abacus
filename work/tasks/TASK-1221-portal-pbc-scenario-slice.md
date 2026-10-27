@@ -4,12 +4,12 @@ title: Python scenario slice for POR-03, POR-04 and POR-14 through service APIs 
 spec: SPEC-323
 acceptance_criteria: [AC-5]
 risk_zone: amber
-status: blocked
+status: in-review
 epic: R-01
 plan_key: R-01-T11
-branch: s8b-portal-ui
+branch: s10-r01t11-portal-slice
 created: 2026-10-25
-updated: 2026-10-25
+updated: 2026-10-27
 ---
 
 ## Objective
@@ -37,5 +37,27 @@ DEC-348 (open): the sources disagree, and building the slice as written would in
 
 DEC-348 carries a proposed resolution. The named Feld subset (the five receipts, the 9:12 email, the 2024 holdout) is buildable without inventing data; it was not started here, because it needs the loader to store evidence bytes through `evidence.api` (a capability the loader does not have yet: it bootstraps no files today) and is best built once with the rest of the slice, after DEC-348.
 
+## As built (2026-10-27, under DEC-348)
+DEC-348 was decided 2026-10-27 (Ayush Bhatia: the proposed option). The plan above was written before it; what landed is narrower, because most of what it lists is either unnamed by any source or refused by a service the loader must go through.
+
+**Built** (`backend/src/abacus_tools/synthetic/scenarios/brightwater_hale/portal_pbc.py`, `--slice portal_pbc`, NEEDS `binders` and `portal`; `build()` unchanged, so SCENARIO_HASH does not move):
+- Dana's client titles (POR-03 i) on four of AUD-03's open Dana rows, through `requests.api.update_item` (newly exported from `lifecycle`, with `ItemPatch`) as Marcus Delaney at the list's publish (Sep 1): "W-3 Form" → "W-3 for 2025", "Opt-Out Elections" → "Opt-out elections — auto-enrolled employees", "Pay Rate Authorizations" → "Pay rate authorizations", "Participant Complaints Log and Support" → "Participant complaints log and support". AUD-03 keeps its 24 rows, totals and `description`s. "IRS opinion letter on the pre-approved plan document" is the same on both screens.
+- Goldens: `backend/tests/golden/scenario/brightwater_hale/portal_pbc.yaml`, typed from POR-03, AUD-03, POR-14 and SHL-14, held to the loaded tenant by `backend/tests/integration/test_r01t11_portal_pbc_goldens.py` (Feld 5 of 7 with the 1095-C and estimates open; Dana's titles and the W-3's Sep 18; AUD-03 24 / 11 / 1 / 12 with descriptions kept; a second load replays nothing; Granite Peak's SURL Draft at the 2026-10-01 snapshot and absent at E0).
+- `loader.SLICE_NEEDS` gains `portal_pbc`. `expand_slices` expands one level, so the slice names `binders` itself.
+
+**Gaps** (each a strict xfail in the golden test where the source gives a figure; returned to the handoff under DEC-348):
+1. "Employee census file — 2025" (POR-03 i): AUD-03's row is received, and `update_item` refuses a received request (`request_closed`). The title stays "Employee Census File". `test_danas_census_row_reads_the_portal_title`.
+2. Claire's 9:12 AM email, `Feld_1095C_2025.pdf` (POR-03 c, c2; INB-02): the Feld TY2025 engagement carries no client acceptance (`binders` bootstraps the engagement; no source gives Feld's acceptance), so `evidence.api`'s client-data gate (SPEC-025 AC-7) refuses any client file on it with `acceptance`. Tried through `add_to_inbox` as Claire; refused. Also, the Inbox has no email channel until N-01. `test_claires_9_12_email_waits_in_the_feld_inbox`.
+3. The Feld received rows' files (W-2 and 1098 "Received by email Aug 3", Jonah's 1099 Aug 5, Claire's donations Aug 7): the same gate; and Jonah Feld has no portal sign-in in any slice.
+4. The returned 2024 form (POR-03 g, POR-04 d, "holdout"): Kevin Osei's return is a person's review decision; `evidence.decide` runs only while that person serves a request (ADR-005, REVIEW-001), so no loader can take it, and bootstrapping a person's decision is what ADR-005 forbids. No holdout was added.
+5. Delegations to Keystone, Harborline, PayGrid and Summit (POR-03 i's note): `delegate_item` needs a contact who is a portal user. Harborline, PayGrid and Summit exist only as organisation contacts (`acceptance` slice) with no named person, and Sam Ortiz's invitation is pending at E0 (POR-01d). So no request is delegated, and Dana's live binder lists every client-visible Northwind request, not only her own. `test_por03i_names_the_four_organisations_requests_went_to`.
+6. POR-14 a, Keystone "4 of 9" at E0: it disagrees with POR-01d (Sam invited, not signed in, at E0) and with AUD-03's statuses (6 of Keystone's 9 are received or uploaded). `test_por14a_keystone_room_reads_4_of_9`. POR-14 d (Harborline's certification contact and two items not on AUD-03's list) is DEC-348 (5).
+7. POR-03 i's binder title "PY2025 Audit requests": the PBC list has no name column the loader can set through a service.
+8. POR-02 "19 of 21 · 37 sorted": DEC-348 (1), (2).
+
+**Not changed:** `make fixtures` exports the `portal` slice at E0 (`fixture_export.SLICES`), so no exported fixture moves. The TS seed already reads POR-03 i's titles.
+
 ## Progress log
 - 2026-10-25: plan written; blocked on DEC-348 (sources disagree; see above). No code. The TS fixtures (R-01-T05) stay the source for the screens until then.
+- 2026-10-27: DEC-348 decided (the proposed option); built the slice on its terms in worktree `abacus-r01t11` (PR "R-01-T11 + P-06-T08: portal PBC slice and Granite Peak SURL", held for the batch). Seven gaps recorded above; four are strict xfails in `test_r01t11_portal_pbc_goldens.py`. Mistake on the way: `NEEDS = ("portal",)` loaded without `binders`, because `expand_slices` expands one level. The slice now names both. A recursive `expand_slices` would stop this recurring.
+
