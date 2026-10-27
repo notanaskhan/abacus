@@ -1,0 +1,21 @@
+{
+  "case": "wrong_form_for_w2",
+  "prompt_ref": "evidence.upload_review@v3",
+  "content_sha256": "e06ce47e97545f99ee0b272cbc4fc94bce7390b66c2e8d7412a79302f30b2b96",
+  "response": {
+    "no_concerns": false,
+    "flags": [
+      {
+        "category": "irrelevant",
+        "confidence": 0.95,
+        "rationale": "The request asks for a Form W-2; this is a Form 1099-NEC for nonemployee compensation.",
+        "citations": [
+          {
+            "page": 1,
+            "quote": "Form 1099-NEC Nonemployee Compensation 2025"
+          }
+        ]
+      }
+    ]
+  }
+}

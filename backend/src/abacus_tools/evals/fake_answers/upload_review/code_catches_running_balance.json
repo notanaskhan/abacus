@@ -1,0 +1,21 @@
+{
+  "case": "code_catches_running_balance",
+  "prompt_ref": "evidence.upload_review@v3",
+  "content_sha256": "1896766bbd4b63c9a627e18e0034cb01648fa0a45083b45f945a495535d108f8",
+  "response": {
+    "no_concerns": false,
+    "flags": [
+      {
+        "category": "altered",
+        "confidence": 0.8,
+        "rationale": "The balance after the payroll line does not follow from the line before it.",
+        "citations": [
+          {
+            "page": 1,
+            "quote": "12/13 ACH payroll ($1,405.50) $10,774.50"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "case": "unsigned_required",
+  "prompt_ref": "evidence.upload_review@v3",
+  "content_sha256": "6565ff17e5ef99e8241218ed179350d9acbb1d935113e0d2c7101b282b3e0152",
+  "response": {
+    "no_concerns": false,
+    "flags": [
+      {
+        "category": "draft",
+        "confidence": 0.85,
+        "rationale": "The certified copy needs a bank officer's signature and the signature line is blank.",
+        "citations": [
+          {
+            "page": 1,
+            "quote": "Certified true copy - signature of bank officer required:"
+          },
+          {
+            "page": 1,
+            "quote": "Signature: ____________________"
+          }
+        ]
+      }
+    ]
+  }
+}

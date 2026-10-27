@@ -22,8 +22,13 @@ from abacus.modules.agents.engagement_agent_workflow import EngagementAgent
 from abacus.modules.agents.entry_assess import ASSESSOR, ask, check
 from abacus.modules.agents.events import FollowUpSent
 from abacus.modules.agents.export_screening import screening_section
-from abacus.modules.agents.fake_responses import SCREEN_PROMPT, screening_responder
+from abacus.modules.agents.fake_responses import (
+    SCREEN_PROMPT,
+    review_sha256,
+    screening_responder,
+)
 from abacus.modules.agents.fake_responses import install as install_fake_responses
+from abacus.modules.agents.fake_responses import install_review as install_fake_reviews
 from abacus.modules.agents.follow_up_drafts import on_follow_up_sent
 from abacus.modules.agents.follow_up_routes import follow_ups_router
 from abacus.modules.agents.gates import register_gate_sources, register_suggestion_lookup
@@ -224,6 +229,7 @@ __all__ = [
     "fail_run",
     "graph_router",
     "install_fake_responses",
+    "install_fake_reviews",
     "knowledge_context",
     "knowledge_router",
     "load_agent_context",
@@ -233,6 +239,7 @@ __all__ = [
     "request_review",
     "review",
     "review_citation_states",
+    "review_sha256",
     "router",
     "run_outcome",
     "screen",

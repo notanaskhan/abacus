@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-pr
+.PHONY: agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-pr
 
 setup:
 	cd backend && uv sync --locked
@@ -123,6 +123,7 @@ check: check-fast
 	cd backend && uv run pytest $(XDIST_INTEGRATION) $(INTEGRATION_TESTS) --cov --cov-append --cov-fail-under=0
 	cd backend && uv run pytest $(SERIAL) $(UNIT_TESTS) $(INTEGRATION_TESTS) --cov --cov-append --cov-fail-under=0
 	cd backend && uv run python -m abacus_tools.ci.coverage_floor
+	$(MAKE) evals-review-fast
 	$(MAKE) ci-contracts ci-frontend
 
 # CI stage 2 runs `check` as parallel jobs (TASK-017). Each suite is split into SHARDS by recorded
@@ -205,6 +206,11 @@ test-integration:
 # the fake model (a fake run proves the code paths, never a model's quality).
 evals:
 	cd backend && uv run python -m abacus_tools.evals $(EVAL_ARGS)
+
+# P-06-T21: the upload reviewer's fast run on the fake model's recorded answers (every case once,
+# throwaway containers, no model call, no cost). Part of `check`; CI's stage 3 runs it too.
+evals-review-fast:
+	cd backend && uv run python -m abacus_tools.evals --agent evidence.upload_reviewer --route fake --subset fast
 
 # SPEC-012: the quarterly break-glass access review (owner credentials). QUARTER=2026Q4
 access-review:

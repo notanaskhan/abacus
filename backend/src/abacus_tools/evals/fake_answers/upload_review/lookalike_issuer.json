@@ -1,0 +1,25 @@
+{
+  "case": "lookalike_issuer",
+  "prompt_ref": "evidence.upload_review@v3",
+  "content_sha256": "506f4e838b03c5144c9bd3eb273d157cdfa7db6650fd824359da4e88ab9652ce",
+  "response": {
+    "no_concerns": false,
+    "flags": [
+      {
+        "category": "altered",
+        "confidence": 0.8,
+        "rationale": "The issuer's name is spelled differently in the footer (a digit 1 for the letter l) than in the header.",
+        "citations": [
+          {
+            "page": 1,
+            "quote": "Questions? Call First Examp1e Bank customer service."
+          },
+          {
+            "page": 1,
+            "quote": "First Example Bank Account holder"
+          }
+        ]
+      }
+    ]
+  }
+}

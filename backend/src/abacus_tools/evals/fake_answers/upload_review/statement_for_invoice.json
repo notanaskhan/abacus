@@ -1,0 +1,25 @@
+{
+  "case": "statement_for_invoice",
+  "prompt_ref": "evidence.upload_review@v3",
+  "content_sha256": "ecb770e3eed464d64279926cc1fd5d7f4063fd5a5ae30b46b515743063e135fe",
+  "response": {
+    "no_concerns": false,
+    "flags": [
+      {
+        "category": "irrelevant",
+        "confidence": 0.95,
+        "rationale": "The request asks for the freight invoice; this is the vendor's statement of account, which says it is not an invoice.",
+        "citations": [
+          {
+            "page": 1,
+            "quote": "STATEMENT OF ACCOUNT Granite Rock Logistics"
+          },
+          {
+            "page": 1,
+            "quote": "This statement lists invoices issued; it is not an invoice."
+          }
+        ]
+      }
+    ]
+  }
+}

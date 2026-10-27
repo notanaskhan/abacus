@@ -1,0 +1,21 @@
+{
+  "case": "letter_for_statement",
+  "prompt_ref": "evidence.upload_review@v3",
+  "content_sha256": "21516c8c537926dd80b95fde99dc805793909a78cac208c37ec6f2889e26f707",
+  "response": {
+    "no_concerns": false,
+    "flags": [
+      {
+        "category": "irrelevant",
+        "confidence": 0.95,
+        "rationale": "The request asks for the operating account's December bank statement; this is a cover letter saying the statements will follow.",
+        "citations": [
+          {
+            "page": 1,
+            "quote": "We will send the bank statements once we receive them from the bank."
+          }
+        ]
+      }
+    ]
+  }
+}

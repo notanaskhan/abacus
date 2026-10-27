@@ -1,0 +1,9 @@
+{
+  "case": "clean_statement",
+  "prompt_ref": "evidence.upload_review@v3",
+  "content_sha256": "82765ee61236217401a8fff6bd4141389f3925747334ae6cfc2ef6aa21fbfa61",
+  "response": {
+    "no_concerns": true,
+    "flags": []
+  }
+}
