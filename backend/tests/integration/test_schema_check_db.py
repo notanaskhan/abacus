@@ -1604,6 +1604,7 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "suggestion_decisions": "agent_decisions_immutable",  # 0095 (P-04-T05)
         "proposal_rows": "agent_decisions_immutable",  # 0095 (P-04-T05)
         "proposal_decisions": "agent_decisions_immutable",  # 0095 (P-04-T05)
+        "inbox_match_decisions": "agent_decisions_immutable",  # 0232 (P-04-T25)
         "ledger_snapshots": LEDGER_FUNCTION,
         "trial_balance_lines": LEDGER_FUNCTION,
         "review_decisions": "review_decisions_immutable",  # TASK-019 (ADR-004)

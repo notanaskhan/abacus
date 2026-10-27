@@ -132883,7 +132883,7 @@
     },
     "/v1/proposals/{proposal_id}/approve": {
       "post": {
-        "description": "Approve, or approve with edits (human only). Over the viewer's limit: 403 with the\napprover to route to.",
+        "description": "Approve, or approve with edits (human only). Over the viewer's limit: 403 with the\napprover to route to. A typed ref approves through the specialist's existing path.",
         "operationId": "proposal_approve",
         "parameters": [
           {
@@ -132891,7 +132891,7 @@
             "name": "proposal_id",
             "required": true,
             "schema": {
-              "format": "uuid",
+              "pattern": "^((screening_result|upload_review|inbox_match):)?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
               "title": "Proposal Id",
               "type": "string"
             }
@@ -133009,6 +133009,16 @@
               }
             },
             "description": "Contract stub: not implemented yet"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service unavailable"
           }
         },
         "summary": "Proposal Approve Route",
@@ -133020,7 +133030,7 @@
     },
     "/v1/proposals/{proposal_id}/follow-up": {
       "post": {
-        "description": "\"Ask follow-up\": a follow-up recorded for the originating thread or run.",
+        "description": "\"Ask follow-up\": a follow-up recorded for the originating thread or run. A retry with\nthe same `Idempotency-Key` records nothing again.",
         "operationId": "proposal_follow_up",
         "parameters": [
           {
@@ -133030,6 +133040,16 @@
             "schema": {
               "format": "uuid",
               "title": "Proposal Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idempotency-Key",
               "type": "string"
             }
           },
@@ -133165,7 +133185,7 @@
             "name": "proposal_id",
             "required": true,
             "schema": {
-              "format": "uuid",
+              "pattern": "^((screening_result|upload_review|inbox_match):)?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
               "title": "Proposal Id",
               "type": "string"
             }
@@ -135720,6 +135740,16 @@
               }
             },
             "description": "Contract stub: not implemented yet"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service unavailable"
           }
         },
         "summary": "Suggestion Adopt Route",

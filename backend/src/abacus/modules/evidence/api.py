@@ -99,7 +99,7 @@ from abacus.modules.evidence.firm_export_contract import router as firm_export_r
 from abacus.modules.evidence.firm_export_schedule_contract import (
     schedule_router as firm_export_schedule_router,
 )
-from abacus.modules.evidence.gate_facts import decided_among, waiting_among
+from abacus.modules.evidence.gate_facts import decided_among, effective_decisions, waiting_among
 from abacus.modules.evidence.hold_activities import ACTIVITIES as HOLD_ACTIVITIES
 from abacus.modules.evidence.hold_routes import router as legal_hold_router
 from abacus.modules.evidence.hold_runs import SUBSCRIPTIONS as HOLD_SUBSCRIPTIONS
@@ -115,6 +115,7 @@ from abacus.modules.evidence.holds import (
 from abacus.modules.evidence.holds import activate as legal_hold_activate
 from abacus.modules.evidence.holds import apply_batch as legal_hold_apply_batch
 from abacus.modules.evidence.inbox import add_to_inbox, register_match_picks
+from abacus.modules.evidence.inbox import assign as assign_inbox_file
 from abacus.modules.evidence.masked_previews import masked_preview_upload
 from abacus.modules.evidence.match_material import (
     Candidate,
@@ -185,7 +186,9 @@ from abacus.modules.evidence.routes import firm_router, router
 # The routers the API mounts, in order (P-39; F-03-T07).
 from abacus.modules.evidence.screening_facts import (
     ScreeningFacts,
+    citation_sources,
     screening_facts,
+    supported_citations,
     verified_citation_ids,
 )
 from abacus.modules.evidence.service import (
@@ -195,12 +198,14 @@ from abacus.modules.evidence.service import (
     EvidenceVersionView,
     NewItem,
     Proposal,
+    ProposalChanged,
     Provenance,
     ScreeningDecision,
     StoredObject,
     UndoneView,
     UndoWindowClosed,
     add_version,
+    decide,
     decisions_on_screenings,
     engagement_snapshots,
     evidence_versions_for,
@@ -432,6 +437,7 @@ __all__ = [
     "PolicyChange",
     "PortalFile",
     "Proposal",
+    "ProposalChanged",
     "Provenance",
     "RecordClass",
     "RecordedCitation",
@@ -456,16 +462,20 @@ __all__ = [
     "add_to_inbox",
     "add_version",
     "anchor_chain",
+    "assign_inbox_file",
     "check_ready",
     "check_upload_content",
     "citation_cell_reason",
     "citation_cell_text",
+    "citation_sources",
     "client_pre_checks",
     "column_letters",
     "configure_storage",
+    "decide",
     "decided_among",
     "decisions_on_screenings",
     "drop_batch",
+    "effective_decisions",
     "effective_policies",
     "engagement_snapshots",
     "evidence_versions_for",
@@ -514,6 +524,7 @@ __all__ = [
     "stale_pdfs",
     "start_trust_layer_backfill",
     "suggest_by_name",
+    "supported_citations",
     "undo_returned_files",
     "undo_review_decision",
     "upload",

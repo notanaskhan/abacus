@@ -12727,7 +12727,7 @@ export const suggestRoomRequestMutation = (options?: Partial<Options<SuggestRoom
  * Proposal Approve Route
  *
  * Approve, or approve with edits (human only). Over the viewer's limit: 403 with the
- * approver to route to.
+ * approver to route to. A typed ref approves through the specialist's existing path.
  */
 export const proposalApproveMutation = (options?: Partial<Options<ProposalApproveData>>): UseMutationOptions<ProposalApproveResponse, ProposalApproveError, Options<ProposalApproveData>> => {
     const mutationOptions: UseMutationOptions<ProposalApproveResponse, ProposalApproveError, Options<ProposalApproveData>> = {
@@ -12746,7 +12746,8 @@ export const proposalApproveMutation = (options?: Partial<Options<ProposalApprov
 /**
  * Proposal Follow Up Route
  *
- * "Ask follow-up": a follow-up recorded for the originating thread or run.
+ * "Ask follow-up": a follow-up recorded for the originating thread or run. A retry with
+ * the same `Idempotency-Key` records nothing again.
  */
 export const proposalFollowUpMutation = (options?: Partial<Options<ProposalFollowUpData>>): UseMutationOptions<ProposalFollowUpResponse, ProposalFollowUpError, Options<ProposalFollowUpData>> => {
     const mutationOptions: UseMutationOptions<ProposalFollowUpResponse, ProposalFollowUpError, Options<ProposalFollowUpData>> = {

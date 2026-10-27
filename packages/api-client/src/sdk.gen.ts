@@ -7732,7 +7732,7 @@ export const suggestRoomRequest = <ThrowOnError extends boolean = false>(options
  * Proposal Approve Route
  *
  * Approve, or approve with edits (human only). Over the viewer's limit: 403 with the
- * approver to route to.
+ * approver to route to. A typed ref approves through the specialist's existing path.
  */
 export const proposalApprove = <ThrowOnError extends boolean = false>(options: Options<ProposalApproveData, ThrowOnError>): RequestResult<ProposalApproveResponses, ProposalApproveErrors, ThrowOnError> => (options.client ?? client).post<ProposalApproveResponses, ProposalApproveErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -7747,7 +7747,8 @@ export const proposalApprove = <ThrowOnError extends boolean = false>(options: O
 /**
  * Proposal Follow Up Route
  *
- * "Ask follow-up": a follow-up recorded for the originating thread or run.
+ * "Ask follow-up": a follow-up recorded for the originating thread or run. A retry with
+ * the same `Idempotency-Key` records nothing again.
  */
 export const proposalFollowUp = <ThrowOnError extends boolean = false>(options: Options<ProposalFollowUpData, ThrowOnError>): RequestResult<ProposalFollowUpResponses, ProposalFollowUpErrors, ThrowOnError> => (options.client ?? client).post<ProposalFollowUpResponses, ProposalFollowUpErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

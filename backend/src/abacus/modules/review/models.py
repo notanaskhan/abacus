@@ -211,3 +211,18 @@ class DecisionAnalysisRequest(Base):
     text_sealed: Mapped[bytes]
     requested_by: Mapped[UUID]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class FieldValueVersion(Base):
+    """A field's version (0093; written only through `review.api.record_value`). Mapped for
+    reads; the write is `field_values.record_value`'s."""
+
+    __tablename__ = "field_value_versions"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID | None]
+    target_type: Mapped[str]
+    target_id: Mapped[UUID]
+    field_key: Mapped[str]
+    seq: Mapped[int]

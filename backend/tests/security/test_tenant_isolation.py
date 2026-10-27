@@ -149,6 +149,7 @@ TABLES: tuple[str, ...] = (
     "human_gates",
     "idempotency_keys",
     "inbox_files",
+    "inbox_match_decisions",
     "inbox_match_proposals",
     "inbox_match_runs",
     "independence_annual_confirmations",
