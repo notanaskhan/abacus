@@ -16,6 +16,10 @@ TABLES: frozenset[str] = frozenset(
         "methodology_version_states",  # mutable under guarded transitions
         "methodology_version_events",
         "standards_sets",  # global; no app privilege (reference data, K-02's publish path)
+        # K-01-T05 (0224): a version's programs, steps and their PBC links.
+        "programs",
+        "program_steps",
+        "program_step_pbc_links",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -27,6 +31,8 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "methodology_request_items",
         "methodology_account_rules",
         "methodology_version_events",
+        "programs",  # K-01-T05 (0224)
+        "program_step_pbc_links",  # K-01-T05 (0224)
     }
 )
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -59,7 +65,27 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"tenant_id", "version_id", "kind", "actor_user_id", "on_behalf_of_user_id", "facts"}
     ),
 }
+# K-01-T05 (0224): programs, steps and links, every column set at insert.
+INSERT_COLUMNS["programs"] = frozenset(
+    {"tenant_id", "version_id", "code", "name", "position", "publisher_program_id"}
+)
+INSERT_COLUMNS["program_steps"] = frozenset(
+    {"id", "tenant_id", "version_id", "program_id", "step_key", "number", "text", "assertions"}
+    | {"standard_refs", "level", "mandatory", "lock_note", "guidance", "prepopulates"}
+    | {"depends_on_step_keys", "publisher_step_id", "origin", "proposed_by_run_id"}
+    | {"parse_confidence", "parse_flag"}
+)
+INSERT_COLUMNS["program_step_pbc_links"] = frozenset(
+    {"tenant_id", "version_id", "step_id", "request_position"}
+)
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
+    # K-01-T05 (0224): a draft step's content (K-01-T14 edits it); the frozen trigger refuses
+    # any change to a published or superseded version's steps.
+    "program_steps": frozenset(
+        {"number", "text", "assertions", "standard_refs", "level", "guidance", "prepopulates"}
+        | {"depends_on_step_keys", "flag_resolution", "flag_resolved_by", "flag_resolved_at"}
+        | {"edited_by", "edited_at", "row_version"}
+    ),
     "methodology_version_states": frozenset(
         {"status", "effective_from", "effective_to", "approved_by", "approved_at"}
         | {"approved_actor_kind", "approval_basis", "standards_set_id", "quality_management_ref"}

@@ -11385,6 +11385,30 @@ export type GapOut = {
 };
 
 /**
+ * GateBandsOut
+ *
+ * Open gates per DF-25 band, in the fixed band order.
+ */
+export type GateBandsOut = {
+    /**
+     * Agent Outputs
+     */
+    agent_outputs: number;
+    /**
+     * Approvals Sends
+     */
+    approvals_sends: number;
+    /**
+     * Decisions
+     */
+    decisions: number;
+    /**
+     * Sign Offs
+     */
+    sign_offs: number;
+};
+
+/**
  * GateBlockerRefOut
  *
  * What blocks a gate: an opaque reference and a registered reason code, never prose.
@@ -12250,6 +12274,28 @@ export type HomeTileOut = {
 };
 
 /**
+ * HumanGateCountsOut
+ *
+ * The one count source (C13; I-01-T04): the HOME-01 header and Approvals badge, the
+ * HOME-02 bands, SHL-04's Approvals tab and I-02 read `total` and `bands` from here.
+ */
+export type HumanGateCountsOut = {
+    bands: GateBandsOut;
+    /**
+     * Overdue
+     */
+    overdue: number;
+    /**
+     * Snoozed
+     */
+    snoozed: number;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
  * HumanGateOut
  *
  * One row of the rebuildable projection. Labels come from the subject's owner at read time.
@@ -12260,9 +12306,25 @@ export type HumanGateOut = {
      */
     assignee_user_id: string | null;
     /**
+     * Band
+     */
+    band: 'decisions' | 'sign_offs' | 'agent_outputs' | 'approvals_sends';
+    /**
+     * Blocked
+     */
+    blocked: boolean;
+    /**
+     * Blocked Reason Code
+     */
+    blocked_reason_code: string | null;
+    /**
      * Client Id
      */
     client_id: string | null;
+    /**
+     * Context
+     */
+    context?: string | null;
     /**
      * Created At
      */
@@ -12282,7 +12344,11 @@ export type HumanGateOut = {
     /**
      * Kind
      */
-    kind: 'decision' | 'sign_off_request' | 'proposal' | 'send' | 'final_approval' | 'export' | 'release';
+    kind: 'decision' | 'sign_off_request' | 'proposal' | 'send' | 'final_approval' | 'export' | 'release' | 'evidence_review';
+    /**
+     * Office Id
+     */
+    office_id: string | null;
     /**
      * Role
      */
@@ -12292,6 +12358,14 @@ export type HumanGateOut = {
      */
     state: 'open' | 'done' | 'voided';
     subject: ObjectRefOut;
+    /**
+     * Subkind
+     */
+    subkind: string;
+    /**
+     * Title
+     */
+    title?: string | null;
     /**
      * Work Item Id
      */
@@ -14054,6 +14128,10 @@ export type KnowledgeItemOut = {
      * Usage Count
      */
     usage_count: number | null;
+    /**
+     * Usage Kind
+     */
+    usage_kind?: 'engagements' | 'returns' | 'closes' | 'audits' | 'agents' | null;
     /**
      * Version Label
      */
@@ -56036,7 +56114,7 @@ export type HumanGateListData = {
         /**
          * Kind
          */
-        kind?: 'decision' | 'sign_off_request' | 'proposal' | 'send' | 'final_approval' | 'export' | 'release' | null;
+        kind?: 'decision' | 'sign_off_request' | 'proposal' | 'send' | 'final_approval' | 'export' | 'release' | 'evidence_review' | null;
         /**
          * Engagement Id
          */
@@ -56086,6 +56164,62 @@ export type HumanGateListResponses = {
 };
 
 export type HumanGateListResponse = HumanGateListResponses[keyof HumanGateListResponses];
+
+export type HumanGateCountsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Office Id
+         */
+        office_id?: string | null;
+    };
+    url: '/v1/human-gates/counts';
+};
+
+export type HumanGateCountsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type HumanGateCountsError = HumanGateCountsErrors[keyof HumanGateCountsErrors];
+
+export type HumanGateCountsResponses = {
+    /**
+     * Successful Response
+     */
+    200: HumanGateCountsOut;
+};
+
+export type HumanGateCountsResponse = HumanGateCountsResponses[keyof HumanGateCountsResponses];
 
 export type AcceptInvitationData = {
     body: AcceptInvitationIn;
@@ -57097,10 +57231,6 @@ export type KnowledgeChangeLogErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type KnowledgeChangeLogError = KnowledgeChangeLogErrors[keyof KnowledgeChangeLogErrors];
@@ -57377,10 +57507,6 @@ export type KnowledgeItemsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type KnowledgeItemsError = KnowledgeItemsErrors[keyof KnowledgeItemsErrors];
@@ -57428,10 +57554,6 @@ export type KnowledgeReviewQueueErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type KnowledgeReviewQueueError = KnowledgeReviewQueueErrors[keyof KnowledgeReviewQueueErrors];
@@ -58292,6 +58414,10 @@ export type ImportTemplateData = {
          * Engagement Type
          */
         engagement_type?: Array<'fs_audit' | 'ebp_audit' | 'review' | 'compilation' | 'preparation' | 'agreed_upon_procedures' | 'soc1' | 'soc2' | 'readiness' | 'internal_audit' | 'tax_compliance' | 'cas_monthly_close' | 'notice_response' | 'advisory'> | null;
+        /**
+         * Family
+         */
+        family?: 'ebp' | 'fs' | 'ssars' | null;
     };
     url: '/v1/methodology/templates/{name}/versions';
 };
@@ -59221,6 +59347,55 @@ export type SubmitVersionResponses = {
 };
 
 export type SubmitVersionResponse = SubmitVersionResponses[keyof SubmitVersionResponses];
+
+export type WorkbookTemplateData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/methodology/workbook-template.xlsx';
+};
+
+export type WorkbookTemplateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type WorkbookTemplateError = WorkbookTemplateErrors[keyof WorkbookTemplateErrors];
+
+export type WorkbookTemplateResponses = {
+    /**
+     * Response Workbook Template
+     *
+     * Successful Response
+     */
+    200: string;
+};
+
+export type WorkbookTemplateResponse = WorkbookTemplateResponses[keyof WorkbookTemplateResponses];
 
 export type ListNotificationsData = {
     body?: never;

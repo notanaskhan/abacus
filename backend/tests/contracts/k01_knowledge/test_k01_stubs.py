@@ -2,7 +2,8 @@
 route declares its one matrix action and answers 404 for a client principal, 404 with its flag
 off and 501 with it on; every field is classified; approving and locking are a person's acts
 with a fresh second factor, and the agent may only parse; the SPEC-008 rows moved to the
-methodology module's matrix file."""
+methodology module's matrix file. Since K-01-T03 (TASK-1426) the three catalog routes are live:
+they keep the client 404, the 403 before the flag and the flag-off 404, and answer for real."""
 
 from __future__ import annotations
 
@@ -26,17 +27,20 @@ from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag
 from abacus.modules.identity.api import AuthContext, Forbidden
 from abacus.modules.identity.authz.matrix import RULES
-from abacus.modules.methodology import contract
+from abacus.modules.methodology import catalog, contract
 
 Json = dict[str, object]
 DOC = cast(Json, json.loads(document()))
 PATHS = cast(dict[str, dict[str, Json]], DOC["paths"])
 MATRIX = Path(__file__).resolve().parents[4] / "docs" / "architecture" / "permission-matrix"
 
-ROUTES: dict[tuple[str, str], tuple[str, Flag]] = {
+# K-01-T03: live, no longer stubs.
+LIVE: dict[tuple[str, str], tuple[str, Flag]] = {
     ("get", "/v1/knowledge/items"): ("knowledge.read", KNOWLEDGE_CATALOG),
     ("get", "/v1/knowledge/review-queue"): ("knowledge.read", KNOWLEDGE_CATALOG),
     ("get", "/v1/knowledge/change-log"): ("knowledge.read", KNOWLEDGE_CATALOG),
+}
+ROUTES: dict[tuple[str, str], tuple[str, Flag]] = {
     ("post", "/v1/methodology/versions/{version_id}/submit"): (
         "methodology.manage",
         METHODOLOGY_LIFECYCLE,
@@ -82,7 +86,6 @@ ROUTES: dict[tuple[str, str], tuple[str, Flag]] = {
 }
 ENDPOINTS: list[tuple[str, Callable[..., Awaitable[object]], Flag]] = []
 for _router in (
-    contract.knowledge_router,
     contract.methodology_lifecycle_router,
     contract.programs_router,
 ):
@@ -112,6 +115,51 @@ def test_k01t01_each_route_declares_its_one_action_and_is_a_stub(method: str, pa
 
 def test_k01t01_the_endpoints_are_the_routes_above() -> None:
     assert len(ENDPOINTS) == len(ROUTES)
+    live = {
+        (next(iter(r.methods or {"GET"})).lower(), r.path)
+        for r in contract.knowledge_router.routes
+        if isinstance(r, APIRoute)
+    }
+    assert live == set(LIVE)
+
+
+@pytest.mark.parametrize(("method", "path"), sorted(LIVE))
+def test_k01t03_each_catalog_route_declares_its_one_action(method: str, path: str) -> None:
+    op = PATHS[path][method]
+    assert op["x-abacus-action"] == LIVE[(method, path)][0]
+    assert "404" in set(cast(Json, op["responses"]))
+
+
+_CATALOG: list[Callable[..., Awaitable[object]]] = [
+    cast(Callable[..., Awaitable[object]], r.endpoint)
+    for r in contract.knowledge_router.routes
+    if isinstance(r, APIRoute)
+]
+
+
+@pytest.mark.parametrize("endpoint", _CATALOG, ids=[e.__name__ for e in _CATALOG])
+async def test_k01t03_catalog_client_404_then_403_then_flag_off_404(
+    endpoint: Callable[..., Awaitable[object]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    seen: list[Flag] = []
+    asked: list[str] = []
+
+    async def flag_enabled(_tenant: object, flag: Flag) -> bool:
+        seen.append(flag)
+        return False
+
+    async def authorise(_ctx: object, action: str, _resource: object) -> None:
+        asked.append(action)
+
+    monkeypatch.setattr(catalog, "flag_enabled", flag_enabled)
+    monkeypatch.setattr(catalog, "authorise", authorise)
+    params = inspect.signature(endpoint).parameters
+    with pytest.raises(NotFound):
+        await endpoint(**{n: (_ctx(client=True) if n == "ctx" else None) for n in params})
+    assert (seen, asked) == ([], [])
+    with pytest.raises(NotFound):
+        await endpoint(**{n: (_ctx() if n == "ctx" else None) for n in params})
+    assert (seen, asked) == ([KNOWLEDGE_CATALOG], ["knowledge.read"])
 
 
 @pytest.mark.parametrize("model", MODELS, ids=[m.__name__ for m in MODELS])
@@ -182,8 +230,8 @@ async def test_k01t01_a_refused_principal_is_403_before_the_flag(
     async def authorise(_ctx: object, action: str, _resource: object) -> None:
         raise Forbidden(action, "role")
 
-    monkeypatch.setattr(contract, "flag_enabled", flag_enabled)
-    monkeypatch.setattr(contract, "authorise", authorise)
+    monkeypatch.setattr(catalog, "flag_enabled", flag_enabled)
+    monkeypatch.setattr(catalog, "authorise", authorise)
     with pytest.raises(Forbidden):
         await contract.knowledge_items_route(_ctx())
     assert seen == []

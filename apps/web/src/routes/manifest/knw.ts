@@ -6,7 +6,7 @@ import type { Manifest } from "./types";
 export const knwScreens = {
   "KNW-01": {
     name: "Knowledge library",
-    status: "planned",
+    status: "fixture",
     path: "/knowledge",
     navArea: "Knowledge",
   }, // legacy Knowledge

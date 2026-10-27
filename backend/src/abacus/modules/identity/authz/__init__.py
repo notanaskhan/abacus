@@ -1170,6 +1170,41 @@ def _member_of(
     return or_(*reach) if reach else false()
 
 
+# I-01-T04: the gate roles that are firm roles (an unassigned EQR-eligibility gate waits on the
+# firm's quality partners), not team roles.
+FIRM_GATE_ROLES: frozenset[str] = frozenset({"quality_partner"})
+
+
+def holds_engagement_role(
+    ctx: AuthContext,
+    engagement_id: EngagementColumn,
+    role: ColumnElement[str] | QueryableAttribute[str | None],
+) -> ColumnElement[bool]:
+    """Rows naming a role the person holds: their team role on the row's engagement, or, for a
+    role in FIRM_GATE_ROLES, their firm role (I-01-T04: an unassigned gate waits on its role's
+    holders). A narrowing filter on
+    top of `visible()`, never a grant: it admits nothing `visible()` would refuse."""
+    team = (
+        select(engagement_members.c.engagement_id)
+        .where(
+            engagement_members.c.tenant_id == ctx.tenant_id,
+            engagement_members.c.user_id == ctx.user_id,
+            engagement_members.c.engagement_id == engagement_id,
+            engagement_members.c.role == role,
+        )
+        .exists()
+    )
+    # Only a gate role that is a firm role by nature (the quality owner who approves EQR
+    # eligibility) matches on the firm role; every other role is a team role on the engagement
+    # (security review L1).
+    firm = (
+        role == ctx.firm_role
+        if ctx.firm_role is not None and ctx.firm_role in FIRM_GATE_ROLES
+        else false()
+    )
+    return or_(team, firm)
+
+
 async def authorise_own(ctx: Actor, action: str) -> None:
     """A firm action a person takes on their own row only (G-01-T13: `independence.annual_confirm`,
     DEC-91), so the relationship is their active staff membership here, not a role on a
@@ -1265,6 +1300,7 @@ __all__ = [
     "authorise",
     "authorise_items",
     "authorise_own",
+    "holds_engagement_role",
     "policy_agent_may_hold",
     "recording_checks",
     "register_active_engagements",

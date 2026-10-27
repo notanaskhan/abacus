@@ -1240,9 +1240,14 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         ),
         # P-04-T03 (migration 0093): a note's status and assignee; the gates projection.
         "reviewable_notes": frozenset({"status", "assignee_user_id"}),
-        "human_gates": frozenset({"state", "assignee_user_id", "due_on", "updated_at"}),
+        "human_gates": frozenset(
+            {"state", "assignee_user_id", "due_on", "updated_at"}
+            # I-01-T04 (0223): the projector's derived Home columns.
+            | {"office_id", "blocked", "blocked_reason_code", "sort_hint"}
+        ),
         # P-04-T04 (migration 0094): card status; checkpoint name, star and status; issues.
-        "decision_cards": frozenset({"status"}),
+        # I-01-T04 (0223): the reserved person, for the reassign hook (guarded by trigger).
+        "decision_cards": frozenset({"status", "reserved_user_id"}),
         # P-04-T05 (migration 0095): suggestion and proposal state.
         "suggestions": frozenset({"status", "version"}),
         "proposals": frozenset({"state", "routed_to_user_id", "version"}),
@@ -1362,6 +1367,12 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         ),
         # P-07-T30 (0155): ENG-05's hours and the portal flag; roles stay behind the definers.
         "engagement_members": frozenset({"budget_hours", "shown_on_portal"}),
+        # K-01-T05 (0224): a draft step's content; the frozen trigger guards published ones.
+        "program_steps": frozenset(
+            {"number", "text", "assertions", "standard_refs", "level", "guidance", "prepopulates"}
+            | {"depends_on_step_keys", "flag_resolution", "flag_resolved_by", "flag_resolved_at"}
+            | {"edited_by", "edited_at", "row_version"}
+        ),
         # K-01-T02 (0180): guarded lifecycle transitions (ED-111: declared without this row).
         "methodology_version_states": frozenset(
             {
