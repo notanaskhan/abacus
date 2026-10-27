@@ -19,7 +19,7 @@ and the manifest the service read.
 `assurance.archive_recorded` (0212's list plus these two; the downgrade restores 0212's).
 
 Revision ID: 0226
-Revises: 0220
+Revises: 0224
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, tenant_table
 
 revision = "0226"
-down_revision = "0220"
+down_revision = "0224"
 branch_labels = None
 depends_on = None
 
