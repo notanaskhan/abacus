@@ -45,6 +45,7 @@ TABLES: frozenset[str] = frozenset(
         "engagement_exports",
         "engagement_export_downloads",
         "engagement_export_contents",
+        "firm_export_schedules",  # G-02-T19 (0241): the firm export's monthly schedule
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -73,6 +74,10 @@ INSERT_ONLY: frozenset[str] = frozenset(
 )
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
+    # G-02-T19 (0241): a live person's schedule (the trigger clears approvals on insert).
+    "firm_export_schedules": frozenset(
+        {"tenant_id", "time_zone", "contents", "paused", "status", "updated_by"}
+    ),
     "evidence_items": frozenset(
         {"id", "tenant_id", "engagement_id", "title", "created_by_kind", "created_by_id"}
     ),
@@ -140,6 +145,11 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
+    # G-02-T19 (0241): set and approved in place against `version`; never deleted.
+    "firm_export_schedules": frozenset(
+        {"time_zone", "contents", "paused", "status", "approved_security_by"}
+        | {"approved_partner_by", "version", "updated_by", "updated_at"}
+    ),
     "inbox_files": frozenset(  # SPEC-023: assigned or discarded, once
         {"status", "assigned_item_id", "assigned_version_id", "decided_by", "decided_at"}
         | {"sort_outcome"}  # R-01-T09 (0153): once, from NULL (trigger)

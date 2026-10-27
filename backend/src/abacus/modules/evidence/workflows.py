@@ -450,3 +450,32 @@ class ExportExpirySweepWorkflow:
             heartbeat_timeout=_EXPIRY_HEARTBEAT,
             retry_policy=_EXPIRY_RETRY,
         )
+
+
+# --- G-02-T19: the firm export's monthly run. v1, recorded in its history. -----------------------
+
+_SCHEDULED_TIMEOUT = timedelta(minutes=5)
+_SCHEDULED_RETRY = RetryPolicy(maximum_attempts=3)  # a failed month alerts; the next month runs
+
+
+def firm_export_schedule_id(tenant_id: object) -> str:
+    """The firm's Schedule, and the id its runs carry (Temporal suffixes each with its time)."""
+    return f"firm_export_schedule:{tenant_id}"
+
+
+@workflow.defn(name="FirmExportSchedule")
+class FirmExportScheduleWorkflow:
+    """`firm_export_schedule:<tenant>`: the 1st at 02:00 in the firm's zone, started only by the
+    firm's calendar Schedule (overlap SKIP). One activity: an `active` schedule starts Q-02's firm
+    export (DEC-623). A change goes behind `workflow.patched`, so
+    `firm-export-schedule-v1-*.json` keeps replaying."""
+
+    @workflow.run
+    async def run(self, tenant_id: str) -> str:
+        return await workflow.execute_activity(
+            "evidence.firm_export_scheduled_run",
+            tenant_id,
+            result_type=str,
+            start_to_close_timeout=_SCHEDULED_TIMEOUT,
+            retry_policy=_SCHEDULED_RETRY,
+        )
