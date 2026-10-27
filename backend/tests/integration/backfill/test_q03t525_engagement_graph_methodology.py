@@ -378,20 +378,7 @@ async def test_ac8_gaps_name_uncovered_areas_unmapped_balances_and_items_without
     )
 
 
-@pytest.mark.parametrize(
-    "who",
-    [
-        "walled",
-        pytest.param(
-            "outsider",
-            marks=pytest.mark.xfail(
-                strict=True,
-                reason="ED-250: a firm member outside the engagement reads 403, not AC-9's 404",
-            ),
-        ),
-        "other_firm",
-    ],
-)
+@pytest.mark.parametrize("who", ["walled", "other_firm"])
 async def test_ac9_no_access_reads_the_same_404(world: World, who: str) -> None:
     await _graphed(world)
     response = await world.graph(who)
@@ -401,3 +388,18 @@ async def test_ac9_no_access_reads_the_same_404(world: World, who: str) -> None:
     )
     assert missing.status_code == 404
     assert response.json() == missing.json()
+
+
+async def test_ac9_a_firm_member_off_the_engagement_reads_what_the_engagement_route_answers(
+    world: World,
+) -> None:
+    """SPEC-008 AC-9 as amended (DEC-802, ED-250 closed as spec drift): a firm member with no
+    membership gets the engagement routes' own refusal (403, SPEC-002 AC-8's "no role"), and the
+    graph never answers differently from the engagement read for the same person."""
+    await _graphed(world)
+    graph = await world.graph("outsider")
+    engagement = await world.net.call(
+        "GET", f"/v1/engagements/{world.site.engagement_id}", world.people["outsider"]
+    )
+    assert graph.status_code == engagement.status_code == 403, (graph.text, engagement.text)
+    assert "areas" not in graph.text
