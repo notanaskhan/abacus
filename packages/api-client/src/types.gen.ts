@@ -31841,10 +31841,6 @@ export type ReconnectRequestErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ReconnectRequestError = ReconnectRequestErrors[keyof ReconnectRequestErrors];
@@ -46777,10 +46773,6 @@ export type TbExportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TbExportError = TbExportErrors[keyof TbExportErrors];

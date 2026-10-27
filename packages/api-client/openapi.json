@@ -67579,7 +67579,7 @@
     },
     "/v1/connections/{connection_id}/reconnect-requests": {
       "post": {
-        "description": "AUD-06's *Ask client to reconnect* (A-02-T23): at most one open request per connection\n(a second ask returns the open one and sends nothing), the POR-20 Reconnect request email from\nits database template, a POR-02 to-do. Audited `connection.reconnect_requested`.",
+        "description": "AUD-06's *Ask client to reconnect* (A-02-T23): at most one open request per connection\n(a second ask returns the open one and sends nothing), the POR-20 Reconnect request email from\nits database template to the entity's owners, a POR-02 to-do. Audited\n`connection.reconnect_requested`.",
         "operationId": "reconnect_request",
         "parameters": [
           {
@@ -67696,16 +67696,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Reconnect Request Route",
@@ -100151,7 +100141,7 @@
     },
     "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/export.xlsx": {
       "get": {
-        "description": "Open in Excel (A-02-T22): a deterministic XLSX of the layer with ticks, citations and a\nprovenance footer, audited `trial_balance.exported`; formula-like text is neutralised.",
+        "description": "Open in Excel (A-02-T22): a deterministic XLSX of the layer with ticks, citations and a\nprovenance footer, audited `trial_balance.exported`; formula-like text is neutralised.\n409 `layer_unavailable` or `layer_unbalanced`, as the view.",
         "operationId": "tb_export",
         "parameters": [
           {
@@ -100295,16 +100285,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Tb Export Route",

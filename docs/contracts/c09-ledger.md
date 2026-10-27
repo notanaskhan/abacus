@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C9 in `docs/contracts/README.md` |
 | Version | v1 (layers half; A-03 adds groupings, the FS-line taxonomy and mapping, frozen S20) |
-| Status | stub (A-02-T03, 2026-10-25); the SPEC-309 to SPEC-311 operations are live; the view by layer and the leadsheet by area are live (A-02-T10, 2026-10-26) |
+| Status | stub (A-02-T03, 2026-10-25); the SPEC-309 to SPEC-311 operations are live; the view by layer and the leadsheet by area are live (A-02-T10, 2026-10-26); the issue link (A-02-T17) and Open in Excel (A-02-T22, 2026-10-27) are live; the `ledger_line` citable is registered (A-02-T22) |
 | Provider epic | A-02 (A-03 for the taxonomy half) |
 | Consumers | AUD-06 (A-02-T05, T09, T14, T24); A-03 (mapping), A-04 (materiality benchmark), A-05 (document-extracted TB), A-06 (adjustment source), T-05, T-06, C-01, A-10 |
 | Freeze sprint | S10 (starts Mon Mar 8, 2027) |
@@ -45,8 +45,15 @@ authorises its one action (independence required for every action here).
 | TB sign-offs L1 to L5 | `POST P/{tb_id}/sign-offs/{prepare,review,manager,partner,eqr}` (201) | `sign_off.*` | per level (SPEC-313) | **denied** | live (SPEC-313) |
 | **View by layer** | `GET P/{tb_id}/layers/{layer}?version=` (409 `layer_unavailable`, `layer_unbalanced`) | `trial_balance.read` | as read | denied | **live** (A-02-T10, `tb_read_model.py`) |
 | **Leadsheet by area** | `GET P/{tb_id}/leadsheets/{area}?layer=&version=` (404 for an area with no lines; `Unassigned` holds the unplaced accounts) | `trial_balance.read` | as read | denied | **live** (A-02-T10) |
-| **Open in Excel** | `GET P/{tb_id}/export.xlsx?layer=&version=` (XLSX attachment) | `trial_balance.export` | partner, manager, senior; fresh MFA (`mfa_recent`; DEC-316, amended) | **denied** | **stub** → A-02-T22 |
+| **Open in Excel** | `GET P/{tb_id}/export.xlsx?layer=&version=` (XLSX attachment) | `trial_balance.export` | partner, manager, senior; fresh MFA (`mfa_recent`; DEC-316, amended) | **denied** | **live** (A-02-T22, `tb_read_model.py`): the layer exactly as the view shows it (409 `layer_unavailable`, `layer_unbalanced`), byte-identical on re-render, ticks and citations as text, a provenance footer, client text written as text; audited `trial_balance.exported` with the file's SHA-256 |
 | **Issue link** | `POST P/{tb_id}/checks/{check_id}/issue-link` `{issue_id, seen_version}` (`Idempotency-Key`; 201; 409) | `tie_out_check.define` | as define | **denied** | **live** (A-02-T17): set once; the same issue again answers the link, another 409 `tie_out_check_issue_linked`, an issue of another engagement 404 |
+
+**`ledger_line` citations (A-02-T22).** Locator `{ledger_snapshot_id, account_code}`; match id
+`led:<snapshot>:<account>`; `source_version` is the snapshot id. Verified only for a reader with
+`trial_balance.read` on the anchor's engagement and a snapshot of that engagement's entity
+(otherwise `source_not_visible`, or `source_not_found` as if absent); a value must equal the
+line's net or its side, a quote must be in the account name. A re-version that adopts another
+snapshot moves every citation to the replaced snapshot (`moved`, cause `ledger_snapshot:<new>`).
 
 A stub authorises first, then answers 404 with `ledger.tb_workpaper` off and 501
 `not_implemented` with it on, so no principal learns the flag state it may not use (DEC-261's
@@ -95,7 +102,7 @@ and total labels); everything else internal. Nothing Restricted.
 | `trial_balance.created` (audit) | Adopt v1 | ids, version |
 | `trial_balance.version_adopted` (audit) | Adopt v1 and every re-version | ids, version (before and after on a re-version), snapshot; the reason stays in the row |
 | `trial_balance.version_created` (outbox, A-02-T07, `ledger.api.TrialBalanceVersionCreated`) | A version is adopted (v1 and every re-version) | `trial_balance_id`, `engagement_id`, `version_no`, `snapshot_id`, `prior_snapshot_id`; P-04 stale detection |
-| `trial_balance.exported` (audit, A-02-T22) | Open in Excel | ids, version, layer |
+| `trial_balance.exported` (audit, A-02-T22) | Open in Excel | ids, version, layer number (0 Unadjusted to 3 Final), file SHA-256 |
 | `tie_out_check.defined`, `.updated`, `.issue_linked` (audit); `tie_out_check.changed` (outbox, A-02-T17) | Define, edit, link | ids and version |
 
 ## 8. Example payloads
