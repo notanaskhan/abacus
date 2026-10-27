@@ -37,7 +37,6 @@ from abacus.modules.engagements.api import (
     engagement_metadata,
     get_ref,
 )
-from abacus.modules.evidence.export_activities import evidence_files, section_files
 from abacus.modules.evidence.export_builder import (
     PackageFacts,
     PackageIntegrityError,
@@ -144,6 +143,13 @@ async def _one(
         requested_by_user_id=ctx.user_id,
         membership_id=ctx.membership_id,
     )
+    # Imported here: export_activities imports the export lifecycle, which imports the firm
+    # export's activities, which import this module (a cycle at import time only).
+    from abacus.modules.evidence.export_activities import (
+        evidence_files,
+        section_files,
+    )
+
     try:
         plan = await plan_selection(ctx, request)
         with plan_in_use(plan):
