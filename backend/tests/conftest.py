@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import cast
 
@@ -11,6 +12,20 @@ from abacus.kernel import controls
 from abacus.kernel.controls import Active
 
 NO_TESTS_COLLECTED = 5
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """Under mutmut (it sets `MUTANT_UNDER_TEST` for every run it makes) the tests marked
+    `source_scan` are left out (Q-03-T051, DEC-599): they read source or repository files, not
+    behaviour, so mutmut's rewritten copies fail them before any mutant is scored, and on a mutant
+    they would only report a textual difference. Every other run keeps them."""
+    if "MUTANT_UNDER_TEST" not in os.environ:
+        return
+    kept = [item for item in items if item.get_closest_marker("source_scan") is None]
+    left = [item for item in items if item.get_closest_marker("source_scan") is not None]
+    if left:
+        config.hook.pytest_deselected(items=left)
+        items[:] = kept
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:

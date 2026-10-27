@@ -141,6 +141,7 @@ asyncio_default_fixture_loop_scope = "function"
 xfail_strict = true
 markers = [
     "serial: a wall-clock budget; runs alone after the parallel workers (DEC-335)",
+    "source_scan: reads source or repository files, not behaviour; left out of mutation runs only (DEC-599)",
 ]
 
 [tool.coverage.run]
