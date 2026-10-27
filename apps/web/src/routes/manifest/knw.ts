@@ -21,7 +21,7 @@ export const knwScreens = {
     path: null,
   },
   "KNW-04": {
-    name: "Firm standards & thresholds · Brightwater Hale",
+    name: "Firm standards & thresholds", // the handoff adds "· Brightwater Hale"; no seed name ships (dist.test.ts)
     status: "planned",
     path: null,
   },

@@ -78,7 +78,8 @@ export function activeArea(context: ToolbarContext): string {
   if (isSettings(context)) return "";
   if (context.screen !== undefined) return context.navArea ?? "";
   const have = segments(context.pathname ?? "/");
-  if (have.length === 0) return "Home";
+  // "/" is Home's area path; HOME-01 lives at "/home" until I-01-T13 moves Home there.
+  if (have.length === 0 || (have.length === 1 && have[0] === "home")) return "Home";
   const area = AREAS.find((a) => {
     const want = segments(a.path);
     return want.length > 0 && want.every((w, i) => w === have[i]);
