@@ -171,13 +171,5 @@ def test_ac7_a_row_carries_identifiers_and_codes_and_only_facts_are_restricted()
     }
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "C16 §3 and P-01 §4.6 name `notifications.register_kind_source(code, event, recipients, "
-        "subject)`; notifications.api does not export it (SUBSCRIPTIONS is computed at import). "
-        "Recorded in work/tasks/TASK-993-notifications-binder-independent-tests.md (#380)"
-    ),
-)
 def test_ac_c16_a_later_epic_can_add_a_producing_event_to_an_existing_kind() -> None:
     assert callable(getattr(notifications, "register_kind_source", None))

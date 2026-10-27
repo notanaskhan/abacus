@@ -15,7 +15,7 @@ Nine flags expire between 2027-01-05 and 2027-01-13, inside the busy-season free
 | `guidance.drafting` | 2027-01-13 | ayushkbhatia | renew or remove |
 | `fieldwork.assessor` | 2027-01-17 | ayushkbhatia | renew or remove |
 | `fieldwork.procedures` | 2027-01-17 | ayushkbhatia | renew or remove |
-| `engagements.work_items_api` | 2027-01-20 | ayushkbhatia | re-date or retire (F-03-T37); retire once P-07 wires ENG-01/02 |
+| `engagements.work_items_api` | 2027-01-20 | ayushkbhatia | re-date or retire (F-03-T37); retire once P-07 wires ENG-01/02. **Retired 2026-10-27 (P-07-T15, TASK-1010).** |
 | `notifications.v2` | 2027-01-20 | ayushkbhatia | renew (P-01 wire-up, P-01-T17 calendars it) |
 | `notifications.email` | 2027-01-20 | ayushkbhatia | renew (P-01-T12) |
 | `review.grammar_api` | 2027-01-20 | ayushkbhatia | renew (C3 live routes, retired S26) |

@@ -1,13 +1,14 @@
 import { EmptyState } from "@abacus/ui";
-import { createRoute, useNavigate, useRouter, useSearch } from "@tanstack/react-router";
+import { Navigate, createRoute, useNavigate, useRouter, useSearch } from "@tanstack/react-router";
 import type { JSX } from "react";
 import { useCan } from "../../app-core/can";
-import { FeatureGate } from "../../app-core/flags";
+import { FeatureGate, useFlag } from "../../app-core/flags";
 import { useParam } from "../params";
 import { appRoute, lazyScreen } from "../root";
 
 // Firm settings (SPEC-016, SPEC-019 Q1): one section list, a section per page. The /admin paths
-// move to /settings with redirects in G-01-T07 (DEC-113); today's URLs are kept.
+// move to /settings (DEC-113): a legacy path whose new page is built redirects to it while that
+// page's flag is on (G-01-T07), and keeps its legacy page otherwise.
 const screens = {
   Methodology: lazyScreen(async () => (await import("../../legacy/Methodology")).Methodology),
   GroupingSets: lazyScreen(async () => (await import("../../legacy/GroupingSets")).GroupingSets),
@@ -323,6 +324,22 @@ const methodologyVersionRoute = createRoute({
   },
 });
 
+/** G-01-T07 (DEC-113): the legacy page, or a redirect to its /settings page once `flag` is on. */
+export function Moved({
+  flag,
+  to,
+  hash,
+  children,
+}: {
+  flag: string;
+  to: "/settings/audit-log";
+  hash?: string;
+  children: JSX.Element;
+}): JSX.Element {
+  if (useFlag(flag) !== true) return children;
+  return <Navigate to={to} replace {...(hash === undefined ? {} : { hash })} />;
+}
+
 export const settingsRoutes = [
   settingsGeneralRoute,
   settingsPeopleRoute,
@@ -343,7 +360,17 @@ export const settingsRoutes = [
       return <screens.AutonomySettings canSet={canSet} />;
     }),
     section("/admin/setup", () => <screens.Onboarding always />),
+    // G-01-T07 (DEC-113): the legacy URLs land on their settings pages. People and walls redirect
+    // for every firm now that `firm_settings.v2` is retired (G-01-T17, DEC-594); the audit log
+    // follows `audit_log.explorer`.
+    section("/admin/people", () => <Navigate to="/settings/people" replace />),
     section("/admin/support", () => <screens.SupportAccess />),
-    section("/admin/audit-log", () => <screens.AuditLog />),
+    section("/admin/audit-log", () => (
+      <Moved flag="audit_log.explorer" to="/settings/audit-log">
+        <screens.AuditLog />
+      </Moved>
+    )),
+    // ADM-03 holds the walls in its own section, scrolled to by `#walls`.
+    section("/admin/walls", () => <Navigate to="/settings/offices" hash="walls" replace />),
   ]),
 ] as const;

@@ -2,14 +2,6 @@
 # file into kernel/_flags.py by `make regenerate`.
 
 flags:
-  - name: engagements.work_items_api
-    description: The C1 work-item list (GET /v1/work-items, F-03-T31). On for local and test environments and for synthetic firms; off elsewhere until P-07 wires ENG-01 and ENG-02, then retired.
-    owner: ayushkbhatia
-    created: 2026-10-23
-    expires: 2027-04-21
-    override: DEC-137
-    kind: boolean
-    default: false
   - name: engagements.v2
     description: 'The engagements family (P-07, C1 v1.1): the v2 index (GET /v1/engagements/index), the record projection (GET /v1/engagements/{id}/record), gates, the interim recorded letter (PUT /v1/engagements/{id}/letter/record), the engagement-type catalogue, the engagement drafts with start-acceptance and create, the ENG-01, ENG-02, ENG-03 and ENG-05 screens and the G2 v2 semantics. When off, those routes answer 404 and the screens show the flag-off ViewState. Off until a founder switches it on per firm; the local seed turns it on for Brightwater Hale. Renewal is due in the S9 protected bundle; retired with the legacy screens (P-07 §0).'
     owner: notanaskhan

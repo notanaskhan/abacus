@@ -38,3 +38,9 @@ updated: 2026-10-24
   merge. **Still deferred:** retiring `engagements.work_items_api`, because F-03's independent
   suite asserts the flag in `/v1/me` (`test_f03_independent_acceptance.py:680`) and a test is
   never weakened without Ayush's word (DEC-224). Tests at the end of the run.
+- 2026-10-27 (S10 gap build, branch `s10-p07t15-retire-work-items-flag`): `engagements.work_items_api` is retired, on Ayush's word ("Yes, retire the engagements.work_items_api flag (P-07-T15), including the F-03 independent test change").
+  - `GET /v1/work-items` is live for every firm: `work_items_api_on` and its 404 are gone.
+  - The registry entry is removed and `kernel/_flags.py` regenerated.
+  - F-03's independent test (`test_f03_independent_acceptance.py`) no longer names the flag. It now asserts that every flag in `/v1/me` answers a boolean or a variant string, beside the existing check that the set equals the registry.
+  - The wall suite's flag list drops it.
+  - The engagements README and `docs/contracts/work-items.md` say the list is live.

@@ -44,7 +44,7 @@ All the models live in `backend/src/abacus/modules/engagements/routes.py`.
   - `engagement_letter`;
   - `no_gate_provider`.
 - **`EngagementOut.allowed_actions`** (F-03-T31): the engagement actions the caller may offer, from `identity.allowed_actions` (never recorded as a check).
-- **`ListPage[WorkItemRowOut]`** (F-03-T31): the P-36 list envelope (`items`, `next_cursor`, `total`, `total_capped`, `counts` per status, the status filter left out of the counts); rows carry `engagement_id`. Behind `engagements.work_items_api`: on locally, in tests and for synthetic firms; 404 elsewhere until P-07.
+- **`ListPage[WorkItemRowOut]`** (F-03-T31): the P-36 list envelope (`items`, `next_cursor`, `total`, `total_capped`, `counts` per status, the status filter left out of the counts); rows carry `engagement_id`. Live for every firm since P-07-T15 retired `engagements.work_items_api` (2026-10-27).
 - **`WorkItemOut`**: `id`, `kind` (assurance, tax_return, close, notice, advisory_project), `name`, `status` (active, archived), `period_start`, `period_end`, `due_on`, and `phase` (assurance only).
 
 ## 4. Status words

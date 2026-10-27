@@ -10,6 +10,7 @@ import re
 from pathlib import Path
 from typing import cast
 
+import pytest
 import yaml
 
 REPO = Path(__file__).resolve().parents[4]
@@ -104,6 +105,7 @@ def test_t027_the_floors_job_compares_with_the_pull_requests_base() -> None:
     assert "abacus_tools.quality.mutation_floors" in check_fast
 
 
+@pytest.mark.source_scan
 def test_mutation_workflows_pin_actions_stay_read_only_and_use_no_secrets() -> None:
     for name in ("mutation-nightly.yml", "mutation-weekly.yml", "mutation-floors.yml"):
         raw = _load(name)

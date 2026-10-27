@@ -677,7 +677,9 @@ async def test_ac14_capabilities_carries_every_field_of_the_me_contract(
     assert body["portal"] is None  # a staff member has no portal shell
     assert body["entitlements"] == ["insights"]  # held modules only; attest is switched off
     assert set(body["flags"]) == set(_flags.FLAGS)
-    assert isinstance(body["flags"]["engagements.work_items_api"], bool)
+    # Every flag answers its value: a boolean, or a variant flag's string (P-07-T15 retired the
+    # work-item list's flag this line once named).
+    assert all(isinstance(v, bool | str) for v in cast(dict[str, object], body["flags"]).values())
 
 
 async def test_ac14_mfa_recent_until_is_set_after_a_fresh_mfa(
