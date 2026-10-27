@@ -242,14 +242,15 @@ def test_f_the_commit_answers_prospect_engagements_and_identifiers() -> None:
         ("patch", f"{DRAFTS}/{{draft_id}}", {"200", "403", "404", "409", "422"}),
         ("post", f"{DRAFTS}/{{draft_id}}/validate", {"200", "403", "404", "422"}),
         ("post", f"{DRAFTS}/{{draft_id}}/commit", {"201", "403", "404", "409", "422"}),
-        ("get", f"{IMPORTS}/{{import_id}}", {"200", "403", "404", "501"}),
-        ("get", f"{IMPORTS}/{{import_id}}/rows", {"200", "403", "404", "422", "501"}),
+        # P-07-T52 (TASK-1503): the import routes are live; their stub 501 is retired.
+        ("get", f"{IMPORTS}/{{import_id}}", {"200", "403", "404"}),
+        ("get", f"{IMPORTS}/{{import_id}}/rows", {"200", "403", "404", "422"}),
         (
             "put",
             f"{IMPORTS}/{{import_id}}/rows/{{row_id}}/decision",
-            {"200", "403", "404", "409", "422", "501"},
+            {"200", "403", "404", "409", "422"},
         ),
-        ("post", f"{IMPORTS}/{{import_id}}/run", {"202", "403", "404", "409", "422", "501"}),
+        ("post", f"{IMPORTS}/{{import_id}}/run", {"202", "403", "404", "409", "422"}),
     ],
 )
 def test_each_route_declares_the_statuses_cli06_handles(

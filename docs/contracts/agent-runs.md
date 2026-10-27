@@ -1,12 +1,12 @@
-# C6 · Agent runs (v1 in progress; v0 live)
+# C6 · Agent runs (v1 frozen; v0 live)
 
 | Field | Value |
 |---|---|
 | Register row | C6 in `docs/contracts/README.md` |
-| Version | v0 live; v1 in progress (TASK-5000): the run read, records read and writes; the run record (TASK-1287) |
+| Version | v1 **frozen 2026-10-27** (Q-02-T45, TASK-1423; DEC-595, DEC-596): the run read, records read and writes (TASK-5000), the items feed (TASK-5001), the projections (TASK-5002), the run record (TASK-1287) and the v1 run summary (ADR-169 §4). Snapshot `backend/tests/contracts/c06_agent_runs/v1.json` |
 | Status | live, pre-contract. v1 extends these routes and does not replace them. |
-| Provider epic | P-09, owned by notanaskhan (DEC-336). SPEC-318: TASK-461, TASK-900, TASK-901, TASK-5000. |
-| Consumers | WB-09 trace drawer; SHL-13 dock (later); ADM-07 and AUD-29 trace links (later) |
+| Provider epic | v1: Q-02 (owner change DEC-595, approved 2026-10-27); v2: P-09 and P-10, owned by notanaskhan (DEC-336). SPEC-318: TASK-461, TASK-900, TASK-901, TASK-5000. |
+| Consumers | WB-09 trace drawer; SHL-13 dock (later); ADM-07 and AUD-29 trace links (later); G-02 (audit-log run links) and A-01 (archive packaging of run records), consumer tests in `backend/tests/contracts/c06_agent_runs/` |
 | Freeze sprint | v1 S12 (2027-04-05) |
 | Flag | none: read-only over existing runs |
 | Spec | `docs/specs/SPEC-318-agent-run-transparency.md` |
@@ -57,6 +57,7 @@ Code: `backend/src/abacus/modules/agents/runs_routes.py`. Every field is `intern
   - `started_at`, `finished_at` and `duration_ms` (computed);
   - `initiator_name`;
   - `subject`: `evidence_version`, `inbox_file`, `template_version` or null. It is a reference kind, never content.
+  - v1 (ADR-169 §4, DEC-596): `state_reason` (the queued reason while queued, `escalated` for needs_input, else null); `outcome` (`approved`, `partially_approved` or `rejected`, derived from the decisions on the run's proposals once every non-superseded one is decided, else null); `stage` (`shadow` or `live`); `record_sha256` and `record_persisted_at` (the run record's own hash and write time, null until persisted). The trace-v1 export leaves these out, so its bytes are unchanged.
 - **TraceRowOut:**
   - `seq`, `at`;
   - `kind`: start, queued, attempt, output, decision or finish;
@@ -152,7 +153,7 @@ None are decided here; v0 is read-only. Only a person may export; the matrix den
 - Done in TASK-5000: `GET /v1/agent-runs/{id}` (with `run_record_sha256` and `allowed_actions`), `/trace/records-read` and `/trace/writes`.
 - Done in TASK-5001: the `items?after_seq=` feed, with the read-time legacy adapter (P-09 Story 8.1).
 - Done in TASK-5002: the content and metadata projections (DEC-87).
-- Done in TASK-1287 (Q-02-T41): `GET /v1/agent-runs/{id}/record`. Still to come with C6 v1 (Q-02-T45, P-09): `record_sha256` and `record_persisted_at` on the run summary (ADR-169 §4).
+- Done in TASK-1287 (Q-02-T41): `GET /v1/agent-runs/{id}/record`. Done in TASK-1423 (Q-02-T45): `state_reason`, `outcome`, `stage`, `record_sha256` and `record_persisted_at` on the run summary (ADR-169 §4); v1 frozen 2026-10-27.
 - Still to come: P-09-T07's projection by level; P-09-T08's `/trace/steps/{id}`. The single `/trace` response stays as the summary and timeline.
 - P-09-T11 adds `pdf` once the C11 renderer and its `run_trace_v1` template exist (S18). JSON keeps this canonical form.
 - Done in TASK-5000: when a run has `suggestions` or `proposals` rows (migration 0095), the trace counts those instead of the lists in `agent_runs.output`, and shows people's decisions on them in the timeline.

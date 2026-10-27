@@ -18,11 +18,14 @@ from datetime import UTC, datetime
 from typing import Final, Literal, cast
 from uuid import UUID
 
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from abacus.ai_gateway import attempts_for
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Ref, Target, uow
-from abacus.modules.agents.models import AgentActivity, AgentRun
+from abacus.modules.agents.models import AgentActivity, AgentRun, AgentRunRecord, Proposal
 from abacus.modules.agents.repository import (
     RunWriteRow,
     engagement_runs,
@@ -58,6 +61,17 @@ State = Literal["queued", "running", "succeeded", "needs_input", "failed"]
 # DEC-87 (TASK-5002): content for the engagement's people and oversight in scope; metadata for
 # everyone else agent_run.read lets in (security and firm admins): what ran, never the content.
 Projection = Literal["content", "metadata"]
+# ADR-169 §1: derived, never stored, once every proposal of the run is decided.
+Outcome = Literal["approved", "partially_approved", "rejected"]
+Stage = Literal["shadow", "live"]
+# The C6 v1 summary fields the trace-v1 export leaves out, so its bytes stay as they were.
+_V1_SUMMARY_FIELDS: Final = (
+    "state_reason",
+    "outcome",
+    "stage",
+    "record_sha256",
+    "record_persisted_at",
+)
 RowKind = Literal["start", "queued", "attempt", "output", "decision", "finish"]
 
 
@@ -72,6 +86,14 @@ class RunSummary:
     duration_ms: int | None
     initiator_name: str
     subject: str | None  # what the run worked on, as a reference kind
+    # C6 v1 (Q-02-T45; ADR-169 §4): the canonical state's reason, the outcome derived from the
+    # decisions on the run's proposals, the stage, and the durable record's fingerprint and when
+    # it was written (null until persisted). Not part of the trace-v1 export (`canonical`).
+    state_reason: str | None = None
+    outcome: Outcome | None = None
+    stage: Stage = "live"
+    record_sha256: str | None = None
+    record_persisted_at: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -147,7 +169,57 @@ def output_counts(output: dict[str, object] | None) -> list[tuple[str, int]]:
     return sorted(counts)
 
 
-def _summary(run: AgentRun, names: dict[UUID, str]) -> RunSummary:
+def state_reason_of(run: AgentRun) -> str | None:
+    """ADR-169 §2's legacy map: the queued reason while queued, `escalated` for needs_input."""
+    state = state_of(run)
+    if state == "queued":
+        return run.queued_reason
+    return "escalated" if state == "needs_input" else None
+
+
+def outcome_of(states: Sequence[str]) -> Outcome | None:
+    """ADR-169 §1: approved, partially approved or rejected once every live proposal is decided;
+    null while one is pending or when the run proposed nothing (superseded ones don't count)."""
+    live = [s for s in states if s != "superseded"]
+    if not live or "pending" in live:
+        return None
+    approved = sum(1 for s in live if s in ("approved", "approved_with_edits"))
+    if approved == len(live):
+        return "approved"
+    return "rejected" if approved == 0 else "partially_approved"
+
+
+@dataclass(frozen=True)
+class _V1Facts:
+    record: AgentRunRecord | None
+    proposal_states: tuple[str, ...]
+
+
+async def _v1_facts(session: AsyncSession, run_ids: Sequence[UUID]) -> dict[UUID, _V1Facts]:
+    """Each run's persisted record and its proposals' states, in two reads (RLS-scoped)."""
+    if not run_ids:
+        return {}
+    records = {
+        r.run_id: r
+        for r in (
+            await session.scalars(select(AgentRunRecord).where(AgentRunRecord.run_id.in_(run_ids)))
+        ).all()
+    }
+    states: dict[UUID, list[str]] = {}
+    for run_id, state in (
+        await session.execute(
+            select(Proposal.agent_run_id, Proposal.state).where(Proposal.agent_run_id.in_(run_ids))
+        )
+    ).all():
+        states.setdefault(run_id, []).append(state)
+    return {i: _V1Facts(records.get(i), tuple(states.get(i, ()))) for i in run_ids}
+
+
+def _summary(run: AgentRun, names: dict[UUID, str], facts: _V1Facts | None = None) -> RunSummary:
+    record = facts.record if facts is not None else None
+    stage: Stage = "shadow" if run.shadow else "live"
+    if record is not None and record.stage in ("shadow", "live"):
+        stage = record.stage
     return RunSummary(
         run.id,
         run.agent_id,
@@ -158,7 +230,18 @@ def _summary(run: AgentRun, names: dict[UUID, str]) -> RunSummary:
         duration_ms(run.started_at, run.finished_at),
         names.get(run.initiator_user_id, "Former member"),
         _subject(run),
+        state_reason_of(run),
+        outcome_of(facts.proposal_states) if facts is not None else None,
+        stage,
+        record.record_sha256 if record is not None else None,
+        record.persisted_at if record is not None else None,
     )
+
+
+async def _summary_v1(ctx: AuthContext, run: AgentRun, names: dict[UUID, str]) -> RunSummary:
+    async with tenant_session(ctx.tenant) as session:
+        facts = await _v1_facts(session, [run.id])
+    return _summary(run, names, facts.get(run.id))
 
 
 async def runs_for(
@@ -171,7 +254,9 @@ async def runs_for(
     if state == "active":
         runs = [r for r in runs if r.status == "running"]
     names = {m.user_id: m.display_name for m in await engagement_team(ctx, engagement_id)}
-    return [_summary(r, names) for r in runs]
+    async with tenant_session(ctx.tenant) as session:
+        facts = await _v1_facts(session, [r.id for r in runs])
+    return [_summary(r, names, facts.get(r.id)) for r in runs]
 
 
 async def _run(ctx: AuthContext, run_id: UUID, action: str) -> AgentRun:
@@ -350,7 +435,10 @@ def _plain(value: object) -> object:
 
 def canonical(trace: Trace) -> bytes:
     """Sorted keys, UTC instants, rows in seq order: the same trace gives the same bytes."""
-    return json.dumps(_plain(asdict(trace)), sort_keys=True, separators=(",", ":")).encode()
+    plain = asdict(trace)
+    for key in _V1_SUMMARY_FIELDS:
+        plain["run"].pop(key, None)
+    return json.dumps(_plain(plain), sort_keys=True, separators=(",", ":")).encode()
 
 
 @dataclass(frozen=True)
@@ -437,7 +525,9 @@ async def run_view(ctx: AuthContext, run_id: UUID) -> RunView:
     ref = await get_ref(ctx, engagement_id)
     actions = await allowed_actions(ctx, ref.resource(), ["agent_run.read", "run_trace.export"])
     projection = await projection_for(ctx, engagement_id)
-    return RunView(_summary(run, names), run_record_sha256(run), sorted(actions), projection)
+    return RunView(
+        await _summary_v1(ctx, run, names), run_record_sha256(run), sorted(actions), projection
+    )
 
 
 def records_read_of(run: AgentRun) -> list[RecordsRead]:
@@ -551,7 +641,7 @@ async def items_for(ctx: AuthContext, run_id: UUID, after_seq: int) -> RunItems:
     if engagement_id is None:
         raise NotFound
     names = {m.user_id: m.display_name for m in await engagement_team(ctx, engagement_id)}
-    summary = _summary(run, names)
+    summary = await _summary_v1(ctx, run, names)
     async with tenant_session(ctx.tenant) as session:
         writes = await run_writes(session, run.id)
         results = await screening_results_of_run(session, run.id)

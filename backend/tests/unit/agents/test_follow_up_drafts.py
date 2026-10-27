@@ -76,12 +76,24 @@ def _calls(path: Path) -> set[str]:
     return found
 
 
+# R-01-T24 (DEC-568): under a firm's `send_on_schedule` policy and the `follow_ups.scheduled_send`
+# flag, P-4 hands the reminder to communications' policy-owned send, which re-checks everything
+# itself. That one handoff, its flag check and its local wrapper are the only send-named calls
+# allowed; anything else that sends, delivers or grants still fails this test.
+_SCHEDULED_SEND: frozenset[str] = frozenset(
+    {"send_scheduled_reminder", "scheduled_send_enabled", "_send_scheduled"}
+)
+
+
 def test_ac19_the_p4_tick_never_reaches_a_send_path() -> None:
-    """DEC-74: the agent's P-4 module drafts; it calls no send, deliver or grant function."""
+    """DEC-74: the agent's P-4 module drafts; it calls no send, deliver or grant function other
+    than the policy-owned scheduled send (DEC-568)."""
     p4 = Path(follow_up_drafts.__file__).with_name("follow_ups.py")
     calls = _calls(p4)
     assert "insert_follow_up" in calls
-    assert not {c for c in calls if "send" in c or "deliver" in c or "grant" in c}
+    found = {c for c in calls if "send" in c or "deliver" in c or "grant" in c}
+    assert found <= _SCHEDULED_SEND, found - _SCHEDULED_SEND
+    assert not {c for c in calls if "deliver" in c or "grant" in c}
 
 
 def test_ac19_every_send_path_refuses_a_non_person_before_anything_else() -> None:

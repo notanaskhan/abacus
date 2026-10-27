@@ -133,6 +133,7 @@ def test_adr110_formulas_are_never_evaluated() -> None:
     assert parsed.trial_balance.lines == ()
 
 
+@pytest.mark.source_scan
 def test_d2_the_isolated_parse_returns_the_same_result() -> None:
     content = qbo_trial_balance_csv(TB)
     assert parse_isolated(content, "qbo_tb_csv", START, END) == parse_export(

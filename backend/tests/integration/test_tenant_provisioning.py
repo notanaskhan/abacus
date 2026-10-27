@@ -32,12 +32,14 @@ from abacus.modules.platform.api import (
     ACTIVITIES,
     WORKFLOWS,
     CanaryWorkflow,
+    IncidentClockRemindersWorkflow,
     IncidentPropagationWorkflow,
     InMemoryTenantKeyOps,
     ProvisionTenantResult,
     SpendAnomalyWorkflow,
     TenantKeyWorkflow,
     TenantProvisioningWorkflow,
+    WispPackWorkflow,
     configure_tenant_key_ops,
     entitlement,
     operator_context,
@@ -119,6 +121,8 @@ async def worker(temporal: Client, key_ops: InMemoryTenantKeyOps) -> AsyncIterat
         IncidentPropagationWorkflow: "time_sensitive",  # Q-02-T33's register (platform's own)
         SpendAnomalyWorkflow: "background",  # Q-01-T26: on its Schedule, not a worker loop
         CanaryWorkflow: "time_sensitive",  # Q-01-T30: every 15 minutes on its Schedule
+        IncidentClockRemindersWorkflow: "background",  # G-02-T18: the FTC clock reminders
+        WispPackWorkflow: "batch",  # G-02-T11: a WISP pack is built later
     } == WORKFLOWS
     activities = cast("list[Callable[..., object]]", list(ACTIVITIES))
     # Two pools, as in production: the general one and the keyops one (P-65).
