@@ -6,7 +6,8 @@ reason. Results are computed on read by the tie engine from the trial balance's 
 so a new version of the trial balance re-evaluates every check without writing anything.
 
 A-02-T17: a check that does not tie is linked, once, to an issue raised through C3 on the same
-engagement (AUD-06 c). Defining, editing and linking announce `tie_out_check.changed`: the
+engagement (AUD-06 c). Defining, editing and linking announce the outbox event
+`tie_out_check.changed` (audited as C9 §7's `.defined`, `.updated`, `.issue_linked`): the
 checks are part of what a trial balance's sign-off approves (`tie_digests`, folded into the
 trial balance's signed hash by assurance), so P-04's stale detector tells earlier signers
 (SPEC-333 AC-13) without any sign-off row changing.
@@ -381,7 +382,7 @@ async def edit_check(
         )
         await set_check_version(tx.session, check.id, version_no)
         tx.record(
-            "tie_out_check.changed",
+            "tie_out_check.updated",  # C9 §7 (ED-176); the outbox event stays `.changed`
             target=Target("tie_out_check", check.id),
             before=Ref(version_no=check.current_version_no),
             after=Ref(version_no=version_no),

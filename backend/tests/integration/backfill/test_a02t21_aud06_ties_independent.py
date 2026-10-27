@@ -411,12 +411,6 @@ async def test_ac11_results_are_computed_on_read_and_never_stored(world: Books) 
     assert cast(Json, (await world.view(tb_id))["checks"])["off"] == 0
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="ED-175: defining a balanced check answers 500 (the version row's CHECK refuses the "
-    "expected value the service writes for a balanced kind); recorded in "
-    "work/tasks/TASK-1474-a02t21-aud06-ties-independent.md",
-)
 async def test_ac10_a_balanced_check_ties_when_debits_equal_credits(world: Books) -> None:
     tb_id = await _tb(world)
     status, check = await _define(
@@ -470,12 +464,6 @@ async def test_ac12_a_citation_of_another_engagement_does_not_count(world: Books
     assert await world.count("tie_out_checks") == 0
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="ED-176: an edit is audited tie_out_check.changed (the outbox name), not "
-    "tie_out_check.updated as C9 §7 and the epic §7 name it; recorded in "
-    "work/tasks/TASK-1474-a02t21-aud06-ties-independent.md",
-)
 async def test_ac12_defining_and_editing_are_audited_as_the_person(world: Books) -> None:
     tb_id = await _tb(world)
     status, check = await _broker(world, tb_id, world.senior)
@@ -571,12 +559,6 @@ async def test_ac11_the_issue_link_replays_on_its_key_and_is_set_once(world: Boo
     )
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="ED-177: an Idempotency-Key reused with another issue answers 409 "
-    "tie_out_check_issue_linked instead of 422 idempotency_key_reused; recorded in "
-    "work/tasks/TASK-1474-a02t21-aud06-ties-independent.md",
-)
 async def test_ac28_an_idempotency_key_reused_for_another_issue_is_refused(world: Books) -> None:
     tb_id = await _tb(world)
     _, check = await _broker(world, tb_id)

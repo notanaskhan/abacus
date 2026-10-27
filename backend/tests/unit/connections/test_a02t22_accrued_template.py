@@ -80,3 +80,21 @@ def test_the_template_is_an_import_source_whose_words_never_name_the_platform() 
     words = " ".join((TEMPLATE.system, *TEMPLATE.steps))
     assert "Accrued" not in words
     assert TEMPLATE.steps[-1].startswith("Upload the")
+
+
+def test_ed178_a_total_labelled_in_the_account_column_is_the_control_total() -> None:
+    book = Workbook()
+    sheet = book.active
+    assert sheet is not None
+    sheet.append(["Period end: 06/30/2026"])
+    sheet.append(["Account", "Account name", "Debit", "Credit"])
+    for row in GRANITE:
+        sheet.append(list(row))
+    sheet.append(["Total", None, 8_000_100, 8_000_100])  # claims 100.00 more a side
+    out = io.BytesIO()
+    book.save(out)
+    parsed = parse_export(out.getvalue(), "accrued_template", START, END)
+    assert not parsed.totals_from_lines
+    assert parsed.trial_balance.declared_debit == Decimal("8000100.00")
+    checked = check_export(TEMPLATE, out.getvalue(), Period(START, END))
+    assert checked.failure == "control_totals_mismatch"

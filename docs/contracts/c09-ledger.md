@@ -30,7 +30,10 @@ answer `layer_unavailable` before.
 ## 2. Who may call it
 Prefix `P = /v1/engagements/{engagement_id}/trial-balances`. Every route resolves the engagement
 in the tenant (404 outside it or behind a wall, with no count of hidden rows, INV-3) and then
-authorises its one action (independence required for every action here).
+authorises its one action (independence required for every action here). How a pending member is
+refused follows DEC-270 (ADR-164 items 2-3), which supersedes SPEC-333 AC-9's wording: a **read**
+answers 403 `independence_pending` only on an attest client's engagement with `g2_blocks_view` on;
+adopt, define and export stay refused to a pending member on an attest client by default (DEC-551).
 
 | Operation | Method and path | Matrix action | Roles allowed | Agent or system | State |
 |---|---|---|---|---|---|
@@ -74,7 +77,8 @@ and total labels); everything else internal. Nothing Restricted.
 - **`TbLayerBalanceOut`**: `layer`, `debit` C, `credit` C, `difference` C, `balanced`.
 - **`TbChecksSummaryOut`**: `tie`, `off`, `pending`, `worst` (C2 `tie_out_tally`).
 - **`TbLeadsheetAreaOut`**: `trial_balance_id`, `version_no`, `area` C, `unassigned`, `layer`, `display_unit`, `rows` (`TbLeadsheetRowOut`: `account_code` C, `account_name` C, `py` C, `cy` C, `change` C, `change_pct` C), `py` C, `cy` C, `change` C, `change_pct` C (half-even to 0.1).
-- **`TieIssueLinkIn`** `{issue_id, seen_version}` (extra fields refused) → **`TieIssueLinkOut`** `{check_id, issue_id, version_no, linked_by_user_id, linked_at}`.
+- **`TieIssueLinkIn`** `{issue_id, seen_version}` (extra fields refused; `Idempotency-Key` replays its answer, reused for another request 422 `idempotency_key_reused`, ED-177) → **`TieIssueLinkOut`** `{check_id, issue_id, version_no, linked_by_user_id, linked_at}`.
+- A tie-out check's **`citation_ids`** are **evidence citations**: ids of evidence versions of the same engagement (SPEC-310 "an evidence citation", "citations must belong to the engagement"; another engagement's answers 404), not C4 citation rows (DEC-551).
 - The live operations' models are in `assurance/routes.py` (`TrialBalancesOut`, `TrialBalanceDetailOut`, `SnapshotOut`, `LeadsheetOut`, `AdoptBody`, `VersionBody`, `AnnotationsBody`) and `workpapers/routes.py` (`TieOutCheckOut`, `TieResultOut`).
 
 ## 4. Status words
@@ -88,12 +92,14 @@ and total labels); everything else internal. Nothing Restricted.
 |---|---|---|
 | 404 | `not_found` | Engagement or TB outside the tenant or behind a wall; a stub with the flag off |
 | 403 | `forbidden` / `independence_pending` | Role, agent or system; no independence confirmation |
-| 409 | `snapshot_entity_mismatch` | Adopting another entity's snapshot |
+| 422 | `snapshot_entity_mismatch` | Adopting another entity's snapshot (`error-codes.yaml`; DEC-551) |
 | 409 | `trial_balance_exists`, `no_assurance_item` | A second TB for the same item, entity, label and period; no assurance work item |
 | 409 | `tb_version_stale`, `tb_same_snapshot` | Re-versioning on a stale `seen_version`, or with the current snapshot |
 | 409 | `layer_unavailable` | AJE, RJE or Final before an adjustment source registers |
 | 409 | `layer_unbalanced` | A layer whose debits and credits differ (`facts.layer`, `facts.difference`); `ledger.api.require_balanced` (A-02-T07), called by the view-by-layer route (A-02-T10) |
-| 409 | `citation_required`, `tie_out_check_stale`, `tie_out_check_issue_linked` | An expected value without a citation; a stale check `seen_version` (edit, issue link); a check already linked to another issue (A-02-T17) |
+| 422 | `citation_required` | An expected value without a citation (`error-codes.yaml`; DEC-551) |
+| 422 | `idempotency_key_reused` | An issue link's `Idempotency-Key` reused for another request (ED-177) |
+| 409 | `tie_out_check_stale`, `tie_out_check_issue_linked` | A stale check `seen_version` (edit, issue link); a check already linked to another issue (A-02-T17) |
 | 501 | `not_implemented` | A stub with the flag on |
 
 ## 7. Audit and outbox events
@@ -103,7 +109,7 @@ and total labels); everything else internal. Nothing Restricted.
 | `trial_balance.version_adopted` (audit) | Adopt v1 and every re-version | ids, version (before and after on a re-version), snapshot; the reason stays in the row |
 | `trial_balance.version_created` (outbox, A-02-T07, `ledger.api.TrialBalanceVersionCreated`) | A version is adopted (v1 and every re-version) | `trial_balance_id`, `engagement_id`, `version_no`, `snapshot_id`, `prior_snapshot_id`; P-04 stale detection |
 | `trial_balance.exported` (audit, A-02-T22) | Open in Excel | ids, version, layer number (0 Unadjusted to 3 Final), file SHA-256 |
-| `tie_out_check.defined`, `.updated`, `.issue_linked` (audit); `tie_out_check.changed` (outbox, A-02-T17) | Define, edit, link | ids and version |
+| `tie_out_check.defined`, `.updated`, `.issue_linked` (audit; an edit is `.updated` since ED-176); `tie_out_check.changed` (outbox, A-02-T17) | Define, edit, link | ids and version |
 
 ## 8. Example payloads
 Brightwater Hale only. `northwindTbView()` in `apps/web/src/fixtures/seed/trial-balance.ts`: Northwind Robotics 401(k) Plan PY2025, Standard, Unadjusted, v1 adopted by Marcus Delaney at 10:02 AM on Sep 14, 2026; 15 lines; Total mutual funds & CITs 14,895,000.00 / 12,683,000.00; Total investments at fair value 16,500,000.00 / 13,940,000.00; Net assets available for benefits 16,812,400.00 / 14,228,500.00; debits = credits 17,663,450.00; checks tie 3. The AUD-06 a–h scenarios are A-02-T05's.

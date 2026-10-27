@@ -372,8 +372,8 @@ REVIEWED_FALLBACK: Final = frozenset(
         "tenant.provisioned",
         "tenant_key.recorded",
         "third_party.upload_noticed",
-        "tie_out_check.changed",
         "tie_out_check.defined",
+        "tie_out_check.updated",  # ED-176: C9 §7's name for an edit (was `.changed`)
         "tin.reveal_throttled",
         "tin.revealed",
         "trial_balance.annotated",

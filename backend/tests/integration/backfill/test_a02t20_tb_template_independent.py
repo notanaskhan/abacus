@@ -192,12 +192,6 @@ async def test_ac24_a_total_row_that_disagrees_with_the_lines_is_refused(books: 
     await _refused(books, _with_total(1))
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="A Total row labelled in the Account column is dropped, not read as the control "
-    "total, so a template whose Total disagrees with its lines is accepted (totals from lines); "
-    "recorded in work/tasks/TASK-1473-a02t20-ledger-tb-independent.md (ED number requested)",
-)
 async def test_ac24_a_total_row_labelled_in_the_account_column_is_still_the_control(
     books: Ledger,
 ) -> None:

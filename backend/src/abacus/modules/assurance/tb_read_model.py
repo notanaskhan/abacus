@@ -39,6 +39,7 @@ from abacus.kernel._statuses import (
 from abacus.kernel.errors import DomainForbidden, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import Ref, Target, uow
+from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.assurance.tb_contract import (
     XLSX,
     AreaKey,
@@ -381,14 +382,36 @@ async def tie_issue_link_route(
     second issue; audited `tie_out_check.issue_linked`. Authorised first (walls 404), then the
     flag (404 off)."""
     await _define_gate(ctx, engagement_id)
-    link = await link_issue(ctx, engagement_id, tb_id, check_id, body.issue_id, body.seen_version)
-    return TieIssueLinkOut(
-        check_id=link.check_id,
-        issue_id=link.issue_id,
-        version_no=link.version_no,
-        linked_by_user_id=link.linked_by_user_id,
-        linked_at=link.linked_at,
+
+    async def run() -> tuple[int, dict[str, object]]:
+        link = await link_issue(
+            ctx, engagement_id, tb_id, check_id, body.issue_id, body.seen_version
+        )
+        out = TieIssueLinkOut(
+            check_id=link.check_id,
+            issue_id=link.issue_id,
+            version_no=link.version_no,
+            linked_by_user_id=link.linked_by_user_id,
+            linked_at=link.linked_at,
+        )
+        return 201, out.model_dump(mode="json")
+
+    # ED-177 (P-36): the key replays its first answer; reused for another request it is 422
+    # `idempotency_key_reused`, before the set-once rule is consulted.
+    stored = await idempotent(
+        ctx.tenant,
+        route="tie_out_check.issue_link",
+        key=idempotency_key,
+        body={
+            "engagement_id": str(engagement_id),
+            "tb_id": str(tb_id),
+            "check_id": str(check_id),
+            "issue_id": str(body.issue_id),
+            "seen_version": body.seen_version,
+        },
+        run=run,
     )
+    return TieIssueLinkOut.model_validate(stored.body)
 
 
 # --- Open in Excel (A-02-T22; AC-8.1) -----------------------------------------------------------

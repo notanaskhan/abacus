@@ -209,18 +209,19 @@ def parse_export(
     for n, row in enumerate(rows[header + 1 :], start=header + 2):
         cells = [*row, *([None] * (max(columns.values()) + 1 - len(row)))]
         name = _text(cells[columns["account"]])
+        code_cell = _text(cells[columns["code"]]) if "code" in columns else ""
         debit, credit = _amount(cells[columns["debit"]]), _amount(cells[columns["credit"]])
-        if not name:
-            continue  # spacer or sub-total without a label
-        if name in fmt.total_labels:
+        # ED-178: a format with its own code column may carry the total's label in either
+        # column; it is the control total either way, never a skipped unlabelled row.
+        if name in fmt.total_labels or (not name and code_cell in fmt.total_labels):
             total = (debit, credit)
             break
+        if not name:
+            continue  # spacer or sub-total without a label
         if debit == 0 and credit == 0 and all(_text(c) == "" for c in cells[1:]):
             continue  # a section heading ("Assets")
         net = debit - credit
-        code, account_name = _account(
-            name, fmt, _text(cells[columns["code"]]) if "code" in columns else ""
-        )
+        code, account_name = _account(name, fmt, code_cell)
         lines.append(
             LedgerLine(
                 account_code=code,
