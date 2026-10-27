@@ -20,6 +20,7 @@ from abacus.kernel.uow import MissingAuditEvent, OutboxEvent, Ref, Target, uow
 from abacus.modules.identity.api import (
     AuthContext,
     engagement_resource,
+    firm_tenant_ids,
     hidden_clients,
     member_facts,
 )
@@ -334,19 +335,32 @@ async def read_all(ctx: AuthContext) -> int:
 
 
 async def purge_once() -> int:
-    """One purge pass (AC-10): notifications older than the retention, across firms, through the
-    definer function, which returns a count. Audited as the system. `NotificationPurgeWorkflow`
-    runs it daily on a Schedule (Q-01-T26)."""
-    platform = TenantContext(UUID(int=0), "system", "notifications:purge")
-    async with uow(platform) as tx:
-        count = await purge(tx.session, RETENTION_DAYS)
-        tx.record(
-            "notifications.purged",
-            target=Target("retention", RETENTION_DAYS),
-            after=Ref(count=count),
-        )
-    _log.info("notifications.purged", count=count)
-    return count
+    """One purge pass (AC-10): notifications older than the retention, firm by firm, through the
+    definer function, which returns a count. Each firm runs in its own session: `notifications`
+    has forced RLS, so a pass outside every firm deleted nothing (ED-016). Audited as the system
+    in the firm whose rows went; one firm failing does not stop the others (the G-01-T13 and
+    Q-02-T21 job pattern). `NotificationPurgeWorkflow` runs it daily on a Schedule (Q-01-T26)."""
+    total = 0
+    for tenant in await firm_tenant_ids():
+        try:
+            async with uow(TenantContext(tenant, "system", "notifications:purge")) as tx:
+                count = await purge(tx.session, RETENTION_DAYS)
+                if count:
+                    tx.record(
+                        "notifications.purged",
+                        target=Target("retention", RETENTION_DAYS),
+                        after=Ref(count=count),
+                    )
+        except MissingAuditEvent:
+            continue  # nothing was old enough in this firm
+        except Exception as exc:
+            _log.error(
+                "notifications.purge_failed", tenant_id=str(tenant), error=type(exc).__name__
+            )
+            continue
+        total += count
+    _log.info("notifications.purged", count=total)
+    return total
 
 
 async def run_purge_job(stop: asyncio.Event) -> None:

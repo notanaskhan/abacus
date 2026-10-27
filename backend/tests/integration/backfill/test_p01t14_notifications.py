@@ -550,16 +550,6 @@ async def test_ac4_1_4_rows_older_than_30_days_are_neither_shown_nor_counted(
     assert feed["unread_count"] == 1
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "SPEC-013 AC-10 defect: `notifications_purge` (0024) runs as abacus_owner, which has no "
-        "BYPASSRLS, and `notifications` has forced RLS, so the daily purge deletes nothing. The "
-        "fix is a new migration redefining the function (not small; one Alembic head across "
-        "parallel sessions). Recorded in "
-        "work/tasks/TASK-993-notifications-binder-independent-tests.md (#380)"
-    ),
-)
 async def test_ac10_the_daily_purge_deletes_rows_older_than_180_days(world: World) -> None:
     kept = await _aged(world, world.senior, 179)
     gone = await _aged(world, world.senior, 181)

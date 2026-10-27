@@ -25,7 +25,7 @@ from abacus.modules.identity.api import (
     security_admins,
     team_of,
 )
-from abacus.modules.notifications.kinds import NotificationKind, register_kind
+from abacus.modules.notifications.kinds import NotificationKind, kind_of, register_kind
 
 Recipients = Callable[[UUID, dict[str, object]], Awaitable[list[UUID]]]
 
@@ -298,7 +298,29 @@ CATALOGUE: Final[dict[str, Kind]] = {
     ),
 }
 
+
 # AC-7: fixed English text per kind; placeholders are names the reader can already see.
+def register_kind_source(
+    code: str,
+    event: str,
+    recipients: Recipients,
+    subject: tuple[str, str | None],
+    *,
+    engagement_key: str | None = "engagement_id",
+) -> None:
+    """C16 §3 (ED-015): a later epic adds a producing event to an existing kind, e.g. P-05's
+    `mention.created` for `mention`. `subject` is the subject's type and its payload key (None:
+    the firm itself). The kind must already exist and the event must produce nothing yet, so a
+    source never re-routes another kind's event; both fail at startup."""
+    known = kind_of(code) is not None or any(k.kind == code for k in CATALOGUE.values())
+    if not known:
+        raise ValueError(f"notification kind {code!r} is not registered")
+    if event in CATALOGUE:
+        raise ValueError(f"event {event!r} already produces {CATALOGUE[event].kind!r}")
+    subject_type, subject_key = subject
+    CATALOGUE[event] = Kind(code, recipients, subject_type, subject_key, engagement_key)
+
+
 TEMPLATES: Final[dict[str, str]] = {
     "support_session.requested": "Platform support asked for access to your firm.",
     "support_session.emergency_approved": (
