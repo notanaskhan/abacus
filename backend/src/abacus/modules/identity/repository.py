@@ -445,6 +445,35 @@ async def active_grants(tenant: TenantContext, user_id: UUID) -> list[GrantRow]:
     return [_grant(row) for row in rows]
 
 
+_OWNERS = text(
+    "SELECT DISTINCT user_id FROM client_access_grants WHERE status = 'active' "
+    "AND user_id IS NOT NULL AND role IN :roles "
+    "AND (expires_at IS NULL OR expires_at > clock_timestamp()) AND ("
+    "(scope_kind = 'client' AND scope_id = :client) "
+    "OR (scope_kind = 'client_entity' AND scope_id = :entity) "
+    "OR (scope_kind = 'engagement' AND scope_id = :engagement)) ORDER BY user_id"
+).bindparams(bindparam("roles", expanding=True))
+
+
+async def owner_holders(
+    tenant: TenantContext, client_id: UUID, client_entity_id: UUID, engagement_id: UUID
+) -> list[UUID]:
+    """A-02-T23: the active, unexpired grants holding the matrix's `client_admin` cells (the
+    Owner and the roles that act for the client, DEC-211) on the client, the entity or the
+    engagement, by holder (a pending invitation has none)."""
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            _OWNERS,
+            {
+                "roles": list(GRANT_ROLES_OF["client_admin"]),
+                "client": client_id,
+                "entity": client_entity_id,
+                "engagement": engagement_id,
+            },
+        )
+    return [cast(UUID, r[0]) for r in rows.all()]
+
+
 _DELEGATE_HOLDERS = text(
     "SELECT DISTINCT user_id FROM client_access_grants WHERE id IN :ids "
     "AND status = 'active' AND user_id IS NOT NULL AND role IN ('third_party', 'delegate') "

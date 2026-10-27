@@ -2233,12 +2233,15 @@ def test_ac20_bound_002_only_named_modules_may_depend_on_ledger() -> None:
 
 
 def test_ac20_bound_002_nothing_depends_on_connections() -> None:
-    """Only the plan's one edge (A-02 §4.1, DEC-517): integrations composes POR-16 over
-    connections, which never imports integrations."""
+    """Only the plan's two edges (A-02 §4.1, DEC-517): integrations composes POR-16 over
+    connections, and the portal home reads its reconnect to-do (A-02-T23, DEC-611); connections
+    imports neither."""
     assert [m for m, deps in bp.MODULE_DEPENDENCIES.items() if "connections" in deps] == [
-        "integrations"
+        "integrations",
+        "portal",
     ]
     assert "integrations" not in bp.MODULE_DEPENDENCIES["connections"]
+    assert "portal" not in bp.MODULE_DEPENDENCIES["connections"]
 
 
 # LIST-001: the ledger exemption ------------------------------------------------------------

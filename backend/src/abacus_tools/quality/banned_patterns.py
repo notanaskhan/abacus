@@ -1014,6 +1014,9 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/requests/repository.py", "live_item_engagements"),
         ("src/abacus/modules/identity/repository.py", "delegate_grant_holders"),
         ("src/abacus/modules/identity/repository.py", "delegate_holders"),
+        # A-02-T23: an entity's Owner grants, for the firm's reconnect request email (recipients
+        # are then held to `recipient_relations`; the asker authorised on the engagement first).
+        ("src/abacus/modules/identity/repository.py", "owner_holders"),
         ("src/abacus/modules/evidence/repository.py", "ever_accepted"),
         ("src/abacus/modules/evidence/repository.py", "client_problem_codes"),
         # P-07-T25 (DEC-302): one contact's delegations, read for CLI-04 after the contact's
@@ -1412,7 +1415,9 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     "communications": _BASE | {"engagements", "organisations", "ledger", "evidence", "requests"},
     # A-02 §4.1 (A-02-T16): POR-16's cards and start compose `connections` (which never imports
     # integrations, so the edge stays acyclic; W-01 relies on the same rule).
-    "integrations": _BASE | {"organisations", "engagements", "evidence", "ledger", "connections"},
+    # A-02-T23 (DEC-611): the reconnect request mails the owners through communications.
+    "integrations": _BASE
+    | {"organisations", "engagements", "evidence", "ledger", "connections", "communications"},
     # The engagement graph reads the latest snapshot's accounts (SPEC-008, TASK-023 D1).
     # SPEC-027 (TASK-051 D3): the engagement agent works out overdue reminders; communications
     # sends them (the only sender, COMM-001).
@@ -1451,9 +1456,11 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     | {"communications", "agents", "tax"},
     "workbench": _BASE | {"organisations", "engagements", "methodology", "agents", "integrations"},
     "practice": _BASE | {"organisations", "engagements", "integrations"},
+    # A-02-T23 (DEC-517, DEC-611): the home's reconnect to-do reads connections.
     "portal": _BASE
     | {"organisations", "engagements", "requests", "evidence", "signatures", "communications"}
-    | {"collaboration", "review", "assurance", "attest", "tax", "closes", "notices"},
+    | {"collaboration", "review", "assurance", "attest", "tax", "closes", "notices"}
+    | {"connections"},
 }
 
 

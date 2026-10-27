@@ -47,6 +47,7 @@ from abacus.modules.identity.repository import (
     get_grant,
     insert_grant,
     insert_grant_event,
+    owner_holders,
     set_grant_status,
 )
 from abacus.modules.identity.slots import ScopeFacts, resolve_scope, resolve_scopes
@@ -231,6 +232,19 @@ async def recipient_relations(
     if await third_party_on(tenant, user_id, engagement_id):
         found.add("third_party")
     return frozenset(found)
+
+
+async def client_owners(
+    tenant: TenantContext, *, client_id: UUID, client_entity_id: UUID, engagement_id: UUID
+) -> list[UUID]:
+    """A-02-T23: the people who own the entity on the client's side (an active Owner grant on
+    the client, the entity or the engagement), who relate to the engagement as its client
+    (`recipient_relations`), so a firm email about it may go to them."""
+    out: list[UUID] = []
+    for user_id in await owner_holders(tenant, client_id, client_entity_id, engagement_id):
+        if "client" in await recipient_relations(tenant, user_id, engagement_id):
+            out.append(user_id)
+    return out
 
 
 async def may_receive_about(tenant: TenantContext, user_id: UUID, engagement_id: UUID) -> bool:

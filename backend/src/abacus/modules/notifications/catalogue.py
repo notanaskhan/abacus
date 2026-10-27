@@ -364,6 +364,12 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     ),
     NotificationKind("connection.created", "client_activity", "Plug"),
     NotificationKind("connection.revoked", "client_activity", "Plug"),
+    # A-02 §4.8 (A-02-T23): a connection that needs its client to sign in again (produced by the
+    # daily health tick, A-02-T25), and the firm's reconnect request, whose client email is the
+    # Reconnect request template itself (communications sends it; notification email is staff
+    # only, INV-4), so no catalogue event fans it out, as `follow_up_sent`.
+    NotificationKind("connection_needs_reauth", "client_activity", "Plug"),
+    NotificationKind("connection_reconnect_requested", "client_activity", "Plug"),
     NotificationKind("independence.requested", "approval", "ShieldCheck"),
     NotificationKind("reminders.drafted", "approval", "Send"),
     NotificationKind("follow_up_drafted", "approval", "Send"),  # P-06-T14 (C16)
