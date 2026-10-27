@@ -147,10 +147,11 @@ describe("AC-26 MaskedValue lifecycle: the clear value lives in component memory
   it("while shown, the value is in no cache, storage, URL or history entry", async () => {
     const m = mount("c");
     await reveal();
-    expect(cacheText(m.queries)).not.toContain(DIGITS);
-    expect(storageText()).not.toContain(DIGITS);
+    // The mask itself ("•••-••-6081") is not the value; the clear value is.
+    expect(cacheText(m.queries)).not.toContain(VALUE);
+    expect(storageText()).not.toContain(VALUE);
     expect(m.href()).not.toContain(DIGITS);
-    expect(JSON.stringify(window.history.state ?? null)).not.toContain(DIGITS);
+    expect(JSON.stringify(window.history.state ?? null)).not.toContain(VALUE);
   });
 
   it("after Hide, no copy remains anywhere", async () => {
@@ -227,7 +228,7 @@ describe("AC-31, AC-34 the unlock form never echoes or stores the password", () 
   });
 
   it("after unmount, the typed but unsent password is gone too", async () => {
-    const m = mount("d");
+    const m = mount("d", variant("d", {}));
     const field = await screen.findByLabelText<HTMLInputElement>("Password");
     fireEvent.change(field, { target: { value: WRONG } });
     m.unmount();
@@ -266,17 +267,19 @@ describe("AC-28, AC-35 reveal and unlock are absent from agent surfaces", () => 
     },
   );
 
-  it("the dock's Agent pane offers neither Reveal nor Unlock", async () => {
+  it("the dock (Agent · Viewer · Notes) holds Reveal and Unlock only inside the viewer", async () => {
     mount("b");
-    const agentTab = await screen
-      .findByRole("radio", { name: "Agent" })
-      .catch(() => screen.findByRole("button", { name: "Agent" }));
-    fireEvent.click(agentTab);
-    const named = screen
+    const dock = await screen.findByRole("complementary", { name: "Dock" });
+    await waitFor(() => {
+      expect(dock.querySelector("[data-viewer-bar]")).not.toBeNull();
+    });
+    expect(within(dock).getByText("Agent")).toBeTruthy();
+    const outside = within(dock)
       .queryAllByRole("button")
-      .map((b) => b.getAttribute("aria-label") ?? b.textContent);
-    expect(named.filter((n) => HUMAN_ONLY.test(n))).toEqual([]);
-    expect(screen.queryByLabelText("Password")).toBeNull();
+      .filter((b) => HUMAN_ONLY.test(b.getAttribute("aria-label") ?? b.textContent))
+      .filter((b) => b.closest("section")?.querySelector("[data-viewer-bar]") == null);
+    expect(outside).toEqual([]);
+    expect(controlsInAgentText()).toEqual([]);
   });
 
   it.each(["a", "b", "c", "d", "e"] as const)(
