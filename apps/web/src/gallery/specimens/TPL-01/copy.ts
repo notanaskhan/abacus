@@ -5,9 +5,10 @@
 export const COPY = {
   title: "Tax Returns",
   search: "Search returns",
-  showing: (shown: number, total: number): string => `Showing ${shown} of ${total} open`,
+  showing: (shown: number, total: number): string =>
+    `Showing ${String(shown)} of ${String(total)} open`,
   summary: (open: number, done: number, total: number, year: number, extended: number): string =>
-    `${open} open · ${done} done · ${total} TY${year} returns · ${extended} extended`,
+    `${String(open)} open · ${String(done)} done · ${String(total)} TY${String(year)} returns · ${String(extended)} extended`,
   filters: {
     form: "Form",
     office: "Office",
@@ -37,12 +38,12 @@ export const COPY = {
     signature: "Signature",
   },
   extended: "Ext.",
-  days: (n: number): string => `${n} ${n === 1 ? "day" : "days"}`,
+  days: (n: number): string => `${String(n)} ${n === 1 ? "day" : "days"}`,
   waitingOnK1: "Waiting on K-1",
   noResults: (q: string): string => `No results for '${q}'.`,
   clearFilters: "Clear filters",
-  seasonEmptyTitle: (year: number): string => `No TY${year} returns yet.`,
+  seasonEmptyTitle: (year: number): string => `No TY${String(year)} returns yet.`,
   seasonEmptyBody: (from: number): string =>
-    `Roll clients forward from TY${from} to create returns, binders and assignments.`,
+    `Roll clients forward from TY${String(from)} to create returns, binders and assignments.`,
   openSeasonSetup: "Open season setup",
 } as const;

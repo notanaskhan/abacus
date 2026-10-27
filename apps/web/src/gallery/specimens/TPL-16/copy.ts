@@ -8,7 +8,7 @@ export const COPY = {
   back: "All documents to sign",
   decline: "Decline…",
   download: "Download",
-  documentsHeader: (n: number): string => `Documents (${n})`,
+  documentsHeader: (n: number): string => `Documents (${String(n)})`,
   form8879: "Form 8879 — IRS e-file Signature Authorization",
   formTr579: "Form TR-579-IT — New York e-file Signature Authorization",
   signersBand: "Signers",
