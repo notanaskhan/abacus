@@ -384,3 +384,27 @@ describe("ADM-03 writes and edges", () => {
     expect(await screen.findByText("You don't have access to firm settings.")).toBeTruthy();
   });
 });
+
+// G-01-T17 (DEC-594): the retired Walls screen's tests (legacy/spec019 "ac6 walls" and "ac7 …
+// no walls"), carried here where ADM-03 has the behaviour; the rest map to ADM-03b, c, e and the
+// step-up test above (SPEC table in DEC-594).
+describe("ADM-03 carries the retired Walls tests (DEC-594)", () => {
+  it("spec019 ac7: a firm with no walls reads empty", async () => {
+    show("a", OPENS.a, { "GET /v1/walls": () => json([]) });
+    expect(await screen.findByText("No ethical walls.")).toBeTruthy();
+  });
+
+  it("spec019 ac6: a lift the server refuses says so, and the wall stays", async () => {
+    show("e", OPENS.e, {
+      "POST /v1/walls/{wall_id}/remove": () => json({ detail: "own_wall" }, 409),
+    });
+    await waitFor(() => {
+      expect(wallRows()).toHaveLength(3);
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Lift the wall on Lena Park" }));
+    const confirm = await screen.findByRole("alertdialog");
+    fireEvent.click(within(confirm).getByRole("button", { name: "Lift" }));
+    await toasted("Couldn't load this section. Try again.");
+    expect(wallRows()).toHaveLength(3);
+  });
+});

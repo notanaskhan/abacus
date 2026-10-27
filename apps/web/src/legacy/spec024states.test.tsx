@@ -1,12 +1,12 @@
 // ac-test-author: ayushkbhatia
 // SPEC-024 AC-8 (TASK-040, TASK-041; back-filled by Q-03-T006 and T008): every new screen of
 // Act 0 has its loading, empty, error and not-allowed states, and colours come only from tokens.
-// The screens: sign-up, the onboarding checklist page (/admin/setup), People and Autonomy.
+// The screens: sign-up, the onboarding checklist page (/admin/setup) and Autonomy (People is
+// ADM-02's since G-01-T17).
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { json, mockApi, never, renderRoutes, signInForTest } from "../testing/support";
 import { Autonomy } from "./Autonomy";
-import { FirmPeople } from "./FirmPeople";
 import { Onboarding } from "./Onboarding";
 import { Signup } from "./Signup";
 
@@ -34,43 +34,8 @@ function loading(container: HTMLElement): Promise<void> {
   });
 }
 
-describe("ac8 People", () => {
-  const render = () => renderRoutes([{ path: "/", component: () => <FirmPeople /> }]);
-
-  it("test_ac8_people_loading_state", async () => {
-    mockApi({ "GET /v1/firm/staff": never, "GET /v1/me": () => json(ME) });
-    const { container } = render();
-    await loading(container);
-  });
-
-  it("test_ac8_people_error_state", async () => {
-    mockApi({
-      "GET /v1/firm/staff": () => json({ detail: "boom" }, 500),
-      "GET /v1/me": () => json(ME),
-    });
-    render();
-    expect(await screen.findByText("Couldn't load your people")).toBeTruthy();
-  });
-
-  it("test_ac8_people_not_allowed_state", async () => {
-    mockApi({
-      "GET /v1/firm/staff": () => json({ detail: "forbidden" }, 403),
-      "GET /v1/me": () => json(ME),
-    });
-    render();
-    expect(await screen.findByText(/only firm administrators can manage people/)).toBeTruthy();
-    expect(screen.queryByText("No pending invitations.")).toBeNull();
-  });
-
-  it("test_ac8_people_empty_state", async () => {
-    mockApi({
-      "GET /v1/firm/staff": () => json({ members: [], invitations: [] }),
-      "GET /v1/me": () => json(ME),
-    });
-    render();
-    expect(await screen.findByText("No pending invitations.")).toBeTruthy();
-  });
-});
+// G-01-T17 (DEC-594): "ac8 People" (the retired FirmPeople screen's loading, error, not-allowed
+// and empty states) moved to screens/ADM-02/ADM-02.test.tsx, mapped one for one in DEC-594.
 
 describe("ac8 Autonomy", () => {
   const render = () => renderRoutes([{ path: "/", component: () => <Autonomy canSet /> }]);
@@ -140,7 +105,8 @@ describe("ac8 sign-up", () => {
 
 type Fs = { readFileSync: (path: string, encoding: "utf8") => string };
 const cwd = (globalThis as unknown as { process: { cwd: () => string } }).process.cwd();
-const SCREENS = ["Signup", "Onboarding", "FirmPeople", "Autonomy"];
+// FirmPeople retired (G-01-T17, DEC-594); ADM-02 is held to tokens by eslint's token rule.
+const SCREENS = ["Signup", "Onboarding", "Autonomy"];
 // A literal colour: hex, rgb/hsl functions, Tailwind's default numbered palette, black or white
 // (the tokens name neither), or an arbitrary value. Token names such as `green-tint` pass.
 const LITERAL =

@@ -21,10 +21,11 @@ export function AdminLayout(): JSX.Element {
       "Firm",
       [
         { label: "Setup", to: "/admin/setup" },
+        // G-01-T17 (DEC-594): People and Walls are ADM-02 and ADM-03 in Settings.
         ...(isAdmin
           ? [
-              { label: "People", to: "/admin/people" } as Section,
-              { label: "Walls", to: "/admin/walls" } as Section,
+              { label: "People", to: "/settings/people" } as Section,
+              { label: "Walls", to: "/settings/offices" } as Section,
             ]
           : []),
       ],
