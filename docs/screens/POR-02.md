@@ -166,7 +166,7 @@ Inbound: POR-01 (role-routed landing), every POR-20 email CTA, POR-12, CLI-04 "r
 |---|---|---|
 | Upload 2 | = binder open client-visible requests = TAX-03 "Intake 2" | P-08-T08 footing test |
 | Answer 3 | = 2 organizer + 1 from Kevin Osei (= POR-05) | same |
-| Binder | 19 of 21 requests done; 37 sorted; bar 90 % | same |
+| Binder | 19 of 21 requests done; 37 sorted; bar 90 % (fixture); E0 loads 5 of 7, 0 sorted (DEC-348) | same; the loaded home: `test_p08t22_portal_seed_footing.py` |
 | Binder (b) | 0 of 21 | same |
 | Copperleaf close | Requests 7 of 9 | same |
 | Meera's K-1 | "Not released yet" (package below `released`) | same |
@@ -188,6 +188,7 @@ Each becomes a test in `POR-02.test.tsx` ("POR-02 avoid: …"): gradients in pro
 | — | b renders at Mon Feb 2, 2026 (its header reads "Monday, February 2"); the README's "Mon 14 Sep 2026" render label is canvas metadata | revision.md > spec > README (DEC-04/DEC-15) | P-08 §2.1 |
 | — | g and h are gated by the `statements_studio` and `attest` entitlements, not flags, and stay fixture-only until A-10/R-02 and X-01 register their home sources | ADR P-28, DEC-55 | P-08 §0 |
 | — | The catalogue's "progress ring" is superseded by the built 5-step StageTracker | The built screen reflects later decisions | P-08 §2.1 |
+| DEC-348 | On E0 the binder reads the load's 5 of 7 with 0 sorted, not the handoff's "19 of 21 · 37 sorted"; the fixture keeps the handoff's figures | Only 7 of the 21 requests are named anywhere (BND-02 a), and the 37 sorted files are never named; the seed loads only what is named | decision-log DEC-348 |
 | — | Planned to-do kinds, cards and nav items are hidden in production and render in fixture builds | Chapter 04 §2.1 rule 4 | P-08 §2.2 |
 
 ### Part 1 notes (P-08-T15)
