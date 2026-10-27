@@ -1095,7 +1095,9 @@ async def test_ac30_posture_agrees_with_the_fieldsets(
         assert facts["open_incidents"] == sum(
             1 for i in incidents["items"] if i["status"] == "investigating"
         )
-    if SAFEGUARDS not in STUBBED:
+    if SAFEGUARDS in STUBBED:
+        assert facts["pub4557_open"] == 0  # nothing recorded until T20's safeguards record
+    else:
         safeguards = (await as_(world.felix)(*SAFEGUARDS)).json()
         assert (
             facts["pub4557_open"]

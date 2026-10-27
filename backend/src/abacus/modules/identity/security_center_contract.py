@@ -321,7 +321,7 @@ def _maybe(p: service.UserRef | None) -> SecurityPersonOut | None:
 def _sign_in_out(p: service.SignInPolicy) -> SignInPolicyOut:
     exempt = p.sso_exempt_account
     return SignInPolicyOut(
-        identity_provider=None,
+        identity_provider=p.identity_provider,
         sso_verified=p.sso_verified,
         require_sso=p.require_sso,
         sso_enforced_at=p.sso_enforced_at,

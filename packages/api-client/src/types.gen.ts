@@ -28606,6 +28606,10 @@ export type RefreshData = {
          * Origin
          */
         origin?: string | null;
+        /**
+         * X-Abacus-Activity
+         */
+        'X-Abacus-Activity'?: string | null;
     };
     path?: never;
     query?: never;

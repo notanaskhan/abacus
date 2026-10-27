@@ -28,8 +28,9 @@ import pytest
 from abacus.api import create_app
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
-from abacus.modules.identity import security_policies
+from abacus.modules.identity import security_policies, support
 from abacus.modules.identity.api import AuthContext, configure_verifier, reset_verifier
+from abacus.modules.identity.governance_errors import SsoNotVerified, SupportRequestsDisabled
 from abacus.modules.identity.staff_session import (
     COOKIE_NAME,
     ProviderRefused,
@@ -37,6 +38,7 @@ from abacus.modules.identity.staff_session import (
     auth_method_of,
     configure_staff_idp,
 )
+from abacus.modules.identity.support import Staff
 from abacus.modules.platform.audit_resolvers import security_policy_values
 from abacus.modules.platform.audit_slots import AuditEventRef
 from abacus_tools.fakes.identity import ISSUER, FakeIdentityProvider
@@ -59,24 +61,24 @@ class MethodIdp:
 
     def __init__(self, signer: FakeIdentityProvider) -> None:
         self.signer = signer
-        self.codes: dict[str, tuple[str, str | None]] = {}
-        self.refresh_tokens: dict[str, tuple[str, str | None]] = {}
+        self.codes: dict[str, tuple[str, str | None, str | None]] = {}
+        self.refresh_tokens: dict[str, tuple[str, str | None, str | None]] = {}
 
     def authorize_url(
         self, *, state: str, challenge: str, redirect_uri: str, reauthenticate: bool
     ) -> str:
         return f"https://idp.test/authorize?state={state}&code_challenge={challenge}"
 
-    def issue(self, subject: str, method: str | None) -> str:
+    def issue(self, subject: str, method: str | None, org: str | None = None) -> str:
         code = uuid.uuid4().hex
-        self.codes[code] = (subject, method)
+        self.codes[code] = (subject, method, org)
         return code
 
-    def _tokens(self, subject: str, method: str | None) -> ProviderTokens:
+    def _tokens(self, subject: str, method: str | None, org: str | None) -> ProviderTokens:
         refresh = uuid.uuid4().hex
-        self.refresh_tokens[refresh] = (subject, method)
+        self.refresh_tokens[refresh] = (subject, method, org)
         token = self.signer.token(subject, mfa=True, expires_in=600)
-        return ProviderTokens(token, 600, refresh, auth_method_of(method))
+        return ProviderTokens(token, 600, refresh, auth_method_of(method), org)
 
     async def exchange(self, *, code: str, verifier: str, redirect_uri: str) -> ProviderTokens:
         if code not in self.codes:
@@ -144,11 +146,12 @@ _POLICY_COLUMNS: Final = (
     "session_absolute_minutes",
     "session_idle_minutes",
     "sso_exempt_user_id",
+    "sso_connection_org",
 )
 _INSERT_POLICY: Final = (
     "INSERT INTO security_policies (tenant_id, updated_by, require_sso, sso_enforced_at, "
-    "sso_enforced_by, session_absolute_minutes, session_idle_minutes, sso_exempt_user_id) "
-    "VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"
+    "sso_enforced_by, session_absolute_minutes, session_idle_minutes, sso_exempt_user_id, "
+    "sso_connection_org) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"
 )
 
 
@@ -161,6 +164,7 @@ async def _policy(seed: Seeder, tenant_id: uuid.UUID, by: uuid.UUID, **columns: 
         "session_absolute_minutes": 720,
         "session_idle_minutes": 30,
         "sso_exempt_user_id": None,
+        "sso_connection_org": None,
     }
     values = {**defaults, **columns}
     await seed.as_actor(
@@ -205,12 +209,16 @@ def _cookie(response: httpx.Response) -> str:
 
 
 async def _sign_in(
-    http: httpx.AsyncClient, idp: MethodIdp, subject: str, method: str | None
+    http: httpx.AsyncClient,
+    idp: MethodIdp,
+    subject: str,
+    method: str | None,
+    org: str | None = None,
 ) -> httpx.Response:
     started = await http.get("/v1/auth/sign-in", params={"return_to": "/x"})
     state = parse_qs(urlparse(started.headers["location"]).query)["state"][0]
     response = await http.get(
-        "/v1/auth/callback", params={"code": idp.issue(subject, method), "state": state}
+        "/v1/auth/callback", params={"code": idp.issue(subject, method, org), "state": state}
     )
     http.cookies.clear()
     return response
@@ -221,9 +229,11 @@ def _refused(response: httpx.Response) -> str | None:
     return query["error"][0] if "error" in query else None
 
 
-async def _refresh(http: httpx.AsyncClient, cookie: str) -> httpx.Response:
+async def _refresh(http: httpx.AsyncClient, cookie: str, *, active: bool = True) -> httpx.Response:
+    activity = {"X-Abacus-Activity": "user"} if active else {}
     response = await http.post(
-        "/v1/auth/refresh", headers={**REFRESH_HEADERS, "Cookie": f"{COOKIE_NAME}={cookie}"}
+        "/v1/auth/refresh",
+        headers={**REFRESH_HEADERS, **activity, "Cookie": f"{COOKIE_NAME}={cookie}"},
     )
     http.cookies.clear()
     return response
@@ -281,9 +291,67 @@ async def test_ac15_with_sso_required_another_method_is_refused(
 ) -> None:
     firm = await _firm(seed)
     user, subject = await _person(seed, firm)
-    await _policy(seed, firm, user, require_sso=True, sso_enforced_by=user, sso_enforced_at=_NOW)
+    await _policy(
+        seed,
+        firm,
+        user,
+        require_sso=True,
+        sso_enforced_by=user,
+        sso_enforced_at=_NOW,
+        sso_connection_org="org_brightwater",
+    )
     assert _refused(await _sign_in(http, idp, subject, method)) == "sso_required"
-    assert _refused(await _sign_in(http, idp, subject, "SSO")) is None
+    assert _refused(await _sign_in(http, idp, subject, "SSO", "org_brightwater")) is None
+
+
+async def test_m1_sso_through_another_firms_connection_does_not_count(
+    http: httpx.AsyncClient, idp: MethodIdp, seed: Seeder
+) -> None:
+    firm = await _firm(seed)
+    user, subject = await _person(seed, firm)
+    await _policy(
+        seed,
+        firm,
+        user,
+        require_sso=True,
+        sso_enforced_by=user,
+        sso_enforced_at=_NOW,
+        sso_connection_org="org_brightwater",
+    )
+    assert _refused(await _sign_in(http, idp, subject, "SSO", "org_elsewhere")) == "sso_required"
+    assert _refused(await _sign_in(http, idp, subject, "SSO")) == "sso_required"
+
+
+async def test_m1_require_sso_needs_the_firms_own_connection(
+    http: httpx.AsyncClient, idp: MethodIdp, seed: Seeder
+) -> None:
+    firm = await _firm(seed)
+    user, subject = await _person(seed, firm)
+    # An admin's SSO sign-in through some other organisation verifies nothing here.
+    assert _refused(await _sign_in(http, idp, subject, "SSO", "org_elsewhere")) is None
+    membership = cast(
+        uuid.UUID,
+        await seed.value(
+            "SELECT id FROM memberships WHERE tenant_id = $1 AND user_id = $2", firm, user
+        ),
+    )
+    ctx = AuthContext(
+        TenantContext(firm, "human", str(user)),
+        user,
+        membership,
+        "security_admin",
+        datetime.now(UTC),
+    )
+    with pytest.raises(SsoNotVerified) as missing:
+        await security_policies.put_sign_in(
+            ctx,
+            require_sso=True,
+            session_absolute_minutes=720,
+            session_idle_minutes=30,
+            idp_mfa_attested=False,
+            version=0,
+        )
+    assert missing.value.facts == {"reason": "connection_missing"}
 
 
 async def test_ac18_the_exempt_account_passes_with_its_passkey_and_is_stamped(
@@ -300,6 +368,7 @@ async def test_ac18_the_exempt_account_passes_with_its_passkey_and_is_stamped(
         sso_enforced_by=felix,
         sso_enforced_at=_NOW,
         sso_exempt_user_id=exempt,
+        sso_connection_org="org_brightwater",
     )
     assert _refused(await _sign_in(http, idp, subject, "MagicAuth")) == "sso_required"
     assert _refused(await _sign_in(http, idp, subject, "Passkey")) is None
@@ -337,10 +406,11 @@ async def test_ac20_a_session_signed_out_of_a_firm_acts_there_no_more_but_elsewh
     await seed.as_actor(
         here,
         ("human", str(user)),
-        "INSERT INTO auth_session_tenant_revocations (tenant_id, session_id, revoked_by) "
-        "VALUES ($1, $2, $3)",
+        "INSERT INTO auth_session_tenant_revocations (tenant_id, session_id, user_id, "
+        "revoked_by) VALUES ($1, $2, $3, $4)",
         here,
         session,
+        user,
         user,
     )
 
@@ -350,12 +420,77 @@ async def test_ac20_a_session_signed_out_of_a_firm_acts_there_no_more_but_elsewh
 
     refused = await http.get("/v1/firm/time-zone", headers=headers(here))
     assert refused.status_code == 401 and refused.json()["detail"] == "session_signed_out"
-    # A bearer token alone does not get round it while no other live session is untouched.
-    bare = await http.get("/v1/firm/time-zone", headers=headers(here, with_cookie=False))
-    assert bare.status_code == 401
     assert (await http.get("/v1/firm/time-zone", headers=headers(elsewhere))).status_code != 401
     ended = await seed.value("SELECT ended_at FROM auth_sessions WHERE id = $1", session)
     assert ended is None
+    # H1: the person signs in again elsewhere (a second live session). The stolen session's
+    # bearer token alone, or with a junk cookie, still acts here no more.
+    _cookie(await _sign_in(http, idp, subject, "sso"))
+    bare = await http.get("/v1/firm/time-zone", headers=headers(here, with_cookie=False))
+    assert bare.status_code == 401
+    junk = {**headers(here, with_cookie=False), "Cookie": f"{COOKIE_NAME}=junk"}
+    assert (await http.get("/v1/firm/time-zone", headers=junk)).status_code == 401
+    # The stolen cookie still refreshes for the firm it was not signed out of, and the token it
+    # gets is refused here again.
+    again = await _refresh(http, cookie)
+    assert again.status_code == 200
+    cookie, token = _cookie(again), again.json()["access_token"]
+    assert (await http.get("/v1/firm/time-zone", headers=headers(here))).status_code == 401
+    assert (
+        await http.get("/v1/firm/time-zone", headers=headers(here, with_cookie=False))
+    ).status_code == 401
+
+
+async def test_h1_a_session_signed_out_of_all_its_firms_gets_no_token(
+    http: httpx.AsyncClient, idp: MethodIdp, seed: Seeder
+) -> None:
+    firm = await _firm(seed)
+    user, subject = await _person(seed, firm)
+    cookie = _cookie(await _sign_in(http, idp, subject, "sso"))
+    session = await seed.value("SELECT id FROM auth_sessions WHERE user_id = $1", user)
+    await seed.as_actor(
+        firm,
+        ("human", str(user)),
+        "INSERT INTO auth_session_tenant_revocations (tenant_id, session_id, user_id, "
+        "revoked_by) VALUES ($1, $2, $3, $4)",
+        firm,
+        session,
+        user,
+        user,
+    )
+    refused = await _refresh(http, cookie)
+    assert refused.status_code == 401
+    reason = await seed.value("SELECT end_reason FROM auth_sessions WHERE id = $1", session)
+    assert reason == "revoked"
+
+
+async def test_m3_a_background_refresh_does_not_move_the_idle_clock(
+    http: httpx.AsyncClient, idp: MethodIdp, seed: Seeder
+) -> None:
+    firm = await _firm(seed)
+    user, subject = await _person(seed, firm)
+    cookie = _cookie(await _sign_in(http, idp, subject, "sso"))
+    await seed.run(
+        "UPDATE auth_sessions SET last_seen_at = now() - interval '20 minutes', "
+        "idle_expires_at = now() + interval '10 minutes' WHERE user_id = $1",
+        user,
+    )
+    polled = await _refresh(http, cookie, active=False)
+    assert polled.status_code == 200
+    idle_left = await seed.value(
+        "SELECT extract(epoch FROM idle_expires_at - now())::int FROM auth_sessions "
+        "WHERE user_id = $1",
+        user,
+    )
+    assert cast(int, idle_left) <= 600  # not pushed back to 30 minutes
+    used = await _refresh(http, _cookie(polled), active=True)
+    assert used.status_code == 200
+    idle_left = await seed.value(
+        "SELECT extract(epoch FROM idle_expires_at - now())::int FROM auth_sessions "
+        "WHERE user_id = $1",
+        user,
+    )
+    assert cast(int, idle_left) > 1700
 
 
 # --- AC-19: the portal session length ------------------------------------------------------------
@@ -433,3 +568,60 @@ async def test_dec529_policy_values_come_from_the_events_own_references() -> Non
     assert values.status == "resolved"
     rows = {r.field: (r.before, r.after) for r in values.rows}
     assert rows == {"require_sso": ("false", "true"), "session_idle_minutes": ("30", "20")}
+
+
+# --- M2: the support switch holds for pending requests ---------------------------------------
+
+
+def _security_admin(tenant: uuid.UUID, user: uuid.UUID, membership: uuid.UUID) -> AuthContext:
+    return AuthContext(
+        TenantContext(tenant, "human", str(user)),
+        user,
+        membership,
+        "security_admin",
+        datetime.now(UTC),
+    )
+
+
+async def test_m2_switching_off_closes_pending_requests_and_nothing_pending_is_granted(
+    seed: Seeder,
+) -> None:
+    firm = await _firm(seed)
+    felix, _ = await _person(seed, firm)
+    membership = cast(
+        uuid.UUID,
+        await seed.value(
+            "SELECT id FROM memberships WHERE tenant_id = $1 AND user_id = $2", firm, felix
+        ),
+    )
+    ctx = _security_admin(firm, felix, membership)
+    reason = "Investigating an integration settings question for the firm"
+    staff = Staff(uuid.uuid4(), "staff-probe", datetime.now(UTC))
+    pending = await support.request_session(staff, firm, reason, "metadata", 60, False)
+    await security_policies.put_support_access(ctx, allow=False, version=0)
+    closed = await seed.value("SELECT status FROM support_sessions WHERE id = $1", pending.id)
+    assert closed == "revoked"
+
+    # A request made before a switch-off written straight to the row is still never granted.
+    other = await _firm(seed)
+    grace, _ = await _person(seed, other)
+    grace_membership = cast(
+        uuid.UUID,
+        await seed.value(
+            "SELECT id FROM memberships WHERE tenant_id = $1 AND user_id = $2", other, grace
+        ),
+    )
+    waiting = await support.request_session(staff, other, reason, "metadata", 60, True)
+    await seed.as_actor(
+        other,
+        ("human", str(grace)),
+        "INSERT INTO security_policies (tenant_id, updated_by, allow_support_requests) "
+        "VALUES ($1, $2, false)",
+        other,
+        grace,
+    )
+    with pytest.raises(SupportRequestsDisabled):
+        await support.approve_session(_security_admin(other, grace, grace_membership), waiting.id)
+    second = Staff(uuid.uuid4(), "staff-second", datetime.now(UTC))
+    with pytest.raises(SupportRequestsDisabled):
+        await support.emergency_approve(second, other, waiting.id)

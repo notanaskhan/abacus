@@ -60335,7 +60335,7 @@
     },
     "/v1/auth/refresh": {
       "post": {
-        "description": "AC 5.1.4: cookie-authenticated, with the CSRF header and the app's own Origin.",
+        "description": "AC 5.1.4: cookie-authenticated, with the CSRF header and the app's own Origin. Only a\nrefresh marked `X-Abacus-Activity: user` (the person's own input) moves the idle clock; an\nabsent mark is never activity (G-02-T14, DEC-535).",
         "operationId": "refresh",
         "parameters": [
           {
@@ -60368,6 +60368,23 @@
                 }
               ],
               "title": "Origin"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Activity",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 16,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Activity"
             }
           },
           {

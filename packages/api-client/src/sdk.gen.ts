@@ -261,7 +261,9 @@ export const callback = <ThrowOnError extends boolean = false>(options?: Options
 /**
  * Refresh Route
  *
- * AC 5.1.4: cookie-authenticated, with the CSRF header and the app's own Origin.
+ * AC 5.1.4: cookie-authenticated, with the CSRF header and the app's own Origin. Only a
+ * refresh marked `X-Abacus-Activity: user` (the person's own input) moves the idle clock; an
+ * absent mark is never activity (G-02-T14, DEC-535).
  */
 export const refresh = <ThrowOnError extends boolean = false>(options?: Options<RefreshData, ThrowOnError>): RequestResult<RefreshResponses, RefreshErrors, ThrowOnError> => (options?.client ?? client).post<RefreshResponses, RefreshErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

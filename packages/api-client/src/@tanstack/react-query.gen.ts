@@ -527,7 +527,9 @@ export const callbackOptions = (options?: Options<CallbackData>) => queryOptions
 /**
  * Refresh Route
  *
- * AC 5.1.4: cookie-authenticated, with the CSRF header and the app's own Origin.
+ * AC 5.1.4: cookie-authenticated, with the CSRF header and the app's own Origin. Only a
+ * refresh marked `X-Abacus-Activity: user` (the person's own input) moves the idle clock; an
+ * absent mark is never activity (G-02-T14, DEC-535).
  */
 export const refreshMutation = (options?: Partial<Options<RefreshData>>): UseMutationOptions<RefreshResponse, RefreshError, Options<RefreshData>> => {
     const mutationOptions: UseMutationOptions<RefreshResponse, RefreshError, Options<RefreshData>> = {

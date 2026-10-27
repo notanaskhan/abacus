@@ -60,3 +60,10 @@ definition of done: its identity routes move from STUBBED to LIVE.
   a creating route; the sessions drawer's IP and device read through the kernel's
   `last_request_context` instead of `audit_events` directly, OWN-001). Gates green. Migration
   roundtrip (up, base, up) passes in `provisioned_database`.
+- 2026-10-27: security review fix round (DEC-535): H1 cookie-bound requests after a per-firm
+  sign-out and no token for a session signed out of every firm; M1 SSO through the firm's own
+  connection (`idp_org`, `sso_connection_org`); M2 the support switch holds in both approval
+  paths and closes pending requests; M3 the activity mark (SPA and BFF); L1 0101's overloads
+  dropped; L2 and L3 recorded; L4 the request check takes the firm from the session; L5 the
+  portal fallback fails closed; L6 recorded for T27. AC-30 asserts `pub4557_open == 0` while
+  T20 is stubbed. Targeted re-run (`-n 2`) and gates green; API client regenerated.

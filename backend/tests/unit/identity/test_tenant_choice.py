@@ -92,7 +92,7 @@ def grace_in_one_firm(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(routing, "access_has_ended", not_ended)
     # G-02-T14 (DEC-528): so does the per-firm sign-out check.
-    monkeypatch.setattr(routing, "signed_out_here", not_ended)
+    monkeypatch.setattr(routing, "refused_here", not_ended)
 
 
 def _request() -> Request:

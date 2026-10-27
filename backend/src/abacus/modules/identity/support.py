@@ -185,6 +185,8 @@ async def emergency_approve(staff: Staff, firm_id: UUID, session_id: UUID) -> Su
             raise NotFound("support_session")
         if not row["emergency"] or row["status"] != "requested" or row["staff_id"] == staff.id:
             raise SupportSessionConflict("not an emergency request another staff member made")
+        # G-02-T14 (security review M2): the firm's switch holds for emergencies too.
+        await require_support_requests_allowed(tx.session)
         await activate_support_session(tx.session, session_id, "staff", staff.id)
         tx.record(
             "support_session.emergency_approved",
@@ -231,6 +233,8 @@ async def _firm_change(ctx: AuthContext, session_id: UUID, change: str) -> Suppo
         if change == "approve":
             if row["status"] != "requested":
                 raise SupportSessionConflict("not awaiting approval")
+            # G-02-T14 (security review M2): switched off, nothing pending is granted.
+            await require_support_requests_allowed(tx.session)
             await activate_support_session(tx.session, session_id, "firm_admin", ctx.user_id)
             action = "support_session.approved"
         elif change == "revoke":

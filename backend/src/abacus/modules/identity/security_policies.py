@@ -58,7 +58,12 @@ from abacus.modules.identity.governance_errors import (
     SsoNotVerified,
     SupportRequestsDisabled,
 )
-from abacus.modules.identity.repository import active_memberships, display_names
+from abacus.modules.identity.repository import (
+    active_memberships,
+    close_support_session,
+    display_names,
+    list_support_sessions,
+)
 
 # The platform maxima the stricter-only check uses (G-02 §4.9; AC-17, AC-19), and the floors
 # that keep a firm from making its own sign-in unusable (the tables' CHECKs hold both).
@@ -135,6 +140,7 @@ class ExemptAccount:
 
 @dataclass(frozen=True)
 class SignInPolicy:
+    identity_provider: str | None
     sso_verified: bool
     require_sso: bool
     sso_enforced_at: datetime | None
@@ -290,13 +296,14 @@ _POLICY = text(
     "SELECT require_sso, sso_enforced_at, sso_enforced_by, idp_mfa_attested_at, "
     "idp_mfa_attested_by, session_absolute_minutes, session_idle_minutes, sso_exempt_user_id, "
     "sso_exempt_tested_at, allow_support_requests, support_updated_at, support_updated_by, "
-    "version, support_version FROM security_policies"
+    "version, support_version, sso_connection_org, identity_provider FROM security_policies"
 )
 _POLICY_FOR_UPDATE = text(
     "SELECT require_sso, sso_enforced_at, sso_enforced_by, idp_mfa_attested_at, "
     "idp_mfa_attested_by, session_absolute_minutes, session_idle_minutes, sso_exempt_user_id, "
     "sso_exempt_tested_at, allow_support_requests, support_updated_at, support_updated_by, "
-    "version, support_version FROM security_policies FOR UPDATE"
+    "version, support_version, sso_connection_org, identity_provider "
+    "FROM security_policies FOR UPDATE"
 )
 _PORTAL = text("SELECT portal_session_minutes, version FROM portal_security_policies")
 _PORTAL_FOR_UPDATE = text(
@@ -324,6 +331,9 @@ class _Stored:
     support_updated_by: UUID | None = None
     version: int = 0  # 0: no row yet (the defaults)
     support_version: int = 0
+    # The firm's SSO connection (provisioning sets it; the app never writes it).
+    sso_connection_org: str | None = None
+    identity_provider: str | None = None
 
 
 def _stored(row: RowMapping | None) -> _Stored:
@@ -376,6 +386,7 @@ def _sign_in(stored: _Stored, people: dict[UUID, UserRef], *, sso_verified: bool
     if stored.sso_exempt_user_id is not None and stored.sso_exempt_user_id in people:
         exempt = ExemptAccount(people[stored.sso_exempt_user_id], stored.sso_exempt_tested_at)
     return SignInPolicy(
+        identity_provider=stored.identity_provider,
         sso_verified=sso_verified,
         require_sso=stored.require_sso,
         sso_enforced_at=stored.sso_enforced_at if stored.require_sso else None,
@@ -577,6 +588,10 @@ async def put_sign_in(
             raise StalePolicy(facts={"version": before.version})
         enforcing = require_sso and not before.require_sso
         if enforcing and not _sso_verified(await _seats(tx.session), await _methods(tx.session)):
+            # M1: SSO counts only through this firm's own connection; a firm without one has
+            # no verified sign-in to enforce (DEC-535).
+            if before.sso_connection_org is None:
+                raise SsoNotVerified(facts={"reason": "connection_missing"})
             raise SsoNotVerified
         now = await _now(tx.session)
         attesting = idp_mfa_attested and before.idp_mfa_attested_at is None
@@ -721,7 +736,8 @@ async def put_portal(ctx: AuthContext, *, session_minutes: int, version: int) ->
 
 async def portal_session_seconds(tenant_id: UUID) -> int:
     """The firm's portal session length for a new portal session (AC-19); the 8-hour maximum
-    when it set none, and the maximum too if the read fails (never longer)."""
+    when it set none. An unreadable policy fails closed to the shortest length a firm may set
+    (security review L5)."""
     try:
         async with tenant_session(TenantContext(tenant_id, "system", "portal:session")) as s:
             found = await s.scalar(
@@ -729,7 +745,7 @@ async def portal_session_seconds(tenant_id: UUID) -> int:
             )
     except Exception as exc:
         _log.warning("portal_session.policy_failed", error=type(exc).__name__)
-        found = None
+        return MIN_PORTAL_SESSION_MINUTES * 60
     minutes = int(found) if found is not None else PLATFORM_MAX_PORTAL_SESSION_MINUTES
     return min(minutes, PLATFORM_MAX_PORTAL_SESSION_MINUTES) * 60
 
@@ -823,10 +839,10 @@ async def sign_out(ctx: AuthContext, session_id: UUID) -> SignedOut:
             datetime,
             await tx.session.scalar(
                 text(
-                    "INSERT INTO auth_session_tenant_revocations (tenant_id, session_id, "
-                    "revoked_by) VALUES (:tenant, :id, :by) RETURNING revoked_at"
+                    "INSERT INTO auth_session_tenant_revocations (tenant_id, session_id, user_id, "
+                    "revoked_by) VALUES (:tenant, :id, :user, :by) RETURNING revoked_at"
                 ),
-                {"tenant": ctx.tenant_id, "id": session_id, "by": ctx.user_id},
+                {"tenant": ctx.tenant_id, "id": session_id, "user": owner, "by": ctx.user_id},
             ),
         )
         tx.record(
@@ -902,12 +918,23 @@ async def _switch_support(ctx: AuthContext, allow: bool, version: int) -> Suppor
             before=Ref(allow=int(before.allow_support_requests), version=before.support_version),
             after=Ref(allow=int(allow), version=after.support_version),
         )
+        if not allow:
+            # M2: switched off, requests still waiting for the firm are closed with it; a granted
+            # session keeps its expiry (AC-28).
+            for row in await list_support_sessions(tx.session):
+                if row["status"] == "requested":
+                    await close_support_session(tx.session, row["id"], "revoked")
+                    tx.record(
+                        "support_session.revoked",
+                        target=Target("support_session", row["id"]),
+                    )
     return await _support(after)
 
 
 async def require_support_requests_allowed(session: AsyncSession) -> None:
-    """SPEC-012's request path, in its own transaction: off answers 409; a firm without a row
-    allows them (the default). Any failure to read refuses (the transaction aborts)."""
+    """SPEC-012's request and approval paths, in their own transaction: off answers 409; a firm
+    without a row allows them (the default). Any failure to read refuses (the transaction
+    aborts)."""
     allowed = await session.scalar(text("SELECT allow_support_requests FROM security_policies"))
     if allowed is not None and not bool(allowed):
         raise SupportRequestsDisabled
@@ -919,28 +946,32 @@ async def require_support_requests_allowed(session: AsyncSession) -> None:
 @dataclass(frozen=True)
 class StaffLimits:
     """The strictest of the person's firms: session limits in seconds; the firms that require
-    SSO; and the firms whose SSO-exempt account this person is."""
+    SSO with the organisation of their connection (None: none yet); and the firms whose
+    SSO-exempt account this person is."""
 
     idle_seconds: int = PLATFORM_MAX_IDLE_MINUTES * 60
     absolute_seconds: int = PLATFORM_MAX_SESSION_MINUTES * 60
-    sso_firms: frozenset[UUID] = field(default_factory=frozenset[UUID])
+    sso_firms: frozenset[tuple[UUID, str | None]] = field(
+        default_factory=frozenset[tuple[UUID, str | None]]
+    )
     exempt_in: frozenset[UUID] = field(default_factory=frozenset[UUID])
 
-    def refuses(self, method: str | None) -> bool:
-        """With SSO required anywhere, only an SSO sign-in passes, or a hardware-key (passkey)
-        one by the exempt account of every such firm (AC-18). An unknown method never passes
-        (fail closed)."""
-        if not self.sso_firms or method == "sso":
-            return False
-        if self.sso_firms - self.exempt_in:
-            return True
-        return method != "passkey"
+    def refuses(self, method: str | None, org: str | None = None) -> bool:
+        """With SSO required, each such firm passes only an SSO sign-in through its own
+        connection (M1, DEC-535), or its exempt account's hardware-key (passkey) sign-in
+        (AC-18). An unknown method or organisation never passes (fail closed)."""
+        for firm, connection in self.sso_firms:
+            through_own = method == "sso" and connection is not None and org == connection
+            exempt = firm in self.exempt_in and method == "passkey"
+            if not (through_own or exempt):
+                return True
+        return False
 
 
 async def staff_limits(user_id: UUID) -> StaffLimits:
     """Read in each of the person's active staff firms under its own row-level security."""
     idle, absolute = PLATFORM_MAX_IDLE_MINUTES, PLATFORM_MAX_SESSION_MINUTES
-    sso: set[UUID] = set()
+    sso: set[tuple[UUID, str | None]] = set()
     exempt: set[UUID] = set()
     for member in await active_memberships(user_id):
         if member.kind != "staff":
@@ -951,10 +982,28 @@ async def staff_limits(user_id: UUID) -> StaffLimits:
         idle = min(idle, stored.session_idle_minutes)
         absolute = min(absolute, stored.session_absolute_minutes)
         if stored.require_sso:
-            sso.add(member.tenant_id)
+            sso.add((member.tenant_id, stored.sso_connection_org))
         if stored.sso_exempt_user_id == user_id:
             exempt.add(member.tenant_id)
     return StaffLimits(idle * 60, absolute * 60, frozenset(sso), frozenset(exempt))
+
+
+async def signed_out_everywhere(user_id: UUID, session_id: UUID) -> bool:
+    """H1: the session was signed out of every firm the person is staff of, so a refresh has
+    nothing left to mint a token for. A person with no staff firm is not this check's."""
+    firms = [m.tenant_id for m in await active_memberships(user_id) if m.kind == "staff"]
+    if not firms:
+        return False
+    for tenant_id in firms:
+        tenant = TenantContext(tenant_id, "system", "auth:refresh")
+        async with tenant_session(tenant) as session:
+            revoked = await session.scalar(
+                text("SELECT 1 FROM auth_session_tenant_revocations WHERE session_id = :id"),
+                {"id": session_id},
+            )
+        if revoked is None:
+            return False
+    return True
 
 
 async def record_exempt_sign_in(user_id: UUID, firms: frozenset[UUID]) -> None:
@@ -976,13 +1025,14 @@ async def record_exempt_sign_in(user_id: UUID, firms: frozenset[UUID]) -> None:
             )
 
 
-async def signed_out_here(tenant_id: UUID, user_id: UUID) -> bool:
-    """AC-20: the request's staff session was signed out of this firm (DEC-528)."""
-    async with platform_transaction(f"user:{user_id}") as conn:
+async def refused_here(tenant: TenantContext, user_id: UUID) -> bool:
+    """AC-20, H1 (DEC-528): once the person was signed out of this firm, a request here needs the
+    BFF cookie of a live session of theirs that was not; a bearer token alone is refused."""
+    async with tenant_session(tenant) as session:
         return bool(
-            await conn.scalar(
-                text("SELECT auth_session_signed_out(:cookie, :user, :tenant)"),
-                {"cookie": _current_session_cookie(), "user": user_id, "tenant": tenant_id},
+            await session.scalar(
+                text("SELECT auth_session_refused_here(:cookie, :user)"),
+                {"cookie": _current_session_cookie(), "user": user_id},
             )
         )
 

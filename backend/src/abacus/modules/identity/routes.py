@@ -1179,12 +1179,15 @@ async def refresh_route(
     cookie: Annotated[str | None, Cookie(alias=COOKIE_NAME)] = None,
     csrf: Annotated[str | None, Header(alias=CSRF_HEADER)] = None,
     origin: Annotated[str | None, Header()] = None,
+    activity: Annotated[str | None, Header(alias="X-Abacus-Activity", max_length=16)] = None,
 ) -> Response:
-    """AC 5.1.4: cookie-authenticated, with the CSRF header and the app's own Origin."""
+    """AC 5.1.4: cookie-authenticated, with the CSRF header and the app's own Origin. Only a
+    refresh marked `X-Abacus-Activity: user` (the person's own input) moves the idle clock; an
+    absent mark is never activity (G-02-T14, DEC-535)."""
     if csrf != "1" or origin is None or origin.rstrip("/") != web_origin():
         return _no_store(JSONResponse({"detail": "forbidden"}, status_code=403))
     try:
-        refreshed = await refresh_session(cookie)
+        refreshed = await refresh_session(cookie, active=activity == "user")
     except RefreshReused:
         return _refusal("session_refresh_reused")
     except SessionExpired:

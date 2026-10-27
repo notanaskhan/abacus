@@ -68,7 +68,9 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"session_idle_minutes", "sso_exempt_user_id", "allow_support_requests"}
         | {"support_updated_at", "support_updated_by", "support_version", "updated_by"}
     ),
-    "auth_session_tenant_revocations": frozenset({"tenant_id", "session_id", "revoked_by"}),
+    "auth_session_tenant_revocations": frozenset(
+        {"tenant_id", "session_id", "user_id", "revoked_by"}
+    ),
     "portal_security_policies": frozenset({"tenant_id", "portal_session_minutes", "updated_by"}),
     "engagement_members": frozenset({"tenant_id", "engagement_id", "user_id", "role"}),
     # P-07-T30 (0155): written by the `engagement_member_history` trigger as the caller.
