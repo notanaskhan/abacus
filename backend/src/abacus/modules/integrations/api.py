@@ -3,7 +3,9 @@
 C20 v1 (A-02-T06): the POR-16 contract stub and the framework's ports. A-02-T12: the
 fail-closed adapter registry, the catalogue read with its honest listing, the catalogue load's
 document and plan (the operator's command is `abacus_tools.integration_catalog`), and sealed
-integration secrets. The write-capability registry file and its compiler land with A-02-T15.
+integration secrets. A-02-T15: the compiled write-capability registry, the egress allowlist
+export, the `Writer` port and the write gate (`authorise_write`, `execute_write`), which refuses
+every write in v1. A-02-T16: the POR-16 routes, composed in `client_connect`.
 """
 
 from abacus.modules.identity.api import AbacusRouter
@@ -13,6 +15,15 @@ from abacus.modules.integrations.adapters import (
     registered_adapter,
     registered_keys,
     unregister_adapter,
+)
+from abacus.modules.integrations.capabilities import (
+    UndeclaredEgress,
+    assert_egress_declared,
+    egress_allowlist,
+    policy_refusal,
+    registry,
+    undeclared_egress,
+    write_capability,
 )
 from abacus.modules.integrations.catalog import (
     CatalogEntry,
@@ -24,7 +35,7 @@ from abacus.modules.integrations.catalog import (
     listing_of,
 )
 from abacus.modules.integrations.catalog_load import CatalogDocument, LoadPlan, plan_load
-from abacus.modules.integrations.contract import firm_router, portal_router
+from abacus.modules.integrations.contract import firm_router
 from abacus.modules.integrations.ports import (
     IntegrationAdapter,
     IntegrationCategory,
@@ -32,12 +43,22 @@ from abacus.modules.integrations.ports import (
     WriteCapabilityEntry,
     WriteCapabilityRegistry,
 )
+
+# A-02-T16: the live POR-16 routes are declared on C20's `portal_router` in `routes`, so it is
+# imported from there (loading the module registers them before the API mounts the router).
+from abacus.modules.integrations.routes import portal_router
 from abacus.modules.integrations.secrets import erase_secret, open_secret, store_secret
+from abacus.modules.integrations.writers import WritePreview, Writer, WriteReceipt, WriteRequest
+from abacus.modules.integrations.writes import (
+    WriteCapabilityRefused,
+    authorise_write,
+    execute_write,
+)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
-    portal_router,  # C20 v1 stub (A-02-T06): POR-16
-    firm_router,  # C20 v1 stub (A-02-T06): reconnect requests and on-demand pulls
+    portal_router,  # C20 v1: POR-16, live since A-02-T16
+    firm_router,  # C20 v1 stub (A-02-T06): reconnect requests (T23) and on-demand pulls (T30)
 )
 
 __all__ = [
@@ -50,19 +71,33 @@ __all__ = [
     "IntegrationCategory",
     "LoadPlan",
     "ReadConnectorEntry",
+    "UndeclaredEgress",
     "WriteCapabilityEntry",
+    "WriteCapabilityRefused",
     "WriteCapabilityRegistry",
+    "WritePreview",
+    "WriteReceipt",
+    "WriteRequest",
+    "Writer",
+    "assert_egress_declared",
+    "authorise_write",
     "catalog_rows",
     "client_catalog",
+    "egress_allowlist",
     "erase_secret",
+    "execute_write",
     "is_available",
     "listed",
     "listing_of",
     "open_secret",
     "plan_load",
+    "policy_refusal",
     "register_adapter",
     "registered_adapter",
     "registered_keys",
+    "registry",
     "store_secret",
+    "undeclared_egress",
     "unregister_adapter",
+    "write_capability",
 ]

@@ -904,6 +904,19 @@ async def active_security_admins(tenant: TenantContext) -> list[UUID]:
         return [cast(UUID, row.user_id) for row in rows.all()]
 
 
+async def active_quality_partners(tenant: TenantContext) -> list[UUID]:
+    """P-07-T47 (security review M3): the firm's active quality owners, who approve an EQR's
+    eligibility (`eqr.approve_eligibility`), under the tenant."""
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            text(
+                "SELECT user_id FROM memberships WHERE firm_role = 'quality_partner' "
+                "AND status = 'active' ORDER BY user_id"
+            )
+        )
+        return [cast(UUID, row.user_id) for row in rows.all()]
+
+
 async def active_partner_members(tenant: TenantContext) -> list[UUID]:
     """Q-02-T33: the firm's active partner-level staff (the derived `firm_partner`, DEC-132)."""
     async with tenant_session(tenant) as session:

@@ -156,7 +156,7 @@ def test_ac36_a_start_states_the_authorization_and_nothing_else() -> None:
             {"consent_version": 1, "authorized": True, "password": "x"}
         )
     responses = cast(Json, PATHS[START]["post"]["responses"])
-    assert {"409", "422", "501"} <= set(responses)
+    assert {"409", "422"} <= set(responses)  # live since A-02-T16: no longer 501
     assert RULES["connection.create"].mfa_recent
 
 

@@ -8,7 +8,10 @@ and starts an `auth_sessions` row. The provider's refresh token is sealed with t
 
 The browser holds one opaque `__Host-` cookie, stored only as a SHA-256. Each refresh rotates it.
 A rotated-out value presented again is reuse, and the whole session ends (AC 5.1.4). Sessions end
-after 30 minutes idle or 12 hours in all (DEC-140), computed per request; no workflow runs.
+after 30 minutes idle or 12 hours in all (DEC-140), or sooner when one of the person's firms set
+shorter limits (G-02-T14, DEC-524: the strictest of their firms, checked at sign-in and every
+refresh); no workflow runs. A firm that requires SSO refuses any other sign-in method, except a
+passkey sign-in by its one SSO-exempt account (AC-15, AC-18), whose sign-in stamps "last tested".
 
 Session audit events go to every firm the person is an active member of, because a session spans
 memberships; with none, to the platform. Facts are identifiers only.
@@ -34,6 +37,13 @@ from abacus.kernel.errors import ServiceUnavailable
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.identity.repository import active_memberships, find_user
+from abacus.modules.identity.security_policies import (
+    AUTH_METHODS,
+    StaffLimits,
+    record_exempt_sign_in,
+    signed_out_everywhere,
+    staff_limits,
+)
 from abacus.modules.identity.tokens import InvalidToken, VerifiedIdentity, token_verifier
 
 COOKIE_NAME: Final = "__Host-abacus-session"
@@ -49,7 +59,22 @@ _REFRESH_FINGERPRINT: Final = "auth_session.provider_refresh"
 _HTTP_TIMEOUT: Final = 10.0
 # Audit references carry integers, never text (kernel.uow.Ref).
 END_REASONS: Final = {"sign_out": 1, "idle": 2, "absolute": 3, "reuse_detected": 4, "revoked": 5}
-REFUSALS: Final = {"mfa_required_at_sign_in": 1, "unknown_staff_user": 2, "sign_in_failed": 3}
+REFUSALS: Final = {
+    "mfa_required_at_sign_in": 1,
+    "unknown_staff_user": 2,
+    "sign_in_failed": 3,
+    "sso_required": 4,
+}
+# How WorkOS names the method a person used (its authenticate response), as `auth_sessions`
+# records it; anything else is unknown (None), which never passes an SSO requirement.
+_PROVIDER_METHODS: Final = {
+    "sso": "sso",
+    "magicauth": "email_code",
+    "magic_auth": "email_code",
+    "email_code": "email_code",
+    "passkey": "passkey",
+    "totp": "totp",
+}
 _log = get_logger(__name__)
 
 
@@ -74,6 +99,27 @@ class ProviderTokens:
     access_token: str
     expires_in: int
     refresh_token: str | None
+    # How the person signed in, when the provider says (`sso`, `email_code`, `passkey`, `totp`).
+    auth_method: str | None = None
+    # The organisation whose connection the person signed in through (WorkOS
+    # `organization_id`), when the provider says: Require SSO matches it to the firm's own.
+    organization_id: str | None = None
+
+
+def _org_of(reported: object) -> str | None:
+    """A provider organisation id as `auth_sessions.idp_org`: an identifier, at most 128."""
+    if not isinstance(reported, str):
+        return None
+    org = reported.strip()
+    return org if 0 < len(org) <= 128 and org.isascii() and org.isprintable() else None
+
+
+def auth_method_of(reported: object) -> str | None:
+    """The provider's method name as `auth_sessions.auth_method`, or None when unknown."""
+    if not isinstance(reported, str):
+        return None
+    method = _PROVIDER_METHODS.get(reported.strip().lower())
+    return method if method in AUTH_METHODS else None
 
 
 class StaffIdp(Protocol):
@@ -160,7 +206,13 @@ class OidcStaffIdp:
             raise ServiceUnavailable("identity provider answered badly")
         if not isinstance(expires, int):
             raise ServiceUnavailable("identity provider answered badly")
-        return ProviderTokens(access, expires, refresh if isinstance(refresh, str) else None)
+        return ProviderTokens(
+            access,
+            expires,
+            refresh if isinstance(refresh, str) else None,
+            auth_method_of(fields.get("authentication_method")),
+            _org_of(fields.get("organization_id")),
+        )
 
 
 _idp: StaffIdp | None = None
@@ -276,6 +328,10 @@ async def complete_sign_in(
     if identity.mfa_at is None:
         await _refused(user.id, "mfa_required_at_sign_in")
         raise SignInRefused("mfa_required_at_sign_in")
+    limits = await staff_limits(user.id)
+    if limits.refuses(tokens.auth_method, tokens.organization_id):
+        await _refused(user.id, "sso_required")
+        raise SignInRefused("sso_required")
     if previous_cookie is not None:  # step-up or a second sign-in replaces the old session
         await end_session(user.id, previous_cookie, reason="revoked")
     cookie = secrets.token_urlsafe(32)
@@ -291,7 +347,7 @@ async def complete_sign_in(
                 await conn.execute(
                     text(
                         "SELECT auth_session_start(:user_id, :provider, :refresh, :mfa_at, "
-                        ":cookie, :idle, :absolute)"
+                        ":cookie, :idle, :absolute, :method, :org)"
                     ),
                     {
                         "user_id": user.id,
@@ -299,13 +355,17 @@ async def complete_sign_in(
                         "refresh": sealed,
                         "mfa_at": identity.mfa_at,
                         "cookie": _digest(cookie),
-                        "idle": IDLE_SECONDS,
-                        "absolute": ABSOLUTE_SECONDS,
+                        "idle": limits.idle_seconds,
+                        "absolute": limits.absolute_seconds,
+                        "method": tokens.auth_method,
+                        "org": tokens.organization_id,
                     },
                 )
             ).scalar_one(),
         )
     await _audit(user.id, "session.started", session_id)
+    if limits.exempt_in:
+        await record_exempt_sign_in(user.id, limits.exempt_in)
     return StartedSession(cookie, str(taken.return_to), session_id)
 
 
@@ -317,16 +377,31 @@ class RefreshedSession:
     identity: VerifiedIdentity
 
 
-async def refresh_session(cookie: str | None) -> RefreshedSession:
-    """AC 5.1.4: rotate the cookie and hand back a fresh access token from the provider."""
+async def refresh_session(cookie: str | None, *, active: bool = False) -> RefreshedSession:
+    """AC 5.1.4: rotate the cookie and hand back a fresh access token from the provider. Only a
+    refresh the person's own activity caused (`active`) moves the idle clock (G-02-T14, security
+    review M3); a session signed out of every firm it could act in gets none (H1)."""
     if not cookie or len(cookie) > 256:
         raise SessionExpired
     next_cookie = secrets.token_urlsafe(32)
     async with platform_transaction("auth:refresh") as conn:
+        owner = await conn.scalar(
+            text("SELECT auth_session_owner(:cookie)"), {"cookie": _digest(cookie)}
+        )
+    limits = await staff_limits(cast(UUID, owner)) if owner is not None else StaffLimits()
+    async with platform_transaction("auth:refresh") as conn:
         row = (
             await conn.execute(
-                text("SELECT * FROM auth_session_rotate(:cookie, :next, :idle)"),
-                {"cookie": _digest(cookie), "next": _digest(next_cookie), "idle": IDLE_SECONDS},
+                text(
+                    "SELECT * FROM auth_session_rotate(:cookie, :next, :idle, :absolute, :active)"
+                ),
+                {
+                    "cookie": _digest(cookie),
+                    "next": _digest(next_cookie),
+                    "idle": limits.idle_seconds,
+                    "absolute": limits.absolute_seconds,
+                    "active": active,
+                },
             )
         ).one()
     if row.outcome == "reused":
@@ -339,6 +414,16 @@ async def refresh_session(cookie: str | None) -> RefreshedSession:
     if row.outcome != "ok" or row.provider_refresh_enc is None:
         raise SessionExpired
     session_id, user_id = cast(UUID, row.session_id), cast(UUID, row.user_id)
+    if user_id != owner or limits.refuses(
+        cast(str | None, row.auth_method), cast(str | None, row.idp_org)
+    ):
+        # SSO is now required where this session's method no longer passes (AC-15).
+        await _revoke(session_id, user_id)
+        raise SessionExpired
+    if await signed_out_everywhere(user_id, session_id):
+        # Signed out of every firm the person is staff of: nothing left to mint a token for.
+        await _revoke(session_id, user_id)
+        raise SessionExpired
     try:
         refresh_token = (
             await open_sealed(_PLATFORM, bytes(row.provider_refresh_enc), _REFRESH_FINGERPRINT)

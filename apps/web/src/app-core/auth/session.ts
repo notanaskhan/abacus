@@ -11,6 +11,10 @@ export const SIGN_IN_PATH = "/v1/auth/sign-in";
 /** The BFF's own routes: never retried or refreshed on a 401 (the refresh answers 401 itself). */
 export const AUTH_PREFIX = "/v1/auth/";
 export const CSRF_HEADER = "X-Abacus-CSRF";
+/** G-02-T14 (security review M3): a refresh the person's own activity caused. Only then does the
+ * BFF move the session's idle clock; a refresh a background poll caused leaves it, so polling
+ * never keeps an unattended session alive. */
+export const ACTIVITY_HEADER = "X-Abacus-Activity";
 
 const TENANT_KEY = "abacus.tenant";
 /** Refresh this long before the token runs out, so a request never leaves with a stale one. */
@@ -32,6 +36,30 @@ let signedInAt = 0;
 let inFlight: Promise<boolean> | null = null;
 /** `signIn` navigates away once per page load; parallel 401s start one sign-in. */
 let signingIn = false;
+
+/** The person's last keyboard or pointer input, and the last refresh: the idle clock's facts. */
+let lastActivity = 0;
+let lastRefresh = 0;
+let tracking = false;
+
+/** The person did something (a key, a click, a touch): the next refresh counts as activity. */
+export function noteUserActivity(now: number = deviceNow()): void {
+  lastActivity = now;
+}
+
+function trackActivity(): void {
+  if (tracking || typeof window === "undefined") return;
+  tracking = true;
+  for (const event of ["pointerdown", "keydown"] as const) {
+    window.addEventListener(
+      event,
+      () => {
+        noteUserActivity();
+      },
+      { capture: true, passive: true },
+    );
+  }
+}
 
 /** The wall clock, for token lifetime only (never business time; that is app-core/clock). */
 function deviceNow(): number {
@@ -62,12 +90,19 @@ export function lastRefreshFailure(): RefreshFailure | null {
  */
 export function refreshSession(now: number = deviceNow()): Promise<boolean> {
   if (inFlight !== null) return inFlight;
+  trackActivity();
+  // The page's first refresh (a load, the callback) is the person's own act; later ones count
+  // only when there was input since the one before.
+  const active = lastRefresh === 0 || lastActivity > lastRefresh;
   inFlight = (async () => {
     try {
       const { data, error } = await refresh({
-        headers: { [CSRF_HEADER]: "1" },
+        headers: active
+          ? { [CSRF_HEADER]: "1", [ACTIVITY_HEADER]: "user" }
+          : { [CSRF_HEADER]: "1" },
         throwOnError: false,
       });
+      lastRefresh = now;
       if (data === undefined) {
         held = null;
         const detail = (error as { detail?: unknown } | undefined)?.detail;
@@ -201,4 +236,6 @@ export function resetAuthForTest(): void {
   inFlight = null;
   signingIn = false;
   lastFailure = null;
+  lastActivity = 0;
+  lastRefresh = 0;
 }

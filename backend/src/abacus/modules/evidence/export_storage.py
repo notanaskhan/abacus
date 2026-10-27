@@ -14,6 +14,7 @@ Writing the same export again overwrites its segments (a retried build is the sa
 from __future__ import annotations
 
 import asyncio
+import re
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import IO, TYPE_CHECKING, Final, TypedDict
@@ -28,6 +29,7 @@ if TYPE_CHECKING:
     from types_boto3_s3 import S3Client
 
 SEGMENT_BYTES: Final = 64 * 1024 * 1024
+_SEGMENT: Final = re.compile(r"segment-[0-9]{4,}")
 
 
 class ExportsUnavailable(ServiceUnavailable):
@@ -146,6 +148,43 @@ async def _drop_from(target: _Exports, tenant_id: UUID, export_id: UUID, n: int)
             return
 
 
+async def delete_segments(tenant_id: UUID, export_id: UUID) -> int:
+    """A-01-T22: remove one expired or voided export's segments; how many were deleted. Only keys
+    under that export's own prefix in its tenant, and only segment keys: nothing else in the
+    bucket is touched. Idempotent (a second call deletes nothing)."""
+    target = _target()
+    prefix = export_prefix(tenant_id, export_id)
+    deleted = 0
+    token = ""
+    while True:
+        if token:
+            listed = await asyncio.to_thread(
+                target.client.list_objects_v2,
+                Bucket=target.bucket,
+                Prefix=prefix,
+                ContinuationToken=token,
+                **target.owned(),
+            )
+        else:
+            listed = await asyncio.to_thread(
+                target.client.list_objects_v2,
+                Bucket=target.bucket,
+                Prefix=prefix,
+                **target.owned(),
+            )
+        for entry in listed.get("Contents", []):
+            key = entry.get("Key", "")
+            if not key.startswith(prefix) or not _SEGMENT.fullmatch(key[len(prefix) :]):
+                continue
+            await asyncio.to_thread(
+                target.client.delete_object, Bucket=target.bucket, Key=key, **target.owned()
+            )
+            deleted += 1
+        token = listed.get("NextContinuationToken", "")
+        if not listed.get("IsTruncated") or not token:
+            return deleted
+
+
 async def get_segment(tenant_id: UUID, export_id: UUID, n: int) -> bytes:
     """One segment, opened: for the download (A-01-T22) and the tests."""
     target = _target()
@@ -163,6 +202,7 @@ __all__ = [
     "SEGMENT_BYTES",
     "ExportsUnavailable",
     "configure_exports",
+    "delete_segments",
     "export_prefix",
     "get_segment",
     "put_segments",
