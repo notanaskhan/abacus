@@ -130280,7 +130280,7 @@
     },
     "/v1/portal/auth/refresh": {
       "post": {
-        "description": "Cookie-authenticated, with the CSRF header and the portal host's own Origin.",
+        "description": "Cookie-authenticated, with the CSRF header and the portal host's own Origin. Only a\nrefresh marked `X-Abacus-Activity: user` moves the idle clock; an absent mark is never\nactivity (DEC-583).",
         "operationId": "portal_refresh",
         "parameters": [
           {
@@ -130329,6 +130329,23 @@
                 }
               ],
               "title": "Host"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Activity",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 16,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Activity"
             }
           },
           {

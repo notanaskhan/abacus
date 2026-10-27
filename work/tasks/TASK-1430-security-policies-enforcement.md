@@ -67,3 +67,5 @@ definition of done: its identity routes move from STUBBED to LIVE.
   dropped; L2 and L3 recorded; L4 the request check takes the firm from the session; L5 the
   portal fallback fails closed; L6 recorded for T27. AC-30 asserts `pub4557_open == 0` while
   T20 is stubbed. Targeted re-run (`-n 2`) and gates green; API client regenerated.
+
+- 2026-10-28: DEC-535's P-08 follow-up built (DEC-583): portal sessions move the idle clock only on a refresh marked `X-Abacus-Activity: user` (migration 0225).
