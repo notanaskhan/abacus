@@ -5,10 +5,19 @@ import uuid
 import pytest
 
 from abacus.modules.notifications.api import CATALOGUE, SUBSCRIPTIONS, TEMPLATES
+from abacus.modules.notifications.email import SENTENCES
 
 
 def test_ac7_every_kind_has_a_template() -> None:
     assert set(TEMPLATES) == set(CATALOGUE)
+
+
+def test_ac7_each_event_emails_its_own_sentence() -> None:
+    """ED-131: two events stored under one kind (`mention`) keep their own email sentence."""
+    assert len(SENTENCES) == len(CATALOGUE)
+    for event, entry in CATALOGUE.items():
+        assert SENTENCES[(entry.kind, entry.subject_type)] == TEMPLATES[event], event
+    assert SENTENCES[("mention", "request_item")].startswith("You were mentioned in a comment")
 
 
 def test_ac1_every_catalogued_event_is_subscribed() -> None:

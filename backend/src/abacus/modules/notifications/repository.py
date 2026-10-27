@@ -283,6 +283,7 @@ class DeliveryFacts:
     kind: str
     recipient_user_id: UUID
     engagement_id: UUID | None
+    subject_type: str
 
 
 async def delivery_facts(session: AsyncSession, notification_id: UUID) -> DeliveryFacts | None:
@@ -294,6 +295,7 @@ async def delivery_facts(session: AsyncSession, notification_id: UUID) -> Delive
                 notifications.c.kind,
                 notifications.c.recipient_user_id,
                 notifications.c.engagement_id,
+                notifications.c.subject_type,
             )
             .join(notifications, notifications.c.id == deliveries.c.notification_id)
             .where(
@@ -303,7 +305,13 @@ async def delivery_facts(session: AsyncSession, notification_id: UUID) -> Delive
     ).first()
     if row is None:
         return None
-    return DeliveryFacts(str(row.status), str(row.kind), row.recipient_user_id, row.engagement_id)
+    return DeliveryFacts(
+        str(row.status),
+        str(row.kind),
+        row.recipient_user_id,
+        row.engagement_id,
+        str(row.subject_type),
+    )
 
 
 async def settle_delivery(

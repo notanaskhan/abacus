@@ -640,6 +640,11 @@ async def test_ac13_2_start_up_admits_exactly_the_declared_hosts(
 
     _declare(monkeypatch, ADAPTER, HOST)
     register_adapter(Probe())
+    # The lifespan's exit shuts the process-global tracer provider down; keep it running for the
+    # rest of this worker's tests (CI: every later span end logged "Processor is already shutdown"
+    # into the JSON log stream and the in-memory exporter stopped recording).
+    monkeypatch.setattr("abacus.api.app.shutdown_tracing", lambda: None)
+    monkeypatch.setattr("abacus.api.app.flush_errors", lambda: None)
     app = create_app()
     async with app.router.lifespan_context(app):
         assert allowed_hosts() == frozenset({HOST})

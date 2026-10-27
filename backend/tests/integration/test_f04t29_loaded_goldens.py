@@ -34,7 +34,10 @@ from abacus_tools.synthetic.scenarios.brightwater_hale import loader
 from .agent_tests.support import Seeder
 from .conftest import MigratedDatabase
 
-pytestmark = pytest.mark.asyncio
+# The three E0 tests read one load in this module's database: one xdist worker runs them all
+# (`--dist loadgroup` otherwise hands each test to whichever worker is free, where the module's
+# database is fresh and empty), and each loads E0 itself if it runs first.
+pytestmark = [pytest.mark.asyncio, pytest.mark.xdist_group(name="f04t29_loaded_goldens")]
 TENANT = loader.TENANT
 GOLDEN = Path(__file__).resolve().parents[1] / "golden" / "scenario" / "brightwater_hale"
 Json = dict[str, object]
@@ -98,6 +101,15 @@ async def _load(db: Database, holdouts: tuple[str, ...] = ()) -> Seeder:
     return Seeder(db.superuser_dsn)
 
 
+async def _e0(db: Database) -> Seeder:
+    """E0 in this module's database: loaded here unless an earlier test of the module loaded it."""
+    seed = Seeder(db.superuser_dsn)
+    if await seed.value("SELECT count(*) FROM clients WHERE tenant_id = $1", TENANT) == 0:
+        return await _load(db)
+    configure_engine(db.app_url)
+    return seed
+
+
 async def _tally(seed: Seeder, sql: str) -> dict[str, Decimal]:
     return {str(r[0]): Decimal(int(r[1])) for r in await seed.rows(sql, TENANT)}
 
@@ -105,7 +117,7 @@ async def _tally(seed: Seeder, sql: str) -> dict[str, Decimal]:
 async def test_the_loaded_e0_matches_the_practice_count_and_client_goldens(
     own_db: Database,
 ) -> None:
-    seed = await _load(own_db)
+    seed = await _e0(own_db)
     counts = _cases("practice_counts.yaml")
 
     clients = Decimal(
@@ -141,8 +153,7 @@ async def test_the_loaded_e0_matches_the_practice_count_and_client_goldens(
 
 
 async def test_the_loaded_clients_carry_the_goldens_facts(own_db: Database) -> None:
-    seed = Seeder(own_db.superuser_dsn)  # loaded by the first test, in this module's database
-    configure_engine(own_db.app_url)
+    seed = await _e0(own_db)
     rows = await seed.rows(
         "SELECT c.name, c.kind, o.name AS office, m.initials AS partner, c.is_attest_client, "
         "c.portal_status, array_agg(ce.name ORDER BY ce.name) AS entities FROM clients c "
@@ -173,8 +184,7 @@ async def test_the_loaded_clients_carry_the_goldens_facts(own_db: Database) -> N
 
 
 async def test_the_loaded_e0_matches_the_audit_roster_golden(own_db: Database) -> None:
-    seed = Seeder(own_db.superuser_dsn)  # loaded by the test above, in this module's database
-    configure_engine(own_db.app_url)
+    seed = await _e0(own_db)
     roster = cast(Json, _cases("audits.yaml")["audits-27-roster-rows"]["inputs"])
     groups = cast(dict[str, str], roster["groups"])
     rows = await seed.rows(

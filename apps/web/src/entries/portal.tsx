@@ -28,7 +28,9 @@ const root = document.getElementById("root");
 if (root === null) throw new Error("Missing #root element");
 
 // Q-01-T23: the router starts only with a valid runtime config; otherwise the plain error state.
-await bootWithRuntimeConfig(root, () => (
+// Not awaited at the top level: an entry that awaits splits every module it shares with a lazy
+// route into its own chunk (main.tsx, TASK-1368).
+void bootWithRuntimeConfig(root, () => (
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />

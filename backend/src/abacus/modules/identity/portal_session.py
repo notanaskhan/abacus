@@ -65,6 +65,14 @@ FLOOR_SECONDS: Final = 0.5
 PORTAL_MARK: Final = "pst_"
 _MAX_TOKEN: Final = 64
 _log = get_logger(__name__)
+# ED-132: `portal_sign_in_attempt` (0116) locks the challenge row and then the firm-and-email
+# `sign_in_locks` row; `portal_sign_in_missed` updates the lock row and then the challenge. A guess
+# counted while the previous one's miss was being recorded deadlocked, and one of the two failed
+# with a database error instead of an answer. Both transactions take the challenge's transaction
+# advisory lock first, so they never interleave on one challenge (the cycle needs the same one).
+_CHALLENGE_LOCK: Final = text(
+    "SELECT pg_advisory_xact_lock(hashtextextended(CAST(:id AS text), 0))"
+)
 
 
 class CodeMismatch(Exception):
@@ -426,6 +434,7 @@ async def verify_code(
     began = time.monotonic()
     pinned = _host(host)
     async with platform_transaction("portal:sign_in") as conn:
+        await conn.execute(_CHALLENGE_LOCK, {"id": str(challenge_id)})
         row = (
             await conn.execute(
                 text("SELECT * FROM portal_sign_in_attempt(:id, :host, :max, :lock)"),
@@ -444,6 +453,7 @@ async def verify_code(
     tenant_id, user_id = cast(UUID | None, row.tenant_id), cast(UUID | None, row.user_id)
     if not matched:
         async with platform_transaction("portal:sign_in") as conn:
+            await conn.execute(_CHALLENGE_LOCK, {"id": str(challenge_id)})
             locked_until = cast(
                 datetime | None,
                 (

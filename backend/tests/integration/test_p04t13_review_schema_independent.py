@@ -614,6 +614,12 @@ def test_t13_the_human_only_probe_detects_a_removed_check(private_db: sc.Databas
         assert len(rows) == 5
         for row in rows:
             await seed.run(f"ALTER TABLE {row['t']} DROP CONSTRAINT {row['conname']}")
+        # 0213 (P-04-T23, DEC-506) added a second guard on `decisions`: `decided_by` must be the
+        # transaction's actor, which no non-person actor id can be. It refuses the same writes, so
+        # the probe reports a hole in `decisions` only once both guards are gone.
+        partial = await human_only_problems(await _world(seed))
+        assert not any(p.startswith("decisions:") for p in partial), partial
+        await seed.run("ALTER TABLE decisions DROP CONSTRAINT decisions_decider_is_the_actor")
         return await human_only_problems(await _world(seed))
 
     found = asyncio.run(run())

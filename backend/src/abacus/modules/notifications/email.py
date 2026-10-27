@@ -56,8 +56,13 @@ _log = get_logger(__name__)
 _emails = meter(__name__).create_counter(
     "abacus.notifications.emails", description="Notification email outcomes, by kind and status"
 )
-# The kind's sentence (SPEC-013 AC-7's fixed text, keyed by its event).
-SENTENCES: Final = {entry.kind: TEMPLATES[event] for event, entry in CATALOGUE.items()}
+# The kind's sentence (SPEC-013 AC-7's fixed text, keyed by its event). One stored kind can come
+# from more than one event (`mention`: a comment mention on a request, and "Notify" on a decision
+# card), so the kind and the notification's subject type, which together name the event, find it
+# (ED-131: keyed by the kind alone, the later event's sentence replaced the earlier one's).
+SENTENCES: Final = {
+    (entry.kind, entry.subject_type): TEMPLATES[event] for event, entry in CATALOGUE.items()
+}
 
 Starter = Callable[[NotificationEmailInput], Awaitable[None]]
 
@@ -163,7 +168,9 @@ async def send_email_activity(given: NotificationEmailInput) -> str:
             kind=facts.kind,
             recipient_user_id=facts.recipient_user_id,
             engagement_id=facts.engagement_id,
-            sentence=SENTENCES.get(facts.kind, "You have a new notification."),
+            sentence=SENTENCES.get(
+                (facts.kind, facts.subject_type), "You have a new notification."
+            ),
         )
     )
 

@@ -26,7 +26,10 @@ if (root === null) {
 }
 
 // Q-01-T23: the router starts only with a valid runtime config; otherwise the plain error state.
-const config = await bootWithRuntimeConfig(root, () => (
+// A promise chain, not a top-level await: an entry module that awaits at the top level makes
+// Rollup split every module it shares with a lazy route into its own chunk (so no route chunk
+// imports from an entry still evaluating), which broke the firm initial bundle budget (TASK-1368).
+void bootWithRuntimeConfig(root, () => (
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -35,13 +38,13 @@ const config = await bootWithRuntimeConfig(root, () => (
       </TooltipProvider>
     </QueryClientProvider>
   </StrictMode>
-));
-// Q-01-T50: browser error reporting, off unless the runtime config names a DSN and the tunnel.
-// The SDK is a lazy chunk, so a host with reporting off never downloads it.
-if (config !== null && telemetryTarget(config) !== null) {
+)).then(async (config) => {
+  // Q-01-T50: browser error reporting, off unless the runtime config names a DSN and the tunnel.
+  // The SDK is a lazy chunk, so a host with reporting off never downloads it.
+  if (config === null || telemetryTarget(config) === null) return;
   const { startTelemetry } = await import("./app-core/telemetry");
   startTelemetry(config, {
     routeTemplate: () => router.state.matches.at(-1)?.fullPath,
     sessionHeaders,
   });
-}
+});
