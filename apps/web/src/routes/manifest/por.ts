@@ -62,7 +62,12 @@ export const porScreens = {
   },
   "POR-18": { name: "Prospect intake", status: "planned", path: null, entry: true },
   "POR-19": { name: "Mobile capture · IRS notice (Whitley)", status: "planned", path: null },
-  "POR-20": { name: "Transactional email templates · Reminder", status: "planned", path: null },
+  // R-01-T25: built on fixtures; "planned" until Grace's edit, test and publish run on staging.
+  "POR-20": {
+    name: "Transactional email templates · Reminder",
+    status: "planned",
+    path: "/settings/portal/email-templates/$templateKey",
+  },
   "POR-21": {
     name: "SOC 2 requests and responses — Tessellate Health Cloud",
     status: "planned",
