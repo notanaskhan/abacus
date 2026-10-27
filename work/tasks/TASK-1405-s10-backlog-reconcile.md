@@ -32,3 +32,4 @@ already in `status-verified.csv` (the TASK-100 fieldwork sign-offs) is replaced 
 ## Progress log
 - 2026-10-27: reconciled on s10-leftovers. The file keeps its CRLF endings; only the `status`
   field of the 59 rows changed.
+- 2026-10-27: targeted tests and gates clean; held in the s10-leftovers PR.

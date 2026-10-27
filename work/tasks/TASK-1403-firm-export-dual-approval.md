@@ -88,3 +88,15 @@ and their functions (no data outside them).
 
 ## Progress log
 - 2026-10-27: plan written; build started (s10-leftovers).
+- 2026-10-27: built; migration 0216 (down_revision 0220) also holds `firm_export_downloads`
+  after the review. Targeted pass: 18 firm-export integration tests, replay, export suites
+  (A-01-T18/T19/T22), schema check on the migrated database, tenant and portal scope isolation,
+  security-center and compliance-kernel contract and G-02-T12 suites, unit exact lists. Gates
+  clean. Security review: no High; six findings fixed (DEC-511). Two lessons: (1) the link's
+  15 minutes must use the database clock (Docker's clock drifts from the host's); (2) I missed
+  three pre-existing tests that cover touched code until pyright flagged them: grep the tests
+  for every touched module name before the targeted pass. Not done here: Q-02-T47 packages;
+  Playwright not run. The undo contract's `follow_up_send` case failed once under `-n 2` (a
+  500) and passed alone; nothing here touches follow-ups.
+- 2026-10-27: SPEC-341 AC-41 says links can be minted "for 7 days from approval":
+  `available_until = decided_at + 7 days`; a build finishing after it fails.

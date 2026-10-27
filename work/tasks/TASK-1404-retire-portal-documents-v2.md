@@ -33,3 +33,4 @@ Revert the commit (the flag returns default off; a firm without it sees POR-03's
 
 ## Progress log
 - 2026-10-27: built on s10-leftovers.
+- 2026-10-27: targeted tests and gates clean; held in the s10-leftovers PR.
