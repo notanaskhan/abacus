@@ -285,6 +285,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/firm/confirmations", "own"),
     ("GET", "/v1/firm/data-exports", "firm_export.read"),
     ("GET", "/v1/firm/data-exports/schedule", "firm_export.read"),
+    ("GET", "/v1/firm/data-exports/{export_id}/links/{link_id}", "firm_export.download"),
     ("GET", "/v1/firm/drafted-guidance", "firm.read_settings"),
     ("GET", "/v1/firm/email-templates", "email_template.read"),
     ("GET", "/v1/firm/email-templates/{key}", "email_template.read"),

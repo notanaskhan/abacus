@@ -195,6 +195,18 @@ async def _export_requester(tenant_id: UUID, payload: dict[str, object]) -> list
     return [requester] if requester is not None else []
 
 
+async def _firm_export_approver(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """Q-02-T43 (DEC-72): the person a firm export names to approve it, never its requester."""
+    approver, requester = _uuid(payload, "approver_user_id"), _uuid(payload, "requested_by")
+    return [approver] if approver is not None and approver != requester else []
+
+
+async def _firm_export_parties(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """Q-02-T43: the requester and the approver, the only two who may make a link."""
+    people = {_uuid(payload, "requested_by"), _uuid(payload, "approver_user_id")}
+    return sorted(p for p in people if p is not None)
+
+
 @dataclass(frozen=True)
 class Kind:
     kind: str  # the stored code; new codes are undotted (C16); the key is the event type
@@ -296,6 +308,14 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "engagement_export.failed": Kind(
         "export_failed", _export_requester, "engagement_export", "export_id"
     ),
+    # Q-02-T43 (compliance-kernel §7): the named approver is asked; both people are told when the
+    # archive is ready. Firm-level.
+    "firm_export.requested": Kind(
+        "firm_export_approval_requested", _firm_export_approver, "firm_export", "export_id", None
+    ),
+    "firm_export.ready": Kind(
+        "firm_export_ready", _firm_export_parties, "firm_export", "export_id", None
+    ),
 }
 
 # AC-7: fixed English text per kind; placeholders are names the reader can already see.
@@ -343,6 +363,8 @@ TEMPLATES: Final[dict[str, str]] = {
     "team.change_proposed": "The team on {engagement} changed and is waiting for your approval.",
     "engagement_export.ready": "Your binder export for {engagement} is ready to download.",
     "engagement_export.failed": "Your binder export for {engagement} could not be built.",
+    "firm_export.requested": "A firm data export is waiting for your approval.",
+    "firm_export.ready": "The firm data export is ready to download for 7 days.",
 }
 
 

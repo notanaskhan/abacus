@@ -47,7 +47,7 @@ Non-artboard states (data conditions, never an `st` prop):
 | Third party | Sam Ortiz opens `/documents` | `404`; the SPA lands on POR-14 (`/requests`) |
 | Upload refused | `413 file_too_large` / `415 type_not_allowed` | the upload row reads the fixed words in `domain/portal/messages.ts` (R-01-T09 writes them; see Open gaps) |
 | Undo refused | `409 firm_already_acted` | Undo absent from `allowed_actions`; a stale click reads the fixed message from `messages.ts` |
-| Flag off | `portal.documents_v2` false | the routes answer 404, which the screen shows as its load error; the legacy `ClientEngagement.tsx` was removed by R-01-T18 and the flag's retirement follows (DEC-443) |
+| Flag off | none since R-01-T18 retired `portal.documents_v2` (DEC-510) | the routes are served to every firm; a 404 now means only a binder or request outside the caller's grant, which the screen shows as its load error, as before. The legacy `ClientEngagement.tsx` was removed by R-01-T18 (DEC-443) |
 | Drop sort off | `portal.drop_sort` false for the firm | every dropped file takes the d path |
 
 ## API

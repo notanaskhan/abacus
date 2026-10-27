@@ -63,6 +63,8 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "team.change_proposed",  # P-07-T47 (`team_change_awaiting_approval`, to the EP)
         "engagement_export.ready",  # A-01-T22 (C16 `export_ready`, to the requester)
         "engagement_export.failed",  # A-01-T22 (C16 `export_failed`, to the requester)
+        "firm_export.requested",  # Q-02-T43 (C16 `firm_export_approval_requested`, the approver)
+        "firm_export.ready",  # Q-02-T43 (C16 `firm_export_ready`, requester and approver)
     }
 
 

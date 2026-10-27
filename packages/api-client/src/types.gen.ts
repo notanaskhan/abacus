@@ -10341,8 +10341,9 @@ export type FirmExportDeclineIn = {
 /**
  * FirmExportLinkOut
  *
- * A presigned download link for 15 minutes; Restricted (it opens the firm's whole archive)
- * and never logged.
+ * A download link for 15 minutes: the API path of the archive for the signed-in person it
+ * was issued to (DEC-509: no presigned URL). Restricted (it opens the firm's whole archive) and
+ * never logged.
  */
 export type FirmExportLinkOut = {
     /**
@@ -50583,10 +50584,6 @@ export type ListFirmExportsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListFirmExportsError = ListFirmExportsErrors[keyof ListFirmExportsErrors];
@@ -50638,10 +50635,6 @@ export type RequestFirmExportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RequestFirmExportError = RequestFirmExportErrors[keyof RequestFirmExportErrors];
@@ -50859,10 +50852,6 @@ export type ApproveFirmExportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ApproveFirmExportError = ApproveFirmExportErrors[keyof ApproveFirmExportErrors];
@@ -50919,10 +50908,6 @@ export type DeclineFirmExportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DeclineFirmExportError = DeclineFirmExportErrors[keyof DeclineFirmExportErrors];
@@ -50984,9 +50969,9 @@ export type LinkFirmExportErrors = {
      */
     422: ValidationErrorOut;
     /**
-     * Contract stub: not implemented yet
+     * Too soon or too many: retry after Retry-After
      */
-    501: ErrorOut;
+    429: ErrorOut;
 };
 
 export type LinkFirmExportError = LinkFirmExportErrors[keyof LinkFirmExportErrors];
@@ -50999,6 +50984,88 @@ export type LinkFirmExportResponses = {
 };
 
 export type LinkFirmExportResponse = LinkFirmExportResponses[keyof LinkFirmExportResponses];
+
+export type FirmExportArchiveData = {
+    body?: never;
+    headers?: {
+        /**
+         * Range
+         */
+        Range?: string | null;
+        /**
+         * If-Range
+         */
+        'If-Range'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Export Id
+         */
+        export_id: string;
+        /**
+         * Link Id
+         */
+        link_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/data-exports/{export_id}/links/{link_id}';
+};
+
+export type FirmExportArchiveErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Gone: the code, link or window expired or was used
+     */
+    410: ErrorOut;
+    /**
+     * Range not satisfiable
+     */
+    416: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Too soon or too many: retry after Retry-After
+     */
+    429: ErrorOut;
+};
+
+export type FirmExportArchiveError = FirmExportArchiveErrors[keyof FirmExportArchiveErrors];
+
+export type FirmExportArchiveResponses = {
+    /**
+     * Response Firm Export Archive
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type FirmExportArchiveResponse = FirmExportArchiveResponses[keyof FirmExportArchiveResponses];
 
 export type DraftedGuidanceData = {
     body?: never;

@@ -7,7 +7,7 @@ P-03-T05 adds v4 `words` (the word layer) and the `trust_layer_backfill` workflo
 adds v5 `pii_scan`; R-01-T09 v6 `portal_drop_sort`; P-03-T15 v7 `masked_preview`, which
 replaces the unmasked v3 preview for new runs, and the backfill's v2 `masks`. The legal-hold
 workflows (Q-02-T29) follow the upload workflow, with their own v1 histories. The engagement
-export (A-01-T19) is v1, recorded in its own histories.
+export (A-01-T19) is v1, recorded in its own histories; so is the firm export (Q-02-T43).
 Extraction never fails the run on a bad file: the activity records `unreadable` instead.
 """
 
@@ -31,6 +31,8 @@ with workflow.unsafe.imports_passed_through():
         EngagementExportInput,
         ExportFailure,
         ExportPackageFacts,
+        FirmExportFacts,
+        FirmExportInput,
         LegalHoldInput,
         UploadInput,
         WithdrawalPurgeInput,
@@ -449,4 +451,49 @@ class ExportExpirySweepWorkflow:
             # L6: the activity heartbeats per firm; a stuck firm fails the run, not the window.
             heartbeat_timeout=_EXPIRY_HEARTBEAT,
             retry_policy=_EXPIRY_RETRY,
+        )
+
+
+# --- Firm export (Q-02-T43; compliance-kernel §7; DEC-72). v1, recorded in its histories. -------
+
+_FIRM_EXPORT_BUILD_RETRY = RetryPolicy(
+    initial_interval=timedelta(seconds=5),
+    backoff_coefficient=2.0,
+    maximum_interval=timedelta(minutes=2),
+    maximum_attempts=4,
+)
+
+
+@workflow.defn(name="firm_export")
+class FirmExportWorkflow:
+    """`firm_export:<tenant>:<export_id>` (reuse rejected), started once the named approver
+    approved: build and store the sealed archive, then mark it ready; a build that spends its
+    retries marks the export failed. Nothing is published before `mark_ready`. A change to what
+    it schedules goes behind `workflow.patched`, so the v1 histories keep replaying."""
+
+    @workflow.run
+    async def run(self, given: FirmExportInput) -> str:
+        try:
+            facts = await workflow.execute_activity(
+                "firm_export.package",
+                given,
+                result_type=FirmExportFacts,
+                start_to_close_timeout=_EXPORT_BUILD_TIMEOUT,
+                heartbeat_timeout=_EXPORT_HEARTBEAT,
+                retry_policy=_FIRM_EXPORT_BUILD_RETRY,
+            )
+        except ActivityError:
+            return await workflow.execute_activity(
+                "firm_export.mark_failed",
+                given,
+                result_type=str,
+                start_to_close_timeout=_TIMEOUT,
+                retry_policy=_EXPORT_STAMP_RETRY,
+            )
+        return await workflow.execute_activity(
+            "firm_export.mark_ready",
+            facts,
+            result_type=str,
+            start_to_close_timeout=_TIMEOUT,
+            retry_policy=_EXPORT_STAMP_RETRY,
         )
