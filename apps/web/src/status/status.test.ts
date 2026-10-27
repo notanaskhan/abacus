@@ -63,7 +63,8 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // S9 to S12 added human_gate, due_risk, methodology_version, methodology_import,
     // knowledge_item, parse_flag, ai_policy_version, security_incident, firm_export,
     // firm_export_schedule, safeguards_control, support_session and client_invitation (+13).
-    expect(Object.keys(REGISTRY)).toHaveLength(91);
+    // F-06-T03 added envelope_signer, signing_step, envelope_purpose and generated_document (+4).
+    expect(Object.keys(REGISTRY)).toHaveLength(95);
     // +21: decision_card 3, suggestion 6, proposal 5, sign_off_slot 2, field_value 4, checkpoint saved.
     // +27 (P-07-T03): client 4, invitation 5, acceptance_record 5, letter_record 2,
     // conflict_assessment 5, nas_evaluation 3, independence_conclusion 3.
@@ -76,7 +77,8 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // +53 (S9 to S12): human_gate 4, due_risk 4, methodology_version 6, methodology_import 6,
     // knowledge_item 3, parse_flag 5, ai_policy_version 6, security_incident 2, firm_export 4,
     // firm_export_schedule 3, safeguards_control 2, support_session 4, client_invitation 4.
-    expect(ROWS).toHaveLength(430);
+    // +17 (F-06-T03): envelope_signer 5, signing_step 4, envelope_purpose 4, generated_document 4.
+    expect(ROWS).toHaveLength(447);
   });
 
   it("resolves each code to a word, a kit variant or a line, and never to match", () => {
