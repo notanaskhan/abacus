@@ -264,6 +264,8 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "membership.access_ending": Kind("seasonal_access_ending", _admins, "firm", None, None),
     # R-01-T09: a client's portal drop the code rule could not sort waits for a person.
     "portal.drop_unsorted": Kind("portal_drop_unsorted", _leads, "inbox_file", "inbox_file_id"),
+    # R-01-T24 (DEC-564): the follow-up policy's maximum was reached for a binder's recipient.
+    "follow_up.limit_reached": Kind("follow_up_limit_reached", _leads, "binder", "binder_id"),
     # R-01-T13: a third party uploaded to a request delegated to them (POR-14).
     "third_party.uploaded": Kind(
         "third_party_uploaded", _request_owner, "request_item", "request_item_id"
@@ -327,6 +329,9 @@ TEMPLATES: Final[dict[str, str]] = {
     "wall.approved": "The ethical wall you added was approved.",
     "membership.access_ending": "Seasonal access ends within seven days for some of your people.",
     "portal.drop_unsorted": "A client sent a file for your team to sort on {engagement}.",
+    "follow_up.limit_reached": (
+        "The last reminder on {engagement} went out; nothing more will go automatically."
+    ),
     "third_party.uploaded": "A third party uploaded a file to a request on {engagement}.",
     "sign_off.went_stale": "Work you signed off on {engagement} changed after sign-off.",
     "review_note.raised": "A review note on {engagement} is waiting for you.",
@@ -388,6 +393,7 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("wall_approved", "system", "ShieldCheck"),
     NotificationKind("seasonal_access_ending", "system", "UserMinus"),  # G-01-T13
     NotificationKind("portal_drop_unsorted", "client_activity", "Inbox"),  # R-01-T09
+    NotificationKind("follow_up_limit_reached", "client_activity", "Send"),  # R-01-T24
     NotificationKind("third_party_uploaded", "client_activity", "Upload"),  # R-01-T13
     NotificationKind("sign_off_stale", "approval", "ClipboardCheck"),  # P-04-T19
     NotificationKind("review_note_raised", "approval", "MessageSquare"),  # P-04-T21

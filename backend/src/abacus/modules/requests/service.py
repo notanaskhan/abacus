@@ -1263,6 +1263,10 @@ class OverdueItem:
     description: str
     due_on: date
     client_assignee_user_id: UUID | None
+    # R-01-T24: what the firm's follow-up policy reads about the item's binder (DEC-74).
+    binder_id: UUID | None = None
+    binder_marked_done: bool = False
+    binder_override: dict[str, object] | None = None  # P-06's {every_days, max}
 
 
 async def overdue_for(
@@ -1271,7 +1275,18 @@ async def overdue_for(
     """For the engagement agent's reminders (SPEC-027 P-4): open or sent-back items past due."""
     async with tenant_session(tenant) as session:
         rows = await overdue_items(session, engagement_id, today)
-    return [OverdueItem(i.id, i.description, due, i.client_assignee_user_id) for i, due in rows]
+    return [
+        OverdueItem(
+            i.id,
+            i.description,
+            due,
+            i.client_assignee_user_id,
+            binder_id,
+            marked_done_at is not None,
+            dict(override) if override else None,
+        )
+        for i, due, binder_id, marked_done_at, override in rows
+    ]
 
 
 _STAFF_ROLES: Final = frozenset({"engagement_partner", "manager", "senior", "staff"})

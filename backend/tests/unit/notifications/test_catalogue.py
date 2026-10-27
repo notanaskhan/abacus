@@ -50,6 +50,7 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "wall.created",  # G-01-T09 (C16 `wall_approval_requested`, to the named partner)
         "wall.approved",  # G-01-T09 (C16 `wall_approved`, to the wall's creator)
         "portal.drop_unsorted",  # R-01-T09 (C16 `portal_drop_unsorted`)
+        "follow_up.limit_reached",  # R-01-T24 (C16 `follow_up_limit_reached`, to the leads)
         "membership.access_ending",  # G-01-T13 (C16 `seasonal_access_ending`, to firm admins)
         "third_party.uploaded",  # R-01-T13 (C16 `third_party_uploaded`, to the request owner)
         "sign_off.went_stale",  # P-04-T19 (C16 `sign_off_stale`, to the signer)

@@ -589,12 +589,19 @@ async def set_default_due_on(
 
 async def overdue_items(
     session: AsyncSession, engagement_id: UUID, today: date
-) -> Sequence[tuple[RequestItem, date]]:
+) -> Sequence[tuple[RequestItem, date, UUID, datetime | None, dict[str, Any] | None]]:
     """Open or sent-back items past their due date (their own, else the list's), for the
-    engagement agent's reminders (LIST_EXEMPT: the platform, not a person, reads them)."""
+    engagement agent's reminders (LIST_EXEMPT: the platform, not a person, reads them), with
+    their binder's id, client "Mark as Done" stamp and follow-up override (R-01-T24)."""
     due = func.coalesce(RequestItem.due_on, RequestList.default_due_on)
     rows = await session.execute(
-        select(RequestItem, due)
+        select(
+            RequestItem,
+            due,
+            RequestList.id,
+            RequestList.marked_done_at,
+            RequestList.follow_up_override,
+        )
         .join(RequestList, RequestList.id == RequestItem.request_list_id)
         .where(
             RequestItem.engagement_id == engagement_id,
@@ -603,7 +610,7 @@ async def overdue_items(
         )
         .order_by(due, RequestItem.created_at, RequestItem.id)
     )
-    return [(item, d) for item, d in rows.all()]
+    return [(item, d, b, done, o) for item, d, b, done, o in rows.all()]
 
 
 async def overdue_counts(

@@ -27,17 +27,26 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from fastapi import Depends, Header, Path
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import COMMUNICATIONS_FIRM_SENDER_DOMAIN, PORTAL_SETTINGS_EDITOR
 from abacus.kernel.classification import classified
+from abacus.kernel.clock import now
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.kernel.uow.idempotency import idempotent
-from abacus.modules.communications import template_service, template_store
+from abacus.modules.communications import (
+    follow_up_policy,
+    template_import,
+    template_preview,
+    template_service,
+    template_store,
+)
+from abacus.modules.communications.lint import LintFinding
 from abacus.modules.communications.render import Block, TemplateContent
 from abacus.modules.communications.template_registry import VARIABLES as TEMPLATE_VARIABLES
 from abacus.modules.communications.template_registry import (
@@ -45,6 +54,7 @@ from abacus.modules.communications.template_registry import (
     FollowUpMode,
     LintCode,
     TemplateAudience,
+    ValueFinding,
     VariableClass,
     VariableKind,
 )
@@ -56,6 +66,7 @@ from abacus.modules.identity.api import (
     Resource,
     allowed_actions,
     current_context,
+    firm_time_zone,
     names_of,
 )
 
@@ -533,15 +544,44 @@ async def list_email_templates_route(ctx: Ctx) -> EmailTemplateListOut:
     action="email_template.import",
     response_model=FirmEmailTemplateImportOut,
     status_code=200,
-    errors=(501,),
 )
 async def import_email_templates_route(
     body: FirmEmailTemplateImportIn, ctx: Ctx
 ) -> FirmEmailTemplateImportOut:
     """Onboarding (R-01-T23): the dry run lints every key and reports changes; applying creates
-    drafts or published versions as database rows. Audited `email_template.imported` (dry runs
-    are not)."""
-    await _stub(ctx)
+    drafts or published versions as database rows, all or nothing (422 `template_lint_failed`
+    or `template_invalid` while any entry is refused). Fresh MFA by the matrix, dry run
+    included. Audited `email_template.imported` (dry runs are not)."""
+    entries = [
+        template_import.BundleEntry(
+            e.key,
+            TemplateContent(
+                subject=e.subject,
+                preheader=e.preheader,
+                blocks=tuple(Block(b.id, b.kind, b.text) for b in e.blocks),
+                cta_label=e.cta_label,
+                cta_target=e.cta_target,
+            ),
+            e.publish,
+        )
+        for e in body.bundle
+    ]
+    results = await template_import.import_bundle(ctx, entries, dry_run=body.dry_run)
+    return FirmEmailTemplateImportOut(
+        dry_run=body.dry_run,
+        results=[
+            TemplateImportResultOut(
+                key=r.key, change=r.change, findings=[_finding_out(f) for f in r.findings]
+            )
+            for r in results
+        ],
+    )
+
+
+def _finding_out(finding: LintFinding | ValueFinding) -> LintFindingOut:
+    if isinstance(finding, ValueFinding):
+        return LintFindingOut(code=finding.code, variable=finding.variable)
+    return LintFindingOut(code=finding.code, block_id=finding.where)
 
 
 @templates_router.get("/{key}", action="email_template.read", response_model=EmailTemplateOut)
@@ -584,15 +624,29 @@ async def discard_email_template_draft_route(key: TemplateKey, ctx: Ctx) -> Emai
     "/{key}/preview",
     action="email_template.read",
     response_model=EmailPreviewOut,
-    errors=(501,),
 )
 async def preview_email_template_route(
     key: TemplateKey, body: EmailPreviewIn, ctx: Ctx
 ) -> EmailPreviewOut:
     """POR-20 a, c, d (R-01-T23): deterministic HTML and text plus lint findings on the text and
     the filled values; the sample contact's items only as far as the viewer may read them
-    (DEC-379); creates nothing."""
-    await _stub(ctx)
+    (DEC-379); 404 for a draft or version that isn't there, or a contact the viewer can't see;
+    creates nothing."""
+    found = await template_preview.preview(
+        ctx,
+        key,
+        source=body.source,
+        width=body.width,
+        sample_contact_id=body.sample_contact_id,
+    )
+    return EmailPreviewOut(
+        subject=found.rendered.subject,
+        html=found.rendered.html,
+        text=found.rendered.text,
+        from_display=found.from_display,
+        from_address=found.from_address,
+        findings=[_finding_out(f) for f in found.findings],
+    )
 
 
 @templates_router.post(
@@ -600,15 +654,38 @@ async def preview_email_template_route(
     action="email_template.test_send",
     response_model=EmailTestSendOut,
     status_code=202,
-    errors=(501,),
 )
 async def test_send_email_template_route(
     key: TemplateKey, body: EmailTestSendIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> EmailTestSendOut:
-    """POR-20 j, k (R-01-T23): to the acting admin only, fresh MFA, onshore; the sample
-    contact's items as far as the viewer may read them (DEC-379); 422 `template_lint_failed`.
-    Audited `email_template.test_sent`."""
-    await _stub(ctx, PORTAL_SETTINGS_EDITOR)
+    """POR-20 j, k (R-01-T23): to the acting admin's own address only (from the session, never
+    the request), "[Test]" before the subject, fresh MFA, onshore; the sample contact's items
+    as far as the viewer may read them (DEC-379); 422 `template_lint_failed`. Audited
+    `email_template.test_sent`. A retry with the same key sends nothing again."""
+    await template_preview.check_test_send(ctx, key)
+
+    async def run() -> tuple[int, dict[str, object]]:
+        sent = await template_preview.send_test(
+            ctx, key, sample_contact_id=body.sample_contact_id, idempotency_key=idempotency_key
+        )
+        # Identifiers only in the stored answer (P-36); the address is the session's own.
+        return 202, {"message_id": str(sent.message_id)}
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="email_templates.test_send",
+        key=idempotency_key,
+        body={"key": key, "sample_contact_id": str(body.sample_contact_id or "")},
+        run=run,
+    )
+    found = await template_preview.preview(
+        ctx, key, source=None, width=600, sample_contact_id=body.sample_contact_id
+    )
+    return EmailTestSendOut(
+        message_id=UUID(str(stored.body["message_id"])),
+        sent_to=await template_preview.own_address(ctx),
+        subject=f"{template_preview.TEST_PREFIX}{found.rendered.subject}",
+    )
 
 
 @templates_router.post(
@@ -700,12 +777,36 @@ async def revoke_sending_domain_route(domain_id: UUID, ctx: Ctx) -> SendingDomai
     await _stub(ctx, COMMUNICATIONS_FIRM_SENDER_DOMAIN)
 
 
-@policy_router.get(
-    "", action="portal_settings.read", response_model=FollowUpPolicyOut, errors=(501,)
-)
+@policy_router.get("", action="portal_settings.read", response_model=FollowUpPolicyOut)
 async def get_follow_up_policy_route(
     ctx: Ctx, sample_contact_id: UUID | None = None
 ) -> FollowUpPolicyOut:
-    """The policy and the next send for a sample recipient (R-01-T24): Mon Sep 14 + 7 days is
-    Mon Sep 21; + 5 days is Sat Sep 19, shifted to Mon Sep 21."""
-    await _stub(ctx)
+    """The policy and the next send for the sample recipient (R-01-T24): the last send taken as
+    today's send time, so Mon Sep 14 + 7 days is Mon Sep 21, and + 5 days is Sat Sep 19, moved
+    to Mon Sep 21. Until contacts carry a time zone the recipient's is the firm's (DEC-563), so
+    the answer is the sample recipient's whatever `sample_contact_id` names (nothing about a
+    contact is read or echoed)."""
+    policy = await follow_up_policy.read_follow_up_policy(ctx)
+    zone = await firm_time_zone(ctx.tenant)
+    today = (await now(ctx.tenant)).astimezone(ZoneInfo(zone)).date()
+    last = datetime.combine(today, policy.send_local_time, tzinfo=ZoneInfo(zone))
+    nxt = follow_up_policy.next_send_at(policy, last, zone)
+    return FollowUpPolicyOut(
+        policy=FollowUpPolicyFields(
+            cadence_days=policy.cadence_days,
+            max_reminders=policy.max_reminders,
+            send_local_time=policy.send_local_time.strftime("%H:%M"),
+            weekdays_only=policy.weekdays_only,
+            stop_on_binder_done=policy.stop_on_binder_done,
+            notify_preparer_after_max=policy.notify_preparer_after_max,
+            cc_assigned_preparer=policy.cc_assigned_preparer,
+            mode=policy.mode,
+        ),
+        version=policy.version,
+        next_send=NextSendOut(
+            sample_contact_id=None,
+            last_sent_at=last,
+            next_send_at=nxt.next_send_at,
+            shifted_from=nxt.shifted_from,
+        ),
+    )

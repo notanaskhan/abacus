@@ -19,6 +19,14 @@ from abacus.modules.communications.events import (
     PortalLinkRenewRequested,
 )
 from abacus.modules.communications.fake_ses import FakeSesEventQueue, FakeSesTransport
+from abacus.modules.communications.follow_up_policy import (
+    FollowUpPolicy,
+    NextSend,
+    follow_up_policy,
+    next_send_at,
+    next_send_on,
+    save_follow_up_policy,
+)
 from abacus.modules.communications.follow_ups import (
     REMINDER_TEMPLATE,
     RETURN_TEMPLATE,
@@ -32,6 +40,9 @@ from abacus.modules.communications.notification_email import (
     NotificationMail,
     send_notification_email,
     template_key,
+)
+from abacus.modules.communications.notification_email import (
+    display_name as engagement_display_name,
 )
 from abacus.modules.communications.preview_scope import PreviewSelection, viewer_scoped
 from abacus.modules.communications.render import Block as TemplateBlockContent
@@ -73,6 +84,8 @@ from abacus.modules.communications.sink import (
     sink_address,
     sink_domain,
 )
+from abacus.modules.communications.template_import import BundleEntry as EmailTemplateBundleEntry
+from abacus.modules.communications.template_import import import_bundle as import_email_templates
 from abacus.modules.communications.template_registry import (
     VARIABLES as TEMPLATE_VARIABLES,
 )
@@ -176,9 +189,11 @@ __all__ = [
     "DnsRecord",
     "Draft",
     "DrainSesEventsWorkflow",
+    "EmailTemplateBundleEntry",
     "EmailTemplateRegistration",
     "FakeSesEventQueue",
     "FakeSesTransport",
+    "FollowUpPolicy",
     "FollowUpPolicyFields",
     "FollowUpTemplateMissing",
     "IdentitySetup",
@@ -189,6 +204,7 @@ __all__ = [
     "MessageBounced",
     "MessageComplained",
     "MessageView",
+    "NextSend",
     "NextSendOut",
     "NotificationMail",
     "OutOfScope",
@@ -221,15 +237,21 @@ __all__ = [
     "discard_email_template_draft",
     "drain_ses_events",
     "email_template_state",
+    "engagement_display_name",
+    "follow_up_policy",
+    "import_email_templates",
     "is_suppressed",
     "issue_secure_link",
     "lint_values",
+    "next_send_at",
+    "next_send_on",
     "on_sink",
     "publish_email_template",
     "register_email_template",
     "registered_templates",
     "resolve_secure_link",
     "save_email_template_draft",
+    "save_follow_up_policy",
     "scheduled_send_enabled",
     "send",
     "send_email",
