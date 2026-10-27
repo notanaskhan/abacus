@@ -1151,6 +1151,8 @@ LIST_EXEMPT = frozenset(
         # Q-02-T33: the incident register's recipients (QI and partners), same footing.
         ("src/abacus/modules/identity/repository.py", "active_security_admins"),
         ("src/abacus/modules/identity/repository.py", "active_partner_members"),
+        # P-07-T47 (DEC-544): the quality owners an EQR gate is assigned to (system, firm-wide).
+        ("src/abacus/modules/identity/repository.py", "active_quality_partners"),
         ("src/abacus/modules/notifications/repository.py", "insert_notifications"),
         # Support sessions are firm-level records, listed after `authorise(support_session.read)`.
         ("src/abacus/modules/identity/repository.py", "list_support_sessions"),
@@ -1185,6 +1187,16 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/ledger/repository.py", "gl_balances_of"),
         ("src/abacus/modules/ledger/repository.py", "gl_entries_of"),
         ("src/abacus/modules/connections/repository.py", "waiting_gl_imports"),
+        # A-02-T16 (DEC-514): facts about connections the caller already authorised
+        # `connection.read` or `.retry` on (an engagement of their entity), keyed by those ids.
+        ("src/abacus/modules/connections/repository.py", "live_connections_of"),
+        ("src/abacus/modules/connections/repository.py", "last_failures"),
+        ("src/abacus/modules/connections/repository.py", "recent_runs"),
+        ("src/abacus/modules/connections/repository.py", "open_reconnect_requests"),
+        ("src/abacus/modules/connections/repository.py", "fulfil_reconnect_requests"),
+        # A-02-T16 (DEC-514): an entity's engagements as candidates `authorise` judges one by one
+        # (`connections.authorised_engagement`); never returned as a list.
+        ("src/abacus/modules/engagements/repository.py", "entity_engagement_ids"),
         ("src/abacus/modules/requests/repository.py", "items_fulfilled_by"),
         # P-06-T07: one binder's sections, requests and recipient history, read after
         # `authorise(binder.*)` on that binder; and the platform's close rule on a C1 fact.
@@ -1245,6 +1257,12 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/review/repository.py", "notes_of"),
         ("src/abacus/modules/review/repository.py", "note_events_of"),
         ("src/abacus/modules/review/repository.py", "notes_of_target"),
+        # P-04-T23: a decision card's own chain, its successors and its history, read after
+        # `authorise(decision.read)` on the card's engagement (or for rows a `visible()` list
+        # already returned).
+        ("src/abacus/modules/review/repository.py", "cards_by_id"),
+        ("src/abacus/modules/review/repository.py", "successors_of"),
+        ("src/abacus/modules/review/repository.py", "versions_of"),
         ("src/abacus/modules/workpapers/repository.py", "engagement_papers"),
         # SPEC-314 (TASK-332): an engagement's risks for the EQR digest, after authorising on it.
         ("src/abacus/modules/fieldwork/repository.py", "engagement_risks"),
@@ -1392,7 +1410,9 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     # The outbound scope checker reads each owner's facts through its API (SPEC-006, TASK-021 D2).
     # SPEC-032 (TASK-062 D1): it registers itself as the check on comments shared with a client.
     "communications": _BASE | {"engagements", "organisations", "ledger", "evidence", "requests"},
-    "integrations": _BASE | {"organisations", "engagements", "evidence", "ledger"},
+    # A-02 §4.1 (A-02-T16): POR-16's cards and start compose `connections` (which never imports
+    # integrations, so the edge stays acyclic; W-01 relies on the same rule).
+    "integrations": _BASE | {"organisations", "engagements", "evidence", "ledger", "connections"},
     # The engagement graph reads the latest snapshot's accounts (SPEC-008, TASK-023 D1).
     # SPEC-027 (TASK-051 D3): the engagement agent works out overdue reminders; communications
     # sends them (the only sender, COMM-001).
@@ -1543,6 +1563,7 @@ _NETWORK_ROOTS = frozenset(
 _CONNECTOR_METHODS = frozenset(
     {"capabilities", "authorise_url", "exchange_code", "refresh", "pull", "changes_since"}
     | {"fetch_attachment", "health"}
+    | {"revoke"}  # A-02-T16 review M1: the read-only grant's end, never a write to the books
 )
 _WRITE_VERBS = ("create", "update", "delete", "write", "post", "put", "patch", "upload", "send")
 
@@ -2343,11 +2364,28 @@ RULES: list[Rule | TreeRule] = [
         exclude=(
             "src/abacus/modules/review/service.py",
             "src/abacus/modules/review/sign_offs.py",
+            "src/abacus/modules/review/bulk.py",  # P-04-T22: each bulk item signs through it
             "src/abacus/modules/review/contract.py",
             "src/abacus/modules/review/api.py",
             "src/abacus/modules/workpapers/service.py",
             "src/abacus/modules/assurance/mapping.py",
             "src/abacus/modules/assurance/trial_balance.py",
+        ),
+    ),
+    Rule(
+        id="DECISION-001",
+        description="Only the decision card service and its route reach a card's decision",
+        adr="ADR-160",
+        check=_check_named(
+            "decide_card",
+            "only the card's reserved person decides, through the review service (INV-1, "
+            "ADR-160 clause 8)",
+        ),
+        # P-04-T23: the definition and its route; any other file naming it fails.
+        include=("src/abacus/*",),
+        exclude=(
+            "src/abacus/modules/review/decisions.py",
+            "src/abacus/modules/review/contract.py",
         ),
     ),
     Rule(
@@ -2471,7 +2509,12 @@ RULES: list[Rule | TreeRule] = [
         description="Connectors are read-only",
         adr="ADR-040",
         check=_check_connector_read_only,
-        include=("src/abacus/modules/connections/*",),
+        # A-02-T16 review round 2 L5: the integrations adapters and the Writer port too.
+        include=(
+            "src/abacus/modules/connections/*",
+            "src/abacus/modules/integrations/adapters.py",
+            "src/abacus/modules/integrations/writers/*",
+        ),
     ),
     Rule(
         id="WF-001",

@@ -34,3 +34,109 @@ class SignOffWentStale(DomainEvent):
     target_id: Annotated[UUID, classified("internal")]
     level: Annotated[int, classified("internal")]
     signed_by: Annotated[UUID, classified("internal")]
+
+
+# --- Review notes (P-04-T21; P-04 §4.5) --------------------------------------------------------
+
+
+class ReviewNoteRaised(DomainEvent):
+    """A person raised a note: the assignee (or, with none, the target's preparers) is told
+    (`review_note_raised`). Never the body."""
+
+    event_type: ClassVar[str] = "review_note.raised"
+
+    note_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    target_type: Annotated[str, classified("internal")]
+    target_id: Annotated[UUID, classified("internal")]
+    by_user: Annotated[UUID, classified("internal")]
+    recipient_user_ids: Annotated[list[UUID], classified("internal")]
+
+
+class ReviewNoteResponded(DomainEvent):
+    event_type: ClassVar[str] = "review_note.responded"
+
+    note_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    target_type: Annotated[str, classified("internal")]
+    target_id: Annotated[UUID, classified("internal")]
+    by_user: Annotated[UUID, classified("internal")]
+
+
+class ReviewNoteCleared(DomainEvent):
+    event_type: ClassVar[str] = "review_note.cleared"
+
+    note_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    target_type: Annotated[str, classified("internal")]
+    target_id: Annotated[UUID, classified("internal")]
+    by_user: Annotated[UUID, classified("internal")]
+
+
+class ReviewNoteReopened(DomainEvent):
+    event_type: ClassVar[str] = "review_note.reopened"
+
+    note_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    target_type: Annotated[str, classified("internal")]
+    target_id: Annotated[UUID, classified("internal")]
+    by_user: Annotated[UUID, classified("internal")]
+
+
+class ReviewNoteWithdrawn(DomainEvent):
+    event_type: ClassVar[str] = "review_note.withdrawn"
+
+    note_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    target_type: Annotated[str, classified("internal")]
+    target_id: Annotated[UUID, classified("internal")]
+    by_user: Annotated[UUID, classified("internal")]
+
+
+# --- Decision cards (P-04-T23; ADR-160 clause 8) -----------------------------------------------
+
+
+class DecisionCardRaised(DomainEvent):
+    """A card waits on its reserved role: the reserved person, or the engagement's holders of the
+    role, are told (`decision_assigned`)."""
+
+    event_type: ClassVar[str] = "decision_card.raised"
+
+    card_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    kind: Annotated[str, classified("internal")]
+    version_no: Annotated[int, classified("internal")]
+    recipient_user_ids: Annotated[list[UUID], classified("internal")]
+
+
+class DecisionCardSuperseded(DomainEvent):
+    event_type: ClassVar[str] = "decision_card.superseded"
+
+    card_id: Annotated[UUID, classified("internal")]
+    superseded_by_card_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    kind: Annotated[str, classified("internal")]
+
+
+class DecisionDecided(DomainEvent):
+    """The reserved person decided: the kind's owner applies it (P-10 resumes a waiting run)."""
+
+    event_type: ClassVar[str] = "decision.decided"
+
+    card_id: Annotated[UUID, classified("internal")]
+    decision_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    kind: Annotated[str, classified("internal")]
+    option_key: Annotated[str, classified("internal")]
+    decided_by: Annotated[UUID, classified("internal")]
+
+
+class DecisionNotifyRequested(DomainEvent):
+    """ "Notify <person>" on a card: a mention to the reserved person (SHL-11 b)."""
+
+    event_type: ClassVar[str] = "decision_card.notify_requested"
+
+    card_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    by_user: Annotated[UUID, classified("internal")]
+    assignee_user_id: Annotated[UUID, classified("internal")]

@@ -35,6 +35,8 @@ _NAMESPACE: Final = uuid.UUID("5b0f3c2e-6a43-4d6e-9a51-7f2c1f0e9d14")
 # The change events an owner announces, and which payload key names the changed target.
 STALE_SOURCES: Final[dict[str, tuple[str, str]]] = {
     "trial_balance.version_created": ("trial_balance", "trial_balance_id"),
+    # A-02-T17 (SPEC-333 AC-13): a trial balance's checks are part of what its sign-off approves.
+    "tie_out_check.changed": ("trial_balance", "trial_balance_id"),
     "workpaper.content_changed": ("workpaper", "workpaper_id"),
 }
 

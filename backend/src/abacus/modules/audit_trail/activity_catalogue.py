@@ -49,6 +49,14 @@ CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
     "staff.unlocked": _a("change"),
     "support_access.requests_allowed": _a("change"),
     "support_access.requests_disallowed": _a("change", "no"),
+    # G-02-T14 writes the security-center contract's names (security-center.md §5; DEC-529).
+    "security_policy.updated": _a("change"),
+    "portal_security_policy.updated": _a("change"),
+    "sso_exempt_account.designated": _a("change"),
+    "sso_exempt_account.cleared": _a("change", "no"),
+    "sso_exempt_account.tested": _a("sign_in"),
+    "session.signed_out": _a("sign_in", "no"),
+    "support_access.updated": _a("change"),
     "incident.timeline_added": _a("change"),
     "incident.decision_recorded": _a("decision"),
     "incident.decided": _a("decision", "ok"),
@@ -75,6 +83,15 @@ CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
     # Walls (G-01) and people
     "wall.created": _a("change", "pl", "user_id", "client_id", "reason", "approver_user_id"),
     "wall.ended": _a("change", "no"),
+    # Connections and integrations (A-02-T15, T16): codes and ids only; `client_actor` marks a
+    # client person's act, rendered "(client)" (INV-5)
+    "write_capability.refused": _a("change", "no", "reason", "shape"),
+    "connection.consent_recorded": _a("decision", "ok", "consent_version", "client_actor"),
+    "connection.reauthorized": _a("change", "pl", "client_actor"),
+    "connection.retry_requested": _a("run", "pl", "sync_run_id", "client_actor"),
+    "connection.grant_revoked": _a("change", "no", "result"),  # review M1: the provider's revoke
+    # Tie-out checks (A-02-T17)
+    "tie_out_check.issue_linked": _a("change", "pl", "issue_id", "version_no"),
 }
 
 _REGISTERED: dict[str, CatalogueEntry] = {}

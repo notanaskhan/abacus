@@ -15,7 +15,7 @@
 - **EQR eligibility approval:** by the quality owner (`eqr.approve_eligibility`), never the
   engagement partner (409 `eqr_approver_is_ep`); an insert-only row with the checks and result.
 - **Confirmation requests:** a person asks members whose confirmation is still requested or
-  declined to confirm; each is audited and re-notified through `independence.requested`.
+  declined to confirm; each is audited and notified through `independence.reminded` (P-07-T47).
 
 Every write is one unit of work with its audit event, after `authorise` (INV-5).
 """
@@ -36,7 +36,7 @@ from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainInvalid, NotFound
 from abacus.kernel.uow import DomainEvent, Ref, Target, uow
-from abacus.modules.engagements.events import IndependenceRequested
+from abacus.modules.engagements.events import EqrEligibilityApproved, IndependenceReminded
 from abacus.modules.engagements.models import Engagement, IndependenceConfirmation
 from abacus.modules.engagements.repository import confirmations_of
 from abacus.modules.engagements.service import EngagementRef, get_ref, lock_ref
@@ -496,6 +496,7 @@ async def approve_eqr_eligibility(
             target=Target("engagement", engagement_id),
             after=Ref(user_id=candidate_user_id),
         )
+        tx.emit(EqrEligibilityApproved(engagement_id=engagement_id, user_id=candidate_user_id))
     return EqrApproval(
         row.id, engagement_id, candidate_user_id, result, checks, ctx.user_id, row.approved_at
     )
@@ -510,6 +511,12 @@ def _checks_json(checks: list[Check]) -> str:
 # --- Confirmation requests ----------------------------------------------------------------------
 
 _OPEN: Final = frozenset({"requested", "declined"})
+
+
+# P-07-T47: the EQR eligibility gate (`human_gates.eqr_eligibility_due`) asks the same questions.
+eqr_target = _target
+needs_eqr_approval = _needs_approval
+eqr_approved = _approved
 
 
 async def remind_independence(
@@ -549,5 +556,10 @@ async def remind_independence(
                 target=Target("engagement", engagement_id),
                 after=Ref(user_id=user_id),
             )
-            tx.emit(IndependenceRequested(engagement_id=engagement_id, user_id=user_id))
+            # P-07-T47: the reminder is its own kind (`independence_reminder`, C16).
+            tx.emit(
+                IndependenceReminded(
+                    engagement_id=engagement_id, user_id=user_id, by_user=ctx.user_id
+                )
+            )
     return wanted

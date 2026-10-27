@@ -13,6 +13,8 @@ HUMAN_ONLY_ACTIONS: Final[frozenset[str]] = frozenset(
         "assurance.phase_recorded",
         "conflict.cleared",
         "contact.unlocked",
+        "decision.decided",
+        "decision.reassessed",
         "engagement.acceptance_recorded",
         "engagement.accepted",
         "engagement.letter_recorded",
