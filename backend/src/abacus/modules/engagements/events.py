@@ -74,3 +74,14 @@ class EqrEligibilityApproved(DomainEvent):
 
     engagement_id: Annotated[UUID, classified("internal")]
     user_id: Annotated[UUID, classified("internal")]
+
+
+# --- P-07-T52: CLI-06's bulk import. Identifiers and counts only. ------------------------------
+
+
+class ClientImportCompleted(DomainEvent):
+    """A bulk client import's run finished: every row applied, skipped or failed."""
+
+    event_type: ClassVar[str] = "client_import.completed"
+
+    import_id: Annotated[UUID, classified("internal")]

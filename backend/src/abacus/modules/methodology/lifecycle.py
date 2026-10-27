@@ -31,7 +31,7 @@ from uuid import UUID
 from sqlalchemy import Insert, func, insert, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from abacus.kernel.db import tenant_session
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.identity.api import AuthContext, Forbidden, Resource, authorise, names_of
@@ -137,6 +137,11 @@ async def checklist_of(session: AsyncSession, version_id: UUID) -> list[Checklis
     ]
 
 
+def _day(on: date) -> int:
+    """A date as an audit ref (integers only): 2026-01-01 is 20260101."""
+    return on.year * 10000 + on.month * 100 + on.day
+
+
 def hash_of(items: list[ChecklistItem]) -> str:
     body = json.dumps(
         [[i.code, i.ok, i.n] for i in items], separators=(",", ":"), sort_keys=True
@@ -227,9 +232,21 @@ async def submit_version(ctx: AuthContext, version_id: UUID, row_version: int) -
 
 
 async def _refused(ctx: AuthContext, version_id: UUID, action: str) -> None:
-    """Keep the refusal: its own unit of work, so the raise that follows rolls nothing back."""
-    async with uow(ctx.tenant) as tx:
-        tx.record(action, target=Target(SUBJECT, version_id), after=Ref(attempted=APPROVE))
+    """Keep the refusal: its own unit of work, so the raise that follows rolls nothing back. A
+    non-human's attempt is recorded by the system for the person it ran for (an agent's audit
+    row must name its person; the database's check)."""
+    tenant = (
+        ctx.tenant
+        if ctx.tenant.actor_kind == "human"
+        else TenantContext(
+            ctx.tenant_id,
+            "system",
+            f"methodology:refusal:{version_id}",
+            on_behalf_of_user_id=ctx.tenant.on_behalf_of_user_id or ctx.user_id,
+        )
+    )
+    async with uow(tenant) as tx:
+        tx.record(action, target=Target(SUBJECT, version_id), after=Ref(version=version_id))
 
 
 async def approve_guard(ctx: AuthContext, version_id: UUID) -> None:
@@ -305,7 +322,7 @@ async def approve_version(
             tx.record(
                 "methodology_version.superseded",
                 target=Target(SUBJECT, p.version_id),
-                after=Ref(by=version_id, effective_to=ends.isoformat()),
+                after=Ref(by=version_id, effective_to=_day(ends)),
             )
             tx.emit(
                 MethodologyVersionSuperseded(
@@ -333,7 +350,7 @@ async def approve_version(
         tx.record(
             "methodology_version.approved",
             target=Target(SUBJECT, version_id),
-            after=Ref(effective_from=effective_from.isoformat(), superseded=len(prior)),
+            after=Ref(effective_from=_day(effective_from), superseded=len(prior)),
         )
         return await _view(tx.session, version_id)
 

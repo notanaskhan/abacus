@@ -209,6 +209,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "procedure.read",
         "procedure.run",
         "proposal.approve",  # P-04-T08 (TASK-414)
+        "proposal.decide_change_set",  # P-04-T24: a person decides a change set's rows
         "proposal.follow_up",  # P-04-T08 (TASK-414)
         "proposal.read",  # P-04-T08 (TASK-414)
         "proposal.reject",  # P-04-T08 (TASK-414)

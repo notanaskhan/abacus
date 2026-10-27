@@ -258,6 +258,19 @@ def _shape(schema: Schema) -> str:
     return json.dumps(keep, sort_keys=True)
 
 
+def _field_breaks(where: str, before: Schema, after: Schema) -> list[str]:
+    """A field's breaks. An inline enum follows the same rule as a named one (README, "The
+    frozen-contract rule"; DEC-597): a member added is additive, a member removed breaks."""
+    old_enum = cast(list[object] | None, before.get("enum"))
+    new_enum = cast(list[object] | None, after.get("enum"))
+    if old_enum is not None and new_enum is not None:
+        rest_before = {k: v for k, v in before.items() if k != "enum"}
+        rest_after = {k: v for k, v in after.items() if k != "enum"}
+        if _shape(rest_before) == _shape(rest_after):
+            return [f"{where}: enum member {m!r} removed" for m in old_enum if m not in new_enum]
+    return [f"{where}: type changed"] if _shape(before) != _shape(after) else []
+
+
 def breaking(frozen: dict[str, Schema], now: dict[str, Schema]) -> list[str]:
     """What today's schemas break of a frozen snapshot."""
     problems: list[str] = []
@@ -277,8 +290,8 @@ def breaking(frozen: dict[str, Schema], now: dict[str, Schema]) -> list[str]:
         for field, spec in old_props.items():
             if field not in new_props:
                 problems.append(f"{name}.{field}: removed or renamed")
-            elif _shape(spec) != _shape(new_props[field]):
-                problems.append(f"{name}.{field}: type changed")
+                continue
+            problems += _field_breaks(f"{name}.{field}", spec, new_props[field])
         newly_required = set(cast(list[str], after.get("required") or [])) - set(
             cast(list[str], before.get("required") or [])
         )

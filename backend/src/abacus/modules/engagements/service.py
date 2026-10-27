@@ -363,6 +363,17 @@ async def open_engagements(tenant: TenantContext) -> list[UUID]:
         return list(await open_engagement_ids(session))
 
 
+async def all_engagement_ids(tenant: TenantContext) -> list[UUID]:
+    """Q-02-T47: every engagement of the firm, archived ones included, oldest first, ids only. The
+    firm export's candidates; the caller authorises each one as its acting person before reading
+    anything of it."""
+    async with tenant_session(tenant) as session:
+        found = await session.execute(
+            select(Engagement.id).order_by(Engagement.created_at, Engagement.id)
+        )
+        return list(found.scalars().all())
+
+
 async def is_archived(tenant: TenantContext, engagement_id: UUID) -> bool | None:
     """SPEC-027 (TASK-050): whether the engagement is archived, or None outside the tenant (the
     engagement agent ends with it)."""
