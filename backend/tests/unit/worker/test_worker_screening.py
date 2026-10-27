@@ -61,6 +61,8 @@ def test_ac14_the_worker_hosts_connections_and_agents() -> None:
         "connection.created",
         "request_item.classified",
         "ledger_snapshot.recorded",  # SPEC-034 (TASK-069): waiting general ledgers follow
+        # A-02-T16: a disconnected or replaced grant is revoked at the provider after commit.
+        "connection_grant.revocation_requested",
     }
     assert worker_main.agents.SUBSCRIPTIONS in worker_main.SUBSCRIBERS
 
@@ -118,6 +120,9 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "independence.declined",
         "independence.concluded",
         "eqr.eligibility_approved",
+        # A-02-T16: grant revocation; A-02-T17: a changed tie-out check makes sign-offs stale.
+        "connection_grant.revocation_requested",
+        "tie_out_check.changed",
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert (

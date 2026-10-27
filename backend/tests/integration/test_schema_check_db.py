@@ -1967,6 +1967,9 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         # 0101 (P-01-T09): the staff session BFF.
         | {"auth_state_put", "auth_state_take", "auth_session_start", "auth_session_rotate"}
         | {"auth_session_set_refresh", "auth_session_revoke", "auth_session_end"}
+        # 0220 (G-02-T14): per-firm limits and sign-outs, ADM-06 sessions, the one-year purge.
+        | {"security_sessions", "security_session_member", "security_sign_in_methods"}
+        | {"auth_session_refused_here", "auth_session_owner", "auth_session_purge"}
         | {"access_events_partition"}  # 0105 (Q-02-T20)
         | {"apply_plan_entitlements", "invite_first_admin", "set_plan_module"}  # 0107
         | {"portal_resolve_host", "portal_host_logo", "portal_domain_add"}  # 0111

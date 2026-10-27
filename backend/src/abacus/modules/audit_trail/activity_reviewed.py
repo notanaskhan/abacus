@@ -355,6 +355,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "support_session.ended",
         "support_session.expired",
         "support_session.requested",
+        "support_session.revoked",  # G-02-T14: turning support off closes pending requests
         "sync_run.failed",
         "sync_run.raw_stored",
         "sync_run.requested_again",
