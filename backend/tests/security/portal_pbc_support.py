@@ -28,7 +28,6 @@ Json = dict[str, object]
 FLAGS: Final = (
     "portal.sign_in_v2",
     "portal.home_v2",
-    "portal.documents_v2",
     "portal.third_party_room",
     "binders.engine",
 )

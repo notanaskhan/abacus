@@ -211,11 +211,6 @@ NOTIFICATIONS_V2 = Flag(
     kind="boolean",
     default="false",
 )
-PORTAL_DOCUMENTS_V2 = Flag(
-    name="portal.documents_v2",
-    kind="boolean",
-    default="false",
-)
 PORTAL_DROP_SORT = Flag(
     name="portal.drop_sort",
     kind="boolean",
@@ -322,7 +317,6 @@ FLAGS: dict[str, Flag] = {
     "methodology.programs": METHODOLOGY_PROGRAMS,
     "notifications.email": NOTIFICATIONS_EMAIL,
     "notifications.v2": NOTIFICATIONS_V2,
-    "portal.documents_v2": PORTAL_DOCUMENTS_V2,
     "portal.drop_sort": PORTAL_DROP_SORT,
     "portal.home_v2": PORTAL_HOME_V2,
     "portal.settings_editor": PORTAL_SETTINGS_EDITOR,
