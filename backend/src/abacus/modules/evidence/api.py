@@ -103,7 +103,12 @@ from abacus.modules.evidence.firm_export_schedule import register_firm_export_st
 from abacus.modules.evidence.firm_export_schedule_contract import (
     schedule_router as firm_export_schedule_router,
 )
-from abacus.modules.evidence.gate_facts import decided_among, effective_decisions, waiting_among
+from abacus.modules.evidence.gate_facts import (
+    decided_among,
+    effective_decisions,
+    review_assignees,
+    waiting_among,
+)
 from abacus.modules.evidence.hold_activities import ACTIVITIES as HOLD_ACTIVITIES
 from abacus.modules.evidence.hold_routes import router as legal_hold_router
 from abacus.modules.evidence.hold_runs import SUBSCRIPTIONS as HOLD_SUBSCRIPTIONS
@@ -535,6 +540,7 @@ __all__ = [
     "render_trial_balance_layers",
     "retain_until_for",
     "return_files",
+    "review_assignees",
     "review_material",
     "router",
     "screening_facts",
