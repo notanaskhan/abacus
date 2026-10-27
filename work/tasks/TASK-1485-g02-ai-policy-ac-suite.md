@@ -90,3 +90,8 @@ Delete the test file and the rows.
   failures, triaged: Hannah's read refused (ED-181, incidental reads moved to Grace), the agent
   and system pass the read routes (ED-182), the opt-in needs `agents.client_data_optin` on (test
   setup), pause audit names (spec drift, DEC-552). Second run of the triaged set green.
+- 2026-10-27: final targeted pass, `-n 2`, in two pieces after a crash cut a single run short:
+  158 passed, 21 strict xfails (ED-180 ×2, ED-181 ×2, ED-182 ×16, legacy autonomy ×1), no
+  failure. Gates on my paths: ruff format and check, pyright (0 errors), lint-imports (5 kept),
+  banned_patterns, error_codes, validate_docs, scope_guards, fresh_mfa, secrets_scan all exit 0.
+  No generated sources or migrations touched. Playwright not run (no frontend change).
