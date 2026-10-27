@@ -1255,6 +1255,12 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/review/repository.py", "notes_of"),
         ("src/abacus/modules/review/repository.py", "note_events_of"),
         ("src/abacus/modules/review/repository.py", "notes_of_target"),
+        # P-04-T23: a decision card's own chain, its successors and its history, read after
+        # `authorise(decision.read)` on the card's engagement (or for rows a `visible()` list
+        # already returned).
+        ("src/abacus/modules/review/repository.py", "cards_by_id"),
+        ("src/abacus/modules/review/repository.py", "successors_of"),
+        ("src/abacus/modules/review/repository.py", "versions_of"),
         ("src/abacus/modules/workpapers/repository.py", "engagement_papers"),
         # SPEC-314 (TASK-332): an engagement's risks for the EQR digest, after authorising on it.
         ("src/abacus/modules/fieldwork/repository.py", "engagement_risks"),
@@ -2356,11 +2362,28 @@ RULES: list[Rule | TreeRule] = [
         exclude=(
             "src/abacus/modules/review/service.py",
             "src/abacus/modules/review/sign_offs.py",
+            "src/abacus/modules/review/bulk.py",  # P-04-T22: each bulk item signs through it
             "src/abacus/modules/review/contract.py",
             "src/abacus/modules/review/api.py",
             "src/abacus/modules/workpapers/service.py",
             "src/abacus/modules/assurance/mapping.py",
             "src/abacus/modules/assurance/trial_balance.py",
+        ),
+    ),
+    Rule(
+        id="DECISION-001",
+        description="Only the decision card service and its route reach a card's decision",
+        adr="ADR-160",
+        check=_check_named(
+            "decide_card",
+            "only the card's reserved person decides, through the review service (INV-1, "
+            "ADR-160 clause 8)",
+        ),
+        # P-04-T23: the definition and its route; any other file naming it fails.
+        include=("src/abacus/*",),
+        exclude=(
+            "src/abacus/modules/review/decisions.py",
+            "src/abacus/modules/review/contract.py",
         ),
     ),
     Rule(

@@ -28,6 +28,7 @@ GROUPS: Final = frozenset(
     | {"access_control"}  # P-08-T21 security review: security-role changes
     | {"team"}  # P-07-T30 (DEC-327): the engagement partner's team approval
     | {"incident"}  # G-02-T02 (Q-02 AC-42): incident decisions
+    | {"sign_off"}  # P-04-T22 (DEC-501): bulk sign-off
 )
 
 

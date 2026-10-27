@@ -3397,7 +3397,7 @@ export type BulkSignOffItemOut = {
     /**
      * Detail
      */
-    detail: 'content_changed' | 'segregation' | 'open_review_notes' | 'independence_pending' | 'incomplete' | 'uncited_change' | 'level_not_permitted' | null;
+    detail: 'content_changed' | 'segregation' | 'open_review_notes' | 'independence_pending' | 'incomplete' | 'uncited_change' | 'level_not_permitted' | 'not_prepared' | 'already_signed' | 'sign_off_invalid' | null;
     /**
      * Ok
      */
@@ -15585,7 +15585,7 @@ export type NoteEventOut = {
     /**
      * Kind
      */
-    kind: 'responded' | 'cleared' | 'reopened';
+    kind: 'responded' | 'cleared' | 'reopened' | 'withdrawn';
 };
 
 /**

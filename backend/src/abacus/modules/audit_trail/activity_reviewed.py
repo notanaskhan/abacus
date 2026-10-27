@@ -99,6 +99,12 @@ REVIEWED_FALLBACK: Final = frozenset(
         "contact.portal_activated",
         "contact.unlocked",
         "contact.updated",
+        "decision.analysis_requested",
+        "decision.decided",
+        "decision.notified",
+        "decision.reassessed",
+        "decision_card.raised",
+        "decision_card.superseded",
         "email_template.draft_discarded",  # R-01-T19
         "email_template.draft_saved",  # R-01-T19
         "email_template.published",  # R-01-T19
@@ -311,6 +317,9 @@ REVIEWED_FALLBACK: Final = frozenset(
         "review_decision.undone",
         "review_note.cleared",
         "review_note.raised",
+        "review_note.reopened",
+        "review_note.responded",
+        "review_note.withdrawn",
         "risk.approved",
         "risk.recorded",
         "sample.approved",

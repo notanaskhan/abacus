@@ -7313,7 +7313,10 @@
                   "independence_pending",
                   "incomplete",
                   "uncited_change",
-                  "level_not_permitted"
+                  "level_not_permitted",
+                  "not_prepared",
+                  "already_signed",
+                  "sign_off_invalid"
                 ],
                 "type": "string"
               },
@@ -32897,7 +32900,8 @@
             "enum": [
               "responded",
               "cleared",
-              "reopened"
+              "reopened",
+              "withdrawn"
             ],
             "title": "Kind",
             "type": "string"
@@ -66971,7 +66975,7 @@
     },
     "/v1/decision-cards": {
       "get": {
-        "description": "Cards on an engagement, on the list envelope with per-status counts.",
+        "description": "Cards on an engagement, on the list envelope with per-status counts (P-04-T23).",
         "operationId": "decision_card_list",
         "parameters": [
           {
@@ -67390,7 +67394,7 @@
     },
     "/v1/decision-cards/{card_id}/decide": {
       "post": {
-        "description": "SHL-11 a to c: the reserved role decides, with a rationale (human only).",
+        "description": "SHL-11 a to c: the reserved role decides, with a rationale (human only; MFA per kind).",
         "operationId": "decision_card_decide",
         "parameters": [
           {
@@ -130744,7 +130748,7 @@
     },
     "/v1/review-notes": {
       "get": {
-        "description": "Notes on a target or an engagement, on the list envelope with per-status counts.",
+        "description": "Notes on a target or an engagement, on the list envelope with per-status counts. Rows\nnever carry a body (P-04-T21).",
         "operationId": "review_note_list",
         "parameters": [
           {
@@ -130951,7 +130955,7 @@
         "x-abacus-action": "review_note.read"
       },
       "post": {
-        "description": "Raise a note on a registered reviewable, optionally on an anchor.",
+        "description": "Raise a note on a registered reviewable, optionally on an anchor; the body is sealed.",
         "operationId": "review_note_raise",
         "parameters": [
           {
@@ -131068,7 +131072,7 @@
     },
     "/v1/review-notes/{note_id}": {
       "get": {
-        "description": "One note with its body and events.",
+        "description": "One note with its body and events (the body read is an access event).",
         "operationId": "review_note",
         "parameters": [
           {
@@ -132214,7 +132218,7 @@
     },
     "/v1/sign-offs:bulk": {
       "post": {
-        "description": "SHL-12 f: sign several targets at one level; reviewers only.",
+        "description": "SHL-12 f: sign several targets at one level; reviewers only, each item atomic, fresh MFA\n(P-04-T22). A replay with the same key returns the stored result.",
         "operationId": "sign_off_bulk",
         "parameters": [
           {

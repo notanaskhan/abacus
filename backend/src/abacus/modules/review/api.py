@@ -17,6 +17,12 @@ from abacus.modules.review.contract import (
     review_notes_router,
     sign_offs_router,
 )
+from abacus.modules.review.decisions import (
+    DecisionCardState,
+    RationaleRequired,
+    RecommendationChanged,
+    raise_decision_card,
+)
 from abacus.modules.review.gates import (
     C13_EVENTS,
     GateSource,
@@ -28,6 +34,7 @@ from abacus.modules.review.gates import SUBSCRIPTIONS as GATE_SUBSCRIPTIONS
 from abacus.modules.review.hashing import Json, NotCanonical, canonical_json, content_hash
 from abacus.modules.review.issue_refs import issue_engagement
 from abacus.modules.review.matrix import review_gate
+from abacus.modules.review.mfa import MfaRequired
 from abacus.modules.review.notes import notes_for, open_note_counts
 from abacus.modules.review.routes import router
 from abacus.modules.review.service import (
@@ -56,8 +63,14 @@ from abacus.modules.review.sign_offs import (
 )
 from abacus.modules.review.slots import (
     REQUIRED_LEVELS,
+    CardContext,
+    CardFactor,
+    CardOption,
+    CardSubject,
+    ComputedCard,
     DecisionKind,
     FieldOwner,
+    Reassessment,
     Reviewable,
     ReviewableFacts,
     ReviewableFactsProvider,
@@ -72,6 +85,7 @@ from abacus.modules.review.slots import (
     register_gate_kind,
     register_reviewable,
     register_reviewable_facts,
+    register_suggestion_owner,
     reviewable_fact_types,
     reviewable_facts,
     reviewables_of,
@@ -113,7 +127,13 @@ __all__ = [
     "SUBSCRIPTIONS",
     "WORKFLOWS",
     "AlreadySigned",
+    "CardContext",
+    "CardFactor",
+    "CardOption",
+    "CardSubject",
+    "ComputedCard",
     "ContentChanged",
+    "DecisionCardState",
     "DecisionKind",
     "FieldOwner",
     "GateSource",
@@ -122,12 +142,16 @@ __all__ = [
     "Json",
     "LevelNotPermitted",
     "LevelState",
+    "MfaRequired",
     "NotCanonical",
     "NotPrepared",
     "NotesOpen",
     "OpenGate",
     "OpenReviewNotes",
     "PreparerCannotReview",
+    "RationaleRequired",
+    "Reassessment",
+    "RecommendationChanged",
     "Reviewable",
     "ReviewableFacts",
     "ReviewableFactsProvider",
@@ -146,6 +170,7 @@ __all__ = [
     "issue_engagement",
     "notes_for",
     "open_note_counts",
+    "raise_decision_card",
     "rebuild_human_gates",
     "record_sign_off",
     "register_decision_kind",
@@ -155,6 +180,7 @@ __all__ = [
     "register_gate_source",
     "register_reviewable",
     "register_reviewable_facts",
+    "register_suggestion_owner",
     "reviewable_fact_types",
     "reviewable_facts",
     "reviewables_of",

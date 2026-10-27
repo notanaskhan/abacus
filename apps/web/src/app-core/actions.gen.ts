@@ -87,6 +87,7 @@ export const ACTIONS = [
   "decision.read",
   "decision.reassess",
   "decision.request_analysis",
+  "decision_card.raise",
   "demo_clock.set",
   "email_template.edit",
   "email_template.import",

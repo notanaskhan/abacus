@@ -13,10 +13,13 @@ TABLES: frozenset[str] = frozenset(
     # P-04-T04 (migration 0094): decision cards and decisions, checkpoints, issues.
     | {"decision_cards", "decisions", "checkpoints", "checkpoint_diffs", "checkpoint_decisions"}
     | {"issues", "issue_events", "issue_links"}
+    # P-04-T23 (migration 0211): a card's numbered history and its analysis requests.
+    | {"decision_card_versions", "decision_analysis_requests"}
 )
 INSERT_ONLY: frozenset[str] = frozenset(
     {"sign_offs", "reviewable_note_events", "field_value_versions"}
     | {"decisions", "checkpoint_diffs", "checkpoint_decisions", "issue_events", "issue_links"}
+    | {"decision_card_versions", "decision_analysis_requests"}
 )
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "sign_offs": frozenset(
@@ -31,9 +34,11 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
 INSERT_COLUMNS["reviewable_notes"] = frozenset(
     {"tenant_id", "engagement_id", "target_type", "target_id", "anchor", "body", "raised_by"}
     | {"assignee_user_id", "anchor_ref", "body_sealed"}  # P-04-T03
+    | {"id"}  # P-04-T21 (migration 0210): the sealed body is bound to its row
 )
 INSERT_COLUMNS["reviewable_note_events"] = frozenset(
     {"tenant_id", "note_id", "kind", "body", "by_user"}
+    | {"id", "body_sealed"}  # P-04-T21 (migration 0210)
 )
 INSERT_COLUMNS["field_value_versions"] = frozenset(
     {"tenant_id", "engagement_id", "target_type", "target_id", "field_key", "seq", "value"}
@@ -59,6 +64,14 @@ INSERT_COLUMNS["decision_cards"] = frozenset(
 INSERT_COLUMNS["decisions"] = frozenset(
     {"tenant_id", "card_id", "option_key", "rationale_sealed", "factors", "seen_card_version"}
     | {"decided_by", "mfa_at"}
+    | {"id"}  # P-04-T23 (migration 0211): the sealed rationale is bound to its row
+)
+INSERT_COLUMNS["decision_card_versions"] = frozenset(
+    {"tenant_id", "card_id", "version_no", "event", "option_key", "changed", "figures"}
+    | {"decision_id", "superseded_by_card_id", "actor_user_id"}
+)
+INSERT_COLUMNS["decision_analysis_requests"] = frozenset(
+    {"id", "tenant_id", "card_id", "text_sealed", "requested_by"}
 )
 INSERT_COLUMNS["checkpoints"] = frozenset(
     {"tenant_id", "engagement_id", "target_type", "target_id", "seq", "name", "starred"}
