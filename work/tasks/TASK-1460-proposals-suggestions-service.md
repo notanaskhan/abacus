@@ -64,3 +64,5 @@ by Samuel Ito with one field version per row."
 
 ## Progress log
 - 2026-10-27: planned.
+- 2026-10-27: built (acceptance tests first; run in the end-of-batch targeted pass). Claude Code restarted mid-build; the worktree was saved as WIP commit 743d43fa and the build resumed from it. Decisions DEC-600 to DEC-608; migrations 0230, 0231; SPEC-360 gains AC-4 to AC-7.
+- 2026-10-27: mistakes found by the tests, for a lint rule: nullable JSONB columns must be `JSONB(none_as_null=True)` (a Python None became JSON `null` and failed the `jsonb_typeof` CHECKs), and a `uuid[]` bind through `text()` takes a list, not a `{...}` string.
