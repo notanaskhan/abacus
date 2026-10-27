@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C13 in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | stub: home half (I-01-T02, 2026-10-26); gate half live in part (P-04-T16 list; the counts, I-01-T04, 2026-10-27) |
+| Status | home half live (I-01-T10, 2026-10-27; client activity I-01-T12); gate half live in part (P-04-T16 list; the counts, I-01-T04, 2026-10-27) |
 | Provider epic | I-01 (home half, AY) with P-04 (projection and gate half, N) |
 | Consumers | HOME-01, HOME-02, SHL-04 (Approvals tab), I-02 (HOME-05, SHL-23), every gate-producing epic |
 | Freeze sprint | S10 (starts 2027-03-08) |
@@ -24,7 +24,7 @@ Home shows one person what waits on them and how their practice stands. C13 has 
 | Snooze, unsnooze | `POST /v1/human-gates/{id}/snooze` `{until}` · `/unsnooze` (I-01-T07) | `human_gate.snooze` | the gate's assignee | denied |
 | Reassign | `GET /v1/human-gates/{id}/reassign-candidates` · `POST …/reassign` `{to_user_id, seen_version}` (I-01-T07) | `human_gate.reassign` | the reserved role's holder, or the EP or a manager on the engagement | denied |
 
-Home is answered in this order: a client principal 404; `home.read` at the firm (403 for the agent, the system and anyone else refused); then the flag (off 404); then 501 until I-01-T10.
+Home is answered in this order: a client principal 404; `home.read` at the firm (403 for the agent, the system and anyone else refused); then the flag (off 404). Live since I-01-T10 (DEC-648).
 
 ## 3. Models
 `backend/src/abacus/modules/practice/home_contract.py` (home half). Classification per field:
@@ -59,7 +59,7 @@ From `docs/product/status-vocabulary.yaml`:
 Home writes nothing. Snooze and reassign (I-01-T07) deny the agent, the system and support at the matrix. At the database (I-01-T04, 0223): `human_gate_snoozes` and `human_gate_reassignments` are insert-only, `actor_kind = 'human'` is a CHECK on both, a trigger binds `actor_kind` and `actor_id` to the transaction's actor and a snooze's `user_id` to that same person. `decision_cards.reserved_user_id` is the app's one other writable card column; a trigger lets it move only for a person, on a card `awaiting_role`, with the status unchanged, never to the mover themself, by the reserved person, the engagement partner or a manager on the engagement, to a holder of the card's reserved role on the engagement who is not walled off from its client, in a transaction that wrote the matching reassignment row from the reserved person (DEC-575). A reassignment names its open gate's own subject; a snooze is of an open gate that waits on the snoozer and lasts at most 30 days (DEC-578). Deciding, signing and approving stay the owners' (C3).
 
 ## 6. Errors
-Home: 404 `{"detail": "not found"}` for a client principal and with the flag off; 403 for a principal `home.read` refuses; 501 `{"detail": "not_implemented"}` with the flag on until I-01-T10. The gate-half codes (I-01-T04, T07): 422 `snooze_past_due`, `snooze_in_past`, `candidate_not_eligible`; 409 `gate_not_open`, `gate_overdue`, `not_reassignable`, `stale_version`.
+Home: 404 `{"detail": "not found"}` for a client principal and with the flag off; 403 for a principal `home.read` refuses; the flag on answers Home (I-01-T10; 501 before it). The gate-half codes (I-01-T04, T07): 422 `snooze_past_due`, `snooze_in_past`, `candidate_not_eligible`; 409 `gate_not_open`, `gate_overdue`, `not_reassignable`, `stale_version`.
 
 ## 7. Audit and outbox events
 | Event | Written when | Payload (no Restricted data) |
@@ -70,7 +70,7 @@ Home: 404 `{"detail": "not found"}` for a client principal and with the flag off
 ## 8. Example payloads
 E0, Mon Sep 14, 2026 9:24 AM CT, Brightwater Hale (synthetic tenant), Daniel Reyes. Footing: Audits 17 + 15 + 11 + 7 = 50 of 79 work items; 27 audits; 11 of 22 closes; 9 notices with 2 New; Waiting on you 11 = 3 + 6 + 2.
 
-`GET /v1/home` (I-01-T10; until then 501):
+`GET /v1/home` (live since I-01-T10):
 ```json
 {"greeting": {"first_name": "Daniel", "date": "2026-09-14"},
  "tiles": [

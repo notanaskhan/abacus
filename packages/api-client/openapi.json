@@ -120799,7 +120799,7 @@
     },
     "/v1/home": {
       "get": {
-        "description": "HOME-01: the viewer's Home, optionally narrowed to one office (DEC-30).",
+        "description": "HOME-01: the viewer's Home, optionally narrowed to one office (DEC-30). Live since\nI-01-T10 (DEC-648); client activity arrives with I-01-T12.",
         "operationId": "home",
         "parameters": [
           {
@@ -120902,16 +120902,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Home Route",

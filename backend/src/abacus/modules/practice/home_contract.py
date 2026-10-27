@@ -1,10 +1,10 @@
 """C13 home half, v1: `GET /v1/home` for HOME-01 (I-01-T02 stub; I-01 §4.3). Contract:
 `docs/contracts/home-and-gates.md` part 2.
 
-Behind `home.dashboard`: off, the route answers 404; on, 501 `not_implemented` until I-01-T10
-(tiles, your work, deadlines, running count) and I-01-T12 (client activity). The queue and every
-count of what waits on the viewer are not here: they are `review`'s C13 endpoints
-(`GET /v1/human-gates`, `/counts`), so Home, HOME-02 and SHL-04 read one count source.
+Behind `home.dashboard`: off, the route answers 404. Live since I-01-T10 (tiles, your work,
+deadlines, running count; `practice/home.py`, DEC-648); client activity arrives with I-01-T12.
+The queue and every count of what waits on the viewer are not here: they are `review`'s C13
+endpoints (`GET /v1/human-gates`, `/counts`), so Home, HOME-02 and SHL-04 read one count source.
 
 Rules the shapes carry:
 - **Counts and identifiers.** Tiles come from owners through `platform.register_home_count`,
@@ -23,7 +23,7 @@ Rules the shapes carry:
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import Depends, Query
@@ -31,7 +31,7 @@ from pydantic import BaseModel, ConfigDict
 
 from abacus.kernel._flags import HOME_DASHBOARD
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import (
     AbacusRouter,
@@ -40,6 +40,7 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
 )
+from abacus.modules.practice.home import DeadlineRow, Tile, home_view
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 DueRisk = Literal["overdue", "due_soon", "approaching", "later"]
@@ -188,18 +189,74 @@ class HomeOut(BaseModel):
 router = AbacusRouter(prefix="/v1/home", tags=["practice"])
 
 
-async def _stub(ctx: AuthContext) -> NoReturn:
+async def _gate(ctx: AuthContext) -> None:
     """The matrix first: a client principal answers 404 (INV-4); the agent, the system and any
-    non-person are refused at the firm (403, INV-1). Then the flag, then 501."""
+    non-person are refused at the firm (403, INV-1). Then the flag (off: 404)."""
     if ctx.client:
         raise NotFound("home")
     await authorise(ctx, "home.read", Resource.firm(ctx.tenant_id))
     if not await flag_enabled(ctx.tenant, HOME_DASHBOARD):
         raise NotFound("home.dashboard")
-    raise NotImplementedYet
 
 
-@router.get("", action="home.read", response_model=HomeOut, errors=(501,))
+def _tile(t: Tile) -> HomeTileOut:
+    c = t.count
+    return HomeTileOut(
+        key=t.spec.key,
+        label=f"home.tile.{t.spec.key}",
+        caption=None,
+        total=c.total,
+        by_status=[TileStatusOut(code=s.code, n=s.n, filter=s.filter) for s in c.by_status],
+        by_office=[TileOfficeOut(office_id=o.office_id, n=o.n) for o in c.by_office],
+        target=t.spec.target if c.target_filter is None else f"{t.spec.target}?{c.target_filter}",
+    )
+
+
+def _deadline(d: DeadlineRow) -> DeadlineRowOut:
+    return DeadlineRowOut(
+        work_item_id=d.work.work_item_id,
+        due_on=d.due_on,
+        client=d.client,
+        filing_label=d.work.name,
+        status=d.work.status,
+        risk=d.risk,
+    )
+
+
+@router.get("", action="home.read", response_model=HomeOut)
 async def home_route(ctx: Ctx, office_id: Annotated[UUID | None, Query()] = None) -> HomeOut:
-    """HOME-01: the viewer's Home, optionally narrowed to one office (DEC-30)."""
-    await _stub(ctx)
+    """HOME-01: the viewer's Home, optionally narrowed to one office (DEC-30). Live since
+    I-01-T10 (DEC-648); client activity arrives with I-01-T12."""
+    await _gate(ctx)
+    v = await home_view(ctx, office_id)
+    return HomeOut(
+        greeting=GreetingOut(first_name=v.first_name, date=v.today),
+        tiles=[_tile(t) for t in v.tiles],
+        your_work=(
+            None
+            if v.work_label is None
+            else YourWorkOut(
+                label=v.work_label,
+                rows=[
+                    WorkRowOut(
+                        work_item_id=r.work.work_item_id,
+                        name=r.work.name,
+                        client=r.client,
+                        status=r.work.status,
+                        function=r.work.function,
+                        tags=[],
+                    )
+                    for r in v.work
+                ],
+            )
+        ),
+        deadlines=DeadlinesOut(
+            rows=[_deadline(d) for d in v.deadlines],
+            next=_deadline(v.next_deadline) if v.next_deadline else None,
+        ),
+        client_activity=[],
+        running_count=v.running_count,
+        segments=SegmentsOut(
+            deadlines="planned", capacity="planned", insights="entitlement_missing"
+        ),
+    )

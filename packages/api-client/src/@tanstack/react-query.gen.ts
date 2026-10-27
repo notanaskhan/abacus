@@ -10622,7 +10622,8 @@ export const homeQueryKey = (options?: Options<HomeData>) => createQueryKey('hom
 /**
  * Home Route
  *
- * HOME-01: the viewer's Home, optionally narrowed to one office (DEC-30).
+ * HOME-01: the viewer's Home, optionally narrowed to one office (DEC-30). Live since
+ * I-01-T10 (DEC-648); client activity arrives with I-01-T12.
  */
 export const homeOptions = (options?: Options<HomeData>) => queryOptions<HomeResponse, HomeError, HomeResponse, ReturnType<typeof homeQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
