@@ -96,6 +96,9 @@ C13_EVENTS: Final = frozenset(
         "proposal.recorded",  # agents: a screening, upload review, match or guidance draft
         "guidance_draft.decided",  # agents: a person approved or discarded a draft
         "review_decision.recorded",  # evidence: a decision on a version, or its undo
+        # I-01-T08: SPEC-004's review queue as `evidence_review` gates (evidence/review_gates).
+        "evidence.uploaded",
+        "review.assigned",
         "inbox_file.sorted",  # evidence: an inbox file assigned or discarded
         "evidence_version.withdrawn",  # evidence: nothing derived from it waits on anyone
         "fulfilment.voided",  # evidence: a voided rule link's version, likewise (R-01 Story 2.2)

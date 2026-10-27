@@ -36,6 +36,7 @@ from abacus.modules.agents.gates import register_gate_sources, register_suggesti
 from abacus.modules.agents.graph import EngagementGraph, engagement_graph
 from abacus.modules.agents.guidance_draft import DRAFTER, DraftOutcome, create_draft_run, draft
 from abacus.modules.agents.handoff import Citation, Handoff, ScreeningOutput, VerifiedCitation
+from abacus.modules.agents.home_counts import register_home_counts
 from abacus.modules.agents.inbox_match import MATCHER, MatchOutcome, create_match_run, match
 from abacus.modules.agents.knowledge import KnowledgeHit, knowledge_context, search_knowledge
 from abacus.modules.agents.proposal_slots import (
@@ -176,6 +177,8 @@ SUBSCRIPTIONS = {
 
 # P-04-T16 (C13): the agent's proposals are `proposal` gates until a person decides.
 register_gate_sources()
+# I-01-T08: this module's HOME-01 tile or pill (platform.register_home_count).
+register_home_counts()
 # P-04-T23: review checks a decision card's recommended suggestion against its engagement.
 register_suggestion_lookup()
 # P-04-T26 (C16): what a proposal says now, for the drawer's facts and Approvals.
