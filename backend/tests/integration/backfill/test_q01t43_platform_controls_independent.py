@@ -26,10 +26,15 @@ import pytest
 
 from abacus.api import create_app
 from abacus.kernel.controls import forget_controls
+from abacus_tools.db_connect import connect
 
 from .support import Migrated, Net, Person, Seeder
 
 READ_ONLY: Final = {"detail": "read_only"}
+AS_ROLE: Final = {
+    "abacus_app": "SET LOCAL ROLE abacus_app",
+    "abacus_ops": "SET LOCAL ROLE abacus_ops",
+}
 MUTATING: Final = {"POST", "PUT", "PATCH", "DELETE"}
 # The contract's exemptions (§3.7 `read_only`; its as-built note, DEC-338): pre-session sign-in,
 # staff routes, the two sign-outs, browser error telemetry and the support session; and reads
@@ -126,10 +131,10 @@ async def test_ac_control_history_is_insert_only(
 ) -> None:
     await _switch(seed, "email_pause", True)
     await _switch(seed, "email_pause", False)
-    conn = await asyncpg.connect(migrated_db.superuser_dsn)
+    conn = await connect(migrated_db.superuser_dsn)
     try:
         async with conn.transaction():
-            await conn.execute(f"SET LOCAL ROLE {role}")
+            await conn.execute(AS_ROLE[role])
             with pytest.raises(asyncpg.InsufficientPrivilegeError):
                 await conn.execute(statement)
     finally:
