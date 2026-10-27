@@ -24,7 +24,13 @@ from abacus.modules.review.decisions import (
     raise_decision_card,
 )
 from abacus.modules.review.engagement_gates import register_engagement_gates
-from abacus.modules.review.field_values import FieldValueInvalid, record_value, typed_value
+from abacus.modules.review.field_values import (
+    FieldValueInvalid,
+    PreviousValue,
+    previous_value,
+    record_value,
+    typed_value,
+)
 from abacus.modules.review.gates import (
     C13_EVENTS,
     GateSource,
@@ -157,6 +163,7 @@ __all__ = [
     "OpenGate",
     "OpenReviewNotes",
     "PreparerCannotReview",
+    "PreviousValue",
     "RationaleRequired",
     "Reassessment",
     "RecommendationChanged",
@@ -179,6 +186,7 @@ __all__ = [
     "notes_for",
     "open_note_counts",
     "open_text",
+    "previous_value",
     "raise_decision_card",
     "rebuild_human_gates",
     "record_sign_off",

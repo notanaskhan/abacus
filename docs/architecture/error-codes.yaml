@@ -429,6 +429,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.follow_up_drafts.FollowUpEffectStarted
+    - abacus.modules.agents.proposal_undo.EffectStarted
     - abacus.modules.evidence.exports.ExportEffectStarted
     - abacus.modules.requests.binders.EffectStarted
     summary: 'The publish''s delivery has started (its grant was consumed): it can no longer be undone.'
@@ -1641,6 +1642,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.follow_up_drafts.FollowUpUndoClosed
+    - abacus.modules.agents.proposal_undo.UndoWindowClosed
     - abacus.modules.evidence.exports.ExportUndoClosed
     - abacus.modules.evidence.service.UndoWindowClosed
     - abacus.modules.requests.binders.UndoWindowClosed

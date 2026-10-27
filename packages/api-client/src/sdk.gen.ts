@@ -8613,7 +8613,8 @@ export const proposalRouteTo = <ThrowOnError extends boolean = false>(options: O
 /**
  * Proposal Undo Route
  *
- * Undo inside 10 seconds by the same person: 409 `undo_window_closed` or `effect_started`.
+ * Undo inside 10 seconds by the same person: 409 `undo_window_closed` or `effect_started`
+ * (P-04-T29; `proposal_undo.py`).
  */
 export const proposalUndo = <ThrowOnError extends boolean = false>(options: Options<ProposalUndoData, ThrowOnError>): RequestResult<ProposalUndoResponses, ProposalUndoErrors, ThrowOnError> => (options.client ?? client).post<ProposalUndoResponses, ProposalUndoErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

@@ -147576,7 +147576,7 @@
     },
     "/v1/proposals/{proposal_id}/undo": {
       "post": {
-        "description": "Undo inside 10 seconds by the same person: 409 `undo_window_closed` or `effect_started`.",
+        "description": "Undo inside 10 seconds by the same person: 409 `undo_window_closed` or `effect_started`\n(P-04-T29; `proposal_undo.py`).",
         "operationId": "proposal_undo",
         "parameters": [
           {
@@ -147584,7 +147584,7 @@
             "name": "proposal_id",
             "required": true,
             "schema": {
-              "format": "uuid",
+              "pattern": "^((screening_result|upload_review|inbox_match):)?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
               "title": "Proposal Id",
               "type": "string"
             }

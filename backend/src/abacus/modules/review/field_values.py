@@ -14,8 +14,10 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+from datetime import datetime
 from decimal import Decimal, InvalidOperation
-from typing import Final, Literal
+from typing import Final, Literal, cast
 from uuid import UUID
 
 from sqlalchemy import text
@@ -166,3 +168,35 @@ async def record_value(
         )
     )
     return seq
+
+
+@dataclass(frozen=True)
+class PreviousValue:
+    """A field's latest version time and the value before it (P-04-T29's Undo)."""
+
+    latest_at: datetime
+    value: dict[str, object]
+    value_kind: Literal["exact", "estimate"]
+
+
+async def previous_value(
+    tx: UnitOfWork, target_type: str, target_id: UUID, field_key: str
+) -> PreviousValue | None:
+    """The value before the field's latest version, or None when it has only one."""
+    rows = (
+        await tx.session.execute(
+            text(
+                "SELECT value, value_kind, created_at FROM field_value_versions "
+                "WHERE target_type = :t AND target_id = :i AND field_key = :f "
+                "ORDER BY seq DESC LIMIT 2"
+            ),
+            {"t": target_type, "i": target_id, "f": field_key},
+        )
+    ).all()
+    if len(rows) < 2:
+        return None
+    return PreviousValue(
+        rows[0].created_at,
+        cast(dict[str, object], rows[1].value),
+        cast(Literal["exact", "estimate"], rows[1].value_kind),
+    )

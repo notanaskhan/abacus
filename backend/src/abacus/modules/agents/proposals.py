@@ -17,7 +17,7 @@ a named approver, or record a follow-up; or adopt or dismiss a single suggestion
   (`review.api.record_value`, cause `suggestion_adopted`, or `edit` for an edited row), linked
   to the proposal's checkpoint. No applier: 503 before anything is written (fail closed).
 - Notes and citation notes are sealed; handing a note over is an access event.
-- Undo is P-04-T29's (its route still answers 501), so `undo_until` stays null here.
+- Undo is P-04-T29's (`proposal_undo.py`): `undo_until` is the decider's 10-second window.
 """
 
 from __future__ import annotations
@@ -76,6 +76,7 @@ from abacus.modules.agents.proposal_store import (
     set_proposal,
     set_suggestion,
 )
+from abacus.modules.agents.proposal_undo import UNDO_WINDOW
 from abacus.modules.agents.stages import starts_in_shadow
 from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.evidence.api import citation_sources, screening_facts, supported_citations
@@ -811,7 +812,13 @@ async def _decision_view(
         decided_by_name=names.get(found.decided_by, "Former member"),
         decided_at=found.created_at,
         routed_to_user_id=found.routed_to_user_id,
-        undo_until=None,  # P-04-T29 serves Undo; until then nothing offers it
+        # P-04-T29: the decider's 10-second Undo window (DEC-24); nobody else is offered it.
+        undo_until=(
+            found.created_at + UNDO_WINDOW
+            if found.decision in ("approved", "approved_with_edits", "rejected")
+            and found.decided_by == ctx.user_id
+            else None
+        ),
     )
 
 

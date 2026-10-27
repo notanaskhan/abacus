@@ -14294,7 +14294,8 @@ export const proposalRouteToMutation = (options?: Partial<Options<ProposalRouteT
 /**
  * Proposal Undo Route
  *
- * Undo inside 10 seconds by the same person: 409 `undo_window_closed` or `effect_started`.
+ * Undo inside 10 seconds by the same person: 409 `undo_window_closed` or `effect_started`
+ * (P-04-T29; `proposal_undo.py`).
  */
 export const proposalUndoMutation = (options?: Partial<Options<ProposalUndoData>>): UseMutationOptions<ProposalUndoResponse, ProposalUndoError, Options<ProposalUndoData>> => {
     const mutationOptions: UseMutationOptions<ProposalUndoResponse, ProposalUndoError, Options<ProposalUndoData>> = {
