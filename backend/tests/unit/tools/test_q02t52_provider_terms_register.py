@@ -59,26 +59,11 @@ def _founder_only_entry() -> dict[str, object]:
 # --- the second approver (ADR-114 Q3; Q-02-T18) --------------------------------------------------
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "TASK-1231: Q-02-T18 is not built on main; the register schema has no second approver, "
-        "so an entry approved by the founder alone still validates (ADR-114 Q3, Q-02 gate G-2; "
-        "found on main at #397)"
-    ),
-)
 def test_t18_an_entry_approved_by_the_founder_alone_is_refused() -> None:
     with pytest.raises(TermsInvalid):
         validate(_founder_only_entry())
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "TASK-1231: Q-02-T18 is not built on main; a register holding a founder-only entry still "
-        "compiles into kernel/_provider_terms.py (ADR-114 Q3, Q-02-T52 seeded violation; #397)"
-    ),
-)
 def test_t18_a_register_holding_a_founder_only_entry_does_not_compile() -> None:
     source = yaml.safe_dump({"entries": [_founder_only_entry()]}, sort_keys=False)
     with pytest.raises(TermsInvalid):

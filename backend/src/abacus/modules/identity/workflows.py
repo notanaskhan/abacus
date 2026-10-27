@@ -29,3 +29,25 @@ class AccessEndSweepWorkflow:
             start_to_close_timeout=_SWEEP_TIMEOUT,
             retry_policy=_SWEEP_RETRY,
         )
+
+
+AUTH_SESSION_PURGE_ID = "auth_session_purge:platform"
+_PURGE_TIMEOUT = timedelta(minutes=5)
+_PURGE_RETRY = RetryPolicy(maximum_attempts=3)  # a failed pass is retried by the next day's run
+
+
+@workflow.defn(name="AuthSessionPurge")
+class AuthSessionPurgeWorkflow:
+    """G-02-T14 (P-01 hand-off): deletes staff sessions that ended more than a year ago, daily,
+    on the Schedule `auth_session_purge:platform` (overlap SKIP). Orchestration only: the
+    activity `identity.purge_auth_sessions` returns a count, so no session or person enters the
+    history."""
+
+    @workflow.run
+    async def run(self) -> int:
+        return await workflow.execute_activity(
+            "identity.purge_auth_sessions",
+            result_type=int,
+            start_to_close_timeout=_PURGE_TIMEOUT,
+            retry_policy=_PURGE_RETRY,
+        )

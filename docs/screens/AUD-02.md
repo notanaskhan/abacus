@@ -153,6 +153,17 @@ Inbound: AUD-01 (row), SHL-02, HOME-01, HOME-02, ENG-02. All 27 designed links o
 ## AVOID
 Each becomes a test in `AUD-02.test.tsx` ("AUD-02 avoid: …"): gradients in product UI, emoji, saturated blue, heavy shadows, invented colors, lorem ipsum, colored row backgrounds for status, the agent saying it approved or decided anything, "Auto sign-off", the words Accrual/Arc/ACME/LSA/Living Robotics; (R2) a Group band on non-group engagements, the Board recording anything a person has not done, settings in a modal, changing states a–g beyond items 1–2, blue, "task" for a to-do.
 
+## Export sheet design follow-up (A-01-T24, DV-9)
+
+Composed from kits; no artboard exists. Recorded for the PF review and as a DF row request to chapter 09 (to mint): "AUD-02/AUD-03 O3 export sheet and record-mode dialogs have no artboard".
+
+- **Entry points:** "Export binder…" in the canvas header's "···" menu (AUD-02; AUD-03's header "···" is the same entry), shown only with `export.create` in the cockpit's `allowed_actions`; `?ov=export` and `?ov=export:<exportId>` open the sheet. "Record phase…", "Record release…", "Record archive…" sit in the same menu's second group while `phase_mode` is `recorded` and the person holds `assurance.record_phase`.
+- **Options:** "Include files awaiting review" (off), "Include the audit trail" (on); every PBC binder of the work item. Footer: "Needs a recent sign-in · Undo for 10 seconds", Cancel, Export.
+- **Step-up:** a 403 from create or download opens the shell's "Confirm it's you" (ADR-030); nothing is exported.
+- **States (C2 `engagement_export`):** Queued, Packaging… (with "Packaging the binder. You can close this sheet; it keeps going."), Ready ("Download · 12 files · 1.2 MB · expires Mon Sep 21"), Export failed (the failure code in words), Expired (the 7 days, or "A file in it was withdrawn by the client, so the package was removed."), Undone. The sheet polls every 3 s while open and the export moves (P-15).
+- **Undo:** the C-21 Undo toast "Export requested" for 10 s; Undo voids the grant (`POST /v1/exports/{id}/undo`).
+- **Record dialogs:** Dialog 400s in local state; release and archive need a fresh second factor (step-up on 403); the contract's refusals read in words.
+
 ## Deviations
 | ID | What differs from the handoff | Why | Decision recorded |
 |---|---|---|---|
@@ -161,7 +172,7 @@ Each becomes a test in `AUD-02.test.tsx` ("AUD-02 avoid: …"): gradients in pro
 | DV-3 | Viewer Hannah Leclerc for a–g (README's Marcus Delaney loses); h Omar Haddad 4:05 PM; i Cole Hart Thu Sep 24, 9:30 AM | DEC-15 | A-01 §2.4; DEC-260 |
 | DV-4 | The overview pill moves in record mode until the gate providers are registered | G4–G5 providers arrive later | A-01 §2.4; DEC-262 |
 | DV-5 | SSARS work items use this cockpit without a Planning band | AUD-26 is A-08 | A-01 §2.4 |
-| DV-9 | "Export binder…" in the layout menu and the O3 export sheet are composed from kits | No artboard (ADR-036) | A-01 §2.4 (design follow-up A-01-T24) |
+| DV-9 | "Export binder…" and the record-mode entries sit in one "···" menu on the canvas header (not the layout chip: the audit bar's right cluster is the kit's, and the chip toggles the dock), and the O3 export sheet and record dialogs are composed from kits (C-13 Menu, O3 SheetModal, C-06 pills, C-21 Undo toast, the shell's step-up) | No artboard (ADR-036) | A-01 §2.4; design follow-up A-01-T24 (below), DEC-541; DF row requested from chapter 09 |
 | DV-11 | "Started 9:24 AM" and "Processing" render only for C6 engagement runs | Engagement runs start with P-10 | A-01 §2.4 |
 | DV-12 | f's server-refusal state (a real firm, Season 1) keeps the O3 confirm open and replaces its text with "Auto mode isn't available for client data yet"; Cancel closes it and the switch reads off | The handoff draws no refusal state and AUD-02 has no copy for it; the string is ADM-04h's reason for the same rule (SPEC-349 AC-35, ADR-186 §6), never invented copy | A-01-T31; DEC-405 |
 | — | h (Group band) deferred to A-09 and i (Board) to K-04, recorded here, not missing | Owning epics | A-01 §2.3 |

@@ -318,3 +318,19 @@ async def set_ai_exclusion(
 async def engagement_count(session: AsyncSession) -> int:
     """How many engagements the session's firm has (SPEC-024 AC-7)."""
     return int(await session.scalar(select(func.count()).select_from(Engagement)) or 0)
+
+
+async def entity_engagement_ids(session: AsyncSession, client_entity_id: UUID) -> Sequence[UUID]:
+    """A-02-T16: the entity's engagements, newest first, for a caller that then authorises its
+    action on each (LIST_EXEMPT: candidates for `authorise`, never shown as a list)."""
+    return (
+        (
+            await session.execute(
+                select(Engagement.id)
+                .where(Engagement.client_entity_id == client_entity_id)
+                .order_by(Engagement.created_at.desc(), Engagement.id)
+            )
+        )
+        .scalars()
+        .all()
+    )

@@ -1,0 +1,43 @@
+---
+id: TASK-1446
+title: "Human-gate and notification registrations (P-07-T47): C13 gate kinds and C16 kinds and database templates for acceptance, risk review, independence reminders, team approval and invitation expiry"
+spec: SPEC-332
+acceptance_criteria: [AC-3, AC-9]
+risk_zone: amber
+status: in-review
+epic: P-07
+plan_key: P-07-T47
+branch: s11-engagements
+created: 2026-10-27
+updated: 2026-10-27
+---
+
+## Objective
+"Daniel Reyes's HOME-02 row appears once Thornbury is sent to the partner and disappears when the
+decision is recorded."
+
+## Plan
+- **Gates (C13, DEC-539):** `engagements/human_gates.py` computes the four gate kinds from
+  engagements' own records; `review/engagement_gates.py` registers them through the existing
+  `register_gate_source` (review already depends on engagements). `review/gates.py` C13_EVENTS
+  gains the engagement events the sources name. No I-01/HOME module code is touched.
+- **Events (identifiers only):** `independence.reminded` (replaces the reminder's second
+  `independence.requested`), `independence.conclusion_due`, `acceptance.review_requested`,
+  `team.change_proposed`, `eqr.eligibility_approved` in `engagements/events.py`, emitted in the
+  existing units of work beside their audit events.
+- **Kinds (C16, DEC-540):** six registrations in `notifications/catalogue.py`, five with catalogue
+  entries and fixed in-app sentences; `invitation_expiring` registered without a producer.
+- **Templates:** content, through the staff import (`notification.<kind>`), never code or seed.
+- No migration, no matrix row, no flag.
+- **Tests:** `tests/integration/backfill/test_p07t47_engagement_gates.py` (the acceptance line,
+  registrations, the risk-review recipient); `test_catalogue.py` and `test_team_roles.py` updated
+  for the new events.
+- **Rollback:** revert the commit; projected rows of the four kinds stay as `open`/`done` rows a
+  rebuild no longer produces (`rebuild_human_gates` leaves unknown sources' rows alone).
+
+## Progress log
+- 2026-10-27: built and registered; DEC-539, DEC-540. The I-01 lane's `subkind` (I-01-T04) should
+  map these subject types to its column when it lands.
+- 2026-10-27: targeted test pass green (see the S11 lane 4 report); gates run once (ruff, pyright, lint-imports, quality modules, check-generated, tsc, eslint, prettier). Playwright skipped (chromium mismatch).
+- 2026-10-27: fix round: the EQR gate reads under `independence.read` (visible() takes reads only); the conclusion gate needs v2 three-statement confirmations, so pre-v2 rows open none (kept P-04-T17's independent suite green).
+- 2026-10-27 security review fix round: M3 need to know (DEC-544), L7 and the voided rule link (DEC-548). **Human to-do (L10):** import the `notification.independence_reminder` email template (and the other new `notification.<kind>` templates: acceptance_awaiting_partner, risk_partner_review_requested, independence_conclusion_due, team_change_awaiting_approval) on each environment through `POST /v1/platform/email-templates/import` before `notifications.email` is turned on for a firm; independence_reminder emails by default.

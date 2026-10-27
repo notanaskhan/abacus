@@ -458,6 +458,9 @@ jobs:
         run: make setup
       - if: needs.changes.outputs.agents == 'true'
         run: make evals EVAL_ARGS="--subset fast"
+      # P-06-T21: the upload reviewer's fast run, on its recorded fake answers.
+      - if: needs.changes.outputs.agents == 'true'
+        run: make evals-review-fast
 
   # One stable check for branch protection: green only when every stage 1 and 2 job passed.
   stage-2:

@@ -3,7 +3,7 @@
 from abacus.kernel.controls import ControlName, control_active
 from abacus.kernel.dispatch import PlatformSchedule
 from abacus.kernel.uow import Handler
-from abacus.modules.identity.api import AbacusRouter
+from abacus.modules.identity.api import AbacusRouter, register_posture_source
 from abacus.modules.platform.audit_resolvers import register as register_audit_resolvers
 from abacus.modules.platform.audit_slots import (
     AuditEventRef,
@@ -69,6 +69,7 @@ from abacus.modules.platform.incidents import (
     facts_sha256,
     finish_propagation,
     incident_clock,
+    open_incidents,
     propagate_into,
     propagation_log,
     record_incident,
@@ -146,6 +147,8 @@ from abacus.modules.platform.workflows import (
 
 # G-02-T09 (DEC-435): labelers and value resolvers for identity-owned audit targets.
 register_audit_resolvers()
+# G-02-T14 (AC-30): the posture's open incidents are the register's.
+register_posture_source("open_incidents", open_incidents)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (

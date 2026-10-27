@@ -127,6 +127,7 @@ from abacus.modules.identity.api import (
     set_member_profile,
 )
 from abacus.modules.organisations.api import (
+    ClientRecordChange,
     NewClient,
     RoleAsked,
     clear_conflict_result,
@@ -134,6 +135,7 @@ from abacus.modules.organisations.api import (
     create_client,
     create_contact,
     run_conflict_check,
+    set_client_record,
 )
 from abacus.modules.platform.api import IncidentFacts, record_incident
 from abacus.modules.portal.api import (
@@ -159,6 +161,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.acceptance import (
     SLICE as ACCEPTANCE_SLICE,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.audits import (
+    AUDITS,
     BY_LABEL,
     PBC_LISTS,
     PORTAL_USERS,
@@ -1406,6 +1409,21 @@ async def _client_invitation_created(conn: asyncpg.Connection, _: Scenario, even
 # --- service-backed events ---------------------------------------------------------------------
 
 
+# The scenario's client kinds (CLI-01's words) in the record's vocabulary (organisations, 0082).
+ClientKind = Literal["household", "business", "plan_sponsor", "nonprofit", "trust_family"]
+CLIENT_KINDS: Final[dict[str, ClientKind]] = {
+    "individual": "household",
+    "household": "household",
+    "business": "business",
+    "partnership": "business",
+    "exempt_org": "nonprofit",
+    "trust": "trust_family",
+    "estate": "trust_family",
+    "plan": "plan_sponsor",
+}
+_AUDIT_ENTITIES: Final = frozenset(a.entity for a in AUDITS if a.entity is not None)
+
+
 async def _client_created(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
     """Through `organisations.api` under the relationship partner, as a person would."""
     client: Client = _CLIENTS[str(event.client)]
@@ -1418,6 +1436,30 @@ async def _client_created(_: asyncpg.Connection, __: Scenario, event: Event) -> 
     )
     async with uow(TenantContext(TENANT, kind, actor)) as tx:  # type: ignore[arg-type]  # "human" or "system"
         await create_client(tx, TENANT, client.name, client.entities[0], ids=ids)
+        # TASK-393 (F-04-T29): the record's facts as clients.json gives them; attest is derived
+        # from the client's engagements (DEC-128), never set.
+        await set_client_record(
+            tx,
+            ids.client_id,
+            ClientRecordChange(
+                kind=CLIENT_KINDS[client.kind],
+                primary_office_id=office_id_of(client.office),
+                relationship_partner_id=user_id_of(_SEATS[client.partner]),
+                portal_status=client.portal,
+            ),
+        )
+        # Further entities, except the plan entities the audit slice adds with their audits.
+        for entity in client.entities[1:]:
+            if entity in _AUDIT_ENTITIES:
+                continue
+            await client_with_entity(
+                tx,
+                TENANT,
+                ids.client_id,
+                None,
+                entity,
+                new_entity_id=UUID(entity_id_of(client.slug, entity)),
+            )
 
 
 # --- A-01-T07: the assurance slice through A-01's services (DEC-310) ----------------------------

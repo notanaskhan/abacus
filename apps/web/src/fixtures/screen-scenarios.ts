@@ -14,6 +14,8 @@ import type { Scenario } from "../app-core/fixture-mode";
 import { scenarios as adm01 } from "./scenarios/ADM-01";
 import { OPENS as ADM02_OPENS, scenarios as adm02 } from "./scenarios/ADM-02";
 import { OPENS as ADM03_OPENS, scenarios as adm03 } from "./scenarios/ADM-03";
+import { OPENS as ADM06_OPENS, scenarios as adm06 } from "./scenarios/ADM-06";
+import { OPENS as ADM07_OPENS, scenarios as adm07 } from "./scenarios/ADM-07";
 import { scenarios as bnd01 } from "./scenarios/BND-01";
 import { OPENS as BND02_OPENS, scenarios as bnd02 } from "./scenarios/BND-02";
 import { scenarios as shl03 } from "./scenarios/SHL-03";
@@ -33,6 +35,8 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
   "ADM-01": { scenarios: adm01, opens: {} },
   "ADM-02": { scenarios: adm02, opens: ADM02_OPENS },
   "ADM-03": { scenarios: adm03, opens: ADM03_OPENS },
+  "ADM-06": { scenarios: adm06, opens: ADM06_OPENS }, // G-02-T16
+  "ADM-07": { scenarios: adm07, opens: ADM07_OPENS }, // G-02-T13
   "BND-01": { scenarios: bnd01, opens: {} },
   "BND-02": { scenarios: bnd02, opens: {}, ids: BND02_OPENS },
   "SHL-03": { scenarios: shl03, opens: {} },

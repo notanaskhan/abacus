@@ -156,6 +156,8 @@ class ConnectionStartIn(BaseModel):
 
     consent_version: Annotated[int, Field(ge=1), classified("internal")]
     authorized: Annotated[bool, classified("internal")]
+    # A-02-T16: the card being reconnected, when the entity has more than one of this system.
+    connection_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class ConnectionStartOut(BaseModel):
@@ -180,6 +182,17 @@ class SyncRunSummaryOut(BaseModel):
     failure_code: Annotated[str | None, classified("internal")] = None
 
 
+class ConnectionActivityOut(BaseModel):
+    """One line of the connection's activity in the ADM-07 grammar (A-02-T16; INV-5):
+    "Connected by Tess Moreno (client)", "Reconnected by …", "Disconnected by …"."""
+
+    model_config = ConfigDict(frozen=True)
+
+    action: Annotated[str, classified("internal")]
+    text: Annotated[str, classified("confidential")]
+    at: Annotated[datetime, classified("internal")]
+
+
 class PortalConnectionDetailOut(BaseModel):
     """The details drawer: scopes, who connected it and when, the last 5 sync runs."""
 
@@ -188,6 +201,9 @@ class PortalConnectionDetailOut(BaseModel):
     card: Annotated[PortalConnectionCardOut, classified("confidential")]
     recent_syncs: Annotated[
         list[SyncRunSummaryOut], Field(max_length=5), classified("internal")
+    ] = []
+    activity: Annotated[
+        list[ConnectionActivityOut], Field(max_length=50), classified("confidential")
     ] = []
 
 
@@ -230,78 +246,6 @@ async def _stub(ctx: AuthContext, flag: Flag = CONNECTIONS_PORTAL_V2) -> NoRetur
 
 portal_router = AbacusRouter(prefix="/v1/portal", tags=["connections"])
 firm_router = AbacusRouter(prefix="/v1", tags=["connections"])
-
-
-@portal_router.get(
-    "/entities/{entity_id}/connections",
-    action="connection.read",
-    response_model=PortalConnectionsOut,
-    errors=(501,),
-)
-async def list_entity_connections_route(entity_id: UUID, ctx: Ctx) -> PortalConnectionsOut:
-    """POR-16 a (A-02-T16): cards for the catalogue rows with a registered adapter."""
-    await _stub(ctx)
-
-
-@portal_router.post(
-    "/entities/{entity_id}/connections/{catalog_key}/start",
-    action="connection.create",
-    response_model=ConnectionStartOut,
-    status_code=201,
-    errors=(409, 501),
-)
-async def start_connection_route(
-    entity_id: UUID,
-    catalog_key: CatalogKey,
-    body: ConnectionStartIn,
-    ctx: Ctx,
-    idempotency_key: IdempotencyKey,
-) -> ConnectionStartOut:
-    """POR-16 b, e, i (A-02-T16): one consent row, then the provider's sign-in. 422
-    `authorization_required`; 409 `consent_version_stale`, `ledger_already_connected`,
-    `connector_not_available`. Audited `connection.started`, `connection.consent_recorded`."""
-    await _stub(ctx)
-
-
-@portal_router.get(
-    "/connections/{connection_id}",
-    action="connection.read",
-    response_model=PortalConnectionDetailOut,
-    errors=(501,),
-)
-async def connection_detail_route(connection_id: UUID, ctx: Ctx) -> PortalConnectionDetailOut:
-    """The details drawer (A-02-T16)."""
-    await _stub(ctx)
-
-
-@portal_router.post(
-    "/connections/{connection_id}/retry",
-    action="connection.retry",
-    response_model=SyncRunRefOut,
-    status_code=202,
-    errors=(409, 501),
-)
-async def retry_connection_route(
-    connection_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
-) -> SyncRunRefOut:
-    """POR-16 g *Try again* (A-02-T16): one run; while it runs the same run is returned; 409
-    `connection_needs_reauth` when the client must sign in again. Audited
-    `connection.retry_requested`."""
-    await _stub(ctx)
-
-
-@portal_router.post(
-    "/connections/{connection_id}/disconnect",
-    action="connection.disconnect",
-    response_model=PortalConnectionCardOut,
-    errors=(409, 501),
-)
-async def disconnect_connection_route(
-    connection_id: UUID, body: ConnectionDisconnectIn, ctx: Ctx, idempotency_key: IdempotencyKey
-) -> PortalConnectionCardOut:
-    """POR-16 f (A-02-T16): "Disconnected" (neutral); the secret is crypto-erased and received
-    data stays. 409 `stale_version` on an old `seen_version`. Audited `connection.revoked`."""
-    await _stub(ctx)
 
 
 @firm_router.post(
