@@ -47,6 +47,13 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "review_note.raised",  # P-04-T21 (C16 `review_note_raised`, to the assignee)
         "decision_card.raised",  # P-04-T23 (C16 `decision_assigned`, to the reserved person)
         "decision_card.notify_requested",  # P-04-T23 (C16 `mention`, SHL-11 b Notify)
+        "acceptance.sent_to_partner",  # P-07-T47 (C16 `acceptance_awaiting_partner`, to the EP)
+        "acceptance.review_requested",  # P-07-T47 (`risk_partner_review_requested`)
+        "independence.reminded",  # P-07-T47 (`independence_reminder`, to the member)
+        "independence.conclusion_due",  # P-07-T47 (`independence_conclusion_due`, to the EP)
+        "team.change_proposed",  # P-07-T47 (`team_change_awaiting_approval`, to the EP)
+        "engagement_export.ready",  # A-01-T22 (C16 `export_ready`, to the requester)
+        "engagement_export.failed",  # A-01-T22 (C16 `export_failed`, to the requester)
     }
 
 

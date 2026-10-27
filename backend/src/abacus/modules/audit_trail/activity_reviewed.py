@@ -125,12 +125,15 @@ REVIEWED_FALLBACK: Final = frozenset(
         "engagement_draft.saved",
         "engagement_draft.started",
         "engagement_draft.started_acceptance",
+        "engagement_export.downloaded",  # A-01-T22: bytes and range, never content
+        "engagement_export.expired",  # A-01-T22: the 7 days (system)
         "engagement_export.failed",
         "engagement_export.packaged",
         "engagement_export.requested",
         "engagement_export.snapshotted",
         "engagement_export.started",
         "engagement_export.undone",
+        "engagement_export.voided",  # A-01-T22 (P-31): withdrawn content (system)
         "engagement_member.added",
         "engagement_member.hours_changed",
         "engagement_member.removed",
@@ -352,6 +355,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "support_session.ended",
         "support_session.expired",
         "support_session.requested",
+        "support_session.revoked",  # G-02-T14: turning support off closes pending requests
         "sync_run.failed",
         "sync_run.raw_stored",
         "sync_run.requested_again",

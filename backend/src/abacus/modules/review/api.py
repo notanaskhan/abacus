@@ -23,6 +23,7 @@ from abacus.modules.review.decisions import (
     RecommendationChanged,
     raise_decision_card,
 )
+from abacus.modules.review.engagement_gates import register_engagement_gates
 from abacus.modules.review.gates import (
     C13_EVENTS,
     GateSource,
@@ -109,6 +110,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 
 # SPEC-313 (TASK-331): G5, review complete, is the review module's.
 register_gate_provider("G5", review_gate)
+register_engagement_gates()  # P-07-T47 (C13): acceptance, independence and EQR gates
 register_engagement_owners(AUDIT_KINDS, audit_owners)  # ED-112: `sign_off.went_stale`
 
 # P-04-T16 (C13): the human-gate projector, on the events its sources may change; P-04-T19:

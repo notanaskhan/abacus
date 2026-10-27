@@ -1151,6 +1151,8 @@ LIST_EXEMPT = frozenset(
         # Q-02-T33: the incident register's recipients (QI and partners), same footing.
         ("src/abacus/modules/identity/repository.py", "active_security_admins"),
         ("src/abacus/modules/identity/repository.py", "active_partner_members"),
+        # P-07-T47 (DEC-544): the quality owners an EQR gate is assigned to (system, firm-wide).
+        ("src/abacus/modules/identity/repository.py", "active_quality_partners"),
         ("src/abacus/modules/notifications/repository.py", "insert_notifications"),
         # Support sessions are firm-level records, listed after `authorise(support_session.read)`.
         ("src/abacus/modules/identity/repository.py", "list_support_sessions"),

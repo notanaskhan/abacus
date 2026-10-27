@@ -17,7 +17,7 @@ from abacus.modules.audit_trail.api import (
     AuditPartitionsWorkflow,
 )
 from abacus.modules.communications.api import DrainSesEventsWorkflow
-from abacus.modules.evidence.api import AuditAnchorWorkflow
+from abacus.modules.evidence.api import AuditAnchorWorkflow, ExportExpirySweepWorkflow
 from abacus.modules.identity.api import AccessEndSweepWorkflow, AuthSessionPurgeWorkflow
 from abacus.modules.notifications.api import NotificationPurgeWorkflow
 from abacus.modules.platform.api import SpendAnomalyWorkflow
@@ -37,6 +37,8 @@ AUDIT_JOBS: dict[str, tuple[str, type]] = {
     "audit-labels-v1-indexed": ("audit_labels:platform", AuditLabelIndexerWorkflow),
     # G-02-T14: the staff session purge's Schedule.
     "auth-session-purge-v1-purged": ("auth_session_purge:platform", AuthSessionPurgeWorkflow),
+    # A-01-T22: the engagement export expiry sweep's Schedule.
+    "export-expiry-v1-swept": ("export_expiry:platform", ExportExpirySweepWorkflow),
 }
 
 

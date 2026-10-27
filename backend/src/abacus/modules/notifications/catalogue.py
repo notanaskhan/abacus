@@ -176,6 +176,25 @@ async def _signer(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     return [signer] if signer is not None else []
 
 
+async def _named_partner(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """P-07-T47: the partner asked for the acceptance risk review, never the asker."""
+    partner, by = _uuid(payload, "partner_id"), _uuid(payload, "by_user")
+    return [partner] if partner is not None and partner != by else []
+
+
+async def _member(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """P-07-T47: the member a reminder is about."""
+    member = _uuid(payload, "user_id")
+    return [member] if member is not None else []
+
+
+async def _export_requester(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """A-01-T22: the person who asked for the export, and only them (walls applied at fan-out
+    and again at read time)."""
+    requester = _uuid(payload, "requested_by")
+    return [requester] if requester is not None else []
+
+
 @dataclass(frozen=True)
 class Kind:
     kind: str  # the stored code; new codes are undotted (C16); the key is the event type
@@ -256,6 +275,27 @@ CATALOGUE: Final[dict[str, Kind]] = {
     # P-04-T23: a card waits on its reserved person; "Notify" mentions them (SHL-11 b).
     "decision_card.raised": Kind("decision_assigned", _listed, "decision_card", "card_id"),
     "decision_card.notify_requested": Kind("mention", _assignee, "decision_card", "card_id"),
+    # P-07-T47 (P-07 §4.8): acceptance, risk review, independence and team approval.
+    "acceptance.sent_to_partner": Kind(
+        "acceptance_awaiting_partner", _partners, "acceptance_record", "record_id"
+    ),
+    "acceptance.review_requested": Kind(
+        "risk_partner_review_requested", _named_partner, "acceptance_record", "record_id"
+    ),
+    "independence.reminded": Kind("independence_reminder", _member, "engagement", "engagement_id"),
+    "independence.conclusion_due": Kind(
+        "independence_conclusion_due", _partners, "engagement", "engagement_id"
+    ),
+    "team.change_proposed": Kind(
+        "team_change_awaiting_approval", _partners, "engagement", "engagement_id"
+    ),
+    # A-01-T22 (A-01 §4.7): the requester's binder export is ready, or its build failed.
+    "engagement_export.ready": Kind(
+        "export_ready", _export_requester, "engagement_export", "export_id"
+    ),
+    "engagement_export.failed": Kind(
+        "export_failed", _export_requester, "engagement_export", "export_id"
+    ),
 }
 
 # AC-7: fixed English text per kind; placeholders are names the reader can already see.
@@ -292,6 +332,17 @@ TEMPLATES: Final[dict[str, str]] = {
     "review_note.raised": "A review note on {engagement} is waiting for you.",
     "decision_card.raised": "A decision on {engagement} is waiting for you.",
     "decision_card.notify_requested": "A decision on {engagement} is waiting for you.",
+    "acceptance.sent_to_partner": "An acceptance on {engagement} is waiting for your decision.",
+    "acceptance.review_requested": (
+        "You were asked for a risk review of an acceptance on {engagement}."
+    ),
+    "independence.reminded": "Reminder: confirm your independence for {engagement}.",
+    "independence.conclusion_due": (
+        "Every member confirmed independence on {engagement}: it is ready for your conclusion."
+    ),
+    "team.change_proposed": "The team on {engagement} changed and is waiting for your approval.",
+    "engagement_export.ready": "Your binder export for {engagement} is ready to download.",
+    "engagement_export.failed": "Your binder export for {engagement} could not be built.",
 }
 
 
@@ -353,6 +404,20 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     ),
     NotificationKind("audit_export_ready", "system", "Download"),
     NotificationKind("security_policy_changed", "system", "Lock"),
+    # P-07-T47 (P-07 §4.8): email text is `notification.<kind>` content (staff import). The
+    # independence reminder emails by default: it is the staff reminder a person sends.
+    NotificationKind("acceptance_awaiting_partner", "approval", "Scale"),
+    NotificationKind("risk_partner_review_requested", "approval", "TriangleAlert"),
+    NotificationKind("independence_reminder", "approval", "ShieldCheck", email_default=True),
+    NotificationKind("independence_conclusion_due", "approval", "ShieldCheck"),
+    NotificationKind("team_change_awaiting_approval", "approval", "UserPlus"),
+    # Day 12 of a 14-day client invitation, to the firm admins; registered for the drawer and
+    # preferences now, produced once an expiry pass exists (P-07 §4.5 has no schedule; DEC-540).
+    NotificationKind("invitation_expiring", "deadline", "Clock"),
+    # A-01-T22 (A-01 §4.7): in-app; an email, when a person turns it on, deep-links to the
+    # export sheet (`notification.export_ready`, imported content), never to a download.
+    NotificationKind("export_ready", "system", "Download"),
+    NotificationKind("export_failed", "system", "Download"),
 )
 for _kind in _REGISTERED:
     register_kind(_kind)
