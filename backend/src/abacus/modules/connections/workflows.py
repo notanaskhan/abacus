@@ -206,3 +206,26 @@ class GlImportWorkflow:
                 retry_policy=_RETRY,
             )
         return status
+
+
+CONNECTION_HEALTH_ID = "connection_health:platform"
+_HEALTH_TIMEOUT = timedelta(minutes=30)
+_HEALTH_RETRY = RetryPolicy(maximum_attempts=3)  # a failed pass is retried by the next day's run
+
+
+@workflow.defn(name="ConnectionHealth")
+class ConnectionHealthWorkflow:
+    """A-02-T25 (A-02 §3.11; DEC-708): the daily refresh and health pass over every firm's live
+    provider connections, on the Schedule `connection_health:platform` (overlap SKIP). The
+    activity `connections.check_connection_health` works inside each firm's own session and
+    returns counts, so no connection, entity or credential enters the history. A change here lands
+    behind a `workflow.patched(...)` id so the recorded v1 history keeps replaying."""
+
+    @workflow.run
+    async def run(self) -> int:
+        return await workflow.execute_activity(
+            "connections.check_connection_health",
+            result_type=int,
+            start_to_close_timeout=_HEALTH_TIMEOUT,
+            retry_policy=_HEALTH_RETRY,
+        )

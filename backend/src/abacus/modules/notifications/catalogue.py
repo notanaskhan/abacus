@@ -280,6 +280,13 @@ CATALOGUE: Final[dict[str, Kind]] = {
     ),
     "connection.created": Kind("connection.created", _leads, "connection", "connection_id"),
     "connection.revoked": Kind("connection.revoked", _leads, "connection", "connection_id"),
+    # A-02-T25: the daily health pass found a grant problem, or a grant ends within 7 days.
+    "connection.needs_reauth": Kind(
+        "connection_needs_reauth", _admins_and_leads, "connection", "connection_id"
+    ),
+    "connection.reauth_due": Kind(
+        "connection_needs_reauth", _admins_and_leads, "connection", "connection_id"
+    ),
     # SPEC-025 (TASK-044): the person who joined is asked to confirm their independence.
     "independence.requested": Kind(
         "independence.requested", _added_member, "engagement", "engagement_id"
@@ -420,6 +427,8 @@ TEMPLATES: Final[dict[str, str]] = {
     "evidence.uploaded": "The client uploaded a file on {engagement}.",
     "connection.created": "The client connected their accounting system on {engagement}.",
     "connection.revoked": "The accounting system connection on {engagement} was ended.",
+    "connection.needs_reauth": "The client needs to sign in to their accounting system again.",
+    "connection.reauth_due": "The client's accounting system sign-in ends within 7 days.",
     "independence.requested": "Confirm your independence for {engagement}.",
     "reminders.drafted": "Overdue reminders on {engagement} are waiting for you to send.",
     "follow_up.drafted": "Follow-ups on {engagement} are waiting for you to send.",

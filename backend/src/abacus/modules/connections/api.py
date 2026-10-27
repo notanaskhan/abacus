@@ -1,6 +1,9 @@
 """Public interface of the connections module; other modules import only this (ADR-008)."""
 
+from datetime import timedelta
+
 from abacus.kernel.audit_owners import register_engagement_owners, register_entity_owners
+from abacus.kernel.dispatch import PlatformSchedule, register_work_classes
 from abacus.kernel.uow import Handler
 from abacus.modules.connections.activities import ACTIVITIES
 from abacus.modules.connections.audit_targets import AUDIT_KINDS, audit_entities, audit_owners
@@ -56,6 +59,7 @@ from abacus.modules.connections.fake_format import parse_trial_balance
 from abacus.modules.connections.gl_import import WORKFLOWS as GL_WORKFLOWS
 from abacus.modules.connections.gl_import import on_ledger_snapshot_recorded
 from abacus.modules.connections.grants import GrantRevocationRequested, revoke_retired
+from abacus.modules.connections.health import check_connection_health_activity
 from abacus.modules.connections.pipeline import (
     RunFailed,
     RunResult,
@@ -99,7 +103,12 @@ from abacus.modules.connections.workflow_types import (
     RetrievalInput,
     RetrievalOutcome,
 )
-from abacus.modules.connections.workflows import GlImportWorkflow, RetrievalWorkflow
+from abacus.modules.connections.workflows import (
+    CONNECTION_HEALTH_ID,
+    ConnectionHealthWorkflow,
+    GlImportWorkflow,
+    RetrievalWorkflow,
+)
 from abacus.modules.engagements.api import register_auto_retrieval
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.requests.api import register_available_datasets
@@ -115,6 +124,18 @@ SUBSCRIPTIONS: dict[str, Handler] = {
     LedgerSnapshotRecorded.event_type: on_ledger_snapshot_recorded,
 }
 WORKFLOWS.update(GL_WORKFLOWS)
+# A-02-T25 (DEC-708): the daily health pass, a platform job.
+WORKFLOWS[ConnectionHealthWorkflow] = "background"
+register_work_classes({ConnectionHealthWorkflow: "background"})
+ACTIVITIES = (*ACTIVITIES, check_connection_health_activity)
+SCHEDULES: tuple[PlatformSchedule, ...] = (
+    PlatformSchedule(
+        id=CONNECTION_HEALTH_ID,
+        workflow=ConnectionHealthWorkflow,
+        every=timedelta(days=1),
+        note="A-02-T25: refresh and health of every live provider connection, daily",
+    ),
+)
 # SPEC-022 D2: requests learns what the live connection can deliver from here.
 register_available_datasets(available_datasets)
 
@@ -137,6 +158,7 @@ __all__ = [
     "CONNECTORS",
     "NETWORKLESS_PROVIDERS",
     "ROUTERS",
+    "SCHEDULES",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
     "ActionCapReached",

@@ -37,32 +37,26 @@ def _revision(database: sc.Database) -> str:
     return str(asyncio.run(seed.value("SELECT version_num FROM alembic_version")))
 
 
+_INSERT_VERSION = (
+    "INSERT INTO evidence_versions (id, tenant_id, engagement_id, evidence_item_id, version_no, "
+    "fingerprint, storage_key, storage_version_id, size_bytes, media_type, source, method, "
+    "supersedes_version_id) VALUES ($1, $2, $3, $4, $5, $6, $7, 'v1', 10, 'application/pdf', "
+    "'portal_drop', 'uploaded', $8)"
+)
+
+
 async def _version(
     seed: Seeder,
     tenant: uuid.UUID,
     engagement: uuid.UUID | None,
     item: uuid.UUID,
     number: int = 1,
-    **extra: object,
+    supersedes_version_id: uuid.UUID | None = None,
 ) -> uuid.UUID:
     fingerprint = uuid.uuid4().hex * 2
-    columns = [
-        "id",
-        "tenant_id",
-        "engagement_id",
-        "evidence_item_id",
-        "version_no",
-        "fingerprint",
-        "storage_key",
-        "storage_version_id",
-        "size_bytes",
-        "media_type",
-        "source",
-        "method",
-        *extra,
-    ]
     version = uuid.uuid4()
-    values = [
+    await seed.run(
+        _INSERT_VERSION,
         version,
         tenant,
         engagement,
@@ -70,17 +64,7 @@ async def _version(
         number,
         fingerprint,
         f"tenants/{tenant}/sha256/{fingerprint}",
-        "v1",
-        10,
-        "application/pdf",
-        "portal_drop",
-        "uploaded",
-        *extra.values(),
-    ]
-    marks = ", ".join(f"${i}" for i in range(1, len(values) + 1))
-    await seed.run(
-        f"INSERT INTO evidence_versions ({', '.join(columns)}) VALUES ({marks})",  # noqa: S608
-        *values,
+        supersedes_version_id,
     )
     return version
 

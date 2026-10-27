@@ -84,6 +84,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         | {"connected_by_user_id", "connected_at", "reauth_due_at", "last_sync_at"}
         | {"status_reason_code"}
         | {"version"}  # 0215 (A-02-T16): bumped on every status change
+        | {"reauth_noticed_for"}  # 0271 (A-02-T25): the due date last told
     ),
     "sync_runs": frozenset(
         {"status", "raw_storage_key", "raw_version_id", "raw_fingerprint", "snapshot_id"}

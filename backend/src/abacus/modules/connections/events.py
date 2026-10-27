@@ -48,3 +48,25 @@ class LedgerSnapshotRecorded(DomainEvent):
 
     client_entity_id: Annotated[UUID, classified("internal")]
     snapshot_id: Annotated[UUID, classified("internal")]
+
+
+class ConnectionNeedsReauth(DomainEvent):
+    """A-02-T25: the daily health pass found a connection whose grant expired or was refused
+    (`token_expired`, `invalid_grant`): it now needs its client to sign in again. Published once
+    per transition, so its leads are told once (C16 `connection_needs_reauth`)."""
+
+    event_type: ClassVar[str] = "connection.needs_reauth"
+
+    connection_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")]
+    reason: Annotated[str, classified("internal")]
+
+
+class ConnectionReauthDue(DomainEvent):
+    """A-02-T25: a connection's grant ends within `REAUTH_NOTICE_DAYS` (`reauth_due_at`); told
+    once per due date (`reauth_noticed_for`)."""
+
+    event_type: ClassVar[str] = "connection.reauth_due"
+
+    connection_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")]
