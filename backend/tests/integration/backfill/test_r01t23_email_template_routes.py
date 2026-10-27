@@ -122,3 +122,39 @@ async def test_preview_and_a_dry_run_import_write_nothing(net: Net, seed: Seeder
     assert applied.status_code == 422 and applied.json()["detail"] == "template_lint_failed"
     stale = await net.call("POST", f"{BASE}/import", admin, body=bundle, mfa=False)
     assert stale.status_code == 403
+
+
+async def test_la_a_walled_team_member_cannot_preview_the_contact(net: Net, seed: Seeder) -> None:
+    """Review L-a: a sample contact counts as visible only through an engagement the viewer may
+    read, walls applied; once walled, the contact answers 404 like an unknown one."""
+    admin = await _admin(seed)
+    creator = await seed.person(admin.tenant_id, "firm_admin")
+    await _published(net, admin)
+    site = await seed.site(admin.tenant_id, creator.user_id, "walled-preview")
+    await seed.member(site, admin, "engagement_partner")
+    client_user = await seed.client_contact(site)
+    contact = await seed.value(
+        "INSERT INTO contacts (tenant_id, client_id, display_name, contact_kind) "
+        "VALUES ($1, $2, 'Probe contact', 'client_person') RETURNING id",
+        admin.tenant_id,
+        site.client_id,
+    )
+    await seed.run(
+        "UPDATE client_access_grants SET contact_id = $3 WHERE tenant_id = $1 AND user_id = $2",
+        admin.tenant_id,
+        client_user.user_id,
+        contact,
+    )
+    body = {"source": "published", "width": 600, "sample_contact_id": str(contact)}
+    seen = await net.call("POST", f"{BASE}/reminder/preview", admin, body=body)
+    assert seen.status_code == 200, seen.text
+    await net.wall(creator, admin, site)
+    walled = await net.call("POST", f"{BASE}/reminder/preview", admin, body=body)
+    assert walled.status_code == 404, walled.text
+    unknown = await net.call(
+        "POST",
+        f"{BASE}/reminder/preview",
+        admin,
+        body={**body, "sample_contact_id": str(uuid.uuid4())},
+    )
+    assert unknown.status_code == 404

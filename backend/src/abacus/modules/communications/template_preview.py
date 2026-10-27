@@ -160,8 +160,9 @@ async def _contact_values(
     audience = set(registration.audience)
     related: list[UUID] = []
     for engagement_id in sorted(await my_engagements(ctx)):
-        try:  # security review: a team member walled off the engagement does not see it here
-            await get_ref(ctx, engagement_id)
+        try:  # review L-a: walls and independence, not existence: authorise the read itself
+            ref = await get_ref(ctx, engagement_id)
+            await authorise(ctx, "engagement.read", ref.resource())
         except (Forbidden, NotFound):
             continue
         for person in people:

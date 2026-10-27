@@ -8,8 +8,9 @@ decides, on its own reads, whether anything goes:
 2. each named request is re-read here (`requests.api.overdue_for`) and kept only if it is still
    overdue for the same due date, a client may be written to about it (client-visible, not
    deleted, in a Published binder that is not closed), its binder is not marked done (when the
-   policy stops there) and the recipient is its client assignee, else one of the engagement's
-   client admins;
+   policy stops there), the recipient is its client assignee, else one of the engagement's
+   client admins, and its sequence is the next one the policy allows, recomputed from what was
+   already sent (the cadence, the maximum; security review M-a);
 3. the words are the firm's published Reminder, filled here from the kept requests' titles: the
    caller passes identifiers only, never text;
 4. `send_templated` then applies its own checks (the version the firm published, attributed to
@@ -32,7 +33,12 @@ from zoneinfo import ZoneInfo
 from abacus.kernel.clock import now
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext
-from abacus.modules.communications.follow_up_policy import follow_up_policy
+from abacus.modules.communications.follow_up_policy import (
+    Sent,
+    follow_up_policy,
+    next_sequence_by_policy,
+    reminder_history,
+)
 from abacus.modules.communications.notification_email import display_name
 from abacus.modules.communications.template_registry import (
     RecipientRef,
@@ -82,6 +88,9 @@ async def send_scheduled_reminder(
     today = (await now(system)).astimezone(ZoneInfo(zone)).date()
     overdue = {i.id: i for i in await overdue_for(system, engagement_id, today)}
     admins = set(await client_admins(system, engagement_id))
+    history = await reminder_history(system, [i for i, _, _ in items])
+    if history is None:
+        return None  # nothing says what was already sent: fail closed
     kept: list[tuple[OverdueItem, int]] = []
     for item_id, due_on, sequence in items:
         found = overdue.get(item_id)
@@ -96,6 +105,19 @@ async def send_scheduled_reminder(
         if (assignee is not None and assignee != recipient_user_id) or (
             assignee is None and recipient_user_id not in admins
         ):
+            continue
+        # Security review M-a: the sequence is this request's next one under the policy (or the
+        # binder's override), recomputed here from what was sent: never more than the maximum,
+        # never sooner than the cadence, never a number the caller made up.
+        rows = [at for i, d, _n, at in history if i == item_id and d == due_on]
+        last = max(rows, default=None)
+        sent = Sent(
+            len(rows), last.astimezone(ZoneInfo(zone)).date() if last is not None else None
+        )
+        expected = next_sequence_by_policy(
+            due_on, sent, today, policy.overridden(found.binder_override)
+        )
+        if expected is None or expected != sequence:
             continue
         kept.append((found, sequence))
     if not kept:

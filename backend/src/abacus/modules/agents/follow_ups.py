@@ -49,8 +49,10 @@ from abacus.modules.agents.repository import (
 )
 from abacus.modules.communications.api import (
     FollowUpPolicy,
+    Sent,
     follow_up_policy,
-    next_send_on,
+    limit_reached_today,
+    next_sequence_by_policy,
     scheduled_send_enabled,
     send_scheduled_reminder,
 )
@@ -95,12 +97,6 @@ def today_in(zone: str, at: datetime) -> date:
     return at.astimezone(ZoneInfo(zone)).date()
 
 
-@dataclass(frozen=True)
-class Sent:
-    count: int
-    last_on: date | None
-
-
 def next_sequence(due_on: date, sent: Sent, today: date) -> int | None:
     """Which reminder this item is due today (1-3), or None. `sent` counts only reminders for this
     due date that weren't dismissed."""
@@ -136,34 +132,12 @@ def plan(
     return dict(batches)
 
 
-def first_tick_on_or_after(day: date) -> date:
-    """The tick runs on business days only: the first one on or after `day`."""
-    while not business_day(day):
-        day += timedelta(days=1)
-    return day
-
-
-def next_sequence_by_policy(
-    due_on: date, sent: Sent, today: date, policy: FollowUpPolicy
-) -> int | None:
-    """R-01-T24: which reminder is due today under the firm's policy (or the binder's
-    override), or None. The first goes on the first tick after the due date; each next one
-    `cadence_days` after the last, moved off a weekend when `weekdays_only`."""
-    if today <= due_on or sent.count >= policy.max_reminders:
-        return None
-    if sent.count == 0 or sent.last_on is None:
-        return 1
-    due, _ = next_send_on(sent.last_on, policy)
-    return sent.count + 1 if today >= due else None
-
-
-def limit_reached_today(sent: Sent, today: date, policy: FollowUpPolicy) -> bool:
-    """The maximum was reached and today is the tick a further reminder would have been due
-    on: the one day `follow_up.limit_reached` is raised (DEC-564)."""
-    if sent.count < policy.max_reminders or sent.last_on is None:
-        return False
-    due, _ = next_send_on(sent.last_on, policy)
-    return first_tick_on_or_after(due) == today
+async def reminder_history_of(
+    tenant: TenantContext, item_ids: Sequence[UUID]
+) -> Sequence[tuple[UUID, date, int, datetime]]:
+    """What communications checks a scheduled Reminder's sequence against (review M-a)."""
+    async with tenant_session(tenant) as session:
+        return await follow_up_history(session, item_ids)
 
 
 @dataclass(frozen=True)

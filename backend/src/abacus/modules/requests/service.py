@@ -1273,12 +1273,15 @@ class OverdueItem:
 
 
 async def overdue_for(
-    tenant: TenantContext, engagement_id: UUID, today: date
+    tenant: TenantContext, engagement_id: UUID, today: date, *, sendable_only: bool = True
 ) -> list[OverdueItem]:
-    """For the engagement agent's reminders (SPEC-027 P-4): open or sent-back items past due."""
+    """For the engagement agent's reminders (SPEC-027 P-4): open or sent-back items past due.
+    By default only what a client may be written to about (`sendable`: client-visible, not
+    deleted, in a Published binder that is not closed; R-01-T24 security review M-b), since
+    every caller but a count drafts or sends a reminder from it."""
     async with tenant_session(tenant) as session:
         rows = await overdue_items(session, engagement_id, today)
-    return [
+    found = [
         OverdueItem(
             i.id,
             i.description,
@@ -1291,6 +1294,7 @@ async def overdue_for(
         )
         for i, due, binder_id, marked_done_at, override, sendable in rows
     ]
+    return [i for i in found if i.sendable] if sendable_only else found
 
 
 _STAFF_ROLES: Final = frozenset({"engagement_partner", "manager", "senior", "staff"})

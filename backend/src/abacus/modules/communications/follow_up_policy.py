@@ -19,9 +19,11 @@ per-binder override (`every_days`, `max`) wins over it, read by the P-4 tick.
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, replace
 from datetime import date, datetime, time, timedelta
 from typing import Final, Literal, cast
+from uuid import UUID
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import text
@@ -88,6 +90,71 @@ def next_send_at(policy: FollowUpPolicy, last_sent_at: datetime, zone: str) -> N
     day, shifted = next_send_on(last_sent_at.astimezone(tz).date(), policy)
     at = datetime.combine(day, policy.send_local_time, tzinfo=tz)
     return NextSend(at.astimezone(ZoneInfo("UTC")), shifted)
+
+
+# --- the cadence rule both the tick and the scheduled send apply (security review M-a) ---------
+
+
+@dataclass(frozen=True)
+class Sent:
+    count: int
+    last_on: date | None
+
+
+def first_tick_on_or_after(day: date) -> date:
+    """The tick runs on business days only: the first one on or after `day`."""
+    while not business_day(day):
+        day += timedelta(days=1)
+    return day
+
+
+def next_sequence_by_policy(
+    due_on: date, sent: Sent, today: date, policy: FollowUpPolicy
+) -> int | None:
+    """R-01-T24: which reminder is due today under the firm's policy (or the binder's
+    override), or None. The first goes on the first tick after the due date; each next one
+    `cadence_days` after the last, moved off a weekend when `weekdays_only`."""
+    if today <= due_on or sent.count >= policy.max_reminders:
+        return None
+    if sent.count == 0 or sent.last_on is None:
+        return 1
+    due, _ = next_send_on(sent.last_on, policy)
+    return sent.count + 1 if today >= due else None
+
+
+def limit_reached_today(sent: Sent, today: date, policy: FollowUpPolicy) -> bool:
+    """The maximum was reached and today is the tick a further reminder would have been due
+    on: the one day `follow_up.limit_reached` is raised (DEC-564)."""
+    if sent.count < policy.max_reminders or sent.last_on is None:
+        return False
+    due, _ = next_send_on(sent.last_on, policy)
+    return first_tick_on_or_after(due) == today
+
+
+def business_day(day: date) -> bool:
+    return day.weekday() < _SATURDAY  # holidays aren't modelled in v1
+
+
+# The reminders already drafted or sent for requests: (request, due date then, sequence, when).
+ReminderHistory = Callable[
+    [TenantContext, Sequence[UUID]], Awaitable[Sequence[tuple[UUID, date, int, datetime]]]
+]
+_HISTORY: list[ReminderHistory] = []
+
+
+def register_reminder_history(provider: ReminderHistory) -> None:
+    """The agents module, which keeps the follow-ups, says what was already sent (R-01-T24
+    security review M-a): communications checks a scheduled Reminder's sequence against it."""
+    _HISTORY[:] = [provider]
+
+
+async def reminder_history(
+    tenant: TenantContext, item_ids: Sequence[UUID]
+) -> Sequence[tuple[UUID, date, int, datetime]] | None:
+    """None when no provider registered: the caller fails closed."""
+    if not _HISTORY:
+        return None
+    return await _HISTORY[0](tenant, item_ids)
 
 
 _READ = text(

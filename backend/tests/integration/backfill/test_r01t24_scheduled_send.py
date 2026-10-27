@@ -243,3 +243,34 @@ async def test_l2_the_limit_is_raised_once_for_the_same_binder_recipient_and_las
         )
     actions = await seed.actions(firm.tenant)
     assert actions.count("follow_up.limit_reached") == 1
+
+
+async def test_ma_a_replayed_or_inflated_sequence_is_refused(
+    seed: Seeder, mailbox: Mailbox
+) -> None:
+    """Review M-a: communications recomputes the sequence from what was sent; the caller's
+    number is only accepted when it is the next one the policy allows today."""
+    firm = await _firm(seed)
+    item = await seed.item(firm.site, "Bank statement", due_on=_due())
+    for inflated in (2, 3, 50):  # nothing sent yet: only the first may go
+        assert (
+            await send_scheduled_reminder(
+                firm.tenant,
+                firm.site.engagement_id,
+                firm.contact.user_id,
+                [(item, _due(), inflated)],
+            )
+            is None
+        )
+    outcome = await chase_overdue(
+        firm.system, firm.site.engagement_id, ZONE, uuid.uuid4(), policy_v1=True
+    )
+    assert outcome.sent == 1 and len(mailbox.sent) == 1
+    for again in (1, 2, 5):  # the first is recorded; the cadence has not passed for the second
+        assert (
+            await send_scheduled_reminder(
+                firm.tenant, firm.site.engagement_id, firm.contact.user_id, [(item, _due(), again)]
+            )
+            is None
+        )
+    assert len(mailbox.sent) == 1

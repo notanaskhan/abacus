@@ -8,15 +8,14 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, date, datetime, time
 
-from abacus.modules.agents.follow_ups import (
-    PolicyPlan,
+from abacus.modules.agents.follow_ups import PolicyPlan, plan_by_policy
+from abacus.modules.communications.api import (
+    FollowUpPolicy,
     Sent,
     first_tick_on_or_after,
     limit_reached_today,
     next_sequence_by_policy,
-    plan_by_policy,
 )
-from abacus.modules.communications.api import FollowUpPolicy
 from abacus.modules.requests.api import OverdueItem
 
 ZONE = "America/Chicago"
