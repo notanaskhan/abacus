@@ -13,6 +13,8 @@ import json
 import re
 from pathlib import Path
 
+import pytest
+
 from abacus_tools import contracts
 from abacus_tools.synthetic import fleet
 from abacus_tools.synthetic.scenarios.brightwater_hale import loader
@@ -75,6 +77,7 @@ def test_ac_the_lockout_and_pause_runbooks_are_written_indexed_and_linked() -> N
         assert "## Rehearsal log" in text  # rehearsed once before the flags retire
 
 
+@pytest.mark.source_scan
 def test_ac_the_runbooks_name_controls_and_routes_that_exist() -> None:
     pause = (RUNBOOKS / "RB-36-portal-sign-in-pause.md").read_text()
     assert "--control portal_sign_in --scope firm" in pause

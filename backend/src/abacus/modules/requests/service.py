@@ -59,6 +59,7 @@ from abacus.modules.requests.guidance import (
 )
 from abacus.modules.requests.models import RequestItem
 from abacus.modules.requests.repository import (
+    awaiting_review_rows,
     client_home_items,
     default_due_on,
     drop_item_rows,
@@ -469,6 +470,22 @@ async def fulfilled_versions(ctx: AuthContext, engagement_id: UUID) -> list[Fulf
         )
         for item, version, at, fulfilment_id in rows
     ]
+
+
+async def awaiting_review(
+    tenant: TenantContext, engagement_id: UUID | None
+) -> list[tuple[UUID, UUID, UUID]]:
+    """I-01-T08 (C13's `evidence_review` source): every uploaded item's newest live fulfilment,
+    as (item, version, engagement); `None` for every engagement (the rebuild). The caller filters
+    decided and withdrawn versions; the projection applies walls on read."""
+    async with tenant_session(tenant) as session:
+        return list(await awaiting_review_rows(session, engagement_id))
+
+
+async def awaiting_review_count(tenant: TenantContext, engagement_id: UUID) -> int:
+    """P-06 §2.3 for I-01: how many items wait on a person's review on the engagement (a count
+    before decisions are read; the gate source narrows to undecided versions)."""
+    return len(await awaiting_review(tenant, engagement_id))
 
 
 # A review decision moves its item (SPEC-004 §6, Q2): only from a status that awaits review.

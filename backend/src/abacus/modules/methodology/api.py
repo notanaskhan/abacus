@@ -25,6 +25,12 @@ from abacus.modules.methodology.contract import (
     methodology_lifecycle_router,
     programs_router,
 )
+from abacus.modules.methodology.lifecycle import (
+    approve_version,
+    submit_version,
+    version_effective_on,
+    version_state,
+)
 from abacus.modules.methodology.routes import methodology_router
 from abacus.modules.methodology.service import (
     ApprovedGuidance,
@@ -90,6 +96,7 @@ __all__ = [
     "UsageCounter",
     "VersionNotLatest",
     "Viewer",
+    "approve_version",
     "area_for",
     "import_template",
     "latest_versions",
@@ -100,7 +107,10 @@ __all__ = [
     "publish_drafted_version",
     "register_catalog_provider",
     "register_usage_counter",
+    "submit_version",
     "templates_in_firm",
     "version_detail",
+    "version_effective_on",
     "version_in",
+    "version_state",
 ]
