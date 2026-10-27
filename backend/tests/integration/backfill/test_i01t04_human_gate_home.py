@@ -20,7 +20,7 @@ from __future__ import annotations
 import json
 import uuid
 from collections.abc import Sequence
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import Final, cast
 
 import asyncpg
@@ -216,7 +216,7 @@ async def test_a_snooze_moves_a_gate_from_total_to_snoozed_for_that_person_only(
         "INSERT INTO human_gate_snoozes (tenant_id, gate_id, user_id, until, actor_kind, "
         "actor_id) VALUES ($1, $2, $3, $4, 'human', $5)"
     )
-    later = datetime(2999, 1, 1, tzinfo=UTC)
+    later = datetime.now(UTC) + timedelta(days=10)  # within the 30-day bound
     await _as(
         migrated_db,
         firm.tenant_id,
@@ -285,7 +285,7 @@ async def test_an_overdue_gate_is_counted_overdue(firm: Firm) -> None:
 
 _SNOOZE: Final = (
     "INSERT INTO human_gate_snoozes (tenant_id, gate_id, user_id, until, actor_kind, actor_id) "
-    "VALUES ($1, $2, $3, '2999-01-01T00:00:00Z', $4, $5)"
+    "VALUES ($1, $2, $3, now() + interval '1 day', $4, $5)"
 )
 _REASSIGN: Final = (
     "INSERT INTO human_gate_reassignments (tenant_id, gate_id, subject_ref, from_user_id, "
@@ -379,12 +379,13 @@ async def test_s42_another_firms_gate_cannot_be_snoozed(firm: Firm, migrated_db:
 
 
 async def _card(f: Firm) -> tuple[uuid.UUID, uuid.UUID]:
-    """A card reserved to Daniel and its gate (seeded as the owner: triggers off)."""
+    """A card reserved to Daniel as a manager-role card and its gate (seeded as the owner:
+    triggers off); Hannah is a manager on the engagement, Lena staff."""
     card = uuid.uuid4()
     await f.net.seed.run_untriggered(
         "INSERT INTO decision_cards (id, tenant_id, engagement_id, kind, question_key, "
         "reserved_role, reserved_user_id, options, raised_by_kind, raised_by_id) VALUES "
-        "($1, $2, $3, 'materiality', 'materiality.overall', 'engagement_partner', $4, '[]', "
+        "($1, $2, $3, 'materiality', 'materiality.overall', 'manager', $4, '[]', "
         "'human', $5)",
         card,
         f.tenant_id,
@@ -464,3 +465,105 @@ async def test_s42_a_card_moves_only_with_a_persons_reassignment_written_now(
             _human(firm.daniel),
             [("UPDATE decision_cards SET question_key = 'x.y' WHERE id = $1", (card,))],
         )
+
+
+async def test_m1_only_the_right_person_moves_a_card_to_a_holder_of_its_role(
+    firm: Firm, migrated_db: Migrated
+) -> None:
+    """Security review M1: a reassignment row is not enough. The mover is the reserved person,
+    the partner or a manager; never to themselves; the row names its gate's own subject and comes
+    from the reserved person; the new person holds the reserved role and is not walled off."""
+    card, gate = await _card(firm)
+    ref = json.dumps({"type": "decision_card", "id": str(card)})
+
+    def row(
+        frm: Person, to: Person, by: Person, on: uuid.UUID = gate
+    ) -> tuple[str, Sequence[object]]:
+        return (
+            _REASSIGN,
+            (firm.tenant_id, on, ref, frm.user_id, to.user_id, "human", str(by.user_id)),
+        )
+
+    def move(to: Person) -> tuple[str, Sequence[object]]:
+        return (_MOVE, (to.user_id, firm.tenant_id, card))
+
+    lena, daniel, hannah = firm.lena, firm.daniel, firm.hannah
+    # Lena (staff, holds nothing on the card) takes it for herself: refused.
+    with pytest.raises(asyncpg.CheckViolationError):
+        await _as(migrated_db, firm.tenant_id, _human(lena), [row(daniel, lena, lena), move(lena)])
+    # Nor may she give it to Hannah: only the reserved person, the partner or a manager moves it.
+    with pytest.raises(asyncpg.InsufficientPrivilegeError):
+        await _as(
+            migrated_db, firm.tenant_id, _human(lena), [row(daniel, hannah, lena), move(hannah)]
+        )
+    # A reassignment row naming the card on another gate is refused at insert.
+    await _a_gate(firm, daniel)
+    other = cast(
+        uuid.UUID,
+        await firm.net.seed.value(
+            "SELECT id FROM human_gates WHERE tenant_id = $1 AND subkind = 'consumer_decision' "
+            "LIMIT 1",
+            firm.tenant_id,
+        ),
+    )
+    with pytest.raises(asyncpg.CheckViolationError):
+        await _as(
+            migrated_db, firm.tenant_id, _human(daniel), [row(daniel, hannah, daniel, other)]
+        )
+    # A row from someone other than the reserved person does not count.
+    with pytest.raises(asyncpg.CheckViolationError):
+        await _as(
+            migrated_db, firm.tenant_id, _human(daniel), [row(lena, hannah, daniel), move(hannah)]
+        )
+    # The new person must hold the card's reserved role (manager): Lena is staff.
+    with pytest.raises(asyncpg.CheckViolationError):
+        await _as(
+            migrated_db, firm.tenant_id, _human(daniel), [row(daniel, lena, daniel), move(lena)]
+        )
+    # And must not be walled off from the client.
+    await firm.net.wall(firm.admin, hannah, firm.bayside)
+    with pytest.raises(asyncpg.CheckViolationError):
+        await _as(
+            migrated_db,
+            firm.tenant_id,
+            _human(daniel),
+            [row(daniel, hannah, daniel), move(hannah)],
+        )
+    assert (
+        await firm.net.seed.value(
+            "SELECT reserved_user_id FROM decision_cards WHERE id = $1", card
+        )
+        == daniel.user_id
+    )
+
+
+async def test_l2_a_snooze_is_bounded_and_of_a_gate_that_waits_on_the_snoozer(
+    firm: Firm, migrated_db: Migrated
+) -> None:
+    hannahs = await _a_gate(firm, firm.hannah)
+    daniel = str(firm.daniel.user_id)
+    sql = (
+        "INSERT INTO human_gate_snoozes (tenant_id, gate_id, user_id, until, actor_kind, "
+        "actor_id) VALUES ($1, $2, $3, now() + $4, 'human', $5)"
+    )
+    with pytest.raises(asyncpg.CheckViolationError):  # Hannah's gate does not wait on Daniel
+        await _as(
+            migrated_db,
+            firm.tenant_id,
+            _human(firm.daniel),
+            [(sql, (firm.tenant_id, hannahs, firm.daniel.user_id, timedelta(days=1), daniel))],
+        )
+    mine = await _a_gate(firm, firm.daniel)
+    with pytest.raises(asyncpg.CheckViolationError):  # past 30 days
+        await _as(
+            migrated_db,
+            firm.tenant_id,
+            _human(firm.daniel),
+            [(sql, (firm.tenant_id, mine, firm.daniel.user_id, timedelta(days=31), daniel))],
+        )
+    await _as(
+        migrated_db,
+        firm.tenant_id,
+        _human(firm.daniel),
+        [(sql, (firm.tenant_id, mine, firm.daniel.user_id, timedelta(days=30), daniel))],
+    )

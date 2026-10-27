@@ -7,6 +7,7 @@ import, as before, with `approval_basis = legacy_import`.
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -119,7 +120,8 @@ async def import_template(
         raise TemplateNameInvalid(name)
     programs = await flag_enabled(ctx.tenant, METHODOLOGY_PROGRAMS)
     for_review = await flag_enabled(ctx.tenant, METHODOLOGY_LIFECYCLE)
-    methodology = parse_workbook(data, programs=programs)
+    # Parsing is CPU-bound and bounded; off the event loop so one upload never stalls the others.
+    methodology = await asyncio.to_thread(parse_workbook, data, programs=programs)
     fingerprint = hashlib.sha256(data).hexdigest()
     async with uow(ctx.tenant) as tx:
         template_id, _ = await lock_or_insert_template(

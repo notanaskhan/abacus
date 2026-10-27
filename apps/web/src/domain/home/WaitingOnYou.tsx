@@ -5,7 +5,7 @@
 // its target is planned, plain text.
 
 import type { HumanGateCountsOut, HumanGateOut } from "@abacus/api-client";
-import { Icon, Pill, cn, date } from "@abacus/ui";
+import { AgentText, Icon, Pill, cn, date } from "@abacus/ui";
 import type { JSX } from "react";
 import { type Band, dueChip, glyphOf, summaryParts, visibleBands } from "./gateClasses";
 import { HOME_MESSAGES } from "./messages";
@@ -69,7 +69,13 @@ function Row({
         <Icon name={glyphOf(gate)} size={12} />
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-[2px]">
-        <span className="truncate text-body leading-[1.3] font-medium">{title}</span>
+        {/* Titles and context lines come from the owners' resolvers and may quote an agent's
+            words (I-01-T07): rendered through AgentText, never raw (frontend rule 2). */}
+        <AgentText
+          inline
+          text={title}
+          className="truncate text-body leading-[1.3] font-medium text-ink"
+        />
         {(gate.context != null || gate.blocked) && (
           <span
             className={cn(
@@ -78,7 +84,15 @@ function Row({
             )}
           >
             {gate.blocked && <span className="sr-only">{`${HOME_MESSAGES.blocked}: `}</span>}
-            {gate.context ?? HOME_MESSAGES.blocked}
+            {gate.context == null ? (
+              HOME_MESSAGES.blocked
+            ) : (
+              <AgentText
+                inline
+                text={gate.context}
+                className="text-meta leading-[1.35] text-inherit"
+              />
+            )}
           </span>
         )}
       </span>

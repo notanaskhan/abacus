@@ -11,10 +11,12 @@
   (deferrable, so a draft's renumbering commits whole).
 - `program_step_pbc_links` (new, forced RLS, insert-only): a step's links to the version's PBC
   request items, by position.
-- `methodology_content_frozen()` on all three: once the version is `published` or `superseded`,
-  no row of it is inserted, updated or deleted, by anyone but the owner's maintenance. Content is
-  changed in a new draft (K-01-T14). SECURITY INVOKER with a pinned search path: it reads the
-  version's state under the caller's own row-level security.
+- `methodology_content_frozen()` on all three: once the version leaves draft (in review,
+  published, superseded or discarded), no row of it is inserted, updated or deleted, by anyone
+  but the owner's maintenance (`session_user`); it share-locks the version's state row, so an
+  edit and a publish never interleave (security review M2, DEC-576). Content is changed in a new
+  draft (K-01-T14). SECURITY INVOKER with a pinned search path: it reads the version's state under
+  the caller's own row-level security.
 
 Every column is set at insert; the app may later edit a draft step's content columns (K-01-T14)
 and delete a draft's step, which the trigger refuses on a published version. No content is
@@ -61,9 +63,13 @@ _FROZEN = """
     DECLARE
         v_tenant uuid;
         v_version uuid;
+        v_status text;
     BEGIN
-        IF current_user = 'abacus_owner' THEN
-            RETURN COALESCE(NEW, OLD);  -- the owner's maintenance (migrations), not the app
+        -- The owner's maintenance (migrations) logs in as abacus_owner; a SECURITY DEFINER
+        -- function owned by it still runs in the app's session, so `session_user`, not
+        -- `current_user`, decides (security review L).
+        IF session_user = 'abacus_owner' THEN
+            RETURN COALESCE(NEW, OLD);
         END IF;
         IF TG_OP = 'DELETE' THEN
             v_tenant := OLD.tenant_id;
@@ -72,13 +78,21 @@ _FROZEN = """
             v_tenant := NEW.tenant_id;
             v_version := NEW.version_id;
         END IF;
-        IF EXISTS (
-            SELECT 1 FROM public.methodology_version_states s
-             WHERE s.tenant_id = v_tenant AND s.version_id = v_version
-               AND s.status IN ('published', 'superseded')
-        ) OR (TG_OP = 'UPDATE' AND (OLD.version_id IS DISTINCT FROM NEW.version_id
-                                    OR OLD.tenant_id IS DISTINCT FROM NEW.tenant_id)) THEN
-            RAISE EXCEPTION 'a published methodology version''s content is frozen'
+        IF TG_OP = 'UPDATE' AND (OLD.version_id IS DISTINCT FROM NEW.version_id
+                                 OR OLD.tenant_id IS DISTINCT FROM NEW.tenant_id) THEN
+            RAISE EXCEPTION 'a step stays in its version'
+                USING ERRCODE = 'insufficient_privilege';
+        END IF;
+        -- Share-lock the version's state row: a publish (an UPDATE of that row) waits for this
+        -- edit to commit, and an edit waits for a publish, so content never changes under an
+        -- approval (security review M2).
+        SELECT s.status INTO v_status FROM public.methodology_version_states s
+         WHERE s.tenant_id = v_tenant AND s.version_id = v_version
+         FOR SHARE;
+        -- Only a draft (or one being parsed) changes; in review, published, superseded or
+        -- discarded content is frozen. No state row yet: the import writing the version now.
+        IF FOUND AND v_status NOT IN ('draft', 'parsing') THEN
+            RAISE EXCEPTION 'a methodology version''s content is frozen once it leaves draft'
                 USING ERRCODE = 'insufficient_privilege';
         END IF;
         RETURN COALESCE(NEW, OLD);
@@ -210,7 +224,7 @@ def upgrade() -> None:
         ),
     )
     # K-01-T14 edits a draft's step content and removes a draft's step; the frozen trigger
-    # refuses both on a published or superseded version. `mandatory` and `lock_note` are not
+    # refuses both once the version leaves draft. `mandatory` and `lock_note` are not
     # here: the lock is its own human-only act (K-01-T14, `methodology.approve`).
     op.execute("REVOKE UPDATE ON program_steps FROM abacus_app")
     op.execute(f"GRANT UPDATE ({', '.join(_STEP_EDITS)}) ON program_steps TO abacus_app")

@@ -42,3 +42,4 @@ workbook still imports, and the database refuses any update to a published versi
 ## Progress log
 - 2026-10-27: built.
 - 2026-10-27: targeted pass green (backend pytest -n 2 on the new and directly covering files, vitest on the touched FE files); gates clean (ruff, pyright, lint-imports, quality tools, check-heads, check-generated, tsc, eslint, prettier, vite build, bundle budget 245.9 of 250 KB). Playwright and axe-in-browser not run in this lane.
+- 2026-10-27: security review fix round: M2 (frozen once out of draft, state row share-locked; DEC-576), owner bypass by session_user, L3 unsafe_text (DEC-577), L4 raw-row cap and parse off the event loop (ED-163). Tests added; re-run green; gates clean.

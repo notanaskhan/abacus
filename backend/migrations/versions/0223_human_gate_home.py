@@ -17,11 +17,16 @@
   Both are a person's acts at the database: `actor_kind = 'human'` is a CHECK, and a BEFORE
   INSERT trigger binds `actor_kind` and `actor_id` to the transaction's actor (`app.actor_*`, set
   by `tenant_connection` from the request, never by the caller; 0015's pattern), and a snooze's
-  `user_id` to that same person. Neither has a writable `created_at`.
+  `user_id` to that same person. A snooze is of an open gate that waits on that person and lasts
+  at most 30 days; a reassignment names its open gate's own subject. Neither has a writable
+  `created_at`.
 - `decision_cards.reserved_user_id`: the app role may now UPDATE that one column (the reassign
   hook, I-01-T07). `decision_cards_reassign_guard` holds it to a person reassigning an open card
-  (`awaiting_role`), in a transaction that wrote the matching `human_gate_reassignments` row; the
-  status grant and 0213's status guard are unchanged.
+  (`awaiting_role`): never to themselves; the mover is the reserved person, the engagement's
+  partner or a manager on it; the new person holds the reserved role on the engagement and is not
+  walled off from its client; and the transaction wrote the matching `human_gate_reassignments`
+  row from the reserved person. The status grant and 0213's status guard are unchanged
+  (security review M1, DEC-575).
 
 The trigger functions are SECURITY INVOKER with a pinned search path: they read under the
 caller's own row-level security.
@@ -74,6 +79,26 @@ _ACTOR_GUARD = """
                 RAISE EXCEPTION 'a person snoozes a gate for themselves only'
                     USING ERRCODE = 'insufficient_privilege';
             END IF;
+            -- Only an open gate that waits on this person (theirs, or assigned to nobody).
+            IF NOT EXISTS (
+                SELECT 1 FROM public.human_gates g
+                 WHERE g.tenant_id = NEW.tenant_id AND g.id = NEW.gate_id AND g.state = 'open'
+                   AND (g.assignee_user_id IS NULL OR g.assignee_user_id = NEW.user_id)
+            ) THEN
+                RAISE EXCEPTION 'a person snoozes only an open gate that waits on them'
+                    USING ERRCODE = 'check_violation';
+            END IF;
+        ELSE
+            -- A reassignment names its open gate's own subject, so it cannot stand in for a
+            -- card the gate is not about.
+            IF NOT EXISTS (
+                SELECT 1 FROM public.human_gates g
+                 WHERE g.tenant_id = NEW.tenant_id AND g.id = NEW.gate_id AND g.state = 'open'
+                   AND g.subject_ref = NEW.subject_ref
+            ) THEN
+                RAISE EXCEPTION 'a reassignment names its open gate''s own subject'
+                    USING ERRCODE = 'check_violation';
+            END IF;
         END IF;
         RETURN NEW;
     END $$
@@ -95,6 +120,9 @@ _REASSIGN_GUARD = f"""
     LANGUAGE plpgsql
     SET search_path = pg_catalog, public, pg_temp
     AS $$
+    DECLARE
+        v_actor text := current_setting('app.actor_id', true);
+        v_client uuid;
     BEGIN
         IF NEW.reserved_user_id IS NOT DISTINCT FROM OLD.reserved_user_id OR NOT ({_BY_APP}) THEN
             RETURN NEW;
@@ -108,12 +136,47 @@ _REASSIGN_GUARD = f"""
             RAISE EXCEPTION 'only a card awaiting its role is reassigned, and nothing else changes'
                 USING ERRCODE = 'check_violation';
         END IF;
-        IF NEW.reserved_user_id IS NULL OR NOT EXISTS (
+        -- Never to oneself: a person moves a card to someone else.
+        IF NEW.reserved_user_id IS NULL OR NEW.reserved_user_id::text = v_actor THEN
+            RAISE EXCEPTION 'a card is reassigned to another person'
+                USING ERRCODE = 'check_violation';
+        END IF;
+        -- Who may move it: the reserved person, or the engagement's partner or a manager on it.
+        IF OLD.reserved_user_id::text IS DISTINCT FROM v_actor AND NOT EXISTS (
+            SELECT 1 FROM public.engagement_members m
+             WHERE m.tenant_id = NEW.tenant_id AND m.engagement_id = NEW.engagement_id
+               AND m.user_id::text = v_actor AND m.role IN ('engagement_partner', 'manager')
+        ) THEN
+            RAISE EXCEPTION 'only the reserved person, the partner or a manager moves a card'
+                USING ERRCODE = 'insufficient_privilege';
+        END IF;
+        -- The new person holds the reserved role on the engagement and is not walled off.
+        IF NOT EXISTS (
+            SELECT 1 FROM public.engagement_members m
+             WHERE m.tenant_id = NEW.tenant_id AND m.engagement_id = NEW.engagement_id
+               AND m.user_id = NEW.reserved_user_id AND m.role = NEW.reserved_role
+        ) THEN
+            RAISE EXCEPTION 'a card goes only to a holder of its reserved role'
+                USING ERRCODE = 'check_violation';
+        END IF;
+        SELECT e.client_id INTO v_client FROM public.engagements e
+         WHERE e.tenant_id = NEW.tenant_id AND e.id = NEW.engagement_id;
+        IF EXISTS (
+            SELECT 1 FROM public.ethical_walls w
+             WHERE w.tenant_id = NEW.tenant_id AND w.user_id = NEW.reserved_user_id
+               AND w.client_id = v_client AND w.status = 'active'
+        ) THEN
+            RAISE EXCEPTION 'a card never goes to a person walled off from its client'
+                USING ERRCODE = 'check_violation';
+        END IF;
+        -- And its reassignment row, written now by this person, from the reserved person.
+        IF NOT EXISTS (
             SELECT 1 FROM public.human_gate_reassignments r
              WHERE r.tenant_id = NEW.tenant_id
                AND r.subject_ref = jsonb_build_object('type', 'decision_card', 'id', NEW.id::text)
+               AND r.from_user_id IS NOT DISTINCT FROM OLD.reserved_user_id
                AND r.to_user_id = NEW.reserved_user_id
-               AND r.actor_id = current_setting('app.actor_id', true)
+               AND r.actor_id = v_actor
                AND r.created_at = now()
         ) THEN
             RAISE EXCEPTION 'a card is reassigned only with its reassignment, written now'
@@ -192,6 +255,10 @@ def upgrade() -> None:
             -- ADR-005: only a person snoozes, and only for themselves (the trigger).
             actor_kind text NOT NULL CHECK (actor_kind = 'human'),
             actor_id text NOT NULL CHECK (length(actor_id) BETWEEN 1 AND 200),
+            -- A snooze is at most 30 days long (I-01 OQ-4 bounds it by the due date too, in
+            -- the route); an unsnooze is a row whose `until` is now.
+            CONSTRAINT human_gate_snoozes_bounded
+                CHECK (until <= created_at + interval '30 days'),
             FOREIGN KEY (tenant_id, gate_id) REFERENCES human_gates (tenant_id, id)
         )
         """

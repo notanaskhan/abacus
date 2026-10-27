@@ -18,7 +18,14 @@ import pytest
 from openpyxl import Workbook, load_workbook
 
 from abacus.modules.methodology.repository import assign_step_keys
-from abacus.modules.methodology.workbook import StepRow, TemplateInvalid, parse_workbook
+from abacus.modules.methodology.workbook import (
+    MAX_RAW_ROWS,
+    Problem,
+    StepRow,
+    TemplateInvalid,
+    _bounded,  # pyright: ignore[reportPrivateUsage] -- the raw-row bound, tested directly (ED-163)
+    parse_workbook,
+)
 from abacus.modules.methodology.workbook_template import SHEETS, workbook_template
 
 Row = list[object]
@@ -168,3 +175,28 @@ def test_the_blank_template_is_what_the_parser_reads_and_stable() -> None:
     for name, columns in SHEETS:
         header = next(book[name].iter_rows(values_only=True))
         assert tuple(header) == columns
+
+
+def test_l3_a_cell_that_reads_as_a_formula_or_hides_text_is_refused() -> None:
+    steps: list[Row] = [
+        ["P-110", 1, "+SUM(A1)", "Planning"],
+        ["P-110", 2, "@cmd", "Planning"],
+        ["P-120", 1, "Assess ‮risks", "Planning"],
+    ]
+    found = _codes(
+        _book(programs=[["P-110", "General planning"], ["P-120", "-Risk"]], steps=steps)
+    )
+    assert {
+        ("Programs", 3, "unsafe_text"),
+        ("Steps", 2, "unsafe_text"),
+        ("Steps", 3, "unsafe_text"),
+        ("Steps", 4, "unsafe_text"),
+    } <= found
+
+
+def test_l4_a_sheet_of_endless_blank_rows_is_refused_not_walked() -> None:
+    problems: list[Problem] = []
+    blank: list[tuple[object, ...]] = [()] * (MAX_RAW_ROWS + 50)
+    read = list(_bounded(iter(blank), "Requests", problems))
+    assert len(read) == MAX_RAW_ROWS
+    assert problems == [Problem("Requests", None, None, "too_many_rows")]

@@ -205,17 +205,69 @@ async def test_ac_the_database_refuses_any_change_to_a_published_versions_steps(
             "UPDATE program_steps SET mandatory = false WHERE version_id = $1",
             published,
         )
-    # A version in review is not frozen: a draft step can still be edited (K-01-T14's path).
+    # In review is frozen too (security review M2): what a person approves is what they read.
     await _flags(net, tenant, "methodology.lifecycle")
-    draft = await _import(net, admin, "BH Audit Methodology", _workbook(changed=4))
-    await _as_app(
-        migrated_db,
-        tenant,
-        admin,
+    review = await _import(net, admin, "BH Audit Methodology", _workbook(changed=4))
+    assert await _status(net, review) == "needs_review"
+    edit = (
         "UPDATE program_steps SET text = 'edited', row_version = row_version + 1 "
-        "WHERE version_id = $1 AND number = 3",
-        draft,
+        "WHERE version_id = $1 AND number = 3"
     )
+    with pytest.raises(asyncpg.InsufficientPrivilegeError):
+        await _as_app(migrated_db, tenant, admin, edit, review)
+    # A draft (K-01-T14's path) is the one state whose content changes.
+    await net.seed.run(
+        "UPDATE methodology_version_states SET status = 'draft' WHERE version_id = $1", review
+    )
+    await _as_app(migrated_db, tenant, admin, edit, review)
+
+
+async def test_m2_an_edit_holds_the_version_so_a_publish_waits_for_it(
+    net: Net, migrated_db: Migrated
+) -> None:
+    """The frozen trigger share-locks the version's state row: while a draft edit is open, a
+    publish (an update of that row) cannot run, so content never changes under an approval."""
+    tenant = await net.seed.firm()
+    admin = await net.seed.person(tenant, "firm_admin")
+    await _flags(net, tenant, "methodology.programs", "methodology.lifecycle")
+    version = await _import(net, admin, "BH Audit Methodology", _workbook())
+    await net.seed.run(
+        "UPDATE methodology_version_states SET status = 'draft' WHERE version_id = $1", version
+    )
+    editor = await asyncpg.connect(_dsn(migrated_db.app_url))
+    publisher = await asyncpg.connect(migrated_db.superuser_dsn)
+    try:
+        # The edit's transaction stays open while the publish tries; leaving it by the
+        # sentinel rolls it back.
+        with pytest.raises(_Held):
+            async with editor.transaction():
+                await editor.execute(
+                    "SELECT set_config('app.tenant_id', $1, true), "
+                    "set_config('app.actor_kind', 'human', true), "
+                    "set_config('app.actor_id', $2, true)",
+                    str(tenant),
+                    str(admin.user_id),
+                )
+                await editor.execute(
+                    "UPDATE program_steps SET text = 'edited' "
+                    "WHERE version_id = $1 AND number = 2",
+                    version,
+                )
+                await publisher.execute("SET lock_timeout = '500ms'")
+                with pytest.raises(asyncpg.LockNotAvailableError):
+                    await publisher.execute(
+                        "UPDATE methodology_version_states SET status = 'needs_review' "
+                        "WHERE version_id = $1",
+                        version,
+                    )
+                raise _Held
+    finally:
+        await editor.close()
+        await publisher.close()
+
+
+class _Held(Exception):
+    """Leaves the edit's transaction without committing it."""
 
 
 async def test_ac24_step_keys_carry_over_to_the_next_version(net: Net) -> None:

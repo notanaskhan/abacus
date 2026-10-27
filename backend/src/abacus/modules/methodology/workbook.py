@@ -123,6 +123,12 @@ _STEP_LENGTH: Final = {
 _PROGRAM_CODE: Final = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,39}")
 STEP_KEY: Final = re.compile(r"[a-z0-9][a-z0-9_.-]{0,79}")
 _LIST_ITEM: Final = re.compile(r"[A-Za-z0-9][A-Za-z0-9 _.,()§-]{0,79}")
+# Text that a spreadsheet would read as a formula, or that hides or reorders what is shown (control
+# and bidi characters): refused at import (ADR-052; security review L3, DEC-577).
+_FORMULA_LEADS: Final = ("=", "+", "-", "@", "\t", "\r")
+_HIDDEN: Final = re.compile(
+    "[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\u200e\u200f\u202a-\u202e\u2066-\u2069]"
+)
 _YES: Final = ("yes", "y", "true")
 _YES_NO: Final = (*_YES, "no", "n", "false")
 
@@ -170,6 +176,24 @@ def _sheet(workbook: Workbook, name: str) -> Iterator[tuple[object, ...]]:
     return iter(sheet.iter_rows(values_only=True))
 
 
+# Raw rows read per sheet, blank ones included (ED-163): a sheet of a million empty rows is
+# refused, never walked. Far above every row limit, so a real workbook never meets it.
+MAX_RAW_ROWS: Final = 20_000
+
+
+def _bounded(
+    rows: Iterator[tuple[object, ...]], sheet: str, problems: list[Problem] | None
+) -> Iterator[tuple[int, tuple[object, ...]]]:
+    """The data rows after the header, numbered from 2, at most MAX_RAW_ROWS of them; past that
+    the sheet is `too_many_rows` (reported once, by the caller that passes `problems`)."""
+    for number, values in enumerate(rows, start=2):
+        if number - 1 > MAX_RAW_ROWS:
+            if problems is not None:
+                problems.append(Problem(sheet, None, None, "too_many_rows"))
+            return
+        yield number, values
+
+
 def _rows(
     rows: Iterator[tuple[object, ...]], name: str, problems: list[Problem]
 ) -> Iterator[tuple[int, dict[str, str]]]:
@@ -178,7 +202,7 @@ def _rows(
     if header[: len(expected)] != expected:
         problems.append(Problem(name, 1, None, "missing_header"))
         return
-    for number, values in enumerate(rows, start=2):
+    for number, values in _bounded(rows, name, problems):
         cells = [_text(v) for v in values[: len(expected)]]
         if not any(cells):
             continue  # blank rows are allowed anywhere
@@ -205,7 +229,7 @@ def _optional(
     found: dict[int, dict[str, str]] = {}
     if not where:
         return found
-    for number, values in enumerate(rows, start=2):
+    for number, values in _bounded(rows, REQUESTS, None):
         cells = {c: _text(values[i]) if i < len(values) else "" for c, i in where.items()}
         for column in ("why", "good_looks_like"):
             if len(cells.get(column, "")) > _GUIDANCE_LENGTH:
@@ -349,7 +373,7 @@ def _named(
         return
     limit = MAX_STEPS if sheet == STEPS else MAX_PROGRAMS
     seen = 0
-    for number, values in enumerate(rows, start=2):
+    for number, values in _bounded(rows, sheet, problems):
         cells = {c: _text(values[i]) if i < len(values) else "" for c, i in where.items()}
         if not any(cells.values()):
             continue
@@ -357,6 +381,16 @@ def _named(
         if seen > limit + 1:  # one past the limit is enough to report it; read no further
             return
         yield number, cells
+
+
+def _safe(sheet: str, number: int, row: dict[str, str], problems: list[Problem]) -> bool:
+    """No cell reads as a formula or carries a control or bidi character (`unsafe_text`)."""
+    ok = True
+    for column, value in row.items():
+        if value.startswith(_FORMULA_LEADS) or _HIDDEN.search(value) is not None:
+            problems.append(Problem(sheet, number, column, "unsafe_text"))
+            ok = False
+    return ok
 
 
 def _length_ok(sheet: str, number: int, row: dict[str, str], problems: list[Problem]) -> bool:
@@ -377,7 +411,9 @@ def _programs(rows: Iterator[tuple[object, ...]], problems: list[Problem]) -> li
         if empty:
             problems += [Problem(PROGRAMS, number, c, "empty_value") for c in empty]
             continue
-        if not _length_ok(PROGRAMS, number, row, problems):
+        if not _length_ok(PROGRAMS, number, row, problems) or not _safe(
+            PROGRAMS, number, row, problems
+        ):
             continue
         if not _PROGRAM_CODE.fullmatch(row["code"]):
             problems.append(Problem(PROGRAMS, number, "code", "invalid_code"))
@@ -431,7 +467,7 @@ def _steps(
         if empty:
             problems += [Problem(STEPS, number, c, "empty_value") for c in empty]
             continue
-        if not _length_ok(STEPS, number, row, problems):
+        if not _length_ok(STEPS, number, row, problems) or not _safe(STEPS, number, row, problems):
             continue
         bad = False
         if row["program_code"] not in programs:
