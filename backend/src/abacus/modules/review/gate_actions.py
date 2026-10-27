@@ -278,7 +278,7 @@ async def _write_snooze(ctx: AuthContext, gate: GateView, until: datetime, actio
         tx.record(
             action,
             target=Target("human_gate", gate.id),
-            after=Ref(user=ctx.user_id, until=until.isoformat()),
+            after=Ref(user=ctx.user_id, until=int(until.timestamp())),
         )
 
 
