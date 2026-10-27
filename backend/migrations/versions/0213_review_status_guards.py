@@ -8,11 +8,13 @@ application, 0175's precedent):
 
 - `reviewable_notes`: forward only (open -> responded, cleared, withdrawn or closed; responded ->
   cleared, withdrawn or closed; cleared -> open, a reopen); withdrawn and closed are final. Only a
-  person changes a status, and only the raiser withdraws.
+  person changes a status, only the raiser withdraws, and a clear, withdrawal or close needs that
+  event row, written in the same transaction by the same person.
 - `reviewable_note_events`: a `withdrawn` event is a person's too, as `cleared` is (0093).
 - `decision_cards`: awaiting_role -> decided only with the acting person's `decisions` row for
-  the card; awaiting_role or decided -> superseded only once a card supersedes it; nothing else,
-  and only a person.
+  the card; awaiting_role or decided -> superseded only once a card of the same engagement and
+  kind supersedes it with a reassessment by the acting person (one successor per card, a unique
+  index); nothing else, and only a person.
 - `decisions.decided_by` and a decided or reassessed `decision_card_versions.actor_user_id` are the
   transaction's actor.
 
@@ -64,9 +66,21 @@ _NOTES_GUARD = f"""
             RAISE EXCEPTION 'only the raiser withdraws a review note'
                 USING ERRCODE = 'check_violation';
         END IF;
+        -- A clear, a withdrawal or a close is the event the same person wrote in this
+        -- transaction (re-review L3): the status is never set on its own.
+        IF NEW.status IN ('cleared', 'withdrawn', 'closed') AND NOT EXISTS (
+            SELECT 1 FROM public.reviewable_note_events e
+             WHERE e.tenant_id = NEW.tenant_id AND e.note_id = NEW.id AND e.kind = NEW.status
+               AND e.actor_kind = 'human'
+               AND e.by_user::text = current_setting('app.actor_id', true)
+               AND e.xmin = pg_current_xact_id()::xid
+        ) THEN
+            RAISE EXCEPTION 'a review note''s % needs its event, written now by the same person',
+                NEW.status USING ERRCODE = 'check_violation';
+        END IF;
         RETURN NEW;
     END $$
-"""
+"""  # noqa: S608 -- fixed SQL, no input
 
 _CARDS_GUARD = f"""
     CREATE FUNCTION decision_cards_status_guard() RETURNS trigger
@@ -92,9 +106,18 @@ _CARDS_GUARD = f"""
                     USING ERRCODE = 'check_violation';
             END IF;
         ELSIF OLD.status IN ('awaiting_role', 'decided') AND NEW.status = 'superseded' THEN
+            -- The successor is this card's own reassessment (re-review L2): the same engagement
+            -- and kind, its first version a reassessment by the person acting now.
             IF NOT EXISTS (
                 SELECT 1 FROM public.decision_cards c
                  WHERE c.tenant_id = NEW.tenant_id AND c.supersedes_id = NEW.id
+                   AND c.engagement_id = NEW.engagement_id AND c.kind = NEW.kind
+                   AND EXISTS (
+                       SELECT 1 FROM public.decision_card_versions v
+                        WHERE v.tenant_id = NEW.tenant_id AND v.card_id = c.id
+                          AND v.event = 'reassessed'
+                          AND v.actor_id = current_setting('app.actor_id', true)
+                   )
             ) THEN
                 RAISE EXCEPTION 'a card is superseded only by a card that supersedes it'
                     USING ERRCODE = 'check_violation';
@@ -109,6 +132,11 @@ _CARDS_GUARD = f"""
 
 
 def upgrade() -> None:
+    # One successor per card (re-review L2).
+    op.execute(
+        "CREATE UNIQUE INDEX decision_cards_one_successor ON decision_cards "
+        "(tenant_id, supersedes_id) WHERE supersedes_id IS NOT NULL"
+    )
     op.execute(_NOTES_GUARD)
     op.execute(
         "CREATE TRIGGER reviewable_notes_status_guard BEFORE UPDATE ON reviewable_notes "
@@ -156,3 +184,4 @@ def downgrade() -> None:
     op.execute("DROP FUNCTION decision_cards_status_guard()")
     op.execute("DROP TRIGGER reviewable_notes_status_guard ON reviewable_notes")
     op.execute("DROP FUNCTION reviewable_notes_status_guard()")
+    op.execute("DROP INDEX decision_cards_one_successor")

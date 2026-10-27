@@ -264,6 +264,9 @@ async def test_the_data_layer_holds_the_note_transitions(team: Cast) -> None:
     hannah = ("human", str(team["hannah"].user_id))
     await _refused_update(team, ("agent", "agent:evidence.screener:run"), "cleared", note_id)
     await _refused_update(team, ("human", str(team["marcus"].user_id)), "withdrawn", note_id)
+    # Re-review L3: the raiser setting the status alone, with no event written now, is refused.
+    await _refused_update(team, hannah, "cleared", note_id)
+    await _refused_update(team, hannah, "withdrawn", note_id)
     withdrawn = await team.call("hannah")("POST", f"/v1/review-notes/{note_id}/withdraw", json={})
     assert withdrawn.status_code == 200, withdrawn.text
     await _refused_update(team, hannah, "open", note_id)  # withdrawn is final
