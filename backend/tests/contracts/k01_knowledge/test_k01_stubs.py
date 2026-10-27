@@ -258,7 +258,11 @@ async def test_k01t01_a_refused_principal_is_403_before_the_flag(
 
 def test_inv1_approving_and_locking_are_a_persons_acts_with_a_fresh_factor() -> None:
     rule = RULES["methodology.approve"]
-    assert {r for r, d in rule.decisions.items() if d == "allow"} == {"quality_partner"}
+    # K-01-T06 (DEC-651): the QM owner, a practice leader (Margaret Okonkwo), approves too.
+    assert {r for r, d in rule.decisions.items() if d == "allow"} == {
+        "practice_leader",
+        "quality_partner",
+    }
     assert rule.decisions.get("agent") == "deny" and rule.decisions.get("system") == "deny"
     assert rule.mfa_recent
 

@@ -34,7 +34,7 @@ async def test_ac_margaret_approves_v3_and_v2_is_superseded_the_day_before(net: 
     seed = net.seed
     tenant = await seed.firm()
     admin = await seed.person(tenant, "firm_admin")
-    margaret = await seed.person(tenant, "quality_partner")
+    margaret = await seed.person(tenant, "practice_leader")
     hannah = await seed.person(tenant)
     await seed.run(
         "UPDATE memberships SET level = 'manager' WHERE tenant_id = $1 AND user_id = $2",
@@ -70,7 +70,7 @@ async def test_ac_margaret_approves_v3_and_v2_is_superseded_the_day_before(net: 
         TenantContext(tenant, cast(ActorKind, "agent"), f"run:{uuid.uuid4()}"),
         margaret.user_id,
         uuid.uuid4(),
-        "quality_partner",
+        "practice_leader",
         datetime.now(UTC) - timedelta(minutes=1),
     )
     with pytest.raises(Forbidden):
@@ -123,7 +123,7 @@ async def test_a_changed_checklist_is_refused(net: Net) -> None:
     seed = net.seed
     tenant = await seed.firm()
     admin = await seed.person(tenant, "firm_admin")
-    margaret = await seed.person(tenant, "quality_partner")
+    margaret = await seed.person(tenant, "practice_leader")
     await _flags(net, tenant, "methodology.programs", "methodology.lifecycle")
     v3 = await _import(net, admin, "BH EBP", _workbook(programs=True))
     state = cast(

@@ -2816,7 +2816,7 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("message.send", "client_contributor", "deny"),
     ("message.send", "third_party", "deny"),
     ("methodology.approve", "firm_admin", "deny"),
-    ("methodology.approve", "practice_leader", "deny"),
+    ("methodology.approve", "practice_leader", "allow"),
     ("methodology.approve", "quality_partner", "allow"),
     ("methodology.approve", "security_admin", "deny"),
     ("methodology.approve", "engagement_partner", "deny"),
