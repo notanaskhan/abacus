@@ -1431,6 +1431,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "independence": "required",
     },
     "methodology.approve": {
+        "practice_leader": "allow",
         "quality_partner": "allow",
         "agent": "deny",
         "system": "deny",

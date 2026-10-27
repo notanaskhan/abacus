@@ -9015,66 +9015,6 @@
         "title": "CheckOut",
         "type": "object"
       },
-      "ChecklistItemOut": {
-        "properties": {
-          "applicable": {
-            "cls": "internal",
-            "title": "Applicable",
-            "type": "boolean"
-          },
-          "blockers": {
-            "cls": "internal",
-            "items": {
-              "type": "string"
-            },
-            "title": "Blockers",
-            "type": "array"
-          },
-          "done": {
-            "cls": "internal",
-            "title": "Done",
-            "type": "boolean"
-          },
-          "gate": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Gate"
-          },
-          "key": {
-            "cls": "internal",
-            "enum": [
-              "accepted",
-              "independence",
-              "engagement_letter",
-              "review_complete",
-              "eqr_concurred",
-              "going_concern",
-              "report_approved",
-              "rep_letter",
-              "released",
-              "archived"
-            ],
-            "title": "Key",
-            "type": "string"
-          }
-        },
-        "required": [
-          "key",
-          "done",
-          "applicable",
-          "gate",
-          "blockers"
-        ],
-        "title": "ChecklistItemOut",
-        "type": "object"
-      },
       "CheckpointApproveIn": {
         "additionalProperties": false,
         "description": "A checkpoint that is no longer proposed, or whose hash differs, answers 409\n`checkpoint_changed`; nothing is written.",
@@ -12782,7 +12722,7 @@
           "checklist": {
             "cls": "internal",
             "items": {
-              "$ref": "#/components/schemas/ChecklistItemOut"
+              "$ref": "#/components/schemas/abacus__modules__assurance__completion_routes__ChecklistItemOut"
             },
             "title": "Checklist",
             "type": "array"
@@ -55616,6 +55556,28 @@
             "cls": "internal",
             "title": "Approved By User Id"
           },
+          "checklist": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/abacus__modules__methodology__contract__ChecklistItemOut"
+            },
+            "title": "Checklist",
+            "type": "array"
+          },
+          "checklist_hash": {
+            "anyOf": [
+              {
+                "pattern": "^sha256:[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Checklist Hash"
+          },
           "default_for_new_engagements": {
             "cls": "internal",
             "title": "Default For New Engagements",
@@ -57583,6 +57545,66 @@
         "title": "CitationOut",
         "type": "object"
       },
+      "abacus__modules__assurance__completion_routes__ChecklistItemOut": {
+        "properties": {
+          "applicable": {
+            "cls": "internal",
+            "title": "Applicable",
+            "type": "boolean"
+          },
+          "blockers": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Blockers",
+            "type": "array"
+          },
+          "done": {
+            "cls": "internal",
+            "title": "Done",
+            "type": "boolean"
+          },
+          "gate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Gate"
+          },
+          "key": {
+            "cls": "internal",
+            "enum": [
+              "accepted",
+              "independence",
+              "engagement_letter",
+              "review_complete",
+              "eqr_concurred",
+              "going_concern",
+              "report_approved",
+              "rep_letter",
+              "released",
+              "archived"
+            ],
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "done",
+          "applicable",
+          "gate",
+          "blockers"
+        ],
+        "title": "ChecklistItemOut",
+        "type": "object"
+      },
       "abacus__modules__assurance__completion_routes__EqrOut": {
         "properties": {
           "concurrence": {
@@ -57954,6 +57976,33 @@
           }
         },
         "title": "StartIn",
+        "type": "object"
+      },
+      "abacus__modules__methodology__contract__ChecklistItemOut": {
+        "description": "One approval checklist item (`has_programs`, `has_steps`, `every_program_has_steps`).",
+        "properties": {
+          "code": {
+            "cls": "internal",
+            "title": "Code",
+            "type": "string"
+          },
+          "n": {
+            "cls": "internal",
+            "title": "N",
+            "type": "integer"
+          },
+          "ok": {
+            "cls": "internal",
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "ok",
+          "n"
+        ],
+        "title": "ChecklistItemOut",
         "type": "object"
       },
       "abacus__modules__methodology__contract__StepOut": {
@@ -127120,7 +127169,7 @@
     },
     "/v1/methodology/versions/{version_id}/approve": {
       "post": {
-        "description": "KNW-02 e: a quality partner approves with an effective date (human-only, fresh MFA).",
+        "description": "KNW-02 e: a quality partner approves with an effective date (human-only, fresh MFA); a\nrefusal is audited before the flag is read. 409 `stale_version`, `version_frozen`,\n`checklist_changed`, `checklist_unmet`; 422 `effective_from_too_early`.",
         "operationId": "approve_version",
         "parameters": [
           {
@@ -127236,16 +127285,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Approve Version Route",
@@ -128393,6 +128432,113 @@
         "x-abacus-action": "methodology.manage"
       }
     },
+    "/v1/methodology/versions/{version_id}/state": {
+      "get": {
+        "description": "KNW-02: the lifecycle row, its checklist and what the viewer may do (K-01-T06).",
+        "operationId": "version_state",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionStateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Version State Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "methodology.read"
+      }
+    },
     "/v1/methodology/versions/{version_id}/steps/{step_id}": {
       "delete": {
         "description": "KNW-03 c: remove a non-mandatory draft step (409 `mandatory_locked`).",
@@ -128854,7 +129000,7 @@
     },
     "/v1/methodology/versions/{version_id}/submit": {
       "post": {
-        "description": "KNW-02: Draft to Needs review.",
+        "description": "KNW-02: Draft to Needs review; 409 `stale_version`, `version_frozen`.",
         "operationId": "submit_version",
         "parameters": [
           {
@@ -128970,16 +129116,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Submit Version Route",
