@@ -611,3 +611,15 @@ Under the same parity-tier reading as the M5 lock (DEC-192: Tier B pixels for fr
 | ---------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 2026-10-27 | Runbook | `docs/design/parity.md`: the pieces, refreshing baselines, adding a board, locking a template, the gallery how-to and where F-05 stands for F-06 |
 | 2026-10-27 | Open    | T60's Tier B lock is the one open F-05 item: it waits on a measured run with a matching browser (parity.md, "Where F-05 stands")                 |
+
+### Tier-3 screen contracts: T6, T10, T16, TPL-01, TPL-06, TPL-10, TPL-16, TPL-19 (F-06-T01)
+
+| Date       | Item              | Decision                                                                                                                                                                                                  |
+| ---------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-27 | Sticky sign bar   | Each specimen keeps its built height: TPL-16g 64, TPL-19 frame 9 (letter i) 72. Production POR-06 uses 64, the template's own 390 state (F-06 §11.2 Q4)                                                  |
+| 2026-10-27 | Ellipsis          | "Approve memo…", "Adopt signature & sign…", "Regenerate…" carry the ellipsis because each opens a dialog or step; the artboards lack it (F-06 §11.2 Q7, ch. 04 §4.5 #9)                                  |
+| 2026-10-27 | Issues label      | "Issues" is the display label for `return.action_required` on tiles and in the record tabsbar (`home_and_tax_tiles`); table rows keep "Action required"                                                   |
+| 2026-10-27 | Adopted by        | "Adopted by Olivia Brandt" is a sub-line under the Draft pill on TPL-10a, never a status; DF-31 has no Adopted (F-06 §11.2 Q6)                                                                            |
+| 2026-10-27 | Ridgeline Issues  | The Ridgeline open-issue count on TPL-01, TPL-06 and TPL-10 is the seed's derived value at E0 (11, as F-05-T57); an artboard that shows another count gets a masked region (G-C02, DEC-801)               |
+| 2026-10-27 | TPL-19 letters    | No DF-03 screenshots: frames are lettered in canvas order a–i, the permission-off variant j; c, d, h and j render "Deferred (DEC-97)" (DEC-800)                                                          |
+| 2026-10-27 | Native artboards  | T16a, TPL-16a and TPL-16c stay Tier C screenshot specimens; no native identity or adopt component (DF-12, F-06 §11.2 Q2)                                                                                  |
