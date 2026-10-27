@@ -47,6 +47,10 @@ const Documents = lazy(async () => ({
 const Room = lazy(async () => ({
   default: (await import("../../screens/POR-14")).POR14,
 }));
+// POR-16 (A-02-T28): the entity's connections, its own chunk.
+const Connections = lazy(async () => ({
+  default: (await import("../../screens/POR-16")).PortalConnections,
+}));
 // POR-04 (R-01-T12): the request sheet over Documents, its own chunk.
 const RequestSheetScreen = lazy(async () => ({
   default: (await import("../../screens/POR-04")).POR04,
@@ -167,6 +171,7 @@ function Area({ area }: { area: string }): JSX.Element | null {
   if (area === "Documents") return <DocumentsPage />;
   if (area === "Request") return <RequestPage />;
   if (area === "Requests") return <RoomPage />;
+  if (area === "Connections") return <ConnectionsPage />;
   return <Shell area={area} />;
 }
 
@@ -177,6 +182,32 @@ function useAreaNavigate(): (area: string) => void {
     const path = AREA_PATHS[area];
     if (path !== undefined) history.push(path);
   };
+}
+
+/** POR-16 with `?entity=` (A-02-T28): the scope's entity by default; back to Home until POR-12;
+ * a stale second factor signs in again and returns here; Export instead opens Documents. */
+function ConnectionsPage(): JSX.Element {
+  const mobile = useMobileViewport();
+  const { history } = useRouter();
+  const [entity] = useState(
+    () => new URLSearchParams(window.location.search).get("entity") ?? undefined,
+  );
+  const here = `/connections${entity === undefined ? "" : `?entity=${encodeURIComponent(entity)}`}`;
+  return (
+    <Connections
+      {...(entity === undefined ? {} : { entityId: entity })}
+      mobile={mobile}
+      onBack={() => {
+        history.push("/");
+      }}
+      onStepUp={() => {
+        history.push(`/sign-in?next=${encodeURIComponent(here)}`);
+      }}
+      onExportInstead={() => {
+        history.push("/documents");
+      }}
+    />
+  );
 }
 
 /** POR-03 with `?binder=` (R-01-T10; docs/screens/POR-03.md): the newest binder by default. */
@@ -292,6 +323,7 @@ export const portalTree = rootRoute.addChildren([
   page("/documents/requests/$requestId", () => <Area area="Request" />), // POR-04
   page("/requests", () => <Area area="Requests" />), // POR-14
   page("/requests/$requestId", () => <Area area="Requests" />),
+  page("/connections", () => <Area area="Connections" />), // POR-16 (A-02-T28)
   page("/k1s", NotBuilt),
   page("/governance", NotBuilt),
   page("/intake", NotBuilt),

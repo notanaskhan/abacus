@@ -11,6 +11,11 @@ const REASONS: Record<string, string> = {
   forbidden: "Only your company's administrator can connect, after signing in recently.",
 };
 
+/** A-02-T26 (DEC-709): the provider's company id, when it sends one, rides inside the code. */
+export function withRealm(code: string, realm: string | null): string {
+  return code !== "" && realm !== null && realm !== "" ? `${code}~${realm}` : code;
+}
+
 /** SPEC-020 AC-2 (TASK-036 D1): the provider sends the browser here; the flow is completed with
  * this person's own sign-in, then they return to their engagement. */
 export function ConnectCallback(): JSX.Element {
@@ -24,7 +29,9 @@ export function ConnectCallback(): JSX.Element {
     sent.current = true;
     const params = new URLSearchParams(searchStr);
     const state = params.get("state") ?? "";
-    const code = params.get("code") ?? "";
+    // A-02-T26 (DEC-709): QuickBooks Online names the client's company only here (`realmId`);
+    // it travels inside the code as `<code>~<realmId>` so the completion contract is unchanged.
+    const code = withRealm(params.get("code") ?? "", params.get("realmId"));
     // The code and state leave the address bar before anything else happens.
     void navigate({ to: ".", search: {}, replace: true });
     if (state === "" || code === "") {
@@ -32,12 +39,18 @@ export function ConnectCallback(): JSX.Element {
       return;
     }
     void complete({ body: { state, code }, throwOnError: true })
-      .then(({ data }) =>
-        navigate({
+      .then(({ data }) => {
+        // A-02-T28: an entity flow (POR-16) returns to the portal's Connections, which reads
+        // the cards again; the legacy engagement flow returns to its engagement.
+        if (data.client_entity_id != null) {
+          window.location.assign(`/connections?entity=${encodeURIComponent(data.client_entity_id)}`);
+          return undefined;
+        }
+        return navigate({
           to: "/client/engagements/$engagementId",
           params: { engagementId: data.engagement_id },
-        }),
-      )
+        });
+      })
       .catch((error: unknown) => {
         const code = errorMessage(error);
         setFailure(REASONS[code] ?? code);

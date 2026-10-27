@@ -55,7 +55,7 @@ export const porScreens = {
     status: "planned",
     path: null,
   },
-  "POR-16": { name: "Connections · Copperleaf", status: "planned", path: null },
+  "POR-16": { name: "Connections · Copperleaf", status: "live", path: null },
   "POR-17": {
     name: "Confirmation response · Granite Peak receivables (C2)",
     status: "planned",

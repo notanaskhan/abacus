@@ -13052,11 +13052,30 @@
       },
       "CompleteOut": {
         "properties": {
+          "client_entity_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Client Entity Id"
+          },
           "engagement_id": {
             "cls": "internal",
             "format": "uuid",
             "title": "Engagement Id",
             "type": "string"
+          },
+          "reconnected": {
+            "cls": "internal",
+            "default": false,
+            "title": "Reconnected",
+            "type": "boolean"
           }
         },
         "required": [
