@@ -80,6 +80,7 @@ def upgrade() -> None:
         "saved_by",
     )
     insert_columns(op, "portal_settings_drafts", _draft)
+    op.execute("REVOKE UPDATE, DELETE ON portal_settings_drafts FROM abacus_app")
     op.execute(
         "GRANT UPDATE (expected_version, base_version, brand, client_experience, "
         "follow_up_policy, logo, saved_at, saved_by), DELETE ON portal_settings_drafts "
