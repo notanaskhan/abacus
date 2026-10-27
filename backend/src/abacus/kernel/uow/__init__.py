@@ -16,8 +16,8 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import AsyncGenerator, Sequence
-from contextlib import asynccontextmanager
+from collections.abc import AsyncGenerator, Generator, Sequence
+from contextlib import asynccontextmanager, contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -42,6 +42,21 @@ _REF_KEY = re.compile(r"[a-z][a-z0-9_]{0,39}")
 _FINGERPRINT = re.compile(r"[0-9a-f]{64}")
 _DIGITS = re.compile(r"[0-9]+")
 _active: ContextVar[bool] = ContextVar("abacus_uow_active", default=False)
+# P-04-T22 re-review M2: units of work that reached their commit while a caller watched (an
+# idempotent request), so a failure after an effect committed never releases its claim.
+_commits: ContextVar[list[bool] | None] = ContextVar("abacus_uow_commits", default=None)
+
+
+@contextmanager
+def watching_commits() -> Generator[list[bool]]:
+    """Collect a mark for each unit of work that reaches its commit inside the block (marked
+    before the COMMIT is sent: a commit cut short counts as committed)."""
+    marks: list[bool] = []
+    token = _commits.set(marks)
+    try:
+        yield marks
+    finally:
+        _commits.reset(token)
 
 
 def _identifier(value: object) -> str:
@@ -359,6 +374,9 @@ async def _unit_of_work(ctx: TenantContext) -> AsyncGenerator[UnitOfWork]:
                 )
             await session.flush()
             await work._write(ctx)  # pyright: ignore[reportPrivateUsage] -- same module
+            marks = _commits.get()
+            if marks is not None:
+                marks.append(True)
             await conn.commit()
         except BaseException:
             await conn.rollback()
@@ -458,6 +476,7 @@ __all__ = [
     "event_sha256",
     "payload_sha256",
     "uow",
+    "watching_commits",
 ]
 
 

@@ -44,6 +44,9 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "membership.access_ending",  # G-01-T13 (C16 `seasonal_access_ending`, to firm admins)
         "third_party.uploaded",  # R-01-T13 (C16 `third_party_uploaded`, to the request owner)
         "sign_off.went_stale",  # P-04-T19 (C16 `sign_off_stale`, to the signer)
+        "review_note.raised",  # P-04-T21 (C16 `review_note_raised`, to the assignee)
+        "decision_card.raised",  # P-04-T23 (C16 `decision_assigned`, to the reserved person)
+        "decision_card.notify_requested",  # P-04-T23 (C16 `mention`, SHL-11 b Notify)
     }
 
 

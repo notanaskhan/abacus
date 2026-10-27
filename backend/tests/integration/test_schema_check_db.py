@@ -1287,6 +1287,10 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"monthly_soft_usd", "monthly_hard_usd", "updated_by", "updated_at"}
         ),
         "feature_flag_states": frozenset({"value", "set_by", "reason", "set_at"}),  # SPEC-011
+        # P-04-T22 re-review (0214, DEC-507): a key is claimed pending, filled, or released.
+        "idempotency_keys": frozenset(
+            {"request_sha256", "status_code", "response", "created_at", "expires_at", "claim_id"}
+        ),
         "notifications": frozenset({"read_at"}),  # SPEC-013
         "client_invitations": frozenset(  # SPEC-015
             {"status", "accepted_by", "accepted_at", "expires_at"}
@@ -1546,6 +1550,8 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "checkpoint_diffs": "review_rows_immutable",  # 0094 (P-04-T04)
         "checkpoint_decisions": "review_rows_immutable",  # 0094 (P-04-T04)
         "issue_events": "review_rows_immutable",  # 0094 (P-04-T04)
+        "decision_card_versions": "review_rows_immutable",  # 0211 (P-04-T23)
+        "decision_analysis_requests": "review_rows_immutable",  # 0211 (P-04-T23)
         "suggestion_decisions": "agent_decisions_immutable",  # 0095 (P-04-T05)
         "proposal_rows": "agent_decisions_immutable",  # 0095 (P-04-T05)
         "proposal_decisions": "agent_decisions_immutable",  # 0095 (P-04-T05)

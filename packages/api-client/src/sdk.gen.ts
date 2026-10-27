@@ -1054,7 +1054,7 @@ export const unlockContact = <ThrowOnError extends boolean = false>(options: Opt
 /**
  * Decision Card List Route
  *
- * Cards on an engagement, on the list envelope with per-status counts.
+ * Cards on an engagement, on the list envelope with per-status counts (P-04-T23).
  */
 export const decisionCardList = <ThrowOnError extends boolean = false>(options?: Options<DecisionCardListData, ThrowOnError>): RequestResult<DecisionCardListResponses, DecisionCardListErrors, ThrowOnError> => (options?.client ?? client).get<DecisionCardListResponses, DecisionCardListErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -1091,7 +1091,7 @@ export const decisionCardAnalysisRequest = <ThrowOnError extends boolean = false
 /**
  * Decision Card Decide Route
  *
- * SHL-11 a to c: the reserved role decides, with a rationale (human only).
+ * SHL-11 a to c: the reserved role decides, with a rationale (human only; MFA per kind).
  */
 export const decisionCardDecide = <ThrowOnError extends boolean = false>(options: Options<DecisionCardDecideData, ThrowOnError>): RequestResult<DecisionCardDecideResponses, DecisionCardDecideErrors, ThrowOnError> => (options.client ?? client).post<DecisionCardDecideResponses, DecisionCardDecideErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -7635,7 +7635,8 @@ export const saveRetentionPolicy = <ThrowOnError extends boolean = false>(option
 /**
  * Review Note List Route
  *
- * Notes on a target or an engagement, on the list envelope with per-status counts.
+ * Notes on a target or an engagement, on the list envelope with per-status counts. Rows
+ * never carry a body (P-04-T21).
  */
 export const reviewNoteList = <ThrowOnError extends boolean = false>(options?: Options<ReviewNoteListData, ThrowOnError>): RequestResult<ReviewNoteListResponses, ReviewNoteListErrors, ThrowOnError> => (options?.client ?? client).get<ReviewNoteListResponses, ReviewNoteListErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -7646,7 +7647,7 @@ export const reviewNoteList = <ThrowOnError extends boolean = false>(options?: O
 /**
  * Review Note Raise Route
  *
- * Raise a note on a registered reviewable, optionally on an anchor.
+ * Raise a note on a registered reviewable, optionally on an anchor; the body is sealed.
  */
 export const reviewNoteRaise = <ThrowOnError extends boolean = false>(options: Options<ReviewNoteRaiseData, ThrowOnError>): RequestResult<ReviewNoteRaiseResponses, ReviewNoteRaiseErrors, ThrowOnError> => (options.client ?? client).post<ReviewNoteRaiseResponses, ReviewNoteRaiseErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -7661,7 +7662,7 @@ export const reviewNoteRaise = <ThrowOnError extends boolean = false>(options: O
 /**
  * Review Note Route
  *
- * One note with its body and events.
+ * One note with its body and events (the body read is an access event).
  */
 export const reviewNote = <ThrowOnError extends boolean = false>(options: Options<ReviewNoteData, ThrowOnError>): RequestResult<ReviewNoteResponses, ReviewNoteErrors, ThrowOnError> => (options.client ?? client).get<ReviewNoteResponses, ReviewNoteErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -7782,7 +7783,8 @@ export const signOffEligibility = <ThrowOnError extends boolean = false>(options
 /**
  * Sign Off Bulk Route
  *
- * SHL-12 f: sign several targets at one level; reviewers only.
+ * SHL-12 f: sign several targets at one level; reviewers only, each item atomic, fresh MFA
+ * (P-04-T22). A replay with the same key returns the stored result.
  */
 export const signOffBulk = <ThrowOnError extends boolean = false>(options: Options<SignOffBulkData, ThrowOnError>): RequestResult<SignOffBulkResponses, SignOffBulkErrors, ThrowOnError> => (options.client ?? client).post<SignOffBulkResponses, SignOffBulkErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

@@ -1988,7 +1988,7 @@ export const decisionCardListQueryKey = (options?: Options<DecisionCardListData>
 /**
  * Decision Card List Route
  *
- * Cards on an engagement, on the list envelope with per-status counts.
+ * Cards on an engagement, on the list envelope with per-status counts (P-04-T23).
  */
 export const decisionCardListOptions = (options?: Options<DecisionCardListData>) => queryOptions<DecisionCardListResponse, DecisionCardListError, DecisionCardListResponse, ReturnType<typeof decisionCardListQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -2008,7 +2008,7 @@ export const decisionCardListInfiniteQueryKey = (options?: Options<DecisionCardL
 /**
  * Decision Card List Route
  *
- * Cards on an engagement, on the list envelope with per-status counts.
+ * Cards on an engagement, on the list envelope with per-status counts (P-04-T23).
  */
 export const decisionCardListInfiniteOptions = (options?: Options<DecisionCardListData>) => {
     const opts = infiniteQueryOptions<DecisionCardListResponse, DecisionCardListError, InfiniteData<DecisionCardListResponse>, QueryKey<Options<DecisionCardListData>>, string | null | Pick<QueryKey<Options<DecisionCardListData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -2077,7 +2077,7 @@ export const decisionCardAnalysisRequestMutation = (options?: Partial<Options<De
 /**
  * Decision Card Decide Route
  *
- * SHL-11 a to c: the reserved role decides, with a rationale (human only).
+ * SHL-11 a to c: the reserved role decides, with a rationale (human only; MFA per kind).
  */
 export const decisionCardDecideMutation = (options?: Partial<Options<DecisionCardDecideData>>): UseMutationOptions<DecisionCardDecideResponse, DecisionCardDecideError, Options<DecisionCardDecideData>> => {
     const mutationOptions: UseMutationOptions<DecisionCardDecideResponse, DecisionCardDecideError, Options<DecisionCardDecideData>> = {
@@ -12532,7 +12532,8 @@ export const reviewNoteListQueryKey = (options?: Options<ReviewNoteListData>) =>
 /**
  * Review Note List Route
  *
- * Notes on a target or an engagement, on the list envelope with per-status counts.
+ * Notes on a target or an engagement, on the list envelope with per-status counts. Rows
+ * never carry a body (P-04-T21).
  */
 export const reviewNoteListOptions = (options?: Options<ReviewNoteListData>) => queryOptions<ReviewNoteListResponse, ReviewNoteListError, ReviewNoteListResponse, ReturnType<typeof reviewNoteListQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -12552,7 +12553,8 @@ export const reviewNoteListInfiniteQueryKey = (options?: Options<ReviewNoteListD
 /**
  * Review Note List Route
  *
- * Notes on a target or an engagement, on the list envelope with per-status counts.
+ * Notes on a target or an engagement, on the list envelope with per-status counts. Rows
+ * never carry a body (P-04-T21).
  */
 export const reviewNoteListInfiniteOptions = (options?: Options<ReviewNoteListData>) => {
     const opts = infiniteQueryOptions<ReviewNoteListResponse, ReviewNoteListError, InfiniteData<ReviewNoteListResponse>, QueryKey<Options<ReviewNoteListData>>, string | null | Pick<QueryKey<Options<ReviewNoteListData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -12582,7 +12584,7 @@ export const reviewNoteListInfiniteOptions = (options?: Options<ReviewNoteListDa
 /**
  * Review Note Raise Route
  *
- * Raise a note on a registered reviewable, optionally on an anchor.
+ * Raise a note on a registered reviewable, optionally on an anchor; the body is sealed.
  */
 export const reviewNoteRaiseMutation = (options?: Partial<Options<ReviewNoteRaiseData>>): UseMutationOptions<ReviewNoteRaiseResponse, ReviewNoteRaiseError, Options<ReviewNoteRaiseData>> => {
     const mutationOptions: UseMutationOptions<ReviewNoteRaiseResponse, ReviewNoteRaiseError, Options<ReviewNoteRaiseData>> = {
@@ -12603,7 +12605,7 @@ export const reviewNoteQueryKey = (options: Options<ReviewNoteData>) => createQu
 /**
  * Review Note Route
  *
- * One note with its body and events.
+ * One note with its body and events (the body read is an access event).
  */
 export const reviewNoteOptions = (options: Options<ReviewNoteData>) => queryOptions<ReviewNoteResponse, ReviewNoteError, ReviewNoteResponse, ReturnType<typeof reviewNoteQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -12773,7 +12775,8 @@ export const signOffEligibilityOptions = (options: Options<SignOffEligibilityDat
 /**
  * Sign Off Bulk Route
  *
- * SHL-12 f: sign several targets at one level; reviewers only.
+ * SHL-12 f: sign several targets at one level; reviewers only, each item atomic, fresh MFA
+ * (P-04-T22). A replay with the same key returns the stored result.
  */
 export const signOffBulkMutation = (options?: Partial<Options<SignOffBulkData>>): UseMutationOptions<SignOffBulkResponse, SignOffBulkError, Options<SignOffBulkData>> => {
     const mutationOptions: UseMutationOptions<SignOffBulkResponse, SignOffBulkError, Options<SignOffBulkData>> = {
