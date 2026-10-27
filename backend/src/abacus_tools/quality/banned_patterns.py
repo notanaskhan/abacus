@@ -1095,6 +1095,9 @@ LIST_EXEMPT = frozenset(
         # Methodology templates are firm-wide (SPEC-008): read after `authorise` on the firm
         # (`methodology.read`) or by a caller authorised on the engagement; no engagement rows.
         ("src/abacus/modules/methodology/repository.py", "list_templates"),  # K-01-T02: moved
+        # K-01-T05: the previous version's step keys, inside an authorised import's own unit of
+        # work (`methodology.manage` on the firm); firm-wide rows, no engagement.
+        ("src/abacus/modules/methodology/repository.py", "_prior_keys"),
         # SPEC-025 (TASK-043): the client picker, firm-level after `authorise(client.read)`; the
         # service drops clients the person is walled off from.
         ("src/abacus/modules/organisations/repository.py", "clients_matching"),

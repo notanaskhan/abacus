@@ -38,6 +38,8 @@ from abacus.modules.methodology.models import (
     MethodologyVersion,
     MethodologyVersionEvent,
     MethodologyVersionState,
+    Program,
+    ProgramStep,
 )
 
 USAGE_TYPE: Final = "methodology_version"
@@ -93,7 +95,8 @@ async def _rows(
 async def _details(
     viewer: Viewer, version_ids: Sequence[UUID]
 ) -> tuple[dict[UUID, int], dict[UUID, tuple[str, ...]]]:
-    """Request counts and area names per version (the subtitle and what search also finds)."""
+    """Request counts, and area and program names per version (the subtitle and what search
+    also finds)."""
     if not version_ids:
         return {}, {}
     async with tenant_session(viewer.ctx.tenant) as session:
@@ -114,6 +117,14 @@ async def _details(
                 select(MethodologyArea.version_id, MethodologyArea.name)
                 .where(MethodologyArea.version_id.in_(list(version_ids)))
                 .order_by(MethodologyArea.version_id, MethodologyArea.position)
+            )
+        ).tuples():
+            areas.setdefault(version_id, []).append(name)
+        for version_id, name in (
+            await session.execute(
+                select(Program.version_id, Program.name)
+                .where(Program.version_id.in_(list(version_ids)))
+                .order_by(Program.version_id, Program.position)
             )
         ).tuples():
             areas.setdefault(version_id, []).append(name)
@@ -162,10 +173,35 @@ async def _items(viewer: Viewer, category: str) -> list[CatalogItem]:
     ]
 
 
+async def _flags_open(viewer: Viewer, version_ids: Sequence[UUID]) -> dict[UUID, int]:
+    """Steps with a parse flag nobody resolved yet, per version (KNW-02's flags)."""
+    if not version_ids:
+        return {}
+    async with tenant_session(viewer.ctx.tenant) as session:
+        rows = await session.execute(
+            select(ProgramStep.version_id, func.count())
+            .where(
+                ProgramStep.version_id.in_(list(version_ids)),
+                ProgramStep.parse_flag.is_not(None),
+                ProgramStep.flag_resolution.is_(None),
+            )
+            .group_by(ProgramStep.version_id)
+        )
+        return {v: int(n) for v, n in rows.tuples().all()}
+
+
 async def _queue(viewer: Viewer, category: str) -> list[ReviewItem]:
     """Versions in review the viewer may approve, and the viewer's own drafts and imports in
     progress, including drafts under a published card (AC1.4)."""
     me = viewer.ctx.user_id
+    waiting = [
+        (t, v, s)
+        for t, v, s in await _rows(viewer)
+        if _category(t.family) == category
+        and s.status in _PENDING
+        and ((s.status == "needs_review" and viewer.approves) or v.imported_by == me)
+    ]
+    flags = await _flags_open(viewer, [v.id for _t, v, _s in waiting])
     return [
         ReviewItem(
             category=category,
@@ -175,13 +211,10 @@ async def _queue(viewer: Viewer, category: str) -> list[ReviewItem]:
             status=s.status,
             submitted_by=v.imported_by,
             submitted_at=v.created_at,
-            flags_open=0,  # parse flags arrive with the document importer (K-01-T18)
+            flags_open=flags.get(v.id, 0),
             route=_route(category, v.id, s.status),
         )
-        for t, v, s in await _rows(viewer)
-        if _category(t.family) == category
-        and s.status in _PENDING
-        and ((s.status == "needs_review" and viewer.approves) or v.imported_by == me)
+        for t, v, s in waiting
     ]
 
 

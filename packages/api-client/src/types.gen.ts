@@ -58335,6 +58335,10 @@ export type ImportTemplateData = {
          * Engagement Type
          */
         engagement_type?: Array<'fs_audit' | 'ebp_audit' | 'review' | 'compilation' | 'preparation' | 'agreed_upon_procedures' | 'soc1' | 'soc2' | 'readiness' | 'internal_audit' | 'tax_compliance' | 'cas_monthly_close' | 'notice_response' | 'advisory'> | null;
+        /**
+         * Family
+         */
+        family?: 'ebp' | 'fs' | 'ssars' | null;
     };
     url: '/v1/methodology/templates/{name}/versions';
 };
@@ -59264,6 +59268,55 @@ export type SubmitVersionResponses = {
 };
 
 export type SubmitVersionResponse = SubmitVersionResponses[keyof SubmitVersionResponses];
+
+export type WorkbookTemplateData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/methodology/workbook-template.xlsx';
+};
+
+export type WorkbookTemplateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type WorkbookTemplateError = WorkbookTemplateErrors[keyof WorkbookTemplateErrors];
+
+export type WorkbookTemplateResponses = {
+    /**
+     * Response Workbook Template
+     *
+     * Successful Response
+     */
+    200: string;
+};
+
+export type WorkbookTemplateResponse = WorkbookTemplateResponses[keyof WorkbookTemplateResponses];
 
 export type ListNotificationsData = {
     body?: never;

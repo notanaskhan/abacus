@@ -18,7 +18,8 @@ A methodology version is a firm's audit program: programs, steps with stable anc
 ## 2. Who may call it
 | Operation | Method and path | Matrix action | Flag | Lands |
 |---|---|---|---|---|
-| Templates and versions (live) | `GET /v1/methodology/templates?latest=`, `GET /v1/methodology/versions/{id}`, `POST /v1/methodology/templates/{name}/versions` | `methodology.read`, `.manage` | — | SPEC-008 |
+| Templates and versions (live) | `GET /v1/methodology/templates?latest=`, `GET /v1/methodology/versions/{id}`, `POST /v1/methodology/templates/{name}/versions?engagement_type=&family=` | `methodology.read`, `.manage` | — (`methodology.programs` reads the Programs and Steps sheets; `methodology.lifecycle` lands the import in Needs review) | SPEC-008; workbook v2 K-01-T05 |
+| Blank workbook v2 (live) | `GET /v1/methodology/workbook-template.xlsx` | `methodology.read` | — | K-01-T05 |
 | Submit | `POST /v1/methodology/versions/{id}/submit` `{row_version}` | `methodology.manage` | `methodology.lifecycle` | K-01-T06 |
 | Approve | `POST /v1/methodology/versions/{id}/approve` `{effective_from, checklist_hash, row_version}` | **`methodology.approve`** (human-only, fresh MFA) | `methodology.lifecycle` | K-01-T06 |
 | New draft | `POST /v1/methodology/versions/{id}/drafts` | `methodology.manage` | `methodology.programs` | K-01-T14 |
@@ -42,6 +43,10 @@ Matrix (`permission-matrix/methodology.yaml`, moved from `engagements.yaml`): `m
 - **`StepResolveOut`**: `version_id`, `program_id`, `program_code`, `step_id`, `number`, `anchor`.
 - Requests: `SubmitVersionIn {row_version}`, `ApproveVersionIn {effective_from, checklist_hash, row_version}`, `StepPatchIn`, `StepCreateIn`, `MandatoryIn {mandatory, lock_note}`.
 
+**Workbook v2 (K-01-T05, DEC-572).** Sheets: `Areas` (`code`, `name`) and `Requests` (`area_code`, `description`, `tier`, then optional `why`, `good_looks_like`, `blocks_fieldwork`, `effort`) required; `Account rules` (`area_code`, `account_from`, `account_to`) optional; `Programs` (`code`, `name`) and `Steps` (`program_code`, `number`, `text`, `level`, optional `step_id`, `assertions`, `standard_refs`, `mandatory`, `lock_note`, `requests`) optional and together, read only with `methodology.programs` on. Columns are found by header name. `level` is Foundation, Planning, Testing or Completion; `mandatory` yes or no and `lock_note` only with it; `assertions` and `standard_refs` `;`-separated short codes; `requests` the Requests rows a step links to (1 is the first). Steps are numbered 1 to n in each program. Problems are `{sheet, row, column, code}` in the 422 validation shape, never a cell: `missing_sheet`, `missing_header`, `empty_value`, `too_long`, `invalid_code`, `duplicate_program`, `unknown_program`, `invalid_number`, `duplicate_number`, `numbering_gap`, `invalid_level`, `invalid_yes_no`, `lock_note_without_mandatory`, `invalid_step_id`, `duplicate_step_id`, `invalid_list`, `unknown_request`, `too_many_rows` (100 programs, 3,000 steps), plus SPEC-008's. Formulas are never evaluated (cached values only), macros never run. **Step keys:** the workbook's `step_id` (lower-cased), else the previous version's key for the same program code and number, else `<program code>-<number>` (unique with a suffix); deterministic, so an anchor survives a re-import. **Landing:** with `methodology.lifecycle` on the version is `needs_review` (no default moves, no effective date) and its `imported` event says so; off, it is published as before.
+
+**Tables (migration 0224, K-01-T05):** `programs`, `program_steps` (the stable `step_key` unique per version, number unique per program, deferrable) and `program_step_pbc_links` (insert-only), all with forced row-level security. `methodology_content_frozen()` refuses any insert, update or delete of a published or superseded version's programs, steps or links, for every role but the owner's migrations; the app may update only a draft step's content columns (never `mandatory` or `lock_note`, the lock being its own human-only act) and delete a draft's step.
+
 **Tables (migration 0180, K-01-T02):** `methodology_version_states` (one per version; the only mutable methodology row), `methodology_version_events` (insert-only), `standards_sets` (global reference data). Legacy versions read `published` with `approval_basis = legacy_import`; until K-01-T06 every import is published the same way and becomes its template's default.
 
 ## 4. Status words
@@ -51,7 +56,7 @@ Matrix (`permission-matrix/methodology.yaml`, moved from `engagements.yaml`): `m
 `methodology.approve` (approve a version, change a mandatory lock): the matrix denies agent and system and needs a fresh second factor; the lifecycle row's `approved_actor_kind` CHECK allows only `human`. The agent proposes draft rows for its own import (`methodology.parse`) and never approves.
 
 ## 6. Errors
-404 (client principal, flag off), 501 until each route lands. Planned codes: 409 `flags_open`, `unverified_sources`, `checklist_changed`, `version_frozen`, `mandatory_locked`, `stale_version`.
+404 (client principal, flag off), 501 until each route lands; the import's 422 workbook problems as above. Planned codes: 409 `flags_open`, `unverified_sources`, `checklist_changed`, `version_frozen`, `mandatory_locked`, `stale_version`.
 
 ## 7. Audit and outbox events
 Audit (K-01 §4.5): `methodology_version.imported`, `.draft_created`, `.submitted`, `.approved`, `.superseded`, `.discarded`, `.exported`; `methodology_step.added`, `.edited`, `.removed`, `.mandatory_changed`. Outbox: `methodology_version.submitted`, `.approved`, `.superseded {version_id, superseded_by}`. Today's SPEC-008 import keeps `methodology.imported` and writes an `imported` version event.

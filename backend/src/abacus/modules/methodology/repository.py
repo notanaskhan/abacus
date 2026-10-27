@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 from uuid import UUID, uuid4
 
@@ -18,8 +19,11 @@ from abacus.modules.methodology.models import (
     MethodologyVersion,
     MethodologyVersionEvent,
     MethodologyVersionState,
+    Program,
+    ProgramStep,
+    ProgramStepPbcLink,
 )
-from abacus.modules.methodology.workbook import Methodology
+from abacus.modules.methodology.workbook import STEP_KEY, Methodology, StepRow
 
 
 async def template_id_for(session: AsyncSession, name: str) -> UUID | None:
@@ -37,6 +41,7 @@ async def lock_or_insert_template(
     name: str,
     created_by: UUID,
     engagement_types: Sequence[str] = ("fs_audit",),
+    family: str | None = None,
 ) -> tuple[UUID, bool]:
     """The template's ID, created if new; locked, so concurrent imports number versions in turn."""
     created = (
@@ -48,6 +53,7 @@ async def lock_or_insert_template(
                 name=name,
                 created_by=created_by,
                 engagement_types=list(engagement_types),
+                family=family,  # K-01-T05: set once, with the template
             )
             .on_conflict_do_nothing(index_elements=["tenant_id", "name"])
             .returning(MethodologyTemplate.id)
@@ -92,6 +98,7 @@ async def insert_version(
     methodology: Methodology,
     origin: str = "workbook",
     drafted_from_version_id: UUID | None = None,
+    for_review: bool = False,
 ) -> tuple[UUID, int]:
     """The next version of the template with its rows (the caller holds the template's lock), and
     its lifecycle row (K-01-T02): until `methodology.lifecycle` turns on approval (K-01-T06) a new
@@ -159,8 +166,170 @@ async def insert_version(
                 for i, r in enumerate(methodology.rules)
             ],
         )
-    await _publish_as_legacy(session, tenant_id, template_id, version_id, imported_by, origin)
+    if methodology.programs:
+        await _insert_programs(session, tenant_id, template_id, version_id, number, methodology)
+    if for_review:
+        await _land_for_review(session, tenant_id, template_id, version_id, imported_by, origin)
+    else:
+        await _publish_as_legacy(session, tenant_id, template_id, version_id, imported_by, origin)
     return version_id, number
+
+
+async def _land_for_review(
+    session: AsyncSession,
+    tenant_id: UUID,
+    template_id: UUID,
+    version_id: UUID,
+    actor: UUID,
+    origin: str,
+) -> None:
+    """K-01-T05 (`methodology.lifecycle` on): the version waits in Needs review for a person to
+    approve it (K-01-T06); the template's published version and default stay as they are."""
+    types = (
+        await session.execute(
+            select(MethodologyTemplate.engagement_types).where(
+                MethodologyTemplate.id == template_id
+            )
+        )
+    ).scalar_one()
+    await session.execute(
+        insert(MethodologyVersionState).values(
+            tenant_id=tenant_id,
+            version_id=version_id,
+            template_id=template_id,
+            status="needs_review",
+            engagement_types=list(types),
+            default_for_new_engagements=False,
+            row_version=1,
+        )
+    )
+    await session.execute(
+        insert(MethodologyVersionEvent).values(
+            tenant_id=tenant_id,
+            version_id=version_id,
+            kind="imported",
+            actor_user_id=actor,
+            facts={"origin": origin, "status": "needs_review"},
+        )
+    )
+
+
+def _derived_key(program_code: str, number: int) -> str:
+    base = re.sub(r"[^a-z0-9_.-]", "-", program_code.casefold()).strip("-") or "step"
+    return f"{base}-{number}"[:80]
+
+
+async def _prior_keys(
+    session: AsyncSession, template_id: UUID, number: int
+) -> dict[tuple[str, int], str]:
+    """The previous version's step keys by (program code, step number): what an unnamed step
+    inherits, so a step keeps its anchor across versions (AC4.4)."""
+    prior = await session.scalar(
+        select(MethodologyVersion.id).where(
+            MethodologyVersion.template_id == template_id,
+            MethodologyVersion.version == number - 1,
+        )
+    )
+    if prior is None:
+        return {}
+    rows = await session.execute(
+        select(Program.code, ProgramStep.number, ProgramStep.step_key)
+        .join(Program, Program.id == ProgramStep.program_id)
+        .where(ProgramStep.version_id == prior)
+    )
+    return {(code, n): key for code, n, key in rows.tuples().all()}
+
+
+def assign_step_keys(steps: Sequence[StepRow], prior: dict[tuple[str, int], str]) -> list[str]:
+    """Stable lineage keys, deterministically: the workbook's `step_id` first (reserved before
+    anything else), then the previous version's key for the same program and number, then a key
+    derived from the program code and number, made unique with a suffix."""
+    keys: list[str | None] = [s.step_id for s in steps]
+    taken = {k for k in keys if k is not None}
+    for i, step in enumerate(steps):
+        if keys[i] is not None:
+            continue
+        inherited = prior.get((step.program_code, step.number))
+        if inherited is not None and inherited not in taken and STEP_KEY.fullmatch(inherited):
+            keys[i] = inherited
+            taken.add(inherited)
+    for i, step in enumerate(steps):
+        if keys[i] is not None:
+            continue
+        candidate = base = _derived_key(step.program_code, step.number)
+        suffix = 2
+        while candidate in taken:
+            candidate = f"{base[:76]}-{suffix}"
+            suffix += 1
+        keys[i] = candidate
+        taken.add(candidate)
+    return [k for k in keys if k is not None]
+
+
+async def _insert_programs(
+    session: AsyncSession,
+    tenant_id: UUID,
+    template_id: UUID,
+    version_id: UUID,
+    number: int,
+    methodology: Methodology,
+) -> None:
+    """Workbook v2's programs, steps (with their lineage keys) and PBC links, in workbook order.
+    Inserted before the version's state row, so the frozen trigger sees a version in the making."""
+    program_ids: dict[str, UUID] = {}
+    for position, program in enumerate(methodology.programs):
+        program_ids[program.code] = (
+            await session.execute(
+                insert(Program)
+                .values(
+                    tenant_id=tenant_id,
+                    version_id=version_id,
+                    code=program.code,
+                    name=program.name,
+                    position=position,
+                )
+                .returning(Program.id)
+            )
+        ).scalar_one()
+    keys = assign_step_keys(methodology.steps, await _prior_keys(session, template_id, number))
+    links: list[dict[str, object]] = []
+    steps: list[dict[str, object]] = []
+    for step, key in zip(methodology.steps, keys, strict=True):
+        step_id = uuid4()
+        steps.append(
+            {
+                "id": step_id,
+                "tenant_id": tenant_id,
+                "version_id": version_id,
+                "program_id": program_ids[step.program_code],
+                "step_key": key,
+                "number": step.number,
+                "text": step.text,
+                "assertions": list(step.assertions),
+                "standard_refs": list(step.standard_refs),
+                "level": step.level,
+                "mandatory": step.mandatory,
+                "lock_note": step.lock_note,
+                "prepopulates": [],
+                "depends_on_step_keys": [],
+                "origin": "workbook",
+            }
+        )
+        links += [
+            dict[str, object](
+                {
+                    "tenant_id": tenant_id,
+                    "version_id": version_id,
+                    "step_id": step_id,
+                    "request_position": position,
+                }
+            )
+            for position in step.request_positions
+        ]
+    if steps:
+        await session.execute(insert(ProgramStep), steps)
+    if links:
+        await session.execute(insert(ProgramStepPbcLink), links)
 
 
 async def _publish_as_legacy(

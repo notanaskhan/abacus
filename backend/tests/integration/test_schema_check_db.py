@@ -1361,6 +1361,12 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         ),
         # P-07-T30 (0155): ENG-05's hours and the portal flag; roles stay behind the definers.
         "engagement_members": frozenset({"budget_hours", "shown_on_portal"}),
+        # K-01-T05 (0224): a draft step's content; the frozen trigger guards published ones.
+        "program_steps": frozenset(
+            {"number", "text", "assertions", "standard_refs", "level", "guidance", "prepopulates"}
+            | {"depends_on_step_keys", "flag_resolution", "flag_resolved_by", "flag_resolved_at"}
+            | {"edited_by", "edited_at", "row_version"}
+        ),
         # K-01-T02 (0180): guarded lifecycle transitions (ED-111: declared without this row).
         "methodology_version_states": frozenset(
             {
