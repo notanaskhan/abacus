@@ -1,13 +1,21 @@
-"""Tie-out checks on a trial balance (SPEC-310; TASK-321; A-02 §3.3).
+"""Tie-out checks on a trial balance (SPEC-310; TASK-321; A-02 §3.3; A-02-T17).
 
 People define a check (balanced, tie or rollforward); every expected value cites the evidence
 it came from (`citation_required`, and a database CHECK agrees). An edit is a new version with a
 reason. Results are computed on read by the tie engine from the trial balance's current version,
 so a new version of the trial balance re-evaluates every check without writing anything.
+
+A-02-T17: a check that does not tie is linked, once, to an issue raised through C3 on the same
+engagement (AUD-06 c). Defining, editing and linking announce `tie_out_check.changed`: the
+checks are part of what a trial balance's sign-off approves (`tie_digests`, folded into the
+trial balance's signed hash by assurance), so P-04's stale detector tells earlier signers
+(SPEC-333 AC-13) without any sign-off row changing.
 """
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -16,22 +24,27 @@ from decimal import Decimal, InvalidOperation
 from typing import Final
 from uuid import UUID
 
-from abacus.kernel.db import tenant_session
-from abacus.kernel.errors import DomainInvalid, NotFound
+from abacus.kernel.clock import system_now
+from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.evidence.api import version_view
 from abacus.modules.identity.api import AuthContext, authorise, engagement_team
 from abacus.modules.ledger.api import TrialBalanceView, trial_balance_view
+from abacus.modules.review.api import issue_engagement
+from abacus.modules.workpapers.events import TieOutCheckChanged
 from abacus.modules.workpapers.tie_models import TieOutCheck, TieOutCheckVersion
 from abacus.modules.workpapers.tie_repository import (
     checks_of,
+    checks_of_many,
     current_versions,
     insert_check,
     insert_check_version,
     key_taken,
     lock_check,
     set_check_version,
+    set_issue_link,
 )
 from abacus.modules.workpapers.ties import (
     Balances,
@@ -57,12 +70,20 @@ class CheckInvalid(DomainInvalid):
     code = "tie_out_check_invalid"
 
 
-class CheckStale(DomainInvalid):
+class CheckStale(DomainConflict):
+    """The check changed since it was read (`seen_version`): 409, as C9 §6 documents (ED-155)."""
+
     code = "tie_out_check_stale"
 
 
 class KeyTaken(DomainInvalid):
     code = "tie_out_check_key_taken"
+
+
+class IssueAlreadyLinked(DomainConflict):
+    """The check is linked to another issue already: a link is set once (A-02-T17)."""
+
+    code = "tie_out_check_issue_linked"
 
 
 @dataclass(frozen=True)
@@ -95,6 +116,16 @@ class CheckView:
     defined_by_name: str
     defined_at: datetime
     result: Result
+    issue_id: UUID | None = None
+
+
+@dataclass(frozen=True)
+class IssueLink:
+    check_id: UUID
+    issue_id: UUID
+    version_no: int
+    linked_by_user_id: UUID
+    linked_at: datetime
 
 
 def _money(value: Decimal) -> Decimal:
@@ -249,6 +280,7 @@ async def checks_for(ctx: AuthContext, engagement_id: UUID, tb_id: UUID) -> list
                 names.get(v.created_by, "Former member"),
                 v.created_at,
                 evaluate(d, balances),
+                c.issue_id,
             )
         )
     return out
@@ -297,6 +329,11 @@ async def define_check(
             "tie_out_check.defined",
             target=Target("tie_out_check", check_id),
             after=Ref(kind=("balanced", "tie", "rollforward").index(clean_body.kind)),
+        )
+        tx.emit(
+            TieOutCheckChanged(
+                check_id=check_id, trial_balance_id=tb_id, engagement_id=engagement_id
+            )
         )
     return check_id
 
@@ -349,4 +386,102 @@ async def edit_check(
             before=Ref(version_no=check.current_version_no),
             after=Ref(version_no=version_no),
         )
+        tx.emit(
+            TieOutCheckChanged(
+                check_id=check.id, trial_balance_id=tb_id, engagement_id=engagement_id
+            )
+        )
     return version_no
+
+
+async def link_issue(
+    ctx: AuthContext,
+    engagement_id: UUID,
+    tb_id: UUID,
+    check_id: UUID,
+    issue_id: UUID,
+    seen_version: int,
+) -> IssueLink:
+    """AUD-06 c (A-02-T17; SPEC-333 AC-11): link an issue raised through C3 on this engagement
+    to the check, once. The check's current version is `seen_version` (409 `tie_out_check_stale`
+    otherwise); linking the same issue again answers the link; another issue 409
+    `tie_out_check_issue_linked`; an issue elsewhere 404."""
+    issue_of = await issue_engagement(ctx.tenant, issue_id)
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "tie_out_check.define", ref.resource())
+    async with tenant_session(ctx.tenant) as session:
+        seen = await session.get(TieOutCheck, check_id)
+    if (
+        seen is not None
+        and seen.target_id == tb_id
+        and seen.engagement_id == engagement_id
+        and seen.issue_id == issue_id
+        and seen.current_version_no == seen_version
+    ):
+        # The same link again: answered as it stands, nothing written (no unit of work).
+        return IssueLink(
+            seen.id,
+            issue_id,
+            seen.current_version_no,
+            seen.issue_linked_by or ctx.user_id,
+            seen.issue_linked_at or system_now(),
+        )
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        await authorise(ctx, "tie_out_check.define", ref.resource())
+        check = await lock_check(tx.session, check_id)
+        if check is None or check.target_id != tb_id or check.engagement_id != engagement_id:
+            raise NotFound("tie_out_check")
+        if issue_of != engagement_id:
+            raise NotFound("issue")
+        if check.current_version_no != seen_version:
+            raise CheckStale(str(check_id))
+        if check.issue_id is not None:
+            raise IssueAlreadyLinked(str(check_id))  # the same issue is answered above
+        at = system_now()
+        await set_issue_link(tx.session, check.id, issue_id, ctx.user_id, at)
+        tx.record(
+            "tie_out_check.issue_linked",
+            target=Target("tie_out_check", check.id),
+            after=Ref(issue_id=issue_id, version_no=check.current_version_no),
+        )
+        tx.emit(
+            TieOutCheckChanged(
+                check_id=check.id, trial_balance_id=tb_id, engagement_id=engagement_id
+            )
+        )
+    return IssueLink(check.id, issue_id, check.current_version_no, ctx.user_id, at)
+
+
+async def tie_digests(tenant: TenantContext, tb_ids: Sequence[UUID]) -> dict[UUID, str]:
+    """A-02-T17 (SPEC-333 AC-13): per trial balance with checks, a SHA-256 over its checks'
+    current definitions and issue links (canonical JSON, key order), for the trial balance's
+    signed hash. Trial balances without checks are left out, so their hash is unchanged.
+    For callers that resolved the trial balances on an engagement they authorised."""
+    async with tenant_session(tenant) as session:
+        checks = await checks_of_many(session, tb_ids)
+        versions = await current_versions(session, checks)
+    by_tb: dict[UUID, list[dict[str, object]]] = {}
+    for c in checks:
+        v = versions.get(c.id)
+        if v is None:
+            continue
+        by_tb.setdefault(c.target_id, []).append(
+            {
+                "key": c.key,
+                "kind": c.kind,
+                "version_no": v.version_no,
+                "label": v.label,
+                "selector": v.actual_selector,
+                "expected": v.expected,
+                "citations": sorted(str(i) for i in v.citation_ids),
+                "tolerance": str(v.tolerance),
+                "issue_id": str(c.issue_id) if c.issue_id else None,
+            }
+        )
+    return {
+        tb: hashlib.sha256(
+            json.dumps(rows, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        for tb, rows in by_tb.items()
+    }

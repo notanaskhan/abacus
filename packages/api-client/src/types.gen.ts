@@ -3730,7 +3730,7 @@ export type BulkSignOffItemOut = {
     /**
      * Detail
      */
-    detail: 'content_changed' | 'segregation' | 'open_review_notes' | 'independence_pending' | 'incomplete' | 'uncited_change' | 'level_not_permitted' | null;
+    detail: 'content_changed' | 'segregation' | 'open_review_notes' | 'independence_pending' | 'incomplete' | 'uncited_change' | 'level_not_permitted' | 'not_prepared' | 'already_signed' | 'sign_off_invalid' | null;
     /**
      * Ok
      */
@@ -6163,6 +6163,27 @@ export type ConflictResultOut = {
 };
 
 /**
+ * ConnectionActivityOut
+ *
+ * One line of the connection's activity in the ADM-07 grammar (A-02-T16; INV-5):
+ * "Connected by Tess Moreno (client)", "Reconnected by …", "Disconnected by …".
+ */
+export type ConnectionActivityOut = {
+    /**
+     * Action
+     */
+    action: string;
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
  * ConnectionDisconnectIn
  */
 export type ConnectionDisconnectIn = {
@@ -6261,6 +6282,10 @@ export type ConnectionStartIn = {
      * Authorized
      */
     authorized: boolean;
+    /**
+     * Connection Id
+     */
+    connection_id?: string | null;
     /**
      * Consent Version
      */
@@ -16141,7 +16166,7 @@ export type NoteEventOut = {
     /**
      * Kind
      */
-    kind: 'responded' | 'cleared' | 'reopened';
+    kind: 'responded' | 'cleared' | 'reopened' | 'withdrawn';
 };
 
 /**
@@ -17234,6 +17259,10 @@ export type PortalConnectionCardOut = {
  * The details drawer: scopes, who connected it and when, the last 5 sync runs.
  */
 export type PortalConnectionDetailOut = {
+    /**
+     * Activity
+     */
+    activity?: Array<ConnectionActivityOut>;
     card: PortalConnectionCardOut;
     /**
      * Recent Syncs
@@ -25553,6 +25582,10 @@ export type TieOutCheckOut = {
      * Id
      */
     id: string;
+    /**
+     * Issue Id
+     */
+    issue_id?: string | null;
     /**
      * Key
      */
@@ -46656,10 +46689,6 @@ export type TieIssueLinkErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TieIssueLinkError = TieIssueLinkErrors[keyof TieIssueLinkErrors];
@@ -60581,10 +60610,6 @@ export type ConnectionDetailErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ConnectionDetailError = ConnectionDetailErrors[keyof ConnectionDetailErrors];
@@ -60645,10 +60670,6 @@ export type DisconnectConnectionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DisconnectConnectionError = DisconnectConnectionErrors[keyof DisconnectConnectionErrors];
@@ -60709,10 +60730,6 @@ export type RetryConnectionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RetryConnectionError = RetryConnectionErrors[keyof RetryConnectionErrors];
@@ -60821,10 +60838,6 @@ export type ListEntityConnectionsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListEntityConnectionsError = ListEntityConnectionsErrors[keyof ListEntityConnectionsErrors];
@@ -60889,10 +60902,6 @@ export type StartConnectionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type StartConnectionError = StartConnectionErrors[keyof StartConnectionErrors];

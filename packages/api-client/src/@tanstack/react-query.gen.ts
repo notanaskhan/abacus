@@ -1848,7 +1848,8 @@ export const clearConflictResultMutation = (options?: Partial<Options<ClearConfl
 /**
  * Complete Route
  *
- * SPEC-020 AC-2 (TASK-036 D1): the SPA hands back the provider's state and code.
+ * SPEC-020 AC-2 (TASK-036 D1): the SPA hands back the provider's state and code. A-02-T16:
+ * a state POR-16 started finishes as an entity-scoped connection (or a reconnect).
  */
 export const completeMutation = (options?: Partial<Options<CompleteData>>): UseMutationOptions<CompleteResponse, CompleteError, Options<CompleteData>> => {
     const mutationOptions: UseMutationOptions<CompleteResponse, CompleteError, Options<CompleteData>> = {
@@ -1990,7 +1991,7 @@ export const decisionCardListQueryKey = (options?: Options<DecisionCardListData>
 /**
  * Decision Card List Route
  *
- * Cards on an engagement, on the list envelope with per-status counts.
+ * Cards on an engagement, on the list envelope with per-status counts (P-04-T23).
  */
 export const decisionCardListOptions = (options?: Options<DecisionCardListData>) => queryOptions<DecisionCardListResponse, DecisionCardListError, DecisionCardListResponse, ReturnType<typeof decisionCardListQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -2010,7 +2011,7 @@ export const decisionCardListInfiniteQueryKey = (options?: Options<DecisionCardL
 /**
  * Decision Card List Route
  *
- * Cards on an engagement, on the list envelope with per-status counts.
+ * Cards on an engagement, on the list envelope with per-status counts (P-04-T23).
  */
 export const decisionCardListInfiniteOptions = (options?: Options<DecisionCardListData>) => {
     const opts = infiniteQueryOptions<DecisionCardListResponse, DecisionCardListError, InfiniteData<DecisionCardListResponse>, QueryKey<Options<DecisionCardListData>>, string | null | Pick<QueryKey<Options<DecisionCardListData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -2079,7 +2080,7 @@ export const decisionCardAnalysisRequestMutation = (options?: Partial<Options<De
 /**
  * Decision Card Decide Route
  *
- * SHL-11 a to c: the reserved role decides, with a rationale (human only).
+ * SHL-11 a to c: the reserved role decides, with a rationale (human only; MFA per kind).
  */
 export const decisionCardDecideMutation = (options?: Partial<Options<DecisionCardDecideData>>): UseMutationOptions<DecisionCardDecideResponse, DecisionCardDecideError, Options<DecisionCardDecideData>> => {
     const mutationOptions: UseMutationOptions<DecisionCardDecideResponse, DecisionCardDecideError, Options<DecisionCardDecideData>> = {
@@ -7017,8 +7018,10 @@ export const editCheckMutation = (options?: Partial<Options<EditCheckData>>): Us
 /**
  * Tie Issue Link Route
  *
- * AUD-06 c: link an issue raised through C3 to a check that does not tie (A-02-T17);
- * 409 `tie_out_check_stale` on a stale `seen_version`, audited `tie_out_check.issue_linked`.
+ * AUD-06 c (A-02-T17): link an issue raised through C3 on this engagement to a check, once;
+ * 409 `tie_out_check_stale` on a stale `seen_version`, 409 `tie_out_check_issue_linked` for a
+ * second issue; audited `tie_out_check.issue_linked`. Authorised first (walls 404), then the
+ * flag (404 off).
  */
 export const tieIssueLinkMutation = (options?: Partial<Options<TieIssueLinkData>>): UseMutationOptions<TieIssueLinkResponse, TieIssueLinkError, Options<TieIssueLinkData>> => {
     const mutationOptions: UseMutationOptions<TieIssueLinkResponse, TieIssueLinkError, Options<TieIssueLinkData>> = {
@@ -12336,7 +12339,7 @@ export const connectionDetailQueryKey = (options: Options<ConnectionDetailData>)
 /**
  * Connection Detail Route
  *
- * The details drawer (A-02-T16).
+ * The details drawer: scopes, who connected it and when, the last 5 syncs, the activity.
  */
 export const connectionDetailOptions = (options: Options<ConnectionDetailData>) => queryOptions<ConnectionDetailResponse, ConnectionDetailError, ConnectionDetailResponse, ReturnType<typeof connectionDetailQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -12354,8 +12357,8 @@ export const connectionDetailOptions = (options: Options<ConnectionDetailData>) 
 /**
  * Disconnect Connection Route
  *
- * POR-16 f (A-02-T16): "Disconnected" (neutral); the secret is crypto-erased and received
- * data stays. 409 `stale_version` on an old `seen_version`. Audited `connection.revoked`.
+ * POR-16 f: "Disconnected" (neutral); the secret is crypto-erased and received data stays.
+ * 409 `stale_version` on an old `seen_version`. Audited `connection.revoked`.
  */
 export const disconnectConnectionMutation = (options?: Partial<Options<DisconnectConnectionData>>): UseMutationOptions<DisconnectConnectionResponse, DisconnectConnectionError, Options<DisconnectConnectionData>> => {
     const mutationOptions: UseMutationOptions<DisconnectConnectionResponse, DisconnectConnectionError, Options<DisconnectConnectionData>> = {
@@ -12374,8 +12377,8 @@ export const disconnectConnectionMutation = (options?: Partial<Options<Disconnec
 /**
  * Retry Connection Route
  *
- * POR-16 g *Try again* (A-02-T16): one run; while it runs the same run is returned; 409
- * `connection_needs_reauth` when the client must sign in again. Audited
+ * POR-16 g *Try again*: one run; while it runs the same run is returned; 409
+ * `connection_needs_reauth`, `no_failed_sync`, `retry_unavailable`. Audited
  * `connection.retry_requested`.
  */
 export const retryConnectionMutation = (options?: Partial<Options<RetryConnectionData>>): UseMutationOptions<RetryConnectionResponse, RetryConnectionError, Options<RetryConnectionData>> => {
@@ -12417,7 +12420,7 @@ export const listEntityConnectionsQueryKey = (options: Options<ListEntityConnect
 /**
  * List Entity Connections Route
  *
- * POR-16 a (A-02-T16): cards for the catalogue rows with a registered adapter.
+ * POR-16 a: cards for the catalogue rows listed here, with the entity's connections.
  */
 export const listEntityConnectionsOptions = (options: Options<ListEntityConnectionsData>) => queryOptions<ListEntityConnectionsResponse, ListEntityConnectionsError, ListEntityConnectionsResponse, ReturnType<typeof listEntityConnectionsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -12435,9 +12438,9 @@ export const listEntityConnectionsOptions = (options: Options<ListEntityConnecti
 /**
  * Start Connection Route
  *
- * POR-16 b, e, i (A-02-T16): one consent row, then the provider's sign-in. 422
+ * POR-16 b, e: one consent row as shown, then the provider's sign-in URL (fresh MFA). 422
  * `authorization_required`; 409 `consent_version_stale`, `ledger_already_connected`,
- * `connector_not_available`. Audited `connection.started`, `connection.consent_recorded`.
+ * `connector_not_available`. Audited `connection.consent_recorded`, `connection.started`.
  */
 export const startConnectionMutation = (options?: Partial<Options<StartConnectionData>>): UseMutationOptions<StartConnectionResponse, StartConnectionError, Options<StartConnectionData>> => {
     const mutationOptions: UseMutationOptions<StartConnectionResponse, StartConnectionError, Options<StartConnectionData>> = {
@@ -12790,7 +12793,8 @@ export const reviewNoteListQueryKey = (options?: Options<ReviewNoteListData>) =>
 /**
  * Review Note List Route
  *
- * Notes on a target or an engagement, on the list envelope with per-status counts.
+ * Notes on a target or an engagement, on the list envelope with per-status counts. Rows
+ * never carry a body (P-04-T21).
  */
 export const reviewNoteListOptions = (options?: Options<ReviewNoteListData>) => queryOptions<ReviewNoteListResponse, ReviewNoteListError, ReviewNoteListResponse, ReturnType<typeof reviewNoteListQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -12810,7 +12814,8 @@ export const reviewNoteListInfiniteQueryKey = (options?: Options<ReviewNoteListD
 /**
  * Review Note List Route
  *
- * Notes on a target or an engagement, on the list envelope with per-status counts.
+ * Notes on a target or an engagement, on the list envelope with per-status counts. Rows
+ * never carry a body (P-04-T21).
  */
 export const reviewNoteListInfiniteOptions = (options?: Options<ReviewNoteListData>) => {
     const opts = infiniteQueryOptions<ReviewNoteListResponse, ReviewNoteListError, InfiniteData<ReviewNoteListResponse>, QueryKey<Options<ReviewNoteListData>>, string | null | Pick<QueryKey<Options<ReviewNoteListData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -12840,7 +12845,7 @@ export const reviewNoteListInfiniteOptions = (options?: Options<ReviewNoteListDa
 /**
  * Review Note Raise Route
  *
- * Raise a note on a registered reviewable, optionally on an anchor.
+ * Raise a note on a registered reviewable, optionally on an anchor; the body is sealed.
  */
 export const reviewNoteRaiseMutation = (options?: Partial<Options<ReviewNoteRaiseData>>): UseMutationOptions<ReviewNoteRaiseResponse, ReviewNoteRaiseError, Options<ReviewNoteRaiseData>> => {
     const mutationOptions: UseMutationOptions<ReviewNoteRaiseResponse, ReviewNoteRaiseError, Options<ReviewNoteRaiseData>> = {
@@ -12861,7 +12866,7 @@ export const reviewNoteQueryKey = (options: Options<ReviewNoteData>) => createQu
 /**
  * Review Note Route
  *
- * One note with its body and events.
+ * One note with its body and events (the body read is an access event).
  */
 export const reviewNoteOptions = (options: Options<ReviewNoteData>) => queryOptions<ReviewNoteResponse, ReviewNoteError, ReviewNoteResponse, ReturnType<typeof reviewNoteQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -13031,7 +13036,8 @@ export const signOffEligibilityOptions = (options: Options<SignOffEligibilityDat
 /**
  * Sign Off Bulk Route
  *
- * SHL-12 f: sign several targets at one level; reviewers only.
+ * SHL-12 f: sign several targets at one level; reviewers only, each item atomic, fresh MFA
+ * (P-04-T22). A replay with the same key returns the stored result.
  */
 export const signOffBulkMutation = (options?: Partial<Options<SignOffBulkData>>): UseMutationOptions<SignOffBulkResponse, SignOffBulkError, Options<SignOffBulkData>> => {
     const mutationOptions: UseMutationOptions<SignOffBulkResponse, SignOffBulkError, Options<SignOffBulkData>> = {

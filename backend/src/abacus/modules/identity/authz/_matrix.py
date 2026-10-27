@@ -637,6 +637,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "deny",
         "independence": "required",
         "reserved_role": "required",
+        "mfa_recent": "required",
     },
     "decision.notify": {
         "engagement_partner": "allow",
@@ -673,6 +674,9 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "system": "deny",
         "independence": "required",
+    },
+    "decision_card.raise": {
+        "agent": "task_scope",
     },
     "demo_clock.set": {
         "firm_admin": "allow",
@@ -1923,6 +1927,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "system": "deny",
         "independence": "required",
+        "mfa_recent": "required",
     },
     "sign_off.create": {
         "engagement_partner": "allow",
@@ -1934,6 +1939,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "system": "deny",
         "independence": "required",
+        "mfa_recent": "required",
     },
     "sign_off.eqr": {
         "reviewer": "allow",
@@ -2184,5 +2190,9 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "agent": "deny",
         "independence": "required",
+    },
+    "write_capability.execute": {
+        "agent": "deny",
+        "system": "deny",
     },
 }
