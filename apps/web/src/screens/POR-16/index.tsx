@@ -192,9 +192,8 @@ function DetailLine({
   const at = (iso: string): string => time(iso, { tz: DEFAULT_TZ });
   if (connecting || card.status === "connecting") {
     return (
-      <p role="status" className="flex items-center gap-[6px] text-cell text-ink-3">
+      <p className="text-cell text-ink-3">
         <Spinner size={12} label={COPY.connecting} />
-        {COPY.connecting}
       </p>
     );
   }
@@ -506,7 +505,6 @@ export function POR16({
 }: POR16Props): JSX.Element | null {
   const now = useNow();
   const brand = usePortalBrand();
-  const firm = brand.name;
   const bar = usePortalToolbar(entityId ?? null);
   const client = useQueryClient();
   const entity = entityId ?? (bar?.scope?.kind === "client_entity" ? bar.scope.id : undefined);
@@ -533,6 +531,8 @@ export function POR16({
   const retry = useMutation(retryConnectionMutation());
   const disconnect = useMutation(disconnectConnectionMutation());
   if (bar === undefined) return null;
+  // The firm's short name ("Brightwater Hale"): the server's, else the portal's branding.
+  const firm = cards.data?.firm_display_name ?? brand.portalName ?? brand.name;
   const items = cards.data?.items ?? [];
   const byKey = (k: string | null): PortalConnectionCardOut | undefined =>
     k === null ? undefined : items.find((c) => c.catalog_key === k || c.connection_id === k);

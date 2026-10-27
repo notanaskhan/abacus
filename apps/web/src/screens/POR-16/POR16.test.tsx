@@ -70,7 +70,8 @@ function show(state: Por16State, options: { mobile?: boolean } = {}): Seen {
 }
 
 async function card(name: string): Promise<HTMLElement> {
-  return screen.findByRole("listitem", { name });
+  // `hidden`: behind an open sheet or dialog the page is inert to assistive technology.
+  return screen.findByRole("listitem", { name, hidden: true });
 }
 
 // Never the product, a posting scope or copy (DF-19), or a password field.
@@ -162,7 +163,9 @@ describe("POR-16 artboards", () => {
     expect(start?.path).toMatch(/\/connections\/american_express\/start$/);
     expect(start?.body).toMatchObject({ consent_version: 1, authorized: true });
     // Back from the provider's site (c): the card is connecting.
-    expect(within(await card("American Express ••1009")).getByText("Connecting…")).toBeTruthy();
+    expect(
+      await within(await card("American Express ••1009")).findByText("Connecting…"),
+    ).toBeTruthy();
     avoid();
   });
 
@@ -189,8 +192,8 @@ describe("POR-16 artboards", () => {
     const go = within(sheet).getByRole("button", { name: "Continue to QuickBooks Online" });
     expect((go as HTMLButtonElement).disabled).toBe(true);
     const qbo = await card("QuickBooks Online");
-    expect(within(qbo).getByRole("button", { name: "Connect" })).toBeTruthy();
-    expect(within(qbo).getByRole("button", { name: "Export instead" })).toBeTruthy();
+    expect(within(qbo).getByRole("button", { name: "Connect", hidden: true })).toBeTruthy();
+    expect(within(qbo).getByRole("button", { name: "Export instead", hidden: true })).toBeTruthy();
     const scopes = [...document.querySelectorAll<HTMLElement>("[data-scope]")].map(
       (el) => el.dataset.scope,
     );
@@ -235,7 +238,7 @@ describe("POR-16 artboards", () => {
     const qbo = await card("QuickBooks Online");
     fireEvent.click(within(qbo).getByRole("button", { name: "Details: QuickBooks Online" }));
     const drawer = await screen.findByRole("dialog", { name: "QuickBooks Online" });
-    expect(within(drawer).getByText("Read ledger")).toBeTruthy();
+    expect(await within(drawer).findByText("Read ledger")).toBeTruthy();
     expect(within(drawer).getByText("Connected by Tess Moreno · Mar 4, 2026")).toBeTruthy();
   });
 

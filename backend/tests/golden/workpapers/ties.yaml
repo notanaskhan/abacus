@@ -8,7 +8,7 @@ golden: workpapers/ties
 trial_balance: northwind-py2025
 assets: ["1110", "1120", "1130", "1140", "1150", "1160", "1200", "1300"]
 checks:
-  - key: net-assets-trust-report
+  - check: net-assets-trust-report
     label: Net assets ↔ trust report
     kind: tie
     accounts: assets
@@ -16,7 +16,7 @@ checks:
     negate: false
     expected: "16812400.00"
     cited: true
-  - key: boy-py2024-audited-fs
+  - check: boy-py2024-audited-fs
     label: BOY ↔ PY2024 audited FS
     kind: tie
     accounts: assets
@@ -24,7 +24,7 @@ checks:
     negate: false
     expected: "14228500.00"
     cited: true
-  - key: loan-rollforward
+  - check: loan-rollforward
     label: Loan rollforward
     kind: rollforward
     accounts: ["1300"]
@@ -36,7 +36,7 @@ checks:
       - ["Repayments", -1, "57450.00"]
       - ["Defaulted loans", -1, "14850.00"]
     cited: true
-  - key: balanced
+  - check: balanced
     label: Debits equal credits
     kind: balanced
     column: eoy

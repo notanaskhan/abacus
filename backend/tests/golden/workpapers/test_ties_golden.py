@@ -100,7 +100,7 @@ def _definition(check: Case) -> Definition:
     )
 
 
-CHECKS = {str(c["key"]): c for c in cast(list[Case], GOLDEN["checks"])}
+CHECKS = {str(c["check"]): c for c in cast(list[Case], GOLDEN["checks"])}
 CASES = cast(list[Case], GOLDEN["cases"])
 
 
