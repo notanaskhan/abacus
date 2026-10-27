@@ -49,7 +49,9 @@ refused, and the audit log renders Connected by Tess Moreno (client)."
 
 ## Progress log
 - 2026-10-27: plan written.
+- 2026-10-27: built as planned, plus `connection_states.category` and `connections.version` in 0215; the five POR-16 routes moved from `contract.py` to `integrations/routes.py`; `POST /v1/connections/complete` finishes both flows (`entity.complete_any`). Try again re-runs request-item runs only until A-02-T30. Export instead has no target until A-02-T28.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| DEC-514 | Per-engagement authorisation of entity actions, state bindings, reconnect in place, version, actor grammar, retry scope | No |

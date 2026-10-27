@@ -43,7 +43,9 @@ client at registry level."
 
 ## Progress log
 - 2026-10-27: plan written.
+- 2026-10-27: built as planned. The compiled registry is read lazily (`registry()`), so the compiler never imports a broken generated file; start-up validates it and refuses undeclared egress. `decision` added to `WriteCapabilityEntry` (optional in the schema, required by the compiler).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| DEC-512 | Skeleton built under a proposed ADR-150; refusal shape, decision field, egress export and start-up check | No (ADR-150 acceptance is a founder's act) |

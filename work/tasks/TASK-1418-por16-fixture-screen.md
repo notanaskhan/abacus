@@ -28,3 +28,4 @@ write scope or vendor logo appears."
 
 ## Progress log
 - 2026-10-27: plan written.
+- 2026-10-27: built; screen contract `docs/screens/POR-16.md` written (DF-19 deviations). No portal route yet (A-02-T28). Vitest: POR-16 12 passed; C20 fixture contract, screen parity, handlers 67 passed. Playwright not run (chromium mismatch).

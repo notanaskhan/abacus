@@ -35,7 +35,9 @@ consumer, the field owner. The reviewable is registered by assurance since SPEC-
 
 ## Progress log
 - 2026-10-27: plan written.
+- 2026-10-27: built as planned; the golden reads Northwind from `tests/golden/ledger/tb_layers.yaml`. The C9 issue-link route moved from the stub to `assurance/tb_read_model.py`.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| DEC-513 | Ties join the trial balance's signed hash; issue link set once; field owner keys | No |
