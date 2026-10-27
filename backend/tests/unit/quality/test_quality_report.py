@@ -175,6 +175,7 @@ def test_design_journeys_ai_and_cost(tmp_path: Path) -> None:
     assert _row(rows, "Consumer contract suites").value == "1 suites"
 
 
+@pytest.mark.source_scan
 def test_the_report_is_never_written_inside_the_repository(tmp_path: Path) -> None:
     inside = rp.REPO / "quality-report.md"
     code = rp.main(["--inputs", str(tmp_path), "--out", str(inside)])
@@ -182,6 +183,7 @@ def test_the_report_is_never_written_inside_the_repository(tmp_path: Path) -> No
     assert not inside.exists()
 
 
+@pytest.mark.source_scan
 def test_main_writes_markdown_and_json_outside_the_repository(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
