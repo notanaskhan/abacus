@@ -123,6 +123,9 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         # A-02-T16: grant revocation; A-02-T17: a changed tie-out check makes sign-offs stale.
         "connection_grant.revocation_requested",
         "tie_out_check.changed",
+        # Q-02-T43: an approved firm export starts its build; an expired one's segments go.
+        "firm_export.approved",
+        "firm_export.expired",
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert (

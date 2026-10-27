@@ -8,6 +8,10 @@ the tenant's key (`kernel.crypto.seal`, the evidence envelope; no new format) an
 export and position, so a segment never opens as another export's or in another place. The API
 streams the decrypted ZIP from these segments (A-01-T22; ADR-104: no presigned link).
 
+A firm export's archive (Q-02-T43, `kind="firm_export"`) is stored the same way under
+`exports/<tenant>/firm-<export_id>/`, bound as `firm_export:<export_id>:<n>`, so neither kind's
+segment opens as the other's.
+
 Writing the same export again overwrites its segments (a retried build is the same bytes).
 """
 
@@ -17,7 +21,7 @@ import asyncio
 import re
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import IO, TYPE_CHECKING, Final, TypedDict
+from typing import IO, TYPE_CHECKING, Final, Literal, TypedDict
 from uuid import UUID
 
 from abacus.kernel.config import settings
@@ -30,6 +34,9 @@ if TYPE_CHECKING:
 
 SEGMENT_BYTES: Final = 64 * 1024 * 1024
 _SEGMENT: Final = re.compile(r"segment-[0-9]{4,}")
+# Which export the segments belong to: an engagement's binder (A-01) or the firm's (Q-02-T43).
+StoredKind = Literal["engagement_export", "firm_export"]
+ENGAGEMENT: Final = "engagement_export"
 
 
 class ExportsUnavailable(ServiceUnavailable):
@@ -77,20 +84,27 @@ def _target() -> _Exports:
     return _exports if _exports is not None else _from_settings()
 
 
-def export_prefix(tenant_id: UUID, export_id: UUID) -> str:
+def export_prefix(tenant_id: UUID, export_id: UUID, *, kind: StoredKind = ENGAGEMENT) -> str:
+    if kind == "firm_export":
+        return f"exports/{tenant_id}/firm-{export_id}/"
     return f"exports/{tenant_id}/{export_id}/"
 
 
-def segment_key(tenant_id: UUID, export_id: UUID, n: int) -> str:
-    return f"{export_prefix(tenant_id, export_id)}segment-{n:04d}"
+def segment_key(tenant_id: UUID, export_id: UUID, n: int, *, kind: StoredKind = ENGAGEMENT) -> str:
+    return f"{export_prefix(tenant_id, export_id, kind=kind)}segment-{n:04d}"
 
 
-def _binding(export_id: UUID, n: int) -> str:
-    return f"engagement_export:{export_id}:{n}"
+def _binding(export_id: UUID, n: int, kind: StoredKind) -> str:
+    return f"{kind}:{export_id}:{n}"
 
 
 async def put_segments(
-    tenant_id: UUID, export_id: UUID, bundle: IO[bytes], *, segment_bytes: int = SEGMENT_BYTES
+    tenant_id: UUID,
+    export_id: UUID,
+    bundle: IO[bytes],
+    *,
+    segment_bytes: int = SEGMENT_BYTES,
+    kind: StoredKind = ENGAGEMENT,
 ) -> int:
     """Seal and store `bundle` (read from its current position) in segments; their count. A
     retry that cuts fewer segments removes the earlier attempt's higher ones."""
@@ -99,27 +113,29 @@ async def put_segments(
     while True:
         chunk = bundle.read(segment_bytes)
         if not chunk and n > 0:
-            await _drop_from(target, tenant_id, export_id, n)
+            await _drop_from(target, tenant_id, export_id, n, kind)
             return n
-        sealed = await seal(tenant_id, chunk, _binding(export_id, n))
+        sealed = await seal(tenant_id, chunk, _binding(export_id, n, kind))
         await asyncio.to_thread(
             target.client.put_object,
             Bucket=target.bucket,
-            Key=segment_key(tenant_id, export_id, n),
+            Key=segment_key(tenant_id, export_id, n, kind=kind),
             Body=sealed,
             ContentType="application/octet-stream",
             **target.owned(),
         )
         n += 1
         if len(chunk) < segment_bytes:
-            await _drop_from(target, tenant_id, export_id, n)
+            await _drop_from(target, tenant_id, export_id, n, kind)
             return n
 
 
-async def _drop_from(target: _Exports, tenant_id: UUID, export_id: UUID, n: int) -> None:
+async def _drop_from(
+    target: _Exports, tenant_id: UUID, export_id: UUID, n: int, kind: StoredKind
+) -> None:
     """Delete this export's segments numbered `n` and above (a previous attempt's tail)."""
-    prefix = export_prefix(tenant_id, export_id)
-    keep = {segment_key(tenant_id, export_id, k) for k in range(n)}
+    prefix = export_prefix(tenant_id, export_id, kind=kind)
+    keep = {segment_key(tenant_id, export_id, k, kind=kind) for k in range(n)}
     token = ""
     while True:
         if token:
@@ -148,12 +164,14 @@ async def _drop_from(target: _Exports, tenant_id: UUID, export_id: UUID, n: int)
             return
 
 
-async def delete_segments(tenant_id: UUID, export_id: UUID) -> int:
+async def delete_segments(
+    tenant_id: UUID, export_id: UUID, *, kind: StoredKind = ENGAGEMENT
+) -> int:
     """A-01-T22: remove one expired or voided export's segments; how many were deleted. Only keys
     under that export's own prefix in its tenant, and only segment keys: nothing else in the
     bucket is touched. Idempotent (a second call deletes nothing)."""
     target = _target()
-    prefix = export_prefix(tenant_id, export_id)
+    prefix = export_prefix(tenant_id, export_id, kind=kind)
     deleted = 0
     token = ""
     while True:
@@ -185,22 +203,25 @@ async def delete_segments(tenant_id: UUID, export_id: UUID) -> int:
             return deleted
 
 
-async def get_segment(tenant_id: UUID, export_id: UUID, n: int) -> bytes:
-    """One segment, opened: for the download (A-01-T22) and the tests."""
+async def get_segment(
+    tenant_id: UUID, export_id: UUID, n: int, *, kind: StoredKind = ENGAGEMENT
+) -> bytes:
+    """One segment, opened: for the downloads (A-01-T22, Q-02-T43) and the tests."""
     target = _target()
     response = await asyncio.to_thread(
         target.client.get_object,
         Bucket=target.bucket,
-        Key=segment_key(tenant_id, export_id, n),
+        Key=segment_key(tenant_id, export_id, n, kind=kind),
         **target.owned(),
     )
     sealed = await asyncio.to_thread(response["Body"].read)
-    return await open_sealed(tenant_id, sealed, _binding(export_id, n))
+    return await open_sealed(tenant_id, sealed, _binding(export_id, n, kind))
 
 
 __all__ = [
     "SEGMENT_BYTES",
     "ExportsUnavailable",
+    "StoredKind",
     "configure_exports",
     "delete_segments",
     "export_prefix",

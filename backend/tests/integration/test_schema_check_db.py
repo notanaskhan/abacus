@@ -1393,6 +1393,25 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "undone_by",
             }
         ),
+        # Q-02-T43 (0216): status forward only; the decision is the named approver's (guard).
+        "firm_exports": frozenset(
+            {
+                "status",
+                "decided_by",
+                "decided_at",
+                "decided_mfa_at",
+                "decline_reason",
+                "bundle_sha256",
+                "manifest_sha256",
+                "bytes",
+                "segment_count",
+                "object_prefix",
+                "ready_at",
+                "available_until",
+                "downloaded_at",
+                "failure_code",
+            }
+        ),
         # G-02-T10 (0192): the label index is re-labelled in place; an audit-log export moves
         # through its build and records what it wrote.
         "audit_event_labels": frozenset(
@@ -1581,6 +1600,7 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "connection_consent_links": "connection_consents_immutable",  # 0195 (A-02-T13)
         "engagement_export_downloads": "engagement_export_rows_immutable",  # 0191 (TASK-1334)
         "engagement_export_contents": "engagement_export_rows_immutable",  # 0191 (TASK-1334)
+        "firm_export_links": "firm_export_links_immutable",  # 0216 (TASK-1403)
     }
     assert _evidence_problems(evidence) == []
 
