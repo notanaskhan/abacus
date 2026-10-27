@@ -238,6 +238,13 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Term | Meaning | Code name | Don't use |
 |---|---|---|---|
 | Envelope / signer | Provider `docusign` or `record`. | `envelopes`, `envelope_documents`, `envelope_signers`, `envelope_events`, `signature_evidence`, `envelope_policies` | — |
+| Envelope | One package of documents sent for signature, or imported already signed (record mode, ADR-149), with its signers, fields and events. Firm-numbered ("E18"). Status words in `envelope`. | `envelopes` (`provider`: `docusign`, `record`, `fake`) | `signature request` (for the record) |
+| Signer | One person who signs an envelope (client contact or firm user), with an identity method: KBA, email code, in-person ID or firm SSO; never SMS for the 8879 family. | `envelope_signers` | — |
+| Signature evidence | The insert-only proof of one signer's signature: time, sealed and masked IP, identity result, method, document hashes and the package in the records bucket. | `signature_evidence` | — |
+| Envelope policy | A firm's rules for one envelope family: allowed identity methods, KBA attempts, failure path, reminders, expiry, countersign, retention. Data, not code; a firm may only tighten the floor. | `envelope_policies` | — |
+| Signing session | One short-lived, one-time handoff of a named signer to the provider's embedded view, confirmed by a server-checked return. | `signing_sessions` | — |
+| ERSD | The electronic record and signature disclosure a signer accepts before signing (ESIGN). Its text is database content approved by counsel. | `esign_disclosures`, `esign_acceptances` | — |
+| Record mode | Importing a package the firm had signed in its own tool, with the signer facts and the importer's attestation; Accrued keeps the evidence and runs no ceremony. | `envelopes.provider = 'record'` | — |
 
 ## New terms: review
 
