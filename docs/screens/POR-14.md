@@ -140,7 +140,7 @@ Each becomes a test in `POR-14.test.tsx` ("POR-14 avoid: …"): gradients in pro
 | — | The open row's slot reads "Drop the letter here or Upload…" for a letter and "Drop the file here or Upload…" for anything else | The handoff draws only the bridge letter | R-01-T14 |
 | — | Any 404 from the room (no delegation, the flag off, an expired or used link) reads as f | One answer for every case (no oracle) | R-01 Story 6.2 |
 | — | At 390 an open row is shown alone (`/requests/$requestId`); the page has no tab bar (`PortalLayout` draws none for an empty nav) | T7-M for a room of one area | R-01-T14 |
-| DEC-348 (seed) | a, b, c and e are fixture only: at E0 the live seed delegates nothing to Keystone (Sam Ortiz's invitation is pending, its grant template naming the 9 requests), and AUD-03's statuses make Keystone's 9 read 6 done, not 4; d's Harborline items are not on AUD-03's list | POR-14 a disagrees with POR-01d and AUD-03; `delegate_item` needs a portal user; DEC-348 (4), (5) | decision-log DEC-348; TASK-1221 gaps 5, 6 |
+| DEC-471 (seed) | Keystone's 9 and Harborline's 2 are delegated on the live seed without a grant (nobody signed in); a's "4 of 9" stays a fixture figure, because AUD-03's statuses make 6 of Keystone's 9 done | Two goldens disagree; the delegations are synthetic | decision-log DEC-471; TASK-1221 |
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |

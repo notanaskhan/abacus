@@ -45,7 +45,7 @@ DEC-348 was decided 2026-10-27 (Ayush Bhatia: the proposed option). The plan abo
 - Goldens: `backend/tests/golden/scenario/brightwater_hale/portal_pbc.yaml`, typed from POR-03, AUD-03, POR-14 and SHL-14, held to the loaded tenant by `backend/tests/integration/test_r01t11_portal_pbc_goldens.py` (Feld 5 of 7 with the 1095-C and estimates open; Dana's titles and the W-3's Sep 18; AUD-03 24 / 11 / 1 / 12 with descriptions kept; a second load replays nothing; Granite Peak's SURL Draft at the 2026-10-01 snapshot and absent at E0).
 - `loader.SLICE_NEEDS` gains `portal_pbc`. `expand_slices` expands one level, so the slice names `binders` itself.
 
-**Gaps** (each a strict xfail in the golden test where the source gives a figure; returned to the handoff under DEC-348):
+**Gaps as first built** (DEC-471, decided the same day, fills 1–5 and 7 with synthetic values; 6 and 8 remain, see the progress log):
 1. "Employee census file — 2025" (POR-03 i): AUD-03's row is received, and `update_item` refuses a received request (`request_closed`). The title stays "Employee Census File". `test_danas_census_row_reads_the_portal_title`.
 2. Claire's 9:12 AM email, `Feld_1095C_2025.pdf` (POR-03 c, c2; INB-02): the Feld TY2025 engagement carries no client acceptance (`binders` bootstraps the engagement; no source gives Feld's acceptance), so `evidence.api`'s client-data gate (SPEC-025 AC-7) refuses any client file on it with `acceptance`. Tried through `add_to_inbox` as Claire; refused. Also, the Inbox has no email channel until N-01. `test_claires_9_12_email_waits_in_the_feld_inbox`.
 3. The Feld received rows' files (W-2 and 1098 "Received by email Aug 3", Jonah's 1099 Aug 5, Claire's donations Aug 7): the same gate; and Jonah Feld has no portal sign-in in any slice.
@@ -60,4 +60,12 @@ DEC-348 was decided 2026-10-27 (Ayush Bhatia: the proposed option). The plan abo
 ## Progress log
 - 2026-10-25: plan written; blocked on DEC-348 (sources disagree; see above). No code. The TS fixtures (R-01-T05) stay the source for the screens until then.
 - 2026-10-27: DEC-348 decided (the proposed option); built the slice on its terms in worktree `abacus-r01t11` (PR "R-01-T11 + P-06-T08: portal PBC slice and Granite Peak SURL", held for the batch). Seven gaps recorded above; four are strict xfails in `test_r01t11_portal_pbc_goldens.py`. Mistake on the way: `NEEDS = ("portal",)` loaded without `binders`, because `expand_slices` expands one level. The slice now names both. A recursive `expand_slices` would stop this recurring.
+- 2026-10-27 (DEC-471, Ayush Bhatia: "fill everything"): gaps 1–5 and 7 filled on the synthetic tenant, each marked DEC-471 in `portal_pbc.py`.
+  - Census title and the list name "PY2025 Audit requests" are bootstrapped.
+  - Delegations are written without a grant: Keystone 9 on Sam Ortiz's contact (Sep 2), Harborline 2, PayGrid 3 and Summit 1 on organisation contacts (Sep 1).
+  - Claire's `Feld_1095C_2025.pdf` is bootstrapped into the Feld Inbox at 9:12 AM, with bytes from the new `documents.form_1095c_pdf` stored through `evidence.api.stage_content`.
+  - New opt-in slice `portal_pbc_returned`: Claire's 2024 upload goes through `add_version` and `fulfil_by_upload`, and Kevin Osei's `wrong_period` return is a bootstrapped decision row plus `move_after_review`.
+  - Three of the four strict xfails were removed. `test_por14a_keystone_room_reads_4_of_9` stays: POR-14 a contradicts AUD-03's statuses, which other goldens hold.
+  - Gap 8 (POR-02's 21 and 37) is not filled; `test_p08t22_portal_seed_footing.py` asserts 5 of 7.
+  - Built without a test run, at the user's request.
 

@@ -1,8 +1,8 @@
 # R-01-T11 (ADR-078; R-01 §5.4; DEC-348): the portal PBC slice's golden figures, typed from the
 # POR-03, POR-04, POR-14 and AUD-03 screen contracts and handoffs and from SHL-14 f, never from the
 # scenario package. `tests/integration/test_r01t11_portal_pbc_goldens.py` holds the loaded tenant
-# to them. Figures the sources name but the slice cannot seed (DEC-348's gaps) are cases too; their
-# tests are xfail(strict=True) citing TASK-1221.
+# to them. DEC-471 fills what no source or service gives; POR-14 a's 4 of 9, which AUD-03's statuses
+# contradict, stays xfail(strict=True) citing TASK-1221.
 golden: brightwater_hale/portal_pbc
 cases:
   - id: feld-binder-5-of-7
@@ -44,7 +44,7 @@ cases:
     kind: titles
     expected:
       title: "Employee census file — 2025"
-    source: "POR-03 i ('You uploaded Sep 2'); gap: AUD-03's row is received, so not editable (TASK-1221)"
+    source: "POR-03 i ('You uploaded Sep 2'); the received row's title is bootstrapped (DEC-471)"
     reviewed_by: pending (AY)
 
   - id: aud03-totals-kept
@@ -64,7 +64,7 @@ cases:
     expected:
       organisations: ["Harborline Trust Company", "Keystone Retirement Services",
                       "PayGrid Payroll", "Summit Plan Administrators"]
-    source: "POR-03 i ('Some requests go to Keystone, Harborline, PayGrid and Summit directly'); gap: no portal contact to delegate to (TASK-1221)"
+    source: "POR-03 i ('Some requests go to Keystone, Harborline, PayGrid and Summit directly'); delegations without a grant (DEC-471)"
     reviewed_by: pending (AY)
 
   - id: keystone-4-of-9
@@ -72,7 +72,7 @@ cases:
     expected:
       delegated: 9
       uploaded: 4
-    source: "POR-14 a (Keystone 4 of 9 at E0); gap: Sam Ortiz's invitation is pending at E0 (POR-01d) and AUD-03's statuses read 6 of 9 done (TASK-1221)"
+    source: "POR-14 a (Keystone 4 of 9 at E0); contradicts AUD-03's statuses, which read 6 of Keystone's 9 done (TASK-1221)"
     reviewed_by: pending (AY)
 
   - id: granite-peak-surl-draft

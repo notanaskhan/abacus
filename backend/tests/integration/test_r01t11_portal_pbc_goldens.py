@@ -5,8 +5,9 @@ The figures live in `tests/golden/scenario/brightwater_hale/portal_pbc.yaml`, ty
 POR-03, POR-04, POR-14, AUD-03 and SHL-14 screen contracts and handoffs; none is imported from the
 scenario package. Each observer reads the database and returns what it sees.
 
-Figures the sources name but the slice cannot seed under DEC-348 are asserted for real and marked
-`xfail(strict=True)` with TASK-1221, which records each gap.
+DEC-471 fills what no source names; the one figure two goldens disagree on (POR-14 a's Keystone
+"4 of 9" against AUD-03's statuses) is asserted for real and marked `xfail(strict=True)` with
+TASK-1221.
 
 E0 plus `portal_pbc` loads once into this module's database; Granite Peak's SURL Draft (Thu Sep
 24) postdates E0, so a second database takes the 2026-10-01 snapshot of `binders`.
@@ -235,12 +236,6 @@ async def test_feld_binder_stays_5_of_7_with_the_1095c_and_estimates_open(
     assert await feld_binder(conn) == {**expected, "open": open_titles}
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="DEC-348 gap: the Feld TY2025 engagement has no client acceptance in the seed, so "
-    "evidence's client-data gate (SPEC-025 AC-7) refuses Claire's file; recorded in "
-    "work/tasks/TASK-1221-portal-pbc-scenario-slice.md",
-)
 async def test_claires_9_12_email_waits_in_the_feld_inbox(conn: asyncpg.Connection) -> None:
     expected = _expected("feld-1095c-emailed-9-12")
     assert await feld_inbox(conn) == [
@@ -255,12 +250,6 @@ async def test_danas_requests_read_the_portal_titles(conn: asyncpg.Connection) -
     assert seen["w3_due"] == expected["w3_due"]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="DEC-348 gap: AUD-03's 'Employee Census File' is received and a received request is "
-    "not editable, so POR-03 i's title is not seeded; recorded in "
-    "work/tasks/TASK-1221-portal-pbc-scenario-slice.md",
-)
 async def test_danas_census_row_reads_the_portal_title(conn: asyncpg.Connection) -> None:
     seen = await dana_titles(conn)
     assert _expected("dana-census-title")["title"] in cast(list[str], seen["titles"])
@@ -277,12 +266,6 @@ async def test_aud03_keeps_24_rows_their_totals_and_descriptions(conn: asyncpg.C
     )
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="DEC-348 gap: no Keystone, Harborline, PayGrid or Summit contact is a portal user at "
-    "E0, so no request is delegated; recorded in "
-    "work/tasks/TASK-1221-portal-pbc-scenario-slice.md",
-)
 async def test_por03i_names_the_four_organisations_requests_went_to(
     conn: asyncpg.Connection,
 ) -> None:
@@ -291,8 +274,9 @@ async def test_por03i_names_the_four_organisations_requests_went_to(
 
 @pytest.mark.xfail(
     strict=True,
-    reason="DEC-348 gap: Sam Ortiz's invitation is pending at E0 (POR-01d) and AUD-03 reads 6 of "
-    "Keystone's 9 done; recorded in work/tasks/TASK-1221-portal-pbc-scenario-slice.md",
+    reason="two goldens disagree: POR-14 a reads Keystone 4 of 9, while AUD-03's statuses "
+    "(f04 goldens, 11 / 1 / 12) make 6 of Keystone's 9 done; recorded in "
+    "work/tasks/TASK-1221-portal-pbc-scenario-slice.md",
 )
 async def test_por14a_keystone_room_reads_4_of_9(conn: asyncpg.Connection) -> None:
     assert await keystone_room(conn) == _expected("keystone-4-of-9")

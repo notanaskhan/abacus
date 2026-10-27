@@ -29,10 +29,16 @@ at E0, the return work items they hang on, and Copperleaf's August close intake.
   (`drafted_wording_source = 'template'`, so J22 step 3 sends it as designed, DV-11). It loads
   from the 2026-10-01 snapshot on; E0 (Sep 14) predates it.
 
-Not here: the SURL request's 31 files. SHL-20 names two of them ("Granite Rock Logistics —
-August statement.pdf", "Invoice 40117.pdf") and TPL-20 sixteen of the forty payments; no source
-names the rest, or which 31 had files on Sep 26 (TASK-993). Northwind's PBC binder is F-04-T20's
-(`audits.py`). There are no TY2026 binders (BND-01d).
+- **The SURL request's 31 files** (SHL-20 a: "31 files", Sat Sep 26), uploaded by Luis Ferrante
+  on Fri Sep 25 (DEC-471) through `evidence.api` onto the Granite Peak engagement, not yet linked
+  to the Draft (a Draft takes no client file). Sixteen are the invoices of TPL-20's SURL-01 to
+  SURL-16 (vendor, amount and invoice date as TPL-20 gives them; SURL-05's is SHL-20 e's
+  `FRF-30418.pdf`); two are SHL-20's flagged files ("Granite Rock Logistics — August
+  statement.pdf", "Invoice 40117.pdf"); thirteen are synthetic (DEC-471): SURL-17 to SURL-24
+  with amounts that foot TPL-20's 1,063,100 below the fold, and five stratum-2 invoices. The
+  bytes come from F-04-T25's generator (`abacus_tools.synthetic.documents`).
+
+Northwind's PBC binder is F-04-T20's (`audits.py`). There are no TY2026 binders (BND-01d).
 
 Opt-in, like `shell`: `loader --slice binders`. `build()` keeps its default, so SCENARIO_HASH
 is unchanged.
@@ -41,10 +47,13 @@ is unchanged.
 from __future__ import annotations
 
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Final, Literal
 
+from abacus_tools.synthetic.documents import invoice_pdf, vendor_statement_pdf
 from abacus_tools.synthetic.scenarios.brightwater_hale.audits import SINK_DOMAIN, on_date
 from abacus_tools.synthetic.scenarios.brightwater_hale.clients import (
     Client,
@@ -692,6 +701,79 @@ SURL_DRAFT: Final = DraftedRequest(
 )
 
 
+# TPL-20's rows SURL-01 to SURL-16: (vendor, amount, invoice date). DEC-471 adds SURL-17 to
+# SURL-24 (footing 1,063,100) and five stratum-2 invoices ($7,750-$49,999).
+_TALUS, _CASCADE, _MESA = (
+    "Talus Climbing Gear, Inc.",
+    "Cascade Footwear Group",
+    "Mesa Packaging Supply",
+)
+_ALPINE, _FRONT_RANGE = "Alpine Thread Mills", "Front Range Freight Co."
+_PEAKLINE, _BASECAMP = "Peakline Apparel Co.", "Basecamp Optics, Inc."
+_CLEAR_CREEK, _HIGHLINE = "Clear Creek Properties, LLC", "Highline Retail Systems, Inc."
+_SURL_ROWS: Final[tuple[tuple[str, str, date], ...]] = (
+    (_TALUS, "186400", date(2026, 6, 18)),
+    (_CASCADE, "248900", date(2026, 6, 24)),
+    (_MESA, "57250", date(2026, 6, 26)),
+    (_ALPINE, "132600", date(2026, 6, 29)),
+    (_FRONT_RANGE, "68400", date(2026, 6, 29)),
+    (_PEAKLINE, "214800", date(2026, 7, 9)),
+    (_BASECAMP, "96300", date(2026, 6, 30)),
+    (_CLEAR_CREEK, "74500", date(2026, 7, 25)),
+    (_TALUS, "171200", date(2026, 7, 17)),
+    (_FRONT_RANGE, "71900", date(2026, 7, 29)),
+    (_CASCADE, "305600", date(2026, 8, 4)),
+    (_HIGHLINE, "58800", date(2026, 8, 1)),
+    (_PEAKLINE, "189700", date(2026, 8, 14)),
+    (_FRONT_RANGE, "66250", date(2026, 8, 28)),
+    (_TALUS, "162400", date(2026, 8, 27)),
+    (_ALPINE, "118300", date(2026, 8, 26)),
+    # DEC-471: SURL-17 to SURL-24, 7 x 132,900 + 132,800 = 1,063,100.
+    (_CASCADE, "132900", date(2026, 8, 31)),
+    (_MESA, "132900", date(2026, 9, 1)),
+    (_PEAKLINE, "132900", date(2026, 9, 2)),
+    (_BASECAMP, "132900", date(2026, 9, 3)),
+    (_ALPINE, "132900", date(2026, 9, 4)),
+    (_HIGHLINE, "132900", date(2026, 9, 8)),
+    (_CLEAR_CREEK, "132900", date(2026, 9, 9)),
+    (_TALUS, "132800", date(2026, 9, 10)),
+    # DEC-471: five stratum-2 invoices.
+    (_MESA, "12400", date(2026, 7, 14)),
+    (_BASECAMP, "18750", date(2026, 7, 28)),
+    (_HIGHLINE, "27300", date(2026, 8, 11)),
+    (_CLEAR_CREEK, "34900", date(2026, 8, 19)),
+    (_FRONT_RANGE, "41600", date(2026, 9, 1)),
+)
+
+
+@dataclass(frozen=True)
+class EngagementFile:
+    file_name: str
+    content: Callable[[], bytes]
+
+
+def _surl_invoice(n: int, vendor: str, amount: str, dated: date) -> EngagementFile:
+    name = "FRF-30418.pdf" if n == 5 else f"SURL-{n:02d} {vendor} invoice.pdf"  # SHL-20 e
+    return EngagementFile(
+        name, lambda: invoice_pdf(vendor=vendor, total=Decimal(amount), dated=dated)
+    )
+
+
+SURL_FILES: Final[tuple[EngagementFile, ...]] = (
+    *(_surl_invoice(n, *row) for n, row in enumerate(_SURL_ROWS, 1)),
+    EngagementFile(
+        "Granite Rock Logistics — August statement.pdf",  # SHL-20 a
+        lambda: vendor_statement_pdf(vendor="Granite Rock Logistics", dated=date(2026, 8, 31)),
+    ),
+    EngagementFile(
+        "Invoice 40117.pdf",  # SHL-20 a; its vendor, total and date are DEC-471's
+        lambda: invoice_pdf(vendor=_MESA, total=Decimal("15800"), dated=date(2026, 8, 12)),
+    ),
+)
+SURL_UPLOADED_BY: Final = "Luis Ferrante"
+SURL_UPLOADED_AT: Final = datetime(2026, 9, 25, 15, 0, tzinfo=CT)  # DEC-471
+
+
 def tax_binders() -> tuple[Binder, ...]:
     return tuple(b for b in BINDERS if b.kind == "organizer")
 
@@ -752,6 +834,17 @@ def binder_events(setup_at: datetime) -> list[Event]:
             "system",
             SLICE,
             {"request": SURL_DRAFT.key, "session": SURL_DRAFT.session},
+            client=GRANITE_PEAK,
+        )
+    )
+    events.append(
+        Event(
+            f"engagement-files:{SURL_DRAFT.key}",
+            SURL_UPLOADED_AT,
+            "evidence.engagement_files_uploaded",
+            "system",
+            SLICE,
+            {"files": SURL_DRAFT.key, "count": len(SURL_FILES), "by": SURL_UPLOADED_BY},
             client=GRANITE_PEAK,
         )
     )
