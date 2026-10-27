@@ -24,7 +24,7 @@ The new state columns are insert-only for the app, as the rest of the state is (
 is ever updated). Expand-only; the downgrade drops the columns.
 
 Revision ID: 0215
-Revises: 0197
+Revises: 0214
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, tenant_table
 
 revision = "0215"
-down_revision = "0197"
+down_revision = "0214"
 branch_labels = None
 depends_on = None
 
