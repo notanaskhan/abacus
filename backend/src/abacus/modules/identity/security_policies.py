@@ -48,7 +48,7 @@ from abacus.kernel.db import TenantContext, platform_transaction, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.listing import Position, clamp_limit, decode_cursor, encode_cursor
 from abacus.kernel.logging import get_logger
-from abacus.kernel.uow import Ref, Target, uow
+from abacus.kernel.uow import Ref, Target, last_request_context, uow
 from abacus.modules.identity.authz import Forbidden, Resource, allowed_actions, authorise
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.events import AccessChanged
@@ -122,14 +122,14 @@ class SsoExemptNotSelf(DomainConflict):
 
 
 @dataclass(frozen=True)
-class Person:
+class UserRef:
     user_id: UUID
     display_name: str
 
 
 @dataclass(frozen=True)
 class ExemptAccount:
-    person: Person
+    person: UserRef
     last_tested_at: datetime | None
 
 
@@ -138,9 +138,9 @@ class SignInPolicy:
     sso_verified: bool
     require_sso: bool
     sso_enforced_at: datetime | None
-    sso_enforced_by: Person | None
+    sso_enforced_by: UserRef | None
     idp_mfa_attested_at: datetime | None
-    idp_mfa_attested_by: Person | None
+    idp_mfa_attested_by: UserRef | None
     session_absolute_minutes: int
     session_idle_minutes: int
     sso_exempt_account: ExemptAccount | None
@@ -172,7 +172,7 @@ class Residency:
 class SupportAccess:
     allow_support_requests: bool
     updated_at: datetime | None
-    updated_by: Person | None
+    updated_by: UserRef | None
     version: int
 
 
@@ -199,7 +199,7 @@ class Posture:
 @dataclass(frozen=True)
 class SecuritySession:
     id: UUID
-    person: Person
+    person: UserRef
     started_at: datetime
     last_seen_at: datetime
     mfa_at: datetime | None
@@ -220,7 +220,7 @@ class SessionPage:
 class SignedOut:
     session_id: UUID
     signed_out_at: datetime
-    signed_out_by: Person
+    signed_out_by: UserRef
 
 
 @dataclass(frozen=True)
@@ -292,7 +292,16 @@ _POLICY = text(
     "sso_exempt_tested_at, allow_support_requests, support_updated_at, support_updated_by, "
     "version, support_version FROM security_policies"
 )
+_POLICY_FOR_UPDATE = text(
+    "SELECT require_sso, sso_enforced_at, sso_enforced_by, idp_mfa_attested_at, "
+    "idp_mfa_attested_by, session_absolute_minutes, session_idle_minutes, sso_exempt_user_id, "
+    "sso_exempt_tested_at, allow_support_requests, support_updated_at, support_updated_by, "
+    "version, support_version FROM security_policies FOR UPDATE"
+)
 _PORTAL = text("SELECT portal_session_minutes, version FROM portal_security_policies")
+_PORTAL_FOR_UPDATE = text(
+    "SELECT portal_session_minutes, version FROM portal_security_policies FOR UPDATE"
+)
 _METHODS = text("SELECT user_id, mfa, sso, passkey FROM security_sign_in_methods()")
 _SEATS = text(
     "SELECT user_id, firm_role FROM memberships WHERE kind = 'staff' AND status = 'active'"
@@ -324,14 +333,15 @@ def _stored(row: RowMapping | None) -> _Stored:
 
 
 async def _policy_row(session: AsyncSession, *, lock: bool = False) -> _Stored:
-    sql = _POLICY.text + (" FOR UPDATE" if lock else "")
-    return _stored((await session.execute(text(sql))).mappings().first())
+    return _stored(
+        (await session.execute(_POLICY_FOR_UPDATE if lock else _POLICY)).mappings().first()
+    )
 
 
-async def _people(ids: Sequence[UUID | None]) -> dict[UUID, Person]:
+async def _people(ids: Sequence[UUID | None]) -> dict[UUID, UserRef]:
     wanted = sorted({i for i in ids if i is not None}, key=str)
     names = await display_names(wanted)
-    return {u: Person(u, names[u]) for u in wanted if u in names}
+    return {u: UserRef(u, names[u]) for u in wanted if u in names}
 
 
 @dataclass(frozen=True)
@@ -361,7 +371,7 @@ def _sso_verified(seats: dict[UUID, str | None], methods: dict[UUID, _Methods]) 
     )
 
 
-def _sign_in(stored: _Stored, people: dict[UUID, Person], *, sso_verified: bool) -> SignInPolicy:
+def _sign_in(stored: _Stored, people: dict[UUID, UserRef], *, sso_verified: bool) -> SignInPolicy:
     exempt = None
     if stored.sso_exempt_user_id is not None and stored.sso_exempt_user_id in people:
         exempt = ExemptAccount(people[stored.sso_exempt_user_id], stored.sso_exempt_tested_at)
@@ -671,7 +681,7 @@ async def put_portal(ctx: AuthContext, *, session_minutes: int, version: int) ->
     if session_minutes < MIN_PORTAL_SESSION_MINUTES:
         raise SessionLimitOutOfRange(facts={"field": "session_minutes"})
     async with uow(ctx.tenant) as tx:
-        row = (await tx.session.execute(text(_PORTAL.text + " FOR UPDATE"))).mappings().first()
+        row = (await tx.session.execute(_PORTAL_FOR_UPDATE)).mappings().first()
         current = int(row["version"]) if row is not None else 0
         before_minutes = (
             int(row["portal_session_minutes"])
@@ -730,13 +740,6 @@ async def portal_session_seconds(tenant_id: UUID) -> int:
 _SESSIONS = text(
     "SELECT id, user_id, created_at, last_seen_at, mfa_at, auth_method FROM security_sessions()"
 )
-# The IP and device a session last acted from in this firm, from this firm's own audit log
-# (DEC-528): never another firm's, never the session table's (it keeps neither).
-_LAST_SEEN_FROM = text(
-    "SELECT DISTINCT ON (session_id) session_id, host(ip) AS ip, device_label "
-    "FROM audit_events WHERE session_id = ANY(:ids) AND actor_kind = 'human' "
-    "ORDER BY session_id, seq DESC"
-)
 
 
 def _current_session_cookie() -> str | None:
@@ -764,15 +767,9 @@ async def sessions(ctx: AuthContext, *, cursor: str | None, limit: int | None) -
     size = clamp_limit(limit)
     async with tenant_session(ctx.tenant) as session:
         rows = list((await session.execute(_SESSIONS)).mappings().all())
-        ids = [cast(UUID, r["id"]) for r in rows]
-        seen = (
-            {
-                cast(UUID, r["session_id"]): r
-                for r in (await session.execute(_LAST_SEEN_FROM, {"ids": ids})).mappings().all()
-            }
-            if ids
-            else {}
-        )
+        # The IP and device a session last acted from in this firm, from this firm's own
+        # audit trail (DEC-528): never another firm's; `auth_sessions` keeps neither.
+        seen = await last_request_context(session, [cast(UUID, r["id"]) for r in rows])
     total = len(rows)
     if cursor is not None:
         at = decode_cursor(cursor, tenant_id=ctx.tenant_id, resource=_SESSIONS_RESOURCE, query="")
@@ -789,15 +786,13 @@ async def sessions(ctx: AuthContext, *, cursor: str | None, limit: int | None) -
     items = tuple(
         SecuritySession(
             id=cast(UUID, r["id"]),
-            person=people.get(cast(UUID, r["user_id"]), Person(cast(UUID, r["user_id"]), "")),
+            person=people.get(cast(UUID, r["user_id"]), UserRef(cast(UUID, r["user_id"]), "")),
             started_at=cast(datetime, r["created_at"]),
             last_seen_at=cast(datetime, r["last_seen_at"]),
             mfa_at=cast(datetime | None, r["mfa_at"]),
             auth_method=cast(AuthMethod | None, r["auth_method"]),
-            ip=cast(str | None, seen[r["id"]]["ip"]) if r["id"] in seen else None,
-            device_label=(
-                cast(str | None, seen[r["id"]]["device_label"]) if r["id"] in seen else None
-            ),
+            ip=seen.get(cast(UUID, r["id"]), (None, None))[0],
+            device_label=seen.get(cast(UUID, r["id"]), (None, None))[1],
             current=r["id"] == mine,
         )
         for r in page
@@ -841,7 +836,7 @@ async def sign_out(ctx: AuthContext, session_id: UUID) -> SignedOut:
         )
         tx.emit(AccessChanged(user_id=cast(UUID, owner)))
     people = await _people([ctx.user_id])
-    return SignedOut(session_id, at, people.get(ctx.user_id, Person(ctx.user_id, "")))
+    return SignedOut(session_id, at, people.get(ctx.user_id, UserRef(ctx.user_id, "")))
 
 
 async def unlock(ctx: AuthContext, user_id: UUID) -> StaffLock:

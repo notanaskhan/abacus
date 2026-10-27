@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import json
 import uuid
+from collections.abc import Callable, Coroutine
 from pathlib import Path
+from types import ModuleType
 from typing import cast
 
 import pytest
@@ -179,14 +181,25 @@ def _authorise(monkeypatch: pytest.MonkeyPatch, *, allow: bool) -> None:
     monkeypatch.setattr(contract, "authorise", authorise)
 
 
+Gate = Callable[[AuthContext, str], Coroutine[object, object, None]]
+
+
+def _stub_of(module: ModuleType) -> Gate:
+    """The stub's gate, read the way the security-center contract test reads its own."""
+    return cast(Gate, module._stub)
+
+
+_STUB = _stub_of(contract)
+
+
 async def test_g02t15_flag_off_is_404_and_on_is_501(monkeypatch: pytest.MonkeyPatch) -> None:
     _authorise(monkeypatch, allow=True)
     _flags(monkeypatch, False)
     with pytest.raises(NotFound):
-        await contract._stub(_ctx("quality_partner"), "ai_policy.read")  # pyright: ignore[reportPrivateUsage]
+        await _STUB(_ctx("quality_partner"), "ai_policy.read")
     seen = _flags(monkeypatch, True)
     with pytest.raises(NotImplementedYet):
-        await contract._stub(_ctx("quality_partner"), "ai_policy.read")  # pyright: ignore[reportPrivateUsage]
+        await _STUB(_ctx("quality_partner"), "ai_policy.read")
     assert seen == [AI_POLICY_V1]
 
 
@@ -196,8 +209,8 @@ async def test_l1_the_matrix_answers_before_the_flag_is_read(
     seen = _flags(monkeypatch, True)
     _authorise(monkeypatch, allow=False)
     with pytest.raises(Forbidden):
-        await contract._stub(_ctx(None, kind="agent"), "ai_policy.publish")  # pyright: ignore[reportPrivateUsage]
+        await _STUB(_ctx(None, kind="agent"), "ai_policy.publish")
     _authorise(monkeypatch, allow=True)
     with pytest.raises(NotFound):  # INV-4: a client principal learns nothing, not even a 403
-        await contract._stub(_ctx(None, client=True), "ai_policy.read")  # pyright: ignore[reportPrivateUsage]
+        await _STUB(_ctx(None, client=True), "ai_policy.read")
     assert seen == []

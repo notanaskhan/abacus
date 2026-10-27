@@ -34,3 +34,5 @@ effective-policy read for P-10, K-02, P-07 and N-02.
   lines, the model family and the opt-in's register version left empty rather than invented
   because the handoff is not in the repository and the provider-terms register is empty).
   c and f (dormant principal) and k stay with T25 and I-03-T37.
+- 2026-10-27: contract test and fixture contract test green; `_stub` read through a helper
+  (TYPE-001). Gates green.

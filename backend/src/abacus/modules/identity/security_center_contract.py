@@ -310,11 +310,11 @@ async def _gate(ctx: AuthContext, action: str) -> None:
         raise NotFound("security_center.v1")
 
 
-def _person(p: service.Person) -> SecurityPersonOut:
+def _person(p: service.UserRef) -> SecurityPersonOut:
     return SecurityPersonOut(user_id=p.user_id, display_name=p.display_name)
 
 
-def _maybe(p: service.Person | None) -> SecurityPersonOut | None:
+def _maybe(p: service.UserRef | None) -> SecurityPersonOut | None:
     return _person(p) if p is not None else None
 
 

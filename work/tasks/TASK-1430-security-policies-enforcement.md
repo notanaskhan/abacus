@@ -52,3 +52,11 @@ definition of done: its identity routes move from STUBBED to LIVE.
 
 ## Progress log
 - 2026-10-27: planned and built. Decisions DEC-524 to DEC-531.
+- 2026-10-27: targeted pass (`-n 2`): the G-02-T12 suite, `test_g02t14_security_policies.py`,
+  both contract tests, staff session, portal sign-in and MFA, app gates, the audit catalogue and
+  targets, value resolvers, schedules, replay, schema check, tenant isolation and the generated
+  security tests: green after four fixes (the portal trigger binds the app role only, so P-08's
+  seeds still write as the owner; ED-160 in the independent suite; the AI-policy version route is
+  a creating route; the sessions drawer's IP and device read through the kernel's
+  `last_request_context` instead of `audit_events` directly, OWN-001). Gates green. Migration
+  roundtrip (up, base, up) passes in `provisioned_database`.

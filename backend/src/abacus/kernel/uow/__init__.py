@@ -456,9 +456,29 @@ __all__ = [
     "audit_page",
     "audit_total_of_targets",
     "event_sha256",
+    "last_request_context",
     "payload_sha256",
     "uow",
 ]
+
+
+async def last_request_context(
+    session: AsyncSession, session_ids: Sequence[UUID]
+) -> dict[UUID, tuple[str | None, str | None]]:
+    """The IP and device label each staff session last acted from in the active tenant's trail
+    (G-02-T14: ADM-06's sessions drawer, DEC-528): a person's events only, never another firm's.
+    The audit trail's owner answers; modules never query it directly."""
+    if not session_ids:
+        return {}
+    rows = await session.execute(
+        text(
+            "SELECT DISTINCT ON (session_id) session_id, host(ip), device_label "
+            "FROM audit_events WHERE session_id = ANY(:ids) AND actor_kind = 'human' "
+            "ORDER BY session_id, seq DESC"
+        ),
+        {"ids": list(session_ids)},
+    )
+    return {UUID(str(sid)): (ip, device) for sid, ip, device in rows.all()}
 
 
 async def audit_counts(

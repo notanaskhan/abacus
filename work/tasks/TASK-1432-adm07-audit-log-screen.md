@@ -28,3 +28,5 @@ grammar.
 
 ## Progress log
 - 2026-10-27: built. DEC-533. axe is the Playwright journey's (G-02-T21); not run here.
+- 2026-10-27: Vitest green (one test per artboard a–g and c's withheld variant); registered for
+  fixture journeys (`?screen=ADM-07`). tsc, eslint and prettier green. Playwright and axe not run.

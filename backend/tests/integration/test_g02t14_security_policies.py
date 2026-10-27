@@ -18,7 +18,7 @@ from __future__ import annotations
 import uuid
 from collections.abc import AsyncIterator, Iterator
 from datetime import UTC, datetime
-from typing import Protocol, cast
+from typing import Final, Protocol, cast
 from urllib.parse import parse_qs, urlparse
 
 import asyncpg
@@ -40,6 +40,8 @@ from abacus.modules.identity.staff_session import (
 from abacus.modules.platform.audit_resolvers import security_policy_values
 from abacus.modules.platform.audit_slots import AuditEventRef
 from abacus_tools.fakes.identity import ISSUER, FakeIdentityProvider
+
+from .agent_tests.support import Seeder
 
 ORIGIN = "https://app.test"
 REFRESH_HEADERS = {"X-Abacus-CSRF": "1", "Origin": ORIGIN}
@@ -130,42 +132,56 @@ async def http(idp: MethodIdp) -> AsyncIterator[httpx.AsyncClient]:
         yield client
 
 
-async def _value(dsn: str, sql: str, *args: object) -> object:
-    conn = await asyncpg.connect(dsn)
-    try:
-        return await conn.fetchval(sql, *args)
-    finally:
-        await conn.close()
+@pytest.fixture
+def seed(dsn: str) -> Seeder:
+    return Seeder(dsn)
 
 
-async def _run(dsn: str, sql: str, *args: object, actor: uuid.UUID | None = None) -> None:
-    """As the superuser; `actor` sets the person the policy triggers expect."""
-    conn = await asyncpg.connect(dsn)
-    try:
-        async with conn.transaction():
-            if actor is not None:
-                await conn.execute(
-                    "SELECT set_config('app.actor_kind', 'human', true), "
-                    "set_config('app.actor_id', $1, true)",
-                    str(actor),
-                )
-            await conn.execute(sql, *args)
-    finally:
-        await conn.close()
+_POLICY_COLUMNS: Final = (
+    "require_sso",
+    "sso_enforced_at",
+    "sso_enforced_by",
+    "session_absolute_minutes",
+    "session_idle_minutes",
+    "sso_exempt_user_id",
+)
+_INSERT_POLICY: Final = (
+    "INSERT INTO security_policies (tenant_id, updated_by, require_sso, sso_enforced_at, "
+    "sso_enforced_by, session_absolute_minutes, session_idle_minutes, sso_exempt_user_id) "
+    "VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"
+)
 
 
-async def _firm(dsn: str) -> uuid.UUID:
-    tenant_id = uuid.uuid4()
-    await _run(dsn, "INSERT INTO firms (tenant_id, name) VALUES ($1, 'Firm')", tenant_id)
-    return tenant_id
+async def _policy(seed: Seeder, tenant_id: uuid.UUID, by: uuid.UUID, **columns: object) -> None:
+    """A policy row as the person `by` (the table's trigger reads the transaction's actor)."""
+    defaults: dict[str, object] = {
+        "require_sso": False,
+        "sso_enforced_at": None,
+        "sso_enforced_by": None,
+        "session_absolute_minutes": 720,
+        "session_idle_minutes": 30,
+        "sso_exempt_user_id": None,
+    }
+    values = {**defaults, **columns}
+    await seed.as_actor(
+        tenant_id,
+        ("human", str(by)),
+        _INSERT_POLICY,
+        tenant_id,
+        by,
+        *(values[c] for c in _POLICY_COLUMNS),
+    )
 
 
-async def _person(dsn: str, *firms: uuid.UUID) -> tuple[uuid.UUID, str]:
+async def _firm(seed: Seeder) -> uuid.UUID:
+    return await seed.firm()
+
+
+async def _person(seed: Seeder, *firms: uuid.UUID) -> tuple[uuid.UUID, str]:
     subject = f"sub-{uuid.uuid4().hex}"
     user_id = cast(
         uuid.UUID,
-        await _value(
-            dsn,
+        await seed.value(
             "INSERT INTO users (idp_issuer, idp_subject, email, display_name) "
             "VALUES ($1, $2, $3, 'Staff Person') RETURNING id",
             ISSUER,
@@ -174,27 +190,13 @@ async def _person(dsn: str, *firms: uuid.UUID) -> tuple[uuid.UUID, str]:
         ),
     )
     for tenant_id in firms:
-        await _run(
-            dsn,
+        await seed.run(
             "INSERT INTO memberships (tenant_id, user_id, firm_role, status) "
             "VALUES ($1, $2, 'security_admin', 'active')",
             tenant_id,
             user_id,
         )
     return user_id, subject
-
-
-async def _policy(dsn: str, tenant_id: uuid.UUID, by: uuid.UUID, **columns: object) -> None:
-    names = ["tenant_id", "updated_by", *columns]
-    marks = ", ".join(f"${i}" for i in range(1, len(names) + 1))
-    await _run(
-        dsn,
-        f"INSERT INTO security_policies ({', '.join(names)}) VALUES ({marks})",  # noqa: S608 -- test column names
-        tenant_id,
-        by,
-        *columns.values(),
-        actor=by,
-    )
 
 
 def _cookie(response: httpx.Response) -> str:
@@ -231,41 +233,38 @@ async def _refresh(http: httpx.AsyncClient, cookie: str) -> httpx.Response:
 
 
 async def test_ac17_an_idle_session_past_the_firms_limit_must_sign_in_again(
-    http: httpx.AsyncClient, idp: MethodIdp, dsn: str
+    http: httpx.AsyncClient, idp: MethodIdp, seed: Seeder
 ) -> None:
-    firm = await _firm(dsn)
-    user, subject = await _person(dsn, firm)
-    await _policy(dsn, firm, user, session_idle_minutes=10)
+    firm = await _firm(seed)
+    user, subject = await _person(seed, firm)
+    await _policy(seed, firm, user, session_idle_minutes=10)
     cookie = _cookie(await _sign_in(http, idp, subject, "sso"))
-    idle = await _value(
-        dsn,
+    idle = await seed.value(
         "SELECT extract(epoch FROM idle_expires_at - created_at)::int FROM auth_sessions "
         "WHERE user_id = $1",
         user,
     )
     assert 590 <= cast(int, idle) <= 600  # started with the firm's 10 minutes, not 30
-    await _run(
-        dsn,
+    await seed.run(
         "UPDATE auth_sessions SET last_seen_at = now() - interval '11 minutes', "
         "idle_expires_at = now() + interval '19 minutes' WHERE user_id = $1",
         user,
     )
     refused = await _refresh(http, cookie)
     assert refused.status_code == 401 and refused.json()["detail"] == "session_expired"
-    reason = await _value(dsn, "SELECT end_reason FROM auth_sessions WHERE user_id = $1", user)
+    reason = await seed.value("SELECT end_reason FROM auth_sessions WHERE user_id = $1", user)
     assert reason == "idle"
 
 
 async def test_ac17_the_strictest_firm_applies_and_a_fresh_session_refreshes(
-    http: httpx.AsyncClient, idp: MethodIdp, dsn: str
+    http: httpx.AsyncClient, idp: MethodIdp, seed: Seeder
 ) -> None:
-    lenient, strict = await _firm(dsn), await _firm(dsn)
-    user, subject = await _person(dsn, lenient, strict)
-    await _policy(dsn, strict, user, session_absolute_minutes=60)
+    lenient, strict = await _firm(seed), await _firm(seed)
+    user, subject = await _person(seed, lenient, strict)
+    await _policy(seed, strict, user, session_absolute_minutes=60)
     cookie = _cookie(await _sign_in(http, idp, subject, "sso"))
     assert (await _refresh(http, cookie)).status_code == 200
-    absolute = await _value(
-        dsn,
+    absolute = await seed.value(
         "SELECT extract(epoch FROM absolute_expires_at - created_at)::int FROM auth_sessions "
         "WHERE user_id = $1",
         user,
@@ -278,23 +277,23 @@ async def test_ac17_the_strictest_firm_applies_and_a_fresh_session_refreshes(
 
 @pytest.mark.parametrize("method", ["MagicAuth", None])
 async def test_ac15_with_sso_required_another_method_is_refused(
-    http: httpx.AsyncClient, idp: MethodIdp, dsn: str, method: str | None
+    http: httpx.AsyncClient, idp: MethodIdp, seed: Seeder, method: str | None
 ) -> None:
-    firm = await _firm(dsn)
-    user, subject = await _person(dsn, firm)
-    await _policy(dsn, firm, user, require_sso=True, sso_enforced_by=user, sso_enforced_at=_NOW)
+    firm = await _firm(seed)
+    user, subject = await _person(seed, firm)
+    await _policy(seed, firm, user, require_sso=True, sso_enforced_by=user, sso_enforced_at=_NOW)
     assert _refused(await _sign_in(http, idp, subject, method)) == "sso_required"
     assert _refused(await _sign_in(http, idp, subject, "SSO")) is None
 
 
 async def test_ac18_the_exempt_account_passes_with_its_passkey_and_is_stamped(
-    http: httpx.AsyncClient, idp: MethodIdp, dsn: str
+    http: httpx.AsyncClient, idp: MethodIdp, seed: Seeder
 ) -> None:
-    firm = await _firm(dsn)
-    felix, _ = await _person(dsn, firm)
-    exempt, subject = await _person(dsn, firm)
+    firm = await _firm(seed)
+    felix, _ = await _person(seed, firm)
+    exempt, subject = await _person(seed, firm)
     await _policy(
-        dsn,
+        seed,
         firm,
         felix,
         require_sso=True,
@@ -304,12 +303,11 @@ async def test_ac18_the_exempt_account_passes_with_its_passkey_and_is_stamped(
     )
     assert _refused(await _sign_in(http, idp, subject, "MagicAuth")) == "sso_required"
     assert _refused(await _sign_in(http, idp, subject, "Passkey")) is None
-    stamped = await _value(
-        dsn, "SELECT sso_exempt_tested_at FROM security_policies WHERE tenant_id = $1", firm
+    stamped = await seed.value(
+        "SELECT sso_exempt_tested_at FROM security_policies WHERE tenant_id = $1", firm
     )
     assert stamped is not None
-    logged = await _value(
-        dsn,
+    logged = await seed.value(
         "SELECT actor_id FROM audit_events WHERE tenant_id = $1 "
         "AND action = 'sso_exempt_account.tested'",
         firm,
@@ -317,33 +315,33 @@ async def test_ac18_the_exempt_account_passes_with_its_passkey_and_is_stamped(
     assert logged == str(exempt)
 
 
-async def test_ac18_nobody_designates_themselves_even_past_the_service(dsn: str) -> None:
-    firm = await _firm(dsn)
-    felix, _ = await _person(dsn, firm)
+async def test_ac18_nobody_designates_themselves_even_past_the_service(seed: Seeder) -> None:
+    firm = await _firm(seed)
+    felix, _ = await _person(seed, firm)
     with pytest.raises(asyncpg.InsufficientPrivilegeError):
-        await _policy(dsn, firm, felix, sso_exempt_user_id=felix)
+        await _policy(seed, firm, felix, sso_exempt_user_id=felix)
 
 
 # --- AC-20: sign out of one firm -----------------------------------------------------------------
 
 
 async def test_ac20_a_session_signed_out_of_a_firm_acts_there_no_more_but_elsewhere_does(
-    http: httpx.AsyncClient, idp: MethodIdp, dsn: str
+    http: httpx.AsyncClient, idp: MethodIdp, seed: Seeder
 ) -> None:
-    here, elsewhere = await _firm(dsn), await _firm(dsn)
-    user, subject = await _person(dsn, here, elsewhere)
+    here, elsewhere = await _firm(seed), await _firm(seed)
+    user, subject = await _person(seed, here, elsewhere)
     cookie = _cookie(await _sign_in(http, idp, subject, "sso"))
     refreshed = await _refresh(http, cookie)
     cookie, token = _cookie(refreshed), refreshed.json()["access_token"]
-    session = await _value(dsn, "SELECT id FROM auth_sessions WHERE user_id = $1", user)
-    await _run(
-        dsn,
+    session = await seed.value("SELECT id FROM auth_sessions WHERE user_id = $1", user)
+    await seed.as_actor(
+        here,
+        ("human", str(user)),
         "INSERT INTO auth_session_tenant_revocations (tenant_id, session_id, revoked_by) "
         "VALUES ($1, $2, $3)",
         here,
         session,
         user,
-        actor=user,
     )
 
     def headers(firm: uuid.UUID, *, with_cookie: bool = True) -> dict[str, str]:
@@ -356,68 +354,65 @@ async def test_ac20_a_session_signed_out_of_a_firm_acts_there_no_more_but_elsewh
     bare = await http.get("/v1/firm/time-zone", headers=headers(here, with_cookie=False))
     assert bare.status_code == 401
     assert (await http.get("/v1/firm/time-zone", headers=headers(elsewhere))).status_code != 401
-    ended = await _value(dsn, "SELECT ended_at FROM auth_sessions WHERE id = $1", session)
+    ended = await seed.value("SELECT ended_at FROM auth_sessions WHERE id = $1", session)
     assert ended is None
 
 
 # --- AC-19: the portal session length ------------------------------------------------------------
 
 
-async def test_ac19_the_portal_length_is_the_firms_and_never_over_eight_hours(dsn: str) -> None:
-    firm = await _firm(dsn)
-    user, _ = await _person(dsn, firm)
+async def test_ac19_the_portal_length_is_the_firms_and_never_over_eight_hours(
+    seed: Seeder,
+) -> None:
+    firm = await _firm(seed)
+    user, _ = await _person(seed, firm)
     assert await security_policies.portal_session_seconds(firm) == 480 * 60
-    await _run(
-        dsn,
+    await seed.run(
         "INSERT INTO portal_security_policies (tenant_id, portal_session_minutes, updated_by) "
         "VALUES ($1, 120, $2)",
         firm,
         user,
-        actor=user,
     )
     assert await security_policies.portal_session_seconds(firm) == 120 * 60
     with pytest.raises(asyncpg.CheckViolationError):
-        await _run(
-            dsn,
+        await seed.run(
             "UPDATE portal_security_policies SET portal_session_minutes = 600, updated_by = $2 "
             "WHERE tenant_id = $1",
             firm,
             user,
-            actor=user,
         )
 
 
 # --- the purge, and the policies' audit values ---------------------------------------------------
 
 
-async def test_sessions_ended_over_a_year_ago_are_purged_and_live_ones_stay(dsn: str) -> None:
-    firm = await _firm(dsn)
-    user, _ = await _person(dsn, firm)
-    old = await _value(
-        dsn,
+async def test_sessions_ended_over_a_year_ago_are_purged_and_live_ones_stay(
+    seed: Seeder,
+) -> None:
+    firm = await _firm(seed)
+    user, _ = await _person(seed, firm)
+    old = await seed.value(
         "INSERT INTO auth_sessions (user_id, provider, idle_expires_at, absolute_expires_at, "
         "ended_at, end_reason) VALUES ($1, 'oidc', now() - interval '400 days', "
         "now() - interval '400 days', now() - interval '400 days', 'sign_out') RETURNING id",
         user,
     )
-    live = await _value(
-        dsn,
+    live = await seed.value(
         "INSERT INTO auth_sessions (user_id, provider, idle_expires_at, absolute_expires_at) "
         "VALUES ($1, 'oidc', now() + interval '30 minutes', now() + interval '12 hours') "
         "RETURNING id",
         user,
     )
-    await _run(
-        dsn,
+    await seed.run(
         "INSERT INTO auth_session_cookies (cookie_sha256, session_id) VALUES ($1, $2)",
         "a" * 64,
         old,
     )
     assert await security_policies.purge_auth_sessions() >= 1
-    left = await _value(dsn, "SELECT count(*) FROM auth_sessions WHERE id = ANY($1)", [old, live])
+    left = await seed.value("SELECT count(*) FROM auth_sessions WHERE id = ANY($1)", [old, live])
     assert left == 1
     assert (
-        await _value(dsn, "SELECT count(*) FROM auth_session_cookies WHERE session_id = $1", old)
+        await seed.value("SELECT count(*) FROM auth_session_cookies WHERE session_id = $1", old)
         == 0
     )
 
