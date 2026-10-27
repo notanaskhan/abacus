@@ -3,9 +3,10 @@ its one matrix action and answers 404 with its flag off and 501 with it on until
 (`IMPLEMENTED`: the documents reads, R-01-T07, the undos, R-01-T08, the drop, R-01-T09, the
 void, TASK-1248, and the room with its suggest, R-01-T13); the read action is a
 client action that grants no firm role and denies the agent and system; the void is human only;
-every client-facing write takes an `Idempotency-Key`; every model field is classified; the three
-flags are boolean and off by default. The consumers' own tests are R-01-T02's, in this
-directory."""
+every client-facing write takes an `Idempotency-Key`; every model field is classified; the two
+remaining flags are boolean and off by default, and the documents reads and the undos are served
+to every firm since R-01-T18 retired `portal.documents_v2` (DEC-510). The consumers' own tests
+are R-01-T02's, in this directory."""
 
 from __future__ import annotations
 
@@ -21,7 +22,7 @@ from pydantic import BaseModel
 
 from abacus.api.export_openapi import document
 from abacus.kernel._flags import (
-    PORTAL_DOCUMENTS_V2,
+    FLAGS,
     PORTAL_DROP_SORT,
     PORTAL_THIRD_PARTY_ROOM,
 )
@@ -40,25 +41,17 @@ Json = dict[str, object]
 DOC = cast(Json, json.loads(document()))
 PATHS = cast(dict[str, dict[str, Json]], DOC["paths"])
 
-# (method, path) -> (the one matrix action, the flag that gates it) (R-01 §4.3; DEC-139 spelling).
-ROUTES: dict[tuple[str, str], tuple[str, Flag]] = {
-    ("get", "/v1/portal/binders"): ("portal_documents.read", PORTAL_DOCUMENTS_V2),
-    ("get", "/v1/portal/binders/{binder_id}"): ("portal_documents.read", PORTAL_DOCUMENTS_V2),
-    ("get", "/v1/portal/request-items/{item_id}"): (
-        "portal_documents.read",
-        PORTAL_DOCUMENTS_V2,
-    ),
+# (method, path) -> (the one matrix action, the flag that gates it; None: every firm since
+# `portal.documents_v2` retired, R-01-T18) (R-01 §4.3; DEC-139 spelling).
+ROUTES: dict[tuple[str, str], tuple[str, Flag | None]] = {
+    ("get", "/v1/portal/binders"): ("portal_documents.read", None),
+    ("get", "/v1/portal/binders/{binder_id}"): ("portal_documents.read", None),
+    ("get", "/v1/portal/request-items/{item_id}"): ("portal_documents.read", None),
     ("get", "/v1/portal/room"): ("portal_documents.read", PORTAL_THIRD_PARTY_ROOM),
     ("post", "/v1/portal/room/suggest"): ("portal_documents.read", PORTAL_THIRD_PARTY_ROOM),
     ("get", "/v1/portal/drops/{batch_id}"): ("portal_documents.read", PORTAL_DROP_SORT),
-    ("post", "/v1/portal/request-items/{item_id}/ignore/undo"): (
-        "request_item.ignore",
-        PORTAL_DOCUMENTS_V2,
-    ),
-    ("post", "/v1/portal/binders/{binder_id}/mark-done/undo"): (
-        "binder.mark_done",
-        PORTAL_DOCUMENTS_V2,
-    ),
+    ("post", "/v1/portal/request-items/{item_id}/ignore/undo"): ("request_item.ignore", None),
+    ("post", "/v1/portal/binders/{binder_id}/mark-done/undo"): ("binder.mark_done", None),
     ("post", "/v1/portal/binders/{binder_id}/drops"): ("evidence.upload", PORTAL_DROP_SORT),
     ("post", "/v1/engagements/{engagement_id}/fulfilments/{fulfilment_id}/void"): (
         "fulfilment.confirm",
@@ -78,11 +71,12 @@ CONFLICTS = {
     ("post", "/v1/engagements/{engagement_id}/fulfilments/{fulfilment_id}/void"),  # not_voidable
 }
 # Every route of the family is live (R-01-T13 retired the last stubs, the room and its suggest);
-# each flag still gates its routes: off, 404 before anything is read.
+# each remaining flag still gates its routes: off, 404 before anything is read.
 GATES: list[tuple[ModuleType, str, Flag]] = [
-    (documents_routes, "_on", PORTAL_DOCUMENTS_V2),
     (rooms, "_delegated", PORTAL_THIRD_PARTY_ROOM),
 ]
+# R-01-T18 (DEC-510): the documents reads and the two undos read no flag at all.
+UNGATED: tuple[ModuleType, ...] = (documents_routes, requests_pbc)
 
 
 def _models(module: ModuleType) -> list[type[BaseModel]]:
@@ -273,10 +267,24 @@ async def test_the_void_is_404_off_and_live_on(monkeypatch: pytest.MonkeyPatch) 
         )
 
 
-@pytest.mark.parametrize("flag", [PORTAL_DOCUMENTS_V2, PORTAL_DROP_SORT, PORTAL_THIRD_PARTY_ROOM])
-def test_the_three_flags_are_boolean_and_default_off(flag: Flag) -> None:
+@pytest.mark.parametrize("flag", [PORTAL_DROP_SORT, PORTAL_THIRD_PARTY_ROOM])
+def test_the_two_remaining_flags_are_boolean_and_default_off(flag: Flag) -> None:
     assert flag.kind == "boolean"
     assert flag.default == "false"
+
+
+def test_r01t18_portal_documents_v2_is_retired() -> None:
+    assert "portal.documents_v2" not in FLAGS
+    for module in UNGATED:
+        assert "flag_enabled" not in vars(module), module.__name__
+    ungated = {path for path, (_, flag) in ROUTES.items() if flag is None}
+    assert ungated == {
+        ("get", "/v1/portal/binders"),
+        ("get", "/v1/portal/binders/{binder_id}"),
+        ("get", "/v1/portal/request-items/{item_id}"),
+        ("post", "/v1/portal/request-items/{item_id}/ignore/undo"),
+        ("post", "/v1/portal/binders/{binder_id}/mark-done/undo"),
+    }
 
 
 def test_no_route_of_the_family_is_unauthenticated() -> None:

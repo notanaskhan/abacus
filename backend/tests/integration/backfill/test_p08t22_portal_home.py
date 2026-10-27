@@ -570,12 +570,8 @@ async def test_leftover_the_binder_picker_of_a_client_with_nothing_published_is_
     world: World,
 ) -> None:
     """A client whose only binder is a draft gets an empty picker, never a 500 from the route
-    guard (no binder meant no `portal_documents.read` check was ever recorded)."""
-    await world.seed.run(
-        "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
-        "VALUES ($1, 'portal.documents_v2', 'true', 'test-seed', 'leftover')",
-        world.tenant,
-    )
+    guard (no binder meant no `portal_documents.read` check was ever recorded). Served to every
+    firm since `portal.documents_v2` retired (R-01-T18, DEC-510)."""
     who, email = await _client(world, ("contributor", "engagement", world.a.engagement_id))
     await _requests(world, world.a, who, 2, publish=False)
     token = await _session(world, email)

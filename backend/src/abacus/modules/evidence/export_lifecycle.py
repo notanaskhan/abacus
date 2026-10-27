@@ -6,7 +6,9 @@
   `expires_at` has passed becomes `expired` (`void_reason = 'expired'`), audited
   `engagement_export.expired`, with the outbox event `engagement_export.expired`. The download
   already answers 410 from `expires_at` itself, so a late or paused sweep never serves a stale
-  bundle; the sweep is what cleans up.
+  bundle; the sweep is what cleans up. The same activity expires firm exports past their 7 days
+  (Q-02-T43, `firm_export_activities.expire_due`): activity code only, so the workflow and its
+  recorded history are unchanged.
 - **Void on withdrawal** (the `evidence_version.withdrawn` subscriber, at least once): every
   export holding the withdrawn version (`engagement_export_contents`) that is `ready` becomes
   `expired` with `withdrawn_content`, audited `engagement_export.voided`, outbox
@@ -45,6 +47,7 @@ from abacus.modules.evidence.export_events import (
 )
 from abacus.modules.evidence.export_models import EngagementExport, EngagementExportContent
 from abacus.modules.evidence.export_storage import delete_segments
+from abacus.modules.evidence.firm_export_activities import expire_due as expire_firm_exports
 from abacus.modules.evidence.withdrawals import withdrawn_among
 from abacus.modules.evidence.workflows import EXPORT_EXPIRY_ID, ExportExpirySweepWorkflow
 from abacus.modules.identity.api import firm_tenant_ids
@@ -260,6 +263,12 @@ async def expire_sweep_activity() -> int:
             total += await expire_due(tenant)
         except Exception as exc:
             _log.error("export_expiry.failed", tenant_id=str(tenant), error=type(exc).__name__)
+        try:  # Q-02-T43: the firm's own exports, apart, so one failure never holds the other
+            total += await expire_firm_exports(tenant)
+        except Exception as exc:
+            _log.error(
+                "firm_export_expiry.failed", tenant_id=str(tenant), error=type(exc).__name__
+            )
     return total
 
 

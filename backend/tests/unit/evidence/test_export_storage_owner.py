@@ -43,7 +43,7 @@ async def test_every_call_carries_the_expected_owner_when_one_is_set(owner: str 
     exports = export_storage._Exports  # pyright: ignore[reportPrivateUsage] -- the store's own target
     drop = export_storage._drop_from  # pyright: ignore[reportPrivateUsage] -- no crypto needed
     target = exports(s3, "abacus-test-exports", owner)
-    await drop(target, TENANT, EXPORT, 1)
+    await drop(target, TENANT, EXPORT, 1, "engagement_export")
     assert [name for name, _ in client.calls] == ["list", "delete"]
     for _, kwargs in client.calls:
         assert kwargs.get("ExpectedBucketOwner") == owner
