@@ -587,14 +587,36 @@ async def set_default_due_on(
     return list_id
 
 
+# An overdue item, its due date, its binder, the binder's done stamp and override, and whether a
+# client may be written to about it.
+type OverdueRow = tuple[
+    RequestItem, date, UUID, datetime | None, dict[str, Any] | None, bool  # Any: JSON values
+]
+
+
 async def overdue_items(
     session: AsyncSession, engagement_id: UUID, today: date
-) -> Sequence[tuple[RequestItem, date]]:
+) -> Sequence[OverdueRow]:
     """Open or sent-back items past their due date (their own, else the list's), for the
-    engagement agent's reminders (LIST_EXEMPT: the platform, not a person, reads them)."""
+    engagement agent's reminders (LIST_EXEMPT: the platform, not a person, reads them), with
+    their binder's id, client "Mark as Done" stamp and follow-up override (R-01-T24), and whether
+    a client may be written to about it: client-visible, not deleted, in a Published binder that
+    is not closed (security review H1)."""
     due = func.coalesce(RequestItem.due_on, RequestList.default_due_on)
     rows = await session.execute(
-        select(RequestItem, due)
+        select(
+            RequestItem,
+            due,
+            RequestList.id,
+            RequestList.marked_done_at,
+            RequestList.follow_up_override,
+            and_(
+                RequestItem.client_visible.is_(True),
+                RequestItem.deleted_at.is_(None),
+                RequestList.status == "published",
+                RequestList.closed_at.is_(None),
+            ),
+        )
         .join(RequestList, RequestList.id == RequestItem.request_list_id)
         .where(
             RequestItem.engagement_id == engagement_id,
@@ -603,7 +625,7 @@ async def overdue_items(
         )
         .order_by(due, RequestItem.created_at, RequestItem.id)
     )
-    return [(item, d) for item, d in rows.all()]
+    return [(item, d, b, done, o, bool(ok)) for item, d, b, done, o, ok in rows.all()]
 
 
 async def overdue_counts(

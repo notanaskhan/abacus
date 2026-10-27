@@ -36,6 +36,7 @@ from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.communications import template_store
 from abacus.modules.communications.deliveries import deliver, is_suppressed
+from abacus.modules.communications.lint import lint_template
 from abacus.modules.communications.models import Message
 from abacus.modules.communications.render import RenderedEmail, render_email
 from abacus.modules.communications.repository import insert_message
@@ -246,6 +247,13 @@ async def send(
             reason, violations = "template_missing", [{"kind": "template_missing", "ref": ""}]
         else:
             violations = _values_findings(registration, values)
+            if isinstance(ctx, SystemSendContext):
+                # Security review M1: no person reads a scheduled Reminder before it goes, so the
+                # version itself is linted again (a version published before a rule existed).
+                violations += [
+                    {"kind": "template_lint_failed", "ref": f.fact()}
+                    for f in lint_template(version.content, registration)
+                ]
             rendered = None if violations else _render(registration, version, values)
             if violations or rendered is None:
                 reason = "template_lint_failed"
@@ -301,3 +309,27 @@ async def send(
     if refused is not None:  # paused or the sink refused after the checks: logged, by kind
         _log.warning("message.delivery_refused", message_id=message_id, kind=refused["kind"])
     return SendOutcome(message_id, "queued", None)
+
+
+async def templated_outcome(
+    ctx: AuthContext,
+    key: str,
+    recipient: RecipientRef,
+    *,
+    scope: SendScope,
+    idempotency_key: str,
+) -> SendOutcome | None:
+    """What a `send_templated` with these arguments recorded, without sending; None when it
+    never ran (A-02-T23 review L1: a caller resending only what never went out). Authorised as
+    a replay is: `message.send` on the stored message's engagement."""
+    if ctx.tenant.actor_kind != "human" or ctx.client:
+        raise Forbidden("message.send", "role")
+    message_id = message_id_for(
+        ctx.tenant.tenant_id, key, recipient, scope.engagement_id, idempotency_key
+    )
+    found = await _recorded(ctx.tenant, message_id)
+    if found is None:
+        return None
+    outcome, engagement_id = found
+    await _authorise_send(ctx, await get_ref(ctx, engagement_id))
+    return outcome

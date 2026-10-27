@@ -88,6 +88,7 @@ All of SPEC-011. Excluded: percentage rollouts, a UI, and SPA flags.
 
   Gates, the schema check and unit tests pass. The CLI and reads were checked against local Postgres (set, re-set, refusals, read back). Full test runs deferred by the founder.
 - `2026-10-07` — SPEC-011 approved and merged (#46). Design written for founder review.
+- 2026-10-27: ADR-078 back-fill suite `backend/tests/integration/backfill/test_q03t050_feature_flags.py`; see `work/tasks/TASK-1440-*.md` (S11 lane 7).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

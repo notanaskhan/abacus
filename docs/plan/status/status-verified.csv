@@ -38,7 +38,7 @@ R-01-T08,partial,"TASK-106: requests/client_responses.py, migration 0063, spec04
 A-06-T04,partial,"TASK-107: migration 0064 findings + misstatements, insert-only; no deficiencies, issue_id or framework column"
 A-06-T07,partial,"TASK-107: fieldwork/findings.py summarise() against materiality; no rollover, iron curtain, engine_version or inputs_hash"
 A-06-T11,partial,"TASK-107: findings.py raise_finding/findings_for, Findings tab, test_findings.py; no review issue, severity bands, agent producers"
-P-04-T18,partial,"TASK-100: fieldwork-only item_signoffs, sign_items, preparer != reviewer, test_flow.py; not the P-04 /v1/sign-offs service"
+P-04-T18,done,"#429 (85d6c961): /v1/sign-offs service, stale detection and re-sign"
 P-08-T15,partial,"TASK-099: shell/PortalBrand.tsx firm name, ClientHome.tsx needs-you-first; no rail, household card or TodoCard registry"
 A-02-T07,done,"TASK-320/322/1285: ledger/trial_balances.py adopt and re-version with prior-snapshot pairing and display_unit, fail-closed register_adjustment_source, layer_totals/require_balanced (layer_unbalanced) for all four layers, AreaRule leadsheet rollup, outbox trial_balance.version_created (ledger/events.py); goldens tests/golden/ledger/tb_layers.yaml (Northwind 16,812,400.00 / 14,228,500.00, AJE-1 Final 16,861,000.00; Granite Peak 26,410,000 / 23,200,000, 71,910,000); tests/integration/test_tb_versions.py (v2 leaves v1 and every snapshot untouched; layer_unavailable). Methodology rules reach the live view with A-02-T10"
 A-02-T17,partial,"TASK-321: workpapers/ties.py tie_out.py, tie_out_checks (mig 0074), TB() cells, legacy/TieChecks.tsx; no rollforward kind or issue link"
@@ -59,3 +59,61 @@ P-09-T10,partial,"TASK-461: legacy/AgentRuns.tsx TraceDrawer 480 with summary, t
 P-09-T11,partial,"TASK-461, TASK-901: POST /v1/agent-runs/{id}/trace-exports canonical JSON + SHA-256 manifest, audited agent_run.trace_exported, fresh MFA; PDF not built (needs C11 run_trace_v1 template)"
 K-04-T33,partial,"TASK-460: assurance/dashboard.py: gates, tiles from progress sources, sign-offs, requests, next-up via could() (SPEC-317, dashboard.read); no lenses, C14 provider, basis strings or health rule"
 K-04-T40,partial,"TASK-460: legacy/EngagementDashboard.tsx tab; not the ENG-12 T21 record variant, lenses or milestones"
+A-01-T18,done,"#450 (dc46552b): engagement_exports create/undo/history behind a 10-s grant, migration 0191"
+A-01-T19,done,"#450 (dc46552b): EngagementExportWorkflow package build, sealed 64 MiB segments, v1 replay histories"
+A-01-T21,done,#464 (b1ea439b): legacy evidence screens retired
+A-01-T31,done,#430 (856d3870): AUD-02 f Auto mode confirm in fixture mode
+A-02-T10,done,#436 (4daa2229): S10 wave B ledger tie-outs
+A-02-T11,done,#436 (4daa2229): tie-out check versions (migration 0193)
+A-02-T12,done,#436 (4daa2229): integrations framework (migration 0194)
+A-02-T13,done,#436 (4daa2229): entity connections and consents (migration 0195)
+A-02-T14,done,#436 (4daa2229): S10 wave B ledger and integrations close
+F-05-T61,done,#464 (b1ea439b): tier-2 parity checks
+G-01-T16,done,#468 (81f57c4d): ADM journeys
+G-02-T08,done,"#444 (b577fa67) audit log read service; gap closed in #469 (f0ad0bd2, DEC-458: events store client and office)"
+G-02-T09,done,"#444 (b577fa67) value slots; gap closed in #469 (f0ad0bd2, DEC-459: five value resolvers)"
+G-02-T10,done,#444 (b577fa67): label index and search
+G-02-T11,done,#450 (dc46552b): security-center v1 stub
+G-02-T12,done,#450 (dc46552b): security-center consumer suite
+I-01-T01,done,#431 (e671bb88): HOME screen contracts
+I-01-T02,done,#431 (e671bb88): C13 home-half stub
+I-01-T03,done,#431 (e671bb88): gate-half AC suite
+K-01-T01,done,#432 (a0d16491): knowledge stub
+K-01-T02,done,"#432 (a0d16491): methodology stub, tables re-owned (migration 0180)"
+P-03-T19,done,#439 (07e4d02c): password unlock (derived extraction for the agent is the DEC-425 follow-up)
+P-03-T21,done,"#439 (07e4d02c), TASK-1322: PII independent suite"
+P-04-T19,done,#429 (85d6c961): sign_off.went_stale and re-sign
+P-04-T20,done,#470 (304989eb): ADR-078 independent sign-off suite
+P-06-T26,done,#434 (96abe9be): parity and accessibility report
+P-06-T27,done,#434 (96abe9be) P-06 docs close-out; C5 frozen by #463 (733bb521)
+P-07-T41,done,#437 (8f89d5e8): independence live (CLI-08)
+P-07-T42,done,#438 (019884f7): single client intake commit
+P-07-T43,done,#470 (304989eb): independent suite
+P-07-T44,done,#470 (304989eb): independent suite
+P-07-T45,done,#470 (304989eb): independent suite
+P-07-T46,done,#437 (8f89d5e8): CLI-07 acceptance screen
+Q-03-T038,done,#472 (ee7bdf04): back-fill fixes ED-081/082 (migration 0197)
+Q-03-T039,done,#433 (895c4da4): back-fill suite for comments
+Q-03-T040,done,#433 (895c4da4): back-fill suites for the guidance drafter and drafted guidance
+R-01-T18,done,"#464 (b1ea439b) live swap and legacy pages retired; portal.documents_v2 retired in s10-leftovers (TASK-1404, DEC-510)"
+R-01-T19,done,#472 (ee7bdf04): email template versions (migration 0196)
+R-01-T20,done,#470 (304989eb): independent portal PBC suite
+R-01-T21,done,#464 (b1ea439b): portal Playwright journeys (run in CI after #476)
+R-01-T22,done,#472 (ee7bdf04): templated send
+Q-02-T43,done,"s10-leftovers (TASK-1403): firm_exports and links (migration 0216), FirmExportWorkflow v1 histories, dual approval in service and database, 15-min links, 410 after 7 days"
+F-05-T60,partial,#464 (b1ea439b) tier-2 checks; no board locked (needs a pnpm visual run and sign-off)
+P-03-T20,partial,"#439 (07e4d02c), TASK-1321 SHL-08 built; ""Ask ... for the password"" blocked on handoff copy (DEC-460, TASK-1365)"
+Q-03-T043,partial,#468 (81f57c4d) repo side; runs need the perf stack (Q-03-T036)
+Q-03-T044,partial,#468 (81f57c4d) repo side; runs need the perf stack (Q-03-T036)
+Q-03-T046,partial,#468 (81f57c4d) repo side; runs need the perf stack (Q-03-T036)
+P-08-T28,partial,#468 (81f57c4d) repo side; staging rollout steps are human
+F-09-T94,todo,"needs programme, vendor or counsel input; nothing in the repo"
+F-09-T95,todo,"needs programme, vendor or counsel input; nothing in the repo"
+F-09-T96,todo,"needs programme, vendor or counsel input; nothing in the repo"
+F-09-T97,todo,"needs programme, vendor or counsel input; nothing in the repo"
+F-09-T98,todo,"needs programme, vendor or counsel input; nothing in the repo"
+F-09-T99,todo,"needs programme, vendor or counsel input; nothing in the repo"
+Q-02-T44,todo,real Bedrock runs cost money: Ayush decides
+Q-03-T041,todo,needs pen test #1 findings (Mar 2027)
+Q-03-T042,todo,needs pen test #1 findings (Mar 2027)
+Q-03-T045,todo,needs four clean sprints and the founders' decision

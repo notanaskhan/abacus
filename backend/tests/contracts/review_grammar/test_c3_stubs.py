@@ -40,6 +40,7 @@ ROUTES: dict[tuple[str, str], str] = {
     ("post", "/v1/review-notes/{note_id}/clear"): "review_note.clear",
     ("post", "/v1/review-notes/{note_id}/withdraw"): "review_note.withdraw",
     ("get", "/v1/human-gates"): "human_gate.read",
+    ("get", "/v1/human-gates/counts"): "human_gate.read",  # I-01-T04: the one count source
     ("get", "/v1/decision-cards"): "decision.read",
     ("get", "/v1/decision-cards/{card_id}"): "decision.read",
     ("post", "/v1/decision-cards/{card_id}/decide"): "decision.decide",
@@ -130,10 +131,13 @@ def _ctx() -> AuthContext:
 # Live with the flag on (no longer 501): P-04-T16 serves the human gates from the projection
 # (tests/integration/backfill/test_p04t16_human_gate_projector.py); P-04-T18 the ladder,
 # eligibility and sign-off (tests/integration/test_p04t18_sign_off_service.py); P-04-T21 the
-# notes, T22 bulk sign-off and T23 decision cards (tests/integration/test_p04t2[123]_*.py).
+# notes, T22 bulk sign-off and T23 decision cards (tests/integration/test_p04t2[123]_*.py);
+# P-04-T24 proposals and suggestions and T25 the typed adapters (test_p04t24_proposals.py,
+# backfill/test_p04t25_proposal_adapters.py). Undo stays 501 until P-04-T29.
 LIVE = frozenset(
     {
         "human_gate_list_route",
+        "human_gate_counts_route",  # I-01-T04
         "sign_off_ladder_route",
         "sign_off_eligibility_route",
         "sign_off_route",
@@ -150,6 +154,13 @@ LIVE = frozenset(
         "decision_card_analysis_request_route",
         "decision_card_notify_route",
         "decision_card_reassess_route",
+        "agent_proposal_route",
+        "proposal_approve_route",
+        "proposal_reject_route",
+        "proposal_route_to_route",
+        "proposal_follow_up_route",
+        "suggestion_adopt_route",
+        "suggestion_dismiss_route",
     }
 )
 
@@ -276,7 +287,11 @@ def test_c3_schema_v1_migrations_agree_with_the_wire() -> None:
     )
     assert "CHECK (status IN ('open', 'responded', 'cleared', 'closed', 'withdrawn'))" in m93
     assert stored_codes("review_note") == ["open", "responded", "cleared", "closed", "withdrawn"]
-    assert check_list(m93, "kind", "human_gates") == list(get_args(review_contract.GateKind))
+    # I-01-T04 (0223, DEC-403) adds `evidence_review` to 0093's list, nothing else.
+    assert [*check_list(m93, "kind", "human_gates"), "evidence_review"] == list(
+        get_args(review_contract.GateKind)
+    )
+    assert "'evidence_review'" in migration("0223_human_gate_home.py")
     assert check_list(m93, "state", "human_gates") == list(get_args(review_contract.GateState))
 
 

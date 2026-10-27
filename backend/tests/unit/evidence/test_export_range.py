@@ -71,7 +71,10 @@ async def test_the_stream_reads_only_the_segments_its_range_needs(
     size = 64 * 1024 * 1024 * 2 + 10  # three segments at the production size
     read: list[int] = []
 
-    async def segment(_tenant: uuid.UUID, _export: uuid.UUID, n: int) -> bytes:
+    async def segment(
+        _tenant: uuid.UUID, _export: uuid.UUID, n: int, *, kind: str = "engagement_export"
+    ) -> bytes:
+        assert kind == "engagement_export"  # an engagement bundle opens as its own kind only
         read.append(n)
         length = export_download.SEGMENT_BYTES if n < 2 else 10
         return bytes([n]) * length

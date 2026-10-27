@@ -8,14 +8,14 @@
 | Provider epic | G-01 (`identity`, `organisations`) |
 | Consumers | ADM-01, ADM-02, ADM-03; SHL-03 (the profile drawer's annual confirmation); P-07 (G2 reads annual confirmations) |
 | Freeze sprint | the sprint review after the stub |
-| Flag | `firm_settings.v2` (default off, created 2026-10-23, expires 2027-04-21 under DEC-137) |
+| Flag | none: `firm_settings.v2` (created 2026-10-23) was retired by G-01-T17 (DEC-594); every route is served to every firm |
 | Spec | G-01 (`docs/plan/epics/G-01.md` §3, §4.3); SPEC-002 amended by DEC-169 |
 | ADRs | ADR-139 (P-36), ADR-024, ADR-026, ADR-031, ADR-005; DEC-30, DEC-43, DEC-52, DEC-73, DEC-91, DEC-132, DEC-169 |
 
 ## 1. Purpose
 One family for the firm's own configuration: the settings frame and its typed sections (ADM-01), people, role templates and annual independence (ADM-02), offices, teams, groups, service-line separation, offshore and walls v2 (ADM-03). Walls keep 404 semantics: nothing here carries a hidden count or a field derived from walled rows (DEC-43). The firm's region is never writable through this family.
 
-**Stub behaviour.** With `firm_settings.v2` off every route below answers 404. With it on, the overview, the sections (G-01-T04, DEC-170), the person, its writes and the role templates (G-01-T05, DEC-286) are live; offices, teams and the Seasonal group's date (G-01-T08, DEC-317), the wall preview, approval and log and the offshore group (G-01-T09, DEC-318, DEC-319) are live; the service lines (G-01-T12, DEC-380) and annual independence (G-01-T13, DEC-381) are live; no route answers 501 any more.
+**Stub behaviour.** Before G-01-T17 every route below answered 404 with `firm_settings.v2` off; the flag is retired (DEC-594). Then, with it on, the overview, the sections (G-01-T04, DEC-170), the person, its writes and the role templates (G-01-T05, DEC-286) are live; offices, teams and the Seasonal group's date (G-01-T08, DEC-317), the wall preview, approval and log and the offshore group (G-01-T09, DEC-318, DEC-319) are live; the service lines (G-01-T12, DEC-380) and annual independence (G-01-T13, DEC-381) are live; no route answers 501 any more.
 
 **Existing routes kept, growing additively in their tasks:**
 - `GET /v1/firm/staff` (G-01-T05): the list envelope of `StaffRowV2Out` (`items`, `next_cursor`, `total`, `counts` per band over the filters less the band filter) with `tallies` (`StaffTalliesOut`) and SPEC-024's `members` and `invitations` kept for the legacy screen; filters `q` (name or email), `role_template`, `office_id`, `team_id`, `status`, `band`, `cursor`, `limit`. Still `firm.manage_users` with fresh MFA (DEC-286). A pending invitation is a row with `invitation_id` and no `user_id`.

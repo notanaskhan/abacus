@@ -14,8 +14,9 @@ Platform jobs run on Temporal Schedules (Q-01-T26; Q-01 §4.5): `schedule()` cre
 converges an existing one on the declared action, interval and policy while keeping its paused
 state; `pause()`, `unpause()` and `delete()` are the operator's levers. Every Schedule skips a run
 while the previous one is still open (overlap SKIP) and catches up at most one hour of missed
-runs. Platform jobs only: firm-facing agent schedules (P-50) are a later decision on the same
-primitive. Modules declare their Schedules in `api.py` (`SCHEDULES`); `abacus_tools.schedules`
+runs. Firm-facing calendar jobs (G-02-T19's monthly firm export) use `firm_schedule()`: a
+calendar in the firm's time zone, paused or running as the firm's own record says. Modules
+declare their platform Schedules in `api.py` (`SCHEDULES`); `abacus_tools.schedules`
 ensures them, so no worker process races another to create one.
 """
 
@@ -31,9 +32,11 @@ from temporalio.client import (
     ScheduleActionExecutionStartWorkflow,
     ScheduleActionStartWorkflow,
     ScheduleAlreadyRunningError,
+    ScheduleCalendarSpec,
     ScheduleIntervalSpec,
     ScheduleOverlapPolicy,
     SchedulePolicy,
+    ScheduleRange,
     ScheduleSpec,
     ScheduleState,
     ScheduleUpdate,
@@ -187,6 +190,66 @@ async def schedule(job: PlatformSchedule) -> Literal["created", "updated"]:
     return "created"
 
 
+@dataclass(frozen=True)
+class FirmSchedule:
+    """A firm-facing job on a calendar (G-02-T19; DEC-623): `day_of_month` at `hour`:`minute` in
+    the firm's `time_zone` (Temporal applies the zone, so it is right across daylight saving).
+    Overlap SKIP and the one-hour catch-up, as a platform job. `id` names the Schedule and its
+    runs; `arg` is the workflow's one argument."""
+
+    id: str
+    workflow: type
+    arg: object
+    day_of_month: int
+    hour: int
+    minute: int
+    time_zone: str
+    note: str
+
+
+def _firm_schedule_of(job: FirmSchedule, *, state: ScheduleState) -> Schedule:
+    return Schedule(
+        action=ScheduleActionStartWorkflow(
+            job.workflow.run,  # pyright: ignore[reportUnknownArgumentType,reportUnknownMemberType] -- a @workflow.defn class
+            args=[job.arg],
+            id=job.id,
+            task_queue=queue_for(work_class_of(job.workflow)),
+        ),
+        spec=ScheduleSpec(
+            calendars=[
+                ScheduleCalendarSpec(
+                    second=[ScheduleRange(0)],
+                    minute=[ScheduleRange(job.minute)],
+                    hour=[ScheduleRange(job.hour)],
+                    day_of_month=[ScheduleRange(job.day_of_month)],
+                )
+            ],
+            time_zone_name=job.time_zone,
+        ),
+        policy=SchedulePolicy(overlap=OVERLAP, catchup_window=CATCHUP_WINDOW),
+        state=state,
+    )
+
+
+async def firm_schedule(job: FirmSchedule, *, paused: bool) -> Literal["created", "updated"]:
+    """Create or converge a firm's calendar Schedule, paused or running as the caller's record
+    says (the firm's own state decides, not an operator's)."""
+    client = await temporal_client()
+    state = ScheduleState(note=job.note, paused=paused)
+    try:
+        await client.create_schedule(job.id, _firm_schedule_of(job, state=state))
+    except ScheduleAlreadyRunningError:
+
+        def converge(given: ScheduleUpdateInput) -> ScheduleUpdate:
+            return ScheduleUpdate(_firm_schedule_of(job, state=state))
+
+        await client.get_schedule_handle(job.id).update(converge)
+        _log.info("dispatch.firm_schedule_updated", schedule=job.id, paused=paused)
+        return "updated"
+    _log.info("dispatch.firm_schedule_created", schedule=job.id, paused=paused)
+    return "created"
+
+
 async def schedule_ids() -> list[str]:
     """Every Schedule's id in the namespace (the caller decides which are its own)."""
     client = await temporal_client()
@@ -293,6 +356,7 @@ __all__ = [
     "CATCHUP_WINDOW",
     "OVERLAP",
     "WORK_CLASSES",
+    "FirmSchedule",
     "PlatformSchedule",
     "ScheduleFacts",
     "ScheduledRun",
@@ -300,6 +364,7 @@ __all__ = [
     "delete",
     "describe_schedule",
     "dispatch",
+    "firm_schedule",
     "pause",
     "queue_for",
     "register_work_classes",

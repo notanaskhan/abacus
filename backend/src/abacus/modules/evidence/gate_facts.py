@@ -29,6 +29,24 @@ async def decided_among(tenant: TenantContext, version_ids: Sequence[UUID]) -> f
         return frozenset(v for v, decision in rows.all() if decision != "undone")
 
 
+async def effective_decisions(
+    tenant: TenantContext, version_ids: Sequence[UUID]
+) -> dict[UUID, str]:
+    """P-04-T25: each version's standing review decision (`accept`, `reject` or `send_back`);
+    versions with none, or whose newest row is an undo, are left out."""
+    ids = list(dict.fromkeys(version_ids))
+    if not ids:
+        return {}
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            select(ReviewDecision.evidence_version_id, ReviewDecision.decision)
+            .where(ReviewDecision.evidence_version_id.in_(ids))
+            .ext(distinct_on(ReviewDecision.evidence_version_id))
+            .order_by(ReviewDecision.evidence_version_id, ReviewDecision.decision_seq.desc())
+        )
+        return {v: decision for v, decision in rows.all() if decision != "undone"}
+
+
 async def waiting_among(tenant: TenantContext, inbox_file_ids: Sequence[UUID]) -> frozenset[UUID]:
     """The inbox files still waiting for a person to assign or discard them."""
     ids = list(dict.fromkeys(inbox_file_ids))
@@ -41,4 +59,4 @@ async def waiting_among(tenant: TenantContext, inbox_file_ids: Sequence[UUID]) -
         return frozenset(rows.scalars().all())
 
 
-__all__ = ["decided_among", "waiting_among"]
+__all__ = ["decided_among", "effective_decisions", "waiting_among"]

@@ -31,6 +31,7 @@ from abacus.modules.agents.fake_responses import install as install_fake_respons
 from abacus.modules.agents.fake_responses import install_review as install_fake_reviews
 from abacus.modules.agents.follow_up_drafts import on_follow_up_sent
 from abacus.modules.agents.follow_up_routes import follow_ups_router
+from abacus.modules.agents.follow_ups import reminder_history_of
 from abacus.modules.agents.gates import register_gate_sources, register_suggestion_lookup
 from abacus.modules.agents.graph import EngagementGraph, engagement_graph
 from abacus.modules.agents.guidance_draft import DRAFTER, DraftOutcome, create_draft_run, draft
@@ -38,11 +39,30 @@ from abacus.modules.agents.handoff import Citation, Handoff, ScreeningOutput, Ve
 from abacus.modules.agents.inbox_match import MATCHER, MatchOutcome, create_match_run, match
 from abacus.modules.agents.knowledge import KnowledgeHit, knowledge_context, search_knowledge
 from abacus.modules.agents.proposal_slots import (
+    AdoptedValue,
+    ApprovedChangeSet,
+    ChangeSetApplier,
+    ProposedValue,
+    SuggestionApplier,
+    ThresholdEvaluation,
+    ThresholdPolicy,
     UnregisteredTarget,
     apply_proposal,
     check_suggestion_target,
+    register_change_set_applier,
     register_proposal_adapter,
+    register_suggestion_applier,
     register_suggestion_target,
+    register_threshold_policy,
+)
+from abacus.modules.agents.proposals import (
+    ProposalChanged,
+    ProposalInvalid,
+    ProposedRow,
+    SuggestionChanged,
+    create_proposal,
+    create_suggestion,
+    register_proposal_state,
 )
 from abacus.modules.agents.review_start import (
     CitationStates,
@@ -115,6 +135,7 @@ from abacus.modules.agents.workflows import (
     ScreeningWorkflow,
     UploadReviewWorkflow,
 )
+from abacus.modules.communications.api import register_reminder_history
 from abacus.modules.evidence.api import register_export_section, register_proposal_source
 from abacus.modules.identity.api import AbacusRouter, register_ai_assistants
 
@@ -157,9 +178,13 @@ SUBSCRIPTIONS = {
 register_gate_sources()
 # P-04-T23: review checks a decision card's recommended suggestion against its engagement.
 register_suggestion_lookup()
+# P-04-T26 (C16): what a proposal says now, for the drawer's facts and Approvals.
+register_proposal_state()
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)
+# R-01-T24 security review M-a: communications checks a scheduled Reminder against what was sent.
+register_reminder_history(reminder_history_of)
 
 __all__ = [
     "ACTIVITIES",
@@ -175,13 +200,16 @@ __all__ = [
     "SCREEN_PROMPT",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
+    "AdoptedValue",
     "AgentEvent",
     "AgentInput",
     "AgentRunBusy",
     "AgentRunNotRunning",
     "AgentSpec",
     "AiPolicyLoosened",
+    "ApprovedChangeSet",
     "ApproverMustDiffer",
+    "ChangeSetApplier",
     "Citation",
     "CitationStates",
     "DraftOutcome",
@@ -202,6 +230,10 @@ __all__ = [
     "MatchOutcome",
     "MatchRunInput",
     "NextTickInput",
+    "ProposalChanged",
+    "ProposalInvalid",
+    "ProposedRow",
+    "ProposedValue",
     "ReviewOutcome",
     "ReviewUnavailable",
     "RunInput",
@@ -213,6 +245,10 @@ __all__ = [
     "ScreeningWorkflow",
     "SheetLayoutError",
     "SlotGrant",
+    "SuggestionApplier",
+    "SuggestionChanged",
+    "ThresholdEvaluation",
+    "ThresholdPolicy",
     "UnregisteredTarget",
     "UploadReviewWorkflow",
     "VerifiedCitation",
@@ -222,8 +258,10 @@ __all__ = [
     "check_suggestion_target",
     "create_draft_run",
     "create_match_run",
+    "create_proposal",
     "create_review_run",
     "create_screening_run",
+    "create_suggestion",
     "draft",
     "engagement_graph",
     "fail_run",
@@ -234,8 +272,11 @@ __all__ = [
     "knowledge_router",
     "load_agent_context",
     "match",
+    "register_change_set_applier",
     "register_proposal_adapter",
+    "register_suggestion_applier",
     "register_suggestion_target",
+    "register_threshold_policy",
     "request_review",
     "review",
     "review_citation_states",

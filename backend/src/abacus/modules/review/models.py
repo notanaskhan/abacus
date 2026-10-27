@@ -94,6 +94,45 @@ class HumanGate(Base):
     state: Mapped[str] = mapped_column(server_default=FetchedValue())
     source_event_id: Mapped[UUID]
     updated_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    # I-01-T04 (migration 0223): the owner's registered name and what Home sorts and bands on.
+    subkind: Mapped[str]
+    office_id: Mapped[UUID | None]
+    blocked: Mapped[bool] = mapped_column(server_default=FetchedValue())
+    blocked_reason_code: Mapped[str | None]
+    sort_hint: Mapped[int | None]
+
+
+class HumanGateSnooze(Base):
+    """A person's snooze of a gate, for them alone (I-01-T04, 0223). Insert-only: the latest row
+    per (gate, person) wins; an unsnooze is a row whose `until` is the moment it was written."""
+
+    __tablename__ = "human_gate_snoozes"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    gate_id: Mapped[UUID]
+    user_id: Mapped[UUID]
+    until: Mapped[datetime]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    actor_kind: Mapped[str]
+    actor_id: Mapped[str]
+
+
+class HumanGateReassignment(Base):
+    """Who moved a gate from whom to whom (I-01-T04, 0223). Insert-only and a person's alone."""
+
+    __tablename__ = "human_gate_reassignments"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    gate_id: Mapped[UUID]
+    subject_ref: Mapped[dict[str, str]] = mapped_column(JSONB)
+    from_user_id: Mapped[UUID | None]
+    to_user_id: Mapped[UUID]
+    reason_code: Mapped[str | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    actor_kind: Mapped[str]
+    actor_id: Mapped[str]
 
 
 class DecisionCard(Base):
@@ -172,3 +211,18 @@ class DecisionAnalysisRequest(Base):
     text_sealed: Mapped[bytes]
     requested_by: Mapped[UUID]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class FieldValueVersion(Base):
+    """A field's version (0093; written only through `review.api.record_value`). Mapped for
+    reads; the write is `field_values.record_value`'s."""
+
+    __tablename__ = "field_value_versions"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID | None]
+    target_type: Mapped[str]
+    target_id: Mapped[UUID]
+    field_key: Mapped[str]
+    seq: Mapped[int]

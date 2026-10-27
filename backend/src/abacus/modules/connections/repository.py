@@ -658,6 +658,66 @@ async def open_reconnect_requests(
     return {cid: at for cid, at in rows.all()}
 
 
+async def insert_reconnect_request(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    connection_id: UUID,
+    requested_by_user_id: UUID,
+    engagement_id: UUID,
+) -> ReconnectRequest | None:
+    """A-02-T23: the new open request, or None when the connection already has one (0195's
+    `reconnect_requests_one_open`)."""
+    return (
+        await session.execute(
+            pg_insert(ReconnectRequest)
+            .values(
+                tenant_id=tenant_id,
+                connection_id=connection_id,
+                requested_by_user_id=requested_by_user_id,
+                engagement_id=engagement_id,
+            )
+            .on_conflict_do_nothing(
+                index_elements=["tenant_id", "connection_id"],
+                index_where=ReconnectRequest.fulfilled_at.is_(None),
+            )
+            .returning(ReconnectRequest)
+        )
+    ).scalar_one_or_none()
+
+
+async def open_reconnect_request(
+    session: AsyncSession, connection_id: UUID
+) -> ReconnectRequest | None:
+    return (
+        await session.execute(
+            select(ReconnectRequest).where(
+                ReconnectRequest.connection_id == connection_id,
+                ReconnectRequest.fulfilled_at.is_(None),
+            )
+        )
+    ).scalar_one_or_none()
+
+
+async def open_requests_on_entities(
+    session: AsyncSession, client_entity_ids: Sequence[UUID]
+) -> int:
+    """A-02-T23: open reconnect requests on the entities' live connections (LIST_EXEMPT: the
+    caller authorised `connection.read` on an engagement of each entity)."""
+    if not client_entity_ids:
+        return 0
+    found = await session.execute(
+        select(func.count(ReconnectRequest.id))
+        .join(Connection, Connection.id == ReconnectRequest.connection_id)
+        .where(
+            Connection.client_entity_id.in_(list(client_entity_ids)),
+            Connection.status.in_(LIVE),
+            ReconnectRequest.fulfilled_at.is_(None),
+        )
+    )
+    return int(found.scalar_one())
+
+
 async def fulfil_reconnect_requests(session: AsyncSession, connection_id: UUID) -> int:
     done = await session.execute(
         update(ReconnectRequest)

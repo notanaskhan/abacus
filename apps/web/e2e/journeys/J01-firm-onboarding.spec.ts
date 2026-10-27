@@ -12,6 +12,8 @@ const HOSTED_URL: Readonly<Record<string, string | undefined>> = {
   canary: process.env.ABACUS_CANARY_URL,
 };
 
+// ADM-06 (G-02-T16) sits behind this flag, which E0 leaves off (G-02-T21).
+const SECURITY_CENTER = ["security_center.v1"];
 // ADM-02f's clock (fixtures/scenarios/ADM-02.ts CLOCK_F): Mon Jan 5, 2026, 10:12 AM CT.
 const JAN_5 = "2026-01-05T10:12:00-06:00";
 
@@ -31,11 +33,11 @@ test.describe("J01-core firm onboarding", () => {
 
   test(
     "J01 1: Margaret Okonkwo opens the firm's settings (ADM-01)",
-    owner("G-01 · G-01-T07 ADM-01 live behind firm_settings.v2 · walked on staging by M8"),
+    owner("G-01 · G-01-T07 ADM-01 (flag retired, G-01-T17) · walked on staging by M8"),
     async ({ journey }) => {
-      // ADM-01 is built on fixtures (G-01-T07); the full stack serves it once E0 turns
-      // firm_settings.v2 on for the firm.
-      test.fixme(journey.project !== "fixture", "firm_settings.v2 is not on in E0 (G-01-T07)");
+      // ADM-01 is built on fixtures (G-01-T07) and served to every firm since G-01-T17 retired
+      // `firm_settings.v2` (DEC-594); the full stack walks it after the batch deploy (G-01-T19).
+      test.fixme(journey.project !== "fixture", "walked full stack after the batch (G-01-T19)");
       await journey.as("margaret-okonkwo", "/settings/general", { clock: DEMO_INSTANT });
       await journey.step("J01 step 1: the firm profile as Margaret Okonkwo", async (page) => {
         await expect(page.getByText("Brightwater Hale").first()).toBeVisible();
@@ -88,18 +90,15 @@ test.describe("J01-core firm onboarding", () => {
     },
   );
 
-  // G-01-T16 (DEC-457): ADM-02 and ADM-03 sit behind `firm_settings.v2`, which E0 leaves off and
-  // the nightly load does not seed with the people slice, so in fixture mode the step opens the
-  // real route on the screen's own scenario (`?screen=&st=`); the full stack and staging walk it
-  // once E0 turns the flag on (G-01-T17) and the batch deploy carries it (G-01-T19).
+  // G-01-T16 (DEC-457): the nightly load does not seed the people slice ADM-02 and ADM-03 need, so
+  // in fixture mode the step opens the real route on the screen's own scenario (`?screen=&st=`);
+  // the full stack and staging walk it after the batch deploy (G-01-T19). `firm_settings.v2` is
+  // retired (G-01-T17, DEC-594).
   test(
     "J01 3: Grace creates offices Chicago, Denver and New York (ADM-03)",
     owner("G-01 · G-01-T16 fixture; full stack and staging after G-01-T17 · S11, Thu Apr 1, 2027"),
     async ({ journey }) => {
-      test.fixme(
-        journey.project !== "fixture",
-        "firm_settings.v2 and the people slice are not in E0",
-      );
+      test.fixme(journey.project !== "fixture", "the people slice is not in E0");
       await journey.as("grace-holloway", "/settings/offices?screen=ADM-03&st=a", {
         clock: DEMO_INSTANT,
       });
@@ -119,10 +118,7 @@ test.describe("J01-core firm onboarding", () => {
     "J01 3: Grace invites the seeded staff, and a 47th invite shows seats full (ADM-02c)",
     owner("G-01 · G-01-T16 fixture; full stack and staging after G-01-T17 · S11, Thu Apr 1, 2027"),
     async ({ journey }) => {
-      test.fixme(
-        journey.project !== "fixture",
-        "firm_settings.v2 and the people slice are not in E0",
-      );
+      test.fixme(journey.project !== "fixture", "the people slice is not in E0");
       await journey.as("grace-holloway", "/settings/people?screen=ADM-02&st=c", {
         clock: DEMO_INSTANT,
       });
@@ -146,6 +142,54 @@ test.describe("J01-core firm onboarding", () => {
       });
       await journey.step("J01 step 3f: Lena Park's pending invite", async (page) => {
         await expect(page.getByText("Invite pending · expires Jan 19").first()).toBeVisible();
+      });
+    },
+  );
+
+  test(
+    "j01 2: Felix enforces Microsoft SSO and MFA",
+    owner(
+      "G-02 · G-02-T21 fixture; full stack once E0 turns security_center.v1 on, staging and the canary after the batch deploy · M7, Fri Apr 16, 2027",
+    ),
+    async ({ journey }) => {
+      // ADM-06 sits behind `security_center.v1`, which E0 leaves off: in fixture mode each step
+      // opens the real route on the screen's own scenario (DEC-457).
+      test.fixme(journey.project !== "fixture", "security_center.v1 is not on in E0");
+      await journey.as("felix-andersen", "/settings/security?screen=ADM-06&st=a", {
+        clock: DEMO_INSTANT,
+        flags: SECURITY_CENTER,
+      });
+      await journey.step("j01 step 2: SSO and MFA enforced as Felix Andersen", async (page) => {
+        const signIn = page.getByRole("heading", { name: "Firm sign-in" });
+        await expect(signIn).toBeVisible();
+        await expect(page.getByText("Microsoft Entra ID (SSO)").first()).toBeVisible();
+        await expect(page.getByText("Enforced · 46 of 46 enrolled").first()).toBeVisible();
+        await expect(
+          page.getByRole("switch", { name: "Require SSO for all firm users" }),
+        ).toBeVisible();
+        await expect(page.getByText("Day 4 of 30 · notify by Oct 10 if ≥ 500")).toBeVisible();
+      });
+      await journey.as("felix-andersen", "/settings/security?screen=ADM-06&st=d", {
+        clock: DEMO_INSTANT,
+        flags: SECURITY_CENTER,
+      });
+      await journey.step("j01 step 2: INC-2026-005 and its two-person decision", async (page) => {
+        const drawer = page.getByRole("dialog");
+        await expect(drawer.getByRole("progressbar", { name: "Day 4 of 30" })).toBeVisible();
+        await expect(
+          drawer.getByRole("button", { name: "Close as not reportable…" }),
+        ).toBeVisible();
+        await expect(drawer.getByRole("button", { name: "Start notification…" })).toBeVisible();
+      });
+      await journey.as("felix-andersen", "/settings/security?screen=ADM-06&st=h", {
+        clock: DEMO_INSTANT,
+        flags: SECURITY_CENTER,
+      });
+      await journey.step("j01 step 2: the WISP and the Pub 4557 evidence", async (page) => {
+        await expect(
+          page.getByText(/BH WISP v4 \(IRS Pub 5708 format\) · approved by Margaret Okonkwo/),
+        ).toBeVisible();
+        await expect(page.getByRole("button", { name: "Export WISP pack" })).toBeVisible();
       });
     },
   );

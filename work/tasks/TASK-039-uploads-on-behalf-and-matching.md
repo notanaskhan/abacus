@@ -100,6 +100,7 @@ All of SPEC-023.
 
   The smoke's request item and its two evidence versions stay in the local database (evidence can't be deleted).
 - `2026-10-09` — SPEC-023 approved and merged (#72). Design written for founder review.
+- 2026-10-27: ADR-078 back-fill suite `backend/tests/integration/backfill/test_q03t047_requests_client_hub.py`; see `work/tasks/TASK-1438-*.md` (S11 lane 7).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

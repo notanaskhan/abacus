@@ -93,6 +93,7 @@ All of SPEC-021.
   - backend unit 8,968 and web 153 passed; the gates pass;
   - a local smoke on seeded evidence passed (versions listed, a 6 KB trial balance downloaded and verified).
 - `2026-10-09` — SPEC-021 approved and merged (#68). Design written for founder review.
+- 2026-10-27: ADR-078 back-fill suite `backend/tests/integration/backfill/test_q03t047_requests_client_hub.py`; see `work/tasks/TASK-1438-*.md` (S11 lane 7).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

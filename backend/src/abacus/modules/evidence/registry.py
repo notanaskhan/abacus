@@ -45,6 +45,11 @@ TABLES: frozenset[str] = frozenset(
         "engagement_exports",
         "engagement_export_downloads",
         "engagement_export_contents",
+        "firm_export_schedules",  # G-02-T19 (0241): the firm export's monthly schedule
+        # Q-02-T43 (0216): firm exports with dual approval and their 15-minute links.
+        "firm_exports",
+        "firm_export_links",
+        "firm_export_downloads",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -69,10 +74,16 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "evidence_version_voids",  # R-01 Story 2.2 (0159)
         "engagement_export_downloads",  # A-01-T18 (0191)
         "engagement_export_contents",  # A-01-T18 (0191)
+        "firm_export_links",  # Q-02-T43 (0216)
+        "firm_export_downloads",  # Q-02-T43 (0216)
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
+    # G-02-T19 (0241): a live person's schedule (the trigger clears approvals on insert).
+    "firm_export_schedules": frozenset(
+        {"tenant_id", "time_zone", "contents", "paused", "status", "updated_by"}
+    ),
     "evidence_items": frozenset(
         {"id", "tenant_id", "engagement_id", "title", "created_by_kind", "created_by_id"}
     ),
@@ -137,9 +148,26 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"tenant_id", "export_id", "user_id", "bytes_sent", "range_start", "range_end", "mfa_at"}
     ),
     "engagement_export_contents": frozenset({"tenant_id", "export_id", "evidence_version_id"}),
+    # Q-02-T43 (0216): the request; status starts awaiting_approval (the default).
+    "firm_exports": frozenset(
+        {"id", "tenant_id", "scope", "origin", "requested_by", "requested_by_kind"}
+        | {"request_mfa_at", "approver_id"}
+    ),
+    "firm_export_links": frozenset(
+        {"id", "tenant_id", "export_id", "user_id", "expires_at", "mfa_at"}
+    ),
+    "firm_export_downloads": frozenset(
+        {"tenant_id", "export_id", "link_id", "user_id", "bytes_sent", "range_start"}
+        | {"range_end", "mfa_at"}
+    ),
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
+    # G-02-T19 (0241): set and approved in place against `version`; never deleted.
+    "firm_export_schedules": frozenset(
+        {"time_zone", "contents", "paused", "status", "approved_security_by"}
+        | {"approved_partner_by", "version", "updated_by", "updated_at"}
+    ),
     "inbox_files": frozenset(  # SPEC-023: assigned or discarded, once
         {"status", "assigned_item_id", "assigned_version_id", "decided_by", "decided_at"}
         | {"sort_outcome"}  # R-01-T09 (0153): once, from NULL (trigger)
@@ -162,5 +190,12 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         {"status", "as_of_seq", "bundle_sha256", "manifest_sha256", "bytes", "file_count"}
         | {"request_count", "segment_count", "object_prefix", "ready_at", "expires_at"}
         | {"failure_code", "void_reason", "undone_at", "undone_by"}
+    ),
+    # Q-02-T43 (0216): status forward only, the decision bound to the named approver and the
+    # stamps written once (the guard trigger).
+    "firm_exports": frozenset(
+        {"status", "decided_by", "decided_at", "decided_mfa_at", "decline_reason"}
+        | {"bundle_sha256", "manifest_sha256", "bytes", "segment_count", "object_prefix"}
+        | {"ready_at", "available_until", "downloaded_at", "failure_code"}
     ),
 }

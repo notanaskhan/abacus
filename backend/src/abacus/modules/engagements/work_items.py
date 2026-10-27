@@ -13,7 +13,7 @@ from datetime import date, datetime
 from typing import Final, cast
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, insert, select, text, update
+from sqlalchemy import ColumnElement, func, insert, select, text, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import QueryableAttribute
 
@@ -237,6 +237,32 @@ async def lock_engagement(tx: UnitOfWork, engagement_id: UUID, at: datetime) -> 
     await tx.session.execute(
         update(Engagement).where(Engagement.id == engagement_id).values(status="archived")
     )
+
+
+async def archive_work_item(tx: UnitOfWork, work_item_id: UUID, at: datetime) -> bool:
+    """A-01-T23 (C1's archived transition, record mode): the work item records `archived_at`
+    (never `archive_locked_at`: this is not A-07's seal, P-43), and its engagement becomes
+    archived, read-only through `authorise`, once every one of its work items is. Returns whether
+    the engagement is now archived. In the caller's unit, which has locked the engagement."""
+    engagement_id = await tx.session.scalar(
+        update(WorkItem)
+        .where(WorkItem.id == work_item_id, WorkItem.archived_at.is_(None))
+        .values(archived_at=at)
+        .returning(WorkItem.engagement_id)
+    )
+    if engagement_id is None:
+        raise NotFound("work_item")
+    open_items = await tx.session.scalar(
+        select(func.count())
+        .select_from(WorkItem)
+        .where(WorkItem.engagement_id == engagement_id, WorkItem.archived_at.is_(None))
+    )
+    if open_items:
+        return False
+    await tx.session.execute(
+        update(Engagement).where(Engagement.id == engagement_id).values(status="archived")
+    )
+    return True
 
 
 # --- F-03-T22: creating work items of every kind ------------------------------------------------

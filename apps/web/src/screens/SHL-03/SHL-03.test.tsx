@@ -253,11 +253,13 @@ describe("SHL-03 behaviour (P-01 AC 2.1)", () => {
     ]);
   });
 
-  it("DEC-463: Firm settings opens ADM-01 while firm_settings.v2 is on, the legacy page otherwise", () => {
-    const nav = { firm_settings: "write", audit_log: "read" } as const;
-    const path = (on: boolean): (string | null)[] => adminRows(nav, on).map((r) => r.path);
-    expect(path(false)).toEqual(["/admin/methodology", "/admin/audit-log"]);
-    expect(path(true)).toEqual(["/settings/general", "/admin/audit-log"]);
+  it("DEC-463, DEC-594: Firm settings opens ADM-01 and Users & roles ADM-02 (flag retired)", () => {
+    const nav = { firm_settings: "write", users_roles: "write", audit_log: "read" } as const;
+    expect(adminRows(nav).map((r) => r.path)).toEqual([
+      "/settings/general",
+      "/settings/people",
+      "/admin/audit-log",
+    ]);
   });
 
   it("AC 2.1.2: the firm menu names no role code", () => {
@@ -313,7 +315,7 @@ describe("SHL-03 behaviour (P-01 AC 2.1)", () => {
     live("a", { navigate });
     const menu = await tray();
     fireEvent.click(within(menu).getByRole("menuitem", { name: "Users & roles" }));
-    expect(navigate).toHaveBeenCalledWith("/admin/people");
+    expect(navigate).toHaveBeenCalledWith("/settings/people");
     expect(screen.queryByRole("menu", { name: "Firm and profile" })).toBeNull();
   });
 

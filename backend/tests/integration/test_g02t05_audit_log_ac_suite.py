@@ -48,8 +48,8 @@ EXPORT_STATUS: Final = ("GET", "/v1/audit-events/exports/{export_id}")
 EXPORT_LINK: Final = ("POST", "/v1/audit-events/exports/{export_id}/link")
 ROUTES: Final = (LIST, DETAIL, EXPORT, EXPORT_STATUS, EXPORT_LINK)
 # Routes still answering 501 (the stub); remove each as its task makes it live. G-02-T08
-# (TASK-1329) made the list and the detail live.
-STUBBED: Final = frozenset({EXPORT, EXPORT_STATUS, EXPORT_LINK})
+# (TASK-1329) made the list and the detail live; G-02-T17 (TASK-1480) the export family.
+STUBBED: Final[frozenset[tuple[str, str]]] = frozenset()
 SSN: Final = "900-00-2208"
 IP_FELIX: Final = "198.51.100.57"
 

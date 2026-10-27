@@ -98,6 +98,13 @@ class ServiceUnavailable(Exception):
     """A dependency isn't reachable right now: 503."""
 
 
+class DomainUnavailable(ServiceUnavailable):
+    """A 503 with a fixed catalogue `code` (P-04-T24, ED-170): the contract names the answer, as
+    `service_unavailable` when no owner is registered to write a proposal's value."""
+
+    code: ClassVar[str] = "service_unavailable"
+
+
 class NotImplementedYet(Exception):
     """A contract stub whose implementation hasn't landed (contract first, AGENTS 15): 501
     `not_implemented`. Raised only behind the contract's flag."""
