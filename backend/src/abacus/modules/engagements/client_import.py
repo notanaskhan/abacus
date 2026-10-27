@@ -56,7 +56,6 @@ from sqlalchemy.types import DateTime, Integer, Text
 from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 from temporalio.exceptions import WorkflowAlreadyStartedError
 
-from abacus.kernel import clock
 from abacus.kernel.crypto import open_sealed, seal
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.dispatch import dispatch
@@ -477,7 +476,6 @@ async def upload_import(
     scored = await _score(ctx, parsed.rows, synthetic)
     import_id = uuid4()
     sealed_file = await seal(ctx.tenant_id, content, _file_aad(import_id))
-    now = await clock.now(ctx.tenant)
     async with uow(ctx.tenant) as tx:
         await tx.session.execute(
             insert(imports).values(
@@ -488,7 +486,8 @@ async def upload_import(
                 file_sealed=sealed_file,
                 file_sha256=hashlib.sha256(content).hexdigest(),
                 file_bytes=len(content),
-                erase_after=now + RETENTION,
+                # From the row's own start (`started_at` is the same clock), so it reads 30 days.
+                erase_after=func.clock_timestamp() + RETENTION,
                 stage=_RUNNABLE,
                 mapping=parsed.mapping,
                 counts={},
@@ -756,15 +755,26 @@ async def _apply_row(
                     decision=DECISIONS.index(cast(Decision, decision)),
                 ),
             )
+        else:  # a skip, or a row nobody decided: marked applied, nothing written
+            tx.record(
+                "client_import.row_skipped",
+                target=Target(SUBJECT, import_id),
+                after=Ref(row_no=cast(int, row["row_no"])),
+            )
     return result is not None
 
 
-async def _fail_row(tenant: TenantContext, row_id: UUID, code: str) -> None:
+async def _fail_row(
+    tenant: TenantContext, import_id: UUID, row_id: UUID, row_no: int, code: str
+) -> None:
     async with uow(tenant) as tx:
         await tx.session.execute(
             sql_update(rows)
             .where(rows.c.id == row_id, rows.c.applied_at.is_(None))
             .values(applied_at=func.clock_timestamp(), error_code=code)
+        )
+        tx.record(
+            "client_import.row_failed", target=Target(SUBJECT, import_id), after=Ref(row_no=row_no)
         )
 
 
@@ -812,7 +822,13 @@ async def apply_import(
         except _AppliedAlready:
             continue
         except (*_ROW_ERRORS, NotFound, Forbidden) as exc:
-            await _fail_row(tenant, cast(UUID, row["id"]), _error_code(exc))
+            await _fail_row(
+                tenant,
+                import_id,
+                cast(UUID, row["id"]),
+                cast(int, row["row_no"]),
+                _error_code(exc),
+            )
             continue
         applied += int(wrote)
     return applied

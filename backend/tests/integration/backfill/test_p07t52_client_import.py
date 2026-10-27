@@ -205,7 +205,7 @@ async def test_the_run_imports_the_rest_skips_two_and_a_rerun_changes_nothing(w:
         _json(await w.call("PUT", f"{decide}/{rows[n]['id']}/decision", body={"decision": "skip"}))
     clients_before = await w.count("SELECT count(*) FROM clients WHERE tenant_id = $1")
 
-    started = _json(await w.call("POST", f"{IMPORTS}/{import_id}/run", key="run-1"), 202)
+    started = _json(await w.call("POST", f"{IMPORTS}/{import_id}/run", key="run-key-one"), 202)
     assert started["stage"] == "importing"
     tenant, iid = w.tenant, uuid.UUID(import_id)
     assert await client_import.apply_import(tenant, iid) == 3
@@ -222,9 +222,9 @@ async def test_the_run_imports_the_rest_skips_two_and_a_rerun_changes_nothing(w:
 
     # A re-run: the same key answers the same; another key is refused; the activity applies
     # nothing again.
-    again = _json(await w.call("POST", f"{IMPORTS}/{import_id}/run", key="run-1"), 202)
+    again = _json(await w.call("POST", f"{IMPORTS}/{import_id}/run", key="run-key-one"), 202)
     assert again["id"] == import_id
-    refused = await w.call("POST", f"{IMPORTS}/{import_id}/run", key="run-2")
+    refused = await w.call("POST", f"{IMPORTS}/{import_id}/run", key="run-key-two")
     assert refused.status_code == 409 and refused.json()["detail"] == "import_already_run"
     with pytest.raises(client_import.ImportNotRunnable):
         await client_import.apply_import(tenant, iid)
@@ -245,7 +245,7 @@ async def test_new_rows_create_clients_once(w: World) -> None:
         )
     )
     before = await w.count("SELECT count(*) FROM clients WHERE tenant_id = $1")
-    _json(await w.call("POST", f"{IMPORTS}/{import_id}/run", key="run-new"), 202)
+    _json(await w.call("POST", f"{IMPORTS}/{import_id}/run", key="run-key-new"), 202)
     iid = uuid.UUID(import_id)
     await client_import.apply_import(w.tenant, iid)
     # A retried activity (the workflow's retry) applies nothing twice.
