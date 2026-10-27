@@ -11321,6 +11321,33 @@
         "title": "ClientIntakeDraftPayload",
         "type": "object"
       },
+      "ClientInvitationCreatedOut": {
+        "description": "ED-007 (SPEC-015 AC-1): the new invitation's id, email and status; never the link.",
+        "properties": {
+          "email": {
+            "cls": "confidential",
+            "title": "Email",
+            "type": "string"
+          },
+          "invitation_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Invitation Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ClientInvitationStatus",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "invitation_id",
+          "email",
+          "status"
+        ],
+        "title": "ClientInvitationCreatedOut",
+        "type": "object"
+      },
       "ClientInvitationIn": {
         "additionalProperties": false,
         "properties": {
@@ -11362,6 +11389,16 @@
         ],
         "title": "ClientInvitationOut",
         "type": "object"
+      },
+      "ClientInvitationStatus": {
+        "enum": [
+          "pending",
+          "accepted",
+          "revoked",
+          "expired"
+        ],
+        "title": "ClientInvitationStatus",
+        "type": "string"
       },
       "ClientObjectRefOut": {
         "description": "An opaque reference an overview row links to (an engagement, a work item, a binder).",
@@ -73967,7 +74004,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ClientInvitationOut"
+                  "$ref": "#/components/schemas/ClientInvitationCreatedOut"
                 }
               }
             },
