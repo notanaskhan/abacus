@@ -32,7 +32,7 @@ The trigger functions are SECURITY INVOKER with a pinned search path: they read 
 caller's own row-level security.
 
 Revision ID: 0223
-Revises: 0220
+Revises: 0222
 """
 
 from __future__ import annotations
@@ -42,7 +42,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, insert_only, tenant_table
 
 revision = "0223"
-down_revision = "0220"
+down_revision = "0222"
 branch_labels = None
 depends_on = None
 
