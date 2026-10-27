@@ -141,13 +141,21 @@ async def _write(
     return len(added)
 
 
-async def _detect(tenant_id: UUID, kind: str, cause: str, source_ids: Sequence[UUID]) -> int:
+async def _detect(
+    tenant_id: UUID,
+    kind: str,
+    cause: str,
+    source_ids: Sequence[UUID],
+    source_type: str = VERSION_SOURCE,
+    engagement_id: UUID | None = None,
+) -> int:
     tenant = _system(tenant_id)
     try:
         async with uow(tenant) as tx:
-            rows = await _not_retired(
-                tx.session, await citations_on(tx.session, VERSION_SOURCE, source_ids)
-            )
+            found = await citations_on(tx.session, source_type, source_ids)
+            if engagement_id is not None:  # only the citing engagement's (security review M)
+                found = [r for r in found if r.engagement_id == engagement_id]
+            rows = await _not_retired(tx.session, found)
             written = await _write(tx, tenant_id, rows, kind, cause) if rows else 0
             if not written:
                 raise _Unchanged
@@ -176,6 +184,22 @@ async def on_version_withdrawn(event: OutboxEvent) -> None:
     """AC6.1: a withdrawn version's citations are broken."""
     version_id = UUID(str(event.payload["evidence_version_id"]))
     await _detect(event.tenant_id, "broken", broken_cause(version_id), [version_id])
+
+
+async def detect_moved(
+    tenant_id: UUID,
+    source_type: str,
+    cause: str,
+    source_ids: Sequence[UUID],
+    *,
+    engagement_id: UUID,
+) -> int:
+    """For a source whose successor is another row (a ledger snapshot a trial balance re-version
+    replaced, A-02-T22): citations to `source_ids` made on `engagement_id` move, with `cause`, in
+    the system's own unit of work. Another engagement of the same entity (a prior year, tax, a
+    walled one) keeps its citations: its trial balance did not move (security review M).
+    Idempotent on the cause. Returns the rows moved."""
+    return await _detect(tenant_id, "moved", cause, source_ids, source_type, engagement_id)
 
 
 async def mark_sources_superseded(
@@ -410,6 +434,7 @@ __all__ = [
     "NotMoved",
     "RelinkUnverified",
     "broken_cause",
+    "detect_moved",
     "mark_sources_superseded",
     "moved_cause",
     "on_version_created",

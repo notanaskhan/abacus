@@ -4,7 +4,7 @@
 |---|---|
 | Register row | Screen-family contract in `docs/contracts/README.md` (A-01 §8.1; chapter 01 may promote it into C1–C21) |
 | Version | v1 |
-| Status | stub (A-01-T02, 2026-10-24); PATCH profile and POST phase live behind the flag (A-01-T05, 2026-10-24); index, cockpit and Source Documents live behind the flag (A-01-T08 to T10, 2026-10-25) |
+| Status | stub (A-01-T02, 2026-10-24); PATCH profile and POST phase live behind the flag (A-01-T05, 2026-10-24); index, cockpit and Source Documents live behind the flag (A-01-T08 to T10, 2026-10-25); release and archive records live behind the flag (A-01-T23, 2026-10-27) |
 | Provider epic | A-01 |
 | Consumers | AUD-01, AUD-02, AUD-03 (A-01-T11, T12, T15); A-02 (Trial Balance section), A-03…A-09, P-09 / P-10 (dock host, rail sync by `work_item_ref`), K-04 (Board, gear), X-01 / X-03 (segments), I-01 (index counts) |
 | Freeze sprint | S8 (freeze Fri Feb 19, 2027 per A-01 §8.1) |
@@ -55,7 +55,7 @@ From `docs/product/status-vocabulary.yaml`: `audit_engagement` (planning, fieldw
 | Status | Code | When |
 |---|---|---|
 | 404 | `not_found` | flag off; work item outside the tenant, walled, or not assurance |
-| 403 | `forbidden` | role, independence, an agent or system context; `mfa_required` on release and archive with stale MFA |
+| 403 | `forbidden` | role, independence, an agent or system context (a plain 403); on release and archive a stale second factor answers `facts.reason = mfa_required` and nothing else does (DEC-592) |
 | 403 | `archived_write` | a write on an archived work item |
 | 409 | `phase_backward` | the target phase is the current one or before it |
 | 409 | `phase_skip` | the target is beyond the next record-mode phase |
@@ -66,6 +66,7 @@ From `docs/product/status-vocabulary.yaml`: `audit_engagement` (planning, fieldw
 | 409 | `release_mode_in_app` | release record while the firm's `assurance_release_mode` is `in_app` (A-01-T23) |
 | 409 | `final_export_required`, `export_stale` | archive record without a ready, current final binder export (A-01-T23) |
 | 422 | `release_date_future` | release date after `clock.today()` (A-01-T23) |
+| 409 | `record_out_of_phase` | a release record before In review or once released; an archive record before Released (A-01-T23, DEC-590; `facts.phase`) |
 | 501 | `not_implemented` | flag on, task not landed |
 
 Bodies are `{"detail": ..., "code": ..., "facts": {...}}` with identifier-only facts.
@@ -76,8 +77,8 @@ Bodies are `{"detail": ..., "code": ..., "facts": {...}}` with identifier-only f
 | audit `assurance.profile_updated` | PATCH profile | work item, changed field names |
 | audit `assurance.phase_recorded` | a person records a phase | work item, from, to, mode `recorded` |
 | audit `assurance.phase_derived` | a registered gate's `gate.met` moves the phase | work item, from, to, gate |
-| audit `assurance.release_recorded` | external release (A-01-T23) | work item, date, kind, `mfa_at` |
-| audit `assurance.archive_recorded` | external archive (A-01-T23) | work item, export ID, manifest SHA-256, `mfa_at` |
+| audit `assurance.release_recorded` | external release (A-01-T23; human-only register) | work item, date (`YYYYMMDD`), `no_report`, `mfa_at` (epoch) |
+| audit `assurance.archive_recorded` | external archive (A-01-T23; human-only register) | work item, export ID, manifest SHA-256, `as_of_seq`, `engagement_archived`, `mfa_at`; never the firm-tool reference |
 | outbox `assurance.phase_changed` | every phase move | engagement, work item, from, to, mode |
 | outbox `gate.met` | consumed (C1) | engagement, gate |
 
@@ -100,8 +101,8 @@ A-01's own registrations (DEC-312): Overview rows `client`, `methodology`, `stan
 ## 11. Versioning
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
-| v1 | — | — | stub 2026-10-24 (A-01-T02); C5 v1.1 additive fields in place; profile and phase live (A-01-T05, DEC-262: phase-to-gate map, `phase_invalid` 422 for a reason over 300 characters); index, cockpit and Source Documents live 2026-10-25 (A-01-T08 to T10, DEC-311 to DEC-313; the cockpit's action is `engagement.read_metadata`, the C5 v1.1 fields filled) |
+| v1 | — | — | stub 2026-10-24 (A-01-T02); C5 v1.1 additive fields in place; profile and phase live (A-01-T05, DEC-262: phase-to-gate map, `phase_invalid` 422 for a reason over 300 characters); index, cockpit and Source Documents live 2026-10-25 (A-01-T08 to T10, DEC-311 to DEC-313; the cockpit's action is `engagement.read_metadata`, the C5 v1.1 fields filled); release and archive records live 2026-10-27 (A-01-T23, DEC-590 to DEC-592) |
 
 ## 12. Open points
 - DEC-261: slot shapes, the `engagement.read_metadata` index refusing portal principals in the route, and the C5 v1.1 fields as optional.
-- The plan's interim G8 and G9 record-mode providers (A-01-T23) meet SPEC-314's in-app G8 and G9 providers, already registered globally; A-01-T23 decides how they coexist per firm (`assurance_release_mode`).
+- Decided (DEC-590): one G8 and one G9 provider stay registered for every firm, each met by SPEC-314's in-app act or by the record-mode record; `assurance_release_mode` (typed firm setting, `external` default) decides which write is open. A record archive sets `work_items.archived_at`, never `archive_locked_at` (DEC-591). The AUD-01 row reads the recorded release date and, for a content reader, the firm-tool reference of an external archive.

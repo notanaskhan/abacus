@@ -29,6 +29,7 @@ GROUPS: Final = frozenset(
     | {"team"}  # P-07-T30 (DEC-327): the engagement partner's team approval
     | {"incident"}  # G-02-T02 (Q-02 AC-42): incident decisions
     | {"sign_off"}  # P-04-T22 (DEC-501): bulk sign-off
+    | {"release"}  # A-01-T23 (DEC-83): the record-mode release and archive
 )
 
 

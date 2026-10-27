@@ -1210,6 +1210,12 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"base_version_id", "sealed", "cta_target", "draft_version", "updated_by"}
             | {"updated_at"}
         ),
+        # R-01-T24 (0221): the firm's follow-up policy.
+        "follow_up_policies": frozenset(
+            {"cadence_days", "max_reminders", "send_local_time", "weekdays_only"}
+            | {"stop_on_binder_done", "notify_preparer_after_max", "cc_assigned_preparer", "mode"}
+            | {"version", "updated_by", "updated_at"}
+        ),
         "contacts": frozenset(
             {"display_name", "phone", "title", "organisation_name", "user_id", "portal_state"}
             | {"email", "party_kind", "version"}  # P-07-T25 (0146)
@@ -1234,9 +1240,14 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         ),
         # P-04-T03 (migration 0093): a note's status and assignee; the gates projection.
         "reviewable_notes": frozenset({"status", "assignee_user_id"}),
-        "human_gates": frozenset({"state", "assignee_user_id", "due_on", "updated_at"}),
+        "human_gates": frozenset(
+            {"state", "assignee_user_id", "due_on", "updated_at"}
+            # I-01-T04 (0223): the projector's derived Home columns.
+            | {"office_id", "blocked", "blocked_reason_code", "sort_hint"}
+        ),
         # P-04-T04 (migration 0094): card status; checkpoint name, star and status; issues.
-        "decision_cards": frozenset({"status"}),
+        # I-01-T04 (0223): the reserved person, for the reassign hook (guarded by trigger).
+        "decision_cards": frozenset({"status", "reserved_user_id"}),
         # P-04-T05 (migration 0095): suggestion and proposal state.
         "suggestions": frozenset({"status", "version"}),
         "proposals": frozenset({"state", "routed_to_user_id", "version"}),
@@ -1356,6 +1367,12 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         ),
         # P-07-T30 (0155): ENG-05's hours and the portal flag; roles stay behind the definers.
         "engagement_members": frozenset({"budget_hours", "shown_on_portal"}),
+        # K-01-T05 (0224): a draft step's content; the frozen trigger guards published ones.
+        "program_steps": frozenset(
+            {"number", "text", "assertions", "standard_refs", "level", "guidance", "prepopulates"}
+            | {"depends_on_step_keys", "flag_resolution", "flag_resolved_by", "flag_resolved_at"}
+            | {"edited_by", "edited_at", "row_version"}
+        ),
         # K-01-T02 (0180): guarded lifecycle transitions (ED-111: declared without this row).
         "methodology_version_states": frozenset(
             {
@@ -1393,6 +1410,25 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "undone_by",
             }
         ),
+        # Q-02-T43 (0216): status forward only; the decision is the named approver's (guard).
+        "firm_exports": frozenset(
+            {
+                "status",
+                "decided_by",
+                "decided_at",
+                "decided_mfa_at",
+                "decline_reason",
+                "bundle_sha256",
+                "manifest_sha256",
+                "bytes",
+                "segment_count",
+                "object_prefix",
+                "ready_at",
+                "available_until",
+                "downloaded_at",
+                "failure_code",
+            }
+        ),
         # G-02-T10 (0192): the label index is re-labelled in place; an audit-log export moves
         # through its build and records what it wrote.
         "audit_event_labels": frozenset(
@@ -1402,6 +1438,36 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "audit_exports": frozenset(
             {"status", "updated_at", "seq_from", "seq_to", "row_count", "expires_at"}
             | {"csv_key", "manifest_key", "manifest_sha256", "signature_key_ref"}
+            | {
+                "segment_count",
+                "bundle_bytes",
+                "failure_code",
+                "signature_key_id",
+            }  # G-02-T17 (0243)
+        ),
+        # G-02-T18 (0240): an incident's status, only with both decisions (the trigger).
+        "security_incidents": frozenset({"status", "closed_at", "notification_started_at"}),
+        # G-02-T19 (0241): the firm export schedule, set and approved against its version.
+        "firm_export_schedules": frozenset(
+            {"time_zone", "contents", "paused", "status", "approved_security_by"}
+            | {"approved_partner_by", "version", "updated_by", "updated_at"}
+        ),
+        # G-02-T20 (0242): the safeguards record and control statuses (the QI's), and the WISP
+        # pack jobs (completed once by the system).
+        "safeguards_programs": frozenset(
+            {"qi_user_id", "wisp_name", "wisp_evidence_item_id", "wisp_approved_by"}
+            | {"wisp_approved_on", "annual_report_last_on", "annual_report_next_due_month"}
+            | {"access_review_quarter", "access_review_due_on", "access_review_status"}
+            | {"training_completed", "ptin_attested", "ptin_total", "updated_by", "version"}
+            | {"updated_at"}
+        ),
+        "safeguards_control_statuses": frozenset(
+            {"status", "due_on", "scheduled_on", "evidence_item_id", "note", "updated_by"}
+            | {"updated_at"}
+        ),
+        "wisp_packs": frozenset(
+            {"status", "document_count", "segment_count", "bundle_bytes", "failure_code"}
+            | {"expires_at", "updated_at"}
         ),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
@@ -1568,6 +1634,7 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "suggestion_decisions": "agent_decisions_immutable",  # 0095 (P-04-T05)
         "proposal_rows": "agent_decisions_immutable",  # 0095 (P-04-T05)
         "proposal_decisions": "agent_decisions_immutable",  # 0095 (P-04-T05)
+        "inbox_match_decisions": "agent_decisions_immutable",  # 0232 (P-04-T25)
         "ledger_snapshots": LEDGER_FUNCTION,
         "trial_balance_lines": LEDGER_FUNCTION,
         "review_decisions": "review_decisions_immutable",  # TASK-019 (ADR-004)
@@ -1581,6 +1648,10 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "connection_consent_links": "connection_consents_immutable",  # 0195 (A-02-T13)
         "engagement_export_downloads": "engagement_export_rows_immutable",  # 0191 (TASK-1334)
         "engagement_export_contents": "engagement_export_rows_immutable",  # 0191 (TASK-1334)
+        "firm_export_links": "firm_export_links_immutable",  # 0216 (TASK-1403)
+        "firm_export_downloads": "firm_export_links_immutable",  # 0216 (TASK-1403)
+        "assurance_external_releases": "assurance_external_records_immutable",  # 0226 (TASK-1443)
+        "assurance_external_archives": "assurance_external_records_immutable",  # 0226 (TASK-1443)
     }
     assert _evidence_problems(evidence) == []
 
@@ -1998,6 +2069,9 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"audit_request_session"}  # 0172 (G-02-T06): the staff session behind a request
         | {"agent_stage_set"}  # 0181 (Q-02-T07): the staff route's stage row
         | {"integration_catalog_rows", "integration_catalog_load"}  # 0194 (A-02-T12)
+        # 0242 (G-02-T20): staff-imported, two-person-published Pub 4557 controls; the firm's read.
+        | {"safeguards_controls_import", "safeguards_controls_publish"}
+        | {"safeguards_controls_published"}
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
 

@@ -60,7 +60,7 @@ from abacus.modules.evidence.uploads import (
 from abacus.modules.identity.api import (
     AuthContext,
     Forbidden,
-    authorise,
+    authorise_on_condition,
     engagement_role_of,
     names_of,
     refuse_unmasked_read,
@@ -132,11 +132,10 @@ async def _role(ctx: AuthContext, engagement_id: UUID) -> str:
     on it, and client contributors (who may assign only to their own items)."""
     engagement = await get_ref(ctx, engagement_id)
     role = await engagement_role_of(ctx.tenant, engagement_id, ctx.user_id)
-    try:
-        await authorise(ctx, "evidence.upload", engagement.resource())
-    except Forbidden as denied:
-        if denied.layer != "role" or role != "client_contributor":
-            raise
+    # A contributor's `assigned_only` grant is enforced item by item at assignment (ED-167).
+    condition = await authorise_on_condition(ctx, "evidence.upload", engagement.resource())
+    if condition is not None and role != "client_contributor":
+        raise Forbidden("evidence.upload", "role")
     return role or ""
 
 

@@ -50,5 +50,25 @@ export const COPY = {
   agentDraft: "Draft · Accrued Agent",
   doesNotTie: "Does not tie · linked to an issue",
   empty: "No trial balance yet",
+  /** A-02-T24: the empty state's adoption (A-02 §3.1 AC-1). */
+  adoptBody: "Adopt a pulled trial balance as this engagement's trial balance of record.",
+  adopt: "Adopt as trial balance of record",
+  snapshotChoice: "Pulled trial balance",
+  snapshotOption: (period: string, source: string, at: string) =>
+    `${period} · ${source} · pulled ${at}`,
+  /** AC-7.1: "A newer trial balance is available · pulled 9:15 AM · 3 lines changed". */
+  newer: (at: string, lines: number) =>
+    `A newer trial balance is available · pulled ${at} · ${String(lines)} ${lines === 1 ? "line" : "lines"} changed`,
+  useVersion: (n: number) => `Use v${String(n)}…`,
+  reason: "Reason",
+  adoptVersion: "Adopt",
+  cancel: "Cancel",
+  /** The source menu (A-02 §3.11, §3.12). */
+  source: "Source",
+  pullLatest: "Pull latest",
+  askReconnect: "Ask client to reconnect",
+  reconnectAsked: "Reconnect requested",
+  pullStarted: "Pull started",
+  failed: "That didn't work. Try again.",
   notFound: "This trial balance isn't available.",
 } as const;

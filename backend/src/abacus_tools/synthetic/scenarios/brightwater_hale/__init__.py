@@ -8,6 +8,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale import (
     email_templates,  # registers "email_templates" (R-01-T22)
     firm_people,  # registers "people" (G-01-T06)
     portal,  # registers "portal" (P-08-T14)
+    portal_pbc,  # registers "portal_pbc" (R-01-T11)
     shell,  # registers "shell" (P-01-T07)
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.scenario import (
@@ -27,5 +28,6 @@ __all__ = [
     "email_templates",
     "firm_people",
     "portal",
+    "portal_pbc",
     "shell",
 ]

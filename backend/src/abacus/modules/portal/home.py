@@ -40,10 +40,15 @@ from abacus.modules.portal.home_sources import (
 )
 
 # The sources P-08 ships register on import; later epics add their own modules (C5 v1.1).
+from abacus.modules.portal.home_sources import connections as _connections
 from abacus.modules.portal.home_sources import engagements as _engagements
 from abacus.modules.portal.home_sources import requests as _requests
 
-LOADED = (_requests.requests_source, _engagements.engagements_source)
+LOADED = (
+    _requests.requests_source,
+    _engagements.engagements_source,
+    _connections.connections_source,  # A-02-T23: the reconnect to-do
+)
 
 
 class PortalPreferencesStale(DomainConflict):

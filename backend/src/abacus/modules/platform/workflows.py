@@ -47,6 +47,9 @@ with workflow.unsafe.imports_passed_through():
         ProvisionTenantInput,
         ProvisionTenantResult,
         TenantKeyInput,
+        WispPackFacts,
+        WispPackFailure,
+        WispPackInput,
     )
 
 KMS_CHILD_PATCH: Final = "tenant_key_v1"
@@ -396,4 +399,80 @@ class CanaryWorkflow:
             result_type=CanaryResult,
             start_to_close_timeout=_CANARY_STEP_TIMEOUT,
             retry_policy=_CANARY_REPORT_RETRY,
+        )
+
+
+# --- G-02-T18: the FTC clock reminders, daily on a Schedule. v1, recorded in its history. -------
+
+INCIDENT_REMINDERS_ID: Final = "incident_reminders:platform"
+
+
+@workflow.defn(name="IncidentClockReminders")
+class IncidentClockRemindersWorkflow:
+    """`incident_reminders:platform`: days 20, 25 and 29 of each open notification event's clock,
+    to the QI and the partners, once each. One activity per run, started only by its Schedule
+    (overlap SKIP); a change goes behind `workflow.patched`, so
+    `incident-reminders-v1-sent.json` keeps replaying."""
+
+    @workflow.run
+    async def run(self) -> int:
+        return await workflow.execute_activity(
+            "platform.incident_reminders",
+            result_type=int,
+            start_to_close_timeout=_JOB_TIMEOUT,
+            retry_policy=_JOB_RETRY,
+        )
+
+
+# --- G-02-T20: Export WISP pack (batch). v1, recorded in its histories. ------------------------
+
+WISP_DECIDED: Final = ("requester_not_member", "exports_unavailable", "wisp_missing")
+_WISP_TIMEOUT: Final = timedelta(minutes=2)
+_WISP_BUILD_TIMEOUT: Final = timedelta(minutes=20)
+_WISP_BUILD_RETRY: Final = RetryPolicy(
+    maximum_attempts=3, non_retryable_error_types=list(WISP_DECIDED)
+)
+_WISP_STAMP_RETRY: Final = RetryPolicy(maximum_attempts=10)
+
+
+def wisp_pack_workflow_id(tenant_id: str, pack_id: str) -> str:
+    return f"wisp_pack:{tenant_id}:{pack_id}"
+
+
+@workflow.defn(name="wisp_pack")
+class WispPackWorkflow:
+    """`wisp_pack:<tenant>:<pack_id>` (reuse rejected): zip the WISP and its linked evidence,
+    read as the requester, into the exports bucket, then mark the pack ready; a failed build
+    marks it failed with its code."""
+
+    @workflow.run
+    async def run(self, given: WispPackInput) -> str:
+        try:
+            facts = await workflow.execute_activity(
+                "platform.wisp_pack_build",
+                given,
+                result_type=WispPackFacts,
+                start_to_close_timeout=_WISP_BUILD_TIMEOUT,
+                retry_policy=_WISP_BUILD_RETRY,
+            )
+        except ActivityError as error:
+            cause = error.cause
+            code = (
+                cause.type
+                if isinstance(cause, ApplicationError) and cause.type in WISP_DECIDED
+                else "build_error"
+            )
+            return await workflow.execute_activity(
+                "platform.wisp_pack_failed",
+                WispPackFailure(given.tenant_id, given.pack_id, code),
+                result_type=str,
+                start_to_close_timeout=_WISP_TIMEOUT,
+                retry_policy=_WISP_STAMP_RETRY,
+            )
+        return await workflow.execute_activity(
+            "platform.wisp_pack_ready",
+            facts,
+            result_type=str,
+            start_to_close_timeout=_WISP_TIMEOUT,
+            retry_policy=_WISP_STAMP_RETRY,
         )

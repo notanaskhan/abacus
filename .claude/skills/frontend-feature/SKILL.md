@@ -53,3 +53,25 @@ code goes into `domain/<area>/` and old screens move there when touched).
 ## Routes (F-03-T17)
 - The route tree is split by area: `apps/web/src/routes/root.tsx` (root, shell, `lazyScreen`, `useParam`), `routes/firm/<area>.tsx` mounted from `routes/firm/index.ts` in the bar's order, and `routes/portal.tsx`. `router.tsx` only assembles them.
 - A new screen is a `lazyScreen(async () => (await import("../../screens/X")).X)` in its area file, so it builds as its own chunk; read path parameters with `useParam("name")`.
+
+## The portal entry (P-08-T29; P-08-T07, DEC-59)
+The client portal is a second Vite entry, not an area of the firm tree. To add a portal screen:
+- **Entry and tree.** `apps/web/portal.html` → `src/entries/portal.tsx` → `src/routes/portal/index.tsx`
+  (`portalTree`). Add one `page("/path", …)` there; the screen is a `lazy(...)` import so it is
+  its own chunk (the portal's first load has its own budget). Paths sit at the origin root (no
+  `/client` prefix); sign-in (`/sign-in`) and `/accept` are public, every other page goes through
+  `Area`, which ensures the BFF session (`app-core/auth/bff.ts`) and returns to `/sign-in?return=`.
+- **What it may import.** `src/portal/*`, `src/domain/portal/*`, `src/screens/POR-*`, `app-core`
+  and `@abacus/ui`. Never `src/legacy`, firm shell code, firm `domain/*` hooks or the firm route
+  tree: eslint L7 (INV-4) refuses it.
+- **Data.** Portal read models only (`/v1/portal/*`, the `portal` module), through the generated
+  client; the token is in memory (`bff.ts`), never in web storage.
+- **Manifest.** The `por.ts` entry keeps `path: null` (manifest paths resolve in the firm tree,
+  DEC-347) with `entry: true` when no designed link reaches it; status `fixture`, then `live`
+  once the screen reads the served routes.
+- **Fixtures.** `src/fixtures/install-portal.ts` answers each journey persona's portal routes;
+  add the screen's handlers there as well as in its scenario file.
+- **White label.** `pnpm build:portal` (tsc, `vite build --mode portal`,
+  `scripts/portal-dist-check.mjs`: no firm chunk, no "Accrued", no fixture string in dist/portal;
+  then the portal's bundle budget) and the L7 crawl.
+- Then follow the `portal-screen` skill for branding, shells and the three widths.

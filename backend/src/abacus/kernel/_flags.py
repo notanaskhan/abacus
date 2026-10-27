@@ -136,11 +136,6 @@ FIELDWORK_PROCEDURES = Flag(
     kind="boolean",
     default="false",
 )
-FIRM_SETTINGS_V2 = Flag(
-    name="firm_settings.v2",
-    kind="boolean",
-    default="false",
-)
 FOLLOW_UPS_SCHEDULED_SEND = Flag(
     name="follow_ups.scheduled_send",
     kind="boolean",
@@ -208,11 +203,6 @@ NOTIFICATIONS_EMAIL = Flag(
 )
 NOTIFICATIONS_V2 = Flag(
     name="notifications.v2",
-    kind="boolean",
-    default="false",
-)
-PORTAL_DOCUMENTS_V2 = Flag(
-    name="portal.documents_v2",
     kind="boolean",
     default="false",
 )
@@ -307,7 +297,6 @@ FLAGS: dict[str, Flag] = {
     "evidence.withdrawal": EVIDENCE_WITHDRAWAL,
     "fieldwork.assessor": FIELDWORK_ASSESSOR,
     "fieldwork.procedures": FIELDWORK_PROCEDURES,
-    "firm_settings.v2": FIRM_SETTINGS_V2,
     "follow_ups.scheduled_send": FOLLOW_UPS_SCHEDULED_SEND,
     "guidance.drafting": GUIDANCE_DRAFTING,
     "home.dashboard": HOME_DASHBOARD,
@@ -322,7 +311,6 @@ FLAGS: dict[str, Flag] = {
     "methodology.programs": METHODOLOGY_PROGRAMS,
     "notifications.email": NOTIFICATIONS_EMAIL,
     "notifications.v2": NOTIFICATIONS_V2,
-    "portal.documents_v2": PORTAL_DOCUMENTS_V2,
     "portal.drop_sort": PORTAL_DROP_SORT,
     "portal.home_v2": PORTAL_HOME_V2,
     "portal.settings_editor": PORTAL_SETTINGS_EDITOR,

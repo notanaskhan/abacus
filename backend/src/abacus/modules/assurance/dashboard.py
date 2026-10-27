@@ -121,7 +121,10 @@ async def dashboard_for(ctx: AuthContext, engagement_id: UUID) -> Dashboard:
     # Requests: received of requested, and overdue ones to chase.
     items = await request_items_for(ctx, engagement_id)
     requested = [i for i in items if i.status in _REQUESTED]
-    overdue = await overdue_for(ctx.tenant, engagement_id, await today(ctx.tenant))
+    # A count of every overdue request, internal ones included (not a reminder).
+    overdue = await overdue_for(
+        ctx.tenant, engagement_id, await today(ctx.tenant), sendable_only=False
+    )
     if await could(ctx, ctx.user_id, "request_item.update", resource):
         next_up.extend(
             NextItem("chase_request", o.description[:120], "request_item", o.id, None)

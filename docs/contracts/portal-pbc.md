@@ -8,7 +8,7 @@
 | Provider epic | R-01 (portal read models: AY; requests and evidence writes: N), on P-06's binder and request routes and P-08's portal identity |
 | Consumers | R-01 (POR-03, POR-04, POR-14), T-02 (POR-05 "upload if yes" falls back to POR-04's upload), C-01 (POR-11 reuses the Request kit rows and the POR-04 `question` slot), A-09 (POR-23 reuses `ScopedRequestRoom` and the room projection), R-03 (mobile capture feeds POR-03 and POR-04), N-03 (INB-04 threads on POR-04 comments), A-01 and P-06 (the firm-side void row-menu) |
 | Freeze sprint | with the rest of C5 (S3, freeze Fri 2026-12-11) for the shapes here; R-01-T36 freezes the section |
-| Flags | `portal.documents_v2` (portal; owner ayushkbhatia; default off; created 2026-10-24, expires 2027-04-21 under the DEC-137 override; retired by R-01-T18), `portal.drop_sort` (portal; owner notanaskhan; same dates), `portal.third_party_room` (portal; owner ayushkbhatia; same dates) |
+| Flags | `portal.documents_v2` retired by R-01-T18 on 2026-10-27 (DEC-510): the documents reads and both undos are served to every firm, `portal.drop_sort` (portal; owner notanaskhan; same dates), `portal.third_party_room` (portal; owner ayushkbhatia; same dates) |
 | Spec | `docs/plan/epics/R-01.md` §3.1–§3.6, §4.3–§4.8; screen contracts `docs/screens/POR-03.md`, `POR-04.md`, `POR-14.md` |
 | ADRs | ADR-139 (P-36 conventions), ADR-140 (P-39), ADR-146 (client access grants), ADR-162 (P-31 withdrawal), ADR-163 (P-11 white label), ADR-005, ADR-031, ADR-050; DEC-24, DEC-58, DEC-59, DEC-63, DEC-139, DEC-240 |
 
@@ -22,11 +22,11 @@ Matrix: `docs/architecture/permission-matrix/portal.yaml` (new `portal_documents
 
 | Operation | Method and path | Matrix action | Roles allowed | Agent or system principal | Flag · lands with |
 |---|---|---|---|---|---|
-| Binder picker | `GET /v1/portal/binders?scope_id=` | `portal_documents.read` (`scope_only`) | client admin, client contributor whose grant covers the scope; no firm role | **denied** | `portal.documents_v2` · T07 |
-| POR-03 binder | `GET /v1/portal/binders/{binder_id}?filter=requested\|all\|uploaded_by_me\|needs_follow_up&category=` | `portal_documents.read` | as above | **denied** | `portal.documents_v2` · T07 |
-| POR-04 request | `GET /v1/portal/request-items/{item_id}` | `portal_documents.read` | as above | **denied** | `portal.documents_v2` · T07 |
-| Undo an Ignore | `POST /v1/portal/request-items/{item_id}/ignore/undo` + `Idempotency-Key` | `request_item.ignore` (existing) | client admin (client-visible), client contributor (assigned) | **denied** | `portal.documents_v2` · T08 |
-| Undo Mark as Done | `POST /v1/portal/binders/{binder_id}/mark-done/undo` + `Idempotency-Key` | `binder.mark_done` (existing) | client admin (client-visible), client contributor (assigned) | **denied** | `portal.documents_v2` · T08 |
+| Binder picker | `GET /v1/portal/binders?scope_id=` | `portal_documents.read` (`scope_only`) | client admin, client contributor whose grant covers the scope; no firm role | **denied** | none (retired, DEC-510) · T07 |
+| POR-03 binder | `GET /v1/portal/binders/{binder_id}?filter=requested\|all\|uploaded_by_me\|needs_follow_up&category=` | `portal_documents.read` | as above | **denied** | none (retired, DEC-510) · T07 |
+| POR-04 request | `GET /v1/portal/request-items/{item_id}` | `portal_documents.read` | as above | **denied** | none (retired, DEC-510) · T07 |
+| Undo an Ignore | `POST /v1/portal/request-items/{item_id}/ignore/undo` + `Idempotency-Key` | `request_item.ignore` (existing) | client admin (client-visible), client contributor (assigned) | **denied** | none (retired, DEC-510) · T08 |
+| Undo Mark as Done | `POST /v1/portal/binders/{binder_id}/mark-done/undo` + `Idempotency-Key` | `binder.mark_done` (existing) | client admin (client-visible), client contributor (assigned) | **denied** | none (retired, DEC-510) · T08 |
 | Drop one file | `POST /v1/portal/binders/{binder_id}/drops?filename=` raw body + `X-Drop-Batch` + `Idempotency-Key` → 202 | `evidence.upload` (existing) | client admin, client contributor (assigned) | system allowed only for connector retrieval, never through this route | `portal.drop_sort` · T09 |
 | Poll a drop batch | `GET /v1/portal/drops/{batch_id}` | `portal_documents.read` | the dropper; anyone else's batch is 404 | **denied** | `portal.drop_sort` · T09 |
 | Void a rule fulfilment | `POST /v1/engagements/{engagement_id}/fulfilments/{fulfilment_id}/void` `{reason: wrong_request}` + `Idempotency-Key` | `fulfilment.confirm` (existing) | engagement partner, manager, senior | **denied** (human only) | `portal.drop_sort` · T09 |

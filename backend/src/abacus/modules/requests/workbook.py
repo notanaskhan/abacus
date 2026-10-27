@@ -153,10 +153,12 @@ def read_rows(
     problems: list[Problem] = []
     rows: list[Row] = []
     empty = 0
+    width = 0
     try:
         if sheet not in workbook.sheetnames:
             raise RequestListInvalid([Problem(sheet, None, None, "missing_sheet")])
         for number, values in enumerate(_rows(workbook, sheet), start=1):
+            width = max(width, len(values))
             if number <= header_row:
                 continue
 
@@ -178,6 +180,15 @@ def read_rows(
             rows.append(Row(number, text, area_text, tier_text if tier_text in TIERS else None))
     finally:
         workbook.close()
+    # SPEC-018 AC-4 (ED-167): a mapped column past the sheet's last column is a problem, not a
+    # column of empty cells.
+    missing = [
+        Problem(sheet, None, column_name(index), "missing_column")
+        for index in (description, area, tier)
+        if index is not None and index >= width
+    ]
+    if missing:
+        raise RequestListInvalid(missing)
     if problems:
         raise RequestListInvalid(problems)
     return rows, empty

@@ -401,13 +401,22 @@ async def get(tenant_id: UUID, stored: StoredObject) -> bytes:
         if error_code(exc) in _MISSING:
             raise IntegrityError("recorded object version is missing") from None
         raise
-    if detached is None:
-        content = await open_sealed(tenant_id, sealed, stored.fingerprint)
-    else:
-        version_id = UUID(detached["version"] or detached["owner"])
-        key = await _key_of(tenant_id, version_id)
-        binding = _binding(version_id, stored.fingerprint, derived=detached["derived"] is not None)
-        content = await open_detached(tenant_id, sealed, binding, key)
+    try:
+        if detached is None:
+            content = await open_sealed(tenant_id, sealed, stored.fingerprint)
+        else:
+            version_id = UUID(detached["version"] or detached["owner"])
+            key = await _key_of(tenant_id, version_id)
+            binding = _binding(
+                version_id, stored.fingerprint, derived=detached["derived"] is not None
+            )
+            content = await open_detached(tenant_id, sealed, binding, key)
+    except DecryptionError:
+        # The key binds the fingerprint: a row whose fingerprint changed no longer opens, which is
+        # the same integrity failure as a mismatch (SPEC-021 AC-2, ED-167), never a 500.
+        raise IntegrityError(
+            "stored content does not open under its recorded fingerprint"
+        ) from None
     if fingerprint(content) != stored.fingerprint or len(content) != stored.size:
         raise IntegrityError("stored content does not match its fingerprint")
     return content

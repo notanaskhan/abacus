@@ -77,6 +77,8 @@ class SettingKey:
     required: bool = False
     read: Read | None = None  # an owner accessor; None: the typed store
     write: Write | None = None
+    # A-01-T23: an enumerated text key accepts only these codes (`assurance_release_mode`).
+    choices: tuple[str, ...] | None = None
 
 
 _KEYS: dict[tuple[str, str], SettingKey] = {}
@@ -218,6 +220,8 @@ def _checked(setting: SettingKey, value: Value) -> Value:
                 raise DisplayNameRequired if setting.key == "display_name" else SettingInvalid
             return None
         if len(value) > setting.max_length or "\n" in value:
+            raise SettingInvalid
+        if setting.choices is not None and value not in setting.choices:
             raise SettingInvalid
     return value
 

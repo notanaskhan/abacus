@@ -83,6 +83,8 @@ export interface AUD02Props {
   /** `?ov=export[:<id>]` or a record dialog (A-01-T24): the overlay it opens on. */
   overlay?: AuditOverlay;
   onOverlay?: (overlay: AuditOverlay) => void;
+  /** AUD-06's "Sign off…" (A-02-T24): the host opens `?ov=signoff:trial_balance:<tb>:L2`. */
+  onSignOff?: (tbId: string) => void;
 }
 
 /** The rail row whose canvas is AUD-06 (A-02-T09). */
@@ -174,6 +176,7 @@ function Cockpit({
   autoMode: autoModeStep,
   overlay,
   onOverlay,
+  onSignOff,
 }: Omit<AUD02Props, "auditId"> & { cockpit: AuditCockpitOut }): JSX.Element {
   // A-01-T24: "Export binder…" and the record-mode entries (DV-9, DV-4).
   const audit = useAuditActions(cockpit, overlay ?? null, onOverlay);
@@ -197,6 +200,7 @@ function Cockpit({
     onLink: () => {
       onDock?.("viewer", doc ?? null);
     },
+    ...(onSignOff === undefined ? {} : { onSignOff }),
   });
   const openDoc = (r: SourceDocumentRowOut): void => {
     const version = r.latest_upload?.evidence_version_id ?? null;
