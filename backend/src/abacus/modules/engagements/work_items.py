@@ -17,11 +17,8 @@ from sqlalchemy import ColumnElement, func, insert, select, text, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import QueryableAttribute
 
-from abacus.kernel._flags import ENGAGEMENTS_WORK_ITEMS_API
-from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
-from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import (
     ListPage,
     capped_total,
@@ -43,7 +40,6 @@ from abacus.modules.identity.api import (
     AuthContext,
     assert_assignable,
     authorise,
-    is_synthetic_firm,
     team_standing,
     visible,
     visible_scope,
@@ -517,15 +513,6 @@ class WorkItemRow:
     created_at: datetime
 
 
-async def work_items_api_on(tenant: TenantContext) -> bool:
-    """The C1 list's flag: on locally and in tests, for synthetic firms, or where it's set."""
-    if settings().environment in ("local", "test"):
-        return True
-    if await is_synthetic_firm(tenant):
-        return True
-    return await flag_enabled(tenant, ENGAGEMENTS_WORK_ITEMS_API)
-
-
 async def list_work_items(
     ctx: AuthContext,
     *,
@@ -536,9 +523,8 @@ async def list_work_items(
     limit: int | None = None,
 ) -> ListPage[WorkItemRow]:
     """Work items the person may read, newest first, on the list envelope with per-status counts
-    (the status filter left out of them). `NotFound` while the flag is off."""
-    if not await work_items_api_on(ctx.tenant):
-        raise NotFound("work_items")
+    (the status filter left out of them). Live for every firm (P-07-T15 retired
+    `engagements.work_items_api`)."""
     size = clamp_limit(limit)
     query = query_hash(engagement_id=engagement_id, kind=kind, status=status)
     after = (

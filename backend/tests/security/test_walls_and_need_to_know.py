@@ -58,7 +58,6 @@ FLAGS: Final = (
     "clients.v2",
     "contacts.v2",
     "engagements.v2",
-    "engagements.work_items_api",
     "notifications.v2",
     "compliance.legal_holds",
     "evidence.viewer_v1",
