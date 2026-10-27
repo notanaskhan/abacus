@@ -306,6 +306,10 @@ CATALOGUE: Final[dict[str, Kind]] = {
     ),
     # Q-02-T29: a legal hold was placed (the evidence module's `legal_hold.placed`).
     "legal_hold.placed": Kind("legal_hold_placed", _hold_notify, "legal_hold", "hold_id"),
+    # G-02-T24 (DEC-712): an AI policy version awaits the named partner (firm-level, not C13).
+    "ai_policy.publish_requested": Kind(
+        "ai_policy_approval_requested", _assignee, "ai_policy", None, None
+    ),
     # Q-02-T33: the incident register (the platform module's events; firm-level).
     "incident.recorded": Kind(
         "incident_recorded", _incident_recorded, "security_incident", "incident_id", None
@@ -438,6 +442,7 @@ TEMPLATES: Final[dict[str, str]] = {
     "risk.approval_requested": "A risk on {engagement} is waiting for your approval.",
     "finding.severity_proposed": "A deficiency on {engagement} is waiting for you to conclude.",
     "legal_hold.placed": "A legal hold was placed on {subject}.",
+    "ai_policy.publish_requested": "A new AI policy version is waiting for your approval.",
     "incident.recorded": "A security incident was recorded: {subject}.",
     "incident.propagated": "Accrued reported a security incident affecting your firm: {subject}.",
     "wall.created": "An ethical wall is waiting for your approval.",
@@ -516,6 +521,9 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     # through the admin import; none is committed.
     NotificationKind("ai_client_data_changed", "system", "ShieldCheck"),
     NotificationKind("legal_hold_placed", "system", "Lock"),
+    NotificationKind(
+        "ai_policy_approval_requested", "approval", "ShieldCheck", email_default=True
+    ),
     NotificationKind("incident_recorded", "system", "ShieldAlert"),
     NotificationKind("incident_from_accrued", "system", "ShieldAlert", email_default=True),
     NotificationKind("firm_export_approval_requested", "approval", "Download"),

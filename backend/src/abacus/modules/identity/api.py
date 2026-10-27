@@ -592,6 +592,7 @@ __all__ = [
     "agent_context_for_run",
     "agent_may_hold",
     "agents_paused",
+    "ai_client_data_opted_in",
     "allowed_actions",
     "assert_assignable",
     "audit_hidden_walls",

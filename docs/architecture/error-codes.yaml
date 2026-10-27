@@ -923,6 +923,11 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.service.NoLedger
     summary: No reconciled general ledger for the engagement's entity and year end.
+  no_pending_version:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.ai_policy_service.NoPendingVersion
+    summary: There is no version awaiting approval with that number.
   no_subsequent_ledger:
     status: 409
     raised_by:
@@ -1110,6 +1115,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.connections.ledger_import.FileTooLarge
+  pending_version_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.ai_policy_service.PendingVersionExists
+    summary: 'A version is already awaiting approval: withdraw it first.'
   person_invalid:
     status: 422
     raised_by:
@@ -1470,6 +1480,7 @@ codes:
   stale_version:
     status: 409
     raised_by:
+    - abacus.modules.agents.ai_policy_service.StaleDraft
     - abacus.modules.assurance.phase.ProfileStale
     - abacus.modules.communications.follow_up_policy.FollowUpPolicyStale
     - abacus.modules.communications.template_service.TemplateDraftStale
@@ -1519,6 +1530,7 @@ codes:
   superseded_by_ai_policy:
     status: 409
     raised_by:
+    - abacus.modules.identity.firm_settings.SupersededByAiPolicy
     - abacus.modules.identity.governance_errors.SupersededByAiPolicy
     summary: 'The firm is on the versioned AI policy (`ai_policy.v1`): the autonomy level is changed
       by publishing a policy version, not by `PUT /v1/firm/autonomy` (ADR-186 item 7).'

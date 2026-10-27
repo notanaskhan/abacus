@@ -9,6 +9,8 @@ from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.agents.activities import ACTIVITIES
 from abacus.modules.agents.ai_policy_contract import ai_policy_router
 from abacus.modules.agents.ai_policy_errors import AiPolicyLoosened, ApproverMustDiffer
+from abacus.modules.agents.ai_policy_service import Effective as EffectiveAiPolicy
+from abacus.modules.agents.ai_policy_service import effective_ai_policy
 from abacus.modules.agents.ai_policy_store import policy_autonomy_level
 from abacus.modules.agents.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.agents.citations import SheetLayoutError
@@ -220,6 +222,7 @@ __all__ = [
     "Citation",
     "CitationStates",
     "DraftOutcome",
+    "EffectiveAiPolicy",
     "EngagementAgent",
     "EngagementGraph",
     "EntryAssessInput",
@@ -270,6 +273,7 @@ __all__ = [
     "create_screening_run",
     "create_suggestion",
     "draft",
+    "effective_ai_policy",
     "engagement_graph",
     "fail_run",
     "graph_router",

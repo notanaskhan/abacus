@@ -43,6 +43,8 @@ TABLES: tuple[str, ...] = (
     "audit_events",
     "audit_exports",
     "auth_session_tenant_revocations",
+    "autonomy_policy_drafts",
+    "autonomy_policy_versions",
     "binder_activity",
     "binder_recipients",
     "budgets",

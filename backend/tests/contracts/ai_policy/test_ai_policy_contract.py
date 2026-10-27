@@ -20,9 +20,10 @@ from abacus.api.export_openapi import document
 from abacus.kernel._flags import AI_POLICY_V1
 from abacus.kernel.classification import level_of, unclassified_fields
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag
 from abacus.modules.agents import ai_policy_contract as contract
+from abacus.modules.agents import ai_policy_service as service
 from abacus.modules.identity.api import AuthContext, Forbidden
 from abacus.modules.identity.authz.matrix import RULES
 
@@ -169,7 +170,7 @@ def _flags(monkeypatch: pytest.MonkeyPatch, value: bool) -> list[Flag]:
         seen.append(flag)
         return value
 
-    monkeypatch.setattr(contract, "flag_enabled", flag_enabled)
+    monkeypatch.setattr(service, "flag_enabled", flag_enabled)
     return seen
 
 
@@ -178,28 +179,27 @@ def _authorise(monkeypatch: pytest.MonkeyPatch, *, allow: bool) -> None:
         if not allow:
             raise Forbidden(action, "role")
 
-    monkeypatch.setattr(contract, "authorise", authorise)
+    monkeypatch.setattr(service, "authorise", authorise)
 
 
 Gate = Callable[[AuthContext, str], Coroutine[object, object, None]]
 
 
 def _stub_of(module: ModuleType) -> Gate:
-    """The stub's gate, read the way the security-center contract test reads its own."""
-    return cast(Gate, module._stub)
+    """The routes' gate (the stub's until G-02-T24; now the service's `_open`)."""
+    return cast(Gate, module._open)
 
 
-_STUB = _stub_of(contract)
+_STUB = _stub_of(service)
 
 
-async def test_g02t15_flag_off_is_404_and_on_is_501(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_g02t24_flag_off_is_404_and_on_opens(monkeypatch: pytest.MonkeyPatch) -> None:
     _authorise(monkeypatch, allow=True)
     _flags(monkeypatch, False)
     with pytest.raises(NotFound):
         await _STUB(_ctx("quality_partner"), "ai_policy.read")
     seen = _flags(monkeypatch, True)
-    with pytest.raises(NotImplementedYet):
-        await _STUB(_ctx("quality_partner"), "ai_policy.read")
+    await _STUB(_ctx("quality_partner"), "ai_policy.read")  # G-02-T24: live, no 501
     assert seen == [AI_POLICY_V1]
 
 

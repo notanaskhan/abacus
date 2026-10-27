@@ -21,7 +21,7 @@ from sqlalchemy import text
 
 from abacus.ai_gateway import BoundaryFactsChanged, forget_boundary_facts
 from abacus.kernel import clock, provider_terms
-from abacus.kernel._flags import AGENTS_CLIENT_DATA_OPTIN
+from abacus.kernel._flags import AGENTS_CLIENT_DATA_OPTIN, AI_POLICY_V1
 from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, tenant_session
@@ -125,9 +125,19 @@ async def autonomy(ctx: AuthContext) -> AutonomyView:
     return AutonomyView(int(row["autonomy_level"]), row["autonomy_set_at"])
 
 
+class SupersededByAiPolicy(DomainConflict):
+    """G-02-T24: with `ai_policy.v1` on, the autonomy level is set by publishing an AI policy
+    version (ADM-04), not by this route."""
+
+    code = "superseded_by_ai_policy"
+
+
 async def set_autonomy(ctx: AuthContext, level: int) -> AutonomyView:
     """AC-5: fresh MFA; audited; Manage and Portfolio refused for now."""
     await authorise(ctx, "autonomy_policy.update", Resource.firm(ctx.tenant_id))
+    if await flag_enabled(ctx.tenant, AI_POLICY_V1):
+        # G-02-T24: the level is the AI policy's for this firm; it changes by a new version.
+        raise SupersededByAiPolicy
     if level not in SELECTABLE:
         raise LevelNotAvailable(str(level))
     async with uow(ctx.tenant) as tx:

@@ -1,8 +1,8 @@
 """The AI-policy contract, v1: ADM-04's family (G-02-T15 stub; SPEC-349 AC-31 to AC-44, AC-48;
 ADR-186, ADR-187; DEC-50, DEC-53, DEC-87, DEC-532). Contract: `docs/contracts/ai-policy.md`.
 
-Behind `ai_policy.v1`: off, every route here answers 404; on, 501 `not_implemented` until
-G-02-T23 (tables, compiled defaults, validator) and T24 (services and routes) land. Each route
+Behind `ai_policy.v1`: off, every route here answers 404; on, live since G-02-T24
+(`ai_policy_service.py`; tables, compiled defaults and validator from G-02-T23). Each route
 declares exactly one matrix action, and the matrix answers before the flag is read (security
 review L1): a client principal gets 404 (INV-4); the agent, the system, a person without the
 action and a stale second factor get 403.
@@ -27,23 +27,18 @@ Rules the shapes carry (ADR-186, ADR-187):
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Path, Query
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import AI_POLICY_V1
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
-from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
+from abacus.modules.agents import ai_policy_service as svc
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
-    Forbidden,
-    Resource,
-    authorise,
     current_context,
 )
 
@@ -410,30 +405,114 @@ class AiPolicyDeclineIn(BaseModel):
     note: Annotated[str | None, Field(max_length=500), classified("confidential")] = None
 
 
+# --- G-02-T24: the live routes' projections ------------------------------------------------------
+
+
+def _person(user_id: UUID | None, names: dict[UUID, str]) -> PolicyPersonOut | None:
+    if user_id is None:
+        return None
+    return PolicyPersonOut(user_id=user_id, display_name=names.get(user_id, ""))
+
+
+def _version_out(
+    v: svc.Version, names: dict[UUID, str], *, superseded: bool = False
+) -> AiPolicyVersionOut:
+    return AiPolicyVersionOut(
+        version_no=v.version_no,
+        state=cast(VersionState, v.state),
+        schema_version=v.schema_version,
+        effective_from=v.effective_from,
+        requested_by=_person(v.requested_by, names),
+        requested_at=v.requested_at,
+        approver=_person(v.approver_user_id, names),
+        decided_by=_person(v.decided_by, names),
+        decided_at=v.decided_at,
+        carried_over=v.carried_over,
+        superseded=superseded,
+    )
+
+
+async def _names(*versions: svc.Version | None) -> dict[UUID, str]:
+    ids: list[UUID | None] = []
+    for v in versions:
+        if v is not None:
+            ids += [v.requested_by, v.approver_user_id, v.decided_by]
+    return await svc.person_names(ids)
+
+
+def _diff_out(
+    before: dict[str, object] | None, after: dict[str, object]
+) -> list[AiPolicyDiffRowOut]:
+    return [AiPolicyDiffRowOut(path=p, before=b, after=a) for p, b, a in svc.diff(before, after)]
+
+
+def _draft_out(d: svc.Draft, effective: svc.Version, names: dict[UUID, str]) -> AiPolicyDraftOut:
+    rows = _diff_out(effective.sections, d.sections)
+    return AiPolicyDraftOut(
+        base_version_no=d.base_version_no,
+        sections=AiPolicySections.model_validate(d.sections),
+        differs=bool(rows),
+        diff=rows,
+        version=d.version,
+        updated_at=d.updated_at,
+        updated_by=_person(d.updated_by, names),
+    )
+
+
+def _gate_out(g: dict[str, object]) -> GateRowOut:
+    return GateRowOut(
+        row=cast(int, g["row"]),
+        gate_key=str(g["gate_key"]),
+        action_keys=cast(list[str], g.get("actions", [])),
+        approver_rule=str(g["approver_rule"]),
+        default_approver_roles=cast(list[str], g.get("approver_roles", [])),
+        policy_acceptance_available=bool(g.get("policy_acceptance_available", False)),
+        policy_acceptance_on=bool(g.get("policy_acceptance_on", False)),
+        policy_acceptance_locked=True,
+        attest=cast(AttestRule | None, g.get("attest")),
+        where_shown=cast(list[str], g.get("where_shown", [])),
+        log_action=str(g["log_action"]),
+    )
+
+
 ai_policy_router = AbacusRouter(prefix="/v1/firm/ai-policy", tags=["ai policy"])
-
-
-async def _stub(ctx: AuthContext, action: str) -> NoReturn:
-    """L1: the matrix first (a client 404, everyone else authorised at the firm), then the flag:
-    off 404, on 501 until G-02-T24."""
-    if ctx.client:
-        raise NotFound("ai_policy")
-    # ED-182: the matrix's `agent: deny` and `system: deny` cells are never reached by a firm-level
-    # role check that reads the person's membership, so a principal that is not a person (or
-    # break-glass support) is refused here first: 403, never the 501 or the flag's 404.
-    if ctx.tenant.actor_kind not in ("human", "support"):
-        raise Forbidden(action, "role")
-    await authorise(ctx, action, Resource.firm(ctx.tenant_id))
-    if not await flag_enabled(ctx.tenant, AI_POLICY_V1):
-        raise NotFound("ai_policy.v1")
-    raise NotImplementedYet
 
 
 @ai_policy_router.get("", action="ai_policy.read", response_model=AiPolicyOut, errors=(501,))
 async def ai_policy_route(ctx: Ctx) -> AiPolicyOut:
     """ADM-04 a, e, g, h and the band: the effective policy for every firm member (AC-31 to
     AC-35, AC-41 to AC-44)."""
-    await _stub(ctx, "ai_policy.read")
+    view = await svc.read_policy(ctx)
+    names = await _names(view.effective, view.pending, view.scheduled)
+    draft = None
+    if view.draft is not None:
+        names |= await svc.person_names([view.draft.updated_by])
+        draft = _draft_out(view.draft, view.effective, names)
+    return AiPolicyOut(
+        effective=_version_out(view.effective, names),
+        sections=AiPolicySections.model_validate(view.effective.sections),
+        pending=_version_out(view.pending, names) if view.pending else None,
+        scheduled=_version_out(view.scheduled, names) if view.scheduled else None,
+        draft=draft,
+        gates=[_gate_out(g) for g in view.gates],
+        locks=[CellLockOut(path=p, reason=cast(LockReason, r)) for p, r in view.locks],
+        immediate=ImmediateControlsOut(
+            client_data_opt_in=ClientDataOptInOut(on=view.opted_in),
+            agent_stages=[],
+            firm_pause=FirmPauseOut(paused=view.paused_at is not None, paused_at=view.paused_at),
+        ),
+        sub_processors=[
+            SubProcessorOut(
+                name=str(p["name"]),
+                purpose=str(p["purpose"]),
+                region=str(p["region"]),
+                trains_on_data=False,
+            )
+            for p in view.sub_processors
+        ],
+        model_family=view.model_family,
+        real_firm=view.real_firm,
+    )
 
 
 @ai_policy_router.get(
@@ -445,7 +524,10 @@ async def ai_policy_versions_route(
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
 ) -> AiPolicyVersionPageOut:
     """ADM-04 j: the history, newest first (AC-34)."""
-    await _stub(ctx, "ai_policy.read")
+    versions, now = await svc.list_versions(ctx)
+    names = await _names(*versions)
+    rows = [_version_out(v, names, superseded=svc.superseded(versions, v, now)) for v in versions]
+    return AiPolicyVersionPageOut(items=rows[:limit], total=len(rows))
 
 
 @ai_policy_router.get(
@@ -458,7 +540,14 @@ async def ai_policy_version_route(
     version_no: Annotated[int, Path(ge=1)], ctx: Ctx
 ) -> AiPolicyVersionDetailOut:
     """A version with its sections and its diff against the one before (AC-34)."""
-    await _stub(ctx, "ai_policy.read")
+    found, before = await svc.read_version(ctx, version_no)
+    names = await _names(found)
+    out = _version_out(found, names)
+    return AiPolicyVersionDetailOut(
+        **out.model_dump(),
+        sections=AiPolicySections.model_validate(found.sections),
+        diff=_diff_out(before.sections if before else None, found.sections),
+    )
 
 
 @ai_policy_router.get(
@@ -473,7 +562,21 @@ async def effective_ai_policy_route(
     at: datetime | None = None,
 ) -> EffectiveAiPolicyOut:
     """AC-39: the version effective at `at` (now on `kernel.clock` when omitted)."""
-    await _stub(ctx, "ai_policy.read")
+    found = await svc.read_effective(ctx, engagement_type, at)
+    sections = AiPolicySections.model_validate(found.version.sections)
+    return EffectiveAiPolicyOut(
+        version_no=found.version.version_no,
+        effective_from=found.version.effective_from,
+        engagement_type=engagement_type,
+        at=found.at,
+        autonomy_level=sections.autonomy.level,
+        auto_mode=found.auto_mode,
+        auto_mode_effective=found.auto_mode_effective,
+        auto_mode_lock="real_firm_season_1" if found.auto_mode and found.real_firm else None,
+        policy_principal_on=sections.policy_principal.on,
+        client_data=sections.client_data,
+        firm_paused=found.paused,
+    )
 
 
 @ai_policy_router.get(
@@ -481,7 +584,8 @@ async def effective_ai_policy_route(
 )
 async def ai_policy_draft_route(ctx: Ctx) -> AiPolicyDraftOut:
     """ADM-04 b: the firm's draft (the effective sections when none is saved)."""
-    await _stub(ctx, "ai_policy.draft")
+    draft, effective = await svc.read_draft(ctx)
+    return _draft_out(draft, effective, await svc.person_names([draft.updated_by]))
 
 
 @ai_policy_router.put(
@@ -492,7 +596,9 @@ async def put_ai_policy_draft_route(
 ) -> AiPolicyDraftOut:
     """AC-36, AC-38, AC-40: save against If-Match (409 `stale_version`); 422
     `policy_loosening_refused` with `facts.field`. Audited `ai_policy.draft_saved`."""
-    await _stub(ctx, "ai_policy.draft")
+    await svc.save_draft(ctx, body.sections.model_dump(mode="json"), if_match)
+    draft, effective = await svc.read_draft(ctx)
+    return _draft_out(draft, effective, await svc.person_names([draft.updated_by]))
 
 
 @ai_policy_router.delete(
@@ -501,7 +607,9 @@ async def put_ai_policy_draft_route(
 async def discard_ai_policy_draft_route(if_match: IfMatch, ctx: Ctx) -> AiPolicyDraftOut:
     """AC-36 "Discard": the draft goes back to the effective version, which comes back. Audited
     `ai_policy.draft_discarded`."""
-    await _stub(ctx, "ai_policy.draft")
+    await svc.discard_draft(ctx, if_match)
+    draft, effective = await svc.read_draft(ctx)
+    return _draft_out(draft, effective, await svc.person_names([draft.updated_by]))
 
 
 @ai_policy_router.post(
@@ -515,7 +623,8 @@ async def publish_ai_policy_route(body: AiPolicyPublishIn, ctx: Ctx) -> AiPolicy
     """ADM-04 d: request publication of the draft as the next version, `awaiting_approval`,
     raising the C13 gate for the approver (AC-37); 409 `approver_must_differ` when the approver
     is the requester. Audited `ai_policy.publish_requested`."""
-    await _stub(ctx, "ai_policy.publish")
+    found = await svc.request_publish(ctx, body.effective_from, body.approver_user_id)
+    return _version_out(found, await _names(found))
 
 
 @ai_policy_router.post(
@@ -529,7 +638,8 @@ async def approve_ai_policy_route(
 ) -> AiPolicyVersionOut:
     """ADM-04 g: the named partner approves with fresh MFA (409 `approver_must_differ` for the
     requester). Audited `ai_policy.approved`."""
-    await _stub(ctx, "ai_policy.approve")
+    found = await svc.approve(ctx, version_no)
+    return _version_out(found, await _names(found))
 
 
 @ai_policy_router.post(
@@ -542,7 +652,8 @@ async def decline_ai_policy_route(
     version_no: Annotated[int, Path(ge=1)], body: AiPolicyDeclineIn, ctx: Ctx
 ) -> AiPolicyVersionOut:
     """The named partner declines. Audited `ai_policy.declined`."""
-    await _stub(ctx, "ai_policy.approve")
+    found = await svc.decline(ctx, version_no, body.reason_code)
+    return _version_out(found, await _names(found))
 
 
 @ai_policy_router.post(
@@ -556,4 +667,5 @@ async def withdraw_ai_policy_route(
 ) -> AiPolicyVersionOut:
     """The requester withdraws a version still awaiting approval. Audited
     `ai_policy.withdrawn`."""
-    await _stub(ctx, "ai_policy.publish")
+    found = await svc.withdraw(ctx, version_no)
+    return _version_out(found, await _names(found))

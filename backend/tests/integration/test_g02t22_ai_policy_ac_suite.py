@@ -91,8 +91,8 @@ OPT_IN: Final = ("GET", "/v1/firm/ai-client-data")
 OPT_IN_PUT: Final = ("PUT", "/v1/firm/ai-client-data")
 LEGACY_AUTONOMY_PUT: Final = ("PUT", "/v1/firm/autonomy")
 
-# Routes still answering 501 (the stubs); G-02-T24 removes each as it makes it live.
-LIVE: Final[frozenset[Route]] = frozenset()
+# Routes still answering 501 (the stubs); G-02-T24 made every route live.
+LIVE: Final[frozenset[Route]] = frozenset(ROUTES)
 STUBBED: Final = frozenset(ROUTES) - LIVE
 READS: Final = (POLICY, VERSIONS, VERSION, EFFECTIVE)
 # ED-182 (fixed): the agent and the system principals are refused `ai_policy.read` (403).
