@@ -35,6 +35,7 @@ import json
 import tempfile
 import zipfile
 from collections.abc import AsyncIterator
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from typing import IO, Final, cast
@@ -112,6 +113,11 @@ CSV_COLUMNS: Final = (
 )
 VALUE_COLUMNS: Final = ("values_status", "values")
 _log = get_logger(__name__)
+
+
+class _Unchanged(Exception):
+    """A repeated stamp found nothing to change: the unit of work rolls back (it records no
+    event, so it may not commit)."""
 
 
 class ExportRangeInvalid(DomainInvalid):
@@ -268,6 +274,24 @@ async def request(
     if found is not None:
         return await _out(ctx.tenant, _row(dict(found)))
     export_id = uuid4()
+    with suppress(_Unchanged):
+        await _insert_request(ctx, body, filter_json, idempotency_key, export_id)
+    async with tenant_session(ctx.tenant) as session:
+        again = (
+            (await session.execute(_BY_KEY, {"by": ctx.user_id, "key": idempotency_key}))
+            .mappings()
+            .one()
+        )
+    return await _out(ctx.tenant, _row(dict(again)))
+
+
+async def _insert_request(
+    ctx: AuthContext,
+    body: AuditExportRequestIn,
+    filter_json: dict[str, Fact],
+    idempotency_key: str,
+    export_id: UUID,
+) -> None:
     async with uow(ctx.tenant) as tx:
         written = await tx.session.scalar(
             _INSERT,
@@ -282,20 +306,14 @@ async def request(
                 "key": idempotency_key,
             },
         )
-        if written is not None:
-            tx.record(
-                "audit_export.requested",
-                target=Target(SUBJECT, export_id),
-                after=Ref(days=(body.to_date - body.from_date).days + 1),
-            )
-            tx.emit(AuditExportRequested(export_id=export_id, requested_by=ctx.user_id))
-    async with tenant_session(ctx.tenant) as session:
-        again = (
-            (await session.execute(_BY_KEY, {"by": ctx.user_id, "key": idempotency_key}))
-            .mappings()
-            .one()
+        if written is None:
+            raise _Unchanged  # the same key raced in: the first request stands
+        tx.record(
+            "audit_export.requested",
+            target=Target(SUBJECT, export_id),
+            after=Ref(days=(body.to_date - body.from_date).days + 1),
         )
-    return await _out(ctx.tenant, _row(dict(again)))
+        tx.emit(AuditExportRequested(export_id=export_id, requested_by=ctx.user_id))
 
 
 async def read(ctx: AuthContext, export_id: UUID) -> AuditExport:
@@ -628,6 +646,13 @@ _FAILED = text(
 
 
 async def mark_ready(facts: AuditExportFacts) -> str:
+    try:
+        return await _mark_ready(facts)
+    except _Unchanged:
+        return "unchanged"  # a retried stamp: already ready
+
+
+async def _mark_ready(facts: AuditExportFacts) -> str:
     tenant_id, export_id = UUID(facts.tenant_id), UUID(facts.export_id)
     system = _system(tenant_id, export_id)
     expires = max(await clock.now(system), clock.system_now()) + EXPIRY
@@ -648,7 +673,7 @@ async def mark_ready(facts: AuditExportFacts) -> str:
             },
         )
         if by is None:
-            return "unchanged"  # a retried stamp: already ready
+            raise _Unchanged
         tx.record(
             "audit_export.ready",
             target=Target(SUBJECT, export_id),
@@ -660,11 +685,14 @@ async def mark_ready(facts: AuditExportFacts) -> str:
 
 async def mark_failed(failure: AuditExportFailure) -> str:
     tenant_id, export_id = UUID(failure.tenant_id), UUID(failure.export_id)
-    async with uow(_system(tenant_id, export_id)) as tx:
-        changed = await tx.session.scalar(_FAILED, {"id": export_id, "code": failure.code})
-        if changed is None:
-            return "unchanged"
-        tx.record("audit_export.failed", target=Target(SUBJECT, export_id))
+    try:
+        async with uow(_system(tenant_id, export_id)) as tx:
+            changed = await tx.session.scalar(_FAILED, {"id": export_id, "code": failure.code})
+            if changed is None:
+                raise _Unchanged
+            tx.record("audit_export.failed", target=Target(SUBJECT, export_id))
+    except _Unchanged:
+        return "unchanged"
     _log.warning("audit_export.failed", tenant_id=str(tenant_id), code=failure.code)
     return "failed"
 

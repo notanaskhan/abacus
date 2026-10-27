@@ -98,6 +98,11 @@ _UNSAFE: Final = re.compile(r"[^A-Za-z0-9 ._()-]+")
 _log = get_logger(__name__)
 
 
+class _Unchanged(Exception):
+    """A repeated stamp found nothing to change: the unit of work rolls back (it records no
+    event, so it may not commit)."""
+
+
 class SafeguardsStale(DomainConflict):
     """The record changed since it was read: read it again (409)."""
 
@@ -594,6 +599,16 @@ async def mark_pack_ready(facts: WispPackFacts) -> str:
     tenant_id, pack_id = UUID(facts.tenant_id), UUID(facts.pack_id)
     system = _system(tenant_id, pack_id)
     expires = max(await clock.now(system), clock.system_now()) + PACK_EXPIRY
+    try:
+        await _stamp_ready(system, pack_id, facts, expires)
+    except _Unchanged:
+        return "unchanged"
+    return "ready"
+
+
+async def _stamp_ready(
+    system: TenantContext, pack_id: UUID, facts: WispPackFacts, expires: datetime
+) -> None:
     async with uow(system) as tx:
         done = await tx.session.scalar(
             _READY,
@@ -606,22 +621,24 @@ async def mark_pack_ready(facts: WispPackFacts) -> str:
             },
         )
         if done is None:
-            return "unchanged"
+            raise _Unchanged
         tx.record(
             "wisp_pack.ready",
             target=Target(PACK, pack_id),
             after=Ref(documents=facts.document_count),
         )
-    return "ready"
 
 
 async def mark_pack_failed(failure: WispPackFailure) -> str:
     tenant_id, pack_id = UUID(failure.tenant_id), UUID(failure.pack_id)
-    async with uow(_system(tenant_id, pack_id)) as tx:
-        done = await tx.session.scalar(_FAILED, {"id": pack_id, "code": failure.code})
-        if done is None:
-            return "unchanged"
-        tx.record("wisp_pack.failed", target=Target(PACK, pack_id))
+    try:
+        async with uow(_system(tenant_id, pack_id)) as tx:
+            done = await tx.session.scalar(_FAILED, {"id": pack_id, "code": failure.code})
+            if done is None:
+                raise _Unchanged
+            tx.record("wisp_pack.failed", target=Target(PACK, pack_id))
+    except _Unchanged:
+        return "unchanged"
     _log.warning("wisp_pack.failed", tenant_id=str(tenant_id), code=failure.code)
     return "failed"
 

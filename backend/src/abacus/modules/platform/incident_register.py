@@ -558,6 +558,10 @@ _REMIND = text(
 REMINDER_ACTOR: Final = "incident_clock_reminders"
 
 
+class _AlreadySent(Exception):
+    """A reminder another run already sent: the unit of work rolls back."""
+
+
 async def remind_firm(tenant_id: UUID) -> int:
     """One firm's due reminders: each open notification event on day 20, 25 or 29 of its clock
     (or past it, for a day a late run missed), once per day, to the QI and the partners."""
@@ -572,18 +576,21 @@ async def remind_firm(tenant_id: UUID) -> int:
             if not day <= clock_day(discovered, zone, on) <= CLOCK_DAYS:
                 continue
             incident_id = cast(UUID, row["id"])
-            async with uow(system) as tx:
-                wrote = await tx.session.scalar(
-                    _REMIND, {"tenant": tenant_id, "incident": incident_id, "day": day}
-                )
-                if wrote is None:
-                    continue
-                tx.record(
-                    "incident.reminder_sent",
-                    target=Target(SUBJECT, incident_id),
-                    after=Ref(day=day),
-                )
-                tx.emit(IncidentDeadlineApproaching(incident_id=incident_id, day=day))
+            try:
+                async with uow(system) as tx:
+                    wrote = await tx.session.scalar(
+                        _REMIND, {"tenant": tenant_id, "incident": incident_id, "day": day}
+                    )
+                    if wrote is None:
+                        raise _AlreadySent  # another run sent it: roll back, record nothing
+                    tx.record(
+                        "incident.reminder_sent",
+                        target=Target(SUBJECT, incident_id),
+                        after=Ref(day=day),
+                    )
+                    tx.emit(IncidentDeadlineApproaching(incident_id=incident_id, day=day))
+            except _AlreadySent:
+                continue
             sent += 1
     return sent
 
