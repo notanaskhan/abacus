@@ -230,7 +230,7 @@ async def test_an_unknown_event_records_nothing(world: World) -> None:
 def ticking(world: World, monkeypatch: pytest.MonkeyPatch) -> list[follow_ups.Outcome]:
     outcomes: list[follow_ups.Outcome] = []
 
-    async def chase_overdue(*_: object) -> follow_ups.Outcome:
+    async def chase_overdue(*_: object, **__: object) -> follow_ups.Outcome:
         return outcomes.pop(0)
 
     async def zone(*_: object) -> str:

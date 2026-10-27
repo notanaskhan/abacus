@@ -663,6 +663,7 @@ def test_ac20_main_exits_0_when_clean(
     assert capsys.readouterr().out == ""
 
 
+@pytest.mark.source_scan
 def test_ac20_repository_has_no_secrets() -> None:
     # Deliberately depends on live repo state: this is the AC-20 claim itself, and duplicates
     # the secrets step of `make check-fast`.
