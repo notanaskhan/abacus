@@ -112,7 +112,13 @@ describe("SHL-03 artboards", () => {
       "Sign out",
     ]);
     expect(adminLabels(menu)).toEqual(["Firm settings", "Users & roles", "Audit log"]);
-    expect(within(menu).getByRole("img", { name: "Accrued" })).toBeTruthy();
+    // The wordmark is decorative inside the menu (an img is not a child a menu may own; axe
+    // aria-required-children, P-07-T22): present, but hidden from assistive technology.
+    expect(
+      within(menu)
+        .getByRole("img", { name: "Accrued", hidden: true })
+        .closest("[aria-hidden='true']"),
+    ).toBeTruthy();
     // The pill reads pressed while the tray is open.
     const pill = screen.getByRole("button", { name: "Brightwater Hale" });
     expect(pill.dataset.pressed).toBe("true");

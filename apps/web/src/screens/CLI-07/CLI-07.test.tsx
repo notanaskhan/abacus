@@ -35,7 +35,8 @@ afterEach(() => {
   cleanup();
   restore?.();
   restore = undefined;
-  toastStore.clear();
+  // `clear` keeps a toast 180 ms while it leaves; `reset` drops it, so none reaches the next test.
+  toastStore.reset();
 });
 
 interface Call {

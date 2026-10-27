@@ -458,6 +458,8 @@ def test_ac20_the_app_may_update_only_the_declared_connection_and_run_columns() 
             "last_sync_at",
             "status_reason_code",
         }
+        # A-02-T16 (migration 0215): the connection's optimistic version for consent changes.
+        | {"version"}
     )
     assert sc.APP_UPDATE_COLUMNS["sync_runs"] == frozenset(
         {
