@@ -117,6 +117,27 @@ MODELS: dict[str, tuple[str, ...]] = {
         "PortalSignInPolicyOut",
         "PortalBrandingOut",
     ),
+    # C6 v1, agent runs (Q-02-T45; ADR-169 §4; DEC-595, the owner change; frozen 2026-10-27):
+    # the run list and view, trace, items, writes, records read, export and the run record.
+    "c06_agent_runs": (
+        "AgentRunOut",
+        "TraceRowOut",
+        "RecordsReadOut",
+        "OutputCountOut",
+        "RunTraceOut",
+        "RunViewOut",
+        "RunWriteOut",
+        "RunItemOut",
+        "RunItemsOut",
+        "TraceExportIn",
+        "TraceExportOut",
+        "RecordRefOut",
+        "CitationLocatorOut",
+        "RecordCitationOut",
+        "RecordInputHashesOut",
+        "RecordOutcomeOut",
+        "RunRecordOut",
+    ),
     # C3 v1, the review grammar's services (P-04-T27, DEC-606; frozen 2026-10-27): every request
     # and response model of `review/contract.py` (parts 1 and 3, decision cards) and
     # `agents/contract.py` (proposals and suggestions), and the status enums they carry.
