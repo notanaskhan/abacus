@@ -153,7 +153,7 @@ async def _requested(firm: Firm) -> uuid.UUID:
 
 async def _ready(firm: Firm) -> FirmExport:
     export_id = await _requested(firm)
-    await firm_exports.decide(partner_ctx(firm), export_id, approve=True)
+    await firm_exports.respond(partner_ctx(firm), export_id, approve=True)
     facts = await firm_export_activities.package_export(firm.tenant, export_id, segment_bytes=512)
     assert await firm_export_activities.ready_export(facts) == "ready"
     return await _row(firm, export_id)
@@ -198,9 +198,9 @@ async def test_ac1_a_same_person_approval_is_refused(firm: Firm) -> None:
         )
     export_id = await _requested(firm)
     with pytest.raises(firm_exports.ApproverMustDiffer):
-        await firm_exports.decide(admin_ctx(firm), export_id, approve=True)
+        await firm_exports.respond(admin_ctx(firm), export_id, approve=True)
     with pytest.raises(firm_exports.ApproverMustDiffer):
-        await firm_exports.decide(admin_ctx(firm), export_id, approve=False)
+        await firm_exports.respond(admin_ctx(firm), export_id, approve=False)
     assert (await _row(firm, export_id)).status == "awaiting_approval"
     assert await _outbox(firm, "firm_export.approved") == []
 
@@ -259,17 +259,17 @@ async def test_ac1_the_database_refuses_one_person_as_both_halves(firm: Firm) ->
 async def test_ac1_only_the_named_approver_decides(firm: Firm) -> None:
     export_id = await _requested(firm)
     with pytest.raises(Forbidden):  # a security admin who wasn't named
-        await firm_exports.decide(
+        await firm_exports.respond(
             ctx_of(firm.other_admin, "security_admin"), export_id, approve=True
         )
     with pytest.raises(Forbidden):  # no role at all
-        await firm_exports.decide(ctx_of(firm.staff), export_id, approve=True)
-    declined = await firm_exports.decide(
+        await firm_exports.respond(ctx_of(firm.staff), export_id, approve=True)
+    declined = await firm_exports.respond(
         partner_ctx(firm), export_id, approve=False, reason="Not this month"
     )
     assert declined.status == "declined"
     with pytest.raises(firm_exports.ExportNotAwaitingApproval):
-        await firm_exports.decide(partner_ctx(firm), export_id, approve=True)
+        await firm_exports.respond(partner_ctx(firm), export_id, approve=True)
 
 
 async def test_the_approver_must_be_a_security_admin_or_partner(firm: Firm) -> None:
@@ -313,7 +313,7 @@ async def test_ac2_a_second_distinct_approver_starts_the_export(
     export_id = await _requested(firm)
     [asked] = await _outbox(firm, "firm_export.requested")
     assert asked["approver_user_id"] == str(firm.partner.user_id)
-    approved = await firm_exports.decide(partner_ctx(firm), export_id, approve=True)
+    approved = await firm_exports.respond(partner_ctx(firm), export_id, approve=True)
     assert approved.status == "building"
     assert approved.approver.user_id == firm.partner.user_id
     [event] = await _outbox(firm, "firm_export.approved")
@@ -331,7 +331,8 @@ async def test_ac2_a_second_distinct_approver_starts_the_export(
     facts = await firm_export_activities.package_export(firm.tenant, export_id, segment_bytes=512)
     assert await firm_export_activities.ready_export(facts) == "ready"
     row = await _row(firm, export_id)
-    assert row.ready_at is not None and row.available_until == row.ready_at + timedelta(days=7)
+    # SPEC-341 AC-41: links can be minted for 7 days from the approval.
+    assert row.decided_at is not None and row.available_until == row.decided_at + timedelta(days=7)
     [ready] = await _outbox(firm, "firm_export.ready")
     assert ready["requested_by"] == str(firm.admin.user_id)
 
@@ -414,8 +415,8 @@ async def test_a_link_answers_410_after_its_15_minutes(firm: Firm) -> None:
         firm.tenant,
         ("human", str(firm.admin.user_id)),
         "INSERT INTO firm_export_links (id, tenant_id, export_id, user_id, issued_at, "
-        "expires_at, mfa_at) VALUES ($1, $2, $3, $4, clock_timestamp() - interval '20 minutes', "
-        "clock_timestamp() - interval '5 minutes', now())",
+        "expires_at, mfa_at) VALUES ($1, $2, $3, $4, now() - interval '20 minutes', "
+        "now() - interval '10 minutes', now())",
         link_id,
         firm.tenant,
         row.id,
@@ -434,11 +435,11 @@ async def test_another_firm_sees_nothing(firm: Firm) -> None:
     with pytest.raises(NotFound):
         await firm_exports.read(admin_ctx(stranger), row.id)
     with pytest.raises(NotFound):
-        await firm_exports.decide(partner_ctx(stranger), row.id, approve=True)
+        await firm_exports.respond(partner_ctx(stranger), row.id, approve=True)
     with pytest.raises(NotFound):
         await firm_exports.issue_link(admin_ctx(stranger), row.id)
-    assert await firm_exports.history(admin_ctx(stranger)) == []
-    assert [v.id for v in await firm_exports.history(admin_ctx(firm))] == [row.id]
+    assert await firm_exports.recent_exports(admin_ctx(stranger)) == []
+    assert [v.id for v in await firm_exports.recent_exports(admin_ctx(firm))] == [row.id]
 
 
 # --- AC 3: the link stops working after 7 days ---------------------------------------------------
@@ -473,3 +474,84 @@ async def test_a_link_opened_within_the_window_still_refuses_after_it(firm: Firm
     link = await firm_exports.issue_link(admin_ctx(firm), row.id)
     with clock.frozen(row.available_until), pytest.raises(ExportExpired):
         await firm_exports.prepare(admin_ctx(firm), row.id, _link_id(link.url), None, None)
+
+
+async def test_an_archive_built_after_its_7_days_is_failed_never_ready(firm: Firm) -> None:
+    export_id = await _requested(firm)
+    await firm_exports.respond(partner_ctx(firm), export_id, approve=True)
+    decided = (await _row(firm, export_id)).decided_at
+    assert decided is not None
+    facts = await firm_export_activities.package_export(firm.tenant, export_id)
+    with clock.frozen(decided + timedelta(days=7)):
+        assert await firm_export_activities.ready_export(facts) == "failed"
+    assert (await _row(firm, export_id)).status == "failed"
+    assert await _outbox(firm, "firm_export.ready") == []
+
+
+# --- security review round (TASK-1403 progress log) ----------------------------------------------
+
+
+async def test_review_a_requester_no_longer_security_admin_blocks_the_approval(
+    firm: Firm,
+) -> None:
+    export_id = await _requested(firm)
+    await firm.seed.run(
+        "UPDATE memberships SET firm_role = NULL WHERE tenant_id = $1 AND user_id = $2",
+        firm.tenant,
+        firm.admin.user_id,
+    )
+    with pytest.raises(firm_exports.RequesterNotActive):
+        await firm_exports.respond(partner_ctx(firm), export_id, approve=True)
+    # The database refuses the same, as the named approver acting directly.
+    with pytest.raises(asyncpg.InsufficientPrivilegeError, match="requester_not_active"):
+        await firm.seed.as_actor(
+            firm.tenant,
+            ("human", str(firm.partner.user_id)),
+            "UPDATE firm_exports SET status = 'building', decided_by = $2, decided_at = now(), "
+            "decided_mfa_at = now() WHERE id = $1",
+            export_id,
+            firm.partner.user_id,
+        )
+    assert (await _row(firm, export_id)).status == "awaiting_approval"
+
+
+async def test_review_a_decision_writes_no_build_stamp(firm: Firm) -> None:
+    export_id = await _requested(firm)
+    with pytest.raises(asyncpg.InsufficientPrivilegeError):
+        await firm.seed.as_actor(
+            firm.tenant,
+            ("human", str(firm.partner.user_id)),
+            "UPDATE firm_exports SET status = 'building', decided_by = $2, decided_at = now(), "
+            "decided_mfa_at = now(), ready_at = now() WHERE id = $1",
+            export_id,
+            firm.partner.user_id,
+        )
+    assert (await _row(firm, export_id)).status == "awaiting_approval"
+
+
+async def test_review_a_failed_build_leaves_no_segments(firm: Firm, raw: S3Client) -> None:
+    export_id = await _requested(firm)
+    await firm_exports.respond(partner_ctx(firm), export_id, approve=True)
+    await firm_export_activities.package_export(firm.tenant, export_id, segment_bytes=512)
+    prefix = export_storage.export_prefix(firm.tenant, export_id, kind="firm_export")
+    assert raw.list_objects_v2(Bucket=ARCHIVES, Prefix=prefix).get("KeyCount", 0) > 0
+    assert await firm_export_activities.fail_export(firm.tenant, export_id) == "failed"
+    assert raw.list_objects_v2(Bucket=ARCHIVES, Prefix=prefix).get("KeyCount", 0) == 0
+    assert "firm_export.failed" in await firm.seed.actions(firm.tenant)
+
+
+async def test_review_each_archive_request_is_recorded_and_counted(firm: Firm) -> None:
+    row = await _ready(firm)
+    link = await firm_exports.issue_link(admin_ctx(firm), row.id)
+    for _ in range(2):
+        await firm_exports.prepare(admin_ctx(firm), row.id, _link_id(link.url), None, None)
+    downloads = await firm.seed.rows(
+        "SELECT user_id, link_id, bytes_sent FROM firm_export_downloads WHERE tenant_id = $1",
+        firm.tenant,
+    )
+    assert [(d["user_id"], d["link_id"], d["bytes_sent"]) for d in downloads] == [
+        (firm.admin.user_id, _link_id(link.url), row.bytes)
+    ] * 2
+    # The link's id is in the link rows, never in an audit row.
+    events = [e for e in await firm.seed.events(firm.tenant) if e.action.startswith("firm_export")]
+    assert all("link" not in e.after for e in events)

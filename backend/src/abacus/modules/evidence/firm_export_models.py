@@ -55,3 +55,20 @@ class FirmExportLink(Base):
     issued_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
     expires_at: Mapped[datetime]
     mfa_at: Mapped[datetime]
+
+
+class FirmExportDownload(Base):
+    """One archive request with the bytes and range planned, by its link's person (insert-only)."""
+
+    __tablename__ = "firm_export_downloads"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    export_id: Mapped[UUID]
+    link_id: Mapped[UUID]
+    user_id: Mapped[UUID]
+    at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    bytes_sent: Mapped[int] = mapped_column(BigInteger)
+    range_start: Mapped[int | None] = mapped_column(BigInteger)
+    range_end: Mapped[int | None] = mapped_column(BigInteger)
+    mfa_at: Mapped[datetime]

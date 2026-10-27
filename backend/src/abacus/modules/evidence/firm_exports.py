@@ -11,8 +11,10 @@ DEC-72, conflict C-11; DEC-508, DEC-509). PROTECTED (evidence, red). Contract:
 - **Decide** (`firm_export.approve`, fresh MFA): only the named approver approves (`building`,
   the outbox starts `FirmExportWorkflow`) or declines. The requester answers 409
   `approver_must_differ` and anyone else 403, both before the status is read; a decided export is
-  409 `export_not_awaiting_approval`. The guard trigger binds the decision to the named approver
-  as the session's person, and re-checks the approver's membership.
+  409 `export_not_awaiting_approval`; a requester who is no longer an active security admin is 409
+  `requester_not_active` (two current people stand behind every approval). The guard trigger
+  binds the decision to the named approver as the session's person, and re-checks both
+  memberships.
 - **Link** (`firm_export.download`, fresh MFA, not offshore; the requester or the approver): a
   15-minute link inside the 7-day window (`available_until`; 410 `export_expired` from then on,
   on whichever of the business and system clocks is later; 409 `export_not_ready` before the
@@ -22,8 +24,10 @@ DEC-72, conflict C-11; DEC-508, DEC-509). PROTECTED (evidence, red). Contract:
   `firm_export_links` (at most `LINK_LIMIT` an hour per person, 429).
 - **Download** (`prepare`): the archive streamed from its sealed segments with the engagement
   export's machinery (one `Range`, 1 MiB slices, a re-check before every segment after the
-  first, at most `MAX_STREAMS` open streams per person), audited `firm_export.streamed`. An
-  expired link answers 410 `link_expired`.
+  first, at most `MAX_STREAMS` open streams per person in a process and `DOWNLOAD_LIMIT` requests
+  per person a minute across processes, counted over `firm_export_downloads`), audited
+  `firm_export.streamed` with a `firm_export_downloads` row. An expired link answers 410
+  `link_expired`. Neither audit event carries the link's id: the link rows hold it.
 
 Every route refuses a non-person first (INV-1), then authorises on the firm, then the flag.
 Nothing here logs a link (Restricted) or a decline reason.
@@ -50,6 +54,8 @@ from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.evidence.export_download import (
+    DOWNLOAD_LIMIT,
+    DOWNLOAD_WINDOW_SECONDS,
     MAX_STREAMS,
     DownloadPlan,
     DownloadRateLimited,
@@ -62,7 +68,11 @@ from abacus.modules.evidence.export_download import (
 )
 from abacus.modules.evidence.exports import authorise_fresh, human
 from abacus.modules.evidence.firm_export_events import FirmExportApproved, FirmExportRequested
-from abacus.modules.evidence.firm_export_models import FirmExport, FirmExportLink
+from abacus.modules.evidence.firm_export_models import (
+    FirmExport,
+    FirmExportDownload,
+    FirmExportLink,
+)
 from abacus.modules.identity.api import (
     AuthContext,
     Forbidden,
@@ -89,6 +99,11 @@ _RECENT_LINKS = text(
     "FROM firm_export_links WHERE user_id = :user "
     "AND issued_at > clock_timestamp() - make_interval(secs => :window)"
 )
+_RECENT_DOWNLOADS = text(
+    "SELECT count(*) AS n, min(at) AS oldest, clock_timestamp() AS now "
+    "FROM firm_export_downloads WHERE user_id = :user "
+    "AND at > clock_timestamp() - make_interval(secs => :window)"
+)
 
 
 class ApproverInvalid(DomainInvalid):
@@ -98,13 +113,21 @@ class ApproverInvalid(DomainInvalid):
 
 
 class ApproverMustDiffer(DomainConflict):
-    """DEC-72: the requester can't decide their own export."""
+    """The person who approves is never the person who asked (AC-37, DEC-50; DEC-72)."""
 
     code = "approver_must_differ"
 
 
 class ExportNotAwaitingApproval(DomainConflict):
+    """The export was already approved or declined."""
+
     code = "export_not_awaiting_approval"
+
+
+class RequesterNotActive(DomainConflict):
+    """The requester is no longer an active security admin: the export can't be approved."""
+
+    code = "requester_not_active"
 
 
 class LinkExpired(Exception):
@@ -112,7 +135,7 @@ class LinkExpired(Exception):
 
 
 @dataclass(frozen=True)
-class Person:
+class NamedUser:
     user_id: UUID
     display_name: str
 
@@ -123,9 +146,9 @@ class FirmExportView:
     status: str
     scope: str
     origin: str
-    requested_by: Person
+    requested_by: NamedUser
     requested_at: datetime
-    approver: Person
+    approver: NamedUser
     decided_at: datetime | None
     ready_at: datetime | None
     available_until: datetime | None
@@ -187,6 +210,8 @@ def _refused(exc: DBAPIError) -> Exception | None:
         return ApproverMustDiffer()
     if "approver_invalid" in said:
         return ApproverInvalid(facts={"field": "approver_user_id"})
+    if "requester_not_active" in said:
+        return RequesterNotActive()
     return None
 
 
@@ -259,7 +284,7 @@ async def _write(ctx: AuthContext, approver_user_id: UUID) -> UUID:
 # --- decide ----------------------------------------------------------------------------------
 
 
-async def decide(
+async def respond(
     ctx: AuthContext, export_id: UUID, *, approve: bool, reason: str | None = None
 ) -> FirmExportView:
     """ADM-06 f: the named approver approves (`building`) or declines (`declined`)."""
@@ -277,6 +302,10 @@ async def decide(
                 raise Forbidden(_APPROVE, "role")
             if row.status != "awaiting_approval":
                 raise ExportNotAwaitingApproval
+            if approve and not await member_could(
+                ctx.tenant_id, row.requested_by, _REQUEST, _firm(ctx), waive_fresh_mfa=True
+            ):
+                raise RequesterNotActive
             values: dict[str, object] = {
                 "status": "building" if approve else "declined",
                 "decided_by": ctx.user_id,
@@ -329,9 +358,9 @@ async def _views(rows: list[FirmExport]) -> list[FirmExportView]:
             status=r.status,
             scope=r.scope,
             origin=r.origin,
-            requested_by=Person(r.requested_by, names.get(r.requested_by, "")),
+            requested_by=NamedUser(r.requested_by, names.get(r.requested_by, "")),
             requested_at=r.requested_at,
-            approver=Person(r.approver_id, names.get(r.approver_id, "")),
+            approver=NamedUser(r.approver_id, names.get(r.approver_id, "")),
             decided_at=r.decided_at,
             ready_at=r.ready_at,
             available_until=r.available_until,
@@ -352,7 +381,7 @@ async def read(ctx: AuthContext, export_id: UUID) -> FirmExportView:
     return view
 
 
-async def history(ctx: AuthContext) -> list[FirmExportView]:
+async def recent_exports(ctx: AuthContext) -> list[FirmExportView]:
     """ADM-06 a and c: the last 12, newest first."""
     await _may(ctx, _READ)
     async with tenant_session(ctx.tenant) as session:
@@ -430,9 +459,7 @@ async def issue_link(ctx: AuthContext, export_id: UUID) -> FirmExportLinkView:
                 .where(FirmExport.id == row.id, FirmExport.status == "ready")
                 .values(status="downloaded", downloaded_at=business_now)
             )
-        tx.record(
-            "firm_export.downloaded", target=Target(SUBJECT, row.id), after=Ref(link=link_id)
-        )
+        tx.record("firm_export.downloaded", target=Target(SUBJECT, row.id))
     return FirmExportLinkView(link_url(export_id, link_id), expires_at, manifest)
 
 
@@ -477,20 +504,46 @@ async def prepare(
     etag = etag_of(digest)
     wanted = range_header if if_range is None or if_range.strip() == etag else None
     byte_range = parse_range(wanted, size)
+    if ctx.mfa_at is None:  # authorise demanded a fresh factor; the row records when
+        raise Forbidden(_DOWNLOAD, "condition")
     sent = byte_range.length if byte_range is not None else size
     async with uow(ctx.tenant) as tx:
+        # One person's archive requests are counted one at a time, across processes (as M2).
+        await tx.session.execute(
+            _LOCK_PERSON, {"key": f"firm_export_download:{ctx.tenant_id}:{ctx.user_id}"}
+        )
+        recent = (
+            await tx.session.execute(
+                _RECENT_DOWNLOADS, {"user": ctx.user_id, "window": DOWNLOAD_WINDOW_SECONDS}
+            )
+        ).one()
+        if int(recent.n) >= DOWNLOAD_LIMIT:
+            elapsed = (recent.now - recent.oldest).total_seconds()
+            raise DownloadRateLimited(
+                facts={
+                    "limit": DOWNLOAD_LIMIT,
+                    "retry_after": max(1, math.ceil(DOWNLOAD_WINDOW_SECONDS - elapsed)),
+                }
+            )
+        await tx.session.execute(
+            insert(FirmExportDownload).values(
+                tenant_id=ctx.tenant_id,
+                export_id=row.id,
+                link_id=link.id,
+                user_id=ctx.user_id,
+                bytes_sent=sent,
+                range_start=byte_range.start if byte_range is not None else None,
+                range_end=byte_range.end if byte_range is not None else None,
+                mfa_at=ctx.mfa_at,
+            )
+        )
         tx.record(
             "firm_export.streamed",
             target=Target(SUBJECT, row.id),
             after=(
-                Ref(
-                    link=link_id,
-                    bytes=sent,
-                    range_start=byte_range.start,
-                    range_end=byte_range.end,
-                )
+                Ref(bytes=sent, range_start=byte_range.start, range_end=byte_range.end)
                 if byte_range is not None
-                else Ref(link=link_id, bytes=sent)
+                else Ref(bytes=sent)
             ),
         )
     firm = _firm(ctx)
@@ -530,12 +583,13 @@ __all__ = [
     "FirmExportLinkView",
     "FirmExportView",
     "LinkExpired",
-    "decide",
+    "RequesterNotActive",
     "file_name",
-    "history",
     "issue_link",
     "past_window",
     "prepare",
     "read",
+    "recent_exports",
     "request",
+    "respond",
 ]

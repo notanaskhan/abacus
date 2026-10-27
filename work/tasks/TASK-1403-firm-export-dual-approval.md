@@ -1,8 +1,8 @@
 ---
 id: TASK-1403
 title: Firm export with dual approval (Q-02-T43; DEC-72, conflict C-11)
-spec: docs/contracts/compliance-kernel.md §2 to §7
-acceptance_criteria: [Q-02-T43]
+spec: SPEC-341
+acceptance_criteria: [AC-40, AC-41]
 risk_zone: red
 status: in-review
 epic: Q-02

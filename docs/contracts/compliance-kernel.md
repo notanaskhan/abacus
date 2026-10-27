@@ -32,7 +32,7 @@ One index for what G-02's security center and Q-05's records screens build on: t
 | A download link | `POST /v1/firm/data-exports/{export_id}/link` | `firm_export.download` (fresh MFA, not offshore) | the requester or the approver | denied |
 | The archive (the link) | `GET /v1/firm/data-exports/{export_id}/links/{link_id}` (one `Range`, 206; `application/zip`, `no-store`) | `firm_export.download` (fresh MFA, not offshore) | the person the link was issued to, still the requester or the approver | denied |
 
-A link is not a presigned URL (ADR-104, DEC-509): it is the archive route's path, which opens only for the signed-in person it was issued to, re-authorised when opened and before each segment of the stream. The archive is stored sealed under the tenant's key in segments (`exports/<tenant>/firm-<export_id>/`). At most 20 links per person an hour (429 `download_rate_limited`) and two open streams per person.
+A link is not a presigned URL (ADR-104, DEC-509): it is the archive route's path, which opens only for the signed-in person it was issued to, re-authorised when opened and before each segment of the stream. The archive is stored sealed under the tenant's key in segments (`exports/<tenant>/firm-<export_id>/`). At most 20 links per person an hour, 60 archive requests per person a minute and two open streams per person (429 `download_rate_limited`). A failed build's segments are deleted. Audit rows never carry a link's id (DEC-511).
 
 ## 3. Models
 Code: `backend/src/abacus/modules/evidence/firm_export_contract.py`. Internal unless stated.
@@ -50,11 +50,11 @@ Code: `backend/src/abacus/modules/evidence/firm_export_contract.py`. Internal un
 |---|---|---|
 | 404 | `{"detail": "not found"}` | flag off; an export of another firm or none |
 | 422 | `approver_invalid` | the approver is the requester, or no security admin or partner-level member |
-| 409 | `approver_must_differ` · `export_not_awaiting_approval` · `export_not_ready` | the requester decides; a decided export; a link before the archive is built |
+| 409 | `approver_must_differ` · `export_not_awaiting_approval` · `export_not_ready` · `requester_not_active` | the requester decides; a decided export; a link before the archive is built; an approval once the requester is no longer an active security admin |
 | 403 | `forbidden` (`facts.reason = mfa_required` for a stale second factor) | not the named approver; not the requester or approver for a link; a role refusal |
 | 410 | `export_expired` · `link_expired` | a link or the archive after the 7 days (either clock); the archive after its link's 15 minutes |
 | 416 | `range_not_satisfiable` (`Content-Range: bytes */size`) | the archive with a range it does not serve (DEC-536's rules) |
-| 429 | `download_rate_limited` | more than 20 links an hour, or a third open stream |
+| 429 | `download_rate_limited` | more than 20 links an hour, more than 60 archive requests a minute (each recorded in `firm_export_downloads`), or a third open stream |
 
 ## 5. Human-only actions
 `firm_export.request`, `firm_export.approve` and `firm_export.download` deny the agent and system at the matrix; `firm_export.approved` is on the human-only register (Q-02 AC-17). Two distinct people are needed (DEC-72): the service refuses the requester as approver, and the database refuses it again (Q-02-T43, migration 0216): a CHECK keeps `approver_id` and `requested_by` apart, the insert trigger binds the request to the acting security admin and checks the approver's membership, and the guard lets only the named approver, as the session's person, decide.

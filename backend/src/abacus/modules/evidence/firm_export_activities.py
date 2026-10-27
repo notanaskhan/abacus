@@ -12,8 +12,9 @@ reads the export row under the tenant and acts as the system on behalf of the ap
   worker scratch, off the event loop, and stored sealed under the tenant's key in 64 MiB segments
   (`export_storage`, `kind="firm_export"`). `manifest_sha256` is the manifest file's digest,
   `bundle_sha256` the archive's.
-- `mark_ready` / `mark_failed`: the stamps (`available_until` = ready + 7 days), the audit event
-  and, for ready, the outbox event that tells both people.
+- `mark_ready` / `mark_failed`: the stamps (`available_until` = the approval + 7 days, SPEC-341
+  AC-41: links can be minted for 7 days from approval), the audit event and, for ready, the
+  outbox event that tells both people. A build finishing after its window is failed instead.
 - Expiry (`expire_due`, run by the daily `export_expiry:platform` sweep's activity): every ready
   or downloaded export past `available_until` becomes `expired`, audited, and its
   `firm_export.expired` subscriber deletes the segments. A link already answers 410 from
@@ -27,6 +28,7 @@ import hashlib
 import json
 import tempfile
 import zipfile
+from collections.abc import Callable
 from contextlib import suppress
 from datetime import datetime
 from typing import IO, Final
@@ -65,6 +67,10 @@ register_work_classes(WORKFLOWS)
 
 class _Nothing(Exception):
     """Nothing to write: leave the unit of work without a commit (and without an audit row)."""
+
+
+class _TooLate(Exception):
+    """The archive was built after the 7 days from its approval: it is failed, never ready."""
 
 
 class FirmExportNotBuilding(Exception):
@@ -191,10 +197,19 @@ def _digest(handle: IO[bytes]) -> tuple[str, int]:
     return digest.hexdigest(), size
 
 
+def _quiet(*_details: object) -> None:
+    return None
+
+
 async def package_export(
-    tenant_id: UUID, export_id: UUID, *, segment_bytes: int | None = None
+    tenant_id: UUID,
+    export_id: UUID,
+    *,
+    segment_bytes: int | None = None,
+    heartbeat: Callable[..., None] = _quiet,
 ) -> FirmExportFacts:
-    """Build and store the archive of an approved `building` export."""
+    """Build and store the archive of an approved `building` export, reporting progress through
+    `heartbeat` between its steps (the activity's)."""
     row = await _row(tenant_id, export_id)
     if row is None or row.status != "building" or not _approved(row):
         raise FirmExportNotBuilding(str(export_id))
@@ -202,12 +217,14 @@ async def package_export(
     with tempfile.TemporaryFile() as scratch:
         manifest_sha256 = await asyncio.to_thread(write_archive, scratch, row, built_at)
         bundle_sha256, size = await asyncio.to_thread(_digest, scratch)
+        heartbeat("written")
         if segment_bytes is None:
             segments = await put_segments(tenant_id, export_id, scratch, kind="firm_export")
         else:
             segments = await put_segments(
                 tenant_id, export_id, scratch, segment_bytes=segment_bytes, kind="firm_export"
             )
+    heartbeat("stored")
     return FirmExportFacts(
         tenant_id=str(tenant_id),
         export_id=str(export_id),
@@ -242,6 +259,8 @@ async def ready_export(facts: FirmExportFacts) -> str:
             )
             if locked is None or locked.status != "building":
                 raise _Nothing
+            if locked.decided_at is None or locked.decided_at + WINDOW <= now:
+                raise _TooLate
             await tx.session.execute(
                 update(FirmExport)
                 .where(FirmExport.id == export_id, FirmExport.status == "building")
@@ -253,7 +272,7 @@ async def ready_export(facts: FirmExportFacts) -> str:
                     segment_count=facts.segment_count,
                     object_prefix=facts.object_prefix,
                     ready_at=now,
-                    available_until=now + WINDOW,
+                    available_until=locked.decided_at + WINDOW,
                 )
             )
             tx.record(
@@ -269,13 +288,20 @@ async def ready_export(facts: FirmExportFacts) -> str:
     except _Nothing:
         again = await _row(tenant_id, export_id)
         return again.status if again is not None else "missing"
+    except _TooLate:
+        return await fail_export(tenant_id, export_id)
     return "ready"
 
 
 async def fail_export(tenant_id: UUID, export_id: UUID) -> str:
+    """`failed`, audited; any segments an attempt stored are deleted (idempotent, so a retried
+    activity finishes the clean-up)."""
     row = await _row(tenant_id, export_id)
     if row is None:
         return "missing"
+    if row.status == "failed":
+        await delete_segments(tenant_id, export_id, kind="firm_export")
+        return "failed"
     if row.status != "building":
         return row.status
     async with uow(_system(row)) as tx:
@@ -285,6 +311,7 @@ async def fail_export(tenant_id: UUID, export_id: UUID) -> str:
             .values(status="failed", failure_code=BUILD_ERROR)
         )
         tx.record("firm_export.failed", target=Target(SUBJECT, export_id))
+    await delete_segments(tenant_id, export_id, kind="firm_export")
     return "failed"
 
 
@@ -351,7 +378,9 @@ async def on_expired(event: OutboxEvent) -> None:
 
 @activity.defn(name="firm_export.package")
 async def package_activity(given: FirmExportInput) -> FirmExportFacts:
-    return await package_export(UUID(given.tenant_id), UUID(given.export_id))
+    return await package_export(
+        UUID(given.tenant_id), UUID(given.export_id), heartbeat=activity.heartbeat
+    )
 
 
 @activity.defn(name="firm_export.mark_ready")

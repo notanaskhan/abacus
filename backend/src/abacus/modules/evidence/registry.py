@@ -48,6 +48,7 @@ TABLES: frozenset[str] = frozenset(
         # Q-02-T43 (0216): firm exports with dual approval and their 15-minute links.
         "firm_exports",
         "firm_export_links",
+        "firm_export_downloads",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -73,6 +74,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "engagement_export_downloads",  # A-01-T18 (0191)
         "engagement_export_contents",  # A-01-T18 (0191)
         "firm_export_links",  # Q-02-T43 (0216)
+        "firm_export_downloads",  # Q-02-T43 (0216)
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
@@ -148,6 +150,10 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "firm_export_links": frozenset(
         {"id", "tenant_id", "export_id", "user_id", "expires_at", "mfa_at"}
+    ),
+    "firm_export_downloads": frozenset(
+        {"tenant_id", "export_id", "link_id", "user_id", "bytes_sent", "range_start"}
+        | {"range_end", "mfa_at"}
     ),
 }
 # Columns the app may update; tables not listed keep what their migration grants.

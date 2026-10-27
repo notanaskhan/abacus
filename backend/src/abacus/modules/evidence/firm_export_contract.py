@@ -119,7 +119,7 @@ class FirmExportLinkOut(BaseModel):
     manifest_sha256: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$"), classified("internal")]
 
 
-def _person(p: firm_exports.Person) -> FirmExportPersonOut:
+def _person(p: firm_exports.NamedUser) -> FirmExportPersonOut:
     return FirmExportPersonOut(user_id=p.user_id, display_name=p.display_name)
 
 
@@ -153,7 +153,7 @@ def _gone(detail: str) -> Response:
 @router.get("", action="firm_export.read", response_model=FirmExportPageOut)
 async def list_firm_exports_route(ctx: Ctx) -> FirmExportPageOut:
     """ADM-06 a and c: the export card and the history tray."""
-    return FirmExportPageOut(items=[_out(v) for v in await firm_exports.history(ctx)])
+    return FirmExportPageOut(items=[_out(v) for v in await firm_exports.recent_exports(ctx)])
 
 
 @router.post(
@@ -181,7 +181,7 @@ async def request_firm_export_route(
 async def approve_firm_export_route(export_id: UUID, ctx: Ctx) -> FirmExportOut:
     """ADM-06 f: the named approver starts the build (`building`). 409 `approver_must_differ` for
     the requester, `export_not_awaiting_approval` once decided. Audited `firm_export.approved`."""
-    return _out(await firm_exports.decide(ctx, export_id, approve=True))
+    return _out(await firm_exports.respond(ctx, export_id, approve=True))
 
 
 @router.post(
@@ -195,7 +195,7 @@ async def decline_firm_export_route(
 ) -> FirmExportOut:
     """The named approver declines (`declined`); the same 409s as approve. Audited
     `firm_export.declined`."""
-    return _out(await firm_exports.decide(ctx, export_id, approve=False, reason=body.reason))
+    return _out(await firm_exports.respond(ctx, export_id, approve=False, reason=body.reason))
 
 
 @router.post(

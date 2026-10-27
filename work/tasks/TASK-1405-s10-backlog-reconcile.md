@@ -1,8 +1,8 @@
 ---
 id: TASK-1405
 title: Reconcile the Sprint 10 rows' status in backlog.csv
-spec: docs/plan/status/
-acceptance_criteria: []
+spec: SPEC-000
+acceptance_criteria: [AC-20]
 risk_zone: green
 status: in-review
 epic: F-01

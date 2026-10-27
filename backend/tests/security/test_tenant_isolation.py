@@ -114,6 +114,7 @@ TABLES: tuple[str, ...] = (
     "finding_severities",
     "findings",
     "firm_demo_clocks",
+    "firm_export_downloads",
     "firm_export_links",
     "firm_exports",
     "firm_integrations",

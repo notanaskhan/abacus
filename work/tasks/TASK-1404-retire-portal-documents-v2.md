@@ -1,8 +1,8 @@
 ---
 id: TASK-1404
 title: Retire portal.documents_v2 (R-01-T18 follow-up; DEC-443)
-spec: docs/contracts/portal-pbc.md
-acceptance_criteria: [R-01-T18]
+spec: SPEC-323
+acceptance_criteria: [AC-3]
 risk_zone: amber
 status: in-review
 epic: R-01

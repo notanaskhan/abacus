@@ -16,6 +16,8 @@ exports with dual approval.
   issued to (the actor, the export's requester or approver), never past the export's window,
   only for a ready or downloaded export (CHECKs and the link trigger). The link is a path the
   signed-in person opens; there is no presigned URL (ADR-104, DEC-509).
+- `firm_export_downloads` (insert-only): each archive request with the bytes and range planned,
+  by the person of its link (the download trigger); counted for the per-person request limit.
 
 Revision ID: 0216
 Revises: 0220
@@ -214,8 +216,24 @@ def upgrade() -> None:
                 IF NOT {_APPROVER.format(tenant="OLD.tenant_id", user="OLD.approver_id")} THEN
                     RAISE EXCEPTION 'approver_invalid' USING ERRCODE = 'insufficient_privilege';
                 END IF;
+                -- The requester must still be an active security admin: two current people.
+                IF NOT {_SECURITY_ADMIN.format(tenant="OLD.tenant_id", user="OLD.requested_by")}
+                THEN
+                    RAISE EXCEPTION 'requester_not_active'
+                        USING ERRCODE = 'insufficient_privilege';
+                END IF;
+                -- A person's decision writes the decision only, never the system's stamps.
+                IF NEW.bundle_sha256 IS NOT NULL OR NEW.manifest_sha256 IS NOT NULL
+                    OR NEW.bytes IS NOT NULL OR NEW.segment_count IS NOT NULL
+                    OR NEW.object_prefix IS NOT NULL OR NEW.ready_at IS NOT NULL
+                    OR NEW.available_until IS NOT NULL OR NEW.downloaded_at IS NOT NULL
+                    OR NEW.failure_code IS NOT NULL
+                THEN
+                    RAISE EXCEPTION 'a decision writes no build stamp'
+                        USING ERRCODE = 'insufficient_privilege';
+                END IF;
             ELSIF OLD.status = 'building' AND NEW.status IN ('ready', 'failed') THEN
-                IF actor_kind IS DISTINCT FROM 'system' THEN
+                IF actor_kind IS DISTINCT FROM 'system' OR NEW.downloaded_at IS NOT NULL THEN
                     RAISE EXCEPTION 'a firm export is built by the system'
                         USING ERRCODE = 'insufficient_privilege';
                 END IF;
@@ -227,7 +245,9 @@ def upgrade() -> None:
                         USING ERRCODE = 'insufficient_privilege';
                 END IF;
             ELSIF OLD.status IN ('ready', 'downloaded') AND NEW.status = 'expired' THEN
-                IF actor_kind IS DISTINCT FROM 'system' THEN
+                IF actor_kind IS DISTINCT FROM 'system'
+                    OR NEW.downloaded_at IS DISTINCT FROM OLD.downloaded_at
+                THEN
                     RAISE EXCEPTION 'a firm export is expired by the system'
                         USING ERRCODE = 'insufficient_privilege';
                 END IF;
@@ -319,9 +339,82 @@ def upgrade() -> None:
         "firm_export_links",
         ("id", "tenant_id", "export_id", "user_id", "expires_at", "mfa_at"),
     )
+    op.execute(
+        """
+        CREATE TABLE firm_export_downloads (
+            id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+            tenant_id uuid NOT NULL,
+            export_id uuid NOT NULL,
+            link_id uuid NOT NULL,
+            user_id uuid NOT NULL,
+            at timestamptz NOT NULL DEFAULT clock_timestamp(),
+            bytes_sent bigint NOT NULL CHECK (bytes_sent >= 0),
+            range_start bigint NULL CHECK (range_start >= 0),
+            range_end bigint NULL CHECK (range_end >= range_start),
+            mfa_at timestamptz NOT NULL,
+            FOREIGN KEY (tenant_id, export_id) REFERENCES firm_exports (tenant_id, id),
+            FOREIGN KEY (tenant_id, link_id) REFERENCES firm_export_links (tenant_id, id)
+        )
+        """
+    )
+    op.execute(
+        "CREATE INDEX firm_export_downloads_by_person ON firm_export_downloads "
+        "(tenant_id, user_id, at DESC)"
+    )
+    op.execute(
+        """
+        CREATE FUNCTION firm_export_downloads_person() RETURNS trigger
+        LANGUAGE plpgsql SET search_path = pg_catalog, public, pg_temp AS $$
+        BEGIN
+            IF current_setting('app.actor_kind', true) IS DISTINCT FROM 'human'
+                OR current_setting('app.actor_id', true) IS DISTINCT FROM NEW.user_id::text
+                OR NOT EXISTS (
+                    SELECT 1 FROM firm_export_links l
+                    WHERE l.tenant_id = NEW.tenant_id AND l.id = NEW.link_id
+                        AND l.export_id = NEW.export_id AND l.user_id = NEW.user_id
+                )
+            THEN
+                RAISE EXCEPTION 'a firm export download is its link''s person''s'
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
+            RETURN NEW;
+        END $$
+        """
+    )
+    op.execute(
+        "CREATE TRIGGER firm_export_downloads_person BEFORE INSERT ON firm_export_downloads "
+        "FOR EACH ROW EXECUTE FUNCTION firm_export_downloads_person()"
+    )
+    op.execute(
+        "CREATE TRIGGER firm_export_downloads_immutable BEFORE UPDATE OR DELETE "
+        "ON firm_export_downloads FOR EACH ROW EXECUTE FUNCTION firm_export_links_immutable()"
+    )
+    op.execute(
+        "CREATE TRIGGER firm_export_downloads_no_truncate BEFORE TRUNCATE "
+        "ON firm_export_downloads "
+        "FOR EACH STATEMENT EXECUTE FUNCTION firm_export_links_immutable()"
+    )
+    tenant_table(op, "firm_export_downloads")
+    op.execute("REVOKE UPDATE, DELETE, TRUNCATE ON firm_export_downloads FROM abacus_app")
+    insert_columns(
+        op,
+        "firm_export_downloads",
+        (
+            "tenant_id",
+            "export_id",
+            "link_id",
+            "user_id",
+            "bytes_sent",
+            "range_start",
+            "range_end",
+            "mfa_at",
+        ),
+    )
 
 
 def downgrade() -> None:
+    op.execute("DROP TABLE firm_export_downloads")
+    op.execute("DROP FUNCTION firm_export_downloads_person()")
     op.execute("DROP TABLE firm_export_links")
     op.execute("DROP FUNCTION firm_export_links_immutable()")
     op.execute("DROP FUNCTION firm_export_links_issue()")
