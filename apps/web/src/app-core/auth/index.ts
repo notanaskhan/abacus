@@ -1,5 +1,6 @@
 // The staff auth client's public entry (P-01-T11): what the shell, screens and api.ts import.
 export {
+  ACTIVITY_HEADER,
   AUTH_PREFIX,
   CALLBACK_PATH,
   CSRF_HEADER,
@@ -14,6 +15,7 @@ export {
   freshToken,
   handleUnauthorised,
   lastRefreshFailure,
+  noteUserActivity,
   refreshSession,
   resetAuthForTest,
   safeReturnTo,

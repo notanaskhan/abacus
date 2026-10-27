@@ -21,6 +21,13 @@ export type HarnessProject = (typeof HARNESS_PROJECTS)[number];
 export interface OpenOptions {
   /** The business instant a fixture journey stands at (ISO 8601 with an offset). */
   clock?: string;
+  /** Flags the firm reads as on, in the fixture project only (`?flags=`): a step walks a screen
+   * built on fixtures whose flag E0 leaves off. The other projects read the firm's own flags. */
+  flags?: readonly string[];
+  /** A screen's own fixture scenario, in the fixture project only (`BND-02:b` becomes
+   * `?screen=BND-02&st=b`, G-01-T16): a step walks a screen whose routes only its scenarios
+   * answer yet. */
+  scenario?: string;
 }
 
 export interface PersonaAdapter {
@@ -43,11 +50,20 @@ export function harnessProject(): HarnessProject {
   );
 }
 
+/** `BND-02:b` as the firm entry's `?screen=BND-02&st=b`; nothing when no scenario is named. */
+function screenParams(scenario: string | undefined): Record<string, string> {
+  if (scenario === undefined) return {};
+  const [screen = "", st = "a"] = scenario.split(":");
+  return { screen, st };
+}
+
 function withQuery(path: string, params: Record<string, string>): string {
-  const [base = "/", query = ""] = path.split("?");
+  // A fragment (`#link=…`, an emailed link's token) stays last, after the query.
+  const [url = "/", fragment] = path.split("#");
+  const [base = "/", query = ""] = url.split("?");
   const search = new URLSearchParams(query);
   for (const [k, v] of Object.entries(params)) search.set(k, v);
-  return `${base}?${search.toString()}`;
+  return `${base}?${search.toString()}${fragment === undefined ? "" : `#${fragment}`}`;
 }
 
 /** With the SPA's own session (its sessionStorage token and tenant): the status `path` answers. */
@@ -99,7 +115,15 @@ const fixture: PersonaAdapter = {
       Date.parse(clock) + 12 * 3_600_000,
     );
     if (persona.kind !== "staff") await servePortalEntry(page, path);
-    await page.goto(withQuery(path, { as: persona.slug, clock }));
+    const flags = options.flags ?? [];
+    await page.goto(
+      withQuery(path, {
+        as: persona.slug,
+        clock,
+        ...(flags.length === 0 ? {} : { flags: flags.join(",") }),
+        ...screenParams(options.scenario),
+      }),
+    );
   },
   probe: () => Promise.resolve(null),
 };

@@ -85,6 +85,10 @@ class FakeModel:
     def respond(self, prompt_ref: str, responder: Responder) -> None:
         self._responders[prompt_ref] = responder
 
+    def responds(self, prompt_ref: str) -> bool:
+        """A responder answers `prompt_ref` (a recorded response answers only its content)."""
+        return prompt_ref in self._responders
+
     def record(self, prompt_ref: str, content_sha256: str, text: str) -> None:
         """A scenario's response to `prompt_ref` for this content (a 64-hex SHA-256)."""
         if not _SHA256.fullmatch(content_sha256):
@@ -121,6 +125,11 @@ _provider: ModelProvider | None = None
 def configure_provider(provider: ModelProvider | None) -> None:
     global _provider
     _provider = provider
+
+
+def fake_responds(prompt_ref: str) -> bool:
+    """P-06-T21: the configured provider is the fake model and a responder answers `prompt_ref`."""
+    return isinstance(_provider, FakeModel) and _provider.responds(prompt_ref)
 
 
 def provider() -> ModelProvider:

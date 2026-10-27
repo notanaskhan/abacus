@@ -1,0 +1,9 @@
+{
+  "case": "clean_aging",
+  "prompt_ref": "evidence.upload_review@v3",
+  "content_sha256": "89728992c42088cb001307b8c5cdc6a3476c06b9429a36c2d21cc115d840c340",
+  "response": {
+    "no_concerns": true,
+    "flags": []
+  }
+}

@@ -87,6 +87,7 @@ export const ACTIONS = [
   "decision.read",
   "decision.reassess",
   "decision.request_analysis",
+  "decision_card.raise",
   "demo_clock.set",
   "email_template.edit",
   "email_template.import",
@@ -295,6 +296,7 @@ export const ACTIONS = [
   "workpaper.read",
   "workpaper.sign_ready",
   "workpaper.sign_reviewed",
+  "write_capability.execute",
 ] as const;
 
 export type Action = (typeof ACTIONS)[number];

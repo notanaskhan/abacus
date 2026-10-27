@@ -4,7 +4,8 @@ Run: python -m abacus_tools.codegen.provider_terms [--check]
 
 The protected `docs/operations/provider-terms.yaml` is validated against ADR-114 (Bedrock only, no
 training, named retention exceptions of at most 30 days, a US region, a review within 12 months,
-approved by the founder) and rendered into a Python literal. The unit tests fail when the
+approved by the founder with counsel as the second approver, ADR-114 Q3 and Q-02-T18) and rendered
+into a Python literal. The unit tests fail when the
 checked-in module and the YAML differ; `--check` reports the same without writing.
 """
 
@@ -79,7 +80,12 @@ def validate(entry: dict[str, object]) -> None:
         raise TermsInvalid("subprocessors must be a list")
     if entry.get("approved_by") != "founder":
         raise TermsInvalid("approved_by must be founder (ADR-114 Q3)")
+    # Q-02-T18 (ADR-114 Q3, Q-02 gate G-2): counsel reviews the entry before the founder approves.
+    if entry.get("second_approver") != "counsel":
+        raise TermsInvalid("second_approver must be counsel (ADR-114 Q3)")
     approved, review = _date(entry, "approved_on"), _date(entry, "review_by")
+    if _date(entry, "second_approved_on") > approved:
+        raise TermsInvalid("counsel approves on or before the founder's approved_on")
     if not approved < review <= approved + _MAX_REVIEW:
         raise TermsInvalid("review_by is after approved_on and within 12 months")
 

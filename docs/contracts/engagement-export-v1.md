@@ -4,7 +4,7 @@
 |---|---|
 | Register row | Screen-family contract "Engagement export" in `docs/contracts/README.md` |
 | Version | v1 (format `accrued.binder-export` 1.0) |
-| Status | create, undo, history and status live (A-01-T18, 2026-10-26); package built by A-01-T19; download a stub until A-01-T22 |
+| Status | create, undo, history and status live (A-01-T18, 2026-10-26); package built by A-01-T19; download, expiry sweep and void on withdrawal live (A-01-T22, 2026-10-27) |
 | Provider epic | A-01 (T17 stub; T18 create, undo, reads; T19 package; T22 download) |
 | Consumers | AUD-02, AUD-03 export sheet (A-01-T24); Q-04 rollback path; G-02 and Q-02 firm export (one package per engagement); A-07 archive seal manifest base (P-43); A-04, A-05, A-06 workpaper sections; requests (index rows) and agents (screening) section providers |
 | Freeze sprint | S11 (Fri Apr 2, 2027) |
@@ -24,7 +24,7 @@ Consumers can rely on one open package format for an audit engagement's PBC bind
 | Undo (10-s window) | `POST /v1/exports/{export_id}/undo` | `export.create` | as create | denied |
 | Download (`Range`) | `GET /v1/exports/{export_id}/download` | `export.download` | engagement partner, manager; fresh MFA, independence, not offshore; and the requester or an `export.create` holder on the engagement (service) | denied |
 
-Platform support holds no export cell (SPEC-012: support roles are read-only); client principals reach none (INV-4). Flag off: 404. Create, undo and the reads are live (A-01-T18; DEC-433); download answers 501 `not_implemented` until A-01-T22.
+Platform support holds no export cell (SPEC-012: support roles are read-only); client principals reach none (INV-4). Flag off: 404. Create, undo and the reads are live (A-01-T18; DEC-433); download is live (A-01-T22; DEC-536 to DEC-538).
 
 Module interface: `evidence.api.register_export_section(name, provider, *, section_version="1.0")` with `SectionRequest` and `SectionFile`; core names `index`, `fulfilments`, `review_decisions`, `screening`, `citations`; reserved `readme`, `manifest`, `checksums`, `evidence`, `audit_trail` (SPEC-344 §6). `SectionRequest` names the requester (`requested_by_user_id`, `membership_id`): a provider reads as that person (`visible()`, walls, independence) and never emits a Restricted value unmasked (DEC-379); it names each binder once, and every binder id has been checked against the work item at create.
 
@@ -53,11 +53,13 @@ C2 `engagement_export` (`docs/product/status-vocabulary.yaml`): `queued` "Queued
 | 409 | `{"detail": "undo_window_closed"}` | Undo after `not_before`, or by anyone but the requester |
 | 409 | `{"detail": "effect_started"}` | Undo once the build consumed the grant |
 | 409 | `{"detail": "export_not_ready"}` | download before `ready` |
-| 410 | `{"detail": "export_expired"}` | download after 7 days or once voided |
+| 410 | `{"detail": "export_expired"}` | download after 7 days on the business clock (before the sweep runs too), once voided, or while it holds a version withdrawn since (DEC-537) |
+| 403 | `{"detail": "forbidden", "facts": {"reason": "mfa_required"}}` | create, undo, reads or download with a stale second factor: the sheet's step-up (DEC-547) |
+| 429 | `{"detail": "download_rate_limited", "facts": {"limit", "retry_after"}}` + `Retry-After` | more than 2 open streams or 60 requests a minute for one person (DEC-545) |
+| 416 | `{"detail": "range_not_satisfiable"}` + `Content-Range: bytes */<size>` | several ranges, a malformed `Range`, a start at or past the end, an empty suffix (DEC-536) |
 | 422 | `{"detail": "export_kind_unsupported"}` | a work item that is not an audit (fail closed until C19) |
 | 422 | `{"detail": "binder_not_in_work_item"}` | a scope binder id that is not one of the work item's PBC binders (DEC-379) |
 | 422 | `{"detail": "export_section_missing"}` | `include_audit_trail` while no audit-trail reader is registered (DEC-433): refused before any grant |
-| 501 | `{"detail": "not_implemented"}` | download, until A-01-T22 |
 
 ## 7. Audit and outbox events
 | Event | Written when | Payload (no Restricted data) |
@@ -66,10 +68,14 @@ C2 `engagement_export` (`docs/product/status-vocabulary.yaml`): `queued` "Queued
 | `engagement_export.undone` | Undo | export id |
 | `engagement_export.packaged` | built | counts, bytes, bundle and manifest SHA-256 |
 | `engagement_export.failed` | build fails | failure code |
-| `engagement_export.downloaded` | download | bytes sent, range |
+| `engagement_export.downloaded` | download (each range its own row in `engagement_export_downloads`, written before the first byte) | bytes planned, range |
 | `engagement_export.expired` / `voided` | 7 days, withdrawn content | export id, reason |
 
-Outbox: `engagement_export.requested`, `.ready`, `.failed`, `.expired`, `.undone` (identifiers only); notifications consumes `ready` and `failed`.
+Outbox: `engagement_export.requested`, `.ready`, `.failed`, `.expired`, `.voided`, `.undone` (identifiers only); notifications consumes `ready` (`export_ready`) and `failed` (`export_failed`), to the requester only; evidence consumes `.expired` and `.voided` to delete that export's segments.
+
+**Download (A-01-T22).** `200` (whole) or `206` (one range) `application/zip`, `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, `Accept-Ranges: bytes`, `ETag: "<bundle_sha256>"`, `Content-Disposition: attachment; filename="accrued-binder-<export_id>.zip"` (ASCII, no names). `If-Range` other than the ETag serves the whole bundle. The API decrypts the sealed segments itself under the export's tenant: no presigned URL and no object key appears in any answer (ADR-104). Before every segment after the first it re-checks the export and the person's `export.download`, and stops the stream if either changed or after 30 minutes (DEC-545); expiry counts on the later of the business and system clocks (DEC-546).
+
+**Expiry and void (A-01-T22).** The Schedule `export_expiry:platform` (`ExportExpirySweep`, daily, background) marks ready exports past `expires_at` `expired` (`void_reason = expired`) firm by firm; the `evidence_version.withdrawn` subscriber voids every ready export holding that version (`expired`, `withdrawn_content`); a build finishing at the same time is voided at `mark_ready` (DEC-538). Then the export's own segments, and nothing else, are deleted.
 
 The build also records `engagement_export.started` (the grant consumed, status `packaging`) and `engagement_export.snapshotted` (`as_of_seq`, file and request counts) as the system on behalf of the requester (DEC-433).
 

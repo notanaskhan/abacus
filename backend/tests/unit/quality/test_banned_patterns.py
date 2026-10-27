@@ -2233,7 +2233,12 @@ def test_ac20_bound_002_only_named_modules_may_depend_on_ledger() -> None:
 
 
 def test_ac20_bound_002_nothing_depends_on_connections() -> None:
-    assert [m for m, deps in bp.MODULE_DEPENDENCIES.items() if "connections" in deps] == []
+    """Only the plan's one edge (A-02 §4.1, DEC-517): integrations composes POR-16 over
+    connections, which never imports integrations."""
+    assert [m for m, deps in bp.MODULE_DEPENDENCIES.items() if "connections" in deps] == [
+        "integrations"
+    ]
+    assert "integrations" not in bp.MODULE_DEPENDENCIES["connections"]
 
 
 # LIST-001: the ledger exemption ------------------------------------------------------------

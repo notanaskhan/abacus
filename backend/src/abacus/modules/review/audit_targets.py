@@ -12,10 +12,12 @@ from sqlalchemy import select
 from sqlalchemy.orm import QueryableAttribute
 
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.modules.review.models import SignOff
+from abacus.modules.review.models import DecisionCard, ReviewableNote, SignOff
 
 _OWNERS: dict[str, tuple[QueryableAttribute[UUID], QueryableAttribute[UUID]]] = {
     "sign_off": (SignOff.id, SignOff.engagement_id),  # SPEC-308
+    "reviewable_note": (ReviewableNote.id, ReviewableNote.engagement_id),  # P-04-T21, ED-150
+    "decision_card": (DecisionCard.id, DecisionCard.engagement_id),  # P-04-T23
 }
 AUDIT_KINDS = frozenset(_OWNERS)
 

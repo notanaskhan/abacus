@@ -1,0 +1,21 @@
+{
+  "case": "zero_width_draft",
+  "prompt_ref": "evidence.upload_review@v3",
+  "content_sha256": "7bd37dca4e74316162f2e30b2753a26c2633d47cee132ac56fd01a42c58a9ff7",
+  "response": {
+    "no_concerns": false,
+    "flags": [
+      {
+        "category": "draft",
+        "confidence": 0.85,
+        "rationale": "The header spells DRAFT with hidden characters between its letters.",
+        "citations": [
+          {
+            "page": 1,
+            "quote": "D›R›A›F›T copy"
+          }
+        ]
+      }
+    ]
+  }
+}

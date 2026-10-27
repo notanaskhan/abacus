@@ -26,6 +26,7 @@ import {
   wave7Rows,
 } from "../seed/audits-index";
 import { stableId } from "../seed/prng";
+import { exportHandlers } from "./exports";
 
 const NOT_FOUND = { detail: "not_found" };
 type Segment = AuditIndexRowOut["segment"];
@@ -87,6 +88,14 @@ export function auditHandlers(
     request.params.engagement_id === northwind.engagement_id &&
     find({ ...request, params: { work_item_id: northwind.work_item_id } }) !== undefined;
   return {
+    // A-01-T24: the export sheet's routes on Northwind's audit.
+    ...(northwind === undefined
+      ? {}
+      : exportHandlers({
+          workItemId: northwind.work_item_id,
+          engagementId: northwind.engagement_id,
+          now: seed.clock.ms,
+        })),
     "GET /v1/audits": (request) => {
       const q = request.query;
       const phase = q.get("phase");

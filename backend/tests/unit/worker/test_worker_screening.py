@@ -61,6 +61,8 @@ def test_ac14_the_worker_hosts_connections_and_agents() -> None:
         "connection.created",
         "request_item.classified",
         "ledger_snapshot.recorded",  # SPEC-034 (TASK-069): waiting general ledgers follow
+        # A-02-T16: a disconnected or replaced grant is revoked at the provider after commit.
+        "connection_grant.revocation_requested",
     }
     assert worker_main.agents.SUBSCRIPTIONS in worker_main.SUBSCRIBERS
 
@@ -103,11 +105,24 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "guidance_draft.decided",
         "review_decision.recorded",
         "inbox_file.sorted",
-        # P-04-T19 (TASK-1367): the stale sign-off detector hears its owners' change events.
-        "workpaper.content_changed",
+        # On main since S10 but missing from this list (ED-165): the export build's start
+        # (A-01-T19), the TB and workpaper staleness subscribers, the AI boundary facts.
+        "engagement_export.requested",
         "trial_balance.version_created",
-        "engagement_export.requested",  # A-01-T19: the engagement export workflow starts
-        "ai_boundary.facts_changed",  # Q-02-T08: the worker forgets a firm's boundary facts
+        "workpaper.content_changed",
+        "ai_boundary.facts_changed",
+        # A-01-T22: an expired or voided export's segments are deleted.
+        "engagement_export.expired",
+        "engagement_export.voided",
+        # P-07-T47 (DEC-539): the C13 projector's engagement gates.
+        "acceptance.decided",
+        "independence.confirmed",
+        "independence.declined",
+        "independence.concluded",
+        "eqr.eligibility_approved",
+        # A-02-T16: grant revocation; A-02-T17: a changed tie-out check makes sign-offs stale.
+        "connection_grant.revocation_requested",
+        "tie_out_check.changed",
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert (

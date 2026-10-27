@@ -45,7 +45,7 @@ const READS: [string, Record<string, string>][] = [
 ];
 
 describe("security-center v1 fixtures (ADM-06)", () => {
-  it("serves a to h and T03's states; i and j stay G-03-T29's", () => {
+  it("serves a to h, T03's states and R2's fixture-only i and j (G-02-T16)", () => {
     expect(Object.keys(scenarios).sort()).toEqual([
       "a",
       "b",
@@ -56,6 +56,8 @@ describe("security-center v1 fixtures (ADM-06)", () => {
       "f",
       "g",
       "h",
+      "i",
+      "j",
       "sessions",
       "support_granted",
       "support_requested",

@@ -14,7 +14,13 @@
 // on time. The same spec runs in the fixture, fullstack, staging and canary projects; the persona
 // adapter of the project signs the persona in.
 import { test as base, type Page } from "@playwright/test";
-import { type HarnessProject, type PersonaAdapter, adapterFor, harnessProject } from "./adapters";
+import {
+  type HarnessProject,
+  type OpenOptions,
+  type PersonaAdapter,
+  adapterFor,
+  harnessProject,
+} from "./adapters";
 import { axeStep } from "./axe";
 import { type InvariantContext, assertInvariants } from "./invariants";
 import { type Persona, type PersonaSlug, persona as personaOf } from "./personas";
@@ -51,7 +57,7 @@ export class Journey {
   }
 
   /** Become `slug` and open `path` (an entry point; later steps click or use to.<ID>()). */
-  async as(slug: PersonaSlug, path: string, options: { clock?: string } = {}): Promise<void> {
+  async as(slug: PersonaSlug, path: string, options: OpenOptions = {}): Promise<void> {
     this.who = personaOf(slug);
     await this.adapter.open(this.page, this.who, path, options);
   }

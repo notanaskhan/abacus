@@ -43,6 +43,43 @@ test.describe("J01-core firm onboarding", () => {
     },
   );
 
+  test(
+    "J01 2: Felix signs in with an email code and a second factor (SHL-06c)",
+    owner("P-01 · P-01-T16 on the WorkOS fake (full stack) and staging · M5, Fri Jan 22, 2027"),
+    async ({ journey }) => {
+      // The hosted sign-in is the identity provider's page (the WorkOS fake on the full stack),
+      // never the SPA's: the fixture project presets a session, so it has no sign-in to walk.
+      test.fixme(
+        journey.project === "fixture",
+        "fixture mode presets the session (no hosted page)",
+      );
+      await journey.as("felix-andersen", "/", { clock: DEMO_INSTANT });
+      await journey.step("J01 step 2: Felix is signed in, inside the toolbar", async (page) => {
+        await expect(page.getByRole("navigation", { name: "Modules" })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Brightwater Hale" })).toBeVisible();
+      });
+    },
+  );
+
+  test(
+    "J01 3: Grace reaches Firm settings from the firm pill (SHL-03a)",
+    owner("P-01 · P-01-T16 · M5, Fri Jan 22, 2027"),
+    async ({ journey }) => {
+      // SHL-03 a: Grace's capabilities hold the admin section (the seed answers none yet).
+      await journey.as("grace-holloway", "/", { clock: DEMO_INSTANT, scenario: "SHL-03:a" });
+      await journey.step("J01 step 3: the firm pill's menu (SHL-03a)", async (page) => {
+        await page.getByRole("button", { name: "Brightwater Hale" }).click();
+        await expect(page.getByRole("menu", { name: "Firm and profile" })).toBeVisible();
+      });
+      await journey.step("J01 step 3: Firm settings opens", async (page) => {
+        await page.getByRole("menuitem", { name: "Firm settings" }).click();
+        // Firm settings is the methodology admin until ADM-01 replaces it (G-01; its assertion
+        // stays fixme until then), then /settings.
+        await expect(page).toHaveURL(/\/(admin\/methodology|settings)\b/);
+      });
+    },
+  );
+
   test.fixme(
     "J01 2: Margaret reviews users and roles and invites a staff member (ADM-02)",
     owner("G-01 · G-01-T10 ADM-02 users table and role templates · S8, Fri Feb 19, 2027"),

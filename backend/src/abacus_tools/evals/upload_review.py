@@ -7,8 +7,15 @@ extraction and checks, then the reviewer through the gateway (evaluation mode pi
 compares the flags shown to the firm with the case's expected categories. Metrics: recall and
 precision per category, citation verification of shown flags, containment of adversarial content
 (delimited and not obeyed), and cost per review; thresholds come from `evals/upload_review`.
-There is no fake answer for this agent (TASK-058 D5 declined): only a real route runs it, and
-only on the stack's synthetic firm (the data boundary applies, ADR-112).
+Real routes run only on the stack's synthetic firm (the data boundary applies, ADR-112).
+
+P-06-T21: `--route fake` runs the same path on the fake model, answering from recorded answers
+(`fake_answers/upload_review/*.json`, F-04.26) keyed by the prompt and the SHA-256 of the request
+and the document as the reviewer is shown it (`review_sha256`). Every quote in them is in the
+generated document, so code verifies it. It proves the code paths and the recorded answers,
+never a model's quality: a fake run never makes a tier eligible. Being recorded, a fake run also
+fails when any attempt isn't reviewed or shows other flags than its case expects. The `fast`
+subset runs every case once.
 """
 
 from __future__ import annotations
@@ -19,29 +26,39 @@ import json
 import statistics
 import time
 import uuid
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Generator, Sequence
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
-from typing import Annotated, Final, cast
+from typing import Annotated, Final, Literal, cast
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.ai_gateway import (
+    FakeModel,
     ModelProvider,
     ModelRequest,
     ModelResponse,
     NotAdmitted,
     Tier,
+    configure_provider,
     evaluation,
     model_id,
 )
 from abacus.ai_gateway.routes import configure_route, route_provider
 from abacus.kernel.clock import system_now
 from abacus.kernel.logging import get_logger
-from abacus.modules.agents.api import REVIEWER, create_review_run, load_agent_context, review, spec
+from abacus.modules.agents.api import (
+    REVIEWER,
+    create_review_run,
+    install_fake_reviews,
+    load_agent_context,
+    review,
+    spec,
+)
 from abacus.modules.evidence.api import (
     UPLOAD_VERSION,
     UploadInput,
@@ -66,10 +83,13 @@ from abacus_tools.synthetic.documents import (
     tax_form_pdf,
     vendor_statement_pdf,
 )
+from abacus_tools.synthetic.scenarios.brightwater_hale.responses import load as load_responses
 
 _log = get_logger(__name__)
 REPO = Path(__file__).resolve().parents[4]
 SUITE = REPO / "evals" / "upload_review" / "suite.yaml"
+FAKE_ANSWERS: Final = Path(__file__).parent / "fake_answers" / "upload_review"
+Subset = Literal["fast", "full"]
 UNTRUSTED: Final = '<untrusted name="document">'
 FLAG_CATEGORIES: Final = ("irrelevant", "draft", "altered")
 MAX_ERRORED: Final = 0.2
@@ -360,7 +380,11 @@ METRICS: Final[dict[str, Callable[[Attempts], float]]] = {
 }
 
 
-def verdict(suite: ReviewSuite, attempts: Attempts) -> tuple[str, list[str], dict[str, float]]:
+def verdict(
+    suite: ReviewSuite, attempts: Attempts, *, exact: bool = False
+) -> tuple[str, list[str], dict[str, float]]:
+    """`exact` (the fake route's recorded answers): also every attempt reviewed and showing
+    exactly the flags its case expects, on top of every threshold."""
     metrics = {name: round(fn(attempts), 4) for name, fn in METRICS.items()}
     reasons = [
         f"{t.metric}:{metrics[t.metric]}<{t.minimum}"
@@ -373,6 +397,10 @@ def verdict(suite: ReviewSuite, attempts: Attempts) -> tuple[str, list[str], dic
     errored = sum(s.stage == "errored" for _, s in attempts)
     if attempts and errored / len(attempts) > MAX_ERRORED:
         reasons.append(f"errored:{errored}")
+    if exact:
+        reasons.extend(
+            f"case:{c.id}" for c, s in attempts if s.stage != "reviewed" or s.shown != c.expected
+        )
     return ("passed" if not reasons else "failed"), reasons, metrics
 
 
@@ -485,12 +513,50 @@ async def _year_end(superuser: str, world: Seeded) -> date:
     return cast(date, found)
 
 
+def fake_answers(directory: Path = FAKE_ANSWERS) -> dict[tuple[str, str], str]:
+    """The recorded answers, by (prompt, `review_sha256`); a second answer for a key is refused."""
+    return {(prompt, sha): text for prompt, sha, text in load_responses(directory)}
+
+
+class _RecordingFake(FakeModel):
+    """The fake route's model, with the recorded answers, keeping what was asked (for
+    containment) and answered (for the report), as `_Recording` does for a real route."""
+
+    def __init__(self, answers: dict[tuple[str, str], str]) -> None:
+        super().__init__()
+        install_fake_reviews(self, answers)
+        self.seen: list[ModelRequest] = []
+        self.said: list[str] = []
+
+    async def complete(self, request: ModelRequest) -> ModelResponse:
+        self.seen.append(request)
+        response = await super().complete(request)
+        self.said.append(response.text[:2000])
+        return response
+
+
+@contextmanager
+def fake_reviewer(answers: dict[tuple[str, str], str]) -> Generator[None]:
+    """The fake route for one run: the fake model with the recorded answers. With its reviewer
+    responder installed the product's `model_available` lets runs start on the fake route; the
+    local stack's fake model has none, so it never reviews there."""
+    configure_provider(_RecordingFake(answers))
+    try:
+        yield
+    finally:
+        configure_provider(None)
+
+
 async def attempt(
     case: ReviewCase, n: int, world: Seeded, stack: Stack, tier: Tier, route: str
 ) -> Seen:
     seen: list[ModelRequest] = []
     said: list[str] = []
-    configure_route(route, _Recording(route_provider(route), seen, said))  # pyright: ignore[reportArgumentType] -- a validated route name
+    if route == "fake":  # `fake_reviewer`'s model records for itself
+        fake = cast(_RecordingFake, route_provider("fake"))
+        fake.seen, fake.said = seen, said
+    else:
+        configure_route(route, _Recording(route_provider(route), seen, said))  # pyright: ignore[reportArgumentType] -- a validated route name
     run_id: uuid.UUID | None = None
     try:
         ctx = world.context()
@@ -562,20 +628,28 @@ async def attempt(
                 cost = spec(REVIEWER).limits.max_cost_usd
         return Seen(case.id, n, "errored", cost_usd=cost, error=type(exc).__name__)
     finally:
-        configure_route(route, None)  # pyright: ignore[reportArgumentType] -- a validated route name
+        if route != "fake":
+            configure_route(route, None)  # pyright: ignore[reportArgumentType] -- a validated route name
 
 
 async def evaluate(
-    stack: Stack, world: Seeded, suite: ReviewSuite, tier: Tier, route: str, out: Path
+    stack: Stack,
+    world: Seeded,
+    suite: ReviewSuite,
+    tier: Tier,
+    route: str,
+    out: Path,
+    subset: Subset = "full",
 ) -> dict[str, object]:
-    """Every case (key cases `repeats` times), stopping before the cost limit; writes a report."""
+    """Every case (key cases `repeats` times; `fast`: once), stopping before the cost limit;
+    writes a report."""
     validate(suite)
     started = system_now()
     attempts: list[tuple[ReviewCase, Seen]] = []
     total, aborted = Decimal(0), False
     budget = spec(REVIEWER).limits.max_cost_usd
     for case in suite.cases:
-        for n in range(1, (suite.repeats if case.key else 1) + 1):
+        for n in range(1, (suite.repeats if case.key and subset == "full" else 1) + 1):
             if total + budget > suite.cost_limit_usd:
                 aborted = True
                 break
@@ -585,7 +659,7 @@ async def evaluate(
             _log.info(
                 "eval.review.attempt", case=case.id, stage=seen.stage, shown=sorted(seen.shown)
             )
-    status, reasons, metrics = verdict(suite, attempts)
+    status, reasons, metrics = verdict(suite, attempts, exact=route == "fake")
     if aborted:
         status, reasons = "aborted_cost", [*reasons, "cost_limit"]
     report: dict[str, object] = {
@@ -595,6 +669,8 @@ async def evaluate(
         "model": model_id(tier, route),  # pyright: ignore[reportArgumentType] -- a validated route name
         "tier": tier,
         "route": route,
+        "subset": subset,
+        "fake": route == "fake",
         "status": status,
         "reasons": reasons,
         "metrics": metrics,

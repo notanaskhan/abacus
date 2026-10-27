@@ -27,6 +27,7 @@ updated: 2026-10-23
 - 2026-10-23: DEC-211 fixes the client-wide grant gap in `identity.repository` (`client_grant_engagements`, `engagement_role`) with `engagements.engagements_of_scope` registered; `tests/integration/test_client_wide_grants.py` (11 cases). Red: identity authorisation.
 
 - 2026-10-23: self-review (security reviewer) found `set_preferences` never authorised `portal_preferences.update`, so the route guard would answer 500 after the write; a scope with nothing covered recorded no check either. Fixed (authorise before the write; 404 for an empty scope) with a `recording_checks` test of both routes. `client_entity` had no scope resolver (the home 404'd for an entity grant): registered. **Open (follow-up):** `client_contacts` and `client_admin_ids` still count only engagement-scope grants, so a client-wide admin is missing from the contacts roster and SPEC-027 reminders, and `remove_client_member` cannot revoke one.
+- 2026-10-27 (S10 gap build): the Feld binder conflict is settled. DEC-348 was decided with the proposed option on Ayush's call: E0 loads only the requests that are named, so Claire's home reads the binder as 5 of 7 with 0 sorted. POR-02's "19 of 21 · 37 sorted" is now a deviation in POR-02.md, and the fixture keeps the handoff's figures. New test: `test_dec348_claires_binder_reads_the_loaded_5_of_7` in `test_p08t22_portal_seed_footing.py`; Upload 2 = 7 − 5 was already asserted.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
