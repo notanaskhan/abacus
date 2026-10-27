@@ -25907,6 +25907,34 @@
             "cls": "internal",
             "title": "Assignee User Id"
           },
+          "band": {
+            "cls": "internal",
+            "enum": [
+              "decisions",
+              "sign_offs",
+              "agent_outputs",
+              "approvals_sends"
+            ],
+            "title": "Band",
+            "type": "string"
+          },
+          "blocked": {
+            "cls": "internal",
+            "title": "Blocked",
+            "type": "boolean"
+          },
+          "blocked_reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Blocked Reason Code"
+          },
           "client_id": {
             "anyOf": [
               {
@@ -25919,6 +25947,18 @@
             ],
             "cls": "internal",
             "title": "Client Id"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Context"
           },
           "created_at": {
             "cls": "internal",
@@ -26017,6 +26057,18 @@
             "title": "Subkind",
             "type": "string"
           },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Title"
+          },
           "work_item_id": {
             "anyOf": [
               {
@@ -26044,7 +26096,10 @@
           "state",
           "created_at",
           "subkind",
-          "office_id"
+          "office_id",
+          "band",
+          "blocked",
+          "blocked_reason_code"
         ],
         "title": "HumanGateOut",
         "type": "object"

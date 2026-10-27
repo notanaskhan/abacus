@@ -115,7 +115,9 @@ def test_c13_one_row_per_subject_is_a_database_rule() -> None:
 
 
 def test_c13_the_row_carries_identifiers_not_labels() -> None:
-    """Labels come from the subject's owner at read time; the projection stores none."""
+    """Labels come from the subject's owner at read time; the projection stores none. Since
+    I-01-T04 the row carries `title` and `context` slots for the owner's resolver (I-01-T07,
+    null until then) and the band and blocked code the projection holds (DEC-573)."""
     props = cast(dict[str, Json], SCHEMAS["HumanGateOut"]["properties"])
     assert set(props) == {
         "id",
@@ -131,6 +133,11 @@ def test_c13_the_row_carries_identifiers_not_labels() -> None:
         "created_at",
         "subkind",  # I-01-T04: the owner's registered gate name (a code)
         "office_id",  # I-01-T04: an identifier, a filter (DEC-30)
+        "band",  # DF-25, computed from the kind
+        "blocked",
+        "blocked_reason_code",  # a code, never text
+        "title",  # the owner's resolver at read time (I-01-T07)
+        "context",
     }
 
 

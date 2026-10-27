@@ -12305,9 +12305,25 @@ export type HumanGateOut = {
      */
     assignee_user_id: string | null;
     /**
+     * Band
+     */
+    band: 'decisions' | 'sign_offs' | 'agent_outputs' | 'approvals_sends';
+    /**
+     * Blocked
+     */
+    blocked: boolean;
+    /**
+     * Blocked Reason Code
+     */
+    blocked_reason_code: string | null;
+    /**
      * Client Id
      */
     client_id: string | null;
+    /**
+     * Context
+     */
+    context?: string | null;
     /**
      * Created At
      */
@@ -12345,6 +12361,10 @@ export type HumanGateOut = {
      * Subkind
      */
     subkind: string;
+    /**
+     * Title
+     */
+    title?: string | null;
     /**
      * Work Item Id
      */

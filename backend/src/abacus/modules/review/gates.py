@@ -451,6 +451,8 @@ class GateView:
     created_at: datetime
     subkind: str = ""
     office_id: UUID | None = None
+    blocked: bool = False
+    blocked_reason_code: str | None = None
 
 
 def _engagement() -> ColumnElement[UUID]:
@@ -573,6 +575,8 @@ async def gates_waiting_on(
                 r.updated_at,
                 r.subkind,
                 r.office_id,
+                r.blocked,
+                r.blocked_reason_code,
             )
             for r in rows
         ],

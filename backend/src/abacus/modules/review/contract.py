@@ -49,7 +49,7 @@ from abacus.modules.review.decisions import (
     reassess,
     request_analysis,
 )
-from abacus.modules.review.gates import gate_counts, gates_waiting_on
+from abacus.modules.review.gates import band_of, gate_counts, gates_waiting_on
 from abacus.modules.review.notes import (
     NoteDetail,
     NoteItem,
@@ -684,6 +684,14 @@ class HumanGateOut(BaseModel):
     # I-01-T04: the owner's registered gate name, and the office it files under (a filter).
     subkind: Annotated[str, classified("internal")]
     office_id: Annotated[UUID | None, classified("internal")]
+    # I-01-T04 (contract first for HOME-01, DEC-573): the DF-25 band, the projection's blocked
+    # reason code, and the row's title and context lines, which the owner's resolver fills at
+    # read time (I-01-T07); null until it does. Never a decision control.
+    band: Annotated[GateBand, classified("internal")]
+    blocked: Annotated[bool, classified("internal")]
+    blocked_reason_code: Annotated[str | None, classified("internal")]
+    title: Annotated[str | None, classified("confidential")] = None
+    context: Annotated[str | None, classified("confidential")] = None
 
 
 class GateBandsOut(BaseModel):
@@ -768,6 +776,9 @@ async def human_gate_list_route(
                 created_at=g.created_at,
                 subkind=g.subkind,
                 office_id=g.office_id,
+                band=cast(GateBand, band_of(g.kind)),
+                blocked=g.blocked,
+                blocked_reason_code=g.blocked_reason_code,
             )
             for g in found.items
         ],

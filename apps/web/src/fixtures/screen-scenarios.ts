@@ -18,6 +18,7 @@ import { OPENS as ADM06_OPENS, scenarios as adm06 } from "./scenarios/ADM-06";
 import { OPENS as ADM07_OPENS, scenarios as adm07 } from "./scenarios/ADM-07";
 import { scenarios as bnd01 } from "./scenarios/BND-01";
 import { OPENS as BND02_OPENS, scenarios as bnd02 } from "./scenarios/BND-02";
+import { scenarios as home01 } from "./scenarios/HOME-01";
 import { scenarios as shl03 } from "./scenarios/SHL-03";
 import { scenarios as shl04 } from "./scenarios/SHL-04";
 import { OPENS as SHL14_OPENS, scenarios as shl14 } from "./scenarios/SHL-14";
@@ -39,6 +40,7 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
   "ADM-07": { scenarios: adm07, opens: ADM07_OPENS }, // G-02-T13
   "BND-01": { scenarios: bnd01, opens: {} },
   "BND-02": { scenarios: bnd02, opens: {}, ids: BND02_OPENS },
+  "HOME-01": { scenarios: home01, opens: {} }, // I-01-T05
   "SHL-03": { scenarios: shl03, opens: {} },
   "SHL-04": { scenarios: shl04, opens: {} },
   "SHL-14": { scenarios: shl14, opens: {}, ids: SHL14_OPENS },
