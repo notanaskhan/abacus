@@ -1,3 +1,11 @@
+---
+id: RB-37
+title: Onboard a firm's people, offices and walls
+owner: builder
+alarms: []
+last_rehearsed: never
+rehearse_by: 2027-03-16
+---
 # RB-37 · Onboard a firm's people, offices and walls
 
 Owner: firm-admin desk (AY lane) · Applies to: a new firm's first week · Contract: `docs/contracts/firm-settings.md` (v1, frozen 2026-10-28) · Screens: ADM-01, ADM-02, ADM-03 · Task: G-01-T18
