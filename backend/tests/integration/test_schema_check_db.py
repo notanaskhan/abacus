@@ -1469,6 +1469,17 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"status", "document_count", "segment_count", "bundle_bytes", "failure_code"}
             | {"expires_at", "updated_at"}
         ),
+        # P-07-T52 (0250): an import's run and end; a row's decision and what the run applied.
+        "client_imports": frozenset({"stage", "counts", "run_by", "run_at", "completed_at"}),
+        "client_import_rows": frozenset(
+            {"decision", "merge_client_id", "decided_by", "decided_at", "applied_at"}
+            | {"result_ref", "error_code"}
+        ),
+        # R-01-T26 (0251): the firm's one portal settings draft.
+        "portal_settings_drafts": frozenset(
+            {"expected_version", "base_version", "brand", "client_experience"}
+            | {"follow_up_policy", "logo", "saved_at", "saved_by"}
+        ),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
@@ -1652,6 +1663,8 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "firm_export_downloads": "firm_export_links_immutable",  # 0216 (TASK-1403)
         "assurance_external_releases": "assurance_external_records_immutable",  # 0226 (TASK-1443)
         "assurance_external_archives": "assurance_external_records_immutable",  # 0226 (TASK-1443)
+        "human_gate_snoozes": "human_gate_acts_immutable",  # 0223 (I-01-T04)
+        "human_gate_reassignments": "human_gate_acts_immutable",  # 0223 (I-01-T04)
     }
     assert _evidence_problems(evidence) == []
 
@@ -2072,6 +2085,7 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         # 0242 (G-02-T20): staff-imported, two-person-published Pub 4557 controls; the firm's read.
         | {"safeguards_controls_import", "safeguards_controls_publish"}
         | {"safeguards_controls_published"}
+        | {"client_import_files_erase"}  # 0250 (P-07-T52): the 30-day erase, a count only
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
 
