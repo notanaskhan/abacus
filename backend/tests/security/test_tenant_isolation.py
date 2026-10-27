@@ -198,6 +198,8 @@ TABLES: tuple[str, ...] = (
     "pii_regions",
     "pii_reveals",
     "pii_scan_runs",
+    "pilot_enrolments",
+    "pilot_metric_snapshots",
     "populations",
     "portal_branding",
     "portal_preferences",

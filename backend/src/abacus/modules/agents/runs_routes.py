@@ -47,6 +47,15 @@ class AgentRunOut(BaseModel):
     duration_ms: Annotated[int | None, classified("internal")]
     initiator_name: Annotated[str, classified("internal")]
     subject: Annotated[str | None, classified("internal")]
+    # C6 v1 (Q-02-T45; ADR-169 §4).
+    # Optional with defaults: additive to v0, so v0 readers and fixtures stay valid.
+    state_reason: Annotated[str | None, classified("internal")] = None
+    outcome: Annotated[
+        Literal["approved", "partially_approved", "rejected"] | None, classified("internal")
+    ] = None
+    stage: Annotated[Literal["shadow", "live"], classified("internal")] = "live"
+    record_sha256: Annotated[str | None, classified("internal")] = None
+    record_persisted_at: Annotated[datetime | None, classified("internal")] = None
 
 
 class TraceRowOut(BaseModel):

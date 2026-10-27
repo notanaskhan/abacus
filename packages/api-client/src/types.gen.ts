@@ -976,6 +976,22 @@ export type AgentRunOut = {
      */
     initiator_name: string;
     /**
+     * Outcome
+     */
+    outcome?: 'approved' | 'partially_approved' | 'rejected' | null;
+    /**
+     * Record Persisted At
+     */
+    record_persisted_at?: string | null;
+    /**
+     * Record Sha256
+     */
+    record_sha256?: string | null;
+    /**
+     * Stage
+     */
+    stage?: 'shadow' | 'live';
+    /**
      * Started At
      */
     started_at: string;
@@ -983,6 +999,10 @@ export type AgentRunOut = {
      * State
      */
     state: 'queued' | 'running' | 'succeeded' | 'needs_input' | 'failed';
+    /**
+     * State Reason
+     */
+    state_reason?: string | null;
     /**
      * Subject
      */
