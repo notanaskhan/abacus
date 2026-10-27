@@ -5,6 +5,6 @@ Regenerate: python -m abacus_tools.codegen.provider_terms
 
 from abacus.kernel.provider_terms import TermsEntry
 
-VERSION = "a79d7a734613e8b44544c853ac3ad5aba664913f1b7d29ee39d284e226b9d76a"
+VERSION = "bbe78f7436ae254e4f9fbfdb418406b3aee20c8cda551bbec90796b8d42f94cd"
 
 ENTRIES: tuple[TermsEntry, ...] = ()

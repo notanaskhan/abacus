@@ -17,3 +17,15 @@ class WorkpaperContentChanged(DomainEvent):
 
     workpaper_id: Annotated[UUID, classified("internal")]
     engagement_id: Annotated[UUID, classified("internal")]
+
+
+class TieOutCheckChanged(DomainEvent):
+    """A tie-out check on a trial balance was defined, edited or linked to an issue (A-02-T17):
+    the trial balance's signed content includes its checks, so P-04-T19's stale detector tells
+    whoever signed the trial balance before the change (SPEC-333 AC-13)."""
+
+    event_type: ClassVar[str] = "tie_out_check.changed"
+
+    check_id: Annotated[UUID, classified("internal")]
+    trial_balance_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]

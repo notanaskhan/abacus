@@ -40,6 +40,8 @@ class Connection(Base):
     reauth_due_at: Mapped[datetime | None]
     last_sync_at: Mapped[datetime | None]
     status_reason_code: Mapped[str | None]
+    # 0215 (A-02-T16): bumped on every status change (the portal's disconnect `seen_version`).
+    version: Mapped[int] = mapped_column(server_default=FetchedValue())
 
 
 class ConnectionState(Base):
@@ -57,6 +59,30 @@ class ConnectionState(Base):
     created_at: Mapped[datetime]
     expires_at: Mapped[datetime]
     used_at: Mapped[datetime | None]
+    # 0215 (A-02-T16): POR-16's consent (same entity), and the connection a reconnect
+    # re-authorises; both null for the legacy engagement flow (SPEC-020).
+    consent_id: Mapped[UUID | None]
+    connection_id: Mapped[UUID | None]
+    category: Mapped[str | None]
+    # The PKCE verifier, sealed (bound to `state_hash`); opened once at completion (review L6).
+    verifier_sealed: Mapped[bytes | None] = mapped_column(LargeBinary)
+
+
+class ConnectionGrantRevocation(Base):
+    """A retired grant waiting for the provider's revoke (0215; review M1). Restricted: the
+    sealed blob is never logged; the row is deleted once the revoke is answered."""
+
+    __tablename__ = "connection_grant_revocations"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    client_entity_id: Mapped[UUID]
+    provider: Mapped[str]
+    connection_id: Mapped[UUID | None]
+    state_id: Mapped[UUID | None]  # an abandoned grant's state (review round 2, L3)
+    sealed: Mapped[bytes] = mapped_column(LargeBinary)
+    reason: Mapped[str]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
 
 
 class ConnectionSecret(Base):

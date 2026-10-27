@@ -322,9 +322,13 @@ async def test_agent_offshore_stale_mfa_and_staff_requests_are_refused(world: Wo
     partner = world.partner.context()
     agent = replace(partner, tenant=TenantContext(world.tenant, "agent", "agent:x:1"))
     stale = replace(partner, mfa_at=datetime.now(UTC) - timedelta(hours=2))
-    for who in (agent, world.offshore.context(), stale, world.staff.context()):
+    for who in (agent, world.offshore.context(), world.staff.context()):
         with pytest.raises(Forbidden):
             await _create(world, who)
+    # A stale second factor is its own 403, `mfa_required`, so the sheet steps up (DEC-547).
+    with pytest.raises(exports.ExportNeedsMfa) as stepping_up:
+        await _create(world, stale)
+    assert stepping_up.value.facts == {"reason": "mfa_required"}
     assert await world.seed.count("engagement_exports", world.tenant) == 0
 
 

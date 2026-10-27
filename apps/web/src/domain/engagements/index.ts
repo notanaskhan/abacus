@@ -62,3 +62,13 @@ export {
   type DecisionDockOption,
   type DecisionDockProps,
 } from "./DecisionDock";
+export {
+  declinedMembers,
+  mayConclude,
+  pendingMembers,
+  useConflictCheck,
+  useIndependence,
+  useIndependenceWrites,
+  useNas,
+  useRotation,
+} from "./independence";

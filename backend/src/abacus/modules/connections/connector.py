@@ -4,6 +4,11 @@ Every connector implements this one interface and passes the conformance suite
 (`tests/unit/connections/conformance.py`). Connectors only read: the contract has no write
 operations and CONN-001 forbids adding any. `pull` returns the provider's bytes exactly as
 sent; the pipeline stores them unaltered before anything interprets them (ADR-038).
+
+A-02-T16 security review: the read-only grant's handshake has PKCE (RFC 7636, S256:
+`authorise_url` takes the challenge, `exchange_code` the verifier) and an end: `revoke` asks the
+provider to revoke the grant the connection holds, after a disconnect or a replaced grant. It
+changes nothing in the client's books; it withdraws the platform's own access.
 """
 
 from __future__ import annotations
@@ -80,10 +85,20 @@ class Connector(ABC):
     def capabilities(self) -> Capabilities: ...
 
     @abstractmethod
-    async def authorise_url(self, state: str, redirect_uri: str) -> str: ...
+    async def authorise_url(
+        self, state: str, redirect_uri: str, *, code_challenge: str | None = None
+    ) -> str: ...
 
     @abstractmethod
-    async def exchange_code(self, code: str, redirect_uri: str) -> Credentials | None: ...
+    async def exchange_code(
+        self, code: str, redirect_uri: str, *, code_verifier: str | None = None
+    ) -> Credentials | None: ...
+
+    @abstractmethod
+    async def revoke(self) -> None:
+        """Revoke the grant at the provider (the connector holds its credentials). `NotSupported`
+        when the provider has no revocation; `Unavailable` to be retried."""
+        ...
 
     @abstractmethod
     async def refresh(self) -> None: ...

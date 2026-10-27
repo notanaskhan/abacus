@@ -282,23 +282,3 @@ async def tb_export_route(
     """Open in Excel (A-02-T22): a deterministic XLSX of the layer with ticks, citations and a
     provenance footer, audited `trial_balance.exported`; formula-like text is neutralised."""
     await _stub(ctx, "trial_balance.export", engagement_id)
-
-
-@tb_router.post(
-    "/{tb_id}/checks/{check_id}/issue-link",
-    action="tie_out_check.define",
-    response_model=TieIssueLinkOut,
-    status_code=201,
-    errors=(409, 501),
-)
-async def tie_issue_link_route(
-    engagement_id: UUID,
-    tb_id: UUID,
-    check_id: UUID,
-    body: TieIssueLinkIn,
-    ctx: Ctx,
-    idempotency_key: IdempotencyKey,
-) -> TieIssueLinkOut:
-    """AUD-06 c: link an issue raised through C3 to a check that does not tie (A-02-T17);
-    409 `tie_out_check_stale` on a stale `seen_version`, audited `tie_out_check.issue_linked`."""
-    await _stub(ctx, "tie_out_check.define", engagement_id)

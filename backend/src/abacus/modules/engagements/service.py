@@ -20,12 +20,13 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Target, UnitOfWork, uow
-from abacus.modules.engagements.events import EngagementCreated
+from abacus.modules.engagements.events import EngagementCreated, TeamChangeProposed
 from abacus.modules.engagements.models import Engagement
 from abacus.modules.engagements.repository import (
     client_column as _client_column,
 )
 from abacus.modules.engagements.repository import (
+    entity_engagement_ids,
     get_engagement,
     insert_engagement,
     list_engagements,
@@ -369,6 +370,14 @@ async def is_archived(tenant: TenantContext, engagement_id: UUID) -> bool | None
     return engagement.status == "archived" if engagement is not None else None
 
 
+async def engagements_of_entity(tenant: TenantContext, client_entity_id: UUID) -> list[UUID]:
+    """A-02-T16 (POR-16): the entity's engagements, newest first, as the candidates an
+    entity-scoped action authorises on, one by one (`connection.read` and the others are
+    authorised on an engagement, never firm-wide: DEC-316)."""
+    async with tenant_session(tenant) as session:
+        return list(await entity_engagement_ids(session, client_entity_id))
+
+
 async def entity_of(tenant: TenantContext, engagement_id: UUID) -> UUID | None:
     """The engagement's client entity, or None outside the tenant (SPEC-022: whose connection
     serves it, for the platform's automatic retrievals)."""
@@ -487,6 +496,10 @@ async def add_to_team(
         await add_member(tx, ctx, engagement_id, ref.client_id, user_id, role)
         if budget_hours is not None:  # P-07-T30: ENG-05's hours
             await set_member_hours(tx, engagement_id, user_id, budget_hours)
+        # P-07-T47: a changed team waits for the engagement partner's approval (ENG-05).
+        tx.emit(
+            TeamChangeProposed(engagement_id=engagement_id, user_id=user_id, by_user=ctx.user_id)
+        )
 
 
 async def change_team_role(
@@ -505,6 +518,11 @@ async def change_team_role(
             raise EqrOnTeam(facts={"user_id": str(user_id)})
         if role is not None:
             await change_role(tx, ctx, engagement_id, user_id, role)
+            tx.emit(
+                TeamChangeProposed(
+                    engagement_id=engagement_id, user_id=user_id, by_user=ctx.user_id
+                )
+            )
         if not isinstance(budget_hours, _Keep):
             await set_member_hours(tx, engagement_id, user_id, budget_hours)
 

@@ -6,7 +6,7 @@ from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.engagements.api import register_evidence_readable
 from abacus.modules.evidence.activities import ACTIVITIES as UPLOAD_ACTIVITIES
 from abacus.modules.evidence.anchor_job import ACTIVITIES as ANCHOR_ACTIVITIES
-from abacus.modules.evidence.anchor_job import SCHEDULES
+from abacus.modules.evidence.anchor_job import SCHEDULES as ANCHOR_SCHEDULES
 from abacus.modules.evidence.anchor_job import WORKFLOWS as ANCHOR_WORKFLOWS
 from abacus.modules.evidence.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.evidence.audit_values import evidence_version_values, pii_reveal_values
@@ -50,6 +50,13 @@ from abacus.modules.evidence.export_activities import ACTIVITIES as EXPORT_ACTIV
 from abacus.modules.evidence.export_activities import SUBSCRIPTIONS as EXPORT_SUBSCRIPTIONS
 from abacus.modules.evidence.export_activities import WORKFLOWS as EXPORT_WORKFLOWS
 from abacus.modules.evidence.export_contract import exports_router, work_item_exports_router
+from abacus.modules.evidence.export_lifecycle import ACTIVITIES as EXPIRY_ACTIVITIES
+from abacus.modules.evidence.export_lifecycle import SCHEDULES as EXPIRY_SCHEDULES
+from abacus.modules.evidence.export_lifecycle import SUBSCRIPTIONS as EXPORT_CLOSE_SUBSCRIPTIONS
+from abacus.modules.evidence.export_lifecycle import WORKFLOWS as EXPIRY_WORKFLOWS
+from abacus.modules.evidence.export_lifecycle import (
+    on_version_withdrawn as void_exports_on_withdrawal,
+)
 from abacus.modules.evidence.export_manifest import (
     FORMAT_VERSION as EXPORT_FORMAT_VERSION,
 )
@@ -226,9 +233,11 @@ from abacus.modules.evidence.workflow_types import (
 from abacus.modules.evidence.workflow_types import ExportFailure as ExportBuildFailure
 from abacus.modules.evidence.workflows import (
     ANCHOR_ID,
+    EXPORT_EXPIRY_ID,
     AuditAnchorWorkflow,
     EngagementExportWorkflow,
     EvidenceWithdrawalPurge,
+    ExportExpirySweepWorkflow,
     LegalHoldApply,
     LegalHoldRelease,
     TrustLayerBackfill,
@@ -268,6 +277,7 @@ WORKFLOWS: dict[type, str] = {
     **WITHDRAWAL_WORKFLOWS,
     **ANCHOR_WORKFLOWS,
     **EXPORT_WORKFLOWS,
+    **EXPIRY_WORKFLOWS,  # A-01-T22: the daily export expiry sweep
 }
 ACTIVITIES: tuple[object, ...] = (
     *UPLOAD_ACTIVITIES,
@@ -275,6 +285,7 @@ ACTIVITIES: tuple[object, ...] = (
     *WITHDRAWAL_ACTIVITIES,
     *ANCHOR_ACTIVITIES,
     *EXPORT_ACTIVITIES,
+    *EXPIRY_ACTIVITIES,  # A-01-T22
 )
 
 
@@ -300,6 +311,7 @@ _SUBSCRIPTIONS: dict[str, Handler] = {
     **HOLD_SUBSCRIPTIONS,
     **WITHDRAWAL_SUBSCRIPTIONS,
     **EXPORT_SUBSCRIPTIONS,
+    **EXPORT_CLOSE_SUBSCRIPTIONS,  # A-01-T22: an expired or voided export's segments go
 }
 # P-03-T12: the moved and broken detector follows each (both idempotent; a failure retries both).
 SUBSCRIPTIONS = {
@@ -307,10 +319,14 @@ SUBSCRIPTIONS = {
     EvidenceVersionCreated.event_type: in_turn(
         _SUBSCRIPTIONS[EvidenceVersionCreated.event_type], on_version_created
     ),
+    # A-01-T22 (P-31): a withdrawn version voids every ready export holding it.
+    # First, so a later subscriber's failure never holds the void back.
     EvidenceVersionWithdrawn.event_type: in_turn(
-        _SUBSCRIPTIONS[EvidenceVersionWithdrawn.event_type], on_version_withdrawn
+        void_exports_on_withdrawal,
+        in_turn(_SUBSCRIPTIONS[EvidenceVersionWithdrawn.event_type], on_version_withdrawn),
     ),
 }
+SCHEDULES = (*ANCHOR_SCHEDULES, *EXPIRY_SCHEDULES)
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)
@@ -326,6 +342,7 @@ __all__ = [
     "CODE_COLUMN",
     "CREDIT_COLUMN",
     "DEBIT_COLUMN",
+    "EXPORT_EXPIRY_ID",
     "EXPORT_FORMAT_VERSION",
     "EXPORT_SCHEMA_FILE",
     "FIRST_LINE_ROW",
@@ -365,6 +382,7 @@ __all__ = [
     "EvidenceVersionWithdrawn",
     "EvidenceWithdrawalPurge",
     "ExportBuildFailure",
+    "ExportExpirySweepWorkflow",
     "ExportPackageFacts",
     "GlBalanceRow",
     "GlHeader",
