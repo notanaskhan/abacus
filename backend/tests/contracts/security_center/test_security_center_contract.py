@@ -307,7 +307,6 @@ def _gate_of(contract: ModuleType) -> Gate:
     return cast(Gate, contract._gate)
 
 
-
 async def test_g02t14_identity_flag_off_is_404_and_on_passes_to_the_service(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

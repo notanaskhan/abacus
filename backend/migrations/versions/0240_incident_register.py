@@ -60,8 +60,16 @@ def upgrade() -> None:
     insert_columns(
         op,
         "security_incident_timeline",
-        ("tenant_id", "incident_id", "occurred_at", "code", "facts", "note", "source")
-        + ("author_user_id",),
+        (
+            "tenant_id",
+            "incident_id",
+            "occurred_at",
+            "code",
+            "facts",
+            "note",
+            "source",
+            "author_user_id",
+        ),
     )
     op.execute(
         """
@@ -239,8 +247,7 @@ def downgrade() -> None:
         "ON security_incidents FROM abacus_app"
     )
     op.execute(
-        "ALTER TABLE security_incidents DROP COLUMN notification_started_at, "
-        "DROP COLUMN closed_at"
+        "ALTER TABLE security_incidents DROP COLUMN notification_started_at, DROP COLUMN closed_at"
     )
     op.execute("DROP TABLE security_incident_decisions")
     op.execute("DROP FUNCTION security_incident_decisions_guard()")

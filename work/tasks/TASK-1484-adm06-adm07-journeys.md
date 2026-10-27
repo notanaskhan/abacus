@@ -2,7 +2,7 @@
 id: TASK-1484
 title: Journey E2E and parity specs for ADM-06 and ADM-07 (G-02-T21; j01 2, j14 7)
 spec: SPEC-349
-acceptance_criteria: [INV-1, INV-2, INV-3, INV-4, INV-5]
+acceptance_criteria: [AC-2, AC-4, AC-12, AC-14, AC-21, AC-22, AC-45, AC-46, AC-47]
 risk_zone: green
 status: in-review
 epic: G-02

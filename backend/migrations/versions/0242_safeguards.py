@@ -224,7 +224,9 @@ def upgrade() -> None:
         """
     )
     tenant_table(op, "safeguards_control_statuses")
-    insert_columns(op, "safeguards_control_statuses", ("tenant_id", "control_key", *_CONTROL_COLUMNS))
+    insert_columns(
+        op, "safeguards_control_statuses", ("tenant_id", "control_key", *_CONTROL_COLUMNS)
+    )
     op.execute("REVOKE UPDATE, DELETE, TRUNCATE ON safeguards_control_statuses FROM abacus_app")
     op.execute(
         f"GRANT UPDATE ({', '.join((*_CONTROL_COLUMNS, 'updated_at'))}) "

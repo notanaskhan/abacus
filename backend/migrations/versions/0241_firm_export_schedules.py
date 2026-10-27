@@ -5,8 +5,8 @@
 `security_admin` and a partner have each approved it, two distinct people (the CHECK); any change
 to its contents or its pause clears both approvals (the guard trigger), so a change always waits
 for both again. Every write is a live person's own (`updated_by`, bound by the trigger), and an
-approval names that same person (clearing one is a change's). `status` follows from the facts (a CHECK): `active` only with
-both approvals and not paused. Never deleted by the app.
+approval names that same person (clearing one is a change's). `status` follows from the facts
+(a CHECK): `active` only with both approvals and not paused. Never deleted by the app.
 
 Revision ID: 0241
 Revises: 0240

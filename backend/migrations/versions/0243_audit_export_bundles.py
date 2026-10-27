@@ -64,7 +64,8 @@ def downgrade() -> None:
     op.execute("DROP TRIGGER audit_exports_forward ON audit_exports")
     op.execute("DROP FUNCTION audit_exports_forward()")
     op.execute(
-        "REVOKE UPDATE (segment_count, bundle_bytes, failure_code) ON audit_exports FROM abacus_app"
+        "REVOKE UPDATE (segment_count, bundle_bytes, failure_code) "
+        "ON audit_exports FROM abacus_app"
     )
     op.execute(
         "ALTER TABLE audit_exports DROP COLUMN failure_code, DROP COLUMN bundle_bytes, "
