@@ -144,7 +144,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "client_imports": frozenset(  # P-07-T52 (0250)
         {"id", "tenant_id", "source", "file_name", "file_sealed", "file_sha256", "file_bytes"}
-        | {"erase_after", "stage", "mapping", "counts", "started_by"}
+        | {"stage", "mapping", "counts", "started_by"}
     ),
     "client_import_rows": frozenset(  # P-07-T52 (0250)
         {"id", "tenant_id", "import_id", "row_no", "parsed", "tin_sealed", "tin_kind"}

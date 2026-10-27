@@ -80,6 +80,15 @@ The 55 tasks that merged without an independent acceptance-test suite, and how e
 
 M8 (Fri May 28, 2027) needs 44 back-filled (tranche 0 included) and 11 superseded, each with an independent AC suite (Q-03 §3.2 B3).
 
+## Q-03-T011: the 2027 Q1 catch-up lane
+
+These are independent suites for amber epic rows that an epic deferred. Each row lists the suite and its first run.
+
+| Row | Spec | Status | Suite |
+|---|---|---|---|
+| F-04-T16 (TASK-392) | SPEC-307 AC-7 | back-filled | `backfill/test_f04t16_clock_adoption.py` (4 passed, 2026-10-27): independence conclusion in business time; mail sink, signup-code expiry and access review in system time. The static half is CLOCK-001 (F-04-T17). |
+| Q-01-T43 (TASK-1212, Q-01-T36/T37) | platform-ops §3.7 | back-filled (repo half) | `backfill/test_q01t43_platform_controls_independent.py` (7 passed, 2026-10-27). Read-only answers 503 on every mutating route in the OpenAPI route table except the exemptions §3.7 names; control history is insert-only for the app and operator roles; each switch adds a history row. Not here: keyops alone holding CreateKey and the replica decrypt (AWS: Terraform, the SCP and KMS in two regions); AI pause before any provider call is the `ai_gateway` boundary's (DEC-338). |
+
 ## QD-3: the superseded list
 
 Recorded at the S6 Contract Monday (Mon Jan 11, 2027; pulled forward to 2026-10-23 with Q-03-T002). The eleven tasks above marked `superseded` are not back-filled on their old code paths, because a later epic rebuilds them against the migrated contracts; each closes when that epic's AC suite merges. The four whose replacement lands after M8 (023, 053, 061, 063) get black-box suites on their legacy paths by M8 (T524, T525), retired only when the replacing suite merges.
@@ -98,6 +107,7 @@ Recorded at the S6 Contract Monday (Mon Jan 11, 2027; pulled forward to 2026-10-
 | 044 | SPEC-025 AC-9 | the roll-forward wizard's states | belongs to TASK-048's suite | Q-03-T023 (S8) |
 | 050 | SPEC-027 §14 | automatic actions audited with actor kind `agent`, policy and version | one `agent.activity` row by the system actor on the engagement; policy and version on the feed row | TASK-050 D2 |
 | 051 | SPEC-027 AC-3, §4.6 | Routine sends; feed outcome `drafted` | the agent drafts at every level and a person sends; outcomes done, skipped, failed | DEC-74, DEC-220 |
+| Q-01-T37 | platform-ops §3.7 `read_only` | non-GET routes refused except sign-in, support-session and operational routes | also open in read-only mode: ending a person's access and revoking an invitation (`/v1/firm/staff/{user_id}/revoke`, `/v1/firm/staff/invitations/{invitation_id}/revoke`), and reads sent as POST | Resolved 2026-10-27: §3.7 now lists every exemption, with why (DEC-338) |
 | 058 | SPEC-030 §6.3 | invalid output ends the run `failed` | the run escalates after its repair attempt; no review is recorded | ADR-048 |
 | 059 | SPEC-030 §8 | `…/request-items/{item}/uploads/{version}/review` under `evidence.read` | `…/evidence-versions/{version}/review` under `upload_review.read` | TASK-059 D1 |
 | 058 | Q-03-T032 acceptance | an unverified output "reads Uncited" | a flag with no verified quote is never shown; shown flags list verified quotes only | SPEC-030 Q3 |

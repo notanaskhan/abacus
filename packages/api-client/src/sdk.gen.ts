@@ -7452,7 +7452,9 @@ export const portalMfaSetupVerify = <ThrowOnError extends boolean = false>(optio
 /**
  * Portal Refresh Route
  *
- * Cookie-authenticated, with the CSRF header and the portal host's own Origin.
+ * Cookie-authenticated, with the CSRF header and the portal host's own Origin. Only a
+ * refresh marked `X-Abacus-Activity: user` moves the idle clock; an absent mark is never
+ * activity (DEC-583).
  */
 export const portalRefresh = <ThrowOnError extends boolean = false>(options?: Options<PortalRefreshData, ThrowOnError>): RequestResult<PortalRefreshResponses, PortalRefreshErrors, ThrowOnError> => (options?.client ?? client).post<PortalRefreshResponses, PortalRefreshErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

@@ -73,6 +73,8 @@ REVIEWED_FALLBACK: Final = frozenset(
         "client_import.files_erased",
         "client_import.row_applied",
         "client_import.row_decided",
+        "client_import.row_failed",
+        "client_import.row_skipped",
         "client_import.started",
         "client_import.uploaded",
         "client_intake.committed",

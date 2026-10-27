@@ -2072,6 +2072,58 @@
             "title": "Initiator Name",
             "type": "string"
           },
+          "outcome": {
+            "anyOf": [
+              {
+                "enum": [
+                  "approved",
+                  "partially_approved",
+                  "rejected"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Outcome"
+          },
+          "record_persisted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Record Persisted At"
+          },
+          "record_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Record Sha256"
+          },
+          "stage": {
+            "cls": "internal",
+            "default": "live",
+            "enum": [
+              "shadow",
+              "live"
+            ],
+            "title": "Stage",
+            "type": "string"
+          },
           "started_at": {
             "cls": "internal",
             "format": "date-time",
@@ -2089,6 +2141,18 @@
             ],
             "title": "State",
             "type": "string"
+          },
+          "state_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "State Reason"
           },
           "subject": {
             "anyOf": [
@@ -130166,7 +130230,7 @@
     },
     "/v1/portal/auth/refresh": {
       "post": {
-        "description": "Cookie-authenticated, with the CSRF header and the portal host's own Origin.",
+        "description": "Cookie-authenticated, with the CSRF header and the portal host's own Origin. Only a\nrefresh marked `X-Abacus-Activity: user` moves the idle clock; an absent mark is never\nactivity (DEC-583).",
         "operationId": "portal_refresh",
         "parameters": [
           {
@@ -130215,6 +130279,23 @@
                 }
               ],
               "title": "Host"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Activity",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 16,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Activity"
             }
           },
           {

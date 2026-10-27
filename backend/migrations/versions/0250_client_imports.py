@@ -4,8 +4,9 @@
   cch_axcess_tax_export · csv), its `stage` (a code, not a registry status: DEC-374), the column
   `mapping` the parser chose and the `counts` CLI-06 g shows. The file itself is kept sealed in
   the row (`file_sealed`, envelope-encrypted per tenant, bound to the import) for 30 days
-  (`erase_after`), then erased by `client_import_files_erase()` (P-07 OQ-4: its own retention, not
-  an evidence object under Object Lock; DEC-643). `file_sha256` stays as the record of what was
+  (`erase_after`, the row's start plus 30 days, set by a BEFORE INSERT trigger), then erased
+  by `client_import_files_erase()` (P-07 OQ-4: its own retention, not an evidence object
+  under Object Lock; DEC-643). `file_sha256` stays as the record of what was
   uploaded.
 - New `client_import_rows`: one parsed row. `parsed` holds the inert cell text the import uses
   (names, entity type code, contact name and email) and row notes as codes; a TIN is sealed at
@@ -134,7 +135,6 @@ def upgrade() -> None:
             "file_sealed",
             "file_sha256",
             "file_bytes",
-            "erase_after",
             "stage",
             "mapping",
             "counts",
@@ -170,6 +170,21 @@ def upgrade() -> None:
         "GRANT UPDATE (decision, merge_client_id, decided_by, decided_at, applied_at, result_ref, "
         "error_code) "
         "ON client_import_rows TO abacus_app"
+    )
+    # `erase_after` is the row's own start plus 30 days, set by the database, never the app.
+    op.execute(
+        """
+        CREATE FUNCTION client_imports_erase_after() RETURNS trigger
+        LANGUAGE plpgsql SET search_path = pg_catalog, public, pg_temp AS $$
+        BEGIN
+            NEW.erase_after := NEW.started_at + interval '30 days';
+            RETURN NEW;
+        END $$
+        """
+    )
+    op.execute(
+        "CREATE TRIGGER client_imports_erase_after BEFORE INSERT ON client_imports "
+        "FOR EACH ROW EXECUTE FUNCTION client_imports_erase_after()"
     )
     op.execute(
         """
@@ -230,3 +245,4 @@ def downgrade() -> None:
     op.execute("DROP TABLE client_import_rows")
     op.execute("DROP TABLE client_imports")
     op.execute("DROP FUNCTION client_import_rows_applied()")
+    op.execute("DROP FUNCTION client_imports_erase_after()")
