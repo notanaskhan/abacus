@@ -1,0 +1,114 @@
+{
+  "scenario": {
+    "version": "bh-2026.10.3",
+    "hash": "2b09e6fb01617c990e6e72feac508159fe5a03c6ff4f80bbb8d4a539c6f8d6a2",
+    "snapshot": "E0",
+    "slices": [
+      "portal"
+    ]
+  },
+  "persona": "daniel-reyes",
+  "request": "GET /v1/binders",
+  "body": {
+    "counts": {
+      "closed": 0,
+      "complete": 0,
+      "draft": 0,
+      "published": 1,
+      "unpublished": 0
+    },
+    "facets": {
+      "client_activity": [
+        {
+          "label": "Any",
+          "n": 1,
+          "value": "any"
+        },
+        {
+          "label": "None in 30 days",
+          "n": 0,
+          "value": "none_30_days"
+        }
+      ],
+      "office": [
+        {
+          "label": "New York",
+          "n": 1,
+          "value": "9c11ca50-e962-4df7-8bb8-5c2e68d764bc"
+        }
+      ],
+      "part": [
+        {
+          "label": "Returns",
+          "n": 1,
+          "value": "1"
+        },
+        {
+          "label": "Second-part binders",
+          "n": 0,
+          "value": "2+"
+        }
+      ],
+      "preparer": [],
+      "season": [
+        {
+          "label": "TY2025",
+          "n": 1,
+          "value": "TY2025"
+        }
+      ],
+      "service": [
+        {
+          "label": "Tax returns",
+          "n": 1,
+          "value": "tax_returns"
+        }
+      ]
+    },
+    "items": [
+      {
+        "allowed_actions": [
+          "binder.create",
+          "binder.publish",
+          "binder.read",
+          "binder.update",
+          "follow_up.draft",
+          "follow_up.send"
+        ],
+        "client_name": "Jonah & Claire Feld",
+        "closed_at": null,
+        "closed_reason": null,
+        "done_count": 5,
+        "engagement_id": "f62c2ff4-9d6b-4a84-8cd2-5dc675d49e3f",
+        "id": "0d4d161a-5a7d-4ccc-b33a-31acd012168d",
+        "kind": "organizer",
+        "last_client_activity_at": "2026-09-14T14:12:00Z",
+        "marked_done_at": null,
+        "marked_done_by": null,
+        "marked_done_by_name": null,
+        "name": "2025 Binder",
+        "office_id": "9c11ca50-e962-4df7-8bb8-5c2e68d764bc",
+        "overdue_count": 1,
+        "part": 1,
+        "preparer_user_id": null,
+        "published_at": "2026-02-03T15:00:00Z",
+        "requested_count": 2,
+        "requested_from": "2026-02-03",
+        "requested_to": "2026-09-01",
+        "season": "TY2025",
+        "service": "tax_returns",
+        "status": "published",
+        "tags": [],
+        "total_count": 7,
+        "unpublish_reason": null,
+        "unpublished_at": null,
+        "unpublished_by": null,
+        "work_item_id": "ac3a8fbe-a8be-4a5a-800a-2635099bf5af",
+        "work_item_label": "2025 Form 1040"
+      }
+    ],
+    "next_cursor": null,
+    "total": 1,
+    "total_capped": false
+  }
+}
