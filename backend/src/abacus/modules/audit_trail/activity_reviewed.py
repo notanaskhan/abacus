@@ -87,6 +87,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "comment.redacted",
         "comment_thread.read",
         "conflict.cleared",
+        "decision.refused_non_human",  # K-01-T06: an agent or the platform asked to approve
         "conflict_check.run",
         "connection.checked",
         "connection.created",
@@ -262,6 +263,11 @@ REVIEWED_FALLBACK: Final = frozenset(
         "notification.read",
         "notification.read_all",
         "notification_preference.changed",
+        # K-01-T06: a methodology version's lifecycle (identifiers and dates only)
+        "methodology_version.approve_refused",
+        "methodology_version.approved",
+        "methodology_version.submitted",
+        "methodology_version.superseded",
         "notifications.purged",
         "office.created",
         "office.updated",

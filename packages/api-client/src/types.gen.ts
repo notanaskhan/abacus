@@ -4168,32 +4168,6 @@ export type CheckOut = {
 };
 
 /**
- * ChecklistItemOut
- */
-export type ChecklistItemOut = {
-    /**
-     * Applicable
-     */
-    applicable: boolean;
-    /**
-     * Blockers
-     */
-    blockers: Array<string>;
-    /**
-     * Done
-     */
-    done: boolean;
-    /**
-     * Gate
-     */
-    gate: string | null;
-    /**
-     * Key
-     */
-    key: 'accepted' | 'independence' | 'engagement_letter' | 'review_complete' | 'eqr_concurred' | 'going_concern' | 'report_approved' | 'rep_letter' | 'released' | 'archived';
-};
-
-/**
  * CheckpointApproveIn
  *
  * A checkpoint that is no longer proposed, or whose hash differs, answers 409
@@ -5931,7 +5905,7 @@ export type CompletionOut = {
     /**
      * Checklist
      */
-    checklist: Array<ChecklistItemOut>;
+    checklist: Array<AbacusModulesAssuranceCompletionRoutesChecklistItemOut>;
     eqr: AbacusModulesAssuranceCompletionRoutesEqrOut;
     going_concern: CompletionRecordOut | null;
     /**
@@ -26396,6 +26370,14 @@ export type VersionStateOut = {
      */
     approved_by_user_id: string | null;
     /**
+     * Checklist
+     */
+    checklist?: Array<AbacusModulesMethodologyContractChecklistItemOut>;
+    /**
+     * Checklist Hash
+     */
+    checklist_hash?: string | null;
+    /**
      * Default For New Engagements
      */
     default_for_new_engagements: boolean;
@@ -27327,6 +27309,32 @@ export type AbacusModulesAgentsRoutesCitationOut = {
 };
 
 /**
+ * ChecklistItemOut
+ */
+export type AbacusModulesAssuranceCompletionRoutesChecklistItemOut = {
+    /**
+     * Applicable
+     */
+    applicable: boolean;
+    /**
+     * Blockers
+     */
+    blockers: Array<string>;
+    /**
+     * Done
+     */
+    done: boolean;
+    /**
+     * Gate
+     */
+    gate: string | null;
+    /**
+     * Key
+     */
+    key: 'accepted' | 'independence' | 'engagement_letter' | 'review_complete' | 'eqr_concurred' | 'going_concern' | 'report_approved' | 'rep_letter' | 'released' | 'archived';
+};
+
+/**
  * EqrOut
  */
 export type AbacusModulesAssuranceCompletionRoutesEqrOut = {
@@ -27505,6 +27513,26 @@ export type AbacusModulesFieldworkRoutesStartIn = {
      * Definition
      */
     definition?: 'journal_entry_testing' | 'unrecorded_liabilities';
+};
+
+/**
+ * ChecklistItemOut
+ *
+ * One approval checklist item (`has_programs`, `has_steps`, `every_program_has_steps`).
+ */
+export type AbacusModulesMethodologyContractChecklistItemOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * N
+     */
+    n: number;
+    /**
+     * Ok
+     */
+    ok: boolean;
 };
 
 /**
@@ -58739,10 +58767,6 @@ export type ApproveVersionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ApproveVersionError = ApproveVersionErrors[keyof ApproveVersionErrors];
@@ -59276,6 +59300,58 @@ export type PublishDraftedResponses = {
 
 export type PublishDraftedResponse = PublishDraftedResponses[keyof PublishDraftedResponses];
 
+export type VersionStateData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}/state';
+};
+
+export type VersionStateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type VersionStateError = VersionStateErrors[keyof VersionStateErrors];
+
+export type VersionStateResponses = {
+    /**
+     * Successful Response
+     */
+    200: VersionStateOut;
+};
+
+export type VersionStateResponse = VersionStateResponses[keyof VersionStateResponses];
+
 export type RemoveStepData = {
     body?: never;
     headers: {
@@ -59523,10 +59599,6 @@ export type SubmitVersionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SubmitVersionError = SubmitVersionErrors[keyof SubmitVersionErrors];

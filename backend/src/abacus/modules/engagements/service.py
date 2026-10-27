@@ -68,6 +68,7 @@ from abacus.modules.identity.api import (
 from abacus.modules.methodology.api import (
     EngagementType,
     MethodologyVersionView,
+    version_effective_on,
     version_in,
 )
 from abacus.modules.organisations.api import (
@@ -407,6 +408,21 @@ async def pin_methodology(
     if not await set_methodology_version(tx.session, engagement_id, version_id):
         raise MethodologyAlreadyApplied(str(engagement_id))
     return detail
+
+
+class NoVersionInForce(NotFound):
+    """No version of the template was in force on the acceptance date (K-01-T06)."""
+
+
+async def pin_methodology_on(
+    tx: UnitOfWork, engagement_id: UUID, template_id: UUID, on: date
+) -> MethodologyVersionView:
+    """K-01-T06: pin the template's version in force on `on` (the engagement's acceptance date),
+    not its newest: a version approved later never reaches back."""
+    version_id = await version_effective_on(tx.session, template_id, on)
+    if version_id is None:
+        raise NoVersionInForce("methodology_version")
+    return await pin_methodology(tx, engagement_id, version_id)
 
 
 def active_engagements() -> Select[UUID]:

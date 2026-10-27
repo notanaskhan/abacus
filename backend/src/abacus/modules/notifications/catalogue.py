@@ -23,6 +23,7 @@ from abacus.modules.identity.api import (
     hidden_clients,
     member_facts,
     partner_members,
+    quality_partners,
     security_admins,
     team_of,
 )
@@ -181,6 +182,12 @@ async def _named_partner(tenant_id: UUID, payload: dict[str, object]) -> list[UU
     """P-07-T47: the partner asked for the acceptance risk review, never the asker."""
     partner, by = _uuid(payload, "partner_id"), _uuid(payload, "by_user")
     return [partner] if partner is not None and partner != by else []
+
+
+async def _quality_reviewers(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """K-01-T06: the firm's quality partners, who approve methodology, never the submitter."""
+    by = _uuid(payload, "by_user")
+    return [u for u in await quality_partners(tenant_id) if u != by]
 
 
 async def _member(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
@@ -346,6 +353,13 @@ CATALOGUE: Final[dict[str, Kind]] = {
         "risk_partner_review_requested", _named_partner, "acceptance_record", "record_id"
     ),
     "independence.reminded": Kind("independence_reminder", _member, "engagement", "engagement_id"),
+    "methodology.review_requested": Kind(
+        "methodology_review_requested",
+        _quality_reviewers,
+        "methodology_version",
+        "version_id",
+        None,
+    ),
     "independence.conclusion_due": Kind(
         "independence_conclusion_due", _partners, "engagement", "engagement_id"
     ),
@@ -452,6 +466,7 @@ TEMPLATES: Final[dict[str, str]] = {
         "You were asked for a risk review of an acceptance on {engagement}."
     ),
     "independence.reminded": "Reminder: confirm your independence for {engagement}.",
+    "methodology.review_requested": "A methodology version is waiting for your review.",
     "independence.conclusion_due": (
         "Every member confirmed independence on {engagement}: it is ready for your conclusion."
     ),

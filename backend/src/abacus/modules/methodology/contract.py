@@ -43,9 +43,11 @@ from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
     Resource,
+    allowed_actions,
     authorise,
     current_context,
 )
+from abacus.modules.methodology import lifecycle
 from abacus.modules.methodology.catalog import catalog_items, change_log, review_queue
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -288,6 +290,16 @@ async def knowledge_change_log_route(
 # --- Methodology lifecycle (KNW-02 e, f) --------------------------------------------------------
 
 
+class ChecklistItemOut(BaseModel):
+    """One approval checklist item (`has_programs`, `has_steps`, `every_program_has_steps`)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    code: Annotated[str, classified("internal")]
+    ok: Annotated[bool, classified("internal")]
+    n: Annotated[int, classified("internal")]
+
+
 class VersionStateOut(BaseModel):
     """A version's lifecycle row and what the viewer may do with it."""
 
@@ -309,6 +321,10 @@ class VersionStateOut(BaseModel):
     drafted_from_version_id: Annotated[UUID | None, classified("internal")]
     row_version: Annotated[int, classified("internal")]
     allowed_actions: Annotated[list[str], classified("internal")]
+    # K-01-T06 (additive): the approval checklist, computed by code, and its hash, which approve
+    # sends back (`checklist_changed` when it moved).
+    checklist: Annotated[list[ChecklistItemOut], classified("internal")] = []
+    checklist_hash: Annotated[ContentHash | None, classified("internal")] = None
 
 
 class SubmitVersionIn(BaseModel):
@@ -333,30 +349,95 @@ methodology_lifecycle_router = AbacusRouter(prefix="/v1/methodology", tags=["met
 VersionId = Annotated[UUID, Path()]
 
 
+async def _gate(ctx: AuthContext, flag: Flag, action: str) -> None:
+    """As `_stub`, for a live route: client 404, the action at the firm, then the flag."""
+    if ctx.client:
+        raise NotFound("knowledge")
+    await authorise(ctx, action, Resource.firm(ctx.tenant_id))
+    if not await flag_enabled(ctx.tenant, flag):
+        raise NotFound(flag.name)
+
+
+async def _state_out(ctx: AuthContext, v: lifecycle.VersionState) -> VersionStateOut:
+    may = await allowed_actions(ctx, Resource.firm(ctx.tenant_id), ["methodology.manage", APPROVE])
+    acts = [
+        a
+        for a, when in (("methodology.manage", "draft"), (APPROVE, "needs_review"))
+        if a in may and v.status == when
+    ]
+    return VersionStateOut(
+        version_id=v.version_id,
+        template_id=v.template_id,
+        label=v.label,
+        status=cast(MethodologyVersionStatus, v.status),
+        effective_from=v.effective_from,
+        effective_to=v.effective_to,
+        approved_by_user_id=v.approved_by,
+        approved_by_name=v.approved_by_name,
+        approved_at=v.approved_at,
+        approval_basis=cast(ApprovalBasis | None, v.approval_basis),
+        standards_set_id=v.standards_set_id,
+        engagement_types=v.engagement_types,
+        default_for_new_engagements=v.default_for_new_engagements,
+        drafted_from_version_id=v.drafted_from_version_id,
+        row_version=v.row_version,
+        allowed_actions=acts,
+        checklist=[ChecklistItemOut(code=i.code, ok=i.ok, n=i.n) for i in v.checklist],
+        checklist_hash=v.checklist_hash,
+    )
+
+
+APPROVE = "methodology.approve"
+
+
+@methodology_lifecycle_router.get(
+    "/versions/{version_id}/state", action="methodology.read", response_model=VersionStateOut
+)
+async def version_state_route(version_id: VersionId, ctx: Ctx) -> VersionStateOut:
+    """KNW-02: the lifecycle row, its checklist and what the viewer may do (K-01-T06)."""
+    await _gate(ctx, METHODOLOGY_LIFECYCLE, "methodology.read")
+    return await _state_out(ctx, await lifecycle.version_state(ctx, version_id))
+
+
 @methodology_lifecycle_router.post(
     "/versions/{version_id}/submit",
     action="methodology.manage",
     response_model=VersionStateOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def submit_version_route(
     version_id: VersionId, body: SubmitVersionIn, ctx: Ctx
 ) -> VersionStateOut:
-    """KNW-02: Draft to Needs review."""
-    await _stub(ctx, METHODOLOGY_LIFECYCLE, "methodology.manage")
+    """KNW-02: Draft to Needs review; 409 `stale_version`, `version_frozen`."""
+    await _gate(ctx, METHODOLOGY_LIFECYCLE, "methodology.manage")
+    return await _state_out(ctx, await lifecycle.submit_version(ctx, version_id, body.row_version))
 
 
 @methodology_lifecycle_router.post(
     "/versions/{version_id}/approve",
     action="methodology.approve",
     response_model=VersionStateOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def approve_version_route(
     version_id: VersionId, body: ApproveVersionIn, ctx: Ctx
 ) -> VersionStateOut:
-    """KNW-02 e: a quality partner approves with an effective date (human-only, fresh MFA)."""
-    await _stub(ctx, METHODOLOGY_LIFECYCLE, "methodology.approve")
+    """KNW-02 e: a quality partner approves with an effective date (human-only, fresh MFA); a
+    refusal is audited before the flag is read. 409 `stale_version`, `version_frozen`,
+    `checklist_changed`, `checklist_unmet`; 422 `effective_from_too_early`."""
+    await lifecycle.approve_guard(ctx, version_id)
+    if not await flag_enabled(ctx.tenant, METHODOLOGY_LIFECYCLE):
+        raise NotFound(METHODOLOGY_LIFECYCLE.name)
+    return await _state_out(
+        ctx,
+        await lifecycle.approve_version(
+            ctx,
+            version_id,
+            effective_from=body.effective_from,
+            checklist_hash=body.checklist_hash,
+            row_version=body.row_version,
+        ),
+    )
 
 
 @methodology_lifecycle_router.post(

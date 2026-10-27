@@ -40,7 +40,12 @@ LIVE: dict[tuple[str, str], tuple[str, Flag]] = {
     ("get", "/v1/knowledge/review-queue"): ("knowledge.read", KNOWLEDGE_CATALOG),
     ("get", "/v1/knowledge/change-log"): ("knowledge.read", KNOWLEDGE_CATALOG),
 }
-ROUTES: dict[tuple[str, str], tuple[str, Flag]] = {
+# K-01-T06 (TASK-1511): the lifecycle's read, submit and approve are live.
+LIFECYCLE_LIVE: dict[tuple[str, str], tuple[str, Flag]] = {
+    ("get", "/v1/methodology/versions/{version_id}/state"): (
+        "methodology.read",
+        METHODOLOGY_LIFECYCLE,
+    ),
     ("post", "/v1/methodology/versions/{version_id}/submit"): (
         "methodology.manage",
         METHODOLOGY_LIFECYCLE,
@@ -49,6 +54,8 @@ ROUTES: dict[tuple[str, str], tuple[str, Flag]] = {
         "methodology.approve",
         METHODOLOGY_LIFECYCLE,
     ),
+}
+ROUTES: dict[tuple[str, str], tuple[str, Flag]] = {
     ("post", "/v1/methodology/versions/{version_id}/drafts"): (
         "methodology.manage",
         METHODOLOGY_PROGRAMS,
@@ -92,6 +99,8 @@ for _router in (
     for _route in _router.routes:
         assert isinstance(_route, APIRoute)
         _method = next(iter(_route.methods or {"GET"})).lower()
+        if (_method, _route.path) in LIFECYCLE_LIVE:
+            continue
         ENDPOINTS.append(
             (
                 _route.path,
@@ -121,6 +130,16 @@ def test_k01t01_the_endpoints_are_the_routes_above() -> None:
         if isinstance(r, APIRoute)
     }
     assert live == set(LIVE)
+
+
+@pytest.mark.parametrize(("method", "path"), sorted(LIFECYCLE_LIVE))
+def test_k01t06_each_lifecycle_route_declares_its_one_action_and_is_live(
+    method: str, path: str
+) -> None:
+    op = PATHS[path][method]
+    assert op["x-abacus-action"] == LIFECYCLE_LIVE[(method, path)][0]
+    assert "404" in set(cast(Json, op["responses"]))
+    assert "501" not in set(cast(Json, op["responses"]))
 
 
 @pytest.mark.parametrize(("method", "path"), sorted(LIVE))

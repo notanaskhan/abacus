@@ -211,6 +211,16 @@ codes:
     raised_by:
     - abacus.modules.platform.service.BudgetInvalid
     summary: Soft must be positive and at most hard; hard at most the plan's limit (Q3).
+  checklist_changed:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.lifecycle.ChecklistChanged
+    summary: 'The checklist is not the one you approved: review it again.'
+  checklist_unmet:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.lifecycle.ChecklistUnmet
+    summary: An approval checklist item is not met (`facts.item`).
   citation_required:
     status: 422
     raised_by:
@@ -412,6 +422,11 @@ codes:
     - abacus.modules.evidence.exports.ExportEffectStarted
     - abacus.modules.requests.binders.EffectStarted
     summary: 'The publish''s delivery has started (its grant was consumed): it can no longer be undone.'
+  effective_from_too_early:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.lifecycle.EffectiveTooEarly
+    summary: A version takes effect after the one it supersedes began.
   empty_comment:
     status: 422
     raised_by:
@@ -1449,6 +1464,7 @@ codes:
     - abacus.modules.identity.security_policies.StalePolicy
     - abacus.modules.identity.service_lines.StalePolicy
     - abacus.modules.identity.settings_registry.StaleSection
+    - abacus.modules.methodology.lifecycle.VersionStale
     - abacus.modules.organisations.live.StaleVersion
     - abacus.modules.organisations.org_structure.StaleOrgStructure
     - abacus.modules.platform.safeguards.SafeguardsStale
@@ -1675,6 +1691,12 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.evidence.uploads.UploadTypeNotAllowed
+  version_frozen:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.lifecycle.VersionFrozen
+    summary: The version is not in a status this step takes (a draft is submitted; a version in review
+      is approved).
   version_not_latest:
     status: 409
     raised_by:
