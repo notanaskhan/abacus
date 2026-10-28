@@ -7,8 +7,8 @@ replays." Here, against the fake connector: the pull records one `on_demand` run
 and no request item, audited `ledger.pull_requested`, and its workflow is started; a second pull
 while it runs answers the same run; no live ledger is 409 `connector_not_available`; a connection
 that needs the client to sign in again is 409 `connection_needs_reauth`; the flag off is 404; a
-staff member without `ledger.pull` is refused. The snapshot end and the replay of every earlier history run in
-the batch review against Temporal (`tests/workflows/test_retrieval_replay.py`).
+staff member without `ledger.pull` is refused. The snapshot end and the replay of every earlier
+history run in the batch review against Temporal (`tests/workflows/test_retrieval_replay.py`).
 
 Boundary: `create_app()` over HTTP as each person; the workflow start is observed, not run.
 """
