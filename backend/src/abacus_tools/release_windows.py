@@ -106,9 +106,14 @@ class Window:
     mini_freezes: tuple[Span, ...]
     deadline_weeks: tuple[Span, ...]
 
+    def covers(self, day: date) -> bool:
+        """The window's dates, and the whole of any deadline week that runs past its end (Apr
+        17-21, 2028 under a season ending Apr 20: a deadline week is frozen whole, DEC-806)."""
+        return day in self.span or any(day in week for week in self.deadline_weeks)
+
     def applies_to(self, firm: Firm, day: date) -> bool:
         return (
-            day in self.span
+            self.covers(day)
             and firm.live_on(day)
             and (self.kind == "season" or firm.autumn_window)
         )

@@ -185,8 +185,9 @@ def _journeys(raw: object, name: str) -> tuple[str, ...]:
 
 
 def window_of(day: date, cal: release_windows.Calendar) -> str | None:
-    """The release window whose dates hold `day` (any window: flags are platform-wide)."""
-    return next((w.id for w in cal.windows if day in w.span), None)
+    """The release window whose dates hold `day`, its trailing deadline week included (any
+    window: flags are platform-wide)."""
+    return next((w.id for w in cal.windows if w.covers(day)), None)
 
 
 def window_conflicts(entries: list[Entry], cal: release_windows.Calendar) -> list[str]:
