@@ -56,6 +56,10 @@ export const engScreens = {
     status: "planned",
     path: "/engagements/$engagementId/dashboard", // legacy EngagementDashboard (SPEC-317)
   },
+  // P-07-T60 built a–e on fixtures (src/screens/ENG-13) over the roll-forward v2 routes behind
+  // `engagements.roll_forward_v2`; d and e are the live shapes, a–c's attest rows and conflicts
+  // fixture-only (DEC-805). Planned for ENG-02's reason: its "Roll forward…" opens it as an O6 over
+  // the record, wired with ENG-02 in routes/firm.
   "ENG-13": { name: "Roll forward — Tessellate SOC 2 Type 2", status: "planned", path: null },
   "ENG-14": {
     name: "Set up with AI — Harlow & Pike Holdings, Inc.",

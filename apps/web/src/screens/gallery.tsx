@@ -167,6 +167,15 @@ import {
   type Eng02State,
   scenarios as eng02Scenarios,
 } from "./ENG-02/scenarios";
+import { ENG13 } from "./ENG-13";
+import {
+  type Eng13State,
+  OPENS as ENG13_OPENS,
+  PREVIEWS as ENG13_PREVIEWS,
+  STATES as ENG13_STATES,
+  STEP_OF as ENG13_STEP_OF,
+  scenarios as eng13Scenarios,
+} from "./ENG-13/scenarios";
 import {
   OPENS as ENG05_OPENS,
   OVERLAYS as ENG05_OVERLAYS,
@@ -1251,6 +1260,38 @@ function Eng03Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("ENG-03", { title: "New engagement wizard", Component: Eng03Artboard });
+
+// ENG-13 (P-07-T60): the roll-forward wizard on the artboard's draft and step; the attest and
+// structure rows and the template conflicts are fixture-only (DEC-805), so only the gallery passes
+// the preview.
+function Eng13Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Eng13State = ENG13_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      eng13Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div key={state} data-artboard={state} className="h-[900px]">
+      <ENG13
+        sourceId={ENG13_OPENS[state].source}
+        draftId={ENG13_OPENS[state].draft}
+        initialStep={ENG13_STEP_OF[state]}
+        preview={ENG13_PREVIEWS[state]}
+      />
+    </div>
+  );
+}
+
+registerScreen("ENG-13", { title: "Roll forward", Component: Eng13Artboard });
 
 const stayOnCard = (): void => undefined;
 

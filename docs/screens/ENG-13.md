@@ -9,12 +9,12 @@
 | Epic and tasks | P-07 · contract P-07-T23 · backend P-07-T55 · screen P-07-T60 |
 | Manifest status | planned (`routes/manifest/eng.ts`) until P-07-T60 |
 
-Code to come: `src/screens/ENG-13/{index.tsx, scenarios.ts, copy.ts, ENG-13.test.tsx}`. Flag `engagements.roll_forward_v2`.
+Code: `src/screens/ENG-13/{index.tsx, scenarios.ts, copy.ts, ENG-13.test.tsx, ENG-13.production.test.tsx}`, fixtures `src/fixtures/scenarios/ENG-13.ts`, axe `e2e/screens/ENG-13.spec.ts` (P-07-T60). Flag `engagements.roll_forward_v2`.
 
 ## States
 | Artboard | Viewer (persona) | Clock | Snapshot | Data condition that produces it | Status |
 |---|---|---|---|---|---|
-| a | laura-kemp | Mon Nov 16, 2026, 10:15 AM CT | E2 | Tessellate SOC 2 Type 2, step 2 What to carry (212 + 1 = 213 requests) | built · fixture (attest carry; see Deviations) |
+| a | laura-kemp | Mon Nov 16, 2026, 10:15 AM CT | E2 | Tessellate SOC 2 Type 2, step 2 What to carry (212 + 1 = 213 requests) | built · fixture (attest carry; see Deviations) (P-07-T60) |
 | b | laura-kemp | same | E2 | Step 3 Template version: "BH SOC 2 · TSC 2017 (rev. 2022) v1" Current; "Nothing to reconcile." | built · fixture (attest carry) |
 | c | hannah-leclerc | Mon Nov 16, 2026, 11:00 AM | E2 | Granite Peak FY2026 → FY2027: template changed FS v5 → FS v6; conflict rows | built · fixture (template conflicts) |
 | d | hannah-leclerc | Mon Jan 11, 2027, 9:30 AM | E2 + archive | Northwind PY2025 EBP Audit Archived → PY2026: 26 workpapers, 24 requests carried as Draft | built · live (T60) |
@@ -25,7 +25,7 @@ Not-allowed: a walled source answers 404; a source in `active` answers 409 `roll
 ## API
 | Read or write | Endpoint | Shape | Matrix action | allowed_actions and read-only reasons per role |
 |---|---|---|---|---|
-| write | `POST /v1/engagements/{engagement_id}/roll-forward/drafts` · `PATCH …/{draft_id}` · `POST …/{draft_id}/create` | carry selections, team, template decision; one unit of work; continuance acceptance record opened | `engagement.create` + `roll_forward.read` on the source | firm admin, practice leader, partner; agent and system deny |
+| read and write | `POST /v1/engagements/{engagement_id}/roll-forward/drafts` · `GET`/`PATCH`/`DELETE …/{draft_id}` · `POST …/{draft_id}/create` (`docs/contracts/engagements-v2.md` §8a) | `RollForwardDraftOut` (selections, team, template decision, catalogue); one unit of work at Create; continuance acceptance record opened | `roll_forward.create` on the client + `roll_forward.read` on the source (DEC-805) | firm admin, practice leader, partners and managers by level; the source's engagement partner or manager to read it; agent and system deny. The Carry · Skip controls and Create follow `allowed_actions` (`roll_forward.create`) |
 
 ## Status
 Source `engagement` Delivered or Archived (soon pill + Lock 12 "WORM"); carried request items arrive as Draft (never client-visible). Template "Current".
@@ -36,7 +36,7 @@ Source `engagement` Delivered or Archived (soon pill + Lock 12 "WORM"); carried 
 | `row.toggle` | "Carry" · "Skip" |
 | `b.current` · `b.pinned` | "Current" · "No newer version · pinned at Create" |
 | `b.nothing` | "Nothing to reconcile." |
-| `e.create` · `e.createLetter` | "Create" · "Create & draft letter" |
+| `e.create` · `e.createLetter` | "Create" · "Create & draft letter" (fixture builds; production draws Create only until N-02) |
 | `e.toast` | "Engagement created · {type} · {period}" |
 
 Template names, carry rows and counts are data.
@@ -77,4 +77,5 @@ Gradients, emoji, saturated blue, heavy shadows, invented colours, lorem ipsum, 
 | a b c | C (fixture) | — | |
 
 ## Open gaps
-None open.
+- The v1 rows' details ("4 people · roles as last year; independence asked again", "24, as Draft; the client sees nothing until you send", "Last year's record, letters and archive, linked read-only") are written for the v1 categories the handoff does not draw on their own (DEC-805); copy review with the screen's parity pass (P-07-T63).
+- Conflict choices (c) are a pressed-button pair, not a Segmented: a Segmented always holds a selection, and Next must wait for both choices.
