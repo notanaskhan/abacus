@@ -282,7 +282,8 @@ test.describe("J03-ebp-audit (A-01's Source Documents steps)", () => {
   test("j03 6 (host): AUD-02 opens from AUD-01 at Source Documents", async ({ journey }) => {
     await journey.as("ana-cruz", "/audits", { scenario: "AUD-01:a", clock: DEMO_INSTANT });
     await journey.step("J03 step 6: the audits index (AUD-01 a)", async (page) => {
-      await expect(page.getByRole("link", { name: /Northwind/ }).first()).toBeVisible();
+      // AUD-01 rows open through their "Open row" button; the engagement name is a cell.
+      await expect(page.getByRole("row", { name: /Northwind/ }).first()).toBeVisible();
     });
   });
 

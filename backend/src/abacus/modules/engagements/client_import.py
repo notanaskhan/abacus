@@ -75,6 +75,7 @@ from abacus.modules.identity.api import (
     Forbidden,
     Resource,
     authorise,
+    firm_tenant_ids,
     hidden_clients,
     is_synthetic_firm,
     member_context,
@@ -862,18 +863,32 @@ async def complete_import(tenant_id: UUID, import_id: UUID, *, failed: bool = Fa
     return stage
 
 
+_DUE = text(
+    "SELECT EXISTS (SELECT 1 FROM client_imports "
+    "WHERE erased_at IS NULL AND erase_after <= clock_timestamp())"
+)
+
+
 async def erase_files() -> int:
-    """One pass of the 30-day erase, across firms (a count only), audited as the system."""
-    platform = TenantContext(UUID(int=0), "system", "client_import:erase")
-    async with uow(platform) as tx:
-        count = int(
-            (await tx.session.execute(text("SELECT client_import_files_erase()"))).scalar_one()
-            or 0
-        )
-        tx.record(
-            "client_import.files_erased",
-            target=Target("retention", int(RETENTION.days)),
-            after=Ref(count=count),
-        )
-    _log.info("client_import.files_erased", count=count)
-    return count
+    """One pass of the 30-day erase (a count only). Each firm in its own session, audited as the
+    system there: the tables force row-level security, so `client_import_files_erase()` sees only
+    the firm whose session calls it, as `anchor_chains_activity` works firm by firm."""
+    total = 0
+    for tenant_id in await firm_tenant_ids():
+        firm = TenantContext(tenant_id, "system", "client_import:erase")
+        async with tenant_session(firm) as session:
+            if not await session.scalar(_DUE):
+                continue
+        async with uow(firm) as tx:
+            count = int(
+                (await tx.session.execute(text("SELECT client_import_files_erase()"))).scalar_one()
+                or 0
+            )
+            tx.record(
+                "client_import.files_erased",
+                target=Target("retention", int(RETENTION.days)),
+                after=Ref(count=count),
+            )
+        total += count
+    _log.info("client_import.files_erased", count=total)
+    return total

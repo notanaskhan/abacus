@@ -87,6 +87,8 @@ test.describe("P-07 gates and access", () => {
   }) => {
     await journey.as("ana-cruz", INDEPENDENCE, { scenario: "CLI-08:e" });
     await journey.step("CLI-08 e: Ana confirms her own independence", async (page) => {
+      // The statements open from her own button (the gallery frame shows them open).
+      await page.getByRole("button", { name: "Confirm my independence" }).click();
       await expect(page.getByText("I am not a participant in the plan.").first()).toBeVisible();
     });
     await journey.as("margaret-okonkwo", INDEPENDENCE, { scenario: "CLI-08:f" });
