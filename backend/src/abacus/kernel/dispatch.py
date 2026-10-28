@@ -155,6 +155,26 @@ class PlatformSchedule:
     every: timedelta
     note: str
     arg: object = None
+    # Q-04-T008: a weekly calendar instead of the interval: (ISO weekday 1-7, hour, minute,
+    # IANA zone); Temporal applies the zone, so the hour holds across daylight saving.
+    weekly: tuple[int, int, int, str] | None = None
+
+
+def _spec_of(job: PlatformSchedule) -> ScheduleSpec:
+    if job.weekly is None:
+        return ScheduleSpec(intervals=[ScheduleIntervalSpec(every=job.every)])
+    weekday, hour, minute, zone = job.weekly
+    return ScheduleSpec(
+        calendars=[
+            ScheduleCalendarSpec(
+                second=[ScheduleRange(0)],
+                minute=[ScheduleRange(minute)],
+                hour=[ScheduleRange(hour)],
+                day_of_week=[ScheduleRange(weekday % 7)],  # Temporal: Sunday is 0
+            )
+        ],
+        time_zone_name=zone,
+    )
 
 
 def _schedule_of(job: PlatformSchedule, *, state: ScheduleState) -> Schedule:
@@ -166,7 +186,7 @@ def _schedule_of(job: PlatformSchedule, *, state: ScheduleState) -> Schedule:
             id=job.id,
             task_queue=queue_for(work_class),
         ),
-        spec=ScheduleSpec(intervals=[ScheduleIntervalSpec(every=job.every)]),
+        spec=_spec_of(job),
         policy=SchedulePolicy(overlap=OVERLAP, catchup_window=CATCHUP_WINDOW),
         state=state,
     )

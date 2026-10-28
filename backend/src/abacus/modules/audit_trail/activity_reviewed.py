@@ -280,6 +280,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "methodology_version.submitted",
         "methodology_version.superseded",
         # R-01-T26: ADM-10's settings and the read-only preview (versions and ids only)
+        "pilot_metrics.computed",  # Q-04-T008: a week's pilot snapshots
         "portal.preview_viewed",
         "portal_settings.draft_discarded",
         "portal_settings.draft_saved",
