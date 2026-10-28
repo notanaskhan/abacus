@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-pr
+.PHONY: windows agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-pr
 
 setup:
 	cd backend && uv sync --locked
@@ -76,6 +76,7 @@ check-fast:
 	cd backend && uv run python -m abacus_tools.quality.seed_contamination
 	cd backend && uv run python -m abacus_tools.quality.fresh_mfa
 	cd backend && uv run python -m abacus_tools.quality.mutation_floors
+	cd backend && uv run python -m abacus_tools.release_windows check
 	$(MAKE) check-generated check-heads
 	cd backend && uv run python -m abacus_tools.quality.secrets_scan
 	cd backend && uv run python -m abacus_tools.quality.check_dependencies
@@ -241,6 +242,10 @@ incident-propagate:
 
 incident-status:
 	cd backend && uv run python -m abacus_tools.incidents status --ref $(REF)
+
+# Q-04-T002 (P-29): the release-window calendar from deploy/windows.yaml, all years or YEAR=2027.
+windows:
+	@cd backend && uv run python -m abacus_tools.release_windows calendar $(if $(YEAR),--year $(YEAR))
 
 # Q-01-T45: change one firm's module entitlement (ops task; audited as the operator).
 entitlement:

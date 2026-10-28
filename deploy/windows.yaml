@@ -1,0 +1,52 @@
+# Release windows (ADR P-29, DEC-68; Q-04-T002; the note is docs/ops/release-windows.md).
+# Both founders approve every change. Pilot codes only, never firm names: a firm is `PF-<letter><n>`
+# (PF-A1) or a cohort code `PC<yy>-<nn>` (PC28-07); the code-to-name map lives only in the vault.
+#
+# `python -m abacus_tools.release_windows check` (make check-fast) refuses an overlapping window, a
+# mini-freeze or deadline week without both dates, dates that differ from the P-29 rule (the shifted
+# deadline under IRC §7503 with DC Emancipation Day), a tenant without a code, and a code that is not
+# a pilot code. `make windows [YEAR=]` prints the calendar.
+#
+# Windows apply to a firm from its `real_data_since` (P-29: from the first real data); with no firm
+# listed, every guard is inert (DEC-68: no freeze before the first real go-live). Season windows
+# apply to every live firm; autumn windows to firms live on tax or EBP work (`autumn_window: true`).
+rules_version: 1
+
+firms: []
+
+windows:
+  - id: autumn-2027
+    kind: autumn
+    starts: 2027-09-01
+    ends: 2027-10-20
+    mini_freezes: [[2027-09-08, 2027-09-15], [2027-09-23, 2027-09-30], [2027-10-08, 2027-10-15]]
+    deadline_weeks: [[2027-09-13, 2027-09-17], [2027-09-27, 2027-10-01], [2027-10-11, 2027-10-15]]
+  - id: season-2028
+    kind: season
+    starts: 2028-01-01
+    ends: 2028-04-20
+    mini_freezes: []
+    deadline_weeks: [[2028-03-13, 2028-03-17], [2028-04-17, 2028-04-21]]
+  - id: autumn-2028
+    kind: autumn
+    starts: 2028-09-01
+    ends: 2028-10-20
+    mini_freezes: [[2028-09-08, 2028-09-15], [2028-09-25, 2028-10-02], [2028-10-09, 2028-10-16]]
+    deadline_weeks: [[2028-09-11, 2028-09-15], [2028-10-02, 2028-10-06], [2028-10-16, 2028-10-20]]
+  - id: season-2029
+    kind: season
+    starts: 2029-01-01
+    ends: 2029-04-20
+    mini_freezes: []
+    deadline_weeks: [[2029-03-12, 2029-03-16], [2029-04-16, 2029-04-20]]
+  - id: autumn-2029
+    kind: autumn
+    starts: 2029-09-01
+    ends: 2029-10-20
+    mini_freezes: [[2029-09-10, 2029-09-17], [2029-09-24, 2029-10-01], [2029-10-08, 2029-10-15]]
+    deadline_weeks: [[2029-09-17, 2029-09-21], [2029-10-01, 2029-10-05], [2029-10-15, 2029-10-19]]
+
+# Inside a window: promotion and flips only in this slot (P-29 rule 3).
+flip_slot: {weekday: tuesday, start: "19:00", end: "21:00", tz: America/Chicago}
+# Inside a window: the pipeline's migrate step waits until this time (P-29 rule 2).
+migrate_not_before: {time: "20:00", tz: America/Chicago}
