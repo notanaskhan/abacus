@@ -122,13 +122,14 @@ async def _draft(firm: Firm, who: Person | None = None) -> Body:
     return cast(Body, made.json())
 
 
-async def _create(firm: Firm, draft: Body, key: str = "roll-forward-1") -> httpx.Response:
+async def _create(firm: Firm, draft: Body, attempt: str = "roll-forward-1") -> httpx.Response:
+    """Create, under the `Idempotency-Key` header `attempt` names."""
     return await firm.call(
         "POST",
         f"{firm.drafts()}/{draft['id']}/create",
         firm.hannah,
         None,
-        **{"Idempotency-Key": key},
+        **{"Idempotency-Key": attempt},
     )
 
 
