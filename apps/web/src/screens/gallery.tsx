@@ -42,6 +42,13 @@ import {
   PREVIEW_AS as ADM10_PREVIEW_AS,
   scenarios as adm10Scenarios,
 } from "./ADM-10/scenarios";
+import { SIG01 } from "./SIG-01";
+import {
+  OPENS as SIG01_OPENS,
+  STATES as SIG01_STATES,
+  type Sig01State,
+  scenarios as sig01Scenarios,
+} from "./SIG-01/scenarios";
 import {
   type Adm07State,
   STATES as ADM07_STATES,
@@ -735,6 +742,44 @@ function Adm07Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("ADM-07", { title: "Audit log explorer", Component: Adm07Artboard });
+
+// N-02-T11: SIG-01 · Signatures hub (a–g; r's Import sheet lands with N-02-T15, DEC-827).
+function Sig01Frame({ state }: { state: Sig01State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/signatures" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  const open = SIG01_OPENS[state];
+  return (
+    <div data-artboard={state}>
+      <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+        <SIG01 initialTab={open.tab} initialEnvelope={open.envelope} />
+      </AppShell>
+    </div>
+  );
+}
+
+function Sig01Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Sig01State = SIG01_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      sig01Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Sig01Frame key={state} state={state} /> : null;
+}
+
+registerScreen("SIG-01", { title: "Signatures hub & evidence drawer", Component: Sig01Artboard });
 
 function Cli01Frame({ state }: { state: Cli01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
