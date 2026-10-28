@@ -454,14 +454,43 @@ def contract_rows(repo: Path) -> Iterator[Row]:
         "reported",
         "backend/tests/contracts",
     )
+    drift = fixture_drift(repo)
     yield Row(
         "Contracts",
         "Fixture-versus-live drift; unverified fakes",
-        "no data",
+        f"{len(drift)} routes; not measured",
         "0; 0",
-        "no data",
-        "route parity (abacus_tools.route_parity)",
+        "reported",
+        "fixture handler keys against packages/api-client/openapi.json (Q-03-T061)",
     )
+
+
+_FIXTURE_KEY = re.compile(r"[\"'`](GET|POST|PUT|PATCH|DELETE) (/v1/[a-z][A-Za-z0-9_{}./-]*)[\"'`]")
+
+
+def fixture_drift(repo: Path) -> list[str]:
+    """Q-03-T061: the routes fixture mode answers that the OpenAPI document has not (the same
+    count `apps/web/src/fixtures/route-drift.test.ts` holds at its known list)."""
+    spec = json.loads((repo / "packages" / "api-client" / "openapi.json").read_text("utf-8"))
+
+    def shape(path: str) -> str:
+        return re.sub(r"\{[^}]+\}", "{}", path)
+
+    live = {
+        f"{method.upper()} {shape(path)}"
+        for path, ops in cast(dict[str, dict[str, object]], spec["paths"]).items()
+        for method in ops
+        if method in ("get", "post", "put", "patch", "delete")
+    }
+    web = repo / "apps" / "web" / "src"
+    answered: set[str] = set()
+    for folder in (web / "fixtures", web / "app-core"):
+        for path in folder.rglob("*.ts"):
+            if path.name.endswith(".test.ts"):
+                continue
+            for method, route in _FIXTURE_KEY.findall(path.read_text("utf-8")):
+                answered.add(f"{method} {shape(route)}")
+    return sorted(answered - live)
 
 
 def journey_rows(journeys: object) -> Iterator[Row]:
