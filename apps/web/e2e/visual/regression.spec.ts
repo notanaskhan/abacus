@@ -15,6 +15,9 @@ test("every specimen renders as it did at the baseline (tier A)", async ({ page 
     .locator("section[id][aria-label]")
     .evaluateAll((sections) => sections.map((s) => s.id));
   expect(ids.length, "the gallery lists its specimens").toBeGreaterThan(0);
+  // One test walks every specimen, so its budget grows with the gallery (about 2.5 s a section
+  // locally, slower on a CI runner); the fixed project timeout ran out as the gallery grew.
+  testInfo.setTimeout(120_000 + ids.length * 8_000);
 
   const fresh: string[] = [];
   const updating = testInfo.config.updateSnapshots === "all";
