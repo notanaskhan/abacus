@@ -331,6 +331,10 @@ def _evidence_files(
     ]
 
 
+# Q-02-T47: the firm export builds its per-engagement packages with the same file reader.
+evidence_files = _evidence_files
+
+
 async def section_files(
     tenant: TenantContext, request: SectionRequest
 ) -> tuple[list[PackageFile], list[ManifestSection]]:

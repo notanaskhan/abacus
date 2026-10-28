@@ -12,6 +12,8 @@ import {
 import { type QueryClient, useQuery } from "@tanstack/react-query";
 
 export const HOME_POLL_MS = 60_000;
+/** I-01-T11: the running pill rides the home read, polled every 30 s. */
+export const RUNNING_POLL_MS = 30_000;
 export const HOME_STALE_MS = 10_000;
 const POLL = {
   refetchInterval: HOME_POLL_MS,
@@ -24,7 +26,11 @@ function office(officeId: string | null): { query?: { office_id: string } } {
 }
 
 export function useHome(officeId: string | null) {
-  return useQuery({ ...homeOptions(office(officeId)), ...POLL });
+  return useQuery({
+    ...homeOptions(office(officeId)),
+    ...POLL,
+    refetchInterval: RUNNING_POLL_MS,
+  });
 }
 
 /** The one count source: the header, the summary line and the Approvals badge read this. */

@@ -41,6 +41,11 @@ ROUTES: dict[tuple[str, str], str] = {
     ("post", "/v1/review-notes/{note_id}/withdraw"): "review_note.withdraw",
     ("get", "/v1/human-gates"): "human_gate.read",
     ("get", "/v1/human-gates/counts"): "human_gate.read",  # I-01-T04: the one count source
+    # I-01-T07 (DEC-646): a person's snooze, unsnooze and reassign, live behind the flag.
+    ("post", "/v1/human-gates/{gate_id}/snooze"): "human_gate.snooze",
+    ("post", "/v1/human-gates/{gate_id}/unsnooze"): "human_gate.snooze",
+    ("get", "/v1/human-gates/{gate_id}/reassign-candidates"): "human_gate.reassign",
+    ("post", "/v1/human-gates/{gate_id}/reassign"): "human_gate.reassign",
     ("get", "/v1/decision-cards"): "decision.read",
     ("get", "/v1/decision-cards/{card_id}"): "decision.read",
     ("post", "/v1/decision-cards/{card_id}/decide"): "decision.decide",
@@ -112,6 +117,10 @@ MODELS: list[type[BaseModel]] = [
 def test_c3_each_route_declares_its_action_and_the_stub_answers(method: str, path: str) -> None:
     op = PATHS[path][method]
     assert op["x-abacus-action"] == ROUTES[(method, path)]
+    if path.startswith("/v1/human-gates"):
+        # I-01-T04 and T07 made the gate routes live: 404 behind the flag, no 501 (DEC-646).
+        assert "404" in set(cast(Json, op["responses"]))
+        return
     assert {"404", "501"} <= set(cast(Json, op["responses"]))
 
 
@@ -138,6 +147,11 @@ LIVE = frozenset(
     {
         "human_gate_list_route",
         "human_gate_counts_route",  # I-01-T04
+        # I-01-T07: the list's filters and the gate acts.
+        "human_gate_snooze_route",
+        "human_gate_unsnooze_route",
+        "human_gate_candidates_route",
+        "human_gate_reassign_route",
         "sign_off_ladder_route",
         "sign_off_eligibility_route",
         "sign_off_route",

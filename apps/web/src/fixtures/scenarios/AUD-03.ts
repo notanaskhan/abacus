@@ -357,3 +357,12 @@ export const OPENS: Readonly<Record<Aud03State, { item: string; returning?: bool
   f: { item: itemOf(BROKERWINDOW_TITLE) },
   g: { item: itemOf("W-3 Form") },
 };
+
+/** The ids each state opens, for the fixture screen switch (A-01-T26): the audit and its row. */
+export const IDS: Readonly<Record<Aud03State, { auditId: string; itemId: string }>> =
+  Object.fromEntries(
+    (Object.keys(OPENS) as Aud03State[]).map((s) => [
+      s,
+      { auditId: AUDIT_ID, itemId: OPENS[s].item },
+    ]),
+  ) as Record<Aud03State, { auditId: string; itemId: string }>;

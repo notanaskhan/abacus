@@ -89,6 +89,10 @@ def test_ac20_each_new_route_declares_exactly_one_action_and_a_response_model() 
 REVIEW_QUEUE = "/v1/engagements/{engagement_id}/review-queue/{version_id}"
 NOT_CREATING = {
     "/v1/platform/email-templates/import",  # TASK-401: idempotent, may write nothing, so 200
+    # I-01-T07: a snooze, an unsnooze and a reassign change who a gate waits on, so 200.
+    "/v1/human-gates/{gate_id}/snooze",
+    "/v1/human-gates/{gate_id}/unsnooze",
+    "/v1/human-gates/{gate_id}/reassign",
     # K-01-T01 (C21 stub): moving a methodology version or a step's flag changes it, so 200.
     "/v1/methodology/versions/{version_id}/approve",
     "/v1/methodology/versions/{version_id}/discard",

@@ -147,6 +147,9 @@ def bind(principal: AuthContext) -> Call:
 
 async def _firm(seed: Seeder) -> tuple[uuid.UUID, AuthContext, AuthContext]:
     tenant = await seed.firm()
+    # The range is whole days in the firm's zone; `_today()` is the UTC date, so the firm keeps
+    # UTC days too (otherwise the hours after UTC midnight fall outside "today").
+    await seed.run("UPDATE firms SET time_zone = 'UTC' WHERE tenant_id = $1", tenant)
     await seed.run(
         "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
         "VALUES ($1, 'audit_log.explorer', 'true', 'test', 'G-02-T17')",

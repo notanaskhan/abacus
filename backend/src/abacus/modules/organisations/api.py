@@ -40,6 +40,7 @@ from abacus.modules.organisations.intake import (
     add_intake_contact,
     add_intake_relationship,
     dedupe_candidates,
+    ein_matches,
     same_name_client,
 )
 from abacus.modules.organisations.live import (
@@ -116,6 +117,7 @@ from abacus.modules.organisations.tin import (
     TinInvalid,
     TinKindNotAllowed,
     clear_tin,
+    fingerprint_tin,
     mask_tin,
     seal_tin,
 )
@@ -206,9 +208,11 @@ __all__ = [
     "create_client",
     "create_contact",
     "dedupe_candidates",
+    "ein_matches",
     "entity_display_name",
     "entity_name_column",
     "find_clients",
+    "fingerprint_tin",
     "firm_names",
     "mask_tin",
     "normalise",

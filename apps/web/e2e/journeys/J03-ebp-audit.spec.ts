@@ -210,3 +210,88 @@ test.describe("J03-ebp-audit (P-06's binder steps)", () => {
     });
   });
 });
+
+// A-01-T26 (A-01 §10): the firm's Source Documents steps on AUD-03, walked in the fixture project on
+// AUD-03's own scenarios (`?screen=AUD-03&st=…`, the audit and row from its ids). Full stack and
+// staging walk them once `audits.cockpit` is on in E0 and the batch is deployed (A-01 §10, M6).
+test.describe("J03-ebp-audit (A-01's Source Documents steps)", () => {
+  const SOURCE = "/audits/_auditId_/source-documents?item=_itemId_";
+
+  test.beforeEach(({ journey }) => {
+    test.fixme(
+      journey.project !== "fixture",
+      "audits.cockpit on in E0 and the S12 batch deployed (A-01 §10; M6, Fri Mar 5, 2027)",
+    );
+  });
+
+  test("j03 4e: Marcus opens a requested row and drafts a reminder to Dana that only a person sends", async ({
+    journey,
+  }) => {
+    await journey.as("marcus-delaney", SOURCE, { scenario: "AUD-03:e", clock: DEMO_INSTANT });
+    await journey.step(
+      "J03 step 4e: a requested row on Source Documents (AUD-03 e)",
+      async (page) => {
+        await expect(page.getByRole("button", { name: "Remind…" }).first()).toBeVisible();
+      },
+    );
+    await journey.step("J03 step 4e: the reminder is drafted, a person sends it", async (page) => {
+      await page.getByRole("button", { name: "Remind…" }).first().click();
+      const sheet = page.getByRole("dialog");
+      await expect(sheet).toBeVisible();
+      // The agent may draft; only a person's click sends (INV-1, ADR-005).
+      await expect(sheet.getByRole("button", { name: /^Send/ })).toBeVisible();
+    });
+  });
+
+  test("j03 5: Ana accepts the certified trust report and Source Documents reads 12 of 24", async ({
+    journey,
+  }) => {
+    await journey.as("ana-cruz", SOURCE, { scenario: "AUD-03:b", clock: DEMO_INSTANT });
+    await journey.step(
+      "J03 step 5: the certified trust report in the dock (AUD-03 b)",
+      async (page) => {
+        await expect(page.getByRole("button", { name: "Accept", exact: true })).toBeVisible();
+      },
+    );
+    await journey.step("J03 step 5: Ana accepts it", async (page) => {
+      await page.getByRole("button", { name: "Accept", exact: true }).click();
+      await expect(page.getByText(/accepted$/).first()).toBeVisible();
+      await expect(page.getByText(/12 of 24/).first()).toBeVisible();
+    });
+  });
+
+  test("j03 5c: the 62% BrokerWindow match is held and Ana returns it as Wrong document", async ({
+    journey,
+  }) => {
+    await journey.as("ana-cruz", SOURCE, { scenario: "AUD-03:c", clock: DEMO_INSTANT });
+    await journey.step("J03 step 5c: the held 62% match (AUD-03 c)", async (page) => {
+      await expect(page.getByText(/match 62%/).first()).toBeVisible();
+    });
+    await journey.step("J03 step 5c: Ana returns it as Wrong document", async (page) => {
+      await page
+        .getByRole("button", { name: /^Return/ })
+        .first()
+        .click();
+      const dialog = page.getByRole("dialog");
+      await dialog.getByText("Wrong document", { exact: true }).click();
+      await dialog.getByRole("button", { name: /^Return/ }).click();
+      await expect(dialog).toBeHidden();
+    });
+  });
+
+  test("j03 6 (host): AUD-02 opens from AUD-01 at Source Documents", async ({ journey }) => {
+    await journey.as("ana-cruz", "/audits", { scenario: "AUD-01:a", clock: DEMO_INSTANT });
+    await journey.step("J03 step 6: the audits index (AUD-01 a)", async (page) => {
+      // AUD-01 rows open through their "Open row" button; the engagement name is a cell.
+      await expect(page.getByRole("row", { name: /Northwind/ }).first()).toBeVisible();
+    });
+  });
+
+  test.fixme(
+    "j03 6 (dock): the dock steps",
+    owner("P-09/P-10 · SHL-13 · S16, Tue Jun 1, 2027"),
+    async ({ journey }) => {
+      await journey.as("ana-cruz", "/audits", { clock: DEMO_INSTANT });
+    },
+  );
+});

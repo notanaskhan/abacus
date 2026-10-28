@@ -72,6 +72,15 @@ def egress_read_posts() -> frozenset[tuple[str, str]]:
     return registry().read_posts()
 
 
+def egress_hosts_by_connector() -> dict[str, frozenset[str]]:
+    """Each declared read connector's own hosts (DEC-582), for `kernel.egress`'s per-connector
+    check."""
+    out: dict[str, set[str]] = {}
+    for r in registry().read_connectors:
+        out.setdefault(r.adapter_key, set()).update(r.egress_hosts)
+    return {key: frozenset(hosts) for key, hosts in out.items()}
+
+
 def declared_hosts(adapter_key: str) -> frozenset[str]:
     return frozenset(
         h

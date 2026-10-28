@@ -23,7 +23,7 @@ Before Jun 1, 2027 one reversible migration may change shape (ADR-135/P-38). The
 refuses while any client-scoped item or cross-engagement fulfilment exists.
 
 Revision ID: 0270
-Revises: 0244 (renumbered on rebase at the S13 batch merge)
+Revises: 0252 (re-chained onto S12's merge revision at the S13 batch merge)
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ from __future__ import annotations
 from alembic import op
 
 revision = "0270"
-down_revision = "0244"
+down_revision = "0252"
 branch_labels = None
 depends_on = None
 

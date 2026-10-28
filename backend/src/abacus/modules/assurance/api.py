@@ -8,6 +8,7 @@ from abacus.modules.assurance.audits_contract import audits_router
 from abacus.modules.assurance.completion import g6, g7
 from abacus.modules.assurance.completion_routes import dashboard_router
 from abacus.modules.assurance.completion_routes import router as completion_router
+from abacus.modules.assurance.home_counts import register_home_counts
 from abacus.modules.assurance.mapping import mapping_facts, mapping_reviewables
 from abacus.modules.assurance.mapping_routes import firm_router as grouping_router
 from abacus.modules.assurance.mapping_routes import router as mapping_router
@@ -15,6 +16,7 @@ from abacus.modules.assurance.phase import SUBSCRIPTIONS as PHASE_SUBSCRIPTIONS
 from abacus.modules.assurance.phase import record_phase, update_profile
 from abacus.modules.assurance.providers import register as register_a01_providers
 from abacus.modules.assurance.release import RELEASE_MODE_SETTING, g8
+from abacus.modules.assurance.review_gates import register_review_gates
 from abacus.modules.assurance.routes import router
 from abacus.modules.assurance.run_badges import run_badges
 from abacus.modules.assurance.sections import (
@@ -77,6 +79,10 @@ register_audit_segment("ebp", None)
 register_audit_segment("review", None)
 # A-01-T09 (DEC-312): A-01's Overview rows and index tags, through the same slots as A-02's.
 register_a01_providers()
+# I-01-T08: this module's HOME-01 tile or pill (platform.register_home_count).
+register_home_counts()
+# I-01-T08 (C13): SPEC-004's review queue as `evidence_review` gates.
+register_review_gates()
 
 __all__ = [
     "ACTIVITIES",

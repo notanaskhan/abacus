@@ -32,6 +32,7 @@ from abacus.modules.communications.follow_up_policy import (
     next_sequence_by_policy,
     register_reminder_history,
     save_follow_up_policy,
+    write_follow_up_policy,
 )
 from abacus.modules.communications.follow_ups import (
     REMINDER_TEMPLATE,
@@ -283,4 +284,5 @@ __all__ = [
     "template_key",
     "templated_outcome",
     "viewer_scoped",
+    "write_follow_up_policy",
 ]
