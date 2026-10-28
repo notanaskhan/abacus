@@ -49,7 +49,7 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 
 from abacus.kernel.clock import system_now
-from abacus_tools import release_windows
+from abacus_tools import flip_request, release_windows
 
 BACKEND = Path(__file__).resolve().parents[2]
 REPO = BACKEND.parent
@@ -533,7 +533,16 @@ def main(argv: Sequence[str] | None = None) -> int:
                 return 1
         else:
             loaded = cast(dict[str, object], yaml.safe_load(Path(args.file).read_text()))
-            print(json.dumps(ops_request(loaded).argv()))
+            if loaded.get("kind") == "flag_flip":
+                # Q-04-T010 (DEC-809): a flip request becomes the flag CLI's command; the flip
+                # guard runs again inside it when the task executes.
+                try:
+                    flip = flip_request.parse(loaded, args.file)
+                except flip_request.RequestError as error:
+                    raise Refused(str(error)) from None
+                print(json.dumps(flip_request.argv(flip)))
+            else:
+                print(json.dumps(ops_request(loaded).argv()))
         return 0
     except Refused as refused:
         print(f"refused: {refused}", file=sys.stderr)

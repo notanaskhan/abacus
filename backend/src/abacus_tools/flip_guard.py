@@ -47,6 +47,7 @@ class Flip:
     approved_by: str | None = None
     rollback: str | None = None
     request: Path | None = None
+    request_sha256: str | None = None  # an ops request's fingerprint, when its file is not here
     hotfix: str | None = None
     eval_report: str | None = None
     shadow_run: str | None = None
@@ -89,12 +90,14 @@ def check(cal: release_windows.Calendar, flip: Flip) -> Verdict:
             request_text = flip.request.read_text(encoding="utf-8")
         except OSError:
             why.append("request_unreadable")
+    if flip.request_sha256 is not None and not re.fullmatch(r"[0-9a-f]{64}", flip.request_sha256):
+        why.append("request_unreadable")
     if flip.hotfix is not None and not 10 <= len(flip.hotfix.strip()) <= 300:
         why.append("hotfix_reason_missing")
     if window is not None:
         if flip.hotfix is None and not release_windows.flip_slot(cal, flip.at, flip.firm):
             why.append("no_slot")
-        if flip.request is None:
+        if flip.request is None and flip.request_sha256 is None:
             why.append("request_missing")
         if any(name.startswith(PROMPT_PREFIX) for name in flip.flags) and (
             flip.eval_report is None or flip.shadow_run is None
@@ -107,6 +110,8 @@ def check(cal: release_windows.Calendar, flip: Flip) -> Verdict:
         refs["rollback"] = fingerprint(flip.rollback)
     if request_text is not None:
         refs["request"] = fingerprint(request_text)
+    elif flip.request_sha256 is not None:
+        refs["request"] = flip.request_sha256
     if flip.eval_report is not None:
         refs["eval_report"] = fingerprint(flip.eval_report)
     if flip.shadow_run is not None:

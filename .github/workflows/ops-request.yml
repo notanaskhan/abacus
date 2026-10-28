@@ -1,0 +1,59 @@
+# Flip ops requests (Q-04-T010; SPEC-403 AC-12; P-29 rule 3; DEC-809). A PR that adds
+# deploy/production/ops-requests/flip-<yyyy-mm-dd>-<pilot code>.yaml runs `flip-precheck` before
+# the other founder may approve it: every journey the request names, and every journey the flag
+# registry lists for its flag, passed on staging within 24 hours; the request names a shadow run;
+# the approver is not the operator; the firm is a pilot firm with the file's code; and its slot is
+# one that firm may flip in. Merging runs ops-task.yml, which turns the request into the flag CLI's
+# command; the flip guard runs again when it executes.
+#
+# The staging journeys are the e2e workflow's "nightly staging journeys" job (F-04.32): its last
+# green completion on main counts for every journey (`*`), until per-journey results are recorded.
+# `flip-precheck` is a required check on main for these paths (branch protection, a human to-do).
+# Read-only: no secrets, no AWS. Every action is pinned to a full commit SHA.
+name: ops-request
+
+on:
+  pull_request:
+    paths:
+      - "deploy/production/ops-requests/flip-*.yaml"
+
+permissions:
+  contents: read
+  actions: read # the e2e workflow's runs, for the staging journeys' last green
+
+jobs:
+  flip-precheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: The staging journeys' last green
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          last=""
+          for id in $(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/e2e.yml/runs?branch=main&per_page=20" \
+            --jq '.workflow_runs[].id'); do
+            done_at=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id/jobs" \
+              --jq '.jobs[] | select(.name == "nightly staging journeys" and .conclusion == "success") | .completed_at')
+            if [ -n "$done_at" ] && { [ -z "$last" ] || [[ "$done_at" > "$last" ]]; }; then last="$done_at"; fi
+          done
+          if [ -n "$last" ]; then jq -n --arg t "$last" '{"*": $t}' > journeys.json; else echo '{}' > journeys.json; fi
+          cat journeys.json
+      - name: flip-precheck
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          files=$(git diff --name-only --diff-filter=AM "$BASE" HEAD -- 'deploy/production/ops-requests/flip-*.yaml')
+          [ -n "$files" ] || { echo "no flip request in this PR"; exit 0; }
+          args=()
+          for f in $files; do args+=("../$f"); done
+          cd backend && uv run --locked python -m abacus_tools.flip_request precheck "${args[@]}" \
+            --journeys ../journeys.json

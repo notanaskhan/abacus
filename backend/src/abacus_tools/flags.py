@@ -148,6 +148,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--approved-by")
     parser.add_argument("--rollback")
     parser.add_argument("--request", type=Path)
+    parser.add_argument("--request-sha256", help="the ops request's fingerprint (ops-task.yml)")
     parser.add_argument("--hotfix", help="a reason: a hotfix may flip outside the slot")
     parser.add_argument("--eval-report")
     parser.add_argument("--shadow-run")
@@ -164,6 +165,7 @@ def main(argv: list[str] | None = None) -> int:
             approved_by=args.approved_by,
             rollback=args.rollback,
             request=args.request,
+            request_sha256=args.request_sha256,
             hotfix=args.hotfix,
             eval_report=args.eval_report,
             shadow_run=args.shadow_run,
