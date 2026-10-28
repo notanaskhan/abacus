@@ -443,7 +443,9 @@ async def test_ac32_twelve_gate_rows_with_policy_acceptance_only_on_rows_1_and_5
         assert gate["policy_acceptance_on"] is False
         assert gate["policy_acceptance_locked"] is True
         if gate["policy_acceptance_available"]:
-            assert gate["attest"] == "never"
+            # ED-200: row 5 (AJE within threshold) is "Never; held for client approval" in the
+            # plan's gate table (05-agent-architecture.md); row 1 is "Never".
+            assert gate["attest"] == ("never_held_for_client" if gate["row"] == 5 else "never")
         for screen in cast(list[str], gate["where_shown"]):
             assert re.fullmatch(r"[A-Z]{3}-\d{2}", screen), screen
 
@@ -615,7 +617,8 @@ async def test_ac40_the_security_admin_saves_a_client_data_change(
     [
         ("autonomy.level", 0),
         ("governance.override_tolerance_pct", 6),
-        ("auto_mode_defaults.fs_audit", False),
+        # ED-201: a default-true cell, so turning it off is a real (stricter) change.
+        ("auto_mode_defaults.tax_return", False),
     ],
 )
 async def test_ac40_the_security_admin_cannot_change_another_section(
