@@ -230,8 +230,11 @@ agent-stage:
 	cd backend && uv run python -m abacus_tools.agent_stage $(if $(STAGE),set $(FIRM) $(AGENT) $(STAGE) "$$AGENT_STAGE_NOTE",report $(FIRM) $(AGENT))
 
 # SPEC-011: set a firm's feature flag (operators; audited).
+# Q-04-T004 (P-29): a pilot firm's flip names APPROVED_BY (never the operator) and ROLLBACK; inside its
+# window also REQUEST (the ops-request file) and the Tuesday slot, or HOTFIX="<reason>"; a prompt.*
+# variant also EVAL_REPORT and SHADOW_RUN. ALL_OFF=1 sets every flag for the firm to its default.
 flag:
-	cd backend && uv run python -m abacus_tools.flags --firm $(FIRM) --flag $(FLAG) --value $(VALUE) --operator $(OPERATOR) --reason "$(REASON)"
+	cd backend && uv run python -m abacus_tools.flags --firm $(FIRM) $(if $(ALL_OFF),--all-off,--flag $(FLAG) --value $(VALUE)) --operator $(OPERATOR) --reason "$(REASON)" $(if $(APPROVED_BY),--approved-by $(APPROVED_BY)) $(if $(ROLLBACK),--rollback "$(ROLLBACK)") $(if $(REQUEST),--request $(REQUEST)) $(if $(HOTFIX),--hotfix "$(HOTFIX)") $(if $(EVAL_REPORT),--eval-report "$(EVAL_REPORT)") $(if $(SHADOW_RUN),--shadow-run "$(SHADOW_RUN)")
 
 # Q-02-T33 (RB-27): propagate an Accrued incident into the firms it touched, as staff. Needs
 # ABACUS_STAFF_TOKEN (a staff-issuer token with MFA) in the environment; STAFF must be the id it
@@ -249,7 +252,7 @@ windows:
 
 # Q-01-T45: change one firm's module entitlement (ops task; audited as the operator).
 entitlement:
-	cd backend && uv run python -m abacus_tools.tenants entitlement --firm $(FIRM) --module $(MODULE) --enabled $(ENABLED) $(if $(SEATS),--seats $(SEATS)) --operator $(OPERATOR) --reason "$(REASON)"
+	cd backend && uv run python -m abacus_tools.tenants entitlement --firm $(FIRM) --module $(MODULE) --enabled $(ENABLED) $(if $(SEATS),--seats $(SEATS)) --operator $(OPERATOR) --reason "$(REASON)" $(if $(APPROVED_BY),--approved-by $(APPROVED_BY)) $(if $(ROLLBACK),--rollback "$(ROLLBACK)") $(if $(REQUEST),--request $(REQUEST)) $(if $(HOTFIX),--hotfix "$(HOTFIX)")
 
 # Q-01-T26: create or converge the platform-job Schedules (spend anomaly, notification purge) on
 # the local stack's Temporal only (--local-only refuses any other). Idempotent; the deploys run it
