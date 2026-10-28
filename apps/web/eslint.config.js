@@ -262,6 +262,19 @@ export default defineConfig(
     rules: { "no-restricted-imports": ["error", importRestrictions(SCREEN_ROOTS)] },
   },
   {
+    // F-06 gallery specimens (gallery only; the dist test holds them out): a specimen draws the
+    // seed and registers through the gallery's fixture mode.
+    files: ["src/gallery/specimens/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        importRestrictions(
+          "^\\.\\./\\.\\./(?:\\.\\./)*(?!\\.\\./|app-core(?:/|$)|fixtures/seed/[^/]+$|fixture-mode$)",
+        ),
+      ],
+    },
+  },
+  {
     // Tests drive a feature from outside: the router, the seed, the harness (plan 04 §1.7).
     files: ["src/**/*.test.{ts,tsx}"],
     rules: { "no-restricted-imports": ["error", importRestrictions("^$")] },

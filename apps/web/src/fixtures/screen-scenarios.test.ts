@@ -32,8 +32,11 @@ describe("screen scenarios on the firm entry", () => {
       "BND-01",
       "BND-02",
       "CLI-04", // P-07-T53
+      "CLI-06", // P-07-T62
       "CLI-07", // P-07-T53
       "CLI-08", // P-07-T53
+      "ENG-02", // P-07-T62
+      "ENG-13", // P-07-T62
       "HOME-01", // I-01-T05
       "KNW-01", // K-01-T04
       "SHL-03",
@@ -81,5 +84,12 @@ describe("screen scenarios on the firm entry", () => {
     const own = "?screen=ADM-03&st=a&expand=DEN";
     expect(withOpens("/settings/offices", own, "", "?expand=CHI")).toBe(`/settings/offices${own}`);
     expect(withOpens("/", "?screen=ADM-02&st=a", "", "")).toBe("/?screen=ADM-02&st=a");
+  });
+
+  it("opens CLI-06 g on the bulk import, and ENG-02 and ENG-13 on their engagements (P-07-T62)", () => {
+    expect(screenScenario("?screen=CLI-06&st=g")?.opens).toBe("?mode=import");
+    expect(screenScenario("?screen=CLI-06&st=b")?.opens).toBe("");
+    expect(screenScenario("?screen=ENG-13&st=d")?.ids.engagementId).toBeTruthy();
+    expect(screenScenario("?screen=ENG-02&st=prospect")?.ids.engagementId).toBeTruthy();
   });
 });

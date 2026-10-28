@@ -211,8 +211,8 @@ Each becomes a test in `POR-20.test.tsx` ("POR-20 avoid: …"): gradients in pro
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a–l | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (unbuilt) | reported from S11; locked at R-01 exit (S18) after F-06-T16 re-homes the well (R-01-T31); the second GroupBand of registered keys is masked |
-| d | C | not run | the 470 × 900 board |
+| a–c, e–l | C (threshold 0.20, maxDiffPixelRatio 3 %) | a 3.36 · b 3.41 · c 3.90 · e 2.75 · f 2.67 · g 2.49 · h 3.00 · i 2.62 · j 69.47 · k 4.26 · l 3.05 (2026-10-28) | the gallery draws the 1400 × 860 window without SHL-01's chrome (`[data-window]`), which most of the over-3 % is; b, j and k are reached by a click (the editor, the Send test sheet, a lint state) and the gallery opens each on its template, so j is the Send test sheet missing; reported from S11; locked at R-01 exit (S18) after F-06-T16 re-homes the well (R-01-T31); the second GroupBand of registered keys is masked |
+| d | C | not run (deviation) | the 470 × 900 board: its manifest entry is report-only until the gallery draws d's phone board alone |
 | host | D | — | toolbar 46, subbar 46–88, panes from y98, structure 470, paper 896, pane header 46 with a 14.5/500 title, list rows 52, bands 31, ValueRows 34, variable chips 24, email card 600 r12 padding 28 32, button 40 r999 (390: full width, 44), toast 36 |
 
 Tier B for SHL-01 is F-05's; T10 is F-06's.

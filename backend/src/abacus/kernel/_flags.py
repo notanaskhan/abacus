@@ -91,6 +91,11 @@ ENGAGEMENTS_ACCEPTANCE_V2 = Flag(
     kind="boolean",
     default="false",
 )
+ENGAGEMENTS_ROLL_FORWARD_V2 = Flag(
+    name="engagements.roll_forward_v2",
+    kind="boolean",
+    default="false",
+)
 ENGAGEMENTS_V2 = Flag(
     name="engagements.v2",
     kind="boolean",
@@ -308,6 +313,7 @@ FLAGS: dict[str, Flag] = {
     "contacts.v2": CONTACTS_V2,
     "engagement_agent.enabled": ENGAGEMENT_AGENT_ENABLED,
     "engagements.acceptance_v2": ENGAGEMENTS_ACCEPTANCE_V2,
+    "engagements.roll_forward_v2": ENGAGEMENTS_ROLL_FORWARD_V2,
     "engagements.v2": ENGAGEMENTS_V2,
     "evidence.citations_v2": EVIDENCE_CITATIONS_V2,
     "evidence.pii_reveal": EVIDENCE_PII_REVEAL,

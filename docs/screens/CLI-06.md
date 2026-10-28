@@ -9,7 +9,7 @@
 | Epic and tasks | P-07 · contract P-07-T23 · stubs P-07-T37 · TIN P-07-T10 · conflicts and screening P-07-T36 · single commit P-07-T42 · bulk import P-07-T52 · screens P-07-T49 (single), P-07-T54 (bulk) |
 | Manifest status | built (P-07-T49: single intake at `/clients/new`; bulk import P-07-T54); `planned` in `routes/manifest/cli.ts` until CLI-01 wires its "+ New client" and "Bulk import" links with `to.CLI06()` |
 
-Code to come: `src/screens/CLI-06/{index.tsx, scenarios.ts, copy.ts, CLI-06.test.tsx}`, `src/domain/clients/ConflictResults.tsx`, `src/fixtures/handlers/intake.ts`. Flag `clients.v2`. Spec: SPEC-332 AC-23 to AC-26.
+Code: `src/screens/CLI-06/{index.tsx, BulkImport.tsx, scenarios.ts, copy.ts, CLI-06.test.tsx}`, `src/domain/clients/{intake.ts, imports.ts}`, `src/fixtures/handlers/{intake.ts, imports.ts}`, `src/fixtures/scenarios/CLI-06.ts`. Flag `clients.v2`. Spec: SPEC-332 AC-23 to AC-26.
 
 ## States
 
@@ -23,7 +23,7 @@ Code to come: `src/screens/CLI-06/{index.tsx, scenarios.ts, copy.ts, CLI-06.test
 | d | grace-holloway (README lists Paul Thornbury: the contact being added) | same | same | Step 3 Contacts: Paul Thornbury, executor | built · live (T49) |
 | e | grace-holloway | same | same | Step 4 Services: final 1040, estate 1041, Form 706 | built · live (T49); due dates planned (see Deviations) |
 | f | grace-holloway | same | same | Step 6 Review: "Create & start acceptance" · "Create" | built · live (T49); intake toggle planned |
-| g | grace-holloway | Tue Sep 8, 2026, 2:04 PM CT | E0 + a synthetic 212-row CCH-format file | Bulk import review: 204 matched + 8 to review + 0 new = 212; rows 7–8 Skip → "Import 210 records" | built · live (T54) |
+| g | grace-holloway | Tue Sep 8, 2026, 2:04 PM CT | E0 + a synthetic 212-row CCH-format file (P-07-T50) | Bulk import review: 204 matched + 8 to review + 0 new = 212; the eight are the file's rows 7, 8, 10, 15, 30, 33, 34, 38; rows 7–8 Skip, the rest Merge → "Import 210 records" | built · live (T54) |
 | h | samuel-ito | 2:10 PM | same | Conflict hit: "Harborline Trust Company" → amber "Counterparty · custodian for Calloway Family Trust — review" with "Clear as not adverse…" for a manager | built · live (T49) |
 | i | grace-holloway | 2:10 PM | same | Validation: Date of death empty → "Required for Form 706 due date" | built · live (T49) |
 
@@ -40,7 +40,7 @@ Not-allowed: without `client.intake` the "+ New client" entry is hidden and the 
 | write | `POST /v1/client-imports` (multipart) · `GET …/{id}` · `…/rows` · `PUT …/rows/{row_id}/decision` · `POST …/{id}/run` (202) | bulk import | `client_import.run` | firm admin, partner, manager |
 
 ## Status
-`client` Prospect for the new engagement's client entity; the engagement is created Prospect only. Conflict assessment words: "No conflicts" · "Counterparty … — review" · "Not adverse". Import progress pill "Importing 210 records…".
+`client` Prospect for the new engagement's client entity; the engagement is created Prospect only. Conflict assessment words: "No conflicts" · "Counterparty … — review" · "Not adverse". Import progress pill "Importing 210 records…". The import's stage and a row's decision are codes; their words are this screen's (`copy.ts` `import.stages`, `import.decisions`), not registry statuses (P-07-T54, DEC-812).
 
 ## Copy
 | Key | String |
@@ -57,6 +57,12 @@ Not-allowed: without `client.intake` the "+ New client" entry is hidden and the 
 | `import.progress` (g) | "Importing {count} records…" |
 | `import.toast` (g) | "{imported} records imported · {skipped} skipped · {new} new clients" |
 | `import.decisions` (g) | "Merge" · "Keep both" · "Skip" |
+| `import.steps` (g) | "Source" · "Map fields" · "Review duplicates" · "Import" |
+| `import.line` (g) | "CCH Axcess Tax · client list · {rows} records · pulled {time}" |
+| `import.tally` (g) | "MATCHED AUTOMATICALLY" · "NEED REVIEW" · "NEW CLIENTS" |
+| `import.columns` (g) | "Imported record" · "Best match" · "Score" · "Decision" · "Note" |
+| `import.undecided` (g, amended) | "Not decided — skipped at import" |
+| `import.mapNote` (g, amended) | "Columns are matched by their headings. A column not listed here is not imported." |
 
 ## Links
 | From | To (manifest builder) | Planned or live |
@@ -89,6 +95,10 @@ Gradients, emoji, saturated blue, heavy shadows, invented colours, lorem ipsum, 
 | redaction | A walled match renders one row without name, link or count | Walls never leak | DEC-43, DEC-64 |
 | d-viewer | The README names Paul Thornbury as d's viewer; the viewer is Grace adding him | A contact never sees the firm wizard | P-07 §5 fixture table |
 | served | The conflict step lists the check's matches (no per-name "No matches" rows, which the check does not serve) and the counterparty words without the relationship ("Counterparty — review"); screening rows recorded earlier are not readable back (no read route), so a's three recorded rows are the scenario's opening state and production shows "Record…" per list until a person records it in this intake; the step-1 values are those the draft holds (type, name, decedent, date of death); the date is entered as YYYY-MM-DD | P-07-T42's shapes | DEC-543 |
+| g-rows | g's eight review rows are the synthetic file's (Harbourview Dental Properties LP 84%, Marcus & Dana Whiteley 78%, … rows 7, 8, 10, 15, 30, 33, 34, 38), not the handoff's eight (Feld, Ridgeline, …); the handoff lists rows at 91–99% as needing review, which the live import merges without a person at 90% and above | P-07-T50's file scored as P-07-T52 scores it; Story 3.2's 90% threshold | DEC-593, DEC-643, DEC-812 |
+| g-map | "Map fields" shows the server's heading map read-only; a person does not remap columns in v1 (a file without a name column is refused with its reason) | No mapping route; the CCH export's headings are known | DEC-812 |
+| g-notes | The Note column carries the row's code words (`tin_kind_not_allowed`, `tin_conflict`, …) or "Not decided — skipped at import"; the handoff's free-text notes ("Decedent's client record") have no source | The rows carry codes, not prose | DEC-812 |
+| g-undecided | A row nobody decided shows Merge, Keep both and Skip as buttons (a Segmented track always shows one chosen) and is left out of "Import N records" | An undecided row is skipped at the run | DEC-643, DEC-812 |
 | validation | A problem on another step's field (the services step's `entity.date_of_death`) jumps to that step and says why there | i, "Next validates each step" | DEC-543 |
 
 ## Parity

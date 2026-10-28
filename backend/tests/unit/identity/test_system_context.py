@@ -51,6 +51,7 @@ CONTRACT_ALLOWED = {
     "inbox_match.run",  # SPEC-033 (TASK-065): the matcher records its proposals
     "guidance_draft.run",  # SPEC-035 (TASK-072): the drafter records its drafts
     "entry_assessment.run",  # SPEC-037 Q4 (TASK-085): the assessor records its assessments
+    "checkpoint.propose",  # P-04-T32 (DEC-804): an engine import's checkpoint, pending a person
 }
 REASON = "documented in the working paper"
 

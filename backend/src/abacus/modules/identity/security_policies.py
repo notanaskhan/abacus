@@ -501,6 +501,43 @@ async def posture(ctx: AuthContext) -> Posture:
     )
 
 
+@dataclass(frozen=True)
+class OperatorPosture:
+    """The firm's identity facts the operator's go-live check reads (Q-04-T009): no person's
+    names, no session, counts and switches only."""
+
+    sso_enforced: bool
+    sso_exempt_designated: bool
+    mfa_enrolled: int
+    mfa_seats: int
+    firm_admins: int
+    security_admins: int
+    support_requests_allowed: bool
+    residency_region: str
+
+
+async def operator_posture(tenant: TenantContext) -> OperatorPosture:
+    """For an operator tool in the firm's tenant context as the platform (`make go-live-check`,
+    Q-04-T009): the same MFA and SSO facts `posture` shows a security admin, without a person's
+    authorisation (an ops task has none). Read-only; callers are `abacus_tools` operator CLIs."""
+    async with tenant_session(tenant) as session:
+        stored = await _policy_row(session)
+        seats = await _seats(session)
+        mfa = _mfa(seats, await _methods(session), stored)
+        region = await _region(session)
+    roles = list(seats.values())
+    return OperatorPosture(
+        sso_enforced=stored.require_sso,
+        sso_exempt_designated=stored.sso_exempt_user_id is not None,
+        mfa_enrolled=mfa.enrolled,
+        mfa_seats=mfa.seats,
+        firm_admins=roles.count("firm_admin"),
+        security_admins=roles.count("security_admin"),
+        support_requests_allowed=stored.allow_support_requests,
+        residency_region=region,
+    )
+
+
 # --- fieldset A: sign-in -------------------------------------------------------------------------
 
 

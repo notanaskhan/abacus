@@ -21,12 +21,15 @@ import { IDS as AUD03_IDS, scenarios as aud03 } from "./scenarios/AUD-03";
 import { scenarios as bnd01 } from "./scenarios/BND-01";
 import { OPENS as BND02_OPENS, scenarios as bnd02 } from "./scenarios/BND-02";
 import { OPENS as CLI04_OPENS, scenarios as cli04 } from "./scenarios/CLI-04";
+import { scenarios as cli06 } from "./scenarios/CLI-06";
 import { OPENS as CLI07_OPENS, scenarios as cli07 } from "./scenarios/CLI-07";
 import {
   CLIENT_ID as CLI08_CLIENT,
   ENGAGEMENT_ID as CLI08_ENGAGEMENT,
   scenarios as cli08,
 } from "./scenarios/CLI-08";
+import { OPENS as ENG02_OPENS, scenarios as eng02 } from "./scenarios/ENG-02";
+import { OPENS as ENG13_OPENS, scenarios as eng13 } from "./scenarios/ENG-13";
 import { scenarios as home01 } from "./scenarios/HOME-01";
 import { scenarios as knw01 } from "./scenarios/KNW-01";
 import { scenarios as shl03 } from "./scenarios/SHL-03";
@@ -66,12 +69,24 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
     opens: {},
     ids: idsOf(CLI04_OPENS, (s) => ({ clientId: CLI04_OPENS[s] })),
   },
+  // P-07-T62: the intake and bulk import (g opens `?mode=import`), j19 2 and 3, and the roll-forward.
+  "CLI-06": { scenarios: cli06, opens: { g: "?mode=import" } },
   "CLI-07": { scenarios: cli07, opens: {}, ids: idsOf(CLI07_OPENS, (s) => CLI07_OPENS[s]) },
   "CLI-08": {
     scenarios: cli08,
     opens: {},
     ids: idsOf(cli08, () => ({ clientId: CLI08_CLIENT, engagementId: CLI08_ENGAGEMENT })),
   },
+  "ENG-02": {
+    scenarios: eng02,
+    opens: {},
+    ids: idsOf(ENG02_OPENS, (s) => ({ engagementId: ENG02_OPENS[s] })),
+  }, // P-07-T62
+  "ENG-13": {
+    scenarios: eng13,
+    opens: {},
+    ids: idsOf(ENG13_OPENS, (s) => ({ engagementId: ENG13_OPENS[s].source })),
+  }, // P-07-T62
   "HOME-01": { scenarios: home01, opens: {} }, // I-01-T05
   "KNW-01": { scenarios: knw01, opens: {} }, // K-01-T04
   "SHL-03": { scenarios: shl03, opens: {} },

@@ -354,6 +354,9 @@ REVIEWED_FALLBACK: Final = frozenset(
         "review_note.withdrawn",
         "risk.approved",
         "risk.recorded",
+        "roll_forward_draft.created",  # P-07-T55: ENG-13's draft, its source and period
+        "roll_forward_draft.discarded",  # P-07-T55
+        "roll_forward_draft.saved",  # P-07-T55
         "sample.approved",
         "screening.completed",
         "screening.feedback_sent",

@@ -1,8 +1,10 @@
-// CLI-06 · New client / prospect intake, single client (P-07-T49; docs/screens/CLI-06.md). One test
-// per artboard a–f, h and i on its fixture scenario (g is P-07-T54's bulk import), and the
-// acceptance: "Scenarios a to f, h and i pass with axe and Create and start acceptance lands on
-// CLI-07" (axe: e2e/screens/CLI-06.spec.ts, Playwright). Also: Next validates each step, step rows
-// jump only to finished steps, a person records screening, a manager clears a hit, and the AVOID
+// CLI-06 · New client / prospect intake (P-07-T49, P-07-T54; docs/screens/CLI-06.md). One test per
+// artboard a–i on its fixture scenario, and the acceptances: "Scenarios a to f, h and i pass with
+// axe and Create and start acceptance lands on CLI-07" (T49) and "Scenario g passes with axe and
+// the toast reads 210 records imported, 2 skipped, 0 new clients" (T54; axe:
+// e2e/screens/CLI-06.spec.ts, Playwright). Also: Next validates each step, step rows jump only to
+// finished steps, a person records screening, a manager clears a hit, the import foots
+// (204 + 8 + 0 = 212; 212 − 2 = 210), nothing below 90% merges without a person, and the AVOID
 // list.
 import { client } from "@abacus/api-client/client";
 import { toastStore } from "@abacus/ui";
@@ -14,9 +16,19 @@ import {
   installFixtureMode,
 } from "../../app-core/fixture-mode";
 import { renderRoutes } from "../../testing/support";
+import { toImport } from "../../domain/clients";
+import { buildClients } from "../../fixtures/seed/clients";
 import { CLI06, type Cli06Target } from ".";
 import { COPY } from "./copy";
-import { type Cli06State, DRAFT_ID, OPENS, STATES, freshScenario } from "./scenarios";
+import {
+  type Cli06State,
+  DRAFT_ID,
+  IMPORT_ID,
+  OPENS,
+  STATES,
+  freshScenario,
+  importRows,
+} from "./scenarios";
 
 beforeAll(() => {
   client.setConfig({ baseUrl: window.location.origin, throwOnError: true });
@@ -34,6 +46,7 @@ interface Call {
   method: string;
   path: string;
   body: unknown;
+  query: URLSearchParams;
 }
 
 function install(scenario: Scenario): Call[] {
@@ -42,7 +55,12 @@ function install(scenario: Scenario): Call[] {
     Object.entries(scenario.handlers).map(([key, handler]) => [
       key,
       ((request) => {
-        calls.push({ method: request.method, path: request.path, body: request.body });
+        calls.push({
+          method: request.method,
+          path: request.path,
+          body: request.body,
+          query: request.query,
+        });
         return handler(request);
       }) satisfies FixtureHandler,
     ]),
@@ -63,6 +81,13 @@ function show(state: Cli06State, onNavigate?: (t: Cli06Target) => void): Call[] 
           step={opens.step}
           {...(opens.problems === undefined ? {} : { problems: opens.problems })}
           screened={opens.screened === true}
+          {...(opens.bulk === undefined
+            ? {}
+            : {
+                mode: "bulk" as const,
+                importId: opens.bulk.importId,
+                importStep: opens.bulk.step,
+              })}
           {...(onNavigate === undefined ? {} : { onNavigate })}
         />
       ),
@@ -76,8 +101,8 @@ function next(): void {
 }
 
 describe("CLI-06 artboards", () => {
-  it("has a scenario for every single-intake artboard (g is the bulk import's)", () => {
-    expect(STATES).toEqual(["a", "b", "c", "d", "e", "f", "h", "i"]);
+  it("has a scenario for every artboard, the bulk import's g among them", () => {
+    expect(STATES).toEqual(["a", "b", "c", "d", "e", "f", "g", "h", "i"]);
   });
 
   it("a: four names searched, No conflicts, screening recorded by a person", async () => {
@@ -199,5 +224,150 @@ describe("CLI-06 avoid", () => {
     await screen.findByText("Harborline Trust Company");
     expect(screen.getAllByRole("button", { name: COPY.conflicts.record })).toHaveLength(3);
     expect(document.body.innerHTML).not.toMatch(/gradient|lorem/i);
+  });
+});
+
+describe("CLI-06 g · bulk import", () => {
+  const run = COPY.import.run;
+
+  it("g: the tallies, the eight to review, rows 7 and 8 skipped, Import 210 records", async () => {
+    show("g");
+    expect(
+      await screen.findByText("CCH Axcess Tax · client list · 212 records · pulled 2:04 PM"),
+    ).toBeTruthy();
+    const strip = screen.getByRole("list", { name: COPY.import.tally.label });
+    expect(within(strip).getByText(COPY.import.tally.matched)).toBeTruthy();
+    expect(within(strip).getByText("204")).toBeTruthy();
+    expect(within(strip).getByText("8")).toBeTruthy();
+    expect(within(strip).getByText("0")).toBeTruthy();
+    const table = screen.getByRole("table", { name: COPY.import.table });
+    expect(within(table).getAllByRole("row")).toHaveLength(9); // the heading and eight rows
+    expect(within(table).getByText("Harbourview Dental Properties LP")).toBeTruthy();
+    expect(within(table).getByText("84%")).toBeTruthy();
+    const seven = screen.getByRole("tablist", {
+      name: COPY.import.decisionLabel("Harbourview Dental Properties LP"),
+    });
+    expect(within(seven).getByRole("tab", { name: "Skip" }).getAttribute("aria-selected")).toBe(
+      "true",
+    );
+    expect(screen.getByRole("button", { name: run(210) })).toBeTruthy();
+  });
+
+  it("g foots: 204 + 8 + 0 = 212 and 212 − 2 = 210; every match is a seed client", () => {
+    const rows = importRows();
+    expect(rows).toHaveLength(212);
+    const review = rows.filter((r) => (r.score ?? 1) < 0.9);
+    expect(rows.length - review.length).toBe(204);
+    expect(review).toHaveLength(8);
+    expect(review.map((r) => r.row_no)).toEqual([7, 8, 10, 15, 30, 33, 34, 38]);
+    expect(rows.filter((r) => r.best_match_client_id == null)).toHaveLength(0);
+    const counts = { rows: 212, matched: 204, to_review: 8, new: 0 };
+    expect(counts.matched + counts.to_review + counts.new).toBe(counts.rows);
+    expect(toImport(counts, review)).toBe(210);
+    const names = new Set(
+      buildClients().map((c) =>
+        c.name === "Estate of Walter Thornbury" ? "Walter Thornbury" : c.name,
+      ),
+    );
+    expect(rows.filter((r) => !names.has(r.best_match_name ?? ""))).toHaveLength(0);
+    expect(new Set(rows.map((r) => r.display_name)).size).toBe(212);
+  });
+
+  it("an undecided row is left out of the count: it is skipped at the run (DEC-643)", () => {
+    const counts = { rows: 212, matched: 204, to_review: 8, new: 0 };
+    const review = importRows().filter((r) => (r.score ?? 1) < 0.9);
+    const undecided = review.map((r, i) => (i === 2 ? { ...r, decision: null } : r));
+    expect(toImport(counts, undecided)).toBe(209);
+  });
+
+  it("a person's decision is saved as made: row 7 merged into its match", async () => {
+    const calls = show("g");
+    const seven = await screen.findByRole("tablist", {
+      name: COPY.import.decisionLabel("Harbourview Dental Properties LP"),
+    });
+    fireEvent.click(within(seven).getByRole("tab", { name: "Merge" }));
+    await waitFor(() => {
+      expect(calls.some((c) => c.method === "PUT" && c.path.endsWith("/decision"))).toBe(true);
+    });
+    const put = calls.find((c) => c.method === "PUT");
+    expect(put?.body).toMatchObject({ decision: "merge" });
+    expect((put?.body as { merge_client_id?: string }).merge_client_id).toBeTruthy();
+    expect(await screen.findByRole("button", { name: run(211) })).toBeTruthy();
+  });
+
+  it("Import 210 records runs once, says Importing 210 records…, then toasts the counts", async () => {
+    const calls = show("g");
+    fireEvent.click(await screen.findByRole("button", { name: run(210) }));
+    expect(await screen.findByText(COPY.import.progress(210))).toBeTruthy();
+    expect(calls.filter((c) => c.path.endsWith("/run"))).toHaveLength(1);
+    const text = COPY.import.toast(210, 2, 0);
+    expect(text).toBe("210 records imported · 2 skipped · 0 new clients");
+    await waitFor(
+      () => {
+        expect(toastStore.list().some((t) => t.text === text)).toBe(true);
+      },
+      { timeout: 4000 },
+    );
+    expect(screen.getByText(text)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: run(210) })).toBeNull();
+  });
+
+  it("uploading a file maps its headings, then reviews the duplicates", async () => {
+    const calls = install(freshScenario("g"));
+    renderRoutes([{ path: "/", component: () => <CLI06 mode="bulk" /> }]);
+    const input = await screen.findByLabelText(COPY.import.choose, { selector: "input" });
+    const file = new File(
+      ["Client ID,Client Name\r\nBH10001,Northwind Robotics, Inc.\r\n"],
+      "list.csv",
+      {
+        type: "text/csv",
+      },
+    );
+    fireEvent.change(input, { target: { files: [file] } });
+    expect(await screen.findByText(COPY.import.chosen("list.csv"))).toBeTruthy();
+    next();
+    expect(await screen.findByRole("table", { name: COPY.import.mapTitle })).toBeTruthy();
+    expect(screen.getByText("Client Name")).toBeTruthy();
+    expect(screen.getByText(COPY.import.fields.client_name ?? "")).toBeTruthy();
+    const upload = calls.find((c) => c.method === "POST" && c.path === "/v1/client-imports");
+    expect(upload?.query.get("filename")).toBe("list.csv");
+    expect(upload?.query.get("source")).toBe("cch_axcess_tax_export");
+    next();
+    expect(await screen.findByRole("table", { name: COPY.import.table })).toBeTruthy();
+  });
+
+  it("a file the import can't read says why", async () => {
+    const scenario = freshScenario("g");
+    install({
+      ...scenario,
+      handlers: {
+        ...scenario.handlers,
+        "POST /v1/client-imports": () =>
+          new Response(
+            JSON.stringify({ detail: "import_file_invalid", facts: { reason: "not_cch_export" } }),
+            { status: 422, headers: { "Content-Type": "application/json" } },
+          ),
+      },
+    });
+    renderRoutes([{ path: "/", component: () => <CLI06 mode="bulk" /> }]);
+    const input = await screen.findByLabelText(COPY.import.choose, { selector: "input" });
+    fireEvent.change(input, { target: { files: [new File(["Name\r\nX\r\n"], "x.csv")] } });
+    await screen.findByText(COPY.import.chosen("x.csv"));
+    next();
+    expect(await screen.findByText(COPY.import.fileErrors.not_cch_export ?? "")).toBeTruthy();
+  });
+
+  it("the header switches between a single client and the bulk import", async () => {
+    show("b");
+    await screen.findByText(COPY.dedupe.match(96, "Walter Thornbury"));
+    fireEvent.click(screen.getByRole("tab", { name: COPY.mode.bulk }));
+    expect(await screen.findByRole("button", { name: COPY.import.choose })).toBeTruthy();
+    expect(screen.getByText(COPY.import.steps.review)).toBeTruthy();
+  });
+
+  it("nothing below 90% is merged without a person; g's import id is the scenario's", () => {
+    const below = importRows().filter((r) => (r.score ?? 1) < 0.9);
+    expect(below.every((r) => r.decided_by != null)).toBe(true);
+    expect(OPENS.g.bulk?.importId).toBe(IMPORT_ID);
   });
 });

@@ -6,7 +6,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { type JSX, useState } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { type FixtureHandler, installFixtureMode } from "../../app-core/fixture-mode";
+import { type FixtureHandler, installFixtureMode, json } from "../../app-core/fixture-mode";
 import { overlayEntry } from "../../app-core/overlays";
 import {
   EMPTY_ALL,
@@ -45,11 +45,11 @@ interface Seen {
   calls: { method: string; path: string; tab: string | null }[];
 }
 
-function install(state: Shl04State): Seen {
+function install(state: Shl04State, extra: Record<string, FixtureHandler> = {}): Seen {
   const seen: Seen = { calls: [] };
   const base = scenarios[state];
   const handlers = Object.fromEntries(
-    Object.entries(base.handlers).map(([key, handler]) => [
+    Object.entries({ ...base.handlers, ...extra }).map(([key, handler]) => [
       key,
       ((request) => {
         seen.calls.push({
@@ -65,8 +65,8 @@ function install(state: Shl04State): Seen {
   return seen;
 }
 
-function show(state: Shl04State): Seen {
-  const seen = install(state);
+function show(state: Shl04State, extra: Record<string, FixtureHandler> = {}): Seen {
+  const seen = install(state, extra);
   render(
     <QueryClientProvider client={newQueryClient()}>
       <SHL04 state={state} />
@@ -350,6 +350,27 @@ function undoWindowSpy(timers: { fn: () => void; ms: number }[]) {
     return real(fn, ms, ...rest);
   }) as typeof window.setTimeout);
 }
+
+describe("SHL-04 Approvals count is C13's (I-01-T13; I-01 AC1.4, P-01 risk R4)", () => {
+  const COUNTS = {
+    total: 11,
+    bands: { decisions: 3, sign_offs: 6, agent_outputs: 0, approvals_sends: 2 },
+    overdue: 0,
+    snoozed: 0,
+  };
+
+  it("the Approvals tab shows the counts endpoint's total, the number HOME-01 shows", async () => {
+    show("a", { "GET /v1/human-gates/counts": () => json(COUNTS) });
+    await waitFor(() => {
+      expect(tabs()).toContain("Approvals11");
+    });
+  });
+
+  it("while the counts endpoint is off (404) the tab keeps the feed's own count", async () => {
+    show("a", { "GET /v1/human-gates/counts": () => json({ detail: "not_found" }, 404) });
+    expect(await tabsCounted()).toContain("Approvals3");
+  });
+});
 
 describe("SHL-04 inline decision and settings (P-01-T10 follow-up)", () => {
   async function rowD(): Promise<HTMLElement> {

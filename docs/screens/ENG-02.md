@@ -22,7 +22,7 @@ Code to come (P-07 §5): `src/screens/ENG-02/{index.tsx, scenarios.ts, copy.ts, 
 | c | priya-raman | same | E0 | Bluestem Analytics, LLC "2026 Close (from Oct)", Accepted, letter viewed Sep 11 and not signed: G3 unmet, no work items | built · live (T20) |
 | d | priya-raman | same | E0 | Meridian Tool & Die, Inc. "FY2025 FS Audit", Archived, archive locked Jun 12, 2026 (WORM): every write answers 409 `archived` | built · live (T20) |
 | e | priya-raman | same | E0 | `GET /v1/engagements/{id}` never answers (`never()` handler) | built · live (T20) |
-| prospect (no artboard) | priya-raman | same | E0 | The Estate of Walter Thornbury engagement, Prospect: acceptance pending with Daniel Reyes | built · live (T20) |
+| prospect (no artboard) | priya-raman | same | E0 | The Estate of Walter Thornbury engagement, Prospect: acceptance pending with Daniel Reyes; Work items holds the intake's Form 706, Form 1041 and Form 1040 (DEC-430; J19 3, P-07-T62) | built · live (T20) |
 | f | margaret-okonkwo (Margaret Okonkwo) | Tue Oct 6, 2026, 11:20 AM CT | Oct 6 snapshot | Granite Peak Outdoor Supply, Inc. "FY2026 Financial Statement Audit" on the Dashboard tab (the ENG-12 default) | built (T28) · fixture: the tab hosts ENG-12's planned target until K-04 (DEC-272) |
 | g | priya-raman | Mon Sep 14, 2026, 9:24 AM CT | E0 | Copperleaf on the Board tab (the ENG-10 close variant) | built (T28) · fixture: the tab hosts ENG-10's planned target until K-04 (DEC-272) |
 

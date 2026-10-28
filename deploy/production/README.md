@@ -11,6 +11,13 @@ Production changes only through pull requests to this directory. The PR is the c
 - Inspector found no fixable critical or high finding in the image (`releases/<sha>/inspector.json`), or this file records an exception: `"inspector_exception": {"reason": "...", "finding_ids": ["..."]}` naming every such finding;
 - if `infra_sha` differs from production's current release, the builder applied `infra/envs/production` by hand first and records it: `"infra_applied_sha": "<the same infra_sha>"` (SPEC-050 AC-6; no workflow holds apply).
 
+Inside a release window (`deploy/windows.yaml`; Q-04-T003, P-29: while any live firm is in one) the record also carries:
+
+- `"window_mode": "defect_only"` or `"dark_only"` (P-29 rules 1 and 2), and `"rollback": "<docs/… path or https link>"`;
+- in a deadline week, `"hotfix": {"reason": "...", "requested_by": "<handle>"}`, or the gate refuses (the release is then counted as an in-window hotfix).
+
+`make release-check [AT=<ISO instant>]` runs the same window gate locally. Promotion inside a window happens only in the Tuesday 19:00–21:00 CT slot, and `deploy-production.yml` holds its migrate step until 20:00 CT. Outside every window none of these fields is required.
+
 Every value is a digest: the image `sha256:` digest, the SPA manifest's SHA-256, the Alembic head, the OpenAPI document's SHA-256 and the infrastructure's git tree. No tag. The committed file starts as a placeholder (`git_sha` null), which deploys nothing.
 
 Cadence: at most one promotion a week, Thursday 10:00 CT, plus milestone releases. Batch: one release PR carries a whole merge window's work.

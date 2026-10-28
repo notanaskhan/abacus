@@ -6,6 +6,7 @@ The firm admin reads stages through identity's disclosure; nobody in a firm can 
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Annotated
 from uuid import UUID
 
@@ -14,7 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
 from abacus.kernel.text import SingleLineText
-from abacus.modules.agents.stage_admin import Stage, set_agent_stage
+from abacus.modules.agents.stage_admin import NamedReport, Stage, set_agent_stage
 from abacus.modules.identity.api import STAFF, AbacusRouter, Staff, current_staff
 
 AgentId = Annotated[str, Field(pattern=r"^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$", max_length=100)]
@@ -27,6 +28,11 @@ class AgentStageIn(BaseModel):
 
     stage: Annotated[Stage, classified("internal")]
     note: Annotated[SingleLineText, Field(min_length=1, max_length=500), classified("internal")]
+    # Q-02-T50: `live` names the shadow report it was decided on (`make shadow-report`).
+    report_sha256: Annotated[
+        str | None, Field(pattern=r"^[0-9a-f]{64}$"), classified("internal")
+    ] = None
+    report_as_of: Annotated[datetime | None, classified("internal")] = None
 
 
 class AgentStageOut(BaseModel):
@@ -47,6 +53,13 @@ async def put_agent_stage(
     body: AgentStageIn,
     staff: Annotated[Staff, Depends(current_staff)],
 ) -> AgentStageOut:
-    """Shadow, live or off for this firm; `live` only after 50 shadow runs over 14 days."""
-    stage_id = await set_agent_stage(staff.id, firm_id, agent_id, body.stage, body.note)
+    """Shadow, live or off for this firm; `live` only on a named shadow report that passes
+    SPEC-036 Q1 (50 runs, 14 days) and QD-10 (25 scored, disagreement at most 8%, no DE-1, DE-4
+    or DE-5 miss)."""
+    report = (
+        NamedReport(body.report_sha256, body.report_as_of)
+        if body.report_sha256 is not None and body.report_as_of is not None
+        else None
+    )
+    stage_id = await set_agent_stage(staff.id, firm_id, agent_id, body.stage, body.note, report)
     return AgentStageOut(id=stage_id, firm_id=firm_id, agent_id=agent_id, stage=body.stage)

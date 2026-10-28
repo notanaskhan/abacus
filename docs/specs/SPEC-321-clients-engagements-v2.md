@@ -7,7 +7,7 @@ risk_zone: red
 related_adrs: [ADR-005, ADR-024, ADR-026, ADR-031, ADR-139, ADR-140]
 related_specs: [SPEC-002, SPEC-025]
 created: 2026-10-23
-updated: 2026-10-24
+updated: 2026-10-28
 ---
 
 > **Outline.** Written with the clients contract stub (P-07-T04, TASK-470); Stories 3 and 4 added
@@ -84,6 +84,7 @@ on the model gateway and agents for `organisations`.
 - **AC-27** CLI-04 a's frame (Northwind's six contacts) is a valid `ContactsPage`: the header reads 3 active · 1 invited · 2 not invited, its four counts sum to the rows and agree with `counts`; the footer's parts are the non-zero per-row delegated counts in row order, 10 + 9 + 2 + 2 + 1 = 24, with 11 received of 24.
 - **AC-28** Grants carry ADR-146's role and scope codes and delegated request ids; an invitation's expiry is fixed at 14 days; no response schema of the contacts routes carries a token or link.
 - **AC-29** No contacts schema carries a wall field or a Restricted field.
+- **AC-30** Roll-forward v2 (P-07-T55; ENG-13; DEC-805): Northwind PY2025 rolls into PY2026 with 24 requests as Draft, no evidence copied, and an active source answers 409 `roll_forward_source_not_released`; Create makes a Prospect with `prior_engagement_id`, the carried team and a continuance acceptance record, once per draft; a walled person gets 404; agent and system are refused.
 
 ## 6. Behaviour and flows
 | From | Event | To | Who can trigger |
@@ -141,6 +142,7 @@ CLI-01 and CLI-02 screen contracts (`docs/screens/`); flag off shows F-05's flag
 | AC-16 to AC-19 | integration | P-07-T14 (independent suite) |
 | AC-20 to AC-22 | contract (consumer) | `backend/tests/contracts/clients/test_clients_consumer.py`; `apps/web/src/fixtures/contracts/clients-engagements.test.ts` |
 | AC-26 to AC-29 | contract (consumer) | `backend/tests/contracts/contacts_access/test_contacts_access_consumer.py`; `apps/web/src/fixtures/contracts/contacts-access.test.ts` |
+| AC-30 | integration | `backend/tests/integration/backfill/test_p07t55_roll_forward_v2.py` |
 | AC-23 to AC-25 | contract (consumer) | `backend/tests/contracts/engagements_v2/test_engagements_v2_consumer.py`; the same TypeScript file |
 
 ## 19. Rollout

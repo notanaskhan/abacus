@@ -140,6 +140,13 @@ CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
     # Q-04-T007 (DEC-716): pilot enrolment of a work item and its mode change.
     "pilot.enrolled": _a("change", "pl"),
     "pilot.mode_changed": _a("decision", "ok"),
+    # P-04-T32 (SHL-16, DEC-804): checkpoints. Approve, reject and restore are a person's.
+    "checkpoint.saved": _a("change", "pl", "seq"),
+    "checkpoint.proposed": _a("change", "pl", "seq", "changes"),
+    "checkpoint.approved": _a("decision", "ok", "seq", "decision", "proposal_decision"),
+    "checkpoint.rejected": _a("decision", "no", "seq", "decision", "proposal_decision"),
+    "checkpoint.restored": _a("decision", "pl", "seq", "restored_seq"),
+    "checkpoint.renamed": _a("change", "pl", "seq"),
     "suggestion.created": _a("run", "pl"),
     "suggestion.adopted": _a("decision", "ok", "decision", "version"),
     "suggestion.edited": _a("decision", "ok", "decision", "version"),

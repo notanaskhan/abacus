@@ -236,6 +236,17 @@ codes:
     raised_by:
     - abacus.modules.methodology.lifecycle.ChecklistUnmet
     summary: An approval checklist item is not met (`facts.item`).
+  checkpoint_changed:
+    status: 409
+    raised_by:
+    - abacus.modules.review.checkpoints.CheckpointChanged
+    summary: 'The checkpoint is no longer proposed, or its hash is not the one the person saw: nothing
+      is written.'
+  checkpoint_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.review.checkpoints.CheckpointInvalid
+    summary: A restore of a checkpoint that is not in effect, or of Current itself; an empty proposal.
   citation_required:
     status: 422
     raised_by:
@@ -1407,6 +1418,17 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.workpapers.OwnWork
     summary: 'ADR-131: the reviewer isn''t the preparer.'
+  roll_forward_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.engagements.roll_forward_v2.RollForwardInvalid
+    summary: 'A carry choice the draft cannot hold (`facts.field`): a person not on last year''s team
+      or not available, a template when the source has none, a period that ends before it starts.'
+  roll_forward_source_not_released:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.roll_forward_v2.RollForwardSourceNotReleased
+    summary: 'The source is not `delivered` or `archived` (`facts.status`): nothing is created.'
   roll_forward_unavailable:
     status: 409
     raised_by:
@@ -1490,6 +1512,21 @@ codes:
     raised_by:
     - abacus.modules.identity.settings_registry.SettingInvalid
     summary: A value of the wrong kind, or too long.
+  shadow_report_changed:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.stage_admin.ShadowReportChanged
+    summary: 'The report recomputed as of its instant has another digest: re-read the report.'
+  shadow_report_required:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.stage_admin.ShadowReportRequired
+    summary: '`live` names the shadow report it was decided on (Q-02-T50).'
+  shadow_report_stale:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.stage_admin.ShadowReportStale
+    summary: 'The report is older than 7 days, or dated in the future: compute it again.'
   sharing_unavailable:
     status: 409
     raised_by:
@@ -1573,6 +1610,7 @@ codes:
     - abacus.modules.engagements.drafts.DraftStaleVersion
     - abacus.modules.engagements.independence.ConclusionSuperseded
     - abacus.modules.engagements.intake.IntakeStaleVersion
+    - abacus.modules.engagements.roll_forward_v2.RollForwardStale
     - abacus.modules.engagements.team_errors.TeamChanged
     - abacus.modules.evidence.firm_export_schedule.ScheduleStale
     - abacus.modules.identity.annual_independence.StaleStatement

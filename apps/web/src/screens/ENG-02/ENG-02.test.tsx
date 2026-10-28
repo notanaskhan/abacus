@@ -177,6 +177,15 @@ describe("ENG-02 states", () => {
     expect(within(rail()).getByText("Prospect")).toBeTruthy();
   });
 
+  it("ENG-02 prospect: the intake's three returns are its work items (j19 3, P-07-T62)", async () => {
+    show("prospect");
+    await screen.findByRole("heading", { name: /Estate returns/ });
+    fireEvent.click(screen.getByRole("tab", { name: /Work items/ }));
+    for (const name of ["Form 706", "Form 1041", "Form 1040"]) {
+      expect(await screen.findByText(name)).toBeTruthy();
+    }
+  });
+
   it("ENG-02 error: the record answers 500", async () => {
     show("b", { "GET /v1/engagements/{engagement_id}/record": () => json({ detail: "x" }, 500) });
     expect(await screen.findByRole("button", { name: "Retry" })).toBeTruthy();

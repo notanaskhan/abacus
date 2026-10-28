@@ -6,7 +6,8 @@
 //   b         Northwind Robotics 401(k) Plan "PY2025 EBP Audit", Active: G1–G3 met, G4 blocked
 //   c         Bluestem Analytics, LLC "2026 Close (from Oct)", Accepted, letter viewed Sep 11
 //   d         Meridian Tool & Die, Inc. "FY2025 FS Audit", Archived, locked Jun 12, 2026 (WORM)
-//   prospect  Estate of Walter Thornbury "Estate returns — final 1040 · 1041 · 706", Prospect
+//   prospect  Estate of Walter Thornbury "Estate returns — final 1040 · 1041 · 706", Prospect, with
+//             the intake's three work items (Form 706, Form 1041, Form 1040; P-07-T62)
 //
 //   a, g      Copperleaf Coffee Roasters, Inc. "2026 Close", Active, CAS (P-07-T28): its 12 closes
 //   f         Granite Peak "FY2026 Financial Statement Audit" at Oct 6 (P-07-T28; the Dashboard tab)
@@ -291,12 +292,30 @@ function thornbury(): EngagementRecordFixture {
     contacts: [],
     letter: { status: "not_signed", signed_count: 0, signer_count: 0 },
     gates: gates({}, { G1: "acceptance_pending" }, ["G1", "G2", "G3"]),
-    tab_counts: { work_items: 0, team: 1 },
+    tab_counts: { work_items: 3, team: 1 },
     read_only_reason: null,
     version: 1,
     allowed_actions: ["engagement.read_metadata", "engagement.read"],
   };
-  return { record, workItems: [], acceptanceDecidedAt: null };
+  // The intake commit's work items (DEC-430; P-07-T62's j19 3): one tax return per form, named
+  // as the live commit names them ("Form ‹FORM›").
+  const workItems: WorkItemOut[] = (
+    [
+      ["706", "2026-02-02", "2026-02-02"],
+      ["1041", "2026-02-02", "2027-01-31"],
+      ["1040", "2026-01-01", "2026-02-02"],
+    ] as const
+  ).map(([form, start, end]) => ({
+    id: stableId(`work-item:thornbury-estate:${form}`),
+    kind: "tax_return",
+    name: `Form ${form}`,
+    period_start: start,
+    period_end: end,
+    due_on: null,
+    phase: null,
+    status: "active",
+  }));
+  return { record, workItems, acceptanceDecidedAt: null };
 }
 
 // ---- a, g: Copperleaf ---------------------------------------------------------------------------

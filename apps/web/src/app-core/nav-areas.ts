@@ -24,7 +24,7 @@ export interface Area {
 }
 
 const AREA_DATA: Readonly<Record<string, Omit<Area, "label">>> = {
-  Home: { landing: "HOME-01", path: "/", routed: true, chord: "h" },
+  Home: { landing: "HOME-01", path: "/home", routed: true, chord: "h" },
   Engagements: { landing: "ENG-01", path: "/engagements", routed: true },
   "Tax Returns": { landing: "TAX-01", path: "/tax-returns", routed: false, chord: "t" },
   Files: { landing: "FIL-01", path: "/files", routed: false },
@@ -78,6 +78,7 @@ export function activeArea(context: ToolbarContext): string {
   if (isSettings(context)) return "";
   if (context.screen !== undefined) return context.navArea ?? "";
   const have = segments(context.pathname ?? "/");
+  // "/" redirects to Home's "/home" (I-01-T13), so both light Home.
   if (have.length === 0) return "Home";
   const area = AREAS.find((a) => {
     const want = segments(a.path);

@@ -168,3 +168,48 @@ class HumanGateReassigned(DomainEvent):
     engagement_id: Annotated[UUID | None, classified("internal")]
     to_user_id: Annotated[UUID, classified("internal")]
     by_user: Annotated[UUID, classified("internal")]
+
+
+# --- Checkpoints (P-04-T32; SHL-16; DEC-85) --------------------------------------------------
+
+
+class CheckpointRecorded(DomainEvent):
+    """A checkpoint was proposed (agent, import), saved or restored as a new checkpoint."""
+
+    event_type: ClassVar[str] = "checkpoint.recorded"
+
+    checkpoint_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")]
+    target_type: Annotated[str, classified("internal")]
+    target_id: Annotated[UUID, classified("internal")]
+    seq: Annotated[int, classified("internal")]
+    status: Annotated[str, classified("internal")]
+    cause: Annotated[str, classified("internal")]
+
+
+class CheckpointApproved(DomainEvent):
+    """A person approved a checkpoint; Current moved. Identifiers only: T-01 and N-02 read the
+    summed amount deltas (`review.api.checkpoint_deltas`, Restricted, return figures) to void a
+    signed 8879 above the Pub 1345 tolerances (DEC-85). `has_deltas` says whether there are any."""
+
+    event_type: ClassVar[str] = "checkpoint.approved"
+
+    checkpoint_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")]
+    target_type: Annotated[str, classified("internal")]
+    target_id: Annotated[UUID, classified("internal")]
+    decided_by: Annotated[UUID, classified("internal")]
+    proposal_decision_id: Annotated[UUID | None, classified("internal")]
+    has_deltas: Annotated[bool, classified("internal")]
+
+
+class CheckpointRejected(DomainEvent):
+    """A person rejected a proposed checkpoint (the reason stays sealed in the decision)."""
+
+    event_type: ClassVar[str] = "checkpoint.rejected"
+
+    checkpoint_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")]
+    target_type: Annotated[str, classified("internal")]
+    target_id: Annotated[UUID, classified("internal")]
+    decided_by: Annotated[UUID, classified("internal")]

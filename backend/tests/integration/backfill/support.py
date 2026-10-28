@@ -86,6 +86,17 @@ class Seeder:
         finally:
             await conn.close()
 
+    async def run_untriggered_many(self, statements: list[tuple[str, tuple[object, ...]]]) -> None:
+        """`run_untriggered` for many rows at once (Q-02-T50's shadow history), in order."""
+        conn = await asyncpg.connect(self._dsn)
+        try:
+            async with conn.transaction():
+                await conn.execute("SET LOCAL session_replication_role = replica")
+                for sql, args in statements:
+                    await conn.execute(sql, *args)
+        finally:
+            await conn.close()
+
     async def value(self, sql: str, *args: object) -> object:
         conn = await asyncpg.connect(self._dsn)
         try:

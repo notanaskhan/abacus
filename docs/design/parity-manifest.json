@@ -1070,6 +1070,292 @@
       "crop": "window",
       "tier": "B",
       "deviation": "F-05-T56 (DEC-354): attachment thumbnails draw the gallery's synthetic page images (viewer-pages.ts) where the handoff renders the pages; client names are the seed's full names, and the Copperleaf and Northwind contacts are the seed's Ben Ashby and Dana Kowalski where the board draws kit names"
+    },
+    "por-03a.window": {
+      "page": "screens/POR-03?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-03 Documents - Feld 2025 Binder/screenshots/POR-03a.png",
+      "sha256": "bf867345f2a4322656febf628459cc0959ea783810ed10bfdabe453115b3f777",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-03b.window": {
+      "page": "screens/POR-03?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-03 Documents - Feld 2025 Binder/screenshots/POR-03b.png",
+      "sha256": "0ac322aa7b88fcc63709a31dd36bb449543c558eaa86181d33a4ee66e60a8113",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-03c.window": {
+      "page": "screens/POR-03?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-03 Documents - Feld 2025 Binder/screenshots/POR-03c.png",
+      "sha256": "b35c716adc46f585d86270ca68c264972838ee0e5481a8264319f3363fac3a16",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-03c2.window": {
+      "page": "screens/POR-03?st=c2",
+      "selector": "[data-artboard=\"c2\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-03 Documents - Feld 2025 Binder/screenshots/POR-03c2.png",
+      "sha256": "b949ff49b50f73596d80db8a25f1e07e4e448872d4eee474d91a755331fc2487",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-03d.window": {
+      "page": "screens/POR-03?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-03 Documents - Feld 2025 Binder/screenshots/POR-03d.png",
+      "sha256": "8b6ad5b2e1120e9f775eeb60544f71bfe7ab3aeb4174c5d838aebd74b59d8a9a",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-03e.window": {
+      "page": "screens/POR-03?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-03 Documents - Feld 2025 Binder/screenshots/POR-03e.png",
+      "sha256": "604ec3463f453241036b37b79e609d15bc587be822ecafe397428b1e63cf7bea",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-03f.window": {
+      "page": "screens/POR-03?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-03 Documents - Feld 2025 Binder/screenshots/POR-03f.png",
+      "sha256": "2aa6fd6a51dbdbb1397fdfcc5c8c02329edd8083ca776b71c9572f2285e032e7",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-03g.window": {
+      "page": "screens/POR-03?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-03 Documents - Feld 2025 Binder/screenshots/POR-03g.png",
+      "sha256": "80f30ae6e728f4ec038a17574bf3e414ca7a89672d98b9089228ac4499bed95d",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-03h.window": {
+      "page": "screens/POR-03?st=h",
+      "selector": "[data-artboard=\"h\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-03 Documents - Feld 2025 Binder/screenshots/POR-03h.png",
+      "sha256": "9ff509880e3073e10c35a019ea19da99d0784b49017aa960b969ae3ae8743268",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-03i.window": {
+      "page": "screens/POR-03?st=i",
+      "selector": "[data-artboard=\"i\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-03 Documents - Feld 2025 Binder/screenshots/POR-03i.png",
+      "sha256": "25a9c0a2e8bcc3a5f83c8c160d1d7c9e575e410c37e73db2b87c1544f6b5ba5b",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-04a.window": {
+      "page": "screens/POR-04?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-04 Request detail - ignore reason sheet/screenshots/POR-04a.png",
+      "sha256": "46178dd9601e9eb32333f1e06087e17d51c7e5db96fa2133f9ec9a3a8d4a75d7",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-04b.window": {
+      "page": "screens/POR-04?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-04 Request detail - ignore reason sheet/screenshots/POR-04b.png",
+      "sha256": "93e3aca17bf0e61f59415e416e43bffda87cfa447d8673f0f5b50cac64a961bc",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-04c.window": {
+      "page": "screens/POR-04?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-04 Request detail - ignore reason sheet/screenshots/POR-04c.png",
+      "sha256": "b5f22b92ba999d92ce352fa7c5faef7a4c982ad45a404aac0cd420cee1dd99b1",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-04d.window": {
+      "page": "screens/POR-04?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-04 Request detail - ignore reason sheet/screenshots/POR-04d.png",
+      "sha256": "d82eb5f8ae2794488a3c959f0cbb918e8896a7201ad4f57098b4d430a01551b6",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-04e.window": {
+      "page": "screens/POR-04?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-04 Request detail - ignore reason sheet/screenshots/POR-04e.png",
+      "sha256": "c7e67e4e38b89d0888c87491c8bded18cf2d0848ef03ab19cfc00a03a035f3a5",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-04f.window": {
+      "page": "screens/POR-04?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-04 Request detail - ignore reason sheet/screenshots/POR-04f.png",
+      "sha256": "06742d1fc58429202c98364b27017a537019304cb12c3cfc0a217f308fa6bc44",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-04g.window": {
+      "page": "screens/POR-04?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-04 Request detail - ignore reason sheet/screenshots/POR-04g.png",
+      "sha256": "4b3d4797d1663a70f3149df9ef914146b0efb4cd776c82227a52a526b82cee21",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-14a.window": {
+      "page": "screens/POR-14?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-14 Third-party request room - Keystone Retirement Services/screenshots/POR-14a.png",
+      "sha256": "191d3ae3f9a98bfa6e98bd8b3041757bf1f2c264f3e23dd1dde613591773ef7a",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-14b.window": {
+      "page": "screens/POR-14?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-14 Third-party request room - Keystone Retirement Services/screenshots/POR-14b.png",
+      "sha256": "7750189b1ad23a2ef73b2a8e67c04c16f97e472d30c23927aca5aa5106342064",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-14c.window": {
+      "page": "screens/POR-14?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-14 Third-party request room - Keystone Retirement Services/screenshots/POR-14c.png",
+      "sha256": "6ab38005487b9d0a246d9ff51531987dd275ab323a73a800de55475a4204fce3",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-14d.window": {
+      "page": "screens/POR-14?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-14 Third-party request room - Keystone Retirement Services/screenshots/POR-14d.png",
+      "sha256": "55d2953b3fefc37d435699ad59f8182369aabaa0d85007b47878c815bc8e626a",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-14e.window": {
+      "page": "screens/POR-14?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-14 Third-party request room - Keystone Retirement Services/screenshots/POR-14e.png",
+      "sha256": "0776d8ec3fedf8eaa93a9762decc7d31198cd22ec68de6efca15f6623457581b",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-14f.window": {
+      "page": "screens/POR-14?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-14 Third-party request room - Keystone Retirement Services/screenshots/POR-14f.png",
+      "sha256": "5fb5cf5e2d11df1d23f7fcf591c8fff50f194fb81718efef1ba2bfc828239873",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-20a.window": {
+      "page": "screens/POR-20?st=a",
+      "selector": "[data-artboard=\"a\"] [data-window]",
+      "source": "handoff/screens/POR-20 Transactional email templates - Reminder/screenshots/POR-20a.png",
+      "sha256": "2673e5b187b61ebdcb302134220223e74658eb69e4221bcb7a24f97816a4742e",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-20b.window": {
+      "page": "screens/POR-20?st=b",
+      "selector": "[data-artboard=\"b\"] [data-window]",
+      "source": "handoff/screens/POR-20 Transactional email templates - Reminder/screenshots/POR-20b.png",
+      "sha256": "ed130eed71b514aa3eeadbf4d2a9f84856d3f5e669580e19bc5e14bc72eaf85a",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-20c.window": {
+      "page": "screens/POR-20?st=c",
+      "selector": "[data-artboard=\"c\"] [data-window]",
+      "source": "handoff/screens/POR-20 Transactional email templates - Reminder/screenshots/POR-20c.png",
+      "sha256": "acc0a142187da3b84fa016939b93672fb894ed5bcf14967a63c0335e3afa1b3f",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-20d.window": {
+      "page": "screens/POR-20?st=d",
+      "selector": "[data-artboard=\"d\"] [data-window]",
+      "source": "handoff/screens/POR-20 Transactional email templates - Reminder/screenshots/POR-20d.png",
+      "sha256": "ca164a0c20c48be02943e5f902038820b4f78d76738e8cbef4a19aa78808f3a4",
+      "crop": [
+        0,
+        0,
+        940,
+        1800
+      ],
+      "tier": "C",
+      "deviation": "the 470 × 900 phone board, not a 1400 window: reported only"
+    },
+    "por-20e.window": {
+      "page": "screens/POR-20?st=e",
+      "selector": "[data-artboard=\"e\"] [data-window]",
+      "source": "handoff/screens/POR-20 Transactional email templates - Reminder/screenshots/POR-20e.png",
+      "sha256": "5d23aacc19904f187e94a90239c42df648ad501ad7592cabd08bb1c0a05aef23",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-20f.window": {
+      "page": "screens/POR-20?st=f",
+      "selector": "[data-artboard=\"f\"] [data-window]",
+      "source": "handoff/screens/POR-20 Transactional email templates - Reminder/screenshots/POR-20f.png",
+      "sha256": "df612af8910e4e15c8421c3a2319dd52f05cbbfc78a8ebd9b955ddbac8dde52f",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-20g.window": {
+      "page": "screens/POR-20?st=g",
+      "selector": "[data-artboard=\"g\"] [data-window]",
+      "source": "handoff/screens/POR-20 Transactional email templates - Reminder/screenshots/POR-20g.png",
+      "sha256": "e6a608576c89e5d84c9c8698d2d3b77e5d7b4db64b64be6b8bbdd6e921998afb",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-20h.window": {
+      "page": "screens/POR-20?st=h",
+      "selector": "[data-artboard=\"h\"] [data-window]",
+      "source": "handoff/screens/POR-20 Transactional email templates - Reminder/screenshots/POR-20h.png",
+      "sha256": "e1b24466f4790ff2755eadfc617505b66c45533a3fb28324c8cee3d5d3c020c4",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-20i.window": {
+      "page": "screens/POR-20?st=i",
+      "selector": "[data-artboard=\"i\"] [data-window]",
+      "source": "handoff/screens/POR-20 Transactional email templates - Reminder/screenshots/POR-20i.png",
+      "sha256": "5f201bac806a679fca3225ea1510d5b67f9f2e0c059a2143da610b74222d56d4",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-20j.window": {
+      "page": "screens/POR-20?st=j",
+      "selector": "[data-artboard=\"j\"] [data-window]",
+      "source": "handoff/screens/POR-20 Transactional email templates - Reminder/screenshots/POR-20j.png",
+      "sha256": "7e398dcda4dd577fc892559e38f8dc29b26177952408d07d70a53029a85f8c70",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-20k.window": {
+      "page": "screens/POR-20?st=k",
+      "selector": "[data-artboard=\"k\"] [data-window]",
+      "source": "handoff/screens/POR-20 Transactional email templates - Reminder/screenshots/POR-20k.png",
+      "sha256": "689074d05e29b8e7fb69c43f99a23078cf7eee6bc35f4a515d0dad231fcf1f97",
+      "crop": "window",
+      "tier": "C"
+    },
+    "por-20l.window": {
+      "page": "screens/POR-20?st=l",
+      "selector": "[data-artboard=\"l\"] [data-window]",
+      "source": "handoff/screens/POR-20 Transactional email templates - Reminder/screenshots/POR-20l.png",
+      "sha256": "f24a78dd04080611b857d6c5f335d3281eca883e11064018565b7c10ed17a898",
+      "crop": "window",
+      "tier": "C"
     }
   }
 }

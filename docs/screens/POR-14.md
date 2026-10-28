@@ -145,12 +145,13 @@ Each becomes a test in `POR-14.test.tsx` ("POR-14 avoid: …"): gradients in pro
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a, b, c, d, e | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (unbuilt) | locked before M8 (R-01-T31) |
-| f | C | not run | reported with the copy deviation masked |
-| 390 | D | — | single page, header 56, targets ≥ 44 × 44, no tab bar |
+| a, b, c, d, e | C (threshold 0.20, maxDiffPixelRatio 3 %), locked (R-01-T31) | a 1.37 · b 1.59 · c 1.72 · d 0.72 · e 1.45 (2026-10-28) | the window (`[data-shell="app"]`), within C's 3 % |
+| f | C | 0.76 | reported with the copy deviation masked |
+| 390 | D | — | `tier-d-portal.spec.ts` at `&w=390`: header 56 and no tab bar hold; targets ≥ 44 × 44 do not (Open gaps) |
 | host | D | — | pane 720 centred, header 46, intro padding 16 18, band 32, row 52, disc 18, progress 3 px × 200, pill 30 |
 
 ## Open gaps
+- **390 targets (R-01-T31).** "Drop files here" is 126 × 30 and Send comment 28 × 28, under 44 × 44; an expected failure in `tier-d-portal.spec.ts`.
 - R-01-T14 wrote the words the handoff has no frame for in `domain/portal/messages.ts` (`ROOM_WORDS`): "Couldn’t load your requests. Nothing was lost; try again in a moment." with Retry, a failed write's toast "That didn't go through. Nothing changed; try again in a moment.", the picker's "Upload" and "Cancel", the composer's "Send comment".
 - No handoff string for the room's load error or flag-off state: the keys are reserved; R-01-T14 uses F-05's portal flag-off ViewState and records any new string here.
 - The user menu's "Security" target is POR-12's security section (N-03); until it exists the item is hidden in production.

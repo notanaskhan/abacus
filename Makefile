@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-pr
+.PHONY: shadow-report go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr
 
 setup:
 	cd backend && uv sync --locked
@@ -76,6 +76,7 @@ check-fast:
 	cd backend && uv run python -m abacus_tools.quality.seed_contamination
 	cd backend && uv run python -m abacus_tools.quality.fresh_mfa
 	cd backend && uv run python -m abacus_tools.quality.mutation_floors
+	cd backend && uv run python -m abacus_tools.release_windows check
 	$(MAKE) check-generated check-heads
 	cd backend && uv run python -m abacus_tools.quality.secrets_scan
 	cd backend && uv run python -m abacus_tools.quality.check_dependencies
@@ -226,11 +227,19 @@ audit-chain-verify:
 # variable, never as shell text). Staff use PUT /v1/platform/agent-stages instead.
 agent-stage: export AGENT_STAGE_NOTE := $(NOTE)
 agent-stage:
-	cd backend && uv run python -m abacus_tools.agent_stage $(if $(STAGE),set $(FIRM) $(AGENT) $(STAGE) "$$AGENT_STAGE_NOTE",report $(FIRM) $(AGENT))
+	cd backend && uv run python -m abacus_tools.agent_stage $(if $(STAGE),set $(FIRM) $(AGENT) $(STAGE) "$$AGENT_STAGE_NOTE" $(if $(REPORT_SHA),$(REPORT_SHA) $(REPORT_AS_OF)),report $(FIRM) $(AGENT))
+
+# Q-02-T50 (DEC-811): the deterministic shadow score for one firm and agent, as JSON with its SHA-256;
+# `make agent-stage ... STAGE=live REPORT_SHA=<sha256> REPORT_AS_OF=<as_of>` names it to go live.
+shadow-report:
+	cd backend && uv run python -m abacus_tools.agent_stage score $(FIRM) $(AGENT)
 
 # SPEC-011: set a firm's feature flag (operators; audited).
+# Q-04-T004 (P-29): a pilot firm's flip names APPROVED_BY (never the operator) and ROLLBACK; inside its
+# window also REQUEST (the ops-request file) and the Tuesday slot, or HOTFIX="<reason>"; a prompt.*
+# variant also EVAL_REPORT and SHADOW_RUN. ALL_OFF=1 sets every flag for the firm to its default.
 flag:
-	cd backend && uv run python -m abacus_tools.flags --firm $(FIRM) --flag $(FLAG) --value $(VALUE) --operator $(OPERATOR) --reason "$(REASON)"
+	cd backend && uv run python -m abacus_tools.flags --firm $(FIRM) $(if $(ALL_OFF),--all-off,--flag $(FLAG) --value $(VALUE)) --operator $(OPERATOR) --reason "$(REASON)" $(if $(APPROVED_BY),--approved-by $(APPROVED_BY)) $(if $(ROLLBACK),--rollback "$(ROLLBACK)") $(if $(REQUEST),--request $(REQUEST)) $(if $(HOTFIX),--hotfix "$(HOTFIX)") $(if $(EVAL_REPORT),--eval-report "$(EVAL_REPORT)") $(if $(SHADOW_RUN),--shadow-run "$(SHADOW_RUN)")
 
 # Q-02-T33 (RB-27): propagate an Accrued incident into the firms it touched, as staff. Needs
 # ABACUS_STAFF_TOKEN (a staff-issuer token with MFA) in the environment; STAFF must be the id it
@@ -242,9 +251,23 @@ incident-propagate:
 incident-status:
 	cd backend && uv run python -m abacus_tools.incidents status --ref $(REF)
 
+# Q-04-T005 (P-29; RK-15): every flag with owner, expiry, the last release train before it, the
+# window it expires in (or its window_exception) and a 21-day warning. Read-only.
+flag-calendar:
+	@cd backend && uv run python -m abacus_tools.codegen.feature_flags --calendar
+
+# Q-04-T009: the dossier's evidence for one firm at one level, as JSON (exit 1 when an item fails).
+# An ops task in production, read-only. LEVEL=shadow|client_facing|tax|season; AT=<ISO> to look ahead.
+go-live-check:
+	cd backend && uv run python -m abacus_tools.go_live --firm $(FIRM) --level $(LEVEL) $(if $(AT),--at $(AT))
+
+# Q-04-T002 (P-29): the release-window calendar from deploy/windows.yaml, all years or YEAR=2027.
+windows:
+	@cd backend && uv run python -m abacus_tools.release_windows calendar $(if $(YEAR),--year $(YEAR))
+
 # Q-01-T45: change one firm's module entitlement (ops task; audited as the operator).
 entitlement:
-	cd backend && uv run python -m abacus_tools.tenants entitlement --firm $(FIRM) --module $(MODULE) --enabled $(ENABLED) $(if $(SEATS),--seats $(SEATS)) --operator $(OPERATOR) --reason "$(REASON)"
+	cd backend && uv run python -m abacus_tools.tenants entitlement --firm $(FIRM) --module $(MODULE) --enabled $(ENABLED) $(if $(SEATS),--seats $(SEATS)) --operator $(OPERATOR) --reason "$(REASON)" $(if $(APPROVED_BY),--approved-by $(APPROVED_BY)) $(if $(ROLLBACK),--rollback "$(ROLLBACK)") $(if $(REQUEST),--request $(REQUEST)) $(if $(HOTFIX),--hotfix "$(HOTFIX)")
 
 # Q-04-T007: enrol a work item in a pilot window (shadow), or move its mode (operators; audited).
 pilot-enrol:
@@ -266,6 +289,11 @@ deploy-lock:
 
 # Q-01-T34: open the release PR for a staging-verified SHA. Needs a shared-account read session
 # (AWS_PROFILE) and gh. Merging the PR runs deploy-production.yml.
+# Q-04-T003 (P-29): the release window gate on the committed (or AT=<ISO instant>) release record,
+# locally and read-only: window_mode, rollback, the Tuesday slot, deadline weeks, the migrate hold.
+release-check:
+	cd backend && uv run python -m abacus_tools.release window-gate --release ../deploy/production/release.json $(if $(AT),--at $(AT))
+
 release-pr:
 	@test -n "$(SHA)" || (echo "usage: make release-pr SHA=<40-character git sha>"; exit 2)
 	aws s3 cp s3://abacus-shared-artifacts/releases/$(SHA)/release.json deploy/production/release.json

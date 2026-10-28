@@ -167,6 +167,15 @@ import {
   type Eng02State,
   scenarios as eng02Scenarios,
 } from "./ENG-02/scenarios";
+import { ENG13 } from "./ENG-13";
+import {
+  type Eng13State,
+  OPENS as ENG13_OPENS,
+  PREVIEWS as ENG13_PREVIEWS,
+  STATES as ENG13_STATES,
+  STEP_OF as ENG13_STEP_OF,
+  scenarios as eng13Scenarios,
+} from "./ENG-13/scenarios";
 import {
   OPENS as ENG05_OPENS,
   OVERLAYS as ENG05_OVERLAYS,
@@ -186,6 +195,14 @@ import {
 import { PortalRequest } from "./POR-04";
 import { PortalRoom } from "./POR-14";
 import { PortalConnections } from "./POR-16";
+import { POR20 } from "./POR-20";
+import {
+  OPENS as POR20_OPENS,
+  SAMPLES as POR20_SAMPLES,
+  STATES as POR20_STATES,
+  type Por20State,
+  scenarios as por20Scenarios,
+} from "./POR-20/scenarios";
 import {
   ARTBOARD as POR16_ARTBOARD,
   STATES as POR16_STATES,
@@ -1136,7 +1153,7 @@ function Cli07Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("CLI-07", { title: "Acceptance & continuance", Component: Cli07Artboard });
 
-// CLI-06 (P-07-T49): the single-client intake, a–f, h and i (g is P-07-T54's bulk import).
+// CLI-06: the single-client intake, a–f, h and i (P-07-T49), and g, the bulk import (P-07-T54).
 function Cli06Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Cli06State = CLI06_STATES.find((s) => s === params.st) ?? "a";
   const [ready, setReady] = useState<string | null>(null);
@@ -1153,10 +1170,14 @@ function Cli06Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
   }, [state, params.as]);
   const opens = CLI06_OPENS[state];
   return ready === state ? (
-    <div data-artboard={state} key={state}>
+    // The wizard is a portal: the frame holds its height so the artboard reads as visible (as ENG-13's).
+    <div data-artboard={state} key={state} className="h-[900px]">
       <IntakePage
         draftId={CLI06_DRAFT}
         step={opens.step}
+        {...(opens.bulk === undefined
+          ? {}
+          : { mode: "bulk", importId: opens.bulk.importId, importStep: opens.bulk.step })}
         {...(opens.problems === undefined ? {} : { problems: opens.problems })}
         screened={opens.screened === true}
       />
@@ -1251,6 +1272,38 @@ function Eng03Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("ENG-03", { title: "New engagement wizard", Component: Eng03Artboard });
+
+// ENG-13 (P-07-T60): the roll-forward wizard on the artboard's draft and step; the attest and
+// structure rows and the template conflicts are fixture-only (DEC-805), so only the gallery passes
+// the preview.
+function Eng13Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Eng13State = ENG13_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      eng13Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div key={state} data-artboard={state} className="h-[900px]">
+      <ENG13
+        sourceId={ENG13_OPENS[state].source}
+        draftId={ENG13_OPENS[state].draft}
+        initialStep={ENG13_STEP_OF[state]}
+        preview={ENG13_PREVIEWS[state]}
+      />
+    </div>
+  );
+}
+
+registerScreen("ENG-13", { title: "Roll forward", Component: Eng13Artboard });
 
 const stayOnCard = (): void => undefined;
 
@@ -1399,6 +1452,7 @@ function Por04Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
       <PortalRequest
         requestId={board.requestId}
         frame
+        mobile={params.w === "390"}
         hold={{
           ...(board.ignoreOpen === true ? { ignoreOpen: true } : {}),
           ...(board.uploading === undefined ? {} : { uploading: board.uploading }),
@@ -1416,7 +1470,7 @@ registerScreen("POR-04", {
 });
 
 // POR-14 (R-01-T14): the third-party room, a–f, as the `ScopedRequestRoom` composition; `&w=390`
-// draws the 390 page (no tab bar).
+// draws the 390 page (no tab bar; wired with POR-04's in R-01-T31).
 function Por14Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Por14State = POR14_STATES.find((s) => s === params.st) ?? "a";
   const [ready, setReady] = useState<string | null>(null);
@@ -1435,7 +1489,11 @@ function Por14Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
   const board = POR14_ARTBOARD[state];
   return (
     <div key={state} data-artboard={state} data-surface="portal">
-      <PortalRoom frame {...(board.expanded === undefined ? {} : { expanded: board.expanded })} />
+      <PortalRoom
+        frame
+        mobile={params.w === "390"}
+        {...(board.expanded === undefined ? {} : { expanded: board.expanded })}
+      />
     </div>
   );
 }
@@ -1475,6 +1533,44 @@ function Por16Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("POR-16", { title: "Connections · Copperleaf", Component: Por16Artboard });
+
+// POR-20 (R-01-T25; gallery R-01-T31): the email templates, a–l on each state's template, width
+// and sample. A firm screen with a POR id: the email it previews is the client's, white-labelled.
+function Por20Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Por20State = POR20_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      por20Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  const opens = POR20_OPENS[state];
+  return (
+    <div key={state} data-artboard={state} className="h-[900px] p-[20px]">
+      {/* The 1400 × 860 window the handoff draws (without SHL-01's chrome here). */}
+      <div data-window="" className="flex h-[860px] w-[1400px] flex-col bg-shell">
+        <POR20
+          templateKey={opens.templateKey}
+          width={opens.w}
+          sample={opens.sample}
+          samples={POR20_SAMPLES}
+        />
+      </div>
+    </div>
+  );
+}
+
+registerScreen("POR-20", {
+  title: "Transactional email templates · Reminder",
+  Component: Por20Artboard,
+});
 
 // SHL-07 (P-03-T07, T11): the citation popover on the AUD-04 and AUD-05 underlays, a–e.
 function Shl07Artboard({ params }: { params: FixtureParams }): JSX.Element | null {

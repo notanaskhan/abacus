@@ -474,6 +474,46 @@ async def awaiting_review_rows(
     return [(i, v, e) for i, v, e in (await session.execute(stmt)).all()]
 
 
+@dataclass(frozen=True)
+class ReviewHost:
+    """Where an uploaded version waits on review (I-01-T13): the item it fulfils and that item's
+    list (a binder, or an assurance PBC list) with its kind and work item."""
+
+    version_id: UUID
+    item_id: UUID
+    list_id: UUID
+    list_kind: str
+    work_item_id: UUID
+
+
+async def review_hosts_rows(
+    session: AsyncSession, version_ids: Sequence[UUID]
+) -> Sequence[ReviewHost]:
+    """I-01-T13 (C13 row targets; a system reader for the evidence-review presenter, which
+    authorises each row first): each version's newest live fulfilment's item and its list."""
+    if not version_ids:
+        return []
+    stmt = (
+        select(
+            Fulfilment.evidence_version_id,
+            RequestItem.id,
+            RequestList.id,
+            RequestList.kind,
+            RequestList.work_item_id,
+        )
+        .join(RequestItem, RequestItem.id == Fulfilment.request_item_id)
+        .join(RequestList, RequestList.id == RequestItem.request_list_id)
+        .where(Fulfilment.evidence_version_id.in_(list(version_ids)), live_fulfilment())
+        .distinct(Fulfilment.evidence_version_id)
+        .order_by(
+            Fulfilment.evidence_version_id, Fulfilment.created_at.desc(), Fulfilment.id.desc()
+        )
+    )
+    return [
+        ReviewHost(v, i, lid, str(k), w) for v, i, lid, k, w in (await session.execute(stmt)).all()
+    ]
+
+
 async def set_status(
     session: AsyncSession, item_id: UUID, *, allowed_from: tuple[str, ...], to: str
 ) -> bool:

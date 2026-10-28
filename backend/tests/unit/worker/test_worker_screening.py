@@ -110,6 +110,10 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         # On main since S10 but missing from this list (ED-165): the export build's start
         # (A-01-T19), the TB and workpaper staleness subscribers, the AI boundary facts.
         "engagement_export.requested",
+        # G-02-T17, T19, T20 (#492): the audit export, the firm export schedule and the WISP pack.
+        "audit_export.requested",
+        "firm_export_schedule.changed",
+        "wisp_pack.requested",
         "trial_balance.version_created",
         "workpaper.content_changed",
         "ai_boundary.facts_changed",
@@ -128,10 +132,6 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         # Q-02-T43: an approved firm export starts its build; an expired one's segments go.
         "firm_export.approved",
         "firm_export.expired",
-        # S12 lanes: a firm export schedule's starter, an audit-log export and a WISP pack build.
-        "firm_export_schedule.changed",
-        "audit_export.requested",
-        "wisp_pack.requested",
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert (

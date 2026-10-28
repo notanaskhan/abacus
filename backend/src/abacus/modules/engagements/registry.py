@@ -25,6 +25,7 @@ TABLES: frozenset[str] = frozenset(
         "client_intake_drafts",  # P-07-T42 (0177): CLI-06's autosaved intake, own scope
         "client_imports",  # P-07-T52 (0250): CLI-06's bulk import, its sealed file 30 days
         "client_import_rows",  # P-07-T52 (0250): parsed rows, decisions, what the run applied
+        "roll_forward_drafts",  # P-07-T55 (0291): ENG-13's saved wizard, own scope
         "team_approvals",  # P-07-T30 (0155): the EP's approval of the team
         "eqr_eligibility_approvals",  # P-07-T30 (0155): the quality owner's EQR approvals
         # P-07-T35 (0163): acceptance and continuance in-app (CLI-07)
@@ -151,6 +152,10 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"tin_last4", "tin_fingerprint", "best_match_client_id", "best_match_entity_id"}
         | {"score", "basis", "decision", "error_code"}
     ),
+    "roll_forward_drafts": frozenset(  # P-07-T55 (0291)
+        {"tenant_id", "source_engagement_id", "created_by", "target_period_start"}
+        | {"target_period_end", "name", "selections", "team", "template_decision"}
+    ),
     "engagements": frozenset(
         {"id", "tenant_id", "client_id", "client_entity_id", "name", "created_by"}
         | {"fiscal_period_start", "fiscal_period_end"}
@@ -230,5 +235,9 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "client_import_rows": frozenset(
         {"decision", "merge_client_id", "decided_by", "decided_at", "applied_at", "result_ref"}
         | {"error_code"}
+    ),
+    "roll_forward_drafts": frozenset(  # P-07-T55 (0291): autosave, discard, create
+        {"target_period_start", "target_period_end", "name", "selections", "team"}
+        | {"template_decision", "created_engagement_id", "version", "saved_at", "discarded_at"}
     ),
 }

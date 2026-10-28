@@ -123,6 +123,67 @@ async def copy_items(
     return len(prior) + len(seeds)
 
 
+async def count_prior_items(ctx: AuthContext, prior_engagement_id: UUID) -> int:
+    """P-07-T55: how many requests last year's list has (ENG-13 "24 requests as Draft"), under
+    `visible(roll_forward.read)` like the copy."""
+    async with tenant_session(ctx.tenant) as session:
+        return len(await items_to_roll_forward(session, ctx, prior_engagement_id))
+
+
+async def copy_items_as_draft(
+    tx: UnitOfWork, ctx: AuthContext, engagement_id: UUID, prior_engagement_id: UUID
+) -> int:
+    """P-07-T55 (ENG-13, Story 7.1): last year's whole request list into the new engagement's,
+    every item as Draft: the same wording, area, tier, dataset, document kind and guidance, no
+    client assignee, no due date, and never client-visible (the status trigger keeps an item that
+    is not client-visible `draft`), so the client sees nothing until the firm sends. Nothing the
+    client uploaded moves: evidence stays on last year's items (ADR-004)."""
+    prior = list(await items_to_roll_forward(tx.session, ctx, prior_engagement_id))
+    if not prior:
+        return 0
+    list_id, created = await request_list_for(tx.session, ctx.tenant_id, engagement_id)
+    if created:
+        tx.record(
+            "request_list.created",
+            target=Target("request_list", list_id),
+            after=Ref(engagement_id=engagement_id),
+        )
+    for old in prior:
+        item_id = uuid4()
+        await insert_request_item(
+            tx.session,
+            item_id=item_id,
+            tenant_id=ctx.tenant_id,
+            engagement_id=engagement_id,
+            request_list_id=list_id,
+            description=old.description,
+            audit_area=old.audit_area,
+            created_by=ctx.user_id,
+            retrievability_tier=old.retrievability_tier,
+            dataset=old.dataset,
+            tier_source=old.tier_source,
+            tier_rule=old.tier_rule,
+            document_kind=old.document_kind,
+            document_kind_source=old.document_kind_source,
+            guidance=Guidance(
+                old.why,
+                old.good_looks_like,
+                old.blocks_fieldwork,
+                old.effort,
+                old.guidance_source,
+                old.guidance_approved_by,
+            ),
+        )
+        await set_client_fields(tx.session, item_id, client_visible=False)
+        tx.record(
+            "request_item.created",
+            target=Target("request_item", item_id),
+            after=Ref(engagement_id=engagement_id, rolled_forward_from=old.id),
+        )
+        tx.emit(RequestItemCreated(request_item_id=item_id, engagement_id=engagement_id))
+    return len(prior)
+
+
 async def copy_binder_items(
     tx: UnitOfWork,
     ctx: AuthContext,

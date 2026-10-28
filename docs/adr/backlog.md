@@ -34,7 +34,7 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 | P-21 | Public API, webhooks, MCP | red | — | next free | Fri 11 Dec | DEC-86 | to draft |
 | P-22 | Agent model: capabilities vs firm definitions | red | P-10 | next free | Fri 6 Nov; re-dated 2026-10-22: drafted with P-10's first task, owner ayushkbhatia | DEC-41 | to draft (re-dated) |
 | P-23 | Workbench sessions | red | P-10 | next free | Fri 13 Nov; re-dated 2026-10-22: drafted with P-10's first task, owner ayushkbhatia | DEC-40 | to draft (re-dated) |
-| P-24 | Structured agent output | red | F-06 | next free | Fri 6 Nov; re-dated 2026-10-22: drafted with F-06's first task, owner ayushkbhatia | DEC-41 | to draft (re-dated) |
+| P-24 | Structured agent output | red | F-06 | ADR-230 | drafted and accepted 2026-10-28 with F-06-T24 (TASK-1704), before F-06-T15 | DEC-41 | accepted |
 | P-25 | Model-drafted text to clients | red | Q-03 | next free | Fri 11 Dec | DEC-79 | to draft |
 | P-26 | E-signature | red | F-02 | ADR-149 | drafted 2026-10-20 (M1 draft by Fri 30 Oct); accept by Fri 4 Dec (DocuSign go/no-go; counsel review through F-09, else record mode only) | DEC-25 | proposed (acceptance: ayushkbhatia) |
 | P-27 | Payments and billing boundary | amber | F-09 | next free | Fri 11 Dec | DEC-89 | to draft |
@@ -78,7 +78,7 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 | P-65 | Tenant key provisioning | red | Q-01 | ADR-156 | Fri 27 Nov | — | proposed |
 | P-66 | Platform controls and kill switches | red | Q-01 | ADR-157 | Fri 27 Nov | — | proposed |
 | P-67 | Observability and on-call vendors | red | Q-01 | ADR-154 | Fri 13 Nov (draft open Fri 30 Oct) | — | proposed |
-| P-68 | Tax computation boundary | amber | T-02 | next free | Fri 28 May 2027 (draft S14) | DEC-77 | to draft (confirmed 2026-10-20) |
+| P-68 | Tax computation boundary | amber | T-02 | ADR-231 | drafted and accepted 2026-10-28 with T-02-T36 (TASK-1705) | DEC-77 | accepted |
 | P-69 | Workbook formula engine and the ADR-052 exception for tax workbooks | red | T-05 | next free | Fri 18 Feb 2028 (draft S33) | DEC-84 | to draft (confirmed 2026-10-20) |
 
 ## ADRs outside the P-programme

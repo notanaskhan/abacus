@@ -2249,6 +2249,32 @@
             "title": "Note",
             "type": "string"
           },
+          "report_as_of": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Report As Of"
+          },
+          "report_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Report Sha256"
+          },
           "stage": {
             "cls": "internal",
             "enum": [
@@ -21865,6 +21891,7 @@
         "enum": [
           "pending",
           "viewed",
+          "verified",
           "signed",
           "declined",
           "verification_failed"
@@ -48514,6 +48541,340 @@
         "title": "RoleTemplatesOut",
         "type": "object"
       },
+      "RollForwardCatalogueOut": {
+        "description": "What v1 can carry. `evidence_copied` is always 0: evidence never moves (ADR-004).",
+        "properties": {
+          "evidence_copied": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Evidence Copied",
+            "type": "integer"
+          },
+          "request_count": {
+            "cls": "internal",
+            "title": "Request Count",
+            "type": "integer"
+          },
+          "team": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/RollForwardTeamMemberOut"
+            },
+            "title": "Team",
+            "type": "array"
+          },
+          "template": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RollForwardTemplateOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "team",
+          "template",
+          "request_count"
+        ],
+        "title": "RollForwardCatalogueOut",
+        "type": "object"
+      },
+      "RollForwardCreatedOut": {
+        "properties": {
+          "acceptance_record_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Acceptance Record Id",
+            "type": "string"
+          },
+          "engagement_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Engagement Id",
+            "type": "string"
+          },
+          "engagement_status": {
+            "$ref": "#/components/schemas/EngagementStatus",
+            "cls": "internal"
+          },
+          "independence_requested_user_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Independence Requested User Ids",
+            "type": "array"
+          },
+          "methodology_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Methodology Version Id"
+          },
+          "prior_engagement_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Prior Engagement Id",
+            "type": "string"
+          },
+          "requests_created": {
+            "cls": "internal",
+            "title": "Requests Created",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "engagement_id",
+          "engagement_status",
+          "prior_engagement_id",
+          "acceptance_record_id",
+          "requests_created",
+          "independence_requested_user_ids",
+          "methodology_version_id"
+        ],
+        "title": "RollForwardCreatedOut",
+        "type": "object"
+      },
+      "RollForwardDraftDiscardedOut": {
+        "properties": {
+          "discarded_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Discarded At",
+            "type": "string"
+          },
+          "draft_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Draft Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "draft_id",
+          "discarded_at"
+        ],
+        "title": "RollForwardDraftDiscardedOut",
+        "type": "object"
+      },
+      "RollForwardDraftOut": {
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "catalogue": {
+            "$ref": "#/components/schemas/RollForwardCatalogueOut",
+            "cls": "internal"
+          },
+          "created_engagement_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Created Engagement Id"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "saved_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Saved At",
+            "type": "string"
+          },
+          "selections": {
+            "$ref": "#/components/schemas/RollForwardSelectionsOut",
+            "cls": "internal"
+          },
+          "source": {
+            "$ref": "#/components/schemas/RollForwardSourceOut",
+            "cls": "confidential"
+          },
+          "target_period_end": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Target Period End",
+            "type": "string"
+          },
+          "target_period_start": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Target Period Start",
+            "type": "string"
+          },
+          "team": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/RollForwardPickOut"
+            },
+            "title": "Team",
+            "type": "array"
+          },
+          "template_decision": {
+            "cls": "internal",
+            "enum": [
+              "current",
+              "skip"
+            ],
+            "title": "Template Decision",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "target_period_start",
+          "target_period_end",
+          "name",
+          "selections",
+          "team",
+          "template_decision",
+          "version",
+          "saved_at",
+          "created_engagement_id",
+          "catalogue",
+          "allowed_actions"
+        ],
+        "title": "RollForwardDraftOut",
+        "type": "object"
+      },
+      "RollForwardDraftPatchIn": {
+        "additionalProperties": false,
+        "description": "Only what changed, on the version seen.",
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Name"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Seen Version",
+            "type": "integer"
+          },
+          "selections": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RollForwardSelectionsIn"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "target_period_end": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Target Period End"
+          },
+          "target_period_start": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Target Period Start"
+          },
+          "team_user_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Team User Ids"
+          },
+          "template_decision": {
+            "anyOf": [
+              {
+                "enum": [
+                  "current",
+                  "skip"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Template Decision"
+          }
+        },
+        "required": [
+          "seen_version"
+        ],
+        "title": "RollForwardDraftPatchIn",
+        "type": "object"
+      },
       "RollForwardIn": {
         "additionalProperties": false,
         "description": "SPEC-025 AC-2 (TASK-048): exactly what the person confirmed from the proposal.",
@@ -48603,6 +48964,27 @@
           "role"
         ],
         "title": "RollForwardMemberIn",
+        "type": "object"
+      },
+      "RollForwardPickOut": {
+        "properties": {
+          "role": {
+            "cls": "internal",
+            "title": "Role",
+            "type": "string"
+          },
+          "user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "role"
+        ],
+        "title": "RollForwardPickOut",
         "type": "object"
       },
       "RollForwardProposalIn": {
@@ -48721,6 +49103,215 @@
           "items"
         ],
         "title": "RollForwardProposalOut",
+        "type": "object"
+      },
+      "RollForwardSelectionsIn": {
+        "additionalProperties": false,
+        "properties": {
+          "prior_year_notes": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Prior Year Notes"
+          },
+          "request_list": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Request List"
+          },
+          "team": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Team"
+          },
+          "template": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Template"
+          }
+        },
+        "title": "RollForwardSelectionsIn",
+        "type": "object"
+      },
+      "RollForwardSelectionsOut": {
+        "description": "Carry (true) or Skip (false), per v1 category.",
+        "properties": {
+          "prior_year_notes": {
+            "cls": "internal",
+            "title": "Prior Year Notes",
+            "type": "boolean"
+          },
+          "request_list": {
+            "cls": "internal",
+            "title": "Request List",
+            "type": "boolean"
+          },
+          "team": {
+            "cls": "internal",
+            "title": "Team",
+            "type": "boolean"
+          },
+          "template": {
+            "cls": "internal",
+            "title": "Template",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "team",
+          "template",
+          "request_list",
+          "prior_year_notes"
+        ],
+        "title": "RollForwardSelectionsOut",
+        "type": "object"
+      },
+      "RollForwardSourceOut": {
+        "properties": {
+          "engagement_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Engagement Id",
+            "type": "string"
+          },
+          "fiscal_period_end": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Fiscal Period End",
+            "type": "string"
+          },
+          "fiscal_period_start": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Fiscal Period Start",
+            "type": "string"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EngagementStatus",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "engagement_id",
+          "name",
+          "status",
+          "fiscal_period_start",
+          "fiscal_period_end"
+        ],
+        "title": "RollForwardSourceOut",
+        "type": "object"
+      },
+      "RollForwardTeamMemberOut": {
+        "description": "Last year's person: `available` false when they have left or are now walled.",
+        "properties": {
+          "available": {
+            "cls": "internal",
+            "title": "Available",
+            "type": "boolean"
+          },
+          "display_name": {
+            "cls": "internal",
+            "title": "Display Name",
+            "type": "string"
+          },
+          "role": {
+            "cls": "internal",
+            "title": "Role",
+            "type": "string"
+          },
+          "user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "display_name",
+          "role",
+          "available"
+        ],
+        "title": "RollForwardTeamMemberOut",
+        "type": "object"
+      },
+      "RollForwardTemplateOut": {
+        "description": "The source's template; `current` when last year's version is still the newest.",
+        "properties": {
+          "current": {
+            "cls": "internal",
+            "title": "Current",
+            "type": "boolean"
+          },
+          "current_version": {
+            "cls": "internal",
+            "title": "Current Version",
+            "type": "integer"
+          },
+          "current_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Current Version Id",
+            "type": "string"
+          },
+          "source_version": {
+            "cls": "internal",
+            "title": "Source Version",
+            "type": "integer"
+          },
+          "template_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Template Id",
+            "type": "string"
+          },
+          "template_name": {
+            "cls": "internal",
+            "title": "Template Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "template_id",
+          "template_name",
+          "source_version",
+          "current_version_id",
+          "current_version",
+          "current"
+        ],
+        "title": "RollForwardTemplateOut",
         "type": "object"
       },
       "RollforwardComponentBody": {
@@ -68662,7 +69253,7 @@
     },
     "/v1/checkpoints": {
       "get": {
-        "description": "SHL-16: the drawer's cards, filtered Agent only, Named only or All.",
+        "description": "SHL-16: the drawer's cards, filtered Agent only, Named only or All (P-04-T32).",
         "operationId": "checkpoint_history",
         "parameters": [
           {
@@ -68802,7 +69393,7 @@
         "x-abacus-action": "checkpoint.read"
       },
       "post": {
-        "description": "SHL-16 f: \"Save checkpoint\u2026\".",
+        "description": "SHL-16 f: \"Save checkpoint\u2026\" (human only).",
         "operationId": "checkpoint_create",
         "parameters": [
           {
@@ -68919,7 +69510,7 @@
     },
     "/v1/checkpoints/{checkpoint_id}": {
       "get": {
-        "description": "SHL-16 a, c: steps and the code-computed diff.",
+        "description": "SHL-16 a, c: the code-computed diff. `steps` stay empty until C6 run steps are read\nthrough review (P-04-T32 leaves them to the run owner).",
         "operationId": "checkpoint",
         "parameters": [
           {
@@ -69048,7 +69639,7 @@
         "x-abacus-action": "checkpoint.read"
       },
       "patch": {
-        "description": "SHL-16 d: rename and star.",
+        "description": "SHL-16 d: rename and star (only the fields sent change).",
         "operationId": "checkpoint_rename",
         "parameters": [
           {
@@ -104963,6 +105554,647 @@
           "fieldwork"
         ],
         "x-abacus-action": "risk.assess"
+      }
+    },
+    "/v1/engagements/{engagement_id}/roll-forward/drafts": {
+      "post": {
+        "description": "ENG-13 \"Roll forward\u2026\" from a delivered or archived engagement (P-07-T55).",
+        "operationId": "roll_forward_draft_create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RollForwardDraftOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Roll Forward Draft Create Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "roll_forward.create"
+      }
+    },
+    "/v1/engagements/{engagement_id}/roll-forward/drafts/{draft_id}": {
+      "delete": {
+        "description": "Escape \u2192 \"Discard this draft?\": nothing was created.",
+        "operationId": "roll_forward_draft_discard",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Draft Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RollForwardDraftDiscardedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Roll Forward Draft Discard Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "roll_forward.create"
+      },
+      "get": {
+        "operationId": "roll_forward_draft",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Draft Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RollForwardDraftOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Roll Forward Draft Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "roll_forward.read"
+      },
+      "patch": {
+        "description": "Autosave: Carry \u00b7 Skip per category, the team, the template decision, period and name.",
+        "operationId": "roll_forward_draft_update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Draft Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RollForwardDraftPatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RollForwardDraftOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Roll Forward Draft Update Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "roll_forward.create"
+      }
+    },
+    "/v1/engagements/{engagement_id}/roll-forward/drafts/{draft_id}/create": {
+      "post": {
+        "description": "ENG-13 e \"Create\": a Prospect engagement with `prior_engagement_id`, the carried team,\nthe template's current version, a continuance acceptance record and the request list as\nDraft; no evidence, results or sign-offs (ADR-004).",
+        "operationId": "roll_forward_create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Draft Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RollForwardCreatedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Roll Forward Create Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "roll_forward.create"
       }
     },
     "/v1/engagements/{engagement_id}/screening-results": {
@@ -141500,7 +142732,7 @@
     },
     "/v1/platform/agent-stages/{firm_id}/{agent_id}": {
       "put": {
-        "description": "Shadow, live or off for this firm; `live` only after 50 shadow runs over 14 days.",
+        "description": "Shadow, live or off for this firm; `live` only on a named shadow report that passes\nSPEC-036 Q1 (50 runs, 14 days) and QD-10 (25 scored, disagreement at most 8%, no DE-1, DE-4\nor DE-5 miss).",
         "operationId": "put_agent_stage",
         "parameters": [
           {

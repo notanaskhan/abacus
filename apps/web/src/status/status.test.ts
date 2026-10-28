@@ -60,7 +60,13 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // evidence_unlock (+3). G-01-T02 added membership, wall_approval and annual_independence (+3).
     // Q-02-T30 added legal_hold (+1). A-01-T01 added engagement_export (+1).
     // A-02-T02 added trial_balance_label and trial_balance_layer (+2).
-    expect(Object.keys(REGISTRY)).toHaveLength(78);
+    // S9 to S12 added human_gate, due_risk, methodology_version, methodology_import,
+    // knowledge_item, parse_flag, ai_policy_version, security_incident, firm_export,
+    // firm_export_schedule, safeguards_control, support_session and client_invitation (+13).
+    // S13 (N-01, N-02) and F-06-T03 added inbox_thread, portal_intake_upload, file_document,
+    // envelope_signer, signing_step, envelope_purpose, generated_document, letter and
+    // letter_clause (+9; the S14 batch joins N-02's and F-06's envelope_signer, DEC-815).
+    expect(Object.keys(REGISTRY)).toHaveLength(100);
     // +21: decision_card 3, suggestion 6, proposal 5, sign_off_slot 2, field_value 4, checkpoint saved.
     // +27 (P-07-T03): client 4, invitation 5, acceptance_record 5, letter_record 2,
     // conflict_assessment 5, nas_evaluation 3, independence_conclusion 3.
@@ -70,7 +76,13 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // +6 (A-01-T01): engagement_export 6.
     // +9 (A-02-T02): trial_balance_label 5, trial_balance_layer 4.
     // +1 (P-07-T36): conflict_assessment `conflict`.
-    expect(ROWS).toHaveLength(377);
+    // +53 (S9 to S12): human_gate 4, due_risk 4, methodology_version 6, methodology_import 6,
+    // knowledge_item 3, parse_flag 5, ai_policy_version 6, security_incident 2, firm_export 4,
+    // firm_export_schedule 3, safeguards_control 2, support_session 4, client_invitation 4.
+    // +41 (S13, F-06-T03): inbox_thread 3, portal_intake_upload 3, file_document 5,
+    // envelope_signer 6, signing_step 4, envelope_purpose 4, generated_document 4, letter 7,
+    // letter_clause 3, inbox_item +2.
+    expect(ROWS).toHaveLength(471);
   });
 
   it("resolves each code to a word, a kit variant or a line, and never to match", () => {
