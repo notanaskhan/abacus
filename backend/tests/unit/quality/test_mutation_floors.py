@@ -278,7 +278,10 @@ def test_t027_the_guard_judges_another_checkout(tmp_path: Path) -> None:
         (tmp_path / rel).write_text((REPO / rel).read_text(encoding="utf-8"), encoding="utf-8")
     assert mutation_floors.main(["--base", "HEAD", "--head-root", str(tmp_path)]) == 0
     floors = tmp_path / mutation_floors.REL
-    floors.write_text(floors.read_text().replace("  evidence: 0\n", ""), encoding="utf-8")
+    kept = floors.read_text().splitlines(keepends=True)
+    dropped = [line for line in kept if not line.startswith("  evidence: ")]
+    assert len(dropped) == len(kept) - 1  # whatever its floor, the evidence scope is removed
+    floors.write_text("".join(dropped), encoding="utf-8")
     assert mutation_floors.main(["--base", "HEAD", "--head-root", str(tmp_path)]) == 1
 
 
