@@ -76,6 +76,7 @@ from abacus.modules.connections.pipeline import (
     snapshot,
     validate_run,
 )
+from abacus.modules.connections.pulls import pull as pull_ledger
 from abacus.modules.connections.reconnect import (
     ReconnectRequested,
     reconnect_todo_count,
@@ -233,6 +234,7 @@ __all__ = [
     "load_system_context",
     "normalise_raw",
     "parse_trial_balance",
+    "pull_ledger",
     "pull_raw",
     "qbo_app",
     "quickbooks_online",
