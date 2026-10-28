@@ -133,6 +133,65 @@ test.describe("J04-fs-audit PBC slice", () => {
   );
 });
 
+// P-03-T25: the trace to source on the full stack and staging. Granite Peak's screened upload is the
+// Sep 24 snapshot's (no fixture scenario carries it): the screening citation on its AUD-03 row
+// opens SHL-07, whose "Open source" opens SHL-08 with the quoted region lit, the region and the
+// cited cell sharing one match. INV-1 to INV-5 after each step, in the browser and the database.
+test.describe("J04-fs-audit trace to source (P-03-T25)", () => {
+  test.beforeEach(({ journey }) => {
+    const hosted = journey.project === "staging" || journey.project === "canary";
+    test.skip(
+      hosted && HOSTED_URL[journey.project] === undefined,
+      `ABACUS_${journey.project.toUpperCase()}_URL is not set`,
+    );
+    test.fixme(
+      journey.project === "fixture",
+      "Granite Peak's screened upload is the Sep 24 snapshot's, full stack only (no fixture data)",
+    );
+  });
+
+  test(
+    "J04 trace: AUD-03 screening citation → SHL-07 → SHL-08 with the region lit",
+    owner("P-03 · P-03-T25 full-stack trace to source · S12, Fri Apr 16, 2027"),
+    async ({ journey }) => {
+      await journey.as("hannah-leclerc", "/audits", { clock: SEP_24 });
+      const page = journey.page;
+      await journey.step(
+        "J04 trace step 1: Granite Peak's cockpit (AUD-01 → AUD-03)",
+        async () => {
+          await page
+            .getByRole("row", { name: new RegExp(GRANITE_PEAK.split(",")[0] ?? "Granite") })
+            .first()
+            .getByRole("button", { name: "Open row" })
+            .click();
+          await expect(page).toHaveURL(/\/audits\/[^/]+/);
+        },
+      );
+      const cited = page.locator("[data-cited]").first();
+      await journey.step(
+        "J04 trace step 2: the screening citation on the row (SHL-07)",
+        async () => {
+          await cited.click();
+          await expect(page.locator('[data-popover="anchored"]').first()).toBeVisible();
+          await expect(cited).toHaveAttribute("data-lit", "");
+        },
+      );
+      await journey.step(
+        "J04 trace step 3: Open source → SHL-08 with the quoted region lit",
+        async () => {
+          await page.getByRole("button", { name: "Open source" }).first().click();
+          await expect(page.locator("[data-viewer-bar]").first()).toBeVisible();
+          const region = page.locator('[data-match-kind="region"][data-lit]').first();
+          await expect(region).toBeVisible();
+          const match = await region.getAttribute("data-match");
+          expect(match).not.toBeNull();
+          await expect(page.locator(`[data-match="${match ?? ""}"]`)).not.toHaveCount(0);
+        },
+      );
+    },
+  );
+});
+
 // A-01-T26: j04 1 on AUD-01's own scenario in the fixture project; full stack and staging after the
 // batch deploy (A-01 §10, M6).
 test.describe("J04-fs-audit (A-01's audits index)", () => {
