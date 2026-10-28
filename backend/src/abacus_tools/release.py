@@ -39,7 +39,7 @@ import re
 import sys
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
 from typing import Final, cast
 from urllib.parse import urlsplit
@@ -48,6 +48,7 @@ import yaml
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 
+from abacus.kernel.clock import system_now
 from abacus_tools import release_windows
 
 BACKEND = Path(__file__).resolve().parents[2]
@@ -522,7 +523,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             if is_placeholder(release):
                 print("placeholder")
                 return 0
-            at = datetime.now(UTC) if args.at is None else datetime.fromisoformat(args.at)
+            at = system_now() if args.at is None else datetime.fromisoformat(args.at)
             if at.tzinfo is None:
                 raise Refused("--at needs an offset")
             verdict = window_gate(release, release_windows.load(Path(args.windows)), at)
