@@ -13,6 +13,12 @@
 # milestone releases; the PR is the record. The placeholder release.json (git_sha null) deploys
 # nothing.
 #
+# Release windows (Q-04-T003; P-29; deploy/windows.yaml): while any live firm is in a window the
+# window gate (`abacus_tools.release window-gate`) needs `window_mode` and a `rollback` link,
+# promotes only in the Tuesday 19:00-21:00 CT slot, refuses a deadline week unless `hotfix` names
+# a reason and who asked (counted as an in-window hotfix), and holds the migrate step until 20:00
+# CT. Outside every window it passes and holds nothing.
+#
 # Needs, in the GitHub environment `production`, the same variables as deploy-staging.yml, plus
 # repository variable ECR_REPOSITORY. While any is unset the job skips with a notice.
 # Jobs: `deploy` (gates, lock, migrate, roll, publish), `smoke` (no OIDC token, no AWS
@@ -39,7 +45,7 @@ jobs:
   deploy:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 180 # 90 for the deploy, plus at most 75 held for the 20:00 CT migrate step
     environment: production
     outputs:
       configured: ${{ steps.gate.outputs.configured }}
@@ -119,8 +125,15 @@ jobs:
             --staging-verified ../staging-verified.json --replay ../replay.json \
             --inspector ../inspector.json --current-infra-sha "$current" \
             --build-record ../build-release.json)
+          (cd backend && uv run --locked python -m abacus_tools.release window-gate \
+            --release ../release.json) > window.json
           echo "git_sha=$sha" >> "$GITHUB_OUTPUT"
           echo "digest=$(jq -r .image_digest release.json)" >> "$GITHUB_OUTPUT"
+          echo "migrate_not_before=$(jq -r .migrate_not_before window.json)" >> "$GITHUB_OUTPUT"
+          {
+            echo "window: $(jq -r '.window // "none"' window.json)"
+            echo "in-window hotfix: $(jq -r .in_window_hotfix window.json)"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Take the deploy lock
         id: lock
@@ -133,6 +146,23 @@ jobs:
             --holder deploy-production --run-ref "$RUN_REF" --git-sha "$GIT_SHA" --purpose deploy \
             --wait-seconds 1800
           echo "taken=true" >> "$GITHUB_OUTPUT"
+
+      # P-29 rule 2: inside a window, migrations run after 20:00 CT. The gate said when; wait, at
+      # most 75 minutes (a release merged in the 19:00 slot waits under an hour).
+      - name: Hold the migrate step for the window
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          NOT_BEFORE: ${{ steps.release.outputs.migrate_not_before }}
+        run: |
+          wait=$(( $(date -d "$NOT_BEFORE" +%s) - $(date +%s) ))
+          if [ "$wait" -gt 4500 ]; then
+            echo "::error title=release window::migrate not before $NOT_BEFORE; merge in the slot"
+            exit 1
+          fi
+          if [ "$wait" -gt 0 ]; then
+            echo "::notice title=release window::holding $wait s until $NOT_BEFORE"
+            sleep "$wait"
+          fi
 
       - name: Migrate
         if: steps.gate.outputs.configured == 'true'
