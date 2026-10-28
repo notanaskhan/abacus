@@ -45,6 +45,9 @@ export function clientRecordHandlers(
     return found === undefined || walled(request).has(found.record.id) ? undefined : found;
   };
   return {
+    // P-07-T61: the Activity tab's lines (P-07-T57); no lines invented (no Activity artboard).
+    "GET /v1/clients/{client_id}/activity": (request) =>
+      find(request) === undefined ? json(NOT_FOUND, 404) : json({ items: [], total: 0 }),
     "GET /v1/clients/{client_id}": (request) => {
       const found = find(request);
       return found === undefined ? json(NOT_FOUND, 404) : json(found.record);
