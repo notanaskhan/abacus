@@ -151,6 +151,6 @@ gates:
     gate_key: agent_instructions_change
     actions: [methodology.approve]
     approver_rule: methodology_owner_publishes
-    approver_roles: [quality_partner]
+    approver_roles: [practice_leader, quality_partner]
     where_shown: [KNW-02, WRK-03]
     log_action: methodology.approved

@@ -213,6 +213,7 @@ _DOCUMENT: Final[dict[str, object]] = json.loads(
         "methodology.approve"
       ],
       "approver_roles": [
+        "practice_leader",
         "quality_partner"
       ],
       "approver_rule": "methodology_owner_publishes",
