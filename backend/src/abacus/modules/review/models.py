@@ -6,7 +6,8 @@ from datetime import date, datetime
 from uuid import UUID
 
 from sqlalchemy import FetchedValue
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from abacus.kernel.db import Base
@@ -226,3 +227,64 @@ class FieldValueVersion(Base):
     target_id: Mapped[UUID]
     field_key: Mapped[str]
     seq: Mapped[int]
+
+
+class Checkpoint(Base):
+    """A saved state of one target (P-04-T04 table, T32 service; ADR-160 clause 9). Only `name`,
+    `starred` and `status` change; "Current" is derived, never stored; nothing is deleted."""
+
+    __tablename__ = "checkpoints"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID | None]
+    target_type: Mapped[str]
+    target_id: Mapped[UUID]
+    seq: Mapped[int]
+    name: Mapped[str | None]
+    starred: Mapped[bool] = mapped_column(server_default=FetchedValue())
+    author_kind: Mapped[str]
+    author_ref: Mapped[str]
+    cause: Mapped[str]
+    status: Mapped[str]
+    proposal_id: Mapped[UUID | None]
+    restored_from_id: Mapped[UUID | None]
+    engine_sync_event_id: Mapped[UUID | None]
+    content_hash: Mapped[str]
+    run_id: Mapped[UUID | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class CheckpointDiff(Base):
+    """One field's change from the checkpoint before it, computed by code (insert-only).
+    `old` and `new` are typed values `{t, v}`; `delta_facts` carries amount deltas (DEC-85)."""
+
+    __tablename__ = "checkpoint_diffs"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    checkpoint_id: Mapped[UUID]
+    field_key: Mapped[str]
+    old: Mapped[dict[str, object] | None] = mapped_column(JSONB(none_as_null=True))
+    new: Mapped[dict[str, object] | None] = mapped_column(JSONB(none_as_null=True))
+    cause: Mapped[str]
+    citation_ids: Mapped[list[UUID]] = mapped_column(ARRAY(PG_UUID(as_uuid=True)))
+    delta_facts: Mapped[dict[str, str] | None] = mapped_column(JSONB(none_as_null=True))
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class CheckpointDecision(Base):
+    """A person's approval, rejection or restore (insert-only, human-only at the data layer;
+    the reason is sealed). On a proposal's checkpoint it names the proposal decision it is."""
+
+    __tablename__ = "checkpoint_decisions"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    checkpoint_id: Mapped[UUID]
+    decision: Mapped[str]
+    reason_code: Mapped[str | None]
+    note_sealed: Mapped[bytes | None]
+    proposal_decision_id: Mapped[UUID | None]
+    decided_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

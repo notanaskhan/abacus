@@ -43,6 +43,7 @@ from abacus.modules.identity.api import (
     allowed_actions,
     current_context,
 )
+from abacus.modules.review import checkpoints
 from abacus.modules.review.bulk import BulkTarget, bulk_sign
 from abacus.modules.review.decisions import (
     CardDetail,
@@ -1934,6 +1935,42 @@ class CheckpointRenameIn(BaseModel):
     starred: Annotated[bool | None, classified("internal")] = None
 
 
+def _checkpoint_out(v: checkpoints.CheckpointView) -> CheckpointItemOut:
+    d = v.decision
+    return CheckpointItemOut(
+        id=v.id,
+        target_type=v.target_type,
+        target_id=v.target_id,
+        seq=v.seq,
+        name=v.name,
+        starred=v.starred,
+        author_kind=cast(CheckpointAuthorKind, v.author_kind),
+        author_user_id=v.author_user_id,
+        author_name=v.author_name,
+        cause=cast(CheckpointCause, v.cause),
+        status=cast(CheckpointStatus, v.status),
+        current=v.current,
+        summary=v.summary,
+        created_at=v.created_at,
+        content_hash=v.content_hash,
+        proposal_id=v.proposal_id,
+        restored_from_id=v.restored_from_id,
+        agent_run_id=v.agent_run_id,
+        decision=None
+        if d is None
+        else CheckpointDecisionOut(
+            id=d.id,
+            decision=cast(CheckpointDecisionKind, d.decision),
+            reason=d.reason,
+            decided_by_user_id=d.decided_by_user_id,
+            decided_by_name=d.decided_by_name,
+            decided_at=d.decided_at,
+            proposal_decision_id=d.proposal_decision_id,
+        ),
+        allowed_actions=v.allowed_actions,
+    )
+
+
 checkpoints_router = AbacusRouter(prefix="/v1/checkpoints", tags=["review"])
 
 
@@ -1946,8 +1983,18 @@ async def checkpoint_history_route(
     target_id: Annotated[UUID, Query()],
     filter: Annotated[CheckpointFilter, Query()] = "all",
 ) -> CheckpointHistoryOut:
-    """SHL-16: the drawer's cards, filtered Agent only, Named only or All."""
-    await _stub(ctx)
+    """SHL-16: the drawer's cards, filtered Agent only, Named only or All (P-04-T32)."""
+    await _live(ctx)
+    found = await checkpoints.list_checkpoints(ctx, target_type, target_id, filter)
+    return CheckpointHistoryOut(
+        target_type=found.target_type,
+        target_id=found.target_id,
+        filter=found.filter,
+        items=[_checkpoint_out(v) for v in found.items],
+        current_checkpoint_id=found.current_checkpoint_id,
+        total=len(found.items),
+        allowed_actions=found.allowed_actions,
+    )
 
 
 @checkpoints_router.get(
@@ -1958,8 +2005,30 @@ async def checkpoint_route(
     ctx: Ctx,
     compare: Annotated[CheckpointCompare, Query()] = "previous",
 ) -> CheckpointDetailOut:
-    """SHL-16 a, c: steps and the code-computed diff."""
-    await _stub(ctx)
+    """SHL-16 a, c: the code-computed diff. `steps` stay empty until C6 run steps are read
+    through review (P-04-T32 leaves them to the run owner)."""
+    await _live(ctx)
+    found = await checkpoints.detail(ctx, checkpoint_id, compare)
+    return CheckpointDetailOut(
+        checkpoint=_checkpoint_out(found.checkpoint),
+        compare=found.compare,
+        compared_to_id=found.compared_to_id,
+        steps=[],
+        diff=[
+            CheckpointDiffRowOut(
+                field_key=r.field_key,
+                label=r.label,
+                old=r.old,
+                new=r.new,
+                cause=r.cause,
+                citation_ids=r.citation_ids,
+            )
+            for r in found.diff
+        ],
+        totals=[
+            CheckpointTotalOut(label=t.label, value=t.value, ties=t.ties) for t in found.totals
+        ],
+    )
 
 
 @checkpoints_router.post(
@@ -1970,8 +2039,11 @@ async def checkpoint_route(
     errors=(501,),
 )
 async def checkpoint_create_route(body: CheckpointCreateIn, ctx: Ctx) -> CheckpointItemOut:
-    """SHL-16 f: "Save checkpoint…"."""
-    await _stub(ctx)
+    """SHL-16 f: "Save checkpoint…" (human only)."""
+    await _live(ctx)
+    return _checkpoint_out(
+        await checkpoints.save(ctx, body.target_type, body.target_id, body.name)
+    )
 
 
 @checkpoints_router.post(
@@ -1984,7 +2056,8 @@ async def checkpoint_approve_route(
     checkpoint_id: UUID, body: CheckpointApproveIn, ctx: Ctx
 ) -> CheckpointItemOut:
     """SHL-16 b: human only; Current moves and `checkpoint.approved` carries the deltas."""
-    await _stub(ctx)
+    await _live(ctx)
+    return _checkpoint_out(await checkpoints.approve(ctx, checkpoint_id, body.seen_hash))
 
 
 @checkpoints_router.post(
@@ -1997,7 +2070,10 @@ async def checkpoint_reject_route(
     checkpoint_id: UUID, body: CheckpointRejectIn, ctx: Ctx
 ) -> CheckpointItemOut:
     """SHL-16 e: "Reject…" with a reason (human only)."""
-    await _stub(ctx)
+    await _live(ctx)
+    return _checkpoint_out(
+        await checkpoints.reject(ctx, checkpoint_id, body.seen_hash, body.reason)
+    )
 
 
 @checkpoints_router.post(
@@ -2011,7 +2087,8 @@ async def checkpoint_restore_route(
     checkpoint_id: UUID, body: CheckpointRestoreIn, ctx: Ctx
 ) -> CheckpointItemOut:
     """SHL-16 c: returns the new checkpoint (Checkpoint 7, a copy of Checkpoint 3); human only."""
-    await _stub(ctx)
+    await _live(ctx)
+    return _checkpoint_out(await checkpoints.restore(ctx, checkpoint_id, body.seen_hash))
 
 
 @checkpoints_router.patch(
@@ -2023,8 +2100,17 @@ async def checkpoint_restore_route(
 async def checkpoint_rename_route(
     checkpoint_id: UUID, body: CheckpointRenameIn, ctx: Ctx
 ) -> CheckpointItemOut:
-    """SHL-16 d: rename and star."""
-    await _stub(ctx)
+    """SHL-16 d: rename and star (only the fields sent change)."""
+    await _live(ctx)
+    return _checkpoint_out(
+        await checkpoints.rename(
+            ctx,
+            checkpoint_id,
+            name=body.name,
+            starred=body.starred,
+            fields=set(body.model_fields_set),
+        )
+    )
 
 
 # --- Field provenance (SHL-09; ADR-160 clauses 5 and 10) --------------------------------------

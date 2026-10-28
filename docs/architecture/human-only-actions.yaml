@@ -123,3 +123,9 @@ actions:
     verb: approve  # K-01-T06: the QM owner approves a methodology version (DEC-657)
   - action: client_import.row_decided
     verb: decide  # P-07-T52: a person's decision on an imported row (DEC-657)
+  - action: checkpoint.approved
+    verb: approve  # P-04-T32 (SHL-16 b; DEC-804, 0290): a person approves a proposed checkpoint
+  - action: checkpoint.rejected
+    verb: reject  # P-04-T32 (SHL-16 e; DEC-804, 0290)
+  - action: checkpoint.restored
+    verb: decide  # P-04-T32 (SHL-16 c; DEC-804, 0290): restoring is a person's decision

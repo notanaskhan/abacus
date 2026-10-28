@@ -964,7 +964,10 @@ def _check_named(name: str, message: str) -> Callable[[SourceFile], Iterator[Fin
 # PROPOSAL-001 (P-04-T24, T25; re-review L4): the top-level scopes that may name a proposal's
 # decision functions, file by file, as `REVIEW_DECIDE_EXEMPT` does for REVIEW-001.
 PROPOSAL_EXEMPT: dict[str, frozenset[str]] = {
-    "src/abacus/modules/agents/proposals.py": frozenset({"__all__"}),
+    # P-04-T32 (DEC-804): SHL-16 decides a proposal's checkpoint through the proposal.
+    "src/abacus/modules/agents/proposals.py": frozenset(
+        {"__all__", "_approve_for_checkpoint", "_reject_for_checkpoint"}
+    ),
     "src/abacus/modules/agents/proposal_adapters.py": frozenset({"__all__"}),
     "src/abacus/modules/agents/contract.py": frozenset(
         {
@@ -1368,6 +1371,12 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/review/repository.py", "sign_offs_of"),
         # P-04-T14: the computed staleness query over the same targets, after the same check.
         ("src/abacus/modules/review/repository.py", "stale_sign_offs"),
+        # P-04-T32: one target's checkpoints, their diffs and decisions, after `checkpoint.read`
+        # on the target's engagement (one target, bounded like the sign-off ladder).
+        ("src/abacus/modules/review/repository.py", "checkpoints_of"),
+        ("src/abacus/modules/review/repository.py", "checkpoint_diffs_of"),
+        ("src/abacus/modules/review/repository.py", "checkpoint_decisions_of"),
+        ("src/abacus/modules/review/repository.py", "lock_proposed_for"),
         # SPEC-309 (TASK-320): ledger stays dependency-free (no visible()); the assurance read
         # model authorises `trial_balance.read` on the engagement before any of these run.
         ("src/abacus/modules/ledger/tb_repository.py", "snapshots_of_entity"),
@@ -2517,6 +2526,32 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/modules/workpapers/service.py",
             "src/abacus/modules/assurance/mapping.py",
             "src/abacus/modules/assurance/trial_balance.py",
+        ),
+    ),
+    Rule(
+        id="CHECKPOINT-001",
+        description="Only the checkpoint service writes checkpoints, their diffs and decisions",
+        adr="ADR-160",
+        check=_check_named_any(
+            (
+                "insert_checkpoint",
+                "insert_checkpoint_diffs",
+                "insert_checkpoint_decision",
+                "set_checkpoint",
+                "follow_proposal_decision",
+            ),
+            "a checkpoint is written by the review checkpoint service; a person decides it "
+            "(INV-1, ADR-160 clause 9)",
+        ),
+        # P-04-T32 (DEC-804): the definitions, review's public interface, and the proposal
+        # service's approve and reject, which decide a proposal's checkpoint in their own unit
+        # of work; any other file fails.
+        include=("src/abacus/*",),
+        exclude=(
+            "src/abacus/modules/review/checkpoints.py",
+            "src/abacus/modules/review/repository.py",
+            "src/abacus/modules/review/api.py",
+            "src/abacus/modules/agents/proposals.py",
         ),
     ),
     Rule(

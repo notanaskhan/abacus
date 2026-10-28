@@ -91,11 +91,14 @@ from abacus.modules.identity.api import (
     names_of,
 )
 from abacus.modules.review.api import (
+    CheckpointProposalHooks,
     UncitedChange,
     UnregisteredKind,
     field_owner,
+    follow_proposal_decision,
     open_text,
     record_text_reads,
+    register_checkpoint_proposal_hooks,
     seal_text,
     typed_value,
 )
@@ -1038,6 +1041,10 @@ async def approve_proposal(
                 )
             )
         version = await set_proposal(tx.session, locked.id, state=decision)
+        # P-04-T32 (DEC-804): the proposal's checkpoint, if any, takes this decision, naming it.
+        await follow_proposal_decision(
+            tx, person, locked.id, "approved", decision_id, checkpoint_id=locked.checkpoint_id
+        )
         if set_applier is not None:
             await set_applier(
                 tx,
@@ -1140,6 +1147,15 @@ async def reject_proposal(
                     tx, person, suggestion, "dismissed", reason_code=reason_code
                 )
         version = await set_proposal(tx.session, locked.id, state="rejected")
+        await follow_proposal_decision(
+            tx,
+            person,
+            locked.id,
+            "rejected",
+            decision_id,
+            checkpoint_id=locked.checkpoint_id,
+            reason=text or None,
+        )
         tx.record(
             "proposal.rejected",
             target=Target(SUBJECT, locked.id),
@@ -1500,6 +1516,41 @@ def register_proposal_state() -> None:
     register_subject_state(SUBJECT, proposal_state)
 
 
+async def _version(person: AuthContext, proposal_id: UUID) -> int:
+    async with tenant_session(person.tenant) as session:
+        found = await get_proposal(session, proposal_id)
+    if found is None:
+        raise NotFound(SUBJECT)
+    return found.version
+
+
+async def _approve_for_checkpoint(ctx: object, proposal_id: UUID) -> None:
+    """SHL-16 b on a proposal's checkpoint: the proposal is approved as it stands (no edits), so
+    the one decision is the proposal's (P-04-T32, DEC-804)."""
+    person = _human(cast(Actor, ctx), APPROVE)
+    await approve_proposal(
+        person, proposal_id, seen_version=await _version(person, proposal_id), edits=()
+    )
+
+
+async def _reject_for_checkpoint(ctx: object, proposal_id: UUID, reason: str) -> None:
+    """SHL-16 e on a proposal's checkpoint: rejected with the person's reason as the note."""
+    person = _human(cast(Actor, ctx), REJECT)
+    await reject_proposal(
+        person,
+        proposal_id,
+        seen_version=await _version(person, proposal_id),
+        reason_code="other",
+        note=reason,
+    )
+
+
+def register_checkpoint_hooks() -> None:
+    register_checkpoint_proposal_hooks(
+        CheckpointProposalHooks(approve=_approve_for_checkpoint, reject=_reject_for_checkpoint)
+    )
+
+
 __all__ = [
     "Edit",
     "ProposalChanged",
@@ -1517,6 +1568,7 @@ __all__ = [
     "dismiss_suggestion",
     "proposal_view",
     "record_follow_up",
+    "register_checkpoint_hooks",
     "reject_proposal",
     "route_proposal",
     "suggestion_view",

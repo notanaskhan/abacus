@@ -226,6 +226,17 @@ codes:
     raised_by:
     - abacus.modules.methodology.lifecycle.ChecklistUnmet
     summary: An approval checklist item is not met (`facts.item`).
+  checkpoint_changed:
+    status: 409
+    raised_by:
+    - abacus.modules.review.checkpoints.CheckpointChanged
+    summary: 'The checkpoint is no longer proposed, or its hash is not the one the person saw: nothing
+      is written.'
+  checkpoint_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.review.checkpoints.CheckpointInvalid
+    summary: A restore of a checkpoint that is not in effect, or of Current itself; an empty proposal.
   citation_required:
     status: 422
     raised_by:

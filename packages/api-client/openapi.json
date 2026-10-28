@@ -63383,7 +63383,7 @@
     },
     "/v1/checkpoints": {
       "get": {
-        "description": "SHL-16: the drawer's cards, filtered Agent only, Named only or All.",
+        "description": "SHL-16: the drawer's cards, filtered Agent only, Named only or All (P-04-T32).",
         "operationId": "checkpoint_history",
         "parameters": [
           {
@@ -63523,7 +63523,7 @@
         "x-abacus-action": "checkpoint.read"
       },
       "post": {
-        "description": "SHL-16 f: \"Save checkpoint\u2026\".",
+        "description": "SHL-16 f: \"Save checkpoint\u2026\" (human only).",
         "operationId": "checkpoint_create",
         "parameters": [
           {
@@ -63640,7 +63640,7 @@
     },
     "/v1/checkpoints/{checkpoint_id}": {
       "get": {
-        "description": "SHL-16 a, c: steps and the code-computed diff.",
+        "description": "SHL-16 a, c: the code-computed diff. `steps` stay empty until C6 run steps are read\nthrough review (P-04-T32 leaves them to the run owner).",
         "operationId": "checkpoint",
         "parameters": [
           {
@@ -63769,7 +63769,7 @@
         "x-abacus-action": "checkpoint.read"
       },
       "patch": {
-        "description": "SHL-16 d: rename and star.",
+        "description": "SHL-16 d: rename and star (only the fields sent change).",
         "operationId": "checkpoint_rename",
         "parameters": [
           {

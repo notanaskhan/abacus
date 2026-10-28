@@ -1,13 +1,13 @@
 ---
 id: SPEC-360
-title: "Review grammar services: review notes, bulk sign-off, decision cards, proposals and the C3 freeze (P-04-T21 to T27)"
+title: "Review grammar services: review notes, bulk sign-off, decision cards, proposals, the C3 freeze and checkpoints (P-04-T21 to T27, T32)"
 status: approved
 owner: founder
 risk_zone: red
 related_adrs: [ADR-005, ADR-031, ADR-050, ADR-160, ADR-161]
 related_specs: [SPEC-308, SPEC-313]
 created: 2026-10-27
-updated: 2026-10-27
+updated: 2026-10-28
 ---
 
 ## 1. Summary
@@ -21,6 +21,7 @@ The C3 review-note, bulk sign-off and decision-card routes (`docs/contracts/revi
 - **AC-5 Typed adapters (P-04-T25; DEC-603, DEC-604, DEC-608).** Accepting a Granite Peak screening flag through the proposal route writes the same review_decisions row AUD-03 writes today, and a shadow-stage firm sees no proposal. Tests: `backend/tests/integration/backfill/test_p04t25_proposal_adapters.py`.
 - **AC-6 Notification kinds (P-04-T26; C16; DEC-605).** Each of the seven kinds fans out once per recipient with walls re-checked, and no template text is committed; facts and pending are read at read time from the subject's owner. Tests: `backend/tests/integration/backfill/test_p04t26_review_notifications.py`, `backend/tests/unit/notifications/test_catalogue.py`.
 - **AC-7 C3 services v1 freeze (P-04-T27; DEC-606).** The register marks C3 services v1 frozen by Fri Apr 16, 2027, and removing a field fails the snapshot diff. Tests: `backend/tests/contracts/review_grammar/test_c3_frozen.py`.
+- **AC-8 Checkpoints (P-04-T32; ADR-160 clause 9; DEC-85, DEC-804).** Restoring Checkpoint 3 creates Checkpoint 7 and deletes nothing, and approving Checkpoint 6 records one decision that SHL-16 and SHL-10 both show; Current is the newest approved or saved checkpoint, the diff is code-computed, a stale hash is 409 `checkpoint_changed`, and only a person with a reviewer function approves, rejects or restores. Tests: `backend/tests/integration/backfill/test_p04t32_checkpoints.py`.
 
 ## 3. Out of scope
 Decision cards and generic proposals in the C13 human-gate projection; recommendation reasons; Undo and the effect hold (P-04-T29); the AUD-17, SHL-10, SHL-11 and SHL-12 screens.

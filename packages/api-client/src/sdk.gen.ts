@@ -497,7 +497,7 @@ export const putBudget = <ThrowOnError extends boolean = false>(options: Options
 /**
  * Checkpoint History Route
  *
- * SHL-16: the drawer's cards, filtered Agent only, Named only or All.
+ * SHL-16: the drawer's cards, filtered Agent only, Named only or All (P-04-T32).
  */
 export const checkpointHistory = <ThrowOnError extends boolean = false>(options: Options<CheckpointHistoryData, ThrowOnError>): RequestResult<CheckpointHistoryResponses, CheckpointHistoryErrors, ThrowOnError> => (options.client ?? client).get<CheckpointHistoryResponses, CheckpointHistoryErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -508,7 +508,7 @@ export const checkpointHistory = <ThrowOnError extends boolean = false>(options:
 /**
  * Checkpoint Create Route
  *
- * SHL-16 f: "Save checkpoint…".
+ * SHL-16 f: "Save checkpoint…" (human only).
  */
 export const checkpointCreate = <ThrowOnError extends boolean = false>(options: Options<CheckpointCreateData, ThrowOnError>): RequestResult<CheckpointCreateResponses, CheckpointCreateErrors, ThrowOnError> => (options.client ?? client).post<CheckpointCreateResponses, CheckpointCreateErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -523,7 +523,8 @@ export const checkpointCreate = <ThrowOnError extends boolean = false>(options: 
 /**
  * Checkpoint Route
  *
- * SHL-16 a, c: steps and the code-computed diff.
+ * SHL-16 a, c: the code-computed diff. `steps` stay empty until C6 run steps are read
+ * through review (P-04-T32 leaves them to the run owner).
  */
 export const checkpoint = <ThrowOnError extends boolean = false>(options: Options<CheckpointData, ThrowOnError>): RequestResult<CheckpointResponses, CheckpointErrors, ThrowOnError> => (options.client ?? client).get<CheckpointResponses, CheckpointErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -534,7 +535,7 @@ export const checkpoint = <ThrowOnError extends boolean = false>(options: Option
 /**
  * Checkpoint Rename Route
  *
- * SHL-16 d: rename and star.
+ * SHL-16 d: rename and star (only the fields sent change).
  */
 export const checkpointRename = <ThrowOnError extends boolean = false>(options: Options<CheckpointRenameData, ThrowOnError>): RequestResult<CheckpointRenameResponses, CheckpointRenameErrors, ThrowOnError> => (options.client ?? client).patch<CheckpointRenameResponses, CheckpointRenameErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

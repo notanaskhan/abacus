@@ -63,6 +63,7 @@ from abacus.modules.agents.proposals import (
     SuggestionChanged,
     create_proposal,
     create_suggestion,
+    register_checkpoint_hooks,
     register_proposal_state,
 )
 from abacus.modules.agents.review_start import (
@@ -183,6 +184,8 @@ register_home_counts()
 register_suggestion_lookup()
 # P-04-T26 (C16): what a proposal says now, for the drawer's facts and Approvals.
 register_proposal_state()
+# P-04-T32 (DEC-804): a proposal's checkpoint is decided through the proposal (SHL-16 = SHL-10).
+register_checkpoint_hooks()
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)

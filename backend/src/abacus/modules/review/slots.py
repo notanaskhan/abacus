@@ -337,3 +337,41 @@ async def run_fix(tenant: TenantContext, issue_kind: str, issue_id: UUID) -> Non
     if runner is None:
         raise ServiceUnavailable
     await runner(tenant, issue_id)
+
+
+# --- P-04-T32 (SHL-16, DEC-804): a checkpoint that came from an SHL-10 proposal is decided
+# through that proposal, so SHL-16 and SHL-10 show one decision. The proposal's owner (agents)
+# registers how; with none, the decision is unavailable (503) and nothing is written.
+
+CheckpointProposalApprove = Callable[[object, UUID], Awaitable[None]]
+CheckpointProposalReject = Callable[[object, UUID, str], Awaitable[None]]
+
+
+@dataclass(frozen=True)
+class CheckpointProposalHooks:
+    """`approve(person, proposal_id)` and `reject(person, proposal_id, reason)`: the owner decides
+    the proposal at its current version and, in the same unit of work, the checkpoint follows
+    (`review.api.follow_proposal_decision`)."""
+
+    approve: CheckpointProposalApprove
+    reject: CheckpointProposalReject
+
+
+_CHECKPOINT_PROPOSALS: list[CheckpointProposalHooks] = []
+
+
+def register_checkpoint_proposal_hooks(hooks: CheckpointProposalHooks) -> None:
+    if _CHECKPOINT_PROPOSALS:
+        known = _CHECKPOINT_PROPOSALS[0]
+        if _name(known.approve) != _name(hooks.approve) or _name(known.reject) != _name(
+            hooks.reject
+        ):
+            raise ValueError("checkpoint proposal hooks are already registered")
+        return
+    _CHECKPOINT_PROPOSALS.append(hooks)
+
+
+def checkpoint_proposal_hooks() -> CheckpointProposalHooks:
+    if not _CHECKPOINT_PROPOSALS:
+        raise ServiceUnavailable
+    return _CHECKPOINT_PROPOSALS[0]

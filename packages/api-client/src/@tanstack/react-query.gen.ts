@@ -1003,7 +1003,7 @@ export const checkpointHistoryQueryKey = (options: Options<CheckpointHistoryData
 /**
  * Checkpoint History Route
  *
- * SHL-16: the drawer's cards, filtered Agent only, Named only or All.
+ * SHL-16: the drawer's cards, filtered Agent only, Named only or All (P-04-T32).
  */
 export const checkpointHistoryOptions = (options: Options<CheckpointHistoryData>) => queryOptions<CheckpointHistoryResponse, CheckpointHistoryError, CheckpointHistoryResponse, ReturnType<typeof checkpointHistoryQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -1021,7 +1021,7 @@ export const checkpointHistoryOptions = (options: Options<CheckpointHistoryData>
 /**
  * Checkpoint Create Route
  *
- * SHL-16 f: "Save checkpoint…".
+ * SHL-16 f: "Save checkpoint…" (human only).
  */
 export const checkpointCreateMutation = (options?: Partial<Options<CheckpointCreateData>>): UseMutationOptions<CheckpointCreateResponse, CheckpointCreateError, Options<CheckpointCreateData>> => {
     const mutationOptions: UseMutationOptions<CheckpointCreateResponse, CheckpointCreateError, Options<CheckpointCreateData>> = {
@@ -1042,7 +1042,8 @@ export const checkpointQueryKey = (options: Options<CheckpointData>) => createQu
 /**
  * Checkpoint Route
  *
- * SHL-16 a, c: steps and the code-computed diff.
+ * SHL-16 a, c: the code-computed diff. `steps` stay empty until C6 run steps are read
+ * through review (P-04-T32 leaves them to the run owner).
  */
 export const checkpointOptions = (options: Options<CheckpointData>) => queryOptions<CheckpointResponse, CheckpointError, CheckpointResponse, ReturnType<typeof checkpointQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -1060,7 +1061,7 @@ export const checkpointOptions = (options: Options<CheckpointData>) => queryOpti
 /**
  * Checkpoint Rename Route
  *
- * SHL-16 d: rename and star.
+ * SHL-16 d: rename and star (only the fields sent change).
  */
 export const checkpointRenameMutation = (options?: Partial<Options<CheckpointRenameData>>): UseMutationOptions<CheckpointRenameResponse, CheckpointRenameError, Options<CheckpointRenameData>> => {
     const mutationOptions: UseMutationOptions<CheckpointRenameResponse, CheckpointRenameError, Options<CheckpointRenameData>> = {

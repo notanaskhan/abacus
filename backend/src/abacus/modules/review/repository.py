@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import cast
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, Select, Text, func, insert, select, update
+from sqlalchemy import ColumnElement, Select, Text, func, insert, or_, select, update
 from sqlalchemy import cast as sql_cast
 from sqlalchemy.dialects.postgresql import ARRAY, distinct_on
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
@@ -16,6 +16,9 @@ from sqlalchemy.orm import aliased
 
 from abacus.modules.identity.api import Actor, visible
 from abacus.modules.review.models import (
+    Checkpoint,
+    CheckpointDecision,
+    CheckpointDiff,
     Decision,
     DecisionAnalysisRequest,
     DecisionCard,
@@ -327,3 +330,137 @@ async def insert_analysis_request(session: AsyncSession, **values: object) -> da
             .returning(DecisionAnalysisRequest.created_at)
         )
     ).scalar_one()
+
+
+# --- Checkpoints (P-04-T32; SHL-16) -----------------------------------------------------------
+
+
+async def checkpoints_of(
+    session: AsyncSession, target_type: str, target_id: UUID
+) -> Sequence[Checkpoint]:
+    """One target's checkpoints, oldest first (LIST_EXEMPT: the caller authorised on the
+    target's engagement; one target, bounded like a sign-off ladder)."""
+    return (
+        (
+            await session.execute(
+                select(Checkpoint)
+                .where(Checkpoint.target_type == target_type, Checkpoint.target_id == target_id)
+                .order_by(Checkpoint.seq)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def get_checkpoint(session: AsyncSession, checkpoint_id: UUID) -> Checkpoint | None:
+    return await session.get(Checkpoint, checkpoint_id)
+
+
+async def lock_checkpoint(session: AsyncSession, checkpoint_id: UUID) -> Checkpoint | None:
+    """The checkpoint, locked for its status change (two approvals can't race)."""
+    return (
+        await session.execute(
+            select(Checkpoint).where(Checkpoint.id == checkpoint_id).with_for_update()
+        )
+    ).scalar_one_or_none()
+
+
+async def lock_proposed_for(
+    session: AsyncSession, proposal_id: UUID, checkpoint_id: UUID | None
+) -> Sequence[Checkpoint]:
+    """The proposed checkpoints a proposal decides: those naming it, or the one it names; locked
+    (LIST_EXEMPT: one proposal's, read inside its decision's unit of work)."""
+    match = Checkpoint.proposal_id == proposal_id
+    if checkpoint_id is not None:
+        match = or_(match, Checkpoint.id == checkpoint_id)
+    return (
+        (
+            await session.execute(
+                select(Checkpoint)
+                .where(match, Checkpoint.status == "proposed")
+                .order_by(Checkpoint.seq)
+                .with_for_update()
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def next_checkpoint_seq(session: AsyncSession, target_type: str, target_id: UUID) -> int:
+    """One more than the target's last checkpoint (the caller holds `lock_target`)."""
+    found = (
+        await session.execute(
+            select(func.max(Checkpoint.seq)).where(
+                Checkpoint.target_type == target_type, Checkpoint.target_id == target_id
+            )
+        )
+    ).scalar_one_or_none()
+    return int(found or 0) + 1
+
+
+async def insert_checkpoint(session: AsyncSession, **values: object) -> UUID:
+    return (
+        await session.execute(insert(Checkpoint).values(**values).returning(Checkpoint.id))
+    ).scalar_one()
+
+
+async def set_checkpoint(session: AsyncSession, checkpoint_id: UUID, **values: object) -> None:
+    """Only `name`, `starred` and `status` (the column grant refuses anything else)."""
+    await session.execute(
+        update(Checkpoint).where(Checkpoint.id == checkpoint_id).values(**values)
+    )
+
+
+async def insert_checkpoint_diffs(
+    session: AsyncSession, rows: Sequence[Mapping[str, object]]
+) -> None:
+    if rows:
+        await session.execute(insert(CheckpointDiff), list(rows))
+
+
+async def checkpoint_diffs_of(
+    session: AsyncSession, checkpoint_ids: Sequence[UUID]
+) -> Sequence[CheckpointDiff]:
+    """LIST_EXEMPT: the diffs of checkpoints read after authorising on their engagement."""
+    if not checkpoint_ids:
+        return []
+    return (
+        (
+            await session.execute(
+                select(CheckpointDiff)
+                .where(CheckpointDiff.checkpoint_id.in_(checkpoint_ids))
+                .order_by(CheckpointDiff.created_at, CheckpointDiff.field_key)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def insert_checkpoint_decision(session: AsyncSession, **values: object) -> UUID:
+    return (
+        await session.execute(
+            insert(CheckpointDecision).values(**values).returning(CheckpointDecision.id)
+        )
+    ).scalar_one()
+
+
+async def checkpoint_decisions_of(
+    session: AsyncSession, checkpoint_ids: Sequence[UUID]
+) -> Sequence[CheckpointDecision]:
+    """LIST_EXEMPT: the decisions of checkpoints read after authorising on their engagement."""
+    if not checkpoint_ids:
+        return []
+    return (
+        (
+            await session.execute(
+                select(CheckpointDecision)
+                .where(CheckpointDecision.checkpoint_id.in_(checkpoint_ids))
+                .order_by(CheckpointDecision.created_at, CheckpointDecision.id)
+            )
+        )
+        .scalars()
+        .all()
+    )

@@ -143,6 +143,21 @@ def _ctx() -> AuthContext:
     )
 
 
+# Live with the flag on (no longer 501): P-04-T32 serves the checkpoints
+# (tests/integration/backfill/test_p04t32_checkpoints.py; DEC-804).
+LIVE = frozenset(
+    {
+        "checkpoint_history_route",
+        "checkpoint_route",
+        "checkpoint_create_route",
+        "checkpoint_approve_route",
+        "checkpoint_reject_route",
+        "checkpoint_restore_route",
+        "checkpoint_rename_route",
+    }
+)
+
+
 @pytest.mark.parametrize("endpoint", _ENDPOINTS, ids=[e.__name__ for e in _ENDPOINTS])
 async def test_c3_part3_flag_off_is_404_and_flag_on_is_501(
     endpoint: Callable[..., Awaitable[object]], monkeypatch: pytest.MonkeyPatch
@@ -163,6 +178,8 @@ async def test_c3_part3_flag_off_is_404_and_flag_on_is_501(
     with pytest.raises(NotFound):
         await endpoint(**args)
     assert seen == [REVIEW_GRAMMAR_API]
+    if endpoint.__name__ in LIVE:
+        return  # served with the flag on; its integration tests cover the answers
     monkeypatch.setattr(c3, "flag_enabled", on)
     with pytest.raises(NotImplementedYet):
         await endpoint(**args)
@@ -189,8 +206,9 @@ def test_c3_part3_reads_are_firm_roles_only(action: str) -> None:
 
 
 def test_c3_part3_the_agent_only_proposes_a_checkpoint() -> None:
-    """`checkpoint.propose` has no route and is the agent's only part 3 cell (§5)."""
-    assert RULES["checkpoint.propose"].decisions == {"agent": "task_scope"}
+    """`checkpoint.propose` has no route and is the agent's only part 3 cell (§5); the system
+    proposes an engine import's checkpoint (P-04-T32, DEC-804)."""
+    assert RULES["checkpoint.propose"].decisions == {"system": "allow", "agent": "task_scope"}
     assert "checkpoint.propose" not in set(ROUTES.values())
     agent_cells = {
         a

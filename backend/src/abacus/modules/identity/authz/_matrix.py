@@ -298,6 +298,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "deny",
     },
     "checkpoint.propose": {
+        "system": "allow",
         "agent": "task_scope",
     },
     "checkpoint.read": {
