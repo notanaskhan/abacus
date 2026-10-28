@@ -44,8 +44,10 @@ def test_ac14_the_worker_hosts_connections_and_agents() -> None:
     assert tuple(m.__name__.split(".")[2] for m in worker_main.MODULES) == (
         "agents",
         "assurance",  # A-01-T05: a computed gate's `gate.met` derives the phase it opens
+        "audit_trail",  # G-02 (S12 lanes): audit exports and the label index
         "communications",  # SPEC-015: invitation emails
         "connections",
+        "engagements",  # P-07-T52: the bulk import's workflow and daily erase (no subscriptions)
         "evidence",  # SPEC-029 (TASK-054): upload processing
         "fieldwork",  # SPEC-037 (TASK-083): procedure selection
         "identity",  # P-08-T17: access changes end portal sessions and trusted devices
@@ -126,6 +128,10 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         # Q-02-T43: an approved firm export starts its build; an expired one's segments go.
         "firm_export.approved",
         "firm_export.expired",
+        # S12 lanes: a firm export schedule's starter, an audit-log export and a WISP pack build.
+        "firm_export_schedule.changed",
+        "audit_export.requested",
+        "wisp_pack.requested",
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert (

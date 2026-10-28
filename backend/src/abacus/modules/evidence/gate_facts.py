@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import distinct_on
 
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.modules.evidence.models import InboxFile, ReviewDecision
+from abacus.modules.evidence.models import InboxFile, ReviewAssignment, ReviewDecision
 
 
 async def decided_among(tenant: TenantContext, version_ids: Sequence[UUID]) -> frozenset[UUID]:
@@ -59,4 +59,21 @@ async def waiting_among(tenant: TenantContext, inbox_file_ids: Sequence[UUID]) -
         return frozenset(rows.scalars().all())
 
 
-__all__ = ["decided_among", "effective_decisions", "waiting_among"]
+async def review_assignees(
+    tenant: TenantContext, version_ids: Sequence[UUID]
+) -> dict[UUID, UUID | None]:
+    """I-01-T08: who took each version for review (SPEC-004 Q3); a version nobody took is
+    absent, one released is None."""
+    ids = list(dict.fromkeys(version_ids))
+    if not ids:
+        return {}
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            select(ReviewAssignment.evidence_version_id, ReviewAssignment.assignee_user_id).where(
+                ReviewAssignment.evidence_version_id.in_(ids)
+            )
+        )
+        return dict(rows.tuples().all())
+
+
+__all__ = ["decided_among", "effective_decisions", "review_assignees", "waiting_among"]

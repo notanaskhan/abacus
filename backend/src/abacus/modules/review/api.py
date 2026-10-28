@@ -8,6 +8,7 @@ from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.engagements.api import register_gate_provider
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.review.audit_targets import AUDIT_KINDS, audit_owners
+from abacus.modules.review.card_reassign import register_card_reassign
 from abacus.modules.review.contract import (
     checkpoints_router,
     decision_cards_router,
@@ -114,6 +115,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 # SPEC-313 (TASK-331): G5, review complete, is the review module's.
 register_gate_provider("G5", review_gate)
 register_engagement_gates()  # P-07-T47 (C13): acceptance, independence and EQR gates
+register_card_reassign()  # I-01-T07: a decision card awaiting its role moves to another holder
 register_engagement_owners(AUDIT_KINDS, audit_owners)  # ED-112: `sign_off.went_stale`
 # P-04-T26 (C16): what a card, note or sign-off says now, for the drawer's facts and Approvals.
 register_notification_states()
@@ -123,6 +125,16 @@ register_notification_states()
 SUBSCRIPTIONS = dict(GATE_SUBSCRIPTIONS) | dict(STALE_SUBSCRIPTIONS)
 WORKFLOWS: dict[type, str] = {}
 ACTIVITIES: tuple[object, ...] = ()
+
+# I-01-T07: owners resolve their gates' presentation facts and register how a gate moves.
+from abacus.modules.review.gate_actions import (  # noqa: E402
+    Candidate,
+    GateFacts,
+    ProposedBy,
+    ReassignHook,
+    register_gate_presenter,
+    register_reassign_hook,
+)
 
 __all__ = [
     "ACTIVITIES",
@@ -134,6 +146,7 @@ __all__ = [
     "SUBSCRIPTIONS",
     "WORKFLOWS",
     "AlreadySigned",
+    "Candidate",
     "CardContext",
     "CardFactor",
     "CardOption",
@@ -144,6 +157,7 @@ __all__ = [
     "DecisionKind",
     "FieldOwner",
     "FieldValueInvalid",
+    "GateFacts",
     "GateSource",
     "Incomplete",
     "IndependencePending",
@@ -157,8 +171,10 @@ __all__ = [
     "OpenGate",
     "OpenReviewNotes",
     "PreparerCannotReview",
+    "ProposedBy",
     "RationaleRequired",
     "Reassessment",
+    "ReassignHook",
     "RecommendationChanged",
     "Reviewable",
     "ReviewableFacts",
@@ -188,7 +204,9 @@ __all__ = [
     "register_field_owner",
     "register_fix_runner",
     "register_gate_kind",
+    "register_gate_presenter",
     "register_gate_source",
+    "register_reassign_hook",
     "register_reviewable",
     "register_reviewable_facts",
     "register_suggestion_owner",

@@ -17,6 +17,7 @@ import json
 import uuid
 import zipfile
 from collections.abc import AsyncIterator, Iterator, Sequence
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import cast
@@ -68,8 +69,12 @@ def raw(s3_settings: dict[str, str]) -> Iterator[S3Client]:
         secret_key=s3_settings["secret_key"],
         region=s3_settings["region"],
     )
-    client.create_bucket(Bucket=EVIDENCE, ObjectLockEnabledForBucket=True)
-    client.create_bucket(Bucket=EXPORTS)
+    # Module-scoped, and other suites reuse this fixture: a bucket already made this session is
+    # kept (the S3 container is the session's).
+    with suppress(client.exceptions.BucketAlreadyOwnedByYou):
+        client.create_bucket(Bucket=EVIDENCE, ObjectLockEnabledForBucket=True)
+    with suppress(client.exceptions.BucketAlreadyOwnedByYou):
+        client.create_bucket(Bucket=EXPORTS)
     yield client
 
 

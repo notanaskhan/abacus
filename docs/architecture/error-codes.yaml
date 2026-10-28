@@ -211,6 +211,21 @@ codes:
     raised_by:
     - abacus.modules.platform.service.BudgetInvalid
     summary: Soft must be positive and at most hard; hard at most the plan's limit (Q3).
+  candidate_not_eligible:
+    status: 422
+    raised_by:
+    - abacus.modules.review.gate_actions.CandidateNotEligible
+    summary: The person can't take this gate (not a holder of its role, or walled off).
+  checklist_changed:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.lifecycle.ChecklistChanged
+    summary: 'The checklist is not the one you approved: review it again.'
+  checklist_unmet:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.lifecycle.ChecklistUnmet
+    summary: An approval checklist item is not met (`facts.item`).
   citation_required:
     status: 422
     raised_by:
@@ -412,6 +427,11 @@ codes:
     - abacus.modules.evidence.exports.ExportEffectStarted
     - abacus.modules.requests.binders.EffectStarted
     summary: 'The publish''s delivery has started (its grant was consumed): it can no longer be undone.'
+  effective_from_too_early:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.lifecycle.EffectiveTooEarly
+    summary: A version takes effect after the one it supersedes began.
   empty_comment:
     status: 422
     raised_by:
@@ -578,6 +598,16 @@ codes:
     raised_by:
     - abacus.modules.agents.follow_up_drafts.FollowUpV2Only
     summary: 'This follow-up was drafted from a binder: send it from the binder''s follow-up sheet.'
+  gate_not_open:
+    status: 409
+    raised_by:
+    - abacus.modules.review.gate_actions.GateNotOpen
+    summary: 'The gate is done or voided: nothing to snooze or move.'
+  gate_overdue:
+    status: 409
+    raised_by:
+    - abacus.modules.review.gate_actions.GateOverdue
+    summary: An overdue gate is never snoozed.
   gate_unmet:
     status: 409
     raised_by:
@@ -641,6 +671,22 @@ codes:
     - abacus.modules.engagements.transitions.IllegalTransition
     - abacus.modules.organisations.live.IllegalTransition
     summary: The engagement cannot move from its state to the one asked for (DEC-39).
+  import_already_run:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.client_import.ImportAlreadyRun
+    summary: 'The import ran: its rows are final.'
+  import_file_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.engagements.client_import.ImportFileRefused
+    summary: The file isn't a client list the import can read (`facts.reason`).
+  import_row_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.engagements.client_import.ImportRowInvalid
+    summary: The row can't take this decision (a merge with nothing to merge into, a target with another
+      decision, keep both without a match).
   inbox_file_gone:
     status: 409
     raised_by:
@@ -827,6 +873,7 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.portal.branding.LogoUnreadable
+    - abacus.modules.portal.settings.LogoTooLarge
     summary: The logo isn't a PNG or JPEG this server can decode, or is too large.
   mapping_invalid:
     status: 422
@@ -877,6 +924,11 @@ codes:
     - abacus.modules.connections.connect.NoLiveConnection
     - abacus.modules.connections.service.NoConnection
     summary: The engagement's client entity has no active connection.
+  no_draft:
+    status: 409
+    raised_by:
+    - abacus.modules.portal.settings.NothingToPublish
+    summary: There is no draft to publish.
   no_failed_sync:
     status: 409
     raised_by:
@@ -947,6 +999,11 @@ codes:
     raised_by:
     - abacus.modules.review.service.NotPrepared
     summary: L2 and above need a current preparer sign-off.
+  not_reassignable:
+    status: 409
+    raised_by:
+    - abacus.modules.review.gate_actions.NotReassignable
+    summary: The gate's owner registered no way to move it to someone else.
   not_self:
     status: 409
     raised_by:
@@ -1204,6 +1261,12 @@ codes:
     raised_by:
     - abacus.modules.identity.walls.RelationshipPartner
     summary: 'The person leads the client''s relationship: reassign it first (AC8.3).'
+  release_date_before_period_end:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.release.ReleaseDateBeforePeriodEnd
+    summary: 'The release date is on or before the engagement''s fiscal period end: a report on a period
+      is released after it closes (DEC-598).'
   release_date_future:
     status: 422
     raised_by:
@@ -1406,6 +1469,16 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.ledger.trial_balances.SnapshotEntityMismatch
+  snooze_in_past:
+    status: 422
+    raised_by:
+    - abacus.modules.review.gate_actions.SnoozeInPast
+    summary: A snooze ends after now.
+  snooze_past_due:
+    status: 422
+    raised_by:
+    - abacus.modules.review.gate_actions.SnoozePastDue
+    summary: A snooze ends no later than the gate's due date (and within 30 days).
   sso_exempt_needs_hardware_key:
     status: 409
     raised_by:
@@ -1449,9 +1522,12 @@ codes:
     - abacus.modules.identity.security_policies.StalePolicy
     - abacus.modules.identity.service_lines.StalePolicy
     - abacus.modules.identity.settings_registry.StaleSection
+    - abacus.modules.methodology.lifecycle.VersionStale
     - abacus.modules.organisations.live.StaleVersion
     - abacus.modules.organisations.org_structure.StaleOrgStructure
     - abacus.modules.platform.safeguards.SafeguardsStale
+    - abacus.modules.portal.settings.SettingsStale
+    - abacus.modules.review.gate_actions.GateStaleVersion
     summary: 'The record changed since it was read: read it again (409).'
   statement_already_approved:
     status: 409
@@ -1486,6 +1562,11 @@ codes:
     - abacus.modules.identity.governance_errors.SupersededByAiPolicy
     summary: 'The firm is on the versioned AI policy (`ai_policy.v1`): the autonomy level is changed
       by publishing a policy version, not by `PUT /v1/firm/autonomy` (ADR-186 item 7).'
+  support_contact_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.portal.settings.SupportContactInvalid
+    summary: The support contact must be an active staff member of the firm.
   support_requests_disabled:
     status: 409
     raised_by:
@@ -1675,6 +1756,12 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.evidence.uploads.UploadTypeNotAllowed
+  version_frozen:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.lifecycle.VersionFrozen
+    summary: The version is not in a status this step takes (a draft is submitted; a version in review
+      is approved).
   version_not_latest:
     status: 409
     raised_by:

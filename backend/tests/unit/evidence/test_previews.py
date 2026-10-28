@@ -76,6 +76,9 @@ def test_ac12_an_image_is_re_encoded_smaller_without_its_metadata() -> None:
 
 def test_ac12_a_decompression_bomb_is_refused(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(previews, "MAX_PIXELS", 1000)
+    # `render` writes the limit into Pillow's global; undo that too, or every later image this
+    # process opens is refused as a bomb (mutmut runs tests in its own order).
+    monkeypatch.setattr(Image, "MAX_IMAGE_PIXELS", Image.MAX_IMAGE_PIXELS)
     image = Image.new("RGB", (100, 100))
     out = io.BytesIO()
     image.save(out, format="PNG")

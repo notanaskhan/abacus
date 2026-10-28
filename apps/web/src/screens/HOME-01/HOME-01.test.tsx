@@ -4,7 +4,7 @@
 // in this lane, recorded in TASK-1428).
 import { client } from "@abacus/api-client/client";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import {
   type FixtureHandler,
@@ -12,6 +12,7 @@ import {
   installFixtureMode,
 } from "../../app-core/fixture-mode";
 import { homeSegmentOptions } from "../../domain/home";
+import { RUNNING_POLL_MS } from "../../domain/home/queries";
 import { newQueryClient } from "../../testing/support";
 import { HOME01 } from ".";
 import { type Home01State, OFFICE, STATES, scenarios } from "./scenarios";
@@ -236,10 +237,30 @@ describe("HOME-01 role states and interactions", () => {
     expect(single).toEqual(["5 Prepared", "4 In review", "3 Issues", "2 Ready"]);
   });
 
-  it("tile-popover: the tiles carry by_office from the same response (the popover is I-01-T11's)", async () => {
+  it("tile-popover: a tile's by-office popover opens by keyboard and lists the offices (I-01-T11)", async () => {
     show("tile-popover");
     await settled();
-    expect(screen.getAllByRole("region").length).toBeGreaterThan(0);
+    const [tile] = await screen.findAllByRole("button", { name: /by office$/u });
+    expect(tile).toBeDefined();
+    if (tile === undefined) return;
+    // A native button: Enter and Space activate it, so the keyboard opens it as a click does.
+    expect(tile.tagName).toBe("BUTTON");
+    tile.focus();
+    expect(document.activeElement).toBe(tile);
+    fireEvent.click(tile);
+    const pop = await screen.findByRole("dialog");
+    expect(within(pop).getAllByRole("listitem").length).toBe(3);
+    fireEvent.keyDown(pop, { key: "Escape" });
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+  });
+
+  it("a: the running pill reads the home read's running count (polled every 30 s, I-01-T11)", async () => {
+    show("a");
+    await settled();
+    expect(document.querySelector("[data-dashboard='running']")?.textContent).toMatch(/running/u);
+    expect(RUNNING_POLL_MS).toBe(30_000);
   });
 
   it("today-brief-off: no Open Today after the date; a has it", async () => {

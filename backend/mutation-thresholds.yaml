@@ -7,19 +7,20 @@
 # and in mutation-floors.yml against the pull request's base). Raising a floor or adding a scope
 # is a normal change; AY approves (Q-03 §6.2).
 #
-# Every scope starts at 0 until T051 measures the baselines in S11 (Fri Apr 2, 2027) and sets each
-# floor at its baseline; M8 targets 85 for identity/authz and the compute packages, 75 for the
-# others (Q-03-T051). Scope names are abacus_tools.quality.mutation's SCOPES.
+# Q-03-T051 (DEC-584): each floor is the scope's baseline from the weekly run of 2026-10-28
+# (mutation-weekly run 40625075584), rounded down. `compute` stays 0: no `*/compute/` package
+# exists yet, so no mutant ran. M8 targets 85 for identity/authz and the compute packages, 75 for
+# the others. Scope names are abacus_tools.quality.mutation's SCOPES.
 #
 # Format (the hook parses it without PyYAML): `floors:` then one `  <scope>: <integer 0-100>` per
 # line; comments and blank lines anywhere.
 schema: 1
 floors:
-  identity/authz: 0
-  kernel/db: 0
-  kernel/uow: 0
-  kernel/crypto: 0
-  evidence: 0
-  ai_gateway: 0
-  audit_trail: 0
+  identity/authz: 62
+  kernel/db: 13
+  kernel/uow: 2
+  kernel/crypto: 53
+  evidence: 22
+  ai_gateway: 20
+  audit_trail: 14
   compute: 0

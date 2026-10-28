@@ -30,7 +30,7 @@ from sqlalchemy import text
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict
-from abacus.kernel.uow import Ref, Target, uow
+from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.identity.api import AuthContext, Resource, authorise
 
 Mode = Literal["draft_for_person", "send_on_schedule"]
@@ -203,43 +203,52 @@ def _values(policy: FollowUpPolicy) -> dict[str, object]:
 async def save_follow_up_policy(
     ctx: AuthContext, policy: FollowUpPolicy, expected_version: int
 ) -> FollowUpPolicy:
-    """Write the firm's policy (R-01-T26's portal-settings publish). 409 on a stale version."""
+    """Write the firm's policy. 409 on a stale version."""
     await authorise(ctx, "portal_settings.manage", Resource.firm(ctx.tenant_id))
     async with uow(ctx.tenant) as tx:
-        have = await tx.session.scalar(text("SELECT version FROM follow_up_policies FOR UPDATE"))
-        current = int(have) if have is not None else 0
-        if expected_version != current:
-            raise FollowUpPolicyStale(facts={"version": current})
-        values = {**_values(policy), "tenant": ctx.tenant_id, "by": ctx.user_id}
-        if have is None:
-            await tx.session.execute(
-                text(
-                    "INSERT INTO follow_up_policies (tenant_id, cadence_days, max_reminders, "
-                    "send_local_time, weekdays_only, stop_on_binder_done, "
-                    "notify_preparer_after_max, cc_assigned_preparer, mode, updated_by) VALUES "
-                    "(:tenant, :cadence_days, :max_reminders, :send_local_time, :weekdays_only, "
-                    ":stop_on_binder_done, :notify_preparer_after_max, :cc_assigned_preparer, "
-                    ":mode, :by)"
-                ),
-                values,
-            )
-        else:
-            await tx.session.execute(
-                text(
-                    "UPDATE follow_up_policies SET cadence_days = :cadence_days, "
-                    "max_reminders = :max_reminders, send_local_time = :send_local_time, "
-                    "weekdays_only = :weekdays_only, stop_on_binder_done = :stop_on_binder_done, "
-                    "notify_preparer_after_max = :notify_preparer_after_max, "
-                    "cc_assigned_preparer = :cc_assigned_preparer, mode = :mode, "
-                    "version = version + 1, updated_by = :by, updated_at = clock_timestamp() "
-                    "WHERE tenant_id = :tenant"
-                ),
-                values,
-            )
-        tx.record(
-            "follow_up_policy.saved",
-            target=Target("follow_up_policy", ctx.tenant_id),
-            before=Ref(version=current) if current else None,
-            after=Ref(version=current + 1),
+        return await write_follow_up_policy(tx, ctx, policy, expected_version)
+
+
+async def write_follow_up_policy(
+    tx: UnitOfWork, ctx: AuthContext, policy: FollowUpPolicy, expected_version: int | None
+) -> FollowUpPolicy:
+    """Inside the caller's unit of work, after it authorised `portal_settings.manage` (R-01-T26's
+    publish applies the policy with the brand in one unit of work). `expected_version` None takes
+    whatever version stands (the publish holds the draft that named it)."""
+    have = await tx.session.scalar(text("SELECT version FROM follow_up_policies FOR UPDATE"))
+    current = int(have) if have is not None else 0
+    if expected_version is not None and expected_version != current:
+        raise FollowUpPolicyStale(facts={"version": current})
+    values = {**_values(policy), "tenant": ctx.tenant_id, "by": ctx.user_id}
+    if have is None:
+        await tx.session.execute(
+            text(
+                "INSERT INTO follow_up_policies (tenant_id, cadence_days, max_reminders, "
+                "send_local_time, weekdays_only, stop_on_binder_done, "
+                "notify_preparer_after_max, cc_assigned_preparer, mode, updated_by) VALUES "
+                "(:tenant, :cadence_days, :max_reminders, :send_local_time, :weekdays_only, "
+                ":stop_on_binder_done, :notify_preparer_after_max, :cc_assigned_preparer, "
+                ":mode, :by)"
+            ),
+            values,
         )
+    else:
+        await tx.session.execute(
+            text(
+                "UPDATE follow_up_policies SET cadence_days = :cadence_days, "
+                "max_reminders = :max_reminders, send_local_time = :send_local_time, "
+                "weekdays_only = :weekdays_only, stop_on_binder_done = :stop_on_binder_done, "
+                "notify_preparer_after_max = :notify_preparer_after_max, "
+                "cc_assigned_preparer = :cc_assigned_preparer, mode = :mode, "
+                "version = version + 1, updated_by = :by, updated_at = clock_timestamp() "
+                "WHERE tenant_id = :tenant"
+            ),
+            values,
+        )
+    tx.record(
+        "follow_up_policy.saved",
+        target=Target("follow_up_policy", ctx.tenant_id),
+        before=Ref(version=current) if current else None,
+        after=Ref(version=current + 1),
+    )
     return replace(policy, version=current + 1)
