@@ -8389,7 +8389,8 @@ export const drawerQueryKey = (options: Options<DrawerData>) => createQueryKey('
 /**
  * Drawer Route
  *
- * FIL-01 O2 drawer (N-01-T19).
+ * FIL-01 O2 drawer (N-01-T19). It carries a masked TIN, masked again for an offshore reader
+ * (review 6).
  */
 export const drawerOptions = (options: Options<DrawerData>) => queryOptions<DrawerResponse, DrawerError, DrawerResponse, ReturnType<typeof drawerQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -11759,7 +11760,8 @@ export const messageTriageQueryKey = (options: Options<MessageTriageData>) => cr
 /**
  * Message Triage Route
  *
- * INB-02's cards (N-01-T18).
+ * INB-02's cards (N-01-T18). A card's classification carries a masked TIN, masked again for
+ * an offshore reader (review 6).
  */
 export const messageTriageOptions = (options: Options<MessageTriageData>) => queryOptions<MessageTriageResponse, MessageTriageError, MessageTriageResponse, ReturnType<typeof messageTriageQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

@@ -15,6 +15,8 @@ import type {
   EngagementStatus,
   EvidenceUnlockOut,
   Facet,
+  ListPageAccessLogRow,
+  ListPageAuditEventRow,
   ListPageActivityEventOut,
   ListPageBinderRequestRowOut,
   ListPageBinderRowOut,
@@ -23,9 +25,13 @@ import type {
   ListPageClientRelationshipOut,
   ListPageClientRowOut,
   ListPageDecisionCardItemOut,
+  ListPageEnvelopeListRow,
   ListPageHumanGateOut,
+  ListPageInboxThreadRow,
+  ListPageIntakeUploadOut,
   ListPageIssueItemOut,
   ListPageKnowledgeItemOut,
+  ListPagePortalEnvelopeRow,
   ListPageReviewNoteItemOut,
   ListPageReviewQueueItemOut,
   ListPageWallEventOut,
@@ -97,7 +103,9 @@ function envelope<T>(page: ListPageShape<T>): ListEnvelope<T> {
 // Every generated list page adapts. A page that drops `items` or `total`, renames `next_cursor`,
 // or changes `counts` or a facet's `{value, label, n}` stops compiling here.
 const LIST_PAGES = {
+  ListPage_AccessLogRow_: (p: ListPageAccessLogRow) => envelope(p), // N-01: FIL-01 access log
   ListPage_ActivityEventOut_: (p: ListPageActivityEventOut) => envelope(p),
+  ListPage_AuditEventRow_: (p: ListPageAuditEventRow) => envelope(p), // P-07-T57: Activity
   ListPage_BinderRequestRowOut_: (p: ListPageBinderRequestRowOut) => envelope(p),
   ListPage_BinderRowOut_: (p: ListPageBinderRowOut) => envelope(p),
   ListPage_ChangeLogEntryOut_: (p: ListPageChangeLogEntryOut) => envelope(p), // K-01: KNW-01
@@ -105,9 +113,13 @@ const LIST_PAGES = {
   ListPage_ClientRelationshipOut_: (p: ListPageClientRelationshipOut) => envelope(p),
   ListPage_ClientRowOut_: (p: ListPageClientRowOut) => envelope(p),
   ListPage_DecisionCardItemOut_: (p: ListPageDecisionCardItemOut) => envelope(p),
+  ListPage_EnvelopeListRow_: (p: ListPageEnvelopeListRow) => envelope(p), // N-02: SIG-01
   ListPage_HumanGateOut_: (p: ListPageHumanGateOut) => envelope(p),
+  ListPage_InboxThreadRow_: (p: ListPageInboxThreadRow) => envelope(p), // N-01: INB-01
+  ListPage_IntakeUploadOut_: (p: ListPageIntakeUploadOut) => envelope(p), // N-01: POR-03
   ListPage_IssueItemOut_: (p: ListPageIssueItemOut) => envelope(p),
   ListPage_KnowledgeItemOut_: (p: ListPageKnowledgeItemOut) => envelope(p), // K-01: KNW-01
+  ListPage_PortalEnvelopeRow_: (p: ListPagePortalEnvelopeRow) => envelope(p), // N-02: POR-06
   ListPage_ReviewNoteItemOut_: (p: ListPageReviewNoteItemOut) => envelope(p),
   ListPage_ReviewQueueItemOut_: (p: ListPageReviewQueueItemOut) => envelope(p), // K-01: KNW-01
   ListPage_WallEventOut_: (p: ListPageWallEventOut) => envelope(p), // G-01-T02

@@ -108,21 +108,20 @@ def _import(connection: Connection, credentials: Credentials | None) -> Connecto
     return ImportConnector(connection.tenant_id, connection.client_entity_id)
 
 
-_egress: EgressClient | None = None
+_egress: dict[str, EgressClient] = {}
 
 
-def _egress_client() -> EgressClient:
-    """One shared outbound client for live connectors (the kernel's allowlisted reads)."""
-    global _egress
-    if _egress is None:
-        _egress = EgressClient()
-    return _egress
+def _egress_client(connector: str) -> EgressClient:
+    """One outbound client per live connector, held to that connector's own hosts (DEC-582)."""
+    if connector not in _egress:
+        _egress[connector] = EgressClient(connector=connector)
+    return _egress[connector]
 
 
 def qbo_app() -> QboApp | None:
     """The QuickBooks Online app registration, if this environment has one (A-02-T26)."""
     config = settings()
-    if config.qbo_client_id is None or config.qbo_client_secret is None:
+    if config.qbo_client_id is None or not config.qbo_client_secret.get_secret_value():
         return None
     return QboApp(
         config.qbo_client_id, config.qbo_client_secret.get_secret_value(), config.qbo_environment
@@ -154,7 +153,7 @@ def _quickbooks_online(connection: Connection, credentials: Credentials | None) 
     if app is None:
         raise ConnectorError("connector_unavailable")
     return QuickBooksOnlineConnector(
-        app, _egress_client(), credentials, on_rotate=_resealer(connection)
+        app, _egress_client(QBO_PROVIDER), credentials, on_rotate=_resealer(connection)
     )
 
 

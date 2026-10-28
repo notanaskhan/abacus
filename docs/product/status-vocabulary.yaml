@@ -350,7 +350,7 @@ objects:
       processing:   {label: "Processing", variant: null, terminal: false, derived: false}   # FIL-01 b: extraction or classification running
       needs_review: {label: "Uploaded – needs review", variant: amber, terminal: false, derived: false}   # DV-4: filed by someone without evidence.accept
       accepted:     {label: "Approved", variant: null, disc: check_olive, terminal: false, derived: false}   # DV-17: label plus olive disc
-      superseded:   {label: "Superseded", variant: muted, terminal: true, derived: false, context_labels: {replaced_by: "Superseded · Replaced by {name} · {date}"}}   # FIL-01 c: struck through
+      superseded:   {label: "Superseded", variant: muted, terminal: true, derived: false, context_labels: {replaced_by: "Superseded · replaced by {name} · {date}"}}   # FIL-01 c: struck through
       on_hold:      {label: "On hold", variant: amber, terminal: false, derived: false}   # FIL-01 d legal hold banner; destruction suspended
 
   issue:
@@ -749,6 +749,13 @@ objects:
       signed:           {label: "Signed", variant: green, terminal: true, derived: false}
       not_required:     {label: "Not required this year", variant: muted, terminal: true, derived: false}
       superseded:       {label: "Superseded", variant: muted, terminal: true, derived: false}   # an amended or re-sent version; the envelope's superseded marker reads the same
+
+  letter_clause:   # N-02-T03; one clause row of ENG-04's composer (on, off, or required by the template)
+    source: "N-02 section 4.4; ENG-04 b"
+    codes:
+      "on":     {label: "On", variant: null, terminal: false, derived: false}
+      "off":    {label: "Off", variant: muted, terminal: false, derived: false}
+      required: {label: "Required", variant: null, terminal: false, derived: false}   # the template's: cannot be turned off
 
   letter_record:   # the interim recorded engagement letter (PUT /v1/engagements/{id}/letter; G3) until N-02's envelopes
     source: "ENG-01 b; ENG-02 b, c"

@@ -167,6 +167,7 @@ def test_ac2_retrieval_is_interactive() -> None:
     assert {
         connections.RetrievalWorkflow: "interactive",
         connections.GlImportWorkflow: "batch",  # SPEC-034 (TASK-069): large files, in the back
+        connections.ConnectionHealthWorkflow: "background",  # A-02-T25: the daily health pass
     } == connections.WORKFLOWS
     assert work_class_of(connections.RetrievalWorkflow) == "interactive"
 

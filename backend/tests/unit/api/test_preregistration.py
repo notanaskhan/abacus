@@ -20,6 +20,7 @@ from abacus_tools.quality.banned_patterns import MODULE_DEPENDENCIES
 
 NEW = {
     "methodology",
+    "signatures",  # N-02-T03: the C7 envelope routes (stubs behind signatures.envelopes)
     "review",
     "collaboration",
     "workpapers",
@@ -54,6 +55,7 @@ LANDED = {
     "integrations",
     "practice",
     "methodology",
+    "signatures",  # N-02-T03: the C7 envelope routes (stubs behind signatures.envelopes)
 }
 TENANT = TenantContext(uuid.uuid4(), "system", "test")
 

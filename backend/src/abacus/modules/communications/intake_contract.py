@@ -46,7 +46,9 @@ from abacus.modules.identity.api import (
     Resource,
     authorise,
     current_context,
+    mask_tins_for,
 )
+from abacus.modules.organisations.api import MaskedTinOut
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -341,8 +343,8 @@ class ClassificationOut(BaseModel):
     tax_year: Annotated[int | None, classified("internal")]
     issuer_name: Annotated[str | None, classified("confidential")]
     page_count: Annotated[int | None, classified("internal")]
-    taxpayer_tin_last4: Annotated[str | None, classified("confidential")]
-    tin_matches_client: Annotated[bool | None, classified("internal")]
+    taxpayer_tin: Annotated[MaskedTinOut | None, classified("restricted")]  # P-12: last four only
+    taxpayer_matches_client: Annotated[bool | None, classified("internal")]
     proposed_by_kind: Annotated[Literal["rule", "agent"], classified("internal")]
     citation_ids: Annotated[list[UUID], classified("internal")]
 
@@ -492,7 +494,7 @@ class DestinationNode(BaseModel):
     reason_code: Annotated[str | None, classified("internal")]
 
 
-class ViewerManifestOut(BaseModel):
+class IntakeViewerManifestOut(BaseModel):
     """The C4 viewer manifest over an intake object (masked pages only)."""
 
     model_config = ConfigDict(frozen=True)
@@ -603,10 +605,10 @@ async def ignore_thread_route(
 @intake_router.get(
     "/attachments/{attachment_id}/viewer",
     action="inbox.read_content",
-    response_model=ViewerManifestOut,
+    response_model=IntakeViewerManifestOut,
     errors=(501,),
 )
-async def attachment_viewer_route(attachment_id: UUID, ctx: Ctx) -> ViewerManifestOut:
+async def attachment_viewer_route(attachment_id: UUID, ctx: Ctx) -> IntakeViewerManifestOut:
     """SHL-08 over an intake object; masked pages only (N-01-T13)."""
     await _stub(ctx, "inbox.read_content")
 
@@ -640,8 +642,9 @@ async def message_zip_route(message_id: UUID, ctx: Ctx) -> Response:
     errors=(501,),
 )
 async def message_triage_route(message_id: UUID, ctx: Ctx) -> MessageTriageOut:
-    """INB-02's cards (N-01-T18)."""
-    await _stub(ctx, "inbox.triage")
+    """INB-02's cards (N-01-T18). A card's classification carries a masked TIN, masked again for
+    an offshore reader (review 6)."""
+    return await mask_tins_for(ctx, await _stub(ctx, "inbox.triage"))
 
 
 @intake_router.post(

@@ -26,4 +26,4 @@ A read-only view of a client's documents: client › permanent file or year › 
 A client principal answers 404 (portal Files is not in MVP-1), then the action (403), then the flag (404), then 501. Walls answer 404; no count includes a hidden item.
 
 ## 3. Shapes
-`backend/src/abacus/modules/evidence/files_contract.py`: `FileTreeOut`/`TreeNode`, `FolderItemsOut` (list envelope plus `documents`, `virtual`), `FileRow`, `VirtualChild`, `DrawerOut` (`TieOut`, `LinkOut`, `VersionOut`, `RetentionOut`, `SignOffSlotOut`), `AccessLogRow`. Status words: `file_document` in `docs/product/status-vocabulary.yaml`. Totals and ties are computed by code (ADR-050).
+`backend/src/abacus/modules/evidence/files_contract.py`: `FileTreeOut`/`TreeNode`, `FolderItemsOut` (list envelope plus `documents`, `virtual`), `FileRow`, `VirtualChild`, `DrawerOut` (`TieOut`, `LinkOut`, `FileVersionOut`, `RetentionOut`, `SignOffSlotOut`), `AccessLogRow`. Status words: `file_document` in `docs/product/status-vocabulary.yaml`. Totals and ties are computed by code (ADR-050).

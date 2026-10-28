@@ -237,6 +237,7 @@ from abacus.modules.methodology.api import (
     version_detail,
 )
 from abacus.modules.organisations.api import (
+    MaskedTinOut,  # N-01: the masked TIN shape, re-exported for evidence's file drawer
     OverviewSection,
     activate_contact,
     readable_client,  # P-07-T57: re-exported for audit_trail's Activity lines (DEC-718)
@@ -369,6 +370,7 @@ __all__ = [
     "IndependenceRequested",
     "Judgment",
     "JudgmentSource",
+    "MaskedTinOut",
     "MethodologyAlreadyApplied",
     "MethodologyVersionView",
     "NewCondition",

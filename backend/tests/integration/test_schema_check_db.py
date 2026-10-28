@@ -1180,6 +1180,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"status", "last_checked_at", "last_check_ok", "revoked_at", "revoked_by"}
             # 0195 (A-02-T13): who (re)connected, reauth and sync facts, the reason code
             | {"connected_by_user_id", "connected_at", "reauth_due_at", "last_sync_at"}
+            | {"reauth_noticed_for"}  # 0271 (A-02-T25): told once per due date
             | {"status_reason_code"}
             | {"version"}  # 0215 (A-02-T16): bumped on every status change
         ),
@@ -1480,6 +1481,22 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"expected_version", "base_version", "brand", "client_experience"}
             | {"follow_up_policy", "logo", "saved_at", "saved_by"}
         ),
+        # G-02-T23 (0272): the AI policy's one draft per firm, and a version's forward-only state.
+        "autonomy_policy_drafts": frozenset(
+            {
+                "base_version_no",
+                "schema_version",
+                "sections",
+                "updated_at",
+                "updated_by",
+                "version",
+            }
+        ),
+        "autonomy_policy_versions": frozenset(
+            {"decided_at", "decided_by", "decline_reason", "state"}
+        ),
+        # Q-04-T007 (0276): a pilot enrolment's mode and its named confirmer.
+        "pilot_enrolments": frozenset({"confirmed_at", "confirmed_by", "mode", "updated_at"}),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(

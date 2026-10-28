@@ -813,7 +813,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "manager": "allow",
         "client_service": "allow",
         "agent": "allow",
-        "system": "allow",
+        "system": "deny",
     },
     "envelope.evidence_download": {
         "engagement_partner": "allow",

@@ -234,4 +234,4 @@ def test_eng04_letter_words_are_df31() -> None:
         "not_required",
         "superseded",
     }
-    assert "approval_content_hash" in letters.LetterOut.model_fields
+    assert "approval_content_hash" in letters.ComposerLetterOut.model_fields

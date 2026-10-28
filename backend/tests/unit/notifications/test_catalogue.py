@@ -75,6 +75,9 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "incident.deadline_approaching",  # G-02-T18 (days 20, 25, 29: the QI and partners)
         "firm_export.requested",  # Q-02-T43 (C16 `firm_export_approval_requested`, the approver)
         "firm_export.ready",  # Q-02-T43 (C16 `firm_export_ready`, requester and approver)
+        "connection.needs_reauth",  # A-02-T25 (C16 `connection_needs_reauth`, admins and leads)
+        "connection.reauth_due",  # A-02-T25 (`connection_reauth_due`, 7 days ahead)
+        "ai_policy.publish_requested",  # G-02-T24 (`ai_policy_approval_requested`, the approver)
     }
 
 

@@ -267,7 +267,8 @@ class Settings(BaseSettings):
     # the connector and its adapter are not registered (the catalogue row reads Coming soon).
     # `sandbox` reads the Intuit sandbox company host; `production` the live one.
     qbo_client_id: Annotated[str | None, classified("internal")] = None
-    qbo_client_secret: Annotated[SecretStr | None, classified("restricted")] = None
+    # Empty: QuickBooks Online is not configured (the connector refuses to start a connection).
+    qbo_client_secret: Annotated[SecretStr, classified("restricted")] = SecretStr("")
     qbo_environment: Annotated[Literal["sandbox", "production"], classified("internal")] = (
         "sandbox"
     )

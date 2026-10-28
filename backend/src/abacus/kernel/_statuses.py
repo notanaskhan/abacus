@@ -629,6 +629,12 @@ class LetterStatus(StrEnum):
     SUPERSEDED = "superseded"
 
 
+class LetterClauseStatus(StrEnum):
+    ON = "on"
+    OFF = "off"
+    REQUIRED = "required"
+
+
 class LetterRecordStatus(StrEnum):
     NOT_SIGNED = "not_signed"
     SIGNED = "signed"
@@ -1272,6 +1278,11 @@ STORED: dict[str, tuple[str, ...]] = {
         "signed",
         "not_required",
         "superseded",
+    ),
+    "letter_clause": (
+        "on",
+        "off",
+        "required",
     ),
     "letter_record": (
         "not_signed",

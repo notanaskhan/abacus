@@ -264,9 +264,9 @@ def test_a07_n02_folder_kinds_are_the_five_files_folders() -> None:
 def test_p11_flag_facts_are_identifiers_only_and_classifications_mask_the_tin() -> None:
     facts = inbox.AttachmentFlagOut.model_fields["facts"].annotation
     assert typing.get_origin(facts) is dict
-    assert "taxpayer_tin_last4" in inbox.ClassificationOut.model_fields
+    assert "taxpayer_tin" in inbox.ClassificationOut.model_fields
     assert not any(
-        "tin" in f and "last4" not in f and "matches" not in f
+        "tin" in f and f != "taxpayer_tin" and "matches" not in f
         for f in inbox.ClassificationOut.model_fields
     )
 

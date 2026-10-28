@@ -66,7 +66,10 @@ def test_ac50_the_generated_module_matches_the_protected_file() -> None:
     ("before", "after"),
     [
         ('"enabled": False', '"enabled": True'),  # switching a write on by hand
-        ("EGRESS_HOSTS: Final[frozenset[str]] = frozenset()", 'EGRESS_HOSTS = {"evil.example"}'),
+        (
+            "EGRESS_HOSTS: Final[frozenset[str]] = frozenset(",
+            'EGRESS_HOSTS = {"evil.example"} | frozenset(',
+        ),
         ('"shape": "W1"', '"shape": "W3"'),
     ],
 )
@@ -111,15 +114,17 @@ def test_a_source_that_would_enable_or_hide_a_write_does_not_compile(
 
 
 def test_a_read_connector_never_also_writes() -> None:
+    # A-02-T26: QuickBooks Online reads as `quickbooks_online`; the reserved posting write is
+    # `quickbooks_online_poster`. Declaring that writer's key as a reader is refused.
     reader = (
         "read_connectors:\n"
-        "  - adapter_key: quickbooks_online\n"
+        "  - adapter_key: quickbooks_online_poster\n"
         "    category: ledger\n"
         "    egress_hosts: [quickbooks.api.intuit.com]\n"
         "    read_scopes: [ledger.read]\n"
     )
     with pytest.raises(compiler.RegistryInvalid, match="never also writes"):
-        compiler.load(SOURCE.replace("read_connectors: []\n", reader, 1))
+        compiler.load(SOURCE.replace("read_connectors:\n", reader, 1))
 
 
 def test_the_registry_enables_nothing_and_names_each_writes_decision() -> None:
@@ -136,7 +141,7 @@ def test_the_egress_export_is_the_declared_hosts(capsys: pytest.CaptureFixture[s
     assert compiler.main(["--egress"]) == 0
     assert json.loads(capsys.readouterr().out) == sorted(registry().egress_hosts())
     with_reader = SOURCE.replace(
-        "read_connectors: []\n",
+        "read_connectors:\n",
         "read_connectors:\n"
         "  - adapter_key: probe_ledger\n"
         "    category: ledger\n"

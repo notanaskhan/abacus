@@ -5027,7 +5027,8 @@ export const accessLog = <ThrowOnError extends boolean = false>(options: Options
 /**
  * Drawer Route
  *
- * FIL-01 O2 drawer (N-01-T19).
+ * FIL-01 O2 drawer (N-01-T19). It carries a masked TIN, masked again for an offshore reader
+ * (review 6).
  */
 export const drawer = <ThrowOnError extends boolean = false>(options: Options<DrawerData, ThrowOnError>): RequestResult<DrawerResponses, DrawerErrors, ThrowOnError> => (options.client ?? client).get<DrawerResponses, DrawerErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -7052,7 +7053,8 @@ export const messageZip = <ThrowOnError extends boolean = false>(options: Option
 /**
  * Message Triage Route
  *
- * INB-02's cards (N-01-T18).
+ * INB-02's cards (N-01-T18). A card's classification carries a masked TIN, masked again for
+ * an offshore reader (review 6).
  */
 export const messageTriage = <ThrowOnError extends boolean = false>(options: Options<MessageTriageData, ThrowOnError>): RequestResult<MessageTriageResponses, MessageTriageErrors, ThrowOnError> => (options.client ?? client).get<MessageTriageResponses, MessageTriageErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

@@ -66,7 +66,7 @@ class LetterVariable(BaseModel):
     source: Annotated[Literal["facts", "override"], classified("internal")]
 
 
-class LetterOut(BaseModel):
+class ComposerLetterOut(BaseModel):
     """`GET /v1/engagements/{id}/letter/composer`: the ENG-04 projection."""
 
     model_config = ConfigDict(frozen=True)
@@ -123,10 +123,10 @@ letter_router = AbacusRouter(prefix="/v1/engagements", tags=["engagements"])
 @letter_router.get(
     "/{engagement_id}/letter/composer",
     action="letter.read",
-    response_model=LetterOut,
+    response_model=ComposerLetterOut,
     errors=(501,),
 )
-async def get_letter_route(engagement_id: UUID, ctx: Ctx) -> LetterOut:
+async def get_letter_route(engagement_id: UUID, ctx: Ctx) -> ComposerLetterOut:
     """ENG-04 (N-02-T33)."""
     await _stub(ctx, "letter.read")
 
@@ -134,12 +134,12 @@ async def get_letter_route(engagement_id: UUID, ctx: Ctx) -> LetterOut:
 @letter_router.put(
     "/{engagement_id}/letter/composer",
     action="letter.draft",
-    response_model=LetterOut,
+    response_model=ComposerLetterOut,
     errors=(409, 501),
 )
 async def draft_letter_route(
     engagement_id: UUID, body: LetterDraftIn, ctx: Ctx, if_match: IfMatch
-) -> LetterOut:
+) -> ComposerLetterOut:
     """Draft edits; an edit after approval stales it (N-02-T33)."""
     await _stub(ctx, "letter.draft")
 
@@ -168,10 +168,10 @@ async def letter_pdf_route(engagement_id: UUID, ctx: Ctx) -> Response:
 @letter_router.post(
     "/{engagement_id}/letter/request-approval",
     action="letter.draft",
-    response_model=LetterOut,
+    response_model=ComposerLetterOut,
     errors=(409, 501),
 )
-async def request_approval_route(engagement_id: UUID, ctx: Ctx) -> LetterOut:
+async def request_approval_route(engagement_id: UUID, ctx: Ctx) -> ComposerLetterOut:
     """C13 `letter_partner_approval` (N-02-T35)."""
     await _stub(ctx, "letter.draft")
 
@@ -179,10 +179,12 @@ async def request_approval_route(engagement_id: UUID, ctx: Ctx) -> LetterOut:
 @letter_router.post(
     "/{engagement_id}/letter/approve",
     action="letter.approve",
-    response_model=LetterOut,
+    response_model=ComposerLetterOut,
     errors=(409, 501),
 )
-async def approve_letter_route(engagement_id: UUID, ctx: Ctx, if_match: IfMatch) -> LetterOut:
+async def approve_letter_route(
+    engagement_id: UUID, ctx: Ctx, if_match: IfMatch
+) -> ComposerLetterOut:
     """Partner, fresh MFA, against the content hash (N-02-T35)."""
     await _stub(ctx, "letter.approve")
 
@@ -201,10 +203,10 @@ async def send_letter_route(engagement_id: UUID, ctx: Ctx) -> LetterSendOut:
 @letter_router.post(
     "/{engagement_id}/letter/amend",
     action="letter.amend",
-    response_model=LetterOut,
+    response_model=ComposerLetterOut,
     status_code=201,
     errors=(409, 501),
 )
-async def amend_letter_route(engagement_id: UUID, ctx: Ctx) -> LetterOut:
+async def amend_letter_route(engagement_id: UUID, ctx: Ctx) -> ComposerLetterOut:
     """An addendum version (N-02-T37)."""
     await _stub(ctx, "letter.amend")

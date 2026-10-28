@@ -1309,7 +1309,7 @@ export const STATUS_REGISTRY = {
       "terminal": true,
       "derived": false,
       "contextLabels": {
-        "replaced_by": "Superseded · Replaced by {name} · {date}"
+        "replaced_by": "Superseded · replaced by {name} · {date}"
       }
     },
     "on_hold": {
@@ -2735,6 +2735,26 @@ export const STATUS_REGISTRY = {
       "label": "Superseded",
       "variant": "muted",
       "terminal": true,
+      "derived": false
+    }
+  },
+  "letter_clause": {
+    "on": {
+      "label": "On",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "off": {
+      "label": "Off",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "required": {
+      "label": "Required",
+      "variant": null,
+      "terminal": false,
       "derived": false
     }
   },

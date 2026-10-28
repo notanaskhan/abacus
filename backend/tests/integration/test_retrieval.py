@@ -1586,8 +1586,11 @@ async def test_ac20_an_item_past_receipt_takes_no_fulfilment(
 async def test_ac20_evidence_of_another_engagement_cannot_fulfil_the_item(
     seed: Seeder, fulfilling: Fulfilling
 ) -> None:
+    # ADR-158 (DEC-705): reuse by reference is for the same client only, so the other
+    # engagement here belongs to another client.
     world = fulfilling.world
-    other = await seed.engagement(world.tenant_id, world.entity_id, world.requester.user_id)
+    stranger = await seed.entity(world.tenant_id, "Another Client LLC")
+    other = await seed.engagement(world.tenant_id, stranger, world.requester.user_id)
     foreign_version = await seed.evidence_version(world.tenant_id, other)
     with pytest.raises(DBAPIError):
         await _fulfil(_platform(world), world.item_id, foreign_version)

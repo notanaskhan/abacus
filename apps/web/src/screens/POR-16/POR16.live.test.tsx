@@ -42,7 +42,8 @@ describe("POR-16 live wiring", () => {
     const qbo = await screen.findByRole("listitem", { name: "QuickBooks Online" });
     fireEvent.click(within(qbo).getByRole("button", { name: "Export instead" }));
     expect(onExportInstead).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getAllByRole("button", { name: "Home" })[0] as HTMLElement);
+    // The pane's back chip, after the portal nav's own "Home".
+    fireEvent.click(screen.getAllByRole("button", { name: "Home" }).at(-1) as HTMLElement);
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 

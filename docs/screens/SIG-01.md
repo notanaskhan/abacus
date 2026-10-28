@@ -45,3 +45,10 @@ Non-artboard: walled (no row, no count, 404 on id); metadata-only firm admin out
 
 ## Links
 Inbound: SHL-01 nav, HOME-01 `signatures_out` tile, TAX-12, AUD-21, NOT-03. Outbound: SIG-02 (drafts), SHL-08 (documents), FIL-01 (signed copies), ENG-04.
+| Opens SIG-02 · envelope builder (designed link, handoff link graph) | SIG-02 | as the target's manifest status |
+| Opens INB-03 with the firm reminder template (designed link, handoff link graph) | INB-03 | as the target's manifest status |
+| Opens TAX-02 · return overview (designed link, handoff link graph) | TAX-02 | as the target's manifest status |
+| Opens ENG-02 · engagement record (designed link, handoff link graph) | ENG-02 | as the target's manifest status |
+| Opens AUD-02 · audit cockpit (designed link, handoff link graph) | AUD-02 | as the target's manifest status |
+| Opens NOT-02 · notice workspace (designed link, handoff link graph) | NOT-02 | as the target's manifest status |
+

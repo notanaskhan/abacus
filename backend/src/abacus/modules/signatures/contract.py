@@ -688,7 +688,7 @@ class ProgressIn(BaseModel):
     last_page_seen: Annotated[int, Field(ge=1, le=2000), classified("internal")]
 
 
-class DeclineIn(BaseModel):
+class SignerDeclineIn(BaseModel):
     """Decline with a reason."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -807,7 +807,7 @@ async def portal_signing_return_route(
     errors=(409, 501),
 )
 async def portal_decline_route(
-    envelope_id: EnvelopeId, body: DeclineIn, ctx: Member
+    envelope_id: EnvelopeId, body: SignerDeclineIn, ctx: Member
 ) -> PortalEnvelopeView:
     """Decline with a reason (N-02-T28)."""
     await _portal_stub(ctx)

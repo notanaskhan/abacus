@@ -142,9 +142,10 @@ def _ctx() -> AuthContext:
 # eligibility and sign-off (tests/integration/test_p04t18_sign_off_service.py); P-04-T21 the
 # notes, T22 bulk sign-off and T23 decision cards (tests/integration/test_p04t2[123]_*.py);
 # P-04-T24 proposals and suggestions and T25 the typed adapters (test_p04t24_proposals.py,
-# backfill/test_p04t25_proposal_adapters.py). Undo stays 501 until P-04-T29.
+# backfill/test_p04t25_proposal_adapters.py); P-04-T29 Undo (backfill/test_p04t29_proposal_undo.py).
 LIVE = frozenset(
     {
+        "proposal_undo_route",  # P-04-T29 (DEC-713)
         "human_gate_list_route",
         "human_gate_counts_route",  # I-01-T04
         # I-01-T07: the list's filters and the gate acts.

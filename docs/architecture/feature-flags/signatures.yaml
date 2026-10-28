@@ -8,7 +8,8 @@ flags:
     description: 'SIG-01, record-mode import and the portal envelope reads (N-02; C7 v1; docs/contracts/c7-envelopes.md; ADR-149): /v1/envelopes*, /v1/envelope-policies, /v1/portal/envelopes* and the ENG-04 composer routes until engagements.letter_composer exists. Off: 404; SIG-01 and POR-06 render their flag-off states. On: 501 not_implemented until N-02-T08 (import) and T11-T15 (hub). Provider sends stay behind signatures.docusign.'
     owner: ayushkbhatia
     created: 2026-10-27
-    expires: 2027-01-25
+    expires: 2027-04-21
+    override: DEC-137
     override: DEC-137
     kind: boolean
     default: false

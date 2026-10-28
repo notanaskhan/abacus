@@ -4918,13 +4918,10 @@ export type ClassificationOut = {
      */
     tax_year: number | null;
     /**
-     * Taxpayer Tin Last4
+     * Taxpayer Matches Client
      */
-    taxpayer_tin_last4: string | null;
-    /**
-     * Tin Matches Client
-     */
-    tin_matches_client: boolean | null;
+    taxpayer_matches_client: boolean | null;
+    taxpayer_tin: MaskedTinOut | null;
 };
 
 /**
@@ -6120,6 +6117,63 @@ export type CompletionRecordOut = {
      * Rationale
      */
     rationale: string | null;
+};
+
+/**
+ * ComposerLetterOut
+ *
+ * `GET /v1/engagements/{id}/letter/composer`: the ENG-04 projection.
+ */
+export type ComposerLetterOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Approval Content Hash
+     */
+    approval_content_hash: string | null;
+    /**
+     * Approved At
+     */
+    approved_at: string | null;
+    /**
+     * Approved By Name
+     */
+    approved_by_name: string | null;
+    /**
+     * Clauses
+     */
+    clauses: Array<LetterClause>;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Envelope Id
+     */
+    envelope_id: string | null;
+    /**
+     * Mode
+     */
+    mode: 'composed' | 'recorded';
+    status: LetterStatus;
+    /**
+     * Template Version Id
+     */
+    template_version_id: string | null;
+    /**
+     * Variables
+     */
+    variables: Array<LetterVariable>;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Version No
+     */
+    version_no: number | null;
 };
 
 /**
@@ -7429,6 +7483,16 @@ export type DecisionSummaryOut = {
 };
 
 /**
+ * DeclineIn
+ */
+export type DeclineIn = {
+    /**
+     * Note
+     */
+    note: string;
+};
+
+/**
  * DedupeCandidateOut
  *
  * A client the person may see (walled clients are never candidates), with its score.
@@ -8058,10 +8122,7 @@ export type DrawerOut = {
      * Linked To
      */
     linked_to: Array<LinkOut>;
-    /**
-     * Masked Tin
-     */
-    masked_tin: string | null;
+    masked_tin: MaskedTinOut | null;
     /**
      * Page Count
      */
@@ -8088,7 +8149,7 @@ export type DrawerOut = {
     /**
      * Versions
      */
-    versions: Array<AbacusModulesEvidenceFilesContractVersionOut>;
+    versions: Array<FileVersionOut>;
     /**
      * Virtual Children
      */
@@ -11051,6 +11112,38 @@ export type FileTreeOut = {
      * Nodes
      */
     nodes: Array<TreeNode>;
+};
+
+/**
+ * FileVersionOut
+ *
+ * One version of the document; earlier versions stay (ADR-004).
+ */
+export type FileVersionOut = {
+    /**
+     * Channel
+     */
+    channel: 'portal' | 'email' | 'firm_upload' | 'retrieval' | 'import' | 'mobile' | 'internal_handoff' | 'generated' | 'confirmation_response' | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * File Name
+     */
+    file_name: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Superseded
+     */
+    superseded: boolean;
+    /**
+     * Version No
+     */
+    version_no: number;
 };
 
 /**
@@ -14521,6 +14614,30 @@ export type IntakeValidationOut = {
 };
 
 /**
+ * IntakeViewerManifestOut
+ *
+ * The C4 viewer manifest over an intake object (masked pages only).
+ */
+export type IntakeViewerManifestOut = {
+    /**
+     * Attachment Id
+     */
+    attachment_id: string;
+    /**
+     * Masked
+     */
+    masked: boolean;
+    /**
+     * Page Count
+     */
+    page_count: number;
+    /**
+     * Page Refs
+     */
+    page_refs: Array<string>;
+};
+
+/**
  * IntegrationStatus
  */
 export type IntegrationStatus = 'available' | 'connecting' | 'connected' | 'needs_attention' | 'needs_reauth' | 'disconnected' | 'coming_soon' | 'paused';
@@ -15832,6 +15949,36 @@ export type LetterIn = {
      * Status
      */
     status: 'not_started' | 'sent' | 'signed' | 'not_required_this_year';
+};
+
+/**
+ * LetterOut
+ */
+export type LetterOut = {
+    /**
+     * File Name
+     */
+    file_name: string | null;
+    /**
+     * Letter Date
+     */
+    letter_date: string | null;
+    /**
+     * Link
+     */
+    link: string | null;
+    /**
+     * Reason
+     */
+    reason: string | null;
+    /**
+     * Recorded At
+     */
+    recorded_at: string;
+    /**
+     * Status
+     */
+    status: string;
 };
 
 /**
@@ -24902,7 +25049,7 @@ export type SetupOut = {
      * Confirmations
      */
     confirmations: Array<AbacusModulesEngagementsRoutesConfirmationOut>;
-    letter: AbacusModulesEngagementsRoutesLetterOut | null;
+    letter: LetterOut | null;
     /**
      * Letter Required
      */
@@ -25428,6 +25575,22 @@ export type SignedOutOut = {
      * Ended
      */
     ended: boolean;
+};
+
+/**
+ * SignerDeclineIn
+ *
+ * Decline with a reason.
+ */
+export type SignerDeclineIn = {
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Reason
+     */
+    reason: 'have_questions' | 'something_wrong' | 'someone_else_should_sign' | 'other';
 };
 
 /**
@@ -28742,6 +28905,24 @@ export type VersionBody = {
 };
 
 /**
+ * VersionOut
+ */
+export type VersionOut = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Signatures
+     */
+    signatures: Array<SignatureOut>;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * VersionStateOut
  *
  * A version's lifecycle row and what the viewer may do with it.
@@ -28816,6 +28997,64 @@ export type VersionStateOut = {
      * Version Id
      */
     version_id: string;
+};
+
+/**
+ * ViewerManifestOut
+ */
+export type ViewerManifestOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Derivation Id
+     */
+    derivation_id: string | null;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * File Name
+     */
+    file_name: string;
+    /**
+     * Kind
+     */
+    kind: 'pages' | 'image' | 'table' | 'none';
+    /**
+     * Media Type
+     */
+    media_type: string;
+    /**
+     * Page Count
+     */
+    page_count: number;
+    /**
+     * Pages
+     */
+    pages: Array<ViewerPageOut>;
+    /**
+     * Pii Masks
+     */
+    pii_masks: Array<PiiMaskOut>;
+    /**
+     * Reason
+     */
+    reason: string | null;
+    /**
+     * Status
+     */
+    status: 'processing' | 'ready' | 'password_protected' | 'unreadable' | 'not_previewable';
+    /**
+     * Truncated
+     */
+    truncated: boolean;
+    /**
+     * View
+     */
+    view?: 'images' | 'text';
 };
 
 /**
@@ -29619,7 +29858,7 @@ export type WorkpaperOut = {
     /**
      * Versions
      */
-    versions: Array<AbacusModulesFieldworkRoutesVersionOut>;
+    versions: Array<VersionOut>;
     /**
      * With Result
      */
@@ -29770,30 +30009,6 @@ export type AbacusModulesAssuranceCompletionRoutesEqrOut = {
 };
 
 /**
- * ViewerManifestOut
- *
- * The C4 viewer manifest over an intake object (masked pages only).
- */
-export type AbacusModulesCommunicationsIntakeContractViewerManifestOut = {
-    /**
-     * Attachment Id
-     */
-    attachment_id: string;
-    /**
-     * Masked
-     */
-    masked: boolean;
-    /**
-     * Page Count
-     */
-    page_count: number;
-    /**
-     * Page Refs
-     */
-    page_refs: Array<string>;
-};
-
-/**
  * StartIn
  */
 export type AbacusModulesConnectionsRoutesStartIn = {
@@ -29826,16 +30041,6 @@ export type AbacusModulesEngagementsAcceptanceContractConfirmationOut = {
 };
 
 /**
- * DeclineIn
- */
-export type AbacusModulesEngagementsAcceptanceContractDeclineIn = {
-    /**
-     * Note
-     */
-    note: string;
-};
-
-/**
  * EqrOut
  */
 export type AbacusModulesEngagementsAcceptanceContractEqrOut = {
@@ -29855,63 +30060,6 @@ export type AbacusModulesEngagementsAcceptanceContractEqrOut = {
      * User Id
      */
     user_id: string;
-};
-
-/**
- * LetterOut
- *
- * `GET /v1/engagements/{id}/letter/composer`: the ENG-04 projection.
- */
-export type AbacusModulesEngagementsLetterContractLetterOut = {
-    /**
-     * Allowed Actions
-     */
-    allowed_actions: Array<string>;
-    /**
-     * Approval Content Hash
-     */
-    approval_content_hash: string | null;
-    /**
-     * Approved At
-     */
-    approved_at: string | null;
-    /**
-     * Approved By Name
-     */
-    approved_by_name: string | null;
-    /**
-     * Clauses
-     */
-    clauses: Array<LetterClause>;
-    /**
-     * Engagement Id
-     */
-    engagement_id: string;
-    /**
-     * Envelope Id
-     */
-    envelope_id: string | null;
-    /**
-     * Mode
-     */
-    mode: 'composed' | 'recorded';
-    status: LetterStatus;
-    /**
-     * Template Version Id
-     */
-    template_version_id: string | null;
-    /**
-     * Variables
-     */
-    variables: Array<LetterVariable>;
-    /**
-     * Version
-     */
-    version: number;
-    /**
-     * Version No
-     */
-    version_no: number | null;
 };
 
 /**
@@ -29945,36 +30093,6 @@ export type AbacusModulesEngagementsRoutesConfirmationOut = {
 };
 
 /**
- * LetterOut
- */
-export type AbacusModulesEngagementsRoutesLetterOut = {
-    /**
-     * File Name
-     */
-    file_name: string | null;
-    /**
-     * Letter Date
-     */
-    letter_date: string | null;
-    /**
-     * Link
-     */
-    link: string | null;
-    /**
-     * Reason
-     */
-    reason: string | null;
-    /**
-     * Recorded At
-     */
-    recorded_at: string;
-    /**
-     * Status
-     */
-    status: string;
-};
-
-/**
  * StepOut
  */
 export type AbacusModulesEngagementsRoutesStepOut = {
@@ -29990,38 +30108,6 @@ export type AbacusModulesEngagementsRoutesStepOut = {
      * Id
      */
     id: 'sso' | 'team' | 'methodology' | 'autonomy' | 'budget' | 'walls' | 'engagement';
-};
-
-/**
- * VersionOut
- *
- * One version of the document; earlier versions stay (ADR-004).
- */
-export type AbacusModulesEvidenceFilesContractVersionOut = {
-    /**
-     * Channel
-     */
-    channel: 'portal' | 'email' | 'firm_upload' | 'retrieval' | 'import' | 'mobile' | 'internal_handoff' | 'generated' | 'confirmation_response' | null;
-    /**
-     * Created At
-     */
-    created_at: string;
-    /**
-     * File Name
-     */
-    file_name: string;
-    /**
-     * Id
-     */
-    id: string;
-    /**
-     * Superseded
-     */
-    superseded: boolean;
-    /**
-     * Version No
-     */
-    version_no: number;
 };
 
 /**
@@ -30053,64 +30139,6 @@ export type AbacusModulesEvidenceRoutesCitationOut = {
 };
 
 /**
- * ViewerManifestOut
- */
-export type AbacusModulesEvidenceTrustContractViewerManifestOut = {
-    /**
-     * Allowed Actions
-     */
-    allowed_actions: Array<string>;
-    /**
-     * Derivation Id
-     */
-    derivation_id: string | null;
-    /**
-     * Evidence Version Id
-     */
-    evidence_version_id: string;
-    /**
-     * File Name
-     */
-    file_name: string;
-    /**
-     * Kind
-     */
-    kind: 'pages' | 'image' | 'table' | 'none';
-    /**
-     * Media Type
-     */
-    media_type: string;
-    /**
-     * Page Count
-     */
-    page_count: number;
-    /**
-     * Pages
-     */
-    pages: Array<ViewerPageOut>;
-    /**
-     * Pii Masks
-     */
-    pii_masks: Array<PiiMaskOut>;
-    /**
-     * Reason
-     */
-    reason: string | null;
-    /**
-     * Status
-     */
-    status: 'processing' | 'ready' | 'password_protected' | 'unreadable' | 'not_previewable';
-    /**
-     * Truncated
-     */
-    truncated: boolean;
-    /**
-     * View
-     */
-    view?: 'images' | 'text';
-};
-
-/**
  * ApprovalIn
  */
 export type AbacusModulesFieldworkRoutesApprovalIn = {
@@ -30128,24 +30156,6 @@ export type AbacusModulesFieldworkRoutesStartIn = {
      * Definition
      */
     definition?: 'journal_entry_testing' | 'unrecorded_liabilities';
-};
-
-/**
- * VersionOut
- */
-export type AbacusModulesFieldworkRoutesVersionOut = {
-    /**
-     * Created At
-     */
-    created_at: string;
-    /**
-     * Signatures
-     */
-    signatures: Array<SignatureOut>;
-    /**
-     * Version
-     */
-    version: number;
 };
 
 /**
@@ -30249,22 +30259,6 @@ export type AbacusModulesMethodologyContractStepOut = {
      * Text
      */
     text: string;
-};
-
-/**
- * DeclineIn
- *
- * Decline with a reason.
- */
-export type AbacusModulesSignaturesContractDeclineIn = {
-    /**
-     * Note
-     */
-    note?: string | null;
-    /**
-     * Reason
-     */
-    reason: 'have_questions' | 'something_wrong' | 'someone_else_should_sign' | 'other';
 };
 
 /**
@@ -41797,7 +41791,7 @@ export type ConfirmIndependenceResponses = {
 export type ConfirmIndependenceResponse = ConfirmIndependenceResponses[keyof ConfirmIndependenceResponses];
 
 export type DeclineIndependenceData = {
-    body: AbacusModulesEngagementsAcceptanceContractDeclineIn;
+    body: DeclineIn;
     headers?: {
         /**
          * Authorization
@@ -42175,7 +42169,7 @@ export type AmendLetterResponses = {
     /**
      * Successful Response
      */
-    201: AbacusModulesEngagementsLetterContractLetterOut;
+    201: ComposerLetterOut;
 };
 
 export type AmendLetterResponse = AmendLetterResponses[keyof AmendLetterResponses];
@@ -42239,7 +42233,7 @@ export type ApproveLetterResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesEngagementsLetterContractLetterOut;
+    200: ComposerLetterOut;
 };
 
 export type ApproveLetterResponse = ApproveLetterResponses[keyof ApproveLetterResponses];
@@ -42356,7 +42350,7 @@ export type GetLetterResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesEngagementsLetterContractLetterOut;
+    200: ComposerLetterOut;
 };
 
 export type GetLetterResponse = GetLetterResponses[keyof GetLetterResponses];
@@ -42420,7 +42414,7 @@ export type DraftLetterResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesEngagementsLetterContractLetterOut;
+    200: ComposerLetterOut;
 };
 
 export type DraftLetterResponse = DraftLetterResponses[keyof DraftLetterResponses];
@@ -42655,7 +42649,7 @@ export type RequestApprovalResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesEngagementsLetterContractLetterOut;
+    200: ComposerLetterOut;
 };
 
 export type RequestApprovalResponse = RequestApprovalResponses[keyof RequestApprovalResponses];
@@ -53689,7 +53683,7 @@ export type ViewerManifestResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesEvidenceTrustContractViewerManifestOut;
+    200: ViewerManifestOut;
 };
 
 export type ViewerManifestResponse = ViewerManifestResponses[keyof ViewerManifestResponses];
@@ -61563,7 +61557,7 @@ export type AttachmentViewerResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesCommunicationsIntakeContractViewerManifestOut;
+    200: IntakeViewerManifestOut;
 };
 
 export type AttachmentViewerResponse = AttachmentViewerResponses[keyof AttachmentViewerResponses];
@@ -67427,7 +67421,7 @@ export type PortalViewResponses = {
 export type PortalViewResponse = PortalViewResponses[keyof PortalViewResponses];
 
 export type PortalDeclineData = {
-    body: AbacusModulesSignaturesContractDeclineIn;
+    body: SignerDeclineIn;
     headers?: {
         /**
          * Authorization

@@ -77,3 +77,17 @@ DV-10 (no writes; P · R read-only; positions masked for parity), DV-11, DV-12, 
 
 ## Links
 Inbound: SHL-01 nav "Files", TXP-00/TXP-01 "Files →", CLI-02 Files tab, INB-02 filed destination, AUD-25, SIG-01 signed copies. Outbound: SHL-08 (live), BND-02, TXP-11, TAX-02 (live as built), FIL-02 (Q-05, planned), NOT-02/NOT-03 (N-04, planned), ADM-12, AUD-25 (planned).
+| Retention policy link in the document drawer (designed link, handoff link graph) | FIL-02 | as the target's manifest status |
+| Legal hold banner and the drawer’s Legal hold link (designed link, handoff link graph) | FIL-02 | as the target's manifest status |
+| Opens CLI-01 · All clients (designed link, handoff link graph) | CLI-01 | as the target's manifest status |
+| Opens SHL-08 · source viewer (designed link, handoff link graph) | SHL-08 | as the target's manifest status |
+| Opens SHL-12 · Preparer level (designed link, handoff link graph) | SHL-12 | as the target's manifest status |
+| Opens TXP-11 · 01 Trial Balance (designed link, handoff link graph) | TXP-11 | as the target's manifest status |
+| Opens TAX-02 · TY2025 Form 1065 · Form 8825 line 2a (designed link, handoff link graph) | TAX-02 | as the target's manifest status |
+| Opens BND-02 · Ridgeline 2025 Binder pt 2 · Elm Street roof replacement: contractor invoice and placed-in-service date (designed link, handoff link graph) | BND-02 | as the target's manifest status |
+| Opens TAX-05 · TY2023 Form 1040 (read-only) (designed link, handoff link graph) | TAX-05 | as the target's manifest status |
+| Opens NOT-02 · notice workspace · Collins CP2000 (N3) (designed link, handoff link graph) | NOT-02 | as the target's manifest status |
+| Opens NOT-03 · response · Collins CP2000 (N3) (designed link, handoff link graph) | NOT-03 | as the target's manifest status |
+| Opens ADM-12 · Monitoring & inspections · finding QM-F-01 (designed link, handoff link graph) | ADM-12 | as the target's manifest status |
+| Opens AUD-25 · FY2025 archive · A Planning (designed link, handoff link graph) | AUD-25 | as the target's manifest status |
+

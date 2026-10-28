@@ -10575,19 +10575,7 @@
             "cls": "internal",
             "title": "Tax Year"
           },
-          "taxpayer_tin_last4": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "confidential",
-            "title": "Taxpayer Tin Last4"
-          },
-          "tin_matches_client": {
+          "taxpayer_matches_client": {
             "anyOf": [
               {
                 "type": "boolean"
@@ -10597,7 +10585,18 @@
               }
             ],
             "cls": "internal",
-            "title": "Tin Matches Client"
+            "title": "Taxpayer Matches Client"
+          },
+          "taxpayer_tin": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MaskedTinOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted"
           }
         },
         "required": [
@@ -10606,8 +10605,8 @@
           "tax_year",
           "issuer_name",
           "page_count",
-          "taxpayer_tin_last4",
-          "tin_matches_client",
+          "taxpayer_tin",
+          "taxpayer_matches_client",
           "proposed_by_kind",
           "citation_ids"
         ],
@@ -13279,6 +13278,151 @@
         "title": "CompletionRecordOut",
         "type": "object"
       },
+      "ComposerLetterOut": {
+        "description": "`GET /v1/engagements/{id}/letter/composer`: the ENG-04 projection.",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "approval_content_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Approval Content Hash"
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Approved At"
+          },
+          "approved_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Approved By Name"
+          },
+          "clauses": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/LetterClause"
+            },
+            "title": "Clauses",
+            "type": "array"
+          },
+          "engagement_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Engagement Id",
+            "type": "string"
+          },
+          "envelope_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Envelope Id"
+          },
+          "mode": {
+            "cls": "internal",
+            "enum": [
+              "composed",
+              "recorded"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/LetterStatus",
+            "cls": "internal"
+          },
+          "template_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Template Version Id"
+          },
+          "variables": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/LetterVariable"
+            },
+            "title": "Variables",
+            "type": "array"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          },
+          "version_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Version No"
+          }
+        },
+        "required": [
+          "engagement_id",
+          "mode",
+          "status",
+          "version_no",
+          "template_version_id",
+          "clauses",
+          "variables",
+          "approved_by_name",
+          "approved_at",
+          "approval_content_hash",
+          "envelope_id",
+          "allowed_actions",
+          "version"
+        ],
+        "title": "ComposerLetterOut",
+        "type": "object"
+      },
       "ConcludeIn": {
         "additionalProperties": false,
         "description": "AC-18: Independent, Independent with safeguards (safeguards required) or Not independent,\nby the EP with fresh MFA; 409 `independence_preconditions_unmet` (AC-19).",
@@ -15891,6 +16035,23 @@
         "title": "DecisionSummaryOut",
         "type": "object"
       },
+      "DeclineIn": {
+        "additionalProperties": false,
+        "properties": {
+          "note": {
+            "cls": "confidential",
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "note"
+        ],
+        "title": "DeclineIn",
+        "type": "object"
+      },
       "DedupeCandidateOut": {
         "description": "A client the person may see (walled clients are never candidates), with its score.",
         "properties": {
@@ -17155,14 +17316,13 @@
           "masked_tin": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/MaskedTinOut"
               },
               {
                 "type": "null"
               }
             ],
-            "cls": "confidential",
-            "title": "Masked Tin"
+            "cls": "restricted"
           },
           "page_count": {
             "anyOf": [
@@ -17232,7 +17392,7 @@
           "versions": {
             "cls": "internal",
             "items": {
-              "$ref": "#/components/schemas/abacus__modules__evidence__files_contract__VersionOut"
+              "$ref": "#/components/schemas/FileVersionOut"
             },
             "title": "Versions",
             "type": "array"
@@ -23684,6 +23844,71 @@
           "nodes"
         ],
         "title": "FileTreeOut",
+        "type": "object"
+      },
+      "FileVersionOut": {
+        "description": "One version of the document; earlier versions stay (ADR-004).",
+        "properties": {
+          "channel": {
+            "anyOf": [
+              {
+                "enum": [
+                  "portal",
+                  "email",
+                  "firm_upload",
+                  "retrieval",
+                  "import",
+                  "mobile",
+                  "internal_handoff",
+                  "generated",
+                  "confirmation_response"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Channel"
+          },
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "file_name": {
+            "cls": "confidential",
+            "title": "File Name",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "superseded": {
+            "cls": "internal",
+            "title": "Superseded",
+            "type": "boolean"
+          },
+          "version_no": {
+            "cls": "internal",
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "version_no",
+          "file_name",
+          "channel",
+          "created_at",
+          "superseded"
+        ],
+        "title": "FileVersionOut",
         "type": "object"
       },
       "FiledDestinationOut": {
@@ -30723,6 +30948,43 @@
         "title": "IntakeValidationOut",
         "type": "object"
       },
+      "IntakeViewerManifestOut": {
+        "description": "The C4 viewer manifest over an intake object (masked pages only).",
+        "properties": {
+          "attachment_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Attachment Id",
+            "type": "string"
+          },
+          "masked": {
+            "cls": "internal",
+            "title": "Masked",
+            "type": "boolean"
+          },
+          "page_count": {
+            "cls": "internal",
+            "title": "Page Count",
+            "type": "integer"
+          },
+          "page_refs": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Page Refs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "attachment_id",
+          "page_count",
+          "masked",
+          "page_refs"
+        ],
+        "title": "IntakeViewerManifestOut",
+        "type": "object"
+      },
       "IntegrationStatus": {
         "enum": [
           "available",
@@ -33616,6 +33878,80 @@
           "status"
         ],
         "title": "LetterIn",
+        "type": "object"
+      },
+      "LetterOut": {
+        "properties": {
+          "file_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "File Name"
+          },
+          "letter_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Letter Date"
+          },
+          "link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Link"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reason"
+          },
+          "recorded_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "letter_date",
+          "reason",
+          "link",
+          "file_name",
+          "recorded_at"
+        ],
+        "title": "LetterOut",
         "type": "object"
       },
       "LetterPolicyIn": {
@@ -52195,7 +52531,7 @@
           "letter": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/abacus__modules__engagements__routes__LetterOut"
+                "$ref": "#/components/schemas/LetterOut"
               },
               {
                 "type": "null"
@@ -53256,6 +53592,41 @@
           "ended"
         ],
         "title": "SignedOutOut",
+        "type": "object"
+      },
+      "SignerDeclineIn": {
+        "additionalProperties": false,
+        "description": "Decline with a reason.",
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Note"
+          },
+          "reason": {
+            "cls": "internal",
+            "enum": [
+              "have_questions",
+              "something_wrong",
+              "someone_else_should_sign",
+              "other"
+            ],
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "SignerDeclineIn",
         "type": "object"
       },
       "SignerIn": {
@@ -60254,6 +60625,36 @@
         "title": "VersionBody",
         "type": "object"
       },
+      "VersionOut": {
+        "properties": {
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "signatures": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/SignatureOut"
+            },
+            "title": "Signatures",
+            "type": "array"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "created_at",
+          "signatures"
+        ],
+        "title": "VersionOut",
+        "type": "object"
+      },
       "VersionStateOut": {
         "description": "A version's lifecycle row and what the viewer may do with it.",
         "properties": {
@@ -60452,6 +60853,135 @@
           "allowed_actions"
         ],
         "title": "VersionStateOut",
+        "type": "object"
+      },
+      "ViewerManifestOut": {
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "derivation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Derivation Id"
+          },
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "file_name": {
+            "cls": "confidential",
+            "title": "File Name",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "pages",
+              "image",
+              "table",
+              "none"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "media_type": {
+            "cls": "internal",
+            "title": "Media Type",
+            "type": "string"
+          },
+          "page_count": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Page Count",
+            "type": "integer"
+          },
+          "pages": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ViewerPageOut"
+            },
+            "title": "Pages",
+            "type": "array"
+          },
+          "pii_masks": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/PiiMaskOut"
+            },
+            "title": "Pii Masks",
+            "type": "array"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reason"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "processing",
+              "ready",
+              "password_protected",
+              "unreadable",
+              "not_previewable"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "truncated": {
+            "cls": "internal",
+            "title": "Truncated",
+            "type": "boolean"
+          },
+          "view": {
+            "cls": "internal",
+            "default": "images",
+            "enum": [
+              "images",
+              "text"
+            ],
+            "title": "View",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidence_version_id",
+          "file_name",
+          "media_type",
+          "status",
+          "reason",
+          "kind",
+          "page_count",
+          "truncated",
+          "pages",
+          "pii_masks",
+          "derivation_id",
+          "allowed_actions"
+        ],
+        "title": "ViewerManifestOut",
         "type": "object"
       },
       "ViewerPageOut": {
@@ -62087,7 +62617,7 @@
           "versions": {
             "cls": "internal",
             "items": {
-              "$ref": "#/components/schemas/abacus__modules__fieldwork__routes__VersionOut"
+              "$ref": "#/components/schemas/VersionOut"
             },
             "title": "Versions",
             "type": "array"
@@ -62416,43 +62946,6 @@
         "title": "EqrOut",
         "type": "object"
       },
-      "abacus__modules__communications__intake_contract__ViewerManifestOut": {
-        "description": "The C4 viewer manifest over an intake object (masked pages only).",
-        "properties": {
-          "attachment_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Attachment Id",
-            "type": "string"
-          },
-          "masked": {
-            "cls": "internal",
-            "title": "Masked",
-            "type": "boolean"
-          },
-          "page_count": {
-            "cls": "internal",
-            "title": "Page Count",
-            "type": "integer"
-          },
-          "page_refs": {
-            "cls": "internal",
-            "items": {
-              "type": "string"
-            },
-            "title": "Page Refs",
-            "type": "array"
-          }
-        },
-        "required": [
-          "attachment_id",
-          "page_count",
-          "masked",
-          "page_refs"
-        ],
-        "title": "ViewerManifestOut",
-        "type": "object"
-      },
       "abacus__modules__connections__routes__StartIn": {
         "additionalProperties": false,
         "properties": {
@@ -62516,23 +63009,6 @@
         "title": "ConfirmationOut",
         "type": "object"
       },
-      "abacus__modules__engagements__acceptance_contract__DeclineIn": {
-        "additionalProperties": false,
-        "properties": {
-          "note": {
-            "cls": "confidential",
-            "maxLength": 8000,
-            "minLength": 1,
-            "title": "Note",
-            "type": "string"
-          }
-        },
-        "required": [
-          "note"
-        ],
-        "title": "DeclineIn",
-        "type": "object"
-      },
       "abacus__modules__engagements__acceptance_contract__EqrOut": {
         "properties": {
           "checks": {
@@ -62572,151 +63048,6 @@
           "checks"
         ],
         "title": "EqrOut",
-        "type": "object"
-      },
-      "abacus__modules__engagements__letter_contract__LetterOut": {
-        "description": "`GET /v1/engagements/{id}/letter/composer`: the ENG-04 projection.",
-        "properties": {
-          "allowed_actions": {
-            "cls": "internal",
-            "items": {
-              "type": "string"
-            },
-            "title": "Allowed Actions",
-            "type": "array"
-          },
-          "approval_content_hash": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Approval Content Hash"
-          },
-          "approved_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Approved At"
-          },
-          "approved_by_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Approved By Name"
-          },
-          "clauses": {
-            "cls": "internal",
-            "items": {
-              "$ref": "#/components/schemas/LetterClause"
-            },
-            "title": "Clauses",
-            "type": "array"
-          },
-          "engagement_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Engagement Id",
-            "type": "string"
-          },
-          "envelope_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Envelope Id"
-          },
-          "mode": {
-            "cls": "internal",
-            "enum": [
-              "composed",
-              "recorded"
-            ],
-            "title": "Mode",
-            "type": "string"
-          },
-          "status": {
-            "$ref": "#/components/schemas/LetterStatus",
-            "cls": "internal"
-          },
-          "template_version_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Template Version Id"
-          },
-          "variables": {
-            "cls": "internal",
-            "items": {
-              "$ref": "#/components/schemas/LetterVariable"
-            },
-            "title": "Variables",
-            "type": "array"
-          },
-          "version": {
-            "cls": "internal",
-            "title": "Version",
-            "type": "integer"
-          },
-          "version_no": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Version No"
-          }
-        },
-        "required": [
-          "engagement_id",
-          "mode",
-          "status",
-          "version_no",
-          "template_version_id",
-          "clauses",
-          "variables",
-          "approved_by_name",
-          "approved_at",
-          "approval_content_hash",
-          "envelope_id",
-          "allowed_actions",
-          "version"
-        ],
-        "title": "LetterOut",
         "type": "object"
       },
       "abacus__modules__engagements__routes__ConfirmationOut": {
@@ -62784,80 +63115,6 @@
         "title": "ConfirmationOut",
         "type": "object"
       },
-      "abacus__modules__engagements__routes__LetterOut": {
-        "properties": {
-          "file_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "confidential",
-            "title": "File Name"
-          },
-          "letter_date": {
-            "anyOf": [
-              {
-                "format": "date",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Letter Date"
-          },
-          "link": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Link"
-          },
-          "reason": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Reason"
-          },
-          "recorded_at": {
-            "cls": "internal",
-            "format": "date-time",
-            "title": "Recorded At",
-            "type": "string"
-          },
-          "status": {
-            "cls": "internal",
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": [
-          "status",
-          "letter_date",
-          "reason",
-          "link",
-          "file_name",
-          "recorded_at"
-        ],
-        "title": "LetterOut",
-        "type": "object"
-      },
       "abacus__modules__engagements__routes__StepOut": {
         "properties": {
           "done": {
@@ -62897,71 +63154,6 @@
           "done"
         ],
         "title": "StepOut",
-        "type": "object"
-      },
-      "abacus__modules__evidence__files_contract__VersionOut": {
-        "description": "One version of the document; earlier versions stay (ADR-004).",
-        "properties": {
-          "channel": {
-            "anyOf": [
-              {
-                "enum": [
-                  "portal",
-                  "email",
-                  "firm_upload",
-                  "retrieval",
-                  "import",
-                  "mobile",
-                  "internal_handoff",
-                  "generated",
-                  "confirmation_response"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Channel"
-          },
-          "created_at": {
-            "cls": "internal",
-            "format": "date-time",
-            "title": "Created At",
-            "type": "string"
-          },
-          "file_name": {
-            "cls": "confidential",
-            "title": "File Name",
-            "type": "string"
-          },
-          "id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "superseded": {
-            "cls": "internal",
-            "title": "Superseded",
-            "type": "boolean"
-          },
-          "version_no": {
-            "cls": "internal",
-            "title": "Version No",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "id",
-          "version_no",
-          "file_name",
-          "channel",
-          "created_at",
-          "superseded"
-        ],
-        "title": "VersionOut",
         "type": "object"
       },
       "abacus__modules__evidence__routes__CitationOut": {
@@ -63028,135 +63220,6 @@
         "title": "CitationOut",
         "type": "object"
       },
-      "abacus__modules__evidence__trust_contract__ViewerManifestOut": {
-        "properties": {
-          "allowed_actions": {
-            "cls": "internal",
-            "items": {
-              "type": "string"
-            },
-            "title": "Allowed Actions",
-            "type": "array"
-          },
-          "derivation_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Derivation Id"
-          },
-          "evidence_version_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Evidence Version Id",
-            "type": "string"
-          },
-          "file_name": {
-            "cls": "confidential",
-            "title": "File Name",
-            "type": "string"
-          },
-          "kind": {
-            "cls": "internal",
-            "enum": [
-              "pages",
-              "image",
-              "table",
-              "none"
-            ],
-            "title": "Kind",
-            "type": "string"
-          },
-          "media_type": {
-            "cls": "internal",
-            "title": "Media Type",
-            "type": "string"
-          },
-          "page_count": {
-            "cls": "internal",
-            "minimum": 0.0,
-            "title": "Page Count",
-            "type": "integer"
-          },
-          "pages": {
-            "cls": "internal",
-            "items": {
-              "$ref": "#/components/schemas/ViewerPageOut"
-            },
-            "title": "Pages",
-            "type": "array"
-          },
-          "pii_masks": {
-            "cls": "confidential",
-            "items": {
-              "$ref": "#/components/schemas/PiiMaskOut"
-            },
-            "title": "Pii Masks",
-            "type": "array"
-          },
-          "reason": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Reason"
-          },
-          "status": {
-            "cls": "internal",
-            "enum": [
-              "processing",
-              "ready",
-              "password_protected",
-              "unreadable",
-              "not_previewable"
-            ],
-            "title": "Status",
-            "type": "string"
-          },
-          "truncated": {
-            "cls": "internal",
-            "title": "Truncated",
-            "type": "boolean"
-          },
-          "view": {
-            "cls": "internal",
-            "default": "images",
-            "enum": [
-              "images",
-              "text"
-            ],
-            "title": "View",
-            "type": "string"
-          }
-        },
-        "required": [
-          "evidence_version_id",
-          "file_name",
-          "media_type",
-          "status",
-          "reason",
-          "kind",
-          "page_count",
-          "truncated",
-          "pages",
-          "pii_masks",
-          "derivation_id",
-          "allowed_actions"
-        ],
-        "title": "ViewerManifestOut",
-        "type": "object"
-      },
       "abacus__modules__fieldwork__routes__ApprovalIn": {
         "additionalProperties": false,
         "properties": {
@@ -63192,36 +63255,6 @@
           }
         },
         "title": "StartIn",
-        "type": "object"
-      },
-      "abacus__modules__fieldwork__routes__VersionOut": {
-        "properties": {
-          "created_at": {
-            "cls": "internal",
-            "format": "date-time",
-            "title": "Created At",
-            "type": "string"
-          },
-          "signatures": {
-            "cls": "internal",
-            "items": {
-              "$ref": "#/components/schemas/SignatureOut"
-            },
-            "title": "Signatures",
-            "type": "array"
-          },
-          "version": {
-            "cls": "internal",
-            "title": "Version",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "version",
-          "created_at",
-          "signatures"
-        ],
-        "title": "VersionOut",
         "type": "object"
       },
       "abacus__modules__methodology__contract__ChecklistItemOut": {
@@ -63434,41 +63467,6 @@
           "allowed_actions"
         ],
         "title": "StepOut",
-        "type": "object"
-      },
-      "abacus__modules__signatures__contract__DeclineIn": {
-        "additionalProperties": false,
-        "description": "Decline with a reason.",
-        "properties": {
-          "note": {
-            "anyOf": [
-              {
-                "maxLength": 1000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "confidential",
-            "title": "Note"
-          },
-          "reason": {
-            "cls": "internal",
-            "enum": [
-              "have_questions",
-              "something_wrong",
-              "someone_else_should_sign",
-              "other"
-            ],
-            "title": "Reason",
-            "type": "string"
-          }
-        },
-        "required": [
-          "reason"
-        ],
-        "title": "DeclineIn",
         "type": "object"
       }
     },
@@ -89198,7 +89196,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/abacus__modules__engagements__acceptance_contract__DeclineIn"
+                "$ref": "#/components/schemas/DeclineIn"
               }
             }
           },
@@ -89911,7 +89909,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__engagements__letter_contract__LetterOut"
+                  "$ref": "#/components/schemas/ComposerLetterOut"
                 }
               }
             },
@@ -90049,7 +90047,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__engagements__letter_contract__LetterOut"
+                  "$ref": "#/components/schemas/ComposerLetterOut"
                 }
               }
             },
@@ -90303,7 +90301,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__engagements__letter_contract__LetterOut"
+                  "$ref": "#/components/schemas/ComposerLetterOut"
                 }
               }
             },
@@ -90439,7 +90437,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__engagements__letter_contract__LetterOut"
+                  "$ref": "#/components/schemas/ComposerLetterOut"
                 }
               }
             },
@@ -90940,7 +90938,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__engagements__letter_contract__LetterOut"
+                  "$ref": "#/components/schemas/ComposerLetterOut"
                 }
               }
             },
@@ -114024,7 +114022,7 @@
     },
     "/v1/evidence-items/{item_id}/drawer": {
       "get": {
-        "description": "FIL-01 O2 drawer (N-01-T19).",
+        "description": "FIL-01 O2 drawer (N-01-T19). It carries a masked TIN, masked again for an offshore reader\n(review 6).",
         "operationId": "drawer",
         "parameters": [
           {
@@ -115028,7 +115026,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__evidence__trust_contract__ViewerManifestOut"
+                  "$ref": "#/components/schemas/ViewerManifestOut"
                 }
               }
             },
@@ -132330,7 +132328,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__communications__intake_contract__ViewerManifestOut"
+                  "$ref": "#/components/schemas/IntakeViewerManifestOut"
                 }
               }
             },
@@ -132832,7 +132830,7 @@
     },
     "/v1/inbox/messages/{message_id}/triage": {
       "get": {
-        "description": "INB-02's cards (N-01-T18).",
+        "description": "INB-02's cards (N-01-T18). A card's classification carries a masked TIN, masked again for\nan offshore reader (review 6).",
         "operationId": "message_triage",
         "parameters": [
           {
@@ -145443,7 +145441,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/abacus__modules__signatures__contract__DeclineIn"
+                "$ref": "#/components/schemas/SignerDeclineIn"
               }
             }
           },

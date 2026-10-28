@@ -298,7 +298,7 @@ CATALOGUE: Final[dict[str, Kind]] = {
         "connection_needs_reauth", _admins_and_leads, "connection", "connection_id"
     ),
     "connection.reauth_due": Kind(
-        "connection_needs_reauth", _admins_and_leads, "connection", "connection_id"
+        "connection_reauth_due", _admins_and_leads, "connection", "connection_id"
     ),
     # SPEC-025 (TASK-044): the person who joined is asked to confirm their independence.
     "independence.requested": Kind(
@@ -530,6 +530,7 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     # Reconnect request template itself (communications sends it; notification email is staff
     # only, INV-4), so no catalogue event fans it out, as `follow_up_sent`.
     NotificationKind("connection_needs_reauth", "client_activity", "Plug"),
+    NotificationKind("connection_reauth_due", "client_activity", "Plug"),  # A-02-T25
     NotificationKind("connection_reconnect_requested", "client_activity", "Plug"),
     NotificationKind("independence.requested", "approval", "ShieldCheck"),
     NotificationKind("reminders.drafted", "approval", "Send"),

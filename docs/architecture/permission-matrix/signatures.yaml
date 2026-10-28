@@ -10,7 +10,7 @@
 
 actions:
   envelope.read:              {firm_admin: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_service: allow, agent: task_scope}   # SIG-01 list, summary, drawer, page previews; firm_admin metadata-only outside an engagement role (ADR-024, the service narrows)
-  envelope.draft:             {engagement_partner: allow, manager: allow, client_service: allow, agent: allow, system: allow}   # SIG-02 draft, edit, validate, resend: the agent may draft only (ADR-005)
+  envelope.draft:             {engagement_partner: allow, manager: allow, client_service: allow, agent: allow, system: deny}   # SIG-02 draft, edit, validate, resend: the agent may draft only (ADR-005); no system run drafts one yet
   envelope.send:              {engagement_partner: allow, manager: allow, client_service: allow, agent: deny, system: deny, independence: required}   # human send through a single-use approval grant (+10 s, ADR-161)
   envelope.remind:            {engagement_partner: allow, manager: allow, client_service: allow, agent: deny, system: deny}   # template-only reminders (DEC-74)
   envelope.void:              {engagement_partner: allow, manager: allow, client_service: allow, agent: deny, system: deny}   # void with a reason; evidence kept

@@ -116,6 +116,9 @@ CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
     "connection.retry_requested": _a("run", "pl", "sync_run_id", "client_actor"),
     "connection.grant_revoked": _a("change", "no", "result"),  # review M1: the provider's revoke
     "connection.reconnect_requested": _a("change", "pl", "engagement_id"),  # A-02-T23
+    # A-02-T25, T26: the daily health pass and a rotated refresh token (resealed).
+    "connection.health_checked": _a("run", "pl", "ok"),
+    "connection.credentials_rotated": _a("change", "pl"),
     # Tie-out checks (A-02-T17)
     "tie_out_check.issue_linked": _a("change", "pl", "issue_id", "version_no"),
     # Open in Excel (A-02-T22): the version, the layer and the file's fingerprint
@@ -128,6 +131,15 @@ CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
     "proposal.rejected": _a("decision", "no", "decision", "version"),
     "proposal.routed": _a("decision", "pl", "decision", "user_id"),
     "proposal.follow_up_recorded": _a("change", "pl", "decision"),
+    # P-04-T29 (DEC-713): a person's Undo within ten seconds reverses their own decision.
+    "proposal.undone": _a("decision", "no", "decision", "undoes"),
+    # P-04-T30 (DEC-714): issues on a record.
+    "issue.created": _a("change", "pl", "record"),
+    "issue.updated": _a("change", "pl", "fields"),
+    "issue.assigned": _a("change", "pl", "assignee"),
+    # Q-04-T007 (DEC-716): pilot enrolment of a work item and its mode change.
+    "pilot.enrolled": _a("change", "pl"),
+    "pilot.mode_changed": _a("decision", "ok"),
     "suggestion.created": _a("run", "pl"),
     "suggestion.adopted": _a("decision", "ok", "decision", "version"),
     "suggestion.edited": _a("decision", "ok", "decision", "version"),

@@ -88,3 +88,5 @@ DV-4, DV-7, DV-8, DV-9, DV-16. The Hold email preview line is a database templat
 
 ## Links
 Inbound: INB-01 "File…", "Review →", a thumbnail's status disc. Outbound: SHL-08 (thumbnail, live), FIL-01 (filed destination, live), BND-02, TAX-03, AUD-03 (live as built), NOT-01/NOT-02 and CLS-03 (planned).
+| Opens SHL-08 (designed link, handoff link graph) | SHL-08 | as the target's manifest status |
+

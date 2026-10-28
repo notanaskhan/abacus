@@ -273,6 +273,30 @@ NOT_CREATING = {
     "/v1/firm/email-templates/{key}/preview",
     "/v1/firm/sending-domains/{domain_id}/check",
     "/v1/firm/portal-settings/logo",
+    # N-01-T02, N-02-T03 (S13 stubs): state changes and sessions on existing records, so 200.
+    "/v1/engagements/{engagement_id}/letter/approve",
+    "/v1/engagements/{engagement_id}/letter/request-approval",
+    "/v1/engagements/{engagement_id}/letter/send",
+    "/v1/envelopes/remind/preview",
+    "/v1/envelopes/remind/send",
+    "/v1/envelopes/{envelope_id}/countersign/session",
+    "/v1/envelopes/{envelope_id}/send",
+    "/v1/envelopes/{envelope_id}/send/undo",
+    "/v1/envelopes/{envelope_id}/signers/{signer_id}/reveal-ip",
+    "/v1/envelopes/{envelope_id}/signers/{signer_id}/wet-signature",
+    "/v1/envelopes/{envelope_id}/validate",
+    "/v1/envelopes/{envelope_id}/void",
+    "/v1/inbox/attachments/bulk-file",
+    "/v1/inbox/messages/{message_id}/triage/apply",
+    "/v1/inbox/threads/{thread_id}/ignore",
+    "/v1/inbox/threads/{thread_id}/match-client",
+    "/v1/portal/envelopes/{envelope_id}/decline",
+    "/v1/portal/envelopes/{envelope_id}/decline/withdraw",
+    "/v1/portal/envelopes/{envelope_id}/esign-consent",
+    "/v1/portal/envelopes/{envelope_id}/progress",
+    "/v1/portal/envelopes/{envelope_id}/signing-session",
+    "/v1/portal/envelopes/{envelope_id}/viewed",
+    "/v1/portal/intake-uploads/{upload_id}/withdraw",
 }
 
 
@@ -518,6 +542,17 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/firm/sending-domains",
         "/v1/firm/portal-settings/publish",
         "/v1/firm/ai-policy/versions",  # G-02-T15 (AI-policy stub): a version requested
+        # N-01-T02, N-02-T03 (S13 stubs): an intake log and its files, a portal upload batch
+        # and its files, an envelope (drafted, imported or resent) and a letter amendment or file.
+        "/v1/inbox/intake",
+        "/v1/inbox/intake/{message_id}/files",
+        "/v1/portal/intake-uploads",
+        "/v1/portal/intake-uploads/{upload_id}/files",
+        "/v1/envelopes",
+        "/v1/envelopes/import",
+        "/v1/envelopes/{envelope_id}/resend",
+        "/v1/engagements/{engagement_id}/letter/amend",
+        "/v1/engagements/{engagement_id}/letter/file",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING

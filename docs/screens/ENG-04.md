@@ -39,3 +39,9 @@ Non-artboard: an edit after approval stales it (`letter.approval_staled`, the ch
 
 ## Links
 Inbound: ENG-02 G3 row, ENG-01 "Letter │ Not signed" filter. Outbound: SIG-02 (send), SIG-01, FIL-01 (signed copy).
+| Opens ENG-01 · all engagements (designed link, handoff link graph) | ENG-01 | as the target's manifest status |
+| Opens ENG-09 · proposals (designed link, handoff link graph) | ENG-09 | as the target's manifest status |
+| Opens CLI-05 · Consents, to prepare the named-third-party disclosure consent (designed link, handoff link graph) | CLI-05 | as the target's manifest status |
+| Opens KNW-03 (designed link, handoff link graph) | KNW-03 | as the target's manifest status |
+| Opens ENG-02 · engagement record (designed link, handoff link graph) | ENG-02 | as the target's manifest status |
+

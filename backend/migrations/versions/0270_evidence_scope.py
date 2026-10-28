@@ -160,6 +160,10 @@ def upgrade() -> None:
             END IF;
             SELECT e.client_id INTO engagement_client FROM engagements e
              WHERE e.tenant_id = NEW.tenant_id AND e.id = NEW.engagement_id;
+            IF NOT FOUND THEN  -- no such engagement in this firm: the reference is missing
+                RAISE EXCEPTION 'an evidence item''s engagement is in its firm (ADR-158)'
+                    USING ERRCODE = 'foreign_key_violation';
+            END IF;
             IF NEW.client_id IS NULL THEN
                 NEW.client_id := engagement_client;
             ELSIF NEW.client_id IS DISTINCT FROM engagement_client THEN
@@ -239,9 +243,11 @@ def upgrade() -> None:
         BEGIN
             SELECT i.engagement_id INTO item_engagement FROM evidence_items i
              WHERE i.tenant_id = NEW.tenant_id AND i.id = NEW.evidence_item_id;
-            IF NEW.engagement_id IS DISTINCT FROM item_engagement THEN
+            -- A missing item, or another engagement's, is a broken reference (the composite
+            -- foreign key this replaces reported both so).
+            IF NOT FOUND OR NEW.engagement_id IS DISTINCT FROM item_engagement THEN
                 RAISE EXCEPTION 'a version carries its item''s engagement (ADR-158)'
-                    USING ERRCODE = 'check_violation';
+                    USING ERRCODE = 'foreign_key_violation';
             END IF;
             IF NEW.channel IS NULL THEN
                 NEW.channel := {_CHANNEL_OF.format(m="NEW.method", s="NEW.source")};

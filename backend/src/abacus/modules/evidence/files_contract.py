@@ -25,12 +25,14 @@ from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
+from abacus.modules.engagements.api import MaskedTinOut
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
     Resource,
     authorise,
     current_context,
+    mask_tins_for,
 )
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -144,7 +146,7 @@ class LinkOut(BaseModel):
     route: Annotated[str, classified("internal")]
 
 
-class VersionOut(BaseModel):
+class FileVersionOut(BaseModel):
     """One version of the document; earlier versions stay (ADR-004)."""
 
     model_config = ConfigDict(frozen=True)
@@ -192,12 +194,14 @@ class DrawerOut(BaseModel):
     page_count: Annotated[int | None, classified("internal")]
     size_bytes: Annotated[int, classified("internal")]
     fingerprint: Annotated[str, classified("internal")]
-    masked_tin: Annotated[str | None, classified("confidential")]
+    masked_tin: Annotated[
+        MaskedTinOut | None, classified("restricted")
+    ]  # P-12: kind and last four
     thumbnail_ref: Annotated[str | None, classified("internal")]
     virtual_children: Annotated[list[VirtualChild], classified("internal")]
     tie: Annotated[TieOut | None, classified("internal")]
     linked_to: Annotated[list[LinkOut], classified("internal")]
-    versions: Annotated[list[VersionOut], classified("internal")]
+    versions: Annotated[list[FileVersionOut], classified("internal")]
     retention: Annotated[RetentionOut, classified("internal")]
     sign_off_slots: Annotated[list[SignOffSlotOut], classified("internal")]
     client_access: Annotated[Literal["off", "view", "view_download"], classified("internal")]
@@ -254,8 +258,9 @@ async def folder_items_route(
     errors=(501,),
 )
 async def drawer_route(item_id: UUID, ctx: Ctx) -> DrawerOut:
-    """FIL-01 O2 drawer (N-01-T19)."""
-    await _stub(ctx, "evidence.read_metadata")
+    """FIL-01 O2 drawer (N-01-T19). It carries a masked TIN, masked again for an offshore reader
+    (review 6)."""
+    return await mask_tins_for(ctx, await _stub(ctx, "evidence.read_metadata"))
 
 
 @files_router.get(
