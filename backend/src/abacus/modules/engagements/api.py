@@ -228,6 +228,7 @@ from abacus.modules.methodology.api import (
 from abacus.modules.organisations.api import (
     OverviewSection,
     activate_contact,
+    readable_client,  # P-07-T57: re-exported for audit_trail's Activity lines (DEC-718)
     register_client_engagements,
     register_conflict_subject,
     register_conflict_subject_names,
@@ -426,6 +427,7 @@ __all__ = [
     "portal_work_items",
     "progress_of",
     "publish_drafted_version",
+    "readable_client",
     "register_auto_retrieval",
     "register_evidence_readable",
     "register_gate_provider",

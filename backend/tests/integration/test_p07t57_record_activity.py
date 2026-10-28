@@ -231,8 +231,8 @@ async def test_ac_nothing_from_walled_clients(world: World, as_: Callable[[objec
     ivan = as_(world.ivan)
     walled_client = await ivan("GET", f"/v1/clients/{world.ashford_client}/activity")
     unknown = await ivan("GET", f"/v1/clients/{uuid.uuid4()}/activity")
-    assert walled_client.status_code == unknown.status_code == 200  # as if it never existed
-    assert _items(walled_client) == _items(unknown) == []
+    assert walled_client.status_code == unknown.status_code == 404  # as if it never existed
+    assert walled_client.text == unknown.text
     walled_engagement = await ivan("GET", f"/v1/engagements/{world.ashford}/record-activity")
     assert walled_engagement.status_code == 404
     seen = _actions(await ivan("GET", f"/v1/clients/{world.thornbury_client}/activity"))

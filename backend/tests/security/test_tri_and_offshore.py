@@ -148,6 +148,9 @@ async def test_i_offshore_only_the_not_offshore_actions_are_refused_at_the_condi
         "run_trace.export",
         "trial_balance.export",
         "signer.reveal_ip",  # N-02-T02 (SPEC-381): a signer's IP, revealed as a second step
+        "envelope.evidence_download",  # N-02-T02: the signed envelope's evidence package
+        "inbox.read_content",  # N-01-T02 (SPEC-380): an intake item's content
+        "inbox.download",  # N-01-T02: an intake attachment
         "firm_export.download",
     } == NOT_OFFSHORE
     assert refused == NOT_OFFSHORE - {"firm_export.download", "email_template.test_send"}
