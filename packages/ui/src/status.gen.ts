@@ -1809,7 +1809,7 @@ export const STATUS_REGISTRY = {
       "terminal": false,
       "derived": false,
       "contextLabels": {
-        "signer_band": "identity verified {time} · {n} fields left"
+        "signer_band": "Identity verified {time} · {n} fields left"
       }
     },
     "signed": {

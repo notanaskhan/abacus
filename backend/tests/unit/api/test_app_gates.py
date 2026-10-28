@@ -408,6 +408,9 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/client-intake-drafts",
         "/v1/client-intake-drafts/{draft_id}/commit",
         "/v1/client-imports",
+        # P-07-T55: a roll-forward draft, and the engagement Create makes from it.
+        "/v1/engagements/{engagement_id}/roll-forward/drafts",
+        "/v1/engagements/{engagement_id}/roll-forward/drafts/{draft_id}/create",
         "/v1/walls",
         "/v1/methodology/templates/{name}/versions",  # SPEC-008: a template version
         "/v1/engagements/{engagement_id}/methodology",  # SPEC-008: items seeded

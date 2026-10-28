@@ -97,8 +97,11 @@ export function SigningCeremony(props: SigningCeremonyProps): JSX.Element {
           onSelect={setSelected}
           signers={envelope.signers}
         />
+        {/* A scrollable region takes keyboard focus so the pages scroll without a pointer (axe
+            scrollable-region-focusable; as Pane's scroll region). */}
         <section
           aria-label={doc?.name ?? "Document"}
+          tabIndex={0}
           data-signing="well"
           className="flex w-[816px] min-w-0 flex-none flex-col items-center gap-[14px] overflow-y-auto rounded-pane bg-shell p-[14px]"
         >

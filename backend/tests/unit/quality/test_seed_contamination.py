@@ -79,6 +79,7 @@ def test_t09_the_lint_covers_the_scenario_the_fixtures_and_the_journeys() -> Non
     assert roots == {
         "backend/src/abacus_tools/synthetic/scenarios",
         "apps/web/src/fixtures",
+        "apps/web/src/gallery/specimens",  # F-06-T02: the tier-3 specimens
         "apps/web/e2e/journeys",
     }
     scanned = {p.relative_to(sc.REPO).as_posix() for p in sc.files()}

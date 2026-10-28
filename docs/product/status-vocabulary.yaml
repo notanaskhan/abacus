@@ -492,7 +492,7 @@ objects:
     codes:
       pending:             {label: "Waiting", variant: neutral, terminal: false, derived: false, context_labels: {chip: "○ {name}"}}
       viewed:              {label: "Viewed", variant: amber, terminal: false, derived: false}
-      verified:            {label: "Identity verified", variant: neutral, terminal: false, derived: false, context_labels: {signer_band: "identity verified {time} · {n} fields left"}}   # F-06-T03: the ceremony's KBA passed; not stored by C7 v1 yet
+      verified:            {label: "Identity verified", variant: neutral, terminal: false, derived: false, context_labels: {signer_band: "Identity verified {time} · {n} fields left"}}   # F-06-T03: the ceremony's KBA passed; not stored by C7 v1 yet
       signed:              {label: "Signed", variant: green-tint, terminal: true, derived: false, context_labels: {with_date: "Signed · {date}", chip: "✓ {name} · {date}", signer_band: "✓ Signed {date}, {time} · identity verified"}}
       declined:            {label: "Declined", variant: red-tint, terminal: true, derived: false}
       verification_failed: {label: "Needs a handwritten signature", variant: amber, terminal: false, derived: false}   # DF-11: three failed KBA attempts; SIG-01 offers "Upload signed 8879…"

@@ -454,6 +454,10 @@ async def _badge(
 
 
 async def test_review_the_run_badge_reaches_content_readers_only(world: World) -> None:
+    # A-01-T27 registers the C6 run badges when assurance loads: swap in the test's provider and
+    # put the registered one back after.
+    registered = list(sections._run_summary)  # pyright: ignore[reportPrivateUsage] -- the slot under test
+    sections._run_summary.clear()  # pyright: ignore[reportPrivateUsage] -- the slot under test
     sections.register_run_summary(_badge)
     try:
         admin, _ = await index.audits_index(
@@ -463,7 +467,7 @@ async def test_review_the_run_badge_reaches_content_readers_only(world: World) -
             world.partner, index.IndexFilters(), cursor=None, limit=50
         )
     finally:
-        sections._run_summary.clear()  # pyright: ignore[reportPrivateUsage] -- test cleanup of a slot
+        sections._run_summary[:] = registered  # pyright: ignore[reportPrivateUsage] -- restore the slot
     assert all(r.run_badge is None for r in admin.items)  # metadata only: no run progress
     assert all(r.run_badge is not None for r in partner.items)
 

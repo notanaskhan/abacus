@@ -460,6 +460,8 @@ def test_ac20_the_app_may_update_only_the_declared_connection_and_run_columns() 
         }
         # A-02-T16 (migration 0215): the connection's optimistic version for consent changes.
         | {"version"}
+        # A-02-T25 (migration 0271, DEC-708): the re-auth date a notice was last sent for.
+        | {"reauth_noticed_for"}
     )
     assert sc.APP_UPDATE_COLUMNS["sync_runs"] == frozenset(
         {
@@ -1201,12 +1203,15 @@ async def test_ac20_a_fulfilment_ties_item_and_evidence_to_one_engagement(
     seed: Seeder, world: World, other: World
 ) -> None:
     elsewhere = await seed.version(other.tenant_id, other.engagement_id)
-    with pytest.raises(asyncpg.ForeignKeyViolationError):
+    # Since 0270 (ADR-158) evidence is the client's, not the engagement's: another engagement's
+    # evidence is refused by `fulfilment_same_client`, before any key is checked.
+    with pytest.raises(asyncpg.CheckViolationError, match="ADR-158"):
         await seed.fulfilment(world, elsewhere)
     mine = await seed.version(world.tenant_id, world.engagement_id)
     with pytest.raises(asyncpg.ForeignKeyViolationError):
         await seed.fulfilment(world, mine, engagement_id=other.engagement_id)
-    with pytest.raises(asyncpg.ForeignKeyViolationError):
+    # Another engagement's request has another client: the same-client trigger refuses it first.
+    with pytest.raises(asyncpg.CheckViolationError, match="ADR-158"):
         await seed.fulfilment(world, mine, request_item_id=other.item_id)
 
 
@@ -1214,7 +1219,9 @@ async def test_ac20_a_fulfilment_cannot_reach_into_another_firm(
     seed: Seeder, world: World, foreign: World
 ) -> None:
     elsewhere = await seed.version(foreign.tenant_id, foreign.engagement_id)
-    with pytest.raises(asyncpg.ForeignKeyViolationError):
+    # Another firm's evidence has no client in this firm: `fulfilment_same_client` refuses it
+    # (0270, ADR-158) before the composite key would.
+    with pytest.raises(asyncpg.CheckViolationError, match="ADR-158"):
         await seed.fulfilment(world, elsewhere)
 
 

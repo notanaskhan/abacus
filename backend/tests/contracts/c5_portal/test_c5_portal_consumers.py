@@ -213,6 +213,8 @@ COINCIDENT = {
     "fieldwork": "an audit client stage (POR-02 g), not the engagement's status",
     "testing": "a SOC 2 client stage (POR-02 h), not the control board's status",
     "scoping": "a SOC 2 client stage (POR-02 h), not the project's status",
+    "review": "a client stage position, not F-06's derived `signing_step` (S14 batch)",
+    "sign": "a client stage position, not F-06's derived `signing_step` (S14 batch)",
 }
 
 

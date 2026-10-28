@@ -384,6 +384,9 @@ async def test_ac6_a_run_with_free_slots_asks_once_and_never_sleeps(
     run_id = (await api.post())["sync_run_id"]
     await api.until(run_id, lambda r: r["status"] == "succeeded")
     handle = _retrieval_handle(temporal, run_id)
+    # The run reads "succeeded" once render records it; the slot is released after, in the
+    # workflow's own finally. Read the history once the workflow has finished.
+    await handle.result()
     names = await _activities(handle)
     assert names == [
         "retrieval.acquire_slot",

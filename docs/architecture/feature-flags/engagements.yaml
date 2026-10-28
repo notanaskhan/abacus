@@ -22,6 +22,7 @@ flags:
     description: 'ENG-13 roll-forward v2 (P-07-T55 routes, P-07-T60 screen): POST, GET, PATCH and DELETE /v1/engagements/{id}/roll-forward/drafts[/{draft_id}] and POST …/{draft_id}/create, from a delivered or archived engagement into next year''s, carrying the v1 categories (team, template at its current version, request list as Draft, prior-year notes link) with a continuance acceptance record. When off, those routes answer 404 and ENG-02''s "Roll forward…" opens nothing. Off until a founder switches it on per firm; the local seed turns it on for Brightwater Hale. ENG-13 is the first cut-list item (P-07 §2.3).'
     owner: notanaskhan
     created: 2026-10-28
-    expires: 2027-01-26
+    expires: 2027-04-26
+    override: DEC-137
     kind: boolean
     default: false
