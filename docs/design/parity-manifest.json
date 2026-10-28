@@ -1356,6 +1356,182 @@
       "sha256": "f24a78dd04080611b857d6c5f335d3281eca883e11064018565b7c10ed17a898",
       "crop": "window",
       "tier": "C"
+    },
+    "aud-01a.window": {
+      "page": "screens/AUD-01?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-01 Audits index - All Audits/screenshots/AUD-01a.png",
+      "sha256": "150ccf3ee623dd07ed4653b29ed51f758b8a62b684677f04d100b39f8cb439ac",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-01b.window": {
+      "page": "screens/AUD-01?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-01 Audits index - All Audits/screenshots/AUD-01b.png",
+      "sha256": "0027efadefed2acb74e8dd53c99e6c036fe0dccc828ef60e08321ae387ff140d",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-01c.window": {
+      "page": "screens/AUD-01?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-01 Audits index - All Audits/screenshots/AUD-01c.png",
+      "sha256": "57ba2bab22bd45330dc901c0befb87bb42e50cc26b9d10bd45f4143881b0cb9d",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-01d.window": {
+      "page": "screens/AUD-01?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-01 Audits index - All Audits/screenshots/AUD-01d.png",
+      "sha256": "42abc77147fcfda74b88433f76dcc7856e0d857c8283c99d9e194ccd30fee2b8",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-01e.window": {
+      "page": "screens/AUD-01?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-01 Audits index - All Audits/screenshots/AUD-01e.png",
+      "sha256": "0c6a644adb486d6d25ea3bead3f1dfcbcc032b1e2912d5dc541a1c4b26cf70ac",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-01f.window": {
+      "page": "screens/AUD-01?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-01 Audits index - All Audits/screenshots/AUD-01f.png",
+      "sha256": "e81744614fb7fb0cc65c0d13ae585f2047dc0e24de104dcd771427cd6211f700",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-01g.window": {
+      "page": "screens/AUD-01?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-01 Audits index - All Audits/screenshots/AUD-01g.png",
+      "sha256": "c717830549381479bce03b63e33f7cc3c2e6b2714c7ac44ccd9dcfa7ba9bd269",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-01h.window": {
+      "page": "screens/AUD-01?st=h",
+      "selector": "[data-artboard=\"h\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-01 Audits index - All Audits/screenshots/AUD-01h.png",
+      "sha256": "2548d3a322d4d1c2021ac9580af82f1156da5781263a4d909105b88b4d3ab61b",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-02a.window": {
+      "page": "screens/AUD-02?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-02 Audit cockpit - Overview- Source Documents- Agent/screenshots/AUD-02a.png",
+      "sha256": "16be38c82a275a70761e6b8efb7f9e014abeee6594b5a4f39063bb7acb6e5c58",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-02b.window": {
+      "page": "screens/AUD-02?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-02 Audit cockpit - Overview- Source Documents- Agent/screenshots/AUD-02b.png",
+      "sha256": "fa6140f097de719e1deb1b6242fe903fc5d5f2916f06f7cb53109e76a52205dd",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-02c.window": {
+      "page": "screens/AUD-02?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-02 Audit cockpit - Overview- Source Documents- Agent/screenshots/AUD-02c.png",
+      "sha256": "ed81209cf5e48b806b195783498f1d4a67df9fc13849c5d31a7f660200e179a7",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-02d.window": {
+      "page": "screens/AUD-02?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-02 Audit cockpit - Overview- Source Documents- Agent/screenshots/AUD-02d.png",
+      "sha256": "88b8d2781ee22ce55407abaef0d9a4d82168aee46a1c8c36bd722f156c995a60",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-02e.window": {
+      "page": "screens/AUD-02?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-02 Audit cockpit - Overview- Source Documents- Agent/screenshots/AUD-02e.png",
+      "sha256": "445a71f759de242a2164108056396537cbc0328bb19359ec27e858b4ad5492dc",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-02f.window": {
+      "page": "screens/AUD-02?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-02 Audit cockpit - Overview- Source Documents- Agent/screenshots/AUD-02f.png",
+      "sha256": "3435b543b018536a07e6e8665ad6aa39d77352aa5d6a20362457fb81c83b5b0b",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-02g.window": {
+      "page": "screens/AUD-02?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-02 Audit cockpit - Overview- Source Documents- Agent/screenshots/AUD-02g.png",
+      "sha256": "11ccf112f124c6f25ccfed742ed545c522c314bc93abf349bb38c43836dd33a4",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-03a.window": {
+      "page": "screens/AUD-03?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-03 Source documents - PBC with viewer/screenshots/AUD-03a.png",
+      "sha256": "665ed1d762803dfb11a5c99843f25b7165ea021076f55fb74ab662fb01b063eb",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-03b.window": {
+      "page": "screens/AUD-03?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-03 Source documents - PBC with viewer/screenshots/AUD-03b.png",
+      "sha256": "cd3503f55ad891311f6c27d49e1915b7ab7817a2a1655d763dadaa4e9d97a69d",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-03c.window": {
+      "page": "screens/AUD-03?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-03 Source documents - PBC with viewer/screenshots/AUD-03c.png",
+      "sha256": "e65178d470758512f2206c511f4378ef30ed62541f6ab4af103b89cc4f48b60d",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-03d.window": {
+      "page": "screens/AUD-03?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-03 Source documents - PBC with viewer/screenshots/AUD-03d.png",
+      "sha256": "ed1aa072abf6824e6a25a56de62f73817feb5d48b8e133578486e836c1aefbd3",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-03e.window": {
+      "page": "screens/AUD-03?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-03 Source documents - PBC with viewer/screenshots/AUD-03e.png",
+      "sha256": "ab056dbc43deae96ac6aaf7cc022f8a1951f5df3205304749649c6dc6d2bf05a",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-03f.window": {
+      "page": "screens/AUD-03?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-03 Source documents - PBC with viewer/screenshots/AUD-03f.png",
+      "sha256": "b0fd26201cb20b65e379b0ad6c94497b455c1ad7fb682ae88fcd6fe9cc526f20",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-03g.window": {
+      "page": "screens/AUD-03?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-03 Source documents - PBC with viewer/screenshots/AUD-03g.png",
+      "sha256": "802bdd19646ee9cfbd63635e8ff51151ec0c34e0b8465837febd3d2404bab17e",
+      "crop": "window",
+      "tier": "C"
     }
   }
 }

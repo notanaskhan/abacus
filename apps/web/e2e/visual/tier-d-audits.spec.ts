@@ -1,0 +1,49 @@
+// Tier D for the audit hosts (A-01-T28; the AUD-01, AUD-02 and AUD-03 contracts' "host" rows): the
+// frame's computed geometry on the gallery artboards, not pixels, so it needs no baseline and
+// blocks where the visual project runs.
+// - AUD-01 (T1 index): toolbar 46, tabs bar 44, pane header 46.
+// - AUD-02 (T2 cockpit): audit bar 59, rail 330, canvas 696, dock 330.
+// - AUD-03 (T2 cockpit, source documents): audit bar 59, rail 330, canvas 536, viewer 490.
+import { type Locator, type Page, expect, test } from "@playwright/test";
+
+test.use({
+  viewport: { width: 1440, height: 900 },
+  deviceScaleFactor: 1,
+  reducedMotion: "reduce",
+});
+
+async function open(page: Page, id: string, st: string): Promise<Locator> {
+  await page.goto(`/components/screens/${id}?st=${st}&frame=1&static=1`);
+  const app = page.locator(`[data-artboard='${st}'] [data-shell='app']`).first();
+  await expect(app).toBeVisible();
+  return app;
+}
+
+async function size(target: Locator): Promise<{ width: number; height: number }> {
+  const box = await target.first().boundingBox();
+  if (box === null) throw new Error("no box");
+  return { width: Math.round(box.width), height: Math.round(box.height) };
+}
+
+test("AUD-01 a: toolbar 46, tabs bar 44, pane header 46", async ({ page }) => {
+  const app = await open(page, "AUD-01", "a");
+  expect((await size(app.locator("[data-shell='toolbar']"))).height).toBe(46);
+  expect((await size(app.locator("[data-shell='tabsbar']"))).height).toBe(44);
+  expect((await size(app.locator("[data-shell='pane-header']"))).height).toBe(46);
+});
+
+test("AUD-02 b: audit bar 59, rail 330, canvas 696, dock 330", async ({ page }) => {
+  const app = await open(page, "AUD-02", "b");
+  expect((await size(app.locator("[data-shell='record-header']"))).height).toBe(59);
+  expect((await size(app.locator("[data-cockpit='rail']"))).width).toBe(330);
+  expect((await size(app.locator("[data-cockpit='canvas']"))).width).toBe(696);
+  expect((await size(app.locator("[data-cockpit='dock']"))).width).toBe(330);
+});
+
+test("AUD-03 a: audit bar 59, rail 330, canvas 536, viewer 490", async ({ page }) => {
+  const app = await open(page, "AUD-03", "a");
+  expect((await size(app.locator("[data-shell='record-header']"))).height).toBe(59);
+  expect((await size(app.locator("[data-cockpit='rail']"))).width).toBe(330);
+  expect((await size(app.locator("[data-audit-canvas='source-documents']"))).width).toBe(536);
+  expect((await size(app.locator("[data-audit-dock='viewer']"))).width).toBe(490);
+});
