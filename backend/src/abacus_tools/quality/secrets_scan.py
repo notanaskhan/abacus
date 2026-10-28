@@ -65,6 +65,12 @@ ALLOW: tuple[tuple[str, str, str], ...] = (
         "C3 `field_key` values are tax-form line codes (f1040.l2a), not credentials",
     ),
     (
+        "apps/web/src/fixtures/seed/review.ts",
+        "SECRET-003",
+        "P-04-T34: the C3 frames moved from review-grammar.test.ts; `field_key` values are"
+        " tax-form line codes (f1040.l2a, sch_b.p1.l1.halvard), not credentials",
+    ),
+    (
         "apps/web/src/fixtures/scenarios/POR-01.ts",
         "SECRET-003",
         "POR-01e's reminder-link fragment is a readable fixture word, not a 256-bit link token",
