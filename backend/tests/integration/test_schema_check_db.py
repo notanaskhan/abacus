@@ -1512,6 +1512,9 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "version",
             }
         ),
+        # N-02-T07 (0292): the envelope counter and a signing session's state.
+        "envelope_numbers": frozenset({"next_value"}),
+        "signing_sessions": frozenset({"state"}),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(

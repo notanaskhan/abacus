@@ -169,6 +169,11 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "firm_export_downloads": "firm_export_links_immutable",  # 0216 (TASK-1403)
     "assurance_external_releases": "assurance_external_records_immutable",  # 0226 (TASK-1443)
     "assurance_external_archives": "assurance_external_records_immutable",  # 0226 (TASK-1443)
+    "envelope_events": "signatures_rows_immutable",  # 0292 (N-02-T07)
+    "envelope_provider_calls": "signatures_rows_immutable",  # 0292 (N-02-T07)
+    "signature_evidence": "signatures_rows_immutable",  # 0292 (N-02-T07)
+    "esign_disclosures": "signatures_rows_immutable",  # 0292 (N-02-T07)
+    "esign_acceptances": "signatures_rows_immutable",  # 0292 (N-02-T07)
 }
 # Update columns for tables outside the modules (TASK-008); modules declare theirs.
 _PLATFORM_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
