@@ -16,6 +16,14 @@ from abacus.modules.platform.audit_slots import AuditEventRef, AuditValueRow, Au
 SSN = "900-00-2208"
 
 
+@pytest.fixture(autouse=True)
+def _own_registries(monkeypatch: pytest.MonkeyPatch) -> None:
+    # The probes register into copies, undone at teardown: a second run in the same process
+    # (mutmut runs the suite more than once) would otherwise find them already there.
+    for registry in ("_LABELERS", "_RESOLVERS"):
+        monkeypatch.setattr(audit_slots, registry, dict(getattr(audit_slots, registry)))
+
+
 def _viewer() -> AuthContext:
     user = uuid.uuid4()
     return AuthContext(TenantContext(uuid.uuid4(), "human", str(user)), user, user, None, None)
