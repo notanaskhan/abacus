@@ -605,6 +605,11 @@ codes:
     raised_by:
     - abacus.modules.identity.people.FirmRoleHeld
     summary: The person holds another firm role; only a firm admin changes it (AC4.3).
+  fix_runner_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.review.issue_resolutions.FixRunnerUnavailable
+    summary: 'No fix runner is registered: nothing is recorded (fail closed).'
   follow_up_already_sent:
     status: 409
     raised_by:
@@ -645,6 +650,7 @@ codes:
     raised_by:
     - abacus.modules.engagements.record.GateUnmet
     - abacus.modules.organisations.contacts.GateUnmet
+    - abacus.modules.review.issue_resolutions.LetterGateUnmet
     summary: A gate the step or the create requires is not met (C1 gate providers; `facts.gate`).
   grant_exists:
     status: 409
@@ -813,6 +819,11 @@ codes:
     raised_by:
     - abacus.modules.review.issues.IssueChanged
     summary: The issue changed since it was read (`seen_version`).
+  issue_status_refused:
+    status: 409
+    raised_by:
+    - abacus.modules.review.issue_resolutions.IssueStatusRefused
+    summary: The issue cannot move there from where it is (`facts.status`).
   item_closed:
     status: 409
     raised_by:

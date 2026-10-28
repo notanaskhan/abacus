@@ -37,6 +37,7 @@ from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import Facet, ListPage
 from abacus.kernel.text import MultiLineText, SingleLineText
+from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
@@ -45,6 +46,7 @@ from abacus.modules.identity.api import (
     names_of,
 )
 from abacus.modules.review import checkpoints
+from abacus.modules.review import issue_resolutions as resolutions
 from abacus.modules.review import issues as issues_svc
 from abacus.modules.review.bulk import BulkTarget, bulk_sign
 from abacus.modules.review.decisions import (
@@ -1758,7 +1760,9 @@ async def issue_update_route(issue_id: UUID, body: IssueUpdateIn, ctx: Ctx) -> I
 )
 async def issue_resolve_route(issue_id: UUID, body: IssueResolutionIn, ctx: Ctx) -> IssueDetailOut:
     """Human only; the agent never resolves its own issue (ISSUE-001)."""
-    await _stub(ctx)
+    await _live(ctx)
+    await resolutions.move(ctx, issue_id, "resolved", body.seen_version)
+    return await _issue_detail(ctx, issue_id)
 
 
 @issues_router.post(
@@ -1766,14 +1770,18 @@ async def issue_resolve_route(issue_id: UUID, body: IssueResolutionIn, ctx: Ctx)
 )
 async def issue_verify_route(issue_id: UUID, body: IssueResolutionIn, ctx: Ctx) -> IssueDetailOut:
     """A reviewer verifies a resolved issue."""
-    await _stub(ctx)
+    await _live(ctx)
+    await resolutions.move(ctx, issue_id, "verified", body.seen_version)
+    return await _issue_detail(ctx, issue_id)
 
 
 @issues_router.post(
     "/{issue_id}/reopen", action="issue.reopen", response_model=IssueDetailOut, errors=(409, 501)
 )
 async def issue_reopen_route(issue_id: UUID, body: IssueResolutionIn, ctx: Ctx) -> IssueDetailOut:
-    await _stub(ctx)
+    await _live(ctx)
+    await resolutions.move(ctx, issue_id, "reopened", body.seen_version)
+    return await _issue_detail(ctx, issue_id)
 
 
 @issues_router.post(
@@ -1786,7 +1794,9 @@ async def issue_not_applicable_route(
     issue_id: UUID, body: IssueResolutionIn, ctx: Ctx
 ) -> IssueDetailOut:
     """Not applicable is a resolution, so it shares `issue.resolve`."""
-    await _stub(ctx)
+    await _live(ctx)
+    await resolutions.move(ctx, issue_id, "not_applicable", body.seen_version)
+    return await _issue_detail(ctx, issue_id)
 
 
 @issues_router.post(
@@ -1802,7 +1812,27 @@ async def issue_send_to_client_route(
     idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
 ) -> IssueDetailOut:
     """SHL-15 b: one request item with only the client wording; G3 is checked (ADR-111)."""
-    await _stub(ctx)
+    await _live(ctx)
+
+    async def run() -> tuple[int, dict[str, object]]:
+        await resolutions.send_to_client(
+            ctx,
+            issue_id,
+            seen_version=body.seen_version,
+            client_wording=body.client_wording,
+            contact_id=body.contact_id,
+            due_on=body.due_on,
+        )
+        return 200, (await _issue_detail(ctx, issue_id)).model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="issue.send_to_client",
+        key=str(idempotency_key),
+        body={"issue_id": str(issue_id), **body.model_dump(mode="json")},
+        run=run,
+    )
+    return IssueDetailOut.model_validate(stored.body)
 
 
 @issues_router.post(
@@ -1816,7 +1846,23 @@ async def fix_instructions_bulk_route(
     body: BulkFixInstructionsIn, ctx: Ctx
 ) -> BulkFixInstructionsOut:
     """SHL-15 e: one instruction per selected issue, each decided on its own."""
-    await _stub(ctx)
+    await _live(ctx)
+    outcomes = await resolutions.set_fix_instructions_bulk(
+        ctx, [(i.issue_id, i.seen_version) for i in body.issues], body.text, "this_issue"
+    )
+    results = [
+        BulkFixItemOut(
+            issue_id=o.issue_id,
+            ok=o.agent_run_id is not None,
+            agent_run_id=o.agent_run_id,
+            detail=cast(FixExclusionCode | None, o.code),
+        )
+        for o in outcomes
+    ]
+    accepted = sum(1 for r in results if r.ok)
+    return BulkFixInstructionsOut(
+        results=results, accepted=accepted, excluded=len(results) - accepted
+    )
 
 
 @issues_router.post(
@@ -1830,7 +1876,14 @@ async def fix_instructions_route(
     issue_id: UUID, body: FixInstructionsIn, ctx: Ctx
 ) -> FixInstructionsAcceptedOut:
     """SHL-15 a: sealed instructions; 409 `fix_runner_unavailable` when no runner is registered."""
-    await _stub(ctx)
+    await _live(ctx)
+    run = await resolutions.set_fix_instructions(
+        ctx, issue_id, body.seen_version, body.text, body.scope
+    )
+    status = (await issues_svc.issue_row(ctx.tenant, issue_id)).status
+    return FixInstructionsAcceptedOut(
+        issue_id=issue_id, agent_run_id=run, status=IssueStatus(status)
+    )
 
 
 @issues_router.post(
