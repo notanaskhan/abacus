@@ -271,10 +271,12 @@ from abacus.modules.identity.security_center_contract import (
     support_access_router,
 )
 from abacus.modules.identity.security_policies import (
+    OperatorPosture,
     PostureFact,
     PostureSource,
     StaffLockPort,
     configure_staff_locks,
+    operator_posture,
     purge_auth_sessions_activity,
     register_posture_source,
 )
@@ -542,6 +544,7 @@ __all__ = [
     "NoActiveTenant",
     "NotNamedApprover",
     "OffshoreConsentRequired",
+    "OperatorPosture",
     "OwnWall",
     "PersonInvalid",
     "PortalIdp",
@@ -687,6 +690,7 @@ __all__ = [
     "names_of",
     "note_budget_reviewed",
     "offshore_consented",
+    "operator_posture",
     "partner_members",
     "person_reads_unmasked",
     "policy_agent_may_hold",
