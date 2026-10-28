@@ -67,3 +67,7 @@ Rollback: delete the five files.
   firm export done in small `-n 2` invocations (Docker shared with other lanes was slow; one run
   hit S3 `RequestTimeTooSkewed`, environmental, passed on retry). ED-161 recorded. Run-record file
   not run. DEC-579 and ED-162 unused.
+- 2026-10-28 (S11 pending build): Q-02-T47 merged in #501 (DEC-640), so the T47 package-manifest
+  case loses its strict xfail unedited, as the row asks; to be confirmed at the batch's end review.
+  The AC-43 staff-route refusal stays a strict xfail: it waits for WorkOS MFA to be on in each
+  environment (TASK-1200), a human step, and turning it on before then would lock staff out.
