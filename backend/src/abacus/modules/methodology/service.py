@@ -23,6 +23,7 @@ from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.identity.api import AuthContext, Resource, authorise
+from abacus.modules.methodology.events import MethodologyReviewRequested
 from abacus.modules.methodology.models import MethodologyTemplate, MethodologyVersion
 from abacus.modules.methodology.repository import (
     get_version,
@@ -229,8 +230,12 @@ async def publish_drafted_version(
 ) -> TemplateVersionSummary:
     """TASK-074 D2: inside the caller's unit of work, the template's next version: a copy of
     `version_id` (which must be the latest) with the approved guidance on its items, marked
-    `drafted` with who approved. Older versions, and engagements pinned to them, are unchanged."""
+    `drafted` with who approved. Older versions, and engagements pinned to them, are unchanged.
+    K-01-T08 (DEC-901): with `methodology.lifecycle` on, the new version lands in Needs review
+    (never current, never the default) and the firm's quality partners are told, as a submitted
+    draft is; a person approves it through the lifecycle (K-01-T06)."""
     await authorise(ctx, "methodology.manage", Resource.firm(ctx.tenant_id))
+    for_review = await flag_enabled(ctx.tenant, METHODOLOGY_LIFECYCLE)
     detail = await _detail(tx.session, version_id)
     if await lock_template(tx.session, detail.summary.template_id) != detail.summary.version:
         raise VersionNotLatest(str(version_id))
@@ -265,6 +270,7 @@ async def publish_drafted_version(
         methodology=Methodology(detail.areas, items, detail.rules),
         origin="guidance_draft",
         drafted_from_version_id=version_id,
+        for_review=for_review,
     )
     tx.record(
         "methodology.published",
@@ -274,8 +280,15 @@ async def publish_drafted_version(
             version=number,
             from_version_id=version_id,  # the event itself says it's drafted guidance
             drafted_items=len(by_position),
+            needs_review=1 if for_review else 0,  # K-01-T08: published means "in review"
         ),
     )
+    if for_review:
+        tx.emit(
+            MethodologyReviewRequested(
+                version_id=new_id, template_id=detail.summary.template_id, by_user=ctx.user_id
+            )
+        )
     return (await _detail(tx.session, new_id)).summary
 
 
