@@ -240,6 +240,7 @@ TABLES: tuple[str, ...] = (
     "risk_partner_reviews",
     "risk_versions",
     "risks",
+    "roll_forward_drafts",
     "safeguards_control_statuses",
     "safeguards_programs",
     "screening_feedback",

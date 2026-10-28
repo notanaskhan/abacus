@@ -171,11 +171,13 @@ Each becomes a test in `POR-04.test.tsx` ("POR-04 avoid: …"): gradients in pro
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a, b, c, d, g | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (unbuilt) | locked before M8 (R-01-T31) |
-| e, f | C | not run | reported in fixture mode; locked by C-01 and T-06 / T-09 |
-| 390 | D | — | full-screen sheet from y44, header 56, targets ≥ 44 × 44 |
+| a, b, c, d, g | C (threshold 0.20, maxDiffPixelRatio 3 %) | a 4.49 · b 4.77 · c 4.61 · d 4.95 · g 4.31 (2026-10-28) | over C's 3 %, so not locked: the sheet's vertical rhythm drifts (its body about 10 px off the board, the upload card about 44 px shorter, "Last year you sent…" placed after it); lock once fixed (Open gaps) |
+| e, f | C | e 7.18 · f 5.04 | reported in fixture mode; locked by C-01 and T-06 / T-09 |
+| 390 | D | — | `tier-d-portal.spec.ts` at `&w=390`: full width and a 56 header hold; from y44 and targets ≥ 44 × 44 do not (Open gaps) |
 | host | D | — | sheet 500 from y52, header 56, fieldset cards radius 10, DropZone 112, composer 44, radio rows 40 |
 
 ## Open gaps
+- **Sheet parity (R-01-T31).** a–d and g measure 4.31–4.95 % at Tier C (budget 3 %): the sheet body sits about 10 px off the board and the upload card is about 44 px shorter, with "Last year you sent…" after the card. The P0 lock waits on that fix.
+- **390 (R-01-T31).** The full-screen sheet starts at y16, not y44; Close is 30 × 30, "Upload…" 49 × 19, Send comment 32 × 32 and Take a photo 36 tall, under 44 × 44. Kept as expected failures in `tier-d-portal.spec.ts`.
 - No handoff string for the not-found sheet, the load error, a failed write or the pre-check messages. R-01-T12 wrote them in `domain/portal/messages.ts` (`SHEET_WORDS`) on the C-20 grammar: "This request isn't available." (404, no oracle); "Couldn’t load this request. Nothing was lost; try again in a moment." with Retry; "That didn't go through. Nothing changed; try again in a moment." (a toast); the pre-checks in `ClientUploadChecks`' fixed words for a file of no known kind ("This file isn't for the year end." for `wrong_period` and `stale_as_of`; "This looks like it's for a different company."; "The totals in this file don't add up. Please check it and upload it again."). The question's text field is labelled "Tell us more" and its radio group "Your answer"; the decision's "Your decision".
 - The question and decision variants' toasts reuse "Sent to Brightwater Hale" (the spec's interaction line); their routes and allowed actions are C-01's and T-06's.

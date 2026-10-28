@@ -214,14 +214,15 @@ Each becomes a test in `POR-03.test.tsx` ("POR-03 avoid: …"): gradients in pro
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a, b, c, c2, d, e, f, g, h, i | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (unbuilt) | reported from S8; locked before M8 (R-01-T31); c masks the receipt sub-line (DEC-58 a) |
+| a, b, c, c2, d, e, f, g, h, i | C (threshold 0.20, maxDiffPixelRatio 3 %), locked (R-01-T31) | a 1.93 · b 1.95 · c 1.65 · c2 1.63 · d 1.60 · e 1.52 · f 1.71 · g 1.61 · h 0.50 · i 0.87 (2026-10-28, handoff 2026-10-21) | the 1400 × 860 window (`[data-shell="app"]`), all within C's 3 %; c masks the receipt sub-line (DEC-58 a) |
 | motion | C | not run | at `?static=1` |
-| M | C + D | not run | Tier D: targets ≥ 44 × 44, sticky Mark as Done, 64 px tab bar |
+| M | C + D | C not run (the PNG is the 470 phone board, not a window) | Tier D (`e2e/visual/tier-d-portal.spec.ts`): header 56 and the 64 px tab bar hold; "2025 Binder" is 36 tall (targets, Open gaps); no sticky Mark as Done on M's frame |
 | host | D | — | toolbar 46, rail 336, documents 1030, pane header 46 with a 14.5/500 title, DropZone radius 12, UploadRow 42, category rows 39 with a 19 px disc, row padding 12 14, File glyph 17 |
 
 Tier B for T7 and T7-M is F-05's (F-05-T49).
 
 ## Open gaps
+- **390 targets (R-01-T31).** M's binder picker is 112 × 36, under the contract's 44 × 44; recorded in `tier-d-portal.spec.ts` with POR-04's and POR-14's as expected failures until the portal's mobile controls grow.
 - No handoff string exists for the upload refusals (`file_too_large`, `type_not_allowed`), the stale Undo (`firm_already_acted`) or the binder load error. R-01-T10 wrote the refusals ("‹name› is larger than 50 MB. Send a smaller copy or split it into parts." · "‹name› can't be uploaded here. Send a PDF, a photo, a spreadsheet, a Word document or a CSV."); the stale Undo's words remain R-01-T08's.
 - The DropZone copy lists HEIC only once renditions exist (R-01 §11 R7, OQ-3); until then POR-04's line reads as designed and the firm side shows "Preview not available yet" for HEIC.
 - The ignore note label names the preparer ("Add a note for Kevin (optional)"); the binder's client-facing contact is the source of the name (R-01-T07 projects it).

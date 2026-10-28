@@ -104,17 +104,24 @@ export function statusesFromSource(
   return out;
 }
 
-/** Every artboard of every `fixture` or `live` screen, in screen then state order. Screens whose
- * contract has no parity table are listed by `missing`. */
+/** Screens built on fixtures that the registry keeps `planned` because their paths live in the
+ * portal entry or under a firm settings path the link checker reads separately (DEC-347,
+ * DEC-567): R-01-T31 measures them all the same. */
+export const BUILT_PLANNED: readonly string[] = ["POR-03", "POR-04", "POR-14", "POR-20"];
+
+/** Every artboard of every `fixture` or `live` screen, and of `also`, in screen then state order.
+ * Screens whose contract has no parity table are listed by `missing`. */
 export function screenRows(
   manifest: Readonly<Record<string, { status: string }>>,
   contractOf: (screen: string) => string | null,
+  also: readonly string[] = [],
 ): { rows: ScreenRow[]; missing: string[] } {
   const rows: ScreenRow[] = [];
   const missing: string[] = [];
+  const extra = new Set(also);
   for (const screen of Object.keys(manifest).sort()) {
     const status = manifest[screen]?.status;
-    if (status !== "fixture" && status !== "live") continue;
+    if (status !== "fixture" && status !== "live" && !extra.has(screen)) continue;
     const markdown = contractOf(screen);
     const found = markdown === null ? [] : contractRows(screen, markdown);
     if (found.length === 0) missing.push(screen);

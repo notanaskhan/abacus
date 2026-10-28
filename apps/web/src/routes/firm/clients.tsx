@@ -123,17 +123,21 @@ const clientAcceptanceRoute = createRoute({
 
 // CLI-06 (P-07-T49): the single-client intake wizard over CLI-01, behind `clients.v2`. "Create &
 // start acceptance" lands on CLI-07; "Create" on CLI-02; closing returns to CLI-01 (wired here,
-// DEC-195).
+// DEC-195). `?mode=import` opens the bulk import (g, P-07-T54).
 const Intake = lazyScreen(async () => (await import("../../screens/CLI-06")).IntakePage);
 
 const clientIntakeRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/clients/new",
+  validateSearch: (search: Record<string, unknown>): { mode?: "import" } =>
+    search.mode === "import" ? { mode: "import" } : {},
   component: function ClientIntakePage(): JSX.Element {
     const navigate = useNavigate();
+    const search: { mode?: "import" } = useSearch({ strict: false });
     return (
       <FeatureGate flag="clients.v2">
         <Intake
+          mode={search.mode === "import" ? "bulk" : "single"}
           onClose={() => {
             void navigate({ to: "/clients" });
           }}

@@ -59,6 +59,7 @@ from abacus.modules.requests.guidance import (
 )
 from abacus.modules.requests.models import RequestItem
 from abacus.modules.requests.repository import (
+    ReviewHost,
     awaiting_review_rows,
     client_home_items,
     default_due_on,
@@ -80,6 +81,7 @@ from abacus.modules.requests.repository import (
     overdue_items,
     request_list_for,
     revert_to_requested,
+    review_hosts_rows,
     rule_link,
     screening_subject_row,
     search_items,
@@ -480,6 +482,13 @@ async def awaiting_review(
     decided and withdrawn versions; the projection applies walls on read."""
     async with tenant_session(tenant) as session:
         return list(await awaiting_review_rows(session, engagement_id))
+
+
+async def review_hosts(tenant: TenantContext, version_ids: Sequence[UUID]) -> list[ReviewHost]:
+    """I-01-T13: where each version waiting on review is decided (its item and that item's list),
+    for the C13 evidence-review presenter; the presenter authorises every row it answers."""
+    async with tenant_session(tenant) as session:
+        return list(await review_hosts_rows(session, version_ids))
 
 
 async def awaiting_review_count(tenant: TenantContext, engagement_id: UUID) -> int:

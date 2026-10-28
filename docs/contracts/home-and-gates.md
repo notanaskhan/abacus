@@ -50,6 +50,19 @@ Gate-half models are `review`'s (`HumanGateOut`, `ListPage`): `docs/contracts/re
 
 **Projection columns (0223).** `subkind` (set once, the source's registered name), `office_id` (the owner's, else the work item's, else the engagement's), `blocked`, `blocked_reason_code` (a code), `sort_hint`: kept in step with the owner by the projector like `state`. `python -m abacus_tools.reproject_human_gates <tenant-id>` re-projects one firm (idempotent; after an office change, which has no C13 event yet).
 
+**I-01-T13 (DEC-803): `subject_route` codes.** A presenter's `subject_route` names a screen and its
+ids, never a URL with data in it: `<SCREEN-ID>?<name>=<uuid>&…`. The SPA resolves it through its
+manifest builders (`apps/web/src/screens/HOME-01/hosts.ts`) and opens nothing for a screen it does
+not route or a value that is not a UUID. Codes in use:
+- `AUD-03?auditId=<assurance work item>&item=<request item>`: an upload waiting on review on an
+  assurance PBC list (assurance's `evidence_review` presenter);
+- `BND-02?binderId=<request list>&request=<request item>`: an upload waiting on review on any other
+  list (a tax binder, an intake list).
+Gates without a presenter open by their own ids while `home.approvals` is off: acceptance on CLI-07;
+independence conclusion, independence confirmation and EQR eligibility on CLI-08; agent outputs and
+sends stay plain text until their host is built. SHL-04's Approvals tab counts with
+`GET /v1/human-gates/counts` (its `total`), the same call as HOME-01's header and badge (P-01 R4).
+
 ## 4. Status words
 From `docs/product/status-vocabulary.yaml`:
 - `human_gate`: `open` ("Open"), `done` ("Done"), `voided` ("Voided"), and the derived per-viewer `snoozed` ("Snoozed until {date}").

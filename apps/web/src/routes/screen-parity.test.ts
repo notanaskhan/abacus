@@ -8,6 +8,7 @@ import {
   isLocked,
   judge,
   renderHtml,
+  BUILT_PLANNED,
   screenRows,
   statesOf,
   statusesFromSource,
@@ -79,6 +80,21 @@ describe("screen parity rows (F-04-T33)", () => {
       .map(([id]) => id);
     expect(new Set([...rows.map((r) => r.screen), ...missing])).toEqual(new Set(built));
     expect(rows.some((r) => r.artboard === "CLI-01a")).toBe(true);
+  });
+
+  it("also measures the built screens the registry keeps planned (R-01-T31)", () => {
+    const contract = (id: string): string | null => {
+      const path = `../../docs/screens/${id}.md`;
+      return existsSync(path) ? readFileSync(path, "utf8") : null;
+    };
+    const { rows } = screenRows(MANIFEST, contract, BUILT_PLANNED);
+    const statuses: Readonly<Record<string, { status: string }>> = MANIFEST;
+    for (const id of BUILT_PLANNED) expect(statuses[id]?.status).toBe("planned");
+    expect(
+      rows.filter((r) => r.screen === "POR-04" && r.tier === "C").map((r) => r.state),
+    ).toEqual(["a", "b", "c", "d", "g", "e", "f"]);
+    expect(rows.some((r) => r.artboard === "POR-03c2" && r.locked)).toBe(true);
+    expect(rows.some((r) => r.artboard === "POR-20a")).toBe(true);
   });
 
   it("reads the registry's statuses from its source exactly as the registry holds them", () => {

@@ -264,7 +264,8 @@ describe("SHL-01 behaviour (P-01 AC 1.1)", () => {
     for (const area of AREAS) {
       const landing = entries[area.landing];
       expect(landing?.navArea, area.landing).toBe(area.label);
-      // A routed landing is reached at its manifest path; Home's "/" is the legacy home page.
+      // A routed landing is reached at its manifest path; Home's is "/home" (I-01-T13), which
+      // "/" redirects to.
       expect(landing?.path ?? area.path, area.landing).toBe(area.path);
       expect(area.routed, area.landing).toBe(landing?.path != null || area.path === "/");
     }
@@ -353,7 +354,7 @@ describe("SHL-01 behaviour (P-01 AC 1.1)", () => {
         expect(lit(board)).toEqual([label]);
       });
     }
-    expect(board.dataset.path).toBe("/");
+    expect(board.dataset.path).toBe("/home"); // I-01-T13: G H opens HOME-01
     fireEvent.keyDown(document, { key: "k", metaKey: true });
     expect(await screen.findByRole("dialog", { name: "Command palette" })).toBeTruthy();
   });

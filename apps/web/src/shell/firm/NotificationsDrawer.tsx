@@ -6,6 +6,7 @@ import type {
 } from "@abacus/api-client";
 import {
   acceptMutation,
+  humanGateCountsOptions,
   listNotificationsQueryKey,
   notificationFeedOptions,
   notificationPreferencesOptions,
@@ -120,12 +121,20 @@ export function groupByDay(
   return groups;
 }
 
-/** The tab track's options: a count only where the server counts more than none. */
+/** The tab track's options: a count only where the server counts more than none. Approvals is
+ * the C13 counts endpoint's total when it answers (I-01-T13; P-01 risk R4), the number HOME-01's
+ * header and segmented badge show; the feed's own count only while that endpoint is off. */
 export function tabOptions(
   counts: NotificationFeedOut["counts"] | undefined,
+  gateTotal?: number,
 ): { label: string; count?: number }[] {
   return TABS.map((tab) => {
-    const count = tab === "all" ? 0 : (counts?.[tab] ?? 0);
+    const count =
+      tab === "all"
+        ? 0
+        : tab === "approvals" && gateTotal !== undefined
+          ? gateTotal
+          : (counts?.[tab] ?? 0);
     return count > 0
       ? { label: NOTIFICATIONS.tabs[tab], count }
       : { label: NOTIFICATIONS.tabs[tab] };
@@ -295,6 +304,8 @@ export function NotificationsDrawer({
     notificationFeedOptions({ query: { tab: t, limit: FEED_LIMIT, days: FEED_DAYS } });
   // The All page carries the counts and the unread count whatever tab is showing.
   const all = useQuery({ ...query("all"), enabled: open, retry: false });
+  // I-01-T13: the Approvals count is C13's, the same call HOME-01 makes (404 while it is off).
+  const gates = useQuery({ ...humanGateCountsOptions(), enabled: open, retry: false });
   const page = useQuery({ ...query(tab), enabled: open, retry: false });
   const refresh = (): void => {
     void queryClient.invalidateQueries({ predicate: isFeed });
@@ -475,7 +486,7 @@ export function NotificationsDrawer({
         <Segmented
           size="small"
           label={NOTIFICATIONS.tabsLabel}
-          options={tabOptions(all.data?.counts)}
+          options={tabOptions(all.data?.counts, gates.data?.total)}
           active={NOTIFICATIONS.tabs[tab]}
           onChange={(label) => {
             setTab(TABS.find((t) => NOTIFICATIONS.tabs[t] === label) ?? "all");

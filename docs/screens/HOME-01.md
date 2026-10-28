@@ -121,7 +121,7 @@ Undesigned strings (no handoff source; added by T06/T11 and marked as such in `c
 | From | To (manifest builder) | Planned or live |
 |---|---|---|
 | Segmented "Approvals" / "Open queue →" / any Waiting-on-you row (flag on) | HOME-02 (`/home/approvals?gate=`) | planned until I-01-T21 (`home.approvals`) |
-| Waiting-on-you rows, flag off (AC2.4) | AUD-03 (evidence review), CLI-07 (acceptance), CLI-08 (independence), BND-02 (uploads awaiting review), the follow-up drafts screen (sends) | per manifest; MVP targets from T13 |
+| Waiting-on-you rows, flag off (AC2.4) | AUD-03 (evidence review on a PBC list), CLI-07 (acceptance), CLI-08 (independence, EQR eligibility), BND-02 (uploads awaiting review on a binder), the follow-up drafts screen (sends) | live from I-01-T13 (DEC-803): AUD-03 and BND-02 through `subject_route`, CLI-07 and CLI-08 by the gate's ids; sends stay text until their host is built |
 | Decision 1 / Decision 3 / sign-off rows / row 10 / row 11 (HOME-02 interactions) | SHL-11 inline · CLI-07 · SHL-12 over TXP-01 · SHL-12 final approval · SIG-01 "To send" | through HOME-02; tax hosts fixture-only until T-04/T-05 |
 | Segmented "Deadlines" / "Calendar →" | HOME-03 | planned → T-08; hidden in production |
 | Segmented "Capacity" | HOME-04 | planned → I-04; hidden in production |

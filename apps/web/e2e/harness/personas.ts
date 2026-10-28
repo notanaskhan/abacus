@@ -47,6 +47,7 @@ export const PERSONAS = {
   "felix-andersen": staff("Felix Andersen"),
   "cole-hart": staff("Cole Hart"),
   "dina-sato": staff("Dina Sato"), // F-06-T02: TPL-16e names her; the E6 preparer
+  "laura-kemp": staff("Laura Kemp"), // ENG-13 a, b and e (P-07-T62)
   "claire-feld": portal("Claire Feld"),
   "dana-kowalski": portal("Dana Kowalski"),
   "tess-moreno": portal("Tess Moreno"),

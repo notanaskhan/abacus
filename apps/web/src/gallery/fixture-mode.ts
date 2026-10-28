@@ -21,6 +21,8 @@ export interface FixtureParams {
   static: boolean;
   /** `?contrast=reference`: the handoff's ink ladder instead of the AA ladder. */
   contrast?: "reference";
+  /** `?w=390`: a screen's 390 layout where its artboards draw the 1400 window (R-01-T31). */
+  w?: "390";
 }
 
 function text(value: unknown): string | undefined {
@@ -42,6 +44,7 @@ export function parseFixtureParams(search: Record<string, unknown>): FixturePara
   if (clock !== undefined) out.clock = clock;
   if (latency !== undefined) out.latency = latency;
   if (text(search.contrast) === "reference") out.contrast = "reference";
+  if (text(search.w) === "390") out.w = "390";
   return out;
 }
 

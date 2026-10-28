@@ -31,12 +31,14 @@ import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { useSession } from "../../app-core/session";
 import {
   INTAKE_STEPS,
+  type ImportStep,
   type IntakeStep,
   stepOfField,
   useConflictResults,
   useIntakeWrites,
   useStaff,
 } from "../../domain/clients";
+import { BulkImport } from "./BulkImport";
 import { COPY } from "./copy";
 
 // CLI-06 · New client / prospect intake, single client (P-07-T49; docs/screens/CLI-06.md). The O6
@@ -47,7 +49,10 @@ import { COPY } from "./copy";
 // check redacts a walled match ("Match on a restricted client"); a manager clears a counterparty
 // hit as not adverse; screening rows are recorded by a person (DEC-64; no automatic result).
 // "Create" and "Create & start acceptance" commit in one unit of work, Prospect only; the second
-// lands on CLI-07. Bulk import (g) is P-07-T54's: its option is shown disabled.
+// lands on CLI-07. The header's Segmented switches to the bulk import (g, P-07-T54: BulkImport.tsx),
+// which `?mode=import` opens directly.
+
+export type Cli06Mode = "single" | "bulk";
 
 export type Cli06Target =
   | { screen: "CLI-07"; clientId: string; engagementId: string }
@@ -64,6 +69,11 @@ export interface CLI06Props {
   screened?: boolean;
   onClose?: () => void;
   onNavigate?: (target: Cli06Target) => void;
+  /** Single client (default) or the bulk import. */
+  mode?: Cli06Mode;
+  /** g: an import to resume, and the step it opens on. */
+  importId?: string;
+  importStep?: ImportStep;
 }
 
 type Screening = ScreeningRecordIn["screening_list"];
@@ -550,14 +560,57 @@ function useDraft(draftId: string | undefined): {
   return { draft: created ?? loaded.data, setDraft: setCreated };
 }
 
+function ModeSwitch({
+  mode,
+  onMode,
+}: {
+  mode: Cli06Mode;
+  onMode: (m: Cli06Mode) => void;
+}): JSX.Element {
+  return (
+    <Segmented
+      size="small"
+      label={COPY.mode.label}
+      active={mode === "bulk" ? COPY.mode.bulk : COPY.mode.single}
+      options={[{ label: COPY.mode.single }, { label: COPY.mode.bulk }]}
+      onChange={(label) => {
+        onMode(label === COPY.mode.bulk ? "bulk" : "single");
+      }}
+    />
+  );
+}
+
 export function CLI06({
+  mode: openMode = "single",
+  importId,
+  importStep,
+  ...props
+}: CLI06Props): JSX.Element | null {
+  const [mode, setMode] = useState<Cli06Mode>(openMode);
+  const modeSwitch = <ModeSwitch mode={mode} onMode={setMode} />;
+  return mode === "bulk" ? (
+    <BulkImport
+      {...(importId === undefined ? {} : { importId })}
+      {...(importStep === undefined ? {} : { step: importStep })}
+      modeSwitch={modeSwitch}
+      {...(props.onClose === undefined ? {} : { onClose: props.onClose })}
+    />
+  ) : (
+    <SingleIntake {...props} modeSwitch={modeSwitch} />
+  );
+}
+
+function SingleIntake({
   draftId,
   step: openStep,
   problems: openProblems = [],
   screened = false,
   onClose,
   onNavigate,
-}: CLI06Props): JSX.Element | null {
+  modeSwitch,
+}: Omit<CLI06Props, "mode" | "importId" | "importStep"> & {
+  modeSwitch: ReactNode;
+}): JSX.Element | null {
   const writes = useIntakeWrites();
   const { draft, setDraft } = useDraft(draftId);
   const [step, setStep] = useState<IntakeStep | null>(openStep ?? null);
@@ -689,12 +742,7 @@ export function CLI06({
         }}
         aside={
           <div className="flex flex-col gap-[8px] p-[14px]">
-            <Segmented
-              size="small"
-              label={COPY.mode.label}
-              active={COPY.mode.single}
-              options={[{ label: COPY.mode.single }, { label: COPY.mode.bulk, disabled: true }]}
-            />
+            {modeSwitch}
             <span className="text-meta text-ink-3">
               {COPY.stepOf(index + 1, INTAKE_STEPS.length)}
             </span>

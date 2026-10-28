@@ -101,6 +101,8 @@ from abacus.modules.engagements.roll_forward import (
     TemplateSeed,
     register_roll_forward_items,
 )
+from abacus.modules.engagements.roll_forward_contract import roll_forward_router
+from abacus.modules.engagements.roll_forward_v2 import register_draft_request_copy
 from abacus.modules.engagements.routes import (
     firm_router,
     router,
@@ -330,6 +332,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     client_intake_drafts_router,
     client_imports_router,
     letter_router,  # C7 v1 letter half stub (N-02-T03): ENG-04 composer
+    roll_forward_router,  # P-07-T55: ENG-13 v2, behind engagements.roll_forward_v2
     router,
     work_items_router,
     firm_router,
@@ -454,6 +457,7 @@ __all__ = [
     "publish_drafted_version",
     "readable_client",
     "register_auto_retrieval",
+    "register_draft_request_copy",
     "register_evidence_readable",
     "register_gate_provider",
     "register_judgment_source",
