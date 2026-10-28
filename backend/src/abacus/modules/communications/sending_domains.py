@@ -16,7 +16,7 @@ commit. Every move is audited `sending_domain.<status>` and emits `sending_domai
 **From** (`sender_for`, DEC-950). With `communications.firm_sender_domain` on and a verified
 domain: From `<from_local_part>@<domain>` under the firm's name. Otherwise the neutral sender
 (the platform's address, `ses_from_address`, never naming the product) under the firm's name,
-with Reply-To the firm's own address when it has a domain on record (the RK-52 fallback).
+with Reply-To the firm's own address when its domain is verified (the RK-52 fallback).
 
 **Gate** (`client_mail_open`, DEC-953). A real firm's client, third-party and respondent mail is
 closed until the platform opens it (`abacus_tools.client_mail`, two people named; migration
@@ -249,25 +249,15 @@ async def list_domains(ctx: AuthContext) -> list[SendingDomain]:
 
 
 async def create_domain(ctx: AuthContext, domain: str, from_local_part: str) -> SendingDomain:
-    """`POST /v1/firm/sending-domains`: the identity first (idempotent at SES for the same
-    domain), then the row. A live domain of this firm, or a live domain of any firm with this
-    name, is 409 `sending_domain_exists` and nothing is recorded (DEC-951)."""
+    """`POST /v1/firm/sending-domains`. The row first, in the same unit of work as the SES call:
+    the two unique indexes refuse a second live domain of this firm, or a name live for any firm,
+    before SES is asked anything (security review: no firm touches another's identity). Then the
+    identity (idempotent at SES for the same domain) and its records; an SES failure rolls the row
+    back. 409 `sending_domain_exists`; 503 `sending_domain_unavailable` (DEC-951)."""
     await authorise_write(ctx)
     if any(d.status in LIVE for d in await _domains(ctx.tenant)):
         raise SendingDomainExists
-    try:
-        setup = await asyncio.to_thread(
-            ses_identities().create_identity,
-            domain=domain,
-            mail_from_subdomain=MAIL_FROM_SUBDOMAIN,
-        )
-    except SesIdentityInvalid:
-        raise NotFound("sending_domain") from None  # unreachable: the model's pattern is stricter
-    except SesIdentityUnavailable as exc:
-        _log.warning("sending_domain.ses_unavailable", code=str(exc))
-        raise SendingDomainUnavailable from None
-    records = [{"type": r.type, "name": r.name, "value": r.value} for r in setup.dns_records]
-    mail_from = f"{MAIL_FROM_SUBDOMAIN}.{setup.domain}"
+    mail_from = f"{MAIL_FROM_SUBDOMAIN}.{domain}"
     try:
         async with uow(ctx.tenant) as tx:
             domain_id = (
@@ -275,19 +265,39 @@ async def create_domain(ctx: AuthContext, domain: str, from_local_part: str) -> 
                     text(
                         "INSERT INTO sending_domains (tenant_id, domain, from_local_part, "
                         "mail_from_domain, dkim_records, ses_identity_ref, requested_by) VALUES "
-                        "(:tenant, :domain, :local, :mail_from, CAST(:records AS jsonb), "
-                        ":domain, :by) RETURNING id"
+                        "(:tenant, :domain, :local, :mail_from, CAST('[]' AS jsonb), :domain, "
+                        ":by) RETURNING id"
                     ),
                     {
                         "tenant": ctx.tenant_id,
-                        "domain": setup.domain,
+                        "domain": domain,
                         "local": from_local_part,
                         "mail_from": mail_from,
-                        "records": _json(records),
                         "by": ctx.user_id,
                     },
                 )
             ).scalar_one()
+            try:
+                setup = await asyncio.to_thread(
+                    ses_identities().create_identity,
+                    domain=domain,
+                    mail_from_subdomain=MAIL_FROM_SUBDOMAIN,
+                )
+            except SesIdentityInvalid:
+                raise NotFound("sending_domain") from None  # unreachable: the model's pattern
+            except SesIdentityUnavailable as exc:
+                _log.warning("sending_domain.ses_unavailable", code=str(exc))
+                raise SendingDomainUnavailable from None
+            records = [
+                {"type": r.type, "name": r.name, "value": r.value} for r in setup.dns_records
+            ]
+            await tx.session.execute(
+                text(
+                    "UPDATE sending_domains SET dkim_records = CAST(:records AS jsonb) "
+                    "WHERE id = :id"
+                ),
+                {"records": _json(records), "id": domain_id},
+            )
             tx.record(
                 "sending_domain.created",
                 target=Target("sending_domain", domain_id),
@@ -338,7 +348,9 @@ async def revoke_domain(ctx: AuthContext, domain_id: UUID) -> SendingDomain:
                 after=Ref(status="revoked"),
             )
             tx.emit(SendingDomainStatusChanged(domain_id=domain_id, status="revoked"))
-    if moved is not None:
+    # Security review: only a live row owns its identity (one live row per name across firms).
+    # A failed row's name may be live again, here or at another firm: its identity is left alone.
+    if moved is not None and current.status in LIVE:
         try:
             await asyncio.to_thread(ses_identities().delete_identity, domain=current.domain)
         except (SesIdentityUnavailable, SesIdentityInvalid) as exc:
@@ -444,7 +456,8 @@ def neutral_domain() -> str | None:
 
 async def sender_for(tenant_id: UUID) -> Sender:
     """The firm's verified domain while `communications.firm_sender_domain` is on; otherwise the
-    neutral sender, with Reply-To the firm's address when it has a domain on record."""
+    neutral sender, with Reply-To the firm's address only when its domain is verified (security
+    review: a pending or failed domain is not proven to be the firm's, so no reply goes there)."""
     tenant = TenantContext(tenant_id, "system", "sender_selection")
     display = await firm_name(tenant_id)
     domains = await _domains(tenant)

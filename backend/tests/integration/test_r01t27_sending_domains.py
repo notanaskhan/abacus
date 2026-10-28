@@ -261,7 +261,8 @@ async def test_72_hours_without_verification_is_failed_and_mail_keeps_the_neutra
     assert (checked.status, checked.failure_reason) == ("failed", "mail_from_not_verified")
     assert len(await _outbox(seed, firm.tenant, "sending_domain.failed")) == 1
     sender = await sender_for(firm.tenant)
-    assert sender.address is None and sender.reply_to == f"clients@{DOMAIN}"  # RK-52
+    # A failed domain is not proven to be the firm's: no From and no Reply-To there.
+    assert sender.address is None and sender.reply_to is None
 
 
 async def test_revoke_ends_the_domain_and_deletes_the_identity(
@@ -278,6 +279,59 @@ async def test_revoke_ends_the_domain_and_deletes_the_identity(
     assert (await sender_for(firm.tenant)).reply_to is None
     # A revoked domain frees its name for a new request.
     assert (await create_domain(firm.admin, DOMAIN, "clients")).status == "pending_dns"
+
+
+async def test_a_verified_domain_with_the_flag_off_is_the_reply_to_of_the_neutral_sender(
+    seed: Seeder, ses: InMemorySesIdentities
+) -> None:
+    firm = await _firm(seed)
+    await _sender_on(seed, firm.tenant)
+    created = await create_domain(firm.admin, DOMAIN, "clients")
+    ses.set_states(DOMAIN, verification="verified", dkim="verified", mail_from="verified")
+    await check_domain(firm.admin, created.id)
+    await seed.run(
+        "UPDATE feature_flag_states SET value = 'false' WHERE tenant_id = $1 AND flag = $2",
+        firm.tenant,
+        SENDER,
+    )
+    sender = await sender_for(firm.tenant)
+    assert sender.address is None and sender.reply_to == f"clients@{DOMAIN}"  # RK-52
+
+
+async def test_revoking_a_failed_row_leaves_a_live_identity_of_the_same_name_alone(
+    seed: Seeder, ses: InMemorySesIdentities
+) -> None:
+    """Security review: a failed row's name can be live again (here, re-added); its revoke must not
+    delete the identity the live row now uses."""
+    firm = await _firm(seed)
+    await _sender_on(seed, firm.tenant)
+    first = await create_domain(firm.admin, DOMAIN, "clients")
+    with frozen(system_now() + VERIFY_WINDOW + VERIFY_WINDOW):
+        assert (await check_domain(firm.admin, first.id)).status == "failed"
+    again = await create_domain(firm.admin, DOMAIN, "clients")
+    await revoke_domain(firm.admin, first.id)
+    assert ses.identity_status(domain=DOMAIN).domain == DOMAIN  # still there for `again`
+    assert (await check_domain(firm.admin, again.id)).status == "pending_dns"
+
+
+async def test_another_firms_live_name_is_refused_before_ses_is_asked(
+    seed: Seeder, ses: InMemorySesIdentities
+) -> None:
+    firm, other = await _firm(seed), await _firm(seed)
+    for f in (firm, other):
+        await _sender_on(seed, f.tenant)
+    await create_domain(firm.admin, DOMAIN, "clients")
+    asked: list[str] = []
+    real = ses.create_identity
+
+    def spy(*, domain: str, mail_from_subdomain: str):  # noqa: ANN202 -- the port's return
+        asked.append(domain)
+        return real(domain=domain, mail_from_subdomain=mail_from_subdomain)
+
+    ses.create_identity = spy
+    with pytest.raises(SendingDomainExists):
+        await create_domain(other.admin, DOMAIN, "clients")
+    assert asked == []
 
 
 async def test_the_app_role_can_neither_read_nor_write_the_mail_policy(seed: Seeder) -> None:
