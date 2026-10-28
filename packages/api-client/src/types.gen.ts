@@ -65533,6 +65533,64 @@ export type DiscardTemplateDraftsResponses = {
 
 export type DiscardTemplateDraftsResponse = DiscardTemplateDraftsResponses[keyof DiscardTemplateDraftsResponses];
 
+export type VersionProgramsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}/programs';
+};
+
+export type VersionProgramsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type VersionProgramsError = VersionProgramsErrors[keyof VersionProgramsErrors];
+
+export type VersionProgramsResponses = {
+    /**
+     * Response Version Programs
+     *
+     * Successful Response
+     */
+    200: Array<ProgramOut>;
+};
+
+export type VersionProgramsResponse = VersionProgramsResponses[keyof VersionProgramsResponses];
+
 export type AddStepData = {
     body: StepCreateIn;
     headers?: {
