@@ -1,7 +1,11 @@
 """Public interface of the requests module; other modules import only this (ADR-008)."""
 
 from abacus.kernel.audit_owners import register_engagement_owners
-from abacus.modules.engagements.api import register_open_requests, register_roll_forward_items
+from abacus.modules.engagements.api import (
+    register_draft_request_copy,
+    register_open_requests,
+    register_roll_forward_items,
+)
 from abacus.modules.identity.api import (
     AbacusRouter,
     register_contact_delegations,
@@ -85,7 +89,12 @@ from abacus.modules.requests.portal_room import (
     room_items,
 )
 from abacus.modules.requests.repository import open_requests_by_engagement
-from abacus.modules.requests.roll_forward import copy_items, proposed_items
+from abacus.modules.requests.roll_forward import (
+    copy_items,
+    copy_items_as_draft,
+    count_prior_items,
+    proposed_items,
+)
 from abacus.modules.requests.routes import firm_router, methodology_router, router
 from abacus.modules.requests.service import (
     FulfilledVersion,
@@ -145,6 +154,8 @@ register_contact_delegations(
 )
 # SPEC-025 (TASK-048 D1): last year's items for a roll-forward, and copying the confirmed ones.
 register_roll_forward_items(proposed_items, copy_items)
+# P-07-T55 (ENG-13 v2): the whole request list into next year's engagement, as Draft.
+register_draft_request_copy(count_prior_items, copy_items_as_draft)
 
 # P-06-T07: binders close when C1 says their work is finished (the subscriber is in binders.py).
 WORKFLOWS: dict[type, str] = {}

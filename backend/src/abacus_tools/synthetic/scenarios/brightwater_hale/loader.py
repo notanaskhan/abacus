@@ -327,6 +327,7 @@ FLAGS_ON: Final = (
     # I-01-T13: HOME-01 lite on synthetic firms (GET /v1/home and the C13 gate list and counts).
     "home.dashboard",
     "review.grammar_api",
+    "engagements.roll_forward_v2",  # P-07-T55: ENG-13 v2 on synthetic firms
 )
 OFFICE_ZONES: Final = {
     "Chicago": "America/Chicago",

@@ -243,6 +243,7 @@ export const ACTIONS = [
   "review_note.withdraw",
   "risk.approve",
   "risk.assess",
+  "roll_forward.create",
   "roll_forward.read",
   "run_content.read",
   "run_trace.export",

@@ -1833,9 +1833,19 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "independence": "required",
     },
+    "roll_forward.create": {
+        "firm_admin": "allow",
+        "practice_leader": "allow",
+        "firm_partner": "allow",
+        "firm_manager": "allow",
+        "agent": "deny",
+        "system": "deny",
+    },
     "roll_forward.read": {
         "firm_admin": "allow",
         "practice_leader": "allow",
+        "engagement_partner": "allow",
+        "manager": "allow",
     },
     "run_content.read": {
         "practice_leader": "in_scope",

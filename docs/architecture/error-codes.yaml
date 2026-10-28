@@ -1361,6 +1361,17 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.workpapers.OwnWork
     summary: 'ADR-131: the reviewer isn''t the preparer.'
+  roll_forward_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.engagements.roll_forward_v2.RollForwardInvalid
+    summary: 'A carry choice the draft cannot hold (`facts.field`): a person not on last year''s team
+      or not available, a template when the source has none, a period that ends before it starts.'
+  roll_forward_source_not_released:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.roll_forward_v2.RollForwardSourceNotReleased
+    summary: 'The source is not `delivered` or `archived` (`facts.status`): nothing is created.'
   roll_forward_unavailable:
     status: 409
     raised_by:
@@ -1526,6 +1537,7 @@ codes:
     - abacus.modules.engagements.drafts.DraftStaleVersion
     - abacus.modules.engagements.independence.ConclusionSuperseded
     - abacus.modules.engagements.intake.IntakeStaleVersion
+    - abacus.modules.engagements.roll_forward_v2.RollForwardStale
     - abacus.modules.engagements.team_errors.TeamChanged
     - abacus.modules.evidence.firm_export_schedule.ScheduleStale
     - abacus.modules.identity.annual_independence.StaleStatement

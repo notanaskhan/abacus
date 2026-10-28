@@ -7,7 +7,8 @@ actions:
   # partner cell lands with the live wizard as the derived `firm_partner` (DEC-132); the manager
   # and senior-by-setting cells wait for a derived firm-level grant (DEC-141's pattern).
   engagement.create:        {firm_admin: allow, practice_leader: allow, firm_partner: allow, agent: deny, system: deny}
-  roll_forward.read:        {firm_admin: allow, practice_leader: allow}   # SPEC-025 (TASK-048 D3): last year's team, template and items, checked on that engagement
+  roll_forward.read:        {firm_admin: allow, practice_leader: allow, engagement_partner: allow, manager: allow}   # SPEC-025 (TASK-048 D3): last year's team, template and items, checked on that engagement; P-07-T55 (DEC-805): its engagement partner and manager (ENG-13 d, Hannah Leclerc)
+  roll_forward.create:      {firm_admin: allow, practice_leader: allow, firm_partner: allow, firm_manager: allow, agent: deny, system: deny}   # P-07-T55 (DEC-805): ENG-13's draft and Create, on the client; with roll_forward.read on the source
   engagement.ai_exclude:    {engagement_partner: allow}   # SPEC-036 (TASK-076): switch AI off for one engagement
   # --- Acceptance, independence and the letter (SPEC-025; TASK-044) ---
   acceptance.record:        {engagement_partner: allow, mfa_recent: required}   # decision, documentation, the independence conclusion

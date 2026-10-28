@@ -21098,6 +21098,154 @@ export type RoleTemplatesOut = {
 };
 
 /**
+ * RollForwardCatalogueOut
+ *
+ * What v1 can carry. `evidence_copied` is always 0: evidence never moves (ADR-004).
+ */
+export type RollForwardCatalogueOut = {
+    /**
+     * Evidence Copied
+     */
+    evidence_copied?: number;
+    /**
+     * Request Count
+     */
+    request_count: number;
+    /**
+     * Team
+     */
+    team: Array<RollForwardTeamMemberOut>;
+    template: RollForwardTemplateOut | null;
+};
+
+/**
+ * RollForwardCreatedOut
+ */
+export type RollForwardCreatedOut = {
+    /**
+     * Acceptance Record Id
+     */
+    acceptance_record_id: string;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    engagement_status: EngagementStatus;
+    /**
+     * Independence Requested User Ids
+     */
+    independence_requested_user_ids: Array<string>;
+    /**
+     * Methodology Version Id
+     */
+    methodology_version_id: string | null;
+    /**
+     * Prior Engagement Id
+     */
+    prior_engagement_id: string;
+    /**
+     * Requests Created
+     */
+    requests_created: number;
+};
+
+/**
+ * RollForwardDraftDiscardedOut
+ */
+export type RollForwardDraftDiscardedOut = {
+    /**
+     * Discarded At
+     */
+    discarded_at: string;
+    /**
+     * Draft Id
+     */
+    draft_id: string;
+};
+
+/**
+ * RollForwardDraftOut
+ */
+export type RollForwardDraftOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    catalogue: RollForwardCatalogueOut;
+    /**
+     * Created Engagement Id
+     */
+    created_engagement_id: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Saved At
+     */
+    saved_at: string;
+    selections: RollForwardSelectionsOut;
+    source: RollForwardSourceOut;
+    /**
+     * Target Period End
+     */
+    target_period_end: string;
+    /**
+     * Target Period Start
+     */
+    target_period_start: string;
+    /**
+     * Team
+     */
+    team: Array<RollForwardPickOut>;
+    /**
+     * Template Decision
+     */
+    template_decision: 'current' | 'skip';
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * RollForwardDraftPatchIn
+ *
+ * Only what changed, on the version seen.
+ */
+export type RollForwardDraftPatchIn = {
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+    selections?: RollForwardSelectionsIn | null;
+    /**
+     * Target Period End
+     */
+    target_period_end?: string | null;
+    /**
+     * Target Period Start
+     */
+    target_period_start?: string | null;
+    /**
+     * Team User Ids
+     */
+    team_user_ids?: Array<string> | null;
+    /**
+     * Template Decision
+     */
+    template_decision?: 'current' | 'skip' | null;
+};
+
+/**
  * RollForwardIn
  *
  * SPEC-025 AC-2 (TASK-048): exactly what the person confirmed from the proposal.
@@ -21133,6 +21281,20 @@ export type RollForwardMemberIn = {
      * Role
      */
     role: 'engagement_partner' | 'manager' | 'senior' | 'staff' | 'reviewer';
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * RollForwardPickOut
+ */
+export type RollForwardPickOut = {
+    /**
+     * Role
+     */
+    role: string;
     /**
      * User Id
      */
@@ -21181,6 +21343,131 @@ export type RollForwardProposalOut = {
      */
     team: Array<ProposedMemberOut>;
     template: ProposedTemplateOut | null;
+};
+
+/**
+ * RollForwardSelectionsIn
+ */
+export type RollForwardSelectionsIn = {
+    /**
+     * Prior Year Notes
+     */
+    prior_year_notes?: boolean | null;
+    /**
+     * Request List
+     */
+    request_list?: boolean | null;
+    /**
+     * Team
+     */
+    team?: boolean | null;
+    /**
+     * Template
+     */
+    template?: boolean | null;
+};
+
+/**
+ * RollForwardSelectionsOut
+ *
+ * Carry (true) or Skip (false), per v1 category.
+ */
+export type RollForwardSelectionsOut = {
+    /**
+     * Prior Year Notes
+     */
+    prior_year_notes: boolean;
+    /**
+     * Request List
+     */
+    request_list: boolean;
+    /**
+     * Team
+     */
+    team: boolean;
+    /**
+     * Template
+     */
+    template: boolean;
+};
+
+/**
+ * RollForwardSourceOut
+ */
+export type RollForwardSourceOut = {
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Fiscal Period End
+     */
+    fiscal_period_end: string;
+    /**
+     * Fiscal Period Start
+     */
+    fiscal_period_start: string;
+    /**
+     * Name
+     */
+    name: string;
+    status: EngagementStatus;
+};
+
+/**
+ * RollForwardTeamMemberOut
+ *
+ * Last year's person: `available` false when they have left or are now walled.
+ */
+export type RollForwardTeamMemberOut = {
+    /**
+     * Available
+     */
+    available: boolean;
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * Role
+     */
+    role: string;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * RollForwardTemplateOut
+ *
+ * The source's template; `current` when last year's version is still the newest.
+ */
+export type RollForwardTemplateOut = {
+    /**
+     * Current
+     */
+    current: boolean;
+    /**
+     * Current Version
+     */
+    current_version: number;
+    /**
+     * Current Version Id
+     */
+    current_version_id: string;
+    /**
+     * Source Version
+     */
+    source_version: number;
+    /**
+     * Template Id
+     */
+    template_id: string;
+    /**
+     * Template Name
+     */
+    template_name: string;
 };
 
 /**
@@ -45867,6 +46154,306 @@ export type ReviseRiskResponses = {
 };
 
 export type ReviseRiskResponse = ReviseRiskResponses[keyof ReviseRiskResponses];
+
+export type RollForwardDraftCreateData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/roll-forward/drafts';
+};
+
+export type RollForwardDraftCreateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RollForwardDraftCreateError = RollForwardDraftCreateErrors[keyof RollForwardDraftCreateErrors];
+
+export type RollForwardDraftCreateResponses = {
+    /**
+     * Successful Response
+     */
+    201: RollForwardDraftOut;
+};
+
+export type RollForwardDraftCreateResponse = RollForwardDraftCreateResponses[keyof RollForwardDraftCreateResponses];
+
+export type RollForwardDraftDiscardData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Draft Id
+         */
+        draft_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/roll-forward/drafts/{draft_id}';
+};
+
+export type RollForwardDraftDiscardErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RollForwardDraftDiscardError = RollForwardDraftDiscardErrors[keyof RollForwardDraftDiscardErrors];
+
+export type RollForwardDraftDiscardResponses = {
+    /**
+     * Successful Response
+     */
+    200: RollForwardDraftDiscardedOut;
+};
+
+export type RollForwardDraftDiscardResponse = RollForwardDraftDiscardResponses[keyof RollForwardDraftDiscardResponses];
+
+export type RollForwardDraftData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Draft Id
+         */
+        draft_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/roll-forward/drafts/{draft_id}';
+};
+
+export type RollForwardDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RollForwardDraftError = RollForwardDraftErrors[keyof RollForwardDraftErrors];
+
+export type RollForwardDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: RollForwardDraftOut;
+};
+
+export type RollForwardDraftResponse = RollForwardDraftResponses[keyof RollForwardDraftResponses];
+
+export type RollForwardDraftUpdateData = {
+    body: RollForwardDraftPatchIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Draft Id
+         */
+        draft_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/roll-forward/drafts/{draft_id}';
+};
+
+export type RollForwardDraftUpdateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RollForwardDraftUpdateError = RollForwardDraftUpdateErrors[keyof RollForwardDraftUpdateErrors];
+
+export type RollForwardDraftUpdateResponses = {
+    /**
+     * Successful Response
+     */
+    200: RollForwardDraftOut;
+};
+
+export type RollForwardDraftUpdateResponse = RollForwardDraftUpdateResponses[keyof RollForwardDraftUpdateResponses];
+
+export type RollForwardCreateData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Draft Id
+         */
+        draft_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/roll-forward/drafts/{draft_id}/create';
+};
+
+export type RollForwardCreateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RollForwardCreateError = RollForwardCreateErrors[keyof RollForwardCreateErrors];
+
+export type RollForwardCreateResponses = {
+    /**
+     * Successful Response
+     */
+    201: RollForwardCreatedOut;
+};
+
+export type RollForwardCreateResponse = RollForwardCreateResponses[keyof RollForwardCreateResponses];
 
 export type ListScreeningResultsData = {
     body?: never;

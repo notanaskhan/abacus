@@ -170,6 +170,8 @@ async def _flags_on() -> None:
     # I-01-T13: HOME-01 lite on the Dev firm: /v1/home and the C13 gate list and counts.
     await set_flag(FIRM, "home.dashboard", "true", "seed", "local development")
     await set_flag(FIRM, "review.grammar_api", "true", "seed", "local development")
+    # P-07-T55: ENG-13's roll-forward v2 routes on the Dev firm.
+    await set_flag(FIRM, "engagements.roll_forward_v2", "true", "seed", "local development")
 
 
 def main() -> int:

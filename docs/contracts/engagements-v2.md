@@ -4,7 +4,7 @@
 |---|---|
 | Register row | Screen-family contracts in `docs/contracts/README.md`; an additive C1 v1.1 note to `work-items.md` (P-07 §8.1) |
 | Version | v2 of the engagement surfaces (C1 stays v1; these are additive operations and models) |
-| Status | live (P-07-T15, P-07-T16, 2026-10-24); start-acceptance live (P-07-T35, 2026-10-26; DEC-372) |
+| Status | live (P-07-T15, P-07-T16, 2026-10-24); start-acceptance live (P-07-T35, 2026-10-26; DEC-372); roll-forward v2 live behind `engagements.roll_forward_v2` (P-07-T55, 2026-10-28; DEC-805) |
 | Provider epic | P-07 (`engagements`) |
 | Consumers | ENG-01, ENG-02, ENG-03 (P-07-T20, T21, T27, T28); CLI-02's Engagements tab; fixtures P-07-T11; A-01 (AUD-02 hangs off ENG-02 and its gates); N-02 (`acceptance_decided_at`, the G3 swap); T-02 and C-01 (tax and CAS through ENG-03) |
 | Freeze sprint | the sprint review after the stub (P-07 §8.1) |
@@ -100,8 +100,28 @@ Brightwater Hale, synthetic; ids are placeholders.
 
 `POST /v1/engagement-drafts/{id}/create` for Morgan & Kai Ferris' TY2025 Form 1040 (ENG-03 e) without `confirm_duplicate` → 409 `possible_duplicate`; with `{"confirm_duplicate": true}` → 201.
 
+## 8a. Roll-forward v2 (ENG-13; P-07-T55; DEC-805)
+
+Behind `engagements.roll_forward_v2` (default off, created 2026-10-28, expires 2027-01-26); off, every route answers 404. `{engagement_id}` is the **source**, which must be `delivered` or `archived`: any other status answers 409 `roll_forward_source_not_released` `{status}` and writes nothing.
+
+| Operation | Route | Action | Who |
+|---|---|---|---|
+| Start a draft | `POST /v1/engagements/{engagement_id}/roll-forward/drafts` → 201 | `roll_forward.create` (on the client) + `roll_forward.read` (on the source) | firm admin, practice leader, partners and managers by level; the source's engagement partner or manager to read it; agent and system denied |
+| Read | `GET …/roll-forward/drafts/{draft_id}` | `roll_forward.read` | the draft's owner only (404 otherwise) |
+| Autosave | `PATCH …/roll-forward/drafts/{draft_id}` `{seen_version, target_period_start?, target_period_end?, name?, selections?, team_user_ids?, template_decision?}` | `roll_forward.create` | the owner; 409 `stale_version`, 422 `roll_forward_invalid {field}` |
+| Discard | `DELETE …/roll-forward/drafts/{draft_id}` → `{draft_id, discarded_at}` | `roll_forward.create` | the owner |
+| Create | `POST …/roll-forward/drafts/{draft_id}/create` + `Idempotency-Key` → 201 `RollForwardCreatedOut` | `roll_forward.create` | the owner; a person only |
+
+- **`RollForwardDraftOut`**: `id`, `source {engagement_id, name, status, fiscal_period_start, fiscal_period_end}`, `target_period_start/end` (default: the source's a year on), `name` (default: the source's with its period year moved on, "… · PY2025" → "… · PY2026"), `selections {team, template, request_list, prior_year_notes}` (Carry true, Skip false; all carried by default, `template` only when the source has one), `team [{user_id, role}]`, `template_decision` (`current` or `skip`), `version`, `saved_at`, `created_engagement_id`, `catalogue {team [{user_id, display_name, role, available}], template {template_id, template_name, source_version, current_version_id, current_version, current} | null, request_count, evidence_copied: 0}`, `allowed_actions`.
+- **The v1 carry categories only.** Team (last year's people and roles; someone who left or is now walled is `available: false` and cannot be carried), template (pinned at its current version at Create; a newer version's change list is K-03's, ENG-13 c), request list (every item as Draft, never client-visible, no client assignee, no due date) and prior-year notes (the new engagement links last year's record through `prior_engagement_id`). Controls, mappings, prior-year balances, triggers, sheets and learned context are not served (X-01, K-03 to K-05; ENG-13 a, b, c are fixture-only).
+- **Create** is one unit of work: a **Prospect** engagement (same client, entity and type) with `prior_engagement_id`, the carried team (each asked to confirm independence: `independence_requested_user_ids`), the template's current version pinned, a **continuance** acceptance record (`acceptance_record_id`, `kind = continuance`, G1 again; nothing is accepted), and the request list copied (`requests_created`). **Evidence, results and sign-offs never move** (ADR-004). A second Create of the same draft, under any key, answers the engagement the first made.
+- **Audit:** `roll_forward_draft.created`, `.saved`, `.discarded`; at Create `engagement.created`, `acceptance.record_opened`, `request_item.created` per item and `engagement.rolled_forward {prior_engagement_id, items_created, team_added, notes_linked, evidence_copied: 0}`; outbox `engagement.created`.
+
+`POST /v1/engagements/{Northwind PY2025}/roll-forward/drafts` (delivered) → draft "Northwind Robotics 401(k) Plan · PY2026", 2026-01-01 – 2026-12-31, `request_count` 24; Create → 201 `{engagement_status: "prospect", requests_created: 24}`. The same on an `active` source → 409 `{"detail": "roll_forward_source_not_released", "facts": {"status": "active"}}`.
+
 ## 9. Consumer contract tests
 - Stub: `backend/tests/contracts/engagements_v2/test_engagements_v2_stub.py` (SPEC-321 AC-10 to AC-15).
+- Roll-forward v2: `backend/tests/integration/backfill/test_p07t55_roll_forward_v2.py` (SPEC-321 AC-30).
 - Consumers (P-07-T06): `backend/tests/contracts/engagements_v2/test_engagements_v2_consumer.py` (SPEC-321 AC-23 to AC-25, reusing F-02-T11's module) and `apps/web/src/fixtures/contracts/clients-engagements.test.ts` (typed ENG-01 b, ENG-02 b gates and the 18-card catalogue). F-02-T11's C1 check (`tests/contracts/c1_work_items/`) keeps holding that C1's `EngagementType` has no excluded type.
 
 ## 10. Versioning
