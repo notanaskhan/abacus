@@ -1,4 +1,4 @@
-// CLI-06 a–f, h and i in fixture mode (P-07-T49; g is P-07-T54): every scenario at 1440×900,
+// CLI-06 a–i in fixture mode (P-07-T49; g, the bulk import, P-07-T54): every scenario at 1440×900,
 // DPR 2, from the /components gallery on fixtures, with axe at zero serious or critical findings.
 // Run: `ABACUS_VISUAL=1 pnpm exec playwright test --project=chromium e2e/screens/CLI-06.spec.ts`.
 import AxeBuilder from "@axe-core/playwright";
@@ -13,6 +13,7 @@ const STATES = [
   { st: "d", ready: "Contact" },
   { st: "e", ready: "Form 706" },
   { st: "f", ready: "Create & start acceptance" },
+  { st: "g", ready: "Import 210 records" },
   { st: "h", ready: "Harborline Trust Company" },
   { st: "i", ready: "Required for Form 706 due date" },
 ] as const;

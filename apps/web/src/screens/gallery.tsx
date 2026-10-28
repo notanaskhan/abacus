@@ -1145,7 +1145,7 @@ function Cli07Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("CLI-07", { title: "Acceptance & continuance", Component: Cli07Artboard });
 
-// CLI-06 (P-07-T49): the single-client intake, a–f, h and i (g is P-07-T54's bulk import).
+// CLI-06: the single-client intake, a–f, h and i (P-07-T49), and g, the bulk import (P-07-T54).
 function Cli06Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Cli06State = CLI06_STATES.find((s) => s === params.st) ?? "a";
   const [ready, setReady] = useState<string | null>(null);
@@ -1166,6 +1166,9 @@ function Cli06Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
       <IntakePage
         draftId={CLI06_DRAFT}
         step={opens.step}
+        {...(opens.bulk === undefined
+          ? {}
+          : { mode: "bulk", importId: opens.bulk.importId, importStep: opens.bulk.step })}
         {...(opens.problems === undefined ? {} : { problems: opens.problems })}
         screened={opens.screened === true}
       />

@@ -1,5 +1,5 @@
-// CLI-06 New client / prospect intake, single client: one fixture scenario per artboard P-07-T49
-// builds (docs/screens/CLI-06.md; g, the bulk import, is P-07-T54's). Grace Holloway adds the
+// CLI-06 New client / prospect intake: one fixture scenario per artboard, single client (P-07-T49)
+// and the bulk import g (P-07-T54) (docs/screens/CLI-06.md). Grace Holloway adds the
 // Estate of Walter Thornbury under the existing Walter Thornbury client on Tue Sep 8, 2026,
 // 2:10 PM CT, through handlers/intake.ts:
 //
@@ -8,11 +8,18 @@
 //   c  Related entities · d Contacts · e Services · f Review
 //   h  Samuel Ito: Harborline Trust Company, a counterparty to review, "Clear as not adverse…"
 //   i  Validation: Date of death empty → "Required for Form 706 due date"
+//   g  Bulk import at 2:04 PM: the synthetic 212-row CCH Axcess Tax client list (P-07-T50's file,
+//      backend/src/abacus_tools/synthetic/scenarios/brightwater_hale/client_list.py) scored as the
+//      live import scores it: 204 matched + 8 to review + 0 new = 212. The eight are the file's
+//      rows 7, 8, 10, 15, 30, 33, 34 and 38 (practice-management spellings, 77–85%); Grace has
+//      merged six and skipped rows 7 and 8, so "Import 210 records" (212 − 2)
 //
 // They live under fixtures/ (dev and test only); screens/CLI-06/scenarios.ts re-exports them.
 
 import type {
   CapabilitiesOut,
+  ClientImportOut,
+  ClientImportRowOut,
   ClientIntakeDraftOut,
   ClientIntakeDraftPayload,
   ConflictCheckOut,
@@ -24,10 +31,11 @@ import {
   defineScenarios,
   json,
 } from "../../app-core/fixture-mode";
+import { importHandlers } from "../handlers/imports";
 import { intakeHandlers } from "../handlers/intake";
 import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";
-import { entityIdOf, slugOfClient } from "../seed/clients";
+import { buildClients, entityIdOf, slugOfClient } from "../seed/clients";
 import { stableId } from "../seed/prng";
 import { capabilitiesFor } from "../seed/shell";
 
@@ -40,6 +48,94 @@ export const THORNBURY_CLIENT = stableId(`client:${slugOfClient("Walter Thornbur
 export const DRAFT_ID = stableId("intake-draft:thornbury-estate");
 const CHECK_ID = stableId("conflict-check:thornbury-estate:2026-09-08");
 const DECEDENT_ENTITY = entityIdOf(slugOfClient("Walter Thornbury"), "Walter Thornbury");
+export const IMPORT_ID = stableId("client-import:cch-client-list:2026-09-08");
+const GRACE = stableId("user:grace-holloway");
+
+// g: the file's eight rows a person reviews (row, as the file spells it, the client, its score:
+// pg_trgm similarity of the normalised names, DEC-441). Rows 7 and 8 are skipped (handoff g).
+const REVIEW: readonly (readonly [number, string, string, number])[] = [
+  [7, "Harbourview Dental Properties LP", "Harborview Dental Properties, LP", 0.8438],
+  [8, "Marcus & Dana Whiteley", "Marcus & Dana Whitley", 0.7826],
+  [10, "Blue Stem Analytics LLC", "Bluestem Analytics, LLC", 0.7727],
+  [15, "Juniper and Oak Interiors LLC", "Juniper & Oak Interiors, LLC", 0.8462],
+  [30, "Kestrel Ventures Fund 1 LP", "Kestrel Ventures Fund I, LP", 0.8462],
+  [33, "Summitline Logistics Inc", "Summit Line Logistics, Inc.", 0.8261],
+  [34, "Pine Crest Pediatrics PC", "Pinecrest Pediatrics, PC", 0.7826],
+  [38, "Riverbend Community Theatre", "Riverbend Community Theater", 0.8065],
+];
+const SKIPPED_ROWS = new Set([7, 8]);
+const PLANS = ["Northwind Robotics 401(k) Plan", "Granite Peak Outdoor Supply 401(k) Plan"];
+const PLAN_SPONSORS = ["Northwind Robotics, Inc.", "Granite Peak Outdoor Supply, Inc."];
+const TRUSTS = 26;
+
+/** The CLI-06 snapshot's name for a client (the holdout keeps Walter Thornbury, DEC-593). */
+function atSnapshot(name: string): string {
+  return name === "Estate of Walter Thornbury" ? "Walter Thornbury" : name;
+}
+
+function clientIdOf(name: string): string {
+  return stableId(`client:${slugOfClient(name)}`);
+}
+
+/** The 212 rows as the import scored them, with g's decisions. */
+export function importRows(): ClientImportRowOut[] {
+  const clients = buildClients();
+  const reviewed = new Set(REVIEW.map(([, , client]) => client));
+  const matched = clients.map((c) => atSnapshot(c.name)).filter((n) => !reviewed.has(n));
+  const at = new Map(REVIEW.map((r) => [r[0], r]));
+  const out: ClientImportRowOut[] = [];
+  const row = (name: string, client: string, score: number): void => {
+    const rowNo = out.length + 1;
+    const review = score < 0.9;
+    out.push({
+      id: stableId(`client-import-row:${String(rowNo)}`),
+      row_no: rowNo,
+      display_name: name,
+      best_match_client_id: clientIdOf(client),
+      best_match_name: client,
+      score,
+      decision: review ? (SKIPPED_ROWS.has(rowNo) ? "skip" : "merge") : "merge",
+      decided_by: review ? GRACE : null,
+      error_code: null,
+      tin: null,
+    });
+  };
+  let next = 0;
+  for (let n = 1; n <= clients.length; n += 1) {
+    const r = at.get(n);
+    if (r !== undefined) {
+      row(r[1], r[2], r[3]);
+    } else {
+      const name = matched[next] ?? "";
+      next += 1;
+      row(name, name, 1);
+    }
+  }
+  PLANS.forEach((plan, i) => {
+    row(plan, PLAN_SPONSORS[i] ?? "", 1);
+  });
+  const grantors = clients
+    .filter((c) => (c.kind === "individual" || c.kind === "household") && !reviewed.has(c.name))
+    .filter((c) => atSnapshot(c.name) === c.name)
+    .slice(0, TRUSTS);
+  for (const g of grantors) row(`${g.name} Revocable Trust`, g.name, 0.96);
+  return out;
+}
+
+function clientImport(): ClientImportOut {
+  return {
+    id: IMPORT_ID,
+    source: "cch_axcess_tax_export",
+    stage: "reviewing",
+    file_name: "cch-axcess-client-list.csv",
+    mapping: { "Client Name": "client_name", "Client Type": "entity_type" },
+    counts: { rows: 212, matched: 204, to_review: 8, new: 0, skipped: 0, imported: 0, failed: 0 },
+    started_at: "2026-09-08T19:04:00Z",
+    started_by: GRACE,
+    completed_at: null,
+    allowed_actions: ["client_import.run"],
+  };
+}
 
 function payload(options: { dod?: boolean; check?: boolean } = {}): ClientIntakeDraftPayload {
   return {
@@ -132,6 +228,7 @@ const PERSONA = {
   d: "grace-holloway",
   e: "grace-holloway",
   f: "grace-holloway",
+  g: "grace-holloway",
   h: "samuel-ito",
   i: "grace-holloway",
 } as const;
@@ -145,15 +242,22 @@ const STEP: Readonly<Record<Cli06State, ClientIntakeDraftOut["step"]>> = {
   d: "contacts",
   e: "services",
   f: "review",
+  g: "entity",
   h: "conflicts",
   i: "entity",
 };
 
-/** What each artboard opens on: the step, and i's problem from the services step's Next. */
+/** What each artboard opens on: the step, i's problem from the services step's Next, and g's
+ * bulk import on its review. */
 export const OPENS: Readonly<
   Record<
     Cli06State,
-    { step: ClientIntakeDraftOut["step"]; problems?: IntakeProblemOut[]; screened?: boolean }
+    {
+      step: ClientIntakeDraftOut["step"];
+      problems?: IntakeProblemOut[];
+      screened?: boolean;
+      bulk?: { importId: string; step: "review" };
+    }
   >
 > = {
   a: { step: "conflicts", screened: true },
@@ -162,6 +266,7 @@ export const OPENS: Readonly<
   d: { step: "contacts" },
   e: { step: "services" },
   f: { step: "review" },
+  g: { step: "entity", bulk: { importId: IMPORT_ID, step: "review" } },
   h: { step: "conflicts" },
   i: {
     step: "entity",
@@ -174,6 +279,8 @@ function capabilities(persona: string | undefined): CapabilitiesOut {
   return { ...base, flags: { ...base.flags, "clients.v2": true } };
 }
 
+const CLOCK_G = "2026-09-08T14:04:00-05:00";
+
 function build(state: Cli06State): Scenario {
   const handlers: Record<string, FixtureHandler> = {
     ...E0.handlers,
@@ -183,9 +290,15 @@ function build(state: Cli06State): Scenario {
       dedupe: { name: "Walter Thornbury", clientId: THORNBURY_CLIENT, score: 96 },
       now: NOW,
     }),
+    ...importHandlers({
+      import: clientImport(),
+      rows: importRows(),
+      now: "2026-09-08T19:04:00Z",
+      decidedBy: GRACE,
+    }),
     "GET /v1/me/capabilities": ({ persona }) => json(capabilities(persona)),
   };
-  return { state, persona: PERSONA[state], clock: CLOCK, handlers };
+  return { state, persona: PERSONA[state], clock: state === "g" ? CLOCK_G : CLOCK, handlers };
 }
 
 export const scenarios = defineScenarios({
@@ -195,6 +308,7 @@ export const scenarios = defineScenarios({
   d: build("d"),
   e: build("e"),
   f: build("f"),
+  g: build("g"),
   h: build("h"),
   i: build("i"),
 });
