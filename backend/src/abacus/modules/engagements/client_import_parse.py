@@ -36,7 +36,7 @@ _SPACE = re.compile(r"\s+")
 _HEADING = re.compile(r"[^a-z0-9]+")
 _DIGITS = re.compile(r"[^0-9]")
 # Bidirectional embeddings, overrides, isolates and marks (Trojan Source), then other controls.
-_BIDI = re.compile("[؜‎‏‪-‮⁦-⁩]")
+_BIDI = re.compile(r"[\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]")
 _CONTROL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]")
 _FORMULA_LEADS: Final = ("=", "+", "-", "@")
 _SSN_SHAPE = re.compile(r"[0-9]{3}[ -][0-9]{2}[ -][0-9]{4}")
