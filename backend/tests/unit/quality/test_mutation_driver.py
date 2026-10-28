@@ -46,6 +46,9 @@ def test_t026_scopes_are_the_red_modules_and_compute_packages(
     assert scope_of(path) == scope
 
 
+# DEC-599: the mutation workflows narrow `only_mutate` to the run's files on the runner before
+# mutmut starts, so this check of the committed list can only hold outside a mutation run.
+@pytest.mark.source_scan
 def test_t026_the_committed_mutmut_config_names_every_scope() -> None:
     config = tomllib.loads(mutation.PYPROJECT.read_text(encoding="utf-8"))["tool"]["mutmut"]
     only = config["only_mutate"]
