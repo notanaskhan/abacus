@@ -458,6 +458,11 @@ export function freshScenario(state: Eng13State): Scenario {
     clock: clock[state],
     handlers: {
       ...E0.handlers,
+      // The route starts a draft when the URL names none (P-07-T62): the scenario's own.
+      [`POST ${DRAFTS}`]: ({ params }) =>
+        params.engagement_id === draft.source.engagement_id
+          ? json(draft, 201)
+          : json({ detail: "not_found" }, 404),
       [`GET ${DRAFTS}/{draft_id}`]: ({ params }) =>
         ours(params) ? json(draft) : json({ detail: "not_found" }, 404),
       [`PATCH ${DRAFTS}/{draft_id}`]: ({ params, body }) => {

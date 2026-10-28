@@ -1,6 +1,7 @@
 import type { RollForwardDraftOut, RollForwardDraftPatchIn } from "@abacus/api-client";
 import {
   rollForwardCreateMutation,
+  rollForwardDraftCreateMutation,
   rollForwardDraftDiscardMutation,
   rollForwardDraftOptions,
   rollForwardDraftQueryKey,
@@ -23,7 +24,7 @@ import {
   toast,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type JSX, useState } from "react";
+import { type JSX, useEffect, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { useSession } from "../../app-core/session";
@@ -557,5 +558,68 @@ export function ENG13({
         </Button>
       </Dialog>
     </>
+  );
+}
+
+export interface RollForwardPageProps {
+  /** The engagement rolled forward (the source). */
+  engagementId: string;
+  /** A draft to resume (`?draft=`); without one the page opens a new draft for the source. */
+  draftId?: string;
+  /** The new draft's id, for the URL (a reload resumes it). */
+  onDraft?: (draftId: string) => void;
+  onClose?: () => void;
+  onCreated?: (engagementId: string) => void;
+}
+
+/** The routed page (P-07-T62): `/engagements/$engagementId/roll-forward` opens the source's draft,
+ * starting one when the URL names none; a source not yet delivered or archived says why (409
+ * `roll_forward_source_not_released`). */
+export function RollForwardPage({
+  engagementId,
+  draftId,
+  onDraft,
+  onClose,
+  onCreated,
+}: RollForwardPageProps): JSX.Element | null {
+  const start = useMutation(rollForwardDraftCreateMutation());
+  const [refused, setRefused] = useState<string | null>(null);
+  useEffect(() => {
+    if (draftId !== undefined) return;
+    let live = true;
+    start.mutateAsync({ path: { engagement_id: engagementId } }).then(
+      (d) => {
+        if (live) onDraft?.(d.id);
+      },
+      (error: unknown) => {
+        const code = (error as { detail?: unknown } | null)?.detail;
+        if (live) {
+          setRefused(
+            code === "roll_forward_source_not_released"
+              ? COPY.toast.notReleased
+              : COPY.toast.failed,
+          );
+        }
+      },
+    );
+    return () => {
+      live = false;
+    };
+  }, [engagementId, draftId]);
+  if (refused !== null) {
+    return (
+      <p role="alert" className="p-[16px] text-body text-red-ink">
+        {refused}
+      </p>
+    );
+  }
+  if (draftId === undefined) return null;
+  return (
+    <ENG13
+      sourceId={engagementId}
+      draftId={draftId}
+      {...(onClose === undefined ? {} : { onClose })}
+      {...(onCreated === undefined ? {} : { onCreated })}
+    />
   );
 }

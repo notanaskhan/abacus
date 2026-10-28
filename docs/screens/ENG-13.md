@@ -2,12 +2,12 @@
 
 | Field | Value |
 |---|---|
-| Route and params | `/engagements/$engagementId/roll-forward` (O6 over ENG-02; P-07 §5). Artboards: `/components/screens/ENG-13?st=a…e` |
+| Route and params | `/engagements/$engagementId/roll-forward?draft=` (O6 over ENG-02; P-07 §5), wired by P-07-T62: without `draft` the page starts the source's draft and puts its id in the URL; a source not delivered or archived says why (409). Artboards: `/components/screens/ENG-13?st=a…e` |
 | Template and host frame | O6 `Wizard` (five steps, Carry · Skip per row) · `Wave 6 - Group Audit & Procedures.dc.html#eng13` (kit `kits/ENG13 Rollforward.dc.html`) |
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/ENG-13 Roll forward - Tessellate SOC 2 Type 2/` (README.md, spec.md; no revision) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | P-07 · contract P-07-T23 · backend P-07-T55 · screen P-07-T60 |
-| Manifest status | planned (`routes/manifest/eng.ts`) until P-07-T60 |
+| Manifest status | planned (`routes/manifest/eng.ts`; path set by P-07-T62) until ENG-02's "Roll forward…" opens it |
 
 Code: `src/screens/ENG-13/{index.tsx, scenarios.ts, copy.ts, ENG-13.test.tsx, ENG-13.production.test.tsx}`, fixtures `src/fixtures/scenarios/ENG-13.ts`, axe `e2e/screens/ENG-13.spec.ts` (P-07-T60). Flag `engagements.roll_forward_v2`.
 

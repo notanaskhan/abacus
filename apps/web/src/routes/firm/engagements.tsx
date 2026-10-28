@@ -1,7 +1,7 @@
 import { workItemsOptions } from "@abacus/api-client/query";
 import { FlagOffState } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
-import { createRoute, useNavigate } from "@tanstack/react-router";
+import { createRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { type JSX, useEffect } from "react";
 import { FeatureGate, useFlag } from "../../app-core/flags";
 import { useParam } from "../params";
@@ -303,6 +303,46 @@ const completionRoute = createRoute({
   },
 });
 
+// ENG-13 (P-07-T60, P-07-T62): the roll-forward wizard, an O6 over the engagement, behind
+// `engagements.roll_forward_v2`. `?draft=` resumes a draft; without one the page starts one and
+// puts it in the URL. Closing returns to the source's record; Create opens the new engagement.
+const RollForward = lazyScreen(async () => (await import("../../screens/ENG-13")).RollForwardPage);
+
+const rollForwardRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/engagements/$engagementId/roll-forward",
+  validateSearch: (search: Record<string, unknown>): { draft?: string } =>
+    typeof search.draft === "string" ? { draft: search.draft } : {},
+  component: function RollForwardRoutePage(): JSX.Element {
+    const engagementId = useParam("engagementId");
+    const search: { draft?: string } = useSearch({ strict: false });
+    const navigate = useNavigate();
+    const record = (id: string): void => {
+      void navigate({ to: "/engagements/$engagementId", params: { engagementId: id } });
+    };
+    return (
+      <FeatureGate flag="engagements.roll_forward_v2">
+        <RollForward
+          engagementId={engagementId}
+          {...(search.draft === undefined ? {} : { draftId: search.draft })}
+          onDraft={(draft) => {
+            void navigate({
+              to: "/engagements/$engagementId/roll-forward",
+              params: { engagementId },
+              search: { draft },
+              replace: true,
+            });
+          }}
+          onClose={() => {
+            record(engagementId);
+          }}
+          onCreated={record}
+        />
+      </FeatureGate>
+    );
+  },
+});
+
 // SPEC-317 (TASK-460): the engagement at a glance.
 const dashboardRoute = createRoute({
   getParentRoute: () => engagementRoute,
@@ -315,6 +355,7 @@ const dashboardRoute = createRoute({
 
 export const engagementRoutes = [
   newEngagementRoute,
+  rollForwardRoute,
   engagementRoute.addChildren([
     overviewRoute,
     boardRoute,

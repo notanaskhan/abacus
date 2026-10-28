@@ -1162,7 +1162,8 @@ function Cli06Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
   }, [state, params.as]);
   const opens = CLI06_OPENS[state];
   return ready === state ? (
-    <div data-artboard={state} key={state}>
+    // The wizard is a portal: the frame holds its height so the artboard reads as visible (as ENG-13's).
+    <div data-artboard={state} key={state} className="h-[900px]">
       <IntakePage
         draftId={CLI06_DRAFT}
         step={opens.step}

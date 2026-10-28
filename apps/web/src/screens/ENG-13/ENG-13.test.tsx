@@ -12,7 +12,8 @@ import {
   installFixtureMode,
 } from "../../app-core/fixture-mode";
 import { renderRoutes } from "../../testing/support";
-import { ENG13 } from ".";
+import { ENG13, RollForwardPage } from ".";
+import { COPY } from "./copy";
 import {
   CLOCK_JAN_11,
   CLOCK_NOV_16,
@@ -261,5 +262,51 @@ describe("ENG-13 e · Review and Create", () => {
     await waitFor(() => {
       expect(closed).toHaveBeenCalledTimes(1);
     });
+  });
+});
+
+describe("ENG-13 route page (P-07-T62)", () => {
+  it("starts a draft for the source when the URL names none, and hands its id to the URL", async () => {
+    restore = installFixtureMode(freshScenario("d"));
+    const onDraft = vi.fn();
+    renderRoutes([
+      {
+        path: "/",
+        component: () => <RollForwardPage engagementId={OPENS.d.source} onDraft={onDraft} />,
+      },
+    ]);
+    await waitFor(() => {
+      expect(onDraft).toHaveBeenCalledWith(OPENS.d.draft);
+    });
+  });
+
+  it("a source not yet delivered or archived says why (409)", async () => {
+    const scenario = freshScenario("d");
+    restore = installFixtureMode({
+      ...scenario,
+      handlers: {
+        ...scenario.handlers,
+        "POST /v1/engagements/{engagement_id}/roll-forward/drafts": () =>
+          new Response(JSON.stringify({ detail: "roll_forward_source_not_released" }), {
+            status: 409,
+            headers: { "Content-Type": "application/json" },
+          }),
+      },
+    });
+    renderRoutes([
+      { path: "/", component: () => <RollForwardPage engagementId={OPENS.d.source} /> },
+    ]);
+    expect(await screen.findByText(COPY.toast.notReleased)).toBeTruthy();
+  });
+
+  it("resumes the named draft on What to carry", async () => {
+    restore = installFixtureMode(freshScenario("d"));
+    renderRoutes([
+      {
+        path: "/",
+        component: () => <RollForwardPage engagementId={OPENS.d.source} draftId={OPENS.d.draft} />,
+      },
+    ]);
+    expect(await screen.findByText(COPY.steps.carry)).toBeTruthy();
   });
 });

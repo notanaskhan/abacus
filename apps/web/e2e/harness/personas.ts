@@ -46,6 +46,7 @@ export const PERSONAS = {
   "grace-holloway": staff("Grace Holloway"),
   "felix-andersen": staff("Felix Andersen"),
   "cole-hart": staff("Cole Hart"),
+  "laura-kemp": staff("Laura Kemp"), // ENG-13 a, b and e (P-07-T62)
   "claire-feld": portal("Claire Feld"),
   "dana-kowalski": portal("Dana Kowalski"),
   "tess-moreno": portal("Tess Moreno"),
