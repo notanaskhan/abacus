@@ -1535,6 +1535,16 @@ async def agents_paused_since(session: AsyncSession) -> datetime | None:
     return cast(datetime, found) if found is not None else None
 
 
+async def agents_pause_of(session: AsyncSession) -> tuple[datetime, UUID] | None:
+    """When the session's firm paused its agents and who did, or None (AC-42)."""
+    found = (
+        await session.execute(text("SELECT agents_paused_at, agents_paused_by FROM firms"))
+    ).first()
+    if found is None or found[0] is None:
+        return None
+    return cast(datetime, found[0]), cast(UUID, found[1])
+
+
 async def set_agents_paused(session: AsyncSession, by: UUID | None) -> None:
     await session.execute(
         text(

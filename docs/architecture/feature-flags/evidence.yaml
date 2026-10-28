@@ -66,3 +66,12 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: files.browser
+    description: 'FIL-01, the read-only Files browser and document drawer (N-01; docs/contracts/files-browser.md; ADR-158): GET /v1/files/*, /v1/evidence-items/{id}/drawer and /access-log. Off: 404 and the Files nav item renders C-20. On: 501 not_implemented until N-01-T19. Retired in N-01-T30.'
+    owner: ayushkbhatia
+    created: 2026-10-27
+    expires: 2027-04-21
+    override: DEC-137
+    override: DEC-137
+    kind: boolean
+    default: false

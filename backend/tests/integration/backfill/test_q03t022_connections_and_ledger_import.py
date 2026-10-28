@@ -350,7 +350,12 @@ async def test_ac2_a_client_admin_connects_and_the_connection_is_active(
     assert handed["state"] and handed["code"]
     done = await world.complete(handed)
     assert done.status_code == 201, done.text
-    assert done.json() == {"engagement_id": str(world.site.engagement_id)}
+    # A-02-T28 added the POR-16 fields; a legacy (SPEC-020) connection names no entity.
+    assert done.json() == {
+        "engagement_id": str(world.site.engagement_id),
+        "client_entity_id": None,
+        "reconnected": False,
+    }
     view = (await world.call("GET", "", world.owner)).json()
     assert view["provider"] == "fake" and view["status"] == "active"
     assert "token" not in str(view).lower()  # SPEC-020 §13: tokens are never returned

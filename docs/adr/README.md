@@ -137,7 +137,7 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-146](ADR-146-client-identity-scoped-grants-portal-mfa.md) | Client identity - scoped grants, link principals and portal MFA | red | accepted |
 | [ADR-147](ADR-147-role-catalogue-need-to-know.md) | Role catalogue and need-to-know - two axes plus work-item functions | red | accepted |
 | [ADR-148](ADR-148-entitlements-agent-minutes-budgets.md) | Entitlements, agent-minutes and two-layer budgets | amber | accepted |
-| [ADR-149](ADR-149-e-signature-record-mode-then-docusign.md) | E-signature - record mode first, then DocuSign embedded with ID Verification behind an EnvelopeProvider port | red | proposed |
+| [ADR-149](ADR-149-e-signature-record-mode-then-docusign.md) | E-signature - record mode first, then DocuSign embedded with ID Verification behind an EnvelopeProvider port | red | accepted |
 | [ADR-150](ADR-150-integrations-module-write-capabilities.md) | Integrations module and the declared write-capability framework | red | proposed |
 | [ADR-151](ADR-151-busy-season-change-policy-from-go-live.md) | Busy-season change policy - the freeze starts at the first real go-live | red | proposed |
 | [ADR-152](ADR-152-unauthenticated-operational-routes.md) | Unauthenticated operational routes - /healthz and portal branding on an explicit allowlist | red | proposed |
@@ -146,7 +146,7 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-155](ADR-155-design-system.md) | packages/ui is the Accrued design system - Tailwind v4 tokens, self-hosted fonts, Radix for behaviour, the AA ink ladder | amber | accepted |
 | [ADR-156](ADR-156-tenant-key-provisioning.md) | Tenant key provisioning - one multi-Region key per firm, created by a keyops worker | red | proposed |
 | [ADR-157](ADR-157-platform-controls-kill-switches.md) | Platform controls and kill switches - database rows read through one function, changed only by operators | red | proposed |
-| [ADR-158](ADR-158-client-scoped-files-cross-engagement-fulfilment.md) | Client-scoped files and cross-engagement fulfilment - evidence with a client and no engagement; reuse by reference, same client only | red | proposed |
+| [ADR-158](ADR-158-client-scoped-files-cross-engagement-fulfilment.md) | Client-scoped files and cross-engagement fulfilment - evidence with a client and no engagement; reuse by reference, same client only | red | accepted |
 | [ADR-159](ADR-159-archive-seal-immutability-hash-chain-object-lock.md) | Archive seal, database immutability, the audit hash chain and Object Lock modes | red | proposed |
 | [ADR-160](ADR-160-review-grammar.md) | Review grammar - sign-offs, review notes, issues, decision cards, checkpoints and field history in one red review module | red | accepted |
 | [ADR-161](ADR-161-suggestions-proposals-approval-grants-undo.md) | Suggestions, proposals, approval grants and Undo as a compensating event; the policy actor is dormant | red | accepted |
@@ -163,3 +163,4 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-186](ADR-186-autonomy-policy-versions-auto-mode.md) | Autonomy policy versions and Auto mode: a versioned, stricter-only firm AI policy published by the QM owner and approved by a second partner | red | accepted |
 | [ADR-187](ADR-187-policy-principal-dormant.md) | Policy principal (dormant): the `policy` actor kind designed, stored off and locked, rendered in fixture mode only | red | accepted |
 | [ADR-190](ADR-190-status-fields-bare-codes.md) | API status fields carry the bare code; the label context is the screen's, a server-known discriminator its own field (amends ADR-138) | amber | accepted |
+| [ADR-210](ADR-210-firm-intake-channel-agnostic.md) | Firm intake is channel-agnostic, read by an intake scope, and filed only by people (P-60 part 1) | red | accepted |

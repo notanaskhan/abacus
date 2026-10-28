@@ -42,6 +42,8 @@ class Connection(Base):
     status_reason_code: Mapped[str | None]
     # 0215 (A-02-T16): bumped on every status change (the portal's disconnect `seen_version`).
     version: Mapped[int] = mapped_column(server_default=FetchedValue())
+    # 0271 (A-02-T25): the `reauth_due_at` the health pass last told the leads about.
+    reauth_noticed_for: Mapped[datetime | None]
 
 
 class ConnectionState(Base):

@@ -99,6 +99,7 @@ from abacus.modules.communications.api import (
     publish_email_template,
     save_email_template_draft,
 )
+from abacus.modules.connections.api import seed_synthetic_connection
 from abacus.modules.engagements.api import (
     NewCondition,
     acceptance_record,
@@ -229,6 +230,12 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.compliance import (
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.compliance import (
     SLICE as COMPLIANCE_SLICE,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.connections import (
+    NEEDS as CONNECTIONS_NEEDS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.connections import (
+    SLICE as CONNECTIONS_SLICE,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.email_templates import (
     SLICE as EMAIL_TEMPLATES_SLICE,
@@ -1367,6 +1374,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     RETURNED_SLICE: PORTAL_PBC_NEEDS,  # POR-03 g's alternate path (DEC-471)
     COMPLIANCE_SLICE: COMPLIANCE_NEEDS,
     METHODOLOGY_SLICE: METHODOLOGY_NEEDS,  # K-01-T10: Grace imports, Margaret approves
+    CONNECTIONS_SLICE: CONNECTIONS_NEEDS,  # A-02-T27: Copperleaf's POR-16a connections
     ACCEPTANCE_SLICE: ACCEPTANCE_NEEDS,
     INTAKE_SLICE: INTAKE_NEEDS,  # P-07-T50: wave 3 (drafts, the open Harborline hit, Meridian)
     EMAIL_TEMPLATES_SLICE: (),  # R-01-T22: Grace's firm admin role is audit_core's
@@ -2069,6 +2077,25 @@ async def _legal_hold_placed(conn: asyncpg.Connection, _: Scenario, event: Event
     await legal_hold_activate(TENANT, view.id)
 
 
+async def _connection_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """A-02-T27: one of Copperleaf's connections at its POR-16a state (fake providers only)."""
+    data = event.data
+    client = await _client_id(conn, str(event.client))
+    last_sync = data["last_sync_at"]
+    await seed_synthetic_connection(
+        TENANT,
+        client_entity_id=await _entity_id(conn, client, str(data["entity"])),
+        provider=str(data["provider"]),
+        category=str(data["category"]),
+        display_label=str(data["label"]),
+        status=str(data["status"]),
+        reason=None if data["reason"] is None else str(data["reason"]),
+        connected_by_user_id=UUID(stable_id(f"user:{slug_of(str(data['connected_by']))}")),
+        connected_at=datetime.fromisoformat(str(data["connected_at"])),
+        last_sync_at=None if last_sync is None else datetime.fromisoformat(str(last_sync)),
+    )
+
+
 async def _incident_recorded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     data = event.data
     consumers = data["consumers_affected"]
@@ -2382,6 +2409,8 @@ HANDLERS: Final[dict[str, Handler]] = {
     "evidence.retention_policy_set": _retention_policy_set,
     "evidence.legal_hold_placed": _legal_hold_placed,
     "platform.incident_recorded": _incident_recorded,
+    # A-02-T27 (`--slice connections`): Copperleaf's POR-16a connections.
+    "connections.connection_seeded": _connection_seeded,
     # P-07-T40 (`--slice acceptance`): templates, Calloway's custodian, the Northwind team's
     # history, the conflict searches, independence, contacts, then Thornbury and Meridian.
     "engagements.questionnaire_template_added": _questionnaire_template_added,

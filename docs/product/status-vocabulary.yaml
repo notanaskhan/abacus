@@ -327,6 +327,31 @@ objects:
       waiting: {label: "Waiting", variant: null, disc: dot_gold_16, terminal: false, derived: false}
       filed:   {label: "Filed",   variant: null, disc: check_olive_15, terminal: true, derived: false}
       ignored: {label: "Ignored", variant: null, disc: x_ink4_15, terminal: true, derived: false}
+      held:      {label: "Waiting", variant: null, disc: dot_gold_16, terminal: false, derived: false, context_labels: {sub_line: "Asked the client · {date}"}}   # N-01 DV-15: blueprint 3.3.1 allows four dot states, so `held` shows the waiting dot with a sub-line
+      withdrawn: {label: "Withdrawn", variant: muted, terminal: true, derived: false}   # ADR-162: the client withdrew it before it was filed
+
+  inbox_thread:   # N-01-T04 (C2); the INB-01 rail row's match state
+    source: "N-01 section 3.3; ADR-210 clause 3"
+    codes:
+      unmatched: {label: "Unmatched", variant: amber, terminal: false, derived: false}   # INB-01 b "Match client…" chip; intake scope only
+      matched:   {label: "Matched", variant: null, terminal: false, derived: false}
+      ignored:   {label: "Ignored", variant: muted, terminal: true, derived: false}
+
+  portal_intake_upload:   # N-01-T04; the client words on POR-03's own uploads (portal never renders "Accrued")
+    source: "N-01 section 3.1; DEC-58 b"
+    codes:
+      sent:      {label: "Sent", variant: null, terminal: false, derived: false, context_labels: {to_firm: "Sent to {firm}"}}   # new or waiting
+      received:  {label: "Received by {firm}", variant: green-tint, terminal: true, derived: false}   # filed, ignored or held: the firm has it
+      withdrawn: {label: "Withdrawn", variant: muted, terminal: true, derived: false}
+
+  file_document:   # N-01-T04; the FIL-01 list and drawer status of one document (a projection over evidence versions and acceptances)
+    source: "N-01 section 3.7; FIL-01 a-d; DV-17"
+    codes:
+      processing:   {label: "Processing", variant: null, terminal: false, derived: false}   # FIL-01 b: extraction or classification running
+      needs_review: {label: "Uploaded – needs review", variant: amber, terminal: false, derived: false}   # DV-4: filed by someone without evidence.accept
+      accepted:     {label: "Approved", variant: null, disc: check_olive, terminal: false, derived: false}   # DV-17: label plus olive disc
+      superseded:   {label: "Superseded", variant: muted, terminal: true, derived: false, context_labels: {replaced_by: "Superseded · replaced by {name} · {date}"}}   # FIL-01 c: struck through
+      on_hold:      {label: "On hold", variant: amber, terminal: false, derived: false}   # FIL-01 d legal hold banner; destruction suspended
 
   issue:
     source: "blueprint 3.3.1"   # kind lines (Missing information, Action required, Review point, Waiting on client) are labels on an issue, not states
@@ -461,6 +486,15 @@ objects:
       declined:  {label: "Declined",  variant: red-tint, terminal: true, derived: false}
       expired:   {label: "Expired",   variant: muted, terminal: true, derived: false}
       voided:    {label: "Voided",    variant: soon,  terminal: true, derived: false}
+
+  envelope_signer:   # C7 v1 (N-02-T03); one signer's state on an envelope (SIG-01 drawer, POR-06 "my state")
+    source: "N-02 section 4.2 (envelope_signers.status); DF-11"
+    codes:
+      pending:             {label: "Waiting", variant: neutral, terminal: false, derived: false}
+      viewed:              {label: "Viewed", variant: amber, terminal: false, derived: false}
+      signed:              {label: "Signed", variant: green-tint, terminal: true, derived: false, context_labels: {with_date: "Signed · {date}"}}
+      declined:            {label: "Declined", variant: red-tint, terminal: true, derived: false}
+      verification_failed: {label: "Needs a handwritten signature", variant: amber, terminal: false, derived: false}   # DF-11: three failed KBA attempts; SIG-01 offers "Upload signed 8879…"
 
   notice:
     source: "blueprint 3.3.1"
@@ -704,6 +738,24 @@ objects:
       awaiting_partner: {label: "Awaiting partner", variant: amber, terminal: false, derived: false, context_labels: {rail_card: "Blocked on a partner decision"}}   # CLI-07a
       decided:          {label: "Decided", variant: green-tint, terminal: true, derived: false}   # CLI-07d pill "{option} · {person} · {date}", e.g. "Accepted with conditions · Daniel Reyes · Sep 14, 9:46 AM", with a lock
       declined:         {label: "Declined", variant: null, terminal: true, derived: false}   # CLI-07e; the engagement becomes Declined
+
+  letter:   # DF-31 (N-02-T05): the Letter object of ENG-04 and the engagement rows
+    source: "DF-31; ENG-04; N-02 section 4.2 (engagement_letter_versions.status)"
+    codes:
+      not_started:      {label: "Not started", variant: neutral, terminal: false, derived: false}
+      draft:            {label: "Draft", variant: neutral, terminal: false, derived: false}
+      partner_approved: {label: "Partner approved", variant: green-tint, terminal: false, derived: false}
+      sent:             {label: "Sent", variant: amber, terminal: false, derived: false}
+      signed:           {label: "Signed", variant: green, terminal: true, derived: false}
+      not_required:     {label: "Not required this year", variant: muted, terminal: true, derived: false}
+      superseded:       {label: "Superseded", variant: muted, terminal: true, derived: false}   # an amended or re-sent version; the envelope's superseded marker reads the same
+
+  letter_clause:   # N-02-T03; one clause row of ENG-04's composer (on, off, or required by the template)
+    source: "N-02 section 4.4; ENG-04 b"
+    codes:
+      "on":     {label: "On", variant: null, terminal: false, derived: false}
+      "off":    {label: "Off", variant: muted, terminal: false, derived: false}
+      required: {label: "Required", variant: null, terminal: false, derived: false}   # the template's: cannot be turned off
 
   letter_record:   # the interim recorded engagement letter (PUT /v1/engagements/{id}/letter; G3) until N-02's envelopes
     source: "ENG-01 b; ENG-02 b, c"

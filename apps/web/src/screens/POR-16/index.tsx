@@ -74,6 +74,12 @@ export interface POR16Props {
   dialog?: string;
   /** Where the provider's sign-in URL goes; the page leaves for it (fixtures stay in the app). */
   onAuthorise?: (url: string, card: PortalConnectionCardOut) => void;
+  /** The back chip: Home until POR-12 (A-02 §11.2 Q4); the browser's back without it. */
+  onBack?: () => void;
+  /** A start refused for a stale second factor (`mfa_required`): sign in again, then return. */
+  onStepUp?: () => void;
+  /** "Export instead": the open trial-balance request's guided steps (ADR-108). */
+  onExportInstead?: () => void;
 }
 
 const TONE_FILL: Readonly<Record<PortalConnectionCardOut["tone"], string>> = {
@@ -513,6 +519,9 @@ export function POR16({
   sheet,
   dialog,
   onAuthorise,
+  onBack,
+  onStepUp,
+  onExportInstead,
 }: POR16Props): JSX.Element | null {
   const now = useNow();
   const brand = usePortalBrand();
@@ -574,7 +583,10 @@ export function POR16({
             window.location.assign(started.authorise_url);
           else failed();
         },
-        onError: failed,
+        onError: (error: unknown) => {
+          if (isStepUp(error) && onStepUp) onStepUp();
+          else failed();
+        },
       },
     );
   };
@@ -613,9 +625,10 @@ export function POR16({
     );
   };
   const exportInstead = (): void => {
-    // A-02-T28 leads to the open trial-balance request's guided steps; with none open the
-    // team asks when it needs one (ADR-108: connecting is never required).
-    toast.show(COPY.exportNone(firm));
+    // A-02-T28: the open trial-balance request's guided steps (the portal's Documents); with no
+    // page to go to, the team asks when it needs one (ADR-108: connecting is never required).
+    if (onExportInstead) onExportInstead();
+    else toast.show(COPY.exportNone(firm));
   };
 
   let body: JSX.Element;
@@ -688,7 +701,8 @@ export function POR16({
       size="sm"
       icon="chevron-left"
       onClick={() => {
-        window.history.back();
+        if (onBack) onBack();
+        else window.history.back();
       }}
     >
       {COPY.back}
@@ -791,6 +805,13 @@ export function POR16({
       )}
     </div>
   );
+}
+
+/** A refusal for a stale second factor: 403 with `facts.reason` `mfa_required`. */
+export function isStepUp(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  const facts = (error as { facts?: { reason?: unknown } }).facts;
+  return facts?.reason === "mfa_required";
 }
 
 function isMissing(error: unknown): boolean {

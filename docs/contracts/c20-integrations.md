@@ -164,3 +164,5 @@ connection provider that reaches a host must be a registry read connector; `kern
 connectors' only HTTP client. Sign-in URLs are HTTPS to an allowlisted host or the app's origin.
 Retry and disconnect replay a repeated `Idempotency-Key`; the start does not (its answer is
 Restricted). Runs and failures are shown only for engagements the reader may read.
+
+**A-02-T28 (additive, 2026-10-27):** `POST /v1/connections/complete` answers `{engagement_id, client_entity_id, reconnected}`; `client_entity_id` is set for an entity-scoped (POR-16) flow and null for the legacy engagement flow, so the portal returns to Connections. QuickBooks Online's `realmId` travels inside `code` as `<code>~<realmId>` (DEC-709).

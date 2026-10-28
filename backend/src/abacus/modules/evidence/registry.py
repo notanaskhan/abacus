@@ -86,6 +86,8 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "evidence_items": frozenset(
         {"id", "tenant_id", "engagement_id", "title", "created_by_kind", "created_by_id"}
+        # N-01-T06 (0270, ADR-158): the scope columns; a trigger fills them from the engagement.
+        | {"client_id", "work_item_id", "scope", "folder_kind"}
     ),
     "evidence_versions": frozenset(
         {"id", "tenant_id", "engagement_id", "evidence_item_id", "version_no", "fingerprint"}
@@ -94,6 +96,9 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"idempotency_key"}
         | {"upload_note"}  # SPEC-023: written once, at insert
         | {"storage_mode"}  # P-06-T18 (0144): detached-key client uploads, at insert
+        # N-01-T06 (0270, ADR-158): channel, supersede link and virtual splits, at insert.
+        | {"channel", "supersedes_version_id", "parent_version_id", "page_range"}
+        | {"virtual_label", "virtual_amount", "display_name", "classification_id"}
     ),
     # P-06-T18 (0144): a detached-key version's wrapped data key, with its version.
     "evidence_object_keys": frozenset(

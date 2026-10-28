@@ -7,7 +7,27 @@ from typing import Final
 
 VERSION: Final = 1
 # The read connectors and the only hosts each may reach (ADR-040).
-READ_CONNECTORS: Final[tuple[dict[str, object], ...]] = ()
+READ_CONNECTORS: Final[tuple[dict[str, object], ...]] = (
+    {
+        "adapter_key": "quickbooks_online",
+        "category": "ledger",
+        "egress_hosts": (
+            "appcenter.intuit.com",
+            "oauth.platform.intuit.com",
+            "developer.api.intuit.com",
+            "sandbox-quickbooks.api.intuit.com",
+            "quickbooks.api.intuit.com",
+        ),
+        "read_posts": (
+            {"host": "oauth.platform.intuit.com", "path": "/oauth2/v1/tokens/bearer"},
+            {"host": "developer.api.intuit.com", "path": "/v2/oauth2/tokens/revoke"},
+        ),
+        "read_scopes": (
+            "ledger.trial_balance",
+            "ledger.company_info",
+        ),
+    },
+)
 # Reserved writes: none is enabled (ADR-150); every execute_write is refused.
 WRITES: Final[tuple[dict[str, object], ...]] = (
     {
@@ -19,7 +39,7 @@ WRITES: Final[tuple[dict[str, object], ...]] = (
         "shape": "W7",
     },
     {
-        "adapter_key": "quickbooks_online",
+        "adapter_key": "quickbooks_online_poster",
         "decision": "P-16",
         "enabled": False,
         "key": "ledger_post_journal_entries",
@@ -36,4 +56,12 @@ WRITES: Final[tuple[dict[str, object], ...]] = (
     },
 )
 # Q-01's DNS Firewall allowlist: every declared egress host.
-EGRESS_HOSTS: Final[frozenset[str]] = frozenset()
+EGRESS_HOSTS: Final[frozenset[str]] = frozenset(
+    {
+        "appcenter.intuit.com",
+        "developer.api.intuit.com",
+        "oauth.platform.intuit.com",
+        "quickbooks.api.intuit.com",
+        "sandbox-quickbooks.api.intuit.com",
+    }
+)

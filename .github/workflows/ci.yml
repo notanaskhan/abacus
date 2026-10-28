@@ -109,18 +109,19 @@ jobs:
           retention-days: 1
 
   integration:
-    name: stage 2 integration tests (${{ matrix.shard }}/8)
+    name: stage 2 integration tests (${{ matrix.shard }}/10)
     needs: [changes]
     runs-on: ubuntu-24.04
     # Headroom for a shard's slowest files (TASK-422); the split is balanced by
     # backend/tests/durations.json, re-recorded when files grow. 30 cancelled two shards of #394
     # at 76% and 98% with the S7 files not yet recorded. Five shards outgrew 45 minutes after the
     # S9-S11 suites (ab224ceb: shards 1 and 2 cancelled at 71% and 83%, no failures), so eight.
+    # S13 (#557): shard 7 of 8 cancelled at 82% twice with 270 files unrecorded, so ten.
     timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     steps:
       - if: needs.changes.outputs.backend != 'true'
         run: echo "no backend paths changed (abacus_tools.ci.paths), so nothing to run"
@@ -143,7 +144,7 @@ jobs:
         run: make setup
       - if: needs.changes.outputs.backend == 'true'
         # Two workers, each with its own Postgres, S3 and Temporal containers, on 4 cores (DEC-335).
-        run: make ci-integration SHARD=${{ matrix.shard }} SHARDS=8 PYTEST_INTEGRATION_WORKERS=2
+        run: make ci-integration SHARD=${{ matrix.shard }} SHARDS=10 PYTEST_INTEGRATION_WORKERS=2
       - if: needs.changes.outputs.backend == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

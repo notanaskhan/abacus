@@ -1222,6 +1222,101 @@ export const STATUS_REGISTRY = {
       "terminal": true,
       "derived": false,
       "disc": "x_ink4_15"
+    },
+    "held": {
+      "label": "Waiting",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "sub_line": "Asked the client · {date}"
+      },
+      "disc": "dot_gold_16"
+    },
+    "withdrawn": {
+      "label": "Withdrawn",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "inbox_thread": {
+    "unmatched": {
+      "label": "Unmatched",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "matched": {
+      "label": "Matched",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "ignored": {
+      "label": "Ignored",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "portal_intake_upload": {
+    "sent": {
+      "label": "Sent",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "to_firm": "Sent to {firm}"
+      }
+    },
+    "received": {
+      "label": "Received by {firm}",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "withdrawn": {
+      "label": "Withdrawn",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "file_document": {
+    "processing": {
+      "label": "Processing",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "needs_review": {
+      "label": "Uploaded – needs review",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "accepted": {
+      "label": "Approved",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "check_olive"
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "replaced_by": "Superseded · replaced by {name} · {date}"
+      }
+    },
+    "on_hold": {
+      "label": "On hold",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
     }
   },
   "issue": {
@@ -1689,6 +1784,41 @@ export const STATUS_REGISTRY = {
       "label": "Voided",
       "variant": "soon",
       "terminal": true,
+      "derived": false
+    }
+  },
+  "envelope_signer": {
+    "pending": {
+      "label": "Waiting",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "viewed": {
+      "label": "Viewed",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "signed": {
+      "label": "Signed",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "with_date": "Signed · {date}"
+      }
+    },
+    "declined": {
+      "label": "Declined",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "verification_failed": {
+      "label": "Needs a handwritten signature",
+      "variant": "amber",
+      "terminal": false,
       "derived": false
     }
   },
@@ -2561,6 +2691,70 @@ export const STATUS_REGISTRY = {
       "label": "Declined",
       "variant": null,
       "terminal": true,
+      "derived": false
+    }
+  },
+  "letter": {
+    "not_started": {
+      "label": "Not started",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "draft": {
+      "label": "Draft",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "partner_approved": {
+      "label": "Partner approved",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "sent": {
+      "label": "Sent",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "signed": {
+      "label": "Signed",
+      "variant": "green",
+      "terminal": true,
+      "derived": false
+    },
+    "not_required": {
+      "label": "Not required this year",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "letter_clause": {
+    "on": {
+      "label": "On",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "off": {
+      "label": "Off",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "required": {
+      "label": "Required",
+      "variant": null,
+      "terminal": false,
       "derived": false
     }
   },

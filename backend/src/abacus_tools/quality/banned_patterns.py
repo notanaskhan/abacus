@@ -2170,6 +2170,9 @@ RULES: list[Rule | TreeRule] = [
             "tests/contracts/undo/support.py",  # P-04-T13: the Undo suite seeds as the superuser
             # P-04-T13: the human-only CHECKs and insert-only rules, as the app role and the owner
             "tests/integration/test_p04t13_review_schema_independent.py",
+            # S13 schema tests: the AI-policy guard (G-02-T23) and pilot grants (Q-04-T007).
+            "tests/integration/test_g02t23_autonomy_policy_migration.py",
+            "tests/integration/test_q04t007_pilot_enrolments.py",
             "tests/integration/test_seed_dev.py",
             # Q-03-T028: loads the plan tests' synthetic fixture as the superuser, rolled back.
             "tests/integration/test_q03t028_plan_tests.py",
@@ -2329,6 +2332,9 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_schema_check_db.py",
             # P-04-T13: the actor GUCs the human-only CHECKs bind, set as a unit of work sets them
             "tests/integration/test_p04t13_review_schema_independent.py",
+            # S13 schema tests: the AI-policy guard (G-02-T23) and pilot grants (Q-04-T007).
+            "tests/integration/test_g02t23_autonomy_policy_migration.py",
+            "tests/integration/test_q04t007_pilot_enrolments.py",
             "tests/integration/agent_tests/test_work_slots_db.py",  # calls the ledger functions
             # A-02-T04: the app role's refusals on 0149's tables, with the tenant set by hand.
             "tests/integration/test_tb_of_record_schema.py",
@@ -2387,6 +2393,9 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/modules/identity/service.py",
             # SPEC-012: the staff token, verified by the staff issuer (break-glass).
             "src/abacus/modules/identity/support.py",
+            # A-02-T26 (DEC-709): a live connector sets the provider's Authorization on its own
+            # outbound reads through `kernel.egress`; it never reads an inbound request.
+            "src/abacus/modules/connections/connectors/quickbooks_online.py",
         ),
     ),
     Rule(

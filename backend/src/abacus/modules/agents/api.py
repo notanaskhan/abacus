@@ -9,6 +9,9 @@ from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.agents.activities import ACTIVITIES
 from abacus.modules.agents.ai_policy_contract import ai_policy_router
 from abacus.modules.agents.ai_policy_errors import AiPolicyLoosened, ApproverMustDiffer
+from abacus.modules.agents.ai_policy_service import Effective as EffectiveAiPolicy
+from abacus.modules.agents.ai_policy_service import effective_ai_policy
+from abacus.modules.agents.ai_policy_store import policy_autonomy_level
 from abacus.modules.agents.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.agents.citations import SheetLayoutError
 from abacus.modules.agents.citations import verify as verify_citations
@@ -19,6 +22,11 @@ from abacus.modules.agents.engagement_agent_workflow import (
     NEXT_TICK as ENGAGEMENT_AGENT_NEXT_TICK,
 )
 from abacus.modules.agents.engagement_agent_workflow import EngagementAgent
+from abacus.modules.agents.engagement_runs import (
+    ActiveRun,
+    active_engagement_runs,
+    register_engagement_run_agent,
+)
 from abacus.modules.agents.entry_assess import ASSESSOR, ask, check
 from abacus.modules.agents.events import FollowUpSent
 from abacus.modules.agents.export_screening import screening_section
@@ -138,7 +146,11 @@ from abacus.modules.agents.workflows import (
 )
 from abacus.modules.communications.api import register_reminder_history
 from abacus.modules.evidence.api import register_export_section, register_proposal_source
-from abacus.modules.identity.api import AbacusRouter, register_ai_assistants
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    register_ai_assistants,
+    register_autonomy_level_provider,
+)
 
 # Evidence owns review decisions; agents owns what was proposed (TASK-019 D1).
 register_proposal_source(proposals_for, proposal_of)
@@ -148,6 +160,8 @@ register_export_section("screening", screening_section)
 register_client_data_facts(cleared=cleared_for_client_data, stage=stage_for)
 # SPEC-036 (TASK-076): identity's disclosure lists the cleared assistants and their stage.
 register_ai_assistants(assistants)
+# G-02-T23 (DEC-711): the AI policy's level, where the policy governs the firm.
+register_autonomy_level_provider(policy_autonomy_level)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
@@ -203,6 +217,7 @@ __all__ = [
     "SCREEN_PROMPT",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
+    "ActiveRun",
     "AdoptedValue",
     "AgentEvent",
     "AgentInput",
@@ -216,6 +231,7 @@ __all__ = [
     "Citation",
     "CitationStates",
     "DraftOutcome",
+    "EffectiveAiPolicy",
     "EngagementAgent",
     "EngagementGraph",
     "EntryAssessInput",
@@ -255,6 +271,7 @@ __all__ = [
     "UnregisteredTarget",
     "UploadReviewWorkflow",
     "VerifiedCitation",
+    "active_engagement_runs",
     "apply_proposal",
     "ask",
     "check",
@@ -266,6 +283,7 @@ __all__ = [
     "create_screening_run",
     "create_suggestion",
     "draft",
+    "effective_ai_policy",
     "engagement_graph",
     "fail_run",
     "graph_router",
@@ -276,6 +294,7 @@ __all__ = [
     "load_agent_context",
     "match",
     "register_change_set_applier",
+    "register_engagement_run_agent",
     "register_proposal_adapter",
     "register_suggestion_applier",
     "register_suggestion_target",

@@ -49,6 +49,7 @@ from abacus.modules.identity.api import (
     names_of,
 )
 from abacus.modules.review.events import SignOffRecorded
+from abacus.modules.review.issues import open_blocking
 from abacus.modules.review.mfa import require_fresh
 from abacus.modules.review.models import SignOff
 from abacus.modules.review.notes import OPEN
@@ -337,7 +338,20 @@ async def eligibility(
     notes = await _open_notes(ctx.tenant, target_id) if level > 1 else []
     independent = await _independent(ctx, facts.engagement_id)
     segregated = level in SEGREGATED and ctx.user_id in preparers
+    blocking = await open_blocking(
+        ctx.tenant,
+        target_id,
+        # The final level, or any above it a firm may ask for, is final approval.
+        "final_approval" if level >= max(facts.required_levels) else "sign_off",
+    )
     checks = [
+        # P-04-T30: open issues that block this level read as one check, however many there are.
+        Check(
+            "open_issues",
+            "fail" if blocking else "pass",
+            {"count": len(blocking)},
+            [("issue", i) for i in blocking],
+        ),
         Check(
             "open_review_notes",
             "fail" if notes else "pass",

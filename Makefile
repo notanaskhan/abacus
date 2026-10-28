@@ -87,7 +87,7 @@ check-fast:
 
 # Generated files match their sources; never hand-edit one (F-01-T06). The API client's drift
 # check stays in ci-contracts, which needs the OpenAPI export.
-GENERATORS = permission_matrix role_templates feature_flags provider_terms agent_specs eval_suites status_vocabulary security_tests human_only_actions sub_processors export_manifest_schema write_capabilities
+GENERATORS = permission_matrix role_templates feature_flags provider_terms ai_policy_defaults agent_specs eval_suites status_vocabulary security_tests human_only_actions sub_processors export_manifest_schema write_capabilities
 check-generated:
 	@cd backend && for g in $(GENERATORS); do \
 		uv run python -m abacus_tools.codegen.$$g --check || { \
@@ -245,6 +245,13 @@ incident-status:
 # Q-01-T45: change one firm's module entitlement (ops task; audited as the operator).
 entitlement:
 	cd backend && uv run python -m abacus_tools.tenants entitlement --firm $(FIRM) --module $(MODULE) --enabled $(ENABLED) $(if $(SEATS),--seats $(SEATS)) --operator $(OPERATOR) --reason "$(REASON)"
+
+# Q-04-T007: enrol a work item in a pilot window (shadow), or move its mode (operators; audited).
+pilot-enrol:
+	cd backend && uv run python -m abacus_tools.pilots enrol --firm $(FIRM) --work-item $(WORK_ITEM) --start $(START) --end $(END) $(if $(BASELINE_DAYS),--baseline-days $(BASELINE_DAYS)) --operator $(OPERATOR)
+
+pilot-mode:
+	cd backend && uv run python -m abacus_tools.pilots mode --firm $(FIRM) --enrolment $(ENROLMENT) --mode $(MODE) --operator $(OPERATOR) $(if $(CONFIRMED_BY),--confirmed-by $(CONFIRMED_BY))
 
 # Q-01-T26: create or converge the platform-job Schedules (spend anomaly, notification purge) on
 # the local stack's Temporal only (--local-only refuses any other). Idempotent; the deploys run it

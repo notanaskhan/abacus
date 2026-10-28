@@ -13,3 +13,17 @@ actions:
   email_template.import:    {firm_admin: allow, agent: deny, system: deny, mfa_recent: required}   # onboarding bundle (dry run and apply)
   sending_domain.read:      {firm_admin: allow, security_admin: allow, agent: deny, system: deny}   # ADM-10 d
   sending_domain.manage:    {firm_admin: allow, security_admin: allow, agent: deny, system: deny, mfa_recent: required}   # create, check, revoke (SES identity)
+  # --- C5 v1.2 intake half: firm intake (N-01-T02 stub; N-01 §4.4; ADR-210; SPEC-380 §9) ---
+  # The intake scope (DEC-701) is a team of kind `intake`; its condition `intake_scope` lands with
+  # N-01-T08 (it fails closed when unregistered). Until then the firm-level cells are `firm_admin`,
+  # narrowed in the service to summary counts for anyone outside the intake team (ADR-024). Every
+  # decision, match and log is a person's: agent and system denied (I-AGENT-NEVER, INV-1).
+  inbox.read:               {firm_admin: allow, practice_leader: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_service: allow, agent: task_scope}   # summary, threads, thread detail; unmatched threads: intake scope only (ADR-210 clause 3)
+  inbox.read_content:       {firm_admin: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_service: allow, agent: task_scope, independence: required, not_offshore: required}   # bodies, viewer pages; intake scope only while unfiled (DEC-20)
+  inbox.download:           {firm_admin: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_service: allow, agent: deny, system: deny, independence: required, not_offshore: required}   # audited, no-store; mfa_recent for TRI attachments is the service's (N-01-T13)
+  inbox.log_intake:         {firm_admin: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny}   # Log received documents
+  inbox.match_sender:       {firm_admin: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_service: allow, agent: deny, system: deny}   # INB-01 b
+  inbox_sender_rule.create: {firm_admin: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_service: allow, agent: deny, system: deny}   # "Remember sender"
+  inbox.triage:             {firm_admin: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_service: allow, agent: deny, system: deny}   # triage read, destinations, ignore
+  inbox.file:               {firm_admin: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_service: allow, agent: deny, system: deny, independence: required}   # live human; the intake scope files only into the matched client's non-walled, non-archived destinations
+  inbox.ask_client:         {firm_admin: allow, manager: allow, senior: allow, staff: allow, client_service: allow, agent: deny, system: deny}   # template-only Hold email through an approval grant (DEC-24)

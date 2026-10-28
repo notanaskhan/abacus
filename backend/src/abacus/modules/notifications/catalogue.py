@@ -293,6 +293,13 @@ CATALOGUE: Final[dict[str, Kind]] = {
     ),
     "connection.created": Kind("connection.created", _leads, "connection", "connection_id"),
     "connection.revoked": Kind("connection.revoked", _leads, "connection", "connection_id"),
+    # A-02-T25: the daily health pass found a grant problem, or a grant ends within 7 days.
+    "connection.needs_reauth": Kind(
+        "connection_needs_reauth", _admins_and_leads, "connection", "connection_id"
+    ),
+    "connection.reauth_due": Kind(
+        "connection_reauth_due", _admins_and_leads, "connection", "connection_id"
+    ),
     # SPEC-025 (TASK-044): the person who joined is asked to confirm their independence.
     "independence.requested": Kind(
         "independence.requested", _added_member, "engagement", "engagement_id"
@@ -312,6 +319,10 @@ CATALOGUE: Final[dict[str, Kind]] = {
     ),
     # Q-02-T29: a legal hold was placed (the evidence module's `legal_hold.placed`).
     "legal_hold.placed": Kind("legal_hold_placed", _hold_notify, "legal_hold", "hold_id"),
+    # G-02-T24 (DEC-712): an AI policy version awaits the named partner (firm-level, not C13).
+    "ai_policy.publish_requested": Kind(
+        "ai_policy_approval_requested", _assignee, "ai_policy", None, None
+    ),
     # Q-02-T33: the incident register (the platform module's events; firm-level).
     "incident.recorded": Kind(
         "incident_recorded", _incident_recorded, "security_incident", "incident_id", None
@@ -443,6 +454,8 @@ TEMPLATES: Final[dict[str, str]] = {
     "evidence.uploaded": "The client uploaded a file on {engagement}.",
     "connection.created": "The client connected their accounting system on {engagement}.",
     "connection.revoked": "The accounting system connection on {engagement} was ended.",
+    "connection.needs_reauth": "The client needs to sign in to their accounting system again.",
+    "connection.reauth_due": "The client's accounting system sign-in ends within 7 days.",
     "independence.requested": "Confirm your independence for {engagement}.",
     "reminders.drafted": "Overdue reminders on {engagement} are waiting for you to send.",
     "follow_up.drafted": "Follow-ups on {engagement} are waiting for you to send.",
@@ -452,6 +465,7 @@ TEMPLATES: Final[dict[str, str]] = {
     "risk.approval_requested": "A risk on {engagement} is waiting for your approval.",
     "finding.severity_proposed": "A deficiency on {engagement} is waiting for you to conclude.",
     "legal_hold.placed": "A legal hold was placed on {subject}.",
+    "ai_policy.publish_requested": "A new AI policy version is waiting for your approval.",
     "incident.recorded": "A security incident was recorded: {subject}.",
     "incident.propagated": "Accrued reported a security incident affecting your firm: {subject}.",
     "wall.created": "An ethical wall is waiting for your approval.",
@@ -516,6 +530,7 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     # Reconnect request template itself (communications sends it; notification email is staff
     # only, INV-4), so no catalogue event fans it out, as `follow_up_sent`.
     NotificationKind("connection_needs_reauth", "client_activity", "Plug"),
+    NotificationKind("connection_reauth_due", "client_activity", "Plug"),  # A-02-T25
     NotificationKind("connection_reconnect_requested", "client_activity", "Plug"),
     NotificationKind("independence.requested", "approval", "ShieldCheck"),
     NotificationKind("reminders.drafted", "approval", "Send"),
@@ -532,6 +547,9 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     # through the admin import; none is committed.
     NotificationKind("ai_client_data_changed", "system", "ShieldCheck"),
     NotificationKind("legal_hold_placed", "system", "Lock"),
+    NotificationKind(
+        "ai_policy_approval_requested", "approval", "ShieldCheck", email_default=True
+    ),
     NotificationKind("incident_recorded", "system", "ShieldAlert"),
     NotificationKind("incident_from_accrued", "system", "ShieldAlert", email_default=True),
     NotificationKind("firm_export_approval_requested", "approval", "Download"),

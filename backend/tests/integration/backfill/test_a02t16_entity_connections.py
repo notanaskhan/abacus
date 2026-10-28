@@ -184,7 +184,10 @@ class World:
         """Connect (or reconnect) the demo ledger; its card, as the portal reads it after."""
         done = await self.complete(await self.handed())
         assert done.status_code == 201, done.text
-        assert done.json() == {"engagement_id": str(self.site.engagement_id)}
+        body = done.json()
+        assert body["engagement_id"] == str(self.site.engagement_id)
+        # A-02-T28 (additive): the entity, so the portal returns to POR-16.
+        assert body["client_entity_id"] == str(self.site.entity_id)
         return await self.card()
 
     async def count(self, table: str) -> int:

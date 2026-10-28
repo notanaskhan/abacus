@@ -131,6 +131,11 @@ FIELDWORK_PROCEDURES = Flag(
     kind="boolean",
     default="false",
 )
+FILES_BROWSER = Flag(
+    name="files.browser",
+    kind="boolean",
+    default="false",
+)
 FOLLOW_UPS_SCHEDULED_SEND = Flag(
     name="follow_ups.scheduled_send",
     kind="boolean",
@@ -143,6 +148,11 @@ GUIDANCE_DRAFTING = Flag(
 )
 HOME_DASHBOARD = Flag(
     name="home.dashboard",
+    kind="boolean",
+    default="false",
+)
+INBOX_FIRM_INTAKE = Flag(
+    name="inbox.firm_intake",
     kind="boolean",
     default="false",
 )
@@ -168,6 +178,11 @@ LEDGER_TB_WORKPAPER = Flag(
 )
 MATCHING_ENABLED = Flag(
     name="matching.enabled",
+    kind="boolean",
+    default="false",
+)
+MATCHING_FIRM_INTAKE = Flag(
+    name="matching.firm_intake",
     kind="boolean",
     default="false",
 )
@@ -208,6 +223,11 @@ PORTAL_DROP_SORT = Flag(
 )
 PORTAL_HOME_V2 = Flag(
     name="portal.home_v2",
+    kind="boolean",
+    default="false",
+)
+PORTAL_INTAKE_UPLOAD = Flag(
+    name="portal.intake_upload",
     kind="boolean",
     default="false",
 )
@@ -254,6 +274,11 @@ SECURITY_CENTER_V1 = Flag(
     kind="boolean",
     default="false",
 )
+SIGNATURES_ENVELOPES = Flag(
+    name="signatures.envelopes",
+    kind="boolean",
+    default="false",
+)
 UPLOAD_REVIEW_ENABLED = Flag(
     name="upload_review.enabled",
     kind="boolean",
@@ -291,14 +316,17 @@ FLAGS: dict[str, Flag] = {
     "evidence.withdrawal": EVIDENCE_WITHDRAWAL,
     "fieldwork.assessor": FIELDWORK_ASSESSOR,
     "fieldwork.procedures": FIELDWORK_PROCEDURES,
+    "files.browser": FILES_BROWSER,
     "follow_ups.scheduled_send": FOLLOW_UPS_SCHEDULED_SEND,
     "guidance.drafting": GUIDANCE_DRAFTING,
     "home.dashboard": HOME_DASHBOARD,
+    "inbox.firm_intake": INBOX_FIRM_INTAKE,
     "knowledge.catalog": KNOWLEDGE_CATALOG,
     "ledger.gl_import": LEDGER_GL_IMPORT,
     "ledger.import": LEDGER_IMPORT,
     "ledger.tb_workpaper": LEDGER_TB_WORKPAPER,
     "matching.enabled": MATCHING_ENABLED,
+    "matching.firm_intake": MATCHING_FIRM_INTAKE,
     "methodology.import_review": METHODOLOGY_IMPORT_REVIEW,
     "methodology.importer": METHODOLOGY_IMPORTER,
     "methodology.lifecycle": METHODOLOGY_LIFECYCLE,
@@ -307,6 +335,7 @@ FLAGS: dict[str, Flag] = {
     "notifications.v2": NOTIFICATIONS_V2,
     "portal.drop_sort": PORTAL_DROP_SORT,
     "portal.home_v2": PORTAL_HOME_V2,
+    "portal.intake_upload": PORTAL_INTAKE_UPLOAD,
     "portal.settings_editor": PORTAL_SETTINGS_EDITOR,
     "portal.sign_in_v2": PORTAL_SIGN_IN_V2,
     "portal.third_party_room": PORTAL_THIRD_PARTY_ROOM,
@@ -315,6 +344,7 @@ FLAGS: dict[str, Flag] = {
     "review.grammar_api": REVIEW_GRAMMAR_API,
     "screening.card": SCREENING_CARD,
     "security_center.v1": SECURITY_CENTER_V1,
+    "signatures.envelopes": SIGNATURES_ENVELOPES,
     "upload_review.enabled": UPLOAD_REVIEW_ENABLED,
     "uploads.processing": UPLOADS_PROCESSING,
 }

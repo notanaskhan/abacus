@@ -333,13 +333,16 @@ def test_ac13_2_the_drift_check_passes_on_untouched_copies(scratch: tuple[Path, 
 
 HAND_EDITS: Final = {
     "enable a write": ('"enabled": False,', '"enabled": True,'),
+    # A-02-T26 declared QuickBooks Online: each edit adds to what is generated, not to an empty
+    # registry.
     "widen the egress allowlist": (
-        "EGRESS_HOSTS: Final[frozenset[str]] = frozenset()",
-        'EGRESS_HOSTS: Final[frozenset[str]] = frozenset({"api.probe-t19.example"})',
+        "EGRESS_HOSTS: Final[frozenset[str]] = frozenset(\n    {\n",
+        "EGRESS_HOSTS: Final[frozenset[str]] = frozenset(\n    {\n"
+        '        "api.probe-t19.example",\n',
     ),
     "declare a read connector by hand": (
-        "READ_CONNECTORS: Final[tuple[dict[str, object], ...]] = ()",
-        "READ_CONNECTORS: Final[tuple[dict[str, object], ...]] = ("
+        "READ_CONNECTORS: Final[tuple[dict[str, object], ...]] = (\n",
+        "READ_CONNECTORS: Final[tuple[dict[str, object], ...]] = (\n    "
         + repr(
             {
                 "adapter_key": ADAPTER,
@@ -348,7 +351,7 @@ HAND_EDITS: Final = {
                 "read_scopes": ("ledger.read",),
             }
         )
-        + ",)",
+        + ",\n",
     ),
     "swap a write's decision": ('"decision": "P-16",', '"decision": "ADR-150",'),
     "drop the attest-relevant shape": ('"shape": "W1",', '"shape": "W3",'),
@@ -372,7 +375,7 @@ def test_ac13_2_an_edit_of_the_protected_file_without_regenerating_fails_the_dri
     source, _ = scratch
     source.write_text(
         PROTECTED.replace(
-            "read_connectors: []\n",
+            "read_connectors:\n",
             "read_connectors:\n"
             f"  - adapter_key: {ADAPTER}\n"
             "    category: ledger\n"
@@ -614,7 +617,12 @@ def _declare(monkeypatch: pytest.MonkeyPatch, adapter_key: str, *hosts: str) -> 
         "egress_hosts": hosts,
         "read_scopes": ("ledger.read",),
     }
-    _seed_compiled(monkeypatch, READ_CONNECTORS=(reader,), EGRESS_HOSTS=frozenset(hosts))
+    # Beside the declared connectors (A-02-T26's QuickBooks Online stays declared).
+    _seed_compiled(
+        monkeypatch,
+        READ_CONNECTORS=(*compiled.READ_CONNECTORS, reader),
+        EGRESS_HOSTS=compiled.EGRESS_HOSTS | frozenset(hosts),
+    )
 
 
 def test_ac13_2_hosts_are_declared_per_adapter(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -647,7 +655,7 @@ async def test_ac13_2_start_up_admits_exactly_the_declared_hosts(
     monkeypatch.setattr("abacus.api.app.flush_errors", lambda: None)
     app = create_app()
     async with app.router.lifespan_context(app):
-        assert allowed_hosts() == frozenset({HOST})
+        assert allowed_hosts() == compiled.EGRESS_HOSTS | {HOST}  # the declared hosts, exactly
         check_egress(f"https://{HOST}/v3/reports/TrialBalance")
         for bad in (
             f"http://{HOST}/v3",  # not HTTPS

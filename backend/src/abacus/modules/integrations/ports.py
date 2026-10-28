@@ -57,6 +57,16 @@ class IntegrationAdapter(Protocol):
     def egress_hosts(self) -> tuple[str, ...]: ...
 
 
+class ReadPost(BaseModel):
+    """A provider POST that is a read of the platform's own grant (A-02-T26): the OAuth token
+    exchange or refresh, and the revoke. Never a path of the client's books (ADR-040, ED-156)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    host: Annotated[Host, classified("internal")]
+    path: Annotated[str, Field(pattern=r"^/[a-z0-9/_.-]{1,120}$"), classified("internal")]
+
+
 class ReadConnectorEntry(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -64,6 +74,14 @@ class ReadConnectorEntry(BaseModel):
     category: Annotated[IntegrationCategory, classified("internal")]
     egress_hosts: Annotated[list[Host], Field(min_length=1), classified("internal")]
     read_scopes: Annotated[list[ScopeCode], Field(min_length=1), classified("internal")]
+    read_posts: Annotated[list[ReadPost], classified("internal")] = []
+
+    @model_validator(mode="after")
+    def _posts_on_declared_hosts(self) -> ReadConnectorEntry:
+        stray = {p.host for p in self.read_posts} - set(self.egress_hosts)
+        if stray:
+            raise ValueError(f"read_posts outside egress_hosts: {sorted(stray)}")
+        return self
 
 
 class WriteCapabilityEntry(BaseModel):
@@ -106,3 +124,7 @@ class WriteCapabilityRegistry(BaseModel):
     def egress_hosts(self) -> frozenset[str]:
         """Every host a declared read connector may reach (Q-01's egress allowlist)."""
         return frozenset(h for r in self.read_connectors for h in r.egress_hosts)
+
+    def read_posts(self) -> frozenset[tuple[str, str]]:
+        """Every provider POST declared as a read, as (host, path) (`kernel.egress`)."""
+        return frozenset((p.host, p.path) for r in self.read_connectors for p in r.read_posts)

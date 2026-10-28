@@ -21,7 +21,7 @@ from sqlalchemy import text
 
 from abacus.ai_gateway import BoundaryFactsChanged, forget_boundary_facts
 from abacus.kernel import clock, provider_terms
-from abacus.kernel._flags import AGENTS_CLIENT_DATA_OPTIN
+from abacus.kernel._flags import AGENTS_CLIENT_DATA_OPTIN, AI_POLICY_V1
 from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, tenant_session
@@ -36,6 +36,7 @@ from abacus.modules.identity.events import FirmAgentsResumed
 from abacus.modules.identity.repository import (
     DemoClockRow,
     acknowledge_onboarding,
+    agents_pause_of,
     agents_paused_since,
     ai_client_data,
     demo_clock_row,
@@ -88,8 +89,29 @@ class FirmFacts:
     walls: int
 
 
+# G-02-T23 (DEC-711): the AI policy's effective `autonomy.level`, registered by `agents`. It
+# answers None when the policy does not govern the firm (flag off, no published version), and
+# the firm's own setting stands; a provider that raises falls back the same way.
+AutonomyLevelProvider = Callable[[UUID], Awaitable[int | None]]
+_level_provider: list[AutonomyLevelProvider] = []
+
+
+def register_autonomy_level_provider(provider: AutonomyLevelProvider) -> None:
+    if _level_provider:
+        raise RuntimeError("the autonomy level provider is already registered")
+    _level_provider.append(provider)
+
+
 async def autonomy_level(tenant_id: UUID) -> int:
-    """The firm's level now, for the platform's automatic actions (Routine if unreadable)."""
+    """The firm's level now, for the platform's automatic actions (Routine if unreadable): the AI
+    policy's when it governs the firm, else the firm's setting."""
+    if _level_provider:
+        try:
+            level = await _level_provider[0](tenant_id)
+        except Exception:  # fail safe to the firm's own setting, never to a looser level
+            level = None
+        if level is not None:
+            return level
     async with tenant_session(TenantContext(tenant_id, "system", "autonomy")) as session:
         row = await firm_settings(session)
     return int(row["autonomy_level"]) if row is not None else ROUTINE
@@ -104,9 +126,19 @@ async def autonomy(ctx: AuthContext) -> AutonomyView:
     return AutonomyView(int(row["autonomy_level"]), row["autonomy_set_at"])
 
 
+class SupersededByAiPolicy(DomainConflict):
+    """G-02-T24: with `ai_policy.v1` on, the autonomy level is set by publishing an AI policy
+    version (ADM-04), not by this route."""
+
+    code = "superseded_by_ai_policy"
+
+
 async def set_autonomy(ctx: AuthContext, level: int) -> AutonomyView:
     """AC-5: fresh MFA; audited; Manage and Portfolio refused for now."""
     await authorise(ctx, "autonomy_policy.update", Resource.firm(ctx.tenant_id))
+    if await flag_enabled(ctx.tenant, AI_POLICY_V1):
+        # G-02-T24: the level is the AI policy's for this firm; it changes by a new version.
+        raise SupersededByAiPolicy
     if level not in SELECTABLE:
         raise LevelNotAvailable(str(level))
     async with uow(ctx.tenant) as tx:
@@ -263,6 +295,12 @@ async def read_letter_policy(ctx: AuthContext) -> bool:
 @dataclass(frozen=True)
 class AgentsState:
     paused_at: datetime | None
+
+
+async def agents_pause(tenant: TenantContext) -> tuple[datetime, UUID] | None:
+    """When the firm paused every engagement agent and who did (ADM-04's band, AC-42)."""
+    async with tenant_session(tenant) as session:
+        return await agents_pause_of(session)
 
 
 async def agents_paused(tenant: TenantContext) -> datetime | None:

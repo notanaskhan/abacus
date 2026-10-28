@@ -8,6 +8,7 @@ export, the `Writer` port and the write gate (`authorise_write`, `execute_write`
 every write in v1. A-02-T16: the POR-16 routes, composed in `client_connect`.
 """
 
+from abacus.modules.connections.api import qbo_app
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.integrations.adapters import (
     AdapterRefused,
@@ -21,6 +22,7 @@ from abacus.modules.integrations.capabilities import (
     assert_egress_declared,
     egress_allowlist,
     egress_hosts_by_connector,
+    egress_read_posts,
     policy_refusal,
     registry,
     undeclared_egress,
@@ -43,6 +45,7 @@ from abacus.modules.integrations.ports import (
     WriteCapabilityEntry,
     WriteCapabilityRegistry,
 )
+from abacus.modules.integrations.qbo_adapter import register_if_configured
 
 # A-02-T16: the live POR-16 routes are declared on C20's `portal_router` in `routes`, so it is
 # imported from there (loading the module registers them before the API mounts the router).
@@ -85,6 +88,7 @@ __all__ = [
     "client_catalog",
     "egress_allowlist",
     "egress_hosts_by_connector",
+    "egress_read_posts",
     "erase_secret",
     "execute_write",
     "is_available",
@@ -102,3 +106,6 @@ __all__ = [
     "unregister_adapter",
     "write_capability",
 ]
+
+# A-02-T26 (DEC-709): the QuickBooks Online adapter, only where the app registration exists.
+register_if_configured(qbo_app() is not None)

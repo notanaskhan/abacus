@@ -65,6 +65,9 @@ FIRM_LEVEL: Final = frozenset(
         "safeguards_program",  # G-02-T20: the firm's safeguards record
         "safeguards_control",  # G-02-T20: one Pub 4557 control's status
         "wisp_pack",  # G-02-T20: an Export WISP pack job
+        "ai_policy",  # G-02-T24: the firm's AI policy, its drafts and versions (one per firm)
+        # Q-04-T007: an operator's pilot enrolment; its work item ref keeps it from walled readers
+        "pilot_enrolment",
     }
 )
 # Kinds whose rows may belong to no engagement (a notification about the firm): then firm-level.

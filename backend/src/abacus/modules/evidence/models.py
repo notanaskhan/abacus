@@ -19,11 +19,19 @@ class EvidenceItem(Base):
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
     tenant_id: Mapped[UUID]
+    # Nullable in the schema since 0270 (ADR-158): a client-scoped item has none. Every path
+    # here creates and reads engagement-scoped items only; client-scoped ones are read through
+    # the Files read model (N-01-T19), never through these engagement-filtered queries.
     engagement_id: Mapped[UUID]
     title: Mapped[str]
     created_by_kind: Mapped[str]
     created_by_id: Mapped[str]
     created_at: Mapped[datetime]
+    # 0270: filled from the engagement by trigger when an insert leaves them out.
+    client_id: Mapped[UUID] = mapped_column(server_default=FetchedValue())
+    work_item_id: Mapped[UUID | None] = mapped_column(server_default=FetchedValue())
+    scope: Mapped[str] = mapped_column(server_default=FetchedValue())
+    folder_kind: Mapped[str] = mapped_column(server_default=FetchedValue())
 
 
 class EvidenceVersion(Base):
@@ -52,6 +60,15 @@ class EvidenceVersion(Base):
     upload_note: Mapped[str | None]
     # ADR-162 §5 (P-06-T18, 0144): a client-channel upload's own object and detached key.
     storage_mode: Mapped[str] = mapped_column(server_default=FetchedValue())
+    # 0270 (ADR-158): how it arrived (filled by trigger), what it supersedes, virtual splits
+    # (a page range of a parent version, no new bytes), its display name and classification.
+    channel: Mapped[str | None] = mapped_column(server_default=FetchedValue())
+    supersedes_version_id: Mapped[UUID | None] = mapped_column(server_default=FetchedValue())
+    parent_version_id: Mapped[UUID | None] = mapped_column(server_default=FetchedValue())
+    virtual_label: Mapped[str | None] = mapped_column(server_default=FetchedValue())
+    virtual_amount: Mapped[Decimal | None] = mapped_column(server_default=FetchedValue())
+    display_name: Mapped[str | None] = mapped_column(server_default=FetchedValue())
+    classification_id: Mapped[UUID | None] = mapped_column(server_default=FetchedValue())
 
 
 class EvidenceObjectKey(Base):

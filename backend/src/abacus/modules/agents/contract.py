@@ -11,7 +11,7 @@ figures, so they are Restricted and never in a list.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import Depends, Header, Path
@@ -20,7 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from abacus.kernel._flags import REVIEW_GRAMMAR_API
 from abacus.kernel._statuses import ProposalStatus, SuggestionStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.text import MultiLineText
 from abacus.modules.agents.proposal_adapters import (
@@ -29,6 +29,7 @@ from abacus.modules.agents.proposal_adapters import (
     parse,
     reject_typed,
 )
+from abacus.modules.agents.proposal_undo import undo_proposal, undo_typed
 from abacus.modules.agents.proposals import (
     Edit,
     ProposalInvalid,
@@ -62,12 +63,6 @@ ProposalDecisionKind = Literal[
 RejectReason = Literal["wrong_treatment", "unsupported_value", "needs_client_input", "other"]
 PolicyResult = Literal["within_threshold", "review_required"]
 SuggestionDecisionKind = Literal["adopted", "edited", "dismissed", "undone"]
-
-
-async def _stub(ctx: AuthContext) -> NoReturn:
-    if not await flag_enabled(ctx.tenant, REVIEW_GRAMMAR_API):
-        raise NotFound("review.grammar_api")
-    raise NotImplementedYet
 
 
 async def _live(ctx: AuthContext) -> None:
@@ -368,10 +363,17 @@ async def proposal_follow_up_route(
     errors=(409, 501),
 )
 async def proposal_undo_route(
-    proposal_id: UUID, body: UndoProposalIn, ctx: Ctx
+    proposal_id: ProposalRef, body: UndoProposalIn, ctx: Ctx
 ) -> AgentProposalOut:
-    """Undo inside 10 seconds by the same person: 409 `undo_window_closed` or `effect_started`."""
-    await _stub(ctx)
+    """Undo inside 10 seconds by the same person: 409 `undo_window_closed` or `effect_started`
+    (P-04-T29; `proposal_undo.py`)."""
+    await _live(ctx)
+    typed = parse(proposal_id)
+    if typed is not None:
+        await undo_typed(ctx, *typed, body.decision_id)
+        return _proposal_out(await adapter_view(ctx, *typed))
+    await undo_proposal(ctx, _uuid(proposal_id), body.decision_id)
+    return _proposal_out(await proposal_view(ctx, _uuid(proposal_id)))
 
 
 # --- Suggestions (C-31 Adopt) ------------------------------------------------------------------

@@ -175,6 +175,10 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "decision.request_analysis",  # P-04-T08 (TASK-414)
         "entry_assessment.adopt",  # SPEC-044 (TASK-109)
         "entry_assessment.request",  # SPEC-037 Q4 (TASK-085)
+        "envelope.evidence_download",  # N-02-T02 (SPEC-381)
+        "envelope.import_record",  # N-02-T02
+        "envelope.record_wet_signature",  # N-02-T02
+        "envelope.send",  # N-02-T02
         "eqr.concur",  # SPEC-314 (TASK-332)
         "evidence.accept",
         "evidence.read",
@@ -193,12 +197,16 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "guidance_draft.decide",  # SPEC-035 (TASK-073)
         "guidance_draft.read",
         "guidance_draft.request",
+        "inbox.download",  # N-01-T02 (SPEC-380)
+        "inbox.file",  # N-01-T02
+        "inbox.read_content",  # N-01-T02
         "inbox_match.read",  # SPEC-033 (TASK-066)
         "inbox_match.request",
         "item.sign_prepared",  # SPEC-040 (TASK-100)
         "item.sign_reviewed",
         "ledger.pull",  # A-02 §4.4 (TASK-1185)
         "ledger_import.upload",  # SPEC-028 (TASK-052)
+        "letter.approve",  # N-02-T02
         "mapping_set.edit",  # SPEC-316 (TASK-345)
         "materiality.decide",  # SPEC-300 (TASK-301)
         "materiality.set",  # SPEC-037 (TASK-083)

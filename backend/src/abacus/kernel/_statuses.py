@@ -269,6 +269,28 @@ class InboxItemStatus(StrEnum):
     WAITING = "waiting"
     FILED = "filed"
     IGNORED = "ignored"
+    HELD = "held"
+    WITHDRAWN = "withdrawn"
+
+
+class InboxThreadStatus(StrEnum):
+    UNMATCHED = "unmatched"
+    MATCHED = "matched"
+    IGNORED = "ignored"
+
+
+class PortalIntakeUploadStatus(StrEnum):
+    SENT = "sent"
+    RECEIVED = "received"
+    WITHDRAWN = "withdrawn"
+
+
+class FileDocumentStatus(StrEnum):
+    PROCESSING = "processing"
+    NEEDS_REVIEW = "needs_review"
+    ACCEPTED = "accepted"
+    SUPERSEDED = "superseded"
+    ON_HOLD = "on_hold"
 
 
 class IssueStatus(StrEnum):
@@ -380,6 +402,14 @@ class EnvelopeStatus(StrEnum):
     DECLINED = "declined"
     EXPIRED = "expired"
     VOIDED = "voided"
+
+
+class EnvelopeSignerStatus(StrEnum):
+    PENDING = "pending"
+    VIEWED = "viewed"
+    SIGNED = "signed"
+    DECLINED = "declined"
+    VERIFICATION_FAILED = "verification_failed"
 
 
 class NoticeStatus(StrEnum):
@@ -587,6 +617,22 @@ class AcceptanceRecordStatus(StrEnum):
     AWAITING_PARTNER = "awaiting_partner"
     DECIDED = "decided"
     DECLINED = "declined"
+
+
+class LetterStatus(StrEnum):
+    NOT_STARTED = "not_started"
+    DRAFT = "draft"
+    PARTNER_APPROVED = "partner_approved"
+    SENT = "sent"
+    SIGNED = "signed"
+    NOT_REQUIRED = "not_required"
+    SUPERSEDED = "superseded"
+
+
+class LetterClauseStatus(StrEnum):
+    ON = "on"
+    OFF = "off"
+    REQUIRED = "required"
 
 
 class LetterRecordStatus(StrEnum):
@@ -933,6 +979,25 @@ STORED: dict[str, tuple[str, ...]] = {
         "waiting",
         "filed",
         "ignored",
+        "held",
+        "withdrawn",
+    ),
+    "inbox_thread": (
+        "unmatched",
+        "matched",
+        "ignored",
+    ),
+    "portal_intake_upload": (
+        "sent",
+        "received",
+        "withdrawn",
+    ),
+    "file_document": (
+        "processing",
+        "needs_review",
+        "accepted",
+        "superseded",
+        "on_hold",
     ),
     "issue": (
         "open",
@@ -1020,6 +1085,13 @@ STORED: dict[str, tuple[str, ...]] = {
         "declined",
         "expired",
         "voided",
+    ),
+    "envelope_signer": (
+        "pending",
+        "viewed",
+        "signed",
+        "declined",
+        "verification_failed",
     ),
     "notice": (
         "received",
@@ -1197,6 +1269,20 @@ STORED: dict[str, tuple[str, ...]] = {
         "awaiting_partner",
         "decided",
         "declined",
+    ),
+    "letter": (
+        "not_started",
+        "draft",
+        "partner_approved",
+        "sent",
+        "signed",
+        "not_required",
+        "superseded",
+    ),
+    "letter_clause": (
+        "on",
+        "off",
+        "required",
     ),
     "letter_record": (
         "not_signed",

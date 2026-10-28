@@ -95,6 +95,7 @@ from abacus.modules.engagements.intake_contract import (
     client_intake_drafts_router,
     dedupe_router,
 )
+from abacus.modules.engagements.letter_contract import letter_router
 from abacus.modules.engagements.roll_forward import (
     PriorItem,
     TemplateSeed,
@@ -236,8 +237,10 @@ from abacus.modules.methodology.api import (
     version_detail,
 )
 from abacus.modules.organisations.api import (
+    MaskedTinOut,  # N-01: the masked TIN shape, re-exported for evidence's file drawer
     OverviewSection,
     activate_contact,
+    readable_client,  # P-07-T57: re-exported for audit_trail's Activity lines (DEC-718)
     register_client_engagements,
     register_conflict_subject,
     register_conflict_subject_names,
@@ -326,6 +329,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     dedupe_router,
     client_intake_drafts_router,
     client_imports_router,
+    letter_router,  # C7 v1 letter half stub (N-02-T03): ENG-04 composer
     router,
     work_items_router,
     firm_router,
@@ -366,6 +370,7 @@ __all__ = [
     "IndependenceRequested",
     "Judgment",
     "JudgmentSource",
+    "MaskedTinOut",
     "MethodologyAlreadyApplied",
     "MethodologyVersionView",
     "NewCondition",
@@ -447,6 +452,7 @@ __all__ = [
     "portal_work_items",
     "progress_of",
     "publish_drafted_version",
+    "readable_client",
     "register_auto_retrieval",
     "register_evidence_readable",
     "register_gate_provider",

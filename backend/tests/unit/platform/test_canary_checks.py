@@ -103,6 +103,7 @@ def test_the_canary_runs_every_15_minutes_on_the_time_sensitive_queue(
         "audit_partitions:platform",  # Q-02-T20
         "auth_session_purge:platform",  # G-02-T14
         "client_import_erase:platform",  # P-07-T52: bulk import files erased after 30 days
+        "connection_health:platform",  # A-02-T25: the daily connection health pass (DEC-708)
         "export_expiry:platform",  # A-01-T22: the daily engagement export expiry sweep
         "incident_reminders:platform",  # G-02-T18: the incident register's FTC clock reminders
         "notification_purge:platform",

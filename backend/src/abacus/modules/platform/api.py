@@ -79,6 +79,10 @@ from abacus.modules.platform.incidents import WORKFLOWS as INCIDENT_WORKFLOWS
 from abacus.modules.platform.jobs import ACTIVITIES as JOB_ACTIVITIES
 from abacus.modules.platform.jobs import SCHEDULES
 from abacus.modules.platform.jobs import WORKFLOWS as JOB_WORKFLOWS
+from abacus.modules.platform.pilots import Mode as PilotMode
+from abacus.modules.platform.pilots import PilotModeRefused
+from abacus.modules.platform.pilots import enrol as enrol_pilot
+from abacus.modules.platform.pilots import set_mode as set_pilot_mode
 from abacus.modules.platform.provisioning import (
     OPERATOR_HANDLE,
     apply_retention_defaults_activity,
@@ -256,6 +260,8 @@ __all__ = [
     "IncidentStepResult",
     "IncidentView",
     "Module",
+    "PilotMode",
+    "PilotModeRefused",
     "PropagationStarted",
     "ProvisionTenantInput",
     "ProvisionTenantResult",
@@ -282,6 +288,7 @@ __all__ = [
     "configure_heartbeat",
     "configure_tenant_key_ops",
     "control_active",
+    "enrol_pilot",
     "entitlement",
     "expected_route",
     "facts_sha256",
@@ -308,6 +315,7 @@ __all__ = [
     "router",
     "schedules",
     "search_document",
+    "set_pilot_mode",
     "should_page",
     "start_propagation",
     "start_provisioning",

@@ -34,6 +34,7 @@ IDS = (
     "audit_partitions:platform",  # Q-02-T20: access_events partitions, every 30 days
     "auth_session_purge:platform",  # G-02-T14: staff sessions ended over a year ago, daily
     "client_import_erase:platform",  # P-07-T52: bulk import files erased after 30 days, daily
+    "connection_health:platform",  # A-02-T25 (DEC-708): every firm's connections, daily
     "export_expiry:platform",  # A-01-T22: the daily engagement export expiry sweep
     "incident_reminders:platform",  # G-02-T18: FTC clock reminders, every 6 hours
     "notification_purge:platform",
@@ -48,6 +49,7 @@ BACKGROUND = (
     "audit_partitions:platform",
     "auth_session_purge:platform",
     "client_import_erase:platform",
+    "connection_health:platform",
     "export_expiry:platform",
     "incident_reminders:platform",
     "notification_purge:platform",

@@ -16,6 +16,7 @@ from abacus.modules.portal.branding import (
 )
 from abacus.modules.portal.contract import router
 from abacus.modules.portal.documents_routes import documents_router
+from abacus.modules.portal.intake_contract import intake_router
 from abacus.modules.portal.notices import SUBSCRIPTIONS
 from abacus.modules.portal.pbc_contract import pbc_router
 from abacus.modules.portal.rooms_routes import rooms_router
@@ -30,6 +31,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     rooms_router,
     pbc_router,
     settings_router,  # C16 v1.1 stub (R-01-T16): portal settings and preview
+    intake_router,  # C5 v1.2 intake half stub (N-01-T02): "Upload something else"
 )
 
 # R-01-T13: the request owner hears of a third party's upload (`third_party.uploaded`).

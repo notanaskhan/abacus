@@ -160,6 +160,16 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.completion.AlreadyLocked
+  attachment_filed:
+    status: 409
+    raised_by:
+    - abacus.modules.communications.intake_contract.AttachmentFiled
+    summary: 'The attachment was already filed: it cannot be decided or withdrawn again.'
+  attachment_withdrawn:
+    status: 409
+    raised_by:
+    - abacus.modules.communications.intake_contract.AttachmentWithdrawn
+    summary: The client withdrew the attachment before it was filed (ADR-162).
   audit_locked:
     status: 422
     raised_by:
@@ -373,11 +383,21 @@ codes:
     - abacus.modules.engagements.acceptance.DecisionLocked
     - abacus.modules.engagements.independence.NasDecided
     summary: 'The acceptance record is decided and locked: nothing on it changes any more.'
+  decision_required:
+    status: 409
+    raised_by:
+    - abacus.modules.communications.intake_contract.DecisionRequired
+    summary: An attachment in the apply has no decision, or a forced Hold was answered otherwise.
   demo_clock_refused:
     status: 409
     raised_by:
     - abacus.modules.identity.firm_settings.DemoClockRefused
     summary: A demo clock is only for a synthetic firm, and never in production (F-04.2, F-04.3).
+  destination_archived:
+    status: 409
+    raised_by:
+    - abacus.modules.communications.intake_contract.DestinationArchived
+    summary: 'The destination engagement or folder is archived: read-only.'
   discovered_in_future:
     status: 422
     raised_by:
@@ -424,6 +444,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.follow_up_drafts.FollowUpEffectStarted
+    - abacus.modules.agents.proposal_undo.EffectStarted
     - abacus.modules.evidence.exports.ExportEffectStarted
     - abacus.modules.requests.binders.EffectStarted
     summary: 'The publish''s delivery has started (its grant was consumed): it can no longer be undone.'
@@ -636,6 +657,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.ledger.mapping.AlreadyPublished
+  has_flags:
+    status: 409
+    raised_by:
+    - abacus.modules.communications.intake_contract.HasFlags
+    summary: 'A flagged attachment cannot be bulk-filed: review it in File… (INB-01 e).'
   hold_not_active:
     status: 409
     raised_by:
@@ -728,6 +754,11 @@ codes:
     raised_by:
     - abacus.modules.identity.annual_independence.StatementMissing
     summary: The firm has not published its independence statement yet, so there is nothing to confirm.
+  intake_not_allowed:
+    status: 409
+    raised_by:
+    - abacus.modules.communications.intake_contract.IntakeNotAllowed
+    summary: The principal's shell cannot use intake (third party, K-1 only, TCWG, prospect).
   integrity_failed:
     status: 409
     raised_by:
@@ -766,9 +797,15 @@ codes:
     raised_by:
     - abacus.modules.organisations.contacts_contract.InvitationUsed
     summary: 'The invitation link was already used: it works once.'
+  issue_changed:
+    status: 409
+    raised_by:
+    - abacus.modules.review.issues.IssueChanged
+    summary: The issue changed since it was read (`seen_version`).
   item_closed:
     status: 409
     raised_by:
+    - abacus.modules.communications.intake_contract.ItemClosed
     - abacus.modules.evidence.uploads.ItemClosed
     summary: The item no longer takes evidence (ready for review or further on).
   item_not_open:
@@ -875,6 +912,11 @@ codes:
     - abacus.modules.portal.branding.LogoUnreadable
     - abacus.modules.portal.settings.LogoTooLarge
     summary: The logo isn't a PNG or JPEG this server can decode, or is too large.
+  low_confidence:
+    status: 409
+    raised_by:
+    - abacus.modules.communications.intake_contract.LowConfidence
+    summary: 'The top destination is below the bulk threshold or ambiguous: choose it in File….'
   mapping_invalid:
     status: 422
     raised_by:
@@ -939,6 +981,11 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.service.NoLedger
     summary: No reconciled general ledger for the engagement's entity and year end.
+  no_pending_version:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.ai_policy_service.NoPendingVersion
+    summary: There is no version awaiting approval with that number.
   no_subsequent_ledger:
     status: 409
     raised_by:
@@ -1131,6 +1178,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.connections.ledger_import.FileTooLarge
+  pending_version_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.ai_policy_service.PendingVersionExists
+    summary: 'A version is already awaiting approval: withdraw it first.'
   person_invalid:
     status: 422
     raised_by:
@@ -1163,6 +1215,11 @@ codes:
     raised_by:
     - abacus.modules.assurance.phase.PhaseSkip
     summary: 'The target phase is past the next one: a phase cannot be skipped.'
+  pilot_mode_refused:
+    status: 409
+    raised_by:
+    - abacus.modules.platform.pilots.PilotModeRefused
+    summary: The enrolment cannot move to that mode from where it is (or without a confirming person).
   planning_invalid:
     status: 422
     raised_by:
@@ -1507,6 +1564,7 @@ codes:
   stale_version:
     status: 409
     raised_by:
+    - abacus.modules.agents.ai_policy_service.StaleDraft
     - abacus.modules.assurance.phase.ProfileStale
     - abacus.modules.communications.follow_up_policy.FollowUpPolicyStale
     - abacus.modules.communications.template_service.TemplateDraftStale
@@ -1559,6 +1617,7 @@ codes:
   superseded_by_ai_policy:
     status: 409
     raised_by:
+    - abacus.modules.identity.firm_settings.SupersededByAiPolicy
     - abacus.modules.identity.governance_errors.SupersededByAiPolicy
     summary: 'The firm is on the versioned AI policy (`ai_policy.v1`): the autonomy level is changed
       by publishing a policy version, not by `PUT /v1/firm/autonomy` (ADR-186 item 7).'
@@ -1674,6 +1733,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.follow_up_drafts.FollowUpUndoClosed
+    - abacus.modules.agents.proposal_undo.UndoWindowClosed
     - abacus.modules.evidence.exports.ExportUndoClosed
     - abacus.modules.evidence.service.UndoWindowClosed
     - abacus.modules.requests.binders.UndoWindowClosed

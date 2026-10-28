@@ -9,6 +9,8 @@ from __future__ import annotations
 # The tables this module owns; no other module reads or writes them (ADR-008).
 TABLES: frozenset[str] = frozenset(
     {
+        "autonomy_policy_drafts",  # G-02-T23 (0272): the AI policy's draft and versions
+        "autonomy_policy_versions",
         "engagement_agents",  # SPEC-027 (TASK-050)
         "agent_activity",
         "upload_reviews",  # SPEC-030 (TASK-058)
@@ -67,6 +69,14 @@ INSERT_ONLY: frozenset[str] = frozenset(
 )
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
+    # G-02-T23 (0272): the draft (one per firm) and the requested versions.
+    "autonomy_policy_drafts": frozenset(
+        {"tenant_id", "base_version_no", "sections", "schema_version", "updated_by"}
+    ),
+    "autonomy_policy_versions": frozenset(
+        {"tenant_id", "version_no", "sections", "schema_version", "effective_from"}
+        | {"requested_by", "requested_at", "approver_user_id"}
+    ),
     # Run records (Q-02-T41, migration 0171): everything but `persisted_at`.
     "agent_run_records": frozenset(
         {"run_id", "tenant_id", "engagement_id", "work_item_id", "capability", "spec_version"}
@@ -177,6 +187,10 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
+    "autonomy_policy_drafts": frozenset(
+        {"base_version_no", "sections", "schema_version", "version", "updated_at", "updated_by"}
+    ),
+    "autonomy_policy_versions": frozenset({"state", "decided_by", "decided_at", "decline_reason"}),
     "suggestions": frozenset({"status", "version"}),  # P-04-T05
     "proposals": frozenset({"state", "routed_to_user_id", "version"}),  # P-04-T05
     # SPEC-027 (TASK-050): an engagement's agent paused or resumed.

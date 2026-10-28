@@ -836,6 +836,12 @@ def _live_human(ctx: AuthContext, action: str) -> None:
         raise Forbidden(action, "role")
 
 
+async def review_decision_engagement(tx: UnitOfWork, decision_id: UUID) -> UUID | None:
+    """P-04-T29: the engagement a review decision belongs to (a typed proposal's Undo)."""
+    found = await decision_by_id(tx.session, decision_id)
+    return found.engagement_id if found is not None else None
+
+
 async def undo_review_decision(
     tx: UnitOfWork, ctx: AuthContext, engagement_id: UUID, decision_id: UUID
 ) -> UndoneView:

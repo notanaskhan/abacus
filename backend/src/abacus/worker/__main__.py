@@ -71,6 +71,7 @@ from abacus.modules.integrations.api import (
     assert_egress_declared,
     egress_allowlist,
     egress_hosts_by_connector,
+    egress_read_posts,
 )
 from abacus.modules.platform.api import configure_canary_probe
 from abacus.worker.canary_probe import ServiceProbe
@@ -120,7 +121,9 @@ async def build_workers(classes: Sequence[WorkClass] = WORK_CLASSES) -> list[Wor
     check_clock()  # F-04-T02: no demo clock in production
     # A-02-T16 review M3: connectors reach only the registry's hosts, through kernel.egress.
     assert_egress_declared()
-    configure_egress(egress_allowlist(), by_connector=egress_hosts_by_connector())
+    configure_egress(
+        egress_allowlist(), egress_read_posts(), by_connector=egress_hosts_by_connector()
+    )
     configure_tracing("abacus-worker")
     configure_metrics("abacus-worker")
     configure_error_tracking("abacus-worker")

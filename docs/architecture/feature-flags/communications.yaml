@@ -18,3 +18,12 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: inbox.firm_intake
+    description: 'INB-01 and INB-02, firm intake (N-01; C5 v1.2 intake half; docs/contracts/firm-intake.md; ADR-210): every /v1/inbox/* route and GET /v1/destinations. Off: 404 and the Inbox nav item renders C-20 "This isn''t on for ‹firm› yet.". On: 501 not_implemented until N-01-T09 (intake writes), T13 (reads) and T18 (triage). On for Brightwater Hale on staging from its first live task; per pilot firm at its flip. Retired in N-01-T30.'
+    owner: ayushkbhatia
+    created: 2026-10-27
+    expires: 2027-04-21
+    override: DEC-137
+    override: DEC-137
+    kind: boolean
+    default: false

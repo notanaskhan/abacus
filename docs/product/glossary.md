@@ -162,6 +162,10 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 
 | Term | Meaning | Code name | Don't use |
 |---|---|---|---|
+| Document classification | What code (or, later, the agent) says a document is: form family and code, tax year, issuer, kind, page count, masked TIN last 4, with confidences and citations. Insert-only; a person confirms. | `document_classifications` (N-01-T17) | — |
+| Folder kind | Which Files folder a document sits in under a work item or client: Source documents, Workpapers, Correspondence, Deliverables, Signed authorizations. | `evidence_items.folder_kind` (`source_documents`, `workpapers`, `correspondence`, `deliverables`, `signed_authorizations`) | — |
+| Permanent file | A client's documents that belong to no single engagement (client-scoped evidence, ADR-158): read by anyone who can read content on a non-walled engagement of that client. | `evidence_items.scope = 'client'` | `master file` |
+| Filed | An inbox attachment a person filed: it is now an evidence version (or version n+1) in a destination. UI word only for inbox items and their Files rows. | `inbox_attachments.status = 'filed'` | — |
 | Citation | An insert-only, code-verified pointer from a cited value to its source, of one of ten kinds (`document_text`, `sheet_cell`, `ledger_line`, `workpaper_cell`, `methodology_step`, `policy_rule`, `record_field`, `tax_form_line`, `artifact_cell`, `request_item`). It is verified before display: a failed one is stored `verified=false` with a `verification_reason` and shown "Unverified". No quote text is stored, only `quote_sha256`; the quote is re-read from the masked word layer. Owned by `evidence` (ADR-166). | `citations` (v2), `citation_kind`, `quote_sha256`, `verification_reason` | — |
 | Citation event | An insert-only row that changes a citation's computed state: `moved` (its source has a successor version), `broken` (the source was voided, withdrawn or erased) or `relinked` (a person re-verified it on the successor; human only). The state is never stored on the citation (ADR-166). | `citation_events` (`citation_event_kind`), view `citation_current` | — |
 | Virtual document | A split of a combined PDF. | `evidence_versions.parent_version_id` + `page_range` | — |
@@ -197,6 +201,14 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Term | Meaning | Code name | Don't use |
 |---|---|---|---|
 | Inbox (firm mailbox) | Distinct from the engagement drop zone `inbox_files`, which is kept. | `mailboxes`, `inbox_threads`, `inbound_messages`, `inbox_attachments`, `triage_decisions` | — |
+| Inbox thread | One conversation of firm intake (INB-01 rail row): a portal upload batch, a staff-logged batch or an email thread, matched to a client or unmatched (ADR-210). Unmatched threads are visible only to the intake scope, by sender and subject. | `inbox_threads` (`source_kind`, `match_method`) | `mail thread` |
+| Inbound message | One received message on an inbox thread, whatever its channel (`email`, `portal_upload`, `staff_logged`). Insert-only; its body is sealed and read only with `inbox.read_content`. | `inbound_messages` (`channel`, `received_via`) | — |
+| Inbox attachment | One file received on an inbound message, before and after triage. Its status moves only through `communications/transitions.py` (New, Waiting, Filed, Ignored, held, withdrawn). Never evidence until a person files it. | `inbox_attachments` | `intake file` |
+| Triage decision | A person's insert-only decision on one inbox attachment: file, ignore or hold (INB-02). Never an agent's (`actor_kind = 'human'`). | `triage_decisions` (`decision`) | `auto-file` |
+| Sender rule | "Remember sender": a matched sender address (stored as an HMAC and a sealed copy) mapped to a client, so later items from it match by themselves. Revocable. | `inbox_sender_rules` | `whitelist` |
+| Intake scope | The firm-level right of an intake-team member to read inbound messages and attachments until they are filed and to file them into the matched client's non-walled destinations (DEC-20, DEC-701). | `intake_scope` (matrix condition) | — |
+| Intake team | A team of kind `intake`; its members hold the intake scope. Managed in the teams settings. | `teams.kind = 'intake'` | — |
+| Log received documents | Staff-logged intake (INB-01 rail menu, O3 sheet): files received by email, mail, fax, in person or otherwise, recorded with who they came from and when. | `POST /v1/inbox/intake`, `inbound_messages.channel = 'staff_logged'` | `manual upload` |
 | Portal thread | POR-07. | `message_threads` | — |
 | Secure link | A single-use, 14-day link in a client email (reminder, invitation, signature request, deliverable ready, reconnect), stored as a token hash. An expired link can be renewed only to the address it was sent to (POR-01 e). The token travels in the URL fragment, never a query string. A secure link is not a fulfilment; `link` stays banned on its own and is allowed only in this compound. | `secure_links` (`purpose`, `token_hash`, `expires_at`, `renewed_from_id`) | — |
 | Email template | A registered, firm-editable email key (`invitation`, `reminder`, `signature_request`, `deliverable_ready`, `confirmation_request`, `reconnect_request`, and keys other epics register through `register_email_template`) with its audience, whitelisted variables and call-to-action targets. `tenant_id` NULL is the platform default; a firm row overrides it from its first edit or import. Firm content: it loads through POR-20, ADM-10 or the import route, never a constant or a migration. | `email_templates` | — |
@@ -226,6 +238,13 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Term | Meaning | Code name | Don't use |
 |---|---|---|---|
 | Envelope / signer | Provider `docusign` or `record`. | `envelopes`, `envelope_documents`, `envelope_signers`, `envelope_events`, `signature_evidence`, `envelope_policies` | — |
+| Envelope | One package of documents sent for signature, or imported already signed (record mode, ADR-149), with its signers, fields and events. Firm-numbered ("E18"). Status words in `envelope`. | `envelopes` (`provider`: `docusign`, `record`, `fake`) | `signature request` (for the record) |
+| Signer | One person who signs an envelope (client contact or firm user), with an identity method: KBA, email code, in-person ID or firm SSO; never SMS for the 8879 family. | `envelope_signers` | — |
+| Signature evidence | The insert-only proof of one signer's signature: time, sealed and masked IP, identity result, method, document hashes and the package in the records bucket. | `signature_evidence` | — |
+| Envelope policy | A firm's rules for one envelope family: allowed identity methods, KBA attempts, failure path, reminders, expiry, countersign, retention. Data, not code; a firm may only tighten the floor. | `envelope_policies` | — |
+| Signing session | One short-lived, one-time handoff of a named signer to the provider's embedded view, confirmed by a server-checked return. | `signing_sessions` | — |
+| ERSD | The electronic record and signature disclosure a signer accepts before signing (ESIGN). Its text is database content approved by counsel. | `esign_disclosures`, `esign_acceptances` | — |
+| Record mode | Importing a package the firm had signed in its own tool, with the signer facts and the importer's attestation; Accrued keeps the evidence and runs no ceremony. | `envelopes.provider = 'record'` | — |
 
 ## New terms: review
 
@@ -383,6 +402,8 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 
 | Term | Meaning | Code name | Don't use |
 |---|---|---|---|
+| Pilot enrolment | One work item's pilot: its window, its mode (shadow, live, system of record, exited) and the baseline days the firm agreed. System of record needs a named confirming person (Q-04-T007). | `pilot_enrolments` (`mode`) | — |
+| Pilot metric snapshot | One computed pilot metric for an enrolment, metric key, optional subject and period; insert-only, one per key. | `pilot_metric_snapshots` | — |
 | Reference set | Platform-published calendars (P-62). | `reference_sets` (+ versions) | — |
 | Agent-minute | Metering unit (P-28). | `agent_minute`; `plan_entitlements` | — |
 | Security incident | A firm's or Accrued's recorded security event, with its discovery time and the FTC clock (notify by discovery + 30 calendar days in the firm's time zone when 500 or more consumers' unencrypted data is involved). An Accrued-side incident is propagated into each affected firm's register. | `security_incidents`, action `incident.manage` | — |

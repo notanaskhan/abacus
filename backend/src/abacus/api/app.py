@@ -60,6 +60,7 @@ from abacus.modules.integrations.api import (
     assert_egress_declared,
     egress_allowlist,
     egress_hosts_by_connector,
+    egress_read_posts,
 )
 
 # A-01-T18 (SPEC-344, DEC-433): no module may import audit_trail, so the composition roots (this
@@ -204,7 +205,9 @@ async def _lifespan(_app: FastAPI) -> AsyncGenerator[None]:
     # A-02-T15 (ADR-040, ADR-150): no adapter may reach a host write-capabilities.yaml does not
     # declare for it; the API does not start while one would.
     assert_egress_declared()
-    configure_egress(egress_allowlist(), by_connector=egress_hosts_by_connector())
+    configure_egress(
+        egress_allowlist(), egress_read_posts(), by_connector=egress_hosts_by_connector()
+    )
     yield
     # Spans and error reports still buffered at shutdown are sent, not lost.
     shutdown_tracing()

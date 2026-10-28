@@ -91,8 +91,8 @@ OPT_IN: Final = ("GET", "/v1/firm/ai-client-data")
 OPT_IN_PUT: Final = ("PUT", "/v1/firm/ai-client-data")
 LEGACY_AUTONOMY_PUT: Final = ("PUT", "/v1/firm/autonomy")
 
-# Routes still answering 501 (the stubs); G-02-T24 removes each as it makes it live.
-LIVE: Final[frozenset[Route]] = frozenset()
+# Routes still answering 501 (the stubs); G-02-T24 made every route live.
+LIVE: Final[frozenset[Route]] = frozenset(ROUTES)
 STUBBED: Final = frozenset(ROUTES) - LIVE
 READS: Final = (POLICY, VERSIONS, VERSION, EFFECTIVE)
 # ED-182 (fixed): the agent and the system principals are refused `ai_policy.read` (403).
@@ -443,7 +443,9 @@ async def test_ac32_twelve_gate_rows_with_policy_acceptance_only_on_rows_1_and_5
         assert gate["policy_acceptance_on"] is False
         assert gate["policy_acceptance_locked"] is True
         if gate["policy_acceptance_available"]:
-            assert gate["attest"] == "never"
+            # ED-200: row 5 (AJE within threshold) is "Never; held for client approval" in the
+            # plan's gate table (05-agent-architecture.md); row 1 is "Never".
+            assert gate["attest"] == ("never_held_for_client" if gate["row"] == 5 else "never")
         for screen in cast(list[str], gate["where_shown"]):
             assert re.fullmatch(r"[A-Z]{3}-\d{2}", screen), screen
 
@@ -615,7 +617,8 @@ async def test_ac40_the_security_admin_saves_a_client_data_change(
     [
         ("autonomy.level", 0),
         ("governance.override_tolerance_pct", 6),
-        ("auto_mode_defaults.fs_audit", False),
+        # ED-201: a default-true cell, so turning it off is a real (stricter) change.
+        ("auto_mode_defaults.tax_return", False),
     ],
 )
 async def test_ac40_the_security_admin_cannot_change_another_section(
@@ -1534,14 +1537,7 @@ async def test_ac45_the_database_refuses_a_policy_decision_written_as_the_agent(
 # --- The legacy autonomy route (ADR-186 item 7) --------------------------------------------------
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "with ai_policy.v1 on, PUT /v1/firm/autonomy still sets the level alone instead of "
-        "answering 409 superseded_by_ai_policy (ADR-186 item 7), which G-02-T24 builds; "
-        "recorded in work/tasks/TASK-1485-g02-ai-policy-ac-suite.md"
-    ),
-)
+# G-02-T24 built the 409 (DEC-712): the strict xfail is lifted.
 async def test_ac38_the_legacy_autonomy_route_is_closed_for_a_flag_on_firm(
     world: World, as_: Callable[[object], Call], seed: Seeder
 ) -> None:

@@ -150,6 +150,10 @@ class CompleteOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     engagement_id: Annotated[UUID, classified("internal")]
+    # A-02-T28 (additive): the entity an entity-scoped flow connected, so the portal returns to
+    # POR-16; null on the legacy engagement flow.
+    client_entity_id: Annotated[UUID | None, classified("internal")] = None
+    reconnected: Annotated[bool, classified("internal")] = False
 
 
 class ConnectionOut(BaseModel):
@@ -215,8 +219,13 @@ async def complete_route(body: CompleteIn, ctx: Ctx) -> CompleteOut:
     """SPEC-020 AC-2 (TASK-036 D1): the SPA hands back the provider's state and code. A-02-T16:
     a state POR-16 started finishes as an entity-scoped connection (or a reconnect)."""
     done = await complete_any(ctx, body.state, body.code)
-    # The portal returns to Connections and reads the cards again (A-02-T28).
-    return CompleteOut(engagement_id=done.engagement_id)
+    # The portal returns to Connections and reads the cards again (A-02-T28): an entity flow
+    # (a connection id) names its entity; the legacy flow returns to its engagement.
+    return CompleteOut(
+        engagement_id=done.engagement_id,
+        client_entity_id=done.client_entity_id if done.connection_id is not None else None,
+        reconnected=done.reconnected,
+    )
 
 
 @connection_router.get("", action="connection.read_log", response_model=ConnectionOut | None)
