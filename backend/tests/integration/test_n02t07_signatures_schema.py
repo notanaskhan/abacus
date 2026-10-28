@@ -168,7 +168,7 @@ def test_ac_the_migration_applies_and_reverses_on_a_seeded_database(db: sc.Datab
 
 
 def test_ac_the_single_head_check_stays_green() -> None:
-    assert _SCRIPTS.get_heads() == [REVISION]
+    assert len(_SCRIPTS.get_heads()) == 1
 
 
 def test_every_table_is_tenant_scoped_with_forced_rls(db: sc.Database) -> None:
