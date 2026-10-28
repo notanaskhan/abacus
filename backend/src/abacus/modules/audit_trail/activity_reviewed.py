@@ -437,5 +437,11 @@ REVIEWED_FALLBACK: Final = frozenset(
         "workpaper.created",
         "workpaper.signed_ready",
         "workpaper.signed_reviewed",
+        "sending_domain.created",  # R-01-T27
+        "sending_domain.failed",  # R-01-T27
+        "sending_domain.revoked",  # R-01-T27
+        "sending_domain.verified",  # R-01-T27
+        "firm_mail_policy.client_mail_enabled",  # R-01-T27
+        "firm_mail_policy.client_mail_disabled",  # R-01-T27
     }
 )
