@@ -43,7 +43,9 @@ export function ConnectCallback(): JSX.Element {
         // A-02-T28: an entity flow (POR-16) returns to the portal's Connections, which reads
         // the cards again; the legacy engagement flow returns to its engagement.
         if (data.client_entity_id != null) {
-          window.location.assign(`/connections?entity=${encodeURIComponent(data.client_entity_id)}`);
+          window.location.assign(
+            `/connections?entity=${encodeURIComponent(data.client_entity_id)}`,
+          );
           return undefined;
         }
         return navigate({

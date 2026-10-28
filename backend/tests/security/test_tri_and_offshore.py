@@ -52,6 +52,10 @@ TIN_ROUTES = {
     # P-07-T37 (DEC-374): the client-import stub's rows carry only the masked TIN shape.
     ("GET", "/v1/client-imports/{import_id}/rows"): "masked",
     ("PUT", "/v1/client-imports/{import_id}/rows/{row_id}/decision"): "masked",
+    # N-01-T02 (S13 stubs): the file drawer and an intake message's triage cards carry only the
+    # masked TIN shape, masked again for an offshore reader (review 6).
+    ("GET", "/v1/evidence-items/{item_id}/drawer"): "masked",
+    ("GET", "/v1/inbox/messages/{message_id}/triage"): "masked",
 }
 
 

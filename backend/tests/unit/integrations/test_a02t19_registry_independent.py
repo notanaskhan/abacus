@@ -337,7 +337,8 @@ HAND_EDITS: Final = {
     # registry.
     "widen the egress allowlist": (
         "EGRESS_HOSTS: Final[frozenset[str]] = frozenset(\n    {\n",
-        'EGRESS_HOSTS: Final[frozenset[str]] = frozenset(\n    {\n        "api.probe-t19.example",\n',
+        "EGRESS_HOSTS: Final[frozenset[str]] = frozenset(\n    {\n"
+        '        "api.probe-t19.example",\n',
     ),
     "declare a read connector by hand": (
         "READ_CONNECTORS: Final[tuple[dict[str, object], ...]] = (\n",

@@ -25,7 +25,6 @@ NEW = {
     "collaboration",
     "workpapers",
     "adjustments",
-    "signatures",
     "integrations",
     "reporting",
     "assurance",

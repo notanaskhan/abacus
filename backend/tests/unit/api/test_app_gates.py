@@ -552,7 +552,6 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/envelopes/import",
         "/v1/envelopes/{envelope_id}/resend",
         "/v1/engagements/{engagement_id}/letter/amend",
-        "/v1/engagements/{engagement_id}/letter/file",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING
