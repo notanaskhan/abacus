@@ -78,7 +78,7 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 | P-65 | Tenant key provisioning | red | Q-01 | ADR-156 | Fri 27 Nov | — | proposed |
 | P-66 | Platform controls and kill switches | red | Q-01 | ADR-157 | Fri 27 Nov | — | proposed |
 | P-67 | Observability and on-call vendors | red | Q-01 | ADR-154 | Fri 13 Nov (draft open Fri 30 Oct) | — | proposed |
-| P-68 | Tax computation boundary | amber | T-02 | next free | Fri 28 May 2027 (draft S14) | DEC-77 | to draft (confirmed 2026-10-20) |
+| P-68 | Tax computation boundary | amber | T-02 | ADR-231 | drafted and accepted 2026-10-28 with T-02-T36 (TASK-1705) | DEC-77 | accepted |
 | P-69 | Workbook formula engine and the ADR-052 exception for tax workbooks | red | T-05 | next free | Fri 18 Feb 2028 (draft S33) | DEC-84 | to draft (confirmed 2026-10-20) |
 
 ## ADRs outside the P-programme
