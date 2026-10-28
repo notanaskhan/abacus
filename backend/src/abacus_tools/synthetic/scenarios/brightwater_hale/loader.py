@@ -324,6 +324,9 @@ FLAGS_ON: Final = (
     "guidance.drafting",
     "agents.client_data_optin",
     "audits.cockpit",  # A-01: "the local seed turns it on for Brightwater Hale"
+    # I-01-T13: HOME-01 lite on synthetic firms (GET /v1/home and the C13 gate list and counts).
+    "home.dashboard",
+    "review.grammar_api",
 )
 OFFICE_ZONES: Final = {
     "Chicago": "America/Chicago",

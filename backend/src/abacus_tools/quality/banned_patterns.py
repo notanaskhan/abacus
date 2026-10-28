@@ -1117,6 +1117,9 @@ LIST_EXEMPT = frozenset(
         # I-01-T08 (DEC-647): C13's system reader for the `evidence_review` gate source; the
         # projection applies `visible()` and the source's read action when anyone reads it.
         ("src/abacus/modules/requests/repository.py", "awaiting_review_rows"),
+        # I-01-T13 (DEC-803): the evidence-review presenter's host lookup by version, for rows
+        # the caller already read from the projection and that the presenter re-authorised.
+        ("src/abacus/modules/requests/repository.py", "review_hosts_rows"),
         # R-01-T07 (DEC-333): the portal read model's lookups by id for rows the caller already
         # read through `visible_items` and authorised `portal_documents.read` on: a binder's
         # requests' live fulfilments, the contacts its requests are delegated to (only their

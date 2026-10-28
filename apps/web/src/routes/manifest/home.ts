@@ -6,7 +6,7 @@ import type { Manifest } from "./types";
 export const homeScreens = {
   "HOME-01": {
     name: "Home dashboard",
-    status: "fixture",
+    status: "live", // I-01-T13: on for Dev and synthetic firms; "/" opens it
     path: "/home",
     navArea: "Home",
   },
