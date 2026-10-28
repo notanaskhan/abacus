@@ -103,7 +103,21 @@ from abacus.modules.agents.service import (
     screen,
     screening_results_for,
 )
+from abacus.modules.agents.shadow_score import (
+    OverrideRate,
+    ShadowScore,
+    override_rate,
+    shadow_score,
+)
 from abacus.modules.agents.spec import AGENTS, AgentSpec, cleared_for_client_data, spec
+from abacus.modules.agents.stage_admin import (
+    NamedReport,
+    ShadowReportChanged,
+    ShadowReportRequired,
+    ShadowReportStale,
+    StageNotReady,
+    check_live,
+)
 from abacus.modules.agents.stage_routes import platform_stages_router
 from abacus.modules.agents.stages import assistants, stage_for
 from abacus.modules.agents.upload_review import (
@@ -232,7 +246,9 @@ __all__ = [
     "MatchInput",
     "MatchOutcome",
     "MatchRunInput",
+    "NamedReport",
     "NextTickInput",
+    "OverrideRate",
     "ProposalChanged",
     "ProposalInvalid",
     "ProposedRow",
@@ -246,8 +262,13 @@ __all__ = [
     "ScreeningOutput",
     "ScreeningResultView",
     "ScreeningWorkflow",
+    "ShadowReportChanged",
+    "ShadowReportRequired",
+    "ShadowReportStale",
+    "ShadowScore",
     "SheetLayoutError",
     "SlotGrant",
+    "StageNotReady",
     "SuggestionApplier",
     "SuggestionChanged",
     "ThresholdEvaluation",
@@ -258,6 +279,7 @@ __all__ = [
     "apply_proposal",
     "ask",
     "check",
+    "check_live",
     "check_suggestion_target",
     "create_draft_run",
     "create_match_run",
@@ -275,6 +297,7 @@ __all__ = [
     "knowledge_router",
     "load_agent_context",
     "match",
+    "override_rate",
     "register_change_set_applier",
     "register_proposal_adapter",
     "register_suggestion_applier",
@@ -290,6 +313,7 @@ __all__ = [
     "screening_responder",
     "screening_results_for",
     "search_knowledge",
+    "shadow_score",
     "spec",
     "start_agents",
     "start_screening",

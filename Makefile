@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr
+.PHONY: shadow-report go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr
 
 setup:
 	cd backend && uv sync --locked
@@ -227,7 +227,12 @@ audit-chain-verify:
 # variable, never as shell text). Staff use PUT /v1/platform/agent-stages instead.
 agent-stage: export AGENT_STAGE_NOTE := $(NOTE)
 agent-stage:
-	cd backend && uv run python -m abacus_tools.agent_stage $(if $(STAGE),set $(FIRM) $(AGENT) $(STAGE) "$$AGENT_STAGE_NOTE",report $(FIRM) $(AGENT))
+	cd backend && uv run python -m abacus_tools.agent_stage $(if $(STAGE),set $(FIRM) $(AGENT) $(STAGE) "$$AGENT_STAGE_NOTE" $(if $(REPORT_SHA),$(REPORT_SHA) $(REPORT_AS_OF)),report $(FIRM) $(AGENT))
+
+# Q-02-T50 (DEC-811): the deterministic shadow score for one firm and agent, as JSON with its SHA-256;
+# `make agent-stage ... STAGE=live REPORT_SHA=<sha256> REPORT_AS_OF=<as_of>` names it to go live.
+shadow-report:
+	cd backend && uv run python -m abacus_tools.agent_stage score $(FIRM) $(AGENT)
 
 # SPEC-011: set a firm's feature flag (operators; audited).
 # Q-04-T004 (P-29): a pilot firm's flip names APPROVED_BY (never the operator) and ROLLBACK; inside its

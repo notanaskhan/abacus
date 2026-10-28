@@ -999,6 +999,14 @@ export type AgentStageIn = {
      */
     note: string;
     /**
+     * Report As Of
+     */
+    report_as_of?: string | null;
+    /**
+     * Report Sha256
+     */
+    report_sha256?: string | null;
+    /**
      * Stage
      */
     stage: 'shadow' | 'live' | 'off';
