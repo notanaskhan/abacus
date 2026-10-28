@@ -233,6 +233,13 @@ from abacus.modules.evidence.service import (
     undo_review_decision,
     version_view,
 )
+from abacus.modules.evidence.signed_copies import (
+    SIGNED_AUTHORIZATIONS,
+    ScreenedFile,
+    file_signed_copy,
+    read_staged,
+    screen_and_stage,
+)
 from abacus.modules.evidence.storage import (
     MAX_CONTENT_BYTES,
     ContentTooLarge,
@@ -404,6 +411,7 @@ __all__ = [
     "RECORD_TYPES",
     "ROUTERS",
     "SCHEDULES",
+    "SIGNED_AUTHORIZATIONS",
     "SUBSCRIPTIONS",
     "SUGGESTION_MIN_SCORE",
     "TOTAL_LABEL",
@@ -468,6 +476,7 @@ __all__ = [
     "RecordClass",
     "RecordedCitation",
     "ReviewMaterial",
+    "ScreenedFile",
     "ScreeningDecision",
     "ScreeningFacts",
     "SectionFile",
@@ -509,6 +518,7 @@ __all__ = [
     "export_requester",
     "export_section_csv",
     "extend_retention_for",
+    "file_signed_copy",
     "final_export_for_archive",
     "firm_export_schedule_id",
     "firm_router",
@@ -531,6 +541,7 @@ __all__ = [
     "put_record",
     "quote_in",
     "read_content",
+    "read_staged",
     "read_version",
     "record_citations",
     "register_citable",
@@ -549,6 +560,7 @@ __all__ = [
     "review_decision_engagement",
     "review_material",
     "router",
+    "screen_and_stage",
     "screening_facts",
     "set_policy",
     "stage_content",

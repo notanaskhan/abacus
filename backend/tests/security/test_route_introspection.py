@@ -935,6 +935,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ),
     ("POST", "/v1/envelopes", "envelope.draft"),
     ("POST", "/v1/envelopes/import", "envelope.import_record"),
+    ("POST", "/v1/envelopes/import/files", "envelope.import_record"),
     ("POST", "/v1/envelopes/remind/preview", "envelope.remind"),
     ("POST", "/v1/envelopes/remind/send", "envelope.remind"),
     ("POST", "/v1/envelopes/{envelope_id}/countersign/session", "envelope.countersign"),

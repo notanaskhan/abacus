@@ -28651,6 +28651,46 @@
         "title": "ImportCountsOut",
         "type": "object"
       },
+      "ImportFileOut": {
+        "description": "`POST /v1/envelopes/import/files`: one scanned, stored file an import names by `id`.",
+        "properties": {
+          "file_name": {
+            "cls": "confidential",
+            "title": "File Name",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "media_type": {
+            "cls": "internal",
+            "title": "Media Type",
+            "type": "string"
+          },
+          "sha256": {
+            "cls": "internal",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "size_bytes": {
+            "cls": "internal",
+            "title": "Size Bytes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "file_name",
+          "media_type",
+          "size_bytes",
+          "sha256"
+        ],
+        "title": "ImportFileOut",
+        "type": "object"
+      },
       "ImportOut": {
         "properties": {
           "difference": {
@@ -113029,7 +113069,7 @@
     },
     "/v1/envelopes/import": {
       "post": {
-        "description": "Record mode (SIG-01 r; N-02-T08).",
+        "description": "Record mode (SIG-01 r; N-02-T08): the signed package lands Completed with its evidence.",
         "operationId": "import_envelope_record",
         "parameters": [
           {
@@ -113146,8 +113186,76 @@
               }
             },
             "description": "Invalid request"
+          }
+        },
+        "summary": "Import Envelope Record Route",
+        "tags": [
+          "signatures"
+        ],
+        "x-abacus-action": "envelope.import_record"
+      }
+    },
+    "/v1/envelopes/import/files": {
+      "post": {
+        "description": "One file for a record-mode import (the completed document or the certificate), the raw\nbytes as the body: scanned before storage, refused closed (N-02-T08; DEC-818).",
+        "operationId": "stage_envelope_import_file",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "filename",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Filename",
+              "type": "string"
+            }
           },
-          "501": {
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportFileOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
             "content": {
               "application/json": {
                 "schema": {
@@ -113155,10 +113263,60 @@
                 }
               }
             },
-            "description": "Contract stub: not implemented yet"
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "The file is too large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service unavailable"
           }
         },
-        "summary": "Import Envelope Record Route",
+        "summary": "Stage Envelope Import File Route",
         "tags": [
           "signatures"
         ],

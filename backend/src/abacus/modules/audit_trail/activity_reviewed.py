@@ -99,6 +99,8 @@ REVIEWED_FALLBACK: Final = frozenset(
         "comment_thread.read",
         "conflict.cleared",
         "decision.refused_non_human",  # K-01-T06: an agent or the platform asked to approve
+        "envelope.imported",  # N-02-T08: record-mode import (SIG-01 r)
+        "envelope_import_file.staged",  # N-02-T08: a scanned file for an import
         "human_gate.reassigned",  # I-01-T07: a person moved a gate to someone else (user ids)
         "conflict_check.run",
         "connection.checked",

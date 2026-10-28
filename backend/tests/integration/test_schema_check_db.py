@@ -1544,6 +1544,8 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             }
         ),
         "inbox_sender_rules": frozenset({"revoked_at"}),
+        # N-02-T08 (0294): a staged import file is consumed once.
+        "envelope_import_files": frozenset({"consumed_envelope_id"}),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(

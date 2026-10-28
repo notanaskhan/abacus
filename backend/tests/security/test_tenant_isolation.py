@@ -106,6 +106,7 @@ TABLES: tuple[str, ...] = (
     "envelope_documents",
     "envelope_events",
     "envelope_fields",
+    "envelope_import_files",
     "envelope_numbers",
     "envelope_policies",
     "envelope_provider_calls",
