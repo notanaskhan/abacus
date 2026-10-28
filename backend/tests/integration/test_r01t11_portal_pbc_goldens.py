@@ -23,9 +23,12 @@ from typing import Final, cast
 import asyncpg
 import pytest
 import yaml
+from types_boto3_s3 import S3Client
 
 from abacus.kernel import clock
 from abacus.kernel.db import configure_engine, dispose_engine
+from abacus.kernel.storage import s3_client
+from abacus.modules.evidence import storage
 from abacus_tools.quality.schema_check import Database, provisioned_database
 from abacus_tools.synthetic.scenarios.brightwater_hale import loader
 
@@ -183,6 +186,30 @@ async def surl(conn: asyncpg.Connection) -> Json | None:
 
 
 # --- the loaded tenants ------------------------------------------------------------------------
+
+
+EVIDENCE: Final = "golden-portal-pbc-evidence"
+
+
+@pytest.fixture(scope="module")
+def evidence_s3(s3_settings: dict[str, str]) -> Iterator[S3Client]:
+    """The loader's uploads go to the test S3 gateway, not the default local endpoint (a CI
+    runner has no compose stack): a write-once bucket of this module's own."""
+    client = s3_client(
+        endpoint_url=s3_settings["endpoint_url"],
+        access_key=s3_settings["access_key"],
+        secret_key=s3_settings["secret_key"],
+        region=s3_settings["region"],
+    )
+    client.create_bucket(Bucket=EVIDENCE, ObjectLockEnabledForBucket=True)
+    yield client
+
+
+@pytest.fixture(autouse=True)
+def evidence_storage(evidence_s3: S3Client) -> Iterator[None]:
+    storage.configure_storage(evidence_s3, EVIDENCE)
+    yield
+    storage.reset_storage()
 
 
 @pytest.fixture(scope="module")

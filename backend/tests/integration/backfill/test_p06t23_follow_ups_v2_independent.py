@@ -191,8 +191,13 @@ class Firm:
         )
         publisher = InMemoryPublisher()
         with frozen(at):
-            for _ in range(3):
-                await relay_once(publisher)
+            # Until a pass claims nothing: the relay takes the worker database's oldest due
+            # events first, and earlier tests' leftovers can fill a fixed number of passes. A held
+            # event backs off on wall-clock time, so it is claimed once per call.
+            for _ in range(200):
+                result = await relay_once(publisher)
+                if result.published + result.failed + result.deferred == 0:
+                    break
         mine = [
             e
             for e in publisher.published
