@@ -20,7 +20,13 @@ import {
   screenUrl,
   shootWhole,
 } from "../visual/support";
-import { judge, screenRows, statusesFromSource, type ScreenRow } from "./screen-rows";
+import {
+  BUILT_PLANNED,
+  judge,
+  screenRows,
+  statusesFromSource,
+  type ScreenRow,
+} from "./screen-rows";
 
 const MANIFEST_DIR = "src/routes/manifest";
 const MANIFEST = statusesFromSource(
@@ -34,7 +40,7 @@ function contractOf(screen: string): string | null {
   return existsSync(path) ? readFileSync(path, "utf8") : null;
 }
 
-const { rows, missing } = screenRows(MANIFEST, contractOf);
+const { rows, missing } = screenRows(MANIFEST, contractOf, BUILT_PLANNED);
 const parity = readManifest();
 
 /** Playwright's comparator, run strictly so the report carries the exact pixel count. */
@@ -90,7 +96,10 @@ async function measure(
   await page.goto(screenUrl(`screens/${row.screen}?st=${row.state}`));
   await page.waitForLoadState("networkidle");
   await page.evaluate(() => document.fonts.ready);
-  const board = page.locator(`[data-artboard="${row.state}"]`).first();
+  // The entry's selector names the window inside the artboard when the board draws more than it
+  // (a portal frame on its presentation ground, R-01-T31); otherwise the board is the window.
+  const selector = parity[row.baselineKey]?.selector ?? `[data-artboard="${row.state}"]`;
+  const board = page.locator(selector).first();
   const actual = await shootWhole(page, board);
   const { width, height } = pngSize(actual);
   const tier = TIERS[row.tier];

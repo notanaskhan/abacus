@@ -179,6 +179,28 @@ function useAreaNavigate(): (area: string) => void {
   };
 }
 
+/** After POR-04 closes, the request's title on POR-03 takes focus back once it is drawn and the
+ * sheet has let go of focus, so a keyboard user lands where they left (R-01-T31; WCAG 2.4.3). */
+function focusRequestTitle(id: string): void {
+  const selector = `[data-request="${CSS.escape(id)}"] [data-open-title]`;
+  let left = 100; // 5 s at 50 ms
+  const attempt = (): void => {
+    const title = document.querySelector<HTMLElement>(selector);
+    const inDialog = document.activeElement?.closest("[role='dialog']") ?? null;
+    if (
+      title !== null &&
+      inDialog === null &&
+      document.querySelector("[role='dialog']") === null
+    ) {
+      title.focus();
+      if (document.activeElement === title) return;
+    }
+    left -= 1;
+    if (left > 0) window.setTimeout(attempt, 50);
+  };
+  window.setTimeout(attempt, 0);
+}
+
 /** POR-03 with `?binder=` (R-01-T10; docs/screens/POR-03.md): the newest binder by default. */
 function DocumentsPage(): JSX.Element {
   const mobile = useMobileViewport();
@@ -217,6 +239,7 @@ function RequestPage(): JSX.Element {
       onNavigate={navigateTo}
       onClose={() => {
         history.push(`/documents${window.location.search}`);
+        if (params.requestId !== undefined) focusRequestTitle(params.requestId);
       }}
     />
   );

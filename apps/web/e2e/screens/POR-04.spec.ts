@@ -38,20 +38,25 @@ for (const size of WIDTHS) {
         await page.goto(`/components/screens/POR-04?st=${st}&frame=1`);
         const board = page.locator(`[data-artboard='${st}']`);
         await expect(board).toBeVisible();
-        await expect(board.getByText(ready).first()).toBeVisible();
-        expect(await board.innerText()).not.toMatch(FIRM_WORDS);
-        const attrs = await board.evaluate((el) =>
-          [...el.querySelectorAll("*")]
-            .flatMap((n) =>
-              ["aria-label", "title", "alt", "placeholder"].map((a) => n.getAttribute(a)),
-            )
-            .filter((v): v is string => v !== null)
-            .join(" "),
-        );
-        expect(attrs).not.toMatch(FIRM_WORDS);
-        expect(await board.locator("[data-variant='primary']").count()).toBeLessThanOrEqual(1);
+        // The sheet is a modal: it renders in its own layer, outside the artboard (R-01-T31).
+        const sheet = page.getByRole("dialog").first();
+        await expect(sheet.getByText(ready).first()).toBeVisible();
+        for (const part of [board, sheet]) {
+          expect(await part.innerText()).not.toMatch(FIRM_WORDS);
+          const attrs = await part.evaluate((el) =>
+            [...el.querySelectorAll("*")]
+              .flatMap((n) =>
+                ["aria-label", "title", "alt", "placeholder"].map((a) => n.getAttribute(a)),
+              )
+              .filter((v): v is string => v !== null)
+              .join(" "),
+          );
+          expect(attrs).not.toMatch(FIRM_WORDS);
+        }
+        expect(await sheet.locator("[data-variant='primary']").count()).toBeLessThanOrEqual(1);
         const { violations } = await new AxeBuilder({ page })
           .include(`[data-artboard='${st}']`)
+          .include("[role='dialog']")
           .analyze();
         const serious = violations
           .filter((v) => SERIOUS.has(v.impact ?? ""))
