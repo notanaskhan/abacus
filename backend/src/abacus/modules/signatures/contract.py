@@ -163,6 +163,15 @@ class EvidenceItem(BaseModel):
     package_sha256: Annotated[str | None, classified("internal")]
 
 
+class SignerChip(BaseModel):
+    """One signer as SIG-01's chip draws them ("✓ Thomas" · "○ Irene")."""
+
+    model_config = ConfigDict(frozen=True)
+
+    name: Annotated[str, classified("confidential")]
+    signed: Annotated[bool, classified("internal")]
+
+
 class EnvelopeListRow(BaseModel):
     """One SIG-01 row."""
 
@@ -185,6 +194,15 @@ class EnvelopeListRow(BaseModel):
     due_on: Annotated[date | None, classified("internal")]
     needs_handwritten: Annotated[bool, classified("internal")]
     allowed_actions: Annotated[list[str], classified("internal")]
+    # N-02-T10 (DEC-826, additive): what SIG-01's table draws beyond the counts.
+    signer_chips: Annotated[list[SignerChip], classified("confidential")] = Field(
+        default_factory=list[SignerChip]
+    )
+    viewed_at: Annotated[datetime | None, classified("internal")] = None
+    work_item_label: Annotated[str | None, classified("confidential")] = None
+    note: Annotated[str | None, classified("confidential")] = None
+    drafted_by_name: Annotated[str | None, classified("internal")] = None
+    outcome: Annotated[str | None, classified("internal")] = None
 
 
 class EnvelopeOut(BaseModel):
