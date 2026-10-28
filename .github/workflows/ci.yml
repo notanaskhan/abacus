@@ -220,9 +220,11 @@ jobs:
     name: stage 2 gallery visual regression
     needs: [changes]
     runs-on: ubuntu-24.04
-    # The screenshot regression renders the base commit's specimens and compares: about 3 minutes
-    # plus setup. The axe gate runs in gallery-axe.
-    timeout-minutes: 20
+    # The screenshot regression renders the base commit's specimens and then the head's (about 7
+    # minutes each since S13 and S14 grew the gallery), then parity and Tier D (about 12 minutes):
+    # about 30 minutes with setup. At 20 the job was cancelled in Tier D on 1e17f30d and 90a04405.
+    # The axe gate runs in gallery-axe.
+    timeout-minutes: 45
     steps:
       - if: needs.changes.outputs.gallery != 'true'
         run: echo "no gallery paths changed (abacus_tools.ci.paths), so nothing to run"
