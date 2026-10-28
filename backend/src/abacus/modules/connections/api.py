@@ -1,6 +1,8 @@
 """Public interface of the connections module; other modules import only this (ADR-008)."""
 
+from collections.abc import Callable
 from datetime import timedelta
+from typing import Any
 
 from abacus.kernel.audit_owners import register_engagement_owners, register_entity_owners
 from abacus.kernel.dispatch import PlatformSchedule, register_work_classes
@@ -132,7 +134,10 @@ WORKFLOWS.update(GL_WORKFLOWS)
 # A-02-T25 (DEC-708): the daily health pass, a platform job.
 WORKFLOWS[ConnectionHealthWorkflow] = "background"
 register_work_classes({ConnectionHealthWorkflow: "background"})
-ACTIVITIES = (*RUN_ACTIVITIES, check_connection_health_activity)
+ACTIVITIES: tuple[Callable[..., Any], ...] = (  # Any: Temporal activities of any shape
+    *RUN_ACTIVITIES,
+    check_connection_health_activity,  # A-02-T25: the daily health pass
+)
 SCHEDULES: tuple[PlatformSchedule, ...] = (
     PlatformSchedule(
         id=CONNECTION_HEALTH_ID,
