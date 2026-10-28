@@ -77,8 +77,8 @@ def wired(raw: S3Client) -> Iterator[None]:
 class Firm:
     net: Net
     tenant_id: uuid.UUID
-    grace: Person  # manager on the engagement: imports
-    other: Person  # another manager
+    grace: Person  # Firm Admin and manager on the engagement: imports
+    other: Person  # another Firm Admin and manager
     site: Site
     contact_id: uuid.UUID
 
@@ -118,8 +118,10 @@ async def firm(net: Net) -> Firm:
         FLAG,
     )
     admin = await seed.person(tenant, "firm_admin")
-    grace = await seed.person(tenant)
-    other = await seed.person(tenant)
+    # SIG-01's importer is a Firm Admin (client_service at the firm, DEC-20); staging a file is
+    # authorised at the firm, the import on the engagement she is also a manager of.
+    grace = await seed.person(tenant, "firm_admin")
+    other = await seed.person(tenant, "firm_admin")
     site = await seed.site(tenant, admin.user_id, "Copperleaf")
     await seed.member(site, grace, "manager")
     await seed.member(site, other, "manager")

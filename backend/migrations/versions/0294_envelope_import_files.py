@@ -77,8 +77,9 @@ def upgrade() -> None:
         """
     )
     op.execute(
-        "CREATE TRIGGER envelope_import_files_consumed_once BEFORE UPDATE ON envelope_import_files "
-        "FOR EACH ROW EXECUTE FUNCTION envelope_import_files_consumed_once()"
+        "CREATE TRIGGER envelope_import_files_consumed_once BEFORE UPDATE "
+        "ON envelope_import_files FOR EACH ROW "
+        "EXECUTE FUNCTION envelope_import_files_consumed_once()"
     )
 
 
