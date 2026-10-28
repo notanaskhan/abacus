@@ -276,3 +276,10 @@ async def test_a_live_sender_rule_matches_the_client(firm: Firm) -> None:
         ),
     )
     assert made.client_id == firm.site.client_id
+
+
+async def test_a_walled_intake_member_cannot_log_for_that_client(firm: Firm) -> None:
+    await firm.net.wall(firm.admin, firm.henry, firm.site)
+    refused = await firm.log(firm.henry, _batch(firm))
+    assert refused.status_code == 404
+    assert await firm.count("inbox_threads") == 0

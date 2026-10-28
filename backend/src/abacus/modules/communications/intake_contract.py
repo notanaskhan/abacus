@@ -52,6 +52,7 @@ from abacus.modules.identity.api import (
     current_context,
     in_intake_scope,
     mask_tins_for,
+    walled_from,
 )
 from abacus.modules.organisations.api import MaskedTinOut
 
@@ -651,8 +652,11 @@ async def _log_check(ctx: AuthContext, client_id: UUID | None) -> None:
     if ctx.tenant.actor_kind != "human" or not await in_intake_scope(ctx.tenant, ctx.user_id):
         await authorise(ctx, "inbox.log_intake", resource)
     else:
-        with suppress(Forbidden):  # the intake scope logs for any client (DEC-20)
+        with suppress(Forbidden):  # the intake scope logs for any client (DEC-20) ...
             await authorise(ctx, "inbox.log_intake", resource)
+        # ... except one its member is walled from: 404, as if it did not exist (DEC-43).
+        if client_id is not None and client_id in await walled_from(ctx.tenant, ctx.user_id):
+            raise NotFound("client")
     if not await flag_enabled(ctx.tenant, INBOX_FIRM_INTAKE):
         raise NotFound(INBOX_FIRM_INTAKE.name)
 
