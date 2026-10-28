@@ -110,3 +110,5 @@ export {
 export { InboxLayout, type InboxLayoutProps } from "./inbox-layout";
 // T5 CatalogLayout (F-05-T59): side pane with About and Categories beside the three-column grid.
 export { CatalogLayout, type CatalogLayoutProps } from "./catalog-layout";
+// T16 SigningCeremony (F-06-T04): provider mode only; the L2 parts are ../signing.
+export { SigningCeremony } from "./signing-ceremony/SigningCeremony";

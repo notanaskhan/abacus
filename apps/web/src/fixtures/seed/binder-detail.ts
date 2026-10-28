@@ -171,6 +171,18 @@ const FELD_ROWS: readonly Spec[] = [
   },
 ];
 
+/** The Feld 2025 binder's requests at E0 as TPL-19 counts them (F-06-T02): open (to do),
+ * received from the client, or provided by the firm. Derived from the rows above. */
+export const FELD_REQUEST_FACTS: readonly {
+  key: string;
+  title: string;
+  state: "to_do" | "received" | "provided";
+}[] = FELD_ROWS.map((r) => ({
+  key: r.key,
+  title: r.title,
+  state: r.kind === "firm_provided" ? "provided" : r.status === "requested" ? "to_do" : "received",
+}));
+
 /** c: the 1095-C filed from the Inbox and the estimates matched, both Sep 14. */
 const FELD_DONE_ROWS: readonly Spec[] = FELD_ROWS.map((r) => {
   if (r.key === "aca") {

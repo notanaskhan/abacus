@@ -4,8 +4,9 @@ Run: python -m abacus_tools.quality.seed_contamination
 
 The Brightwater Hale seed comes from the shared context block and blueprint §9, never from the
 design kits' sample data, and its canonical names are spelled one way. This scans the scenario
-package (`abacus_tools/synthetic/scenarios/`), the TS seed and scenarios (`apps/web/src/fixtures/`)
-and the journey specs (`apps/web/e2e/journeys/`) and fails on:
+package (`abacus_tools/synthetic/scenarios/`), the TS seed and scenarios (`apps/web/src/fixtures/`,
+including the F-06 tax seed in `fixtures/seed/tax/`), the tier-3 gallery specimens
+(`apps/web/src/gallery/specimens/`) and the journey specs (`apps/web/e2e/journeys/`) and fails on:
 
 - kit sample data (F-04.13; ch. 04 §9 "Never port kit sample data"): Elena Ruiz, "Ridgeview
   Partners", the Whitcombes' Schedule E, the kit's inbox address, "17% (4 / 24)", "86 of the 119
@@ -33,6 +34,7 @@ REPO: Final = BACKEND.parent
 ROOTS: Final = (
     BACKEND / "src" / "abacus_tools" / "synthetic" / "scenarios",
     REPO / "apps" / "web" / "src" / "fixtures",
+    REPO / "apps" / "web" / "src" / "gallery" / "specimens",  # F-06-T02: the tier-3 specimens
     REPO / "apps" / "web" / "e2e" / "journeys",
 )
 SUFFIXES: Final = (".py", ".ts", ".tsx", ".json", ".yaml", ".yml", ".md", ".txt")

@@ -407,9 +407,29 @@ class EnvelopeStatus(StrEnum):
 class EnvelopeSignerStatus(StrEnum):
     PENDING = "pending"
     VIEWED = "viewed"
+    VERIFIED = "verified"
     SIGNED = "signed"
     DECLINED = "declined"
     VERIFICATION_FAILED = "verification_failed"
+
+
+class SigningStepStatus(StrEnum):
+    pass
+    # derived, never stored: verify, review, sign, done
+
+
+class EnvelopePurposeStatus(StrEnum):
+    E_FILE_AUTHORIZATION = "e_file_authorization"
+    ENGAGEMENT_LETTER = "engagement_letter"
+    REPRESENTATION_LETTER = "representation_letter"
+    CONSENT_7216 = "consent_7216"
+
+
+class GeneratedDocumentStatus(StrEnum):
+    DRAFTING = "drafting"
+    DRAFT = "draft"
+    APPROVED = "approved"
+    LOCKED = "locked"
 
 
 class NoticeStatus(StrEnum):
@@ -1089,9 +1109,24 @@ STORED: dict[str, tuple[str, ...]] = {
     "envelope_signer": (
         "pending",
         "viewed",
+        "verified",
         "signed",
         "declined",
         "verification_failed",
+    ),
+    "signing_step": (
+    ),
+    "envelope_purpose": (
+        "e_file_authorization",
+        "engagement_letter",
+        "representation_letter",
+        "consent_7216",
+    ),
+    "generated_document": (
+        "drafting",
+        "draft",
+        "approved",
+        "locked",
     ),
     "notice": (
         "received",

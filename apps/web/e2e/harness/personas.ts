@@ -46,11 +46,13 @@ export const PERSONAS = {
   "grace-holloway": staff("Grace Holloway"),
   "felix-andersen": staff("Felix Andersen"),
   "cole-hart": staff("Cole Hart"),
+  "dina-sato": staff("Dina Sato"), // F-06-T02: TPL-16e names her; the E6 preparer
   "claire-feld": portal("Claire Feld"),
   "dana-kowalski": portal("Dana Kowalski"),
   "tess-moreno": portal("Tess Moreno"),
   "luis-ferrante": portal("Luis Ferrante"),
   "meera-shah": portal("Meera Shah"),
+  "mira-kapoor": portal("Mira Kapoor"), // F-06-T02: the TPL-16 signer on envelope E6
   "sam-ortiz": portal("Sam Ortiz", "third_party"),
 } as const satisfies Record<string, Persona>;
 
