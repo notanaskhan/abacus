@@ -18,6 +18,7 @@ function gate(over: Partial<HumanGateOut>): HumanGateOut {
     subject: { type: "engagement_acceptance", id: A },
     engagement_id: B,
     client_id: C,
+    work_item_id: null,
     assignee_user_id: null,
     office_id: null,
     role: null,
