@@ -66,6 +66,11 @@ Nothing says which accounts belong to which area, which areas have no requests, 
 - **Editing templates in the UI:** a new version is a new import.
 - **Any UI:** this spec is API only.
 
+> **Amended 2026-10-28 (Q-03-T525, DEC-802; ED-250 closed as spec drift):** AC-9's 404 is for a
+> person who can't see the engagement (a wall, another firm; SPEC-002 AC-4). A firm member with no
+> membership gets the engagement routes' own 403 (SPEC-002's "no role" refusal), the same answer
+> as `GET /v1/engagements/{id}` for that person.
+
 ## 5. User stories and acceptance criteria
 ### Story 1: A firm brings its methodology
 - **AC-1** Given a firm admin and a workbook in the fixed layout (Q1), when they import it under a template name, then a new immutable template version is stored with its areas, request items and account rules. `methodology.imported` is audited with the version and the workbook's fingerprint.
