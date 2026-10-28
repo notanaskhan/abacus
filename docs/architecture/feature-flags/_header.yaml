@@ -4,3 +4,10 @@
 # expired flag fails `make check-fast` until it is removed), kind (boolean | variant), values
 # (variants only) and default (the safe behaviour: flags fall back to it on any read error).
 # Regenerate the runtime module after editing: python -m abacus_tools.codegen.feature_flags
+#
+# Q-04-T005 (P-29): `expires` may not fall inside a release window in deploy/windows.yaml (any
+# window; flags are platform-wide) unless the entry carries
+#   window_exception: {reason: <1-200 chars>, approved_by: <the other founder's handle, not owner>}
+# (a registry-only renewal inside a window, RK-15). Optional `journeys: [<journey spec slug>, ...]`
+# names the staging journeys a flip of the flag needs green within 24 hours (Q-04-T010).
+# `make flag-calendar` lists every flag, its last release train before expiry and any conflict.

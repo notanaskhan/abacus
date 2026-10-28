@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: windows agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr
+.PHONY: windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr
 
 setup:
 	cd backend && uv sync --locked
@@ -245,6 +245,11 @@ incident-propagate:
 
 incident-status:
 	cd backend && uv run python -m abacus_tools.incidents status --ref $(REF)
+
+# Q-04-T005 (P-29; RK-15): every flag with owner, expiry, the last release train before it, the
+# window it expires in (or its window_exception) and a 21-day warning. Read-only.
+flag-calendar:
+	@cd backend && uv run python -m abacus_tools.codegen.feature_flags --calendar
 
 # Q-04-T002 (P-29): the release-window calendar from deploy/windows.yaml, all years or YEAR=2027.
 windows:
