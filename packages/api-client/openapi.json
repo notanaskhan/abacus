@@ -133801,7 +133801,7 @@
     },
     "/v1/inbox/intake": {
       "post": {
-        "description": "Log received documents (DV-1): the batch; files follow (N-01-T09).",
+        "description": "Log received documents (DV-1): the batch, one thread and one message; files follow\n(N-01-T09). The intake scope or `inbox.log_intake` on the named client; people only.",
         "operationId": "log_intake",
         "parameters": [
           {
@@ -133918,16 +133918,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Log Intake Route",
@@ -133939,7 +133929,7 @@
     },
     "/v1/inbox/intake/{message_id}/files": {
       "post": {
-        "description": "One file of a staff-logged batch, scanned before storage, fail closed (N-01-T09).",
+        "description": "One file of a staff-logged batch, scanned before storage, fail closed (N-01-T09). Only the\nperson who logged the batch adds to it.",
         "operationId": "log_intake_file",
         "parameters": [
           {
@@ -134068,16 +134058,6 @@
             },
             "description": "The file is too large"
           },
-          "415": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "The file type is not accepted"
-          },
           "422": {
             "content": {
               "application/json": {
@@ -134087,16 +134067,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           },
           "503": {
             "content": {

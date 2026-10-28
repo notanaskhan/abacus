@@ -7094,7 +7094,8 @@ export const attachmentViewer = <ThrowOnError extends boolean = false>(options: 
 /**
  * Log Intake Route
  *
- * Log received documents (DV-1): the batch; files follow (N-01-T09).
+ * Log received documents (DV-1): the batch, one thread and one message; files follow
+ * (N-01-T09). The intake scope or `inbox.log_intake` on the named client; people only.
  */
 export const logIntake = <ThrowOnError extends boolean = false>(options: Options<LogIntakeData, ThrowOnError>): RequestResult<LogIntakeResponses, LogIntakeErrors, ThrowOnError> => (options.client ?? client).post<LogIntakeResponses, LogIntakeErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -7109,7 +7110,8 @@ export const logIntake = <ThrowOnError extends boolean = false>(options: Options
 /**
  * Log Intake File Route
  *
- * One file of a staff-logged batch, scanned before storage, fail closed (N-01-T09).
+ * One file of a staff-logged batch, scanned before storage, fail closed (N-01-T09). Only the
+ * person who logged the batch adds to it.
  */
 export const logIntakeFile = <ThrowOnError extends boolean = false>(options: Options<LogIntakeFileData, ThrowOnError>): RequestResult<LogIntakeFileResponses, LogIntakeFileErrors, ThrowOnError> => (options.client ?? client).post<LogIntakeFileResponses, LogIntakeFileErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

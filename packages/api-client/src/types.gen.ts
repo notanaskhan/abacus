@@ -62289,10 +62289,6 @@ export type LogIntakeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type LogIntakeError = LogIntakeErrors[keyof LogIntakeErrors];
@@ -62359,17 +62355,9 @@ export type LogIntakeFileErrors = {
      */
     413: ErrorOut;
     /**
-     * The file type is not accepted
-     */
-    415: ErrorOut;
-    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
     /**
      * Service unavailable
      */

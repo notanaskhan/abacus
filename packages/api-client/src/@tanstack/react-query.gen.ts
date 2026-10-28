@@ -11823,7 +11823,8 @@ export const attachmentViewerOptions = (options: Options<AttachmentViewerData>) 
 /**
  * Log Intake Route
  *
- * Log received documents (DV-1): the batch; files follow (N-01-T09).
+ * Log received documents (DV-1): the batch, one thread and one message; files follow
+ * (N-01-T09). The intake scope or `inbox.log_intake` on the named client; people only.
  */
 export const logIntakeMutation = (options?: Partial<Options<LogIntakeData>>): UseMutationOptions<LogIntakeResponse, LogIntakeError, Options<LogIntakeData>> => {
     const mutationOptions: UseMutationOptions<LogIntakeResponse, LogIntakeError, Options<LogIntakeData>> = {
@@ -11842,7 +11843,8 @@ export const logIntakeMutation = (options?: Partial<Options<LogIntakeData>>): Us
 /**
  * Log Intake File Route
  *
- * One file of a staff-logged batch, scanned before storage, fail closed (N-01-T09).
+ * One file of a staff-logged batch, scanned before storage, fail closed (N-01-T09). Only the
+ * person who logged the batch adds to it.
  */
 export const logIntakeFileMutation = (options?: Partial<Options<LogIntakeFileData>>): UseMutationOptions<LogIntakeFileResponse, LogIntakeFileError, Options<LogIntakeFileData>> => {
     const mutationOptions: UseMutationOptions<LogIntakeFileResponse, LogIntakeFileError, Options<LogIntakeFileData>> = {

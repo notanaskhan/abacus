@@ -217,6 +217,8 @@ REVIEWED_FALLBACK: Final = frozenset(
         "home_activity.projected",  # I-01-T12 (DEC-900): one activity row, the code only
         "home_activity.pruned",  # I-01-T12: a count of rows past 90 days
         "human_gate.projected",
+        "inbound_message.recorded",  # N-01-T09: a message reached the inbox
+        "inbox_attachment.received",  # N-01-T09: a scanned, stored file
         "inbox_file.added",
         "inbox_file.assigned",
         "inbox_file.discarded",
@@ -224,6 +226,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "inbox_file.flagged",
         "inbox_match.created",
         "inbox_match.requested",
+        "inbox_thread.created",  # N-01-T09: a new inbox thread
         "incident.propagated",
         "incident.recorded",
         "independence.annual_",
