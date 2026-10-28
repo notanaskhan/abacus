@@ -90,6 +90,10 @@ def world(monkeypatch: pytest.MonkeyPatch) -> _World:
 
     monkeypatch.setattr(boundary, "_cleared", cleared)
     monkeypatch.setattr(provider_terms, "covering", covering)
+    # Each test starts at the API's hold with no cached facts, whatever ran before it in this
+    # process (a worker boot elsewhere sets the hold to 0; mutmut runs tests in its own order).
+    boundary.hold_facts_for(60.0)  # the API's hold, `_CACHE_SECONDS`
+    boundary.clear_cache()
     monkeypatch.setattr(_provider_terms, "VERSION", "a" * 64)
     boundary.clear_cache()
     return made
