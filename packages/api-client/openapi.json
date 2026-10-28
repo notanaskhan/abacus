@@ -2249,6 +2249,32 @@
             "title": "Note",
             "type": "string"
           },
+          "report_as_of": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Report As Of"
+          },
+          "report_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Report Sha256"
+          },
           "stage": {
             "cls": "internal",
             "enum": [
@@ -141500,7 +141526,7 @@
     },
     "/v1/platform/agent-stages/{firm_id}/{agent_id}": {
       "put": {
-        "description": "Shadow, live or off for this firm; `live` only after 50 shadow runs over 14 days.",
+        "description": "Shadow, live or off for this firm; `live` only on a named shadow report that passes\nSPEC-036 Q1 (50 runs, 14 days) and QD-10 (25 scored, disagreement at most 8%, no DE-1, DE-4\nor DE-5 miss).",
         "operationId": "put_agent_stage",
         "parameters": [
           {

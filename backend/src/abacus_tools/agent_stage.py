@@ -2,13 +2,20 @@
 
 Run:
   python -m abacus_tools.agent_stage report <firm-id> <agent-id>
-  python -m abacus_tools.agent_stage set <firm-id> <agent-id> <shadow|live|off> "<note>"
+  python -m abacus_tools.agent_stage score <firm-id> <agent-id>        # make shadow-report
+  python -m abacus_tools.agent_stage set <firm-id> <agent-id> <shadow|live|off> "<note>" \
+      [<report sha256> <report as_of>]                                   # live needs both
 
 The founder's operations command. It writes through the owner role (the application role can only
 read `agent_stages`), as the platform (`platform:founder`), and audits each change in the same
 transaction. `live` is refused until the agent has had at least 50 shadow runs over 14 days for
 the firm (SPEC-036 Q1). The report compares shadow output with what the firm's people decided:
 for the screener, its proposal against the review decision (D3).
+
+Q-02-T50 (DEC-811): `score` prints the deterministic shadow score (`agents.api.shadow_score`,
+`shadow_score.v1`) as canonical JSON with its SHA-256; `live` names that digest and the instant
+it was computed as of, and is refused unless the recomputed report is the same and passes both
+SPEC-036 Q1 and QD-10 (the same check the staff route makes).
 """
 
 from __future__ import annotations
@@ -26,6 +33,17 @@ import asyncpg
 
 from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
+from abacus.kernel.db import TenantContext
+from abacus.kernel.db.session import configure_engine, dispose_engine
+from abacus.modules.agents.api import (
+    NamedReport,
+    ShadowReportChanged,
+    ShadowReportRequired,
+    ShadowReportStale,
+    StageNotReady,
+    check_live,
+    shadow_score,
+)
 from abacus_tools.db_connect import connect as connect_db
 
 ACTOR: Final = "platform:founder"
@@ -119,7 +137,38 @@ class StageRefused(Exception):
     pass
 
 
-async def set_stage(firm: UUID, agent_id: str, stage: str, note: str) -> None:
+async def _check_named(firm: UUID, agent_id: str, named: NamedReport | None) -> None:
+    """The staff route's live check, through the agents module (DEC-811)."""
+    url = settings().database_url
+    if url is None:
+        raise StageRefused("ABACUS_DATABASE_URL is not set")
+    configure_engine(url.get_secret_value())
+    try:
+        await check_live(firm, agent_id, named)
+    except (StageNotReady, ShadowReportRequired, ShadowReportChanged, ShadowReportStale) as no:
+        raise StageRefused(f"{no.code}: {dict(no.facts)}") from None
+    finally:
+        await dispose_engine()
+
+
+async def score(firm: UUID, agent_id: str) -> dict[str, object]:
+    """`make shadow-report`: the score as of now, and its digest."""
+    url = settings().database_url
+    if url is None:
+        raise StageRefused("ABACUS_DATABASE_URL is not set")
+    configure_engine(url.get_secret_value())
+    try:
+        found = await shadow_score(
+            TenantContext(firm, "system", "platform:founder"), agent_id, system_now()
+        )
+    finally:
+        await dispose_engine()
+    return {**found.export(), "sha256": found.sha256, "passes": found.passes}
+
+
+async def set_stage(
+    firm: UUID, agent_id: str, stage: str, note: str, named: NamedReport | None = None
+) -> None:
     """Append the stage row and its audit event in one transaction, as the platform."""
     if stage not in STAGES:
         raise StageRefused(f"stage is one of {', '.join(STAGES)}")
@@ -132,6 +181,7 @@ async def set_stage(firm: UUID, agent_id: str, stage: str, note: str) -> None:
                 f"live needs {MIN_RUNS} shadow runs over {MIN_DAYS} days; "
                 f"this firm has {found.runs} over {found.days}"
             )
+        await _check_named(firm, agent_id, named)
     connection = await _connect(firm)
     try:
         async with connection.transaction():
@@ -172,9 +222,13 @@ def main(argv: list[str]) -> int:
     if len(argv) == 3 and argv[0] == "report":
         _print(asyncio.run(report(UUID(argv[1]), argv[2])))
         return 0
-    if len(argv) == 5 and argv[0] == "set":
+    if len(argv) == 3 and argv[0] == "score":
+        print(json.dumps(asyncio.run(score(UUID(argv[1]), argv[2])), indent=2, sort_keys=True))
+        return 0
+    if len(argv) in (5, 7) and argv[0] == "set":
+        named = NamedReport(argv[5], datetime.fromisoformat(argv[6])) if len(argv) == 7 else None
         try:
-            asyncio.run(set_stage(UUID(argv[1]), argv[2], argv[3], argv[4]))
+            asyncio.run(set_stage(UUID(argv[1]), argv[2], argv[3], argv[4], named))
         except StageRefused as refused:
             print(f"refused: {refused}")
             return 1

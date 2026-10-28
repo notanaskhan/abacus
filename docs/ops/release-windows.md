@@ -2,7 +2,7 @@
 
 Owner: both founders · Source: ADR P-29 (DEC-68), Q-04 §4.9, chapter 01 §1.3.3 · Task: Q-04-T001 · Status: **draft for both founders' approval in the S12 window** (the plan's approval line; DEC-654)
 
-This note says when production may change once real firms rely on it. `deploy/windows.yaml` (Q-04-T002) is the machine-checked copy; where they disagree, fix the file to match this note, then both founders approve the change.
+This note says when production may change once real firms rely on it. `deploy/windows.yaml` (Q-04-T002; `make windows` prints it, `make check-fast` checks it against the rule in §2 and the names rule in §5) is the machine-checked copy; where they disagree, fix the file to match this note, then both founders approve the change.
 
 ## 1. When windows apply
 
@@ -37,7 +37,7 @@ A hotfix still carries its rollback and a recurrence test (Q-03's escaped-defect
 
 ## 5. Names in git
 
-Pilot firms appear in git only as codes: `PF-` followed by a letter and digits (`PF-A1`), or a cohort code. Never a firm's name, domain or tenant UUID without its `code`. `make check-fast` refuses anything else in `deploy/windows.yaml` (Q-04 AC-1.3).
+Pilot firms appear in git only as codes: `PF-` followed by a letter and digits (`PF-A1`), or a cohort code `PC<yy>-<nn>` (`PC28-07`; DEC-806). Never a firm's name, domain or tenant UUID without its `code`. `make check-fast` refuses anything else in `deploy/windows.yaml` (Q-04 AC-1.3).
 
 ## 6. The calendar, 2027–2029
 

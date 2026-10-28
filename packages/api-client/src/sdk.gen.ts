@@ -7929,7 +7929,9 @@ export const readNotification = <ThrowOnError extends boolean = false>(options: 
 /**
  * Put Agent Stage
  *
- * Shadow, live or off for this firm; `live` only after 50 shadow runs over 14 days.
+ * Shadow, live or off for this firm; `live` only on a named shadow report that passes
+ * SPEC-036 Q1 (50 runs, 14 days) and QD-10 (25 scored, disagreement at most 8%, no DE-1, DE-4
+ * or DE-5 miss).
  */
 export const putAgentStage = <ThrowOnError extends boolean = false>(options: Options<PutAgentStageData, ThrowOnError>): RequestResult<PutAgentStageResponses, PutAgentStageErrors, ThrowOnError> => (options.client ?? client).put<PutAgentStageResponses, PutAgentStageErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

@@ -6,7 +6,7 @@ Run as an ECS one-off `abacus-ops` task, never from a laptop against a hosted da
         --operator <handle>
     python -m abacus_tools.tenants status --tenant <tenant_id>
     make entitlement FIRM=<tenant_id> MODULE=attest ENABLED=true SEATS=10 OPERATOR=<handle> \
-        REASON="pilot plan"
+        REASON="pilot plan" [APPROVED_BY=<handle> ROLLBACK=<link> REQUEST=<file> HOTFIX=<reason>]
 
 `provision` calls `provision_firm(...)` as `abacus_ops` (`ops_database_url`; EXECUTE only, no
 table privileges), which refuses any region but `us` and returns the same tenant for the same
@@ -25,7 +25,9 @@ import hashlib
 import json
 import re
 import sys
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
+from pathlib import Path
 from typing import Final, cast
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -33,7 +35,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import asyncpg
 from temporalio.service import RPCError, RPCStatusCode
 
-from abacus.kernel.clock import FIRM_ZONE
+from abacus.kernel.clock import FIRM_ZONE, system_now
 from abacus.kernel.config import settings
 from abacus.kernel.db.session import configure_engine, dispose_engine
 from abacus.kernel.temporal import temporal_client
@@ -48,6 +50,8 @@ from abacus.modules.platform.api import (
     provisioning_workflow_id,
     start_provisioning,
 )
+from abacus_tools import flags as flags_tool
+from abacus_tools import flip_guard
 from abacus_tools.db_connect import connect as connect_db
 
 REGION: Final = "us"  # the only region offered (firms.region CHECK; ADR-156)
@@ -193,8 +197,10 @@ async def set_entitlement(
     seats: int | None,
     operator: str,
     reason: str,
+    refs: Mapping[str, str | int] | None = None,
 ) -> None:
-    """One `tenant_entitlements` row and `tenant.entitlements_changed`, in one transaction."""
+    """One `tenant_entitlements` row and `tenant.entitlements_changed`, in one transaction. `refs`
+    are the flip guard's references (Q-04-T004: approver, rollback, request, slot, hotfix)."""
     _operator(operator)
     if module not in MODULES:
         raise Refused(f"--module is one of {', '.join(_MODULES)}")
@@ -243,6 +249,7 @@ async def set_entitlement(
             }
             if seats is not None:
                 after["seats"] = seats
+            after.update(refs or {})
             await connection.execute(
                 "INSERT INTO audit_events (tenant_id, actor_kind, actor_id, action, "
                 "target_type, target_id, after_ref) VALUES ($1, 'system', $2, "
@@ -337,6 +344,11 @@ def _parser() -> argparse.ArgumentParser:
     entitling.add_argument("--seats", type=int, default=None)
     entitling.add_argument("--operator", required=True)
     entitling.add_argument("--reason", required=True)
+    # Q-04-T004: the flip guard's fields (a pilot firm's change; P-29 inside its window).
+    entitling.add_argument("--approved-by")
+    entitling.add_argument("--rollback")
+    entitling.add_argument("--request", type=Path)
+    entitling.add_argument("--hotfix")
     return parser
 
 
@@ -345,6 +357,19 @@ def main(argv: list[str] | None = None) -> int:
     s = settings()
     try:
         if args.command == "entitlement":
+            verdict = flags_tool.guard(
+                flip_guard.Flip(
+                    firm=args.firm,
+                    operator=args.operator,
+                    at=system_now(),
+                    approved_by=args.approved_by,
+                    rollback=args.rollback,
+                    request=args.request,
+                    hotfix=args.hotfix,
+                )
+            )
+            if not verdict.allowed:
+                raise Refused(", ".join(verdict.why))
             if s.migrations_database_url is None:
                 raise Refused("migrations_database_url (the owner role) is not set")
             owner = s.migrations_database_url.get_secret_value()
@@ -357,6 +382,7 @@ def main(argv: list[str] | None = None) -> int:
                     seats=args.seats,
                     operator=args.operator,
                     reason=args.reason,
+                    refs=verdict.refs,
                 )
             )
             print(f"{args.module} for {args.firm}: enabled={args.enabled} seats={args.seats}")

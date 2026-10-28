@@ -1490,6 +1490,21 @@ codes:
     raised_by:
     - abacus.modules.identity.settings_registry.SettingInvalid
     summary: A value of the wrong kind, or too long.
+  shadow_report_changed:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.stage_admin.ShadowReportChanged
+    summary: 'The report recomputed as of its instant has another digest: re-read the report.'
+  shadow_report_required:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.stage_admin.ShadowReportRequired
+    summary: '`live` names the shadow report it was decided on (Q-02-T50).'
+  shadow_report_stale:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.stage_admin.ShadowReportStale
+    summary: 'The report is older than 7 days, or dated in the future: compute it again.'
   sharing_unavailable:
     status: 409
     raised_by:

@@ -13,11 +13,21 @@ this decides.
     python -m abacus_tools.release runtime-config --environment staging --release <sha> \
         --authority <url> --client-id <id> --portal-base-domain <host> [--sentry-dsn <url>]
     python -m abacus_tools.release ops-request deploy/production/ops-requests/<file>.yaml
+    python -m abacus_tools.release window-gate --release deploy/production/release.json \
+        [--at 2027-09-21T19:05:00-05:00]                    # make release-check [AT=]
 
 A release names every deploy input by digest: the image by `sha256:` digest, the SPA by its
 manifest's SHA-256, the schema by its Alembic head, the API by the OpenAPI document's SHA-256 and
 the infrastructure by its git tree. No tag, no `latest`. A production release adds what its PR
 records: an Inspector exception (reason and finding IDs) or the infrastructure applied by hand.
+
+Q-04-T003 (P-29; SPEC-403 AC-5 to AC-7) adds the window gate. While any live firm is in a release
+window (`deploy/windows.yaml`, `abacus_tools.release_windows`), the record must carry `window_mode`
+(`defect_only` or `dark_only`) and a `rollback` link, promotion happens only in the Tuesday slot,
+a deadline week refuses promotion unless `hotfix: {reason, requested_by}` is set (and the hotfix
+is counted), and the migrate step waits for 20:00 CT. Outside every window none of this applies.
+Contract operations in a migration are Q-03-T081's guard, the one implementation, which the gate
+calls in window mode once it lands; the gate has no migration rule of its own.
 """
 
 from __future__ import annotations
@@ -29,6 +39,7 @@ import re
 import sys
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Final, cast
 from urllib.parse import urlsplit
@@ -36,6 +47,9 @@ from urllib.parse import urlsplit
 import yaml
 from alembic.config import Config
 from alembic.script import ScriptDirectory
+
+from abacus.kernel.clock import system_now
+from abacus_tools import flip_request, release_windows
 
 BACKEND = Path(__file__).resolve().parents[2]
 REPO = BACKEND.parent
@@ -50,7 +64,12 @@ RELEASE_KEYS: Final = frozenset(
         "infra_sha",
     }
 )
-OPTIONAL_KEYS: Final = frozenset({"inspector_exception", "infra_applied_sha"})
+OPTIONAL_KEYS: Final = frozenset(
+    {"inspector_exception", "infra_applied_sha", "window_mode", "rollback", "hotfix"}
+)
+WINDOW_MODES: Final = frozenset({"defect_only", "dark_only"})
+# A rollback link: the runbook or flip record in this repository, or an https page (P-29 rule 5).
+_ROLLBACK = re.compile(r"(https://[^\s]{1,280}|docs/[A-Za-z0-9_./-]{1,200}(#[a-z0-9-]{1,80})?)")
 _GIT_SHA = re.compile(r"[0-9a-f]{40}")
 _DIGEST = re.compile(r"sha256:[0-9a-f]{64}")
 _SHA256 = re.compile(r"[0-9a-f]{64}")
@@ -148,6 +167,28 @@ def check(release: Mapping[str, object], *, production: bool = False) -> None:
     applied = release.get("infra_applied_sha")
     if applied is not None and (not isinstance(applied, str) or not _GIT_SHA.fullmatch(applied)):
         raise Refused("infra_applied_sha is a git tree SHA")
+    mode = release.get("window_mode")
+    if mode is not None and mode not in WINDOW_MODES:
+        raise Refused(f"window_mode is one of {sorted(WINDOW_MODES)}")
+    rollback = release.get("rollback")
+    if rollback is not None and (
+        not isinstance(rollback, str) or not _ROLLBACK.fullmatch(rollback)
+    ):
+        raise Refused("rollback is an https link or a docs/ path in this repository")
+    hotfix = release.get("hotfix")
+    if hotfix is not None:
+        fix: Mapping[str, object] = (
+            cast(Mapping[str, object], hotfix) if isinstance(hotfix, dict) else {}
+        )
+        reason, by = fix.get("reason"), fix.get("requested_by")
+        if (
+            set(fix) != {"reason", "requested_by"}
+            or not isinstance(reason, str)
+            or not 10 <= len(reason) <= 300
+            or not isinstance(by, str)
+            or not _HANDLE.fullmatch(by)
+        ):
+            raise Refused("hotfix needs a reason (10-300 characters) and requested_by, a handle")
     exception = release.get("inspector_exception")
     if exception is not None:
         facts: Mapping[str, object] = (
@@ -264,6 +305,61 @@ def gate(
     return why
 
 
+# --- The release window gate (Q-04-T003) ---------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class WindowVerdict:
+    """What the window gate decided for a release at an instant."""
+
+    why: tuple[str, ...]
+    window: str | None
+    deadline_week: str | None
+    hotfix: bool
+    migrate_not_before: datetime
+
+    def as_json(self) -> str:
+        return json.dumps(
+            {
+                "promotable": not self.why,
+                "refused": list(self.why),
+                "window": self.window,
+                "deadline_week": self.deadline_week,
+                "in_window_hotfix": self.hotfix and self.window is not None,
+                "migrate_not_before": self.migrate_not_before.isoformat(),
+            },
+            sort_keys=True,
+        )
+
+
+def window_gate(
+    release: Mapping[str, object], cal: release_windows.Calendar, at: datetime
+) -> WindowVerdict:
+    """Why `release` may not promote at `at` under P-29 (SPEC-403 AC-5, AC-6), and when its
+    migrate step may run (AC-7). Outside every window nothing is required."""
+    check(release, production=True)
+    window = release_windows.platform_window(cal, at)
+    hotfix = release.get("hotfix") is not None
+    week = release_windows.deadline_week(cal, at)
+    why: list[str] = []
+    if window is not None:
+        if release.get("window_mode") is None:
+            why.append("window_mode_missing")
+        if release.get("rollback") is None:
+            why.append("rollback_missing")
+        if week is not None and not hotfix:
+            why.append("deadline_week_without_hotfix")
+        elif not release_windows.in_slot(cal, at) and not hotfix:
+            why.append("outside_the_tuesday_slot")
+    return WindowVerdict(
+        why=tuple(why),
+        window=window,
+        deadline_week=None if week is None else f"{week.start}/{week.end}",
+        hotfix=hotfix,
+        migrate_not_before=release_windows.migrate_not_before(cal, at),
+    )
+
+
 # --- runtime-config.json (platform-ops contract 3.2) -------------------------------------------
 
 
@@ -366,6 +462,10 @@ def _parser() -> argparse.ArgumentParser:
     config.add_argument("--portal-base-domain", required=True)
     config.add_argument("--sentry-dsn")
     sub.add_parser("ops-request").add_argument("file")
+    windowing = sub.add_parser("window-gate")
+    windowing.add_argument("--release", required=True)
+    windowing.add_argument("--at", default=None, help="ISO 8601 with an offset; now by default")
+    windowing.add_argument("--windows", default=str(release_windows.WINDOWS_FILE))
     return parser
 
 
@@ -418,12 +518,37 @@ def main(argv: Sequence[str] | None = None) -> int:
                     sort_keys=True,
                 )
             )
+        elif args.command == "window-gate":
+            release = _load(args.release)
+            if is_placeholder(release):
+                print("placeholder")
+                return 0
+            at = system_now() if args.at is None else datetime.fromisoformat(args.at)
+            if at.tzinfo is None:
+                raise Refused("--at needs an offset")
+            verdict = window_gate(release, release_windows.load(Path(args.windows)), at)
+            print(verdict.as_json())
+            if verdict.why:
+                print("refused: " + ", ".join(verdict.why), file=sys.stderr)
+                return 1
         else:
             loaded = cast(dict[str, object], yaml.safe_load(Path(args.file).read_text()))
-            print(json.dumps(ops_request(loaded).argv()))
+            if loaded.get("kind") == "flag_flip":
+                # Q-04-T010 (DEC-809): a flip request becomes the flag CLI's command; the flip
+                # guard runs again inside it when the task executes.
+                try:
+                    flip = flip_request.parse(loaded, args.file)
+                except flip_request.RequestError as error:
+                    raise Refused(str(error)) from None
+                print(json.dumps(flip_request.argv(flip)))
+            else:
+                print(json.dumps(ops_request(loaded).argv()))
         return 0
     except Refused as refused:
         print(f"refused: {refused}", file=sys.stderr)
+        return 1
+    except release_windows.WindowsError as broken:
+        print(f"refused: deploy/windows.yaml: {broken}", file=sys.stderr)
         return 1
 
 

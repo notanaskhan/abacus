@@ -13282,7 +13282,9 @@ export const readNotificationMutation = (options?: Partial<Options<ReadNotificat
 /**
  * Put Agent Stage
  *
- * Shadow, live or off for this firm; `live` only after 50 shadow runs over 14 days.
+ * Shadow, live or off for this firm; `live` only on a named shadow report that passes
+ * SPEC-036 Q1 (50 runs, 14 days) and QD-10 (25 scored, disagreement at most 8%, no DE-1, DE-4
+ * or DE-5 miss).
  */
 export const putAgentStageMutation = (options?: Partial<Options<PutAgentStageData>>): UseMutationOptions<PutAgentStageResponse, PutAgentStageError, Options<PutAgentStageData>> => {
     const mutationOptions: UseMutationOptions<PutAgentStageResponse, PutAgentStageError, Options<PutAgentStageData>> = {
