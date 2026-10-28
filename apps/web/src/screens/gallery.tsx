@@ -33,6 +33,13 @@ import {
   scenarios as adm06Scenarios,
 } from "./ADM-06/scenarios";
 import { ADM07 } from "./ADM-07";
+import { INB01 } from "./INB-01";
+import {
+  OPENS as INB01_OPENS,
+  STATES as INB01_STATES,
+  type Inb01State,
+  scenarios as inb01Scenarios,
+} from "./INB-01/scenarios";
 import {
   type Adm07State,
   STATES as ADM07_STATES,
@@ -653,6 +660,46 @@ function Adm07Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("ADM-07", { title: "Audit log explorer", Component: Adm07Artboard });
+
+// N-01-T10: INB-01 · Inbox on T8 (a–g; DEC-830).
+function Inb01Frame({ state }: { state: Inb01State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/inbox" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <INB01
+        frame
+        toolbar={bar.toolbar}
+        initialThread={INB01_OPENS[state] ?? null}
+        initialClientId={state === "f" ? "00000000-0000-4000-8000-000000000f00" : null}
+      />
+    </div>
+  );
+}
+
+function Inb01Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Inb01State = INB01_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      inb01Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Inb01Frame key={state} state={state} /> : null;
+}
+
+registerScreen("INB-01", { title: "Inbox", Component: Inb01Artboard });
 
 function Cli01Frame({ state }: { state: Cli01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
