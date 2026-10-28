@@ -143,9 +143,11 @@ test.describe("J04-fs-audit (A-01's audits index)", () => {
     );
     await journey.as("hannah-leclerc", "/audits", { scenario: "AUD-01:a", clock: SEP_24 });
     await journey.step("J04 step 1: Granite Peak on the audits index (AUD-01 a)", async (page) => {
+      // AUD-01 rows open through their "Open row" button; the engagement name is a cell.
       await page
-        .getByRole("link", { name: new RegExp(GRANITE_PEAK.split(",")[0] ?? "Granite") })
+        .getByRole("row", { name: new RegExp(GRANITE_PEAK.split(",")[0] ?? "Granite") })
         .first()
+        .getByRole("button", { name: "Open row" })
         .click();
       await expect(page).toHaveURL(/\/audits\/[^/]+/);
     });
