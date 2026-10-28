@@ -99,7 +99,14 @@ def test_an_unregistered_type_has_no_label_and_its_values_are_unavailable() -> N
     assert asyncio.run(audit_slots.audit_values(viewer, _EVENT)).status == "unavailable"
 
 
-def test_a_failing_resolver_answers_unavailable_and_restricted_labels_are_refused() -> None:
+def test_a_failing_resolver_answers_unavailable_and_restricted_labels_are_refused(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # The probe's registrations go into copies, undone at teardown: a second run in the same
+    # process (mutmut runs the suite more than once) would otherwise find them already there.
+    for registry in ("_LABELERS", "_RESOLVERS"):
+        monkeypatch.setattr(audit_slots, registry, dict(getattr(audit_slots, registry)))
+
     async def labeler(viewer: AuthContext | None, ids: Sequence[str]) -> Mapping[str, AuditLabel]:
         return {"1": AuditLabel("Copperleaf", "confidential"), "2": AuditLabel("x", "restricted")}
 

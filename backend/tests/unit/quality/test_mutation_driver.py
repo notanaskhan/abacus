@@ -46,6 +46,9 @@ def test_t026_scopes_are_the_red_modules_and_compute_packages(
     assert scope_of(path) == scope
 
 
+# DEC-599: the mutation workflows narrow `only_mutate` to the run's files on the runner before
+# mutmut starts, so this check of the committed list can only hold outside a mutation run.
+@pytest.mark.source_scan
 def test_t026_the_committed_mutmut_config_names_every_scope() -> None:
     config = tomllib.loads(mutation.PYPROJECT.read_text(encoding="utf-8"))["tool"]["mutmut"]
     only = config["only_mutate"]
@@ -120,6 +123,7 @@ def _meta(codes: dict[str, int | None]) -> dict[str, object]:
     return {"exit_code_by_key": codes, "durations_by_key": {}}
 
 
+@pytest.mark.source_scan
 def test_t026_survivors_are_published_per_module(tmp_path: Path) -> None:
     mutants = tmp_path / "mutants"
     metas = {
@@ -185,6 +189,7 @@ def test_t026_a_floored_scope_with_no_results_fails_the_weekly_run() -> None:
     ]
 
 
+@pytest.mark.source_scan
 def test_t026_the_weekly_floors_check_fails_on_an_unmeasured_red_scope(tmp_path: Path) -> None:
     mutants = tmp_path / "mutants"
     meta = mutants / "src/abacus/kernel/db/session.py.meta"

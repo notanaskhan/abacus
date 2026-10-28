@@ -92,6 +92,7 @@ def test_ac2_the_refusal_is_not_a_provider_error() -> None:
     assert not issubclass(DataBoundaryRefused, ProviderError)
 
 
+@pytest.mark.source_scan
 def test_ac2_every_provider_call_in_the_gateway_is_preceded_by_the_boundary() -> None:
     """The gateway's only two model calls (`.complete`, `.embed`) each follow `enforce_boundary`
     in the same block, so no path reaches a provider unchecked."""

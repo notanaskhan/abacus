@@ -15,6 +15,7 @@ URL in `ABACUS_STAGING_URL` / `ABACUS_CANARY_URL`; they skip while it is unset).
 - `J01-firm-onboarding.spec.ts`: J01-core skeleton (F-04-T32; M8); step 3 and 3f live in fixture mode (G-01-T16).
 - `J14-firm-admin.spec.ts`: j14 1, 2 and 2b, Lena Park's seasonal seat and wall (G-01-T16).
 - `J16-daily-practice.spec.ts`: j16 2, Firm settings from the firm pill (G-01-T16).
+- `gates-access.spec.ts`: P-07's gates and access, CLI-04's invite, CLI-07 and CLI-08 as human-only gates, and J03 steps 1 and 2, on the screens' own scenarios (P-07-T53; DEC-645).
 
 A step on a screen behind a flag E0 leaves off may open the real route on the screen's own fixture scenario with `?screen=<ID>&st=<state>` (fixture project only; DEC-457).
 

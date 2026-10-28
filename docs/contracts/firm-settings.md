@@ -7,7 +7,7 @@
 | Status | overview and sections live (G-01-T04, 2026-10-23); people, role templates live (G-01-T05, 2026-10-24); offices, teams, groups, walls v2 and offshore live (G-01-T08, T09, 2026-10-25); service lines live (G-01-T12, 2026-10-26); annual independence live (G-01-T13, 2026-10-26) |
 | Provider epic | G-01 (`identity`, `organisations`) |
 | Consumers | ADM-01, ADM-02, ADM-03; SHL-03 (the profile drawer's annual confirmation); P-07 (G2 reads annual confirmations) |
-| Freeze sprint | the sprint review after the stub |
+| Freeze sprint | frozen 2026-10-28 (G-01-T18); changes are additive in place or a v2 |
 | Flag | none: `firm_settings.v2` (created 2026-10-23) was retired by G-01-T17 (DEC-594); every route is served to every firm |
 | Spec | G-01 (`docs/plan/epics/G-01.md` §3, §4.3); SPEC-002 amended by DEC-169 |
 | ADRs | ADR-139 (P-36), ADR-024, ADR-026, ADR-031, ADR-005; DEC-30, DEC-43, DEC-52, DEC-73, DEC-91, DEC-132, DEC-169 |
@@ -96,4 +96,4 @@ Brightwater Hale, synthetic, at E0: the overview's People row facts `{used: 46, 
 ## 10. Versioning
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
-| v1 | | | stub 2026-10-23 (G-01-T02); people live 2026-10-24 (G-01-T05: `StaffRowV2Out.user_id` nullable, `invitation_id`, `deactivated_on`, `StaffTalliesOut`); offices, teams, walls v2 and offshore live 2026-10-25 (G-01-T08, T09: `version` on `FirmOfficeOut`/`FirmTeamOut` and their inputs, `service_line` on teams; `WallOut` grew the v2 fields); service lines live 2026-10-26 (G-01-T12: no shape change; 501 gone); annual independence live 2026-10-26 (G-01-T13: 501 gone; added `GET /v1/me/independence/annual`, `GET`/`PUT /v1/firm/independence/statement`, `MyAnnualIndependenceOut`, `AnnualStatementOut`, `AnnualStatementIn`); `WallOut.allowed_actions` 2026-10-26 (ED-071, G-01-T15) |
+| v1 | 2026-10-28 (G-01-T18) | — | stub 2026-10-23 (G-01-T02); people live 2026-10-24 (G-01-T05: `StaffRowV2Out.user_id` nullable, `invitation_id`, `deactivated_on`, `StaffTalliesOut`); offices, teams, walls v2 and offshore live 2026-10-25 (G-01-T08, T09: `version` on `FirmOfficeOut`/`FirmTeamOut` and their inputs, `service_line` on teams; `WallOut` grew the v2 fields); service lines live 2026-10-26 (G-01-T12: no shape change; 501 gone); annual independence live 2026-10-26 (G-01-T13: 501 gone; added `GET /v1/me/independence/annual`, `GET`/`PUT /v1/firm/independence/statement`, `MyAnnualIndependenceOut`, `AnnualStatementOut`, `AnnualStatementIn`); `WallOut.allowed_actions` 2026-10-26 (ED-071, G-01-T15) |

@@ -58,6 +58,9 @@ EVENTS: Final = {
     "independence.concluded",
     "engagement_member.added",
     "eqr.eligibility_approved",
+    # I-01-T08 (DEC-647): SPEC-004's review queue as `evidence_review` gates.
+    "evidence.uploaded",
+    "review.assigned",
 }
 # Contract §2: firm admin, practice leader (in scope), quality partner, engagement partner,
 # manager, senior, staff, reviewer, EQR reviewer.
@@ -138,6 +141,15 @@ def test_c13_the_row_carries_identifiers_not_labels() -> None:
         "blocked_reason_code",  # a code, never text
         "title",  # the owner's resolver at read time (I-01-T07)
         "context",
+        # I-01-T07 (DEC-646): the owner's presentation facts (codes, routes, ids), review's own
+        # actions and version, and the run that proposed it (INV-5). No label is stored.
+        "bulk_eligible",
+        "subject_route",
+        "overlay",
+        "glyph",
+        "allowed_actions",
+        "version",
+        "proposed_by",
     }
 
 

@@ -1114,6 +1114,9 @@ _SCOPE_KINDS = frozenset({"engagement", "work_item", "client", "client_entity", 
 # lookups for rows the caller has already authorised, or sign-in before a tenant exists.
 LIST_EXEMPT = frozenset(
     {
+        # I-01-T08 (DEC-647): C13's system reader for the `evidence_review` gate source; the
+        # projection applies `visible()` and the source's read action when anyone reads it.
+        ("src/abacus/modules/requests/repository.py", "awaiting_review_rows"),
         # R-01-T07 (DEC-333): the portal read model's lookups by id for rows the caller already
         # read through `visible_items` and authorised `portal_documents.read` on: a binder's
         # requests' live fulfilments, the contacts its requests are delegated to (only their

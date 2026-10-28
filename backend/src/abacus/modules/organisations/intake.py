@@ -183,6 +183,48 @@ async def dedupe_candidates(ctx: AuthContext, name: str) -> list[DedupeMatch]:
     return ranked[:DEDUPE_LIMIT]
 
 
+_EIN_MATCHES = text(
+    """
+    SELECT e.tin_fingerprint AS fingerprint, c.id AS client_id, c.name AS client_name,
+           e.id AS entity_id, e.name AS entity_name
+      FROM client_entities e JOIN clients c ON c.id = e.client_id
+     WHERE e.tin_kind = 'ein' AND e.tin_fingerprint = ANY(:fingerprints)
+    """
+)
+
+
+async def ein_matches(ctx: AuthContext, fingerprints: Sequence[bytes]) -> dict[bytes, DedupeMatch]:
+    """CLI-06's bulk import (P-07-T52): the entity whose EIN fingerprint (`fingerprint_tin`) is
+    each given one, scored 1.0 on basis `ein`; one per fingerprint (the index is unique per
+    firm). A client the person is walled from is never a match (DEC-43). No digits are read."""
+    await authorise(ctx, DEDUPE, Resource.firm(ctx.tenant_id))
+    if not fingerprints:
+        return {}
+    async with tenant_session(ctx.tenant) as session:
+        rows = (
+            (
+                await session.execute(
+                    _EIN_MATCHES, {"fingerprints": list(dict.fromkeys(fingerprints))}
+                )
+            )
+            .mappings()
+            .all()
+        )
+    walled = await walled_from(ctx.tenant, ctx.user_id)
+    return {
+        bytes(cast(bytes, r["fingerprint"])): DedupeMatch(
+            cast(UUID, r["client_id"]),
+            cast(str, r["client_name"]),
+            cast(UUID, r["entity_id"]),
+            cast(str, r["entity_name"]),
+            1.0,
+            "ein",
+        )
+        for r in rows
+        if cast(UUID, r["client_id"]) not in walled
+    }
+
+
 async def same_name_client(ctx: AuthContext, name: str) -> UUID | None:
     """A client the person may see whose normalised name is exactly `name`'s (the commit's 409
     `possible_duplicate` for a new client)."""

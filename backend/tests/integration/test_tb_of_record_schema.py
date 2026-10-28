@@ -436,7 +436,18 @@ def test_ac33_the_trigger_refuses_every_role_even_the_superuser(
 # --- AC-34: the downgrade guard (last: a labelled snapshot can never be removed) -----------------
 
 
-def test_ac34_the_downgrade_is_refused_while_a_snapshot_is_not_standard(db: sc.Database) -> None:
+@pytest.fixture
+def own_db() -> Iterator[sc.Database]:
+    """AC-34's own database: the module's holds AC-32's `import_accrued_template` snapshot, whose
+    0235 guard (later in the chain) would refuse the downgrade before 0149's is reached."""
+    with provisioned_database(roundtrip=False) as database:
+        yield database
+
+
+def test_ac34_the_downgrade_is_refused_while_a_snapshot_is_not_standard(
+    own_db: sc.Database,
+) -> None:
+    db = own_db
     firm = asyncio.run(_firm(db))
     asyncio.run(_snapshot(db, firm, "import_netsuite", "prior"))
     head = asyncio.run(_revision(db))
