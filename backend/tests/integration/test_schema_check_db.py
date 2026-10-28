@@ -1497,6 +1497,21 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         ),
         # Q-04-T007 (0276): a pilot enrolment's mode and its named confirmer.
         "pilot_enrolments": frozenset({"confirmed_at", "confirmed_by", "mode", "updated_at"}),
+        # P-07-T55 (0291): a roll-forward draft's autosaved choices, its discard and its Create.
+        "roll_forward_drafts": frozenset(
+            {
+                "created_engagement_id",
+                "discarded_at",
+                "name",
+                "saved_at",
+                "selections",
+                "target_period_end",
+                "target_period_start",
+                "team",
+                "template_decision",
+                "version",
+            }
+        ),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(

@@ -709,7 +709,12 @@ async def test_t30_grace_holloway_has_binder_and_invitation_actions_but_no_evide
     offered = set(body["capabilities"])
     assert {"request_item.create", "request_item.update", "binder.read"} <= offered  # binders
     assert {"client_contact.invite", "client_contact.read"} <= offered  # invitations
-    assert not {a for a in offered if a.startswith(("evidence.", "comment."))}, offered
+    # N-01's Files browser (N-01 §4.4, ADR-158) gives a firm admin the metadata read only: the
+    # tree and folders, never a file's content (DV-11). Every content action stays out.
+    metadata_only = {"evidence.read_metadata"}
+    content = {a for a in offered if a.startswith(("evidence.", "comment."))} - metadata_only
+    assert not content, offered
+    assert "evidence.read" not in offered
     roles = {r["code"]: r["label"] for r in body["roles"]}
     assert "client_service" in roles and roles["client_service"].strip()
     assert body["engagement_id"] == str(engagement)
