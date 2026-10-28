@@ -1809,6 +1809,11 @@ codes:
     raised_by:
     - abacus.modules.engagements.drafts.UnknownEngagementType
     summary: The type is not in the engagement-type catalogue (single audit included, DEC-19).
+  unknown_envelope_source:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.sources.UnknownEnvelopeSource
+    summary: 'No source of this kind is registered: nothing can be drafted from it.'
   unknown_firm_setting:
     status: 422
     raised_by:

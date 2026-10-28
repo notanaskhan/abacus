@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C7 |
 | Version | v1 |
-| Status | stub (N-02-T03, 2026-10-27): every route 404 with `signatures.envelopes` off, 501 with it on |
+| Status | stub (N-02-T03, 2026-10-27): every route 404 with `signatures.envelopes` off, 501 with it on until its task lands. **Record mode frozen as v1** (N-02-T09, DEC-820): `POST /v1/envelopes/import`, `POST /v1/envelopes/import/files`, `register_envelope_source`, `envelope_summary_for`, `envelope_gate_facts` (G3) change only additively |
 | Provider epic | N-02 |
 | Consumers | F-06 (signatures shell), T-01 (8879 family, consents "1 of 2 signed"), T-02, P-07 (G3 letter gate), A-07 (governance letters), N-04 (notice responses), I-01 (activity, `signatures_out` home count), R-02 |
 | Freeze sprint | S15 Contract Monday (Mon May 17, 2027) |
