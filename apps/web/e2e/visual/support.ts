@@ -49,6 +49,11 @@ export interface ManifestEntry {
    * baseline before they are compared (chapter 04's parity harness masks: spinners, presence
    * avatars, upload bars, missing icons; a screen's dock until P-09 locks SHL-13). */
   mask?: string[];
+  /** A chrome strip inside the frame (F-06 §5.4 Tier A: envelope header 46, steps pane 300, the
+   * 64 px document rows, sticky bars): the entry shoots the whole frame like its window entry,
+   * then compares only the strip's box, cut from the render and from the frame's own baseline, so a
+   * strip needs no hand-measured crop and never drifts from the frame it sits in (F-06-T13). */
+  strip?: string;
 }
 
 /** The checked-in manifest (docs/design/parity-manifest.json), read from apps/web. */
@@ -200,4 +205,51 @@ export async function masked(
   const baseline = await paintBoxes(page, readFileSync(snapshotPath(name)), boxes);
   writeFileSync(snapshotPath(maskedName), baseline);
   return { actual: await paintBoxes(page, shot, boxes), name: maskedName };
+}
+
+/** `png` cut to `box` (device pixels), on a blank page's canvas like `paintBoxes`. */
+export async function cropPng(page: Page, png: Uint8Array, box: Box): Promise<Buffer> {
+  const scratch = await page.context().newPage();
+  try {
+    const cut = await scratch.evaluate(
+      async ({ data, r }) => {
+        const image = new Image();
+        image.src = `data:image/png;base64,${data}`;
+        await image.decode();
+        const canvas = document.createElement("canvas");
+        canvas.width = r.width;
+        canvas.height = r.height;
+        const context = canvas.getContext("2d");
+        if (context === null) throw new Error("no 2d canvas");
+        context.drawImage(image, r.x, r.y, r.width, r.height, 0, 0, r.width, r.height);
+        return canvas.toDataURL("image/png").slice("data:image/png;base64,".length);
+      },
+      { data: toBase64(png), r: box },
+    );
+    return fromBase64(cut);
+  } finally {
+    await scratch.close();
+  }
+}
+
+/**
+ * For an entry with a `strip`: the strip's box cut from the (masked) render and from its
+ * (masked) baseline, the cut baseline written beside it (`<name>.strip.png`, local only) and that
+ * name to compare against. A strip that does not render is an error, never a pass. Without a
+ * strip, the shot and its name unchanged.
+ */
+export async function stripped(
+  page: Page,
+  target: Locator,
+  strip: string | undefined,
+  shot: { actual: Uint8Array; name: string },
+  snapshotPath: (name: string) => string,
+): Promise<{ actual: Uint8Array; name: string }> {
+  if (strip === undefined) return shot;
+  const [box] = await maskBoxes(target, [strip], shot.actual);
+  if (box === undefined) throw new Error(`strip ${strip} is not in the frame`);
+  const name = shot.name.replace(/(\.masked)?\.png$/u, ".strip.png");
+  const baseline = await cropPng(page, readFileSync(snapshotPath(shot.name)), box);
+  writeFileSync(snapshotPath(name), baseline);
+  return { actual: await cropPng(page, shot.actual, box), name };
 }

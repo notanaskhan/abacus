@@ -634,3 +634,16 @@ Under the same parity-tier reading as the M5 lock (DEC-192: Tier B pixels for fr
 | 2026-10-28 | TPL-16 route    | The seeded specimen registers as `/components/screens/TPL-16?st=b                                                                                                                                                                                                                                                                                                  | d`(the gallery's registry for app-side specimens), not`/components/specimens/tpl-16` (F-06.md §5.1) |
 | 2026-10-28 | Decline         | "Decline…" in the envelope header opens nothing yet: `onOpenDecline` is the hook F-06-T05's DeclineDialog fills; it shows only while the viewer can still sign                                                                                                                                                                                                     |
 | 2026-10-28 | T16 placeholder | The T16 template board's own data (canvas `T16.LINES`, `T16.EVIDENCE`): "2025 e-file authorizations", five evidence rows on T16c; no authorizing card (the board draws none)                                                                                                                                                                                       |
+
+### Signing and tax-index lock: T16, TPL-16, TPL-01 (F-06-T13)
+
+| Date       | Item          | Decision |
+| ---------- | ------------- | -------- |
+| 2026-10-29 | Entries       | Tier B frames: `t16-signing-ceremony.t16b`, `.t16c`; `tpl-16a/b/d/e/f.window`; `tpl-16g.phone` (crop 50 56 830 1744, the 390 × 844 phone at 2x); `tpl-01a`–`e.window`. Tier A strips: T16b and TPL-16b envelope header (46), first document row (64) and steps pane (300); TPL-16g sticky bar (64). TPL-16c Tier C with a deviation (DEC-1250) |
+| 2026-10-29 | Masks         | `[data-signing='page']` on every board with a page in the well (the provider frame region in provider mode, F-06 §5.4; replaces F-06-T04's page deviation). TPL-16a: the well and the verify step row. TPL-16e and TPL-01: none |
+| 2026-10-29 | Strips        | A manifest `strip` names a chrome strip inside the frame; the parity spec cuts its box from the frame's render and the frame's baseline (no hand-measured crop) |
+| 2026-10-29 | TPL-16a       | The production state: the provider's view in the well, Mira "verifying identity" (the handoff's band), verify current. The native KBA card is never built (DF-12) |
+| 2026-10-29 | TPL-01 frame  | The board sits in the firm `AppShell` (1400 × 860 window, Tax Returns lit), as the artboards draw it |
+| 2026-10-29 | Tier D added  | `e2e/visual/tier-d-signing.spec.ts`: T16b/c and TPL-16a, b, d, e, f header 46, documents 240, well 816, page 680 (provider frame 680 on a), steps 300, document rows 64; TPL-16g frame 390 × 844, sticky bar 64, primary 48; TPL-01a–e window 1400 × 860. The 44 × 44 targets stay in F-06-T07's TPL-16.spec.ts |
+| 2026-10-29 | Lock          | Pending the measured run: every entry above stays `locked: false` until `parity.json` reads ≤ 2 % at Tier B (≤ 0.5 % at Tier A); the measured diffs and the locked set are recorded here when it runs |
+

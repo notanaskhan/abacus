@@ -71,7 +71,7 @@ Gradients, emoji, saturated blue, heavy shadows, invented colours, lorem ipsum, 
 ## Parity
 | Artboard | Tier (A/B/D) | Diff % | Notes |
 |---|---|---|---|
-| a–e | B frame · A strips · D geometry | not run | locked in F-06-T13 |
+| a–e | B frame (inside the firm window, Tax Returns lit) · D window 1400 × 860 | measured at the end review | no mask; lock F-06-T13 (DEC-1250) |
 
 ## Open gaps
 - No `revision.md`. The spec text puts "Ready" before Gathering in the first group; TAX-01's order is recorded above.

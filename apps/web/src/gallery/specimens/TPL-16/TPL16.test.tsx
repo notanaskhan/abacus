@@ -126,3 +126,25 @@ describe("TPL-16g: 390", () => {
     expect(bar?.querySelector("button")?.textContent).toBe("Adopt signature & sign…");
   });
 });
+
+// F-06-T13 (SPEC-400 AC-37; DEC-1250): TPL-16a in production is the provider's view in the well,
+// titled and sandboxed, on a host that never resolves; no native KBA card, no page, no sign control.
+describe("TPL-16a: the provider's view (DF-12)", () => {
+  it("AC-37: the well hosts the provider frame and nothing of the native card", () => {
+    render(<Tpl16Specimen state="a" />);
+    const frame = document.querySelector('[data-signing="provider-frame"]');
+    expect(frame?.getAttribute("title")).toBe("Verify your identity and sign: Form 8879");
+    expect(new URL(frame?.getAttribute("src") ?? "").hostname.endsWith(".invalid")).toBe(true);
+    expect(document.querySelector('[data-signing="page"]')).toBeNull();
+    expect(screen.queryByText(/Question \d of \d/)).toBeNull();
+    expect(screen.queryAllByRole("button", { name: /^Sign here:/ })).toHaveLength(0);
+    expect(screen.getByText("verifying identity")).toBeTruthy();
+  });
+
+  it("AC-37: the verify step is current and nothing is signed for Mira", () => {
+    const envelope = e6Envelope("a");
+    expect(envelope.steps.find((s) => s.state === "current")?.key).toBe("verify");
+    expect(envelope.signers.find((s) => s.isViewer)?.status).toBe("viewed");
+    expect(envelope.signedCount).toBe(1);
+  });
+});

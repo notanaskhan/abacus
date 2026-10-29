@@ -1944,6 +1944,209 @@
       "sha256": "48fa52e822af1d9457fdff15a4736a3c25ffbbdf29861f48d2907b7e833bf511",
       "crop": "window",
       "tier": "C"
+    },
+    "t16-signing-ceremony.t16b": {
+      "selector": "[data-artboard=\"t16b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T16 Signing ceremony/screenshots/T16b.png",
+      "sha256": "5a60ecde7bd3e1da4f49a34c1f10d4d2f65065d87c0d0d5aa8bc20b6d3487ec6",
+      "crop": "window",
+      "tier": "B",
+      "mask": [
+        "[data-signing='page']"
+      ]
+    },
+    "t16-signing-ceremony.t16c": {
+      "selector": "[data-artboard=\"t16c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T16 Signing ceremony/screenshots/T16c.png",
+      "sha256": "21a55b78734de749f48f5cf00c1378d374f7e3bae36a154d6ba1c0cf8d774eaa",
+      "crop": "window",
+      "tier": "B",
+      "mask": [
+        "[data-signing='page']"
+      ]
+    },
+    "t16-signing-ceremony.t16b-header": {
+      "selector": "[data-artboard=\"t16b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T16 Signing ceremony/screenshots/T16b.png",
+      "sha256": "5a60ecde7bd3e1da4f49a34c1f10d4d2f65065d87c0d0d5aa8bc20b6d3487ec6",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-signing='envelope-header']"
+    },
+    "t16-signing-ceremony.t16b-documents": {
+      "selector": "[data-artboard=\"t16b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T16 Signing ceremony/screenshots/T16b.png",
+      "sha256": "5a60ecde7bd3e1da4f49a34c1f10d4d2f65065d87c0d0d5aa8bc20b6d3487ec6",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-signing='documents'] li >> nth=0"
+    },
+    "t16-signing-ceremony.t16b-steps": {
+      "selector": "[data-artboard=\"t16b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T16 Signing ceremony/screenshots/T16b.png",
+      "sha256": "5a60ecde7bd3e1da4f49a34c1f10d4d2f65065d87c0d0d5aa8bc20b6d3487ec6",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-signing='steps']"
+    },
+    "tpl-16a.window": {
+      "page": "screens/TPL-16?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16a.png",
+      "sha256": "8101b1965bf0270c92d263a570ed7b6300d85585253c492c77beb1aee293f4e2",
+      "crop": "window",
+      "tier": "B",
+      "mask": [
+        "[data-signing='well']",
+        "[data-step='verify']"
+      ]
+    },
+    "tpl-16b.window": {
+      "page": "screens/TPL-16?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16b.png",
+      "sha256": "1f7d0ac2d721266d794b11cab4d6a7bb1b59a02eff92dd0f91590bbb003bb244",
+      "crop": "window",
+      "tier": "B",
+      "mask": [
+        "[data-signing='page']"
+      ]
+    },
+    "tpl-16d.window": {
+      "page": "screens/TPL-16?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16d.png",
+      "sha256": "6c6ccac1c63865a1621da10c40338b7eeb22c0f5add49588a8c8efaab158cb75",
+      "crop": "window",
+      "tier": "B",
+      "mask": [
+        "[data-signing='page']"
+      ]
+    },
+    "tpl-16e.window": {
+      "page": "screens/TPL-16?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16e.png",
+      "sha256": "6ecc2dc9636bf85796dc8b34203b23fb9f40a4f666070d2007bc3c9c96663171",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-16f.window": {
+      "page": "screens/TPL-16?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16f.png",
+      "sha256": "f94393a42fcef941034f7dff5b63f11307fadba7efad627a9b41e8ffe0aa84cc",
+      "crop": "window",
+      "tier": "B",
+      "mask": [
+        "[data-signing='page']"
+      ]
+    },
+    "tpl-16c.window": {
+      "page": "screens/TPL-16?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16c.png",
+      "sha256": "700b7742977fadb7ef7d2bae14cd423ea0364361d54630a853098b7dd0ab3a16",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "DF-12: the native 560 Adopt dialog and its scrim are not built (no AdoptSignatureDialog); identity and signature run in the provider's view. Reported as a screenshot specimen against the b frame, never locked"
+    },
+    "tpl-16b.header": {
+      "page": "screens/TPL-16?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16b.png",
+      "sha256": "1f7d0ac2d721266d794b11cab4d6a7bb1b59a02eff92dd0f91590bbb003bb244",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-signing='envelope-header']"
+    },
+    "tpl-16b.documents": {
+      "page": "screens/TPL-16?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16b.png",
+      "sha256": "1f7d0ac2d721266d794b11cab4d6a7bb1b59a02eff92dd0f91590bbb003bb244",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-signing='documents'] li >> nth=0"
+    },
+    "tpl-16b.steps": {
+      "page": "screens/TPL-16?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16b.png",
+      "sha256": "1f7d0ac2d721266d794b11cab4d6a7bb1b59a02eff92dd0f91590bbb003bb244",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-signing='steps']"
+    },
+    "tpl-16g.phone": {
+      "page": "screens/TPL-16?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16g.png",
+      "sha256": "973afb608bd0e0dd8c90fd50798063a3cac96001381c7199778e9c082cd7d25b",
+      "crop": [
+        50,
+        56,
+        830,
+        1744
+      ],
+      "tier": "B",
+      "mask": [
+        "[data-signing='page']"
+      ]
+    },
+    "tpl-16g.sign-bar": {
+      "page": "screens/TPL-16?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16g.png",
+      "sha256": "973afb608bd0e0dd8c90fd50798063a3cac96001381c7199778e9c082cd7d25b",
+      "crop": [
+        50,
+        56,
+        830,
+        1744
+      ],
+      "tier": "A",
+      "strip": "[data-signing='mobile-sign-bar']"
+    },
+    "tpl-01a.window": {
+      "page": "screens/TPL-01?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-01 Index list specimen - Tax Returns/screenshots/TPL-01a.png",
+      "sha256": "bcdb20292cb6a12b628707bc2ce018e512ffd057f686ab4b49cade13f4c342d9",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-01b.window": {
+      "page": "screens/TPL-01?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-01 Index list specimen - Tax Returns/screenshots/TPL-01b.png",
+      "sha256": "680b92bf829771f2f0dc8a20bcd45be7c8c2d419913e60aed613b162aa142b73",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-01c.window": {
+      "page": "screens/TPL-01?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-01 Index list specimen - Tax Returns/screenshots/TPL-01c.png",
+      "sha256": "4046e6106396c98ef6e4a7235c01e615c950bf033ee5671da5bdbd8cfc81da3a",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-01d.window": {
+      "page": "screens/TPL-01?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-01 Index list specimen - Tax Returns/screenshots/TPL-01d.png",
+      "sha256": "b476d3f6425454b32864249a082e90d875cd62add0ed966e501a349688c51f85",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-01e.window": {
+      "page": "screens/TPL-01?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-01 Index list specimen - Tax Returns/screenshots/TPL-01e.png",
+      "sha256": "5aea28ae1f6b6075e6ebff0fed4c6d8c50d66f0656b8063f7bd933ab52bbe6f6",
+      "crop": "window",
+      "tier": "B"
     }
   }
 }

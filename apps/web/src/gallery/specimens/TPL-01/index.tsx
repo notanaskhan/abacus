@@ -1,4 +1,5 @@
 import {
+  AppShell,
   Button,
   IndexList,
   type IndexColumn,
@@ -23,6 +24,8 @@ import {
   TILE_ORDER,
   boardOrder,
 } from "../../../fixtures/seed/tax";
+import { useSession } from "../../../app-core/session";
+import { useFirmToolbar } from "../../../shell/firm/ToolbarData";
 import type { FixtureParams } from "../../fixture-mode";
 import { COPY } from "./copy";
 
@@ -248,7 +251,7 @@ export function Tpl01Specimen({ state }: { state: Tpl01State }): JSX.Element {
             }
           : { kind: "ready" };
   return (
-    <div data-specimen="tpl-01" className="flex h-[860px] flex-col overflow-hidden">
+    <div data-specimen="tpl-01" className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <IndexList<SeedTaxReturn>
         title={COPY.title}
         noun="returns"
@@ -351,7 +354,29 @@ export function Tpl01Specimen({ state }: { state: Tpl01State }): JSX.Element {
   );
 }
 
+/** The board inside the firm window, as the TPL-01 artboards draw it (F-06-T13): the toolbar with
+ * Tax Returns lit, the 860 window, the T1 list in its body. */
+function Tpl01Frame({ state }: { state: Tpl01State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/tax-returns" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+      <Tpl01Specimen key={state} state={state} />
+    </AppShell>
+  );
+}
+
 export function Tpl01Artboard({ params }: { params: FixtureParams }): JSX.Element {
   const state: Tpl01State = TPL01_STATES.find((s) => s === params.st) ?? "a";
-  return <Tpl01Specimen key={state} state={state} />;
+  // F-06-T13: the artboard wrapper the parity manifest and the specimen walk select by.
+  return (
+    <div data-artboard={state}>
+      <Tpl01Frame state={state} />
+    </div>
+  );
 }

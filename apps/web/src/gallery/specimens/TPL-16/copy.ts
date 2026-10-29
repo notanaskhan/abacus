@@ -13,6 +13,8 @@ export const COPY = {
   formTr579: "Form TR-579-IT — New York e-file Signature Authorization",
   signersBand: "Signers",
   signerYou: (name: string): string => `${name} (you)`,
+  // TPL-16a's signer band while the viewer verifies (F-06-T13).
+  verifyingIdentity: "verifying identity",
   steps: { verify: "Verify identity", review: "Review", sign: "Sign", done: "Done" },
   stepSubs: {
     verify: "4 of 4 questions · 9:21 AM",
