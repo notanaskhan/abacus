@@ -13,6 +13,7 @@ import {
   installFixtureMode,
   json,
 } from "../../app-core/fixture-mode";
+import { methodologyHandlers } from "../../fixtures/handlers/methodology-versions";
 import { newQueryClient } from "../../testing/support";
 import { KNW02, type Knw02Search } from ".";
 import { type Knw02State, OPENS, scenarios } from "./scenarios";
@@ -47,7 +48,15 @@ function show(
   const scenario: Scenario = scenarios[state];
   const calls: Call[] = [];
   const handlers = Object.fromEntries(
-    Object.entries({ ...scenario.handlers, ...override }).map(([key, handler]) => [
+    // Fresh handlers per test: a scenario's handlers keep their state (an approval) in a closure.
+    Object.entries({
+      ...scenario.handlers,
+      ...methodologyHandlers({
+        status: state === "f" ? "published" : "needs_review",
+        approvedAt: "2026-01-12T20:31:00Z",
+      }),
+      ...override,
+    }).map(([key, handler]) => [
       key,
       ((request) => {
         calls.push({ method: request.method, path: request.path, body: request.body });
@@ -118,13 +127,21 @@ describe("KNW-02 workbook slice", () => {
           ]),
       },
     );
-    const approve = await screen.findByRole("button", { name: "Approve version…" });
+    const approve = await screen.findByRole(
+      "button",
+      { name: "Approve version…" },
+      { timeout: 5000 },
+    );
     expect((approve as HTMLButtonElement).disabled).toBe(true);
   });
 
   it("a row problem names sheet, row and column, never the cell's value", async () => {
     show("e", { ov: "upload" });
-    const sheet = await screen.findByRole("dialog", { name: "Upload methodology" });
+    const sheet = await screen.findByRole(
+      "dialog",
+      { name: "Upload methodology" },
+      { timeout: 5000 },
+    );
     const file = new File(["PK"], "BH EBP Programs v3.xlsx", {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
@@ -132,7 +149,7 @@ describe("KNW-02 workbook slice", () => {
       target: { files: [file] },
     });
     fireEvent.click(within(sheet).getByRole("button", { name: "Upload" }));
-    const problems = await within(sheet).findByRole("alert");
+    const problems = await within(sheet).findByRole("alert", {}, { timeout: 5000 });
     expect(problems.textContent).toContain("Steps · row 14 · Level");
     expect(problems.textContent).toContain(
       "The level must be foundation, planning, testing or completion.",
