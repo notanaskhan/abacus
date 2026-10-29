@@ -133,8 +133,11 @@ async def test_evidence_never_copied_and_carried_requests_stay_invisible_to_the_
         assert str(row["id"]) not in home.text
     firm_route = await net.call("GET", f"/v1/engagements/{new_id}/request-items", claire)
     assert firm_route.status_code in (403, 404)
-    for path in (_drafts(site), f"/v1/engagements/{new_id}/record-activity"):
-        refused = await net.call("GET", path, claire)
+    for method, path in (
+        ("POST", _drafts(site)),  # the draft route is POST-only
+        ("GET", f"/v1/engagements/{new_id}/record-activity"),
+    ):
+        refused = await net.call(method, path, claire)
         assert refused.status_code in (403, 404), (path, refused.status_code)
 
 

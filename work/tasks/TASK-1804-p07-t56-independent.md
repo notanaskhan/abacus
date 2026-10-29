@@ -1,8 +1,8 @@
 ---
 id: TASK-1804
 title: Independent AC tests for P-07-T55, T47, T57 (P-07-T56)
-spec: docs/contracts/engagements-v2.md §8a; docs/contracts/home-and-gates.md; docs/contracts/notifications.md
-acceptance_criteria: [Story 7.1]
+spec: SPEC-321
+acceptance_criteria: [AC-30]
 risk_zone: amber
 status: in-review
 epic: P-07
