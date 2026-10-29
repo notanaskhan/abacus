@@ -6429,7 +6429,8 @@ export const putSsoExemptAccount = <ThrowOnError extends boolean = false>(option
 /**
  * List Sending Domains Route
  *
- * ADM-10 d (R-01-T27): the firm's sender domain and its DNS records.
+ * ADM-10 d (R-01-T27): the firm's sender domains, newest first, with their DNS records.
+ * Never behind the flag.
  */
 export const listSendingDomains = <ThrowOnError extends boolean = false>(options?: Options<ListSendingDomainsData, ThrowOnError>): RequestResult<ListSendingDomainsResponses, ListSendingDomainsErrors, ThrowOnError> => (options?.client ?? client).get<ListSendingDomainsResponses, ListSendingDomainsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -6440,8 +6441,11 @@ export const listSendingDomains = <ThrowOnError extends boolean = false>(options
 /**
  * Create Sending Domain Route
  *
- * An SES identity with Easy DKIM and a custom MAIL FROM; `pending_dns` (R-01-T27); 409
- * `sending_domain_exists` while one is pending or verified. Audited `sending_domain.created`.
+ * An SES identity with Easy DKIM and the custom MAIL FROM `bounce.<domain>`; `pending_dns`
+ * (R-01-T27); 409 `sending_domain_exists` while this firm has one pending or verified, or the
+ * domain is live for any firm (DEC-951); 503 `sending_domain_unavailable` when SES can't be
+ * reached. Fresh MFA. Audited `sending_domain.created`. A retry with the same key answers the
+ * domain it created, after authorising again.
  */
 export const createSendingDomain = <ThrowOnError extends boolean = false>(options: Options<CreateSendingDomainData, ThrowOnError>): RequestResult<CreateSendingDomainResponses, CreateSendingDomainErrors, ThrowOnError> => (options.client ?? client).post<CreateSendingDomainResponses, CreateSendingDomainErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -6456,8 +6460,8 @@ export const createSendingDomain = <ThrowOnError extends boolean = false>(option
 /**
  * Revoke Sending Domain Route
  *
- * Revoke (R-01-T27): client mail returns to the neutral sender. Audited
- * `sending_domain.revoked`.
+ * Revoke (R-01-T27): client mail returns to the neutral sender and the SES identity is
+ * deleted. Audited `sending_domain.revoked`.
  */
 export const revokeSendingDomain = <ThrowOnError extends boolean = false>(options: Options<RevokeSendingDomainData, ThrowOnError>): RequestResult<RevokeSendingDomainResponses, RevokeSendingDomainErrors, ThrowOnError> => (options.client ?? client).delete<RevokeSendingDomainResponses, RevokeSendingDomainErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -6468,7 +6472,8 @@ export const revokeSendingDomain = <ThrowOnError extends boolean = false>(option
 /**
  * Check Sending Domain Route
  *
- * Check the identity now (R-01-T27); the workflow checks every 15 minutes for 72 hours.
+ * Check the identity now (R-01-T27); the workflow checks every 15 minutes, and fails the
+ * domain after 72 hours. Audited `sending_domain.verified` or `.failed` when it moves.
  */
 export const checkSendingDomain = <ThrowOnError extends boolean = false>(options: Options<CheckSendingDomainData, ThrowOnError>): RequestResult<CheckSendingDomainResponses, CheckSendingDomainErrors, ThrowOnError> => (options.client ?? client).post<CheckSendingDomainResponses, CheckSendingDomainErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -6948,7 +6953,7 @@ export const publishGroupingSet = <ThrowOnError extends boolean = false>(options
  * Home Route
  *
  * HOME-01: the viewer's Home, optionally narrowed to one office (DEC-30). Live since
- * I-01-T10 (DEC-648); client activity arrives with I-01-T12.
+ * I-01-T10 (DEC-648); client activity since I-01-T12 (DEC-900).
  */
 export const home = <ThrowOnError extends boolean = false>(options?: Options<HomeData, ThrowOnError>): RequestResult<HomeResponses, HomeErrors, ThrowOnError> => (options?.client ?? client).get<HomeResponses, HomeErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

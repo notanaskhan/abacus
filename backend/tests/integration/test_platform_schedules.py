@@ -36,6 +36,7 @@ IDS = (
     "client_import_erase:platform",  # P-07-T52: bulk import files erased after 30 days, daily
     "connection_health:platform",  # A-02-T25 (DEC-708): every firm's connections, daily
     "export_expiry:platform",  # A-01-T22: the daily engagement export expiry sweep
+    "home_activity_prune:platform",  # I-01-T12 (DEC-900): Home client activity past 90 days
     "incident_reminders:platform",  # G-02-T18: FTC clock reminders, every 6 hours
     "notification_purge:platform",
     "ses_events:platform",
@@ -51,6 +52,7 @@ BACKGROUND = (
     "client_import_erase:platform",
     "connection_health:platform",
     "export_expiry:platform",
+    "home_activity_prune:platform",
     "incident_reminders:platform",
     "notification_purge:platform",
     "spend_anomaly:platform",

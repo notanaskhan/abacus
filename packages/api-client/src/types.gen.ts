@@ -4967,6 +4967,12 @@ export type ClientActivityOut = {
      */
     id: string;
     /**
+     * Labels
+     */
+    labels?: {
+        [key: string]: string;
+    };
+    /**
      * Occurred At
      */
     occurred_at: string;
@@ -59416,10 +59422,6 @@ export type ListSendingDomainsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListSendingDomainsError = ListSendingDomainsErrors[keyof ListSendingDomainsErrors];
@@ -59476,9 +59478,9 @@ export type CreateSendingDomainErrors = {
      */
     422: ValidationErrorOut;
     /**
-     * Contract stub: not implemented yet
+     * Service unavailable
      */
-    501: ErrorOut;
+    503: ErrorOut;
 };
 
 export type CreateSendingDomainError = CreateSendingDomainErrors[keyof CreateSendingDomainErrors];
@@ -59531,10 +59533,6 @@ export type RevokeSendingDomainErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RevokeSendingDomainError = RevokeSendingDomainErrors[keyof RevokeSendingDomainErrors];
@@ -59588,9 +59586,9 @@ export type CheckSendingDomainErrors = {
      */
     422: ValidationErrorOut;
     /**
-     * Contract stub: not implemented yet
+     * Service unavailable
      */
-    501: ErrorOut;
+    503: ErrorOut;
 };
 
 export type CheckSendingDomainError = CheckSendingDomainErrors[keyof CheckSendingDomainErrors];

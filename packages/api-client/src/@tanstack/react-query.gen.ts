@@ -10734,7 +10734,8 @@ export const listSendingDomainsQueryKey = (options?: Options<ListSendingDomainsD
 /**
  * List Sending Domains Route
  *
- * ADM-10 d (R-01-T27): the firm's sender domain and its DNS records.
+ * ADM-10 d (R-01-T27): the firm's sender domains, newest first, with their DNS records.
+ * Never behind the flag.
  */
 export const listSendingDomainsOptions = (options?: Options<ListSendingDomainsData>) => queryOptions<ListSendingDomainsResponse, ListSendingDomainsError, ListSendingDomainsResponse, ReturnType<typeof listSendingDomainsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -10752,8 +10753,11 @@ export const listSendingDomainsOptions = (options?: Options<ListSendingDomainsDa
 /**
  * Create Sending Domain Route
  *
- * An SES identity with Easy DKIM and a custom MAIL FROM; `pending_dns` (R-01-T27); 409
- * `sending_domain_exists` while one is pending or verified. Audited `sending_domain.created`.
+ * An SES identity with Easy DKIM and the custom MAIL FROM `bounce.<domain>`; `pending_dns`
+ * (R-01-T27); 409 `sending_domain_exists` while this firm has one pending or verified, or the
+ * domain is live for any firm (DEC-951); 503 `sending_domain_unavailable` when SES can't be
+ * reached. Fresh MFA. Audited `sending_domain.created`. A retry with the same key answers the
+ * domain it created, after authorising again.
  */
 export const createSendingDomainMutation = (options?: Partial<Options<CreateSendingDomainData>>): UseMutationOptions<CreateSendingDomainResponse, CreateSendingDomainError, Options<CreateSendingDomainData>> => {
     const mutationOptions: UseMutationOptions<CreateSendingDomainResponse, CreateSendingDomainError, Options<CreateSendingDomainData>> = {
@@ -10772,8 +10776,8 @@ export const createSendingDomainMutation = (options?: Partial<Options<CreateSend
 /**
  * Revoke Sending Domain Route
  *
- * Revoke (R-01-T27): client mail returns to the neutral sender. Audited
- * `sending_domain.revoked`.
+ * Revoke (R-01-T27): client mail returns to the neutral sender and the SES identity is
+ * deleted. Audited `sending_domain.revoked`.
  */
 export const revokeSendingDomainMutation = (options?: Partial<Options<RevokeSendingDomainData>>): UseMutationOptions<RevokeSendingDomainResponse, RevokeSendingDomainError, Options<RevokeSendingDomainData>> => {
     const mutationOptions: UseMutationOptions<RevokeSendingDomainResponse, RevokeSendingDomainError, Options<RevokeSendingDomainData>> = {
@@ -10792,7 +10796,8 @@ export const revokeSendingDomainMutation = (options?: Partial<Options<RevokeSend
 /**
  * Check Sending Domain Route
  *
- * Check the identity now (R-01-T27); the workflow checks every 15 minutes for 72 hours.
+ * Check the identity now (R-01-T27); the workflow checks every 15 minutes, and fails the
+ * domain after 72 hours. Audited `sending_domain.verified` or `.failed` when it moves.
  */
 export const checkSendingDomainMutation = (options?: Partial<Options<CheckSendingDomainData>>): UseMutationOptions<CheckSendingDomainResponse, CheckSendingDomainError, Options<CheckSendingDomainData>> => {
     const mutationOptions: UseMutationOptions<CheckSendingDomainResponse, CheckSendingDomainError, Options<CheckSendingDomainData>> = {
@@ -11562,7 +11567,7 @@ export const homeQueryKey = (options?: Options<HomeData>) => createQueryKey('hom
  * Home Route
  *
  * HOME-01: the viewer's Home, optionally narrowed to one office (DEC-30). Live since
- * I-01-T10 (DEC-648); client activity arrives with I-01-T12.
+ * I-01-T10 (DEC-648); client activity since I-01-T12 (DEC-900).
  */
 export const homeOptions = (options?: Options<HomeData>) => queryOptions<HomeResponse, HomeError, HomeResponse, ReturnType<typeof homeQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

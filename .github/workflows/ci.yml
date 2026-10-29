@@ -117,7 +117,9 @@ jobs:
     # at 76% and 98% with the S7 files not yet recorded. Five shards outgrew 45 minutes after the
     # S9-S11 suites (ab224ceb: shards 1 and 2 cancelled at 71% and 83%, no failures), so eight.
     # S13 (#557): shard 7 of 8 cancelled at 82% twice with 270 files unrecorded, so ten.
-    timeout-minutes: 45
+    # c441d80c: shard 4 of 10 cancelled at 63% with no failures (the S13r and S11 files are not
+    # recorded yet), so 60 minutes until durations.json is re-recorded.
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -220,9 +222,11 @@ jobs:
     name: stage 2 gallery visual regression
     needs: [changes]
     runs-on: ubuntu-24.04
-    # The screenshot regression renders the base commit's specimens and compares: about 3 minutes
-    # plus setup. The axe gate runs in gallery-axe.
-    timeout-minutes: 20
+    # The screenshot regression renders the base commit's specimens and then the head's (about 7
+    # minutes each since S13 and S14 grew the gallery), then parity and Tier D (about 12 minutes):
+    # about 30 minutes with setup. At 20 the job was cancelled in Tier D on 1e17f30d and 90a04405.
+    # The axe gate runs in gallery-axe.
+    timeout-minutes: 45
     steps:
       - if: needs.changes.outputs.gallery != 'true'
         run: echo "no gallery paths changed (abacus_tools.ci.paths), so nothing to run"

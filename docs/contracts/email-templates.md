@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C16 in `docs/contracts/README.md` (v1.1, additive; v1 is `notifications.md`, frozen) |
 | Version | v1.1 |
-| Status | stub (R-01-T16, 2026-10-26); list, read, draft, publish and `send_templated` live (R-01-T19, 2026-10-27; DEC-449); preview, test send and import live (R-01-T23, 2026-10-27; DEC-549, DEC-560 to DEC-562); the follow-up policy read live (R-01-T24, 2026-10-27; DEC-563 to DEC-566); sending domains still 501 (R-01-T27) |
+| Status | stub (R-01-T16, 2026-10-26); list, read, draft, publish and `send_templated` live (R-01-T19, 2026-10-27; DEC-449); preview, test send and import live (R-01-T23, 2026-10-27; DEC-549, DEC-560 to DEC-562); the follow-up policy read live (R-01-T24, 2026-10-27; DEC-563 to DEC-566); sending domains, From selection and the client-mail gate live (R-01-T27, 2026-10-28; DEC-950 to DEC-955) |
 | Provider epic | R-01 (N the email half, AY the screens); T19 drafts and publish, T23 preview, lint, test send and import, T24 follow-up policy, T27 sending domains |
 | Consumers | POR-20, ADM-10 (R-01-T25, T28); P-06 (`request_sent`, `request_returned`, `reminder`); P-08 (`portal.sign_in_code`, platform-locked, same renderer); N-02 (`signature_request`); A-02 (`reconnect_request`); A-08 (`confirmation_request`); R-02, A-07, T-02 (`deliverable_ready`); R-03, X-01, X-03, A-09 (DF-40 keys); N-03 (sender domains); Q-04 (import) |
 | Freeze sprint | at the R-01 S12 review (with T19) |
@@ -32,7 +32,7 @@ Consumers can rely on one slot to register a firm-editable template key, one fun
 | Revoke | `DELETE /v1/firm/sending-domains/{domain_id}` | `sending_domain.manage` | as add | denied |
 | Follow-up policy and next send | `GET /v1/firm/follow-up-policy?sample_contact_id=` | `portal_settings.read` | firm admin, practice leader | denied |
 
-Flags: template writes 404 with `portal.settings_editor` off; sending-domain writes 404 with `communications.firm_sender_domain` off; reads and the import are never gated (off, the screens show published values read-only and `allowed_actions` is empty). Every route answers 501 `not_implemented` until its task; list, read, draft save and discard and publish are live (R-01-T19), preview, test send and import (R-01-T23) and the follow-up policy (R-01-T24): they authorise first, then check the flag (writes), then the key (404 for a key that is not registered firm-editable). Only the sending-domain routes still answer 501. Policy edits are saved through the portal-settings draft (`portal-settings.md`), so this contract only reads the policy.
+Flags: template writes 404 with `portal.settings_editor` off; sending-domain writes 404 with `communications.firm_sender_domain` off; reads and the import are never gated (off, the screens show published values read-only and `allowed_actions` is empty). Every route answers 501 `not_implemented` until its task; list, read, draft save and discard and publish are live (R-01-T19), preview, test send and import (R-01-T23) and the follow-up policy (R-01-T24): they authorise first, then check the flag (writes), then the key (404 for a key that is not registered firm-editable). The sending domains are live (R-01-T27): 503 `sending_domain_unavailable` when SES can't be reached. Policy edits are saved through the portal-settings draft (`portal-settings.md`), so this contract only reads the policy.
 
 ### Module interface (`communications.api`)
 - `register_email_template(key, audience, variables, cta_targets, used_by, *, firm_editable) -> EmailTemplateRegistration`: once per key at import time; variables from the whitelist only; at most one call-to-action target per audience; `used_by` names screen ids; a `staff` template is never firm-editable. `registered_templates()` lists them.
@@ -90,7 +90,7 @@ Every action here is denied to the agent and the system at the matrix (INV-1). S
 | 409 | `{"detail": "sending_domain_exists"}` | a second domain while one is pending or verified |
 | 422 | `{"detail": "template_lint_failed", "facts": {"count": n, "finding_0": "amount:b2", …}}` | test send or publish of a draft with findings, or an applied import with a refused entry (at most 20 `finding_<n>`, each `code:where`, `where` a block id or `subject`, `preheader`, `cta_label`, `var:<variable>` for a filled value, `<key>.<where>` for an import entry; identifier-only facts, ADR-139) |
 | 422 | `{"detail": "template_invalid"}` | a draft whose call to action the key does not register, a label without a target, a repeated block id, a line break in the subject or a stray brace |
-| 501 | `{"detail": "not_implemented"}` | until the implementing task |
+| 503 | `{"detail": "sending_domain_unavailable"}` | SES refused or could not be reached on a sending-domain create or check; nothing recorded (R-01-T27) |
 
 `send_templated` never raises a refusal; it records `blocked` with the reason.
 

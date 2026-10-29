@@ -1,3 +1,3 @@
 # ecs-service
 
-Skeleton. Implemented in a later Q-01 task (see docs/plan/06-platform-ops-security.md section 1.17). Local modules only; providers limited to hashicorp/aws.
+One task definition and, for a long-lived process, its Fargate service (Q-01-T15).
