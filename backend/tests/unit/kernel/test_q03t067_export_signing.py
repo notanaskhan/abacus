@@ -51,7 +51,7 @@ def _denied(operation: str) -> ClientError:
 
 
 def _kms(fake: FakeKms) -> signing.KmsExportSigner:
-    return signing.KmsExportSigner(cast(Any, fake), ALIAS)
+    return signing.KmsExportSigner(cast(Any, fake), ALIAS)  # Any: a fake standing in for boto3
 
 
 @pytest.fixture(autouse=True)

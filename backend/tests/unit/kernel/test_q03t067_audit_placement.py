@@ -21,7 +21,7 @@ import pytest
 from abacus.kernel.uow import placement as subject
 from abacus.kernel.uow.placement import EngagementKey, Placeable, Placement
 
-CONN = cast(Any, object())
+CONN = cast(Any, object())  # Any: the placers here never touch the connection
 E1, E2, W1 = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
 CLIENT, OTHER_CLIENT = uuid.uuid4(), uuid.uuid4()
 OFFICE, PRIMARY, EXPLICIT = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
