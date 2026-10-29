@@ -108,6 +108,11 @@ LIVE_PATHS = frozenset(
         "/v1/inbox/attachments/{attachment_id}/viewer",
         "/v1/inbox/attachments/{attachment_id}/content",
         "/v1/inbox/messages/{message_id}/attachments.zip",
+        # N-01-T18 (DEC-1061): triage, apply, bulk-file and the destinations picker.
+        "/v1/inbox/messages/{message_id}/triage",
+        "/v1/inbox/messages/{message_id}/triage/apply",
+        "/v1/inbox/attachments/bulk-file",
+        "/v1/destinations",
         # N-01-T14 (DEC-1060): portal intake.
         "/v1/portal/intake-uploads",
         "/v1/portal/intake-uploads/{upload_id}/files",

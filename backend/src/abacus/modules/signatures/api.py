@@ -137,24 +137,6 @@ async def start_envelope(tenant_id: UUID, envelope_id: UUID) -> None:
         id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
     )
 
-# N-02-T14: EnvelopeWorkflow on the time-sensitive queue; its activities by name.
-WORKFLOWS: dict[type, WorkClass] = {EnvelopeWorkflow: "time_sensitive"}
-register_work_classes(WORKFLOWS)
-ACTIVITIES: tuple[object, ...] = ENVELOPE_ACTIVITIES
-SUBSCRIPTIONS: dict[str, Handler] = {}
-
-
-async def start_envelope(tenant_id: UUID, envelope_id: UUID) -> None:
-    """Start the envelope's workflow once its send is committed (N-02-T22); a second start
-    attaches to the running one."""
-    await dispatch(
-        EnvelopeWorkflow,
-        EnvelopeInput(str(tenant_id), str(envelope_id)),
-        id=envelope_workflow_id(str(tenant_id), str(envelope_id)),
-        id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE,
-        id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
-    )
-
 
 # The routers the API mounts, in order (P-39; F-03-T07). `/import` and `/summary` are declared
 # before `/{envelope_id}` inside `router`.

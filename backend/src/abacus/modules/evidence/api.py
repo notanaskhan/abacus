@@ -128,6 +128,12 @@ from abacus.modules.evidence.holds import activate as legal_hold_activate
 from abacus.modules.evidence.holds import apply_batch as legal_hold_apply_batch
 from abacus.modules.evidence.inbox import add_to_inbox, register_match_picks
 from abacus.modules.evidence.inbox import assign as assign_inbox_file
+from abacus.modules.evidence.intake_filing import (
+    Filed,
+    IntakeObject,
+    SupersedeMismatch,
+    file_intake_object,
+)
 from abacus.modules.evidence.intake_keys import (
     destroy_intake_key,
     held_intake_objects,
@@ -466,6 +472,7 @@ __all__ = [
     "ExportExpirySweepWorkflow",
     "ExportPackageFacts",
     "ExportStale",
+    "Filed",
     "FinalExport",
     "FinalExportRequired",
     "FirmExportFacts",
@@ -479,6 +486,7 @@ __all__ = [
     "HoldView",
     "InboxFileAdded",
     "InboxFileExtracted",
+    "IntakeObject",
     "IntakeSource",
     "IntegrityError",
     "LayerExport",
@@ -505,6 +513,7 @@ __all__ = [
     "SentBack",
     "StoredObject",
     "StoredRecord",
+    "SupersedeMismatch",
     "TrialBalance",
     "TrialBalanceLine",
     "TrustLayerBackfill",
@@ -540,6 +549,7 @@ __all__ = [
     "export_requester",
     "export_section_csv",
     "extend_retention_for",
+    "file_intake_object",
     "file_signed_copy",
     "final_export_for_archive",
     "firm_export_schedule_id",
