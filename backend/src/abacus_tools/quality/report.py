@@ -458,9 +458,9 @@ def contract_rows(repo: Path) -> Iterator[Row]:
     yield Row(
         "Contracts",
         "Fixture-versus-live drift; unverified fakes",
-        f"{len(drift)} routes; not measured",
+        "no data" if drift is None else f"{len(drift)} routes; not measured",
         "0; 0",
-        "reported",
+        "no data" if drift is None else "reported",
         "fixture handler keys against packages/api-client/openapi.json (Q-03-T061)",
     )
 
@@ -468,10 +468,14 @@ def contract_rows(repo: Path) -> Iterator[Row]:
 _FIXTURE_KEY = re.compile(r"[\"'`](GET|POST|PUT|PATCH|DELETE) (/v1/[a-z][A-Za-z0-9_{}./-]*)[\"'`]")
 
 
-def fixture_drift(repo: Path) -> list[str]:
+def fixture_drift(repo: Path) -> list[str] | None:
     """Q-03-T061: the routes fixture mode answers that the OpenAPI document has not (the same
-    count `apps/web/src/fixtures/route-drift.test.ts` holds at its known list)."""
-    spec = json.loads((repo / "packages" / "api-client" / "openapi.json").read_text("utf-8"))
+    count `apps/web/src/fixtures/route-drift.test.ts` holds at its known list); None without the
+    document ("no data", as every missing source reads)."""
+    document = repo / "packages" / "api-client" / "openapi.json"
+    if not document.is_file():
+        return None
+    spec = json.loads(document.read_text("utf-8"))
 
     def shape(path: str) -> str:
         return re.sub(r"\{[^}]+\}", "{}", path)
