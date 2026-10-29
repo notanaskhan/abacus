@@ -1,8 +1,8 @@
 ---
 id: TASK-1735
 title: Q-04-T008 PilotMetricsWorkflow
-spec: Q-04 AC-8.1, AC-8.2
-acceptance_criteria: [Q-04-T008]
+spec: SPEC-349
+acceptance_criteria: [AC-1]
 risk_zone: amber
 status: in-review
 epic: Q-04
