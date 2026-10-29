@@ -12,7 +12,7 @@ The downgrade recreates the table empty, as 0036, 0085 and 0175 left it: its col
 tenant policy, insert-only grants and the `legacy_g2` cut-off trigger.
 
 Revision ID: 0321
-Revises: 0320
+Revises: 0295
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, tenant_table
 
 revision = "0321"
-down_revision = "0320"
+down_revision = "0295"
 branch_labels = None
 depends_on = None
 
