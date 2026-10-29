@@ -1,8 +1,8 @@
 ---
 id: TASK-1729
 title: N-01-T08 Intake scope
-spec: N-01 §4.4; DEC-20; DEC-75
-acceptance_criteria: [N-01-T08]
+spec: SPEC-380
+acceptance_criteria: [AC-8]
 risk_zone: red
 status: in-review
 epic: N-01
