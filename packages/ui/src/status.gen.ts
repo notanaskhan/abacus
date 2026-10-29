@@ -228,6 +228,78 @@ export const STATUS_REGISTRY = {
       "disc": "x_brick"
     }
   },
+  "engine_import": {
+    "scanning": {
+      "label": "Scanning",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "pending_approval": {
+      "label": "Import pending approval",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "rejected": {
+      "label": "Rejected",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "routed": {
+      "label": "Sent to the inbox",
+      "variant": "neutral",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "k3": {
+    "included": {
+      "label": "K-3 included",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "not_required": {
+      "label": "Not required",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "not_included": {
+      "label": "No K-3",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "transcript_parse": {
+    "queued": {
+      "label": "Queued",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "parsed": {
+      "label": "Read",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "failed": {
+      "label": "Couldn't read",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
+    }
+  },
   "k1_package": {
     "not_prepared": {
       "label": "Not prepared",

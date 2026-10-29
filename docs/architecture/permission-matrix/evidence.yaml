@@ -120,4 +120,4 @@ actions:
   evidence.read_access_log: {engagement_partner: allow, manager: allow, senior: allow, staff: allow, security_admin: allow, quality_partner: in_scope, agent: deny, system: deny}   # the drawer's access-log card
   # T-02-T03 (DEC-1162): a client channel's duplicate upload, kept or discarded by a person
   # (unaccepted versions only, in the service).
-  evidence.resolve_duplicate: {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}
+  evidence.resolve_duplicate: {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny}

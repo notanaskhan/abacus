@@ -36,6 +36,12 @@ Verbatim from the handoff's spec.md (and revision.md) into `screens/TAX-03/copy.
 
 ## Links
 Outbound: SHL-08 (viewer), SHL-14 (request), POR-05 (organizer). Inbound: TAX-02 Intake tab.
+| Opens POR-05 · answers · read-only | POR-05 | planned (handoff link; tooltip-only) |
+| Opens SHL-14 · request composer | SHL-14 | planned (handoff link; tooltip-only) |
+| Opens TXP-01 · Ridgeline 2025 Form 1065 | TXP-01 | planned (handoff link; tooltip-only) |
+| Opens BND-02 · binder builder | BND-02 | planned (handoff link; tooltip-only) |
+| Opens INB-01 with the thread selected | INB-01 | planned (handoff link; tooltip-only) |
+| Clicking a received request opens it in the dock (SHL-08), with Approve Document in the footer | SHL-08 | planned (handoff link; tooltip-only) |
 
 ## Acceptance
 - TAX-03 acceptance: every artboard renders from its fixture scenario with the persona and clock above.

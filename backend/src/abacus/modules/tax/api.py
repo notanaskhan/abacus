@@ -4,8 +4,10 @@ Pre-registered (F-03-T08; ADR-140). T-01-T02: the engine-bridge and e-file-recor
 (`engine_contract`) and final approval's blocker API, raising until T-01-T27.
 """
 
+from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.engagements.api import register_work_item_kind
 from abacus.modules.identity.api import AbacusRouter
+from abacus.modules.tax.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.tax.engine_contract import (
     ApprovalBlocker,
     engine_router,
@@ -20,6 +22,9 @@ from abacus.modules.tax.transitions import apply_transition, record_sync_state
 
 # F-03-T22: the `tax_return` work-item kind.
 register_work_item_kind("tax_return", TaxReturnKind())
+
+# DEC-121: the audit explorer asks which engagement each `tax_return` target belongs to.
+register_engagement_owners(AUDIT_KINDS, audit_owners)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (

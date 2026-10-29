@@ -95,9 +95,11 @@ def test_ac5_box_amounts_and_answers_are_tri() -> None:
     assert "x-tri" in json.dumps(questionnaires_contract.AnswerIn.model_json_schema())
 
 
-def test_ac5_a_recipient_sees_a_tin_by_its_last_four_only() -> None:
+def test_ac5_a_package_row_carries_no_tin() -> None:
+    """End review: a list row never carries a TIN, even masked (ADR-031); the recipient's own
+    detail shows it as `MaskedTinOut`."""
     fields = set(k1_contract.K1PackageOut.model_fields)
-    assert "tin_last4" in fields and "tin" not in fields
+    assert not {"tin", "tin_last4", "ssn", "ein"} & fields
 
 
 def test_ac5_the_contract_docs_exist() -> None:

@@ -178,7 +178,7 @@ async def _portal_stub(ctx: AuthContext) -> NoReturn:
     status_code=201,
     errors=(501,),
 )
-async def import_template_route(
+async def questionnaire_import_template_route(
     body: TemplateImportIn, ctx: Ctx, dry_run: Annotated[bool, Query()] = True
 ) -> TemplateImportOut:
     await _stub(ctx, "questionnaire_template.import")
@@ -190,7 +190,7 @@ async def import_template_route(
     response_model=list[QuestionnaireTemplateOut],
     errors=(501,),
 )
-async def list_templates_route(ctx: Ctx) -> list[QuestionnaireTemplateOut]:
+async def questionnaire_list_templates_route(ctx: Ctx) -> list[QuestionnaireTemplateOut]:
     await _stub(ctx, "questionnaire_template.read")
 
 
