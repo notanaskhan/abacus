@@ -7,6 +7,10 @@ default privileges; idempotent) and then sets each app role's password from the 
 task definition injects from Secrets Manager. Nothing is printed but the role names it touched:
 never a password, never a DSN.
 
+After the SQL it verifies the large-object guard (ED-292): no large object may exist, because a
+managed admin cannot revoke the large-object functions from PUBLIC, so the app roles could create
+them; `verify` runs the same check alone (`python -m abacus_tools.db_bootstrap verify`).
+
 Environment (all required): `ABACUS_DB_HOST`, `ABACUS_DB_MASTER_USER`,
 `ABACUS_DB_MASTER_PASSWORD` (the RDS-managed master secret's keys) and
 `ABACUS_BOOTSTRAP_<ROLE>_PASSWORD` for owner, app, relay, identity and ops. TLS follows
@@ -20,6 +24,8 @@ import os
 import sys
 from pathlib import Path
 from urllib.parse import quote
+
+import asyncpg
 
 from abacus_tools.db_connect import connect
 
@@ -59,6 +65,42 @@ def admin_dsn() -> str:
     return f"postgresql://{user}:{password}@{host}:5432/{database}?sslmode=verify-full"
 
 
+_LO_FUNCTIONS = (
+    "SELECT count(*) FROM pg_proc p WHERE p.pronamespace = 'pg_catalog'::regnamespace "
+    "AND (p.proname LIKE 'lo\\_%' OR p.proname IN ('loread', 'lowrite')) "
+    "AND has_function_privilege('public', p.oid, 'EXECUTE')"
+)
+
+
+async def large_object_guard(connection: asyncpg.Connection) -> tuple[int, int]:
+    """(large objects stored, large-object functions PUBLIC may still execute). The first must be
+    0 (ED-292); the second is 0 under a superuser and reported under a managed admin."""
+    stored = int(await connection.fetchval("SELECT count(*) FROM pg_largeobject_metadata") or 0)
+    open_functions = int(await connection.fetchval(_LO_FUNCTIONS) or 0)
+    return stored, open_functions
+
+
+def _judge(stored: int, open_functions: int) -> None:
+    if stored:
+        raise BootstrapError(f"large objects exist ({stored}); the app never stores them (ED-292)")
+    if open_functions:
+        print(
+            f"bootstrap: {open_functions} large-object functions stay executable by PUBLIC "
+            "(managed admin; ED-292); none are used",
+            file=sys.stderr,
+        )
+
+
+async def verify() -> tuple[int, int]:
+    connection = await connect(admin_dsn())
+    try:
+        found = await large_object_guard(connection)
+    finally:
+        await connection.close()
+    _judge(*found)
+    return found
+
+
 async def run() -> list[str]:
     roles = passwords()
     connection = await connect(admin_dsn())
@@ -70,12 +112,22 @@ async def run() -> list[str]:
                 "SELECT format('ALTER ROLE %I PASSWORD %L', $1::text, $2::text)", role, password
             )
             await connection.execute(str(statement))
+        _judge(*await large_object_guard(connection))
     finally:
         await connection.close()
     return sorted(roles)
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    args = sys.argv[1:] if argv is None else argv
+    if args[:1] == ["verify"]:
+        try:
+            stored, open_functions = asyncio.run(verify())
+        except BootstrapError as exc:
+            print(f"bootstrap: {exc}", file=sys.stderr)
+            return 2
+        print(f"bootstrap: large objects {stored}; open large-object functions {open_functions}")
+        return 0
     try:
         touched = asyncio.run(run())
     except BootstrapError as exc:
