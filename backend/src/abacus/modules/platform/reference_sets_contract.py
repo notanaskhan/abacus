@@ -1,4 +1,4 @@
-"""C21 v1 part A, the stub: platform reference sets (K-02-T02; K-02 §4.2, §4.3, §4.4, §4.5).
+"""C21 v1 part A, the contract: platform reference sets (K-02-T02; K-02 §4.2, §4.3, §4.4, §4.5).
 Contract: `docs/contracts/rules-tables.md`. ADR-300 (P-62) binds.
 
 Reference sets are global tables of public law (due-date rules, legal holidays, disaster
@@ -7,13 +7,12 @@ retention minimums and standards sets), published as immutable, effective-dated 
 two-person rule. Rules are database rows, never constants (AGENTS 16): nothing here carries a
 rule's value.
 
-Each route answers 404 for a client principal (INV-4), 403 for a principal the matrix refuses,
-404 with `rules.reference_sets` off and 501 `not_implemented` with it on until K-02-T05. There
-are no write routes: the operator CLI (K-02-T06) is the only writer until PLT-01 (G-04).
+The routes live in `reference_sets_routes.py` and the service in `reference_sets.py` (K-02-T05).
+There are no write routes: the operator CLI (K-02-T06) is the only writer until PLT-01 (G-04).
 
-The module APIs (`reference_value` and the typed readers) raise `NotImplementedError` until
-K-02-T05; their signatures are frozen with C21 (S17) and T-01's and T-02's consumer contract
-tests import them. Every result names the version it was read from (INV-2 provenance).
+The module APIs (`reference_value` and the typed readers) have signatures frozen with C21 (S17);
+T-01's and T-02's consumer contract tests import them. Every result names the version it was
+read from (INV-2 provenance).
 
 Classification (ADR-031): reference payloads are public law, `public`; a version's handles and
 reason are `internal`. No reference set holds TRI.
@@ -23,27 +22,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import Depends, Path, Query
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import RULES_REFERENCE_SETS
 from abacus.kernel._statuses import ReferenceSetVersionStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
-from abacus.kernel.flags import flag_enabled
-from abacus.kernel.listing import ListPage
-from abacus.modules.identity.api import (
-    AbacusRouter,
-    AuthContext,
-    Resource,
-    authorise,
-    current_context,
-)
-
-Ctx = Annotated[AuthContext, Depends(current_context)]
 
 # The seven kinds of ADR-300 (`state_breach_matrix` and `state_retention_rules` are reserved for
 # Q-05, which writes their schemas).
@@ -323,62 +308,7 @@ class ReferenceSetResolvedOut(BaseModel):
     version: Annotated[ReferenceSetVersionOut, classified("public")]
 
 
-router = AbacusRouter(prefix="/v1/reference-sets", tags=["reference-sets"])
-
-
-async def _stub(ctx: AuthContext) -> NoReturn:
-    """A client principal never reaches the rules tables (INV-4): 404. Then the matrix (403),
-    then the flag (404), then 501 until K-02-T05."""
-    if ctx.client:
-        raise NotFound("reference_set")
-    await authorise(ctx, "reference_set.read", Resource.firm(ctx.tenant_id))
-    if not await flag_enabled(ctx.tenant, RULES_REFERENCE_SETS):
-        raise NotFound(RULES_REFERENCE_SETS.name)
-    raise NotImplementedYet
-
-
-@router.get(
-    "",
-    action="reference_set.read",
-    response_model=ListPage[ReferenceSetOut],
-    errors=(501,),
-)
-async def list_reference_sets_route(
-    ctx: Ctx, kind: Annotated[ReferenceSetKind | None, Query()] = None
-) -> ListPage[ReferenceSetOut]:
-    """KNW-04 j: the published sets, by kind."""
-    await _stub(ctx)
-
-
-@router.get(
-    "/{key}",
-    action="reference_set.read",
-    response_model=ReferenceSetResolvedOut,
-    errors=(501,),
-)
-async def resolve_reference_set_route(
-    key: Annotated[str, Path(pattern=r"^[a-z0-9_.]{3,80}$")],
-    ctx: Ctx,
-    as_of: Annotated[date | None, Query()] = None,
-) -> ReferenceSetResolvedOut:
-    """The version in effect on `as_of` (today, in business time, when absent)."""
-    await _stub(ctx)
-
-
-@router.get(
-    "/{key}/versions",
-    action="reference_set.read",
-    response_model=ListPage[ReferenceSetVersionOut],
-    errors=(501,),
-)
-async def reference_set_versions_route(
-    key: Annotated[str, Path(pattern=r"^[a-z0-9_.]{3,80}$")], ctx: Ctx
-) -> ListPage[ReferenceSetVersionOut]:
-    """The published and withdrawn versions, newest first (never a draft)."""
-    await _stub(ctx)
-
-
-# --- C21 part A module API (frozen S17; K-02-T05 implements) -------------------------------------
+# --- C21 part A module API results (frozen S17; `reference_sets.py` builds them) ----------------
 
 
 @dataclass(frozen=True)
@@ -440,35 +370,3 @@ class RetentionFloor:
     floor_years: int
     anchor: str
     reference_set_version_id: UUID
-
-
-def _unbuilt() -> NoReturn:
-    raise NotImplementedError("C21 part A: K-02-T05 builds the reference-set service")
-
-
-async def reference_value(key: str, as_of: date) -> ResolvedReference:
-    """The version of set `key` in effect on `as_of`. Unknown key or nothing published by then:
-    `LookupError`."""
-    _unbuilt()
-
-
-async def form_8879_for(
-    return_type: str, tax_year: int, jurisdiction: str, *, as_of: date
-) -> Form8879For:
-    """The 8879-family form for a return type and tax year, from the form set in effect."""
-    _unbuilt()
-
-
-async def pub1345_tolerances(tax_year: int, *, as_of: date) -> TolerancesFor:
-    """The Pub 1345 relock tolerances for a tax year, from the form set in effect."""
-    _unbuilt()
-
-
-async def information_return_threshold(form: str, payment_year: int) -> ThresholdFor:
-    """The 1099-family reporting threshold for a payment year."""
-    _unbuilt()
-
-
-async def retention_minimum(record_type: str, service_line: str) -> RetentionFloor:
-    """The counsel-approved retention floor for a record type and service line."""
-    _unbuilt()

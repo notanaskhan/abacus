@@ -1,6 +1,6 @@
 # ac-test-author: ayushkbhatia
 """T-01-T04 (TASK-2111; SPEC-501 AC-10): C21 as T-01 consumes it (I-8879-DRIFT reads database
-rows, never constants). Runs in K-02's CI against the stub, then the live service.
+rows, never constants). Runs in K-02's CI against the live service (K-02-T05).
 
 - `form_8879_for` and `pub1345_tolerances` exist with the frozen signatures and return the form,
   both tolerance keys and the reference-set version id the binding stores.
@@ -16,6 +16,7 @@ from datetime import date
 import pytest
 
 from abacus.modules.platform import api as platform_api
+from abacus.modules.platform import reference_sets
 from abacus.modules.platform.reference_sets_contract import Pub1345Tolerances
 
 
@@ -40,6 +41,15 @@ def test_ac10_the_tolerance_payload_has_both_keys_and_no_defaults() -> None:
     assert all(f.is_required() for f in fields.values())  # DEC-85: never defaulted
 
 
-def test_ac10_the_stub_refuses_until_k02_t05() -> None:
-    with pytest.raises(NotImplementedError):
+def test_ac10_no_form_set_in_effect_is_refused_never_defaulted(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # The live service (K-02-T05): nothing in effect is a LookupError, never a default (DEC-85).
+    async def nothing(*_: object) -> list[object]:
+        return []
+
+    monkeypatch.setattr(reference_sets, "_in_effect", nothing)
+    with pytest.raises(LookupError):
         asyncio.run(platform_api.pub1345_tolerances(2026, as_of=date(2027, 7, 1)))
+    with pytest.raises(LookupError):
+        asyncio.run(platform_api.form_8879_for("1065", 2026, "US", as_of=date(2027, 7, 1)))

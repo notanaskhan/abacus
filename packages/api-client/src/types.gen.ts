@@ -76942,10 +76942,6 @@ export type ListReferenceSetsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListReferenceSetsError = ListReferenceSetsErrors[keyof ListReferenceSetsErrors];
@@ -77003,10 +76999,6 @@ export type ResolveReferenceSetErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ResolveReferenceSetError = ResolveReferenceSetErrors[keyof ResolveReferenceSetErrors];
@@ -77059,10 +77051,6 @@ export type ReferenceSetVersionsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ReferenceSetVersionsError = ReferenceSetVersionsErrors[keyof ReferenceSetVersionsErrors];

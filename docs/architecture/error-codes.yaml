@@ -1387,6 +1387,16 @@ codes:
     - abacus.modules.assurance.release.RecordOutOfPhase
     summary: 'The audit''s phase does not take this record: a release from In review to Ready to release,
       an archive once Released (`facts.phase`).'
+  reference_kind_unknown:
+    status: 422
+    raised_by:
+    - abacus.modules.platform.reference_sets.ReferenceKindUnknown
+    summary: The kind is not one of the seven reference kinds (`state_*` kinds are Q-05's).
+  reference_payload_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.platform.reference_sets.ReferencePayloadInvalid
+    summary: The payload does not parse as its kind's model (`facts.kind`, `facts.problems`).
   relationship_partner:
     status: 409
     raised_by:
@@ -1701,6 +1711,12 @@ codes:
     - abacus.modules.review.gate_actions.GateStaleVersion
     - abacus.modules.tax.status.StaleReturn
     summary: 'The record changed since it was read: read it again (409).'
+  standards_set_refused:
+    status: 422
+    raised_by:
+    - abacus.modules.platform.reference_sets.StandardsSetRefused
+    summary: A `standards_sets` draft holds a PCAOB or issuer set, drops a published code or moves one
+      to another family (`facts.reason`, `facts.code`; X-07).
   statement_already_approved:
     status: 409
     raised_by:

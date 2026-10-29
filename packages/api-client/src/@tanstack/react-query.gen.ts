@@ -15698,7 +15698,7 @@ export const listReferenceSetsQueryKey = (options?: Options<ListReferenceSetsDat
 /**
  * List Reference Sets Route
  *
- * KNW-04 j: the published sets, by kind.
+ * KNW-04 j: the published sets, by kind then key, each with the version in effect today.
  */
 export const listReferenceSetsOptions = (options?: Options<ListReferenceSetsData>) => queryOptions<ListReferenceSetsResponse, ListReferenceSetsError, ListReferenceSetsResponse, ReturnType<typeof listReferenceSetsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

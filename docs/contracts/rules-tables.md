@@ -54,6 +54,8 @@ Payloads are discriminated by `kind`, `payload_schema_version` 1 (`platform/refe
 - `practice.api`: `due_dates_for(form, tax_year, period_end, jurisdiction="US", location=None, event_date=None)`, `add_business_days(start, n, jurisdiction="US")`, `clock_due(kind, start)`.
 - `methodology.api`: `current_version(tenant_id, standard_key, as_of)`, `classify_entry`, `variance_exceeded`, `materiality_range_for`, `validate_materiality`, `confidence_hold`, `required_review_levels`, `return_approval_policy`, `ssars_framework_for`, `register_standard_examples(kind, provider)`.
 
+**Live since K-02-T05 (DEC-1254):** part A's routes and readers (`platform/reference_sets.py`, routes in `platform/reference_sets_routes.py`). The typed readers scan every set of the kind in effect on the date (latest effective first) and answer from the first row that matches; nothing matching is a `LookupError`, never a default. `information_return_threshold` and `retention_minimum` resolve on today's business date. `check_draft(kind, payload)` is the operator CLI's pre-draft check (422 `reference_kind_unknown`, `reference_payload_invalid`, `standards_set_refused`).
+
 Every result carries the version id it used (INV-2). **`as_of` per consumer:** AJE classification, the entry's creation date; materiality validation, the decision date; checklists, `applies_to.tax_year`; BH-TAX-02, pinned on the return at creation; due dates, the period end. Consumers store the version id.
 
 ## 6. Human-only actions
