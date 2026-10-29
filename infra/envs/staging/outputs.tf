@@ -62,6 +62,7 @@ output "github_staging_variables" {
     FIRM_DISTRIBUTION_ID    = module.firm_edge[0].distribution_id
     SMOKE_BASE_URL          = "https://${module.firm_edge[0].domain_name}"
     DEPLOY_ROLE_NAME        = module.deploy_role[0].role_name
+    API_ALARMS              = join(",", [aws_cloudwatch_metric_alarm.api_5xx[0].alarm_name, aws_cloudwatch_metric_alarm.api_unhealthy[0].alarm_name])
   } : null
 }
 
