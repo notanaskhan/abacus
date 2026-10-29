@@ -21359,6 +21359,18 @@
             "title": "Client Name",
             "type": "string"
           },
+          "drafted_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Drafted By Name"
+          },
           "due_on": {
             "anyOf": [
               {
@@ -21395,10 +21407,34 @@
             "title": "Needs Handwritten",
             "type": "boolean"
           },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Note"
+          },
           "number": {
             "cls": "internal",
             "title": "Number",
             "type": "string"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Outcome"
           },
           "provider": {
             "cls": "internal",
@@ -21460,6 +21496,14 @@
             "title": "Signed",
             "type": "integer"
           },
+          "signer_chips": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/SignerChip"
+            },
+            "title": "Signer Chips",
+            "type": "array"
+          },
           "status": {
             "$ref": "#/components/schemas/EnvelopeStatus",
             "cls": "internal"
@@ -21474,6 +21518,19 @@
             "title": "Total",
             "type": "integer"
           },
+          "viewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Viewed At"
+          },
           "work_item_id": {
             "anyOf": [
               {
@@ -21486,6 +21543,18 @@
             ],
             "cls": "internal",
             "title": "Work Item Id"
+          },
+          "work_item_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Work Item Label"
           }
         },
         "required": [
@@ -54233,6 +54302,27 @@
           "ended"
         ],
         "title": "SignedOutOut",
+        "type": "object"
+      },
+      "SignerChip": {
+        "description": "One signer as SIG-01's chip draws them (\"\u2713 Thomas\" \u00b7 \"\u25cb Irene\").",
+        "properties": {
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "signed": {
+            "cls": "internal",
+            "title": "Signed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "signed"
+        ],
+        "title": "SignerChip",
         "type": "object"
       },
       "SignerDeclineIn": {

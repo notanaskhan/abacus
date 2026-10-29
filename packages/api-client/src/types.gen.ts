@@ -9903,6 +9903,10 @@ export type EnvelopeListRow = {
      */
     client_name: string;
     /**
+     * Drafted By Name
+     */
+    drafted_by_name?: string | null;
+    /**
      * Due On
      */
     due_on: string | null;
@@ -9919,9 +9923,17 @@ export type EnvelopeListRow = {
      */
     needs_handwritten: boolean;
     /**
+     * Note
+     */
+    note?: string | null;
+    /**
      * Number
      */
     number: string;
+    /**
+     * Outcome
+     */
+    outcome?: string | null;
     /**
      * Provider
      */
@@ -9942,6 +9954,10 @@ export type EnvelopeListRow = {
      * Signed
      */
     signed: number;
+    /**
+     * Signer Chips
+     */
+    signer_chips?: Array<SignerChip>;
     status: EnvelopeStatus;
     /**
      * Title
@@ -9952,9 +9968,17 @@ export type EnvelopeListRow = {
      */
     total: number;
     /**
+     * Viewed At
+     */
+    viewed_at?: string | null;
+    /**
      * Work Item Id
      */
     work_item_id: string | null;
+    /**
+     * Work Item Label
+     */
+    work_item_label?: string | null;
 };
 
 /**
@@ -25904,6 +25928,22 @@ export type SignedOutOut = {
      * Ended
      */
     ended: boolean;
+};
+
+/**
+ * SignerChip
+ *
+ * One signer as SIG-01's chip draws them ("✓ Thomas" · "○ Irene").
+ */
+export type SignerChip = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Signed
+     */
+    signed: boolean;
 };
 
 /**
