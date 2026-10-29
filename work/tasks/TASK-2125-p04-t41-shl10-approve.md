@@ -1,8 +1,8 @@
 ---
 id: TASK-2125
 title: P-04-T41 SHL-10 Approve agent output, frames a, b, c and f
-spec: SPEC-360
-acceptance_criteria: [backlog row]
+spec: SPEC-000  # P-04-T41 row; SPEC-360 and the SHL-10 handoff
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: green
 status: in-review
 epic: P-04

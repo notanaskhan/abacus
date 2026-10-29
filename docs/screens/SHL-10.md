@@ -37,3 +37,9 @@ Loading: "Loading the proposal". Error: "This proposal isn't available." Not-all
 ## Open
 - Diff-row lighting (hover lights the target field in the underlay) needs a typed locator: `AgentProposalOut` carries no target record, so no `MatchId` can be minted (INV-2). Waits on the projection adding `target_type`/`target_id` (P-04-T24).
 - The footer line reads "Approving creates a checkpoint and logs to Activity." (the handoff's "Checkpoint 6" is that frame's number; the projection does not yet carry the next checkpoint's sequence).
+
+## Links
+| From | To (manifest builder) | Planned or live |
+|---|---|---|
+| Evidence rows (Opens SHL-08 with the cited box lit) | SHL-08 | live in fixture mode: `?ov=viewer:<evidence_version_id>` |
+| Opens SHL-19 on this set | SHL-19 | planned (handoff link; tooltip-only) |
