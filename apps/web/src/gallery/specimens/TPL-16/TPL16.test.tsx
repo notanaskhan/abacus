@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { Tpl16Specimen, e6Envelope } from ".";
 
@@ -72,10 +72,13 @@ describe("TPL-16f: decline", () => {
     }
     const confirm = document.querySelector<HTMLButtonElement>('[data-signing="decline-confirm"]');
     expect(confirm?.disabled).toBe(true);
-    screen.getByRole("radio", { name: "I have a question first" }).click();
-    expect(confirm?.disabled).toBe(false);
-    confirm?.click();
-    confirm?.click();
+    fireEvent.click(screen.getByRole("radio", { name: "I have a question first" }));
+    const enabled = document.querySelector<HTMLButtonElement>('[data-signing="decline-confirm"]');
+    expect(enabled?.disabled).toBe(false);
+    if (enabled !== null) {
+      fireEvent.click(enabled);
+      fireEvent.click(enabled);
+    }
     expect(decided).toEqual([{ reason: "I have a question first", note: "" }]);
   });
 });
