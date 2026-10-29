@@ -114,6 +114,7 @@ known-first-party = ["abacus", "abacus_tools"]
 "src/abacus_tools/ci/paths.py" = ["T20", "S603"]  # runs git diff (F-01-T07)
 "src/abacus_tools/drill.py" = ["T20", "S608"]  # table names from the catalogue and the insert-only registry (Q-01-T38)
 "src/abacus_tools/ci/coverage_floor.py" = ["T20", "S603"]  # runs coverage report (DEC-10)
+"src/abacus_tools/quality/coverage_floors.py" = ["T20", "S603"]  # git show, coverage json (Q-03-T066)
 "src/abacus_tools/local/worktree_env.py" = ["T20", "S603"]  # runs git worktree list (F-01-T09)
 "src/abacus_tools/synthetic/scenarios/brightwater_hale/loader.py" = ["S311", "S603"]  # runs gh run list (F-04.16)
 "src/abacus_tools/synthetic/**" = ["S311"]  # seeded, non-cryptographic by design (ADR-085)
