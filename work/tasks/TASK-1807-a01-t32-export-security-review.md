@@ -1,8 +1,8 @@
 ---
 id: TASK-1807
 title: Source-assisted security review of the binder export (A-01-T32)
-spec: docs/contracts/engagement-export-v1.md
-acceptance_criteria: [A-01-T32]
+spec: SPEC-344
+acceptance_criteria: [AC-14, AC-15]
 risk_zone: red
 status: in-review
 epic: A-01
