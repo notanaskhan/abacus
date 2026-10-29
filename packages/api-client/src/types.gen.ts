@@ -6809,7 +6809,7 @@ export type ConsentExportOut = {
     /**
      * Status
      */
-    status: 'queued';
+    status: 'queued' | 'ready' | 'failed';
 };
 
 /**
@@ -17101,7 +17101,7 @@ export type K1PackageOut = {
     /**
      * K3 Status
      */
-    k3_status: 'included' | 'not_required' | 'none';
+    k3_status: 'included' | 'not_required' | 'not_included';
     /**
      * Recipient Id
      */
@@ -17127,10 +17127,6 @@ export type K1PackageOut = {
      * Tax Year
      */
     tax_year: number;
-    /**
-     * Tin Last4
-     */
-    tin_last4: string | null;
     /**
      * Version No
      */
@@ -22788,9 +22784,9 @@ export type PostponementArea = {
      */
     counties: Array<string>;
     /**
-     * State
+     * State Code
      */
-    state: string;
+    state_code: string;
 };
 
 /**
@@ -30777,10 +30773,7 @@ export type TaxProfileOut = {
      * Open Notices
      */
     open_notices: number | null;
-    /**
-     * Tin Last4
-     */
-    tin_last4: string | null;
+    taxpayer_tin?: MaskedTinOut | null;
 };
 
 /**
@@ -76386,7 +76379,7 @@ export type AgentProposalResponses = {
 
 export type AgentProposalResponse = AgentProposalResponses[keyof AgentProposalResponses];
 
-export type ListTemplates2Data = {
+export type QuestionnaireListTemplatesData = {
     body?: never;
     headers?: {
         /**
@@ -76403,7 +76396,7 @@ export type ListTemplates2Data = {
     url: '/v1/questionnaire-templates';
 };
 
-export type ListTemplates2Errors = {
+export type QuestionnaireListTemplatesErrors = {
     /**
      * Not authenticated
      */
@@ -76426,18 +76419,18 @@ export type ListTemplates2Errors = {
     501: ErrorOut;
 };
 
-export type ListTemplates2Error = ListTemplates2Errors[keyof ListTemplates2Errors];
+export type QuestionnaireListTemplatesError = QuestionnaireListTemplatesErrors[keyof QuestionnaireListTemplatesErrors];
 
-export type ListTemplates2Responses = {
+export type QuestionnaireListTemplatesResponses = {
     /**
-     * Response List Templates
+     * Response Questionnaire List Templates
      *
      * Successful Response
      */
     200: Array<QuestionnaireTemplateOut>;
 };
 
-export type ListTemplates2Response = ListTemplates2Responses[keyof ListTemplates2Responses];
+export type QuestionnaireListTemplatesResponse = QuestionnaireListTemplatesResponses[keyof QuestionnaireListTemplatesResponses];
 
 export type PublishTemplateData = {
     body?: never;
@@ -76503,7 +76496,7 @@ export type PublishTemplateResponses = {
 
 export type PublishTemplateResponse = PublishTemplateResponses[keyof PublishTemplateResponses];
 
-export type ImportTemplate2Data = {
+export type QuestionnaireImportTemplateData = {
     body: TemplateImportIn;
     headers?: {
         /**
@@ -76525,7 +76518,7 @@ export type ImportTemplate2Data = {
     url: '/v1/questionnaire-templates:import';
 };
 
-export type ImportTemplate2Errors = {
+export type QuestionnaireImportTemplateErrors = {
     /**
      * Not authenticated
      */
@@ -76548,16 +76541,16 @@ export type ImportTemplate2Errors = {
     501: ErrorOut;
 };
 
-export type ImportTemplate2Error = ImportTemplate2Errors[keyof ImportTemplate2Errors];
+export type QuestionnaireImportTemplateError = QuestionnaireImportTemplateErrors[keyof QuestionnaireImportTemplateErrors];
 
-export type ImportTemplate2Responses = {
+export type QuestionnaireImportTemplateResponses = {
     /**
      * Successful Response
      */
     201: TemplateImportOut;
 };
 
-export type ImportTemplate2Response = ImportTemplate2Responses[keyof ImportTemplate2Responses];
+export type QuestionnaireImportTemplateResponse = QuestionnaireImportTemplateResponses[keyof QuestionnaireImportTemplateResponses];
 
 export type CreateQuestionnaireData = {
     body: QuestionnaireCreateIn;
@@ -78498,7 +78491,7 @@ export type DraftVersionResponses = {
 
 export type DraftVersionResponse = DraftVersionResponses[keyof DraftVersionResponses];
 
-export type DiscardDraft2Data = {
+export type StandardDiscardDraftData = {
     body?: never;
     headers: {
         /**
@@ -78528,7 +78521,7 @@ export type DiscardDraft2Data = {
     url: '/v1/standards/{standard_id}/versions/{version_id}';
 };
 
-export type DiscardDraft2Errors = {
+export type StandardDiscardDraftErrors = {
     /**
      * Not authenticated
      */
@@ -78555,16 +78548,16 @@ export type DiscardDraft2Errors = {
     501: ErrorOut;
 };
 
-export type DiscardDraft2Error = DiscardDraft2Errors[keyof DiscardDraft2Errors];
+export type StandardDiscardDraftError = StandardDiscardDraftErrors[keyof StandardDiscardDraftErrors];
 
-export type DiscardDraft2Responses = {
+export type StandardDiscardDraftResponses = {
     /**
      * Successful Response
      */
     200: StandardVersionSummaryOut;
 };
 
-export type DiscardDraft2Response = DiscardDraft2Responses[keyof DiscardDraft2Responses];
+export type StandardDiscardDraftResponse = StandardDiscardDraftResponses[keyof StandardDiscardDraftResponses];
 
 export type StandardVersionData = {
     body?: never;
@@ -78759,7 +78752,7 @@ export type VersionDiffResponses = {
 
 export type VersionDiffResponse = VersionDiffResponses[keyof VersionDiffResponses];
 
-export type ExportVersion2Data = {
+export type StandardExportVersionData = {
     body?: never;
     headers?: {
         /**
@@ -78785,7 +78778,7 @@ export type ExportVersion2Data = {
     url: '/v1/standards/{standard_id}/versions/{version_id}/export.xlsx';
 };
 
-export type ExportVersion2Errors = {
+export type StandardExportVersionErrors = {
     /**
      * Not authenticated
      */
@@ -78808,18 +78801,18 @@ export type ExportVersion2Errors = {
     501: ErrorOut;
 };
 
-export type ExportVersion2Error = ExportVersion2Errors[keyof ExportVersion2Errors];
+export type StandardExportVersionError = StandardExportVersionErrors[keyof StandardExportVersionErrors];
 
-export type ExportVersion2Responses = {
+export type StandardExportVersionResponses = {
     /**
-     * Response Export Version
+     * Response Standard Export Version
      *
      * Successful Response
      */
     200: Blob | File;
 };
 
-export type ExportVersion2Response = ExportVersion2Responses[keyof ExportVersion2Responses];
+export type StandardExportVersionResponse = StandardExportVersionResponses[keyof StandardExportVersionResponses];
 
 export type PublishVersionData = {
     body: StandardPublishIn;
@@ -79661,7 +79654,7 @@ export type RecordAckResponses = {
 
 export type RecordAckResponse = RecordAckResponses[keyof RecordAckResponses];
 
-export type Assign2Data = {
+export type ReturnAssignData = {
     body: AssignmentIn;
     headers?: {
         /**
@@ -79683,7 +79676,7 @@ export type Assign2Data = {
     url: '/v1/tax-returns/{return_id}/assignments';
 };
 
-export type Assign2Errors = {
+export type ReturnAssignErrors = {
     /**
      * Not authenticated
      */
@@ -79710,16 +79703,16 @@ export type Assign2Errors = {
     501: ErrorOut;
 };
 
-export type Assign2Error = Assign2Errors[keyof Assign2Errors];
+export type ReturnAssignError = ReturnAssignErrors[keyof ReturnAssignErrors];
 
-export type Assign2Responses = {
+export type ReturnAssignResponses = {
     /**
      * Successful Response
      */
     200: TaxReturnRecordOut;
 };
 
-export type Assign2Response = Assign2Responses[keyof Assign2Responses];
+export type ReturnAssignResponse = ReturnAssignResponses[keyof ReturnAssignResponses];
 
 export type PublishDeliverableData = {
     body?: never;
