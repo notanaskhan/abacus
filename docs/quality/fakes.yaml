@@ -1,0 +1,38 @@
+# The fakes register (Q-03-T094): every fake that stands in for an external provider, what it
+# imitates, and when it was last checked against the real thing (a provider sandbox or a recorded
+# exchange from one). A fake not verified within 92 days, or never, is "unverified" and the quality
+# report counts it (`python -m abacus_tools.quality.fakes`). Verifying needs the provider's sandbox
+# credentials, which live in the vault: a person runs the nightly connector suite and records the
+# date here. Synthetic responses written by us do not count as verification.
+max_age_days: 92
+fakes:
+  - fake: backend/src/abacus/modules/connections/fake.py
+    provider: a ledger provider's trial balance (provider-shaped JSON)
+    contract: C20
+    suite: backend/tests/unit/connections/test_qbo_connector.py
+    verified_on: null
+  - fake: backend/src/abacus_tools/fakes/ledgers.py
+    provider: QuickBooks Online (recorded transport) and NetSuite (CSV export)
+    contract: C20
+    suite: backend/tests/integration/backfill/test_a02t29_independent_connections.py
+    verified_on: null
+  - fake: backend/src/abacus_tools/fakes/workos.py
+    provider: WorkOS
+    contract: identity (ADR-165)
+    suite: backend/tests/integration/test_staff_session.py
+    verified_on: null
+  - fake: backend/src/abacus_tools/fakes/identity.py
+    provider: an OpenID Connect provider
+    contract: identity (TASK-007)
+    suite: backend/tests/integration/test_staff_session.py
+    verified_on: null
+  - fake: backend/src/abacus/modules/communications/fake_ses.py
+    provider: Amazon SES
+    contract: C16 (email half)
+    suite: backend/tests/acceptance/test_q01_ses_transport.py
+    verified_on: null
+  - fake: backend/src/abacus/modules/signatures/contract.py
+    provider: DocuSign (the `fake` envelope provider)
+    contract: C7
+    suite: backend/tests/contracts/c7_n02/test_c7_stubs.py
+    verified_on: null
