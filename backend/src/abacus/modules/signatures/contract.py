@@ -118,6 +118,10 @@ class SignerOut(BaseModel):
     signature_method: Annotated[SignatureMethod | None, classified("internal")]
     decline_reason: Annotated[DeclineReason | None, classified("internal")]
     provider_recipient_id: Annotated[str | None, classified("internal")]
+    # N-02-T21 (DEC-1174): SIG-02's signer sub-line and the "Email required" check. None until the
+    # builder service fills them (N-02-T20); a signer with no email on file blocks Send.
+    title: Annotated[str | None, Field(max_length=200), classified("confidential")] = None
+    email: Annotated[str | None, Field(max_length=320), classified("confidential")] = None
 
 
 class FieldOut(BaseModel):
@@ -290,15 +294,28 @@ class DraftUpdateIn(BaseModel):
     expires_on: Annotated[date | None, classified("internal")] = None
     date_as_of_mode: Annotated[DateAsOfMode, classified("internal")] = "none"
     date_as_of: Annotated[date | None, classified("internal")] = None
+    # N-02-T21 (DEC-1174): SIG-02's document order after a drag or keyboard move; None keeps it.
+    document_order: Annotated[list[UUID] | None, Field(max_length=20), classified("internal")] = None
+
+
+class ValidationCheck(BaseModel):
+    """One code-computed check SIG-02's Checks band lists (N-02-T21, DEC-1174): an identifier the
+    screen words (`amounts_match`, `signer_authority`, `ero_efin`, `no_ssn_visible`), never prose."""
+
+    model_config = ConfigDict(frozen=True)
+
+    code: Annotated[str, Field(pattern=r"^[a-z][a-z0-9_]*$", max_length=60), classified("internal")]
+    ok: Annotated[bool, classified("internal")]
 
 
 class ValidationOut(BaseModel):
-    """Code-computed checks before send."""
+    """Code-computed checks before send. `problems` are identifiers (`signer_email_missing:<id>`)."""
 
     model_config = ConfigDict(frozen=True)
 
     ok: Annotated[bool, classified("internal")]
     problems: Annotated[list[str], classified("internal")]
+    checks: Annotated[list[ValidationCheck], classified("internal")] = []
 
 
 class SendOut(BaseModel):

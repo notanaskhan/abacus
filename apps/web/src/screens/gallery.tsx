@@ -309,6 +309,13 @@ import {
   type Shl20State,
   scenarios as shl20Scenarios,
 } from "./SHL-20/scenarios";
+import { EnvelopeBuilder } from "./SIG-02";
+import {
+  OPENS as SIG02_OPENS,
+  STATES as SIG02_STATES,
+  type Sig02State,
+  scenarios as sig02Scenarios,
+} from "./SIG-02/scenarios";
 import { RequestComposer } from "./SHL-14";
 import {
   OPENS as SHL14_OPENS,
@@ -1531,6 +1538,31 @@ function Cli08Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("CLI-08", { title: "Independence & conflicts", Component: Cli08Artboard });
+
+// SIG-02 (N-02-T21): the envelope builder, a, e and f, over an empty frame.
+function Sig02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Sig02State = SIG02_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      sig02Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div key={state} data-artboard={state} className="h-[900px]">
+      <EnvelopeBuilder envelopeId={SIG02_OPENS[state]} open onOpenChange={() => undefined} />
+    </div>
+  );
+}
+
+registerScreen("SIG-02", { title: "Envelope builder", Component: Sig02Artboard });
 
 // SHL-14 (P-06-T13, T24): the request composer drawer, opened over an empty frame.
 function Shl14Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
