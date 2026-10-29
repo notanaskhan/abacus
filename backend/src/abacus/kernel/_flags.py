@@ -46,11 +46,6 @@ CLIENTS_TAX_PROFILE = Flag(
     kind="boolean",
     default="false",
 )
-CLIENTS_V2 = Flag(
-    name="clients.v2",
-    kind="boolean",
-    default="false",
-)
 COMMUNICATIONS_FIRM_SENDER_DOMAIN = Flag(
     name="communications.firm_sender_domain",
     kind="boolean",
@@ -96,18 +91,8 @@ ENGAGEMENT_AGENT_ENABLED = Flag(
     kind="boolean",
     default="false",
 )
-ENGAGEMENTS_ACCEPTANCE_V2 = Flag(
-    name="engagements.acceptance_v2",
-    kind="boolean",
-    default="false",
-)
 ENGAGEMENTS_ROLL_FORWARD_V2 = Flag(
     name="engagements.roll_forward_v2",
-    kind="boolean",
-    default="false",
-)
-ENGAGEMENTS_V2 = Flag(
-    name="engagements.v2",
     kind="boolean",
     default="false",
 )
@@ -324,7 +309,6 @@ FLAGS: dict[str, Flag] = {
     "audits.cockpit": AUDITS_COCKPIT,
     "binders.engine": BINDERS_ENGINE,
     "clients.tax_profile": CLIENTS_TAX_PROFILE,
-    "clients.v2": CLIENTS_V2,
     "communications.firm_sender_domain": COMMUNICATIONS_FIRM_SENDER_DOMAIN,
     "compliance.firm_export": COMPLIANCE_FIRM_EXPORT,
     "compliance.incidents": COMPLIANCE_INCIDENTS,
@@ -334,9 +318,7 @@ FLAGS: dict[str, Flag] = {
     "consents.registry": CONSENTS_REGISTRY,
     "contacts.v2": CONTACTS_V2,
     "engagement_agent.enabled": ENGAGEMENT_AGENT_ENABLED,
-    "engagements.acceptance_v2": ENGAGEMENTS_ACCEPTANCE_V2,
     "engagements.roll_forward_v2": ENGAGEMENTS_ROLL_FORWARD_V2,
-    "engagements.v2": ENGAGEMENTS_V2,
     "evidence.citations_v2": EVIDENCE_CITATIONS_V2,
     "evidence.pii_reveal": EVIDENCE_PII_REVEAL,
     "evidence.viewer_unlock": EVIDENCE_VIEWER_UNLOCK,
