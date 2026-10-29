@@ -100,37 +100,52 @@ describe("SIG-01 · N-02-T15", () => {
   }
 
   it("f: three checked, the bar reads 3 selected · Remind 3…, nothing sends until Send", async () => {
-    const posted: string[] = [];
-    const original = globalThis.fetch;
-    globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-      const request = input instanceof Request ? input : new Request(input, init);
-      if (request.method === "POST") posted.push(new URL(request.url).pathname);
-      return original(input, init);
-    };
-    try {
-      mountWith("f");
-      expect(await screen.findByText(COPY.selection.selected(3))).toBeTruthy();
-      fireEvent.click(screen.getByRole("button", { name: COPY.selection.remind(3) }));
-      const dialog = await screen.findByRole("dialog");
-      expect(await within(dialog).findByText(/Please sign/)).toBeTruthy();
-      const send = await within(dialog).findByRole("button", { name: "Send 3 reminders" });
-      await waitFor(() => {
-        expect((send as HTMLButtonElement).disabled).toBe(false);
-      });
-      expect(posted).not.toContain("/v1/envelopes/remind/send");
-      fireEvent.click(send);
-      await waitFor(() => {
-        expect(posted.filter((p) => p === "/v1/envelopes/remind/send")).toHaveLength(1);
-      });
-    } finally {
-      globalThis.fetch = original;
-    }
+    const sent: unknown[] = [];
+    const base = scenarios.f;
+    const send = base.handlers["POST /v1/envelopes/remind/send"];
+    if (send === undefined) throw new Error("the f scenario has no send");
+    restore = installFixtureMode({
+      ...base,
+      handlers: {
+        ...base.handlers,
+        "POST /v1/envelopes/remind/send": (request) => {
+          sent.push(request.body);
+          return send(request);
+        },
+      },
+    });
+    const open = OPENS.f;
+    renderRoutes([
+      {
+        path: "/",
+        component: () => (
+          <SIG01
+            initialTab={open.tab}
+            initialEnvelope={open.envelope}
+            initialChecked={open.checked ?? []}
+          />
+        ),
+      },
+    ]);
+    expect(await screen.findByText(COPY.selection.selected(3))).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: COPY.selection.remind(3) }));
+    const dialog = await screen.findByRole("dialog");
+    expect(await within(dialog).findByText(/Please sign/)).toBeTruthy();
+    const button = await within(dialog).findByRole("button", { name: "Send 3 reminders" });
+    await waitFor(() => {
+      expect((button as HTMLButtonElement).disabled).toBe(false);
+    });
+    expect(sent).toHaveLength(0);
+    fireEvent.click(button);
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
   });
 
   it("r: Import signed package waits for the attestation", async () => {
     mountWith("r");
     const sheet = await screen.findByRole("dialog");
-    expect(within(sheet).getByText(COPY.importSheet.title)).toBeTruthy();
+    expect(within(sheet).getAllByText(COPY.importSheet.title).length).toBeGreaterThan(0);
     expect(within(sheet).getByText(COPY.importSheet.attest)).toBeTruthy();
     const importButton = within(sheet).getByRole("button", { name: COPY.importSheet.import });
     expect((importButton as HTMLButtonElement).disabled).toBe(true);

@@ -17,6 +17,7 @@ import {
   defineScenarios,
   json,
 } from "../../app-core/fixture-mode";
+import { meHandlers } from "../handlers";
 import { clientHandlers } from "./clients";
 import { contactHandlers } from "./contacts";
 import {
@@ -232,7 +233,8 @@ const base = (state: string, handlers: Record<string, FixtureHandler>): Scenario
   state,
   persona: SIG01_PERSONA,
   clock: SIG01_CLOCK,
-  handlers,
+  // N-02-T15: the signed-in person (the reminder's Send is a person's, HumanAction).
+  handlers: { ...meHandlers(), ...handlers },
 });
 
 /** SIG-01's artboards: a (E2 drawer), b, c, d, e (Declined variant on E9), f (E5, E8, E9
