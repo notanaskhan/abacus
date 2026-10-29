@@ -22,7 +22,7 @@ from datetime import date, datetime
 from typing import Annotated, Literal, NoReturn
 from uuid import UUID
 
-from fastapi import Depends, Header, Query, Response
+from fastapi import Depends, Header, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import SIGNATURES_ENVELOPES
@@ -31,6 +31,7 @@ from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
+from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
@@ -39,6 +40,7 @@ from abacus.modules.identity.api import (
     current_context,
     current_member,
 )
+from abacus.modules.signatures import imports
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 Member = Annotated[AuthContext, Depends(current_member)]
@@ -367,6 +369,18 @@ class ImportRecordIn(BaseModel):
     attested: Annotated[Literal[True], classified("internal")]
 
 
+class ImportFileOut(BaseModel):
+    """`POST /v1/envelopes/import/files`: one scanned, stored file an import names by `id`."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    file_name: Annotated[str, classified("confidential")]
+    media_type: Annotated[str, classified("internal")]
+    size_bytes: Annotated[int, classified("internal")]
+    sha256: Annotated[str, classified("internal")]
+
+
 class WetSignatureIn(BaseModel):
     """DF-11: the hand-signed form, uploaded and attested."""
 
@@ -454,13 +468,145 @@ async def envelope_summary_route(ctx: Ctx) -> EnvelopeSummary:
     action="envelope.import_record",
     response_model=EnvelopeOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def import_envelope_record_route(
     body: ImportRecordIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> EnvelopeOut:
-    """Record mode (SIG-01 r; N-02-T08)."""
-    await _stub(ctx, "envelope.import_record")
+    """Record mode (SIG-01 r; N-02-T08): the signed package lands Completed with its evidence."""
+    request = imports.ImportRequest(
+        purpose=body.purpose,
+        form_code=body.form_code,
+        client_id=body.client_id,
+        engagement_id=body.engagement_id,
+        work_item_id=body.work_item_id,
+        title=body.title,
+        provider_name=body.provider_name,
+        signers=tuple(
+            imports.SignerFacts(s.contact_id, s.user_id, s.role, s.signed_on, s.identity_method)
+            for s in body.signers
+        ),
+        upload_ids=tuple(body.upload_ids),
+    )
+    await imports.check_import(ctx, request)
+
+    async def run() -> tuple[int, dict[str, object]]:
+        made = await imports.import_record(ctx, request)
+        return 201, _imported_out(body, made).model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="envelope.import_record",
+        key=idempotency_key,
+        body=body.model_dump(mode="json"),
+        run=run,
+    )
+    return EnvelopeOut.model_validate(stored.body)
+
+
+@router.post(
+    "/import/files",
+    action="envelope.import_record",
+    response_model=ImportFileOut,
+    status_code=201,
+    errors=(413, 503),
+)
+async def stage_envelope_import_file_route(
+    request: Request,
+    ctx: Ctx,
+    filename: Annotated[str, Query(min_length=1, max_length=255)],
+    client_id: UUID,
+    engagement_id: UUID | None = None,
+) -> ImportFileOut:
+    """One file for a record-mode import into this client (and engagement) (the completed document
+    or the certificate), the raw bytes as the body: authorised as the import is, scanned before
+    storage, refused closed (N-02-T08; DEC-818)."""
+    staged = await imports.stage_file(
+        ctx,
+        client_id=client_id,
+        engagement_id=engagement_id,
+        file_name=filename,
+        content=await request.body(),
+    )
+    return ImportFileOut(
+        id=staged.id,
+        file_name=staged.file_name,
+        media_type=staged.media_type,
+        size_bytes=staged.size_bytes,
+        sha256=staged.sha256,
+    )
+
+
+def _imported_out(body: ImportRecordIn, made: imports.Imported) -> EnvelopeOut:
+    signers = [
+        SignerOut(
+            id=signer_id,
+            order=order,
+            routing_group=1,
+            name=name,
+            role=given.role,
+            identity_method=given.identity_method,
+            status=EnvelopeSignerStatus("signed"),
+            kba_failures=0,
+            viewed_at=None,
+            signed_at=None,
+            signature_method="provider_adopted",
+            decline_reason=None,
+            provider_recipient_id=None,
+        )
+        for order, (signer_id, name, given) in enumerate(
+            zip(made.signer_ids, made.signer_names, body.signers, strict=True), start=1
+        )
+    ]
+    return EnvelopeOut(
+        row=EnvelopeListRow(
+            id=made.envelope_id,
+            number=f"E{made.number}",
+            purpose=body.purpose,
+            form_code=body.form_code,
+            title=body.title,
+            client_id=body.client_id,
+            client_name=made.client_name,
+            work_item_id=body.work_item_id,
+            provider="record",
+            status=EnvelopeStatus("completed"),
+            signed=len(signers),
+            total=len(signers),
+            sent_by_name=None,
+            sent_at=None,
+            due_on=None,
+            needs_handwritten=False,
+            allowed_actions=[],
+        ),
+        policy_family=imports.policy_family(body.purpose),
+        source_kind=imports.SOURCE_KIND,
+        source_id=made.envelope_id,
+        engagement_id=made.engagement_id,
+        signer_order="sequential",
+        date_as_of_mode="none",
+        date_as_of=None,
+        expires_at=None,
+        message=None,
+        reminder_cadence=None,
+        documents=[
+            EnvelopeDocumentOut(
+                id=made.document_id,
+                order=1,
+                title=body.title,
+                page_count=0,
+                sha256=made.document_sha256,
+                read_only=True,
+                tri=body.purpose in imports.EFILE_PURPOSES,
+            )
+        ],
+        signers=signers,
+        fields=[],
+        evidence=[],
+        provider_envelope_id=None,
+        superseded_at=None,
+        voided_reason=None,
+        version=1,
+    )
 
 
 @router.post("/remind/preview", action="envelope.remind", response_model=RemindOut, errors=(501,))

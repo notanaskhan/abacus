@@ -13521,6 +13521,34 @@ export type ImportCountsOut = {
 };
 
 /**
+ * ImportFileOut
+ *
+ * `POST /v1/envelopes/import/files`: one scanned, stored file an import names by `id`.
+ */
+export type ImportFileOut = {
+    /**
+     * File Name
+     */
+    file_name: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Media Type
+     */
+    media_type: string;
+    /**
+     * Sha256
+     */
+    sha256: string;
+    /**
+     * Size Bytes
+     */
+    size_bytes: number;
+};
+
+/**
  * ImportOut
  */
 export type ImportOut = {
@@ -52818,10 +52846,6 @@ export type ImportEnvelopeRecordErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ImportEnvelopeRecordError = ImportEnvelopeRecordErrors[keyof ImportEnvelopeRecordErrors];
@@ -52834,6 +52858,74 @@ export type ImportEnvelopeRecordResponses = {
 };
 
 export type ImportEnvelopeRecordResponse = ImportEnvelopeRecordResponses[keyof ImportEnvelopeRecordResponses];
+
+export type StageEnvelopeImportFileData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Filename
+         */
+        filename: string;
+        /**
+         * Client Id
+         */
+        client_id: string;
+        /**
+         * Engagement Id
+         */
+        engagement_id?: string | null;
+    };
+    url: '/v1/envelopes/import/files';
+};
+
+export type StageEnvelopeImportFileErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * The file is too large
+     */
+    413: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
+};
+
+export type StageEnvelopeImportFileError = StageEnvelopeImportFileErrors[keyof StageEnvelopeImportFileErrors];
+
+export type StageEnvelopeImportFileResponses = {
+    /**
+     * Successful Response
+     */
+    201: ImportFileOut;
+};
+
+export type StageEnvelopeImportFileResponse = StageEnvelopeImportFileResponses[keyof StageEnvelopeImportFileResponses];
 
 export type RemindEnvelopesPreviewData = {
     body: RemindIn;

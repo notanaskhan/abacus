@@ -27,6 +27,7 @@ One envelope model for every signed document, whichever provider: `record` (impo
 | Reveal a signer's IP | `POST /v1/envelopes/{id}/signers/{sid}/reveal-ip` | `signer.reveal_ip` (fresh MFA, onshore) | deny |
 | Evidence package | `GET /v1/envelopes/{id}/evidence.zip` | `envelope.evidence_download` | deny |
 | Record-mode import | `POST /v1/envelopes/import` | `envelope.import_record` | deny |
+| Record-mode import file (N-02-T08, DEC-818): the raw bytes, `?filename=`; scanned before storage, refused closed; answers `ImportFileOut` whose `id` an import names in `upload_ids` (the first is the completed document) | `POST /v1/envelopes/import/files` | `envelope.import_record` | deny |
 | Wet signature | `POST /v1/envelopes/{id}/signers/{sid}/wet-signature` | `envelope.record_wet_signature` | deny |
 | Countersign session | `POST /v1/envelopes/{id}/countersign/session` | `envelope.countersign` | deny |
 | Policies | `GET /v1/envelope-policies`, `PUT /v1/envelope-policies/{family}` | `envelope_policy.read`, `envelope_policy.manage` | deny |
