@@ -26,7 +26,7 @@ The app has no grant on any of the three. Definers:
   a code or moves one to another family.
 
 Revision ID: 0400
-Revises: 0295
+Revises: 0371
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ from __future__ import annotations
 from alembic import op
 
 revision = "0400"
-down_revision = "0295"
+down_revision = "0371"
 branch_labels = None
 depends_on = None
 
