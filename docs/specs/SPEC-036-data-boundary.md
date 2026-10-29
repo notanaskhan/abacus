@@ -142,3 +142,6 @@ All resolved: the founder approved every recommendation below on 2026-10-16.
 - **Q4: when an opt-in lapses.** *Recommendation:* when the register's Bedrock entry changes materially (training, retention, region or subprocessors), every firm must opt in again; a review date alone doesn't reset it.
 - **Q5: opt-out propagation.** *Recommendation:* opt-out takes effect immediately in the process that handles it, at the next run start in workers, and within the cache period (60 seconds) for a call already in flight elsewhere. A stricter rule needs a shared cache, which is a later decision.
 - **Q6: the client's say.** *Recommendation:* no client-side switch. The firm decides, and a partner excludes the engagement if the client objects. The firm's engagement letter is where clients are told (the firm's responsibility; we provide suggested wording in the disclosure).
+
+## 10. Status (Q-02-T51, 2026-10-28)
+Done for AC-1 to AC-5, AC-7 and AC-8 (TASK-076's log; Q-02-T07, Q-02-T50). **Left open:** AC-6's screen half and AC-9, handed to Q-04-T351; this spec closes only when they pass. Operations: RB-39 (agent stages), RB-40 (provider terms and Bedrock parity).

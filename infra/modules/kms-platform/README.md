@@ -1,3 +1,4 @@
 # kms-platform
 
-Skeleton. Implemented in a later Q-01 task (see docs/plan/06-platform-ops-security.md section 1.17). Local modules only; providers limited to hashicorp/aws.
+The environment platform key (Q-01-T14): multi-Region, rotated, alias `alias/abacus/<env>/platform`.
+Tenant keys are made at run time by the keyops worker (Q-01-T27).

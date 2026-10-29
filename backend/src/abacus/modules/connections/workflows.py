@@ -89,6 +89,16 @@ class RetrievalWorkflow:
             await workflow.execute_activity(
                 "retrieval.snapshot", input, start_to_close_timeout=_TIMEOUT, retry_policy=_RETRY
             )
+            # A-02-T30 (DEC-829): a run no request item asked for ends at its snapshot. Histories
+            # from before the patch replay without the step.
+            if workflow.patched("on-demand-pulls") and await workflow.execute_activity(
+                "retrieval.finish_at_snapshot",
+                input,
+                result_type=bool,
+                start_to_close_timeout=_TIMEOUT,
+                retry_policy=_RETRY,
+            ):
+                return RetrievalOutcome("succeeded", None, None)
             version_id = await workflow.execute_activity(
                 "retrieval.render",
                 input,

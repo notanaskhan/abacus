@@ -1,3 +1,5 @@
 # network
 
-Skeleton. Implemented in a later Q-01 task (see docs/plan/06-platform-ops-security.md section 1.17). Local modules only; providers limited to hashicorp/aws.
+The environment VPC (Q-01-T14): public, app and data subnets over two zones, NAT for the app
+subnets, an S3 gateway endpoint and VPC flow logs. Interface endpoints and the DNS Firewall
+allowlist are a later pass (DEC-1003).

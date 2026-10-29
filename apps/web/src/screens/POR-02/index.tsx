@@ -22,6 +22,7 @@ import {
   StatusPill,
   count,
   date,
+  portalNav,
   usePortalBrand,
   weekdayDate,
 } from "@abacus/ui";
@@ -911,6 +912,58 @@ export function POR02({
         <Pane header={false}>{body}</Pane>
       </PortalLayout>
     </div>
+  );
+}
+
+/** ADM-10's live preview (R-01-T28; R-01 Story 8.2): this home for a projection the firm app read
+ * in preview mode, under the brand the caller provides. Nothing in it navigates or writes: no
+ * user menu and no `onNavigate`, so every control is inert. Approvals shows for an entity only. */
+export function PortalHomePreview({
+  home,
+  user,
+  mobile,
+}: {
+  home: PortalHomeOut;
+  user: string;
+  mobile: boolean;
+}): JSX.Element {
+  const firstName = user.split(/\s+/)[0] ?? user;
+  const nav = portalNav(home.scope.kind === "client_entity" ? "entity" : "individual");
+  const body = (
+    <Main
+      home={home}
+      scopeId={home.scope.id}
+      firstName={firstName}
+      mobile={mobile}
+      onNavigate={undefined}
+    />
+  );
+  if (mobile) {
+    return (
+      <PortalLayout
+        variant="mobile"
+        user={user}
+        nav={navWithCounts(nav, home)}
+        active="Home"
+        frame
+        height={844}
+      >
+        {body}
+      </PortalLayout>
+    );
+  }
+  return (
+    <PortalLayout
+      variant="split"
+      user={user}
+      nav={nav}
+      active="Home"
+      frame
+      height={860}
+      rail={<Rail home={home} />}
+    >
+      <Pane header={false}>{body}</Pane>
+    </PortalLayout>
   );
 }
 

@@ -573,6 +573,18 @@ IfMatch = Annotated[int, Header(alias="If-Match", ge=1)]
 
 
 @programs_router.get(
+    "/versions/{version_id}/programs",
+    action="methodology.read",
+    response_model=list[ProgramOut],
+    errors=(501,),
+)
+async def version_programs_route(version_id: VersionId, ctx: Ctx) -> list[ProgramOut]:
+    """KNW-02's Programs tree (K-01-T07 stub, DEC-957; built with K-01-T12): a version's
+    programs in order, with counts and open flags."""
+    await _stub(ctx, METHODOLOGY_PROGRAMS, "methodology.read")
+
+
+@programs_router.get(
     "/programs/{program_id}", action="methodology.read", response_model=ProgramOut, errors=(501,)
 )
 async def program_route(program_id: Annotated[UUID, Path()], ctx: Ctx) -> ProgramOut:

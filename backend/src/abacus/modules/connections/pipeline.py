@@ -348,6 +348,30 @@ async def _import_details(
 
 
 # 6. render (+ fulfilment) ----------------------------------------------------------------------
+async def finish_at_snapshot(sys: SystemContext) -> bool:
+    """A-02-T30 (DEC-829): a run no request item asked for (an on-demand pull) ends at its
+    snapshot: no evidence version, no fulfilment; AUD-06 adopts the snapshot. True when this run
+    is one (and is now finished); False for a request-item run, which renders next."""
+    run = await _run(sys)
+    if run.request_item_id is not None:
+        return False
+    if run.status != "running":
+        return True
+    if run.snapshot_id is None:
+        raise NotFound("ledger_snapshot")
+    try:
+        async with uow(sys.tenant) as tx:
+            if await finish(tx.session, sys.run_id, status="succeeded"):
+                tx.record(
+                    "sync_run.succeeded",
+                    target=Target("sync_run", sys.run_id),
+                    after=Ref(snapshot_id=run.snapshot_id, on_behalf_of=sys.on_behalf_of),
+                )
+    except MissingAuditEvent:
+        pass  # finished by an earlier attempt: nothing to record
+    return True
+
+
 async def render(sys: SystemContext) -> UUID:
     """Render the snapshot, add it as an evidence version, fulfil the request item by rule, and
     finish the run (AC-10). Authorises before doing anything. Idempotent: a finished run returns
@@ -416,8 +440,8 @@ async def render(sys: SystemContext) -> UUID:
                     requested_by=sys.on_behalf_of,
                 )
                 if run.request_item_id is None:
-                    # 0195: runs without a request item end at the snapshot once A-02-T30
-                    # patches the workflow; until then the render stage refuses them (terminal).
+                    # 0195: runs without a request item end at the snapshot (A-02-T30's
+                    # `on-demand-pulls` patch); a history from before it still refuses here.
                     raise NotFound("request_item")
                 await fulfil_by_rule(
                     tx, sys, request_item_id=run.request_item_id, evidence_version_id=version.id

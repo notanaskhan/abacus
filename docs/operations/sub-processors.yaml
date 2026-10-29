@@ -238,3 +238,4 @@ rows:
     needed_by: R0
     egress_hosts: ["database.clamav.net"]
     references: [ADR-153]
+
