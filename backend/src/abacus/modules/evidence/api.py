@@ -128,6 +128,7 @@ from abacus.modules.evidence.holds import activate as legal_hold_activate
 from abacus.modules.evidence.holds import apply_batch as legal_hold_apply_batch
 from abacus.modules.evidence.inbox import add_to_inbox, register_match_picks
 from abacus.modules.evidence.inbox import assign as assign_inbox_file
+from abacus.modules.evidence.intake_sources import IntakeSource, register_intake_source
 from abacus.modules.evidence.item_detail import Download as DocumentDownload
 from abacus.modules.evidence.item_detail import latest_document
 from abacus.modules.evidence.masked_previews import masked_preview_upload
@@ -159,6 +160,7 @@ from abacus.modules.evidence.processing import (
     stale_pdfs,
 )
 from abacus.modules.evidence.processing import check_upload as check_upload_content
+from abacus.modules.evidence.processing import workflow_id as upload_workflow_id
 from abacus.modules.evidence.records import RecordClass, StoredRecord, anchor_chain, put_record
 from abacus.modules.evidence.render import (
     CODE_COLUMN,
@@ -263,8 +265,8 @@ from abacus.modules.evidence.withdrawals import WORKFLOWS as WITHDRAWAL_WORKFLOW
 from abacus.modules.evidence.withdrawals import is_version_withdrawn, withdrawn_among
 from abacus.modules.evidence.words import WORDS_VERSION, start_trust_layer_backfill, words_upload
 from abacus.modules.evidence.workflow_types import INBOX as UPLOAD_INBOX
-from abacus.modules.evidence.workflow_types import VERSION as UPLOAD_VERSION
 from abacus.modules.evidence.workflow_types import (
+    INTAKE,
     BackfillInput,
     EngagementExportInput,
     ExportPackageFacts,
@@ -274,6 +276,7 @@ from abacus.modules.evidence.workflow_types import (
     UploadInput,
     WithdrawalPurgeInput,
 )
+from abacus.modules.evidence.workflow_types import VERSION as UPLOAD_VERSION
 from abacus.modules.evidence.workflow_types import ExportFailure as ExportBuildFailure
 from abacus.modules.evidence.workflows import (
     ANCHOR_ID,
@@ -407,6 +410,7 @@ __all__ = [
     "EXPORT_FORMAT_VERSION",
     "EXPORT_SCHEMA_FILE",
     "FIRST_LINE_ROW",
+    "INTAKE",
     "MAX_CONTENT_BYTES",
     "NAME_COLUMN",
     "RECORD_TYPES",
@@ -461,6 +465,7 @@ __all__ = [
     "HoldView",
     "InboxFileAdded",
     "InboxFileExtracted",
+    "IntakeSource",
     "IntegrityError",
     "LayerExport",
     "LayerLine",
@@ -550,6 +555,7 @@ __all__ = [
     "register_export_audit_trail",
     "register_export_section",
     "register_firm_export_starter",
+    "register_intake_source",
     "register_match_picks",
     "register_proposal_source",
     "render_general_ledger",
@@ -574,6 +580,7 @@ __all__ = [
     "undo_review_decision",
     "upload",
     "upload_preview",
+    "upload_workflow_id",
     "verified_citation_ids",
     "version_view",
     "waiting_among",

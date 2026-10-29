@@ -30,6 +30,7 @@ from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.evidence import storage
+from abacus.modules.evidence.intake_sources import source_of, target_type
 from abacus.modules.evidence.object_keys import under_key
 from abacus.modules.evidence.pii import DETECTOR_VERSION
 from abacus.modules.evidence.previews import (
@@ -40,8 +41,6 @@ from abacus.modules.evidence.previews import (
     render_masked_isolated,
 )
 from abacus.modules.evidence.repository import (
-    get_inbox_file,
-    get_version,
     insert_preview,
     insert_preview_pages,
     is_withdrawn,
@@ -53,7 +52,13 @@ from abacus.modules.evidence.repository import (
     sources_without_masks,
 )
 from abacus.modules.evidence.words import WORDS_VERSION
-from abacus.modules.evidence.workflow_types import INBOX, VERSION, BackfillInput, UploadInput
+from abacus.modules.evidence.workflow_types import (
+    INBOX,
+    INTAKE,
+    VERSION,
+    BackfillInput,
+    UploadInput,
+)
 from abacus.modules.evidence.workflows import BACKFILL_BATCH
 
 _log = get_logger(__name__)
@@ -81,26 +86,27 @@ async def masked_preview_upload(given: UploadInput) -> str:
     tenant = _system(tenant_id)
     version_id = source_id if given.kind == VERSION else None
     inbox_id = source_id if given.kind == INBOX else None
+    attachment_id = source_id if given.kind == INTAKE else None
     async with tenant_session(tenant) as session:
         done = await preview_for(
             session,
             evidence_version_id=version_id,
             inbox_file_id=inbox_id,
+            inbox_attachment_id=attachment_id,
             renderer_version=MASKED_RENDERER_VERSION,
         )
         if done is not None:
             return done.kind
-        source = (
-            await get_version(session, source_id)
-            if version_id is not None
-            else await get_inbox_file(session, source_id)
-        )
+        source = await source_of(session, tenant, given.kind, source_id)
         if source is None:
             if version_id is not None and await is_withdrawn(session, version_id):
                 return WITHDRAWN  # DEC-298: nothing is derived from a withdrawn version
             raise NotFound("upload")
         extraction = await newest_extraction(
-            session, evidence_version_id=version_id, inbox_file_id=inbox_id
+            session,
+            evidence_version_id=version_id,
+            inbox_file_id=inbox_id,
+            inbox_attachment_id=attachment_id,
         )
         if extraction is not None and extraction.reason == ACTIVE_CONTENT:
             return "none"  # DEC-296: kept, never rendered
@@ -108,18 +114,21 @@ async def masked_preview_upload(given: UploadInput) -> str:
             session,
             evidence_version_id=version_id,
             inbox_file_id=inbox_id,
+            inbox_attachment_id=attachment_id,
             detector_version=DETECTOR_VERSION,
         )
         layer = await pages_of(
             session,
             evidence_version_id=version_id,
             inbox_file_id=inbox_id,
+            inbox_attachment_id=attachment_id,
             extractor_version=WORDS_VERSION,
         )
         regions = await pii_regions_of(
             session,
             evidence_version_id=version_id,
             inbox_file_id=inbox_id,
+            inbox_attachment_id=attachment_id,
             detector_version=DETECTOR_VERSION,
         )
     masks: dict[int, list[Box]] = {}
@@ -152,6 +161,7 @@ async def masked_preview_upload(given: UploadInput) -> str:
             engagement_id=source.engagement_id,
             evidence_version_id=version_id,
             inbox_file_id=inbox_id,
+            inbox_attachment_id=attachment_id,
             renderer_version=MASKED_RENDERER_VERSION,
             mask_version=MASK_VERSION,
             kind=rendered.kind,
@@ -180,7 +190,7 @@ async def masked_preview_upload(given: UploadInput) -> str:
         # A concurrent run that got there first adds nothing: still one audited write.
         tx.record(
             "upload.masked_previewed" if row is not None else "upload.masked_preview_exists",
-            target=Target("evidence_version" if version_id else "inbox_file", source_id),
+            target=Target(target_type(given.kind), source_id),
             after=Ref(pages=len(pages), masks=sum(len(b) for b in masks.values())),
         )
     _log.info("upload.masked_previewed", kind=given.kind, pages=len(pages))

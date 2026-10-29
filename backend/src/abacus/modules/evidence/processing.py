@@ -55,15 +55,15 @@ from abacus.modules.evidence.events import (
     UploadChecksRecorded,
 )
 from abacus.modules.evidence.extraction import EXTRACTOR_VERSION, Extraction, extract_isolated
+from abacus.modules.evidence.intake_sources import source_of, target_type
 from abacus.modules.evidence.masked_text import masked_pages
-from abacus.modules.evidence.models import UploadExtraction
+from abacus.modules.evidence.models import InboxFile, UploadExtraction
 from abacus.modules.evidence.object_keys import under_key
 from abacus.modules.evidence.pii import DETECTOR_VERSION, masked_rows
 from abacus.modules.evidence.previews import RENDERER_VERSION, render_isolated
 from abacus.modules.evidence.repository import (
     checks_exist,
     extraction_for,
-    get_inbox_file,
     get_version,
     insert_checks,
     insert_extraction,
@@ -78,7 +78,7 @@ from abacus.modules.evidence.repository import (
     stale_pdf_uploads,
 )
 from abacus.modules.evidence.service import engagement_snapshots
-from abacus.modules.evidence.workflow_types import INBOX, VERSION, UploadInput
+from abacus.modules.evidence.workflow_types import INBOX, INTAKE, VERSION, UploadInput
 from abacus.modules.evidence.workflows import TrustLayerBackfill, UploadProcessing
 from abacus.modules.ledger.api import snapshot_view
 from abacus.modules.requests.api import (
@@ -196,20 +196,18 @@ async def process_upload(given: UploadInput) -> str:
     tenant = _system(tenant_id)
     version_id = source_id if given.kind == VERSION else None
     inbox_id = source_id if given.kind == INBOX else None
+    attachment_id = source_id if given.kind == INTAKE else None
     async with tenant_session(tenant) as session:
         done = await extraction_for(
             session,
             evidence_version_id=version_id,
             inbox_file_id=inbox_id,
+            inbox_attachment_id=attachment_id,
             extractor_version=EXTRACTOR_VERSION,
         )
         if done is not None:
             return done.status
-        source = (
-            await get_version(session, source_id)
-            if version_id is not None
-            else await get_inbox_file(session, source_id)
-        )
+        source = await source_of(session, tenant, given.kind, source_id)
     if source is None:
         if version_id is not None and await _withdrawn(tenant, version_id):
             return WITHDRAWN  # P-06-T19: an in-flight run records nothing for it
@@ -230,6 +228,7 @@ async def process_upload(given: UploadInput) -> str:
             engagement_id=source.engagement_id,
             evidence_version_id=version_id,
             inbox_file_id=inbox_id,
+            inbox_attachment_id=attachment_id,
             extractor_version=EXTRACTOR_VERSION,
             status=found.status,
             reason=found.reason,
@@ -242,12 +241,12 @@ async def process_upload(given: UploadInput) -> str:
         # A concurrent run that got there first leaves `row` None: still one audited write.
         tx.record(
             "upload.extracted" if row is not None else "upload.extraction_exists",
-            target=Target("evidence_version" if version_id else "inbox_file", source_id),
+            target=Target(target_type(given.kind), source_id),
             after=Ref(fingerprint=source.fingerprint),
         )
-        if row is not None and inbox_id is not None and found.status == "extracted":
+        if row is not None and isinstance(source, InboxFile) and found.status == "extracted":
             tx.emit(  # SPEC-033 (TASK-066): the matcher may follow (P-7)
-                InboxFileExtracted(engagement_id=source.engagement_id, inbox_file_id=inbox_id)
+                InboxFileExtracted(engagement_id=source.engagement_id, inbox_file_id=source.id)
             )
     _log.info("upload.extracted", kind=given.kind, status=found.status, reason=found.reason)
     return found.status
@@ -418,20 +417,18 @@ async def preview_upload(given: UploadInput) -> str:
     tenant = _system(tenant_id)
     version_id = source_id if given.kind == VERSION else None
     inbox_id = source_id if given.kind == INBOX else None
+    attachment_id = source_id if given.kind == INTAKE else None
     async with tenant_session(tenant) as session:
         done = await preview_for(
             session,
             evidence_version_id=version_id,
             inbox_file_id=inbox_id,
+            inbox_attachment_id=attachment_id,
             renderer_version=RENDERER_VERSION,
         )
         if done is not None:
             return done.kind
-        source = (
-            await get_version(session, source_id)
-            if version_id is not None
-            else await get_inbox_file(session, source_id)
-        )
+        source = await source_of(session, tenant, given.kind, source_id)
     if source is None:
         if version_id is not None and await _withdrawn(tenant, version_id):
             return "none"  # P-06-T19: nothing is rendered for a withdrawn version
@@ -451,6 +448,7 @@ async def preview_upload(given: UploadInput) -> str:
             engagement_id=source.engagement_id,
             evidence_version_id=version_id,
             inbox_file_id=inbox_id,
+            inbox_attachment_id=attachment_id,
             renderer_version=RENDERER_VERSION,
             kind=rendered.kind,
             reason=rendered.reason,
@@ -477,7 +475,7 @@ async def preview_upload(given: UploadInput) -> str:
             )
         tx.record(
             "upload.previewed" if row is not None else "upload.preview_exists",
-            target=Target("evidence_version" if version_id else "inbox_file", source_id),
+            target=Target(target_type(given.kind), source_id),
             after=Ref(pages=len(pages)),
         )
     return rendered.kind
@@ -553,7 +551,7 @@ async def review_material(
             return None
         row = await newest_extraction(session, evidence_version_id=version_id)
         checks = await latest_checks(session, version_id)
-    if row is None:
+    if row is None or row.engagement_id is None:
         return None
     items = await items_of_version(tenant, version_id)
     item = next((i for i in items), None)
