@@ -289,6 +289,16 @@ SIGNATURES_ENVELOPES = Flag(
     kind="boolean",
     default="false",
 )
+TAX_DELIVERY_EFILE = Flag(
+    name="tax.delivery_efile",
+    kind="boolean",
+    default="false",
+)
+TAX_ENGINE_BRIDGE = Flag(
+    name="tax.engine_bridge",
+    kind="boolean",
+    default="false",
+)
 UPLOAD_REVIEW_ENABLED = Flag(
     name="upload_review.enabled",
     kind="boolean",
@@ -357,6 +367,8 @@ FLAGS: dict[str, Flag] = {
     "screening.card": SCREENING_CARD,
     "security_center.v1": SECURITY_CENTER_V1,
     "signatures.envelopes": SIGNATURES_ENVELOPES,
+    "tax.delivery_efile": TAX_DELIVERY_EFILE,
+    "tax.engine_bridge": TAX_ENGINE_BRIDGE,
     "upload_review.enabled": UPLOAD_REVIEW_ENABLED,
     "uploads.processing": UPLOADS_PROCESSING,
 }

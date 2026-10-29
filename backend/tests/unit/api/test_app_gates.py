@@ -117,6 +117,16 @@ NOT_CREATING = {
     "/v1/platform/retention/defaults/{set_version}/publish",
     # G-02-T20: publishing a Pub 4557 control set changes a draft's status, so 200.
     "/v1/platform/safeguards-controls/{set_version}/publish",
+    # T-01-T02 (engine-bridge stub): approvals, marks, rejections, letters, publishing and the
+    # format check change or read a record, so 200.
+    "/v1/tax-returns/{return_id}/final-approval",
+    "/v1/engine-exports/{export_id}/mark-exported",
+    "/v1/engine-imports/{import_id}/approve",
+    "/v1/engine-imports/{import_id}/reject",
+    "/v1/delivery-packets/{packet_id}/letter:regenerate",
+    "/v1/delivery-packets/{packet_id}/approve",
+    "/v1/tax-returns/{return_id}/deliverables:publish",
+    "/v1/firm/integrations/{key}/test",
     # T-01-T01 (C19 stub): a decline, a revocation and a template publish change a record, so 200.
     "/v1/consents/{consent_id}/declines",
     "/v1/consents/{consent_id}/revocations",
@@ -361,6 +371,15 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/request-items",
         # K-01-T01 (C21 stub): a methodology draft and a program step.
         "/v1/methodology/versions/{version_id}/drafts",
+        # T-01-T02 (engine-bridge stub): an export, an import, a packet, the 8879 envelope, an ERO
+        # notice, a transmission record and an ack.
+        "/v1/tax-returns/{return_id}/engine-exports",
+        "/v1/tax-returns/{return_id}/engine-imports",
+        "/v1/tax-returns/{return_id}/delivery-packet:assemble",
+        "/v1/tax-returns/{return_id}/efile-envelope",
+        "/v1/tax-returns/{return_id}/ero-notices",
+        "/v1/tax-returns/{return_id}/transmissions",
+        "/v1/tax-returns/{return_id}/acks",
         # T-01-T01 (C19 stub): consent drafts and records, templates, authorizations, transcripts.
         "/v1/consents/requests",
         "/v1/consents/renewals",
