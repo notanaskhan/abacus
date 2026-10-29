@@ -773,7 +773,7 @@ function Adm07Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("ADM-07", { title: "Audit log explorer", Component: Adm07Artboard });
 
-// N-02-T11: SIG-01 · Signatures hub (a–g; r's Import sheet lands with N-02-T15, DEC-827).
+// N-02-T11: SIG-01 · Signatures hub (a–g); f's reminder and r's Import sheet with N-02-T15.
 function Sig01Frame({ state }: { state: Sig01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
   const bar = useFirmToolbar({
@@ -786,7 +786,12 @@ function Sig01Frame({ state }: { state: Sig01State }): JSX.Element {
   return (
     <div data-artboard={state}>
       <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
-        <SIG01 initialTab={open.tab} initialEnvelope={open.envelope} />
+        <SIG01
+          initialTab={open.tab}
+          initialEnvelope={open.envelope}
+          initialChecked={open.checked ?? []}
+          initialImport={open.importing ?? false}
+        />
       </AppShell>
     </div>
   );
