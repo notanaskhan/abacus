@@ -8,7 +8,7 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import FetchedValue, Float, Integer, Numeric
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB
+from sqlalchemy.dialects.postgresql import ARRAY, INT4RANGE, JSONB, Range
 from sqlalchemy.orm import Mapped, mapped_column
 
 from abacus.kernel.db import Base
@@ -65,6 +65,8 @@ class EvidenceVersion(Base):
     channel: Mapped[str | None] = mapped_column(server_default=FetchedValue())
     supersedes_version_id: Mapped[UUID | None] = mapped_column(server_default=FetchedValue())
     parent_version_id: Mapped[UUID | None] = mapped_column(server_default=FetchedValue())
+    # N-01-T19: a virtual split's pages (no new bytes); with `parent_version_id` only.
+    page_range: Mapped[Range[int] | None] = mapped_column(INT4RANGE, server_default=FetchedValue())
     virtual_label: Mapped[str | None] = mapped_column(server_default=FetchedValue())
     virtual_amount: Mapped[Decimal | None] = mapped_column(server_default=FetchedValue())
     display_name: Mapped[str | None] = mapped_column(server_default=FetchedValue())
