@@ -51,9 +51,9 @@ _CONNECTIONS = (
     "identity_issuer",
     "identity_audience",
     "identity_jwks",
-    "s3_endpoint_url",
-    "s3_access_key",
-    "s3_secret_key",
+    # S3 is not here (DEC-1004): in AWS the client uses the task role and S3's own endpoint, and
+    # IAM users with access keys are refused by the organisation (scp-baseline-guards). The local
+    # stack keeps its gateway endpoint and keys through _LOCAL_DEFAULTS.
     "evidence_bucket",
     "temporal_target",
     "trusted_hosts",
@@ -323,6 +323,9 @@ class Settings(BaseSettings):
     # Temporal Cloud needs TLS and an API key; both are required outside local and test.
     temporal_tls: Annotated[bool, classified("internal")] = False
     temporal_api_key: Annotated[SecretStr | None, classified("restricted")] = None
+    # DEC-1004: staging may run a single Temporal server inside its VPC (no TLS, no API key)
+    # instead of Temporal Cloud. Production refuses it.
+    temporal_in_vpc: Annotated[bool, classified("internal")] = False
     # Encrypts every workflow payload before it leaves the process (ADR-017). Local and test use
     # this one key (id `platform-v1`); staging and production use the keyring below instead.
     temporal_payload_key: Annotated[SecretStr | None, classified("restricted")] = None
@@ -446,8 +449,13 @@ class Settings(BaseSettings):
                 raise ValueError("temporal_payload_key must be at least 32 varied characters")
             if self.environment not in LOCAL_STACK and value.startswith("example-"):
                 raise ValueError("temporal_payload_key must be a real secret outside local/test")
-        if self.environment not in LOCAL_STACK and (
-            not self.temporal_tls or self.temporal_api_key is None
+        if self.temporal_in_vpc and self.environment == "production":
+            raise ValueError("production refuses temporal_in_vpc (DEC-1004)")
+        in_vpc = self.temporal_in_vpc and self.environment == "staging"
+        if (
+            self.environment not in LOCAL_STACK
+            and not in_vpc
+            and (not self.temporal_tls or self.temporal_api_key is None)
         ):
             raise ValueError("Temporal needs TLS and an API key outside local and test")
         return self

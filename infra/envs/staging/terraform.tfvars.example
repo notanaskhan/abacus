@@ -25,3 +25,13 @@ portal_managed_rules_action = "count"
 # the ECS task roles; until then the bucket's policies exist unattached.
 # worker_task_role_name = "abacus-staging-worker-task"
 # api_task_role_name    = "abacus-staging-api-task"
+
+# Staging stack (Q-01-T14/T15; DEC-1003). Leave image_digest unset to plan only the data plane.
+# shared_account_id    = "000000000000"
+# image_digest         = "000000000000.dkr.ecr.us-east-2.amazonaws.com/abacus-backend@sha256:<64 hex>"
+# ses_verified_address = "you@example.test"
+# workos_issuer        = "https://api.workos.test/user_management/client_XXXX"
+# workos_client_id     = "client_XXXX"
+# workos_jwks          = "{\"keys\": [...]}"
+# worker_task_role_name = "abacus-staging-worker"
+# api_task_role_name    = "abacus-staging-api"

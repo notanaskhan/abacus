@@ -27,6 +27,11 @@ function connectNewEntitiesToTheFakeLedger(): void {
   execFileSync("make", ["seed"], { cwd: REPO_ROOT, stdio: "pipe" });
 }
 
+// P-07-T58 (DEC-904) retired the legacy Engagements, Setup and EngagementLayout screens this walk
+// drives. The v2 journeys (eng-cli-core, J02, CLI-06, J19) cover the same ground and walk the full
+// stack once P-07-T59 turns the v2 flags on in E0; TASK-1812 records the approval.
+test.fixme(true, "P-07-T58: the legacy setup-first screens are retired; the v2 journeys own it");
+
 test("setup-first journey: create, setup gates, request, retrieve, screened", async ({ page }) => {
   // Unique per run, so a second night never meets "This client may already exist".
   const stamp = String(Date.now());

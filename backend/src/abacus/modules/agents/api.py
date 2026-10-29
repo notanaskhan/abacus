@@ -128,7 +128,7 @@ from abacus.modules.agents.stage_admin import (
     check_live,
 )
 from abacus.modules.agents.stage_routes import platform_stages_router
-from abacus.modules.agents.stages import assistants, stage_for
+from abacus.modules.agents.stages import assistants, stage_for, starts_in_shadow
 from abacus.modules.agents.upload_review import (
     REVIEWER,
     ReviewOutcome,
@@ -339,6 +339,7 @@ __all__ = [
     "spec",
     "start_agents",
     "start_screening",
+    "starts_in_shadow",
     "template_drafts_router",
     "upload_review_available",
     "verify_citations",
