@@ -120,8 +120,10 @@ async def access_log_route(
     cursor: str | None = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
 ) -> ListPage[AccessLogRow]:
-    """The drawer's access-log card (N-01-T19)."""
-    await _live(ctx, "evidence.read_access_log")
+    """The drawer's access-log card (N-01-T19). The firm gate is metadata (every engagement role
+    holds it there); `evidence.read_access_log` is checked on the item's own engagement or client
+    by the read model's `visible()` (its relationship layer needs the engagement)."""
+    await _live(ctx, "evidence.read_metadata")
     rows, next_cursor = await svc.access_log(ctx, item_id, cursor=cursor, limit=limit)
     return ListPage[AccessLogRow](items=rows, next_cursor=next_cursor, total=len(rows))
 

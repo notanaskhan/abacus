@@ -2,7 +2,7 @@
 id: TASK-2001
 title: N-01-T19 Files read model
 spec: SPEC-380
-acceptance_criteria: [Story 7]
+acceptance_criteria: [AC-25]
 risk_zone: red
 status: in-review
 epic: N-01

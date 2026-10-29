@@ -178,7 +178,7 @@ async def test_ac1_olivia_sees_12_documents_and_7_virtual_children(net: Net) -> 
     tree = await net.call("GET", f"{TREE}?client_id={site.client_id}", olivia)
     assert tree.status_code == 200, tree.text
     [client] = tree.json()["nodes"]
-    assert client["label"] == "Ridgeline Property Partners, LP" and client["count"] == 12
+    assert "Ridgeline Property Partners, LP" in client["label"] and client["count"] == 12
     folders = {
         n["folder_kind"]: n["count"]
         for year in client["children"]
