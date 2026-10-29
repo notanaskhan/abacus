@@ -48,6 +48,13 @@ import {
   OPENS as ADM06_OPENS,
   scenarios as adm06Scenarios,
 } from "./ADM-06/scenarios";
+import { ADM05 } from "./ADM-05";
+import {
+  type Adm05State,
+  STATES as ADM05_STATES,
+  OPENS as ADM05_OPENS,
+  scenarios as adm05Scenarios,
+} from "./ADM-05/scenarios";
 import { ADM07 } from "./ADM-07";
 import { ADM10 } from "./ADM-10";
 import {
@@ -793,6 +800,55 @@ function Adm07Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("ADM-07", { title: "Audit log explorer", Component: Adm07Artboard });
+
+// ADM-05 a, b, f and g (T-01-T13): the consent registry on the T12 frame; each state opens with
+// its search (g's three rows are checked by the walk).
+function Adm05Frame({ state }: { state: Adm05State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/settings/consents" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  const [search, setSearch] = useState(() => searchOf(ADM05_OPENS[state]));
+  return (
+    <div data-artboard={state}>
+      <AppShell
+        frame
+        height={860}
+        toolbar={{ ...bar.toolbar, active: "", firmPressed: true }}
+        overlay={bar.overlay}
+      >
+        <ADM05
+          search={search}
+          onSearch={(next) => {
+            setSearch({ ...next });
+          }}
+        />
+      </AppShell>
+    </div>
+  );
+}
+
+function Adm05Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Adm05State = ADM05_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      adm05Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Adm05Frame key={state} state={state} /> : null;
+}
+
+registerScreen("ADM-05", { title: "Consent registry (§7216)", Component: Adm05Artboard });
 
 // N-02-T11: SIG-01 · Signatures hub (a–g); f's reminder and r's Import sheet with N-02-T15.
 function Sig01Frame({ state }: { state: Sig01State }): JSX.Element {

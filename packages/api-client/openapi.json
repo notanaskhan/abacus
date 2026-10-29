@@ -14660,6 +14660,19 @@
             "cls": "internal",
             "title": "Consent Set Id"
           },
+          "declined_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Declined At"
+          },
           "envelope_id": {
             "anyOf": [
               {
@@ -14742,6 +14755,19 @@
             "title": "Requested At",
             "type": "string"
           },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Revoked At"
+          },
           "scope": {
             "additionalProperties": {
               "type": "string"
@@ -14772,6 +14798,14 @@
             "cls": "internal",
             "title": "Signer Count",
             "type": "integer"
+          },
+          "signers": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/ConsentSignerOut"
+            },
+            "title": "Signers",
+            "type": "array"
           },
           "source": {
             "cls": "internal",
@@ -15143,6 +15177,18 @@
             ],
             "cls": "confidential",
             "title": "Signed At"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Title"
           }
         },
         "required": [

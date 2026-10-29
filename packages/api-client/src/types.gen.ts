@@ -6851,6 +6851,10 @@ export type ConsentOut = {
      */
     consent_set_id: string | null;
     /**
+     * Declined At
+     */
+    declined_at?: string | null;
+    /**
      * Envelope Id
      */
     envelope_id: string | null;
@@ -6887,6 +6891,10 @@ export type ConsentOut = {
      */
     requested_at: string;
     /**
+     * Revoked At
+     */
+    revoked_at?: string | null;
+    /**
      * Scope
      */
     scope: {
@@ -6904,6 +6912,10 @@ export type ConsentOut = {
      * Signer Count
      */
     signer_count: number;
+    /**
+     * Signers
+     */
+    signers?: Array<ConsentSignerOut>;
     /**
      * Source
      */
@@ -7061,6 +7073,10 @@ export type ConsentSignerOut = {
      * Signed At
      */
     signed_at: string | null;
+    /**
+     * Title
+     */
+    title?: string | null;
 };
 
 /**
