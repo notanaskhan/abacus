@@ -89,6 +89,7 @@ Every real-data milestone waits on third parties with lead times (vendors, couns
 
 ### Story 6: As the builder I want a recorded M1 result
 - **AC-33** Given Fri Oct 30 (M1), then the builder records the M1 result in `docs/product/decision-log.md`: every chapter 06 section 7.6 application has a submitted date (Xero and NetSuite on Nov 2), counsel is engaged with a dated scope, the compliance tool is contracted, at least 6 conversations are booked, and thresholds W1 to W3 merged before the first call; any unfiled application is named with a date.
+- **AC-36 Pilot 0 retros and PW1 success metrics (F-09-T126).** By Fri May 28, 2027, `docs/ops/pilot/retros/README.md` indexes, by pilot code, each Pilot 0 partner's retro (held on, note in the vault) and its champion's signed-off PW1 success metrics (the PW1 exit, W2b, W6 and W8 with their `thresholds.md` bands); notes and sign-offs stay in the vault, and new capability requests go to F-09-T128's triage, never promised in a retro.
 
 ## 6. Behaviour and flows
 **Happy path**
