@@ -69,3 +69,5 @@ definition of done: its identity routes move from STUBBED to LIVE.
   T20 is stubbed. Targeted re-run (`-n 2`) and gates green; API client regenerated.
 
 - 2026-10-28: DEC-535's P-08 follow-up built (DEC-583): portal sessions move the idle clock only on a refresh marked `X-Abacus-Activity: user` (migration 0225).
+- 2026-10-28 (S11 pending build): the unlock "stub" is final, not pending: WorkOS publishes no
+  lock state or unlock endpoint (DEC-1002), so DEC-526's timed unlock is the built behaviour.
