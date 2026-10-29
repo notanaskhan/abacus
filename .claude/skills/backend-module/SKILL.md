@@ -59,3 +59,7 @@ Work items (`engagements`, C1) are the units of work inside an engagement; each 
 - [ ] Permission tests regenerate cleanly from the matrix
 - [ ] `MODULES`, `ROUTERS`, `registry.py`, `MODULE_DEPENDENCIES` and the import-linter containers agree
 - [ ] Module README updated (tables, interface, slots it registers with)
+
+## Frozen contracts (P-07-T64, DEC-1054)
+
+A frozen contract (`docs/contracts/*.md` with **frozen**, snapshot under `backend/tests/contracts/<family>/v<n>.json`) takes additions only. A rename, retype, newly required field or removed enum member ships the next version with overlap: `python -m abacus_tools.contracts --freeze <family> v<n+1>`, never an edit of the old snapshot.
