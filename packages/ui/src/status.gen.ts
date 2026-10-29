@@ -109,7 +109,10 @@ export const STATUS_REGISTRY = {
       "label": "Approved",
       "variant": "green-tint",
       "terminal": false,
-      "derived": false
+      "derived": false,
+      "contextLabels": {
+        "home_and_tax_tiles": "Ready"
+      }
     },
     "awaiting_signature": {
       "label": "Awaiting signature",
@@ -267,6 +270,60 @@ export const STATUS_REGISTRY = {
     "superseded": {
       "label": "Superseded (amended K-1)",
       "variant": "soon",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "questionnaire": {
+    "open": {
+      "label": "Open",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "complete": {
+      "label": "Complete",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "submitted": {
+      "label": "Submitted",
+      "variant": "green",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "recipient_details_change": {
+    "pending": {
+      "label": "Pending review",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "accepted": {
+      "label": "Accepted",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "rejected": {
+      "label": "Rejected",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "k1_handoff": {
+    "awaiting": {
+      "label": "Awaiting K-1",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "received": {
+      "label": "Received",
+      "variant": "green-tint",
       "terminal": true,
       "derived": false
     }
@@ -1735,50 +1792,6 @@ export const STATUS_REGISTRY = {
       "variant": "muted",
       "terminal": true,
       "derived": false
-    }
-  },
-  "engine_sync": {
-    "not_linked": {
-      "label": "Not linked",
-      "variant": "neutral",
-      "terminal": false,
-      "derived": true
-    },
-    "ready_to_export": {
-      "label": "Ready to export",
-      "variant": "state",
-      "terminal": false,
-      "derived": true
-    },
-    "exported": {
-      "label": "Exported",
-      "variant": "green-tint",
-      "terminal": false,
-      "derived": true
-    },
-    "import_pending_approval": {
-      "label": "Import pending approval",
-      "variant": "amber",
-      "terminal": false,
-      "derived": true
-    },
-    "in_sync": {
-      "label": "In sync",
-      "variant": "green",
-      "terminal": false,
-      "derived": true
-    },
-    "out_of_sync": {
-      "label": "Out of sync",
-      "variant": "amber",
-      "terminal": false,
-      "derived": true
-    },
-    "failed": {
-      "label": "Export failed",
-      "variant": "red-tint",
-      "terminal": false,
-      "derived": true
     }
   },
   "efile_ack": {

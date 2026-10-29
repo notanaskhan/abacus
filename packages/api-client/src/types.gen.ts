@@ -10884,7 +10884,7 @@ export type EngineSyncOut = {
     /**
      * State
      */
-    state: 'not_linked' | 'ready_to_export' | 'exported' | 'import_pending_approval' | 'in_sync' | 'out_of_sync' | 'failed';
+    state: 'not_yet_exported' | 'ready_for_export' | 'exporting' | 'synced' | 'out_of_sync' | 'import_pending_approval' | 'failed';
 };
 
 /**

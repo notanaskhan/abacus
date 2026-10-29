@@ -61,6 +61,23 @@ class K1PackageStatus(StrEnum):
     SUPERSEDED = "superseded"
 
 
+class QuestionnaireStatus(StrEnum):
+    OPEN = "open"
+    COMPLETE = "complete"
+    SUBMITTED = "submitted"
+
+
+class RecipientDetailsChangeStatus(StrEnum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+
+
+class K1HandoffStatus(StrEnum):
+    AWAITING = "awaiting"
+    RECEIVED = "received"
+
+
 class AuditEngagementStatus(StrEnum):
     PLANNING = "planning"
     FIELDWORK = "fieldwork"
@@ -391,11 +408,6 @@ class TaxAuthorizationStatus(StrEnum):
     EXPIRED = "expired"
     REVOKED = "revoked"
     # derived, never stored: not_on_file
-
-
-class EngineSyncStatus(StrEnum):
-    pass
-    # derived, never stored: not_linked, ready_to_export, exported, import_pending_approval, in_sync, out_of_sync, failed
 
 
 class EfileAckStatus(StrEnum):
@@ -853,6 +865,20 @@ STORED: dict[str, tuple[str, ...]] = {
         "bounced",
         "superseded",
     ),
+    "questionnaire": (
+        "open",
+        "complete",
+        "submitted",
+    ),
+    "recipient_details_change": (
+        "pending",
+        "accepted",
+        "rejected",
+    ),
+    "k1_handoff": (
+        "awaiting",
+        "received",
+    ),
     "audit_engagement": (
         "planning",
         "fieldwork",
@@ -1128,8 +1154,6 @@ STORED: dict[str, tuple[str, ...]] = {
         "on_file",
         "expired",
         "revoked",
-    ),
-    "engine_sync": (
     ),
     "efile_ack": (
         "accepted",

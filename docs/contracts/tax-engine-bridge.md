@@ -26,7 +26,7 @@ CCH Axcess Tax is the engine of record; the link is a **file bridge** (W2 `cch_a
 | Settings (locked cells), mappings (409 `mapping_conflict`), format check | `GET`/`PUT /v1/firm/integrations/{key}/settings`, `PUT …/user-mapping`, `…/office-mapping`, `…/status-mirror`, `POST …/test` | `integration.read`, `integration.configure` (fresh MFA), `integration.test` |
 
 ## 3. Sync-chip states
-not_linked · ready_to_export · exported · import_pending_approval · in_sync · out_of_sync · failed (registry rows with T-01-T06).
+not_yet_exported · ready_for_export · exporting · synced · out_of_sync · import_pending_approval · failed (the registry's `return_sync_chip`).
 
 ## 4. Module API
 `tax.api.final_approval_blockers(return_id)`, `tax.api.register_final_approval_blocker(kind, provider)` (T-02 registers the draft K-1 blocker); raise until T-01-T27.
