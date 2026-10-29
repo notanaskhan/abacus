@@ -81,7 +81,7 @@ class Firm:
     henry: Person  # also on it
     site: Site
 
-    async def log(self, who: Person, body: Body, key: str = "log-1") -> httpx.Response:
+    async def log(self, who: Person, body: Body, key: str = "intake-log-1") -> httpx.Response:
         return await self.net.http.post(
             "/v1/inbox/intake",
             json=body,
@@ -164,7 +164,7 @@ async def test_ac_a_staff_logged_batch_creates_one_thread_with_waiting_attachmen
     assert made.status_code == 201, made.text
     message = cast(Body, made.json())["message_id"]
     for n, (content, name) in enumerate(((W2, "W-2.pdf"), (K1, "K-1.pdf"))):
-        response = await firm.file(firm.grace, message, content, name, f"file-{n}")
+        response = await firm.file(firm.grace, message, content, name, f"intake-file-{n}")
         assert response.status_code == 201, response.text
         assert response.json()["status"] == "waiting"
     assert await firm.count("inbox_threads") == 1
@@ -175,7 +175,7 @@ async def test_ac_a_staff_logged_batch_creates_one_thread_with_waiting_attachmen
 async def test_ac_an_unmatched_batch_holds_new_attachments(firm: Firm) -> None:
     made = await firm.log(firm.grace, _batch(firm, matched=False))
     message = cast(Body, made.json())["message_id"]
-    response = await firm.file(firm.grace, message, W2, "W-2.pdf", "file-0")
+    response = await firm.file(firm.grace, message, W2, "W-2.pdf", "intake-file-0")
     assert response.status_code == 201, response.text
     assert response.json()["status"] == "new"
 
@@ -185,7 +185,7 @@ async def test_ac_a_scanner_outage_stores_nothing(firm: Firm, raw: S3Client) -> 
     message = cast(Body, made.json())["message_id"]
     down = b"%PDF-1.7\n% scanner down\n%%EOF\n"
     inject_verdict(hashlib.sha256(down).hexdigest(), "error")
-    response = await firm.file(firm.grace, message, down, "W-2.pdf", "file-0")
+    response = await firm.file(firm.grace, message, down, "W-2.pdf", "intake-file-0")
     assert response.status_code in (422, 503)
     assert await firm.count("inbox_attachments") == 0
     listed = raw.list_objects_v2(Bucket=EVIDENCE, Prefix=f"{firm.tenant_id}/")
@@ -198,8 +198,8 @@ async def test_ac_a_scanner_outage_stores_nothing(firm: Firm, raw: S3Client) -> 
 async def test_the_same_file_again_is_flagged_not_refused(firm: Firm) -> None:
     made = await firm.log(firm.grace, _batch(firm))
     message = cast(Body, made.json())["message_id"]
-    first = await firm.file(firm.grace, message, W2, "W-2.pdf", "file-0")
-    again = await firm.file(firm.grace, message, W2, "W-2 copy.pdf", "file-1")
+    first = await firm.file(firm.grace, message, W2, "W-2.pdf", "intake-file-0")
+    again = await firm.file(firm.grace, message, W2, "W-2 copy.pdf", "intake-file-1")
     assert first.status_code == again.status_code == 201
     flag = await firm.net.seed.value(
         "SELECT kind FROM inbox_attachment_flags WHERE attachment_id = $1",
@@ -211,7 +211,7 @@ async def test_the_same_file_again_is_flagged_not_refused(firm: Firm) -> None:
 async def test_only_the_person_who_logged_a_batch_adds_to_it(firm: Firm) -> None:
     made = await firm.log(firm.grace, _batch(firm))
     message = cast(Body, made.json())["message_id"]
-    response = await firm.file(firm.henry, message, W2, "W-2.pdf", "file-0")
+    response = await firm.file(firm.henry, message, W2, "W-2.pdf", "intake-file-0")
     assert response.status_code == 404
 
 

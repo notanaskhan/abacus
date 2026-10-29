@@ -167,7 +167,7 @@ async def record_inbound_message(tenant: TenantContext, given: Inbound) -> Recor
             tx.record(
                 "inbox_thread.created",
                 target=Target("inbox_thread", thread_id),
-                after=Ref(channel=given.channel, match_method=method),
+                after=Ref(messages=1),
             )
         else:
             await tx.session.execute(
@@ -211,7 +211,7 @@ async def record_inbound_message(tenant: TenantContext, given: Inbound) -> Recor
         tx.record(
             "inbound_message.recorded",
             target=Target("inbound_message", message_id),
-            after=Ref(thread_id=thread_id, channel=given.channel),
+            after=Ref(thread_id=thread_id),
         )
         tx.emit(
             InboundMessageRecorded(
@@ -300,7 +300,7 @@ async def add_attachment(
         tx.record(
             "inbox_attachment.received",
             target=Target("inbox_attachment", attachment_id),
-            after=Ref(message_id=message_id, fingerprint=screened.sha256, status=status),
+            after=Ref(message_id=message_id, fingerprint=screened.sha256),
         )
         tx.emit(
             InboxAttachmentReceived(
