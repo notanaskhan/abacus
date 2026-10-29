@@ -32,6 +32,7 @@ import {
   Popover,
   SettingsLayout,
   SheetModal,
+  RestrictedState,
   Skeleton,
   Toggle,
   ValueRow,
@@ -241,6 +242,9 @@ export function ADM04({ opens = {}, onNavigate }: ADM04Props): JSX.Element {
   }, [opens.scrollTo, sections]);
 
   if (policy.isPending || data === undefined || sections === null) {
+    // SPEC-036 AC-9 (Q-04-T351): a person the matrix does not let read the policy sees why,
+    // not a retry.
+    if (policy.isError && isForbidden(policy.error)) return <RestrictedState reason="role" />;
     return policy.isError ? (
       <ErrorState title={COPY.title} onRetry={() => void policy.refetch()} />
     ) : (
