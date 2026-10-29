@@ -23,9 +23,10 @@ import sys
 import xml.etree.ElementTree as ET
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
-from datetime import date
 from pathlib import Path
 from typing import Final
+
+from abacus.kernel.clock import system_now
 
 ROOT: Final = Path(__file__).resolve().parents[4]  # the repository
 BACKEND: Final = ROOT / "backend"
@@ -121,7 +122,7 @@ def plan(text: str, tests: Path = BACKEND / "tests") -> list[Plan]:
 def _junit_failures(report: Path) -> dict[str, list[str]]:
     """Failed or errored test ids by file (path relative to backend/)."""
     failed: dict[str, list[str]] = {}
-    tree = ET.parse(report)  # noqa: S314 -- written by our own pytest run
+    tree = ET.parse(report)  # our own pytest run wrote it
     for case in tree.iter("testcase"):
         if case.find("failure") is None and case.find("error") is None:
             continue
@@ -146,7 +147,7 @@ def _run_python(paths: Iterable[str], junit: Path) -> int:
     if not unique:
         return 0
     argv = ["uv", "run", "pytest", "-q", f"--junitxml={junit}", *unique]
-    return subprocess.call(argv, cwd=BACKEND)  # noqa: S603 -- a fixed argv of our own paths
+    return subprocess.call(argv, cwd=BACKEND)
 
 
 def _run_web(paths: Iterable[str]) -> set[str]:
@@ -154,14 +155,14 @@ def _run_web(paths: Iterable[str]) -> set[str]:
     failed: set[str] = set()
     for path in sorted({p for p in paths if (WEB / p).exists()}):
         argv = ["pnpm", "exec", "vitest", "run", path]
-        code = subprocess.call(argv, cwd=WEB)  # noqa: S603 -- a fixed argv of our own paths
+        code = subprocess.call(argv, cwd=WEB)
         if code != 0:
             failed.add(path)
     return failed
 
 
 def report(plans: Sequence[Plan], failures: dict[str, list[str]], web_failed: set[str]) -> str:
-    today = date.today().isoformat()
+    today = system_now().date().isoformat()
     lines = [
         f"# Back-fill re-run, {today} (Q-03-T059)",
         "",
@@ -200,7 +201,7 @@ def main(argv: list[str] | None = None) -> int:
     _run_python((s for p in plans for s in p.python), junit)
     failures = _junit_failures(junit) if junit.exists() else {}
     web_failed = _run_web(s for p in plans for s in p.web)
-    out = ROOT / "docs" / "quality" / f"backfill-rerun-{date.today().isoformat()}.md"
+    out = ROOT / "docs" / "quality" / f"backfill-rerun-{system_now().date().isoformat()}.md"
     out.write_text(report(plans, failures, web_failed), encoding="utf-8")
     print(f"wrote {out.relative_to(ROOT)}")
     return 0 if not failures and not web_failed else 1
