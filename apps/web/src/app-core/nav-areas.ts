@@ -27,7 +27,7 @@ const AREA_DATA: Readonly<Record<string, Omit<Area, "label">>> = {
   Home: { landing: "HOME-01", path: "/home", routed: true, chord: "h" },
   Engagements: { landing: "ENG-01", path: "/engagements", routed: true },
   "Tax Returns": { landing: "TAX-01", path: "/tax-returns", routed: false, chord: "t" },
-  Files: { landing: "FIL-01", path: "/files", routed: false },
+  Files: { landing: "FIL-01", path: "/files", routed: true },
   Knowledge: { landing: "KNW-01", path: "/knowledge", routed: true },
   Workbench: { landing: "WB-01", path: "/workbench", routed: false, chord: "w" },
   Inbox: { landing: "INB-01", path: "/inbox", routed: false },

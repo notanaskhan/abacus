@@ -227,6 +227,22 @@ class FieldValueVersion(Base):
     target_id: Mapped[UUID]
     field_key: Mapped[str]
     seq: Mapped[int]
+    # P-04-T35: the provenance read (SHL-09).
+    value: Mapped[dict[str, object]] = mapped_column(JSONB)
+    value_kind: Mapped[str]
+    value_source: Mapped[str]
+    cause: Mapped[str]
+    actor_kind: Mapped[str] = mapped_column(server_default=FetchedValue())
+    actor_id: Mapped[str] = mapped_column(server_default=FetchedValue())
+    on_behalf_of_user_id: Mapped[UUID | None]
+    suggestion_id: Mapped[UUID | None]
+    checkpoint_id: Mapped[UUID | None]
+    citation_ids: Mapped[list[UUID]] = mapped_column(
+        ARRAY(PG_UUID(as_uuid=True)), server_default=FetchedValue()
+    )
+    citation_note_sealed: Mapped[bytes | None]
+    issue_id: Mapped[UUID | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
 
 
 class Checkpoint(Base):

@@ -125,6 +125,32 @@ export interface SigningCompletionVM {
   note?: string;
 }
 
+/** F-06-T05, F-06-T06: the identity, exception and phone states' words, from the screen's copy
+ * module (the kit holds no copy of its own). */
+export interface SigningOutcomeCopy {
+  /** DF-11 (TPL-16e): the title and the paper-form text naming the firm's contact. */
+  verifyFailedTitle: string;
+  verifyFailedBody: string;
+  /** After the provider returns, until the server confirms the signature (Story 1.1). */
+  pendingTitle: string;
+  pendingBody: string;
+  /** ProviderSigningFrame: the frame's title, the redirect call to action, and a URL it can't
+   * host. */
+  providerTitle: string;
+  providerContinue: string;
+  providerUnavailable: string;
+  decline: {
+    title: string;
+    reasons: readonly string[];
+    reasonsLabel: string;
+    noteLabel: string;
+    confirm: string;
+    trigger: string;
+  };
+  /** The 390 step chips' names. */
+  stepNames: Readonly<Record<StepKey, string>>;
+}
+
 export interface SigningCeremonyProps {
   envelope: EnvelopeVM;
   /** The signed-in person (the toolbar's user chip). The firm's name comes from the portal brand
@@ -148,7 +174,20 @@ export interface SigningCeremonyProps {
   onRetry?: () => void;
   /** A signer chip opens SIG-01 for the firm; the portal passes nothing. */
   onOpenSignatures?: (envelopeId: string) => void;
-  /** Presentation only (the gallery): a 1400 window. */
+  /** Presentation only (the gallery): a 1400 window, or a 390 phone. */
   frame?: boolean;
   height?: number;
+  /** F-06-T05, F-06-T06: the identity, exception and phone states' words. */
+  copy?: SigningOutcomeCopy;
+  /** F-06-T06: 390 (TPL-16g, TPL-19 frame 9, POR-06 on a phone). */
+  layout?: "desktop" | "phone";
+  /** The phone's sticky bar: 64 (TPL-16g, POR-06) or 72 (TPL-19 frame 9). */
+  stickyBarHeight?: 64 | 72;
+  /** The provider sent the signer back (the return URL's event parameter). A hint only: the kit
+   * shows Completed only when the server's envelope says so (Story 1.1). */
+  providerReturned?: boolean;
+  /** Decline with a reason (TPL-16f): called once per confirmation. Given the outcome words, the kit owns the
+   * dialog; `declineForceState` holds it open for a specimen. */
+  onDecline?: (choice: { reason: string; note: string }) => void;
+  declineForceState?: "open";
 }

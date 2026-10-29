@@ -4,7 +4,7 @@
 |---|---|
 | Register row | Screen-family contracts in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | live for dedupe, intake drafts and commit (P-07-T42, 2026-10-26) and for imports (P-07-T52, 2026-10-27) |
+| Status | **frozen 2026-10-29** (v1, P-07-T64, DEC-1054: `backend/tests/contracts/p07_intake_import/v1.json`; additions only, a breaking change ships v2 with overlap). live for dedupe, intake drafts and commit (P-07-T42, 2026-10-26) and for imports (P-07-T52, 2026-10-27) |
 | Provider epic | P-07 (`engagements`, the intake and import package; dedupe reads `organisations` through its api) |
 | Consumers | CLI-06 single intake (P-07-T49) and bulk import (P-07-T54); the consumer suite P-07-T45; the implementations P-07-T42 (dedupe, drafts, commit) and P-07-T52 (imports) |
 | Freeze sprint | the sprint review after the stub (P-07 §8.1) |

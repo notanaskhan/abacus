@@ -77,3 +77,13 @@ Seven steps, each computed from data (identity's `firm_facts` plus this module's
 
 ## AI exclusion (SPEC-036; TASK-076)
 `GET/PUT /v1/engagements/{id}/ai-exclusion`: the engagement partner (`engagement.ai_exclude`) switches AI off with a reason, or on again; audited, and the gateway refuses every model call on the engagement while it's off (`ai_excluded`, registered).
+
+## Frozen contracts (P-07-T64; DEC-1054)
+
+Frozen at v1 on 2026-10-29; the snapshots under `backend/tests/contracts/p07_*/v1.json` fail the
+contract tests on any removed or retyped field, newly required field or removed enum member. A
+breaking change ships the next version with overlap (`python -m abacus_tools.contracts --freeze`).
+
+- `docs/contracts/engagements-v2.md`
+- `docs/contracts/acceptance-independence.md`
+- `docs/contracts/intake-import.md`

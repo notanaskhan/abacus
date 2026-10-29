@@ -1,0 +1,1113 @@
+{
+  "ClientImportCountsOut": {
+    "description": "CLI-06 g: \"204 matched \u00b7 8 to review \u00b7 0 new\"; after the run, imported and skipped.",
+    "properties": {
+      "failed": {
+        "cls": "internal",
+        "default": 0,
+        "title": "Failed",
+        "type": "integer"
+      },
+      "imported": {
+        "cls": "internal",
+        "default": 0,
+        "title": "Imported",
+        "type": "integer"
+      },
+      "matched": {
+        "cls": "internal",
+        "title": "Matched",
+        "type": "integer"
+      },
+      "new": {
+        "cls": "internal",
+        "title": "New",
+        "type": "integer"
+      },
+      "rows": {
+        "cls": "internal",
+        "title": "Rows",
+        "type": "integer"
+      },
+      "skipped": {
+        "cls": "internal",
+        "default": 0,
+        "title": "Skipped",
+        "type": "integer"
+      },
+      "to_review": {
+        "cls": "internal",
+        "title": "To Review",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "rows",
+      "matched",
+      "to_review",
+      "new"
+    ],
+    "title": "ClientImportCountsOut",
+    "type": "object"
+  },
+  "ClientImportOut": {
+    "properties": {
+      "allowed_actions": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "type": "string"
+        },
+        "title": "Allowed Actions",
+        "type": "array"
+      },
+      "completed_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Completed At"
+      },
+      "counts": {
+        "$ref": "#/components/schemas/ClientImportCountsOut",
+        "cls": "internal"
+      },
+      "file_name": {
+        "cls": "confidential",
+        "title": "File Name",
+        "type": "string"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "mapping": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "cls": "internal",
+        "default": {},
+        "title": "Mapping",
+        "type": "object"
+      },
+      "source": {
+        "cls": "internal",
+        "enum": [
+          "cch_axcess_tax_export",
+          "csv"
+        ],
+        "title": "Source",
+        "type": "string"
+      },
+      "stage": {
+        "cls": "internal",
+        "enum": [
+          "uploaded",
+          "mapped",
+          "reviewing",
+          "importing",
+          "done",
+          "failed"
+        ],
+        "title": "Stage",
+        "type": "string"
+      },
+      "started_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Started At",
+        "type": "string"
+      },
+      "started_by": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Started By",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "source",
+      "stage",
+      "file_name",
+      "counts",
+      "started_by",
+      "started_at"
+    ],
+    "title": "ClientImportOut",
+    "type": "object"
+  },
+  "ClientImportRowOut": {
+    "description": "One parsed row: cells are inert text (ADR-052); a TIN sealed at parse and shown only in\nthe masked shape (kind, presence, last four).",
+    "properties": {
+      "best_match_client_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Best Match Client Id"
+      },
+      "best_match_name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Best Match Name"
+      },
+      "decided_by": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Decided By"
+      },
+      "decision": {
+        "anyOf": [
+          {
+            "enum": [
+              "new",
+              "merge",
+              "keep_both",
+              "skip"
+            ],
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Decision"
+      },
+      "display_name": {
+        "cls": "confidential",
+        "title": "Display Name",
+        "type": "string"
+      },
+      "entity_type": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Entity Type"
+      },
+      "error_code": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Error Code"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "row_no": {
+        "cls": "internal",
+        "title": "Row No",
+        "type": "integer"
+      },
+      "score": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Score"
+      },
+      "tin": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/MaskedTinOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "x-pii-kind": "tin"
+      }
+    },
+    "required": [
+      "id",
+      "row_no",
+      "display_name"
+    ],
+    "title": "ClientImportRowOut",
+    "type": "object"
+  },
+  "ClientImportRowsOut": {
+    "description": "The list envelope's shape (P-36): rows, a cursor and the total.",
+    "properties": {
+      "items": {
+        "cls": "confidential",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/ClientImportRowOut"
+        },
+        "title": "Items",
+        "type": "array"
+      },
+      "next_cursor": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Next Cursor"
+      },
+      "total": {
+        "cls": "internal",
+        "title": "Total",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "total"
+    ],
+    "title": "ClientImportRowsOut",
+    "type": "object"
+  },
+  "ClientIntakeDraftDiscardedOut": {
+    "properties": {
+      "discarded_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Discarded At",
+        "type": "string"
+      },
+      "draft_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Draft Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "draft_id",
+      "discarded_at"
+    ],
+    "title": "ClientIntakeDraftDiscardedOut",
+    "type": "object"
+  },
+  "ClientIntakeDraftIn": {
+    "additionalProperties": false,
+    "properties": {
+      "payload": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/ClientIntakeDraftPayload"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential"
+      },
+      "step": {
+        "cls": "internal",
+        "default": "entity",
+        "enum": [
+          "entity",
+          "relationships",
+          "contacts",
+          "services",
+          "conflicts",
+          "review"
+        ],
+        "title": "Step",
+        "type": "string"
+      }
+    },
+    "title": "ClientIntakeDraftIn",
+    "type": "object"
+  },
+  "ClientIntakeDraftOut": {
+    "properties": {
+      "allowed_actions": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "type": "string"
+        },
+        "title": "Allowed Actions",
+        "type": "array"
+      },
+      "committed_client_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Committed Client Id"
+      },
+      "created_by": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Created By",
+        "type": "string"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "payload": {
+        "$ref": "#/components/schemas/ClientIntakeDraftPayload",
+        "cls": "confidential"
+      },
+      "saved_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Saved At",
+        "type": "string"
+      },
+      "step": {
+        "cls": "internal",
+        "enum": [
+          "entity",
+          "relationships",
+          "contacts",
+          "services",
+          "conflicts",
+          "review"
+        ],
+        "title": "Step",
+        "type": "string"
+      },
+      "version": {
+        "cls": "internal",
+        "title": "Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "id",
+      "created_by",
+      "step",
+      "payload",
+      "version",
+      "saved_at"
+    ],
+    "title": "ClientIntakeDraftOut",
+    "type": "object"
+  },
+  "ClientIntakeDraftPatchIn": {
+    "additionalProperties": false,
+    "description": "Autosave: absent fields are unchanged; `seen_version` behind answers 409\n`stale_version`.",
+    "properties": {
+      "payload": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/ClientIntakeDraftPayload"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential"
+      },
+      "seen_version": {
+        "cls": "internal",
+        "minimum": 0.0,
+        "title": "Seen Version",
+        "type": "integer"
+      },
+      "step": {
+        "anyOf": [
+          {
+            "enum": [
+              "entity",
+              "relationships",
+              "contacts",
+              "services",
+              "conflicts",
+              "review"
+            ],
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Step"
+      }
+    },
+    "required": [
+      "seen_version"
+    ],
+    "title": "ClientIntakeDraftPatchIn",
+    "type": "object"
+  },
+  "ClientIntakeDraftPayload": {
+    "additionalProperties": false,
+    "description": "Identifiers and typed values only: no TIN (entered on the entity, sealed, after commit),\nno free text beyond names (P-07 \u00a74.2 M8).",
+    "properties": {
+      "conflict_check_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Conflict Check Id"
+      },
+      "contacts": {
+        "cls": "confidential",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/IntakeContactIn"
+        },
+        "maxItems": 20,
+        "title": "Contacts",
+        "type": "array"
+      },
+      "engagement_partner_user_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Engagement Partner User Id"
+      },
+      "entity": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/IntakeEntityIn"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential"
+      },
+      "relationships": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/IntakeRelationshipIn"
+        },
+        "maxItems": 20,
+        "title": "Relationships",
+        "type": "array"
+      },
+      "services": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/IntakeServiceIn"
+        },
+        "maxItems": 10,
+        "title": "Services",
+        "type": "array"
+      }
+    },
+    "title": "ClientIntakeDraftPayload",
+    "type": "object"
+  },
+  "DedupeCandidateOut": {
+    "description": "A client the person may see (walled clients are never candidates), with its score.",
+    "properties": {
+      "basis": {
+        "cls": "internal",
+        "enum": [
+          "name",
+          "ein"
+        ],
+        "title": "Basis",
+        "type": "string"
+      },
+      "client_entity_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Client Entity Id"
+      },
+      "client_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Client Id",
+        "type": "string"
+      },
+      "display_name": {
+        "cls": "confidential",
+        "title": "Display Name",
+        "type": "string"
+      },
+      "entity_name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Entity Name"
+      },
+      "score": {
+        "cls": "internal",
+        "maximum": 1.0,
+        "minimum": 0.0,
+        "title": "Score",
+        "type": "number"
+      }
+    },
+    "required": [
+      "client_id",
+      "display_name",
+      "score",
+      "basis"
+    ],
+    "title": "DedupeCandidateOut",
+    "type": "object"
+  },
+  "DedupeIn": {
+    "additionalProperties": false,
+    "description": "The name is in the body so it never reaches a URL or an access log.",
+    "properties": {
+      "kind": {
+        "anyOf": [
+          {
+            "enum": [
+              "household",
+              "business",
+              "plan_sponsor",
+              "nonprofit",
+              "trust_family"
+            ],
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Kind"
+      },
+      "name": {
+        "cls": "confidential",
+        "maxLength": 200,
+        "minLength": 1,
+        "title": "Name",
+        "type": "string"
+      }
+    },
+    "required": [
+      "name"
+    ],
+    "title": "DedupeIn",
+    "type": "object"
+  },
+  "DedupeOut": {
+    "properties": {
+      "candidates": {
+        "cls": "confidential",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/DedupeCandidateOut"
+        },
+        "title": "Candidates",
+        "type": "array"
+      }
+    },
+    "title": "DedupeOut",
+    "type": "object"
+  },
+  "IntakeCommitIn": {
+    "additionalProperties": false,
+    "description": "\"Create & start acceptance\" (`start_acceptance`) or \"Create\".",
+    "properties": {
+      "start_acceptance": {
+        "cls": "internal",
+        "default": false,
+        "title": "Start Acceptance",
+        "type": "boolean"
+      }
+    },
+    "title": "IntakeCommitIn",
+    "type": "object"
+  },
+  "IntakeCommittedOut": {
+    "description": "One unit of work; a replay with the same `Idempotency-Key` answers the same body.",
+    "properties": {
+      "acceptance_record_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Acceptance Record Id"
+      },
+      "client_entity_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Client Entity Id",
+        "type": "string"
+      },
+      "client_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Client Id",
+        "type": "string"
+      },
+      "conflict_check_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Conflict Check Id"
+      },
+      "draft_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Draft Id",
+        "type": "string"
+      },
+      "engagement_ids": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "title": "Engagement Ids",
+        "type": "array"
+      },
+      "engagement_status": {
+        "$ref": "#/components/schemas/EngagementStatus",
+        "cls": "internal"
+      },
+      "work_item_ids": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "title": "Work Item Ids",
+        "type": "array"
+      }
+    },
+    "required": [
+      "draft_id",
+      "client_id",
+      "client_entity_id",
+      "engagement_status"
+    ],
+    "title": "IntakeCommittedOut",
+    "type": "object"
+  },
+  "IntakeContactIn": {
+    "additionalProperties": false,
+    "properties": {
+      "display_name": {
+        "cls": "confidential",
+        "maxLength": 200,
+        "minLength": 1,
+        "title": "Display Name",
+        "type": "string"
+      },
+      "email": {
+        "anyOf": [
+          {
+            "maxLength": 254,
+            "pattern": "^[^@\\s]+@[^@\\s]+$",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Email"
+      },
+      "roles": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "pattern": "^[a-z0-9_]{1,64}$",
+          "type": "string"
+        },
+        "maxItems": 10,
+        "title": "Roles",
+        "type": "array"
+      }
+    },
+    "required": [
+      "display_name"
+    ],
+    "title": "IntakeContactIn",
+    "type": "object"
+  },
+  "IntakeEntityIn": {
+    "additionalProperties": false,
+    "properties": {
+      "client_display_name": {
+        "anyOf": [
+          {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Client Display Name"
+      },
+      "client_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Client Id"
+      },
+      "date_of_death": {
+        "anyOf": [
+          {
+            "format": "date",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Date Of Death"
+      },
+      "entity_name": {
+        "anyOf": [
+          {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Entity Name"
+      },
+      "entity_type": {
+        "anyOf": [
+          {
+            "pattern": "^[a-z0-9_]{1,64}$",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Entity Type"
+      },
+      "mode": {
+        "cls": "internal",
+        "enum": [
+          "new_client",
+          "existing_client"
+        ],
+        "title": "Mode",
+        "type": "string"
+      }
+    },
+    "required": [
+      "mode"
+    ],
+    "title": "IntakeEntityIn",
+    "type": "object"
+  },
+  "IntakeProblemOut": {
+    "properties": {
+      "code": {
+        "cls": "internal",
+        "title": "Code",
+        "type": "string"
+      },
+      "field": {
+        "cls": "internal",
+        "title": "Field",
+        "type": "string"
+      }
+    },
+    "required": [
+      "field",
+      "code"
+    ],
+    "title": "IntakeProblemOut",
+    "type": "object"
+  },
+  "IntakeRelationshipIn": {
+    "additionalProperties": false,
+    "properties": {
+      "kind": {
+        "cls": "internal",
+        "pattern": "^[a-z0-9_]{1,64}$",
+        "title": "Kind",
+        "type": "string"
+      },
+      "related_entity_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Related Entity Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "related_entity_id"
+    ],
+    "title": "IntakeRelationshipIn",
+    "type": "object"
+  },
+  "IntakeServiceIn": {
+    "additionalProperties": false,
+    "properties": {
+      "fiscal_period_end": {
+        "anyOf": [
+          {
+            "format": "date",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Fiscal Period End"
+      },
+      "fiscal_period_start": {
+        "anyOf": [
+          {
+            "format": "date",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Fiscal Period Start"
+      },
+      "forms": {
+        "anyOf": [
+          {
+            "items": {
+              "pattern": "^[a-z0-9_]{1,64}$",
+              "type": "string"
+            },
+            "maxItems": 5,
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Forms"
+      },
+      "type_code": {
+        "cls": "internal",
+        "pattern": "^[a-z0-9_]{1,64}$",
+        "title": "Type Code",
+        "type": "string"
+      }
+    },
+    "required": [
+      "type_code"
+    ],
+    "title": "IntakeServiceIn",
+    "type": "object"
+  },
+  "IntakeValidateIn": {
+    "additionalProperties": false,
+    "properties": {
+      "step": {
+        "cls": "internal",
+        "enum": [
+          "entity",
+          "relationships",
+          "contacts",
+          "services",
+          "conflicts",
+          "review"
+        ],
+        "title": "Step",
+        "type": "string"
+      }
+    },
+    "required": [
+      "step"
+    ],
+    "title": "IntakeValidateIn",
+    "type": "object"
+  },
+  "IntakeValidationOut": {
+    "properties": {
+      "draft_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Draft Id",
+        "type": "string"
+      },
+      "problems": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/IntakeProblemOut"
+        },
+        "title": "Problems",
+        "type": "array"
+      },
+      "step": {
+        "cls": "internal",
+        "enum": [
+          "entity",
+          "relationships",
+          "contacts",
+          "services",
+          "conflicts",
+          "review"
+        ],
+        "title": "Step",
+        "type": "string"
+      },
+      "valid": {
+        "cls": "internal",
+        "title": "Valid",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "draft_id",
+      "step",
+      "valid"
+    ],
+    "title": "IntakeValidationOut",
+    "type": "object"
+  },
+  "RowDecisionIn": {
+    "additionalProperties": false,
+    "description": "A person's decision on a row; `merge` names the client it merges into.",
+    "properties": {
+      "decision": {
+        "cls": "internal",
+        "enum": [
+          "new",
+          "merge",
+          "keep_both",
+          "skip"
+        ],
+        "title": "Decision",
+        "type": "string"
+      },
+      "merge_client_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Merge Client Id"
+      }
+    },
+    "required": [
+      "decision"
+    ],
+    "title": "RowDecisionIn",
+    "type": "object"
+  }
+}
