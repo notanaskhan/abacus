@@ -1,8 +1,8 @@
 ---
 id: TASK-1732
 title: P-07-T61 Activity tabs on CLI-02 and ENG-02
-spec: docs/screens/CLI-02.md; docs/screens/ENG-02.md
-acceptance_criteria: [P-07-T61]
+spec: SPEC-349
+acceptance_criteria: [AC-1]
 risk_zone: green
 status: in-review
 epic: P-07
