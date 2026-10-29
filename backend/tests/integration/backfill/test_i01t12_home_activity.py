@@ -14,7 +14,7 @@ import pytest
 from abacus.kernel.uow import OutboxEvent
 from abacus.modules.practice.activity import (
     ACTIVITY_TYPES,
-    project,
+    on_event,
     prune_firm,
     rebuild_home_activity,
 )
@@ -100,13 +100,13 @@ async def test_ac_replaying_events_leaves_the_projection_unchanged_and_rows_hold
         ),
     ]
     for event in events:
-        await project(event)
+        await on_event(event)
     first = await _rows(net, tenant)
     assert sorted(str(r["event_type"]) for r in first) == sorted(ACTIVITY_TYPES)
 
     # The same events again, in another order: nothing changes.
     for event in reversed(events):
-        await project(event)
+        await on_event(event)
     assert await _rows(net, tenant) == first
 
     # Identifiers, codes and counts only: no names, no amounts, no free text.
@@ -140,7 +140,7 @@ async def test_ac_a_walled_users_timeline_omits_the_client_entirely(net: Net) ->
     bayside = await seed.site(tenant, admin.user_id, "Bayside")
     for site in (ashford, bayside):
         await seed.member(site, lena, "manager")
-        await project(_upload(tenant, site.engagement_id))
+        await on_event(_upload(tenant, site.engagement_id))
 
     before = cast(Json, (await net.call("GET", HOME, lena)).json())
     assert len(cast(list[Json], before["client_activity"])) == 2
@@ -165,8 +165,8 @@ async def test_the_prune_drops_rows_past_90_days_and_the_rebuild_restores_the_ou
     admin = await seed.person(tenant, "firm_admin")
     site = await seed.site(tenant, admin.user_id, "Calloway")
     old, recent = _upload(tenant, site.engagement_id), _upload(tenant, site.engagement_id)
-    await project(old)
-    await project(recent)
+    await on_event(old)
+    await on_event(recent)
     await seed.run(
         "UPDATE home_activity_items SET occurred_at = $2 WHERE source_event_id = $1",
         old.event_id,

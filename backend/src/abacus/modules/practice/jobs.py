@@ -8,7 +8,7 @@ from temporalio import activity
 
 from abacus.kernel.dispatch import PlatformSchedule, WorkClass, register_work_classes
 from abacus.kernel.uow import Handler
-from abacus.modules.practice.activity import SOURCES, project, prune_once
+from abacus.modules.practice.activity import SOURCES, on_event, prune_once
 from abacus.modules.practice.workflows import HOME_ACTIVITY_PRUNE_ID, HomeActivityPruneWorkflow
 
 
@@ -18,7 +18,7 @@ async def prune_home_activity_activity() -> int:
 
 
 # The `HomeActivityProjector`: every allowlisted event type (I-01 §4.4).
-SUBSCRIPTIONS: dict[str, Handler] = dict.fromkeys(SOURCES, project)
+SUBSCRIPTIONS: dict[str, Handler] = dict.fromkeys(SOURCES, on_event)
 WORKFLOWS: dict[type, WorkClass] = {HomeActivityPruneWorkflow: "background"}
 register_work_classes(WORKFLOWS)
 ACTIVITIES: tuple[object, ...] = (prune_home_activity_activity,)

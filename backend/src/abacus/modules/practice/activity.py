@@ -5,7 +5,7 @@
   (`ACTIVITY_TYPES`, the table's CHECK): a client upload (`evidence.uploaded`), a follow-up sent
   (`follow_up.sent`), a letter recorded (`gate.met` for G3, the interim recorded letter) and an
   agent pre-screen (`upload_review.recorded`). Inbound mail and envelopes join in S29 (I-01-T23).
-- **The projector** (`project`, `practice.api.SUBSCRIPTIONS`): one row per event, built from the
+- **The projector** (`on_event`, `practice.api.SUBSCRIPTIONS`): one row per event, built from the
   event's identifiers and the engagement's client and office (read from `engagements`, under the
   event's tenant as the system), inserted with `source_event_id` = the event id and `ON CONFLICT
   DO NOTHING`: a redelivered or replayed event changes nothing, and writes no audit event. Rows
@@ -146,7 +146,7 @@ async def _insert(event: OutboxEvent, occurred_at: datetime | None) -> int:
     if shape is None or engagement_raw is None:
         return 0
     engagement_id = UUID(str(engagement_raw))
-    tenant = _system(event.tenant_id, "project")
+    tenant = _system(event.tenant_id, "projector")
     facts = await engagement_hold_facts(tenant, engagement_id)
     if facts is None:
         return 0
@@ -178,14 +178,14 @@ async def _insert(event: OutboxEvent, occurred_at: datetime | None) -> int:
                 tx.record(
                     "home_activity.projected",
                     target=Target("engagement", engagement_id),
-                    after=Ref(event_type=shape.event_type),
+                    after=Ref(source_event_id=event.event_id),
                 )
             return added
     except MissingAuditEvent:
         return 0  # a replay: the row was already there, nothing written
 
 
-async def project(event: OutboxEvent) -> None:
+async def on_event(event: OutboxEvent) -> None:
     """The `HomeActivityProjector` outbox consumer: idempotent on the event id."""
     await _insert(event, None)
 
@@ -288,7 +288,7 @@ __all__ = [
     "SOURCES",
     "ActivityRow",
     "client_activity",
-    "project",
+    "on_event",
     "prune_firm",
     "prune_once",
     "rebuild_home_activity",

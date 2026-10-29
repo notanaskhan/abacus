@@ -1,8 +1,8 @@
 ---
 id: TASK-1800
 title: Home client activity projection (I-01-T12)
-spec: docs/contracts/home-and-gates.md
-acceptance_criteria: [AC4.3, AC4.4]
+spec: SPEC-313
+acceptance_criteria: [AC-1]
 risk_zone: amber
 status: in-review
 epic: I-01
