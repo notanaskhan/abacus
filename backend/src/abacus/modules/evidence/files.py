@@ -43,7 +43,7 @@ from abacus.kernel.listing import (
     query_hash,
 )
 from abacus.kernel.uow import AuditRow
-from abacus.modules.engagements.api import work_item_index
+from abacus.modules.engagements.api import engagement_resource_of, work_item_index
 from abacus.modules.evidence.files_shapes import (
     AccessLogRow,
     Channel,
@@ -70,6 +70,8 @@ from abacus.modules.evidence.models import (
 )
 from abacus.modules.identity.api import (
     AuthContext,
+    Resource,
+    authorise,
     names_of,
     target_events,
     visible,
@@ -287,7 +289,9 @@ async def tree(
                     year_children,
                 )
             )
-        total = sum(n for (c, _w, _s, _k), n in counts.items() if c == cid)
+        # The client's count is what its tree shows (the permanent file and its years): an item
+        # on no work item sits in no folder and is not counted (review).
+        total = sum(n.count for n in children)
         show = client_id is not None or f"client:{cid}" in expand
         out.append(_node(f"client:{cid}", "client", cname, total, children, expanded=show))
     return FileTreeOut(nodes=out)
@@ -652,7 +656,17 @@ async def access_log(
 ) -> tuple[list[AccessLogRow], str | None]:
     """`GET /v1/evidence-items/{id}/access-log`: audit events on the item and its versions,
     newest first. The cursor is the last row's audit sequence."""
-    item = await _readable_item(ctx, item_id, READ_ACCESS_LOG)
+    # `visible()` filters reads only, and the access log is not a read verb: the item is found as
+    # metadata (walls and other firms 404), then the log's own action is authorised where the
+    # item lives (its engagement; the firm for a client-scoped item, where only firm-level
+    # roles such as security admin hold it).
+    item = await _readable_item(ctx, item_id, READ_METADATA)
+    resource = (
+        await engagement_resource_of(ctx.tenant, item.engagement_id)
+        if item.scope == "engagement"
+        else Resource.firm(ctx.tenant_id)
+    )
+    await authorise(ctx, READ_ACCESS_LOG, resource)
     async with tenant_session(ctx.tenant) as session:
         versions = {
             v.id: v.version_no
