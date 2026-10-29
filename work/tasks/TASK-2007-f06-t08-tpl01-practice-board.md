@@ -2,7 +2,7 @@
 id: TASK-2007
 title: F-06-T08 TPL-01 Tax Returns practice board specimen
 spec: SPEC-400
-acceptance_criteria: [F2]
+acceptance_criteria: [AC-43]
 risk_zone: green
 status: in-review
 epic: F-06
