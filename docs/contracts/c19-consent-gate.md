@@ -54,3 +54,9 @@ Consent rows `confidential`; return and transcript figures TRI (`restricted`, `x
 - **Matrix:** condition `consent: <purposes>` over `TargetFacts.consent_subjects`; consent checks for `use` and `ai_disclosure` registered by organisations. No row carries it yet: the first agent TRI actions arrive with T-04 and P-10-T22.
 - **Agent specs:** `data_classes: [tri]` needs both checks registered.
 
+## Live since T-01-T12 (DEC-1258)
+- **Offshore provider:** `register_consent_check("offshore_disclosure", check, predicate, count)` from `organisations/consent_gate.py`; keyed by client (every taxpayer entity covered).
+- **TRI MFA:** engagements' `tri_scope` in P-08's floor (`FLOOR` now names three predicates).
+- **SSN unlock:** `seal_tin` accepts an SSN or ITIN on a real firm once the three C19 checks are registered. CLI-06's draft-text guard (no SSN or ITIN in an intake draft's free text) and the client import's drop rule are unchanged.
+- **Tags:** `MaskedTinOut.last4` and `TinRevealOut.value` carry `x-tri`.
+

@@ -238,8 +238,10 @@ from abacus.modules.identity.portal_session import (
 from abacus.modules.identity.repository import (
     ContactGrantRow,
     EngagementRole,
+    GrantRow,
     MemberDetail,
     MemberFacts,
+    active_grants,
     contact_user_ids,
     engagement_team_query,
     firm_tenant_ids,
@@ -335,6 +337,7 @@ from abacus.modules.identity.settings_registry import (
     stored_value,
 )
 from abacus.modules.identity.slots import (
+    OFFSHORE_DISCLOSURE,
     InvitationParties,
     LinkOutcome,
     ScopeFacts,
@@ -487,6 +490,7 @@ __all__ = [
     "FULL_ROLES",
     "IDENTITY",
     "MFA_RECENT",
+    "OFFSHORE_DISCLOSURE",
     "OWN",
     "PARTNER_ROLES",
     "PORTAL_PUBLIC",
@@ -537,6 +541,7 @@ __all__ = [
     "GrantExists",
     "GrantNotYetDue",
     "GrantRole",
+    "GrantRow",
     "GrantScope",
     "GrantScopeInvalid",
     "GrantScopeOutsideClient",
@@ -600,6 +605,7 @@ __all__ = [
     "WallCreated",
     "WallExists",
     "acknowledge",
+    "active_grants",
     "active_staff_among",
     "active_wall_count",
     "add_creator_as_partner",

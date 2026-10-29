@@ -117,8 +117,11 @@ class MaskedTinOut(BaseModel):
 
     kind: Annotated[TinKind, classified("internal")]
     presence: Annotated[TinPresence, classified("internal")]
+    # T-01-T12 (C19): a taxpayer's TIN is tax return information as well as a TIN.
     last4: Annotated[
-        str | None, Field(pattern=r"^[0-9]{4}$"), classified("restricted", pii_kind="tin")
+        str | None,
+        Field(pattern=r"^[0-9]{4}$"),
+        classified("restricted", tri=True, pii_kind="tin"),
     ] = None
 
 
@@ -286,7 +289,7 @@ class TinRevealOut(BaseModel):
 
     entity_id: Annotated[UUID, classified("internal")]
     kind: Annotated[TinKind, classified("internal")]
-    value: Annotated[str, classified("restricted", pii_kind="tin")]
+    value: Annotated[str, classified("restricted", tri=True, pii_kind="tin")]
     remask_after_seconds: Annotated[int, classified("internal")] = 10
 
 

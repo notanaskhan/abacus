@@ -40396,7 +40396,8 @@
             ],
             "cls": "restricted",
             "title": "Last4",
-            "x-pii-kind": "tin"
+            "x-pii-kind": "tin",
+            "x-tri": true
           },
           "presence": {
             "cls": "internal",
@@ -67562,7 +67563,8 @@
             "cls": "restricted",
             "title": "Value",
             "type": "string",
-            "x-pii-kind": "tin"
+            "x-pii-kind": "tin",
+            "x-tri": true
           }
         },
         "required": [

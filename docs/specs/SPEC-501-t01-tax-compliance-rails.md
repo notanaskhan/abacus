@@ -58,3 +58,9 @@ T-01 gives Accrued the §7216 consent registry and the gate that keeps tax retur
 - **AC-21** The matrix condition `consent: <purposes>` takes only the six §7216 purposes; it is a resource condition binding every actor, held only when every `TargetFacts.consent_subjects` entity holds every listed purpose now (none: refused); the generated security cases cover it (consented allow; not consented and no subjects deny).
 - **AC-22** An agent spec declaring `data_classes: [tri]` loads only while the `use` and `ai_disclosure` consent checks are registered.
 - **AC-23** Model text is stored with every unmasked SSN, ITIN or EIN form masked (`•••-••-1234`) and the hit counted (`abacus.ai.tin_masked`); a TIN in the assembled context still refuses the call (`pii_in_context`, ADR-167 §2).
+
+**TRI MFA, offshore and the SSN unlock (T-01-T12).**
+- **AC-24** P-08's floor includes `tri_scope` (engagements): a client person with an active grant on a K-1 package, a `tax_return` work item or an engagement holding one must pass the second step (POR-01c) before any TRI-bearing page; other scopes are not TRI-bearing. Unregistered, the floor fails closed.
+- **AC-25** The `offshore_disclosure` provider is registered in G-01's slot: a client is covered when it has a taxpayer entity and every entity holds the consent in force (signed by every required signer, unrevoked, unexpired); the check, the SQL predicate (ADM-03d) and the count agree.
+- **AC-26** An offshore member is assigned to a client's work only while it is covered (409 `offshore_consent_required` otherwise; offshore is not a wall, DEC-319); every TIN they read is masked or null (`mask_tins_for`), and `tin.reveal` stays `not_offshore`.
+- **AC-27** TIN fields carry `tri` beside `pii_kind=tin`; P-07's SSN and ITIN refusal on a real firm lifts once C19's `use`, `ai_disclosure` and `offshore_disclosure` checks are registered (before that it stays 422 `tin_kind_not_allowed`).

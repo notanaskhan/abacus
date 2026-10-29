@@ -38,6 +38,7 @@ from abacus.modules.engagements.setup import g2_blocks
 from abacus.modules.engagements.slots import NewWorkItem, work_item_provider
 from abacus.modules.identity.api import (
     AuthContext,
+    active_grants,
     assert_assignable,
     authorise,
     team_standing,
@@ -585,6 +586,29 @@ async def list_work_items(
         total=total,
         counts=counts,
     )
+
+
+async def mfa_tri_scope(tenant: TenantContext, user_id: UUID) -> bool:
+    """T-01-T12 (C19; P-08's slot): whether a client person's access reaches tax return
+    information, so the portal's second step is required: an active grant on a K-1 package, on
+    a `tax_return` work item, or on an engagement holding one (TRI-bearing scopes)."""
+    grants = await active_grants(tenant, user_id)
+    if any(g.scope_kind == "k1_package" for g in grants):
+        return True
+    items = [g.scope_id for g in grants if g.scope_kind == "work_item"]
+    engagements = [g.scope_id for g in grants if g.scope_kind == "engagement"]
+    if not items and not engagements:
+        return False
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            select(WorkItem.id)
+            .where(
+                WorkItem.kind == "tax_return",
+                WorkItem.id.in_(items) | WorkItem.engagement_id.in_(engagements),
+            )
+            .limit(1)
+        )
+    return found is not None
 
 
 async def holds_tax_return(tenant: TenantContext, engagement_id: UUID) -> bool:

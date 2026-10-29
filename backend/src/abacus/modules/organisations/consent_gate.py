@@ -31,14 +31,18 @@ from datetime import datetime
 from typing import Final, NamedTuple
 from uuid import UUID
 
-from sqlalchemy import text
+from sqlalchemy import ColumnElement, and_, column, func, literal, or_, select, table, text
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
 from abacus.kernel import provider_terms
 from abacus.kernel.clock import now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict
 from abacus.kernel.uow.access import AccessSubject, record_reads, register_access_kind
-from abacus.modules.identity.api import register_consent_check
+from abacus.modules.identity.api import (
+    OFFSHORE_DISCLOSURE,
+    register_consent_check,
+)
 from abacus.modules.organisations.consents_contract import ConsentState, TriVerdict
 
 TRI_PURPOSES: Final = ("use", "ai_disclosure")
@@ -227,11 +231,96 @@ async def _given(tenant: TenantContext, entity_id: UUID, purpose: str, at: datet
     return (entity_id, purpose) in await _in_force(tenant, [entity_id], [purpose], at, None)
 
 
+# --- offshore disclosure (T-01-T12; G-01-T09's slot; DEC-52) -------------------------------------
+#
+# A client is covered when it has at least one taxpayer entity and every one of them holds an
+# `offshore_disclosure` consent in force (signed by every required signer, unrevoked, unexpired).
+# The check, the SQL predicate (ADM-03d's filter) and the count read the same rule.
+
+_entities = table("client_entities", column("id"), column("client_id"))
+_offshore = table(
+    "consents",
+    column("id"),
+    column("tenant_id"),
+    column("client_entity_id"),
+    column("purpose"),
+    column("status"),
+    column("revoked_at"),
+    column("expires_at"),
+)
+_signers = table(
+    "consent_signers",
+    column("tenant_id"),
+    column("consent_id"),
+    column("required"),
+    column("signed_at"),
+)
+
+
+def _entity_covered(entity_id: ColumnElement[UUID], purpose: str) -> ColumnElement[bool]:
+    unsigned = (
+        select(literal(1))
+        .where(
+            _signers.c.tenant_id == _offshore.c.tenant_id,
+            _signers.c.consent_id == _offshore.c.id,
+            _signers.c.required.is_(True),
+            _signers.c.signed_at.is_(None),
+        )
+        .exists()
+    )
+    return (
+        select(literal(1))
+        .where(
+            _offshore.c.client_entity_id == entity_id,
+            _offshore.c.purpose == purpose,
+            _offshore.c.status == "signed",
+            _offshore.c.revoked_at.is_(None),
+            or_(_offshore.c.expires_at.is_(None), _offshore.c.expires_at > func.abacus_now()),
+            ~unsigned,
+        )
+        .exists()
+    )
+
+
+def offshore_column(client_id: ColumnElement[UUID], purpose: str) -> ColumnElement[bool]:
+    """The client-id column is covered: it has an entity, and none lacks the consent."""
+    entity = _entities.alias("covered_entity")
+    has_entity = select(literal(1)).where(entity.c.client_id == client_id).exists()
+    uncovered = (
+        select(literal(1))
+        .where(entity.c.client_id == client_id, ~_entity_covered(entity.c.id, purpose))
+        .exists()
+    )
+    return and_(has_entity, ~uncovered)
+
+
+async def _offshore_given(
+    tenant: TenantContext, client_id: UUID, purpose: str, _at: datetime
+) -> bool:
+    """`consent_given` for `offshore_disclosure`, keyed by client (as G-01 asks)."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            select(offshore_column(literal(client_id, type_=PG_UUID(as_uuid=True)), purpose))
+        )
+    return bool(found)
+
+
+async def _offshore_count(tenant: TenantContext, purpose: str) -> int:
+    clients = table("clients", column("id"))
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            select(func.count()).select_from(clients).where(offshore_column(clients.c.id, purpose))
+        )
+    return int(found or 0)
+
+
 def register_consent_gate() -> None:
-    """Once, from `organisations.api`: the two TRI purposes' checks. Organisations never
-    imports the gateway (P-07-T04): engagements registers `covering_consents` with it."""
+    """Once, from `organisations.api`: the two TRI purposes' checks, and the offshore
+    disclosure's check, predicate and count (T-01-T12). Organisations never imports the gateway
+    (P-07-T04): engagements registers `covering_consents` with it."""
     for purpose in TRI_PURPOSES:
         register_consent_check(purpose, _given)
+    register_consent_check(OFFSHORE_DISCLOSURE, _offshore_given, offshore_column, _offshore_count)
 
 
 __all__ = [
@@ -240,6 +329,7 @@ __all__ = [
     "TriSubject",
     "consent_state",
     "covering_consents",
+    "offshore_column",
     "register_consent_gate",
     "require_tri_consent",
     "tri_consent_verdict",
