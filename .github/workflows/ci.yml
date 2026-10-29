@@ -117,7 +117,9 @@ jobs:
     # at 76% and 98% with the S7 files not yet recorded. Five shards outgrew 45 minutes after the
     # S9-S11 suites (ab224ceb: shards 1 and 2 cancelled at 71% and 83%, no failures), so eight.
     # S13 (#557): shard 7 of 8 cancelled at 82% twice with 270 files unrecorded, so ten.
-    timeout-minutes: 45
+    # c441d80c: shard 4 of 10 cancelled at 63% with no failures (the S13r and S11 files are not
+    # recorded yet), so 60 minutes until durations.json is re-recorded.
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
