@@ -55,7 +55,7 @@ async def _independence(tenant: TenantContext, engagement_id: UUID) -> GateFact:
     return GateFact(met=True)
 
 
-async def _letter(tenant: TenantContext, engagement_id: UUID) -> GateFact:
+async def recorded_letter(tenant: TenantContext, engagement_id: UUID) -> GateFact:
     """G3: a signed letter, or `not_required_this_year` (the exceptions path, 0182). The firm's
     letter policy never meets it (DEC-39 (b), ED-010)."""
     async with tenant_session(tenant) as session:
@@ -68,7 +68,7 @@ async def _letter(tenant: TenantContext, engagement_id: UUID) -> GateFact:
 def register_gates() -> None:
     register_gate_provider("G1", _acceptance)
     register_gate_provider("G2", _independence)
-    register_gate_provider("G3", _letter)
+    register_gate_provider("G3", recorded_letter)  # interim until signatures (N-02-T09)
 
 
 @dataclass(frozen=True)

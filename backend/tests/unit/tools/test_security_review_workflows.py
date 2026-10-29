@@ -22,6 +22,7 @@ ROLE_WORKFLOWS = (
     "rollback.yml",
     "drill.yml",
     "ops-task.yml",
+    "git-bundle-backup.yml",  # Q-01-T07: the weekly source backup
 )
 
 

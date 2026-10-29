@@ -128,6 +128,8 @@ export function CatalogLayout({
           <Pane
             key="grid"
             title={grid.title}
+            // A scrolling region a keyboard can reach (axe scrollable-region-focusable; K-01-T11).
+            scrollLabel={`${grid.title} content`}
             {...(grid.left === undefined ? {} : { left: grid.left })}
             {...(grid.right === undefined ? {} : { right: grid.right })}
             className="min-h-0"

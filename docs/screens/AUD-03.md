@@ -164,7 +164,7 @@ Each becomes a test in `AUD-03.test.tsx` ("AUD-03 avoid: …"): gradients in pro
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a–g | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (Playwright not run in the S9 wave: chromium mismatch) | locked by Fri Apr 30, 2027 (A-01-T28); SHL-20's card is parity-checked inside b and c |
+| a–g | C (threshold 0.20, maxDiffPixelRatio 3 %) | 5.70 / 4.49 / 6.12 / 12.66 / 3.25 / 5.93 / 3.25 | report-only: measured Thu Oct 29, 2026 (A-01-T28), all above 3 % (d opens on the Return dialog); locked by Fri Apr 30, 2027 once the viewer and dialog regions are masked; SHL-20's card is parity-checked inside b and c |
 | host | D | — | audit bar 59, rail 330, canvas 536, viewer 490, rows 52, group bands 32, evbar 44, pills 19, radius 12 |
 
 ## Open gaps

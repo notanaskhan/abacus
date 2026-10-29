@@ -1,3 +1,4 @@
+import { publishPortalSettings } from "@abacus/api-client";
 import { AppShell } from "@abacus/ui";
 import { type JSX, useEffect, useState } from "react";
 import { installFixtureMode } from "../app-core/fixture-mode";
@@ -33,6 +34,21 @@ import {
   scenarios as adm06Scenarios,
 } from "./ADM-06/scenarios";
 import { ADM07 } from "./ADM-07";
+import { ADM10 } from "./ADM-10";
+import {
+  type Adm10State,
+  STATES as ADM10_STATES,
+  OPENS as ADM10_OPENS,
+  PREVIEW_AS as ADM10_PREVIEW_AS,
+  scenarios as adm10Scenarios,
+} from "./ADM-10/scenarios";
+import { SIG01 } from "./SIG-01";
+import {
+  OPENS as SIG01_OPENS,
+  STATES as SIG01_STATES,
+  type Sig01State,
+  scenarios as sig01Scenarios,
+} from "./SIG-01/scenarios";
 import {
   type Adm07State,
   STATES as ADM07_STATES,
@@ -195,6 +211,13 @@ import {
 import { PortalRequest } from "./POR-04";
 import { PortalRoom } from "./POR-14";
 import { PortalConnections } from "./POR-16";
+import { KNW02 } from "./KNW-02";
+import {
+  type Knw02State,
+  STATES as KNW02_STATES,
+  OPENS as KNW02_OPENS,
+  scenarios as knw02Scenarios,
+} from "./KNW-02/scenarios";
 import { POR20 } from "./POR-20";
 import {
   OPENS as POR20_OPENS,
@@ -605,6 +628,72 @@ function Adm06Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("ADM-06", { title: "Security center & data residency", Component: Adm06Artboard });
 
+// ADM-10 a–g (R-01-T28): portal settings on the T12 frame; each state opens with its preview
+// contact, device and drawer. f publishes b's draft before it draws (a step, not a prop).
+function Adm10Frame({ state }: { state: Adm10State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/settings/portal" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  const opens = ADM10_OPENS[state];
+  const [search, setSearch] = useState<Record<string, string | undefined>>(() => ({
+    as: opens.as,
+    device: opens.device,
+    ...(opens.ov === undefined ? {} : { ov: opens.ov }),
+  }));
+  return (
+    <div data-artboard={state}>
+      <AppShell
+        frame
+        height={860}
+        toolbar={{ ...bar.toolbar, active: "", firmPressed: true }}
+        overlay={bar.overlay}
+      >
+        <ADM10
+          search={search}
+          onSearch={(next) => {
+            setSearch({ ...next });
+          }}
+          previewAs={ADM10_PREVIEW_AS}
+        />
+      </AppShell>
+    </div>
+  );
+}
+
+function Adm10Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Adm10State = ADM10_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    const restore = installFixtureMode(
+      adm10Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    const step =
+      ADM10_OPENS[state].publish === true
+        ? publishPortalSettings({ headers: { "Idempotency-Key": `adm10-${state}` } })
+        : Promise.resolve();
+    void step.finally(() => {
+      if (live) setReady(state);
+    });
+    return () => {
+      live = false;
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Adm10Frame key={state} state={state} /> : null;
+}
+
+registerScreen("ADM-10", {
+  title: "Portal branding & client experience",
+  Component: Adm10Artboard,
+});
+
 // ADM-07 a–g (G-02-T13; G-02-T21 screen spec): the audit log on the T12 frame; each state opens
 // with its search.
 function Adm07Frame({ state }: { state: Adm07State }): JSX.Element {
@@ -653,6 +742,44 @@ function Adm07Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("ADM-07", { title: "Audit log explorer", Component: Adm07Artboard });
+
+// N-02-T11: SIG-01 · Signatures hub (a–g; r's Import sheet lands with N-02-T15, DEC-827).
+function Sig01Frame({ state }: { state: Sig01State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/signatures" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  const open = SIG01_OPENS[state];
+  return (
+    <div data-artboard={state}>
+      <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+        <SIG01 initialTab={open.tab} initialEnvelope={open.envelope} />
+      </AppShell>
+    </div>
+  );
+}
+
+function Sig01Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Sig01State = SIG01_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      sig01Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Sig01Frame key={state} state={state} /> : null;
+}
+
+registerScreen("SIG-01", { title: "Signatures hub & evidence drawer", Component: Sig01Artboard });
 
 function Cli01Frame({ state }: { state: Cli01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
@@ -1566,6 +1693,46 @@ function Por20Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
     </div>
   );
 }
+
+// KNW-02 e, f (K-01-T07): the workbook slice on the T3 triad (Prepare preset), each state on its
+// version and search.
+function Knw02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Knw02State = KNW02_STATES.find((s) => s === params.st) ?? "e";
+  const [ready, setReady] = useState<string | null>(null);
+  const [search, setSearch] = useState<Record<string, string | undefined>>({});
+  useEffect(() => {
+    const restore = installFixtureMode(
+      knw02Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    const opens = KNW02_OPENS[state];
+    setSearch(opens.ov === undefined ? {} : { ov: opens.ov });
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div key={state} data-artboard={state} className="h-[900px] p-[20px]">
+      <div data-window="" className="flex h-[860px] w-[1400px] flex-col bg-shell">
+        <KNW02
+          versionId={KNW02_OPENS[state].versionId}
+          search={search}
+          onSearch={(next) => {
+            setSearch({ ...next });
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+registerScreen("KNW-02", {
+  title: "Methodology versions & import review",
+  Component: Knw02Artboard,
+});
 
 registerScreen("POR-20", {
   title: "Transactional email templates · Reminder",

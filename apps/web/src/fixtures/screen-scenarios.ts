@@ -15,6 +15,7 @@ import { scenarios as adm01 } from "./scenarios/ADM-01";
 import { OPENS as ADM02_OPENS, scenarios as adm02 } from "./scenarios/ADM-02";
 import { OPENS as ADM03_OPENS, scenarios as adm03 } from "./scenarios/ADM-03";
 import { OPENS as ADM06_OPENS, scenarios as adm06 } from "./scenarios/ADM-06";
+import { OPENS as ADM10_OPENS, scenarios as adm10 } from "./scenarios/ADM-10";
 import { OPENS as ADM07_OPENS, scenarios as adm07 } from "./scenarios/ADM-07";
 import { scenarios as aud01 } from "./scenarios/AUD-01";
 import { IDS as AUD03_IDS, scenarios as aud03 } from "./scenarios/AUD-03";
@@ -59,6 +60,16 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
   "ADM-03": { scenarios: adm03, opens: ADM03_OPENS },
   "ADM-06": { scenarios: adm06, opens: ADM06_OPENS }, // G-02-T16
   "ADM-07": { scenarios: adm07, opens: ADM07_OPENS }, // G-02-T13
+  // R-01-T28: the preview's contact and device, and e's drawer, live in the URL.
+  "ADM-10": {
+    scenarios: adm10,
+    opens: Object.fromEntries(
+      Object.entries(ADM10_OPENS).map(([state, o]) => [
+        state,
+        `?${new URLSearchParams({ as: o.as, device: o.device, ...(o.ov === undefined ? {} : { ov: o.ov }) }).toString()}`,
+      ]),
+    ),
+  },
   "AUD-01": { scenarios: aud01, opens: {} }, // A-01-T26: j03 6, j04 1
   "AUD-03": { scenarios: aud03, opens: {}, ids: AUD03_IDS }, // A-01-T26: j03 4e, 5, 5c
   "BND-01": { scenarios: bnd01, opens: {} },

@@ -78,6 +78,11 @@ class Facts:
     flag_expiries: Mapping[str, date] = field(default_factory=dict[str, date])
     runbooks_rehearsed: Mapping[str, date | None] = field(default_factory=dict[str, date | None])
     on_call_updated: date | None = None
+    # G-01-T19 (DEC-903): the M9 checklist rows.
+    members_without_level: int = 0
+    walls_active: int = 0
+    offshore_members: int = 0
+    offshore_consented_clients: int = 0
 
 
 def _item(ok: bool, id: str, section: str, value: str) -> Item:
@@ -86,6 +91,16 @@ def _item(ok: bool, id: str, section: str, value: str) -> Item:
 
 def _manual(id: str, section: str, dossier: str) -> Item:
     return Item(id, section, "manual", "evidence in the dossier", dossier)
+
+
+def walls_item(f: Facts) -> Item:
+    """M9 "walls configured" (G-01-T19): any active wall passes; none is manual, because only
+    the dossier can say the firm declared no conflict that needs one (ADM-03 b)."""
+    if f.walls_active > 0:
+        return Item("identity.walls", "Identity", "pass", f"{f.walls_active} active walls")
+    return _manual(
+        "identity.walls", "Identity", "§Identity: no active wall; confirm no declared conflict"
+    )
 
 
 def shadow_items(f: Facts, at: datetime, cal: release_windows.Calendar) -> list[Item]:
@@ -128,13 +143,19 @@ def shadow_items(f: Facts, at: datetime, cal: release_windows.Calendar) -> list[
             "SSO-exempt account designated" if f.sso_exempt_designated else "none designated",
         ),
         _item(
-            f.firm_admins >= 1 and f.security_admins >= 1,
+            f.firm_admins >= 1 and f.security_admins >= 1 and f.members_without_level == 0,
             "identity.roles_mapped",
             "Identity",
-            f"{f.firm_admins} firm admins, {f.security_admins} security admins",
+            f"{f.firm_admins} firm admins, {f.security_admins} security admins, "
+            f"{f.members_without_level} staff without a role template (P-10)",
         ),
-        _manual(
-            "identity.walls", "Identity", "§Identity: walls for declared conflicts (ADM-03 b)"
+        walls_item(f),
+        _item(
+            True,  # the gate is code: assignment refuses an offshore member without a consent
+            "identity.offshore_consent_gated",
+            "Identity",
+            f"{f.offshore_members} offshore members; assignment needs an offshore-disclosure "
+            f"consent ({f.offshore_consented_clients} clients consented)",
         ),
         Item(
             "operations.support_switch",
@@ -410,6 +431,10 @@ async def collect(tenant_id: UUID, cal: release_windows.Calendar) -> Facts:
         flag_expiries={e.name: e.expires for e in feature_flags.parse(feature_flags.source())},
         runbooks_rehearsed=runbooks_rehearsed(),
         on_call_updated=on_call_updated(),
+        members_without_level=posture.members_without_level,
+        walls_active=posture.walls_active,
+        offshore_members=posture.offshore_members,
+        offshore_consented_clients=posture.offshore_consented_clients,
     )
 
 
