@@ -10699,6 +10699,14 @@
             "title": "Id",
             "type": "string"
           },
+          "labels": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "cls": "confidential",
+            "title": "Labels",
+            "type": "object"
+          },
           "occurred_at": {
             "cls": "internal",
             "format": "date-time",
@@ -132253,7 +132261,7 @@
     },
     "/v1/home": {
       "get": {
-        "description": "HOME-01: the viewer's Home, optionally narrowed to one office (DEC-30). Live since\nI-01-T10 (DEC-648); client activity arrives with I-01-T12.",
+        "description": "HOME-01: the viewer's Home, optionally narrowed to one office (DEC-30). Live since\nI-01-T10 (DEC-648); client activity since I-01-T12 (DEC-900).",
         "operationId": "home",
         "parameters": [
           {

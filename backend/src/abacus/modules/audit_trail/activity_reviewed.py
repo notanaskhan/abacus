@@ -85,6 +85,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "client_invitation.accept_refused",
         "client_invitation.accepted",
         "client_invitation.created",
+        "client_invitation.expiry_notified",  # P-07-T47: the expiry only, never the address
         "client_invitation.renewed",
         "client_invitation.resent",
         "client_invitation.revoked",
@@ -211,6 +212,8 @@ REVIEWED_FALLBACK: Final = frozenset(
         "guidance_draft.created",
         "guidance_draft.discarded",
         "guidance_draft.requested",
+        "home_activity.projected",  # I-01-T12 (DEC-900): one activity row, the code only
+        "home_activity.pruned",  # I-01-T12: a count of rows past 90 days
         "human_gate.projected",
         "inbox_file.added",
         "inbox_file.assigned",

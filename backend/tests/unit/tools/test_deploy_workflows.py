@@ -40,11 +40,12 @@ def _function(name: str) -> str:
 # --- build.yml (Q-01-T11) ----------------------------------------------------------------------
 
 
-def test_build_runs_on_main_pushes_and_weekly_for_the_base_refresh() -> None:
+def test_build_runs_on_dispatch_and_weekly_for_the_base_refresh() -> None:
+    """DEC-1007 (amends SPEC-050 AC-19): a push never builds; a dispatch on main builds once per
+    batch, and the weekly schedule checks the base image."""
     build = load("build.yml")
     on = triggers(build)
-    assert cast(Mapping, on["push"])["branches"] == ["main"]
-    assert set(on) == {"push", "schedule", "workflow_dispatch"}
+    assert set(on) == {"schedule", "workflow_dispatch"}
     main = "github.ref == 'refs/heads/main'"
     assert jobs(build)["base-refresh"]["if"] == f"{main} && github.event_name == 'schedule'"
     assert jobs(build)["image"]["if"] == f"{main} && github.event_name != 'schedule'"

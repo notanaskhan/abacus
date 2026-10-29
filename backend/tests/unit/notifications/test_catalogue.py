@@ -54,6 +54,7 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "sending_domain.verified",  # R-01-T27 (R-01 §4.8, to the firm and security admins)
         "sending_domain.failed",  # R-01-T27 (R-01 §4.8, after 72 hours unverified)
         "membership.access_ending",  # G-01-T13 (C16 `seasonal_access_ending`, to firm admins)
+        "invitation.expiring",  # P-07-T47 (C16 `invitation_expiring`, to firm admins, day 12)
         "third_party.uploaded",  # R-01-T13 (C16 `third_party_uploaded`, to the request owner)
         "sign_off.went_stale",  # P-04-T19 (C16 `sign_off_stale`, to the signer)
         "review_note.raised",  # P-04-T21 (C16 `review_note_raised`, to the assignee)
