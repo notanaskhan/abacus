@@ -32,6 +32,7 @@ import json
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from contextlib import suppress
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Literal, Protocol, cast
 from uuid import UUID
 
@@ -264,3 +265,33 @@ async def event_state(
     if found is None:
         return "absent"
     return "published" if found else "pending"
+
+
+_PUBLISHED_SINCE = text(
+    "SELECT id, tenant_id, event_type, payload, trace_context, occurred_at FROM outbox "
+    "WHERE tenant_id = :tenant AND event_type = ANY(:types) AND published_at IS NOT NULL "
+    "AND occurred_at >= :since ORDER BY seq"
+)
+
+
+async def published_events(
+    tenant_id: UUID, event_types: Sequence[str], since: datetime
+) -> list[tuple[OutboxEvent, datetime]]:
+    """I-01-T12 (DEC-900): one firm's published events of the given types since a moment, with
+    when each was written, oldest first, for a projection's rebuild. Reads through the relay
+    role (the app role may only insert into the outbox); one firm only."""
+    async with relay_engine().connect() as conn:
+        rows = (
+            await conn.execute(
+                _PUBLISHED_SINCE, {"tenant": tenant_id, "types": list(event_types), "since": since}
+            )
+        ).all()
+    return [
+        (
+            OutboxEvent(
+                row.id, row.tenant_id, row.event_type, _payload(row.payload), row.trace_context
+            ),
+            cast(datetime, row.occurred_at),
+        )
+        for row in rows
+    ]

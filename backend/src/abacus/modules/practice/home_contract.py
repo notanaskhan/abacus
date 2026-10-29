@@ -2,7 +2,8 @@
 `docs/contracts/home-and-gates.md` part 2.
 
 Behind `home.dashboard`: off, the route answers 404. Live since I-01-T10 (tiles, your work,
-deadlines, running count; `practice/home.py`, DEC-648); client activity arrives with I-01-T12.
+deadlines, running count; `practice/home.py`, DEC-648); client activity since I-01-T12
+(`practice/activity.py`, DEC-900).
 The queue and every count of what waits on the viewer are not here: they are `review`'s C13
 endpoints (`GET /v1/human-gates`, `/counts`), so Home, HOME-02 and SHL-04 read one count source.
 
@@ -23,7 +24,7 @@ Rules the shapes carry:
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Query
@@ -41,6 +42,7 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
 )
+from abacus.modules.practice.activity import ActivityRow, client_activity
 from abacus.modules.practice.home import DeadlineRow, Tile, home_view
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -232,12 +234,33 @@ def _deadline(d: DeadlineRow) -> DeadlineRowOut:
     )
 
 
+def _activity(r: ActivityRow) -> ClientActivityOut:
+    i = r.item
+    actor_id = i.actor_ref.get("id")
+    return ClientActivityOut(
+        id=i.id,
+        occurred_at=i.occurred_at,
+        event_type=i.event_type,
+        client_id=i.client_id,
+        client_label=r.client_label,
+        engagement_id=i.engagement_id,
+        actor=ActivityActorOut(
+            type=cast(ActorType, i.actor_kind),
+            id=UUID(actor_id) if actor_id else None,
+            label=r.actor_label,
+        ),
+        subject=ActivityRefOut(type=i.subject_ref["type"], id=UUID(i.subject_ref["id"])),
+        facts=i.facts,
+    )
+
+
 @router.get("", action="home.read", response_model=HomeOut)
 async def home_route(ctx: Ctx, office_id: Annotated[UUID | None, Query()] = None) -> HomeOut:
     """HOME-01: the viewer's Home, optionally narrowed to one office (DEC-30). Live since
-    I-01-T10 (DEC-648); client activity arrives with I-01-T12."""
+    I-01-T10 (DEC-648); client activity since I-01-T12 (DEC-900)."""
     await _gate(ctx)
     v = await home_view(ctx, office_id)
+    activity = await client_activity(ctx, office_id)
     return HomeOut(
         greeting=GreetingOut(first_name=v.first_name, date=v.today),
         tiles=[_tile(t) for t in v.tiles],
@@ -263,7 +286,7 @@ async def home_route(ctx: Ctx, office_id: Annotated[UUID | None, Query()] = None
             rows=[_deadline(d) for d in v.deadlines],
             next=_deadline(v.next_deadline) if v.next_deadline else None,
         ),
-        client_activity=[],
+        client_activity=[_activity(r) for r in activity],
         running_count=v.running_count,
         segments=SegmentsOut(
             deadlines="planned", capacity="planned", insights="entitlement_missing"
