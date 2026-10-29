@@ -3,9 +3,13 @@
 // Sep 14, 2026, 9:24 AM CT). One scenario per artboard (a–g, r). Nothing here sends, voids or
 // signs: Remind answers a preview only and Send is a person's (INV-1).
 import type {
+  EmailPreviewIn,
   EnvelopeListRow,
+  EnvelopeOut,
   EnvelopeSummary,
+  ImportRecordIn,
   ListPageEnvelopeListRow,
+  RemindIn,
 } from "@abacus/api-client";
 import {
   type FixtureHandler,
@@ -13,6 +17,18 @@ import {
   defineScenarios,
   json,
 } from "../../app-core/fixture-mode";
+import { clientHandlers } from "./clients";
+import { contactHandlers } from "./contacts";
+import {
+  FROM_ADDRESS,
+  FROM_DISPLAY,
+  type TemplateSeed,
+  renderEmail,
+  templateOut,
+  templateSeed,
+  versionOut,
+} from "../seed/email-templates";
+import { getSeed } from "../seed";
 import { stableId } from "../seed/prng";
 import {
   COMPLETED,
@@ -101,6 +117,64 @@ export function summaryOf(view: HubView): EnvelopeSummary {
   };
 }
 
+/** The firm's `signature_reminder` template (DEC-1057): until the content pack gives reminder
+ * wording, a reminder re-sends the designed signature request (POR-20's `signature_request`
+ * blocks, verbatim), published as version 1. A firm edits it in POR-20. */
+function reminderSeed(): TemplateSeed {
+  const request = templateSeed("signature_request");
+  if (request === undefined) throw new Error("the POR-20 seed has no signature_request");
+  return {
+    ...request,
+    key: "signature_reminder",
+    name: "Signature reminder",
+    usedByLabel: "SIG-01 reminders",
+  };
+}
+
+/** What Import signed package (r) records: a completed `record` envelope (DF-12). */
+function importedOut(body: ImportRecordIn): EnvelopeOut {
+  const id = stableId(`envelope:import:${body.title}`);
+  return {
+    row: {
+      id,
+      number: "E19",
+      purpose: body.purpose,
+      form_code: body.form_code ?? null,
+      title: body.title,
+      client_id: body.client_id,
+      client_name: "",
+      work_item_id: body.work_item_id ?? null,
+      provider: "record",
+      status: "completed",
+      signed: body.signers.length,
+      total: body.signers.length,
+      sent_by_name: null,
+      sent_at: null,
+      due_on: null,
+      needs_handwritten: false,
+      allowed_actions: ["envelope.evidence_download"],
+    },
+    policy_family: body.purpose.startsWith("form_8879") ? "efile_authorization" : "general",
+    source_kind: "record_import",
+    source_id: id,
+    engagement_id: body.engagement_id ?? null,
+    signer_order: "sequential",
+    date_as_of_mode: "none",
+    date_as_of: null,
+    expires_at: null,
+    message: null,
+    reminder_cadence: null,
+    documents: [],
+    signers: [],
+    fields: [],
+    evidence: [],
+    provider_envelope_id: null,
+    superseded_at: null,
+    voided_reason: null,
+    version: 1,
+  };
+}
+
 export function signaturesHandlers(
   view: HubView = { toSend: TO_SEND, declined: null },
 ): Record<string, FixtureHandler> {
@@ -116,6 +190,41 @@ export function signaturesHandlers(
       return json(page(tabRows(tab)));
     },
     "GET /v1/envelopes/summary": () => json(summaryOf(view)),
+    // f: the preview counts what would go; Send answers only when a person clicks it (INV-1).
+    "POST /v1/envelopes/remind/preview": ({ body }) =>
+      json({ count: (body as RemindIn).envelope_ids.length, skipped: [] }),
+    "POST /v1/envelopes/remind/send": ({ body }) =>
+      json({ count: (body as RemindIn).envelope_ids.length, skipped: [] }),
+    "GET /v1/firm/email-templates/{key}": ({ params }) => {
+      if (params.key !== "signature_reminder") return json({ code: "not_found" }, 404);
+      const seed = reminderSeed();
+      return json(templateOut(seed, { published: versionOut(seed, 1), draft: null }, []));
+    },
+    "POST /v1/firm/email-templates/{key}/preview": ({ params, body }) => {
+      if (params.key !== "signature_reminder") return json({ code: "not_found" }, 404);
+      const seed = reminderSeed();
+      const given = (body ?? {}) as EmailPreviewIn;
+      return json({
+        ...renderEmail(seed.content, seed.sample.values, given.width ?? 600),
+        from_display: FROM_DISPLAY,
+        from_address: FROM_ADDRESS,
+        reply_to: null,
+        findings: [],
+      });
+    },
+    // r: each file staged, then one import (DF-12).
+    "POST /v1/envelopes/import/files": ({ query }) =>
+      json(
+        {
+          id: stableId(`import-file:${query.get("filename") ?? ""}`),
+          file_name: query.get("filename") ?? "",
+          media_type: "application/pdf",
+          size_bytes: 1,
+          sha256: "0".repeat(64),
+        },
+        201,
+      ),
+    "POST /v1/envelopes/import": ({ body }) => json(importedOut(body as ImportRecordIn), 201),
   };
 }
 
@@ -137,5 +246,9 @@ export const SIG01_SCENARIOS = defineScenarios({
   e: base("e", signaturesHandlers({ toSend: TO_SEND, declined: "E9" })),
   f: base("f", signaturesHandlers()),
   g: base("g", signaturesHandlers({ toSend: [], declined: null })),
-  r: base("r", signaturesHandlers()),
+  r: base("r", {
+    ...signaturesHandlers(),
+    ...clientHandlers(getSeed()),
+    ...contactHandlers(getSeed()),
+  }),
 });

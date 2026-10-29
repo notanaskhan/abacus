@@ -1,7 +1,7 @@
 // SIG-01 · Signatures hub (N-02-T11; DEC-827). Acceptance (the task row): "Scenario tests for a, b,
 // c, d, e and g pass at 1400 with the DF-11 copy in the E2 drawer and no Send new link at unlock."
 import { client } from "@abacus/api-client/client";
-import { cleanup, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { installFixtureMode } from "../../app-core/fixture-mode";
 import { renderRoutes } from "../../testing/support";
@@ -75,5 +75,64 @@ describe("SIG-01", () => {
   it("g: empty To send", async () => {
     mount("g");
     expect(await screen.findByText(COPY.empty.title)).toBeTruthy();
+  });
+});
+
+// N-02-T15 (TASK-2016; DEC-1057). Acceptance (the task row, fixture half): "the f scenario sends
+// nothing until a human clicks Send."
+describe("SIG-01 · N-02-T15", () => {
+  function mountWith(state: Sig01State): void {
+    restore = installFixtureMode(scenarios[state]);
+    const open = OPENS[state];
+    renderRoutes([
+      {
+        path: "/",
+        component: () => (
+          <SIG01
+            initialTab={open.tab}
+            initialEnvelope={open.envelope}
+            initialChecked={open.checked ?? []}
+            initialImport={open.importing ?? false}
+          />
+        ),
+      },
+    ]);
+  }
+
+  it("f: three checked, the bar reads 3 selected · Remind 3…, nothing sends until Send", async () => {
+    const posted: string[] = [];
+    const original = globalThis.fetch;
+    globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = input instanceof Request ? input : new Request(input, init);
+      if (request.method === "POST") posted.push(new URL(request.url).pathname);
+      return original(input, init);
+    };
+    try {
+      mountWith("f");
+      expect(await screen.findByText(COPY.selection.selected(3))).toBeTruthy();
+      fireEvent.click(screen.getByRole("button", { name: COPY.selection.remind(3) }));
+      const dialog = await screen.findByRole("dialog");
+      expect(await within(dialog).findByText(/Please sign/)).toBeTruthy();
+      const send = await within(dialog).findByRole("button", { name: "Send 3 reminders" });
+      await waitFor(() => {
+        expect((send as HTMLButtonElement).disabled).toBe(false);
+      });
+      expect(posted).not.toContain("/v1/envelopes/remind/send");
+      fireEvent.click(send);
+      await waitFor(() => {
+        expect(posted.filter((p) => p === "/v1/envelopes/remind/send")).toHaveLength(1);
+      });
+    } finally {
+      globalThis.fetch = original;
+    }
+  });
+
+  it("r: Import signed package waits for the attestation", async () => {
+    mountWith("r");
+    const sheet = await screen.findByRole("dialog");
+    expect(within(sheet).getByText(COPY.importSheet.title)).toBeTruthy();
+    expect(within(sheet).getByText(COPY.importSheet.attest)).toBeTruthy();
+    const importButton = within(sheet).getByRole("button", { name: COPY.importSheet.import });
+    expect((importButton as HTMLButtonElement).disabled).toBe(true);
   });
 });

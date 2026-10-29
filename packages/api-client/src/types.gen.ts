@@ -21563,9 +21563,13 @@ export type RemindIn = {
      */
     envelope_ids: Array<string>;
     /**
+     * Template Version
+     */
+    template_version?: number | null;
+    /**
      * Template Version Id
      */
-    template_version_id: string;
+    template_version_id?: string | null;
 };
 
 /**
