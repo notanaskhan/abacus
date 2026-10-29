@@ -20,7 +20,7 @@
 status is read from its latest delivery event (DEC-952), so `messages` stays insert-only.
 
 Revision ID: 0340
-Revises: 0291
+Revises: 0320
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, tenant_table
 
 revision = "0340"
-down_revision = "0291"
+down_revision = "0320"
 branch_labels = None
 depends_on = None
 
