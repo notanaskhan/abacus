@@ -43,6 +43,7 @@ locals {
     ABACUS_TRUSTED_HOSTS            = "[\"${module.firm_edge[0].domain_name}\"]"
     ABACUS_PROXY_TRUSTED_HOSTS      = jsonencode(module.network.app_subnet_cidrs)
     ABACUS_RELEASE                  = split("@", var.image_digest)[1]
+    ABACUS_DATABASE_CA_FILE         = "/app/src/abacus/kernel/certs/rds-global-bundle.pem"
   }) : {}
   common_secrets = {
     ABACUS_DATABASE_URL                  = "${local.secret.db_app}:url::"
@@ -62,7 +63,7 @@ module "cluster" {
   source = "../../modules/ecs-cluster"
 
   environment = "staging"
-  secret_arns = [for s in aws_secretsmanager_secret.this : s.arn]
+  secret_arns = concat([for s in aws_secretsmanager_secret.this : s.arn], [module.db.master_secret_arn])
   kms_key_arn = module.kms_platform.key_arn
 }
 
@@ -167,25 +168,6 @@ resource "aws_iam_role_policy" "keyops" {
   policy = data.aws_iam_policy_document.keyops.json
 }
 
-# The bootstrap task reads the RDS-managed master secret (Q-01-T20).
-data "aws_iam_policy_document" "ops" {
-  statement {
-    actions   = ["secretsmanager:GetSecretValue"]
-    resources = [module.db.master_secret_arn]
-  }
-
-  statement {
-    actions   = ["kms:Decrypt"]
-    resources = [module.kms_platform.key_arn]
-  }
-}
-
-resource "aws_iam_role_policy" "ops" {
-  name   = "bootstrap"
-  role   = aws_iam_role.task["ops"].name
-  policy = data.aws_iam_policy_document.ops.json
-}
-
 # --- internal load balancer ---------------------------------------------------------------------
 
 resource "aws_security_group" "alb" {
@@ -271,7 +253,7 @@ locals {
   }
   oneoffs = {
     migrate   = { command = ["migrate"], role = "worker" }
-    bootstrap = { command = ["ops", "db_bootstrap"], role = "ops" }
+    bootstrap = { command = ["bootstrap"], role = "ops" }
     ops       = { command = ["ops", "tenants"], role = "ops" }
   }
 }
@@ -311,8 +293,10 @@ module "oneoff" {
   command            = each.value.command
   cpu                = 512
   memory             = 1024
-  environment_vars   = merge(local.common_env, each.key == "bootstrap" ? { ABACUS_DB_MASTER_SECRET_ARN = module.db.master_secret_arn, ABACUS_DB_HOST = module.db.address } : {})
+  environment_vars   = merge(local.common_env, each.key == "bootstrap" ? { ABACUS_DB_HOST = module.db.address } : {})
   secrets = merge(local.common_secrets, each.key == "bootstrap" ? {
+    ABACUS_DB_MASTER_USER              = "${module.db.master_secret_arn}:username::"
+    ABACUS_DB_MASTER_PASSWORD          = "${module.db.master_secret_arn}:password::"
     ABACUS_BOOTSTRAP_OWNER_PASSWORD    = "${local.secret.db_owner}:password::"
     ABACUS_BOOTSTRAP_APP_PASSWORD      = "${local.secret.db_app}:password::"
     ABACUS_BOOTSTRAP_RELAY_PASSWORD    = "${local.secret.db_relay}:password::"

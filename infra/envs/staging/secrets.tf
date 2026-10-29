@@ -5,15 +5,14 @@
 
 locals {
   secret_names = {
-    db_owner             = "abacus/staging/db/owner"
-    db_app               = "abacus/staging/db/app"
-    db_relay             = "abacus/staging/db/relay"
-    db_identity          = "abacus/staging/db/identity"
-    db_ops               = "abacus/staging/db/ops"
-    temporal_keyring     = "abacus/staging/temporal/payload-keyring"
-    peppers              = "abacus/staging/peppers"
-    workos               = "abacus/staging/workos"
-    temporal_placeholder = "abacus/staging/temporal/api-key"
+    db_owner         = "abacus/staging/db/owner"
+    db_app           = "abacus/staging/db/app"
+    db_relay         = "abacus/staging/db/relay"
+    db_identity      = "abacus/staging/db/identity"
+    db_ops           = "abacus/staging/db/ops"
+    temporal_keyring = "abacus/staging/temporal/payload-keyring"
+    peppers          = "abacus/staging/peppers"
+    workos           = "abacus/staging/workos"
   }
 }
 
