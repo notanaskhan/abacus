@@ -50,7 +50,7 @@ def test_ac30_pdf_and_docx_equal_the_recorded_goldens() -> None:
 def test_ac6_no_clock_time_in_the_pdf() -> None:
     pdf, _ = render()
     with pdfplumber.open(io.BytesIO(pdf)) as document:
-        meta = cast(dict[str, object], document.metadata)
+        meta = cast(dict[str, object], document.metadata)  # type: ignore[attr-defined]  # pdfplumber PDF
     assert str(meta["CreationDate"]).startswith("D:20260914142400")
     assert str(meta["ModDate"]).startswith("D:20260914142400")
 
