@@ -13,21 +13,31 @@ from __future__ import annotations
 import contextlib
 import uuid
 from collections.abc import AsyncGenerator
+from dataclasses import dataclass, field
 from types import SimpleNamespace
-from typing import Any
+from typing import cast
 
 import pytest
 
 from abacus.modules.connections import pipeline
+from abacus.modules.identity.api import SystemContext
 
 
 class Stop(Exception):
     pass
 
 
+@dataclass
+class World:
+    connection: SimpleNamespace
+    flag: bool = False
+    fresh: bool | None = None
+    failed: tuple[str, str] | None = None
+    called: list[str] = field(default_factory=lambda: list[str]())
+
+
 @pytest.fixture
-def world(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
-    state: dict[str, Any] = {"flag": False, "fresh": None, "failed": None, "called": []}
+def world(monkeypatch: pytest.MonkeyPatch) -> World:
     run = SimpleNamespace(
         raw_fingerprint=None,
         status="running",
@@ -37,13 +47,14 @@ def world(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         period_start=None,
         period_end=None,
     )
-    connection = SimpleNamespace(
-        id=run.connection_id,
-        status="active",
-        client_entity_id=run.client_entity_id,
-        provider="qbo",
+    state = World(
+        SimpleNamespace(
+            id=run.connection_id,
+            status="active",
+            client_entity_id=run.client_entity_id,
+            provider="qbo",
+        )
     )
-    state["connection"] = connection
 
     async def _run(_sys: object) -> object:
         return run
@@ -56,18 +67,18 @@ def world(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         yield object()
 
     async def get_connection(_session: object, _id: object) -> object:
-        return connection
+        return state.connection
 
     async def flag_enabled(_tenant: object, _flag: object, *, fresh: bool = False) -> bool:
-        state["fresh"] = fresh
-        return bool(state["flag"])
+        state.fresh = fresh
+        return state.flag
 
     async def fail_run(_sys: object, status: str, code: str) -> Exception:
-        state["failed"] = (status, code)
+        state.failed = (status, code)
         return Stop(code)
 
     async def credentials_of(_tenant: object, _connection: object) -> None:
-        state["called"].append("credentials")
+        state.called.append("credentials")
         raise Stop("reached the provider")
 
     monkeypatch.setattr(pipeline, "_run", _run)
@@ -80,31 +91,30 @@ def world(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     return state
 
 
-SYS: Any = SimpleNamespace(tenant=object(), run_id=uuid.uuid4(), engagement_id=uuid.uuid4())
+SYS = cast(
+    SystemContext,
+    SimpleNamespace(tenant=object(), run_id=uuid.uuid4(), engagement_id=uuid.uuid4()),
+)
 
 
-async def test_the_flag_off_ends_the_pull_paused_before_the_provider(
-    world: dict[str, Any],
-) -> None:
+async def test_the_flag_off_ends_the_pull_paused_before_the_provider(world: World) -> None:
     with pytest.raises(Stop, match="connector_paused"):
         await pipeline.pull_raw(SYS)
-    assert world["failed"] == ("failed", "connector_paused")
-    assert world["called"] == []  # no credentials read, nothing sent to the provider
-    assert world["fresh"] is True  # read past the flag cache: the switch holds at once
+    assert world.failed == ("failed", "connector_paused")
+    assert world.called == []  # no credentials read, nothing sent to the provider
+    assert world.fresh is True  # read past the flag cache: the switch holds at once
 
 
-async def test_the_flag_on_lets_the_pull_reach_the_provider(world: dict[str, Any]) -> None:
-    world["flag"] = True
+async def test_the_flag_on_lets_the_pull_reach_the_provider(world: World) -> None:
+    world.flag = True
     with pytest.raises(Stop, match="reached the provider"):
         await pipeline.pull_raw(SYS)
-    assert world["called"] == ["credentials"] and world["failed"] is None
+    assert world.called == ["credentials"] and world.failed is None
 
 
 @pytest.mark.parametrize("provider", ["fake", "import", "fake_qbo"])
-async def test_a_networkless_provider_is_not_a_live_ledger(
-    world: dict[str, Any], provider: str
-) -> None:
-    world["connection"].provider = provider
+async def test_a_networkless_provider_is_not_a_live_ledger(world: World, provider: str) -> None:
+    world.connection.provider = provider
     with pytest.raises(Stop, match="reached the provider"):
         await pipeline.pull_raw(SYS)
-    assert world["fresh"] is None  # the switch is not consulted
+    assert world.fresh is None  # the switch is not consulted
