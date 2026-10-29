@@ -2,8 +2,11 @@
 # the neutral portal domain (F-09-T09) and the API's VPC origin exists (Q-01-T15): with either
 # unset, this plans to nothing. Apply is the builder's, by hand (infra/README.md "Portal edge").
 
+# The API origin defaults to the firm edge's VPC origin and the internal ALB (Q-01-T15).
 locals {
-  portal_edge = var.portal_base_domain != null && var.api_vpc_origin_id != null && var.api_origin_domain_name != null
+  portal_api_vpc_origin_id      = coalesce(var.api_vpc_origin_id, try(module.firm_edge[0].api_vpc_origin_id, null), "unset")
+  portal_api_origin_domain_name = coalesce(var.api_origin_domain_name, try(aws_lb.api.dns_name, null), "unset")
+  portal_edge                   = var.portal_base_domain != null && local.portal_api_vpc_origin_id != "unset"
 }
 
 module "portal_waf" {
@@ -21,7 +24,7 @@ module "portal_edge" {
   environment            = "staging"
   portal_base_domain     = var.portal_base_domain
   canary_custom_domain   = var.portal_canary_custom_domain
-  api_vpc_origin_id      = var.api_vpc_origin_id
-  api_origin_domain_name = var.api_origin_domain_name
+  api_vpc_origin_id      = local.portal_api_vpc_origin_id
+  api_origin_domain_name = local.portal_api_origin_domain_name
   web_acl_arn            = module.portal_waf[0].arn
 }

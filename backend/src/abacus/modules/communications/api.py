@@ -8,6 +8,7 @@ from abacus.modules.communications.audit_targets import AUDIT_KINDS, audit_owner
 from abacus.modules.communications.deliveries import (
     SesEventQueue,
     configure_ses_event_queue,
+    delivery_status,
     drain_ses_events,
     drain_ses_events_activity,
     is_suppressed,
@@ -16,7 +17,11 @@ from abacus.modules.communications.deliveries import (
 from abacus.modules.communications.events import (
     MessageBounced,
     MessageComplained,
+    MessageDeliveryStatusChanged,
     PortalLinkRenewRequested,
+    SendingDomainFailed,
+    SendingDomainStatusChanged,
+    SendingDomainVerified,
 )
 from abacus.modules.communications.fake_ses import FakeSesEventQueue, FakeSesTransport
 from abacus.modules.communications.follow_up_policy import (
@@ -41,6 +46,12 @@ from abacus.modules.communications.follow_ups import (
     FollowUpTemplateMissing,
     compose_follow_up,
     deliver_follow_up,
+)
+from abacus.modules.communications.intake import (
+    Inbound,
+    Recorded,
+    add_attachment,
+    record_inbound_message,
 )
 from abacus.modules.communications.intake_contract import destinations_router, intake_router
 from abacus.modules.communications.invitations import deliver_invitation, deliver_staff_invitation
@@ -71,6 +82,12 @@ from abacus.modules.communications.secure_links import (
     resolve_secure_link,
     revoke_links_of,
     revoke_links_on_access_revoked,
+)
+from abacus.modules.communications.sending_domains import (
+    check_sending_domain_activity,
+    client_mail_open,
+    on_status_changed,
+    sender_for,
 )
 from abacus.modules.communications.service import Draft, MessageView, OutOfScope, send
 from abacus.modules.communications.ses_identities import (
@@ -131,7 +148,11 @@ from abacus.modules.communications.templates_contract import (
     templates_router,
 )
 from abacus.modules.communications.transport import LocalMailbox, Transport, configure_transport
-from abacus.modules.communications.workflows import DrainSesEventsWorkflow
+from abacus.modules.communications.workflows import (
+    DrainSesEventsWorkflow,
+    SendingDomainVerificationInput,
+    SendingDomainVerificationWorkflow,
+)
 from abacus.modules.identity.api import (
     AbacusRouter,
     ClientAccessRevoked,
@@ -152,6 +173,8 @@ SUBSCRIPTIONS = {
     PortalLinkRenewRequested.event_type: deliver_renewed_link,  # P-08-T21
     PortalMfaResetNoticeRequested.event_type: deliver_mfa_reset_notice,  # P-08-T21
     ClientAccessRevoked.event_type: revoke_links_on_access_revoked,  # P-08-T21: links die too
+    # R-01-T27: a new domain's verification starts once its row is committed.
+    SendingDomainStatusChanged.event_type: on_status_changed,
 }
 # P-08-T21: identity's sign-in start uses a portal email's link through this.
 register_link_claim(claim)
@@ -162,9 +185,12 @@ register_comment_scope_check(comment_scope_kinds)
 # Q-01-T46: the every-minute drain of SES delivery events, on its Schedule `ses_events:platform`
 # (Q-01-T26; `abacus_tools.schedules ensure`). Without `ses_events_queue_url` a run drains nothing.
 SES_EVENTS_ID = "ses_events:platform"
-WORKFLOWS: dict[type, WorkClass] = {DrainSesEventsWorkflow: "time_sensitive"}
+WORKFLOWS: dict[type, WorkClass] = {
+    DrainSesEventsWorkflow: "time_sensitive",
+    SendingDomainVerificationWorkflow: "background",  # R-01-T27: every 15 minutes, 72 hours
+}
 register_work_classes(WORKFLOWS)
-ACTIVITIES: tuple[object, ...] = (drain_ses_events_activity,)
+ACTIVITIES: tuple[object, ...] = (drain_ses_events_activity, check_sending_domain_activity)
 SCHEDULES: tuple[PlatformSchedule, ...] = (
     PlatformSchedule(
         id=SES_EVENTS_ID,
@@ -213,10 +239,12 @@ __all__ = [
     "IdentitySetup",
     "IdentityStatus",
     "InMemorySesIdentities",
+    "Inbound",
     "IssuedLink",
     "LocalMailbox",
     "MessageBounced",
     "MessageComplained",
+    "MessageDeliveryStatusChanged",
     "MessageView",
     "NextSend",
     "NextSendOut",
@@ -224,12 +252,18 @@ __all__ = [
     "OutOfScope",
     "PreviewSelection",
     "RecipientRef",
+    "Recorded",
     "ReminderHistory",
     "ScheduledReminder",
     "SecureLinkView",
     "SendOutcome",
     "SendRefusal",
     "SendScope",
+    "SendingDomainFailed",
+    "SendingDomainStatusChanged",
+    "SendingDomainVerificationInput",
+    "SendingDomainVerificationWorkflow",
+    "SendingDomainVerified",
     "Sent",
     "SesEventQueue",
     "SesIdentities",
@@ -244,12 +278,15 @@ __all__ = [
     "Transport",
     "ValueFinding",
     "Violation",
+    "add_attachment",
     "check_scope",
+    "client_mail_open",
     "compose_follow_up",
     "configure_ses_event_queue",
     "configure_ses_identities",
     "configure_transport",
     "deliver_follow_up",
+    "delivery_status",
     "discard_email_template_draft",
     "drain_ses_events",
     "email_template_state",
@@ -266,6 +303,7 @@ __all__ = [
     "next_sequence_by_policy",
     "on_sink",
     "publish_email_template",
+    "record_inbound_message",
     "register_email_template",
     "register_reminder_history",
     "registered_templates",
@@ -278,6 +316,7 @@ __all__ = [
     "send_notification_email",
     "send_scheduled_reminder",
     "send_templated",
+    "sender_for",
     "ses_identities",
     "sink_address",
     "sink_domain",

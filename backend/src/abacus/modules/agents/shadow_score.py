@@ -228,12 +228,56 @@ async def shadow_score(tenant: TenantContext, agent_id: str, as_of: datetime) ->
     )
 
 
+async def live_override(
+    tenant: TenantContext, agent_id: str, start: datetime, end: datetime
+) -> OverrideRate:
+    """Q-04-T008 (W7): `override_rate.v1` over the agent's **live** (non-shadow) outputs started
+    in [start, end) and people's latest decisions on them by `end`: the same pairs, agreement
+    table and `override_rate` the shadow report uses (never a second implementation, DEC-96)."""
+    async with tenant_session(tenant) as session:
+        rows = (
+            (
+                await session.execute(
+                    select(ScreeningResult.id, ScreeningResult.action, AgentRun.failure_code)
+                    .join(AgentRun, AgentRun.id == ScreeningResult.agent_run_id)
+                    .where(
+                        ScreeningResult.subject_kind == "version",
+                        AgentRun.agent_id == agent_id,
+                        AgentRun.shadow.is_(False),
+                        AgentRun.started_at >= start,
+                        AgentRun.started_at < end,
+                    )
+                    .order_by(ScreeningResult.id)
+                )
+            ).all()
+            if agent_id == SCREENER
+            else ()
+        )
+    results = [(r[0], r[1], r[2]) for r in rows]
+    decisions = await decisions_on_screenings(tenant, [r[0] for r in results])
+    latest: dict[UUID, tuple[datetime, str]] = {}
+    for d in decisions:
+        if d.actor_kind != "human" or d.at >= end:
+            continue
+        seen = latest.get(d.screening_result_id)
+        if seen is None or d.at > seen[0]:
+            latest[d.screening_result_id] = (d.at, d.decision)
+    pairs = [
+        Pair(action, latest[rid][1], failure)
+        for rid, action, failure in results
+        if rid in latest and latest[rid][1] != "undone"
+    ]
+    agreed = sum(1 for p in pairs if p.decision in AGREES.get(p.action, ()))
+    return override_rate(len(pairs) - agreed, 0, len(pairs))
+
+
 __all__ = [
     "ALGORITHM",
     "OVERRIDE_ALGORITHM",
     "OverrideRate",
     "Pair",
     "ShadowScore",
+    "live_override",
     "override_rate",
     "score",
     "shadow_score",

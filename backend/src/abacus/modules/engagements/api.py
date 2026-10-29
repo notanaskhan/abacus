@@ -57,7 +57,7 @@ from abacus.modules.engagements.contract import (
 )
 from abacus.modules.engagements.drafts import create_draft, draft_visible, start_acceptance
 from abacus.modules.engagements.events import EngagementCreated, IndependenceRequested
-from abacus.modules.engagements.gates import register_gates
+from abacus.modules.engagements.gates import recorded_letter, register_gates
 from abacus.modules.engagements.hold_scope import (
     EngagementHoldFacts,
     engagement_hold_facts,
@@ -96,6 +96,7 @@ from abacus.modules.engagements.intake_contract import (
     dedupe_router,
 )
 from abacus.modules.engagements.letter_contract import letter_router
+from abacus.modules.engagements.pilot_w4 import w4_portal_activation
 from abacus.modules.engagements.roll_forward import (
     PriorItem,
     TemplateSeed,
@@ -138,6 +139,7 @@ from abacus.modules.engagements.service import (
     register_auto_retrieval,
     remove_from_team,
     run_auto_retrieval,
+    set_ai_exclusion_of,
 )
 from abacus.modules.engagements.setup import (
     EngagementNotOpen,
@@ -173,6 +175,7 @@ from abacus.modules.engagements.slots import (
     register_judgment_source,
     register_progress_source,
     register_work_item_kind,
+    replace_gate_provider,
     work_item_provider,
 )
 from abacus.modules.engagements.team import (
@@ -250,6 +253,7 @@ from abacus.modules.organisations.api import (
     register_overview_section,
     register_screening_evidence,
 )
+from abacus.modules.platform.api import register_pilot_metric_source
 
 # Identity owns ethical walls; this module owns which client an engagement belongs to (TASK-016).
 register_engagement_client(client_subquery, client_of)
@@ -341,6 +345,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 # P-07-T52: the bulk import's workflow, activities and daily erase make engagements a module with
 # worker parts; it subscribes to nothing.
 SUBSCRIPTIONS: dict[str, Callable[[OutboxEvent], Awaitable[None]]] = {}
+
+register_pilot_metric_source("w4", w4_portal_activation)  # Q-04-T008 (DEC-825)
 
 __all__ = [
     "ACCEPTANCE_DECISION_DUE",
@@ -456,6 +462,7 @@ __all__ = [
     "progress_of",
     "publish_drafted_version",
     "readable_client",
+    "recorded_letter",
     "register_auto_retrieval",
     "register_draft_request_copy",
     "register_evidence_readable",
@@ -466,12 +473,14 @@ __all__ = [
     "register_roll_forward_items",
     "register_work_item_kind",
     "remove_from_team",
+    "replace_gate_provider",
     "request_manual_check",
     "require_open",
     "router",
     "run_auto_retrieval",
     "send_to_partner",
     "service_line_of",
+    "set_ai_exclusion_of",
     "set_assurance_profile",
     "start_acceptance",
     "stored_file",

@@ -27,3 +27,8 @@ output "app_subnet_cidrs" {
   description = "App subnet CIDRs (the API trusts proxy headers from the ALB here)."
   value       = aws_subnet.app[*].cidr_block
 }
+
+output "drill_subnet_ids" {
+  description = "Drill subnets (restore drills), no route out."
+  value       = aws_subnet.drill[*].id
+}

@@ -8,9 +8,9 @@ routes and new models beside it.
 - Reads (`email_template.read`, `portal_settings.read`, `sending_domain.read`) and the onboarding
   import are never behind a flag: with the editor off the screens show the published values
   read-only. They answer 501 until their task (list and read R-01-T19; preview and import
-  R-01-T23; follow-up policy R-01-T24; sending domains R-01-T27).
+  R-01-T23; follow-up policy R-01-T24; sending domains R-01-T27). Every route is live now.
 - Template writes (draft save and discard, test send, publish) are behind `portal.settings_editor`;
-  sending-domain writes behind `communications.firm_sender_domain`. Off: 404. On: 501.
+  sending-domain writes behind `communications.firm_sender_domain`. Off: 404.
 
 Publish and test send carry `Idempotency-Key` (a client-visible version; an email). Publish,
 import and test send need a fresh second factor; test send also an onshore member, and goes only
@@ -25,22 +25,23 @@ variable}`), never the text or the value.
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn, cast
+from typing import Annotated, Literal, cast
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
 from fastapi import Depends, Header, Path
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import COMMUNICATIONS_FIRM_SENDER_DOMAIN, PORTAL_SETTINGS_EDITOR
+from abacus.kernel._flags import PORTAL_SETTINGS_EDITOR
 from abacus.kernel.classification import classified
 from abacus.kernel.clock import now
 from abacus.kernel.db import tenant_session
-from abacus.kernel.errors import NotFound, NotImplementedYet
-from abacus.kernel.flags import Flag, flag_enabled
+from abacus.kernel.errors import NotFound
+from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.communications import (
     follow_up_policy,
+    sending_domains,
     template_import,
     template_preview,
     template_service,
@@ -385,12 +386,6 @@ class FollowUpPolicyOut(BaseModel):
     next_send: Annotated[NextSendOut | None, classified("internal")] = None
 
 
-async def _stub(ctx: AuthContext, flag: Flag | None = None) -> NoReturn:
-    if flag is not None and not await flag_enabled(ctx.tenant, flag):
-        raise NotFound(flag.name)
-    raise NotImplementedYet
-
-
 templates_router = AbacusRouter(prefix="/v1/firm/email-templates", tags=["email templates"])
 domains_router = AbacusRouter(prefix="/v1/firm/sending-domains", tags=["email templates"])
 policy_router = AbacusRouter(prefix="/v1/firm/follow-up-policy", tags=["email templates"])
@@ -733,12 +728,31 @@ def _publishers_of(version: StoredVersion) -> set[UUID]:
     return set() if person is None else {person}
 
 
-@domains_router.get(
-    "", action="sending_domain.read", response_model=SendingDomainListOut, errors=(501,)
-)
+def _domain_out(found: sending_domains.SendingDomain) -> SendingDomainOut:
+    return SendingDomainOut(
+        id=found.id,
+        domain=found.domain,
+        from_local_part=found.from_local_part,
+        mail_from_domain=found.mail_from_domain,
+        status=found.status,
+        records=[
+            DnsRecordOut(type=r.type, name=r.name, value=r.value, status=r.status)
+            for r in found.records
+        ],
+        failure_reason=found.failure_reason,
+        requested_at=found.requested_at,
+        verified_at=found.verified_at,
+        last_checked_at=found.last_checked_at,
+    )
+
+
+@domains_router.get("", action="sending_domain.read", response_model=SendingDomainListOut)
 async def list_sending_domains_route(ctx: Ctx) -> SendingDomainListOut:
-    """ADM-10 d (R-01-T27): the firm's sender domain and its DNS records."""
-    await _stub(ctx)
+    """ADM-10 d (R-01-T27): the firm's sender domains, newest first, with their DNS records.
+    Never behind the flag."""
+    return SendingDomainListOut(
+        items=[_domain_out(d) for d in await sending_domains.list_domains(ctx)]
+    )
 
 
 @domains_router.post(
@@ -746,37 +760,53 @@ async def list_sending_domains_route(ctx: Ctx) -> SendingDomainListOut:
     action="sending_domain.manage",
     response_model=SendingDomainOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409, 503),
 )
 async def create_sending_domain_route(
     body: SendingDomainIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> SendingDomainOut:
-    """An SES identity with Easy DKIM and a custom MAIL FROM; `pending_dns` (R-01-T27); 409
-    `sending_domain_exists` while one is pending or verified. Audited `sending_domain.created`."""
-    await _stub(ctx, COMMUNICATIONS_FIRM_SENDER_DOMAIN)
+    """An SES identity with Easy DKIM and the custom MAIL FROM `bounce.<domain>`; `pending_dns`
+    (R-01-T27); 409 `sending_domain_exists` while this firm has one pending or verified, or the
+    domain is live for any firm (DEC-951); 503 `sending_domain_unavailable` when SES can't be
+    reached. Fresh MFA. Audited `sending_domain.created`. A retry with the same key answers the
+    domain it created, after authorising again."""
+    await sending_domains.authorise_write(ctx)
+
+    async def run() -> tuple[int, dict[str, object]]:
+        created = await sending_domains.create_domain(ctx, body.domain, body.from_local_part)
+        return 201, {"domain_id": str(created.id)}  # identifiers only (P-36)
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="sending_domains.create",
+        key=idempotency_key,
+        body={"domain": body.domain, "from_local_part": body.from_local_part},
+        run=run,
+    )
+    return _domain_out(await sending_domains.domain_of(ctx, UUID(str(stored.body["domain_id"]))))
 
 
 @domains_router.post(
     "/{domain_id}/check",
     action="sending_domain.manage",
     response_model=SendingDomainOut,
-    errors=(501,),
+    errors=(503,),
 )
 async def check_sending_domain_route(domain_id: UUID, ctx: Ctx) -> SendingDomainOut:
-    """Check the identity now (R-01-T27); the workflow checks every 15 minutes for 72 hours."""
-    await _stub(ctx, COMMUNICATIONS_FIRM_SENDER_DOMAIN)
+    """Check the identity now (R-01-T27); the workflow checks every 15 minutes, and fails the
+    domain after 72 hours. Audited `sending_domain.verified` or `.failed` when it moves."""
+    return _domain_out(await sending_domains.check_domain(ctx, domain_id))
 
 
 @domains_router.delete(
     "/{domain_id}",
     action="sending_domain.manage",
     response_model=SendingDomainOut,
-    errors=(501,),
 )
 async def revoke_sending_domain_route(domain_id: UUID, ctx: Ctx) -> SendingDomainOut:
-    """Revoke (R-01-T27): client mail returns to the neutral sender. Audited
-    `sending_domain.revoked`."""
-    await _stub(ctx, COMMUNICATIONS_FIRM_SENDER_DOMAIN)
+    """Revoke (R-01-T27): client mail returns to the neutral sender and the SES identity is
+    deleted. Audited `sending_domain.revoked`."""
+    return _domain_out(await sending_domains.revoke_domain(ctx, domain_id))
 
 
 @policy_router.get("", action="portal_settings.read", response_model=FollowUpPolicyOut)

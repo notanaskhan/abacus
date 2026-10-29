@@ -20,7 +20,7 @@ Rules the shapes carry:
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import UTC, date, datetime, time
 from typing import Annotated, Literal, NoReturn
 from uuid import UUID
 
@@ -40,13 +40,18 @@ from abacus.kernel.errors import (
 )
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
+from abacus.kernel.uow.idempotency import idempotent
+from abacus.modules.communications import intake
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
     Resource,
     authorise,
+    authorise_with_scope,
     current_context,
+    in_intake_scope,
     mask_tins_for,
+    walled_from,
 )
 from abacus.modules.organisations.api import MaskedTinOut
 
@@ -550,13 +555,42 @@ async def get_thread_route(thread_id: UUID, ctx: Ctx) -> InboxThreadDetail:
     action="inbox.log_intake",
     response_model=IntakeCreatedOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def log_intake_route(
     body: LogIntakeIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> IntakeCreatedOut:
-    """Log received documents (DV-1): the batch; files follow (N-01-T09)."""
-    await _stub(ctx, "inbox.log_intake")
+    """Log received documents (DV-1): the batch, one thread and one message; files follow
+    (N-01-T09). The intake scope or `inbox.log_intake` on the named client; people only."""
+    await _log_check(ctx, body.client_id)
+
+    async def run() -> tuple[int, dict[str, object]]:
+        made = await intake.record_inbound_message(
+            ctx.tenant,
+            intake.Inbound(
+                channel="staff_logged",
+                sender_display=body.from_display or "Logged by staff",
+                subject=body.subject,
+                received_at=datetime.combine(body.received_at, time(12, 0), tzinfo=UTC),
+                body=body.note,
+                client_id=body.client_id,
+                client_entity_id=body.client_entity_id,
+                from_contact_id=body.from_contact_id,
+                logged_by=ctx.user_id,
+                received_via=body.received_via,
+            ),
+        )
+        out = IntakeCreatedOut(thread_id=made.thread_id, message_id=made.message_id)
+        return 201, out.model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="inbox.log_intake",
+        key=idempotency_key,
+        body=body.model_dump(mode="json"),
+        run=run,
+    )
+    return IntakeCreatedOut.model_validate(stored.body)
 
 
 @intake_router.post(
@@ -564,7 +598,7 @@ async def log_intake_route(
     action="inbox.log_intake",
     response_model=IntakeFileOut,
     status_code=201,
-    errors=(409, 413, 415, 501, 503),
+    errors=(409, 413, 503),
 )
 async def log_intake_file_route(
     message_id: UUID,
@@ -573,8 +607,59 @@ async def log_intake_file_route(
     idempotency_key: IdempotencyKey,
     filename: Annotated[str, Query(min_length=1, max_length=255)],
 ) -> IntakeFileOut:
-    """One file of a staff-logged batch, scanned before storage, fail closed (N-01-T09)."""
-    await _stub(ctx, "inbox.log_intake")
+    """One file of a staff-logged batch, scanned before storage, fail closed (N-01-T09). Only the
+    person who logged the batch adds to it."""
+    facts = await intake.message_facts(ctx.tenant, message_id)
+    if facts.channel != "staff_logged" or facts.logged_by != ctx.user_id:
+        await _log_check(ctx, facts.client_id)
+        raise NotFound("inbound_message")
+    await _log_check(ctx, facts.client_id)
+    content = await request.body()
+
+    async def run() -> tuple[int, dict[str, object]]:
+        made = await intake.add_attachment(
+            ctx.tenant, message_id, file_name=filename, content=content
+        )
+        out = IntakeFileOut(
+            attachment_id=made.attachment_id,
+            file_name=made.file_name,
+            status=InboxItemStatus(made.status),
+        )
+        return 201, out.model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="inbox.log_intake_file",
+        key=idempotency_key,
+        body={"message_id": str(message_id), "filename": filename, "size": len(content)},
+        run=run,
+    )
+    return IntakeFileOut.model_validate(stored.body)
+
+
+async def _log_check(ctx: AuthContext, client_id: UUID | None) -> None:
+    """A firm person (404 for a client principal); a person on an intake team may log for any
+    client or none; anyone else needs `inbox.log_intake` on the named client (the wall 404s).
+    The agent and the system are refused by the matrix before the flag is read."""
+    if ctx.client:
+        raise NotFound("inbox")
+    resource = (
+        Resource.firm(ctx.tenant_id)
+        if client_id is None
+        else Resource.client(ctx.tenant_id, client_id)
+    )
+    in_scope = ctx.tenant.actor_kind == "human" and await in_intake_scope(ctx.tenant, ctx.user_id)
+    # The intake scope logs for any client (DEC-20) except one its member is walled from: 404,
+    # as if it did not exist (DEC-43).
+    if (
+        in_scope
+        and client_id is not None
+        and client_id in await walled_from(ctx.tenant, ctx.user_id)
+    ):
+        raise NotFound("client")
+    await authorise_with_scope(ctx, "inbox.log_intake", resource, in_scope=in_scope)
+    if not await flag_enabled(ctx.tenant, INBOX_FIRM_INTAKE):
+        raise NotFound(INBOX_FIRM_INTAKE.name)
 
 
 @intake_router.post(

@@ -64,6 +64,11 @@ ROUTES: dict[tuple[str, str], tuple[str, Flag]] = {
         "methodology.manage",
         METHODOLOGY_PROGRAMS,
     ),
+    # K-01-T07 (DEC-957): KNW-02's Programs tree, stubbed for K-01-T12.
+    ("get", "/v1/methodology/versions/{version_id}/programs"): (
+        "methodology.read",
+        METHODOLOGY_PROGRAMS,
+    ),
     ("get", "/v1/methodology/programs/{program_id}"): ("methodology.read", METHODOLOGY_PROGRAMS),
     ("get", "/v1/methodology/programs/{program_id}/steps"): (
         "methodology.read",

@@ -14,3 +14,21 @@ variable "reader_account_ids" {
     error_message = "reader_account_ids must be 12-digit AWS account IDs."
   }
 }
+
+variable "production_account_id" {
+  description = "The production account, for ECR replication. Null until Q-01-T28."
+  type        = string
+  default     = null
+}
+
+variable "firm_domain" {
+  description = "The firm app's domain (F-09-T09). Null: no hosted zone yet."
+  type        = string
+  default     = null
+}
+
+variable "portal_base_domain" {
+  description = "The neutral portal domain (F-09-T09, ADR-163). Null: no hosted zone yet."
+  type        = string
+  default     = null
+}

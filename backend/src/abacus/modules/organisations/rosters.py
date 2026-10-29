@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.uow import Ref, Target, UnitOfWork
-from abacus.modules.identity.api import reconcile_service_lines
+from abacus.modules.identity.api import AccessChanged, reconcile_service_lines
 from abacus.modules.organisations.events import TeamMemberAdded, TeamMemberRemoved
 from abacus.modules.organisations.models import Team, TeamRoster
 
@@ -91,6 +91,9 @@ async def _change(
     )
     event = TeamMemberAdded if added else TeamMemberRemoved
     tx.emit(event(team_id=team_id, user_id=user_id))
+    # N-01-T08: joining or leaving an intake team changes what the person may read (DEC-20).
+    if await tx.session.scalar(select(Team.kind).where(Team.id == team_id)) == "intake":
+        tx.emit(AccessChanged(user_id=user_id))
 
 
 async def set_member_teams(
