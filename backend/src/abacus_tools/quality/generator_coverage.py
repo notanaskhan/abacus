@@ -27,7 +27,7 @@ import sys
 from collections.abc import Iterable
 from pathlib import Path
 
-from abacus.modules.identity.authz.matrix import CONDITION_KEYS, RULES
+from abacus.modules.identity.api import CONDITION_KEYS, RULES
 from abacus_tools.codegen.security_tests import ISOLATION, tenant_tables
 from abacus_tools.quality.schema_check import TABLE_OWNERS
 

@@ -1,8 +1,8 @@
 ---
 id: TASK-2131
 title: Q-03-T095 Security and reliability sweep 2027 Q2 (generator coverage)
-spec: ADR-080
-acceptance_criteria: [backlog row]
+spec: SPEC-000  # Q-03-T095 row; ADR-080
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: red
 status: in-review
 epic: Q-03
