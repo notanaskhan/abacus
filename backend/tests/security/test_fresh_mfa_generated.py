@@ -67,6 +67,8 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("consent.export", "export", "firm_admin"),
     ("consent_template.manage", "consent", "security_admin"),
     ("consent_template.publish", "consent", "firm_partner"),
+    ("integration.configure", "access_control", "firm_admin"),
+    ("member.set_ero", "access_control", "firm_admin"),
 )
 ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/audit-events/exports/{export_id}/download", "audit_event.export"),
@@ -139,6 +141,11 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("PUT", "/v1/firm/ai-client-data", "firm.ai_client_data"),
     ("PUT", "/v1/firm/autonomy", "autonomy_policy.update"),
     ("PUT", "/v1/firm/data-exports/schedule", "firm_export.schedule"),
+    ("PUT", "/v1/firm/integrations/{key}/office-mapping", "integration.configure"),
+    ("PUT", "/v1/firm/integrations/{key}/settings", "integration.configure"),
+    ("PUT", "/v1/firm/integrations/{key}/status-mirror", "integration.configure"),
+    ("PUT", "/v1/firm/integrations/{key}/user-mapping", "integration.configure"),
+    ("PUT", "/v1/firm/members/{user_id}/ero", "member.set_ero"),
     ("PUT", "/v1/firm/safeguards", "security.manage"),
     ("PUT", "/v1/firm/safeguards/controls/{control_key}", "security.manage"),
     ("PUT", "/v1/firm/security/portal-sign-in", "security.manage"),
