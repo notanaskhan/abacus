@@ -864,6 +864,26 @@ export type AgentProposalOut = {
 };
 
 /**
+ * AgentReadOut
+ *
+ * An agent run that read the taxpayer's TRI under this consent (CLI-05d, ADM-05 drawer).
+ */
+export type AgentReadOut = {
+    /**
+     * Agent Run Id
+     */
+    agent_run_id: string;
+    /**
+     * On Behalf Of Name
+     */
+    on_behalf_of_name: string;
+    /**
+     * Read At
+     */
+    read_at: string;
+};
+
+/**
  * AgentRunOut
  */
 export type AgentRunOut = {
@@ -6615,6 +6635,77 @@ export type ConsentCopyOut = {
 };
 
 /**
+ * ConsentDetailOut
+ */
+export type ConsentDetailOut = {
+    /**
+     * Agent Reads
+     */
+    agent_reads: Array<AgentReadOut>;
+    consent: ConsentOut;
+    /**
+     * Documents
+     */
+    documents: Array<ConsentDocumentOut>;
+    /**
+     * Signers
+     */
+    signers: Array<ConsentSignerOut>;
+};
+
+/**
+ * ConsentDocumentOut
+ */
+export type ConsentDocumentOut = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Purpose
+     */
+    purpose: 'use' | 'ai_disclosure' | 'offshore_disclosure' | 'third_party_disclosure' | 'other_services_use' | 'firm_defined';
+    /**
+     * Text Sha256
+     */
+    text_sha256: string;
+};
+
+/**
+ * ConsentDraftsOut
+ *
+ * The drafted envelope and the consents it will carry.
+ */
+export type ConsentDraftsOut = {
+    /**
+     * Consents
+     */
+    consents: Array<ConsentOut>;
+    /**
+     * Envelope Id
+     */
+    envelope_id: string;
+};
+
+/**
+ * ConsentExportOut
+ */
+export type ConsentExportOut = {
+    /**
+     * Export Id
+     */
+    export_id: string;
+    /**
+     * Status
+     */
+    status: 'queued';
+};
+
+/**
  * ConsentIn
  *
  * ERSD acceptance.
@@ -6624,6 +6715,337 @@ export type ConsentIn = {
      * Disclosure Version Id
      */
     disclosure_version_id: string;
+};
+
+/**
+ * ConsentOut
+ *
+ * One consent: one purpose, its years, scope, recipients, template and signers.
+ */
+export type ConsentOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Consent Set Id
+     */
+    consent_set_id: string | null;
+    /**
+     * Envelope Id
+     */
+    envelope_id: string | null;
+    /**
+     * Expires At
+     */
+    expires_at: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Offshore
+     */
+    offshore: boolean;
+    /**
+     * Provider Terms Version
+     */
+    provider_terms_version: string;
+    /**
+     * Purpose
+     */
+    purpose: 'use' | 'ai_disclosure' | 'offshore_disclosure' | 'third_party_disclosure' | 'other_services_use' | 'firm_defined';
+    /**
+     * Recipients
+     */
+    recipients: Array<ConsentRecipientOut>;
+    /**
+     * Renewal Of Id
+     */
+    renewal_of_id: string | null;
+    /**
+     * Requested At
+     */
+    requested_at: string;
+    /**
+     * Scope
+     */
+    scope: {
+        [key: string]: string;
+    };
+    /**
+     * Signed At
+     */
+    signed_at: string | null;
+    /**
+     * Signed Count
+     */
+    signed_count: number;
+    /**
+     * Signer Count
+     */
+    signer_count: number;
+    /**
+     * Source
+     */
+    source: 'envelope' | 'record';
+    /**
+     * Status
+     */
+    status: 'requested' | 'signed' | 'declined' | 'revoked' | 'superseded' | 'expired';
+    /**
+     * Tax Years
+     */
+    tax_years: Array<number>;
+    /**
+     * Template Version Id
+     */
+    template_version_id: string;
+};
+
+/**
+ * ConsentReasonIn
+ */
+export type ConsentReasonIn = {
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+};
+
+/**
+ * ConsentRecipientOut
+ *
+ * Who a disclosure consent names (DF-16: from the register, never free text).
+ */
+export type ConsentRecipientOut = {
+    /**
+     * Country
+     */
+    country: string | null;
+    /**
+     * Kind
+     */
+    kind: 'firm' | 'provider' | 'offshore_preparer' | 'third_party';
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
+ * ConsentRecordIn
+ *
+ * Record mode: a consent signed outside Accrued, from scanned files (upload intents).
+ */
+export type ConsentRecordIn = {
+    /**
+     * Attested
+     */
+    attested: true;
+    /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    /**
+     * Purpose
+     */
+    purpose: 'use' | 'ai_disclosure' | 'offshore_disclosure' | 'third_party_disclosure' | 'other_services_use' | 'firm_defined';
+    /**
+     * Signed On
+     */
+    signed_on: string;
+    /**
+     * Tax Years
+     */
+    tax_years: Array<number>;
+    /**
+     * Template Version Id
+     */
+    template_version_id: string;
+    /**
+     * Upload Ids
+     */
+    upload_ids: Array<string>;
+};
+
+/**
+ * ConsentRenewalIn
+ */
+export type ConsentRenewalIn = {
+    /**
+     * Consent Ids
+     */
+    consent_ids: Array<string>;
+};
+
+/**
+ * ConsentRequestIn
+ *
+ * Draft a C7 envelope with one document per purpose (422 `one_purpose_per_document`, 409
+ * `consent_declined` for a purpose the taxpayer declined).
+ */
+export type ConsentRequestIn = {
+    /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    /**
+     * Purposes
+     */
+    purposes: Array<'use' | 'ai_disclosure' | 'offshore_disclosure' | 'third_party_disclosure' | 'other_services_use' | 'firm_defined'>;
+    /**
+     * Recipient Id
+     */
+    recipient_id?: string | null;
+    /**
+     * Scope
+     */
+    scope?: {
+        [key: string]: string;
+    } | null;
+    /**
+     * Tax Years
+     */
+    tax_years: Array<number>;
+};
+
+/**
+ * ConsentSignerOut
+ */
+export type ConsentSignerOut = {
+    /**
+     * Contact Id
+     */
+    contact_id: string | null;
+    /**
+     * Method
+     */
+    method: 'email_code' | 'kba' | 'wet' | 'record' | null;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Required
+     */
+    required: boolean;
+    /**
+     * Role
+     */
+    role: 'taxpayer' | 'spouse' | 'officer' | 'fiduciary' | 'partner';
+    /**
+     * Signed At
+     */
+    signed_at: string | null;
+};
+
+/**
+ * ConsentSummaryOut
+ *
+ * Counts for ADM-04 D, CLI-02 b and the BND-01 tag (no client names).
+ */
+export type ConsentSummaryOut = {
+    /**
+     * Ai Use Signed
+     */
+    ai_use_signed: number;
+    /**
+     * Declined
+     */
+    declined: number;
+    /**
+     * Expired
+     */
+    expired: number;
+    /**
+     * Expiring
+     */
+    expiring: number;
+    /**
+     * Offshore
+     */
+    offshore: number;
+    /**
+     * Requested
+     */
+    requested: number;
+    /**
+     * Revoked
+     */
+    revoked: number;
+    /**
+     * Signed
+     */
+    signed: number;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * ConsentTemplateImportIn
+ */
+export type ConsentTemplateImportIn = {
+    /**
+     * Counsel Attestation
+     */
+    counsel_attestation: true;
+    /**
+     * Dry Run
+     */
+    dry_run?: boolean;
+    /**
+     * Upload Id
+     */
+    upload_id: string;
+};
+
+/**
+ * ConsentTemplateOut
+ */
+export type ConsentTemplateOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Published At
+     */
+    published_at: string | null;
+    /**
+     * Purpose
+     */
+    purpose: 'use' | 'ai_disclosure' | 'offshore_disclosure' | 'third_party_disclosure' | 'other_services_use' | 'firm_defined';
+    /**
+     * Status
+     */
+    status: 'draft' | 'published' | 'retired';
+    /**
+     * Text Sha256
+     */
+    text_sha256: string;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
@@ -16863,6 +17285,40 @@ export type ListPageClientRowOut = {
      * Items
      */
     items: Array<ClientRowOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
+ * ListPage[ConsentOut]
+ */
+export type ListPageConsentOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<ConsentOut>;
     /**
      * Next Cursor
      */
@@ -28599,6 +29055,205 @@ export type TakenOut = {
 };
 
 /**
+ * TaxAuthorizationDesigneeOut
+ */
+export type TaxAuthorizationDesigneeOut = {
+    /**
+     * Caf Last4
+     */
+    caf_last4: string | null;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * TaxAuthorizationIn
+ *
+ * An authorization already on file (with its scanned form as an upload intent).
+ */
+export type TaxAuthorizationIn = {
+    /**
+     * Designee User Ids
+     */
+    designee_user_ids: Array<string>;
+    /**
+     * Expires On
+     */
+    expires_on?: string | null;
+    /**
+     * Form
+     */
+    form: '8821' | '2848' | 'state';
+    /**
+     * Received On
+     */
+    received_on: string;
+    /**
+     * State Form Code
+     */
+    state_form_code?: string | null;
+    /**
+     * Tax Matters
+     */
+    tax_matters: Array<string>;
+    /**
+     * Tax Years
+     */
+    tax_years: Array<number>;
+    /**
+     * Upload Id
+     */
+    upload_id: string;
+};
+
+/**
+ * TaxAuthorizationOut
+ */
+export type TaxAuthorizationOut = {
+    /**
+     * Designees
+     */
+    designees: Array<TaxAuthorizationDesigneeOut>;
+    /**
+     * Expires On
+     */
+    expires_on: string | null;
+    /**
+     * Form
+     */
+    form: '8821' | '2848' | 'state';
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Received On
+     */
+    received_on: string | null;
+    /**
+     * State Form Code
+     */
+    state_form_code: string | null;
+    /**
+     * Status
+     */
+    status: 'requested' | 'on_file' | 'expired' | 'revoked';
+    /**
+     * Tax Matters
+     */
+    tax_matters: Array<string>;
+    /**
+     * Tax Years
+     */
+    tax_years: Array<number>;
+};
+
+/**
+ * TaxAuthorizationRequestIn
+ */
+export type TaxAuthorizationRequestIn = {
+    /**
+     * Form
+     */
+    form: '8821' | '2848';
+};
+
+/**
+ * TaxElectionIn
+ */
+export type TaxElectionIn = {
+    /**
+     * Amount
+     */
+    amount?: number | string | null;
+    /**
+     * Jurisdiction
+     */
+    jurisdiction?: string | null;
+    /**
+     * Seen Version
+     */
+    seen_version?: number | null;
+    /**
+     * Status Code
+     */
+    status_code: string;
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+};
+
+/**
+ * TaxElectionOut
+ */
+export type TaxElectionOut = {
+    /**
+     * Amount
+     */
+    amount: string | null;
+    /**
+     * Jurisdiction
+     */
+    jurisdiction: string | null;
+    /**
+     * Kind
+     */
+    kind: string;
+    /**
+     * Status Code
+     */
+    status_code: string;
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+};
+
+/**
+ * TaxProfileOut
+ *
+ * CLI-05's rail: consents in force, authorizations on file, elections, a masked identity band
+ * (last four only; DEC-52) and open notices (planned).
+ */
+export type TaxProfileOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Authorizations
+     */
+    authorizations: Array<TaxAuthorizationOut>;
+    /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    /**
+     * Consents
+     */
+    consents: Array<ConsentOut>;
+    /**
+     * Elections
+     */
+    elections: Array<TaxElectionOut>;
+    /**
+     * Open Notices
+     */
+    open_notices: number | null;
+    /**
+     * Tin Last4
+     */
+    tin_last4: string | null;
+};
+
+/**
  * TbChecksSummaryOut
  *
  * The check strip's tally; each check's result is `GET …/checks` (SPEC-310).
@@ -30023,6 +30678,114 @@ export type TraceRowOut = {
      * Title
      */
     title: string;
+};
+
+/**
+ * TranscriptComparisonIn
+ */
+export type TranscriptComparisonIn = {
+    /**
+     * Return Id
+     */
+    return_id: string;
+};
+
+/**
+ * TranscriptComparisonOut
+ */
+export type TranscriptComparisonOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Lines
+     */
+    lines: Array<TranscriptLineDiffOut>;
+    /**
+     * Return Id
+     */
+    return_id: string;
+    /**
+     * Transcript Id
+     */
+    transcript_id: string;
+};
+
+/**
+ * TranscriptLineDiffOut
+ *
+ * A transcript line against the return as filed (code computes; ADR-050).
+ */
+export type TranscriptLineDiffOut = {
+    /**
+     * Form
+     */
+    form: string;
+    /**
+     * Matched
+     */
+    matched: boolean;
+    /**
+     * Payer Name
+     */
+    payer_name: string | null;
+    /**
+     * Return Amount
+     */
+    return_amount: string | null;
+    /**
+     * Transcript Amount
+     */
+    transcript_amount: string;
+};
+
+/**
+ * TranscriptOut
+ */
+export type TranscriptOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'wage_income' | 'account' | 'record_of_account';
+    /**
+     * Parse Status
+     */
+    parse_status: 'queued' | 'parsed' | 'failed';
+    /**
+     * Pulled At
+     */
+    pulled_at: string;
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+};
+
+/**
+ * TranscriptUploadIn
+ */
+export type TranscriptUploadIn = {
+    /**
+     * Authorization Id
+     */
+    authorization_id: string;
+    /**
+     * Kind
+     */
+    kind: 'wage_income' | 'account' | 'record_of_account';
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+    /**
+     * Upload Id
+     */
+    upload_id: string;
 };
 
 /**
@@ -34837,6 +35600,410 @@ export type RelinkCitationResponses = {
 
 export type RelinkCitationResponse = RelinkCitationResponses[keyof RelinkCitationResponses];
 
+export type ListAuthorizationsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Entity Id
+         */
+        client_entity_id: string;
+    };
+    query?: never;
+    url: '/v1/client-entities/{client_entity_id}/authorizations';
+};
+
+export type ListAuthorizationsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListAuthorizationsError = ListAuthorizationsErrors[keyof ListAuthorizationsErrors];
+
+export type ListAuthorizationsResponses = {
+    /**
+     * Response List Authorizations
+     *
+     * Successful Response
+     */
+    200: Array<TaxAuthorizationOut>;
+};
+
+export type ListAuthorizationsResponse = ListAuthorizationsResponses[keyof ListAuthorizationsResponses];
+
+export type AddAuthorizationData = {
+    body: TaxAuthorizationIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Entity Id
+         */
+        client_entity_id: string;
+    };
+    query?: never;
+    url: '/v1/client-entities/{client_entity_id}/authorizations';
+};
+
+export type AddAuthorizationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AddAuthorizationError = AddAuthorizationErrors[keyof AddAuthorizationErrors];
+
+export type AddAuthorizationResponses = {
+    /**
+     * Successful Response
+     */
+    201: TaxAuthorizationOut;
+};
+
+export type AddAuthorizationResponse = AddAuthorizationResponses[keyof AddAuthorizationResponses];
+
+export type RequestAuthorizationData = {
+    body: TaxAuthorizationRequestIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Entity Id
+         */
+        client_entity_id: string;
+    };
+    query?: never;
+    url: '/v1/client-entities/{client_entity_id}/authorizations/requests';
+};
+
+export type RequestAuthorizationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RequestAuthorizationError = RequestAuthorizationErrors[keyof RequestAuthorizationErrors];
+
+export type RequestAuthorizationResponses = {
+    /**
+     * Successful Response
+     */
+    201: TaxAuthorizationOut;
+};
+
+export type RequestAuthorizationResponse = RequestAuthorizationResponses[keyof RequestAuthorizationResponses];
+
+export type EntityConsentsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Entity Id
+         */
+        client_entity_id: string;
+    };
+    query?: never;
+    url: '/v1/client-entities/{client_entity_id}/consents';
+};
+
+export type EntityConsentsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityConsentsError = EntityConsentsErrors[keyof EntityConsentsErrors];
+
+export type EntityConsentsResponses = {
+    /**
+     * Response Entity Consents
+     *
+     * Successful Response
+     */
+    200: Array<ConsentOut>;
+};
+
+export type EntityConsentsResponse = EntityConsentsResponses[keyof EntityConsentsResponses];
+
+export type PutElectionData = {
+    body: TaxElectionIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Entity Id
+         */
+        client_entity_id: string;
+        /**
+         * Kind
+         */
+        kind: string;
+    };
+    query?: never;
+    url: '/v1/client-entities/{client_entity_id}/elections/{kind}';
+};
+
+export type PutElectionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PutElectionError = PutElectionErrors[keyof PutElectionErrors];
+
+export type PutElectionResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxElectionOut;
+};
+
+export type PutElectionResponse = PutElectionResponses[keyof PutElectionResponses];
+
+export type TaxProfileData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Entity Id
+         */
+        client_entity_id: string;
+    };
+    query?: never;
+    url: '/v1/client-entities/{client_entity_id}/tax-profile';
+};
+
+export type TaxProfileErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TaxProfileError = TaxProfileErrors[keyof TaxProfileErrors];
+
+export type TaxProfileResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxProfileOut;
+};
+
+export type TaxProfileResponse = TaxProfileResponses[keyof TaxProfileResponses];
+
+export type UploadTranscriptData = {
+    body: TranscriptUploadIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Entity Id
+         */
+        client_entity_id: string;
+    };
+    query?: never;
+    url: '/v1/client-entities/{client_entity_id}/transcripts';
+};
+
+export type UploadTranscriptErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type UploadTranscriptError = UploadTranscriptErrors[keyof UploadTranscriptErrors];
+
+export type UploadTranscriptResponses = {
+    /**
+     * Successful Response
+     */
+    201: TranscriptOut;
+};
+
+export type UploadTranscriptResponse = UploadTranscriptResponses[keyof UploadTranscriptResponses];
+
 export type RevealTinData = {
     body: TinRevealIn;
     headers?: {
@@ -36428,6 +37595,724 @@ export type ReconnectRequestResponses = {
 };
 
 export type ReconnectRequestResponse = ReconnectRequestResponses[keyof ReconnectRequestResponses];
+
+export type ImportConsentTemplatesData = {
+    body: ConsentTemplateImportIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/consent-templates/imports';
+};
+
+export type ImportConsentTemplatesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ImportConsentTemplatesError = ImportConsentTemplatesErrors[keyof ImportConsentTemplatesErrors];
+
+export type ImportConsentTemplatesResponses = {
+    /**
+     * Response Import Consent Templates
+     *
+     * Successful Response
+     */
+    201: Array<ConsentTemplateOut>;
+};
+
+export type ImportConsentTemplatesResponse = ImportConsentTemplatesResponses[keyof ImportConsentTemplatesResponses];
+
+export type PublishConsentTemplateData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Template Id
+         */
+        template_id: string;
+    };
+    query?: never;
+    url: '/v1/consent-templates/{template_id}/publish';
+};
+
+export type PublishConsentTemplateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PublishConsentTemplateError = PublishConsentTemplateErrors[keyof PublishConsentTemplateErrors];
+
+export type PublishConsentTemplateResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConsentTemplateOut;
+};
+
+export type PublishConsentTemplateResponse = PublishConsentTemplateResponses[keyof PublishConsentTemplateResponses];
+
+export type ListConsentsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Status
+         */
+        status?: 'requested' | 'signed' | 'declined' | 'revoked' | 'superseded' | 'expired' | null;
+        /**
+         * Purpose
+         */
+        purpose?: 'use' | 'ai_disclosure' | 'offshore_disclosure' | 'third_party_disclosure' | 'other_services_use' | 'firm_defined' | null;
+        /**
+         * Tax Year
+         */
+        tax_year?: number | null;
+        /**
+         * Offshore
+         */
+        offshore?: boolean | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/consents';
+};
+
+export type ListConsentsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListConsentsError = ListConsentsErrors[keyof ListConsentsErrors];
+
+export type ListConsentsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageConsentOut;
+};
+
+export type ListConsentsResponse = ListConsentsResponses[keyof ListConsentsResponses];
+
+export type ExportConsentsData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/consents/exports';
+};
+
+export type ExportConsentsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ExportConsentsError = ExportConsentsErrors[keyof ExportConsentsErrors];
+
+export type ExportConsentsResponses = {
+    /**
+     * Successful Response
+     */
+    202: ConsentExportOut;
+};
+
+export type ExportConsentsResponse = ExportConsentsResponses[keyof ExportConsentsResponses];
+
+export type RecordConsentData = {
+    body: ConsentRecordIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/consents/records';
+};
+
+export type RecordConsentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RecordConsentError = RecordConsentErrors[keyof RecordConsentErrors];
+
+export type RecordConsentResponses = {
+    /**
+     * Successful Response
+     */
+    201: ConsentOut;
+};
+
+export type RecordConsentResponse = RecordConsentResponses[keyof RecordConsentResponses];
+
+export type RenewConsentsData = {
+    body: ConsentRenewalIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/consents/renewals';
+};
+
+export type RenewConsentsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RenewConsentsError = RenewConsentsErrors[keyof RenewConsentsErrors];
+
+export type RenewConsentsResponses = {
+    /**
+     * Successful Response
+     */
+    201: ConsentDraftsOut;
+};
+
+export type RenewConsentsResponse = RenewConsentsResponses[keyof RenewConsentsResponses];
+
+export type RequestConsentsData = {
+    body: ConsentRequestIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/consents/requests';
+};
+
+export type RequestConsentsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RequestConsentsError = RequestConsentsErrors[keyof RequestConsentsErrors];
+
+export type RequestConsentsResponses = {
+    /**
+     * Successful Response
+     */
+    201: ConsentDraftsOut;
+};
+
+export type RequestConsentsResponse = RequestConsentsResponses[keyof RequestConsentsResponses];
+
+export type ConsentSummaryData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/consents/summary';
+};
+
+export type ConsentSummaryErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsentSummaryError = ConsentSummaryErrors[keyof ConsentSummaryErrors];
+
+export type ConsentSummaryResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConsentSummaryOut;
+};
+
+export type ConsentSummaryResponse = ConsentSummaryResponses[keyof ConsentSummaryResponses];
+
+export type ConsentData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Consent Id
+         */
+        consent_id: string;
+    };
+    query?: never;
+    url: '/v1/consents/{consent_id}';
+};
+
+export type ConsentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsentError = ConsentErrors[keyof ConsentErrors];
+
+export type ConsentResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConsentDetailOut;
+};
+
+export type ConsentResponse = ConsentResponses[keyof ConsentResponses];
+
+export type DeclineConsentData = {
+    body: ConsentReasonIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Consent Id
+         */
+        consent_id: string;
+    };
+    query?: never;
+    url: '/v1/consents/{consent_id}/declines';
+};
+
+export type DeclineConsentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DeclineConsentError = DeclineConsentErrors[keyof DeclineConsentErrors];
+
+export type DeclineConsentResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConsentOut;
+};
+
+export type DeclineConsentResponse = DeclineConsentResponses[keyof DeclineConsentResponses];
+
+export type ConsentEvidenceData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Consent Id
+         */
+        consent_id: string;
+        /**
+         * Document Id
+         */
+        document_id: string;
+    };
+    query?: never;
+    url: '/v1/consents/{consent_id}/documents/{document_id}/evidence';
+};
+
+export type ConsentEvidenceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsentEvidenceError = ConsentEvidenceErrors[keyof ConsentEvidenceErrors];
+
+export type ConsentEvidenceResponses = {
+    /**
+     * Response Consent Evidence
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type ConsentEvidenceResponse = ConsentEvidenceResponses[keyof ConsentEvidenceResponses];
+
+export type RevokeConsentData = {
+    body: ConsentReasonIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Consent Id
+         */
+        consent_id: string;
+    };
+    query?: never;
+    url: '/v1/consents/{consent_id}/revocations';
+};
+
+export type RevokeConsentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RevokeConsentError = RevokeConsentErrors[keyof RevokeConsentErrors];
+
+export type RevokeConsentResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConsentOut;
+};
+
+export type RevokeConsentResponse = RevokeConsentResponses[keyof RevokeConsentResponses];
 
 export type GetContactData = {
     body?: never;
@@ -73177,6 +75062,62 @@ export type BrowserErrorResponses = {
 };
 
 export type BrowserErrorResponse = BrowserErrorResponses[keyof BrowserErrorResponses];
+
+export type CompareTranscriptData = {
+    body: TranscriptComparisonIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Transcript Id
+         */
+        transcript_id: string;
+    };
+    query?: never;
+    url: '/v1/transcripts/{transcript_id}/comparisons';
+};
+
+export type CompareTranscriptErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CompareTranscriptError = CompareTranscriptErrors[keyof CompareTranscriptErrors];
+
+export type CompareTranscriptResponses = {
+    /**
+     * Successful Response
+     */
+    201: TranscriptComparisonOut;
+};
+
+export type CompareTranscriptResponse = CompareTranscriptResponses[keyof CompareTranscriptResponses];
 
 export type ListWallsData = {
     body?: never;

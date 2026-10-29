@@ -41,6 +41,16 @@ BINDERS_ENGINE = Flag(
     kind="boolean",
     default="false",
 )
+CLIENTS_TAX_PROFILE = Flag(
+    name="clients.tax_profile",
+    kind="boolean",
+    default="false",
+)
+CLIENTS_V2 = Flag(
+    name="clients.v2",
+    kind="boolean",
+    default="false",
+)
 COMMUNICATIONS_FIRM_SENDER_DOMAIN = Flag(
     name="communications.firm_sender_domain",
     kind="boolean",
@@ -71,6 +81,11 @@ CONNECTIONS_PORTAL_V2 = Flag(
     kind="boolean",
     default="false",
 )
+CONSENTS_REGISTRY = Flag(
+    name="consents.registry",
+    kind="boolean",
+    default="false",
+)
 CONTACTS_V2 = Flag(
     name="contacts.v2",
     kind="boolean",
@@ -81,8 +96,18 @@ ENGAGEMENT_AGENT_ENABLED = Flag(
     kind="boolean",
     default="false",
 )
+ENGAGEMENTS_ACCEPTANCE_V2 = Flag(
+    name="engagements.acceptance_v2",
+    kind="boolean",
+    default="false",
+)
 ENGAGEMENTS_ROLL_FORWARD_V2 = Flag(
     name="engagements.roll_forward_v2",
+    kind="boolean",
+    default="false",
+)
+ENGAGEMENTS_V2 = Flag(
+    name="engagements.v2",
     kind="boolean",
     default="false",
 )
@@ -298,15 +323,20 @@ FLAGS: dict[str, Flag] = {
     "audits.binder_export": AUDITS_BINDER_EXPORT,
     "audits.cockpit": AUDITS_COCKPIT,
     "binders.engine": BINDERS_ENGINE,
+    "clients.tax_profile": CLIENTS_TAX_PROFILE,
+    "clients.v2": CLIENTS_V2,
     "communications.firm_sender_domain": COMMUNICATIONS_FIRM_SENDER_DOMAIN,
     "compliance.firm_export": COMPLIANCE_FIRM_EXPORT,
     "compliance.incidents": COMPLIANCE_INCIDENTS,
     "compliance.legal_holds": COMPLIANCE_LEGAL_HOLDS,
     "connections.live_ledger": CONNECTIONS_LIVE_LEDGER,
     "connections.portal_v2": CONNECTIONS_PORTAL_V2,
+    "consents.registry": CONSENTS_REGISTRY,
     "contacts.v2": CONTACTS_V2,
     "engagement_agent.enabled": ENGAGEMENT_AGENT_ENABLED,
+    "engagements.acceptance_v2": ENGAGEMENTS_ACCEPTANCE_V2,
     "engagements.roll_forward_v2": ENGAGEMENTS_ROLL_FORWARD_V2,
+    "engagements.v2": ENGAGEMENTS_V2,
     "evidence.citations_v2": EVIDENCE_CITATIONS_V2,
     "evidence.pii_reveal": EVIDENCE_PII_REVEAL,
     "evidence.viewer_unlock": EVIDENCE_VIEWER_UNLOCK,

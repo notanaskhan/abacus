@@ -31,6 +31,7 @@ GROUPS: Final = frozenset(
     | {"sign_off"}  # P-04-T22 (DEC-501): bulk sign-off
     | {"release"}  # A-01-T23 (DEC-83): the record-mode release and archive
     | {"standards"}  # K-02-T01 (DEC-1150): creating a firm standard and publishing a version
+    | {"consent"}  # T-01-T01 (DEC-1155): §7216 consent records and templates
 )
 
 

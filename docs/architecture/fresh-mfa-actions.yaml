@@ -117,3 +117,12 @@ actions:
     group: standards
   - action: firm_standard.publish
     group: standards
+  # §7216 consents (T-01-T01, DEC-1155; T-01 §4.3): recording, exporting, importing and publishing
+  - action: consent.record
+    group: consent
+  - action: consent.export
+    group: export
+  - action: consent_template.manage
+    group: consent
+  - action: consent_template.publish
+    group: consent

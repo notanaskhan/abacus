@@ -28,7 +28,7 @@ Status values: `planned` (no stub), `stub` (models, 501 routes, matrix actions, 
 | C16 | Notification kinds and transactional email templates (database) | `notifications.md`; v1.1 `email-templates.md` and `portal-settings.md` | P-01, R-01 | all | S5 | 2026-12-28 | v1; v1.1 | frozen (P-01-T12, 2026-10-23); v1.1 additive stub (POR-20 and ADM-10 family: R-01-T16, 2026-10-26) |
 | C17 | Workbench tool registry (per-module read and compute tools, ADR-049) | `workbench-tools.md` | P-10 | W-02, W-03, I-02 | S32 | 2028-01-10 | v1 | planned |
 | C18 | Portal approvals (FS packages, client AJE approval) | `portal-approvals.md` | R-02 | A-06, A-07, C-02 | S30 | 2027-12-13 | v1 | planned |
-| C19 | Section 7216 consent gate and TRI data class (gateway condition 6) | `consent-7216.md` | T-01 | T-*, N-04, W-02, I-02 | S17 | 2027-06-14 | v1 | planned |
+| C19 | Section 7216 consent gate and TRI data class (gateway condition 6) | `c19-consent-gate.md` | T-01 | T-*, N-04, W-02, I-02 | S17 | 2027-06-14 | v1 | stub (T-01-T01, 2026-10-29) |
 | C20 | Integration framework and write-capability registry (firm, personal and client connections; W entries) | `c20-integrations.md` | A-02, W-01 | POR-16, TAX-09, CLS-11, ATT-09, ADM-08 | framework S10, catalogue S45 | 2027-03-08, 2028-07-10 | v1 | stub (POR-16 family, reconnect requests, pulls, `IntegrationAdapter` and the write-capability registry schema: A-02-T06, 2026-10-26) |
 | C21 | Effective-dated rules tables (due dates, holidays, form sets and tolerances, thresholds, retention floors) | `rules-tables.md` | K-02 | T-01, T-02, T-03, T-08, C-02, Q-05 | S17 | 2027-06-14 | v1 | stub (K-02-T02, 2026-10-29) |
 

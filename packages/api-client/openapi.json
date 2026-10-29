@@ -1857,6 +1857,35 @@
         "title": "AgentProposalOut",
         "type": "object"
       },
+      "AgentReadOut": {
+        "description": "An agent run that read the taxpayer's TRI under this consent (CLI-05d, ADM-05 drawer).",
+        "properties": {
+          "agent_run_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Agent Run Id",
+            "type": "string"
+          },
+          "on_behalf_of_name": {
+            "cls": "confidential",
+            "title": "On Behalf Of Name",
+            "type": "string"
+          },
+          "read_at": {
+            "cls": "confidential",
+            "format": "date-time",
+            "title": "Read At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "agent_run_id",
+          "read_at",
+          "on_behalf_of_name"
+        ],
+        "title": "AgentReadOut",
+        "type": "object"
+      },
       "AgentRunOut": {
         "properties": {
           "agent": {
@@ -14233,6 +14262,142 @@
         "title": "ConsentCopyOut",
         "type": "object"
       },
+      "ConsentDetailOut": {
+        "properties": {
+          "agent_reads": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/AgentReadOut"
+            },
+            "title": "Agent Reads",
+            "type": "array"
+          },
+          "consent": {
+            "$ref": "#/components/schemas/ConsentOut",
+            "cls": "confidential"
+          },
+          "documents": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ConsentDocumentOut"
+            },
+            "title": "Documents",
+            "type": "array"
+          },
+          "signers": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/ConsentSignerOut"
+            },
+            "title": "Signers",
+            "type": "array"
+          }
+        },
+        "required": [
+          "consent",
+          "signers",
+          "documents",
+          "agent_reads"
+        ],
+        "title": "ConsentDetailOut",
+        "type": "object"
+      },
+      "ConsentDocumentOut": {
+        "properties": {
+          "evidence_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Evidence Version Id"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "purpose": {
+            "cls": "internal",
+            "enum": [
+              "use",
+              "ai_disclosure",
+              "offshore_disclosure",
+              "third_party_disclosure",
+              "other_services_use",
+              "firm_defined"
+            ],
+            "title": "Purpose",
+            "type": "string"
+          },
+          "text_sha256": {
+            "cls": "internal",
+            "title": "Text Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "purpose",
+          "text_sha256",
+          "evidence_version_id"
+        ],
+        "title": "ConsentDocumentOut",
+        "type": "object"
+      },
+      "ConsentDraftsOut": {
+        "description": "The drafted envelope and the consents it will carry.",
+        "properties": {
+          "consents": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/ConsentOut"
+            },
+            "title": "Consents",
+            "type": "array"
+          },
+          "envelope_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Envelope Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "envelope_id",
+          "consents"
+        ],
+        "title": "ConsentDraftsOut",
+        "type": "object"
+      },
+      "ConsentExportOut": {
+        "properties": {
+          "export_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Export Id",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "const": "queued",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "export_id",
+          "status"
+        ],
+        "title": "ConsentExportOut",
+        "type": "object"
+      },
       "ConsentIn": {
         "additionalProperties": false,
         "description": "ERSD acceptance.",
@@ -14248,6 +14413,701 @@
           "disclosure_version_id"
         ],
         "title": "ConsentIn",
+        "type": "object"
+      },
+      "ConsentOut": {
+        "description": "One consent: one purpose, its years, scope, recipients, template and signers.",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "client_entity_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Client Entity Id",
+            "type": "string"
+          },
+          "client_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Client Id",
+            "type": "string"
+          },
+          "client_name": {
+            "cls": "confidential",
+            "title": "Client Name",
+            "type": "string"
+          },
+          "consent_set_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Consent Set Id"
+          },
+          "envelope_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Envelope Id"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Expires At"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "offshore": {
+            "cls": "internal",
+            "title": "Offshore",
+            "type": "boolean"
+          },
+          "provider_terms_version": {
+            "cls": "internal",
+            "title": "Provider Terms Version",
+            "type": "string"
+          },
+          "purpose": {
+            "cls": "internal",
+            "enum": [
+              "use",
+              "ai_disclosure",
+              "offshore_disclosure",
+              "third_party_disclosure",
+              "other_services_use",
+              "firm_defined"
+            ],
+            "title": "Purpose",
+            "type": "string"
+          },
+          "recipients": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/ConsentRecipientOut"
+            },
+            "title": "Recipients",
+            "type": "array"
+          },
+          "renewal_of_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Renewal Of Id"
+          },
+          "requested_at": {
+            "cls": "confidential",
+            "format": "date-time",
+            "title": "Requested At",
+            "type": "string"
+          },
+          "scope": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "cls": "confidential",
+            "title": "Scope",
+            "type": "object"
+          },
+          "signed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Signed At"
+          },
+          "signed_count": {
+            "cls": "internal",
+            "title": "Signed Count",
+            "type": "integer"
+          },
+          "signer_count": {
+            "cls": "internal",
+            "title": "Signer Count",
+            "type": "integer"
+          },
+          "source": {
+            "cls": "internal",
+            "enum": [
+              "envelope",
+              "record"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "requested",
+              "signed",
+              "declined",
+              "revoked",
+              "superseded",
+              "expired"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tax_years": {
+            "cls": "internal",
+            "items": {
+              "type": "integer"
+            },
+            "title": "Tax Years",
+            "type": "array"
+          },
+          "template_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Template Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "client_id",
+          "client_entity_id",
+          "client_name",
+          "consent_set_id",
+          "purpose",
+          "tax_years",
+          "scope",
+          "recipients",
+          "provider_terms_version",
+          "template_version_id",
+          "source",
+          "envelope_id",
+          "status",
+          "signed_count",
+          "signer_count",
+          "requested_at",
+          "signed_at",
+          "expires_at",
+          "renewal_of_id",
+          "offshore",
+          "allowed_actions"
+        ],
+        "title": "ConsentOut",
+        "type": "object"
+      },
+      "ConsentReasonIn": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "cls": "confidential",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Seen Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "reason",
+          "seen_version"
+        ],
+        "title": "ConsentReasonIn",
+        "type": "object"
+      },
+      "ConsentRecipientOut": {
+        "description": "Who a disclosure consent names (DF-16: from the register, never free text).",
+        "properties": {
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Country"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "firm",
+              "provider",
+              "offshore_preparer",
+              "third_party"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "name",
+          "country"
+        ],
+        "title": "ConsentRecipientOut",
+        "type": "object"
+      },
+      "ConsentRecordIn": {
+        "additionalProperties": false,
+        "description": "Record mode: a consent signed outside Accrued, from scanned files (upload intents).",
+        "properties": {
+          "attested": {
+            "cls": "internal",
+            "const": true,
+            "title": "Attested",
+            "type": "boolean"
+          },
+          "client_entity_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Client Entity Id",
+            "type": "string"
+          },
+          "purpose": {
+            "cls": "internal",
+            "enum": [
+              "use",
+              "ai_disclosure",
+              "offshore_disclosure",
+              "third_party_disclosure",
+              "other_services_use",
+              "firm_defined"
+            ],
+            "title": "Purpose",
+            "type": "string"
+          },
+          "signed_on": {
+            "cls": "confidential",
+            "format": "date",
+            "title": "Signed On",
+            "type": "string"
+          },
+          "tax_years": {
+            "cls": "internal",
+            "items": {
+              "maximum": 2100.0,
+              "minimum": 2000.0,
+              "type": "integer"
+            },
+            "maxItems": 5,
+            "minItems": 1,
+            "title": "Tax Years",
+            "type": "array"
+          },
+          "template_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Template Version Id",
+            "type": "string"
+          },
+          "upload_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 5,
+            "minItems": 1,
+            "title": "Upload Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "client_entity_id",
+          "purpose",
+          "tax_years",
+          "template_version_id",
+          "signed_on",
+          "upload_ids",
+          "attested"
+        ],
+        "title": "ConsentRecordIn",
+        "type": "object"
+      },
+      "ConsentRenewalIn": {
+        "additionalProperties": false,
+        "properties": {
+          "consent_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Consent Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "consent_ids"
+        ],
+        "title": "ConsentRenewalIn",
+        "type": "object"
+      },
+      "ConsentRequestIn": {
+        "additionalProperties": false,
+        "description": "Draft a C7 envelope with one document per purpose (422 `one_purpose_per_document`, 409\n`consent_declined` for a purpose the taxpayer declined).",
+        "properties": {
+          "client_entity_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Client Entity Id",
+            "type": "string"
+          },
+          "purposes": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "use",
+                "ai_disclosure",
+                "offshore_disclosure",
+                "third_party_disclosure",
+                "other_services_use",
+                "firm_defined"
+              ],
+              "type": "string"
+            },
+            "maxItems": 6,
+            "minItems": 1,
+            "title": "Purposes",
+            "type": "array"
+          },
+          "recipient_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Recipient Id"
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Scope"
+          },
+          "tax_years": {
+            "cls": "internal",
+            "items": {
+              "maximum": 2100.0,
+              "minimum": 2000.0,
+              "type": "integer"
+            },
+            "maxItems": 5,
+            "minItems": 1,
+            "title": "Tax Years",
+            "type": "array"
+          }
+        },
+        "required": [
+          "client_entity_id",
+          "purposes",
+          "tax_years"
+        ],
+        "title": "ConsentRequestIn",
+        "type": "object"
+      },
+      "ConsentSignerOut": {
+        "properties": {
+          "contact_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Contact Id"
+          },
+          "method": {
+            "anyOf": [
+              {
+                "enum": [
+                  "email_code",
+                  "kba",
+                  "wet",
+                  "record"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Method"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "required": {
+            "cls": "internal",
+            "title": "Required",
+            "type": "boolean"
+          },
+          "role": {
+            "cls": "internal",
+            "enum": [
+              "taxpayer",
+              "spouse",
+              "officer",
+              "fiduciary",
+              "partner"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "signed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Signed At"
+          }
+        },
+        "required": [
+          "contact_id",
+          "name",
+          "role",
+          "required",
+          "signed_at",
+          "method"
+        ],
+        "title": "ConsentSignerOut",
+        "type": "object"
+      },
+      "ConsentSummaryOut": {
+        "description": "Counts for ADM-04 D, CLI-02 b and the BND-01 tag (no client names).",
+        "properties": {
+          "ai_use_signed": {
+            "cls": "internal",
+            "title": "Ai Use Signed",
+            "type": "integer"
+          },
+          "declined": {
+            "cls": "internal",
+            "title": "Declined",
+            "type": "integer"
+          },
+          "expired": {
+            "cls": "internal",
+            "title": "Expired",
+            "type": "integer"
+          },
+          "expiring": {
+            "cls": "internal",
+            "title": "Expiring",
+            "type": "integer"
+          },
+          "offshore": {
+            "cls": "internal",
+            "title": "Offshore",
+            "type": "integer"
+          },
+          "requested": {
+            "cls": "internal",
+            "title": "Requested",
+            "type": "integer"
+          },
+          "revoked": {
+            "cls": "internal",
+            "title": "Revoked",
+            "type": "integer"
+          },
+          "signed": {
+            "cls": "internal",
+            "title": "Signed",
+            "type": "integer"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "signed",
+          "requested",
+          "expiring",
+          "expired",
+          "declined",
+          "revoked",
+          "ai_use_signed",
+          "offshore"
+        ],
+        "title": "ConsentSummaryOut",
+        "type": "object"
+      },
+      "ConsentTemplateImportIn": {
+        "additionalProperties": false,
+        "properties": {
+          "counsel_attestation": {
+            "cls": "internal",
+            "const": true,
+            "title": "Counsel Attestation",
+            "type": "boolean"
+          },
+          "dry_run": {
+            "cls": "internal",
+            "default": true,
+            "title": "Dry Run",
+            "type": "boolean"
+          },
+          "upload_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Upload Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "upload_id",
+          "counsel_attestation"
+        ],
+        "title": "ConsentTemplateImportIn",
+        "type": "object"
+      },
+      "ConsentTemplateOut": {
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Published At"
+          },
+          "purpose": {
+            "cls": "internal",
+            "enum": [
+              "use",
+              "ai_disclosure",
+              "offshore_disclosure",
+              "third_party_disclosure",
+              "other_services_use",
+              "firm_defined"
+            ],
+            "title": "Purpose",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "draft",
+              "published",
+              "retired"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "text_sha256": {
+            "cls": "internal",
+            "title": "Text Sha256",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "purpose",
+          "version",
+          "status",
+          "text_sha256",
+          "published_at"
+        ],
+        "title": "ConsentTemplateOut",
         "type": "object"
       },
       "ContactAccessIn": {
@@ -35604,6 +36464,66 @@
           "total"
         ],
         "title": "ListPage[ClientRowOut]",
+        "type": "object"
+      },
+      "ListPage_ConsentOut_": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "facets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Facet"
+              },
+              "type": "array"
+            },
+            "cls": "internal",
+            "title": "Facets",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ConsentOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_capped": {
+            "cls": "internal",
+            "default": false,
+            "title": "Total Capped",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListPage[ConsentOut]",
         "type": "object"
       },
       "ListPage_DecisionCardItemOut_": {
@@ -59772,6 +60692,463 @@
         "title": "TakenOut",
         "type": "object"
       },
+      "TaxAuthorizationDesigneeOut": {
+        "properties": {
+          "caf_last4": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Caf Last4"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "name",
+          "caf_last4"
+        ],
+        "title": "TaxAuthorizationDesigneeOut",
+        "type": "object"
+      },
+      "TaxAuthorizationIn": {
+        "additionalProperties": false,
+        "description": "An authorization already on file (with its scanned form as an upload intent).",
+        "properties": {
+          "designee_user_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Designee User Ids",
+            "type": "array"
+          },
+          "expires_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Expires On"
+          },
+          "form": {
+            "cls": "internal",
+            "enum": [
+              "8821",
+              "2848",
+              "state"
+            ],
+            "title": "Form",
+            "type": "string"
+          },
+          "received_on": {
+            "cls": "confidential",
+            "format": "date",
+            "title": "Received On",
+            "type": "string"
+          },
+          "state_form_code": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "State Form Code"
+          },
+          "tax_matters": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Tax Matters",
+            "type": "array"
+          },
+          "tax_years": {
+            "cls": "internal",
+            "items": {
+              "maximum": 2100.0,
+              "minimum": 2000.0,
+              "type": "integer"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Tax Years",
+            "type": "array"
+          },
+          "upload_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Upload Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "form",
+          "designee_user_ids",
+          "tax_matters",
+          "tax_years",
+          "received_on",
+          "upload_id"
+        ],
+        "title": "TaxAuthorizationIn",
+        "type": "object"
+      },
+      "TaxAuthorizationOut": {
+        "properties": {
+          "designees": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/TaxAuthorizationDesigneeOut"
+            },
+            "title": "Designees",
+            "type": "array"
+          },
+          "expires_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Expires On"
+          },
+          "form": {
+            "cls": "internal",
+            "enum": [
+              "8821",
+              "2848",
+              "state"
+            ],
+            "title": "Form",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "received_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Received On"
+          },
+          "state_form_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "State Form Code"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "requested",
+              "on_file",
+              "expired",
+              "revoked"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tax_matters": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Tax Matters",
+            "type": "array"
+          },
+          "tax_years": {
+            "cls": "internal",
+            "items": {
+              "type": "integer"
+            },
+            "title": "Tax Years",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "form",
+          "state_form_code",
+          "designees",
+          "tax_matters",
+          "tax_years",
+          "received_on",
+          "expires_on",
+          "status"
+        ],
+        "title": "TaxAuthorizationOut",
+        "type": "object"
+      },
+      "TaxAuthorizationRequestIn": {
+        "additionalProperties": false,
+        "properties": {
+          "form": {
+            "cls": "internal",
+            "enum": [
+              "8821",
+              "2848"
+            ],
+            "title": "Form",
+            "type": "string"
+          }
+        },
+        "required": [
+          "form"
+        ],
+        "title": "TaxAuthorizationRequestIn",
+        "type": "object"
+      },
+      "TaxElectionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Amount",
+            "x-tri": true
+          },
+          "jurisdiction": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Jurisdiction"
+          },
+          "seen_version": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Seen Version"
+          },
+          "status_code": {
+            "cls": "internal",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Status Code",
+            "type": "string"
+          },
+          "tax_year": {
+            "cls": "internal",
+            "maximum": 2100.0,
+            "minimum": 2000.0,
+            "title": "Tax Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "tax_year",
+          "status_code"
+        ],
+        "title": "TaxElectionIn",
+        "type": "object"
+      },
+      "TaxElectionOut": {
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Amount",
+            "x-tri": true
+          },
+          "jurisdiction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Jurisdiction"
+          },
+          "kind": {
+            "cls": "internal",
+            "title": "Kind",
+            "type": "string"
+          },
+          "status_code": {
+            "cls": "internal",
+            "title": "Status Code",
+            "type": "string"
+          },
+          "tax_year": {
+            "cls": "internal",
+            "title": "Tax Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kind",
+          "jurisdiction",
+          "tax_year",
+          "amount",
+          "status_code"
+        ],
+        "title": "TaxElectionOut",
+        "type": "object"
+      },
+      "TaxProfileOut": {
+        "description": "CLI-05's rail: consents in force, authorizations on file, elections, a masked identity band\n(last four only; DEC-52) and open notices (planned).",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "authorizations": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/TaxAuthorizationOut"
+            },
+            "title": "Authorizations",
+            "type": "array"
+          },
+          "client_entity_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Client Entity Id",
+            "type": "string"
+          },
+          "consents": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/ConsentOut"
+            },
+            "title": "Consents",
+            "type": "array"
+          },
+          "elections": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/TaxElectionOut"
+            },
+            "title": "Elections",
+            "type": "array",
+            "x-tri": true
+          },
+          "open_notices": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Open Notices"
+          },
+          "tin_last4": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Tin Last4"
+          }
+        },
+        "required": [
+          "client_entity_id",
+          "tin_last4",
+          "consents",
+          "authorizations",
+          "elections",
+          "open_notices",
+          "allowed_actions"
+        ],
+        "title": "TaxProfileOut",
+        "type": "object"
+      },
       "TbChecksSummaryOut": {
         "description": "The check strip's tally; each check's result is `GET \u2026/checks` (SPEC-310).",
         "properties": {
@@ -62733,6 +64110,211 @@
           "actor"
         ],
         "title": "TraceRowOut",
+        "type": "object"
+      },
+      "TranscriptComparisonIn": {
+        "additionalProperties": false,
+        "properties": {
+          "return_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Return Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "return_id"
+        ],
+        "title": "TranscriptComparisonIn",
+        "type": "object"
+      },
+      "TranscriptComparisonOut": {
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "lines": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/TranscriptLineDiffOut"
+            },
+            "title": "Lines",
+            "type": "array",
+            "x-tri": true
+          },
+          "return_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Return Id",
+            "type": "string"
+          },
+          "transcript_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Transcript Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "transcript_id",
+          "return_id",
+          "lines"
+        ],
+        "title": "TranscriptComparisonOut",
+        "type": "object"
+      },
+      "TranscriptLineDiffOut": {
+        "description": "A transcript line against the return as filed (code computes; ADR-050).",
+        "properties": {
+          "form": {
+            "cls": "internal",
+            "title": "Form",
+            "type": "string"
+          },
+          "matched": {
+            "cls": "internal",
+            "title": "Matched",
+            "type": "boolean"
+          },
+          "payer_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Payer Name",
+            "x-tri": true
+          },
+          "return_amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Return Amount",
+            "x-tri": true
+          },
+          "transcript_amount": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Transcript Amount",
+            "type": "string",
+            "x-tri": true
+          }
+        },
+        "required": [
+          "form",
+          "payer_name",
+          "transcript_amount",
+          "return_amount",
+          "matched"
+        ],
+        "title": "TranscriptLineDiffOut",
+        "type": "object"
+      },
+      "TranscriptOut": {
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "wage_income",
+              "account",
+              "record_of_account"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "parse_status": {
+            "cls": "internal",
+            "enum": [
+              "queued",
+              "parsed",
+              "failed"
+            ],
+            "title": "Parse Status",
+            "type": "string"
+          },
+          "pulled_at": {
+            "cls": "confidential",
+            "format": "date-time",
+            "title": "Pulled At",
+            "type": "string"
+          },
+          "tax_year": {
+            "cls": "internal",
+            "title": "Tax Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "tax_year",
+          "pulled_at",
+          "parse_status"
+        ],
+        "title": "TranscriptOut",
+        "type": "object"
+      },
+      "TranscriptUploadIn": {
+        "additionalProperties": false,
+        "properties": {
+          "authorization_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Authorization Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "wage_income",
+              "account",
+              "record_of_account"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "tax_year": {
+            "cls": "internal",
+            "maximum": 2100.0,
+            "minimum": 2000.0,
+            "title": "Tax Year",
+            "type": "integer"
+          },
+          "upload_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Upload Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "tax_year",
+          "authorization_id",
+          "upload_id"
+        ],
+        "title": "TranscriptUploadIn",
         "type": "object"
       },
       "TreeNode": {
@@ -73413,6 +74995,885 @@
         "x-abacus-action": "citation.relink"
       }
     },
+    "/v1/client-entities/{client_entity_id}/authorizations": {
+      "get": {
+        "operationId": "list_authorizations",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_entity_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Entity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TaxAuthorizationOut"
+                  },
+                  "title": "Response List Authorizations",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "List Authorizations Route",
+        "tags": [
+          "consents"
+        ],
+        "x-abacus-action": "tax_authorization.manage"
+      },
+      "post": {
+        "operationId": "add_authorization",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_entity_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Entity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaxAuthorizationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxAuthorizationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Add Authorization Route",
+        "tags": [
+          "consents"
+        ],
+        "x-abacus-action": "tax_authorization.manage"
+      }
+    },
+    "/v1/client-entities/{client_entity_id}/authorizations/requests": {
+      "post": {
+        "description": "Draft an 8821 or 2848 through C7.",
+        "operationId": "request_authorization",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_entity_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Entity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaxAuthorizationRequestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxAuthorizationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Request Authorization Route",
+        "tags": [
+          "consents"
+        ],
+        "x-abacus-action": "tax_authorization.manage"
+      }
+    },
+    "/v1/client-entities/{client_entity_id}/consents": {
+      "get": {
+        "operationId": "entity_consents",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_entity_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Entity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConsentOut"
+                  },
+                  "title": "Response Entity Consents",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Entity Consents Route",
+        "tags": [
+          "consents"
+        ],
+        "x-abacus-action": "consent.read"
+      }
+    },
+    "/v1/client-entities/{client_entity_id}/elections/{kind}": {
+      "put": {
+        "operationId": "put_election",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_entity_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Entity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "pattern": "^[a-z][a-z0-9_]{1,59}$",
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaxElectionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxElectionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Put Election Route",
+        "tags": [
+          "consents"
+        ],
+        "x-abacus-action": "tax_election.manage"
+      }
+    },
+    "/v1/client-entities/{client_entity_id}/tax-profile": {
+      "get": {
+        "operationId": "tax_profile",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_entity_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Entity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxProfileOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Tax Profile Route",
+        "tags": [
+          "consents"
+        ],
+        "x-abacus-action": "tax_profile.read"
+      }
+    },
+    "/v1/client-entities/{client_entity_id}/transcripts": {
+      "post": {
+        "operationId": "upload_transcript",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_entity_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Entity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TranscriptUploadIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranscriptOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Upload Transcript Route",
+        "tags": [
+          "consents"
+        ],
+        "x-abacus-action": "transcript.upload"
+      }
+    },
     "/v1/client-entities/{entity_id}/tin/reveal": {
       "post": {
         "description": "Human-only: a live, onshore person with recent MFA and a reason, holding `tin.reveal` on\none of the client's open engagements (P-07-T10, DEC-223); 403 otherwise, 404 for a walled or\nunknown entity or no TIN on file; 403 `mfa_step_up_required` when only MFA is stale; 429\n`tin_reveal_rate_limited` past 20 reveals an hour (DEC-232). One `tin_reveals` row and one\n`tin.revealed` audit event in the same unit of work (the reason, never the value);\n`Cache-Control: no-store`.",
@@ -76979,6 +79440,1642 @@
           "connections"
         ],
         "x-abacus-action": "connection.reconnect_request"
+      }
+    },
+    "/v1/consent-templates/imports": {
+      "post": {
+        "operationId": "import_consent_templates",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentTemplateImportIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConsentTemplateOut"
+                  },
+                  "title": "Response Import Consent Templates",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Import Consent Templates Route",
+        "tags": [
+          "consents"
+        ],
+        "x-abacus-action": "consent_template.manage"
+      }
+    },
+    "/v1/consent-templates/{template_id}/publish": {
+      "post": {
+        "operationId": "publish_consent_template",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "template_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Template Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentTemplateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Publish Consent Template Route",
+        "tags": [
+          "consents"
+        ],
+        "x-abacus-action": "consent_template.publish"
+      }
+    },
+    "/v1/consents": {
+      "get": {
+        "description": "ADM-05: the registry, needs-attention first, walls applied (no hidden counts).",
+        "operationId": "list_consents",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "requested",
+                    "signed",
+                    "declined",
+                    "revoked",
+                    "superseded",
+                    "expired"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "purpose",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "use",
+                    "ai_disclosure",
+                    "offshore_disclosure",
+                    "third_party_disclosure",
+                    "other_services_use",
+                    "firm_defined"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Purpose"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tax_year",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 2100,
+                  "minimum": 2000,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tax Year"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offshore",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Offshore"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPage_ConsentOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "List Consents Route",
+        "tags": [
+          "consents"
+        ],
+        "x-abacus-action": "consent.read"
+      }
+    },
+    "/v1/consents/exports": {
+      "post": {
+        "operationId": "export_consents",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentExportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Export Consents Route",
+        "tags": [
+          "consents"
+        ],
+        "x-abacus-action": "consent.export"
+      }
+    },
+    "/v1/consents/records": {
+      "post": {
+        "operationId": "record_consent",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentRecordIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Record Consent Route",
+        "tags": [
+          "consents"
+        ],
+        "x-abacus-action": "consent.record"
+      }
+    },
+    "/v1/consents/renewals": {
+      "post": {
+        "operationId": "renew_consents",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentRenewalIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentDraftsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Renew Consents Route",
+        "tags": [
+          "consents"
+        ],
+        "x-abacus-action": "consent.request"
+      }
+    },
+    "/v1/consents/requests": {
+      "post": {
+        "operationId": "request_consents",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentRequestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentDraftsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Request Consents Route",
+        "tags": [
+          "consents"
+        ],
+        "x-abacus-action": "consent.request"
+      }
+    },
+    "/v1/consents/summary": {
+      "get": {
+        "operationId": "consent_summary",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentSummaryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Consent Summary Route",
+        "tags": [
+          "consents"
+        ],
+        "x-abacus-action": "consent.read"
+      }
+    },
+    "/v1/consents/{consent_id}": {
+      "get": {
+        "operationId": "consent",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "consent_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Consent Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Consent Route",
+        "tags": [
+          "consents"
+        ],
+        "x-abacus-action": "consent.read"
+      }
+    },
+    "/v1/consents/{consent_id}/declines": {
+      "post": {
+        "operationId": "decline_consent",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "consent_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Consent Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentReasonIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Decline Consent Route",
+        "tags": [
+          "consents"
+        ],
+        "x-abacus-action": "consent.record"
+      }
+    },
+    "/v1/consents/{consent_id}/documents/{document_id}/evidence": {
+      "get": {
+        "description": "The signed document, audited (`consent.evidence_downloaded`).",
+        "operationId": "consent_evidence",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "consent_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Consent Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "contentMediaType": "application/octet-stream",
+                  "title": "Response Consent Evidence",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Consent Evidence Route",
+        "tags": [
+          "consents"
+        ],
+        "x-abacus-action": "consent.evidence_download"
+      }
+    },
+    "/v1/consents/{consent_id}/revocations": {
+      "post": {
+        "operationId": "revoke_consent",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "consent_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Consent Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentReasonIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Revoke Consent Route",
+        "tags": [
+          "consents"
+        ],
+        "x-abacus-action": "consent.record"
       }
     },
     "/v1/contacts/{contact_id}": {
@@ -157637,6 +161734,132 @@
           "budget"
         ],
         "x-abacus-action": "own"
+      }
+    },
+    "/v1/transcripts/{transcript_id}/comparisons": {
+      "post": {
+        "operationId": "compare_transcript",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "transcript_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Transcript Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TranscriptComparisonIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranscriptComparisonOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Compare Transcript Route",
+        "tags": [
+          "consents"
+        ],
+        "x-abacus-action": "transcript.compare"
       }
     },
     "/v1/walls": {
