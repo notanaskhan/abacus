@@ -151,6 +151,11 @@ KNOWLEDGE_CATALOG = Flag(
     kind="boolean",
     default="false",
 )
+KNOWLEDGE_FIRM_STANDARDS = Flag(
+    name="knowledge.firm_standards",
+    kind="boolean",
+    default="false",
+)
 LEDGER_GL_IMPORT = Flag(
     name="ledger.gl_import",
     kind="boolean",
@@ -254,6 +259,11 @@ REVIEW_GRAMMAR_API = Flag(
     kind="boolean",
     default="false",
 )
+RULES_REFERENCE_SETS = Flag(
+    name="rules.reference_sets",
+    kind="boolean",
+    default="false",
+)
 SCREENING_CARD = Flag(
     name="screening.card",
     kind="boolean",
@@ -310,6 +320,7 @@ FLAGS: dict[str, Flag] = {
     "home.dashboard": HOME_DASHBOARD,
     "inbox.firm_intake": INBOX_FIRM_INTAKE,
     "knowledge.catalog": KNOWLEDGE_CATALOG,
+    "knowledge.firm_standards": KNOWLEDGE_FIRM_STANDARDS,
     "ledger.gl_import": LEDGER_GL_IMPORT,
     "ledger.import": LEDGER_IMPORT,
     "ledger.tb_workpaper": LEDGER_TB_WORKPAPER,
@@ -330,6 +341,7 @@ FLAGS: dict[str, Flag] = {
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
     "retrieval.auto": RETRIEVAL_AUTO,
     "review.grammar_api": REVIEW_GRAMMAR_API,
+    "rules.reference_sets": RULES_REFERENCE_SETS,
     "screening.card": SCREENING_CARD,
     "security_center.v1": SECURITY_CENTER_V1,
     "signatures.envelopes": SIGNATURES_ENVELOPES,

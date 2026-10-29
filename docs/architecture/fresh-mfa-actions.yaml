@@ -112,3 +112,8 @@ actions:
     group: access_control
   - action: letter.approve
     group: release
+  # Firm standards (K-02-T01, DEC-1150; K-02 §4.4): creating a standard and publishing a version
+  - action: firm_standard.create
+    group: standards
+  - action: firm_standard.publish
+    group: standards

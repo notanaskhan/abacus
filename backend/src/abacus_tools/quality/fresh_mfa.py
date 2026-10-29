@@ -30,6 +30,7 @@ GROUPS: Final = frozenset(
     | {"incident"}  # G-02-T02 (Q-02 AC-42): incident decisions
     | {"sign_off"}  # P-04-T22 (DEC-501): bulk sign-off
     | {"release"}  # A-01-T23 (DEC-83): the record-mode release and archive
+    | {"standards"}  # K-02-T01 (DEC-1150): creating a firm standard and publishing a version
 )
 
 
