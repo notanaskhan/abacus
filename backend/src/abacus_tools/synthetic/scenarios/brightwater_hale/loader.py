@@ -62,6 +62,10 @@ P-01-T03 and P-01-T04, so the loader checks the schema first and refuses the who
 Refuses: `environment = production`; outside `--staging`, any database URL that is not loopback;
 with `--staging`, an environment other than staging, a firm that is not synthetic, or a staging
 deploy in flight (F-04.16, F-04.17).
+
+With `--staging`, each firm the timeline creates gets its tenant key before anything else is
+written for it: the loader starts (or attaches to) the firm's `TenantKeyWorkflow` and waits for
+the verified key (DEC-1012), since staging seals every write with the firm's own KMS key.
 """
 
 from __future__ import annotations
@@ -75,7 +79,7 @@ import shutil
 import subprocess
 import sys
 from collections.abc import AsyncGenerator, Awaitable, Callable, Generator
-from contextlib import asynccontextmanager, contextmanager
+from contextlib import asynccontextmanager, contextmanager, suppress
 from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
@@ -87,10 +91,14 @@ import asyncpg
 from opentelemetry import trace
 from opentelemetry.trace import NonRecordingSpan, SpanContext, TraceFlags
 from sqlalchemy import text
+from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
+from temporalio.exceptions import WorkflowAlreadyStartedError
 
 from abacus.kernel.clock import frozen, system_now
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext
+from abacus.kernel.dispatch import dispatch
+from abacus.kernel.temporal import temporal_client
 from abacus.kernel.uow import Target, uow
 from abacus.modules.assurance.api import record_phase, update_profile
 from abacus.modules.communications.api import (
@@ -162,7 +170,13 @@ from abacus.modules.organisations.api import (
     run_conflict_check,
     set_client_record,
 )
-from abacus.modules.platform.api import IncidentFacts, record_incident
+from abacus.modules.platform.api import (
+    IncidentFacts,
+    TenantKeyInput,
+    TenantKeyWorkflow,
+    record_incident,
+    tenant_key_workflow_id,
+)
 from abacus.modules.portal.api import (
     BrandingSlots,
     activate_portal_host,
@@ -332,6 +346,8 @@ DEFAULT_SUPERUSER: Final = "postgresql://postgres:postgres@127.0.0.1:55432/abacu
 LOOPBACK: Final = frozenset({"127.0.0.1", "localhost", "::1"})
 LOADER: Final = "scenario-loader"
 SETTLE_SECONDS: Final = 120.0
+# DEC-1012: how long a staging load waits for a firm's tenant key (create, replicate, verify).
+KEY_SECONDS: Final = 600.0
 # The flags `seed_dev` turns on for the local firm (F-04 §1: rollout only, renewed Dec 14 to 18).
 FLAGS_ON: Final = (
     "retrieval.auto",
@@ -365,6 +381,10 @@ class LoadRefused(RuntimeError):
 
 class SettleTimeout(RuntimeError):
     """The tenant's outbox did not drain within the barrier's timeout."""
+
+
+class KeyTimeout(RuntimeError):
+    """A firm's tenant key was not verified within the wait (staging, DEC-1012)."""
 
 
 class SchemaPending(RuntimeError):
@@ -2626,6 +2646,32 @@ async def settle(conn: asyncpg.Connection, timeout: float = SETTLE_SECONDS) -> N
         await asyncio.sleep(0.25)
 
 
+# The events that bootstrap a firm row: on staging each firm needs its tenant key next (DEC-1012).
+FIRM_KINDS: Final = frozenset({"identity.firm_created", "identity.sandbox_firm_created"})
+
+
+async def ensure_tenant_key(tenant: UUID, *, timeout: float = KEY_SECONDS) -> str:
+    """DEC-1012: start (or attach to) the firm's `TenantKeyWorkflow` and wait for its verified key.
+
+    Provisioning starts that workflow (Q-01-T27); the loader bootstraps the firm without
+    provisioning, so on staging, where every sealed write needs the firm's KMS key, it asks for
+    the key itself. A run that already completed is not started again: its result is the key."""
+    workflow_id = tenant_key_workflow_id(str(tenant))
+    with suppress(WorkflowAlreadyStartedError):
+        await dispatch(
+            TenantKeyWorkflow,
+            TenantKeyInput(str(tenant), LOADER),
+            id=workflow_id,
+            id_reuse_policy=WorkflowIDReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY,
+            id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
+        )
+    handle = (await temporal_client()).get_workflow_handle(workflow_id)
+    try:
+        return str(await asyncio.wait_for(handle.result(), timeout))
+    except TimeoutError:
+        raise KeyTimeout(f"the tenant key was not verified within {timeout:.0f}s") from None
+
+
 async def load(
     dsn: str,
     at: str = "E0",
@@ -2660,12 +2706,15 @@ async def load(
                 raise NotImplementedError(f"no loader handler for {event.kind}")
             if await _already_loaded(conn, event):
                 skipped += 1
-                continue
-            with frozen(event.at), _traced(event):
-                await handler(conn, scenario, event)
-            replayed += 1
-            if wait:
-                await settle(conn)
+            else:
+                with frozen(event.at), _traced(event):
+                    await handler(conn, scenario, event)
+                replayed += 1
+                if wait:
+                    await settle(conn)
+            # A firm loaded by an earlier run may still lack its key, so this runs either way.
+            if staging and event.kind in FIRM_KINDS:
+                await ensure_tenant_key(tenant_of(event))
     finally:
         await conn.close()
     if replayed:
@@ -2711,7 +2760,7 @@ def main(argv: list[str] | None = None) -> int:
                 wait=not args.no_settle,
             )
         )
-    except (LoadRefused, SchemaPending) as refused:
+    except (LoadRefused, SchemaPending, KeyTimeout) as refused:
         print(f"refused: {refused}", file=sys.stderr)
         return 1
     print(
