@@ -10,7 +10,7 @@ outbox event's id, unique per firm, so a redelivered or replayed event inserts n
 The app role may insert and delete (the prune), never update.
 
 Revision ID: 0320
-Revises: 0291
+Revises: 0360
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, tenant_table
 
 revision = "0320"
-down_revision = "0291"
+down_revision = "0360"
 branch_labels = None
 depends_on = None
 
