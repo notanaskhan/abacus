@@ -41,7 +41,7 @@ Owner is the builder for every row. `Last rehearsed` stays `never` until a rehea
 | RB-11 | Regional failover | ADR-098, ADR-096 | R2 (tabletop), then yearly | never | none (tabletop) | drafted |
 | RB-12 | Break-glass access: support sessions, retention override, key custodian | ADR-098, ADR-028 | R1 | never | break-glass audit event | drafted |
 | RB-13 | Firm offboarding and crypto-shred | ADR-098, ADR-034 | R2 (on the canary) | never | none | stub (Q-02 writes it) |
-| RB-14 | Legal hold: apply, release, failures | ADR-098, ADR-033 | R2 | never | hold workflow failure | stub (Q-02 writes it) |
+| RB-14 | Legal hold: apply, release, failures | ADR-098, ADR-033 | R2 | never | hold workflow failure | drafted (Q-02-T51) |
 | RB-15 | Disaster-recovery drill procedure | ADR-098, ADR-096 | R1 | never | none (drill) | drafted |
 | RB-16 | Busy-season readiness | ADR-098, ADR-075 | Aug 2027 | never | readiness test | stub (Q-04 writes it) |
 | RB-17 | Section 7216 consent expiry or revocation wave (agents pause per taxpayer) | R-01 | R2 if tax is in scope | never | consent alarms | to write |
@@ -54,7 +54,7 @@ Owner is the builder for every row. `Last rehearsed` stays `never` until a rehea
 | RB-24 | Malware scanner down (fail-closed backlog; signature staleness) | ADR-110, ADR-153 | R0 | never | SLO-03 | drafted |
 | RB-25 | Provider-terms register entry nearing `review_by` (AI refused for real firms once past) | ADR-114 | R2 | never | register expiry | to write |
 | RB-26 | Feature-flag expiry wave (fast check red) | ADR-089 | Dec 2026 | never | flag expiry check | drafted |
-| RB-27 | **Accrued-originated incident touching firm data:** notify the firm within 72 hours and create the incident-register entry so the firm's own 30-day clock starts with facts | R-27, R-32 | R2 (tabletop) | never | incident created | to write |
+| RB-27 | **Accrued-originated incident touching firm data:** notify the firm within 72 hours and create the incident-register entry so the firm's own 30-day clock starts with facts | R-27, R-32 | R2 (tabletop) | never | incident created | drafted (Q-02-T51) |
 | RB-28 | Real-time delivery degraded (event stream down; clients fall back to polling) | P-15 | When P-15 ships | never | SLO-06 | to write |
 | RB-29 | Integrity alert: evidence fingerprint mismatch, seal mismatch, or broken audit hash chain (SEV1) | ADR-096 | R1 | never | chain mismatch alarm | drafted |
 | RB-30 | Write-capability incident (wrong posting or export; reversal as a new write) | P-16 | Before the first write capability goes live | never | write anomaly | to write |
@@ -66,8 +66,10 @@ Owner is the builder for every row. `Last rehearsed` stays `never` until a rehea
 | RB-36 | Pause portal sign-in for a firm (`portal_sign_in` control) | P-08-T28 | before the portal flags retire | never | none yet (RB-22, RB-35 point here) | drafted |
 | RB-37 | Onboard a firm's people, offices and walls | G-01-T18 | before the first real firm onboards | never | none | drafted |
 | RB-38 | PII reveal review and unlock abuse | P-03-T26 | before the first real firm reveals | never | pii.reveal-volume, evidence.unlock-failures (DEC-656) | drafted |
+| RB-39 | Agent stage promotion and demotion (SPEC-036, DEC-811) | Q-02-T51 | before the first real firm goes live | never | none | drafted |
+| RB-40 | Provider-terms `review_by` renewal and Bedrock parity refresh | Q-02-T51 | before the first real-firm model call | never | none | drafted |
 
-Also owed by Q-02-T51, not yet numbered: agent stage promotion and demotion; Bedrock route-parity refresh. Give each the next free RB number when written (RB-39 onward; RB-31 is P-01-T17's, RB-32 P-06-T27's, RB-33 A-01-T30's).
+Q-02-T51's agent-stage and provider-terms runbooks are RB-39 and RB-40. Give the next runbook the next free number (RB-41 onward; RB-31 is P-01-T17's, RB-32 P-06-T27's, RB-33 A-01-T30's).
 
 ## Template
 
