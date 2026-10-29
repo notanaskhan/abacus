@@ -424,6 +424,28 @@ class IncidentClockRemindersWorkflow:
         )
 
 
+# --- Q-04-T008: the weekly pilot metrics, Mondays 06:00 Central. v1. ---------------------------
+
+PILOT_METRICS_ID: Final = "pilot_metrics:platform"
+_PILOT_METRICS_TIMEOUT = timedelta(minutes=30)
+
+
+@workflow.defn(name="PilotMetrics")
+class PilotMetricsWorkflow:
+    """`pilot_metrics:platform`: last ISO week's W4 to W7 snapshots for every firm with a live
+    enrolment (Q-04 AC-8.1). One activity per run, started only by its Schedule (overlap SKIP); a
+    rerun writes nothing new (AC-8.2). A change goes behind `workflow.patched`."""
+
+    @workflow.run
+    async def run(self) -> int:
+        return await workflow.execute_activity(
+            "platform.pilot_metrics",
+            result_type=int,
+            start_to_close_timeout=_PILOT_METRICS_TIMEOUT,
+            retry_policy=_JOB_RETRY,
+        )
+
+
 # --- G-02-T20: Export WISP pack (batch). v1, recorded in its histories. ------------------------
 
 WISP_DECIDED: Final = ("requester_not_member", "exports_unavailable", "wisp_missing")

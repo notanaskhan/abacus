@@ -52,8 +52,7 @@ const CLOCK = {
 export type Cli07State = keyof typeof CLOCK;
 
 function capabilities(persona: string | undefined): CapabilitiesOut {
-  const base = capabilitiesFor(seed, persona ?? "daniel-reyes");
-  return { ...base, flags: { ...base.flags, "engagements.acceptance_v2": true } };
+  return capabilitiesFor(seed, persona ?? "daniel-reyes");
 }
 
 function thornbury(stage: ThornburyStage): AcceptanceFixture {

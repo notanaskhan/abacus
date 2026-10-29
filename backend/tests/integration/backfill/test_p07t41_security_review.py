@@ -1,4 +1,5 @@
-"""P-07-T41 security review (DEC-429; TASK-1325): SPEC-025's route can no longer meet G2 (H1), an
+"""P-07-T41 security review (DEC-429; TASK-1325): SPEC-025's route can no longer meet G2 (H1; the
+route retired with P-07-T59 and its table with migration 0321, DEC-906), an
 independence answer is the acting person's own at the database (M1), a conclusion supersedes one
 of the same engagement (L1), a decided NAS row is the partner's (L2), and conflict hits on a
 client the reader is walled from carry no result id in the banner (L4).
@@ -18,7 +19,6 @@ from sqlalchemy.exc import DBAPIError, IntegrityError
 
 from abacus.kernel.db import TenantContext
 from abacus.kernel.db.session import ActorKind
-from abacus.kernel.flags import forget_flags
 from abacus.kernel.uow import Target, uow
 
 from .support import Net
@@ -46,49 +46,16 @@ async def nw(net: Net) -> Northwind:
     return await _world(net)
 
 
-# --- H1: SPEC-025's route never meets G2 -------------------------------------------------------
+# --- H1: SPEC-025's route never meets G2 (route retired by P-07-T59; table dropped by 0321) ---
 
 
-async def test_h1_with_v2_on_the_old_route_refuses_a_conclusion(nw: Northwind) -> None:
+async def test_h1_the_old_route_is_gone_and_g2_stays_unmet(nw: Northwind) -> None:
+    """SPEC-025's PUT retired with P-07-T59 (DEC-905): nothing reaches the legacy conclusion."""
     refused = await nw.call("PUT", f"/v1/engagements/{nw.eid}/acceptance", nw.margaret, LEGACY)
-    _refusal(refused, 409, "decision_locked")
+    assert refused.status_code == 405, refused.text
     assert (await nw.gate("G2"))["met"] is False
-    concluded = await nw.seed.value(
-        "SELECT count(*) FROM engagement_acceptance WHERE engagement_id = $1 "
-        "AND independence_concluded_at IS NOT NULL",
-        nw.eid,
-    )
-    assert concluded == 0
-
-
-async def test_h1_with_v2_off_a_conclusion_written_now_does_not_meet_g2(nw: Northwind) -> None:
-    await nw.seed.run(
-        "DELETE FROM feature_flag_states WHERE tenant_id = $1 "
-        "AND flag = 'engagements.acceptance_v2'",
-        nw.tenant,
-    )
-    forget_flags()
-    recorded = await nw.call("PUT", f"/v1/engagements/{nw.eid}/acceptance", nw.margaret, LEGACY)
-    assert recorded.status_code == 200, recorded.text
-    rows = await nw.seed.rows(
-        "SELECT legacy_g2, independence_concluded_at FROM engagement_acceptance "
-        "WHERE engagement_id = $1",
-        nw.eid,
-    )
-    assert [(r["legacy_g2"], r["independence_concluded_at"] is not None) for r in rows] == [
-        (False, True)
-    ]
-    assert (await nw.gate("G2"))["met"] is False
-    # A row from before 0175 (written outside the app) still stands until P-07-T59.
-    await nw.seed.run(
-        "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
-        "decided_by, documented_at, independence_concluded_by, independence_concluded_at, "
-        "independence_documented_at) VALUES ($1, $2, 'continuance', 'accepted', 'seed', "
-        "'Memo', 'seed', clock_timestamp(), 'Memo')",
-        nw.tenant,
-        nw.eid,
-    )
-    assert (await nw.gate("G2"))["met"] is True
+    tables = await nw.seed.value("SELECT to_regclass('engagement_acceptance') IS NULL")
+    assert tables is True  # migration 0321 (DEC-906): no legacy table to write
 
 
 # --- M1: an answer is the acting person's own ----------------------------------------------------

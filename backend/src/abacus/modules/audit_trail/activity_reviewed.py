@@ -242,12 +242,19 @@ REVIEWED_FALLBACK: Final = frozenset(
         "integration_secret.stored",
         "invitation.resent",
         "invitation.revoked",
+        "issue.fix_instructions_set",  # P-04-T31
+        "issue.marked_not_applicable",  # P-04-T31
+        "issue.reopened",  # P-04-T31
+        "issue.resolved",  # P-04-T31
+        "issue.sent_to_client",  # P-04-T31
+        "issue.verified",  # P-04-T31
         "item.signed",
         "knowledge_chunk.embedded",
         "knowledge_document.added",
         "knowledge_document.failed",
         "knowledge_document.ready",
         "knowledge_document.withdrawn",
+        "ledger.pull_requested",  # A-02-T30: an on-demand pull
         "ledger_import.duplicate",
         "ledger_import.failed",
         "ledger_import.received",
@@ -288,6 +295,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "methodology_version.submitted",
         "methodology_version.superseded",
         # R-01-T26: ADM-10's settings and the read-only preview (versions and ids only)
+        "pilot_metrics.computed",  # Q-04-T008: a week's pilot snapshots
         "portal.preview_viewed",
         "portal_settings.draft_discarded",
         "portal_settings.draft_saved",

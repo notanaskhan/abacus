@@ -96,6 +96,7 @@ from abacus.modules.organisations.service import (
     firm_names,
     firm_offices,
     normalise,
+    portal_activation,
     set_client_record,
     set_entity_attributes,
 )
@@ -221,6 +222,7 @@ __all__ = [
     "mask_tin",
     "normalise",
     "office_name_column",
+    "portal_activation",
     "readable_client",
     "register_client_engagements",
     "register_conflict_subject",

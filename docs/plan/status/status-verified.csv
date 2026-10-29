@@ -1,5 +1,5 @@
 task_id,status,evidence
-F-01-T05,partial,Green main + 73% recorded (work/tasks/TASK-077); no dated ADR-116 exception in docs/adr; backend/pyproject.toml:136 still fail_under=95
+F-01-T05,partial,"Dated exception is backend/coverage-exception.toml (DEC-10; read by abacus_tools.ci.coverage_floor): 70% from 2026-10-20, 78% by 2026-11-06, 87% by 2026-11-20, expires 2026-12-01 when fail_under=95 applies; ADR-116 dropped by the solo edition. Open until coverage holds at 95 (re-verified 2026-10-29)"
 F-01-T06,partial,".github/workflows/ci.yml has merge_group, draft gating, changes job, frontend job; Makefile check-heads/check-generated; 5 green runs and ruleset not judgeable"
 F-01-T07,partial,abacus_tools/ci/paths.py + tests/unit/tools/test_paths.py; ci.yml frontend and evals-fast gates; 6-minute clause unmeasured (frontend job timeout 10)
 F-01-T09,partial,"tools/local/db_guard+worktree_env tests, .claude/hooks (test_hooks generated-file test), Makefile dev-fixtures; VITE_FIXTURES read nowhere in apps/web/src"
@@ -7,41 +7,41 @@ F-01-T10,not-started,"Obsolete: SU-06 removed number blocks (test_validate_docs.
 Q-02-T06,partial,"Matrix rows firm.ai_client_data, engagement.ai_exclude in docs/architecture/permission-matrix.yaml:55-56; no agent_stage.set row, flag agents.client_data_optin, glossary rows or fresh-mfa/human-only yaml"
 Q-02-T07,partial,"Migration 0056, identity/routes.py:633-644, engagements/routes.py:903, ai_gateway/boundary.py, abacus_tools/agent_stage.py, tests/unit/ai_gateway/test_client_data_boundary.py; no make agent-stage, no route integration tests"
 Q-02-T08,partial,"Shadow hidden in agents/{screenings,upload_review,inbox_match,guidance_draft}.py; test_board_reads_api.py:138; no re-opt-in on register change, no outbox cache clear"
-F-05-T03,partial,"packages/ui/src/theme.css (plain @theme, Geist); no tokens.ts, contrast.css or tokens.test.ts"
-F-05-T04,partial,"Geist via @fontsource imports in theme.css:9-12, no googleapis; no fonts-doc.css (Arimo, Gelasio); unused newsreader/source-sans-3 deps in packages/ui/package.json"
-F-05-T09,partial,"apps/web/src/gallery/Gallery.tsx at DEV-only /_ds (router.tsx:313-343); no VITE_UI_GALLERY, /components/tokens or /components/screens/:id"
-F-05-T12,partial,"packages/ui/src/status.tsx STATUS/Status/statusWord; no StatusDisc, SubLine, SyncChip, Tick, TallyPill, RETIRED map or generated C2 data"
-F-05-T14,partial,"packages/ui/src/components/button.tsx (7px radius), workspace.tsx Count/StatusPill/AiTag; no Pill, Tick, Tag, Person, Monogram, Pulse, Reveal, useReducedMotion"
-F-05-T15,partial,"components/field.tsx Input/Label; popover.tsx Menu/Tooltip; overlays.tsx Fieldset; shell/Tabs.tsx; no Segmented, SearchField, Picker, Toggle, Radio, Checkbox"
-F-05-T18,partial,"screens/Layout.tsx:96 h-[46px] toolbar, EngagementLayout.tsx:23 42px header, shell/Tabs.tsx; no AppShell/Toolbar components, overflow order or Tier D specimens"
-F-05-T19,partial,"components/surfaces.tsx EmptyState/Skeleton/Alert; no ViewState, OfflineBanner, AgentRunningRow, restricted/flag-off states"
-F-05-T20,partial,"components/overlays.tsx Drawer/Sheet, popover.tsx Popover, dialog.tsx Dialog; no OverlayStack, ?ov= codec, FullSheet, CommandPalette, ConfirmDialog"
-F-05-T21,partial,"components/toast.tsx: 4 s toast, UNDO_MS=10_000, max 3 (slice(-2)); gallery/components.test.tsx undo tests; no hover pause or running pill"
-F-05-T23,partial,"Layout.tsx toolbar replaces rail (Rail unused by screens); screens not under legacy/, shell/ClientBell.tsx still used, wordmark reads Abacus not Accrued"
-F-05-T27,partial,"components/data-table.tsx sort, selection, bulk bar; gallery/components.test.tsx:60-73; no MoneyCell, TickCell, role=grid or arrow/Enter model"
-P-01-T02,partial,"Layout.tsx hard-codes two nav links + bell with unread (useUnreadCount); no nav.ts, DF-39 overflow, Go/Cmd-K chords or flag-off frames"
-P-07-T20,partial,"EngagementLayout.tsx 42px header, Tabs, Archived/Active pill; no G3 banner, record-signed-letter sheet or prospect banner"
-P-07-T27,partial,"screens/Engagements.tsx search + status filter + counts, Engagements.test.tsx; no service-line segmented, seven tiles or G3 banner"
-G-01-T07,partial,"screens/AdminLayout.tsx grouped section list at /admin/*; no /settings subtree, dirty/Save with step-up, leave guard or legacy redirects"
-I-01-T06,partial,"apps/web/src/home/WaitingOnYou.tsx + queue.test.ts; no greeting subbar, Home segmented, tile row or Approvals badge"
-P-04-T21,partial,"fieldwork/notes.py raise_note/respond/clear/NotesOpen, tests/unit/fieldwork/test_notes.py; no withdraw, sealed bodies, notification or workpaper anchors"
+F-05-T03,done,"packages/ui/src/tokens/ (tokens.ts), contrast.css exported by @abacus/ui (re-verified 2026-10-29)"
+F-05-T04,done,"packages/ui/src/fonts.css, fonts-doc.css (Arimo, Gelasio) exported by @abacus/ui (re-verified 2026-10-29)"
+F-05-T09,done,VITE_UI_GALLERY in apps/web/vite.config.ts and src/gallery (re-verified 2026-10-29)
+F-05-T12,done,"StatusDisc, TallyPill and the status runtime in packages/ui/src (re-verified 2026-10-29)"
+F-05-T14,done,Tick and the T0 primitives in packages/ui/src (re-verified 2026-10-29)
+F-05-T15,done,Segmented and the inputs in packages/ui/src (re-verified 2026-10-29)
+F-05-T18,done,AppShell in packages/ui and apps/web/src/shell (re-verified 2026-10-29)
+F-05-T19,done,"ViewState, OfflineBanner in packages/ui (re-verified 2026-10-29)"
+F-05-T20,done,OverlayStack in packages/ui and apps/web (re-verified 2026-10-29)
+F-05-T21,done,ToastHost/useToast (re-verified 2026-10-29)
+F-05-T23,done,apps/web/src/legacy holds the re-skinned screens (re-verified 2026-10-29)
+F-05-T27,done,MoneyCell in packages/ui DataTable (re-verified 2026-10-29)
+P-01-T02,done,apps/web/src/shell renders from shell/nav.ts (re-verified 2026-10-29)
+P-07-T20,done,screens/ENG-02 with the G3 and recorded-letter flows (re-verified 2026-10-29)
+P-07-T27,done,screens/ENG-01 with the service-line segmented (re-verified 2026-10-29)
+G-01-T07,done,/settings routes (ADM-01) (re-verified 2026-10-29)
+I-01-T06,done,"screens/HOME-01 main region (S11 lane 8) plus client activity rows (#624, DEC-1001); h/i bands are I-01-T24 (S35) (re-verified 2026-10-29)"
+P-04-T21,done,"review notes with withdraw (S11 lane 1, #477) (re-verified 2026-10-29)"
 A-03-T04,partial,"sampling/selection.py seeded_v1 (random.random partial Fisher-Yates), test_selection.py:129-137; no v2.3 getrandbits, strata, attribute_size, udl, project, versions"
 A-03-T07,partial,"sampling/population.py build_population/tie_out from gl_entries, test_selection.py:148; no upload source, column map, check-number gaps or population routes"
 A-04-T08,partial,"fieldwork/service.py set_materiality/MaterialityInvalid, models engagement_materiality; no pure engine, benchmarks, rounding policy or versions"
 A-08-T10,partial,"sampling/selection.py rules_for: large, round, near_year_end, manual, rare_account, weekend, keywords with reasons; no holiday, post-close, score or inputs_hash"
 A-08-T12,partial,"fieldwork/{service,selecting,workflows,workpaper}.py, models procedures/selected_items/item_results; no je_tests/je_scores tables, JeScoringWorkflow or 412k run"
 A-08-T27,partial,"screens/Fieldwork.tsx + spec037fieldwork.test.tsx (tie-out, exception, support, sign); states a-h and Open in Excel not mapped one to one"
-P-06-T14,partial,"TASK-104: agents/reminders.py remind() drafts only, draft_now(), screens/FollowUps.tsx; no follow_ups_v2 migration, replay or template drafts"
+P-06-T14,done,follow_ups migrations and the v2 service (re-verified 2026-10-29)
 F-03-T16,not-started,TASK-104 left names alone; modules/agents/reminders.py and /reminders routes remain
 F-03-T15,not-started,TASK-105 changed words only (packages/ui/src/status.tsx STATUS.request); no request-status migration
-R-01-T08,partial,"TASK-106: requests/client_responses.py, migration 0063, spec042portal.test.tsx; reason stored in client_item_responses, not a shared comment"
+R-01-T08,done,requests/client_responses.py ignore and undo (re-verified 2026-10-29)
 A-06-T04,partial,"TASK-107: migration 0064 findings + misstatements, insert-only; no deficiencies, issue_id or framework column"
 A-06-T07,partial,"TASK-107: fieldwork/findings.py summarise() against materiality; no rollover, iron curtain, engine_version or inputs_hash"
 A-06-T11,partial,"TASK-107: findings.py raise_finding/findings_for, Findings tab, test_findings.py; no review issue, severity bands, agent producers"
 P-04-T18,done,"#429 (85d6c961): /v1/sign-offs service, stale detection and re-sign"
-P-08-T15,partial,"TASK-099: shell/PortalBrand.tsx firm name, ClientHome.tsx needs-you-first; no rail, household card or TodoCard registry"
+P-08-T15,done,screens/POR-02 with the household card (re-verified 2026-10-29)
 A-02-T07,done,"TASK-320/322/1285: ledger/trial_balances.py adopt and re-version with prior-snapshot pairing and display_unit, fail-closed register_adjustment_source, layer_totals/require_balanced (layer_unbalanced) for all four layers, AreaRule leadsheet rollup, outbox trial_balance.version_created (ledger/events.py); goldens tests/golden/ledger/tb_layers.yaml (Northwind 16,812,400.00 / 14,228,500.00, AJE-1 Final 16,861,000.00; Granite Peak 26,410,000 / 23,200,000, 71,910,000); tests/integration/test_tb_versions.py (v2 leaves v1 and every snapshot untouched; layer_unavailable). Methodology rules reach the live view with A-02-T10"
-A-02-T17,partial,"TASK-321: workpapers/ties.py tie_out.py, tie_out_checks (mig 0074), TB() cells, legacy/TieChecks.tsx; no rollforward kind or issue link"
+A-02-T17,done,"workpapers tie engine with roll-forward (S11 lane 2, #478) (re-verified 2026-10-29)"
 A-06-T09,partial,TASK-322: apply_entries per layer (unadjusted/aje/rje/final) and uncorrected_for; no methodology.classify_entry thresholds or proposal flow
 A-06-T25,partial,"TASK-345: ledger/mapping.py build_statements: draft statements from the mapped final TB (SPEC-316); no note templates, C4 lineage or TieOutWorkflow"
 A-03-T06,partial,"TASK-345: mig 0079 grouping_sets, grouping_set_versions (frozen on publish), groupings, fs_lines, fs_line_range_rules, mapping_sets, mapping_set_edits; parse_grouping_set import/publish"
@@ -52,7 +52,7 @@ A-07-T09,partial,TASK-332: mig 0077 archives with Merkle seal; no documentation_
 A-07-T15,partial,TASK-332: G6-G9 providers in assurance registered via register_gate_provider; not table-driven per engagement type
 A-07-T30,partial,"TASK-332: completion_routes release (releases table, lock_engagement); no Idempotency-Key, fresh MFA or /v1/audits path"
 A-07-T37,partial,TASK-332: archive lock and Merkle seal (lock_archive); no worker-batch workflow or 9-of-9 checklist
-Q-02-T45,partial,TASK-461: GET /v1/engagements/{id}/agent-runs with the legacy state map (agents/runs_routes.py); no GET /v1/agent-runs/{id}
+Q-02-T45,done,"agents/runs_routes.py /v1/agent-runs (C6 v1, #510) (re-verified 2026-10-29)"
 P-09-T07,partial,"TASK-461: engagement run list read model, visible() on agent_run.read, shadow excluded; no projection by level, items feed or allowed_actions"
 P-09-T08,partial,"TASK-461: GET /v1/agent-runs/{id}/trace: summary, timeline, records read in one response; no steps/records-read/writes sub-resources or metadata projection"
 P-09-T10,partial,"TASK-461: legacy/AgentRuns.tsx TraceDrawer 480 with summary, timeline, records read, Export JSON; no ?ov= registration, Segmented tabs or Copy link"
@@ -117,3 +117,8 @@ Q-02-T44,todo,real Bedrock runs cost money: Ayush decides
 Q-03-T041,todo,needs pen test #1 findings (Mar 2027)
 Q-03-T042,todo,needs pen test #1 findings (Mar 2027)
 Q-03-T045,todo,needs four clean sprints and the founders' decision
+F-02-T08,done,"abacus_tools/quality/scope_guards.py and docs/architecture/scope-guards.yaml, in make check-fast (re-verified 2026-10-29)"
+F-02-T09,done,apps/web/src/shell/nav.ts and nav.test.ts (re-verified 2026-10-29)
+F-04-T03,done,"apps/web/src/app-core/clock.tsx, clock.test.ts, clock-provider.test.tsx (re-verified 2026-10-29)"
+F-03-T38,done,docs/adr/ADR-158-client-scoped-files-cross-engagement-fulfilment.md (re-verified 2026-10-29)
+Q-02-T14,done,"docs/adr/ADR-159 (hash chain, archive seal) (re-verified 2026-10-29)"

@@ -753,14 +753,7 @@ async def test_ac6_a_re_version_never_moves_another_engagements_citations(
             world.admin.user_id,
         ),
     )
-    await seed.run(
-        "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
-        "decided_by, documented_at, independence_concluded_by, independence_concluded_at, "
-        "independence_documented_at) VALUES ($1, $2, 'continuance', 'accepted', 'test-seed', "
-        "'Seeded', 'test-seed', clock_timestamp(), 'Seeded')",
-        world.tenant_id,
-        other_engagement,
-    )
+    await seed.open_engagement(world.tenant_id, other_engagement)
     from dataclasses import replace
 
     site_b = replace(world.site, engagement_id=other_engagement)

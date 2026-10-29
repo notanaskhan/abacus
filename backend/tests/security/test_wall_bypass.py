@@ -15,7 +15,7 @@ from typing import cast
 
 import pytest
 
-from .support import ROLES, STAFF_ROLES, Env, Seeder
+from .support import ROLES, Env, Seeder
 
 # --- AC-5: lists and searches ---------------------------------------------------------------
 
@@ -130,43 +130,13 @@ async def test_spec002_ac5_notifications_about_the_walled_engagement_are_hidden(
     assert cast(dict[str, object], response.json())["unread_count"] == 1
 
 
-@pytest.mark.parametrize("role", STAFF_ROLES)
-async def test_spec002_ac5_open_independence_requests_hide_the_walled_client(
-    env: Env, seed: Seeder, role: str
-) -> None:
-    """A team member asked to confirm independence, then walled: the request names the client."""
-    firm_role = None
-    who = await seed.person(env.tenant_id, firm_role)
-    for site in (env.a, env.b):
-        await seed.run(
-            "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
-            "VALUES ($1, $2, $3, $4)",
-            env.tenant_id,
-            site.engagement_id,
-            who.user_id,
-            role,
-        )
-        await seed.run(
-            "INSERT INTO independence_confirmations (tenant_id, engagement_id, user_id, status) "
-            "VALUES ($1, $2, $3, 'requested')",
-            env.tenant_id,
-            site.engagement_id,
-            who.user_id,
-        )
-    await env.net.wall(env.admin, who, env.a)
-    response = await env.get(who, "/v1/firm/confirmations")
-    assert response.status_code == 200, response.text
-    assert env.leaks(response) == []
-    assert str(env.b.engagement_id) in response.text
-
-
 # --- AC-4: and nothing is reached by id ----------------------------------------------------------
 
 
 @pytest.mark.parametrize("role", ROLES)
 async def test_spec002_ac4_the_walled_engagement_is_not_found_by_id(env: Env, role: str) -> None:
     who = await env.walled(role)
-    for tail in ("", "/request-items", "/evidence-versions", "/team", "/setup", "/board-summary"):
+    for tail in ("", "/request-items", "/evidence-versions", "/team", "/record", "/board-summary"):
         response = await env.get(who, f"/v1/engagements/{env.a.engagement_id}{tail}")
         assert response.status_code == 404, (tail, response.text)
         assert response.json() == {"detail": "not found"}

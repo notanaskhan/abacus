@@ -2,7 +2,7 @@
 On hold…" with a reason code, through F-03-T13's transition table. A person with fresh MFA holds
 and resumes; each move writes one audit event and one `engagement.status_changed` in the same
 unit of work; any other state answers 409 `illegal_transition`; an agent is refused before
-anything is written; the routes answer 404 with `engagements.v2` off."""
+anything is written; the routes answer for every firm (`engagements.v2` retired with P-07-T59)."""
 
 from __future__ import annotations
 
@@ -13,7 +13,6 @@ import pytest
 
 from abacus.kernel.db import TenantContext, configure_engine
 from abacus.kernel.db.session import ActorKind
-from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import forget_flags
 from abacus.modules.engagements import contract
 from abacus.modules.engagements.transitions import (
@@ -33,15 +32,9 @@ class _World:
     def __init__(self, seed: Seeder) -> None:
         self.seed = seed
 
-    async def make(self, *, flag: bool = True) -> _World:
+    async def make(self) -> _World:
         forget_flags()
         self.tenant = await self.seed.firm()
-        if flag:
-            await self.seed.run(
-                "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
-                "VALUES ($1, 'engagements.v2', 'true', 'test-seed', 'TASK-1198 tests')",
-                self.tenant,
-            )
         self.partner: Person = await self.seed.person(self.tenant)
         self.staff: Person = await self.seed.person(self.tenant)
         entity = await self.seed.entity(self.tenant)
@@ -154,14 +147,14 @@ async def test_staff_stale_mfa_and_an_agent_are_refused_and_nothing_is_written(
     )
 
 
-async def test_the_routes_are_404_with_the_flag_off(migrated_db: MigratedDatabase) -> None:
+async def test_the_routes_answer_without_a_flag(migrated_db: MigratedDatabase) -> None:
+    """`engagements.v2` retired with P-07-T59 (DEC-905): no flag row, and the hold goes through."""
     configure_engine(migrated_db.app_url)
-    off = await _World(Seeder(migrated_db.superuser_dsn)).make(flag=False)
-    with pytest.raises(NotFound):
-        await contract.hold_engagement_route(
-            off.engagement, contract.EngagementHoldIn(reason="other"), off.ctx(off.partner)
-        )
-    assert await off.status() == "active"
+    plain = await _World(Seeder(migrated_db.superuser_dsn)).make()
+    await contract.hold_engagement_route(
+        plain.engagement, contract.EngagementHoldIn(reason="other"), plain.ctx(plain.partner)
+    )
+    assert await plain.status() == "on_hold"
 
 
 # --- Security review (DEC-328) --------------------------------------------------------------

@@ -287,7 +287,8 @@ async def add_attachment(
                 text(
                     "INSERT INTO inbox_attachment_flags (tenant_id, attachment_id, run_no, kind, "
                     "severity, facts, checker_version) VALUES (:tenant, :attachment, 1, "
-                    "'duplicate_hash', 'info', jsonb_build_object('duplicate_of', CAST(:dup AS text)), "
+                    "'duplicate_hash', 'info', "
+                    "jsonb_build_object('duplicate_of', CAST(:dup AS text)), "
                     ":checker)"
                 ),
                 {

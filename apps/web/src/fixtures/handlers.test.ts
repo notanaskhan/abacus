@@ -223,16 +223,16 @@ describe("handlers", () => {
 
 describe("journey switches: ?flags= and ?screen= (P-07-T22, P-06-T25)", () => {
   it("?flags= turns the named flags on in the persona's capabilities", async () => {
-    restore = installSeedFromSearch("?as=grace-holloway&flags=clients.v2,engagements.v2");
+    restore = installSeedFromSearch("?as=grace-holloway&flags=contacts.v2,binders.engine");
     const flags = (await myCapabilities()).data?.flags ?? {};
-    expect(flags["clients.v2"]).toBe(true);
-    expect(flags["engagements.v2"]).toBe(true);
+    expect(flags["contacts.v2"]).toBe(true);
+    expect(flags["binders.engine"]).toBe(true);
   });
 
   it("leaves capabilities alone without ?flags=", async () => {
     restore = installSeedFromSearch("?as=grace-holloway");
     const caps = await myCapabilities({ throwOnError: false });
-    expect(caps.data?.flags["clients.v2"]).toBeUndefined();
+    expect(caps.data?.flags["contacts.v2"]).toBeUndefined();
   });
 
   it("?screen= serves the screen's scenario as its persona, with ?flags= over it", async () => {
