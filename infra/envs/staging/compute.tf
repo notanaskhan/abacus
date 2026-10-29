@@ -63,6 +63,12 @@ locals {
     ABACUS_RUN_RECORD_FINGERPRINT_PEPPER = "${local.secret.peppers}:run_record_fingerprint::"
     ABACUS_WORKOS_API_KEY                = "${local.secret.workos}:api_key::"
   }
+  # A-02-T33: the sandbox QuickBooks app, only once its secret holds both keys (an empty secret
+  # would stop every task from starting). Staging never reads Intuit's live host (settings refuse it).
+  qbo_secrets = var.qbo_enabled ? {
+    ABACUS_QBO_CLIENT_ID     = "${local.secret.qbo}:client_id::"
+    ABACUS_QBO_CLIENT_SECRET = "${local.secret.qbo}:client_secret::"
+  } : {}
 }
 
 module "cluster" {
@@ -308,7 +314,7 @@ module "backend" {
   cpu                    = each.value.cpu
   memory                 = each.value.memory
   environment_vars       = local.common_env
-  secrets                = local.common_secrets
+  secrets                = merge(local.common_secrets, local.qbo_secrets)
   port                   = each.value.port
   subnet_ids             = module.network.app_subnet_ids
   security_group_ids     = [aws_security_group.tasks.id]
