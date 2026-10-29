@@ -282,6 +282,55 @@ async def notes_for(
     return out
 
 
+@dataclass(frozen=True)
+class FieldFlag:
+    """P-04-T35 (ADR-160 clause 5): a flag on a field ("⚑ SI · Sep 11") is a review note anchored
+    on the field's key."""
+
+    note_id: UUID
+    raised_by: UUID
+    raised_by_initials: str
+    raised_at: datetime
+    body: str
+    status: NoteStatus
+
+
+async def field_flags(
+    ctx: AuthContext, engagement_id: UUID, target_type: str, target_id: UUID, field_key: str
+) -> list[FieldFlag]:
+    """The notes anchored on one field of the target, oldest first, with their bodies (an access
+    event per note handed over). For a caller authorised to read the field's target."""
+    ref = await get_ref(ctx, engagement_id)
+    async with tenant_session(ctx.tenant) as session:
+        notes = [
+            n
+            for n in await notes_of(session, engagement_id, target_type, target_id)
+            if (n.anchor_ref or {}).get("kind") == "field"
+            and (n.anchor_ref or {}).get("ref") == field_key
+        ]
+    if not notes:
+        return []
+    names = await names_of(list({n.raised_by for n in notes}))
+    await record_text_reads(
+        ctx.tenant,
+        SUBJECT,
+        [n.id for n in notes],
+        engagement_id=engagement_id,
+        client_id=ref.client_id,
+    )
+    return [
+        FieldFlag(
+            n.id,
+            n.raised_by,
+            _initials(names.get(n.raised_by, "")),
+            n.created_at,
+            await _note_body(ctx.tenant, n),
+            status_of(n.status),
+        )
+        for n in notes
+    ]
+
+
 async def _may(ctx: AuthContext, action: str, resource: Resource) -> bool:
     try:
         await authorise(ctx, action, resource)

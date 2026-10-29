@@ -78,3 +78,5 @@ Rollback: delete the five files.
   engagements. Run: both engagements become readable audits but are omitted `no_binders` (the
   seeded sites have no asked PBC binder), so the strict xfail stays with that reason. Next: seed
   one asked PBC binder per engagement.
+- 2026-10-29: ED-290 closed: the fixture publishes each site's PBC binder (an asked binder on the
+  assurance work item); the T47 case passes with no xfail. Suite: 17 passed.

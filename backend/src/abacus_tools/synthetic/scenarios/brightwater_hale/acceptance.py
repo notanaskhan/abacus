@@ -45,7 +45,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.timeline import Event
 
 SLICE: Final = "acceptance"
 NEEDS: Final = ("people",)
-FLAGS: Final = ("engagements.acceptance_v2", "contacts.v2", "engagements.v2")
+FLAGS: Final = ("contacts.v2",)  # clients and engagements v2 retired (P-07-T59)
 NORTHWIND: Final = "Northwind Robotics, Inc."
 CALLOWAY: Final = "Calloway Family Trust"
 THORNBURY: Final = "Estate of Walter Thornbury"

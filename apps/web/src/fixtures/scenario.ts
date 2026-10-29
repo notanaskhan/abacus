@@ -19,8 +19,7 @@ export function seedScenario(): Scenario {
       persona: DEFAULT_PERSONA,
       clock: DEMO_INSTANT,
       // The v2 engagements index first: `/v1/engagements/{engagement_id}` would match "index".
-      // The CLI-02 and ENG-02 record reads (P-07-T19, T20) answer behind `clients.v2` and
-      // `engagements.v2`, so the app on fixtures opens a record once a journey turns them on.
+      // The CLI-02 and ENG-02 record reads (P-07-T19, T20) answer for every firm (P-07-T59).
       handlers: {
         ...engagementHandlers(),
         ...engagementRecordHandlers(getSeed()),

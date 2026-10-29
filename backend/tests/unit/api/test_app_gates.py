@@ -150,7 +150,6 @@ NOT_CREATING = {
     # SPEC-024 (TASK-042): the checklist's state comes back.
     "/v1/firm/onboarding/{step}/acknowledge",
     "/v1/firm/onboarding/dismiss",
-    "/v1/engagements/{engagement_id}/independence",  # SPEC-025: returns the setup state
     "/v1/engagements/proposal",  # SPEC-025 (TASK-048): a proposal, nothing stored
     # SPEC-312 (TASK-324): a statement review's decisions applied, nothing stored
     "/v1/engagements/{engagement_id}/request-items/{item_id}/uploads/{version_id}/statement/preview",
@@ -424,7 +423,6 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/inbox",  # SPEC-023: an inbox file
         "/v1/signup",  # SPEC-024: a firm
         "/v1/firm/staff/invitations",  # SPEC-024: a staff invitation
-        "/v1/engagements/{engagement_id}/acceptance/file",  # SPEC-025: a stored file
         "/v1/engagements/{engagement_id}/letter/file",
         "/v1/engagements/{engagement_id}/inbox/{file_id}/assign",  # SPEC-023: evidence
         "/v1/engagements/{engagement_id}/connection/import",  # SPEC-028: a ledger import
@@ -553,6 +551,7 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/portal/intake-uploads/{upload_id}/files",
         "/v1/envelopes",
         "/v1/envelopes/import",
+        "/v1/envelopes/import/files",  # N-02: one stored file a record-mode import names
         "/v1/envelopes/{envelope_id}/resend",
         "/v1/engagements/{engagement_id}/letter/amend",
     }

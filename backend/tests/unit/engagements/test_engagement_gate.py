@@ -6,21 +6,17 @@ from datetime import UTC, datetime
 from types import SimpleNamespace
 from typing import cast
 
-from abacus.modules.engagements.models import EngagementAcceptance, EngagementLetter
+from abacus.modules.engagements.acceptance_tables import G1Decision
+from abacus.modules.engagements.models import EngagementLetter
 from abacus.modules.engagements.setup import (
     _blocked,  # pyright: ignore[reportPrivateUsage] -- the gate's pure rule, tested directly
 )
 
+Opened = tuple[G1Decision, bool]  # CLI-07's decision, and whether CLI-08 concluded (DEC-906)
 
-def _acceptance(decision: str = "accepted", concluded: bool = True) -> EngagementAcceptance:
-    return cast(
-        EngagementAcceptance,
-        SimpleNamespace(
-            decision=decision,
-            independence_concluded_at=datetime.now(UTC) if concluded else None,
-            legacy_g2=True,  # a row from before 0175 (DEC-429)
-        ),
-    )
+
+def _acceptance(decision: str = "accepted", concluded: bool = True) -> Opened:
+    return G1Decision(decision == "accepted", datetime.now(UTC), None), concluded
 
 
 def _letter(status: str) -> EngagementLetter:
@@ -28,11 +24,16 @@ def _letter(status: str) -> EngagementLetter:
 
 
 def _code(
-    acceptance: EngagementAcceptance | None, letter: EngagementLetter | None, needs_letter: bool
+    opened: Opened | None, letter: EngagementLetter | None, needs_letter: bool
 ) -> str | None:
     # An attest engagement: G1 to G3 all apply (F-03-T13 made the gates per type).
+    decision, concluded = opened if opened is not None else (None, False)
     found = _blocked(
-        acceptance, letter, gates=frozenset({"G1", "G2", "G3"}), needs_letter=needs_letter
+        decision,
+        letter,
+        gates=frozenset({"G1", "G2", "G3"}),
+        needs_letter=needs_letter,
+        g2=concluded,
     )
     return None if found is None else found.code
 

@@ -8,13 +8,17 @@ Person level: on an open engagement a member who has not confirmed independence 
 data while confirmed members are not; adding someone later restricts only them.
 
 HTTP through `create_app()` against a real Postgres (the real independence SQL in `visible()` and
-the real confirmation lookup in `authorise`). Expectations come from the spec.
+the real confirmation lookup in `authorise`). Expectations come from the spec. SPEC-025's routes
+retired with P-07-T59 (DEC-905): acceptance and the conclusion are seeded as CLI-07 and CLI-08
+records (DEC-906) and a member answers through `answer_independence`, the service those routes
+called.
 """
 
 from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import cast
 
@@ -22,6 +26,10 @@ import httpx
 import pytest
 
 from abacus.kernel.config import settings
+from abacus.kernel.db import TenantContext
+from abacus.modules.engagements.api import answer_independence
+from abacus.modules.identity.api import AuthContext
+from abacus_tools.fakes.acceptance import Decision
 
 from .support import Net, Person, Seeder, Site
 
@@ -130,35 +138,36 @@ async def _team(net: Net, seed: Seeder, *, opened: bool) -> Team:
 # --- the engagement is open or it is not ---------------------------------------------------------
 
 
-async def _record(team: Team, **given: object) -> None:
-    body = {"decision": "accepted", "documented_at": "Acceptance memo, 12 Oct", **given}
-    response = await team.net.call("PUT", f"{team.base}/acceptance", team.partner, body=body)
-    assert response.status_code == 200, response.text
-
-
-async def _concluded_before_v2(team: Team) -> None:
-    """The partner's SPEC-025 conclusion as a row written before independence v2 (0175): since
-    DEC-429 (P-07-T41 security review) a row the app writes through SPEC-025's route no longer
-    meets G2, so the open engagement is seeded the way rows from before 0175 stand."""
-    await team.net.seed.run(
-        "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
-        "decided_by, documented_at, independence_concluded_by, independence_concluded_at, "
-        "independence_documented_at) VALUES ($1, $2, 'continuance', 'accepted', $3, "
-        "'Acceptance memo, 12 Oct', $3, clock_timestamp(), 'Memo 2')",
+async def _record(team: Team, *, decision: Decision = "accept", concluded: bool = False) -> None:
+    """The partner's CLI-07 decision and, when `concluded`, CLI-08's conclusion (DEC-906)."""
+    await team.net.seed.open_engagement(
         team.tenant_id,
         team.site.engagement_id,
-        str(team.partner.user_id),
+        decided_by=team.partner.user_id,
+        decision=decision,
+        concluded=concluded,
     )
+
+
+async def _answer(who: Person, engagement_id: uuid.UUID, note: str | None = None) -> None:
+    """The member's own answer (confirm without a note, decline with one)."""
+    ctx = AuthContext(
+        TenantContext(who.tenant_id, "human", str(who.user_id)),
+        who.user_id,
+        uuid.uuid4(),
+        None,  # a member answers by their engagement role, not a firm role
+        datetime.now(UTC) - timedelta(minutes=1),
+    )
+    await answer_independence(ctx, engagement_id, confirm=note is None, note=note)
 
 
 async def _closed_by(team: Team, reason: str) -> None:
     if reason == "acceptance_declined":
-        await _record(team, decision="declined")
+        await _record(team, decision="decline")
     elif reason == "independence_conclusion_missing":
         await _record(team)
     elif reason == "letter_missing":
-        await _record(team)
-        await _concluded_before_v2(team)
+        await _record(team, concluded=True)
         policy = await team.net.call(
             "PUT", "/v1/firm/letter-policy", team.admin, body={"required": True}
         )
@@ -195,8 +204,7 @@ async def test_ac7_once_the_engagement_is_open_the_actions_reach_their_own_check
 ) -> None:
     team = await _team(net, seed, opened=False)
     assert [r.status_code for r in await team.attempts(team.partner)] == [409] * 5
-    await _record(team)
-    await _concluded_before_v2(team)
+    await _record(team, concluded=True)
     invited = await team.attempt(team.partner, "invite")
     assert invited.status_code == 201, invited.text  # the gate is open: the invitation is made
     started = await team.attempt(team.partner, "connect")
@@ -259,9 +267,15 @@ async def test_ac7_an_unconfirmed_member_still_sees_the_engagement_and_what_is_a
     )
     for tail in ASKED:
         assert (await team.get(newcomer, tail)).status_code == 200, tail
-    assert (await team.get(newcomer, "/setup")).status_code == 200
-    mine = await net.call("GET", "/v1/firm/confirmations", newcomer)
-    assert [c["engagement_id"] for c in mine.json()] == [str(team.site.engagement_id)]
+    asked = await seed.rows(
+        "SELECT engagement_id, status FROM independence_confirmations "
+        "WHERE tenant_id = $1 AND user_id = $2",
+        team.tenant_id,
+        newcomer.user_id,
+    )
+    assert [(r["engagement_id"], r["status"]) for r in asked] == [
+        (team.site.engagement_id, "requested")
+    ]
 
 
 async def test_ac7_confirming_opens_client_data_to_that_person_only(
@@ -276,8 +290,7 @@ async def test_ac7_confirming_opens_client_data_to_that_person_only(
             team.partner,
             body={"user_id": str(who.user_id), "role": "senior"},
         )
-    confirmed = await net.call("POST", f"{team.base}/independence", first, body={"confirm": True})
-    assert confirmed.status_code == 200, confirmed.text
+    await _answer(first, team.site.engagement_id)
     assert await team.clients_data(first) == [200] * 4
     assert await team.clients_data(second) == [403] * 4
     assert "independence.confirmed" in await seed.actions(team.tenant_id)
@@ -294,13 +307,7 @@ async def test_ac7_declining_keeps_client_data_closed_to_that_person(
         team.partner,
         body={"user_id": str(member.user_id), "role": "senior"},
     )
-    declined = await net.call(
-        "POST",
-        f"{team.base}/independence",
-        member,
-        body={"confirm": False, "note": "I banked with them until last year."},
-    )
-    assert declined.status_code == 200, declined.text
+    await _answer(member, team.site.engagement_id, "I banked with them until last year.")
     assert await team.clients_data(member) == [403] * 4
     assert await team.clients_data(team.partner) == [200] * 4
 
@@ -325,7 +332,7 @@ async def test_ac7_confirming_on_one_engagement_does_not_open_another(
         other.engagement_id,
         member.user_id,
     )
-    await net.call("POST", f"{team.base}/independence", member, body={"confirm": True})
+    await _answer(member, team.site.engagement_id)
     assert await team.clients_data(member) == [200] * 4
     refused = await net.call(
         "GET", f"/v1/engagements/{other.engagement_id}/evidence-versions", member

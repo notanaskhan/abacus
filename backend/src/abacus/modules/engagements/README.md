@@ -1,6 +1,6 @@
 # engagements
 
-One job for one client and one fiscal period (glossary). Owns `engagements`, its work items and their setup records (`registry.py`; ADR-103): `work_items`, `assurance_work_items`, `advisory_projects`, `work_item_assignments`, `engagement_entities`, `engagement_contacts`, `gate_policy_overrides`, `engagement_acceptance`, `independence_confirmations`, `engagement_letters`, and the methodology tables. Map: `docs/architecture/data-model.md`.
+One job for one client and one fiscal period (glossary). Owns `engagements`, its work items and their setup records (`registry.py`; ADR-103): `work_items`, `assurance_work_items`, `advisory_projects`, `work_item_assignments`, `engagement_entities`, `engagement_contacts`, `gate_policy_overrides`, `independence_confirmations`, `engagement_letters`, and the methodology tables. Map: `docs/architecture/data-model.md`.
 
 ## Work items, the lifecycle and gates (C1; F-03, `docs/contracts/work-items.md`)
 - **Work items** (`work_items.py`, migration 0068): the units of work inside an engagement, of kind `assurance`, `tax_return`, `close`, `notice` or `advisory_project`. The `engagement_work_item_defaults` trigger gives every engagement one `primary` `engagement_entities` row and, for the ten attest types, its one `assurance` work item (at most one per engagement).
@@ -77,3 +77,13 @@ Seven steps, each computed from data (identity's `firm_facts` plus this module's
 
 ## AI exclusion (SPEC-036; TASK-076)
 `GET/PUT /v1/engagements/{id}/ai-exclusion`: the engagement partner (`engagement.ai_exclude`) switches AI off with a reason, or on again; audited, and the gateway refuses every model call on the engagement while it's off (`ai_excluded`, registered).
+
+## Frozen contracts (P-07-T64; DEC-1054)
+
+Frozen at v1 on 2026-10-29; the snapshots under `backend/tests/contracts/p07_*/v1.json` fail the
+contract tests on any removed or retyped field, newly required field or removed enum member. A
+breaking change ships the next version with overlap (`python -m abacus_tools.contracts --freeze`).
+
+- `docs/contracts/engagements-v2.md`
+- `docs/contracts/acceptance-independence.md`
+- `docs/contracts/intake-import.md`

@@ -1,0 +1,2555 @@
+{
+  "AcceptanceAnswersIn": {
+    "additionalProperties": false,
+    "properties": {
+      "answers": {
+        "cls": "confidential",
+        "maxProperties": 200,
+        "patternProperties": {
+          "^[a-z0-9_]{1,64}$": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "Answers",
+        "type": "object"
+      },
+      "complete": {
+        "cls": "internal",
+        "default": false,
+        "title": "Complete",
+        "type": "boolean"
+      },
+      "risk_rating": {
+        "anyOf": [
+          {
+            "enum": [
+              "low",
+              "moderate",
+              "high"
+            ],
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Risk Rating"
+      },
+      "seen_version": {
+        "cls": "internal",
+        "minimum": 0.0,
+        "title": "Seen Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "seen_version",
+      "answers"
+    ],
+    "title": "AcceptanceAnswersIn",
+    "type": "object"
+  },
+  "AcceptanceConditionOut": {
+    "properties": {
+      "assignee_user_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Assignee User Id",
+        "type": "string"
+      },
+      "completed_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Completed At"
+      },
+      "completed_by": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Completed By"
+      },
+      "due_on": {
+        "anyOf": [
+          {
+            "format": "date",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Due On"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "text": {
+        "cls": "confidential",
+        "title": "Text",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "text",
+      "assignee_user_id"
+    ],
+    "title": "AcceptanceConditionOut",
+    "type": "object"
+  },
+  "AcceptanceDecisionIn": {
+    "additionalProperties": false,
+    "description": "AC-6, AC-7: the EP's decision with fresh MFA; 422 `rationale_required` without a\nrationale, or with Accept with conditions and no condition.",
+    "properties": {
+      "conditions": {
+        "cls": "confidential",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/ConditionIn"
+        },
+        "maxItems": 20,
+        "title": "Conditions",
+        "type": "array"
+      },
+      "option": {
+        "cls": "internal",
+        "enum": [
+          "accept",
+          "accept_with_conditions",
+          "decline"
+        ],
+        "title": "Option",
+        "type": "string"
+      },
+      "rationale": {
+        "cls": "confidential",
+        "maxLength": 8000,
+        "title": "Rationale",
+        "type": "string"
+      },
+      "seen_version": {
+        "cls": "internal",
+        "minimum": 0.0,
+        "title": "Seen Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "option",
+      "rationale",
+      "seen_version"
+    ],
+    "title": "AcceptanceDecisionIn",
+    "type": "object"
+  },
+  "AcceptanceDecisionOut": {
+    "description": "The one insert-only decision row (`record_id` UNIQUE, `actor_kind = 'human'` CHECK).",
+    "properties": {
+      "decided_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Decided At",
+        "type": "string"
+      },
+      "decided_by": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Decided By",
+        "type": "string"
+      },
+      "option": {
+        "cls": "internal",
+        "enum": [
+          "accept",
+          "accept_with_conditions",
+          "decline"
+        ],
+        "title": "Option",
+        "type": "string"
+      },
+      "rationale": {
+        "cls": "confidential",
+        "title": "Rationale",
+        "type": "string"
+      }
+    },
+    "required": [
+      "option",
+      "rationale",
+      "decided_by",
+      "decided_at"
+    ],
+    "title": "AcceptanceDecisionOut",
+    "type": "object"
+  },
+  "AcceptanceFlagIn": {
+    "additionalProperties": false,
+    "properties": {
+      "body": {
+        "cls": "confidential",
+        "maxLength": 8000,
+        "minLength": 1,
+        "title": "Body",
+        "type": "string"
+      },
+      "severity": {
+        "cls": "internal",
+        "enum": [
+          "low",
+          "medium",
+          "high"
+        ],
+        "title": "Severity",
+        "type": "string"
+      },
+      "sources": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/SourceRefIn"
+        },
+        "maxItems": 20,
+        "title": "Sources",
+        "type": "array"
+      },
+      "title": {
+        "cls": "confidential",
+        "maxLength": 200,
+        "minLength": 1,
+        "title": "Title",
+        "type": "string"
+      }
+    },
+    "required": [
+      "severity",
+      "title",
+      "body"
+    ],
+    "title": "AcceptanceFlagIn",
+    "type": "object"
+  },
+  "AcceptanceFlagOut": {
+    "description": "Insert-only; authored by a person (`authored_kind = 'human'` CHECK).",
+    "properties": {
+      "authored_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Authored At",
+        "type": "string"
+      },
+      "authored_by": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Authored By",
+        "type": "string"
+      },
+      "body": {
+        "cls": "confidential",
+        "title": "Body",
+        "type": "string"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "severity": {
+        "cls": "internal",
+        "enum": [
+          "low",
+          "medium",
+          "high"
+        ],
+        "title": "Severity",
+        "type": "string"
+      },
+      "sources": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/SourceRefOut"
+        },
+        "title": "Sources",
+        "type": "array"
+      },
+      "title": {
+        "cls": "confidential",
+        "title": "Title",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "severity",
+      "title",
+      "body",
+      "authored_by",
+      "authored_at"
+    ],
+    "title": "AcceptanceFlagOut",
+    "type": "object"
+  },
+  "AcceptanceRecordOut": {
+    "properties": {
+      "allowed_actions": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "type": "string"
+        },
+        "title": "Allowed Actions",
+        "type": "array"
+      },
+      "client_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Client Id",
+        "type": "string"
+      },
+      "conditions": {
+        "cls": "confidential",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/AcceptanceConditionOut"
+        },
+        "title": "Conditions",
+        "type": "array"
+      },
+      "decision": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/AcceptanceDecisionOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential"
+      },
+      "engagement_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Engagement Id",
+        "type": "string"
+      },
+      "flags": {
+        "cls": "confidential",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/AcceptanceFlagOut"
+        },
+        "title": "Flags",
+        "type": "array"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "new_client",
+          "new_engagement_existing_client",
+          "continuance"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "prepared_by": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Prepared By",
+        "type": "string"
+      },
+      "prior": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/PriorAcceptanceOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential"
+      },
+      "risk_partner_review": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/RiskPartnerReviewOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal"
+      },
+      "risk_rating": {
+        "anyOf": [
+          {
+            "enum": [
+              "low",
+              "moderate",
+              "high"
+            ],
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Risk Rating"
+      },
+      "sections": {
+        "cls": "confidential",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/AcceptanceSectionOut"
+        },
+        "title": "Sections",
+        "type": "array"
+      },
+      "sent_to_partner_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Sent To Partner At"
+      },
+      "sent_to_partner_by": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Sent To Partner By"
+      },
+      "status": {
+        "$ref": "#/components/schemas/AcceptanceRecordStatus",
+        "cls": "internal"
+      },
+      "template_name": {
+        "cls": "internal",
+        "title": "Template Name",
+        "type": "string"
+      },
+      "template_version_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Template Version Id",
+        "type": "string"
+      },
+      "version": {
+        "cls": "internal",
+        "title": "Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "id",
+      "engagement_id",
+      "client_id",
+      "kind",
+      "status",
+      "template_version_id",
+      "template_name",
+      "prepared_by",
+      "version"
+    ],
+    "title": "AcceptanceRecordOut",
+    "type": "object"
+  },
+  "AcceptanceSectionOut": {
+    "description": "A questionnaire section from the firm's pinned template version (never a constant).",
+    "properties": {
+      "answer_state": {
+        "cls": "internal",
+        "enum": [
+          "pending",
+          "complete",
+          "flag",
+          "manual_check_open",
+          "manual_check_done"
+        ],
+        "title": "Answer State",
+        "type": "string"
+      },
+      "answers": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cls": "confidential",
+        "default": {},
+        "title": "Answers",
+        "type": "object"
+      },
+      "code": {
+        "cls": "internal",
+        "title": "Code",
+        "type": "string"
+      },
+      "manual_check": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/ManualCheckOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal"
+      },
+      "title": {
+        "cls": "internal",
+        "title": "Title",
+        "type": "string"
+      },
+      "version": {
+        "cls": "internal",
+        "title": "Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "code",
+      "title",
+      "answer_state",
+      "version"
+    ],
+    "title": "AcceptanceSectionOut",
+    "type": "object"
+  },
+  "BreachEventIn": {
+    "additionalProperties": false,
+    "properties": {
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "evaluated",
+          "tcwg_communicated",
+          "remediated"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "note": {
+        "anyOf": [
+          {
+            "maxLength": 8000,
+            "minLength": 1,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Note"
+      }
+    },
+    "required": [
+      "kind"
+    ],
+    "title": "BreachEventIn",
+    "type": "object"
+  },
+  "BreachEventOut": {
+    "properties": {
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "logged",
+          "evaluated",
+          "tcwg_communicated",
+          "remediated"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "note": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Note"
+      },
+      "recorded_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Recorded At",
+        "type": "string"
+      },
+      "recorded_by": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Recorded By",
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "recorded_by",
+      "recorded_at"
+    ],
+    "title": "BreachEventOut",
+    "type": "object"
+  },
+  "BreachIn": {
+    "additionalProperties": false,
+    "properties": {
+      "description": {
+        "cls": "confidential",
+        "maxLength": 8000,
+        "minLength": 1,
+        "title": "Description",
+        "type": "string"
+      },
+      "user_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "User Id"
+      }
+    },
+    "required": [
+      "description"
+    ],
+    "title": "BreachIn",
+    "type": "object"
+  },
+  "BreachOut": {
+    "description": "CLI-08 g: the banner stays until evaluated, TCWG communicated and remediated (AC-28).",
+    "properties": {
+      "description": {
+        "cls": "confidential",
+        "title": "Description",
+        "type": "string"
+      },
+      "engagement_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Engagement Id",
+        "type": "string"
+      },
+      "events": {
+        "cls": "confidential",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/BreachEventOut"
+        },
+        "title": "Events",
+        "type": "array"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "resolved": {
+        "cls": "internal",
+        "title": "Resolved",
+        "type": "boolean"
+      },
+      "user_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "User Id"
+      }
+    },
+    "required": [
+      "id",
+      "engagement_id",
+      "description",
+      "resolved"
+    ],
+    "title": "BreachOut",
+    "type": "object"
+  },
+  "ConcludeIn": {
+    "additionalProperties": false,
+    "description": "AC-18: Independent, Independent with safeguards (safeguards required) or Not independent,\nby the EP with fresh MFA; 409 `independence_preconditions_unmet` (AC-19).",
+    "properties": {
+      "option": {
+        "$ref": "#/components/schemas/IndependenceConclusionStatus",
+        "cls": "internal"
+      },
+      "safeguards": {
+        "anyOf": [
+          {
+            "maxLength": 8000,
+            "minLength": 1,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Safeguards"
+      }
+    },
+    "required": [
+      "option"
+    ],
+    "title": "ConcludeIn",
+    "type": "object"
+  },
+  "ConditionCompleteIn": {
+    "additionalProperties": false,
+    "properties": {
+      "note": {
+        "anyOf": [
+          {
+            "maxLength": 8000,
+            "minLength": 1,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Note"
+      }
+    },
+    "title": "ConditionCompleteIn",
+    "type": "object"
+  },
+  "ConditionIn": {
+    "additionalProperties": false,
+    "properties": {
+      "assignee_user_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Assignee User Id",
+        "type": "string"
+      },
+      "due_on": {
+        "anyOf": [
+          {
+            "format": "date",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Due On"
+      },
+      "text": {
+        "cls": "confidential",
+        "maxLength": 200,
+        "minLength": 1,
+        "title": "Text",
+        "type": "string"
+      }
+    },
+    "required": [
+      "text",
+      "assignee_user_id"
+    ],
+    "title": "ConditionIn",
+    "type": "object"
+  },
+  "ConfirmIn": {
+    "additionalProperties": false,
+    "description": "AC-17: the three statements ticked, for oneself only (409 `not_self` otherwise).",
+    "properties": {
+      "interests_note": {
+        "anyOf": [
+          {
+            "maxLength": 8000,
+            "minLength": 1,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Interests Note"
+      },
+      "statement_codes": {
+        "cls": "internal",
+        "items": {
+          "pattern": "^[a-z0-9_]{1,64}$",
+          "type": "string"
+        },
+        "maxItems": 10,
+        "minItems": 1,
+        "title": "Statement Codes",
+        "type": "array"
+      },
+      "statement_version": {
+        "cls": "internal",
+        "pattern": "^[a-z0-9_]{1,64}$",
+        "title": "Statement Version",
+        "type": "string"
+      }
+    },
+    "required": [
+      "statement_version",
+      "statement_codes"
+    ],
+    "title": "ConfirmIn",
+    "type": "object"
+  },
+  "ConflictCheckIn": {
+    "additionalProperties": false,
+    "description": "The intake names to search (at most 50, sealed at rest) and what they are for.",
+    "properties": {
+      "names": {
+        "cls": "confidential",
+        "items": {
+          "maxLength": 200,
+          "minLength": 1,
+          "type": "string"
+        },
+        "maxItems": 50,
+        "minItems": 1,
+        "title": "Names",
+        "type": "array"
+      },
+      "subject": {
+        "$ref": "#/components/schemas/SubjectRefIn",
+        "cls": "internal"
+      }
+    },
+    "required": [
+      "subject",
+      "names"
+    ],
+    "title": "ConflictCheckIn",
+    "type": "object"
+  },
+  "ConflictCheckOut": {
+    "properties": {
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "names_count": {
+        "cls": "internal",
+        "title": "Names Count",
+        "type": "integer"
+      },
+      "outcome": {
+        "cls": "internal",
+        "enum": [
+          "pending",
+          "clear",
+          "hits"
+        ],
+        "title": "Outcome",
+        "type": "string"
+      },
+      "restricted_match": {
+        "cls": "internal",
+        "default": false,
+        "title": "Restricted Match",
+        "type": "boolean"
+      },
+      "results": {
+        "cls": "confidential",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/ConflictResultOut"
+        },
+        "title": "Results",
+        "type": "array"
+      },
+      "run_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Run At",
+        "type": "string"
+      },
+      "run_by": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Run By",
+        "type": "string"
+      },
+      "subject": {
+        "$ref": "#/components/schemas/SubjectRefOut",
+        "cls": "internal"
+      }
+    },
+    "required": [
+      "id",
+      "subject",
+      "names_count",
+      "outcome",
+      "run_by",
+      "run_at"
+    ],
+    "title": "ConflictCheckOut",
+    "type": "object"
+  },
+  "ConflictClearIn": {
+    "additionalProperties": false,
+    "properties": {
+      "assessment": {
+        "cls": "internal",
+        "enum": [
+          "clear",
+          "same_family_not_adverse",
+          "not_adverse",
+          "counterparty_review",
+          "conflict"
+        ],
+        "title": "Assessment",
+        "type": "string"
+      },
+      "reason": {
+        "cls": "confidential",
+        "maxLength": 4000,
+        "minLength": 1,
+        "title": "Reason",
+        "type": "string"
+      }
+    },
+    "required": [
+      "assessment",
+      "reason"
+    ],
+    "title": "ConflictClearIn",
+    "type": "object"
+  },
+  "ConflictResultOut": {
+    "description": "One match. A redacted row (a client the caller is walled from) carries only `id`,\n`redacted`, `match_kind` and `assessment`: every other field is null.",
+    "properties": {
+      "allowed_actions": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "type": "string"
+        },
+        "title": "Allowed Actions",
+        "type": "array"
+      },
+      "assessment": {
+        "$ref": "#/components/schemas/ConflictAssessmentStatus",
+        "cls": "internal"
+      },
+      "cleared_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Cleared At"
+      },
+      "cleared_by": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Cleared By"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "match_kind": {
+        "cls": "internal",
+        "enum": [
+          "exact",
+          "trigram",
+          "relationship",
+          "counterparty"
+        ],
+        "title": "Match Kind",
+        "type": "string"
+      },
+      "matched_client_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Matched Client Id"
+      },
+      "matched_name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Matched Name"
+      },
+      "matched_ref_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Matched Ref Id"
+      },
+      "matched_ref_type": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Matched Ref Type"
+      },
+      "redacted": {
+        "cls": "internal",
+        "title": "Redacted",
+        "type": "boolean"
+      },
+      "score": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Score"
+      }
+    },
+    "required": [
+      "id",
+      "redacted",
+      "match_kind",
+      "assessment"
+    ],
+    "title": "ConflictResultOut",
+    "type": "object"
+  },
+  "DeclineIn": {
+    "additionalProperties": false,
+    "properties": {
+      "note": {
+        "cls": "confidential",
+        "maxLength": 8000,
+        "minLength": 1,
+        "title": "Note",
+        "type": "string"
+      }
+    },
+    "required": [
+      "note"
+    ],
+    "title": "DeclineIn",
+    "type": "object"
+  },
+  "EqrCandidateOut": {
+    "description": "ENG-05 c: a Replace EQR candidate with its eligibility (\"Not eligible \u2014 cooling-off\").",
+    "properties": {
+      "checks": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/EqrCheckOut"
+        },
+        "title": "Checks",
+        "type": "array"
+      },
+      "current": {
+        "cls": "internal",
+        "default": false,
+        "title": "Current",
+        "type": "boolean"
+      },
+      "display_name": {
+        "cls": "confidential",
+        "title": "Display Name",
+        "type": "string"
+      },
+      "eligibility": {
+        "cls": "internal",
+        "enum": [
+          "eligible",
+          "not_eligible"
+        ],
+        "title": "Eligibility",
+        "type": "string"
+      },
+      "user_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "User Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "user_id",
+      "display_name",
+      "eligibility",
+      "checks"
+    ],
+    "title": "EqrCandidateOut",
+    "type": "object"
+  },
+  "EqrCheckOut": {
+    "description": "One eligibility check, a code and its result; `year` names the cooling-off year.",
+    "properties": {
+      "code": {
+        "cls": "internal",
+        "enum": [
+          "not_on_team",
+          "cooling_off",
+          "competence",
+          "independence",
+          "capacity"
+        ],
+        "title": "Code",
+        "type": "string"
+      },
+      "count": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Count"
+      },
+      "result": {
+        "cls": "internal",
+        "enum": [
+          "pass",
+          "fail",
+          "pending",
+          "not_assessed"
+        ],
+        "title": "Result",
+        "type": "string"
+      },
+      "year": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Year"
+      }
+    },
+    "required": [
+      "code",
+      "result"
+    ],
+    "title": "EqrCheckOut",
+    "type": "object"
+  },
+  "EqrEligibilityApprovalIn": {
+    "additionalProperties": false,
+    "properties": {
+      "candidate_user_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Candidate User Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "candidate_user_id"
+    ],
+    "title": "EqrEligibilityApprovalIn",
+    "type": "object"
+  },
+  "EqrEligibilityApprovalOut": {
+    "description": "The quality owner's insert-only approval (`actor_kind = 'human'` CHECK), never the EP's.",
+    "properties": {
+      "approved_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Approved At",
+        "type": "string"
+      },
+      "approved_by": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Approved By",
+        "type": "string"
+      },
+      "candidate_user_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Candidate User Id",
+        "type": "string"
+      },
+      "checks": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/EqrCheckOut"
+        },
+        "title": "Checks",
+        "type": "array"
+      },
+      "engagement_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Engagement Id",
+        "type": "string"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "result": {
+        "cls": "internal",
+        "enum": [
+          "eligible",
+          "not_eligible"
+        ],
+        "title": "Result",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "engagement_id",
+      "candidate_user_id",
+      "result",
+      "checks",
+      "approved_by",
+      "approved_at"
+    ],
+    "title": "EqrEligibilityApprovalOut",
+    "type": "object"
+  },
+  "EqrIn": {
+    "additionalProperties": false,
+    "properties": {
+      "user_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "User Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "user_id"
+    ],
+    "title": "EqrIn",
+    "type": "object"
+  },
+  "IndependenceBlockerOut": {
+    "description": "A banner reason: a registry code and the object it names, never prose.",
+    "properties": {
+      "reason_code": {
+        "cls": "internal",
+        "enum": [
+          "member_not_confirmed",
+          "member_declined",
+          "conflict_not_cleared",
+          "ske_designee_missing",
+          "nas_not_evaluated",
+          "breach_open"
+        ],
+        "title": "Reason Code",
+        "type": "string"
+      },
+      "ref_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Ref Id",
+        "type": "string"
+      },
+      "ref_type": {
+        "cls": "internal",
+        "title": "Ref Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "reason_code",
+      "ref_type",
+      "ref_id"
+    ],
+    "title": "IndependenceBlockerOut",
+    "type": "object"
+  },
+  "IndependenceConclusionOut": {
+    "description": "Insert-only (`actor_kind = 'human'` CHECK); a later one names what it supersedes.",
+    "properties": {
+      "concluded_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Concluded At",
+        "type": "string"
+      },
+      "concluded_by": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Concluded By",
+        "type": "string"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "option": {
+        "$ref": "#/components/schemas/IndependenceConclusionStatus",
+        "cls": "internal"
+      },
+      "safeguards": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Safeguards"
+      },
+      "supersedes_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Supersedes Id"
+      }
+    },
+    "required": [
+      "id",
+      "option",
+      "concluded_by",
+      "concluded_at"
+    ],
+    "title": "IndependenceConclusionOut",
+    "type": "object"
+  },
+  "IndependenceSummaryOut": {
+    "description": "CLI-08 a: \"{confirmed} of {total} confirmed\", the banner reasons and the conclusion.",
+    "properties": {
+      "allowed_actions": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "type": "string"
+        },
+        "title": "Allowed Actions",
+        "type": "array"
+      },
+      "attest_client": {
+        "cls": "internal",
+        "title": "Attest Client",
+        "type": "boolean"
+      },
+      "blockers": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/IndependenceBlockerOut"
+        },
+        "title": "Blockers",
+        "type": "array"
+      },
+      "conclusion": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/IndependenceConclusionOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential"
+      },
+      "confirmed": {
+        "cls": "internal",
+        "title": "Confirmed",
+        "type": "integer"
+      },
+      "engagement_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Engagement Id",
+        "type": "string"
+      },
+      "members": {
+        "cls": "confidential",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/MemberConfirmationOut"
+        },
+        "title": "Members",
+        "type": "array"
+      },
+      "ske_designee_contact_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Ske Designee Contact Id"
+      },
+      "total": {
+        "cls": "internal",
+        "title": "Total",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "engagement_id",
+      "attest_client",
+      "confirmed",
+      "total"
+    ],
+    "title": "IndependenceSummaryOut",
+    "type": "object"
+  },
+  "ManualCheckCompleteIn": {
+    "additionalProperties": false,
+    "properties": {
+      "note": {
+        "anyOf": [
+          {
+            "maxLength": 8000,
+            "minLength": 1,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Note"
+      }
+    },
+    "title": "ManualCheckCompleteIn",
+    "type": "object"
+  },
+  "ManualCheckOut": {
+    "properties": {
+      "completed_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Completed At"
+      },
+      "completed_by": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Completed By"
+      },
+      "note": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Note"
+      },
+      "requested_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Requested At",
+        "type": "string"
+      },
+      "requested_by": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Requested By",
+        "type": "string"
+      },
+      "requested_of": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Requested Of",
+        "type": "string"
+      },
+      "section_code": {
+        "cls": "internal",
+        "title": "Section Code",
+        "type": "string"
+      }
+    },
+    "required": [
+      "section_code",
+      "requested_of",
+      "requested_by",
+      "requested_at"
+    ],
+    "title": "ManualCheckOut",
+    "type": "object"
+  },
+  "ManualCheckRequestIn": {
+    "additionalProperties": false,
+    "properties": {
+      "requested_of": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Requested Of",
+        "type": "string"
+      }
+    },
+    "required": [
+      "requested_of"
+    ],
+    "title": "ManualCheckRequestIn",
+    "type": "object"
+  },
+  "MemberConfirmationOut": {
+    "description": "A member's own confirmation for this engagement; a decline's note is the EP's to read.",
+    "properties": {
+      "annual_confirmed": {
+        "anyOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Annual Confirmed"
+      },
+      "answered_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Answered At"
+      },
+      "confirmation": {
+        "cls": "internal",
+        "enum": [
+          "requested",
+          "confirmed",
+          "declined"
+        ],
+        "title": "Confirmation",
+        "type": "string"
+      },
+      "decline_note": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Decline Note"
+      },
+      "display_name": {
+        "cls": "confidential",
+        "title": "Display Name",
+        "type": "string"
+      },
+      "reminder_count": {
+        "cls": "internal",
+        "default": 0,
+        "title": "Reminder Count",
+        "type": "integer"
+      },
+      "role": {
+        "cls": "internal",
+        "title": "Role",
+        "type": "string"
+      },
+      "statement_version": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Statement Version"
+      },
+      "user_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "User Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "user_id",
+      "display_name",
+      "role",
+      "confirmation"
+    ],
+    "title": "MemberConfirmationOut",
+    "type": "object"
+  },
+  "NasEvaluationIn": {
+    "additionalProperties": false,
+    "properties": {
+      "evaluation": {
+        "anyOf": [
+          {
+            "maxLength": 8000,
+            "minLength": 1,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Evaluation"
+      },
+      "provided": {
+        "cls": "internal",
+        "title": "Provided",
+        "type": "boolean"
+      },
+      "safeguards": {
+        "anyOf": [
+          {
+            "maxLength": 8000,
+            "minLength": 1,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Safeguards"
+      },
+      "ske_contact_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Ske Contact Id"
+      },
+      "status": {
+        "$ref": "#/components/schemas/NasEvaluationStatus",
+        "cls": "internal"
+      }
+    },
+    "required": [
+      "provided",
+      "status"
+    ],
+    "title": "NasEvaluationIn",
+    "type": "object"
+  },
+  "NasOut": {
+    "properties": {
+      "attest_client": {
+        "cls": "internal",
+        "title": "Attest Client",
+        "type": "boolean"
+      },
+      "rows": {
+        "cls": "confidential",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/NasRowOut"
+        },
+        "title": "Rows",
+        "type": "array"
+      },
+      "ske_designee_contact_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Ske Designee Contact Id"
+      }
+    },
+    "required": [
+      "attest_client"
+    ],
+    "title": "NasOut",
+    "type": "object"
+  },
+  "NasRowOut": {
+    "description": "A nonattest service on an attest engagement (AC-21); insert-only events behind it.",
+    "properties": {
+      "evaluated_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Evaluated At"
+      },
+      "evaluated_by": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Evaluated By"
+      },
+      "evaluation": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Evaluation"
+      },
+      "provided": {
+        "cls": "internal",
+        "title": "Provided",
+        "type": "boolean"
+      },
+      "safeguards": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Safeguards"
+      },
+      "service_code": {
+        "cls": "internal",
+        "title": "Service Code",
+        "type": "string"
+      },
+      "ske_contact_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Ske Contact Id"
+      },
+      "status": {
+        "$ref": "#/components/schemas/NasEvaluationStatus",
+        "cls": "internal"
+      }
+    },
+    "required": [
+      "service_code",
+      "provided",
+      "status"
+    ],
+    "title": "NasRowOut",
+    "type": "object"
+  },
+  "PortalVisibilityIn": {
+    "additionalProperties": false,
+    "properties": {
+      "shown_on_portal": {
+        "cls": "internal",
+        "title": "Shown On Portal",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "shown_on_portal"
+    ],
+    "title": "PortalVisibilityIn",
+    "type": "object"
+  },
+  "PortalVisibilityOut": {
+    "properties": {
+      "shown_on_portal": {
+        "cls": "internal",
+        "title": "Shown On Portal",
+        "type": "boolean"
+      },
+      "user_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "User Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "user_id",
+      "shown_on_portal"
+    ],
+    "title": "PortalVisibilityOut",
+    "type": "object"
+  },
+  "PriorAcceptanceOut": {
+    "description": "A continuance's prior year through the `prior_engagement_id` chain, read-only (AC-5).",
+    "properties": {
+      "conditions": {
+        "cls": "confidential",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/AcceptanceConditionOut"
+        },
+        "title": "Conditions",
+        "type": "array"
+      },
+      "decided_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Decided At"
+      },
+      "engagement_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Engagement Id",
+        "type": "string"
+      },
+      "independence": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/IndependenceConclusionStatus"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal"
+      },
+      "option": {
+        "anyOf": [
+          {
+            "enum": [
+              "accept",
+              "accept_with_conditions",
+              "decline"
+            ],
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Option"
+      },
+      "record_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Record Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "record_id",
+      "engagement_id"
+    ],
+    "title": "PriorAcceptanceOut",
+    "type": "object"
+  },
+  "RemindersIn": {
+    "additionalProperties": false,
+    "description": "ENG-05 \"Send confirmation request\" and CLI-08 \"Send reminder\": sent by the person\nclicking, for members whose confirmation is still requested or declined.",
+    "properties": {
+      "user_ids": {
+        "cls": "internal",
+        "items": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "maxItems": 50,
+        "minItems": 1,
+        "title": "User Ids",
+        "type": "array"
+      }
+    },
+    "required": [
+      "user_ids"
+    ],
+    "title": "RemindersIn",
+    "type": "object"
+  },
+  "RemindersOut": {
+    "properties": {
+      "reminded_user_ids": {
+        "cls": "internal",
+        "items": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "title": "Reminded User Ids",
+        "type": "array"
+      }
+    },
+    "required": [
+      "reminded_user_ids"
+    ],
+    "title": "RemindersOut",
+    "type": "object"
+  },
+  "RiskPartnerReviewCompleteIn": {
+    "additionalProperties": false,
+    "description": "The named risk partner completes the review they were asked for (AC-4; TASK-1258).",
+    "properties": {},
+    "title": "RiskPartnerReviewCompleteIn",
+    "type": "object"
+  },
+  "RiskPartnerReviewIn": {
+    "additionalProperties": false,
+    "description": "The EP picks another partner (never the EP) for a High-risk record (AC-4).",
+    "properties": {
+      "partner_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Partner Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "partner_id"
+    ],
+    "title": "RiskPartnerReviewIn",
+    "type": "object"
+  },
+  "RiskPartnerReviewOut": {
+    "properties": {
+      "completed_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Completed At"
+      },
+      "partner_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Partner Id",
+        "type": "string"
+      },
+      "requested_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Requested At",
+        "type": "string"
+      },
+      "requested_by": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Requested By",
+        "type": "string"
+      }
+    },
+    "required": [
+      "partner_id",
+      "requested_by",
+      "requested_at"
+    ],
+    "title": "RiskPartnerReviewOut",
+    "type": "object"
+  },
+  "RotationOut": {
+    "properties": {
+      "review_years": {
+        "cls": "internal",
+        "title": "Review Years",
+        "type": "integer"
+      },
+      "rows": {
+        "cls": "confidential",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/RotationRowOut"
+        },
+        "title": "Rows",
+        "type": "array"
+      }
+    },
+    "required": [
+      "review_years"
+    ],
+    "title": "RotationOut",
+    "type": "object"
+  },
+  "RotationRowOut": {
+    "description": "CLI-08 d: years served from the `prior_engagement_id` chain and role history (AC-27).",
+    "properties": {
+      "display_name": {
+        "cls": "confidential",
+        "title": "Display Name",
+        "type": "string"
+      },
+      "familiarity_flag": {
+        "cls": "internal",
+        "title": "Familiarity Flag",
+        "type": "boolean"
+      },
+      "role": {
+        "cls": "internal",
+        "title": "Role",
+        "type": "string"
+      },
+      "user_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "User Id",
+        "type": "string"
+      },
+      "years_served": {
+        "cls": "internal",
+        "title": "Years Served",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "user_id",
+      "display_name",
+      "role",
+      "years_served",
+      "familiarity_flag"
+    ],
+    "title": "RotationRowOut",
+    "type": "object"
+  },
+  "ScreeningRecordIn": {
+    "additionalProperties": false,
+    "description": "AC-26: a person records the result of a list they checked; nothing is looked up.",
+    "properties": {
+      "evidence_version_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Evidence Version Id"
+      },
+      "note": {
+        "anyOf": [
+          {
+            "maxLength": 4000,
+            "minLength": 1,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Note"
+      },
+      "result": {
+        "cls": "internal",
+        "enum": [
+          "no_match",
+          "match",
+          "not_applicable"
+        ],
+        "title": "Result",
+        "type": "string"
+      },
+      "screening_list": {
+        "cls": "internal",
+        "enum": [
+          "ofac_sdn",
+          "adverse_media",
+          "restricted_entities"
+        ],
+        "title": "Screening List",
+        "type": "string"
+      },
+      "subject": {
+        "$ref": "#/components/schemas/SubjectRefIn",
+        "cls": "internal"
+      }
+    },
+    "required": [
+      "subject",
+      "screening_list",
+      "result"
+    ],
+    "title": "ScreeningRecordIn",
+    "type": "object"
+  },
+  "ScreeningRecordOut": {
+    "description": "Insert-only; reads \"Recorded by {person}\".",
+    "properties": {
+      "evidence_version_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Evidence Version Id"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "recorded_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Recorded At",
+        "type": "string"
+      },
+      "recorded_by": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Recorded By",
+        "type": "string"
+      },
+      "result": {
+        "cls": "internal",
+        "enum": [
+          "no_match",
+          "match",
+          "not_applicable"
+        ],
+        "title": "Result",
+        "type": "string"
+      },
+      "screening_list": {
+        "cls": "internal",
+        "enum": [
+          "ofac_sdn",
+          "adverse_media",
+          "restricted_entities"
+        ],
+        "title": "Screening List",
+        "type": "string"
+      },
+      "subject": {
+        "$ref": "#/components/schemas/SubjectRefOut",
+        "cls": "internal"
+      }
+    },
+    "required": [
+      "id",
+      "subject",
+      "screening_list",
+      "result",
+      "recorded_by",
+      "recorded_at"
+    ],
+    "title": "ScreeningRecordOut",
+    "type": "object"
+  },
+  "SendToPartnerIn": {
+    "additionalProperties": false,
+    "properties": {
+      "seen_version": {
+        "cls": "internal",
+        "minimum": 0.0,
+        "title": "Seen Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "seen_version"
+    ],
+    "title": "SendToPartnerIn",
+    "type": "object"
+  },
+  "SourceRefIn": {
+    "additionalProperties": false,
+    "description": "A flag's source: a file version or a request item, never a model output (INV-2).",
+    "properties": {
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "evidence_version",
+          "request_item"
+        ],
+        "title": "Kind",
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "id"
+    ],
+    "title": "SourceRefIn",
+    "type": "object"
+  },
+  "SourceRefOut": {
+    "properties": {
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "evidence_version",
+          "request_item"
+        ],
+        "title": "Kind",
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "id"
+    ],
+    "title": "SourceRefOut",
+    "type": "object"
+  },
+  "SubjectRefIn": {
+    "additionalProperties": false,
+    "properties": {
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "client",
+          "client_entity",
+          "engagement_draft",
+          "client_intake_draft"
+        ],
+        "title": "Kind",
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "id"
+    ],
+    "title": "SubjectRefIn",
+    "type": "object"
+  },
+  "SubjectRefOut": {
+    "properties": {
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "client",
+          "client_entity",
+          "engagement_draft",
+          "client_intake_draft"
+        ],
+        "title": "Kind",
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "id"
+    ],
+    "title": "SubjectRefOut",
+    "type": "object"
+  },
+  "TeamApprovalOut": {
+    "description": "ENG-05's footer: \"Team approved by {EP} \u00b7 {date} \u00b7 changes since: + {person} (awaiting\napproval)\". `changed` compares the current member set with the approved one.",
+    "properties": {
+      "added_since": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "title": "Added Since",
+        "type": "array"
+      },
+      "approved_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Approved At"
+      },
+      "approved_by": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Approved By"
+      },
+      "approved_by_name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Approved By Name"
+      },
+      "changed": {
+        "cls": "internal",
+        "title": "Changed",
+        "type": "boolean"
+      },
+      "engagement_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Engagement Id",
+        "type": "string"
+      },
+      "member_set_hash": {
+        "cls": "internal",
+        "title": "Member Set Hash",
+        "type": "string"
+      }
+    },
+    "required": [
+      "engagement_id",
+      "member_set_hash",
+      "changed"
+    ],
+    "title": "TeamApprovalOut",
+    "type": "object"
+  },
+  "TeamApproveIn": {
+    "additionalProperties": false,
+    "description": "The `member_set_hash` of the roster the partner approves (security review): a team that\nchanged since answers 409 `stale_version`.",
+    "properties": {
+      "member_set_hash": {
+        "cls": "internal",
+        "pattern": "^[0-9a-f]{64}$",
+        "title": "Member Set Hash",
+        "type": "string"
+      }
+    },
+    "required": [
+      "member_set_hash"
+    ],
+    "title": "TeamApproveIn",
+    "type": "object"
+  }
+}
