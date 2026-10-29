@@ -1693,6 +1693,231 @@
       "tier": "C",
       "deviation": "A-02-T31: DF-19 rewords the relationship caption, f's body and e's scopes (read-only: no posting copy) where the handoff draws the posting wording; the parity spec does not read data-parity-mask yet, so the copy masks the row names are recorded here, not applied",
       "locked": true
+    },
+    "adm-04a.window": {
+      "page": "screens/ADM-04?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-04 AI policy and approval gates/screenshots/ADM-04a.png",
+      "sha256": "5ff8e4b662626971bc4a3ed2cab7f8c1e1bafb3e020837b397cc67e55299d914",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "adm-04b.window": {
+      "page": "screens/ADM-04?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-04 AI policy and approval gates/screenshots/ADM-04b.png",
+      "sha256": "cb63eaebed558f6844a946e0e56b4f67a872986aa7d4385493f8e9c8eef4c1bd",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "adm-04c.window": {
+      "page": "screens/ADM-04?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-04 AI policy and approval gates/screenshots/ADM-04c.png",
+      "sha256": "832fc60c02e2f58122a7633274102594511cf039a3c8f2c08ce021cf7b5d44fc",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-04d.window": {
+      "page": "screens/ADM-04?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-04 AI policy and approval gates/screenshots/ADM-04d.png",
+      "sha256": "b5581e5c9b58deac44ba9d75852f1a19e857e045c739db8873c1108001e2cff0",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-04e.window": {
+      "page": "screens/ADM-04?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-04 AI policy and approval gates/screenshots/ADM-04e.png",
+      "sha256": "3299d1f2e3f5e392777ef7b359729c77d26da0338ca982df97f28e21a86b9044",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "adm-04f.window": {
+      "page": "screens/ADM-04?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-04 AI policy and approval gates/screenshots/ADM-04f.png",
+      "sha256": "2d6c799a6d680822d57afe34e368798df171e374a04bad169348e385b40ae448",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-04g.window": {
+      "page": "screens/ADM-04?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-04 AI policy and approval gates/screenshots/ADM-04g.png",
+      "sha256": "a2627385585c264edb126daa99cfe9124f5e797a97c5f2ae6f99639ce8639002",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-04h.window": {
+      "page": "screens/ADM-04?st=h",
+      "selector": "[data-artboard=\"h\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-04 AI policy and approval gates/screenshots/ADM-04h.png",
+      "sha256": "db51e8f7f575aec227d77dde42c13d5343ad531859bc05258a88d0c8d23123f0",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "adm-04i.window": {
+      "page": "screens/ADM-04?st=i",
+      "selector": "[data-artboard=\"i\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-04 AI policy and approval gates/screenshots/ADM-04i.png",
+      "sha256": "12e72e3fa306dc185909b162b52e46f4c04e9f4c1c18b8a122fcad8b122de8ca",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "adm-04j.window": {
+      "page": "screens/ADM-04?st=j",
+      "selector": "[data-artboard=\"j\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-04 AI policy and approval gates/screenshots/ADM-04j.png",
+      "sha256": "1c1cd536024d6054c920b6276abf74f1c0de42471c4b0d78fe1e0d7110c4a453",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-06a.window": {
+      "page": "screens/ADM-06?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-06 Security center and data residency/screenshots/ADM-06a.png",
+      "sha256": "434f7d14b4b30db2992e4499ef37ef703bf2237dc7ecda1402d159222f55c4eb",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-06b.window": {
+      "page": "screens/ADM-06?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-06 Security center and data residency/screenshots/ADM-06b.png",
+      "sha256": "180893c660790913fc7fa0d97d6d4ab1043fde783019ce06c4e80efa23949a24",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-06c.window": {
+      "page": "screens/ADM-06?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-06 Security center and data residency/screenshots/ADM-06c.png",
+      "sha256": "fe0e51011e6f8d5d23405227435746349e6fae500f5346fbc7012a8746f7818b",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-06d.window": {
+      "page": "screens/ADM-06?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-06 Security center and data residency/screenshots/ADM-06d.png",
+      "sha256": "249ebce0559057dac4a3690e6d766065b330ce3317371fb04ff3588285ee87fc",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-06e.window": {
+      "page": "screens/ADM-06?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-06 Security center and data residency/screenshots/ADM-06e.png",
+      "sha256": "2abfea21392dc7c34719010272c7fe1bf6c422d8e972dd1ad35e4ee8186fde21",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "adm-06f.window": {
+      "page": "screens/ADM-06?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-06 Security center and data residency/screenshots/ADM-06f.png",
+      "sha256": "ca8f680ba41dae84d2ba42813763069775290cf8c38a2bca75c053589b9e03ee",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-06g.window": {
+      "page": "screens/ADM-06?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-06 Security center and data residency/screenshots/ADM-06g.png",
+      "sha256": "6fd2729fd5f4adf1b9b1695abfbd0fd734c4e1b4c62ec6acc9462501ffa35ad3",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-06h.window": {
+      "page": "screens/ADM-06?st=h",
+      "selector": "[data-artboard=\"h\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-06 Security center and data residency/screenshots/ADM-06h.png",
+      "sha256": "6240dc3b55dd09f8f4a7ea0d4e874a9944b70d87f555bf8f63468566330a1f3c",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-06i.window": {
+      "page": "screens/ADM-06?st=i",
+      "selector": "[data-artboard=\"i\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-06 Security center and data residency/screenshots/ADM-06i.png",
+      "sha256": "1a88551306e4584bc63e1bbfc38b6ed4e313864d94a8dfdb29304013144e94f1",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-06j.window": {
+      "page": "screens/ADM-06?st=j",
+      "selector": "[data-artboard=\"j\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-06 Security center and data residency/screenshots/ADM-06j.png",
+      "sha256": "f41182270306cbcaaf8eef33dc07c2522de979fc0997783be3f966e3850cd146",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-07a.window": {
+      "page": "screens/ADM-07?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-07 Audit log explorer/screenshots/ADM-07a.png",
+      "sha256": "338884d22345f1eddee34f1b5dea18acc55de692442056e6226a6b3cf85cc78d",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "adm-07b.window": {
+      "page": "screens/ADM-07?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-07 Audit log explorer/screenshots/ADM-07b.png",
+      "sha256": "d768a509202ac6ad2d514d647c39c1bd59c1d07671262c0802fc80ad2b8e704f",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "adm-07c.window": {
+      "page": "screens/ADM-07?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-07 Audit log explorer/screenshots/ADM-07c.png",
+      "sha256": "e2d72905619af29342e722dec11dcc2ee05e6fdb1562662a47b377d36cd104c5",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-07d.window": {
+      "page": "screens/ADM-07?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-07 Audit log explorer/screenshots/ADM-07d.png",
+      "sha256": "57762e31acc5ba5305a40f573a63a8bc4d8119de757dff7b06434d3d515ae244",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-07e.window": {
+      "page": "screens/ADM-07?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-07 Audit log explorer/screenshots/ADM-07e.png",
+      "sha256": "a2eede8e47d322b52a49a9fb43a6f99c9545cea8d1e267d9087da248f234b3b0",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-07f.window": {
+      "page": "screens/ADM-07?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-07 Audit log explorer/screenshots/ADM-07f.png",
+      "sha256": "7c007c0d1c5d40783d5335a36d4ab8eca7e32593ccbdccc4682a489b7099ea02",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "adm-07g.window": {
+      "page": "screens/ADM-07?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-07 Audit log explorer/screenshots/ADM-07g.png",
+      "sha256": "48fa52e822af1d9457fdff15a4736a3c25ffbbdf29861f48d2907b7e833bf511",
+      "crop": "window",
+      "tier": "C"
     }
   }
 }

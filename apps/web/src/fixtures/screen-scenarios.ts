@@ -14,6 +14,7 @@ import type { Scenario } from "../app-core/fixture-mode";
 import { scenarios as adm01 } from "./scenarios/ADM-01";
 import { OPENS as ADM02_OPENS, scenarios as adm02 } from "./scenarios/ADM-02";
 import { OPENS as ADM03_OPENS, scenarios as adm03 } from "./scenarios/ADM-03";
+import { scenarios as adm04 } from "./scenarios/ADM-04";
 import { OPENS as ADM06_OPENS, scenarios as adm06 } from "./scenarios/ADM-06";
 import { OPENS as ADM10_OPENS, scenarios as adm10 } from "./scenarios/ADM-10";
 import { OPENS as ADM07_OPENS, scenarios as adm07 } from "./scenarios/ADM-07";
@@ -58,6 +59,8 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
   "ADM-01": { scenarios: adm01, opens: {} },
   "ADM-02": { scenarios: adm02, opens: ADM02_OPENS },
   "ADM-03": { scenarios: adm03, opens: ADM03_OPENS },
+  // G-02-T26: ADM-04's OPENS are the gallery's open props (sheet, popover), not a search.
+  "ADM-04": { scenarios: adm04, opens: {} },
   "ADM-06": { scenarios: adm06, opens: ADM06_OPENS }, // G-02-T16
   "ADM-07": { scenarios: adm07, opens: ADM07_OPENS }, // G-02-T13
   // R-01-T28: the preview's contact and device, and e's drawer, live in the URL.

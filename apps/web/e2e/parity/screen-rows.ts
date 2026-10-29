@@ -119,6 +119,9 @@ export const BUILT_PLANNED: readonly string[] = [
   "AUD-03",
   "AUD-06",
   "POR-16",
+  "ADM-04",
+  "ADM-06",
+  "ADM-07",
 ];
 
 /** Every artboard of every `fixture` or `live` screen, and of `also`, in screen then state order.
