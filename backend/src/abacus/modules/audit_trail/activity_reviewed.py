@@ -85,6 +85,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "client_invitation.accept_refused",
         "client_invitation.accepted",
         "client_invitation.created",
+        "client_invitation.expiry_notified",  # P-07-T47: the expiry only, never the address
         "client_invitation.renewed",
         "client_invitation.resent",
         "client_invitation.revoked",
@@ -98,6 +99,8 @@ REVIEWED_FALLBACK: Final = frozenset(
         "comment_thread.read",
         "conflict.cleared",
         "decision.refused_non_human",  # K-01-T06: an agent or the platform asked to approve
+        "envelope.imported",  # N-02-T08: record-mode import (SIG-01 r)
+        "envelope_import_file.staged",  # N-02-T08: a scanned file for an import
         "human_gate.reassigned",  # I-01-T07: a person moved a gate to someone else (user ids)
         "conflict_check.run",
         "connection.checked",
@@ -211,7 +214,11 @@ REVIEWED_FALLBACK: Final = frozenset(
         "guidance_draft.created",
         "guidance_draft.discarded",
         "guidance_draft.requested",
+        "home_activity.projected",  # I-01-T12 (DEC-900): one activity row, the code only
+        "home_activity.pruned",  # I-01-T12: a count of rows past 90 days
         "human_gate.projected",
+        "inbound_message.recorded",  # N-01-T09: a message reached the inbox
+        "inbox_attachment.received",  # N-01-T09: a scanned, stored file
         "inbox_file.added",
         "inbox_file.assigned",
         "inbox_file.discarded",
@@ -219,6 +226,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "inbox_file.flagged",
         "inbox_match.created",
         "inbox_match.requested",
+        "inbox_thread.created",  # N-01-T09: a new inbox thread
         "incident.propagated",
         "incident.recorded",
         "independence.annual_",
@@ -234,6 +242,12 @@ REVIEWED_FALLBACK: Final = frozenset(
         "integration_secret.stored",
         "invitation.resent",
         "invitation.revoked",
+        "issue.fix_instructions_set",  # P-04-T31
+        "issue.marked_not_applicable",  # P-04-T31
+        "issue.reopened",  # P-04-T31
+        "issue.resolved",  # P-04-T31
+        "issue.sent_to_client",  # P-04-T31
+        "issue.verified",  # P-04-T31
         "item.signed",
         "knowledge_chunk.embedded",
         "knowledge_document.added",
@@ -281,6 +295,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "methodology_version.submitted",
         "methodology_version.superseded",
         # R-01-T26: ADM-10's settings and the read-only preview (versions and ids only)
+        "pilot_metrics.computed",  # Q-04-T008: a week's pilot snapshots
         "portal.preview_viewed",
         "portal_settings.draft_discarded",
         "portal_settings.draft_saved",
@@ -438,5 +453,12 @@ REVIEWED_FALLBACK: Final = frozenset(
         "workpaper.created",
         "workpaper.signed_ready",
         "workpaper.signed_reviewed",
+        "sending_domain.checked",  # R-01-T27
+        "sending_domain.created",  # R-01-T27
+        "sending_domain.failed",  # R-01-T27
+        "sending_domain.revoked",  # R-01-T27
+        "sending_domain.verified",  # R-01-T27
+        "firm_mail_policy.client_mail_enabled",  # R-01-T27
+        "firm_mail_policy.client_mail_disabled",  # R-01-T27
     }
 )

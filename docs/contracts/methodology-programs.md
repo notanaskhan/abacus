@@ -25,6 +25,7 @@ A methodology version is a firm's audit program: programs, steps with stable anc
 | Lifecycle state | `GET /v1/methodology/versions/{id}/state` → `VersionStateOut` with `checklist [{code, ok, n}]` and `checklist_hash` (additive, K-01-T06) | `methodology.read` | `methodology.lifecycle` | K-01-T06 (live) |
 | New draft | `POST /v1/methodology/versions/{id}/drafts` | `methodology.manage` | `methodology.programs` | K-01-T14 |
 | Discard | `POST /v1/methodology/versions/{id}/discard` `{row_version}` | `methodology.manage` | `methodology.programs` | K-01-T14 |
+| Version programs (additive, K-01-T07, DEC-957) | `GET /v1/methodology/versions/{version_id}/programs` → `ProgramOut[]` in position order | `methodology.read` | `methodology.programs` | K-01-T12 |
 | Program | `GET /v1/methodology/programs/{program_id}` | `methodology.read` | `methodology.programs` | K-01-T12 |
 | Steps | `GET /v1/methodology/programs/{program_id}/steps` | `methodology.read` | `methodology.programs` | K-01-T12 |
 | Resolve a citation | `GET /v1/methodology/steps/resolve?key=&version=` | `methodology.read` | `methodology.programs` | K-01-T12 |

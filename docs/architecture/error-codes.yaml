@@ -605,6 +605,11 @@ codes:
     raised_by:
     - abacus.modules.identity.people.FirmRoleHeld
     summary: The person holds another firm role; only a firm admin changes it (AC4.3).
+  fix_runner_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.review.issue_resolutions.FixRunnerUnavailable
+    summary: 'No fix runner is registered: nothing is recorded (fail closed).'
   follow_up_already_sent:
     status: 409
     raised_by:
@@ -645,6 +650,7 @@ codes:
     raised_by:
     - abacus.modules.engagements.record.GateUnmet
     - abacus.modules.organisations.contacts.GateUnmet
+    - abacus.modules.review.issue_resolutions.LetterGateUnmet
     summary: A gate the step or the create requires is not met (C1 gate providers; `facts.gate`).
   grant_exists:
     status: 409
@@ -718,12 +724,22 @@ codes:
     raised_by:
     - abacus.modules.engagements.client_import.ImportFileRefused
     summary: The file isn't a client list the import can read (`facts.reason`).
+  import_file_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.imports.ImportFileUnavailable
+    summary: A named file is not the importer's own staged file, or another import used it.
   import_row_invalid:
     status: 422
     raised_by:
     - abacus.modules.engagements.client_import.ImportRowInvalid
     summary: The row can't take this decision (a merge with nothing to merge into, a target with another
       decision, keep both without a match).
+  import_scope_mismatch:
+    status: 422
+    raised_by:
+    - abacus.modules.signatures.imports.ImportScopeMismatch
+    summary: The engagement, work item or a signer belongs to another client (`facts.field`).
   inbox_file_gone:
     status: 409
     raised_by:
@@ -813,6 +829,11 @@ codes:
     raised_by:
     - abacus.modules.review.issues.IssueChanged
     summary: The issue changed since it was read (`seen_version`).
+  issue_status_refused:
+    status: 409
+    raised_by:
+    - abacus.modules.review.issue_resolutions.IssueStatusRefused
+    summary: The issue cannot move there from where it is (`facts.status`).
   item_closed:
     status: 409
     raised_by:
@@ -1375,6 +1396,12 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.workpapers.ResultInvalid
     summary: An exception needs a note, and not tested a reason; evidence must be this engagement's.
+  retention_floor_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.imports.RetentionFloorMissing
+    summary: 'No retention floor or firm policy covers signature evidence yet: nothing is imported, because
+      COMPLIANCE storage needs a retain-until date (N-02 §3.13).'
   retention_set_exists:
     status: 409
     raised_by:
@@ -1496,6 +1523,12 @@ codes:
     raised_by:
     - abacus.modules.review.sign_offs.Segregation
     summary: 'R-SO-3: the target''s preparer never signs L2 or L3 on it.'
+  sending_domain_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.communications.sending_domains.SendingDomainExists
+    summary: 'R-01-T27 (DEC-951): a sender domain is pending or verified for this firm, or the name is
+      live for any firm.'
   service_line_lead_invalid:
     status: 422
     raised_by:
@@ -1787,6 +1820,11 @@ codes:
     raised_by:
     - abacus.modules.engagements.drafts.UnknownEngagementType
     summary: The type is not in the engagement-type catalogue (single audit included, DEC-19).
+  unknown_envelope_source:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.sources.UnknownEnvelopeSource
+    summary: 'No source of this kind is registered: nothing can be drafted from it.'
   unknown_firm_setting:
     status: 422
     raised_by:

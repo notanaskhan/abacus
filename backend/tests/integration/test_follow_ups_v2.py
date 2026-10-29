@@ -62,6 +62,7 @@ class Mailbox:
         reply_to: str | None = None,
         tenant_id: uuid.UUID | None = None,
         message_id: uuid.UUID | None = None,
+        from_address: str | None = None,
     ) -> None:
         self.sent.append({"to": to, "subject": subject, "body": body, "id": str(message_id)})
 

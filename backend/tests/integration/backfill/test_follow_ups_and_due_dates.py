@@ -54,6 +54,7 @@ class Mailbox:
         reply_to: str | None = None,
         tenant_id: uuid.UUID | None = None,
         message_id: uuid.UUID | None = None,
+        from_address: str | None = None,
     ) -> None:
         # Q-01-T09: the transport protocol also carries the Reply-To and the IDs SES tags use.
         self.sent.append({"to": to, "subject": subject, "body": body, "sender_name": sender_name})

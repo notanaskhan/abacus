@@ -247,27 +247,98 @@ function Deadlines({ home, now }: { home: HomeOut; now: Date }): JSX.Element {
   );
 }
 
-/** The activity glyph by event type (I-01-T11; the allowlist is I-01-T12's). */
+/** The activity glyph by code: I-01-T12's allowlist, plus the mail and envelope rows S29 adds
+ * (I-01-T23; fixture content until then). */
 const ACTIVITY_ICON: Readonly<Record<string, IconName>> = {
-  "evidence.uploaded": "upload",
-  "follow_up.sent": "send",
-  "letter.recorded": "file",
-  "agent.prescreened": "bot",
+  client_upload: "upload",
+  follow_up_sent: "send",
+  letter_recorded: "file",
+  agent_pre_screen: "bot",
+  inbound_mail: "mail",
+  envelope_sent: "send",
 };
 
-function Activity({ home, tz }: { home: HomeOut; tz: string }): JSX.Element | null {
+type ActivityItem = HomeOut["client_activity"][number];
+
+/** A row's two lines from its code, labels and facts (DEC-1001): codes and counts on the wire,
+ * names resolved by the reader now. */
+export function activityLines(
+  row: ActivityItem,
+  viewer: string | null,
+  now: Date,
+): { text: string; context: string } {
+  const a = COPY.activity;
+  const labels = row.labels ?? {};
+  const facts = row.facts;
+  const actor =
+    row.actor.type === "user" && row.actor.id !== null && row.actor.id === viewer
+      ? a.you
+      : (row.actor.label ?? a.someone);
+  const docClass = typeof facts.document_class === "string" ? facts.document_class : "";
+  const [one, many] = a.documents[docClass] ?? ["", ""];
+  const count = typeof facts.count === "number" ? facts.count : 0;
+  const subject = labels.subject ?? "";
+  let text: string;
+  let context = labels.context ?? "";
+  switch (row.event_type) {
+    case "inbound_mail":
+      text = a.mailed(
+        actor,
+        count > 1 && many !== "" ? a.counted(count, many) : a.quoted(subject),
+      );
+      break;
+    case "envelope_sent":
+      text = a.sent(actor, one, subject, labels.recipient ?? "");
+      if (typeof facts.due_on === "string") context = a.envelope(date(facts.due_on, { now }));
+      break;
+    case "agent_pre_screen":
+      text = a.preScreened(actor, row.client_label);
+      if (typeof facts.flags === "number") context = a.flags(facts.flags);
+      break;
+    case "client_upload":
+      text = a.uploaded(actor, subject);
+      break;
+    case "follow_up_sent":
+      text = a.followUpSent(actor);
+      break;
+    case "letter_recorded":
+      text = a.letterRecorded;
+      break;
+    default:
+      text = row.client_label;
+  }
+  return { text, context: context === "" ? row.client_label : context };
+}
+
+function Activity({
+  home,
+  tz,
+  now,
+  viewer,
+}: {
+  home: HomeOut;
+  tz: string | undefined;
+  now: Date;
+  viewer: string | null;
+}): JSX.Element | null {
   if (home.client_activity.length === 0) return null;
+  const today = date(now.toISOString(), { now, ...(tz === undefined ? {} : { tz }) });
   return (
     <ul data-home="activity">
-      {home.client_activity.map((row) => (
-        <ActivityRow
-          key={row.id}
-          icon={ACTIVITY_ICON[row.event_type] ?? "file"}
-          text={row.actor.label ?? row.client_label}
-          context={row.client_label}
-          when={time(new Date(row.occurred_at), { tz })}
-        />
-      ))}
+      {home.client_activity.map((row) => {
+        const at = new Date(row.occurred_at);
+        const day = date(row.occurred_at, { now, ...(tz === undefined ? {} : { tz }) });
+        const lines = activityLines(row, viewer, now);
+        return (
+          <ActivityRow
+            key={row.id}
+            icon={ACTIVITY_ICON[row.event_type] ?? "file"}
+            text={lines.text}
+            context={lines.context}
+            when={day === today ? time(at, tz === undefined ? {} : { tz }) : day}
+          />
+        );
+      })}
     </ul>
   );
 }
@@ -423,7 +494,10 @@ export function HOME01({
         },
         {
           title: COPY.activity.title,
-          children: view === undefined ? null : <Activity home={view} tz={tz} />,
+          children:
+            view === undefined ? null : (
+              <Activity home={view} tz={tz} now={now} viewer={session.user?.id ?? null} />
+            ),
         },
       ]}
       sideTopHeight={334}

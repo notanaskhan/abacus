@@ -155,6 +155,26 @@ class PlatformSchedule:
     every: timedelta
     note: str
     arg: object = None
+    # Q-04-T008: a weekly calendar instead of the interval: (ISO weekday 1-7, hour, minute,
+    # IANA zone); Temporal applies the zone, so the hour holds across daylight saving.
+    weekly: tuple[int, int, int, str] | None = None
+
+
+def _spec_of(job: PlatformSchedule) -> ScheduleSpec:
+    if job.weekly is None:
+        return ScheduleSpec(intervals=[ScheduleIntervalSpec(every=job.every)])
+    weekday, hour, minute, zone = job.weekly
+    return ScheduleSpec(
+        calendars=[
+            ScheduleCalendarSpec(
+                second=[ScheduleRange(0)],
+                minute=[ScheduleRange(minute)],
+                hour=[ScheduleRange(hour)],
+                day_of_week=[ScheduleRange(weekday % 7)],  # Temporal: Sunday is 0
+            )
+        ],
+        time_zone_name=zone,
+    )
 
 
 def _schedule_of(job: PlatformSchedule, *, state: ScheduleState) -> Schedule:
@@ -166,7 +186,7 @@ def _schedule_of(job: PlatformSchedule, *, state: ScheduleState) -> Schedule:
             id=job.id,
             task_queue=queue_for(work_class),
         ),
-        spec=ScheduleSpec(intervals=[ScheduleIntervalSpec(every=job.every)]),
+        spec=_spec_of(job),
         policy=SchedulePolicy(overlap=OVERLAP, catchup_window=CATCHUP_WINDOW),
         state=state,
     )
@@ -340,6 +360,8 @@ async def describe_schedule(schedule_id: str) -> ScheduleFacts:
     action = given.action
     if not isinstance(action, ScheduleActionStartWorkflow):
         raise LookupError(f"{schedule_id} does not start a workflow")
+    # temporalio 1.35 types the catch-up window as optional; ours are always set (CATCHUP_WINDOW).
+    window = given.policy.catchup_window
     return ScheduleFacts(
         id=schedule_id,
         paused=given.state.paused,
@@ -348,7 +370,7 @@ async def describe_schedule(schedule_id: str) -> ScheduleFacts:
         task_queue=str(action.task_queue),
         every_seconds=tuple(int(i.every.total_seconds()) for i in given.spec.intervals),
         overlap=given.policy.overlap.name,
-        catchup_window_seconds=int(given.policy.catchup_window.total_seconds()),
+        catchup_window_seconds=0 if window is None else int(window.total_seconds()),
     )
 
 

@@ -93,6 +93,9 @@ FIRM: list[tuple[str, Endpoint, Flag, ModuleType]] = [
     for p, e in _endpoints(inbox, inbox.intake_router, inbox.destinations_router)
 ] + [(p, e, FILES_BROWSER, files) for p, e in _endpoints(files, files.files_router)]
 PORTAL: list[tuple[str, Endpoint]] = _endpoints(portal, portal.intake_router)
+# Live since N-01-T09 (staff-logged intake; DEC-821): their own codes, never 501.
+LIVE_PATHS = frozenset({"/v1/inbox/intake", "/v1/inbox/intake/{message_id}/files"})
+STUBBED = [f for f in FIRM if f[0] not in LIVE_PATHS]
 
 
 def _models(module: ModuleType) -> list[type[BaseModel]]:
@@ -123,7 +126,7 @@ def _call(endpoint: Endpoint, ctx: AuthContext) -> Awaitable[object]:
     return endpoint(**{n: (ctx if n == "ctx" else None) for n in params})
 
 
-@pytest.mark.parametrize(("method", "path"), sorted(ROUTES))
+@pytest.mark.parametrize(("method", "path"), sorted(k for k in ROUTES if k[1] not in LIVE_PATHS))
 def test_n01t02_each_route_declares_its_one_action_and_is_a_stub(method: str, path: str) -> None:
     op = PATHS[path][method]
     assert op["x-abacus-action"] == ROUTES[(method, path)]
@@ -135,7 +138,9 @@ def test_n01t02_the_endpoints_are_the_routes_above() -> None:
 
 
 @pytest.mark.parametrize(
-    ("path", "endpoint", "flag", "module"), FIRM, ids=[e.__name__ for _p, e, _f, _m in FIRM]
+    ("path", "endpoint", "flag", "module"),
+    STUBBED,
+    ids=[e.__name__ for _p, e, _f, _m in STUBBED],
 )
 async def test_n01t02_firm_routes_client_404_then_action_then_flag_then_501(
     path: str,
@@ -280,3 +285,12 @@ def test_files_statuses_and_drawer_are_read_only() -> None:
         "on_hold",
     }
     assert "allowed_actions" in files.DrawerOut.model_fields
+
+
+@pytest.mark.parametrize(("method", "path"), sorted(k for k in ROUTES if k[1] in LIVE_PATHS))
+def test_n01t09_the_live_intake_routes_declare_their_action_and_no_501(
+    method: str, path: str
+) -> None:
+    op = PATHS[path][method]
+    assert op["x-abacus-action"] == ROUTES[(method, path)] == "inbox.log_intake"
+    assert "501" not in set(cast(Json, op["responses"]))

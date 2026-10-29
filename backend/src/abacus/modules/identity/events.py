@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from typing import Annotated, ClassVar
 from uuid import UUID
 
@@ -176,6 +176,18 @@ class SeasonalAccessEnding(DomainEvent):
 
     access_ends_on: Annotated[date, classified("internal")]
     members: Annotated[int, classified("internal")]
+
+
+class InvitationExpiring(DomainEvent):
+    """A pending client invitation lapses within two days, on day 12 of its 14 (P-07-T47; P-07
+    §4.8, DEC-1000): firm admins are told once per invitation and expiry (`invitation_expiring`).
+    Identifiers only: never the address or the contact's name."""
+
+    event_type: ClassVar[str] = "invitation.expiring"
+
+    invitation_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    expires_at: Annotated[datetime, classified("internal")]
 
 
 class WallRemoved(DomainEvent):

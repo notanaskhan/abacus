@@ -105,6 +105,12 @@ async def _firm(seed: Seeder) -> Firm:
             tenant,
             flag,
         )
+    # R-01-T27: a real firm's client mail opens only at its M10 flip (two operators named).
+    await seed.run(
+        "INSERT INTO firm_mail_policies (tenant_id, client_mail_enabled, enabled_by, second_by) "
+        "VALUES ($1, true, 'probe-one', 'probe-two')",
+        tenant,
+    )
     ctx = _ctx(admin)
     await template_service.save_draft(ctx, "reminder", REMINDER, 0)
     await template_service.publish(ctx, "reminder")

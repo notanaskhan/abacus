@@ -10699,6 +10699,14 @@
             "title": "Id",
             "type": "string"
           },
+          "labels": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "cls": "confidential",
+            "title": "Labels",
+            "type": "object"
+          },
           "occurred_at": {
             "cls": "internal",
             "format": "date-time",
@@ -21351,6 +21359,18 @@
             "title": "Client Name",
             "type": "string"
           },
+          "drafted_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Drafted By Name"
+          },
           "due_on": {
             "anyOf": [
               {
@@ -21387,10 +21407,34 @@
             "title": "Needs Handwritten",
             "type": "boolean"
           },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Note"
+          },
           "number": {
             "cls": "internal",
             "title": "Number",
             "type": "string"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Outcome"
           },
           "provider": {
             "cls": "internal",
@@ -21452,6 +21496,14 @@
             "title": "Signed",
             "type": "integer"
           },
+          "signer_chips": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/SignerChip"
+            },
+            "title": "Signer Chips",
+            "type": "array"
+          },
           "status": {
             "$ref": "#/components/schemas/EnvelopeStatus",
             "cls": "internal"
@@ -21466,6 +21518,19 @@
             "title": "Total",
             "type": "integer"
           },
+          "viewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Viewed At"
+          },
           "work_item_id": {
             "anyOf": [
               {
@@ -21478,6 +21543,18 @@
             ],
             "cls": "internal",
             "title": "Work Item Id"
+          },
+          "work_item_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Work Item Label"
           }
         },
         "required": [
@@ -25122,7 +25199,8 @@
               "eqr_pool",
               "monitoring_reviewers",
               "reviewer_pool",
-              "custom"
+              "custom",
+              "intake"
             ],
             "title": "Kind",
             "type": "string"
@@ -25245,7 +25323,8 @@
               "eqr_pool",
               "monitoring_reviewers",
               "reviewer_pool",
-              "custom"
+              "custom",
+              "intake"
             ],
             "title": "Kind",
             "type": "string"
@@ -28641,6 +28720,46 @@
           "unmatched_areas"
         ],
         "title": "ImportCountsOut",
+        "type": "object"
+      },
+      "ImportFileOut": {
+        "description": "`POST /v1/envelopes/import/files`: one scanned, stored file an import names by `id`.",
+        "properties": {
+          "file_name": {
+            "cls": "confidential",
+            "title": "File Name",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "media_type": {
+            "cls": "internal",
+            "title": "Media Type",
+            "type": "string"
+          },
+          "sha256": {
+            "cls": "internal",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "size_bytes": {
+            "cls": "internal",
+            "title": "Size Bytes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "file_name",
+          "media_type",
+          "size_bytes",
+          "sha256"
+        ],
+        "title": "ImportFileOut",
         "type": "object"
       },
       "ImportOut": {
@@ -54183,6 +54302,27 @@
           "ended"
         ],
         "title": "SignedOutOut",
+        "type": "object"
+      },
+      "SignerChip": {
+        "description": "One signer as SIG-01's chip draws them (\"\u2713 Thomas\" \u00b7 \"\u25cb Irene\").",
+        "properties": {
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "signed": {
+            "cls": "internal",
+            "title": "Signed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "signed"
+        ],
+        "title": "SignerChip",
         "type": "object"
       },
       "SignerDeclineIn": {
@@ -113011,7 +113151,7 @@
     },
     "/v1/envelopes/import": {
       "post": {
-        "description": "Record mode (SIG-01 r; N-02-T08).",
+        "description": "Record mode (SIG-01 r; N-02-T08): the signed package lands Completed with its evidence.",
         "operationId": "import_envelope_record",
         "parameters": [
           {
@@ -113128,8 +113268,103 @@
               }
             },
             "description": "Invalid request"
+          }
+        },
+        "summary": "Import Envelope Record Route",
+        "tags": [
+          "signatures"
+        ],
+        "x-abacus-action": "envelope.import_record"
+      }
+    },
+    "/v1/envelopes/import/files": {
+      "post": {
+        "description": "One file for a record-mode import into this client (and engagement) (the completed document\nor the certificate), the raw bytes as the body: authorised as the import is, scanned before\nstorage, refused closed (N-02-T08; DEC-818).",
+        "operationId": "stage_envelope_import_file",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "filename",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Filename",
+              "type": "string"
+            }
           },
-          "501": {
+          {
+            "in": "query",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "engagement_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Engagement Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportFileOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
             "content": {
               "application/json": {
                 "schema": {
@@ -113137,10 +113372,60 @@
                 }
               }
             },
-            "description": "Contract stub: not implemented yet"
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "The file is too large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service unavailable"
           }
         },
-        "summary": "Import Envelope Record Route",
+        "summary": "Stage Envelope Import File Route",
         "tags": [
           "signatures"
         ],
@@ -127471,7 +127756,7 @@
     },
     "/v1/firm/sending-domains": {
       "get": {
-        "description": "ADM-10 d (R-01-T27): the firm's sender domain and its DNS records.",
+        "description": "ADM-10 d (R-01-T27): the firm's sender domains, newest first, with their DNS records.\nNever behind the flag.",
         "operationId": "list_sending_domains",
         "parameters": [
           {
@@ -127557,16 +127842,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Sending Domains Route",
@@ -127576,7 +127851,7 @@
         "x-abacus-action": "sending_domain.read"
       },
       "post": {
-        "description": "An SES identity with Easy DKIM and a custom MAIL FROM; `pending_dns` (R-01-T27); 409\n`sending_domain_exists` while one is pending or verified. Audited `sending_domain.created`.",
+        "description": "An SES identity with Easy DKIM and the custom MAIL FROM `bounce.<domain>`; `pending_dns`\n(R-01-T27); 409 `sending_domain_exists` while this firm has one pending or verified, or the\ndomain is live for any firm (DEC-951); 503 `sending_domain_unavailable` when SES can't be\nreached. Fresh MFA. Audited `sending_domain.created`. A retry with the same key answers the\ndomain it created, after authorising again.",
         "operationId": "create_sending_domain",
         "parameters": [
           {
@@ -127694,7 +127969,7 @@
             },
             "description": "Invalid request"
           },
-          "501": {
+          "503": {
             "content": {
               "application/json": {
                 "schema": {
@@ -127702,7 +127977,7 @@
                 }
               }
             },
-            "description": "Contract stub: not implemented yet"
+            "description": "Service unavailable"
           }
         },
         "summary": "Create Sending Domain Route",
@@ -127714,7 +127989,7 @@
     },
     "/v1/firm/sending-domains/{domain_id}": {
       "delete": {
-        "description": "Revoke (R-01-T27): client mail returns to the neutral sender. Audited\n`sending_domain.revoked`.",
+        "description": "Revoke (R-01-T27): client mail returns to the neutral sender and the SES identity is\ndeleted. Audited `sending_domain.revoked`.",
         "operationId": "revoke_sending_domain",
         "parameters": [
           {
@@ -127810,16 +128085,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Revoke Sending Domain Route",
@@ -127831,7 +128096,7 @@
     },
     "/v1/firm/sending-domains/{domain_id}/check": {
       "post": {
-        "description": "Check the identity now (R-01-T27); the workflow checks every 15 minutes for 72 hours.",
+        "description": "Check the identity now (R-01-T27); the workflow checks every 15 minutes, and fails the\ndomain after 72 hours. Audited `sending_domain.verified` or `.failed` when it moves.",
         "operationId": "check_sending_domain",
         "parameters": [
           {
@@ -127928,7 +128193,7 @@
             },
             "description": "Invalid request"
           },
-          "501": {
+          "503": {
             "content": {
               "application/json": {
                 "schema": {
@@ -127936,7 +128201,7 @@
                 }
               }
             },
-            "description": "Contract stub: not implemented yet"
+            "description": "Service unavailable"
           }
         },
         "summary": "Check Sending Domain Route",
@@ -132263,7 +132528,7 @@
     },
     "/v1/home": {
       "get": {
-        "description": "HOME-01: the viewer's Home, optionally narrowed to one office (DEC-30). Live since\nI-01-T10 (DEC-648); client activity arrives with I-01-T12.",
+        "description": "HOME-01: the viewer's Home, optionally narrowed to one office (DEC-30). Live since\nI-01-T10 (DEC-648); client activity since I-01-T12 (DEC-900).",
         "operationId": "home",
         "parameters": [
           {
@@ -133616,7 +133881,7 @@
     },
     "/v1/inbox/intake": {
       "post": {
-        "description": "Log received documents (DV-1): the batch; files follow (N-01-T09).",
+        "description": "Log received documents (DV-1): the batch, one thread and one message; files follow\n(N-01-T09). The intake scope or `inbox.log_intake` on the named client; people only.",
         "operationId": "log_intake",
         "parameters": [
           {
@@ -133733,16 +133998,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Log Intake Route",
@@ -133754,7 +134009,7 @@
     },
     "/v1/inbox/intake/{message_id}/files": {
       "post": {
-        "description": "One file of a staff-logged batch, scanned before storage, fail closed (N-01-T09).",
+        "description": "One file of a staff-logged batch, scanned before storage, fail closed (N-01-T09). Only the\nperson who logged the batch adds to it.",
         "operationId": "log_intake_file",
         "parameters": [
           {
@@ -133883,16 +134138,6 @@
             },
             "description": "The file is too large"
           },
-          "415": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "The file type is not accepted"
-          },
           "422": {
             "content": {
               "application/json": {
@@ -133902,16 +134147,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           },
           "503": {
             "content": {
@@ -141173,6 +141408,127 @@
           "methodology"
         ],
         "x-abacus-action": "template_guidance.decide"
+      }
+    },
+    "/v1/methodology/versions/{version_id}/programs": {
+      "get": {
+        "description": "KNW-02's Programs tree (K-01-T07 stub, DEC-957; built with K-01-T12): a version's\nprograms in order, with counts and open flags.",
+        "operationId": "version_programs",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProgramOut"
+                  },
+                  "title": "Response Version Programs",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Version Programs Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "methodology.read"
       }
     },
     "/v1/methodology/versions/{version_id}/programs/{program_id}/steps": {

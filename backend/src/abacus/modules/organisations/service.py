@@ -9,7 +9,7 @@ from datetime import date
 from typing import Final, Literal
 from uuid import UUID, uuid4
 
-from sqlalchemy import Select
+from sqlalchemy import Select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -493,3 +493,21 @@ async def firm_offices(tenant: TenantContext) -> list[tuple[UUID, str]]:
     """P-01-T04: the firm's offices for identity's `/v1/me` (registered as its office list)."""
     async with tenant_session(tenant) as session:
         return await offices_in_firm(session)
+
+
+async def portal_activation(tenant: TenantContext, client_id: UUID) -> tuple[int, int]:
+    """Q-04-T008 (W4): the client's contacts invited to the portal and, of those, the ones who
+    signed in at least once (`active`, or `locked` after signing in), as counts only; for the
+    platform's pilot metrics, which authorised nothing per person."""
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(
+                text(
+                    "SELECT count(*) FILTER (WHERE portal_state <> 'not_invited'), "
+                    "count(*) FILTER (WHERE portal_state IN ('active', 'locked')) "
+                    "FROM contacts WHERE client_id = :client"
+                ),
+                {"client": client_id},
+            )
+        ).one()
+    return int(row[0]), int(row[1])

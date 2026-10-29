@@ -35,17 +35,26 @@ BEGIN
 END
 $$;
 
--- Enforce attributes even if the roles already existed with others.
-ALTER ROLE abacus_owner NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS NOREPLICATION;
-ALTER ROLE abacus_app   NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS NOREPLICATION NOINHERIT;
--- The outbox relay reads every tenant's unpublished events (TASK-006, founder-approved): it bypasses
--- row-level security, so it is granted privileges on `outbox` only (in migration 0002), nothing else.
-ALTER ROLE abacus_relay NOSUPERUSER NOCREATEDB NOCREATEROLE BYPASSRLS NOREPLICATION NOINHERIT;
--- Sign-in finds a user's memberships before any tenant is chosen (TASK-007, founder-approved): it
--- bypasses row-level security, so it may only read users, memberships and firms (migration 0004).
-ALTER ROLE abacus_identity NOSUPERUSER NOCREATEDB NOCREATEROLE BYPASSRLS NOREPLICATION NOINHERIT;
+-- Enforce attributes even if the roles already existed with others. A managed database's admin
+-- (RDS `rds_superuser`) is not a superuser and may not touch SUPERUSER or REPLICATION at all; roles
+-- it creates never have either, so there it sets only the attributes it may change (Q-01-T20).
+DO $$
+DECLARE
+  super boolean := (SELECT rolsuper FROM pg_roles WHERE rolname = current_user);
+  privileged text := CASE WHEN super THEN ' NOSUPERUSER NOREPLICATION' ELSE '' END;
+BEGIN
+  EXECUTE 'ALTER ROLE abacus_owner NOCREATEDB NOCREATEROLE NOBYPASSRLS' || privileged;
+  EXECUTE 'ALTER ROLE abacus_app NOCREATEDB NOCREATEROLE NOBYPASSRLS NOINHERIT' || privileged;
+  -- The outbox relay reads every tenant's unpublished events (TASK-006, founder-approved): it
+  -- bypasses row-level security, so it is granted privileges on `outbox` only (in migration 0002).
+  EXECUTE 'ALTER ROLE abacus_relay NOCREATEDB NOCREATEROLE BYPASSRLS NOINHERIT' || privileged;
+  -- Sign-in finds a user's memberships before any tenant is chosen (TASK-007, founder-approved): it
+  -- bypasses row-level security, so it may only read users, memberships and firms (migration 0004).
+  EXECUTE 'ALTER ROLE abacus_identity NOCREATEDB NOCREATEROLE BYPASSRLS NOINHERIT' || privileged;
+  EXECUTE 'ALTER ROLE abacus_ops NOCREATEDB NOCREATEROLE NOBYPASSRLS NOINHERIT' || privileged;
+END
+$$;
 ALTER ROLE abacus_identity SET default_transaction_read_only = on;
-ALTER ROLE abacus_ops NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS NOREPLICATION NOINHERIT;
 
 DO $$
 BEGIN
@@ -77,19 +86,41 @@ ALTER DEFAULT PRIVILEGES FOR ROLE abacus_owner IN SCHEMA public
 ALTER DEFAULT PRIVILEGES FOR ROLE abacus_owner REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
 
 -- Large objects are not tenant-scoped (no row-level security), so nobody but the admin may use them.
+-- A managed admin (RDS) does not own the catalogue functions and may not revoke on them: each one it
+-- cannot revoke is reported, and the application never calls large objects (ED-292, Q-01-T20).
 DO $$
-DECLARE f regprocedure;
+DECLARE
+  f regprocedure;
+  kept integer := 0;
 BEGIN
   FOR f IN
     SELECT p.oid::regprocedure FROM pg_proc p
     WHERE p.pronamespace = 'pg_catalog'::regnamespace
       AND (p.proname LIKE 'lo\_%' OR p.proname IN ('loread', 'lowrite'))
   LOOP
-    EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM PUBLIC', f);
+    BEGIN
+      EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM PUBLIC', f);
+    EXCEPTION WHEN insufficient_privilege THEN
+      kept := kept + 1;
+    END;
   END LOOP;
+  IF kept > 0 THEN
+    RAISE NOTICE 'large-object functions left executable by PUBLIC (managed admin): %', kept;
+  END IF;
 END
 $$;
 
--- The application has no business in the maintenance databases.
-REVOKE CONNECT, TEMPORARY ON DATABASE postgres FROM PUBLIC;
-REVOKE CONNECT, TEMPORARY ON DATABASE template1 FROM PUBLIC;
+-- The application has no business in the maintenance databases. On RDS `template1` belongs to
+-- `rdsadmin`, which the managed admin cannot revoke for: reported, not fatal (Q-01-T20).
+DO $$
+DECLARE d text;
+BEGIN
+  FOREACH d IN ARRAY ARRAY['postgres', 'template1'] LOOP
+    BEGIN
+      EXECUTE format('REVOKE CONNECT, TEMPORARY ON DATABASE %I FROM PUBLIC', d);
+    EXCEPTION WHEN insufficient_privilege THEN
+      RAISE NOTICE 'could not revoke PUBLIC access to database % (managed admin)', d;
+    END;
+  END LOOP;
+END
+$$;
