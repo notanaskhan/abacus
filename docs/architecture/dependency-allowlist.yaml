@@ -29,6 +29,9 @@ python:
     pdfplumber: approved        # upload extraction: PDF text and tables, in an isolated child (SPEC-029 Q1, TASK-054; brings pdfminer.six)
     pypdfium2: approved         # upload previews: PDF page images, server-side (SPEC-029 Q1, ADR-110)
     pillow: approved            # upload previews: images re-encoded server-side, metadata stripped (SPEC-029, ADR-110)
+    weasyprint: approved        # deterministic PDF rendering in reporting only, in the isolated child (DEC-16, ADR-320, P-11-T02)
+    python-docx: approved       # deterministic DOCX from the same DocBlocks, reporting only (DEC-16, ADR-320, P-11-T02)
+    pillow-heif: approved       # HEIC phone photos decoded for OCR in evidence, in the isolated child (DEC-16, ADR-321)
     pyyaml: approved            # parse doc frontmatter and policy YAML in abacus_tools.quality.validate_docs (TASK-001); runtime since Q-01-T20: ECS ops tasks run abacus_tools that read YAML
   dev:
     pytest: approved

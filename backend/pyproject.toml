@@ -28,6 +28,9 @@ dependencies = [
     "uvicorn>=0.40",
     "workos>=10.6.0",
     "pyyaml",  # ECS ops tasks run abacus_tools (tenants, flags, release) that read YAML
+    "weasyprint>=66",
+    "python-docx>=1.2",
+    "pillow-heif>=1.1",
 ]
 
 [dependency-groups]
