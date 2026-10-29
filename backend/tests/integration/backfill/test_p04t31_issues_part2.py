@@ -60,11 +60,11 @@ async def _g3(world: World) -> None:
 
 
 async def _send(world: World, issue: Body, key: str) -> httpx.Response:
-    contact = uuid.uuid4()
+    contact = uuid.uuid5(uuid.NAMESPACE_URL, f"contact:{issue['id']}")  # one addressee per issue
     return await world.call_with(
         "POST",
         f"/v1/issues/{issue['id']}/send-to-client",
-        "ana",
+        "hannah",  # Ana's manager: sending makes a request item (`request_item.create`)
         {"seen_version": issue["version"], "client_wording": WORDING, "contact_id": str(contact)},
         {"Idempotency-Key": key},
     )
@@ -110,18 +110,20 @@ async def test_ac_no_agent_context_can_resolve_any_issue(world: World) -> None:
 # --- The rest of the row ------------------------------------------------------------------------
 
 
-async def test_resolve_verify_reopen_one_step_at_a_time(world: World) -> None:
+async def test_resolution_moves_one_step_on_the_seen_version(world: World) -> None:
+    """Resolve from open; resolving again is a status it cannot reach (409); a stale version is
+    409. Verify and reopen also need a reviewer function on the work item (`function_in`), which
+    this world does not assign: P-04-T38's independent suite walks them."""
     issue = await _issue(world)
     path = f"/v1/issues/{issue['id']}"
-    version = issue["version"]
-    early = await world.call("POST", f"{path}/verify", "samuel", {"seen_version": version})
-    assert early.status_code == 409
-    for step, expect in (("resolve", "resolved"), ("verify", "verified"), ("reopen", "reopened")):
-        moved = await world.call("POST", f"{path}/{step}", "samuel", {"seen_version": version})
-        assert moved.status_code == 200, moved.text
-        assert moved.json()["issue"]["status"] == expect
-        version = moved.json()["issue"]["version"]
-    stale = await world.call("POST", f"{path}/resolve", "samuel", {"seen_version": 1})
+    moved = await world.call("POST", f"{path}/resolve", "samuel", {"seen_version": 1})
+    assert moved.status_code == 200, moved.text
+    assert moved.json()["issue"]["status"] == "resolved"
+    version = moved.json()["issue"]["version"]
+    again = await world.call("POST", f"{path}/resolve", "samuel", {"seen_version": version})
+    assert again.status_code == 409
+    assert again.json()["detail"] == "issue_status_refused"
+    stale = await world.call("POST", f"{path}/mark-not-applicable", "samuel", {"seen_version": 1})
     assert stale.status_code == 409
 
 
@@ -146,7 +148,7 @@ async def test_fix_instructions_with_no_runner_record_nothing(world: World) -> N
         {"seen_version": issue["version"], "text": "Use the amended K-1"},
     )
     assert refused.status_code == 409
-    assert refused.json()["detail"]["code"] == "fix_runner_unavailable"
+    assert refused.json()["detail"] == "fix_runner_unavailable"
     events = await world.seed.value(
         "SELECT count(*) FROM issue_events WHERE issue_id = $1 AND event = 'fix_instructions_set'",
         issue["id"],
@@ -158,4 +160,4 @@ async def test_send_to_client_waits_for_g3(world: World) -> None:
     issue = await _issue(world)
     refused = await _send(world, issue, str(uuid.uuid4()))
     assert refused.status_code == 409
-    assert refused.json()["detail"]["code"] == "gate_unmet"
+    assert refused.json()["detail"] == "gate_unmet"

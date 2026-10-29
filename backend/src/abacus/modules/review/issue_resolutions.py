@@ -124,8 +124,8 @@ async def move(ctx: AuthContext, issue_id: UUID, to: str, seen_version: int) -> 
         tx.record(
             f"issue.{_EVENT[to]}",
             target=Target(SUBJECT, issue_id),
-            before=Ref(status=current.status),
-            after=Ref(status=to),
+            before=Ref(version=current.version),
+            after=Ref(version=current.version + 1),
             scope=Scope(engagement_id=current.engagement_id),
         )
 
@@ -156,7 +156,7 @@ async def set_fix_instructions(
         tx.record(
             "issue.fix_instructions_set",
             target=Target(SUBJECT, issue_id),
-            after=Ref(scope=scope),
+            after=Ref(version=current.version),
             scope=Scope(engagement_id=current.engagement_id),
         )
     return await run_fix(ctx.tenant, current.kind, issue_id)
@@ -181,6 +181,13 @@ async def set_fix_instructions_bulk(
         except DomainConflict as refused:
             out.append(BulkOutcome(issue_id, None, refused.code))
     return out
+
+
+async def check_send(ctx: AuthContext, issue_id: UUID) -> None:
+    """The route's check before its `Idempotency-Key` lookup, so a replay is authorised too."""
+    current = await _one(ctx.tenant, issue_id)
+    _, resource, _ = await _record(ctx, current.record_type, current.record_id)
+    await authorise(ctx, "issue.send_to_client", resource)
 
 
 async def send_to_client(
@@ -217,7 +224,7 @@ async def send_to_client(
         await tx.session.execute(
             text(
                 "INSERT INTO issue_links (tenant_id, issue_id, link_kind, ref) "
-                "VALUES (:t, :i, 'request_item', jsonb_build_object('id', :item))"
+                "VALUES (:t, :i, 'request_item', jsonb_build_object('id', CAST(:item AS text)))"
             ),
             {"t": ctx.tenant_id, "i": issue_id, "item": str(item)},
         )

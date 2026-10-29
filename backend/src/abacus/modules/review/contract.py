@@ -1813,6 +1813,7 @@ async def issue_send_to_client_route(
 ) -> IssueDetailOut:
     """SHL-15 b: one request item with only the client wording; G3 is checked (ADR-111)."""
     await _live(ctx)
+    await resolutions.check_send(ctx, issue_id)
 
     async def run() -> tuple[int, dict[str, object]]:
         await resolutions.send_to_client(
