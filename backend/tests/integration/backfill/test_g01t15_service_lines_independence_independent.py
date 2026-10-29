@@ -213,14 +213,7 @@ class Firm:
                 self.grace.user_id,
             ),
         )
-        await self.seed.run(
-            "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
-            "decided_by, documented_at, independence_concluded_by, independence_concluded_at, "
-            "independence_documented_at) VALUES ($1, $2, 'continuance', 'accepted', "
-            "'test-seed', 'Seeded', 'test-seed', clock_timestamp(), 'Seeded')",
-            self.tenant_id,
-            engagement_id,
-        )
+        await self.seed.open_engagement(self.tenant_id, engagement_id)
         # A binder joins a work item (types without an automatic one get theirs here).
         await self.seed.run(
             "INSERT INTO work_items (tenant_id, engagement_id, client_id, client_entity_id, kind, "

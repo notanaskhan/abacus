@@ -65,6 +65,9 @@ FIRM = [(r, c7) for r in _routes(c7.router, c7.policies_router)] + [
     (r, letters) for r in _routes(letters.letter_router)
 ]
 PORTAL = _routes(c7.portal_router)
+# Live since N-02-T08 (record-mode import; DEC-818): their own codes, never 501.
+LIVE = frozenset({"import_envelope_record_route", "stage_envelope_import_file_route"})
+STUBBED = [(r, m) for r, m in FIRM if r.name not in LIVE]
 
 
 def _models(module: ModuleType) -> list[type[BaseModel]]:
@@ -95,7 +98,7 @@ def _call(endpoint: Endpoint, ctx: AuthContext) -> Awaitable[object]:
     return endpoint(**{n: (ctx if n == "ctx" else None) for n in params})
 
 
-@pytest.mark.parametrize("route", [r for r, _m in FIRM] + PORTAL, ids=lambda r: r.name)
+@pytest.mark.parametrize("route", [r for r, _m in STUBBED] + PORTAL, ids=lambda r: r.name)
 def test_n02t03_each_route_declares_one_matrix_action_and_is_a_stub(route: APIRoute) -> None:
     method = next(iter(route.methods or {"GET"})).lower()
     op = PATHS[route.path][method]
@@ -103,7 +106,7 @@ def test_n02t03_each_route_declares_one_matrix_action_and_is_a_stub(route: APIRo
     assert {"404", "501"} <= set(cast(Json, op["responses"]))
 
 
-@pytest.mark.parametrize(("route", "module"), FIRM, ids=[r.name for r, _m in FIRM])
+@pytest.mark.parametrize(("route", "module"), STUBBED, ids=[r.name for r, _m in STUBBED])
 async def test_n02t03_firm_routes_client_404_then_action_then_flag_then_501(
     route: APIRoute, module: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -235,3 +238,11 @@ def test_eng04_letter_words_are_df31() -> None:
         "superseded",
     }
     assert "approval_content_hash" in letters.ComposerLetterOut.model_fields
+
+
+@pytest.mark.parametrize("route", [r for r, _m in FIRM if r.name in LIVE], ids=lambda r: r.name)
+def test_n02t08_the_live_import_routes_declare_their_action_and_no_501(route: APIRoute) -> None:
+    method = next(iter(route.methods or {"GET"})).lower()
+    op = PATHS[route.path][method]
+    assert op["x-abacus-action"] == "envelope.import_record"
+    assert "501" not in set(cast(Json, op["responses"]))

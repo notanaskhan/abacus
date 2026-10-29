@@ -4,6 +4,7 @@ from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.kernel.uow import Handler
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.engagements.api import register_evidence_readable
+from abacus.modules.evidence.access import KIND as CONTENT_READ_KIND
 from abacus.modules.evidence.activities import ACTIVITIES as UPLOAD_ACTIVITIES
 from abacus.modules.evidence.anchor_job import ACTIVITIES as ANCHOR_ACTIVITIES
 from abacus.modules.evidence.anchor_job import SCHEDULES as ANCHOR_SCHEDULES
@@ -233,6 +234,13 @@ from abacus.modules.evidence.service import (
     undo_review_decision,
     version_view,
 )
+from abacus.modules.evidence.signed_copies import (
+    SIGNED_AUTHORIZATIONS,
+    ScreenedFile,
+    file_signed_copy,
+    read_staged,
+    screen_and_stage,
+)
 from abacus.modules.evidence.storage import (
     MAX_CONTENT_BYTES,
     ContentTooLarge,
@@ -392,6 +400,7 @@ __all__ = [
     "ACTIVITIES",
     "ANCHOR_ID",
     "CODE_COLUMN",
+    "CONTENT_READ_KIND",
     "CREDIT_COLUMN",
     "DEBIT_COLUMN",
     "EXPORT_EXPIRY_ID",
@@ -403,6 +412,7 @@ __all__ = [
     "RECORD_TYPES",
     "ROUTERS",
     "SCHEDULES",
+    "SIGNED_AUTHORIZATIONS",
     "SUBSCRIPTIONS",
     "SUGGESTION_MIN_SCORE",
     "TOTAL_LABEL",
@@ -467,6 +477,7 @@ __all__ = [
     "RecordClass",
     "RecordedCitation",
     "ReviewMaterial",
+    "ScreenedFile",
     "ScreeningDecision",
     "ScreeningFacts",
     "SectionFile",
@@ -509,6 +520,7 @@ __all__ = [
     "export_requester",
     "export_section_csv",
     "extend_retention_for",
+    "file_signed_copy",
     "final_export_for_archive",
     "firm_export_schedule_id",
     "firm_router",
@@ -531,6 +543,7 @@ __all__ = [
     "put_record",
     "quote_in",
     "read_content",
+    "read_staged",
     "read_version",
     "record_citations",
     "register_citable",
@@ -549,6 +562,7 @@ __all__ = [
     "review_decision_engagement",
     "review_material",
     "router",
+    "screen_and_stage",
     "screening_facts",
     "set_policy",
     "stage_content",

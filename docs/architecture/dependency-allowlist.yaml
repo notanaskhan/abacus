@@ -29,6 +29,7 @@ python:
     pdfplumber: approved        # upload extraction: PDF text and tables, in an isolated child (SPEC-029 Q1, TASK-054; brings pdfminer.six)
     pypdfium2: approved         # upload previews: PDF page images, server-side (SPEC-029 Q1, ADR-110)
     pillow: approved            # upload previews: images re-encoded server-side, metadata stripped (SPEC-029, ADR-110)
+    pyyaml: approved            # parse doc frontmatter and policy YAML in abacus_tools.quality.validate_docs (TASK-001); runtime since Q-01-T20: ECS ops tasks run abacus_tools that read YAML
   dev:
     pytest: approved
     pytest-asyncio: approved
@@ -40,7 +41,6 @@ python:
     mutmut: approved
     pip-audit: approved
     bandit: approved
-    pyyaml: approved            # parse doc frontmatter and policy YAML in abacus_tools.quality.validate_docs (TASK-001)
     types-PyYAML: approved      # pyyaml stubs; required for strict Pyright (ADR-009)
     pytest-cov: approved        # coverage floors in make check (ADR-079, TASK-002)
     pytest-xdist: approved      # parallel test workers for the local gate and CI shards (DEC-335, TASK-1206; brings execnet)

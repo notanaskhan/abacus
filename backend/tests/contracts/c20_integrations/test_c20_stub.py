@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import uuid
+from datetime import date
 from typing import cast
 
 import pytest
@@ -21,7 +22,7 @@ from abacus.api.export_openapi import document
 from abacus.kernel._flags import CONNECTIONS_LIVE_LEDGER, CONNECTIONS_PORTAL_V2
 from abacus.kernel.classification import unclassified_fields
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.identity.authz.matrix import RULES
@@ -56,9 +57,10 @@ ROUTES: dict[tuple[str, str], tuple[str, Flag]] = {
 }
 IDEMPOTENT = {path for (method, path) in ROUTES if method == "post"}
 # Live since A-02-T16 (TASK-1416): POR-16's routes answer 404 (flag off, another entity) and
-# their own codes, never 501. The two firm routes stay stubs (A-02-T23, A-02-T30).
+# their own codes, never 501. The two firm routes went live in A-02-T23 and A-02-T30.
 LIVE = {(m, p) for (m, p) in ROUTES if p.startswith("/v1/portal/")} | {
     ("post", "/v1/connections/{connection_id}/reconnect-requests"),  # A-02-T23 (TASK-1471)
+    ("post", "/v1/engagements/{engagement_id}/connection/pulls"),  # A-02-T30 (TASK-1739)
 }
 MODELS: tuple[type[BaseModel], ...] = (
     contract.PortalConnectionsOut,
@@ -127,26 +129,26 @@ def _ctx() -> AuthContext:
     )
 
 
-@pytest.mark.parametrize("flag", [CONNECTIONS_PORTAL_V2, CONNECTIONS_LIVE_LEDGER])
-async def test_flag_off_is_404_and_flag_on_is_501(
-    flag: Flag, monkeypatch: pytest.MonkeyPatch
+async def test_the_live_pull_answers_404_with_its_flag_off(
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """A-02-T30 made the pull live: off, `connections.live_ledger` answers 404 before anything
+    is read (the stub's 501 is gone with the stub)."""
     seen: list[object] = []
 
     async def off(_tenant: object, f: object) -> bool:
         seen.append(f)
         return False
 
-    async def on(_tenant: object, _f: object) -> bool:
-        return True
-
     monkeypatch.setattr(contract, "flag_enabled", off)
     with pytest.raises(NotFound):
-        await contract._stub(_ctx(), flag)  # pyright: ignore[reportPrivateUsage] -- the gate
-    assert seen == [flag]
-    monkeypatch.setattr(contract, "flag_enabled", on)
-    with pytest.raises(NotImplementedYet):
-        await contract._stub(_ctx(), flag)  # pyright: ignore[reportPrivateUsage] -- the gate
+        await contract.ledger_pull_route(
+            uuid.uuid4(),
+            contract.LedgerPullIn(period_end=date(2026, 12, 31)),
+            _ctx(),
+            "pull-1",
+        )
+    assert seen == [CONNECTIONS_LIVE_LEDGER]
 
 
 def test_both_flags_are_off_by_default() -> None:

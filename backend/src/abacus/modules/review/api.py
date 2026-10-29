@@ -51,6 +51,7 @@ from abacus.modules.review.gates import (
 from abacus.modules.review.gates import SUBSCRIPTIONS as GATE_SUBSCRIPTIONS
 from abacus.modules.review.hashing import Json, NotCanonical, canonical_json, content_hash
 from abacus.modules.review.issue_refs import issue_engagement
+from abacus.modules.review.issue_resolutions import register_client_request_sender
 from abacus.modules.review.matrix import review_gate
 from abacus.modules.review.mfa import MfaRequired
 from abacus.modules.review.notes import notes_for, open_note_counts
@@ -235,6 +236,7 @@ __all__ = [
     "record_text_reads",
     "record_value",
     "register_checkpoint_proposal_hooks",
+    "register_client_request_sender",
     "register_decision_kind",
     "register_field_citations",
     "register_field_owner",

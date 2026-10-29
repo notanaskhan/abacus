@@ -18,7 +18,12 @@ const local = `http://localhost:${String(5173 + offset)}`;
 // adapter for the project (`metadata.harness`, e2e/harness/adapters.ts) signs the persona in.
 // fullstack is `make dev` + `make seed-demo` on the local stack, never a hosted database; staging
 // and canary run only where their URL is set (the nightly and release jobs, F-04-T28).
-const JOURNEY_FILES = ["**/journeys/**/*.spec.ts", "**/harness/**/*.spec.ts"];
+// P-03-T25: a `*.fullstack.spec.ts` outside journeys/ (e2e/trust) runs on the harness projects too.
+const JOURNEY_FILES = [
+  "**/journeys/**/*.spec.ts",
+  "**/harness/**/*.spec.ts",
+  "**/*.fullstack.spec.ts",
+];
 const journeyUse = {
   ...devices["Desktop Chrome"],
   viewport: { width: 1440, height: 900 },

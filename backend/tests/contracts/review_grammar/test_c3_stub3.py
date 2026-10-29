@@ -165,6 +165,15 @@ LIVE: Final = frozenset(
         "field_edit_route",
         "field_reference_route",
         "field_tick_route",
+        # P-04-T31 (DEC-828): resolutions, fix instructions and send-to-client
+        # (tests/integration/backfill/test_p04t31_issues_part2.py).
+        "issue_resolve_route",
+        "issue_verify_route",
+        "issue_reopen_route",
+        "issue_not_applicable_route",
+        "issue_send_to_client_route",
+        "fix_instructions_route",
+        "fix_instructions_bulk_route",
     }
 )
 

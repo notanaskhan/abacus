@@ -4,7 +4,8 @@
 // the next morning, v4 effective Sep 15. T03's frames: `band` (Grace Holloway: the client-data
 // opt-in, agent stages, Pause all agents), `awaiting` (Daniel Reyes: "Awaiting approval · Daniel
 // Reyes") and `real_firm` (Auto mode off and locked). c and f (the dormant policy principal,
-// fixture-only) arrive with the screen (G-02-T25); k is I-03-T37's.
+// fixture-only) arrived with the screen (G-02-T25): the contract serves them as a; the screen opens
+// the confirm (c) or shows the principal on (f) without a write. k is I-03-T37's.
 
 import { defineScenarios } from "../../app-core/fixture-mode";
 import { type AiPolicyOptions, aiPolicyHandlers } from "../handlers/ai-policy";
@@ -25,8 +26,10 @@ function at(state: string, persona: string, options: AiPolicyOptions = {}, clock
 export const scenarios = defineScenarios({
   a: at("a", "margaret-okonkwo"),
   b: at("b", "margaret-okonkwo", { view: "b" }),
+  c: at("c", "margaret-okonkwo"),
   d: at("d", "margaret-okonkwo", { view: "b" }),
   e: at("e", "hannah-leclerc", { view: "read_only" }),
+  f: at("f", "margaret-okonkwo"),
   g: at("g", "margaret-okonkwo", { view: "g" }, AI_POLICY_G),
   h: at("h", "margaret-okonkwo"),
   i: at("i", "margaret-okonkwo"),
@@ -37,3 +40,26 @@ export const scenarios = defineScenarios({
 });
 
 export type Adm04State = keyof typeof scenarios;
+
+/** What each state opens with (ADM-04 artboards): the sheet (d), the row-5 gate popover (i), the
+ * version history (j), the principal confirm (c), the principal on (f), Auto mode in view (h). */
+export const OPENS: Partial<
+  Record<
+    Adm04State,
+    {
+      sheet?: boolean;
+      popover?: number;
+      history?: boolean;
+      confirm?: boolean;
+      principalOn?: boolean;
+      scrollTo?: "auto";
+    }
+  >
+> = {
+  c: { confirm: true },
+  d: { sheet: true },
+  f: { principalOn: true },
+  h: { scrollTo: "auto" },
+  i: { popover: 5 },
+  j: { history: true },
+};

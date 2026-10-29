@@ -139,7 +139,7 @@ FieldValue = Callable[[TenantContext, UUID, str], Awaitable[dict[str, object] | 
 FieldEdit = Callable[
     ["UnitOfWork", "AuthContext", UUID, str, dict[str, object]], Awaitable[str | None]
 ]
-FixRunner = Callable[[TenantContext, UUID], Awaitable[None]]
+FixRunner = Callable[[TenantContext, UUID], Awaitable[UUID]]  # the agent run it started
 
 
 # --- P-04-T23 (ADR-160 clause 8): what a decision kind's provider computes, in code.
@@ -404,12 +404,18 @@ def register_fix_runner(issue_kind: str, runner: FixRunner) -> None:
     )
 
 
-async def run_fix(tenant: TenantContext, issue_kind: str, issue_id: UUID) -> None:
-    """A registered runner applies the fix; with none, the fix is unavailable (503)."""
+def fix_runner_registered(issue_kind: str) -> bool:
+    """P-04-T31: whether a runner fixes this kind (no runner: 409 `fix_runner_unavailable`)."""
+    return issue_kind in _FIX_RUNNERS
+
+
+async def run_fix(tenant: TenantContext, issue_kind: str, issue_id: UUID) -> UUID:
+    """A registered runner applies the fix and answers its agent run; with none, the fix is
+    unavailable (503)."""
     runner = _FIX_RUNNERS.get(issue_kind)
     if runner is None:
         raise ServiceUnavailable
-    await runner(tenant, issue_id)
+    return await runner(tenant, issue_id)
 
 
 # --- P-04-T32 (SHL-16, DEC-804): a checkpoint that came from an SHL-10 proposal is decided

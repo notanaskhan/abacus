@@ -32,17 +32,19 @@ scope or copy ever offers a write (DF-19, AC-38): scopes are read scopes only.
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Path
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import CONNECTIONS_LIVE_LEDGER, CONNECTIONS_PORTAL_V2
+from abacus.kernel._flags import CONNECTIONS_LIVE_LEDGER
 from abacus.kernel._statuses import IntegrationStatus, TrialBalanceLabelStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
-from abacus.kernel.flags import Flag, flag_enabled
+from abacus.kernel.errors import NotFound
+from abacus.kernel.flags import flag_enabled
+from abacus.kernel.uow.idempotency import idempotent
+from abacus.modules.connections.api import check_ledger_pull, pull_ledger
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 from abacus.modules.integrations.ports import IntegrationCategory
 
@@ -238,12 +240,6 @@ class LedgerPullIn(BaseModel):
     )
 
 
-async def _stub(ctx: AuthContext, flag: Flag = CONNECTIONS_PORTAL_V2) -> NoReturn:
-    if not await flag_enabled(ctx.tenant, flag):
-        raise NotFound(flag.name)
-    raise NotImplementedYet
-
-
 portal_router = AbacusRouter(prefix="/v1/portal", tags=["connections"])
 firm_router = AbacusRouter(prefix="/v1", tags=["connections"])
 
@@ -253,11 +249,28 @@ firm_router = AbacusRouter(prefix="/v1", tags=["connections"])
     action="ledger.pull",
     response_model=SyncRunRefOut,
     status_code=202,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def ledger_pull_route(
     engagement_id: UUID, body: LedgerPullIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> SyncRunRefOut:
     """*Pull latest* (A-02-T30): a `sync_runs` row with trigger `on_demand`; 409
     `connection_needs_reauth` or `connector_not_available`. Audited `ledger.pull_requested`."""
-    await _stub(ctx, CONNECTIONS_LIVE_LEDGER)
+    if not await flag_enabled(ctx.tenant, CONNECTIONS_LIVE_LEDGER):
+        raise NotFound(CONNECTIONS_LIVE_LEDGER.name)
+    await check_ledger_pull(ctx, engagement_id)
+
+    async def run() -> tuple[int, dict[str, object]]:
+        made = await pull_ledger(ctx, engagement_id, body.period_end, body.label.value)
+        return 202, SyncRunRefOut(
+            sync_run_id=made.run_id, status=cast(SyncStatus, made.status)
+        ).model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="ledger.pull",
+        key=idempotency_key,
+        body={"engagement_id": str(engagement_id), **body.model_dump(mode="json")},
+        run=run,
+    )
+    return SyncRunRefOut.model_validate(stored.body)

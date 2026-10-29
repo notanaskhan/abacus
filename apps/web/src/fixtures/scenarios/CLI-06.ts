@@ -275,8 +275,7 @@ export const OPENS: Readonly<
 };
 
 function capabilities(persona: string | undefined): CapabilitiesOut {
-  const base = capabilitiesFor(seed, persona ?? "grace-holloway");
-  return { ...base, flags: { ...base.flags, "clients.v2": true } };
+  return capabilitiesFor(seed, persona ?? "grace-holloway");
 }
 
 const CLOCK_G = "2026-09-08T14:04:00-05:00";

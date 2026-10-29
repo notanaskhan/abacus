@@ -36,7 +36,7 @@ def _stale(ctx: AuthContext) -> bool:
 
 async def authorise_record(ctx: AuthContext, action: str, resource: Resource) -> None:
     """The matrix row (role, independence, walls, archived, fresh MFA), then a live person."""
-    if ctx.client or ctx.is_support or ctx.tenant.actor_kind != "human":
+    if ctx.tenant.actor_kind != "human" or ctx.client or ctx.is_support:
         raise Forbidden(action, "role")
     try:
         await authorise(ctx, action, resource)

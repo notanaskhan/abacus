@@ -2229,6 +2229,10 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_tie_out_schema.py",
             "tests/integration/test_integrations_schema.py",
             "tests/integration/test_entity_connections_schema.py",
+            # N-02-T07 (S14): 0292's round trip; seeds as the superuser and proves the app
+            # role's refusals with the tenant and actor set by hand.
+            "tests/integration/test_n02t07_signatures_schema.py",
+            "tests/integration/test_n01t07_firm_intake_schema.py",  # N-01-T07: 0293
             # I-01-T04, K-01-T05 (S11): the human-only snooze and reassignment rows, the card's
             # reassign guard and the frozen methodology content, proved as the app role with the
             # tenant and actor set by hand, as tenant_session sets them.
@@ -2369,6 +2373,8 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus_tools/agent_stage.py",
             # Q-01-T45: writes an entitlement and its audit event as the operator.
             "src/abacus_tools/tenants.py",
+            # DEC-1011: binds a synthetic persona and audits it as the operator, firm by firm.
+            "src/abacus_tools/staging_personas.py",
             # F-04-T13: bootstrap writes carry the event's tenant, actor and business time.
             "src/abacus_tools/synthetic/scenarios/brightwater_hale/loader.py",
             "tests/integration/test_tenancy.py",
@@ -2377,6 +2383,10 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_schema_check_db.py",
             # P-04-T13: the actor GUCs the human-only CHECKs bind, set as a unit of work sets them
             "tests/integration/test_p04t13_review_schema_independent.py",
+            # N-02-T08: the retention policy's version trigger reads the tenant a session sets.
+            "tests/integration/backfill/test_n02t08_record_import.py",
+            # Q-04-T008: back-dates seeded audit rows under the actor the immutability guard reads.
+            "tests/integration/backfill/test_q04t008_pilot_metrics.py",
             # S13 schema tests: the AI-policy guard (G-02-T23) and pilot grants (Q-04-T007).
             "tests/integration/test_g02t23_autonomy_policy_migration.py",
             "tests/integration/test_q04t007_pilot_enrolments.py",
@@ -2387,6 +2397,10 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_tie_out_schema.py",
             "tests/integration/test_integrations_schema.py",
             "tests/integration/test_entity_connections_schema.py",
+            # N-02-T07 (S14): 0292's round trip; seeds as the superuser and proves the app
+            # role's refusals with the tenant and actor set by hand.
+            "tests/integration/test_n02t07_signatures_schema.py",
+            "tests/integration/test_n01t07_firm_intake_schema.py",  # N-01-T07: 0293
             # I-01-T04, K-01-T05 (S11): the human-only snooze and reassignment rows, the card's
             # reassign guard and the frozen methodology content, proved as the app role with the
             # tenant and actor set by hand, as tenant_session sets them.
@@ -2395,6 +2409,11 @@ RULES: list[Rule | TreeRule] = [
             # Q-03-T028: plans each list as the app role with the firm's tenant set by hand, as
             # tenant_session sets it, so row-level security adds the tenant predicate.
             "tests/integration/test_q03t028_plan_tests.py",
+            # N-02-T08, Q-04-T008 (S14): seed rows whose triggers read the tenant (the retention
+            # policy's version, a back-dated metric row), set in the same statement as
+            # tenant_session sets it.
+            "tests/integration/backfill/test_n02t08_record_import.py",
+            "tests/integration/backfill/test_q04t008_pilot_metrics.py",
             "tests/unit/kernel/test_migration_helpers.py",
             "tests/unit/quality/test_banned_patterns.py",
         ),

@@ -1,17 +1,14 @@
 import { FlagOffState } from "@abacus/ui";
 import { createRoute, useNavigate } from "@tanstack/react-router";
 import type { JSX } from "react";
-import { FeatureGate } from "../../app-core/flags";
 import { AREAS, type Area } from "../../app-core/nav-areas";
 import { appRoute, lazyScreen } from "../root";
 
-// The bar's landings (P-01-T02; SHL-01 AC 1.1.5). Engagements opens the legacy engagements index
-// until ENG-01 is built. An area whose landing screen has no route yet (Tax Returns before T-02,
+// The bar's landings (P-01-T02; SHL-01 AC 1.1.5). Engagements opens ENG-01. An area whose landing screen has no route yet (Tax Returns before T-02,
 // and so on) still has its path, and shows F-05-T19's flag-off state there: never a 404, a blank
 // page or a hidden item. When the landing screen is routed its route replaces this one.
 
-const Engagements = lazyScreen(async () => (await import("../../legacy/Engagements")).Engagements);
-// ENG-01 (P-07-T27) behind `engagements.v2`; the legacy index answers while it is off.
+// ENG-01 (P-07-T27), for every firm since P-07-T59 retired `engagements.v2` (DEC-905).
 const EngagementsIndex = lazyScreen(
   async () => (await import("../../screens/ENG-01")).EngagementsIndex,
 );
@@ -23,13 +20,11 @@ export const engagementsIndexRoute = createRoute({
     const navigate = useNavigate();
     return (
       <div className="flex min-h-0 flex-1 flex-col">
-        <FeatureGate flag="engagements.v2" fallback={<Engagements />}>
-          <EngagementsIndex
-            onOpen={(engagementId) => {
-              void navigate({ to: "/engagements/$engagementId", params: { engagementId } });
-            }}
-          />
-        </FeatureGate>
+        <EngagementsIndex
+          onOpen={(engagementId) => {
+            void navigate({ to: "/engagements/$engagementId", params: { engagementId } });
+          }}
+        />
       </div>
     );
   },
