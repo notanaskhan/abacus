@@ -18,6 +18,8 @@ throwaway containers, with their activities replaced by stubs (replay never runs
   DEC-453);
 - `auth-session-purge-v1-purged.json`: one purge pass that deleted six staff sessions (G-02-T14).
 - `export-expiry-v1-swept.json`: one export expiry sweep that expired four exports (A-01-T22).
+- `home-activity-prune-v1-pruned.json`: one Home client-activity prune that deleted five rows
+  (I-01-T12).
 Each run is started the way its Schedule starts it: no argument, its own id. A history already on
 disk is never overwritten: only the missing ones are recorded.
 """
@@ -57,6 +59,7 @@ from abacus.modules.identity.api import (
 )
 from abacus.modules.notifications.api import NOTIFICATION_PURGE_ID, NotificationPurgeWorkflow
 from abacus.modules.platform.api import SPEND_ANOMALY_ID, SpendAnomalyWorkflow
+from abacus.modules.practice.api import HOME_ACTIVITY_PRUNE_ID, HomeActivityPruneWorkflow
 from abacus_tools.stack import Stack, connect, run_with_stack
 from abacus_tools.workflows.histories import decoded_and_scrubbed
 
@@ -73,6 +76,7 @@ _FILES = (
     "audit-labels-v1-indexed.json",
     "auth-session-purge-v1-purged.json",
     "export-expiry-v1-swept.json",
+    "home-activity-prune-v1-pruned.json",
 )
 
 
@@ -131,6 +135,11 @@ async def _expire() -> int:
     return 4
 
 
+@activity.defn(name="practice.prune_home_activity")
+async def _prune_activity() -> int:
+    return 5
+
+
 async def _run(client: Client, workflow: type, workflow_id: str) -> WorkflowHistory:
     handle: WorkflowHandle[object, int] = await client.start_workflow(
         workflow.run,  # pyright: ignore[reportUnknownArgumentType,reportUnknownMemberType] -- a @workflow.defn class
@@ -158,11 +167,13 @@ async def _record(out: Path, stack: Stack) -> None:
             AuditLabelIndexerWorkflow,
             AuthSessionPurgeWorkflow,
             ExportExpirySweepWorkflow,
+            HomeActivityPruneWorkflow,
         ],
         activities=[
             *(_flag, _purge, _drain, _sweep, _partitions, _seal, _verify, _anchor, _labels),
             _purge_sessions,
             _expire,
+            _prune_activity,
         ],
     ):
         runs = (
@@ -177,6 +188,7 @@ async def _record(out: Path, stack: Stack) -> None:
             (AuditLabelIndexerWorkflow, LABELS_ID, _FILES[8]),
             (AuthSessionPurgeWorkflow, AUTH_SESSION_PURGE_ID, _FILES[9]),
             (ExportExpirySweepWorkflow, EXPORT_EXPIRY_ID, _FILES[10]),
+            (HomeActivityPruneWorkflow, HOME_ACTIVITY_PRUNE_ID, _FILES[11]),
         )
         for workflow, workflow_id, name in runs:
             if (out / name).exists():
