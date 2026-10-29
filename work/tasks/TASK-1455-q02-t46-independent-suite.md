@@ -75,5 +75,6 @@ Rollback: delete the five files.
   packages to what the approver may read, and the suite's approver reads neither engagement).
   The strict xfail stays, now citing ED-290 for triage.
 - 2026-10-29: ED-290 decided: DEC-640 stands; the fixture puts the named partner on both
-  engagements and the T47 case loses its xfail. Not run (build-only round); confirm at the next
-  targeted pass.
+  engagements. Run: both engagements become readable audits but are omitted `no_binders` (the
+  seeded sites have no asked PBC binder), so the strict xfail stays with that reason. Next: seed
+  one asked PBC binder per engagement.
