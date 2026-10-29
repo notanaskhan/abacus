@@ -1,5 +1,5 @@
 import { publishPortalSettings } from "@abacus/api-client";
-import { AppShell } from "@abacus/ui";
+import { AppShell, toast } from "@abacus/ui";
 import { type JSX, useEffect, useState } from "react";
 import { installFixtureMode } from "../app-core/fixture-mode";
 import { useSession } from "../app-core/session";
@@ -65,6 +65,14 @@ import {
   scenarios as sig01Scenarios,
 } from "./SIG-01/scenarios";
 import { INB01 } from "./INB-01";
+import { INB02 } from "./INB-02";
+import { COPY as INB02_COPY } from "./INB-02/copy";
+import {
+  type Inb02State,
+  STATES as INB02_STATES,
+  messageOf as inb02MessageOf,
+  scenarios as inb02Scenarios,
+} from "./INB-02/scenarios";
 import {
   OPENS as INB01_OPENS,
   STATES as INB01_STATES,
@@ -842,6 +850,59 @@ function Inb01Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("INB-01", { title: "Inbox", Component: Inb01Artboard });
+
+// N-01-T15: INB-02 · Attachment triage & File-to, the O3 sheet over INB-01 (a–g, a2; DEC-1062).
+function Inb02Frame({ state }: { state: Inb02State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/inbox" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  const message = inb02MessageOf(state);
+  useEffect(() => {
+    if (state !== "f") return;
+    toast.show({ kind: "success", text: INB02_COPY.toast(1, 1, 0, ["Kevin Osei"]) });
+  }, [state]);
+  return (
+    <div data-artboard={state}>
+      <INB01
+        frame
+        toolbar={bar.toolbar}
+        initialThread={INB01_OPENS[state === "f" ? "d" : "a"] ?? null}
+      />
+      {state !== "f" && (
+        <INB02
+          messageId={message.id}
+          subject={message.subject}
+          sender={message.sender}
+          startDirty={state === "a2"}
+          onClose={() => undefined}
+        />
+      )}
+    </div>
+  );
+}
+
+function Inb02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Inb02State = INB02_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      inb02Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Inb02Frame key={state} state={state} /> : null;
+}
+
+registerScreen("INB-02", { title: "Attachment triage & File-to", Component: Inb02Artboard });
 
 function Adm04Frame({ state }: { state: Adm04State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
