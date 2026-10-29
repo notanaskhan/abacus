@@ -1,0 +1,90 @@
+# Nightly connector conformance (A-02-T32; ADR-044; chapter 10 §10.7.4). One suite, two targets:
+# backend/tests/connectors/quickbooks_online runs against the fake (it also runs on every pull
+# request, in the unit set) and against Intuit's sandbox company. The outcomes are recorded as the
+# `connector-conformance` artifact, which the weekly quality report reads: a sandbox failure while
+# the fake passes is a drifted fake, and the journeys that depend on it read "unverified".
+#
+# The repository is public: the sandbox run's pytest output stays on the runner (tracebacks could
+# carry a rotated token), only the outcome word leaves it. Without the sandbox secrets the sandbox
+# outcome is "skipped", which proves nothing either way. Nothing is built, pushed or deployed.
+# Third-party actions are pinned to full commit SHAs.
+name: connectors-nightly
+
+on:
+  schedule:
+    - cron: "17 9 * * *" # daily, 3:17 CT (4:17 in daylight time), after fuzz-nightly
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: connectors-nightly
+  cancel-in-progress: false
+
+jobs:
+  quickbooks-online:
+    name: QuickBooks Online conformance (fake and sandbox)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Install the backend (no build)
+        run: cd backend && uv sync --frozen
+      - name: Against the fake
+        id: fake
+        working-directory: backend
+        run: |
+          if uv run pytest tests/connectors/quickbooks_online -k "not sandbox" -p no:randomly -q; then
+            echo "outcome=passed" >> "$GITHUB_OUTPUT"
+          else
+            echo "outcome=failed" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Against the sandbox
+        id: sandbox
+        working-directory: backend
+        env:
+          ABACUS_QBO_SANDBOX_CLIENT_ID: ${{ secrets.QBO_SANDBOX_CLIENT_ID }}
+          ABACUS_QBO_SANDBOX_CLIENT_SECRET: ${{ secrets.QBO_SANDBOX_CLIENT_SECRET }}
+          ABACUS_QBO_SANDBOX_REFRESH_TOKEN: ${{ secrets.QBO_SANDBOX_REFRESH_TOKEN }}
+          ABACUS_QBO_SANDBOX_REALM_ID: ${{ secrets.QBO_SANDBOX_REALM_ID }}
+        run: |
+          if [ -z "$ABACUS_QBO_SANDBOX_CLIENT_ID" ] || [ -z "$ABACUS_QBO_SANDBOX_REFRESH_TOKEN" ]; then
+            echo "outcome=skipped" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if uv run pytest tests/connectors/quickbooks_online -k sandbox -p no:randomly -q \
+              --tb=no -p no:cacheprovider > "$RUNNER_TEMP/sandbox.log" 2>&1; then
+            echo "outcome=passed" >> "$GITHUB_OUTPUT"
+          else
+            echo "outcome=failed" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Record the outcomes
+        working-directory: backend
+        env:
+          FAKE: ${{ steps.fake.outputs.outcome }}
+          SANDBOX: ${{ steps.sandbox.outputs.outcome }}
+        run: |
+          OUT="$RUNNER_TEMP/connector-conformance"
+          mkdir -p "$OUT"
+          uv run python -m abacus_tools.quality.connector_conformance record \
+            --provider quickbooks_online --fake "$FAKE" --sandbox "$SANDBOX" \
+            --out "$OUT/connectors.json"
+          echo "QuickBooks Online: fake $FAKE, sandbox $SANDBOX" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: connector-conformance
+          path: ${{ runner.temp }}/connector-conformance
+          retention-days: 30
+      - name: Fail the night on a failed target
+        env:
+          FAKE: ${{ steps.fake.outputs.outcome }}
+          SANDBOX: ${{ steps.sandbox.outputs.outcome }}
+        run: |
+          if [ "$FAKE" = failed ] || [ "$SANDBOX" = failed ]; then exit 1; fi

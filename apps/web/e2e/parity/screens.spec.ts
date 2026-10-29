@@ -18,6 +18,7 @@ import {
   pngSize,
   readManifest,
   screenUrl,
+  masked,
   shootWhole,
 } from "../visual/support";
 import {
@@ -100,10 +101,18 @@ async function measure(
   // (a portal frame on its presentation ground, R-01-T31); otherwise the board is the window.
   const selector = parity[row.baselineKey]?.selector ?? `[data-artboard="${row.state}"]`;
   const board = page.locator(selector).first();
-  const actual = await shootWhole(page, board);
-  const { width, height } = pngSize(actual);
+  // Masks paint the same boxes out of the render and its baseline (chapter 04's harness masks).
+  const shot = await masked(
+    page,
+    board,
+    parity[row.baselineKey]?.mask,
+    await shootWhole(page, board),
+    name,
+    (n) => testInfo.snapshotPath(n),
+  );
+  const { width, height } = pngSize(shot.actual);
   const tier = TIERS[row.tier];
-  const counted = diffPixels(actual, name, tier.threshold);
+  const counted = diffPixels(shot.actual, shot.name, tier.threshold);
   // A different size fails a blocking row at any tier, as in parity.spec.ts.
   if (typeof counted === "string") return judge(row, 100, 0, counted);
   const percent = Math.round((counted / (width * height)) * 10_000) / 100;

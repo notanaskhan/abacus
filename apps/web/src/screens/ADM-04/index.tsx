@@ -144,7 +144,7 @@ function GateRow({ g, open }: { g: GateRowOut; open: boolean }): JSX.Element {
         </span>
       </span>
     ) : (
-      <span className="flex items-center gap-[4px] text-ink-4">
+      <span className="flex items-center gap-[4px] text-ink-3">
         {COPY.gates.notAllowed}
         <Icon name="lock" size={12} />
       </span>

@@ -1,0 +1,478 @@
+{
+ "_comment": "N-01-T11: the docs@ mailbox at E0 (INB-01 rows 1-17, newest first), from the File Kit's W0 dataset (packages/ui/src/specimens/tpl08-data.ts). 'client' is the scenario's client and 'chip' the name INB-01 shows; 'messages' are the ones INB-01 reads (oldest first); attachment states are W0's: wait, new, filed, ignored.",
+ "threads": [
+  {
+   "key": "feld",
+   "subject": "Re: 2025 tax documents",
+   "sender": "claire.feld@gmail.com",
+   "state": "new",
+   "client": "Jonah & Claire Feld",
+   "chip": "Jonah & Claire Feld",
+   "days_ago": 0,
+   "messages": [
+    {
+     "key": "feld-b",
+     "subject": "2025 tax documents",
+     "sender": "claire.feld@gmail.com",
+     "days_ago": 42,
+     "body": "Hi Kevin, attached are my 2025 W-2 from Mercer Hill and our 1098 for the co-op loan. Jonah will send the Halvard 1099 separately. Thanks, Claire",
+     "attachments": [
+      {
+       "name": "Claire_Feld_2025_W2_MercerHill.pdf",
+       "state": "filed"
+      },
+      {
+       "name": "Claire_Feld_2025_1098_HudsonMutual.pdf",
+       "state": "filed"
+      }
+     ]
+    },
+    {
+     "key": "feld-a",
+     "subject": "Re: 2025 tax documents",
+     "sender": "claire.feld@gmail.com",
+     "days_ago": 0,
+     "body": "Hi Kevin, here are our health insurance forms from Mercer Hill. I wasn’t sure which year you needed, so I sent both. Thanks, Claire",
+     "attachments": [
+      {
+       "name": "Feld_1095C_2025.pdf",
+       "state": "wait"
+      },
+      {
+       "name": "Feld_1095C_2024.pdf",
+       "state": "wait"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "shah",
+   "subject": "Schedule C expenses — 2025",
+   "sender": "meera.shah@shahadvisory.com",
+   "state": "wait",
+   "client": "Meera Shah",
+   "chip": "Meera Shah",
+   "days_ago": 0,
+   "messages": [
+    {
+     "key": "shah",
+     "subject": "Schedule C expenses — 2025",
+     "sender": "meera.shah@shahadvisory.com",
+     "days_ago": 0,
+     "body": "Hi Kevin, attached is the 2025 expense summary for my advisory practice. Thanks, Meera",
+     "attachments": [
+      {
+       "name": "Shah_2025_ScheduleC_Expenses.pdf",
+       "state": "wait"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "stein",
+   "subject": "Re: IRS letter — the 1099s you asked for",
+   "sender": "harold.stein@outlook.com",
+   "state": "wait",
+   "client": "Harold Stein",
+   "chip": "Harold Stein",
+   "days_ago": 0,
+   "messages": [
+    {
+     "key": "stein",
+     "subject": "Re: IRS letter — the 1099s you asked for",
+     "sender": "harold.stein@outlook.com",
+     "days_ago": 0,
+     "body": "Hi Kevin, here are the 1099s you asked for, and the IRS letter again in case you need it. Harold",
+     "attachments": [
+      {
+       "name": "Stein_1099B_2024_Corrected.pdf",
+       "state": "wait"
+      },
+      {
+       "name": "Stein_1099DIV_2024.pdf",
+       "state": "wait"
+      },
+      {
+       "name": "Stein_CP2000_2024_copy.pdf",
+       "state": "wait"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "copper",
+   "subject": "Receipts for August Amex charges",
+   "sender": "ben.ashby@copperleafcoffee.com",
+   "state": "wait",
+   "client": "Copperleaf Coffee Roasters, Inc.",
+   "chip": "Copperleaf Coffee Roasters, Inc.",
+   "days_ago": 0,
+   "messages": [
+    {
+     "key": "copper",
+     "subject": "Receipts for August Amex charges",
+     "sender": "ben.ashby@copperleafcoffee.com",
+     "days_ago": 0,
+     "body": "Receipts for the three August Amex charges you asked about.",
+     "attachments": [
+      {
+       "name": "Amex_Receipt_Aug04.pdf",
+       "state": "wait"
+      },
+      {
+       "name": "Amex_Receipt_Aug12.pdf",
+       "state": "wait"
+      },
+      {
+       "name": "Amex_Receipt_Aug26.pdf",
+       "state": "wait"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "north",
+   "subject": "Census corrections for the 401(k) audit",
+   "sender": "dana.kowalski@northwindrobotics.com",
+   "state": "wait",
+   "client": "Northwind Robotics, Inc.",
+   "chip": "Northwind Robotics, Inc.",
+   "days_ago": 0,
+   "messages": [
+    {
+     "key": "north",
+     "subject": "Census corrections for the 401(k) audit",
+     "sender": "dana.kowalski@northwindrobotics.com",
+     "days_ago": 0,
+     "body": "Corrected census files with the hire dates fixed.",
+     "attachments": [
+      {
+       "name": "Northwind_Census_PY2025_v2.pdf",
+       "state": "wait"
+      },
+      {
+       "name": "Northwind_Census_Changes.pdf",
+       "state": "wait"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "kowal",
+   "subject": "Re: signing our 8879",
+   "sender": "irene.kowal@gmail.com",
+   "state": "wait",
+   "client": "Thomas & Irene Kowal",
+   "chip": "Irene Kowal",
+   "days_ago": 1,
+   "messages": [
+    {
+     "key": "kowal",
+     "subject": "Re: signing our 8879",
+     "sender": "irene.kowal@gmail.com",
+     "days_ago": 1,
+     "body": "Signed copies attached.",
+     "attachments": [
+      {
+       "name": "Kowal_8879_Signed.pdf",
+       "state": "wait"
+      },
+      {
+       "name": "Kowal_IL-8453_Signed.pdf",
+       "state": "wait"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "collins",
+   "subject": "Avery’s corrected W-2",
+   "sender": "wren.collins@icloud.com",
+   "state": "wait",
+   "client": "Wren & Avery Collins",
+   "chip": "Wren Collins",
+   "days_ago": 1,
+   "messages": [
+    {
+     "key": "collins",
+     "subject": "Avery’s corrected W-2",
+     "sender": "wren.collins@icloud.com",
+     "days_ago": 1,
+     "body": "Avery’s W-2 from the summer job, front and back.",
+     "attachments": [
+      {
+       "name": "Avery_W2_Front.pdf",
+       "state": "wait"
+      },
+      {
+       "name": "Avery_W2_Back.pdf",
+       "state": "wait"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "mendez",
+   "subject": "Documents for 2025",
+   "sender": "gloria.mendez@yahoo.com",
+   "state": "wait",
+   "client": "Gloria Mendez",
+   "chip": "Gloria Mendez",
+   "days_ago": 1,
+   "messages": [
+    {
+     "key": "mendez",
+     "subject": "Documents for 2025",
+     "sender": "gloria.mendez@yahoo.com",
+     "days_ago": 1,
+     "body": "Hi Kevin, here are two more documents for our 2025 return. Gloria",
+     "attachments": [
+      {
+       "name": "Mendez_2025_1099-R.pdf",
+       "state": "wait"
+      },
+      {
+       "name": "Mendez_2025_1098-T.pdf",
+       "state": "wait"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "sound",
+   "subject": "Invoice SE-1187",
+   "sender": "billing@soundelectricco.com",
+   "state": "new",
+   "client": null,
+   "chip": null,
+   "days_ago": 2,
+   "messages": [
+    {
+     "key": "sound",
+     "subject": "Invoice SE-1187",
+     "sender": "billing@soundelectricco.com",
+     "days_ago": 2,
+     "body": "Please find invoice SE-1187 attached. Thank you for your business.",
+     "attachments": [
+      {
+       "name": "SoundElectric_INV-SE-1187.pdf",
+       "state": "new"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "oster",
+   "subject": "Brokerage statement",
+   "sender": "ben.osterberg@gmail.com",
+   "state": "wait",
+   "client": "Benjamin Osterberg",
+   "chip": "Benjamin Osterberg",
+   "days_ago": 2,
+   "messages": [
+    {
+     "key": "oster",
+     "subject": "Brokerage statement",
+     "sender": "ben.osterberg@gmail.com",
+     "days_ago": 2,
+     "body": "Attached is the year-end brokerage statement. Ben",
+     "attachments": [
+      {
+       "name": "Osterberg_2025_Brokerage_Statement.pdf",
+       "state": "wait"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "okonjo",
+   "subject": "Fwd: my partnership K-1",
+   "sender": "juliet.okonjo@gmail.com",
+   "state": "wait",
+   "client": "Juliet Okonjo",
+   "chip": "Juliet Okonjo",
+   "days_ago": 2,
+   "messages": [
+    {
+     "key": "okonjo",
+     "subject": "Fwd: my partnership K-1",
+     "sender": "juliet.okonjo@gmail.com",
+     "days_ago": 2,
+     "body": "Forwarding the K-1 I received from the partnership. Juliet",
+     "attachments": [
+      {
+       "name": "Okonjo_2025_K-1.pdf",
+       "state": "wait"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "iyer",
+   "subject": "NY notice and 1099s",
+   "sender": "priyanka.iyer@gmail.com",
+   "state": "wait",
+   "client": "Priyanka & Sam Iyer",
+   "chip": "Priyanka Iyer",
+   "days_ago": 3,
+   "messages": [
+    {
+     "key": "iyer",
+     "subject": "NY notice and 1099s",
+     "sender": "priyanka.iyer@gmail.com",
+     "days_ago": 3,
+     "body": "New York sent a notice, and here are the rest of my 1099s.",
+     "attachments": [
+      {
+       "name": "NY_Notice_DTF-160.pdf",
+       "state": "wait"
+      },
+      {
+       "name": "Iyer_2025_1099-B.pdf",
+       "state": "wait"
+      },
+      {
+       "name": "Iyer_2025_1099-INT.pdf",
+       "state": "wait"
+      },
+      {
+       "name": "Iyer_2025_1099-DIV.pdf",
+       "state": "wait"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "summit",
+   "subject": "Draft Form 5500 — Northwind Robotics 401(k) Plan",
+   "sender": "j.ortega@summitplanadmin.com",
+   "state": "new",
+   "client": null,
+   "chip": null,
+   "days_ago": 3,
+   "messages": [
+    {
+     "key": "summit",
+     "subject": "Draft Form 5500 — Northwind Robotics 401(k) Plan",
+     "sender": "j.ortega@summitplanadmin.com",
+     "days_ago": 3,
+     "body": "Attached is the draft Form 5500 and Schedule H for your review.",
+     "attachments": [
+      {
+       "name": "Northwind_Draft_5500_ScheduleH.pdf",
+       "state": "new"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "whitley",
+   "subject": "Re: estimated payments",
+   "sender": "dana.whitley@gmail.com",
+   "state": "filed",
+   "client": "Marcus & Dana Whitley",
+   "chip": "Marcus & Dana Whitley",
+   "days_ago": 3,
+   "messages": [
+    {
+     "key": "whitley",
+     "subject": "Re: estimated payments",
+     "sender": "dana.whitley@gmail.com",
+     "days_ago": 3,
+     "body": "Confirmations for the September estimated payments.",
+     "attachments": [
+      {
+       "name": "Whitley_2026_Q3_Estimates.pdf",
+       "state": "filed"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "varga",
+   "subject": "Donation receipt (duplicate)",
+   "sender": "elena.varga@me.com",
+   "state": "ignored",
+   "client": "Elena Varga",
+   "chip": "Elena Varga",
+   "days_ago": 4,
+   "messages": [
+    {
+     "key": "varga",
+     "subject": "Donation receipt (duplicate)",
+     "sender": "elena.varga@me.com",
+     "days_ago": 4,
+     "body": "Sending the donation receipt again in case the first one didn’t arrive.",
+     "attachments": [
+      {
+       "name": "Varga_Donation_Receipt.pdf",
+       "state": "ignored"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "ferris",
+   "subject": "Signed consent?",
+   "sender": "kai.ferris@protonmail.com",
+   "state": "new",
+   "client": null,
+   "chip": null,
+   "days_ago": 5,
+   "messages": [
+    {
+     "key": "ferris",
+     "subject": "Signed consent?",
+     "sender": "kai.ferris@protonmail.com",
+     "days_ago": 5,
+     "body": "Is this the consent you needed me to sign?",
+     "attachments": [
+      {
+       "name": "Ferris_7216_Consent_signed.pdf",
+       "state": "new"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "tallgrass",
+   "subject": "Elm Street site visit photos",
+   "sender": "appraisals@tallgrasscost.com",
+   "state": "new",
+   "client": null,
+   "chip": null,
+   "days_ago": 5,
+   "messages": [
+    {
+     "key": "tallgrass",
+     "subject": "Elm Street site visit photos",
+     "sender": "appraisals@tallgrasscost.com",
+     "days_ago": 5,
+     "body": "Photos from the Elm Street site visit are attached.",
+     "attachments": [
+      {
+       "name": "Elm_Street_site_photos.pdf",
+       "state": "new"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

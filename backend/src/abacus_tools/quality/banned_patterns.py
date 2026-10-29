@@ -2210,6 +2210,8 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/agent_tests/support.py",
             "tests/integration/agent_tests/test_work_slots_db.py",  # the ledger, as the app
             "tests/integration/backfill/support.py",  # Q-03 acceptance tests seed as the superuser
+            # N-02-T12: the app role's refusals on the signatures tables, after a real import.
+            "tests/integration/backfill/test_n02t12_signatures_independent.py",
             "tests/integration/trust_kit/support.py",  # P-03-T05, T06: seeds as the superuser
             "tests/security/support.py",  # the security suite seeds as the superuser
             "tests/contracts/undo/support.py",  # P-04-T13: the Undo suite seeds as the superuser
@@ -2218,6 +2220,8 @@ RULES: list[Rule | TreeRule] = [
             # S13 schema tests: the AI-policy guard (G-02-T23) and pilot grants (Q-04-T007).
             "tests/integration/test_g02t23_autonomy_policy_migration.py",
             "tests/integration/test_q04t007_pilot_enrolments.py",
+            # Q-04-T012: the app role's refusals on the pilot tables, with the tenant set by hand.
+            "tests/integration/backfill/test_q04t012_pilot_metrics_independent.py",
             "tests/integration/test_seed_dev.py",
             # Q-03-T028: loads the plan tests' synthetic fixture as the superuser, rolled back.
             "tests/integration/test_q03t028_plan_tests.py",
@@ -2389,6 +2393,8 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/backfill/test_n02t13_envelope_hub.py",
             "tests/integration/backfill/test_n02t14_envelope_workflow.py",
             "tests/integration/backfill/test_n02t16_signatures_independent.py",
+            # N-02-T12: the app role's refusals on the signatures tables, tenant and actor by hand.
+            "tests/integration/backfill/test_n02t12_signatures_independent.py",
             # Q-04-T008: back-dates seeded audit rows under the actor the immutability guard reads.
             "tests/integration/backfill/test_q04t008_pilot_metrics.py",
             # S13 schema tests: the AI-policy guard (G-02-T23) and pilot grants (Q-04-T007).
@@ -2418,6 +2424,8 @@ RULES: list[Rule | TreeRule] = [
             # tenant_session sets it.
             "tests/integration/backfill/test_n02t08_record_import.py",
             "tests/integration/backfill/test_q04t008_pilot_metrics.py",
+            # Q-04-T012: back-dated audit rows and the app role's refusals on the pilot tables.
+            "tests/integration/backfill/test_q04t012_pilot_metrics_independent.py",
             "tests/unit/kernel/test_migration_helpers.py",
             "tests/unit/quality/test_banned_patterns.py",
         ),
