@@ -465,18 +465,6 @@ objects:
       published:  {label: "Published", variant: green-tint, terminal: false, derived: false}
       superseded: {label: "Superseded", variant: soon, terminal: true, derived: false}
 
-  consent:   # consents.status (T-01-T08); ADM-05, CLI-05 d, TAX-02 chip (T-01-T06, DF-31)
-    source: "T-01 section 3.1, 3.5; ADM-05 and CLI-05 handoff pills"
-    codes:
-      not_requested: {label: "Not requested", variant: neutral, terminal: false, derived: true}
-      requested:     {label: "Requested · {signed} of {total} signed", variant: state, terminal: false, derived: false}
-      signed:        {label: "Signed · expires {date}", variant: green-tint, terminal: false, derived: false}
-      expiring:      {label: "Expiring {date}", variant: amber, terminal: false, derived: true}   # 30 days before expiry
-      expired:       {label: "Expired", variant: red-tint, terminal: true, derived: false}
-      declined:      {label: "Declined", variant: red-tint, terminal: true, derived: false}
-      revoked:       {label: "Revoked", variant: red-tint, terminal: true, derived: false}
-      superseded:    {label: "Superseded", variant: soon, terminal: true, derived: false}
-
   tax_authorization:   # tax_authorizations.status (T-01-T43); CLI-05 rail
     source: "T-01 section 3.6; CLI-05 handoff"
     codes:
@@ -597,6 +585,9 @@ objects:
       expired:   {label: "Expired",   variant: red-tint, terminal: true, derived: false}
       declined:  {label: "Declined",  variant: neutral, terminal: true, derived: false}
       revoked:   {label: "Revoked",   variant: soon, terminal: true, derived: false}
+      # T-01-T06 (DEC-1157): a renewal replaces a signed consent; before any request, nothing is stored.
+      superseded:    {label: "Superseded", variant: muted, terminal: true, derived: false}
+      not_requested: {label: "Not requested", variant: neutral, terminal: false, derived: true}
 
   consent_purpose:   # each purpose is its own signed document; a category, never a state
     source: "blueprint 3.3.1"

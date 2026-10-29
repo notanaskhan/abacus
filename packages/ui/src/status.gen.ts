@@ -1705,44 +1705,6 @@ export const STATUS_REGISTRY = {
       "derived": false
     }
   },
-  "consent": {
-    "requested": {
-      "label": "Requested",
-      "variant": "amber",
-      "terminal": false,
-      "derived": false
-    },
-    "signed": {
-      "label": "Signed · expires {date}",
-      "variant": "green",
-      "terminal": false,
-      "derived": false
-    },
-    "expiring": {
-      "label": "Expiring",
-      "variant": "amber",
-      "terminal": false,
-      "derived": false
-    },
-    "expired": {
-      "label": "Expired",
-      "variant": "red-tint",
-      "terminal": true,
-      "derived": false
-    },
-    "declined": {
-      "label": "Declined",
-      "variant": "neutral",
-      "terminal": true,
-      "derived": false
-    },
-    "revoked": {
-      "label": "Revoked",
-      "variant": "soon",
-      "terminal": true,
-      "derived": false
-    }
-  },
   "tax_authorization": {
     "not_on_file": {
       "label": "Not on file",
@@ -2154,6 +2116,56 @@ export const STATUS_REGISTRY = {
       "variant": "red-tint",
       "terminal": false,
       "derived": false
+    }
+  },
+  "consent": {
+    "requested": {
+      "label": "Requested",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "signed": {
+      "label": "Signed · expires {date}",
+      "variant": "green",
+      "terminal": false,
+      "derived": false
+    },
+    "expiring": {
+      "label": "Expiring",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "expired": {
+      "label": "Expired",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "declined": {
+      "label": "Declined",
+      "variant": "neutral",
+      "terminal": true,
+      "derived": false
+    },
+    "revoked": {
+      "label": "Revoked",
+      "variant": "soon",
+      "terminal": true,
+      "derived": false
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    },
+    "not_requested": {
+      "label": "Not requested",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": true
     }
   },
   "consent_purpose": {

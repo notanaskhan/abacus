@@ -385,15 +385,6 @@ class KnowledgeItemStatus(StrEnum):
     SUPERSEDED = "superseded"
 
 
-class ConsentStatus(StrEnum):
-    REQUESTED = "requested"
-    SIGNED = "signed"
-    EXPIRING = "expiring"
-    EXPIRED = "expired"
-    DECLINED = "declined"
-    REVOKED = "revoked"
-
-
 class TaxAuthorizationStatus(StrEnum):
     REQUESTED = "requested"
     ON_FILE = "on_file"
@@ -483,6 +474,17 @@ class NoticeStatus(StrEnum):
     AWAITING_IRS = "awaiting_irs"
     CLOSED = "closed"
     ESCALATED = "escalated"
+
+
+class ConsentStatus(StrEnum):
+    REQUESTED = "requested"
+    SIGNED = "signed"
+    EXPIRING = "expiring"
+    EXPIRED = "expired"
+    DECLINED = "declined"
+    REVOKED = "revoked"
+    SUPERSEDED = "superseded"
+    # derived, never stored: not_requested
 
 
 class ConsentPurposeStatus(StrEnum):
@@ -1121,14 +1123,6 @@ STORED: dict[str, tuple[str, ...]] = {
         "published",
         "superseded",
     ),
-    "consent": (
-        "requested",
-        "signed",
-        "expiring",
-        "expired",
-        "declined",
-        "revoked",
-    ),
     "tax_authorization": (
         "requested",
         "on_file",
@@ -1200,6 +1194,15 @@ STORED: dict[str, tuple[str, ...]] = {
         "awaiting_irs",
         "closed",
         "escalated",
+    ),
+    "consent": (
+        "requested",
+        "signed",
+        "expiring",
+        "expired",
+        "declined",
+        "revoked",
+        "superseded",
     ),
     "consent_purpose": (
         "use",
