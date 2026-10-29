@@ -20,6 +20,7 @@ URL in `ABACUS_STAGING_URL` / `ABACUS_CANARY_URL`; they skip while it is unset).
 - `J19-estate-amended.spec.ts`: j19 0 (Grace adds the estate under Walter Thornbury, conflict check and screening, Create & start acceptance), j19 2 (Daniel accepts with conditions) and j19 3 (the estate engagement's three returns); steps 1 and 4–8 fixme with owners (P-07-T62).
 - `eng-13-roll-forward.spec.ts`: ENG-13 d (Northwind PY2025 → PY2026, 24 requests as Draft) and e (Tessellate, fixture until X-01) through the route (P-07-T62).
 - `portal-keyboard.spec.ts`: the portal's keyboard-only drop (POR-03) and sheet (POR-04) paths (R-01-T31).
+- `R01-templates.spec.ts`: j16 4 (Grace edits, tests and publishes Reminder v4 on POR-20 a → j → k → l) in the fixture project; j12 1 (the sink), j02's database invitation and the M8 j12-core canary walk are `test.fixme` until R-01's live swap reaches staging (R-01-T32).
 - `gates-access.spec.ts`: P-07's gates and access, CLI-04's invite, CLI-07 and CLI-08 as human-only gates, and J03 steps 1 and 2, on the screens' own scenarios (P-07-T53; DEC-645).
 
 A step on a screen behind a flag E0 leaves off may open the real route on the screen's own fixture scenario with `?screen=<ID>&st=<state>` (fixture project only; DEC-457).
