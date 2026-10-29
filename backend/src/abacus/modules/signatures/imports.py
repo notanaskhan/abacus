@@ -119,10 +119,18 @@ async def _flag(ctx: AuthContext) -> None:
         raise NotFound(SIGNATURES_ENVELOPES.name)
 
 
-async def stage_file(ctx: AuthContext, *, file_name: str, content: bytes) -> StagedFile:
-    """One file for a later import: scanned before storage, refused closed (SPEC-029 AC-1)."""
+async def stage_file(
+    ctx: AuthContext,
+    *,
+    client_id: UUID,
+    engagement_id: UUID | None,
+    file_name: str,
+    content: bytes,
+) -> StagedFile:
+    """One file for a later import into this client (and engagement): authorised as the import
+    is, then scanned before storage, refused closed (SPEC-029 AC-1)."""
     await _firm_only(ctx)
-    await authorise(ctx, ACTION, Resource.firm(ctx.tenant_id))
+    await _authorised_on(ctx, client_id, engagement_id, None)
     await _flag(ctx)
     screened = await screen_and_stage(ctx.tenant_id, content, file_name, None)
     file_id = uuid4()
@@ -167,12 +175,13 @@ def policy_family(
     return "general"
 
 
-async def check_import(ctx: AuthContext, request: ImportRequest) -> Resource:
-    """The route's check before its `Idempotency-Key` lookup, so a replay is authorised too."""
-    await _firm_only(ctx)
-    engagement_id = request.engagement_id
-    if request.work_item_id is not None:
-        owner = await work_item_engagement(ctx.tenant, request.work_item_id)
+async def _authorised_on(
+    ctx: AuthContext, client_id: UUID, engagement_id: UUID | None, work_item_id: UUID | None
+) -> Resource:
+    """`envelope.import_record` on the engagement (its work item's, when named) or the client;
+    the engagement must be the client's (the wall answers 404 through `get_ref`)."""
+    if work_item_id is not None:
+        owner = await work_item_engagement(ctx.tenant, work_item_id)
         if owner is None:
             raise NotFound("work_item")
         if engagement_id is not None and owner != engagement_id:
@@ -181,13 +190,22 @@ async def check_import(ctx: AuthContext, request: ImportRequest) -> Resource:
     if engagement_id is not None:
         ref = await get_ref(ctx, engagement_id)
         resource = ref.resource()
-        if ref.client_id != request.client_id:
+        if ref.client_id != client_id:
             raise ImportScopeMismatch(facts={"field": "engagement_id"})
     else:
-        if not await client_exists(ctx.tenant, request.client_id):
+        if not await client_exists(ctx.tenant, client_id):
             raise NotFound("client")
-        resource = Resource.client(ctx.tenant_id, request.client_id)
+        resource = Resource.client(ctx.tenant_id, client_id)
     await authorise(ctx, ACTION, resource)
+    return resource
+
+
+async def check_import(ctx: AuthContext, request: ImportRequest) -> Resource:
+    """The route's check before its `Idempotency-Key` lookup, so a replay is authorised too."""
+    await _firm_only(ctx)
+    resource = await _authorised_on(
+        ctx, request.client_id, request.engagement_id, request.work_item_id
+    )
     await _flag(ctx)
     return resource
 

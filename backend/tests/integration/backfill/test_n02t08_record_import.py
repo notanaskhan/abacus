@@ -85,7 +85,11 @@ class Firm:
     async def stage(self, who: Person, content: bytes, name: str) -> httpx.Response:
         return await self.net.http.post(
             "/v1/envelopes/import/files",
-            params={"filename": name},
+            params={
+                "filename": name,
+                "client_id": str(self.site.client_id),
+                "engagement_id": str(self.site.engagement_id),
+            },
             content=content,
             headers={**self.net.headers(who), "Content-Type": "application/octet-stream"},
         )
@@ -103,9 +107,9 @@ async def _floor(firm: Firm) -> None:
     await firm.net.seed.run(
         "WITH t AS (SELECT set_config('app.tenant_id', $1::text, true)) "
         "INSERT INTO retention_policies (tenant_id, record_type, service_line, firm_years, "
-        "clock_start_event, updated_by) SELECT $1, 'signature_evidence', 'any', 7, "
+        "clock_start_event, updated_by) SELECT $1::uuid, 'signature_evidence', 'any', 7, "
         "'event_date', 'test-seed' FROM t",
-        firm.tenant_id,
+        str(firm.tenant_id),
     )
 
 

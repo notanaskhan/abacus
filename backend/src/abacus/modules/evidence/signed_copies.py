@@ -17,6 +17,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import insert
 
+from abacus.kernel.clock import system_now
 from abacus.kernel.uow import Ref, Target, UnitOfWork
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.models import EvidenceItem, EvidenceVersion
@@ -107,6 +108,7 @@ async def file_signed_copy(
             media_type=media_type,
             source="signature_import",
             method="imported",
+            pulled_at=system_now(),  # an imported version records when it came in (0041)
             channel="import",
             display_name=title,
         )

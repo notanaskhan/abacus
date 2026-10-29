@@ -515,10 +515,19 @@ async def stage_envelope_import_file_route(
     request: Request,
     ctx: Ctx,
     filename: Annotated[str, Query(min_length=1, max_length=255)],
+    client_id: UUID,
+    engagement_id: UUID | None = None,
 ) -> ImportFileOut:
-    """One file for a record-mode import (the completed document or the certificate), the raw
-    bytes as the body: scanned before storage, refused closed (N-02-T08; DEC-818)."""
-    staged = await imports.stage_file(ctx, file_name=filename, content=await request.body())
+    """One file for a record-mode import into this client (and engagement) (the completed document
+    or the certificate), the raw bytes as the body: authorised as the import is, scanned before
+    storage, refused closed (N-02-T08; DEC-818)."""
+    staged = await imports.stage_file(
+        ctx,
+        client_id=client_id,
+        engagement_id=engagement_id,
+        file_name=filename,
+        content=await request.body(),
+    )
     return ImportFileOut(
         id=staged.id,
         file_name=staged.file_name,
