@@ -1,8 +1,8 @@
 ---
 id: TASK-2136
 title: Q-03-T090 Source-assisted review of A-01's export create and download
-spec: SPEC-344
-acceptance_criteria: [backlog row]
+spec: SPEC-000  # Q-03-T090 row; SPEC-344 is the reviewed spec
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: red
 status: in-review
 epic: Q-03
