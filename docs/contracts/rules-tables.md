@@ -44,8 +44,10 @@ Payloads are discriminated by `kind`, `payload_schema_version` 1 (`platform/refe
 - **Standard kinds:** `review_checklist`, `review_levels`, `return_approval_policy`, `ssars_cas_settings` (table `firm_standards`); `aje_thresholds`, `variance_thresholds`, `materiality_ranges`, `document_confidence` (table `threshold_policies`).
 - Classification: reference payloads `public`; standard payloads `internal`; example rows and BH-TAX-02 applies-to `confidential`. No TRI.
 
+**Additive since the stub (K-02-T13, DEC-1154):** `StandardOut.entries`, `StandardVersionSummaryOut.tax_year`, `StandardDetailOut.labels` (ids to names, `visible()`-filtered), `StandardExamplesOut.caption`, `StandardExampleRowOut.approver_name` and `.cells`.
+
 ## 4. Status words
-`reference_set_version`: draft · published · superseded (computed) · withdrawn. `firm_standard_version`: draft · published · superseded (computed) · discarded (hidden). Superseded is never stored: a later published version is effective on or before `as_of`.
+`reference_set_version`: draft · published · superseded (computed) · withdrawn. `firm_standard_version`: draft · published · superseded (computed) · discarded (hidden). Superseded is never stored: a later published version is effective on or before `as_of`. On the wire the derived code is not an enum value (the registry's derived codes stay out of OpenAPI): a summary is `published` with `current: false`, and the screen words it Superseded.
 
 ## 5. Module APIs (frozen with v1)
 - `platform.api`: `reference_value(key, as_of)`, `form_8879_for(return_type, tax_year, jurisdiction, *, as_of)`, `pub1345_tolerances(tax_year, *, as_of)`, `information_return_threshold(form, payment_year)`, `retention_minimum(record_type, service_line)`.

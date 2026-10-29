@@ -27540,6 +27540,12 @@ export type StandardCreateIn = {
  * KNW-04's form pane: the standard, the version shown, and the Timeline (newest first).
  */
 export type StandardDetailOut = {
+    /**
+     * Labels
+     */
+    labels?: {
+        [key: string]: string;
+    };
     standard: StandardOut;
     /**
      * Timeline
@@ -27590,6 +27596,16 @@ export type StandardExampleRowOut = {
      */
     amount_usd: number | null;
     /**
+     * Approver Name
+     */
+    approver_name?: string | null;
+    /**
+     * Cells
+     */
+    cells?: {
+        [key: string]: string;
+    };
+    /**
      * Client Id
      */
     client_id: string | null;
@@ -27621,6 +27637,10 @@ export type StandardExampleRowOut = {
  * `provider_registered` false: KNW-04's designed empty state, never invented rows.
  */
 export type StandardExamplesOut = {
+    /**
+     * Caption
+     */
+    caption?: string | null;
     /**
      * Period
      */
@@ -27704,6 +27724,10 @@ export type StandardOut = {
     allowed_actions: Array<string>;
     current_version: StandardVersionSummaryOut | null;
     draft_version: StandardVersionSummaryOut | null;
+    /**
+     * Entries
+     */
+    entries?: number | null;
     /**
      * Id
      */
@@ -27909,6 +27933,10 @@ export type StandardVersionSummaryOut = {
     published_at: string | null;
     published_by: StandardPersonOut | null;
     status: FirmStandardVersionStatus;
+    /**
+     * Tax Year
+     */
+    tax_year?: number | null;
     /**
      * Version
      */
