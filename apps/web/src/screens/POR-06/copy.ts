@@ -18,8 +18,7 @@ export const COPY = {
   stepSubs: {
     // The portal's own sign-in verified the person by email code (DF-11: letters and consents).
     verify: "Email code",
-    reviewing: (page: number, total: number): string =>
-      `Page ${String(page)} of ${String(total)}`,
+    reviewing: (page: number, total: number): string => `Page ${String(page)} of ${String(total)}`,
     reviewed: (total: number): string => `${String(total)} ${total === 1 ? "page" : "pages"}`,
   },
   consent: {
