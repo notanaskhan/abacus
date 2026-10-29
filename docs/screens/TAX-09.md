@@ -35,7 +35,7 @@ Non-artboard: not allowed (a principal the matrix refuses: 404, no count), flag 
 Every write denies the agent and the system; no agent-owned control says Approve, Release, Send, Post or Decide.
 
 ## Status
-`engine_sync` (seven derived chip states).
+`return_sync_chip` (the blueprint's seven chip states).
 
 ## Copy
 Verbatim from the handoff's spec.md into `screens/TAX-09/copy.ts`. Banned (T-01 §5.7; `apps/web/src/copy-bans.test.ts`): any phrase in which Accrued or the agent transmits, e-files or files a return; vendor logos.

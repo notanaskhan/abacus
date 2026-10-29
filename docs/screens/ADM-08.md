@@ -34,7 +34,7 @@ Non-artboard: not allowed (a principal the matrix refuses: 404, no count), flag 
 Every write denies the agent and the system; no agent-owned control says Approve, Release, Send, Post or Decide.
 
 ## Status
-`engine_sync` chip words where the tax engine card shows them.
+`return_sync_chip` words where the tax engine card shows them.
 
 ## Copy
 Verbatim from the handoff's spec.md into `screens/ADM-08/copy.ts`. Banned (T-01 §5.7; `apps/web/src/copy-bans.test.ts`): any phrase in which Accrued or the agent transmits, e-files or files a return; vendor logos.
