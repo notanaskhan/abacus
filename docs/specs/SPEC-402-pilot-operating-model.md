@@ -37,3 +37,8 @@ pilot codes and the W-signal thresholds, for every pilot window from PW1 (Q-04 Â
   policies, AI opt-in and stages, the support-session switch and status subscribers; every step
   names its screen state or CLI, its operator and its evidence, and no step loads firm content
   through a commit or the seed loader (Q-04-T015; Q-04 AC-5.1 to AC-5.7).
+- **AC-5** `docs/ops/on-call.md` names N as SEV1/2 primary and AY as the named backup for every day
+  of each live window (PW1: Jun 1 to Jul 12, 2027), quiet hours in writing, each firm's QI contact by
+  pilot code and vault entry (never the contact itself), and a test-page record; a test page reaches N
+  and escalates to AY after 15 minutes; `abacus_tools.quality.on_call` refuses an uncovered day, a
+  backup equal to the primary, or a phone number or email address in the file (Q-04-T020).
