@@ -134,7 +134,7 @@ check: check-fast
 # container start to whichever file it ran first):
 # pytest -n 0 --durations=0 --durations-min=0 > report.txt, then
 # python -m abacus_tools.ci.shard --record report.txt
-UNIT_TESTS = tests/unit tests/property tests/acceptance
+UNIT_TESTS = tests/unit tests/property tests/acceptance tests/connectors
 INTEGRATION_TESTS = tests/integration tests/security tests/workflows
 SHARD ?= 1
 SHARDS ?= 1
