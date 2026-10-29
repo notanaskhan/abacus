@@ -8434,7 +8434,9 @@ export const accessLogQueryKey = (options: Options<AccessLogData>) => createQuer
 /**
  * Access Log Route
  *
- * The drawer's access-log card (N-01-T19).
+ * The drawer's access-log card (N-01-T19). The firm gate is metadata (every engagement role
+ * holds it there); `evidence.read_access_log` is checked on the item's own engagement or client
+ * by the read model's `visible()` (its relationship layer needs the engagement).
  */
 export const accessLogOptions = (options: Options<AccessLogData>) => queryOptions<AccessLogResponse, AccessLogError, AccessLogResponse, ReturnType<typeof accessLogQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -8454,7 +8456,9 @@ export const accessLogInfiniteQueryKey = (options: Options<AccessLogData>): Quer
 /**
  * Access Log Route
  *
- * The drawer's access-log card (N-01-T19).
+ * The drawer's access-log card (N-01-T19). The firm gate is metadata (every engagement role
+ * holds it there); `evidence.read_access_log` is checked on the item's own engagement or client
+ * by the read model's `visible()` (its relationship layer needs the engagement).
  */
 export const accessLogInfiniteOptions = (options: Options<AccessLogData>) => {
     const opts = infiniteQueryOptions<AccessLogResponse, AccessLogError, InfiniteData<AccessLogResponse>, QueryKey<Options<AccessLogData>>, string | null | Pick<QueryKey<Options<AccessLogData>>[0], 'body' | 'headers' | 'path' | 'query'>>(

@@ -115117,7 +115117,7 @@
     },
     "/v1/evidence-items/{item_id}/access-log": {
       "get": {
-        "description": "The drawer's access-log card (N-01-T19).",
+        "description": "The drawer's access-log card (N-01-T19). The firm gate is metadata (every engagement role\nholds it there); `evidence.read_access_log` is checked on the item's own engagement or client\nby the read model's `visible()` (its relationship layer needs the engagement).",
         "operationId": "access_log",
         "parameters": [
           {
