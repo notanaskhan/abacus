@@ -2,7 +2,7 @@
 id: TASK-2004
 title: F-06-T05 T16 identity and exception states
 spec: SPEC-400
-acceptance_criteria: [Story 1.1, Story 1.4, Story 1.5, Story 1.7]
+acceptance_criteria: [AC-40]
 risk_zone: amber
 status: in-review
 epic: F-06
