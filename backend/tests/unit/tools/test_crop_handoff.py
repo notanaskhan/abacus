@@ -96,6 +96,12 @@ def test_a_good_entry_parses() -> None:
     )
     assert entry.deviation is None
     assert entry.selector is None
+    assert entry.mask == ()
+
+
+def test_a_mask_lists_selectors_painted_out_of_both_images() -> None:
+    entry = parse_entry("k", {**GOOD, "mask": ["[data-spinner]", "[data-cockpit='dock']"]})
+    assert entry.mask == ("[data-spinner]", "[data-cockpit='dock']")
 
 
 def test_the_window_alias_is_the_plans_crop() -> None:
@@ -117,6 +123,9 @@ def test_the_window_alias_is_the_plans_crop() -> None:
         ("k", {"tier": "E"}, '"tier"'),
         ("k", {"selector": 4}, '"selector"'),
         ("k", {"deviation": " "}, '"deviation"'),
+        ("k", {"mask": "[data-spinner]"}, '"mask"'),
+        ("k", {"mask": ["[data-spinner]", " "]}, '"mask"'),
+        ("k", {"mask": [3]}, '"mask"'),
         ("k", {"crop": [1, 2, 3]}, '"crop"'),
         ("k", {"crop": [1, 2, 3, "4"]}, '"crop"'),
         ("k", {"crop": [1, 2, True, 4]}, '"crop"'),
