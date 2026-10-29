@@ -1,8 +1,8 @@
 ---
 id: TASK-2010
 title: I-01-T14 HOME-01 MVP proof
-spec: SPEC-385
-acceptance_criteria: [I-01 MVP]
+spec: SPEC-317
+acceptance_criteria: [AC-4]
 risk_zone: green
 status: in-review
 epic: I-01
