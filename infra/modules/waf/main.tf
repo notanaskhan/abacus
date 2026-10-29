@@ -26,7 +26,7 @@ locals {
 
 resource "aws_wafv2_web_acl" "this" {
   name        = var.name
-  description = "Edge rules for ${var.name} (chapter 06 section 1.13)"
+  description = "Edge rules for ${var.name}, chapter 06 section 1.13"
   scope       = "CLOUDFRONT"
   region      = local.edge_region
 
