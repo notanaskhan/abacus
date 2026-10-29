@@ -35,6 +35,21 @@ Verbatim from the handoff's spec.md (and revision.md) into `screens/TAX-02/copy.
 
 ## Links
 Outbound: TAX-03 (Intake tab), TXP-12 (K-1s), TAX-09, TAX-12, SHL-12 h (final approval), SHL-15 (issues). Inbound: TAX-01 rows.
+| Opens SHL-16 · checkpoint drawer | SHL-16 | planned (handoff link; tooltip-only) |
+| Opens TAX-09 · engine sync | TAX-09 | planned (handoff link; tooltip-only) |
+| Opens TAX-08 · assistant panel | TAX-08 | planned (handoff link; tooltip-only) |
+| Opens TXP-01 · Ridgeline review summary (pack 9) | TXP-01 | planned (handoff link; tooltip-only) |
+| Opens TAX-05 · Leadsheets with this line lit | TAX-05 | planned (handoff link; tooltip-only) |
+| Opens TAX-06 · Issues with this item selected | TAX-06 | planned (handoff link; tooltip-only) |
+| Opens TXI-02 · K-1 treatment resolver | TXI-02 | planned (handoff link; tooltip-only) |
+| Opens TAX-10 · two-year comparison | TAX-10 | planned (handoff link; tooltip-only) |
+| Opens CLI-02 · client record | CLI-02 | planned (handoff link; tooltip-only) |
+| Opens ENG-02 · engagement record | ENG-02 | planned (handoff link; tooltip-only) |
+| Opens BND-02 · binder | BND-02 | planned (handoff link; tooltip-only) |
+| Opens FIL-01 · client folder | FIL-01 | planned (handoff link; tooltip-only) |
+| Opens TAX-12 · delivery and e-file | TAX-12 | planned (handoff link; tooltip-only) |
+| Opens TXI-01 · 1040 worksheet editor | TXI-01 | planned (handoff link; tooltip-only) |
+| Opens TXI-03 · state residency and allocation | TXI-03 | planned (handoff link; tooltip-only) |
 
 ## Acceptance
 - TAX-02 acceptance: every artboard renders from its fixture scenario with the persona and clock above.

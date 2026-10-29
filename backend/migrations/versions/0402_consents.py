@@ -63,6 +63,10 @@ CONSENT_INSERT = (
     "requested_at",
     "renewal_of_id",
     "created_by",
+    # Record mode (T-01 §3.1): a consent signed or declined on paper is recorded with its dates.
+    "signed_at",
+    "declined_at",
+    "expires_at",
 )
 CONSENT_UPDATE = (
     "status",

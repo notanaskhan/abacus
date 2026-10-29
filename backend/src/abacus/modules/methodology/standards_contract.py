@@ -590,7 +590,7 @@ async def edit_draft_route(
     response_model=StandardVersionSummaryOut,
     errors=(409, 501),
 )
-async def discard_draft_route(
+async def standard_discard_draft_route(
     standard_id: StandardId, version_id: VersionId, ctx: Ctx, if_match: IfMatch
 ) -> StandardVersionSummaryOut:
     """Discard draft: status `discarded`; the row stays (never deleted)."""
@@ -638,7 +638,9 @@ async def version_diff_route(
     response_model=bytes,
     errors=(501,),
 )
-async def export_version_route(standard_id: StandardId, version_id: VersionId, ctx: Ctx) -> bytes:
+async def standard_export_version_route(
+    standard_id: StandardId, version_id: VersionId, ctx: Ctx
+) -> bytes:
     """The version as a workbook; re-importing it gives an empty diff (US-5.1)."""
     await _stub(ctx, "firm_standard.read")
 
