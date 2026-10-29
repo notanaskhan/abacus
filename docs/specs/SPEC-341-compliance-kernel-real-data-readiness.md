@@ -120,6 +120,7 @@ The compliance kernel is what must be true in code before any firm puts real cli
 
 ### Story 13: The security stage
 - **AC-46** Given R1, then the `security` stage (generated tenant isolation, permission matrix and route introspection; CodeQL; dependency review; pip-audit; Trivy) is a required check on `main`. **Partial**: the generated suites and `.github/workflows/security.yml` are built (TASK-376, TASK-411); making it a required ruleset check is the human's (F-01).
+- **AC-51 M8 quality rows (Q-03-T085; chapter 10 §10.13).** Given the pinned SHA on Fri May 28, 2027, then `abacus_tools.quality.m8_evidence` derives the quality rows of `docs/ops/gates/M8-mvp-code-complete.md` from the registers (55 back-fill items closed as 44 / 7 / 4; back-filled suites green or ticketed; `fail_under = 95` with no coverage exception and every red line floor at 97; a mutation floor for every red scope; no back-fill defect above SEV3 open; every escaped defect with its layer) and exits 0, and both founders sign the rows.
 - **AC-48 Independent tests for the quality tooling (Q-03-T088; ADR-078).** The report publishes every chapter 10 §10.14.2 area without a commit, mutation jobs run only inside budget, and a PR lowering a mutation floor is refused; a red module below 97% line failing stage 2 waits on Q-03-T066.
 - **AC-47 Supply chain at quarter end (Q-03-T086).** No high or critical dependency or image finding is older than its SLA at the quarter's end (`supply_chain report --quarter`).
 
@@ -205,6 +206,7 @@ None in this epic. Facts arrive as words and numbers so consumer screens never e
 | AC-44 | integration, unit, replay | `agent_tests/test_run_records.py`, `unit/agents/test_run_records.py`, `workflows/test_run_record_replay.py`; T46 (not built) |
 | AC-45 | not built | Q-02-T45, T46 |
 | AC-46 | generated security tests | `tests/security/` |
+| AC-51 | unit; the derived gate rows | `unit/quality/test_m8_evidence.py`, `docs/ops/gates/M8-mvp-code-complete.md` |
 
 ## 19. Rollout
 - **Flags:** `agents.client_data_optin`, `compliance.legal_holds`, `compliance.incidents`, `compliance.firm_export` (rollout only; off answers 404 and the boundary keeps refusing). Never flagged: classification, attribution, the human-only guard, access events, the chain, floors, Object Lock classes, the hold check, shadow filtering.
