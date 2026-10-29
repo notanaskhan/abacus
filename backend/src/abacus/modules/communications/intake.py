@@ -105,6 +105,9 @@ async def _match(
     if given.client_id is not None:
         if not await client_exists(tenant, given.client_id):
             raise NotFound("client")
+        if given.channel == "portal_upload" and given.principal_id is not None:
+            # N-01-T14: the portal batch's client is its grant's, not a staff choice.
+            return given.client_id, "portal_principal"
         return given.client_id, "staff_selected"
     async with tenant_session(tenant) as session:
         if given.from_contact_id is not None:

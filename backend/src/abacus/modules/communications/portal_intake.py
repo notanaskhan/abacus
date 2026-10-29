@@ -32,7 +32,6 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.flags import flag_enabled
-from abacus.kernel.holds import HoldCheckMissing, erasable_versions
 from abacus.kernel.listing import Position, decode_cursor, page_of, query_hash
 from abacus.kernel.uow import OutboxEvent, Ref, Target, uow
 from abacus.modules.communications import intake
@@ -42,7 +41,7 @@ from abacus.modules.communications.intake_purge_workflow import (
     IntakeWithdrawalPurgeWorkflow,
     intake_purge_id,
 )
-from abacus.modules.evidence.api import destroy_intake_key, live_intake_keys
+from abacus.modules.evidence.api import destroy_intake_key, held_intake_objects, live_intake_keys
 from abacus.modules.identity.api import (
     AuthContext,
     Resource,
@@ -54,7 +53,8 @@ from abacus.modules.identity.api import (
 UPLOAD: Final = "portal_intake.upload"
 READ_OWN: Final = "portal_intake.read_own"
 WITHDRAW: Final = "portal_intake.withdraw"
-UPLOADING_ROLES: Final = frozenset({"client_admin", "client_contributor"})
+# The grant roles the matrix calls `client_admin` (owner) and `client_contributor` (DEC-1060).
+UPLOADING_ROLES: Final = frozenset({"owner", "contributor"})
 PURGE_AFTER: Final = timedelta(days=30)
 LIST_RESOURCE: Final = "portal_intake_uploads"
 _OPEN: Final = ("new", "waiting")
@@ -332,7 +332,7 @@ async def erase_withdrawn_intake(given: IntakePurgeInput) -> int:
         withdrawn = (
             await session.execute(
                 text(
-                    "SELECT id, withdrawn_at FROM inbox_attachments "
+                    "SELECT id, client_id, withdrawn_at FROM inbox_attachments "
                     "WHERE message_id = :upload AND status = 'withdrawn'"
                 ),
                 {"upload": UUID(given.upload_id)},
@@ -342,14 +342,13 @@ async def erase_withdrawn_intake(given: IntakePurgeInput) -> int:
     rows = [r for r in withdrawn if r.id in live]
     if not rows:
         return 0
-    due = [r.id for r in rows if r.withdrawn_at + PURGE_AFTER <= now]
+    due = [r for r in rows if r.withdrawn_at + PURGE_AFTER <= now]
     if not due:
         first = min(r.withdrawn_at for r in rows)
         return max(1, int((first + PURGE_AFTER - now).total_seconds()))
-    try:
-        erasable = await erasable_versions(tenant, due)
-    except HoldCheckMissing:
-        return _HELD_RETRY_SECONDS  # an unknown hold state is a hold
+    # Unfiled, so no evidence version: the version hold check would call every id held.
+    held = await held_intake_objects(tenant, [(r.id, r.client_id) for r in due])
+    erasable = [r.id for r in due if r.id not in held]
     for attachment in erasable:
         async with uow(tenant) as tx:
             await destroy_intake_key(tx, attachment)

@@ -136,6 +136,7 @@ from abacus.modules.evidence.intake_filing import (
 )
 from abacus.modules.evidence.intake_keys import (
     destroy_intake_key,
+    held_intake_objects,
     live_intake_keys,
     record_intake_key,
     screen_and_stage_detached,
@@ -546,6 +547,7 @@ __all__ = [
     "final_export_for_archive",
     "firm_export_schedule_id",
     "firm_router",
+    "held_intake_objects",
     "holds_covering",
     "included_export_versions",
     "intake_masked_pages",

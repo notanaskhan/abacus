@@ -88,3 +88,24 @@ async def live_intake_keys(tenant: TenantContext, attachment_ids: list[UUID]) ->
             {"ids": attachment_ids},
         )
         return frozenset(rows.scalars())
+
+
+async def held_intake_objects(
+    tenant: TenantContext, objects: list[tuple[UUID, UUID]]
+) -> frozenset[UUID]:
+    """The unfiled intake objects, given as (attachment, client), that an open legal hold may
+    cover. A hold can't name an intake object yet (DEC-1060), and the version hold check reports
+    an id it doesn't know as held, so here any open hold on the object's client covers it: an
+    unknown hold state is a hold (ADR-162 §7)."""
+    if not objects:
+        return frozenset()
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            text(
+                "SELECT DISTINCT client_id FROM legal_holds "
+                "WHERE status IN ('applying', 'active') AND client_id = ANY(:clients)"
+            ),
+            {"clients": list({client for _a, client in objects})},
+        )
+        held = frozenset(rows.scalars())
+    return frozenset(attachment for attachment, client in objects if client in held)
