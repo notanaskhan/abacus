@@ -122,6 +122,7 @@ The compliance kernel is what must be true in code before any firm puts real cli
 - **AC-46** Given R1, then the `security` stage (generated tenant isolation, permission matrix and route introspection; CodeQL; dependency review; pip-audit; Trivy) is a required check on `main`. **Partial**: the generated suites and `.github/workflows/security.yml` are built (TASK-376, TASK-411); making it a required ruleset check is the human's (F-01).
 - **AC-48 Independent tests for the quality tooling (Q-03-T088; ADR-078).** The report publishes every chapter 10 §10.14.2 area without a commit, mutation jobs run only inside budget, and a PR lowering a mutation floor is refused; a red module below 97% line failing stage 2 waits on Q-03-T066.
 - **AC-47 Supply chain at quarter end (Q-03-T086).** No high or critical dependency or image finding is older than its SLA at the quarter's end (`supply_chain report --quarter`).
+- **AC-49 Pre-shadow scrubbing audit (Q-03-T083; ADR-031, ADR-167).** Given the seeded cases pushed through the kernel logger, Sentry and the scrubbing meter in staging and on the production canary, then the sampled CloudWatch log events, Sentry events and metric attributes hold no seeded value and no valid TIN form, each sink is shown to have received the seed (an undelivered sink is inconclusive, never clean), and each miss found becomes a test in `test_classification_scrubbing.py` (`abacus_tools.scrub_audit`, RB-42).
 
 **Invariants across the spec.** INV-1: every new write action is denied to the agent in the matrix and listed in `human-only-actions.yaml` where it records a human decision. INV-3: every table here is tenant-scoped with forced RLS except the platform reference sets (`retention_floors`, `retention_policy_defaults`), which are read through definers. INV-5: every audit event names a person, "‹person› via Agent", or the system.
 
@@ -205,6 +206,7 @@ None in this epic. Facts arrive as words and numbers so consumer screens never e
 | AC-44 | integration, unit, replay | `agent_tests/test_run_records.py`, `unit/agents/test_run_records.py`, `workflows/test_run_record_replay.py`; T46 (not built) |
 | AC-45 | not built | Q-02-T45, T46 |
 | AC-46 | generated security tests | `tests/security/` |
+| AC-49 | unit; the audit run itself (RB-42) | `unit/tools/test_scrub_audit.py`, `security/test_classification_scrubbing.py`, `docs/ops/scrub-audits/` |
 
 ## 19. Rollout
 - **Flags:** `agents.client_data_optin`, `compliance.legal_holds`, `compliance.incidents`, `compliance.firm_export` (rollout only; off answers 404 and the boundary keeps refusing). Never flagged: classification, attribution, the human-only guard, access events, the chain, floors, Object Lock classes, the hold check, shadow filtering.
