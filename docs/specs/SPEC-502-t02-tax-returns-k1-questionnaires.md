@@ -49,3 +49,8 @@ T-02 is the tax practice board and the return workspace (TAX-01 to TAX-03), K-1 
 - **AC-12** `GET /v1/tax-returns` filters by status, review level, form, office, partner (signer), preparer, due within n days (business time) and `q` (client name, case-folded substring); sort is an allowlist (`extended_due` default, `client`; anything else 422); `group_by=office` orders by office first. Rows carry people chips (initials and name), the sync chip and tags `ext`, `on_hold`.
 - **AC-13** `POST /v1/tax-returns:bulk-assign` (Idempotency-Key) assigns through `engagements.api.assign_work_item` and answers `assigned` and `refused` (any return the viewer can't see or engagements refuses), never a reason.
 - **AC-14** G-01's office fact `tax_returns` (the latest year's returns per office) and the C15 projection `tax_return` (form and year; metadata only) are registered.
+
+**The Python tax slice (T-02-T11).**
+- **AC-15** The `tax_board` slice (needs `binders`) sets the 224 TY2025 returns on 214 engagements (10 with two): open 79 by status 2 / 8 / 9 / 17 / 15 / 11 / 7 / 10, done 145 (6 filed, 139 accepted), 161 extended (every open return), offices 98 / 64 / 62; golden footing tests hold it without a database.
+- **AC-16** Each return carries its review level (every In review return has one), sync state (synced returns with their day), due dates (original, and extended when on extension) and its preparer and detail reviewer as work-item assignments on the engagement's team.
+- **AC-17** The named rows (TPL-01 a and b, §9.7 R1 to R30) are the fixture seed's field for field, and `make fixtures` exports TAX-01's summary and rows from the loaded slice, so `make seed-demo` and fixture mode show the same board.
