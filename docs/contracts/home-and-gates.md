@@ -29,7 +29,7 @@ Home is answered in this order: a client principal 404; `home.read` at the firm 
 ## 3. Models
 `backend/src/abacus/modules/practice/home_contract.py` (home half). Classification per field:
 
-- **`HomeOut`** (`HomeVM`): `greeting` (Confidential), `tiles[]` (Internal), `your_work` (Confidential, null when the role has no assigned work band), `deadlines` (Confidential), `client_activity[]` (Confidential, the first 20), `running_count` (Internal, null when no owner registered `agent_runs_running`), `segments` (Internal).
+- **`HomeOut`** (`HomeVM`): `greeting` (Confidential), `tiles[]` (Internal), `your_work` (Confidential, null when the role has no assigned work band), `deadlines` (Confidential), `client_activity[]` (Confidential, the first 20; each row's codes and counts in `facts`, and since DEC-1001 an additive `labels` map of read-time names the sentence uses, `subject`, `recipient` and `context`, resolved now and never stored, empty until a source fills them), `running_count` (Internal, null when no owner registered `agent_runs_running`), `segments` (Internal).
 - **`GreetingOut`**: `first_name` (Confidential), `date` (Internal; the firm's time zone on `kernel.clock`).
 - **`HomeTileOut`**: `key` (the registered home count), `label` and `caption` (copy keys), `total`, `by_status[] {code, n, filter}`, `by_office[] {office_id, n}`, `target` (the route the tile opens). All Internal.
 - **`YourWorkOut`**: `label` (copy key, Internal), `rows[] {work_item_id, name, client, status, function, tags}`; `name` and `client` Confidential.

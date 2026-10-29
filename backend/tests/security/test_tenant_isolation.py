@@ -164,6 +164,7 @@ TABLES: tuple[str, ...] = (
     "independence_confirmations",
     "independence_statements",
     "integration_secrets",
+    "invitation_expiry_notices",
     "issue_events",
     "issue_links",
     "issues",

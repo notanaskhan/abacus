@@ -51,7 +51,29 @@ export const COPY = {
   },
   deadlines: { title: "Your deadlines · next 14 days", calendar: "Calendar" },
   next: (on: string, client: string, filing: string) => `Next: ${on} · ${client} · ${filing}`,
-  activity: { title: "Client activity" },
+  activity: {
+    title: "Client activity",
+    /** HOME-01a's rows (docs/screens/HOME-01.md); `the` and the quotes are the handoff's. */
+    you: "You",
+    mailed: (actor: string, what: string) => `${actor} emailed ${what}`,
+    quoted: (subject: string) => `"${subject}"`,
+    counted: (n: number, plural: string) => `${String(n)} ${plural}`,
+    sent: (actor: string, document: string, subject: string, recipient: string) =>
+      `${actor} sent the ${document} "${subject}" to ${recipient}`,
+    preScreened: (actor: string, client: string) => `${actor} pre-screened the ${client}`,
+    uploaded: (actor: string, subject: string) => `${actor} uploaded the ${subject}`,
+    flags: (n: number) => `${String(n)} flags · awaiting your decision`,
+    envelope: (due: string) => `Envelope · due ${due}`,
+    /** Undesigned (DEC-1001): the two allowlisted codes HOME-01a draws no row for. */
+    followUpSent: (actor: string) => `${actor} sent a follow-up`,
+    letterRecorded: "The engagement letter was recorded",
+    /** Document classes the rows name, singular and plural. */
+    documents: {
+      engagement_letter: ["engagement letter", "engagement letters"],
+      health_insurance_form: ["health insurance form", "health insurance forms"],
+    } as Record<string, readonly [string, string]>,
+    someone: "Someone",
+  },
   /** Undesigned (I-01-T11): the tile popover's name and its office rows. */
   byOffice: {
     label: (tile: string) => `${tile} by office`,
