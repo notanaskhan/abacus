@@ -254,6 +254,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "knowledge_document.failed",
         "knowledge_document.ready",
         "knowledge_document.withdrawn",
+        "ledger.pull_requested",  # A-02-T30: an on-demand pull
         "ledger_import.duplicate",
         "ledger_import.failed",
         "ledger_import.received",
