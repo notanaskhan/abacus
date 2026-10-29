@@ -13,11 +13,19 @@ declare module "node:fs" {
 }
 
 // Playwright's screenshots are Buffers; the workspace has no @types/node to say so.
-declare class Buffer extends Uint8Array {}
+declare class Buffer extends Uint8Array {
+  static from(data: ArrayLike<number>): Buffer;
+}
 
 // The visual harness (F-05-T16): baseline checks and the parity report.
 declare module "node:fs" {
   export function existsSync(path: string): boolean;
   export function mkdirSync(path: string, options: { recursive: true }): void;
   export function writeFileSync(path: string, data: string, encoding: "utf8"): void;
+}
+
+// Parity masks paint a baseline PNG and write the painted copy beside it.
+declare module "node:fs" {
+  export function readFileSync(path: string): Uint8Array;
+  export function writeFileSync(path: string, data: Uint8Array): void;
 }

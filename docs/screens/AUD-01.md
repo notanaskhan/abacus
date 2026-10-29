@@ -154,7 +154,7 @@ Each becomes a test in `AUD-01.test.tsx` ("AUD-01 avoid: …"): gradients in pro
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
 | a, b, c, e, f | C (threshold 0.20, maxDiffPixelRatio 3 %) | 2.95 / 1.40 / 1.67 / 1.02 / 0.80 | locked (A-01-T28, measured Thu Oct 29, 2026) |
-| d | C | 3.01 | report-only: the Processing spinner is unmasked (the parity report has no masks yet); locked by Fri Apr 30, 2027 once it is |
+| d | C | 3.00 | report-only: 3.005 % with the Processing spinner masked (`[data-phase='processing'] svg`, measured Thu Oct 29, 2026), 240 px over the line; what remains is the row order (Northwind above Fairhaven in the render, below it in `AUD-01d.png`) and the run popover. Locked by Fri Apr 30, 2027 once the order matches |
 | g, h | C | 2.91 / 1.60 | report-only (fixture only) |
 | i | — | — | deferred to K-04, recorded here, not missing |
 | host | D | — | toolbar 46, tabs bar 44, filter bar 50, tiles 120×72 radius 12, pane header 46 with a 14.5/500 title, rows 38, pills 21/19 |

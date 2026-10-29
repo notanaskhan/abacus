@@ -181,9 +181,9 @@ Composed from kits; no artboard exists. Recorded for the PF review and as a DF r
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| b, g | C (threshold 0.20, maxDiffPixelRatio 3 %) | 4.16 / 4.17 | report-only: measured Thu Oct 29, 2026 (A-01-T28) with the dock unmasked, as the parity report has no masks yet; locked by Fri Apr 30, 2027 once the dock is masked |
-| a, c, d, e | C | 4.97 / 4.16 / 2.40 / 4.96 | report-only with the dock masked until P-09 locks SHL-13 |
-| f | C | 7.63 | report-only (fixture, A-01-T31; dock masked as a, c, d, e; the confirm open as in `AUD-02f.png`) |
+| b, g | C (threshold 0.20, maxDiffPixelRatio 3 %) | 3.84 / 3.86 | report-only: measured Thu Oct 29, 2026 with the dock masked (`[data-cockpit='dock']`; 4.16 / 4.17 unmasked). What remains is layout: the page header and the Source Documents list sit about 14 px below the handoff's and the list rows differ. Locked by Fri Apr 30, 2027 once they match |
+| a, c, d, e | C | 3.92 / 3.84 / 1.34 / 3.92 | report-only with the dock masked until P-09 locks SHL-13 (d passes 3 % masked) |
+| f | C | 6.43 | report-only (fixture, A-01-T31; dock masked as a, c, d, e; the confirm open as in `AUD-02f.png`) |
 | h, i | — | — | deferred to A-09 / K-04 |
 | host | D | — | toolbar 46, audit bar 59, rail 330, canvas 696, dock 330, pane header 46 with a 14.5/500 title, rows 44, pills 21/19, radius 12; masks: spinners |
 
