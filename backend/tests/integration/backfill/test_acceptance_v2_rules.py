@@ -232,8 +232,8 @@ async def test_spec025s_route_cannot_contradict_the_record(net: Net) -> None:
     legacy = f"/v1/engagements/{eid}/acceptance"
     body: Json = {"decision": "accepted", "documented_at": "Acceptance memo"}
     refused = await w.call("PUT", legacy, w.partner, body)
-    assert refused.status_code == 409, refused.text
-    assert refused.json()["detail"] == "decision_locked"
+    # SPEC-025's PUT retired with P-07-T59 (DEC-905): the record has no other writer.
+    assert refused.status_code == 405, refused.text
     assert await net.seed.value(
         "SELECT status FROM engagements WHERE id = $1", uuid.UUID(eid)
     ) == ("prospect")
@@ -262,20 +262,13 @@ async def test_spec025s_route_cannot_contradict_the_record(net: Net) -> None:
         },
     )
     assert decided.status_code == 201, decided.text
-    declined = await w.call("PUT", legacy, w.partner, {**body, "decision": "declined"})
-    assert declined.status_code == 409, declined.text
-    same = await w.call("PUT", legacy, w.partner, body)
-    assert same.status_code == 200, same.text
-    # DEC-429 (P-07-T41 security review): with a CLI-07 record the conclusion is CLI-08's alone;
-    # SPEC-025's route refuses to document one.
-    concluded = await w.call(
-        "PUT",
-        legacy,
-        w.partner,
+    # Neither a decline nor a conclusion reaches the record through SPEC-025 any more.
+    for given in (
+        {**body, "decision": "declined"},
         {**body, "independence_concluded": True, "independence_documented_at": "Memo"},
-    )
-    assert concluded.status_code == 409, concluded.text
-    assert concluded.json()["detail"] == "decision_locked"
+    ):
+        gone = await w.call("PUT", legacy, w.partner, given)
+        assert gone.status_code == 405, gone.text
     assert await net.seed.value(
         "SELECT status FROM engagements WHERE id = $1", uuid.UUID(eid)
     ) == ("accepted")

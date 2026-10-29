@@ -2,7 +2,7 @@
 ADR-139, P-36). Contract: `docs/contracts/acceptance-independence.md` §Conflicts; spec: SPEC-332
 Story 7; DEC-326.
 
-Behind `engagements.acceptance_v2`: off, every route here answers 404; on, live since P-07-T36
+Live since P-07-T36, for every firm since P-07-T59 retired `engagements.acceptance_v2`
 (migration 0164 and `organisations.conflicts`; DEC-373).
 
 - A check runs synchronously over at most 50 names, searching clients, client entities, contacts,
@@ -26,11 +26,8 @@ from uuid import UUID
 from fastapi import Depends
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import ENGAGEMENTS_ACCEPTANCE_V2
 from abacus.kernel._statuses import ConflictAssessmentStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound
-from abacus.kernel.flags import flag_enabled
 from abacus.kernel.text import MultiLineText, SingleLineText
 from abacus.modules.identity.api import (
     AbacusRouter,
@@ -153,11 +150,9 @@ async def _gate(ctx: AuthContext, action: str) -> None:
     """Security review (DEC-326): authorise before the flag is read (the audits contract's
     order). Firm-level: no client principal, agent or system runs or reads a check. The service
     then requires a live person and authorises again."""
-    if ctx.client or ctx.tenant.actor_kind != "human":
+    if ctx.tenant.actor_kind != "human" or ctx.client:
         raise Forbidden(action, "role")
     await authorise(ctx, action, Resource.firm(ctx.tenant_id))
-    if not await flag_enabled(ctx.tenant, ENGAGEMENTS_ACCEPTANCE_V2):
-        raise NotFound("engagements.acceptance_v2")
 
 
 def _check_out(view: conflicts.CheckView) -> ConflictCheckOut:

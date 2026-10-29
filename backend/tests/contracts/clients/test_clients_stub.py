@@ -1,23 +1,19 @@
 """The clients family contract stub, v1 (P-07-T04; SPEC-321 AC-1 to AC-5): every route exists with
-its one matrix action and answers 404 with `clients.v2` off and 501 with it on; no payload carries
-a hidden-by-wall field or a TIN beyond the masked last four and the one reveal; the reveal is a
-live person's act. The consumers' own tests are P-07-T06's."""
+its one matrix action and answers for every firm (`clients.v2` retired, P-07-T59); no payload
+carries a hidden-by-wall field or a TIN beyond the masked last four and the one reveal; the reveal
+is a live person's act. The consumers' own tests are P-07-T06's."""
 
 from __future__ import annotations
 
 import ast
 import json
-import uuid
 from pathlib import Path
 from typing import cast
 
 import pytest
 
 from abacus.api.export_openapi import document
-from abacus.kernel._flags import CLIENTS_V2
-from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound
-from abacus.modules.identity.api import AuthContext
+from abacus.kernel._flags import FLAGS
 from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.organisations import contract
 
@@ -124,28 +120,12 @@ def test_ac3_tin_reveal_is_a_live_person_with_mfa_and_a_reason() -> None:
     assert not _granted("tin.reveal") & CLIENT_ROLES
 
 
-async def test_ac4_flag_off_is_404_and_flag_on_passes_the_gate(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    user = uuid.uuid4()
-    ctx = AuthContext(
-        TenantContext(uuid.uuid4(), "human", str(user)), user, uuid.uuid4(), None, None
-    )
-    seen: list[object] = []
-
-    async def off(_tenant: object, flag: object) -> bool:
-        seen.append(flag)
-        return False
-
-    async def on(_tenant: object, _flag: object) -> bool:
-        return True
-
-    monkeypatch.setattr(contract, "flag_enabled", off)
-    with pytest.raises(NotFound):
-        await contract._gate(ctx)  # pyright: ignore[reportPrivateUsage] -- the flag gate
-    assert seen == [CLIENTS_V2]
-    monkeypatch.setattr(contract, "flag_enabled", on)
-    await contract._gate(ctx)  # pyright: ignore[reportPrivateUsage] -- the flag gate
+def test_ac4_clients_v2_is_retired_and_no_route_reads_a_flag() -> None:
+    """P-07-T59 (DEC-905): the routes answer for every firm; the registry no longer has the flag
+    and the contract reads none."""
+    assert "clients.v2" not in FLAGS
+    assert not hasattr(contract, "flag_enabled")
+    assert not hasattr(contract, "_gate")
 
 
 def test_ac5_organisations_never_imports_the_model_gateway_or_agents() -> None:

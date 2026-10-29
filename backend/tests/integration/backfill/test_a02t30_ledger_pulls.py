@@ -73,12 +73,12 @@ async def _connect(net: Net, site: Site, reason: str | None = None) -> None:
 
 
 async def _pull(
-    net: Net, who: Person, site: Site, key: str = "ledger-pull-1", label: str = "standard"
+    net: Net, who: Person, site: Site, attempt: str = "ledger-pull-1", label: str = "standard"
 ) -> httpx.Response:
     return await net.http.post(
         f"/v1/engagements/{site.engagement_id}/connection/pulls",
         json={"period_end": "2026-12-31", "label": label},
-        headers={**net.headers(who), "Idempotency-Key": key},
+        headers={**net.headers(who), "Idempotency-Key": attempt},
     )
 
 
@@ -111,10 +111,10 @@ async def test_ac_a_pull_records_one_on_demand_run(net: Net, started: list[uuid.
 async def test_a_second_pull_while_one_runs_answers_it(net: Net) -> None:
     _, simone, _, site = await _world(net)
     await _connect(net, site)
-    first = await _pull(net, simone, site, key="ledger-pull-a")
-    again = await _pull(net, simone, site, key="ledger-pull-b")
+    first = await _pull(net, simone, site, attempt="ledger-pull-a")
+    again = await _pull(net, simone, site, attempt="ledger-pull-b")
     assert first.json()["sync_run_id"] == again.json()["sync_run_id"]
-    prior = await _pull(net, simone, site, key="ledger-pull-c", label="prior")
+    prior = await _pull(net, simone, site, attempt="ledger-pull-c", label="prior")
     assert prior.json()["sync_run_id"] != first.json()["sync_run_id"]
 
 
@@ -154,7 +154,7 @@ async def test_staff_without_ledger_pull_is_refused(net: Net) -> None:
 async def test_a_replay_of_the_same_key_answers_the_same_run(net: Net) -> None:
     _, simone, _, site = await _world(net)
     await _connect(net, site)
-    first = await _pull(net, simone, site, key="ledger-pull-replay")
-    again = await _pull(net, simone, site, key="ledger-pull-replay")
+    first = await _pull(net, simone, site, attempt="ledger-pull-replay")
+    again = await _pull(net, simone, site, attempt="ledger-pull-replay")
     assert (first.status_code, again.status_code) == (202, 202)
     assert first.json()["sync_run_id"] == again.json()["sync_run_id"]

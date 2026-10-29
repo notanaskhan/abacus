@@ -1,6 +1,6 @@
 """The intake and import contract stubs, v1 (P-07-T37; `docs/contracts/intake-import.md`;
-DEC-374): every route exists with its one matrix action and answers 404 with `clients.v2` off
-(they answered 501 with it on until P-07-T42 and P-07-T52 made them live); commit and run
+DEC-374): every route exists with its one matrix action and answers for every firm (`clients.v2`
+retired with P-07-T59; P-07-T42 and P-07-T52 made them live); commit and run
 require an `Idempotency-Key`;
 the agent and the system are refused before the flag is read; no client role holds an action;
 no schema carries a plain TIN, a hidden-by-wall field or a walled count. The consumer suite is
@@ -15,10 +15,9 @@ from typing import cast
 import pytest
 
 from abacus.api.export_openapi import document
-from abacus.kernel._flags import CLIENTS_V2
+from abacus.kernel._flags import FLAGS
 from abacus.kernel.db import TenantContext
 from abacus.kernel.db.session import ActorKind
-from abacus.kernel.errors import NotFound
 from abacus.modules.engagements import intake_contract
 from abacus.modules.identity.api import AuthContext, Forbidden
 from abacus.modules.identity.authz.matrix import RULES
@@ -139,41 +138,32 @@ def _ctx(kind: ActorKind = "human", *, client: bool = False) -> AuthContext:
     )
 
 
-async def test_authorise_first_then_the_flag(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_authorise_first_and_no_flag(monkeypatch: pytest.MonkeyPatch) -> None:
+    """P-07-T59 (DEC-905): `clients.v2` is retired; the gate authorises and reads no flag."""
     seen: list[object] = []
 
     async def authorised(_ctx: object, action: str, _resource: object) -> None:
         seen.append(action)
 
-    async def off(_tenant: object, flag: object) -> bool:
-        seen.append(flag)
-        return False
-
-    async def on(_tenant: object, _flag: object) -> bool:
-        return True
-
     monkeypatch.setattr(intake_contract, "authorise", authorised)
-    monkeypatch.setattr(intake_contract, "flag_enabled", off)
-    with pytest.raises(NotFound):
-        await intake_contract._gate(_ctx(), "client.intake")  # pyright: ignore[reportPrivateUsage] -- the gate
-    assert seen == ["client.intake", CLIENTS_V2]
-    monkeypatch.setattr(intake_contract, "flag_enabled", on)
+    await intake_contract._gate(_ctx(), "client.intake")  # pyright: ignore[reportPrivateUsage] -- the gate
     await intake_contract._gate(_ctx(), "client_import.run")  # pyright: ignore[reportPrivateUsage] -- the gate
-    assert seen == ["client.intake", CLIENTS_V2, "client_import.run"]
+    assert seen == ["client.intake", "client_import.run"]
+    assert "clients.v2" not in FLAGS
+    assert not hasattr(intake_contract, "flag_enabled")
 
 
 @pytest.mark.parametrize("who", ["agent", "system", "client"])
-async def test_agent_system_and_client_are_refused_before_the_flag(
+async def test_agent_system_and_client_are_refused_first(
     monkeypatch: pytest.MonkeyPatch, who: str
 ) -> None:
-    flags: list[object] = []
+    seen: list[object] = []
 
-    async def flag(_tenant: object, f: object) -> bool:
-        flags.append(f)
-        return True
+    async def authorised(_ctx: object, action: str, _resource: object) -> None:
+        seen.append(action)
 
-    monkeypatch.setattr(intake_contract, "flag_enabled", flag)
+    monkeypatch.setattr(intake_contract, "authorise", authorised)
     ctx = _ctx("human", client=True) if who == "client" else _ctx(cast(ActorKind, who))
     with pytest.raises(Forbidden):
         await intake_contract._gate(ctx, "client.intake")  # pyright: ignore[reportPrivateUsage] -- the gate
-    assert flags == []
+    assert seen == []  # refused before anything is authorised

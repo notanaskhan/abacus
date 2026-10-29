@@ -87,7 +87,6 @@ TABLES: tuple[str, ...] = (
     "decisions",
     "email_suppressions",
     "email_template_drafts",
-    "engagement_acceptance",
     "engagement_accounts",
     "engagement_agents",
     "engagement_contacts",
