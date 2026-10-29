@@ -117,6 +117,11 @@ NOT_CREATING = {
     "/v1/platform/retention/defaults/{set_version}/publish",
     # G-02-T20: publishing a Pub 4557 control set changes a draft's status, so 200.
     "/v1/platform/safeguards-controls/{set_version}/publish",
+    # T-02-T01 (tax-returns stub): a bulk assignment, an assignment and a transition change the
+    # returns and return them, so 200.
+    "/v1/tax-returns:bulk-assign",
+    "/v1/tax-returns/{return_id}/assignments",
+    "/v1/tax-returns/{return_id}/transitions",
     # T-01-T02 (engine-bridge stub): approvals, marks, rejections, letters, publishing and the
     # format check change or read a record, so 200.
     "/v1/tax-returns/{return_id}/final-approval",

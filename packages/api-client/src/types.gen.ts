@@ -1894,6 +1894,20 @@ export type AssignedOut = {
 };
 
 /**
+ * AssignmentIn
+ */
+export type AssignmentIn = {
+    /**
+     * Role
+     */
+    role: 'preparer' | 'reviewer' | 'signer';
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
  * AssistantOut
  */
 export type AssistantOut = {
@@ -3721,6 +3735,38 @@ export type BudgetOut = {
      * Spent This Month Usd
      */
     spent_this_month_usd: string;
+};
+
+/**
+ * BulkAssignIn
+ */
+export type BulkAssignIn = {
+    /**
+     * Return Ids
+     */
+    return_ids: Array<string>;
+    /**
+     * Role
+     */
+    role: 'preparer' | 'reviewer' | 'signer';
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * BulkAssignOut
+ */
+export type BulkAssignOut = {
+    /**
+     * Assigned
+     */
+    assigned: number;
+    /**
+     * Refused
+     */
+    refused: Array<string>;
 };
 
 /**
@@ -10830,6 +10876,26 @@ export type EngineSettingsOut = {
 };
 
 /**
+ * EngineSummaryLineOut
+ *
+ * One engine figure from an approved import only (ADR-231).
+ */
+export type EngineSummaryLineOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Line Key
+     */
+    line_key: string;
+};
+
+/**
  * EngineSyncEventOut
  */
 export type EngineSyncEventOut = {
@@ -15741,6 +15807,24 @@ export type InformationReturnThresholdsPayload = {
 };
 
 /**
+ * IntakeCategoryOut
+ */
+export type IntakeCategoryOut = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Received
+     */
+    received: number;
+    /**
+     * Requested
+     */
+    requested: number;
+};
+
+/**
  * IntakeCommitIn
  *
  * "Create & start acceptance" (`start_acceptance`) or "Create".
@@ -16833,6 +16917,26 @@ export type JoinedOut = {
 export type JsonValue = unknown;
 
 /**
+ * K1DependencyOut
+ */
+export type K1DependencyOut = {
+    /**
+     * Issuer Name
+     */
+    issuer_name: string;
+    /**
+     * Source Return Id
+     */
+    source_return_id: string | null;
+    status: K1HandoffStatus;
+};
+
+/**
+ * K1HandoffStatus
+ */
+export type K1HandoffStatus = 'awaiting' | 'received';
+
+/**
  * KindTotalOut
  */
 export type KindTotalOut = {
@@ -17065,6 +17169,21 @@ export type LadderLevelOut = {
      * Required
      */
     required: boolean;
+};
+
+/**
+ * LadderStepOut
+ */
+export type LadderStepOut = {
+    person: PersonChipOut | null;
+    /**
+     * Role
+     */
+    role: 'preparer' | 'reviewer' | 'signer';
+    /**
+     * Signed Off At
+     */
+    signed_off_at: string | null;
 };
 
 /**
@@ -18383,6 +18502,40 @@ export type ListPageStandardOut = {
      * Items
      */
     items: Array<StandardOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
+ * ListPage[TaxReturnRowOut]
+ */
+export type ListPageTaxReturnRowOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<TaxReturnRowOut>;
     /**
      * Next Cursor
      */
@@ -20069,6 +20222,24 @@ export type OfficeOut = {
 };
 
 /**
+ * OfficeTotalOut
+ */
+export type OfficeTotalOut = {
+    /**
+     * Done
+     */
+    done: number;
+    /**
+     * Office Id
+     */
+    office_id: string;
+    /**
+     * Open
+     */
+    open: number;
+};
+
+/**
  * OffshoreOut
  *
  * ADM-03d. The two policy toggles are always on and locked (AC9.3).
@@ -20268,6 +20439,24 @@ export type PaymentInstructionOut = {
      * Kind
      */
     kind: 'refund' | 'balance_due' | 'estimate';
+};
+
+/**
+ * PersonChipOut
+ */
+export type PersonChipOut = {
+    /**
+     * Initials
+     */
+    initials: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * User Id
+     */
+    user_id: string;
 };
 
 /**
@@ -24537,6 +24726,16 @@ export type ReturnApprovalPolicyPayload = {
      */
     rule: 'signing_partner_final_approval';
 };
+
+/**
+ * ReturnStatus
+ */
+export type ReturnStatus = 'not_started' | 'gathering' | 'preparing' | 'prepared' | 'in_review' | 'action_required' | 'approved' | 'awaiting_signature' | 'filed' | 'accepted' | 'rejected' | 'fixing';
+
+/**
+ * ReturnSyncChipStatus
+ */
+export type ReturnSyncChipStatus = 'not_yet_exported' | 'ready_for_export' | 'exporting' | 'synced' | 'out_of_sync' | 'import_pending_approval' | 'failed';
 
 /**
  * ReturnToClientIn
@@ -29339,6 +29538,17 @@ export type StatementOut = {
 };
 
 /**
+ * StatusTileOut
+ */
+export type StatusTileOut = {
+    /**
+     * Count
+     */
+    count: number;
+    status: ReturnStatus;
+};
+
+/**
  * StepCreateIn
  */
 export type StepCreateIn = {
@@ -29749,6 +29959,20 @@ export type SyncRunSummaryOut = {
 };
 
 /**
+ * TabCountOut
+ */
+export type TabCountOut = {
+    /**
+     * Count
+     */
+    count: number | null;
+    /**
+     * Tab
+     */
+    tab: string;
+};
+
+/**
  * TablePart
  */
 export type TablePart = {
@@ -29977,6 +30201,213 @@ export type TaxProfileOut = {
      * Tin Last4
      */
     tin_last4: string | null;
+};
+
+/**
+ * TaxReturnIntakeOut
+ *
+ * TAX-03: binder card, categories, requests and files, questionnaires and K-1 hand-offs.
+ */
+export type TaxReturnIntakeOut = {
+    /**
+     * Binder Id
+     */
+    binder_id: string | null;
+    /**
+     * Categories
+     */
+    categories: Array<IntakeCategoryOut>;
+    /**
+     * K1 Handoffs
+     */
+    k1_handoffs: Array<K1DependencyOut>;
+    /**
+     * Questionnaire Ids
+     */
+    questionnaire_ids: Array<string>;
+    /**
+     * Return Id
+     */
+    return_id: string;
+    /**
+     * Waiting Files
+     */
+    waiting_files: number;
+};
+
+/**
+ * TaxReturnOverviewOut
+ *
+ * TAX-02: the team ladder, pipeline, filing band, engine summaries, top issues and K-1
+ * dependencies.
+ */
+export type TaxReturnOverviewOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Consent Ok
+     */
+    consent_ok: boolean | null;
+    /**
+     * Engine Summary
+     */
+    engine_summary: Array<EngineSummaryLineOut>;
+    /**
+     * Engine Version
+     */
+    engine_version: string | null;
+    /**
+     * K1 Dependencies
+     */
+    k1_dependencies: Array<K1DependencyOut>;
+    /**
+     * Ladder
+     */
+    ladder: Array<LadderStepOut>;
+    /**
+     * Open Issues
+     */
+    open_issues: number;
+    /**
+     * Return Id
+     */
+    return_id: string;
+};
+
+/**
+ * TaxReturnRecordOut
+ *
+ * The `ReturnFrame`: subbar, tab counts and what the viewer may do.
+ */
+export type TaxReturnRecordOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Approval Policy Version Id
+     */
+    approval_policy_version_id: string | null;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Engine Return Id
+     */
+    engine_return_id: string | null;
+    row: TaxReturnRowOut;
+    /**
+     * Tabs
+     */
+    tabs: Array<TabCountOut>;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
+ * TaxReturnRowOut
+ *
+ * One TAX-01 row.
+ */
+export type TaxReturnRowOut = {
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Due Rule Code
+     */
+    due_rule_code: string | null;
+    /**
+     * Extended
+     */
+    extended: boolean;
+    /**
+     * Extended Due On
+     */
+    extended_due_on: string | null;
+    /**
+     * Form
+     */
+    form: '1040' | '1041' | '1065' | '1120s' | '1120' | '990' | '706' | '709' | '1040x';
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Office Id
+     */
+    office_id: string | null;
+    /**
+     * On Hold
+     */
+    on_hold: boolean;
+    /**
+     * Original Due On
+     */
+    original_due_on: string | null;
+    preparer: PersonChipOut | null;
+    /**
+     * Review Level
+     */
+    review_level: 'detail' | 'manager' | 'partner' | null;
+    reviewer: PersonChipOut | null;
+    signer: PersonChipOut | null;
+    status: ReturnStatus;
+    sync: ReturnSyncChipStatus | null;
+    /**
+     * Tags
+     */
+    tags: Array<string>;
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+};
+
+/**
+ * TaxReturnSummaryOut
+ *
+ * TAX-01 tiles: per canonical status, open and done, extended, office totals (wall-safe).
+ */
+export type TaxReturnSummaryOut = {
+    /**
+     * Done
+     */
+    done: number;
+    /**
+     * Extended
+     */
+    extended: number;
+    /**
+     * Offices
+     */
+    offices: Array<OfficeTotalOut>;
+    /**
+     * Open
+     */
+    open: number;
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+    /**
+     * Tiles
+     */
+    tiles: Array<StatusTileOut>;
+    /**
+     * Total
+     */
+    total: number;
 };
 
 /**
@@ -31512,6 +31943,22 @@ export type TranscriptUploadIn = {
      * Upload Id
      */
     upload_id: string;
+};
+
+/**
+ * TransitionIn
+ *
+ * A person's move; the person-gated moves (approval, filing) are not here (409 `{gate}`).
+ */
+export type TransitionIn = {
+    /**
+     * Event
+     */
+    event: 'start_preparation' | 'start_review';
+    /**
+     * Seen Version
+     */
+    seen_version: number;
 };
 
 /**
@@ -76679,6 +77126,218 @@ export type EndSupportSessionResponses = {
 
 export type EndSupportSessionResponse = EndSupportSessionResponses[keyof EndSupportSessionResponses];
 
+export type ListReturnsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Tax Year
+         */
+        tax_year?: number | null;
+        /**
+         * Status
+         */
+        status?: Array<ReturnStatus> | null;
+        /**
+         * Review Level
+         */
+        review_level?: 'detail' | 'manager' | 'partner' | null;
+        /**
+         * Form
+         */
+        form?: Array<'1040' | '1041' | '1065' | '1120s' | '1120' | '990' | '706' | '709' | '1040x'> | null;
+        /**
+         * Office
+         */
+        office?: Array<string> | null;
+        /**
+         * Partner
+         */
+        partner?: string | null;
+        /**
+         * Preparer
+         */
+        preparer?: string | null;
+        /**
+         * Due Within Days
+         */
+        due_within_days?: number | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Group By
+         */
+        group_by?: 'office' | null;
+        /**
+         * Sort
+         */
+        sort?: 'extended_due' | 'client' | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/tax-returns';
+};
+
+export type ListReturnsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListReturnsError = ListReturnsErrors[keyof ListReturnsErrors];
+
+export type ListReturnsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageTaxReturnRowOut;
+};
+
+export type ListReturnsResponse = ListReturnsResponses[keyof ListReturnsResponses];
+
+export type ReturnsSummaryData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Tax Year
+         */
+        tax_year?: number | null;
+    };
+    url: '/v1/tax-returns/summary';
+};
+
+export type ReturnsSummaryErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ReturnsSummaryError = ReturnsSummaryErrors[keyof ReturnsSummaryErrors];
+
+export type ReturnsSummaryResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxReturnSummaryOut;
+};
+
+export type ReturnsSummaryResponse = ReturnsSummaryResponses[keyof ReturnsSummaryResponses];
+
+export type ReturnRecordData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}';
+};
+
+export type ReturnRecordErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ReturnRecordError = ReturnRecordErrors[keyof ReturnRecordErrors];
+
+export type ReturnRecordResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxReturnRecordOut;
+};
+
+export type ReturnRecordResponse = ReturnRecordResponses[keyof ReturnRecordResponses];
+
 export type RecordAckData = {
     body: EfileAckIn;
     headers: {
@@ -76742,6 +77401,66 @@ export type RecordAckResponses = {
 };
 
 export type RecordAckResponse = RecordAckResponses[keyof RecordAckResponses];
+
+export type Assign2Data = {
+    body: AssignmentIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/assignments';
+};
+
+export type Assign2Errors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type Assign2Error = Assign2Errors[keyof Assign2Errors];
+
+export type Assign2Responses = {
+    /**
+     * Successful Response
+     */
+    200: TaxReturnRecordOut;
+};
+
+export type Assign2Response = Assign2Responses[keyof Assign2Responses];
 
 export type PublishDeliverableData = {
     body?: never;
@@ -77351,6 +78070,178 @@ export type ApproveReturnResponses = {
 
 export type ApproveReturnResponse = ApproveReturnResponses[keyof ApproveReturnResponses];
 
+export type ReturnIntakeData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/intake';
+};
+
+export type ReturnIntakeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ReturnIntakeError = ReturnIntakeErrors[keyof ReturnIntakeErrors];
+
+export type ReturnIntakeResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxReturnIntakeOut;
+};
+
+export type ReturnIntakeResponse = ReturnIntakeResponses[keyof ReturnIntakeResponses];
+
+export type ReturnOverviewData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/overview';
+};
+
+export type ReturnOverviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ReturnOverviewError = ReturnOverviewErrors[keyof ReturnOverviewErrors];
+
+export type ReturnOverviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxReturnOverviewOut;
+};
+
+export type ReturnOverviewResponse = ReturnOverviewResponses[keyof ReturnOverviewResponses];
+
+export type TransitionData = {
+    body: TransitionIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/transitions';
+};
+
+export type TransitionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TransitionError = TransitionErrors[keyof TransitionErrors];
+
+export type TransitionResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxReturnRecordOut;
+};
+
+export type TransitionResponse = TransitionResponses[keyof TransitionResponses];
+
 export type RecordTransmissionData = {
     body: TransmissionIn;
     headers: {
@@ -77414,6 +78305,61 @@ export type RecordTransmissionResponses = {
 };
 
 export type RecordTransmissionResponse = RecordTransmissionResponses[keyof RecordTransmissionResponses];
+
+export type BulkAssignData = {
+    body: BulkAssignIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/tax-returns:bulk-assign';
+};
+
+export type BulkAssignErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type BulkAssignError = BulkAssignErrors[keyof BulkAssignErrors];
+
+export type BulkAssignResponses = {
+    /**
+     * Successful Response
+     */
+    200: BulkAssignOut;
+};
+
+export type BulkAssignResponse = BulkAssignResponses[keyof BulkAssignResponses];
 
 export type BrowserErrorData = {
     body?: never;
