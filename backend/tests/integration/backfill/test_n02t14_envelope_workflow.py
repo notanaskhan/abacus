@@ -247,7 +247,7 @@ def test_reminders_fall_on_weekdays_at_nine_in_the_zone_and_before_expiry() -> N
     out = reminder_instants(
         cadence="daily",
         sent_at=friday,
-        expires_at=friday + timedelta(days=4),
+        expires_at=friday + timedelta(days=4, hours=1),  # Tue 10:00 CST: Tue 9:00 is before it
         cap=3,
         zone="America/Chicago",
     )

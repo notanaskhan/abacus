@@ -66,10 +66,19 @@ FIRM = [(r, c7) for r in _routes(c7.router, c7.policies_router)] + [
 ]
 PORTAL = _routes(c7.portal_router)
 # Live since N-02-T08 (record-mode import; DEC-818): their own codes, never 501.
+IMPORTS = frozenset({"import_envelope_record_route", "stage_envelope_import_file_route"})
+# N-02-T13 (DEC-1055): the hub routes keep the contract's own actions.
+LIVE_ACTIONS = {
+    "list_envelopes_route": "envelope.read",
+    "envelope_summary_route": "envelope.read",
+    "get_envelope_route": "envelope.read",
+    "void_envelope_route": "envelope.void",
+    "reveal_signer_ip_route": "signer.reveal_ip",
+    "envelope_evidence_route": "envelope.evidence_download",
+}
 LIVE = frozenset(
     {
-        "import_envelope_record_route",
-        "stage_envelope_import_file_route",
+        *IMPORTS,
         # N-02-T13 (DEC-1055): the hub, the drawer and its actions.
         "list_envelopes_route",
         "envelope_summary_route",
@@ -256,5 +265,5 @@ def test_eng04_letter_words_are_df31() -> None:
 def test_n02t08_the_live_import_routes_declare_their_action_and_no_501(route: APIRoute) -> None:
     method = next(iter(route.methods or {"GET"})).lower()
     op = PATHS[route.path][method]
-    assert op["x-abacus-action"] == "envelope.import_record"
+    assert op["x-abacus-action"] == LIVE_ACTIONS.get(route.name, "envelope.import_record")
     assert "501" not in set(cast(Json, op["responses"]))
