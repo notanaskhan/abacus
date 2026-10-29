@@ -35,7 +35,7 @@ from abacus.modules.connections.repository import (
 )
 from abacus.modules.connections.retrievals import ensure_workflow
 from abacus.modules.connections.service import ActionCapReached, today_start
-from abacus.modules.engagements.api import lock_ref
+from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.identity.api import AuthContext, authorise
 
 ACTION: Final = "ledger.pull"
@@ -53,6 +53,12 @@ def period_of(period_end: date) -> tuple[date, date]:
     """The twelve months ending on `period_end`."""
     start = date(period_end.year - 1, period_end.month, period_end.day) + timedelta(days=1)
     return start, period_end
+
+
+async def check_pull(ctx: AuthContext, engagement_id: UUID) -> None:
+    """The route's check before its `Idempotency-Key` lookup, so a replay is authorised too."""
+    engagement = await get_ref(ctx, engagement_id)
+    await authorise(ctx, ACTION, engagement.resource())
 
 
 async def pull(ctx: AuthContext, engagement_id: UUID, period_end: date, label: str) -> Pulled:
@@ -92,7 +98,7 @@ async def pull(ctx: AuthContext, engagement_id: UUID, period_end: date, label: s
             tx.record(
                 "action_cap.refused",
                 target=Target("engagement", engagement_id),
-                after=Ref(user_id=ctx.user_id, trigger="on_demand"),
+                after=Ref(user_id=ctx.user_id),
             )
         else:
             run = await insert_retry_run(
@@ -114,12 +120,12 @@ async def pull(ctx: AuthContext, engagement_id: UUID, period_end: date, label: s
             tx.record(
                 "ledger.pull_requested",
                 target=Target("sync_run", run.id),
-                after=Ref(engagement_id=engagement_id, label=label, period_end=end.isoformat()),
+                after=Ref(engagement_id=engagement_id, period_end=int(end.strftime("%Y%m%d"))),
             )
             tx.record(
                 "sync_run.started",
                 target=Target("sync_run", run.id),
-                after=Ref(user_id=ctx.user_id, trigger="on_demand"),
+                after=Ref(user_id=ctx.user_id),
             )
     if capped or run is None:
         raise ActionCapReached("retrieval")

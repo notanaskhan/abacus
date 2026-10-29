@@ -44,7 +44,7 @@ from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow.idempotency import idempotent
-from abacus.modules.connections.api import pull_ledger
+from abacus.modules.connections.api import check_ledger_pull, pull_ledger
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 from abacus.modules.integrations.ports import IntegrationCategory
 
@@ -258,6 +258,7 @@ async def ledger_pull_route(
     `connection_needs_reauth` or `connector_not_available`. Audited `ledger.pull_requested`."""
     if not await flag_enabled(ctx.tenant, CONNECTIONS_LIVE_LEDGER):
         raise NotFound(CONNECTIONS_LIVE_LEDGER.name)
+    await check_ledger_pull(ctx, engagement_id)
 
     async def run() -> tuple[int, dict[str, object]]:
         made = await pull_ledger(ctx, engagement_id, body.period_end, body.label.value)

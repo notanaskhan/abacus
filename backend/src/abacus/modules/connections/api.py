@@ -76,6 +76,7 @@ from abacus.modules.connections.pipeline import (
     snapshot,
     validate_run,
 )
+from abacus.modules.connections.pulls import check_pull as check_ledger_pull
 from abacus.modules.connections.pulls import pull as pull_ledger
 from abacus.modules.connections.reconnect import (
     ReconnectRequested,
@@ -219,6 +220,7 @@ __all__ = [
     "WorkflowUnavailable",
     "authorised_engagement",
     "auto_retrieve",
+    "check_ledger_pull",
     "complete_any",
     "complete_router",
     "connection_detail",
