@@ -189,7 +189,7 @@ async def test_the_review_grammar_journey_keeps_inv_1_to_inv_5(
     client = await world.seed.client_contact(world.site)
     for path in (
         f"/v1/proposals/{proposal}",
-        "/v1/checkpoints?target_type=x&target_id=" + str(ret),
+        f"/v1/checkpoints?target_type={PROBE}&target_id={ret}",
     ):
         assert (await world.call("GET", path, client)).status_code in (403, 404)
 
