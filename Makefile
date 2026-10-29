@@ -75,6 +75,8 @@ check-fast:
 	cd backend && uv run python -m abacus_tools.quality.scope_guards
 	cd backend && uv run python -m abacus_tools.quality.seed_contamination
 	cd backend && uv run python -m abacus_tools.quality.fresh_mfa
+	# Q-03-T095 (ADR-080): every table and matrix kind the code uses has its generated tests.
+	cd backend && uv run python -m abacus_tools.quality.generator_coverage
 	cd backend && uv run python -m abacus_tools.quality.mutation_floors
 	cd backend && uv run python -m abacus_tools.quality.coverage_floors
 	cd backend && uv run python -m abacus_tools.release_windows check
