@@ -1,8 +1,8 @@
 ---
 id: TASK-1734
 title: Q-04-T013 Independent AC tests for the metric reads and the go-live check
-spec: Q-04 §4; SPEC-403; chapter 06 §8.3
-acceptance_criteria: [Q-04-T013]
+spec: SPEC-403
+acceptance_criteria: [AC-11]
 risk_zone: amber
 status: in-review
 epic: Q-04
