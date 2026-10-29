@@ -15,6 +15,7 @@ export const COPY = {
     team: "Team",
     letter: "Letter & terms",
     budget: "Budget",
+    activity: "Activity", // P-07-T61: the tab's label (R2 tab list)
   },
   /** R2: the gear at the right end of the tabsbar; it opens ENG-11 (planned). */
   gear: "Engagement settings",

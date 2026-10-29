@@ -26,6 +26,7 @@ from abacus.modules.audit_trail.metrics import (
     event_counts,
     first_to_last_durations,
 )
+from abacus.modules.audit_trail.pilot_w6 import w6_request_to_received
 from abacus.modules.audit_trail.routes import router
 from abacus.modules.audit_trail.service import events_for_target
 from abacus.modules.audit_trail.workflows import (
@@ -43,6 +44,7 @@ from abacus.modules.audit_trail.workflows import (
     AuditPartitionsWorkflow,
 )
 from abacus.modules.identity.api import AbacusRouter, register_target_events
+from abacus.modules.platform.api import register_pilot_metric_source
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
@@ -67,6 +69,8 @@ LIVE_READS = audit_log_routes.router
 
 # Q-02-T20, T21: partitions, checkpoints and the nightly verify on Schedules (the daily anchor is
 # evidence's).
+register_pilot_metric_source("w6", w6_request_to_received)  # Q-04-T008 (DEC-825)
+
 __all__ = [
     "ACTIVITIES",
     "CHECKPOINT_ID",

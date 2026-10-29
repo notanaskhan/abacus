@@ -1,8 +1,8 @@
 # The firm app's edge (Q-01-T15): one CloudFront distribution on its default *.cloudfront.net
 # host until the firm domain exists (DEC-1003). The SPA comes from abacus-<env>-web through origin
 # access control; /v1/* goes to the internal ALB through a CloudFront VPC origin (no public
-# endpoint). /healthz and /readyz are refused at the edge (the ALB alone probes them). The WAF
-# rules and the firm certificate join with the domain.
+# endpoint). /healthz and /readyz answer 403 at the edge (the ALB alone probes them). The WAF
+# WebACL attaches when given; the firm host and its certificate join with the domain.
 
 resource "aws_cloudfront_origin_access_control" "web" {
   name                              = "abacus-${var.environment}-web"
@@ -74,21 +74,15 @@ data "aws_cloudfront_origin_request_policy" "all_viewer_except_host" {
 resource "aws_cloudfront_function" "edge_block" {
   name    = "abacus-${var.environment}-firm-edge-block"
   runtime = "cloudfront-js-2.0"
-  comment = "Refuse /healthz and /readyz at the edge"
+  comment = "Refuse /healthz and /readyz at the edge (403)"
   publish = true
-  code    = <<-JS
-    function handler(event) {
-      var uri = event.request.uri;
-      if (uri === "/healthz" || uri === "/readyz" || uri.indexOf("/healthz/") === 0 || uri.indexOf("/readyz/") === 0) {
-        return { statusCode: 404, statusDescription: "Not Found" };
-      }
-      return event.request;
-    }
-  JS
+  code    = file("${path.module}/firm-edge.js")
 }
 
 resource "aws_cloudfront_distribution" "firm" {
   enabled             = true
+  web_acl_id          = var.web_acl_arn
+  aliases             = var.firm_host == null ? [] : [var.firm_host]
   comment             = "abacus ${var.environment} firm app"
   default_root_object = "index.html"
   price_class         = "PriceClass_100"
@@ -150,7 +144,9 @@ resource "aws_cloudfront_distribution" "firm" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    cloudfront_default_certificate = var.certificate_arn == null
+    acm_certificate_arn            = var.certificate_arn
+    ssl_support_method             = var.certificate_arn == null ? null : "sni-only"
     minimum_protocol_version       = "TLSv1.2_2021"
   }
 }

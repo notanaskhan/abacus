@@ -38,6 +38,7 @@ TeamKind = Literal[
     "monitoring_reviewers",
     "reviewer_pool",
     "custom",
+    "intake",  # N-01-T08 (DEC-20): the intake scope
 ]
 OfficeCode = Annotated[str, Field(pattern=r"^[A-Z]{2,6}$")]
 ServiceLine = Literal["audit", "tax", "cas", "advisory"]

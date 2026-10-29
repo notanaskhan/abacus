@@ -507,6 +507,20 @@ async def _line_reader(ctx: AuthContext, rule: Rule, engagement_id: UUID) -> boo
     return await attest_of(ctx.tenant, engagement_id) is False
 
 
+async def authorise_with_scope(
+    ctx: AuthContext, action: str, resource: Resource, *, in_scope: bool
+) -> None:
+    """`authorise`, or a firm-level scope a person holds (N-01-T08's intake scope, DEC-20,
+    DEC-819) where the matrix's roles do not grant the action. The scope never grants the agent,
+    the system or support; the caller decides `in_scope` and checks walls itself."""
+    try:
+        await authorise(ctx, action, resource)
+    except Forbidden:
+        if not in_scope or ctx.is_support or ctx.tenant.actor_kind != "human":
+            raise
+        _record(action)
+
+
 async def authorise(
     ctx: Actor, action: str, resource: Resource, *, reason: str | None = None
 ) -> None:

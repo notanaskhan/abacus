@@ -24,6 +24,7 @@ from abacus.modules.connections.gl_import import process_gl_import, render_gl_ev
 from abacus.modules.connections.pipeline import (
     RunFailed,
     fail_run,
+    finish_at_snapshot,
     is_retryable,
     mark_queued,
     normalise_raw,
@@ -163,6 +164,12 @@ async def snapshot_activity(input: RetrievalInput) -> None:
     await _stage(input, snapshot)
 
 
+@activity.defn(name="retrieval.finish_at_snapshot")
+async def finish_at_snapshot_activity(input: RetrievalInput) -> bool:
+    """A-02-T30: True when the run (an on-demand pull) ended at its snapshot."""
+    return bool(await _stage(input, finish_at_snapshot))
+
+
 @activity.defn(name="retrieval.render")
 async def render_activity(input: RetrievalInput) -> str | None:
     version_id = await _stage(input, render)
@@ -198,6 +205,7 @@ ACTIVITIES = (
     normalise_raw_activity,
     validate_run_activity,
     snapshot_activity,
+    finish_at_snapshot_activity,
     render_activity,
     fail_run_activity,
     gl_import_activity,  # SPEC-034 (TASK-069)

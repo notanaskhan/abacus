@@ -4,6 +4,7 @@ from abacus.kernel.uow.placement import register_client_placer
 from abacus.modules.identity.api import (
     AbacusRouter,
     register_client_partner,
+    register_intake_scope,
     register_member_teams,
     register_office_list,
     register_settings_area,
@@ -43,6 +44,7 @@ from abacus.modules.organisations.intake import (
     ein_matches,
     same_name_client,
 )
+from abacus.modules.organisations.intake_team import on_intake_team
 from abacus.modules.organisations.live import (
     NewRelationship,
     add_relationship,
@@ -94,6 +96,7 @@ from abacus.modules.organisations.service import (
     firm_names,
     firm_offices,
     normalise,
+    portal_activation,
     set_client_record,
     set_entity_attributes,
 )
@@ -141,6 +144,8 @@ register_client_placer(client_offices)
 # G-01-T05: ADM-02 reads and replaces a person's teams through this; G-01-T08: and the
 # service lines their service-line teams hold.
 register_member_teams(member_teams, set_member_teams, service_line_teams)  # T08: AC7.4
+# N-01-T08 (DEC-20, DEC-819): the intake scope is a team of kind `intake`.
+register_intake_scope(on_intake_team)
 # G-01-T09 (AC8.3): a wall on a client's relationship partner is refused.
 register_client_partner(client_partner_of)
 # G-01-T04: the Offices & teams row of the settings overview's At a glance.
@@ -217,6 +222,7 @@ __all__ = [
     "mask_tin",
     "normalise",
     "office_name_column",
+    "portal_activation",
     "readable_client",
     "register_client_engagements",
     "register_conflict_subject",

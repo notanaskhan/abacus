@@ -93,6 +93,14 @@ const SECURITY_SEARCH = ["incident", "sessions", "export"] as const;
 // budget); the width (`w`) and the preview's sample contact (`sample`) live in the URL. Writes are
 // the server's to allow (`allowed_actions`, `portal.settings_editor`); reads are never gated.
 const EmailTemplates = lazyScreen(async () => (await import("../../screens/POR-20")).POR20);
+// R-01-T28: ADM-10 at /settings/portal; the preview's contact and device and the open template
+// drawer live in the URL. "Preview as" lists the sample client only until a visible-contact read
+// lands (DEC-20, DEC-956); the preview opens in a new tab at /settings/portal/preview.
+const PortalSettings = lazyScreen(async () => (await import("../../screens/ADM-10")).ADM10);
+const PortalSettingsPreview = lazyScreen(
+  async () => (await import("../../screens/ADM-10")).ADM10Preview,
+);
+const PORTAL_SEARCH = ["as", "device", "ov"] as const;
 const TEMPLATE_SEARCH = ["w", "sample"] as const;
 const WIDTHS = new Set(["600", "390", "phone"]);
 
@@ -296,6 +304,58 @@ const settingsEmailTemplatesRoute = createRoute({
     );
   },
 });
+const settingsPortalRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/settings/portal",
+  validateSearch: (search: Record<string, unknown>) => pick(PORTAL_SEARCH, search),
+  component: function SettingsPortalPage(): JSX.Element {
+    const navigate = useNavigate();
+    const router = useRouter();
+    const search = pick(PORTAL_SEARCH, useSearch({ strict: false }));
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <PortalSettings
+          search={search}
+          onSearch={(next) => {
+            void navigate({ to: ".", search: pick(PORTAL_SEARCH, { ...next }), replace: true });
+          }}
+          onNavigate={(section) => {
+            void navigate({ to: "/settings/$section", params: { section } });
+          }}
+          onOpenTemplate={(key) => {
+            void navigate({
+              to: "/settings/portal/email-templates/$templateKey",
+              params: { templateKey: key },
+            });
+          }}
+          onOpenPreview={(as, device) => {
+            const query = new URLSearchParams({ as, device }).toString();
+            window.open(`/settings/portal/preview?${query}`, "_blank", "noopener");
+          }}
+          onBack={() => {
+            router.history.back();
+          }}
+        />
+      </div>
+    );
+  },
+});
+const settingsPortalPreviewRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/settings/portal/preview",
+  validateSearch: (search: Record<string, unknown>) => pick(["as", "device"] as const, search),
+  component: function SettingsPortalPreviewPage(): JSX.Element {
+    const search = pick(["as", "device"] as const, useSearch({ strict: false }));
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <PortalSettingsPreview
+          as={search.as ?? "sample"}
+          device={search.device === "phone" ? "phone" : "desktop"}
+        />
+      </div>
+    );
+  },
+});
 // G-02-T25: ADM-04 at /settings/ai-policy behind `ai_policy.v1` (DEC-831).
 const FirmSettingsAiPolicy = lazyScreen(async () => (await import("../../screens/ADM-04")).ADM04);
 const settingsAiPolicyRoute = createRoute({
@@ -366,6 +426,8 @@ export const settingsRoutes = [
   settingsOfficesRoute,
   settingsAuditLogRoute,
   settingsSecurityRoute,
+  settingsPortalRoute,
+  settingsPortalPreviewRoute,
   settingsEmailTemplatesRoute,
   settingsAiPolicyRoute,
   settingsSectionRoute,
