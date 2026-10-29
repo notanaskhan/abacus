@@ -2385,6 +2385,8 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_p04t13_review_schema_independent.py",
             # N-02-T08: the retention policy's version trigger reads the tenant a session sets.
             "tests/integration/backfill/test_n02t08_record_import.py",
+            # N-02-T13: the same retention policy, for the evidence zip's record-mode import.
+            "tests/integration/backfill/test_n02t13_envelope_hub.py",
             # Q-04-T008: back-dates seeded audit rows under the actor the immutability guard reads.
             "tests/integration/backfill/test_q04t008_pilot_metrics.py",
             # S13 schema tests: the AI-policy guard (G-02-T23) and pilot grants (Q-04-T007).

@@ -66,7 +66,19 @@ FIRM = [(r, c7) for r in _routes(c7.router, c7.policies_router)] + [
 ]
 PORTAL = _routes(c7.portal_router)
 # Live since N-02-T08 (record-mode import; DEC-818): their own codes, never 501.
-LIVE = frozenset({"import_envelope_record_route", "stage_envelope_import_file_route"})
+LIVE = frozenset(
+    {
+        "import_envelope_record_route",
+        "stage_envelope_import_file_route",
+        # N-02-T13 (DEC-1055): the hub, the drawer and its actions.
+        "list_envelopes_route",
+        "envelope_summary_route",
+        "get_envelope_route",
+        "void_envelope_route",
+        "reveal_signer_ip_route",
+        "envelope_evidence_route",
+    }
+)
 STUBBED = [(r, m) for r, m in FIRM if r.name not in LIVE]
 
 
