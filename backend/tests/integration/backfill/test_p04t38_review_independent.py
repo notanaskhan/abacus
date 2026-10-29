@@ -82,7 +82,7 @@ async def test_restore_only_adds_rows_and_changes_none(world: World) -> None:
         "samuel",
         {"seen_hash": first["content_hash"]},
     )
-    assert restored.status_code == 200, restored.text
+    assert restored.status_code == 201, restored.text
     after = await _rows(world, target)
     for name, rows in before.items():
         assert set(rows) <= set(after[name]), f"a {name} row changed or went"
@@ -112,12 +112,12 @@ async def test_an_import_checkpoint_waits_for_a_person(world: World) -> None:
     status = await world.seed.value("SELECT status FROM checkpoints WHERE id = $1", imported)
     assert status == "proposed"
     history = await history_(world, target)
-    current = [c for c in history["items"] if c.get("is_current")]
+    current = [c for c in history["items"] if c.get("current")]
     assert all(c["id"] != str(imported) for c in current)
 
     await decide_(world, imported, f"sha256:{digest}")
     history = await history_(world, target)
-    current = [c for c in history["items"] if c.get("is_current")]
+    current = [c for c in history["items"] if c.get("current")]
     assert [c["id"] for c in current] == [str(imported)]
     decided_by = await world.seed.value(
         "SELECT actor_kind FROM checkpoint_decisions WHERE checkpoint_id = $1", imported
@@ -156,7 +156,7 @@ async def test_the_client_wording_never_carries_the_internal_note(world: World) 
             "client_wording": WORDING,
             "contact_id": str(uuid.uuid5(uuid.NAMESPACE_URL, f"contact:{issue['id']}")),
         },
-        {"Idempotency-Key": f"p04t38-{issue['id']}"},
+        {"Idempotency-Key": str(uuid.uuid5(uuid.NAMESPACE_URL, f"p04t38:{issue['id']}"))},
     )
     assert sent.status_code in (200, 201), sent.text
     rows = await world.seed.rows(

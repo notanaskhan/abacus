@@ -20,7 +20,10 @@ OWNER: Final = SRC / "modules" / "review" / "field_values.py"
 _SQL: Final = re.compile(
     r"(INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+field_value_versions\b", re.IGNORECASE
 )
-_ORM: Final = re.compile(r"\b(insert|update|delete)\(\s*FieldValueVersion\b|\bFieldValueVersion\(")
+# The model's own `class FieldValueVersion(Base):` line is its definition, not a write.
+_ORM: Final = re.compile(
+    r"\b(insert|update|delete)\(\s*FieldValueVersion\b|(?<!class )\bFieldValueVersion\("
+)
 
 
 def _offenders() -> list[str]:
