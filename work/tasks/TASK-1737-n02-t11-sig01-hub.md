@@ -1,8 +1,8 @@
 ---
 id: TASK-1737
 title: N-02-T11 SIG-01 Signatures hub (fixture mode)
-spec: docs/screens/SIG-01.md
-acceptance_criteria: [N-02-T11]
+spec: SPEC-381
+acceptance_criteria: [AC-4]
 risk_zone: green
 status: in-review
 epic: N-02
