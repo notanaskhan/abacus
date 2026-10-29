@@ -7,7 +7,7 @@
 | Surface | firm (Grace Holloway, Firm Admin). The preview frame and the email preview card are client-facing renderings: white-labelled, Brightwater Hale only |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/ADM-10 Portal branding and client experience/` (README.md, spec.md; no revision.md) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | R-01 · contract R-01-T03; contract stub R-01-T16 (C16 v1.1, `docs/contracts/portal-settings.md`); consumer tests R-01-T17; glossary R-01-T04; template versions R-01-T19 (N); preview and lint R-01-T23 (N); follow-up policy R-01-T24 (N); portal settings and preview R-01-T26; sender domains R-01-T27 (N); data R-01-T22; frontend a–g R-01-T28 (reuses POR-20's editor from R-01-T25); independent AC tests R-01-T29 and R-01-T30; parity and accessibility R-01-T31; Playwright R-01-T32; pilot onboarding R-01-T34; delta #1 readiness R-01-T35 |
-| Manifest status | planned (`routes/manifest/adm.ts`); fixture once R-01-T28 builds it |
+| Manifest status | planned (`routes/manifest/adm.ts`, path `/settings/portal`); built a–g on fixtures by R-01-T28 (TASK-1851, DEC-956); planned until walked on staging (DEC-195) |
 
 Code to come (R-01 §5.2): `src/screens/ADM-10/{index.tsx, scenarios.ts, copy.ts, ADM-10.test.tsx}`, `src/domain/portal/PortalPreviewFrame.tsx`, `src/fixtures/handlers/portal-settings.ts`, `e2e/screens/adm-10-portal-settings.spec.ts`; the drawer reuses `src/domain/communications/{EmailPreview.tsx, templateBlocks.ts, variables.ts}`.
 
@@ -125,7 +125,7 @@ Copy keys live in `screens/ADM-10/copy.ts`; every string below is verbatim from 
 | `toast.published` | "Portal settings published · clients see changes on next visit" |
 | `domain.pendingDns` | "Pending DNS" |
 | `domain.verified` | "Verified" |
-| `domain.records`, `domain.fallback`, `domain.failed`, `domain.failedReason`, `sender.replyTo`, `flagOff.note`, `error.staleDraft` | reserved; R-01-T28 writes them (the handoff's d helper is superseded by DEC-59, see Deviations) |
+| `domain.records`, `domain.fallback`, `domain.failed`, `domain.failedReason`, `sender.replyTo`, `flagOff.note`, `error.staleDraft` | written by R-01-T28 (`screens/ADM-10/copy.ts`; DEC-956): "Give these records to your IT team. They usually take effect within a few hours." · "Until it verifies, clients see" · "Not verified" · the three reasons ("The DKIM records weren't found within 72 hours.", "The MAIL FROM records weren't found within 72 hours.", "The domain needs to be added again.") · "Replies go to {address}" · the flag-off note · the stale-draft line; the row label `brand.portalHost` is "Portal address" |
 
 Template row labels (registry, ADM-10's own wording): Invitation / "CLI-04 invites, prospect intake" · Reminder / "Binders, close requests, PBC — on the cadence below" · Signature request / "SIG-02 envelopes" · Deliverable ready / "Returns, K-1s, statements, reports" · Confirmation request / "AUD-14 · single-use POR-17 link, no portal" · Reconnect request / "CLS-11 · expired ledger connections (POR-16)".
 

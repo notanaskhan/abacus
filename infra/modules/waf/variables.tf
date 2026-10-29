@@ -59,3 +59,9 @@ variable "log_destination_arn" {
   type        = string
   default     = null
 }
+
+variable "enable_logging" {
+  description = "Send WebACL logs to log_destination_arn (rule 7), with authorization and cookie redacted."
+  type        = bool
+  default     = false
+}

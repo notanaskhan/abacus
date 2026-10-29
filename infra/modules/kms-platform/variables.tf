@@ -8,3 +8,9 @@ variable "app_role_arns" {
   type        = list(string)
   default     = []
 }
+
+variable "replica" {
+  description = "Replicate the platform key to us-west-2 (DR)."
+  type        = bool
+  default     = true
+}

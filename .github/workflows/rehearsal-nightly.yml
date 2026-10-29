@@ -1,0 +1,37 @@
+# Q-02-T48 (DEC-958): the real-data rehearsal on staging, nightly. It starts the staging ops task
+# with `abacus_tools.rehearsal run` and the rehearsal tenant's ids (repository variables, not
+# secrets: ids, never client data). OFF until the rehearsal tenant is provisioned on staging: it
+# runs only when the repository variable REHEARSAL_NIGHTLY is "on". Three green nights in a row
+# before Fri Apr 16 meet Q-02 §10 DoD 5. Every action is pinned to a full commit SHA.
+name: rehearsal-nightly
+
+on:
+  schedule:
+    - cron: "41 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  start:
+    if: vars.REHEARSAL_NIGHTLY == 'on' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Start the staging ops task
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TENANT: ${{ vars.REHEARSAL_TENANT }}
+          ADMIN: ${{ vars.REHEARSAL_ADMIN }}
+          PARTNER: ${{ vars.REHEARSAL_PARTNER }}
+          ENGAGEMENT: ${{ vars.REHEARSAL_ENGAGEMENT }}
+          TAX_ENGAGEMENT: ${{ vars.REHEARSAL_TAX_ENGAGEMENT }}
+        run: |
+          args=$(jq -cn --arg t "$TENANT" --arg a "$ADMIN" --arg p "$PARTNER" \
+            --arg e "$ENGAGEMENT" --arg x "$TAX_ENGAGEMENT" \
+            '["--tenant",$t,"--admin",$a,"--partner",$p,"--engagement",$e,"--tax-engagement",$x]')
+          gh workflow run ops-task.yml --repo "$GITHUB_REPOSITORY" --ref main \
+            -f command="abacus_tools.rehearsal run" -f args="$args" \
+            -f operator="rehearsal-nightly" -f reason="Q-02-T48 nightly real-data rehearsal"

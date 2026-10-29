@@ -53,7 +53,7 @@ output "github_staging_variables" {
   value = local.enabled ? {
     ECS_CLUSTER             = module.cluster.cluster_name
     API_SERVICE             = module.backend["api"].service_name
-    WORKER_SERVICES         = join(" ", [module.backend["worker"].service_name, module.backend["keyops"].service_name])
+    WORKER_SERVICES         = join(" ", [for k, m in module.backend : m.service_name if k != "api"])
     MIGRATE_TASK_DEFINITION = module.oneoff["migrate"].family
     OPS_TASK_DEFINITION     = module.oneoff["ops"].family
     TASK_SUBNETS            = join(",", module.network.app_subnet_ids)
@@ -62,6 +62,7 @@ output "github_staging_variables" {
     FIRM_DISTRIBUTION_ID    = module.firm_edge[0].distribution_id
     SMOKE_BASE_URL          = "https://${module.firm_edge[0].domain_name}"
     DEPLOY_ROLE_NAME        = module.deploy_role[0].role_name
+    API_ALARMS              = join(",", [aws_cloudwatch_metric_alarm.api_5xx[0].alarm_name, aws_cloudwatch_metric_alarm.api_unhealthy[0].alarm_name])
   } : null
 }
 

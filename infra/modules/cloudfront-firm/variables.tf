@@ -23,3 +23,21 @@ variable "content_security_policy" {
   type        = string
   default     = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'none'; form-action 'self'"
 }
+
+variable "web_acl_arn" {
+  description = "WAF WebACL (CLOUDFRONT scope) to attach, or null."
+  type        = string
+  default     = null
+}
+
+variable "firm_host" {
+  description = "The firm app's host name once the domain exists, or null (the default CloudFront host)."
+  type        = string
+  default     = null
+}
+
+variable "certificate_arn" {
+  description = "ACM certificate (us-east-1) for firm_host, or null."
+  type        = string
+  default     = null
+}

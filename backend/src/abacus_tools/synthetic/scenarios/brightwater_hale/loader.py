@@ -173,6 +173,7 @@ from abacus.modules.requests.api import (
     move_after_review,
     update_item,
 )
+from abacus_tools import deploy_lock
 from abacus_tools.db_connect import connect as connect_db
 from abacus_tools.fakes.identity import ISSUER
 from abacus_tools.flags import set_flag
@@ -443,10 +444,16 @@ def guard(dsn: str, *, staging: bool) -> None:
 
 
 def deploy_in_flight() -> str | None:
-    """The deploy-staging run in progress, if any (working agreement: no load during a build)."""
+    """The deploy-staging run in progress, if any (working agreement: no load during a build).
+    From a laptop, GitHub's run list; inside the staging VPC (the ops task, no gh), the SSM deploy
+    lock every deploy takes first (`abacus_tools.deploy_lock`, DEC-1005)."""
     gh = shutil.which("gh")
     if gh is None:
-        raise LoadRefused("cannot tell whether a staging deploy is in flight: no gh")
+        try:
+            lock = deploy_lock.held("staging")
+        except Exception as error:  # no credentials or no SSM: refuse rather than guess
+            raise LoadRefused("cannot tell whether a staging deploy is in flight") from error
+        return None if lock is None else f"deploy lock held by {lock.holder} ({lock.run_ref})"
     try:
         found = subprocess.run(
             [

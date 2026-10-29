@@ -11,7 +11,8 @@ URL in `ABACUS_STAGING_URL` / `ABACUS_CANARY_URL`; they skip while it is unset).
 - `eng-cli-core.spec.ts`: the P-07 screens in the app on fixtures, CLI-01 → CLI-02 and ENG-01 → ENG-02b (P-07-T22).
 - `J03-ebp-audit.spec.ts`, `J06-individual-1040.spec.ts`, `J10-month-end-close.spec.ts`, `J16-daily-practice.spec.ts`, `J22-unrecorded-liabilities.spec.ts`: the P-06 steps (P-06-T25).
 - `J12-client-portal.spec.ts`: J12-core (F-04-T26).
-- `J04-fs-audit.spec.ts`: J04-fs-audit's PBC slice at the Sep 24 snapshot (F-04-T32; M6).
+- `J04-fs-audit.spec.ts`: J04-fs-audit's PBC slice at the Sep 24 snapshot (F-04-T32; M6), and the trace to source, AUD-03's screening citation → SHL-07 → SHL-08 with the region lit (P-03-T25; full stack and staging).
+- `../trust/pii-reveal-unlock.fullstack.spec.ts`: the masked W-2, the logged reveal and its refusals, and the password PDF unlocked to masked pages (P-03-T25; full stack and staging). Files named `*.fullstack.spec.ts` anywhere under `e2e/` run on the harness projects.
 - `J01-firm-onboarding.spec.ts`: J01-core skeleton (F-04-T32; M8); step 3 and 3f live in fixture mode (G-01-T16).
 - `J14-firm-admin.spec.ts`: j14 1, 2 and 2b, Lena Park's seasonal seat and wall (G-01-T16).
 - `J16-daily-practice.spec.ts`: j16 2, Firm settings from the firm pill (G-01-T16).

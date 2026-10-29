@@ -18,7 +18,9 @@ locals {
   deploy_role_arns      = local.enabled ? ["${local.role}/abacus-staging-deploy"] : []
   firm_distribution_arn = local.enabled ? module.firm_edge[0].distribution_arn : null
   dns                   = "abacus-staging.internal"
-  secret                = { for k, v in aws_secretsmanager_secret.this : k => v.arn }
+  # DEC-1008: the pinned third-party images come from the shared ECR mirrors once copied.
+  third_party = var.third_party_registry == null ? "" : "${trimsuffix(var.third_party_registry, "/")}/thirdparty/"
+  secret      = { for k, v in aws_secretsmanager_secret.this : k => v.arn }
 
   # Settings every backend process reads (kernel/config.py). Nothing secret: those are `secrets`.
   common_env = local.enabled ? merge(module.exports.task_environment, {
@@ -129,7 +131,7 @@ data "aws_iam_policy_document" "app" {
 }
 
 resource "aws_iam_role_policy" "app" {
-  for_each = toset(["api", "worker", "keyops"])
+  for_each = toset(["api", "worker", "keyops", "ops"])
   name     = "app"
   role     = aws_iam_role.task[each.key].name
   policy   = data.aws_iam_policy_document.app.json
@@ -166,6 +168,20 @@ resource "aws_iam_role_policy" "keyops" {
   name   = "tenant-keys"
   role   = aws_iam_role.task["keyops"].name
   policy = data.aws_iam_policy_document.keyops.json
+}
+
+# The ops task (the scenario loader, DEC-1005) reads the deploy lock before it loads anything.
+data "aws_iam_policy_document" "ops" {
+  statement {
+    actions   = ["ssm:GetParameter"]
+    resources = ["arn:aws:ssm:${local.region}:${local.account}:parameter/abacus/staging/deploy-lock"]
+  }
+}
+
+resource "aws_iam_role_policy" "ops" {
+  name   = "deploy-lock-read"
+  role   = aws_iam_role.task["ops"].name
+  policy = data.aws_iam_policy_document.ops.json
 }
 
 # --- internal load balancer ---------------------------------------------------------------------
@@ -246,11 +262,20 @@ resource "aws_lb_listener" "api" {
 # --- services and one-off tasks -----------------------------------------------------------------
 
 locals {
-  backend_services = {
-    api    = { cpu = 512, memory = 1024, command = ["api"], role = "api", port = 8000 }
-    worker = { cpu = 512, memory = 1024, command = ["worker", "--classes", "interactive,time_sensitive,background,batch"], role = "worker", port = null }
-    keyops = { cpu = 256, memory = 512, command = ["worker", "--classes", "keyops"], role = "keyops", port = null }
+  worker_classes = var.worker_split ? ["interactive", "time_sensitive", "background", "batch"] : ["all"]
+  workers = {
+    for c in local.worker_classes : (c == "all" ? "worker" : "worker-${replace(c, "_", "-")}") => {
+      cpu     = 512
+      memory  = 1024
+      command = ["worker", "--classes", c == "all" ? "interactive,time_sensitive,background,batch" : c]
+      role    = "worker"
+      port    = null
+    }
   }
+  backend_services = merge(local.workers, {
+    api    = { cpu = 512, memory = 1024, command = ["api"], role = "api", port = 8000 }
+    keyops = { cpu = 256, memory = 512, command = ["worker", "--classes", "keyops"], role = "keyops", port = null }
+  })
   oneoffs = {
     migrate   = { command = ["migrate"], role = "worker" }
     bootstrap = { command = ["bootstrap"], role = "ops" }
@@ -315,7 +340,7 @@ module "scanner" {
   name                   = "scanner"
   cluster_arn            = module.cluster.cluster_arn
   execution_role_arn     = module.cluster.execution_role_arn
-  image                  = "clamav/clamav:1.4@sha256:982e28f90061d0e66eb03276419f589a47c9fa601e985e472fc2f6c64b497ca0"
+  image                  = "${local.third_party}clamav/clamav:1.4@sha256:982e28f90061d0e66eb03276419f589a47c9fa601e985e472fc2f6c64b497ca0"
   cpu                    = 1024
   memory                 = 3072
   port                   = 3310
@@ -335,7 +360,7 @@ module "temporal" {
   name                   = "temporal"
   cluster_arn            = module.cluster.cluster_arn
   execution_role_arn     = module.cluster.execution_role_arn
-  image                  = "temporalio/temporal:1.9.1@sha256:ad4c82c97bd12b417d1ea942610dbcd511afb250c4d5ed26c694009533df447e"
+  image                  = "${local.third_party}temporalio/temporal:1.9.1@sha256:ad4c82c97bd12b417d1ea942610dbcd511afb250c4d5ed26c694009533df447e"
   command                = ["server", "start-dev", "--ip", "0.0.0.0", "--headless"]
   cpu                    = 512
   memory                 = 1024
@@ -356,6 +381,9 @@ module "firm_edge" {
   web_bucket_regional_domain = module.web.regional_domain_name
   alb_arn                    = aws_lb.api.arn
   alb_dns_name               = aws_lb.api.dns_name
+  web_acl_arn                = module.firm_waf[0].arn
+  firm_host                  = var.firm_certificate_arn == null ? null : var.firm_host
+  certificate_arn            = var.firm_certificate_arn
 }
 
 module "ses" {
