@@ -57,7 +57,7 @@ from abacus.modules.engagements.contract import (
 )
 from abacus.modules.engagements.drafts import create_draft, draft_visible, start_acceptance
 from abacus.modules.engagements.events import EngagementCreated, IndependenceRequested
-from abacus.modules.engagements.gates import register_gates
+from abacus.modules.engagements.gates import recorded_letter, register_gates
 from abacus.modules.engagements.hold_scope import (
     EngagementHoldFacts,
     engagement_hold_facts,
@@ -174,6 +174,7 @@ from abacus.modules.engagements.slots import (
     register_judgment_source,
     register_progress_source,
     register_work_item_kind,
+    replace_gate_provider,
     work_item_provider,
 )
 from abacus.modules.engagements.team import (
@@ -457,6 +458,7 @@ __all__ = [
     "progress_of",
     "publish_drafted_version",
     "readable_client",
+    "recorded_letter",
     "register_auto_retrieval",
     "register_draft_request_copy",
     "register_evidence_readable",
@@ -467,6 +469,7 @@ __all__ = [
     "register_roll_forward_items",
     "register_work_item_kind",
     "remove_from_team",
+    "replace_gate_provider",
     "request_manual_check",
     "require_open",
     "router",
