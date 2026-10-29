@@ -142,12 +142,31 @@ def _owned(path: str, failures: dict[str, list[str]]) -> list[str]:
     ]
 
 
-def _run_python(paths: Iterable[str], junit: Path) -> int:
+def _group(path: str) -> str:
+    """The folder a suite runs with: each conftest tree in its own pytest invocation (mixing
+    `tests/integration/backfill` with the rest of `tests/integration` loses fixtures)."""
+    parts = Path(path).parts
+    return (
+        "/".join(parts[:3])
+        if parts[:3] == ("tests", "integration", "backfill")
+        else ("/".join(parts[:2]))
+    )
+
+
+def _run_python(paths: Iterable[str], junit_dir: Path) -> list[Path]:
+    """One pytest invocation per folder; the JUnit files written."""
     unique = sorted({p for p in paths if (BACKEND / p).exists()})
-    if not unique:
-        return 0
-    argv = ["uv", "run", "pytest", "-q", f"--junitxml={junit}", *unique]
-    return subprocess.call(argv, cwd=BACKEND)
+    groups: dict[str, list[str]] = {}
+    for path in unique:
+        groups.setdefault(_group(path), []).append(path)
+    written: list[Path] = []
+    for n, (_, files) in enumerate(sorted(groups.items())):
+        junit = junit_dir / f"backfill-rerun-{n}.xml"
+        argv = ["uv", "run", "pytest", "-q", f"--junitxml={junit}", *files]
+        subprocess.call(argv, cwd=BACKEND)
+        if junit.exists():
+            written.append(junit)
+    return written
 
 
 def _run_web(paths: Iterable[str]) -> set[str]:
@@ -197,9 +216,12 @@ def main(argv: list[str] | None = None) -> int:
     if args[:1] == ["plan"]:
         print(json.dumps([p.__dict__ for p in plans], indent=2))
         return 0
-    junit = BACKEND / ".backfill-rerun.xml"
-    _run_python((s for p in plans for s in p.python), junit)
-    failures = _junit_failures(junit) if junit.exists() else {}
+    junit_dir = BACKEND / ".backfill-rerun"
+    junit_dir.mkdir(exist_ok=True)
+    failures: dict[str, list[str]] = {}
+    for junit in _run_python((s for p in plans for s in p.python), junit_dir):
+        for module, names in _junit_failures(junit).items():
+            failures.setdefault(module, []).extend(names)
     web_failed = _run_web(s for p in plans for s in p.web)
     out = ROOT / "docs" / "quality" / f"backfill-rerun-{system_now().date().isoformat()}.md"
     out.write_text(report(plans, failures, web_failed), encoding="utf-8")
