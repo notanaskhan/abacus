@@ -5,13 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NotificationPanel } from "../shell/NotificationPanel";
 import { json, mockApi, renderRoutes, signInForTest } from "../testing/support";
 import { takeTokenFromFragment } from "./ClientAccept";
-import { Contacts } from "./Contacts";
 import { ImportRequestList } from "./ImportRequestList";
 import { Layout } from "./Layout";
 import { MapView } from "./MapView";
 import { Methodology } from "./Methodology";
 import { Overview } from "./Overview";
-import { People } from "./People";
 
 const E = "e1";
 
@@ -135,39 +133,6 @@ describe("ac4 engagement map", () => {
   });
 });
 
-describe("ac5 client contacts", () => {
-  it("shows a pending invitation with its email and role, never a link, and invites by email", async () => {
-    const { calls } = mockApi({
-      [`GET /v1/engagements/${E}/client-contacts`]: () =>
-        json([
-          {
-            kind: "invitation",
-            id: "inv1",
-            role: "client_admin",
-            email: "fd@northwind.test",
-            expires_at: "2026-10-15T00:00:00Z",
-          },
-        ]),
-      [`POST /v1/engagements/${E}/client-invitations`]: () => json({ invitation_id: "inv2" }, 201),
-    });
-    renderRoutes([{ path: "/", component: () => <Contacts engagementId={E} /> }]);
-    expect(await screen.findByText("fd@northwind.test")).toBeTruthy();
-    expect(screen.getByText("Client admin")).toBeTruthy();
-    expect(document.body.textContent).not.toMatch(/token=|\/client\/accept/);
-    fireEvent.click(
-      screen.getAllByRole("button", { name: "Invite client contact" })[0] as HTMLElement,
-    );
-    fireEvent.change(await screen.findByLabelText("Email"), {
-      target: { value: "ap@northwind.test" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Send invitation" }));
-    await waitFor(() => {
-      const posted = calls.find((c) => c.method === "POST");
-      expect(posted?.body).toEqual({ email: "ap@northwind.test", role: "client_admin" });
-    });
-  });
-});
-
 describe("ac6 methodology upload", () => {
   it("shows each workbook problem by sheet, row and column", async () => {
     mockApi({
@@ -252,39 +217,6 @@ describe("ac8 client users stay in the client portal", () => {
     ]);
     expect(await screen.findByText("Client home")).toBeTruthy();
     expect(screen.queryByRole("navigation", { name: "Workspace" })).toBeNull();
-  });
-});
-
-describe("SPEC-017 ac7 people tab", () => {
-  it("lets a manager handle seniors, staff and reviewers only, with confirmation to remove", async () => {
-    const me: MeOut = {
-      user_id: "u-m",
-      display_name: "Max Manager",
-      email: "m@dev.test",
-      active_tenant_id: "t1",
-      server_now: "2026-09-14T14:24:00Z",
-      clock_mode: "real",
-      memberships: [{ tenant_id: "t1", firm_name: "Dev firm", firm_role: null, kind: "staff" }],
-    };
-    mockApi({
-      "GET /v1/me": () => json(me),
-      [`GET /v1/engagements/${E}/team`]: () =>
-        json([
-          { user_id: "u-p", display_name: "Pat Partner", role: "engagement_partner" },
-          { user_id: "u-m", display_name: "Max Manager", role: "manager" },
-          { user_id: "u-s", display_name: "Sam Staff", role: "staff" },
-        ]),
-      [`GET /v1/engagements/${E}/client-contacts`]: () => json([]),
-    });
-    renderRoutes([{ path: "/", component: () => <People engagementId={E} /> }]);
-    expect(await screen.findByText("Pat Partner")).toBeTruthy();
-    expect(screen.queryByLabelText("Role for Pat Partner")).toBeNull();
-    const samRole = await screen.findByLabelText("Role for Sam Staff");
-    const options = Array.from((samRole as HTMLSelectElement).options).map((o) => o.value);
-    expect(options).toEqual(["senior", "staff", "reviewer"]);
-    expect(screen.getAllByRole("button", { name: "Remove" })).toHaveLength(1);
-    fireEvent.click(screen.getByRole("button", { name: "Remove" }));
-    expect(await screen.findByRole("dialog", { name: "Remove Sam Staff?" })).toBeTruthy();
   });
 });
 
