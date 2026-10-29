@@ -46,6 +46,7 @@ from abacus.modules.agents.guidance_draft import DRAFTER, DraftOutcome, create_d
 from abacus.modules.agents.handoff import Citation, Handoff, ScreeningOutput, VerifiedCitation
 from abacus.modules.agents.home_counts import register_home_counts
 from abacus.modules.agents.inbox_match import MATCHER, MatchOutcome, create_match_run, match
+from abacus.modules.agents.issue_client_requests import send_issue_to_client
 from abacus.modules.agents.knowledge import KnowledgeHit, knowledge_context, search_knowledge
 from abacus.modules.agents.pilot_w7 import w7_override_rate
 from abacus.modules.agents.proposal_slots import (
@@ -169,6 +170,7 @@ from abacus.modules.identity.api import (
     register_autonomy_level_provider,
 )
 from abacus.modules.platform.api import register_pilot_metric_source
+from abacus.modules.review.api import register_client_request_sender
 
 # Evidence owns review decisions; agents owns what was proposed (TASK-019 D1).
 register_proposal_source(proposals_for, proposal_of)
@@ -224,6 +226,7 @@ register_engagement_owners(AUDIT_KINDS, audit_owners)
 register_reminder_history(reminder_history_of)
 
 register_pilot_metric_source("w7", w7_override_rate)  # Q-04-T008 (DEC-825)
+register_client_request_sender(send_issue_to_client)  # P-04-T31 (DEC-828)
 
 __all__ = [
     "ACTIVITIES",

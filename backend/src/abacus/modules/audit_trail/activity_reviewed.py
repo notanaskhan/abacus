@@ -242,6 +242,12 @@ REVIEWED_FALLBACK: Final = frozenset(
         "integration_secret.stored",
         "invitation.resent",
         "invitation.revoked",
+        "issue.fix_instructions_set",  # P-04-T31
+        "issue.marked_not_applicable",  # P-04-T31
+        "issue.reopened",  # P-04-T31
+        "issue.resolved",  # P-04-T31
+        "issue.sent_to_client",  # P-04-T31
+        "issue.verified",  # P-04-T31
         "item.signed",
         "knowledge_chunk.embedded",
         "knowledge_document.added",
