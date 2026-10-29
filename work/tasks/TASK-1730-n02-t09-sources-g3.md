@@ -1,8 +1,8 @@
 ---
 id: TASK-1730
 title: N-02-T09 Envelope source registry and G3
-spec: N-02 §3.12, §8.2; docs/contracts/c7-envelopes.md
-acceptance_criteria: [N-02-T09]
+spec: SPEC-381
+acceptance_criteria: [AC-2, AC-14]
 risk_zone: red
 status: in-review
 epic: N-02
