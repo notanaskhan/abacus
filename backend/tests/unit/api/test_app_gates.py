@@ -117,6 +117,8 @@ NOT_CREATING = {
     "/v1/platform/retention/defaults/{set_version}/publish",
     # G-02-T20: publishing a Pub 4557 control set changes a draft's status, so 200.
     "/v1/platform/safeguards-controls/{set_version}/publish",
+    # K-02-T02 (C21 stub): publishing a firm standard's draft changes its status, so 200.
+    "/v1/standards/{standard_id}/versions/{version_id}/publish",
     "/v1/walls/{wall_id}/remove",  # TASK-016: returns the removed wall, so 200
     REVIEW_QUEUE + "/take",
     REVIEW_QUEUE + "/release",
@@ -353,6 +355,11 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/request-items",
         # K-01-T01 (C21 stub): a methodology draft and a program step.
         "/v1/methodology/versions/{version_id}/drafts",
+        # K-02-T02 (C21 stub): a firm standard, a draft version, and drafts from an import.
+        "/v1/standards",
+        "/v1/standards/{standard_id}/versions",
+        "/v1/standards/{standard_id}/imports",
+        "/v1/standards/imports",
         "/v1/methodology/versions/{version_id}/programs/{program_id}/steps",
         # G-02-T11 (security-center stub): an incident timeline entry.
         "/v1/firm/security/incidents/{incident_id}/timeline",

@@ -1401,6 +1401,50 @@ export type AiPolicyVersionPageOut = {
 };
 
 /**
+ * AjeThresholdRow
+ *
+ * One account class. `limit` rows are within threshold up to `limit_usd`; the last two rows
+ * of every version ("All other classes · Review required" and "Attest clients · Always held")
+ * cannot be removed (K-02-T05 validates).
+ */
+export type AjeThresholdRow = {
+    /**
+     * Account Class
+     */
+    account_class: string;
+    /**
+     * Approver Level
+     */
+    approver_level: 'senior_or_above' | 'manager_or_partner' | 'partner';
+    /**
+     * Batch
+     */
+    batch: boolean;
+    /**
+     * Limit Usd
+     */
+    limit_usd: number | null;
+    /**
+     * Rule
+     */
+    rule: 'limit' | 'review_required' | 'always_held';
+};
+
+/**
+ * AjeThresholdsPayload
+ */
+export type AjeThresholdsPayload = {
+    /**
+     * Kind
+     */
+    kind: 'aje_thresholds';
+    /**
+     * Rows
+     */
+    rows: Array<AjeThresholdRow>;
+};
+
+/**
  * AnalysisRequestIn
  */
 export type AnalysisRequestIn = {
@@ -4200,6 +4244,40 @@ export type CheckOut = {
      * Ref Item Id
      */
     ref_item_id: string | null;
+};
+
+/**
+ * ChecklistAppliesTo
+ */
+export type ChecklistAppliesTo = {
+    /**
+     * Form
+     */
+    form: string;
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+};
+
+/**
+ * ChecklistItem
+ *
+ * Firm-authored text only (ADR-056).
+ */
+export type ChecklistItem = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Section
+     */
+    section: string;
+    /**
+     * Text
+     */
+    text: string;
 };
 
 /**
@@ -7729,6 +7807,43 @@ export type DigestCardOut = {
 };
 
 /**
+ * DisasterPostponement
+ */
+export type DisasterPostponement = {
+    /**
+     * Acts
+     */
+    acts: Array<string>;
+    /**
+     * Areas
+     */
+    areas: Array<PostponementArea>;
+    /**
+     * Notice Id
+     */
+    notice_id: string;
+    /**
+     * Postponed To
+     */
+    postponed_to: string;
+    window: PostponementWindow;
+};
+
+/**
+ * DisasterPostponementsPayload
+ */
+export type DisasterPostponementsPayload = {
+    /**
+     * Kind
+     */
+    kind: 'disaster_postponements';
+    /**
+     * Rows
+     */
+    rows: Array<DisasterPostponement>;
+};
+
+/**
  * DiscardedOut
  */
 export type DiscardedOut = {
@@ -7802,6 +7917,54 @@ export type DnsRecordOut = {
      * Value
      */
     value: string;
+};
+
+/**
+ * DocumentConfidencePayload
+ *
+ * `auto_accept_enabled` stays false while the policy principal is dormant (P-08).
+ */
+export type DocumentConfidencePayloadInput = {
+    /**
+     * Auto Accept Above Pct
+     */
+    auto_accept_above_pct: number | string;
+    /**
+     * Auto Accept Enabled
+     */
+    auto_accept_enabled: false;
+    /**
+     * Hold Below Pct
+     */
+    hold_below_pct: number | string;
+    /**
+     * Kind
+     */
+    kind: 'document_confidence';
+};
+
+/**
+ * DocumentConfidencePayload
+ *
+ * `auto_accept_enabled` stays false while the policy principal is dormant (P-08).
+ */
+export type DocumentConfidencePayloadOutput = {
+    /**
+     * Auto Accept Above Pct
+     */
+    auto_accept_above_pct: string;
+    /**
+     * Auto Accept Enabled
+     */
+    auto_accept_enabled: false;
+    /**
+     * Hold Below Pct
+     */
+    hold_below_pct: string;
+    /**
+     * Kind
+     */
+    kind: 'document_confidence';
 };
 
 /**
@@ -8179,6 +8342,126 @@ export type DropFileOut = {
      * Request Item Id
      */
     request_item_id?: string | null;
+};
+
+/**
+ * DueDateExtension
+ */
+export type DueDateExtension = {
+    /**
+     * Form
+     */
+    form: string;
+    /**
+     * Months
+     */
+    months: number;
+};
+
+/**
+ * DueDateOffset
+ *
+ * When a return is due: the day of the month that falls this many months after period end.
+ */
+export type DueDateOffset = {
+    /**
+     * Day
+     */
+    day: number;
+    /**
+     * Months After Period End
+     */
+    months_after_period_end: number;
+};
+
+/**
+ * DueDateOut
+ *
+ * A return's original and extended due dates, with the rules that produced them.
+ */
+export type DueDateOut = {
+    /**
+     * Extended Due On
+     */
+    extended_due_on: string | null;
+    /**
+     * Extended Rolled
+     */
+    extended_rolled: boolean;
+    /**
+     * Extension Form
+     */
+    extension_form: string | null;
+    /**
+     * Form
+     */
+    form: string;
+    /**
+     * Inputs Hash
+     */
+    inputs_hash: string;
+    /**
+     * Jurisdiction
+     */
+    jurisdiction: 'US' | 'DC';
+    /**
+     * Original Due On
+     */
+    original_due_on: string;
+    /**
+     * Original Rolled
+     */
+    original_rolled: boolean;
+    /**
+     * Period End
+     */
+    period_end: string;
+    postponement: PostponementOut | null;
+    /**
+     * Reference Set Version Ids
+     */
+    reference_set_version_ids: Array<string>;
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+};
+
+/**
+ * DueDateRuleRow
+ *
+ * One form's rule: 1040/4868, 1041/7004, 1065/7004, 1120-S/7004, 1120/7004, 990/8868,
+ * 5500/5558, 706/4768, 709 (each verified per season, outside the repo).
+ */
+export type DueDateRuleRow = {
+    /**
+     * Authority
+     */
+    authority: string;
+    extension: DueDateExtension | null;
+    /**
+     * Form
+     */
+    form: string;
+    /**
+     * Fye Rule
+     */
+    fye_rule: 'calendar_year' | 'fiscal_year' | 'any';
+    original: DueDateOffset;
+};
+
+/**
+ * DueDateRulesPayload
+ */
+export type DueDateRulesPayload = {
+    /**
+     * Kind
+     */
+    kind: 'due_date_rules';
+    /**
+     * Rows
+     */
+    rows: Array<DueDateRuleRow>;
 };
 
 /**
@@ -11683,6 +11966,11 @@ export type FirmRoleIn = {
 };
 
 /**
+ * FirmStandardVersionStatus
+ */
+export type FirmStandardVersionStatus = 'draft' | 'published' | 'discarded';
+
+/**
  * FirmTeamIn
  *
  * A `service_line` team names its line, and only it does (422 `org_structure_invalid`);
@@ -12177,6 +12465,50 @@ export type FollowUpSendManyIn = {
      * Ids
      */
     ids: Array<string>;
+};
+
+/**
+ * Form8879Row
+ *
+ * Which authorization form a return type uses (older revisions allowed: 8879-C and 8879-S
+ * for TY2025).
+ */
+export type Form8879Row = {
+    /**
+     * Authorization Form
+     */
+    authorization_form: string;
+    /**
+     * Jurisdiction
+     */
+    jurisdiction: 'US' | 'DC';
+    /**
+     * Return Type
+     */
+    return_type: string;
+    /**
+     * Revision
+     */
+    revision: string;
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+};
+
+/**
+ * Form8879SetPayload
+ */
+export type Form8879SetPayload = {
+    /**
+     * Kind
+     */
+    kind: 'form_8879_set';
+    /**
+     * Rows
+     */
+    rows: Array<Form8879Row>;
+    tolerances: Pub1345Tolerances;
 };
 
 /**
@@ -14329,6 +14661,42 @@ export type IndependenceSummaryOut = {
 };
 
 /**
+ * InformationReturnThreshold
+ */
+export type InformationReturnThreshold = {
+    /**
+     * Form
+     */
+    form: string;
+    /**
+     * Min Transactions
+     */
+    min_transactions: number | null;
+    /**
+     * Payment Year
+     */
+    payment_year: number;
+    /**
+     * Threshold Usd
+     */
+    threshold_usd: number;
+};
+
+/**
+ * InformationReturnThresholdsPayload
+ */
+export type InformationReturnThresholdsPayload = {
+    /**
+     * Kind
+     */
+    kind: 'information_return_thresholds';
+    /**
+     * Rows
+     */
+    rows: Array<InformationReturnThreshold>;
+};
+
+/**
  * IntakeCommitIn
  *
  * "Create & start acceptance" (`start_acceptance`) or "Create".
@@ -15854,6 +16222,38 @@ export type LegalHoldsOut = {
 };
 
 /**
+ * LegalHoliday
+ */
+export type LegalHoliday = {
+    /**
+     * Date
+     */
+    date: string;
+    /**
+     * Jurisdiction
+     */
+    jurisdiction: 'US' | 'DC';
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
+ * LegalHolidaysPayload
+ */
+export type LegalHolidaysPayload = {
+    /**
+     * Kind
+     */
+    kind: 'legal_holidays';
+    /**
+     * Rows
+     */
+    rows: Array<LegalHoliday>;
+};
+
+/**
  * LetterClause
  *
  * One clause of the template version and its state.
@@ -16750,6 +17150,74 @@ export type ListPagePortalEnvelopeRow = {
 };
 
 /**
+ * ListPage[ReferenceSetOut]
+ */
+export type ListPageReferenceSetOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<ReferenceSetOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
+ * ListPage[ReferenceSetVersionOut]
+ */
+export type ListPageReferenceSetVersionOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<ReferenceSetVersionOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
  * ListPage[ReviewNoteItemOut]
  */
 export type ListPageReviewNoteItemOut = {
@@ -16803,6 +17271,40 @@ export type ListPageReviewQueueItemOut = {
      * Items
      */
     items: Array<ReviewQueueItemOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
+ * ListPage[StandardOut]
+ */
+export type ListPageStandardOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<StandardOut>;
     /**
      * Next Cursor
      */
@@ -17327,6 +17829,94 @@ export type MaterialityOut = {
      * Trivial
      */
     trivial: string;
+};
+
+/**
+ * MaterialityRange
+ */
+export type MaterialityRangeInput = {
+    /**
+     * Benchmark
+     */
+    benchmark: string;
+    /**
+     * Engagement Kind
+     */
+    engagement_kind: string;
+    /**
+     * High Pct
+     */
+    high_pct: number | string;
+    /**
+     * Low Pct
+     */
+    low_pct: number | string;
+};
+
+/**
+ * MaterialityRange
+ */
+export type MaterialityRangeOutput = {
+    /**
+     * Benchmark
+     */
+    benchmark: string;
+    /**
+     * Engagement Kind
+     */
+    engagement_kind: string;
+    /**
+     * High Pct
+     */
+    high_pct: string;
+    /**
+     * Low Pct
+     */
+    low_pct: string;
+};
+
+/**
+ * MaterialityRangesPayload
+ *
+ * Decisions stay the engagement partner's: these are the ranges a decision is validated
+ * against (A-04's AUD-07).
+ */
+export type MaterialityRangesPayloadInput = {
+    /**
+     * Clearly Trivial Pct
+     */
+    clearly_trivial_pct: number | string;
+    /**
+     * Kind
+     */
+    kind: 'materiality_ranges';
+    performance_materiality: StandardPctRangeInput;
+    /**
+     * Rows
+     */
+    rows: Array<MaterialityRangeInput>;
+};
+
+/**
+ * MaterialityRangesPayload
+ *
+ * Decisions stay the engagement partner's: these are the ranges a decision is validated
+ * against (A-04's AUD-07).
+ */
+export type MaterialityRangesPayloadOutput = {
+    /**
+     * Clearly Trivial Pct
+     */
+    clearly_trivial_pct: string;
+    /**
+     * Kind
+     */
+    kind: 'materiality_ranges';
+    performance_materiality: StandardPctRangeOutput;
+    /**
+     * Rows
+     */
+    rows: Array<MaterialityRangeOutput>;
 };
 
 /**
@@ -20477,6 +21067,50 @@ export type PortalVisibilityOut = {
 };
 
 /**
+ * PostponementArea
+ */
+export type PostponementArea = {
+    /**
+     * Counties
+     */
+    counties: Array<string>;
+    /**
+     * State
+     */
+    state: string;
+};
+
+/**
+ * PostponementOut
+ *
+ * The disaster postponement that moved a date, by its notice.
+ */
+export type PostponementOut = {
+    /**
+     * Notice Id
+     */
+    notice_id: string;
+    /**
+     * Postponed To
+     */
+    postponed_to: string;
+};
+
+/**
+ * PostponementWindow
+ */
+export type PostponementWindow = {
+    /**
+     * End
+     */
+    end: string;
+    /**
+     * Start
+     */
+    start: string;
+};
+
+/**
  * PostureOut
  *
  * The Posture card's five facts (AC-30); the same read feeds ADM-01's At a glance and the
@@ -21083,6 +21717,23 @@ export type ProviderOut = {
 };
 
 /**
+ * Pub1345Tolerances
+ *
+ * DEC-85: the amounts past which a signed 8879 must be relocked (verified each season,
+ * never defaulted).
+ */
+export type Pub1345Tolerances = {
+    /**
+     * Tax Withholding Refund Balance Usd
+     */
+    tax_withholding_refund_balance_usd: number;
+    /**
+     * Total Income Or Agi Usd
+     */
+    total_income_or_agi_usd: number;
+};
+
+/**
  * PublishedVersionOut
  */
 export type PublishedVersionOut = {
@@ -21450,6 +22101,158 @@ export type RedactionOut = {
      * Redacted By Name
      */
     redacted_by_name: string;
+};
+
+/**
+ * ReferenceSetOut
+ *
+ * A set and the version in effect today (none before its first publish).
+ */
+export type ReferenceSetOut = {
+    /**
+     * Content Owner
+     */
+    content_owner: string;
+    /**
+     * Current Effective From
+     */
+    current_effective_from: string | null;
+    /**
+     * Current Version
+     */
+    current_version: number | null;
+    /**
+     * Description
+     */
+    description: string | null;
+    /**
+     * Jurisdiction
+     */
+    jurisdiction: string | null;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Kind
+     */
+    kind: 'due_date_rules' | 'legal_holidays' | 'disaster_postponements' | 'form_8879_set' | 'information_return_thresholds' | 'retention_minimums' | 'standards_sets';
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * ReferenceSetResolvedOut
+ *
+ * The version in effect on `as_of`: the latest `effective_from` on or before it, ties to the
+ * highest version.
+ */
+export type ReferenceSetResolvedOut = {
+    /**
+     * As Of
+     */
+    as_of: string;
+    set: ReferenceSetOut;
+    version: ReferenceSetVersionOut;
+};
+
+/**
+ * ReferenceSetVersionOut
+ *
+ * One published (or withdrawn) version. Drafts are never served (ADR-300); superseded is
+ * computed at read time: a later published version is effective on or before `as_of`.
+ */
+export type ReferenceSetVersionOut = {
+    /**
+     * Approved By
+     */
+    approved_by: string | null;
+    /**
+     * Change Reason
+     */
+    change_reason: string;
+    /**
+     * Drafted By
+     */
+    drafted_by: string;
+    /**
+     * Effective From
+     */
+    effective_from: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Payload
+     */
+    payload: ({
+        kind: 'due_date_rules';
+    } & DueDateRulesPayload) | ({
+        kind: 'legal_holidays';
+    } & LegalHolidaysPayload) | ({
+        kind: 'disaster_postponements';
+    } & DisasterPostponementsPayload) | ({
+        kind: 'form_8879_set';
+    } & Form8879SetPayload) | ({
+        kind: 'information_return_thresholds';
+    } & InformationReturnThresholdsPayload) | ({
+        kind: 'retention_minimums';
+    } & RetentionMinimumsPayload) | ({
+        kind: 'standards_sets';
+    } & StandardsSetsPayload);
+    /**
+     * Payload Hash
+     */
+    payload_hash: string;
+    /**
+     * Payload Schema Version
+     */
+    payload_schema_version: number;
+    /**
+     * Published At
+     */
+    published_at: string | null;
+    /**
+     * Set Key
+     */
+    set_key: string;
+    /**
+     * Source Citations
+     */
+    source_citations: Array<ReferenceSourceCitationOut>;
+    status: ReferenceSetVersionStatus;
+    /**
+     * Tax Year
+     */
+    tax_year: number | null;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * ReferenceSetVersionStatus
+ */
+export type ReferenceSetVersionStatus = 'draft' | 'published' | 'withdrawn';
+
+/**
+ * ReferenceSourceCitationOut
+ *
+ * Where a version's rows come from, e.g. "Pub 1345 (rev.) — verify".
+ */
+export type ReferenceSourceCitationOut = {
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Url
+     */
+    url?: string | null;
 };
 
 /**
@@ -22296,6 +23099,48 @@ export type RetentionFloorSetIn = {
 };
 
 /**
+ * RetentionMinimum
+ *
+ * DEC-71 (counsel-approved, never defaulted): a legal floor per record type and line.
+ */
+export type RetentionMinimum = {
+    /**
+     * Anchor
+     */
+    anchor: string;
+    /**
+     * Authority
+     */
+    authority: string;
+    /**
+     * Floor Years
+     */
+    floor_years: number;
+    /**
+     * Record Type
+     */
+    record_type: string;
+    /**
+     * Service Line
+     */
+    service_line: string;
+};
+
+/**
+ * RetentionMinimumsPayload
+ */
+export type RetentionMinimumsPayload = {
+    /**
+     * Kind
+     */
+    kind: 'retention_minimums';
+    /**
+     * Rows
+     */
+    rows: Array<RetentionMinimum>;
+};
+
+/**
  * RetentionOut
  *
  * The retention policy, eligible date and any legal hold (read only).
@@ -22504,6 +23349,48 @@ export type RetrievalOut = {
 };
 
 /**
+ * ReturnApprovalAssignment
+ *
+ * A client and the partner who gives its final approval (client ids are confidential).
+ */
+export type ReturnApprovalAssignment = {
+    /**
+     * Approver User Id
+     */
+    approver_user_id: string;
+    /**
+     * Client Id
+     */
+    client_id: string;
+};
+
+/**
+ * ReturnApprovalPolicyPayload
+ */
+export type ReturnApprovalPolicyPayload = {
+    /**
+     * Applies To
+     */
+    applies_to: Array<ReturnApprovalAssignment>;
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Export Condition
+     */
+    export_condition: 'after_final_approval';
+    /**
+     * Kind
+     */
+    kind: 'return_approval_policy';
+    /**
+     * Rule
+     */
+    rule: 'signing_partner_final_approval';
+};
+
+/**
  * ReturnToClientIn
  */
 export type ReturnToClientIn = {
@@ -22542,6 +23429,21 @@ export type RevealOut = {
 };
 
 /**
+ * ReviewChecklistPayload
+ */
+export type ReviewChecklistPayload = {
+    applies_to: ChecklistAppliesTo;
+    /**
+     * Items
+     */
+    items: Array<ChecklistItem>;
+    /**
+     * Kind
+     */
+    kind: 'review_checklist';
+};
+
+/**
  * ReviewFlagCountOut
  */
 export type ReviewFlagCountOut = {
@@ -22575,6 +23477,20 @@ export type ReviewFlagOut = {
      * Rationale
      */
     rationale: string;
+};
+
+/**
+ * ReviewLevelsPayload
+ */
+export type ReviewLevelsPayload = {
+    /**
+     * Kind
+     */
+    kind: 'review_levels';
+    /**
+     * Tiers
+     */
+    tiers: Array<ReviewTier>;
 };
 
 /**
@@ -22839,6 +23755,32 @@ export type ReviewRequestedOut = {
      * Evidence Version Id
      */
     evidence_version_id: string;
+};
+
+/**
+ * ReviewTier
+ */
+export type ReviewTier = {
+    /**
+     * Criteria
+     */
+    criteria: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Required Levels
+     */
+    required_levels: Array<'L1' | 'L2' | 'L3' | 'L4' | 'L5'>;
+    /**
+     * Second Partner Review
+     */
+    second_partner_review: boolean;
+    /**
+     * Tier
+     */
+    tier: number;
 };
 
 /**
@@ -26180,6 +27122,22 @@ export type SpendOut = {
 };
 
 /**
+ * SsarsCasSettingsPayload
+ *
+ * SSARS 27's boundary: periods ending on or after Dec 15, 2026 (K-02 §4.3).
+ */
+export type SsarsCasSettingsPayload = {
+    /**
+     * Early Adopt Ssars27
+     */
+    early_adopt_ssars27: boolean;
+    /**
+     * Kind
+     */
+    kind: 'ssars_cas_settings';
+};
+
+/**
  * SsoExemptAccountIn
  *
  * Designate the one SSO-exempt account, or clear it with `user_id: null`.
@@ -26531,6 +27489,469 @@ export type StaffTalliesOut = {
      * Walls Active
      */
     walls_active?: number | null;
+};
+
+/**
+ * StandardChangedCellOut
+ *
+ * One changed value for KNW-04 i: the amber cell with the struck prior value. `path` is a
+ * JSON pointer into the payload; values are rendered strings.
+ */
+export type StandardChangedCellOut = {
+    /**
+     * After
+     */
+    after: string | null;
+    /**
+     * Before
+     */
+    before: string | null;
+    /**
+     * Path
+     */
+    path: string;
+};
+
+/**
+ * StandardCreateIn
+ */
+export type StandardCreateIn = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Kind
+     */
+    kind: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence';
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Owner Id
+     */
+    owner_id: string;
+};
+
+/**
+ * StandardDetailOut
+ *
+ * KNW-04's form pane: the standard, the version shown, and the Timeline (newest first).
+ */
+export type StandardDetailOut = {
+    standard: StandardOut;
+    /**
+     * Timeline
+     */
+    timeline: Array<StandardVersionSummaryOut>;
+    version: StandardVersionOut | null;
+};
+
+/**
+ * StandardDraftPatchIn
+ */
+export type StandardDraftPatchIn = {
+    /**
+     * Change Summary
+     */
+    change_summary?: string | null;
+    /**
+     * Payload
+     */
+    payload: ({
+        kind: 'aje_thresholds';
+    } & AjeThresholdsPayload) | ({
+        kind: 'variance_thresholds';
+    } & VarianceThresholdsPayloadInput) | ({
+        kind: 'materiality_ranges';
+    } & MaterialityRangesPayloadInput) | ({
+        kind: 'document_confidence';
+    } & DocumentConfidencePayloadInput) | ({
+        kind: 'review_checklist';
+    } & ReviewChecklistPayload) | ({
+        kind: 'review_levels';
+    } & ReviewLevelsPayload) | ({
+        kind: 'return_approval_policy';
+    } & ReturnApprovalPolicyPayload) | ({
+        kind: 'ssars_cas_settings';
+    } & SsarsCasSettingsPayload);
+};
+
+/**
+ * StandardExampleRowOut
+ *
+ * One example a registered provider gives (KNW-04 a, e, f, g, h), filtered by `visible()`
+ * with no hidden counts (DEC-43): a walled client's row is absent and totals are recomputed.
+ */
+export type StandardExampleRowOut = {
+    /**
+     * Amount Usd
+     */
+    amount_usd: number | null;
+    /**
+     * Client Id
+     */
+    client_id: string | null;
+    /**
+     * Client Name
+     */
+    client_name: string | null;
+    /**
+     * Detail
+     */
+    detail: string | null;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Outcome
+     */
+    outcome: string;
+    /**
+     * Route
+     */
+    route: string | null;
+};
+
+/**
+ * StandardExamplesOut
+ *
+ * `provider_registered` false: KNW-04's designed empty state, never invented rows.
+ */
+export type StandardExamplesOut = {
+    /**
+     * Period
+     */
+    period: string | null;
+    /**
+     * Provider Registered
+     */
+    provider_registered: boolean;
+    /**
+     * Rows
+     */
+    rows: Array<StandardExampleRowOut>;
+    /**
+     * Standard Id
+     */
+    standard_id: string;
+};
+
+/**
+ * StandardImportIn
+ *
+ * A workbook already uploaded and scanned through the upload flow (an upload intent).
+ */
+export type StandardImportIn = {
+    /**
+     * Upload Id
+     */
+    upload_id: string;
+};
+
+/**
+ * StandardImportProblemOut
+ *
+ * A workbook problem: where, and a fixed code, never the cell's content (ADR-052).
+ */
+export type StandardImportProblemOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Column
+     */
+    column: string | null;
+    /**
+     * Row
+     */
+    row: number | null;
+    /**
+     * Sheet
+     */
+    sheet: string;
+};
+
+/**
+ * StandardImportResultOut
+ *
+ * An import makes drafts; it never publishes.
+ */
+export type StandardImportResultOut = {
+    /**
+     * Drafts
+     */
+    drafts: Array<StandardVersionSummaryOut>;
+    /**
+     * Problems
+     */
+    problems: Array<StandardImportProblemOut>;
+};
+
+/**
+ * StandardOut
+ *
+ * A section row: the standard, its owner, the version in effect, and the partner-only draft
+ * (absent for anyone else). `allowed_actions` drives New version…, Publish and Import.
+ */
+export type StandardOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    current_version: StandardVersionSummaryOut | null;
+    draft_version: StandardVersionSummaryOut | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Kind
+     */
+    kind: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence';
+    /**
+     * Name
+     */
+    name: string;
+    owner: StandardPersonOut;
+    /**
+     * Usage Count
+     */
+    usage_count: number | null;
+};
+
+/**
+ * StandardOwnerIn
+ */
+export type StandardOwnerIn = {
+    /**
+     * Owner Id
+     */
+    owner_id: string;
+};
+
+/**
+ * StandardPctRange
+ */
+export type StandardPctRangeInput = {
+    /**
+     * High Pct
+     */
+    high_pct: number | string;
+    /**
+     * Low Pct
+     */
+    low_pct: number | string;
+};
+
+/**
+ * StandardPctRange
+ */
+export type StandardPctRangeOutput = {
+    /**
+     * High Pct
+     */
+    high_pct: string;
+    /**
+     * Low Pct
+     */
+    low_pct: string;
+};
+
+/**
+ * StandardPersonOut
+ */
+export type StandardPersonOut = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * StandardPublishIn
+ *
+ * `effective_from` on or after today (business time) and after the current version's.
+ */
+export type StandardPublishIn = {
+    /**
+     * Change Summary
+     */
+    change_summary: string;
+    /**
+     * Effective From
+     */
+    effective_from: string;
+};
+
+/**
+ * StandardVersionDiffOut
+ */
+export type StandardVersionDiffOut = {
+    /**
+     * Against Version Id
+     */
+    against_version_id: string;
+    /**
+     * Cells
+     */
+    cells: Array<StandardChangedCellOut>;
+    /**
+     * Version Id
+     */
+    version_id: string;
+};
+
+/**
+ * StandardVersionOut
+ *
+ * One version in full.
+ */
+export type StandardVersionOut = {
+    /**
+     * Change Summary
+     */
+    change_summary: string | null;
+    drafted_by: StandardPersonOut;
+    /**
+     * Drafted From Version Id
+     */
+    drafted_from_version_id: string | null;
+    /**
+     * Effective From
+     */
+    effective_from: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Payload
+     */
+    payload: ({
+        kind: 'aje_thresholds';
+    } & AjeThresholdsPayload) | ({
+        kind: 'variance_thresholds';
+    } & VarianceThresholdsPayloadOutput) | ({
+        kind: 'materiality_ranges';
+    } & MaterialityRangesPayloadOutput) | ({
+        kind: 'document_confidence';
+    } & DocumentConfidencePayloadOutput) | ({
+        kind: 'review_checklist';
+    } & ReviewChecklistPayload) | ({
+        kind: 'review_levels';
+    } & ReviewLevelsPayload) | ({
+        kind: 'return_approval_policy';
+    } & ReturnApprovalPolicyPayload) | ({
+        kind: 'ssars_cas_settings';
+    } & SsarsCasSettingsPayload);
+    /**
+     * Payload Hash
+     */
+    payload_hash: string;
+    /**
+     * Payload Schema Version
+     */
+    payload_schema_version: number;
+    /**
+     * Published At
+     */
+    published_at: string | null;
+    published_by: StandardPersonOut | null;
+    /**
+     * Row Version
+     */
+    row_version: number;
+    /**
+     * Standard Id
+     */
+    standard_id: string;
+    status: FirmStandardVersionStatus;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * StandardVersionSummaryOut
+ *
+ * A version on the header and the Timeline. `status` is the C2 code: `superseded` is
+ * computed (a later published version is in effect).
+ */
+export type StandardVersionSummaryOut = {
+    /**
+     * Current
+     */
+    current: boolean;
+    /**
+     * Effective From
+     */
+    effective_from: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Published At
+     */
+    published_at: string | null;
+    published_by: StandardPersonOut | null;
+    status: FirmStandardVersionStatus;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * StandardsSetRow
+ *
+ * A standards set K-01's KNW-02d maps to. No PCAOB or issuer family exists (X-07, DEC-19);
+ * a published code is never removed or moved to another family (K-02-T05 validates).
+ */
+export type StandardsSetRow = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Family
+     */
+    family: 'gaas_nonissuer' | 'ssars' | 'sqms';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Standard Refs
+     */
+    standard_refs: Array<string>;
+};
+
+/**
+ * StandardsSetsPayload
+ */
+export type StandardsSetsPayload = {
+    /**
+     * Kind
+     */
+    kind: 'standards_sets';
+    /**
+     * Rows
+     */
+    rows: Array<StandardsSetRow>;
 };
 
 /**
@@ -29073,6 +30494,74 @@ export type ValueRow = {
      * Masked
      */
     masked?: boolean;
+};
+
+/**
+ * VarianceRow
+ *
+ * A variance is exceeded only when both the percent and the amount are (K-02 §4.3).
+ */
+export type VarianceRowInput = {
+    /**
+     * Amount Usd
+     */
+    amount_usd: number;
+    /**
+     * Context
+     */
+    context: 'close_flux' | 'ssars_review_analytics' | 'tax_two_year';
+    /**
+     * Pct
+     */
+    pct: number | string;
+};
+
+/**
+ * VarianceRow
+ *
+ * A variance is exceeded only when both the percent and the amount are (K-02 §4.3).
+ */
+export type VarianceRowOutput = {
+    /**
+     * Amount Usd
+     */
+    amount_usd: number;
+    /**
+     * Context
+     */
+    context: 'close_flux' | 'ssars_review_analytics' | 'tax_two_year';
+    /**
+     * Pct
+     */
+    pct: string;
+};
+
+/**
+ * VarianceThresholdsPayload
+ */
+export type VarianceThresholdsPayloadInput = {
+    /**
+     * Kind
+     */
+    kind: 'variance_thresholds';
+    /**
+     * Rows
+     */
+    rows: Array<VarianceRowInput>;
+};
+
+/**
+ * VarianceThresholdsPayload
+ */
+export type VarianceThresholdsPayloadOutput = {
+    /**
+     * Kind
+     */
+    kind: 'variance_thresholds';
+    /**
+     * Rows
+     */
+    rows: Array<VarianceRowOutput>;
 };
 
 /**
@@ -35609,6 +37098,82 @@ export type DestinationsResponses = {
 };
 
 export type DestinationsResponse = DestinationsResponses[keyof DestinationsResponses];
+
+export type PracticeDueDatesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Form
+         */
+        form: string;
+        /**
+         * Tax Year
+         */
+        tax_year: number;
+        /**
+         * Period End
+         */
+        period_end: string;
+        /**
+         * Jurisdiction
+         */
+        jurisdiction?: 'US' | 'DC';
+        /**
+         * State
+         */
+        state?: string | null;
+        /**
+         * County
+         */
+        county?: string | null;
+    };
+    url: '/v1/due-dates';
+};
+
+export type PracticeDueDatesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PracticeDueDatesError = PracticeDueDatesErrors[keyof PracticeDueDatesErrors];
+
+export type PracticeDueDatesResponses = {
+    /**
+     * Successful Response
+     */
+    200: DueDateOut;
+};
+
+export type PracticeDueDatesResponse = PracticeDueDatesResponses[keyof PracticeDueDatesResponses];
 
 export type CreateEngagementDraftData = {
     body: EngagementDraftIn;
@@ -69181,6 +70746,179 @@ export type AgentProposalResponses = {
 
 export type AgentProposalResponse = AgentProposalResponses[keyof AgentProposalResponses];
 
+export type ListReferenceSetsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Kind
+         */
+        kind?: 'due_date_rules' | 'legal_holidays' | 'disaster_postponements' | 'form_8879_set' | 'information_return_thresholds' | 'retention_minimums' | 'standards_sets' | null;
+    };
+    url: '/v1/reference-sets';
+};
+
+export type ListReferenceSetsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListReferenceSetsError = ListReferenceSetsErrors[keyof ListReferenceSetsErrors];
+
+export type ListReferenceSetsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageReferenceSetOut;
+};
+
+export type ListReferenceSetsResponse = ListReferenceSetsResponses[keyof ListReferenceSetsResponses];
+
+export type ResolveReferenceSetData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Key
+         */
+        key: string;
+    };
+    query?: {
+        /**
+         * As Of
+         */
+        as_of?: string | null;
+    };
+    url: '/v1/reference-sets/{key}';
+};
+
+export type ResolveReferenceSetErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ResolveReferenceSetError = ResolveReferenceSetErrors[keyof ResolveReferenceSetErrors];
+
+export type ResolveReferenceSetResponses = {
+    /**
+     * Successful Response
+     */
+    200: ReferenceSetResolvedOut;
+};
+
+export type ResolveReferenceSetResponse = ResolveReferenceSetResponses[keyof ResolveReferenceSetResponses];
+
+export type ReferenceSetVersionsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Key
+         */
+        key: string;
+    };
+    query?: never;
+    url: '/v1/reference-sets/{key}/versions';
+};
+
+export type ReferenceSetVersionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ReferenceSetVersionsError = ReferenceSetVersionsErrors[keyof ReferenceSetVersionsErrors];
+
+export type ReferenceSetVersionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageReferenceSetVersionOut;
+};
+
+export type ReferenceSetVersionsResponse = ReferenceSetVersionsResponses[keyof ReferenceSetVersionsResponses];
+
 export type ListRetentionPoliciesData = {
     body?: never;
     headers?: {
@@ -70021,6 +71759,857 @@ export type SignupResponses = {
 };
 
 export type SignupResponse = SignupResponses[keyof SignupResponses];
+
+export type ListStandardsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Kind
+         */
+        kind?: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence' | null;
+    };
+    url: '/v1/standards';
+};
+
+export type ListStandardsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListStandardsError = ListStandardsErrors[keyof ListStandardsErrors];
+
+export type ListStandardsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageStandardOut;
+};
+
+export type ListStandardsResponse = ListStandardsResponses[keyof ListStandardsResponses];
+
+export type CreateStandardData = {
+    body: StandardCreateIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/standards';
+};
+
+export type CreateStandardErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CreateStandardError = CreateStandardErrors[keyof CreateStandardErrors];
+
+export type CreateStandardResponses = {
+    /**
+     * Successful Response
+     */
+    201: StandardOut;
+};
+
+export type CreateStandardResponse = CreateStandardResponses[keyof CreateStandardResponses];
+
+export type ImportStandardsData = {
+    body: StandardImportIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/standards/imports';
+};
+
+export type ImportStandardsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ImportStandardsError = ImportStandardsErrors[keyof ImportStandardsErrors];
+
+export type ImportStandardsResponses = {
+    /**
+     * Successful Response
+     */
+    201: StandardImportResultOut;
+};
+
+export type ImportStandardsResponse = ImportStandardsResponses[keyof ImportStandardsResponses];
+
+export type StandardData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Standard Id
+         */
+        standard_id: string;
+    };
+    query?: {
+        /**
+         * Version
+         */
+        version?: number | null;
+    };
+    url: '/v1/standards/{standard_id}';
+};
+
+export type StandardErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type StandardError = StandardErrors[keyof StandardErrors];
+
+export type StandardResponses = {
+    /**
+     * Successful Response
+     */
+    200: StandardDetailOut;
+};
+
+export type StandardResponse = StandardResponses[keyof StandardResponses];
+
+export type StandardExamplesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Standard Id
+         */
+        standard_id: string;
+    };
+    query?: {
+        /**
+         * Period
+         */
+        period?: string | null;
+    };
+    url: '/v1/standards/{standard_id}/examples';
+};
+
+export type StandardExamplesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type StandardExamplesError = StandardExamplesErrors[keyof StandardExamplesErrors];
+
+export type StandardExamplesResponses = {
+    /**
+     * Successful Response
+     */
+    200: StandardExamplesOut;
+};
+
+export type StandardExamplesResponse = StandardExamplesResponses[keyof StandardExamplesResponses];
+
+export type ImportStandardData = {
+    body: StandardImportIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Standard Id
+         */
+        standard_id: string;
+    };
+    query?: never;
+    url: '/v1/standards/{standard_id}/imports';
+};
+
+export type ImportStandardErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ImportStandardError = ImportStandardErrors[keyof ImportStandardErrors];
+
+export type ImportStandardResponses = {
+    /**
+     * Successful Response
+     */
+    201: StandardImportResultOut;
+};
+
+export type ImportStandardResponse = ImportStandardResponses[keyof ImportStandardResponses];
+
+export type AssignOwnerData = {
+    body: StandardOwnerIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Standard Id
+         */
+        standard_id: string;
+    };
+    query?: never;
+    url: '/v1/standards/{standard_id}/owner';
+};
+
+export type AssignOwnerErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AssignOwnerError = AssignOwnerErrors[keyof AssignOwnerErrors];
+
+export type AssignOwnerResponses = {
+    /**
+     * Successful Response
+     */
+    200: StandardOut;
+};
+
+export type AssignOwnerResponse = AssignOwnerResponses[keyof AssignOwnerResponses];
+
+export type DraftVersionData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Standard Id
+         */
+        standard_id: string;
+    };
+    query?: never;
+    url: '/v1/standards/{standard_id}/versions';
+};
+
+export type DraftVersionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DraftVersionError = DraftVersionErrors[keyof DraftVersionErrors];
+
+export type DraftVersionResponses = {
+    /**
+     * Successful Response
+     */
+    201: StandardVersionOut;
+};
+
+export type DraftVersionResponse = DraftVersionResponses[keyof DraftVersionResponses];
+
+export type DiscardDraft2Data = {
+    body?: never;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': number;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Standard Id
+         */
+        standard_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/standards/{standard_id}/versions/{version_id}';
+};
+
+export type DiscardDraft2Errors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DiscardDraft2Error = DiscardDraft2Errors[keyof DiscardDraft2Errors];
+
+export type DiscardDraft2Responses = {
+    /**
+     * Successful Response
+     */
+    200: StandardVersionSummaryOut;
+};
+
+export type DiscardDraft2Response = DiscardDraft2Responses[keyof DiscardDraft2Responses];
+
+export type StandardVersionData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Standard Id
+         */
+        standard_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/standards/{standard_id}/versions/{version_id}';
+};
+
+export type StandardVersionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type StandardVersionError = StandardVersionErrors[keyof StandardVersionErrors];
+
+export type StandardVersionResponses = {
+    /**
+     * Successful Response
+     */
+    200: StandardVersionOut;
+};
+
+export type StandardVersionResponse = StandardVersionResponses[keyof StandardVersionResponses];
+
+export type EditDraftData = {
+    body: StandardDraftPatchIn;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': number;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Standard Id
+         */
+        standard_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/standards/{standard_id}/versions/{version_id}';
+};
+
+export type EditDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EditDraftError = EditDraftErrors[keyof EditDraftErrors];
+
+export type EditDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: StandardVersionOut;
+};
+
+export type EditDraftResponse = EditDraftResponses[keyof EditDraftResponses];
+
+export type VersionDiffData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Standard Id
+         */
+        standard_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: {
+        /**
+         * Against
+         */
+        against?: string | null;
+    };
+    url: '/v1/standards/{standard_id}/versions/{version_id}/diff';
+};
+
+export type VersionDiffErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type VersionDiffError = VersionDiffErrors[keyof VersionDiffErrors];
+
+export type VersionDiffResponses = {
+    /**
+     * Successful Response
+     */
+    200: StandardVersionDiffOut;
+};
+
+export type VersionDiffResponse = VersionDiffResponses[keyof VersionDiffResponses];
+
+export type ExportVersion2Data = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Standard Id
+         */
+        standard_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/standards/{standard_id}/versions/{version_id}/export.xlsx';
+};
+
+export type ExportVersion2Errors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ExportVersion2Error = ExportVersion2Errors[keyof ExportVersion2Errors];
+
+export type ExportVersion2Responses = {
+    /**
+     * Response Export Version
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type ExportVersion2Response = ExportVersion2Responses[keyof ExportVersion2Responses];
+
+export type PublishVersionData = {
+    body: StandardPublishIn;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': number;
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Standard Id
+         */
+        standard_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/standards/{standard_id}/versions/{version_id}/publish';
+};
+
+export type PublishVersionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PublishVersionError = PublishVersionErrors[keyof PublishVersionErrors];
+
+export type PublishVersionResponses = {
+    /**
+     * Successful Response
+     */
+    200: StandardVersionOut;
+};
+
+export type PublishVersionResponse = PublishVersionResponses[keyof PublishVersionResponses];
 
 export type SuggestionAdoptData = {
     body: AdoptSuggestionIn;
