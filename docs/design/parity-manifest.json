@@ -1513,7 +1513,11 @@
       "source": "handoff/screens/AUD-03 Source documents - PBC with viewer/screenshots/AUD-03a.png",
       "sha256": "665ed1d762803dfb11a5c99843f25b7165ea021076f55fb74ab662fb01b063eb",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ],
+      "locked": true
     },
     "aud-03b.window": {
       "page": "screens/AUD-03?st=b",
@@ -1521,7 +1525,11 @@
       "source": "handoff/screens/AUD-03 Source documents - PBC with viewer/screenshots/AUD-03b.png",
       "sha256": "cd3503f55ad891311f6c27d49e1915b7ab7817a2a1655d763dadaa4e9d97a69d",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ],
+      "locked": true
     },
     "aud-03c.window": {
       "page": "screens/AUD-03?st=c",
@@ -1529,7 +1537,11 @@
       "source": "handoff/screens/AUD-03 Source documents - PBC with viewer/screenshots/AUD-03c.png",
       "sha256": "e65178d470758512f2206c511f4378ef30ed62541f6ab4af103b89cc4f48b60d",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ],
+      "locked": true
     },
     "aud-03d.window": {
       "page": "screens/AUD-03?st=d",
@@ -1537,7 +1549,11 @@
       "source": "handoff/screens/AUD-03 Source documents - PBC with viewer/screenshots/AUD-03d.png",
       "sha256": "ed1aa072abf6824e6a25a56de62f73817feb5d48b8e133578486e836c1aefbd3",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']",
+        "[data-overlay='dialog']"
+      ]
     },
     "aud-03e.window": {
       "page": "screens/AUD-03?st=e",
@@ -1546,7 +1562,10 @@
       "sha256": "ab056dbc43deae96ac6aaf7cc022f8a1951f5df3205304749649c6dc6d2bf05a",
       "crop": "window",
       "tier": "C",
-      "locked": true
+      "locked": true,
+      "mask": [
+        "[data-cockpit='dock']"
+      ]
     },
     "aud-03f.window": {
       "page": "screens/AUD-03?st=f",
@@ -1554,7 +1573,10 @@
       "source": "handoff/screens/AUD-03 Source documents - PBC with viewer/screenshots/AUD-03f.png",
       "sha256": "b0fd26201cb20b65e379b0ad6c94497b455c1ad7fb682ae88fcd6fe9cc526f20",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ]
     },
     "aud-03g.window": {
       "page": "screens/AUD-03?st=g",
@@ -1562,7 +1584,11 @@
       "source": "handoff/screens/AUD-03 Source documents - PBC with viewer/screenshots/AUD-03g.png",
       "sha256": "802bdd19646ee9cfbd63635e8ff51151ec0c34e0b8465837febd3d2404bab17e",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ],
+      "locked": true
     },
     "home-01a.window": {
       "page": "screens/HOME-01?st=a",

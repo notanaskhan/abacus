@@ -181,8 +181,8 @@ Composed from kits; no artboard exists. Recorded for the PF review and as a DF r
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| b, g | C (threshold 0.20, maxDiffPixelRatio 3 %) | 3.13 / 3.14 | report-only: measured Thu Oct 29, 2026 with the dock masked (`[data-cockpit='dock']`), the audit bar at the window's edges, the rail's Overview band and the 44 rows (DEC-908). What remains: the Source Documents order (the handoff's static frame lists received rows first under "Missing first"; the screen sorts as the chip says, DEC-341), the OverviewCard about 3 px shorter, and the bar controls the viewer's capabilities hide (Auto mode, Rail · Board, gear, Add). Locked by Fri Apr 30, 2027 |
-| a, c, d, e | C | 3.19 / 3.13 / 1.09 / 3.19 | report-only with the dock masked until P-09 locks SHL-13 (d passes 3 % masked) |
+| b, g | C (threshold 0.20, maxDiffPixelRatio 3 %) | 3.13 / 3.14 | report-only: measured Thu Oct 29, 2026 with the dock masked (`[data-cockpit='dock']`), the audit bar at the window's edges, the rail's Overview band and the 44 rows (DEC-908). What remains: the Source Documents order (the handoff's static frame lists received rows first under "Missing first"; the screen sorts as the chip says, DEC-341), the OverviewCard about 3 px shorter, and the bar controls the viewer's capabilities hide (Auto mode, Rail · Board, gear, Add). A-01-T33 (S34, DEC-909) locks them or records why not |
+| a, c, d, e | C | 3.19 / 3.13 / 1.09 / 3.19 | report-only with the dock masked until P-09-T18 locks SHL-13; A-01-T33 (S34, DEC-909) then unmasks and locks them (d passes 3 % masked) |
 | f | C | 6.01 | report-only (fixture, A-01-T31; dock masked as a, c, d, e; the confirm open as in `AUD-02f.png`) |
 | h, i | — | — | deferred to A-09 / K-04 |
 | host | D | — | toolbar 46, audit bar 59, rail 330, canvas 696, dock 330, pane header 46 with a 14.5/500 title, rows 44, pills 21/19, radius 12; masks: spinners |
