@@ -13,10 +13,26 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from sqlalchemy import text
+from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 
 from abacus.kernel.db import tenant_session
+from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
+from abacus.kernel.uow import Handler
 from abacus.modules.identity.api import AbacusRouter, AuthContext
+from abacus.modules.signatures.activities import ACTIVITIES as ENVELOPE_ACTIVITIES
 from abacus.modules.signatures.contract import policies_router, portal_router, router
+from abacus.modules.signatures.hub import seal_ip
+from abacus.modules.signatures.provider import (
+    Completed,
+    Created,
+    EnvelopeSpec,
+    EsignProvider,
+    ProviderUnavailable,
+    SignerEvidence,
+    SignerState,
+    configure_provider,
+)
+from abacus.modules.signatures.reminders import ReminderSender, register_reminder_sender
 from abacus.modules.signatures.sources import (
     LETTER,
     LETTER_GATE,
@@ -28,6 +44,13 @@ from abacus.modules.signatures.sources import (
     register_envelope_source,
     register_letter_source,
     registered_sources,
+)
+from abacus.modules.signatures.workflows import (
+    EnvelopeInput,
+    EnvelopeWorkflow,
+    ReminderDue,
+    SendPlan,
+    envelope_workflow_id,
 )
 
 
@@ -92,21 +115,59 @@ async def envelope_gate_facts(ctx: AuthContext, gate_kind: str, target_ref: UUID
 
 register_letter_source()
 
+# N-02-T14: EnvelopeWorkflow on the time-sensitive queue; its activities by name.
+WORKFLOWS: dict[type, WorkClass] = {EnvelopeWorkflow: "time_sensitive"}
+register_work_classes(WORKFLOWS)
+ACTIVITIES: tuple[object, ...] = ENVELOPE_ACTIVITIES
+SUBSCRIPTIONS: dict[str, Handler] = {}
+
+
+async def start_envelope(tenant_id: UUID, envelope_id: UUID) -> None:
+    """Start the envelope's workflow once its send is committed (N-02-T22); a second start
+    attaches to the running one."""
+    await dispatch(
+        EnvelopeWorkflow,
+        EnvelopeInput(str(tenant_id), str(envelope_id)),
+        id=envelope_workflow_id(str(tenant_id), str(envelope_id)),
+        id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE,
+        id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
+    )
+
 
 # The routers the API mounts, in order (P-39; F-03-T07). `/import` and `/summary` are declared
 # before `/{envelope_id}` inside `router`.
 ROUTERS: tuple[AbacusRouter, ...] = (router, policies_router, portal_router)
 
 __all__ = [
+    "ACTIVITIES",
     "LETTER",
     "ROUTERS",
+    "SUBSCRIPTIONS",
+    "WORKFLOWS",
+    "Completed",
+    "Created",
+    "EnvelopeInput",
     "EnvelopeSource",
+    "EnvelopeSpec",
     "EnvelopeSummary",
+    "EnvelopeWorkflow",
+    "EsignProvider",
     "GateFacts",
+    "ProviderUnavailable",
+    "ReminderDue",
+    "ReminderSender",
+    "SendPlan",
+    "SignerEvidence",
+    "SignerState",
     "UnknownEnvelopeSource",
+    "configure_provider",
     "envelope_gate_facts",
     "envelope_source",
     "envelope_summary_for",
+    "envelope_workflow_id",
     "register_envelope_source",
+    "register_reminder_sender",
     "registered_sources",
+    "seal_ip",
+    "start_envelope",
 ]
