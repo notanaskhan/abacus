@@ -27,7 +27,7 @@ test.describe("TPL-16 at 1440", () => {
     test(`TPL-16${st}: axe finds nothing serious`, async ({ page }) => {
       await page.goto(`/components/screens/TPL-16?st=${st}&frame=1`);
       await expect(page.locator("[data-template='t16']")).toBeVisible();
-      await axeClean(page, "[data-artboard]");
+      await axeClean(page, "[data-shell='app']");
     });
   }
 });
