@@ -146934,7 +146934,7 @@
         "x-abacus-action": "portal_intake.read_own"
       },
       "post": {
-        "description": "POR-03 \"IntakeBatch something else\": the batch (N-01-T14).",
+        "description": "POR-03 \"Upload something else\": the batch (N-01-T14).",
         "operationId": "create_intake_upload",
         "parameters": [
           {

@@ -117,6 +117,7 @@ TABLES: tuple[str, ...] = (
     "esign_disclosures",
     "ethical_walls",
     "evidence_derivations",
+    "evidence_intake_object_keys",
     "evidence_items",
     "evidence_object_keys",
     "evidence_pages",
