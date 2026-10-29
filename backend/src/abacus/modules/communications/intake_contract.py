@@ -21,12 +21,13 @@ Rules the shapes carry:
 from __future__ import annotations
 
 from datetime import UTC, date, datetime, time
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
+from abacus.kernel import listing
 from abacus.kernel._flags import INBOX_FIRM_INTAKE
 from abacus.kernel._statuses import InboxItemStatus, InboxThreadStatus
 from abacus.kernel.classification import classified
@@ -41,7 +42,7 @@ from abacus.kernel.errors import (
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.kernel.uow.idempotency import idempotent
-from abacus.modules.communications import intake
+from abacus.modules.communications import inbox_read, intake
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
@@ -516,15 +517,97 @@ intake_router = AbacusRouter(prefix="/v1/inbox", tags=["inbox"])
 destinations_router = AbacusRouter(prefix="/v1", tags=["inbox"])
 
 
-@intake_router.get("/summary", action="inbox.read", response_model=InboxSummaryOut, errors=(501,))
+def _row_out(r: inbox_read.ThreadRow) -> InboxThreadRow:
+    return InboxThreadRow(
+        id=r.id,
+        source_kind=cast(SourceKind, r.source_kind),
+        channel=cast(Channel, r.channel or "email"),
+        match_state=cast(InboxThreadStatus, r.match_state),
+        client_id=r.client_id,
+        client_name=r.client_name,
+        subject_display=r.subject_display,
+        sender_display=r.sender_display,
+        last_received_at=r.last_received_at,
+        status=cast(InboxItemStatus, r.status),
+        waiting=r.waiting,
+        message_count=r.message_count,
+    )
+
+
+def _detail_out(d: inbox_read.ThreadDetail) -> InboxThreadDetail:
+    return InboxThreadDetail(
+        thread=_row_out(d.thread),
+        match_method=cast(MatchMethod, d.match_method),
+        work_item_label=None,
+        messages=[
+            InboundMessageOut(
+                id=m.id,
+                channel=cast(Channel, m.channel),
+                received_via=cast(ReceivedVia | None, m.received_via),
+                sender_display=m.sender_display,
+                logged_by_name=m.logged_by_name,
+                subject_display=m.subject_display,
+                received_at=m.received_at,
+                body=m.body,
+                attachments=[
+                    InboxAttachmentOut(
+                        id=a.id,
+                        file_name=a.file_name,
+                        media_type=a.media_type,
+                        size_bytes=a.size_bytes,
+                        fingerprint=f"sha256:{a.fingerprint}",
+                        status=cast(InboxItemStatus, a.status),
+                        flags=[
+                            AttachmentFlagOut(
+                                kind=cast(FlagKind, f.kind),
+                                severity=cast(FlagSeverity, f.severity),
+                                ref_evidence_version_id=f.ref_evidence_version_id,
+                                facts=f.facts,
+                            )
+                            for f in a.flags
+                        ],
+                        filed=None,  # the destination's path and route arrive with N-01-T18
+                        ignored_reason=None,
+                        held_at=None,
+                        thumbnail_ref=None,
+                        allowed_actions=a.allowed_actions,
+                    )
+                    for a in m.attachments
+                ],
+            )
+            for m in d.messages
+        ],
+        allowed_actions=d.allowed_actions,
+        version=d.version,
+    )
+
+
+def _download(made: inbox_read.Download) -> Response:
+    return Response(
+        made.body,
+        media_type=made.media_type,
+        headers={
+            "Content-Disposition": f'attachment; filename="{made.file_name}"',
+            "Cache-Control": "no-store",
+        },
+    )
+
+
+@intake_router.get("/summary", action="inbox.read", response_model=InboxSummaryOut)
 async def inbox_summary_route(ctx: Ctx) -> InboxSummaryOut:
     """INB-01 "23 waiting · 4 unmatched", over visible rows only (N-01-T13)."""
-    await _stub(ctx, "inbox.read")
+    made = await inbox_read.summary(ctx)
+    return InboxSummaryOut(
+        waiting=made.waiting,
+        unmatched=made.unmatched,
+        by_source=[
+            SourceCount(source_kind=cast(SourceKind, k), source_display=d, waiting=n)
+            for k, d, n in made.by_source
+        ],
+    )
 
 
-@intake_router.get(
-    "/threads", action="inbox.read", response_model=ListPage[InboxThreadRow], errors=(501,)
-)
+@intake_router.get("/threads", action="inbox.read", response_model=ListPage[InboxThreadRow])
 async def list_threads_route(
     ctx: Ctx,
     source: SourceKind | None = None,
@@ -539,15 +622,36 @@ async def list_threads_route(
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
 ) -> ListPage[InboxThreadRow]:
     """INB-01 rail, `last_received_at` descending (N-01-T13)."""
-    await _stub(ctx, "inbox.read")
+    page = await inbox_read.list_threads(
+        ctx,
+        inbox_read.ThreadFilters(
+            source=source,
+            client_id=client_id,
+            status=status,
+            received_since=received_since,
+            channel=channel,
+            q=q,
+            show_ignored=show_ignored,
+            show_filed=show_filed,
+        ),
+        cursor,
+        limit,
+    )
+    return listing.envelope(
+        [_row_out(r) for r in page.rows],
+        next_position=page.next_position,
+        tenant_id=ctx.tenant_id,
+        resource=inbox_read.LIST_RESOURCE,
+        query=page.query,
+        total=page.total,
+        counts=page.counts,
+    )
 
 
-@intake_router.get(
-    "/threads/{thread_id}", action="inbox.read", response_model=InboxThreadDetail, errors=(501,)
-)
+@intake_router.get("/threads/{thread_id}", action="inbox.read", response_model=InboxThreadDetail)
 async def get_thread_route(thread_id: UUID, ctx: Ctx) -> InboxThreadDetail:
-    """INB-01 reading pane; bodies only with `inbox.read_content` (N-01-T13)."""
-    await _stub(ctx, "inbox.read")
+    """INB-01 reading pane; bodies only with `inbox.read_content`, audited (N-01-T13)."""
+    return _detail_out(await inbox_read.thread_detail(ctx, thread_id))
 
 
 @intake_router.post(
@@ -666,58 +770,70 @@ async def _log_check(ctx: AuthContext, client_id: UUID | None) -> None:
     "/threads/{thread_id}/match-client",
     action="inbox.match_sender",
     response_model=InboxThreadDetail,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def match_client_route(thread_id: UUID, body: MatchClientIn, ctx: Ctx) -> InboxThreadDetail:
-    """INB-01 b: attachments New → Waiting; "Remember sender" also needs
-    `inbox_sender_rule.create` (N-01-T18)."""
-    await _stub(ctx, "inbox.match_sender")
+    """INB-01 b: attachments New → Waiting; "Remember this sender" writes a sender rule
+    (N-01-T13)."""
+    await inbox_read.match_client(
+        ctx,
+        thread_id,
+        client_id=body.client_id,
+        client_entity_id=body.client_entity_id,
+        remember_sender=body.remember_sender,
+        seen_version=body.seen_version,
+    )
+    return _detail_out(await inbox_read.thread_detail(ctx, thread_id))
 
 
 @intake_router.post(
     "/threads/{thread_id}/ignore",
     action="inbox.triage",
     response_model=InboxThreadDetail,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def ignore_thread_route(
     thread_id: UUID, body: IgnoreThreadIn, ctx: Ctx
 ) -> InboxThreadDetail:
-    """INB-01 b "Ignore" for an unmatched sender (N-01-T18)."""
-    await _stub(ctx, "inbox.triage")
+    """INB-01 b "Ignore" for an unmatched sender (N-01-T13)."""
+    await inbox_read.ignore_thread(ctx, thread_id, body.reason_code)
+    return _detail_out(await inbox_read.thread_detail(ctx, thread_id))
 
 
 @intake_router.get(
     "/attachments/{attachment_id}/viewer",
     action="inbox.read_content",
     response_model=IntakeViewerManifestOut,
-    errors=(501,),
 )
 async def attachment_viewer_route(attachment_id: UUID, ctx: Ctx) -> IntakeViewerManifestOut:
-    """SHL-08 over an intake object; masked pages only (N-01-T13)."""
-    await _stub(ctx, "inbox.read_content")
+    """SHL-08 over an intake object; masked pages only, audited (N-01-T13)."""
+    made = await inbox_read.viewer_manifest(ctx, attachment_id)
+    return IntakeViewerManifestOut(
+        attachment_id=made.attachment_id,
+        page_count=made.page_count,
+        masked=made.masked,
+        page_refs=made.page_refs,
+    )
 
 
 @intake_router.get(
     "/attachments/{attachment_id}/content",
     action="inbox.download",
     response_model=bytes,
-    errors=(501,),
 )
 async def attachment_content_route(attachment_id: UUID, ctx: Ctx) -> Response:
     """Audited download, `no-store` (N-01-T13)."""
-    await _stub(ctx, "inbox.download")
+    return _download(await inbox_read.attachment_content(ctx, attachment_id))
 
 
 @intake_router.get(
     "/messages/{message_id}/attachments.zip",
     action="inbox.download",
     response_model=bytes,
-    errors=(501,),
 )
 async def message_zip_route(message_id: UUID, ctx: Ctx) -> Response:
     """ "Download All": stdlib zip, audited, `no-store` (N-01-T13)."""
-    await _stub(ctx, "inbox.download")
+    return _download(await inbox_read.message_zip(ctx, message_id))
 
 
 @intake_router.get(

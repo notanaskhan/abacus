@@ -129,6 +129,7 @@ from abacus.modules.evidence.holds import apply_batch as legal_hold_apply_batch
 from abacus.modules.evidence.inbox import add_to_inbox, register_match_picks
 from abacus.modules.evidence.inbox import assign as assign_inbox_file
 from abacus.modules.evidence.intake_sources import IntakeSource, register_intake_source
+from abacus.modules.evidence.masked_previews import intake_masked_pages
 from abacus.modules.evidence.item_detail import Download as DocumentDownload
 from abacus.modules.evidence.item_detail import latest_document
 from abacus.modules.evidence.masked_previews import masked_preview_upload
@@ -466,6 +467,7 @@ __all__ = [
     "InboxFileAdded",
     "InboxFileExtracted",
     "IntakeSource",
+    "intake_masked_pages",
     "IntegrityError",
     "LayerExport",
     "LayerLine",

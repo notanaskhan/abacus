@@ -132421,16 +132421,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Attachment Content Route",
@@ -132442,7 +132432,7 @@
     },
     "/v1/inbox/attachments/{attachment_id}/viewer": {
       "get": {
-        "description": "SHL-08 over an intake object; masked pages only (N-01-T13).",
+        "description": "SHL-08 over an intake object; masked pages only, audited (N-01-T13).",
         "operationId": "attachment_viewer",
         "parameters": [
           {
@@ -132538,16 +132528,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Attachment Viewer Route",
@@ -132944,16 +132924,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Message Zip Route",
@@ -133316,16 +133286,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Inbox Summary Route",
@@ -133580,16 +133540,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Threads Route",
@@ -133601,7 +133551,7 @@
     },
     "/v1/inbox/threads/{thread_id}": {
       "get": {
-        "description": "INB-01 reading pane; bodies only with `inbox.read_content` (N-01-T13).",
+        "description": "INB-01 reading pane; bodies only with `inbox.read_content`, audited (N-01-T13).",
         "operationId": "get_thread",
         "parameters": [
           {
@@ -133697,16 +133647,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Thread Route",
@@ -133718,7 +133658,7 @@
     },
     "/v1/inbox/threads/{thread_id}/ignore": {
       "post": {
-        "description": "INB-01 b \"Ignore\" for an unmatched sender (N-01-T18).",
+        "description": "INB-01 b \"Ignore\" for an unmatched sender (N-01-T13).",
         "operationId": "ignore_thread",
         "parameters": [
           {
@@ -133834,16 +133774,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Ignore Thread Route",
@@ -133855,7 +133785,7 @@
     },
     "/v1/inbox/threads/{thread_id}/match-client": {
       "post": {
-        "description": "INB-01 b: attachments New \u2192 Waiting; \"Remember sender\" also needs\n`inbox_sender_rule.create` (N-01-T18).",
+        "description": "INB-01 b: attachments New \u2192 Waiting; \"Remember this sender\" writes a sender rule\n(N-01-T13).",
         "operationId": "match_client",
         "parameters": [
           {
@@ -133971,16 +133901,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Match Client Route",

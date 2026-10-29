@@ -95,7 +95,21 @@ FIRM: list[tuple[str, Endpoint, Flag, ModuleType]] = [
 ] + [(p, e, FILES_BROWSER, files) for p, e in _endpoints(files, files.files_router)]
 PORTAL: list[tuple[str, Endpoint]] = _endpoints(portal, portal.intake_router)
 # Live since N-01-T09 (staff-logged intake; DEC-821): their own codes, never 501.
-LIVE_PATHS = frozenset({"/v1/inbox/intake", "/v1/inbox/intake/{message_id}/files"})
+LIVE_PATHS = frozenset(
+    {
+        "/v1/inbox/intake",
+        "/v1/inbox/intake/{message_id}/files",
+        # N-01-T13 (DEC-1059): the read APIs, match-client and ignore.
+        "/v1/inbox/summary",
+        "/v1/inbox/threads",
+        "/v1/inbox/threads/{thread_id}",
+        "/v1/inbox/threads/{thread_id}/match-client",
+        "/v1/inbox/threads/{thread_id}/ignore",
+        "/v1/inbox/attachments/{attachment_id}/viewer",
+        "/v1/inbox/attachments/{attachment_id}/content",
+        "/v1/inbox/messages/{message_id}/attachments.zip",
+    }
+)
 STUBBED = [f for f in FIRM if f[0] not in LIVE_PATHS]
 
 
