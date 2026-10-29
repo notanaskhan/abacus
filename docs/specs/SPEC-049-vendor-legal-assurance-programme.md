@@ -89,6 +89,7 @@ Every real-data milestone waits on third parties with lead times (vendors, couns
 
 ### Story 6: As the builder I want a recorded M1 result
 - **AC-33** Given Fri Oct 30 (M1), then the builder records the M1 result in `docs/product/decision-log.md`: every chapter 06 section 7.6 application has a submitted date (Xero and NetSuite on Nov 2), counsel is engaged with a dated scope, the compliance tool is contracted, at least 6 conversations are booked, and thresholds W1 to W3 merged before the first call; any unfiled application is named with a date.
+- **AC-35 M8 tax go/no-go, criteria (b) and (c) (F-09-T125).** On Fri May 28, 2027, `docs/ops/gates/M8-tax-go-no-go.md` records criterion (b) (a tax partner signed for 5–15 extended returns; its CCH admin's written sign-off on the file format) and criterion (c) (counsel-approved §7216 text naming AWS Bedrock; the DocuSign ID Verification contract signed) each as met or not met with its evidence by vault reference, and the GO/NO-GO is a DEC row the same day.
 
 ## 6. Behaviour and flows
 **Happy path**
