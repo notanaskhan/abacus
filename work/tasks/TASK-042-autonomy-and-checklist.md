@@ -8,7 +8,7 @@ status: done
 branch: task-042-autonomy-checklist
 worktree:
 created: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-29
 ---
 
 > **Rules for the agent working this task**
@@ -131,3 +131,7 @@ Checked and not needed:
 |---|---|---|
 
 ## Handoff
+
+## Superseded (G-02-T26, 2026-10-29; QD-3)
+- The autonomy settings this task built are superseded by G-02's AI policy (ADM-04 at
+  `/settings/ai-policy`, G-02-T25; C17 policy versions, G-02-T23/T24). Closed under QD-3; DEC-837.

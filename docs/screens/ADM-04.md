@@ -112,8 +112,9 @@ Gradients, emoji, saturated blue toggles, heavy shadows, invented colours, lorem
 
 | Artboard | Tier | Diff % | Notes |
 |---|---|---|---|
-| a, b, d, e, g, h, i, j | C (threshold 0.20, maxDiffPixelRatio 3%) | — | locked by Fri May 14, 2027 (G-02-T26); DV-1 and the band report-only until the boards are revised |
-| c, f | C report-only | — | fixture mode only (T26) |
+| a, b, e, h, i | C (locked) | 2.58 / 2.74 / 2.46 / 2.29 / 2.65 | locked 2026-10-29 (G-02-T26), measured on `parity-screens`; DV-1 and the band report-only until the boards are revised |
+| d, g, j | C report-only | 24.05 / 3.33 / 5.01 | over 3 % (G-02-T26 measure, 2026-10-29): d is the history sheet over the board, g and j the step-up and the gate popover; lock when the boards are revised (open gap) |
+| c, f | C report-only | 5.18 / 3.22 | fixture mode only (T26) |
 | k | — | — | I-03-T37 |
 
 Tier D on every state: toolbar 46, pane header 46 with 14.5/500 title, rows 40, pills 19, radius 12.

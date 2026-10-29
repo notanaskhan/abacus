@@ -119,3 +119,119 @@ def test_replay_puts_the_firm_offices_and_people_before_clients() -> None:
 
 def test_every_event_kind_has_a_handler() -> None:
     assert {e.kind for e in build("E0").events} <= set(loader.HANDLERS)
+
+
+# --- DEC-1012: on staging each firm gets its tenant key before anything is sealed ---------------
+
+
+class _Handle:
+    def __init__(self, result: object) -> None:
+        self._result = result
+
+    async def result(self) -> object:
+        if isinstance(self._result, BaseException):
+            raise self._result
+        return self._result
+
+
+def _temporal(mp: pytest.MonkeyPatch, result: object, asked: list[str]) -> None:
+    class Client:
+        def get_workflow_handle(self, workflow_id: str) -> _Handle:
+            asked.append(workflow_id)
+            return _Handle(result)
+
+    async def client() -> Client:
+        return Client()
+
+    mp.setattr(loader, "temporal_client", client)
+
+
+async def test_ensure_tenant_key_starts_the_firms_key_workflow_and_returns_its_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    started: list[tuple[type, object, dict[str, object]]] = []
+
+    async def dispatch(workflow: type, arg: object, **options: object) -> None:
+        started.append((workflow, arg, options))
+
+    asked: list[str] = []
+    monkeypatch.setattr(loader, "dispatch", dispatch)
+    _temporal(monkeypatch, "verified arn:replica", asked)
+    assert await loader.ensure_tenant_key(loader.TENANT) == "verified arn:replica"
+    [(workflow, arg, options)] = started
+    assert workflow is loader.TenantKeyWorkflow
+    assert arg == loader.TenantKeyInput(str(loader.TENANT), loader.LOADER)
+    assert options["id"] == loader.tenant_key_workflow_id(str(loader.TENANT))
+    assert options["id_reuse_policy"] == loader.WorkflowIDReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY
+    assert asked == [options["id"]]
+
+
+async def test_a_key_workflow_that_already_completed_is_read_not_started_again(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def dispatch(_workflow: type, _arg: object, **options: object) -> None:
+        raise loader.WorkflowAlreadyStartedError(str(options["id"]), "TenantKey")
+
+    asked: list[str] = []
+    monkeypatch.setattr(loader, "dispatch", dispatch)
+    _temporal(monkeypatch, "verified", asked)
+    assert await loader.ensure_tenant_key(loader.SANDBOX) == "verified"
+    assert asked == [loader.tenant_key_workflow_id(str(loader.SANDBOX))]
+
+
+async def test_a_key_that_is_not_verified_in_time_refuses_the_load(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def dispatch(_workflow: type, _arg: object, **_options: object) -> None:
+        return None
+
+    monkeypatch.setattr(loader, "dispatch", dispatch)
+    _temporal(monkeypatch, TimeoutError(), [])
+    with pytest.raises(loader.KeyTimeout, match="not verified"):
+        await loader.ensure_tenant_key(loader.TENANT, timeout=0.01)
+
+
+@pytest.mark.parametrize(("staging", "keyed"), [(True, 1), (False, 0)])
+async def test_a_staging_load_keys_the_firm_even_when_it_was_loaded_before(
+    monkeypatch: pytest.MonkeyPatch, staging: bool, keyed: int
+) -> None:
+    """Today's failure: a firm bootstrapped by an earlier run, never keyed, then skipped."""
+    firm = next(e for e in build("E0").events if e.kind == "identity.firm_created")
+    keys: list[object] = []
+
+    async def nothing(*_args: object, **_kwargs: object) -> None:
+        return None
+
+    async def loaded(_conn: object, _event: object) -> bool:
+        return True
+
+    async def synthetic(*_args: object) -> bool:
+        return True
+
+    async def key(tenant: object) -> str:
+        keys.append(tenant)
+        return "verified"
+
+    class Conn:
+        async def close(self) -> None:
+            return None
+
+    async def connect(_dsn: str) -> Conn:
+        return Conn()
+
+    def guard(_dsn: str, *, staging: bool) -> None:
+        return None
+
+    def scenario(*_args: object) -> SimpleNamespace:
+        return SimpleNamespace(events=(firm,))
+
+    monkeypatch.setattr(loader, "guard", guard)
+    monkeypatch.setattr(loader, "build", scenario)
+    monkeypatch.setattr(loader, "connect_db", connect)
+    monkeypatch.setattr(loader, "tenant_value", synthetic)
+    monkeypatch.setattr(loader, "preflight", nothing)
+    monkeypatch.setattr(loader, "_already_loaded", loaded)
+    monkeypatch.setattr(loader, "ensure_tenant_key", key)
+    result = await loader.load(LOCAL, staging=staging)
+    assert result == loader.LoadResult(0, 1)
+    assert keys == [loader.TENANT] * keyed
