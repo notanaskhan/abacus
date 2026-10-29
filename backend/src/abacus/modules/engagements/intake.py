@@ -253,7 +253,7 @@ def _creates_engagement(service: dict[str, object]) -> bool:
 
 def _live_human(ctx: AuthContext) -> None:
     """OQ-2, INV-1: a person's own act, never an agent, the platform, a client or support."""
-    if ctx.client or ctx.tenant.actor_kind != "human" or ctx.is_support:
+    if ctx.tenant.actor_kind != "human" or ctx.client or ctx.is_support:
         raise Forbidden(INTAKE, "role")
 
 

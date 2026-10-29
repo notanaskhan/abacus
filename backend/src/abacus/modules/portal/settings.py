@@ -109,7 +109,7 @@ class Settings:
 
 
 def _human(ctx: AuthContext, action: str) -> None:
-    if ctx.client or ctx.tenant.actor_kind != "human" or ctx.is_support:
+    if ctx.tenant.actor_kind != "human" or ctx.client or ctx.is_support:
         raise Forbidden(action, "role")
 
 

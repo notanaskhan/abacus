@@ -42,6 +42,10 @@ locals {
     ABACUS_IDENTITY_AUDIENCE        = coalesce(var.workos_client_id, "unset")
     ABACUS_IDENTITY_JWKS            = coalesce(var.workos_jwks, "{\"keys\": []}")
     ABACUS_WORKOS_CLIENT_ID         = coalesce(var.workos_client_id, "unset")
+    ABACUS_IDENTITY_CLIENT_ID       = coalesce(var.workos_client_id, "unset")
+    ABACUS_IDENTITY_AUTHORIZE_URL   = coalesce(var.workos_authorize_url, "https://unset.invalid/authorize")
+    ABACUS_IDENTITY_EXCHANGE_URL    = coalesce(var.workos_token_url, "https://unset.invalid/token")
+    ABACUS_WEB_ORIGIN               = "https://${module.firm_edge[0].domain_name}"
     ABACUS_TRUSTED_HOSTS            = "[\"${module.firm_edge[0].domain_name}\"]"
     ABACUS_PROXY_TRUSTED_HOSTS      = jsonencode(module.network.app_subnet_cidrs)
     ABACUS_RELEASE                  = split("@", var.image_digest)[1]

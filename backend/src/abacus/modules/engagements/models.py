@@ -48,36 +48,6 @@ class Engagement(Base):
 # --- Acceptance, independence and the letter (SPEC-025; TASK-044) ------------------------------
 
 
-class EngagementAcceptance(Base):
-    """One decision record; the newest row is the live one (rows are never changed)."""
-
-    __tablename__ = "engagement_acceptance"
-
-    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
-    tenant_id: Mapped[UUID]
-    engagement_id: Mapped[UUID]
-    kind: Mapped[str]
-    decision: Mapped[str]
-    decided_by: Mapped[str]
-    documented_at: Mapped[str]
-    predecessor_auditor: Mapped[str | None]
-    predecessor_communicated_on: Mapped[date | None]
-    independence_concluded_by: Mapped[str | None]
-    independence_concluded_at: Mapped[datetime | None]
-    independence_documented_at: Mapped[str | None]
-    file_key: Mapped[str | None]
-    file_version_id: Mapped[str | None]
-    file_fingerprint: Mapped[str | None]
-    file_size: Mapped[int | None]
-    file_media_type: Mapped[str | None]
-    file_name: Mapped[str | None]
-    before_act_1: Mapped[bool] = mapped_column(server_default=FetchedValue())
-    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
-    # 0175 (DEC-429): true only on rows written before independence v2 (or outside the app);
-    # SPEC-025's conclusion counts for G2 only there.
-    legacy_g2: Mapped[bool] = mapped_column(server_default=FetchedValue())
-
-
 class IndependenceConfirmation(Base):
     __tablename__ = "independence_confirmations"
 

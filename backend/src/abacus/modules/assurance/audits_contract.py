@@ -442,7 +442,7 @@ async def _allowed(ctx: AuthContext, action: str, work_item_id: UUID | None) -> 
     """Security review (DEC-261): every route authorises before the flag or the stub answers, so
     no principal learns the flag state it may not use. No `/v1/audits` route serves a client
     principal (INV-4), an agent or the system (the stubs and record mode are a person's)."""
-    if ctx.client or ctx.tenant.actor_kind != "human":
+    if ctx.tenant.actor_kind != "human" or ctx.client:
         raise Forbidden(action, "role")
     if work_item_id is not None:
         await _authorise_on_item(ctx, action, work_item_id)
@@ -462,7 +462,7 @@ async def _record_allowed(ctx: AuthContext, action: str, work_item_id: UUID) -> 
     """The release and archive records: as `_allowed`, but a stale second factor is told apart
     from every other refusal (403 `facts.reason = mfa_required`, DEC-547), so the shell's
     step-up opens for that alone. The service authorises again under its lock."""
-    if ctx.client or ctx.tenant.actor_kind != "human":
+    if ctx.tenant.actor_kind != "human" or ctx.client:
         raise Forbidden(action, "role")
     item = await assurance_item(ctx.tenant, work_item_id)
     ref = await get_ref(ctx, item.engagement_id)

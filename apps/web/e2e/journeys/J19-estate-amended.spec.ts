@@ -129,7 +129,6 @@ test.describe("J19-estate-amended (P-07's steps 0, 2 and 3)", () => {
   }) => {
     await journey.as("daniel-reyes", RECORD, {
       scenario: "ENG-02:prospect",
-      flags: ["engagements.v2"],
     });
     await journey.step("J19 3 · ENG-02: the estate engagement, Prospect", async (page) => {
       await expect(page.getByRole("heading", { name: /Estate returns/ })).toBeVisible();

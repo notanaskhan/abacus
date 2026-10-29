@@ -738,7 +738,7 @@ async def start_acceptance(ctx: AuthContext, draft_id: UUID) -> AcceptanceStarte
     it (each asked to confirm independence), and opens its acceptance record. Nothing is
     accepted: accepting is the engagement partner's decision on the record. The draft points at
     the prospect, so a second call answers the same engagement and record."""
-    if ctx.client or ctx.tenant.actor_kind != "human" or ctx.is_support:
+    if ctx.tenant.actor_kind != "human" or ctx.client or ctx.is_support:
         raise Forbidden(INTAKE, "role")
     await authorise(ctx, INTAKE, Resource.firm(ctx.tenant_id))
     async with tenant_session(ctx.tenant) as session:

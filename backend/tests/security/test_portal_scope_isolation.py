@@ -354,14 +354,7 @@ async def _entity(seed: Seeder) -> Entity:
             firm.admin.user_id,
         ),
     )
-    await seed.run(
-        "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
-        "decided_by, documented_at, independence_concluded_by, independence_concluded_at, "
-        "independence_documented_at) VALUES ($1, $2, 'continuance', 'accepted', 'test-seed', "
-        "'Seeded', 'test-seed', clock_timestamp(), 'Seeded')",
-        firm.tenant,
-        sibling,
-    )
+    await seed.open_engagement(firm.tenant, sibling)
     return Entity(firm, site, sibling, marker)
 
 

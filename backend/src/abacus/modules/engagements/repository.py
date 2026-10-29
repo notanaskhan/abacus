@@ -14,7 +14,6 @@ from sqlalchemy.orm import QueryableAttribute, aliased
 
 from abacus.modules.engagements.models import (
     Engagement,
-    EngagementAcceptance,
     EngagementLetter,
     IndependenceConfirmation,
 )
@@ -152,23 +151,6 @@ async def set_methodology_version(
 
 
 # --- Acceptance, independence and the letter (SPEC-025; TASK-044) ------------------------------
-
-
-async def latest_acceptance(
-    session: AsyncSession, engagement_id: UUID
-) -> EngagementAcceptance | None:
-    return (
-        await session.execute(
-            select(EngagementAcceptance)
-            .where(EngagementAcceptance.engagement_id == engagement_id)
-            .order_by(EngagementAcceptance.created_at.desc(), EngagementAcceptance.id.desc())
-            .limit(1)
-        )
-    ).scalar_one_or_none()
-
-
-async def insert_acceptance(session: AsyncSession, **values: object) -> None:
-    await session.execute(insert(EngagementAcceptance).values(**values))
 
 
 async def other_engagements_of_client(

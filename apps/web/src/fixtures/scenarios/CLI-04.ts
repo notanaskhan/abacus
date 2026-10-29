@@ -1,8 +1,8 @@
 // CLI-04 Contacts & portal access: one fixture scenario per artboard (P-07-T33;
 // docs/screens/CLI-04.md). All stand at E0, Mon Sep 14, 2026, 9:24 AM CT, seen by Grace Holloway
 // (Firm Admin; the README's "Sam Ortiz" for d and e is a label error, OQ-13). Data: the client
-// records (seed/client-records.ts) and the contacts (handlers/contacts.ts), with `clients.v2` and
-// `contacts.v2` on. Each artboard is a data condition and the overlay it opens on:
+// records (seed/client-records.ts) and the contacts (handlers/contacts.ts), with `contacts.v2`
+// on. Each artboard is a data condition and the overlay it opens on:
 //
 //   a  Northwind's six contacts: 3 active · 1 invited · 2 not invited; 10 + 9 + 2 + 2 + 1 = 24
 //   b  a, Harborline's "Invite…" sheet open with its two delegated requests ticked
@@ -48,7 +48,7 @@ function capabilities(persona: string | undefined): CapabilitiesOut {
   return {
     ...base,
     capabilities: [...base.capabilities, "client.read"],
-    flags: { ...base.flags, "clients.v2": true, "contacts.v2": true },
+    flags: { ...base.flags, "contacts.v2": true },
   };
 }
 

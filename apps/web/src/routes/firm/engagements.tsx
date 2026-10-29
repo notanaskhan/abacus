@@ -7,9 +7,9 @@ import { FeatureGate, useFlag } from "../../app-core/flags";
 import { useParam } from "../params";
 import { appRoute, lazyScreen } from "../root";
 
-// An engagement: behind `engagements.v2` the record is ENG-02 (P-07-T20) with its own in-screen
-// tabs. P-07-T58 retired the legacy layout (DEC-904): with the flag off the route shows the
-// flag-off state. The tab routes below rendered inside that layout's outlet; ENG-02 has none, so
+// An engagement: the record is ENG-02 (P-07-T20) with its own in-screen tabs, for every firm since
+// P-07-T59 retired `engagements.v2` (DEC-905). P-07-T58 retired the legacy layout (DEC-904); the
+// tab routes below rendered inside that layout's outlet; ENG-02 has none, so
 // they wait for their owners' retirement and render nowhere.
 const EngagementRecord = lazyScreen(
   async () => (await import("../../screens/ENG-02")).EngagementRecordPage,
@@ -37,7 +37,7 @@ const screens = {
   TrialBalance: lazyScreen(async () => (await import("../../legacy/TrialBalance")).TrialBalance),
 };
 
-// ENG-03 (P-07-T21): `/engagements/new` behind `engagements.v2`, resuming `?draft=` or starting
+// ENG-03 (P-07-T21): `/engagements/new`, resuming `?draft=` or starting
 // a draft (prefilled with `?client=`); Create opens the new engagement's record.
 const NewEngagement = lazyScreen(
   async () => (await import("../../screens/ENG-03")).NewEngagementPage,
@@ -59,21 +59,19 @@ export const newEngagementRoute = createRoute({
     const search = newEngagementRoute.useSearch();
     const navigate = useNavigate();
     return (
-      <FeatureGate flag="engagements.v2">
-        <NewEngagement
-          draftId={search.draft}
-          clientId={search.client}
-          onClose={() => {
-            void navigate({ to: "/engagements" });
-          }}
-          onCreated={(engagementId) => {
-            void navigate({ to: "/engagements/$engagementId", params: { engagementId } });
-          }}
-          onOpen={(engagementId) => {
-            void navigate({ to: "/engagements/$engagementId", params: { engagementId } });
-          }}
-        />
-      </FeatureGate>
+      <NewEngagement
+        draftId={search.draft}
+        clientId={search.client}
+        onClose={() => {
+          void navigate({ to: "/engagements" });
+        }}
+        onCreated={(engagementId) => {
+          void navigate({ to: "/engagements/$engagementId", params: { engagementId } });
+        }}
+        onOpen={(engagementId) => {
+          void navigate({ to: "/engagements/$engagementId", params: { engagementId } });
+        }}
+      />
     );
   },
 });
@@ -85,22 +83,17 @@ export const engagementRoute = createRoute({
     const engagementId = useParam("engagementId");
     const navigate = useNavigate();
     return (
-      <FeatureGate
-        flag="engagements.v2"
-        fallback={<FlagOffState flag="engagements.v2" label="Engagements" />}
-      >
-        <div className="flex min-h-0 flex-1 flex-col">
-          <EngagementRecord
-            engagementId={engagementId}
-            onNavigate={(target) => {
-              if (target.screen === "ENG-01") void navigate({ to: "/engagements" });
-              else {
-                void navigate({ to: "/clients/$clientId", params: { clientId: target.clientId } });
-              }
-            }}
-          />
-        </div>
-      </FeatureGate>
+      <div className="flex min-h-0 flex-1 flex-col">
+        <EngagementRecord
+          engagementId={engagementId}
+          onNavigate={(target) => {
+            if (target.screen === "ENG-01") void navigate({ to: "/engagements" });
+            else {
+              void navigate({ to: "/clients/$clientId", params: { clientId: target.clientId } });
+            }
+          }}
+        />
+      </div>
     );
   },
 });

@@ -139,7 +139,7 @@ def _gone(two: Two, response: httpx.Response) -> None:
 READS = [
     "/v1/engagements/{e}",
     "/v1/engagements/{e}/team",
-    "/v1/engagements/{e}/setup",
+    "/v1/engagements/{e}/record",  # SPEC-025's /setup retired with P-07-T59 (DEC-905)
     "/v1/engagements/{e}/request-items",
     "/v1/engagements/{e}/request-items/{i}/versions",
     "/v1/engagements/{e}/request-items/{i}/comments",
@@ -234,7 +234,6 @@ LISTS = [
     "/v1/firm/staff",
     "/v1/walls",
     "/v1/notifications",
-    "/v1/firm/confirmations",
     "/v1/firm/waiting/overdue",
     "/v1/firm/waiting/review",
     "/v1/firm/waiting/fieldwork",

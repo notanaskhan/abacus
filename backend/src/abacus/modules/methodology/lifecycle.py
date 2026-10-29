@@ -207,7 +207,7 @@ def _event(ctx: AuthContext, version_id: UUID, kind: str, facts: dict[str, objec
 
 
 async def submit_version(ctx: AuthContext, version_id: UUID, row_version: int) -> VersionState:
-    if ctx.client or ctx.tenant.actor_kind != "human":
+    if ctx.tenant.actor_kind != "human" or ctx.client:
         raise Forbidden(MANAGE, "role")
     await authorise(ctx, MANAGE, Resource.firm(ctx.tenant_id))
     async with uow(ctx.tenant) as tx:

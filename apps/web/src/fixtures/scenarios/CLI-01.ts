@@ -41,7 +41,6 @@ function capabilities(persona: string | undefined): CapabilitiesOut {
       "client.read",
       ...(INTAKE.has(slug) ? ["client.intake"] : []),
     ],
-    flags: { ...base.flags, "clients.v2": true },
   };
 }
 
