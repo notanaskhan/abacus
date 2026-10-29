@@ -4,6 +4,7 @@ from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.kernel.uow import Handler
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.engagements.api import register_evidence_readable
+from abacus.modules.evidence.access import KIND as CONTENT_READ_KIND
 from abacus.modules.evidence.activities import ACTIVITIES as UPLOAD_ACTIVITIES
 from abacus.modules.evidence.anchor_job import ACTIVITIES as ANCHOR_ACTIVITIES
 from abacus.modules.evidence.anchor_job import SCHEDULES as ANCHOR_SCHEDULES
@@ -391,6 +392,7 @@ __all__ = [
     "ACTIVITIES",
     "ANCHOR_ID",
     "CODE_COLUMN",
+    "CONTENT_READ_KIND",
     "CREDIT_COLUMN",
     "DEBIT_COLUMN",
     "EXPORT_EXPIRY_ID",

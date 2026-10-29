@@ -39,7 +39,8 @@ class TransportError(Exception):
 class Transport(Protocol):
     # `sender_name` is the display name (SPEC-025 AC-8: the firm's); the address stays ours.
     # `reply_to` is where a reply goes (the firm's). `tenant_id` and `message_id` identify the
-    # message in delivery events (SES tags): IDs only, never an address.
+    # message in delivery events (SES tags): IDs only, never an address. `from_address` is the
+    # firm's verified sender (R-01-T27, DEC-950); None: the transport's own neutral address.
     def send(
         self,
         *,
@@ -50,6 +51,7 @@ class Transport(Protocol):
         reply_to: str | None = None,
         tenant_id: UUID | None = None,
         message_id: UUID | None = None,
+        from_address: str | None = None,
     ) -> None: ...
 
 
@@ -69,6 +71,7 @@ class LocalMailbox:
         reply_to: str | None = None,
         tenant_id: UUID | None = None,
         message_id: UUID | None = None,
+        from_address: str | None = None,
     ) -> None:
         ensure_sendable(subject, body)
         write_mailbox_record(
@@ -78,6 +81,7 @@ class LocalMailbox:
             body=body,
             sender_name=sender_name,
             reply_to=reply_to,
+            extra={"from_address": from_address} if from_address else None,
         )
 
 
@@ -141,14 +145,16 @@ class SesTransport:
         reply_to: str | None = None,
         tenant_id: UUID | None = None,
         message_id: UUID | None = None,
+        from_address: str | None = None,
     ) -> None:
         if tenant_id is None or message_id is None:
             raise ValueError("a send carries its tenant ID and message ID")
         ensure_sendable(subject, body)
+        address = header_safe(from_address, "from address") if from_address else self._from
         source = (
-            formataddr((header_safe(sender_name, "sender name"), self._from))
+            formataddr((header_safe(sender_name, "sender name"), address))
             if sender_name
-            else self._from
+            else address
         )
         recipients = [header_safe(to, "recipient")]
         replies = [header_safe(reply_to, "reply-to")] if reply_to else []

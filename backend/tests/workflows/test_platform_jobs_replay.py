@@ -21,6 +21,7 @@ from abacus.modules.evidence.api import AuditAnchorWorkflow, ExportExpirySweepWo
 from abacus.modules.identity.api import AccessEndSweepWorkflow, AuthSessionPurgeWorkflow
 from abacus.modules.notifications.api import NotificationPurgeWorkflow
 from abacus.modules.platform.api import SpendAnomalyWorkflow
+from abacus.modules.practice.api import HomeActivityPruneWorkflow
 
 HISTORIES = Path(__file__).resolve().parent / "histories"
 ANOMALY = sorted(HISTORIES.glob("spend-anomaly-v*.json"))
@@ -39,6 +40,8 @@ AUDIT_JOBS: dict[str, tuple[str, type]] = {
     "auth-session-purge-v1-purged": ("auth_session_purge:platform", AuthSessionPurgeWorkflow),
     # A-01-T22: the engagement export expiry sweep's Schedule.
     "export-expiry-v1-swept": ("export_expiry:platform", ExportExpirySweepWorkflow),
+    # I-01-T12 (DEC-900): Home's client-activity prune.
+    "home-activity-prune-v1-pruned": ("home_activity_prune:platform", HomeActivityPruneWorkflow),
 }
 
 

@@ -7,8 +7,12 @@ and the send is refused, recorded `blocked`, with the first reason that applies:
 `template_missing` (no published block version), `template_lint_failed` (a value outside the
 key's whitelist, a missing value, or a value with an amount, TIN or account-number shape),
 `out_of_scope` (the rendered text names another client, entity, account or amount) or
-`suppressed` (no deliverable address, or a bounced or complained one). Otherwise the message is
-recorded `sent` with its `template_version_id` and handed to delivery after the commit.
+`suppressed` (no deliverable address, or a bounced or complained one). Before any of them, a
+recipient outside the firm (client, third party, respondent) of a firm whose client mail is not
+open yet is `firm_not_client_facing` (R-01-T27, story 9.2: the M10 flip). Otherwise the message is
+recorded `sent` with its `template_version_id` and the domain it goes From (`sender_for`: the
+firm's verified domain, else the neutral sender with the firm's Reply-To), and handed to delivery
+after the commit.
 
 The stored body is the text part with the secure link removed, so the token is never stored.
 The message id is derived from the firm, the key, the recipient, the engagement and the
@@ -17,8 +21,7 @@ authorising on the stored message's engagement. A recipient must be someone the 
 concerns (its team, or a client grant covering it), and only for a key whose audience matches
 how they relate to it, read under the firm's row-level security, else 404 (security review H).
 The system's Reminder is checked as its publisher could send it
-(security review M2), and the database refuses any other non-person templated message. The
-client-mail gate (`firm_not_client_facing`) arrives with R-01-T27, the policy's mode with T24.
+(security review M2), and the database refuses any other non-person templated message.
 """
 
 from __future__ import annotations
@@ -41,6 +44,11 @@ from abacus.modules.communications.models import Message
 from abacus.modules.communications.render import RenderedEmail, render_email
 from abacus.modules.communications.repository import insert_message
 from abacus.modules.communications.scope import check_scope
+from abacus.modules.communications.sending_domains import (
+    GATED,
+    client_mail_open,
+    sender_for,
+)
 from abacus.modules.communications.template_registry import (
     VARIABLES,
     EmailTemplateRegistration,
@@ -62,7 +70,6 @@ from abacus.modules.identity.api import (
     Forbidden,
     authorise,
     contact_emails,
-    firm_name,
     member_context,
     member_could,
     recipient_relations,
@@ -108,7 +115,12 @@ def _outcome(message_id: UUID, status: str, violations: list[dict[str, str]]) ->
     row_violations = violations
     kinds = {v.get("kind") for v in row_violations}
     reason: SendRefusal = "out_of_scope"
-    for candidate in ("template_missing", "template_lint_failed", "suppressed"):
+    for candidate in (
+        "template_missing",
+        "template_lint_failed",
+        "suppressed",
+        "firm_not_client_facing",
+    ):
         if candidate in kinds:
             reason = cast(SendRefusal, candidate)
     return SendOutcome(message_id, "blocked", reason)
@@ -234,16 +246,23 @@ async def send(
         # Security review H: only someone the engagement concerns may be written to about it.
         # The re-review: and only for a key whose audience matches how they relate to it (a
         # third party never gets `deliverable_ready`).
+        outside = recipient.kind != "user"  # a contact, third party or respondent
         if recipient.kind == "user":
             relations = await recipient_relations(tenant, recipient.id, ref.id)
             audience = set(registration.audience) if registration is not None else set(relations)
             if not relations & audience:
                 raise NotFound("recipient")
+            outside = bool(relations & audience & GATED)
             address = await _address(recipient)
         version = await template_store.resolve(tx.session, tenant.tenant_id, key)
         violations: list[dict[str, str]] = []
         reason: SendRefusal | None = None
-        if registration is None or version is None or version.content is None:
+        sender = await sender_for(tenant.tenant_id)
+        if outside and not await client_mail_open(tenant.tenant_id):
+            # R-01-T27 (story 9.2): nothing reaches a client before the firm's M10 flip.
+            reason = "firm_not_client_facing"
+            violations = [{"kind": "firm_not_client_facing", "ref": ""}]
+        elif registration is None or version is None or version.content is None:
             reason, violations = "template_missing", [{"kind": "template_missing", "ref": ""}]
         else:
             violations = _values_findings(registration, values)
@@ -289,6 +308,7 @@ async def send(
             created_by=checker.user_id,
             template_version_id=version.version_id if version is not None else None,
             kind="staff" if audience == ("staff",) else "client",
+            from_domain=sender.from_domain,
         )
         tx.record(
             f"message.{status}",
@@ -304,7 +324,9 @@ async def send(
         to=address,
         subject=rendered.subject,
         body=rendered.text,
-        sender_name=await firm_name(tenant.tenant_id),
+        sender_name=sender.display,
+        reply_to=sender.reply_to,
+        from_address=sender.address,
     )
     if refused is not None:  # paused or the sink refused after the checks: logged, by kind
         _log.warning("message.delivery_refused", message_id=message_id, kind=refused["kind"])

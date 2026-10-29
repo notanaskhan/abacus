@@ -1,0 +1,62 @@
+# Weekly source backup (Q-01-T07; chapter 06 §6, the source code row): a `git bundle` of every
+# branch and tag, verified, into s3://abacus-shared-backups/source/<date>.bundle (kept 12 weeks by
+# the bucket's lifecycle). It protects the code against the loss of the GitHub account. The role
+# may only put objects under source/ (GitHub OIDC, main only).
+# Needs the repository variable AWS_BACKUP_ROLE (the shared account's `abacus-ci-git-backup`); while
+# it is unset the job skips with a notice. Every action is pinned to a full commit SHA.
+name: git-bundle-backup
+
+on:
+  schedule:
+    - cron: "41 5 * * 0" # Sundays
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: git-bundle-backup
+  cancel-in-progress: false
+
+jobs:
+  bundle:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write # OIDC token for the backup role
+    env:
+      AWS_BACKUP_ROLE: ${{ vars.AWS_BACKUP_ROLE }}
+    steps:
+      - name: Backup configured?
+        id: gate
+        run: |
+          if [ -n "$AWS_BACKUP_ROLE" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=backup skipped::repository variable AWS_BACKUP_ROLE is not set (infra/README.md)"
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Bundle and verify
+        if: steps.gate.outputs.configured == 'true'
+        run: |
+          git fetch --tags --force origin '+refs/heads/*:refs/remotes/origin/*'
+          git bundle create "$RUNNER_TEMP/source.bundle" --all
+          git bundle verify "$RUNNER_TEMP/source.bundle"
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          role-to-assume: ${{ env.AWS_BACKUP_ROLE }}
+          aws-region: us-east-2
+          role-session-name: git-bundle-backup-${{ github.run_id }}
+      - name: Upload
+        if: steps.gate.outputs.configured == 'true'
+        run: |
+          aws s3 cp "$RUNNER_TEMP/source.bundle" "s3://abacus-shared-backups/source/$(date -u +%F).bundle" \
+            --only-show-errors

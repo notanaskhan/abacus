@@ -138,6 +138,7 @@ from abacus.modules.engagements.service import (
     register_auto_retrieval,
     remove_from_team,
     run_auto_retrieval,
+    set_ai_exclusion_of,
 )
 from abacus.modules.engagements.setup import (
     EngagementNotOpen,
@@ -472,6 +473,7 @@ __all__ = [
     "run_auto_retrieval",
     "send_to_partner",
     "service_line_of",
+    "set_ai_exclusion_of",
     "set_assurance_profile",
     "start_acceptance",
     "stored_file",

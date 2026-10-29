@@ -154,6 +154,11 @@ async def _incident_from_accrued(tenant_id: UUID, payload: dict[str, object]) ->
     return sorted(set(await security_admins(tenant_id)) | set(await firm_admins(tenant_id)))
 
 
+async def _domain_admins(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """R-01-T27 (R-01 §4.8): a sender domain's outcome goes to the firm and security admins."""
+    return sorted(set(await security_admins(tenant_id)) | set(await firm_admins(tenant_id)))
+
+
 async def _wall_approver(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     """G-01-T09 (AC8.2): the partner a new wall names to approve it (none named: nobody)."""
     approver = _uuid(payload, "approver_user_id")
@@ -337,10 +342,21 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "wall.approved": Kind("wall_approved", _wall_creator, "ethical_wall", "wall_id", None),
     # G-01-T13 (AC4.5): firm admins, seven days or fewer before seasonal access ends.
     "membership.access_ending": Kind("seasonal_access_ending", _admins, "firm", None, None),
+    # P-07-T47 (DEC-1000): firm admins, on day 12 of a 14-day client invitation.
+    "invitation.expiring": Kind(
+        "invitation_expiring", _admins, "client_invitation", "invitation_id"
+    ),
     # R-01-T09: a client's portal drop the code rule could not sort waits for a person.
     "portal.drop_unsorted": Kind("portal_drop_unsorted", _leads, "inbox_file", "inbox_file_id"),
     # R-01-T24 (DEC-564): the follow-up policy's maximum was reached for a binder's recipient.
     "follow_up.limit_reached": Kind("follow_up_limit_reached", _leads, "binder", "binder_id"),
+    # R-01-T27: the firm's sender domain verified, or failed after 72 hours (ADM-10 d).
+    "sending_domain.verified": Kind(
+        "sending_domain_verified", _domain_admins, "sending_domain", "domain_id", None
+    ),
+    "sending_domain.failed": Kind(
+        "sending_domain_failed", _domain_admins, "sending_domain", "domain_id", None
+    ),
     # R-01-T13: a third party uploaded to a request delegated to them (POR-14).
     "third_party.uploaded": Kind(
         "third_party_uploaded", _request_owner, "request_item", "request_item_id"
@@ -471,11 +487,17 @@ TEMPLATES: Final[dict[str, str]] = {
     "wall.created": "An ethical wall is waiting for your approval.",
     "wall.approved": "The ethical wall you added was approved.",
     "membership.access_ending": "Seasonal access ends within seven days for some of your people.",
+    "invitation.expiring": "A client invitation on {engagement} expires in two days.",
     "portal.drop_unsorted": "A client sent a file for your team to sort on {engagement}.",
     "follow_up.limit_reached": (
         "The last reminder on {engagement} went out; nothing more will go automatically."
     ),
     "third_party.uploaded": "A third party uploaded a file to a request on {engagement}.",
+    # R-01-T27: ADM-10 d's sender domain.
+    "sending_domain.verified": "Your sending domain is verified. Client email can go from it.",
+    "sending_domain.failed": (
+        "Your sending domain wasn't verified within 72 hours. Check its DNS records."
+    ),
     "sign_off.went_stale": "Work you signed off on {engagement} changed after sign-off.",
     "review_note.raised": "A review note on {engagement} is waiting for you.",
     "decision_card.raised": "A decision on {engagement} is waiting for you.",
@@ -560,6 +582,8 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("seasonal_access_ending", "system", "UserMinus"),  # G-01-T13
     NotificationKind("portal_drop_unsorted", "client_activity", "Inbox"),  # R-01-T09
     NotificationKind("follow_up_limit_reached", "client_activity", "Send"),  # R-01-T24
+    NotificationKind("sending_domain_verified", "system", "ShieldCheck"),  # R-01-T27
+    NotificationKind("sending_domain_failed", "system", "ShieldAlert"),  # R-01-T27
     NotificationKind("third_party_uploaded", "client_activity", "Upload"),  # R-01-T13
     # P-04-T19, T21, T23, T26: the review grammar's seven kinds (C16 Approvals), their facts and
     # pending state read from the subject's owner at read time. Email text is database content
@@ -623,8 +647,8 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     # I-01-T07: a gate moved to you; K-01-T06: a methodology version waits for your review.
     NotificationKind("gate_reassigned", "approval", "UserPlus"),
     NotificationKind("methodology_review_requested", "approval", "Scale"),
-    # Day 12 of a 14-day client invitation, to the firm admins; registered for the drawer and
-    # preferences now, produced once an expiry pass exists (P-07 §4.5 has no schedule; DEC-540).
+    # Day 12 of a 14-day client invitation, to the firm admins; produced by the hourly identity
+    # pass (`identity.invitation_expiry`, DEC-1000).
     NotificationKind("invitation_expiring", "deadline", "Clock"),
     # A-01-T22 (A-01 §4.7): in-app; an email, when a person turns it on, deep-links to the
     # export sheet (`notification.export_ready`, imported content), never to a download.

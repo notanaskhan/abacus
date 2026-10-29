@@ -54,6 +54,7 @@ def test_ac14_the_worker_hosts_connections_and_agents() -> None:
         "notifications",
         "platform",  # Q-01-T45: tenant provisioning
         "portal",  # R-01-T13: the request owner hears of a third party's upload
+        "practice",  # I-01-T12 (DEC-900): Home's client-activity projector and prune
         "requests",  # P-06-T07: binders close on C1's terminal transitions
         "review",  # P-04-T16: the human-gate projector (C13)
     )

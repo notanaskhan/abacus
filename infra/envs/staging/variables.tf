@@ -67,3 +67,86 @@ variable "api_task_role_name" {
   type        = string
   default     = null
 }
+
+variable "ses_verified_address" {
+  description = "The one inbox SES (sandbox) may send to and from on staging (DEC-1003). Null: no email identity."
+  type        = string
+  default     = null
+}
+
+variable "workos_issuer" {
+  description = "WorkOS staging environment's token issuer (not a secret)."
+  type        = string
+  default     = null
+}
+
+variable "workos_client_id" {
+  description = "WorkOS staging client ID (not a secret)."
+  type        = string
+  default     = null
+}
+
+variable "image_digest" {
+  description = "The backend image to run, as <repository url>@sha256:... (from the release record). Null: no services are planned."
+  type        = string
+  default     = null
+}
+
+variable "workos_jwks" {
+  description = "WorkOS staging JWKS document (public keys, JSON). Null until WorkOS is set up."
+  type        = string
+  default     = null
+}
+
+variable "shared_account_id" {
+  description = "The shared account (release images and records). From the untracked terraform.tfvars."
+  type        = string
+  default     = null
+}
+
+variable "github_repo" {
+  description = "Repository whose staging environment may assume the deploy role."
+  type        = string
+  default     = "notanaskhan/abacus"
+}
+
+variable "bedrock_enabled" {
+  description = "Let the API and workers call Bedrock through US Geo (after Q-02-T44's clearance)."
+  type        = bool
+  default     = false
+}
+variable "firm_managed_rules_action" {
+  description = "count for the first weeks of the firm WebACL on staging, then block (chapter 06 section 1.13)."
+  type        = string
+  default     = "count"
+}
+
+variable "firm_host" {
+  description = "The firm app's host once its domain exists (F-09-T09). Null: CloudFront's default host."
+  type        = string
+  default     = null
+}
+
+variable "firm_certificate_arn" {
+  description = "The issued firm certificate (after DNS validation). Null: the default certificate."
+  type        = string
+  default     = null
+}
+
+variable "canary_tenant_id" {
+  description = "Tenant id of the synthetic canary firm (Canary & Co, Q-01-T20), for its Terraform-declared key. Null until provisioned."
+  type        = string
+  default     = null
+}
+
+variable "worker_split" {
+  description = "Run one worker service per work class (interactive, time_sensitive, background, batch) instead of one for all (minimal sizing, DEC-1003)."
+  type        = bool
+  default     = false
+}
+
+variable "third_party_registry" {
+  description = "The shared ECR registry host (<account>.dkr.ecr.us-east-2.amazonaws.com) holding the third-party mirrors. Null: Docker Hub."
+  type        = string
+  default     = null
+}

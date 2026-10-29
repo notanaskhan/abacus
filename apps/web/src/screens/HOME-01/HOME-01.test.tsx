@@ -152,6 +152,68 @@ describe("HOME-01 a (Daniel Reyes at E0)", () => {
   });
 });
 
+describe("HOME-01 a client activity (DEC-1001)", () => {
+  it("draws the six rows of a, verbatim, newest first, with today's times and earlier dates", async () => {
+    show("a");
+    await settled();
+    const list = await waitFor(() => {
+      const found = document.querySelector<HTMLElement>("[data-home='activity']");
+      expect(found).not.toBeNull();
+      return found as HTMLElement;
+    });
+    const text = list.textContent;
+    const rows: [string, string, string][] = [
+      ["9:12 AM", "Claire Feld emailed 2 health insurance forms", "Waiting to be filed · Inbox"],
+      [
+        "8:40 AM",
+        'You sent the engagement letter "Ridgeline cost segregation & §754 analysis" to Owen Calder',
+        "Envelope · due Sep 24",
+      ],
+      ["Sep 11", 'Dana Whitley emailed "Re: estimated payments"', "Filed to 2025 Binder"],
+      [
+        "Sep 11",
+        "Accrued Agent pre-screened the Estate of Walter Thornbury",
+        "3 flags · awaiting your decision",
+      ],
+      [
+        "Sep 9",
+        "Paul Thornbury uploaded the asset summary",
+        "New engagement intake · Estate of Walter Thornbury",
+      ],
+      [
+        "Sep 9",
+        "Eleanor Calloway uploaded the Harborline Trust Company custodial statements",
+        "Calloway 2025 Binder",
+      ],
+    ];
+    expect(list.querySelectorAll("li")).toHaveLength(6);
+    let at = 0;
+    for (const [when, line, context] of rows) {
+      for (const part of [line, context]) {
+        expect(text.indexOf(part, at), part).toBeGreaterThanOrEqual(0);
+      }
+      expect(text).toContain(when);
+      at = text.indexOf(line);
+    }
+  });
+
+  it("office-denver keeps only Denver's clients' rows", async () => {
+    show("office-denver");
+    await settled();
+    await waitFor(() => {
+      const text = document.querySelector("[data-home='activity']")?.textContent ?? "";
+      expect(text).toContain("Dana Whitley");
+      expect(text).not.toContain("Claire Feld");
+    });
+  });
+
+  it("d: Kevin's Home draws no activity rows", async () => {
+    show("d");
+    await settled();
+    expect(document.querySelector("[data-home='activity']")).toBeNull();
+  });
+});
+
 describe("HOME-01 f and g", () => {
   it("f: the counts read 0, so the pane is the quiet day and no badge count shows", async () => {
     show("f");

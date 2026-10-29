@@ -1,6 +1,7 @@
 # Staging train deploy (Q-01-T18; SPEC-050 AC-26; DEC-54 / P-56 amending ADR-088). Dispatched
 # once per F-01 merge window for the last green SHA, or by "Ship batch"; a merge never deploys by
-# itself, and there is no schedule. One run at a time (concurrency `deploy-staging`), then the SSM
+# itself, and there is no schedule. Dispatch build.yml on main first (DEC-1007): this reads the
+# SHA's release record, which only a build writes. One run at a time (concurrency `deploy-staging`), then the SSM
 # deploy lock, which F-01's db_guard also honours. The sequence:
 #   pre-flight: the SHA's release record (digests only), `alembic heads`, the SHA's replay tests
 #     (ADR-090); a changed infra_sha stops the deploy until the builder has applied it by hand

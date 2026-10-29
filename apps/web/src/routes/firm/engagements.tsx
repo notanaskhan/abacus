@@ -7,25 +7,20 @@ import { FeatureGate, useFlag } from "../../app-core/flags";
 import { useParam } from "../params";
 import { appRoute, lazyScreen } from "../root";
 
-// An engagement (SPEC-016): one header over its tabs; each tab's screen is its own chunk. Behind
-// `engagements.v2` the record is ENG-02 (P-07-T20) with its own in-screen tabs; the legacy layout
-// and its tab routes answer while the flag is off.
+// An engagement: behind `engagements.v2` the record is ENG-02 (P-07-T20) with its own in-screen
+// tabs. P-07-T58 retired the legacy layout (DEC-904): with the flag off the route shows the
+// flag-off state. The tab routes below rendered inside that layout's outlet; ENG-02 has none, so
+// they wait for their owners' retirement and render nowhere.
 const EngagementRecord = lazyScreen(
   async () => (await import("../../screens/ENG-02")).EngagementRecordPage,
 );
-const EngagementLayout = lazyScreen(
-  async () => (await import("../../legacy/EngagementLayout")).EngagementLayout,
-);
 const screens = {
   Overview: lazyScreen(async () => (await import("../../legacy/Overview")).Overview),
-  DefaultToSetup: lazyScreen(async () => (await import("../../legacy/Setup")).DefaultToSetup),
-  Setup: lazyScreen(async () => (await import("../../legacy/Setup")).Setup),
   AgentRuns: lazyScreen(async () => (await import("../../legacy/AgentRuns")).AgentRuns),
   AgentActivity: lazyScreen(
     async () => (await import("../../legacy/AgentActivity")).AgentActivity,
   ),
   MapView: lazyScreen(async () => (await import("../../legacy/MapView")).MapView),
-  People: lazyScreen(async () => (await import("../../legacy/People")).People),
   Planning: lazyScreen(async () => (await import("../../legacy/Planning")).Planning),
   Findings: lazyScreen(async () => (await import("../../legacy/Findings")).Findings),
   Fieldwork: lazyScreen(async () => (await import("../../legacy/Fieldwork")).Fieldwork),
@@ -92,7 +87,7 @@ export const engagementRoute = createRoute({
     return (
       <FeatureGate
         flag="engagements.v2"
-        fallback={<EngagementLayout engagementId={engagementId} />}
+        fallback={<FlagOffState flag="engagements.v2" label="Engagements" />}
       >
         <div className="flex min-h-0 flex-1 flex-col">
           <EngagementRecord
@@ -115,11 +110,7 @@ const overviewRoute = createRoute({
   path: "/",
   component: function OverviewPage(): JSX.Element {
     const engagementId = useParam("engagementId");
-    return (
-      <screens.DefaultToSetup engagementId={engagementId}>
-        <screens.Overview engagementId={engagementId} />
-      </screens.DefaultToSetup>
-    );
+    return <screens.Overview engagementId={engagementId} />;
   },
 });
 /** The engagement's assurance work item: `undefined` while loading, `null` when it has none. */
@@ -185,15 +176,6 @@ const mapRoute = createRoute({
   },
 });
 
-const setupRoute = createRoute({
-  getParentRoute: () => engagementRoute,
-  path: "/setup",
-  component: function SetupPage(): JSX.Element {
-    const engagementId = useParam("engagementId");
-    return <screens.Setup engagementId={engagementId} />;
-  },
-});
-
 const activityRoute = createRoute({
   getParentRoute: () => engagementRoute,
   path: "/activity",
@@ -205,15 +187,6 @@ const activityRoute = createRoute({
         <screens.AgentActivity engagementId={engagementId} />
       </div>
     );
-  },
-});
-
-const peopleRoute = createRoute({
-  getParentRoute: () => engagementRoute,
-  path: "/people",
-  component: function PeoplePage(): JSX.Element {
-    const engagementId = useParam("engagementId");
-    return <screens.People engagementId={engagementId} />;
   },
 });
 
@@ -361,9 +334,7 @@ export const engagementRoutes = [
     boardRoute,
     itemRoute,
     mapRoute,
-    setupRoute,
     activityRoute,
-    peopleRoute,
     reviewRoute,
     fieldworkRoute,
     findingsRoute,
