@@ -20,6 +20,13 @@ from abacus.modules.organisations.conflicts_contract import (
     conflict_checks_router,
     screening_records_router,
 )
+from abacus.modules.organisations.consents_contract import (
+    ConsentState,
+    TriVerdict,
+    consent_state,
+    consents_router,
+    tri_consent_verdict,
+)
 from abacus.modules.organisations.contacts import RoleAsked, contact_portal_facts, create_contact
 from abacus.modules.organisations.contacts_contract import (
     client_contacts_router,
@@ -135,6 +142,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     conflict_checks_router,  # conflict checks and screening, v1 stub (P-07-T29)
     screening_records_router,
     org_settings_router,  # firm-settings family v1: offices and teams (G-01-T02 stub)
+    consents_router,  # C19 v1: consents, the TRI gate and the tax profile (T-01-T01 stub)
 )
 
 # P-01-T04: identity's `/v1/me` lists the firm's offices through this.
@@ -168,6 +176,7 @@ __all__ = [
     "ClientRecord",
     "ClientRecordChange",
     "ClientRecordInvalid",
+    "ConsentState",
     "ContactExists",
     "ContactFacts",
     "ContactKind",
@@ -190,6 +199,7 @@ __all__ = [
     "TinConflict",
     "TinInvalid",
     "TinKindNotAllowed",
+    "TriVerdict",
     "activate_contact",
     "add_contact",
     "add_intake_contact",
@@ -206,6 +216,7 @@ __all__ = [
     "client_of_entity",
     "client_record",
     "client_with_entity",
+    "consent_state",
     "contact_client",
     "contact_facts",
     "contact_portal_facts",
@@ -237,4 +248,5 @@ __all__ = [
     "set_client_record",
     "set_entity_attributes",
     "standing_conflict_results",
+    "tri_consent_verdict",
 ]

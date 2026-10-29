@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from abacus.kernel.audit_owners import register_client_owners, register_engagement_owners
 from abacus.kernel.dispatch import PlatformSchedule, WorkClass, register_work_classes
+from abacus.modules.communications import portal_intake
 from abacus.modules.communications.audit_targets import (
     AUDIT_KINDS,
     CLIENT_KINDS,
@@ -20,9 +21,11 @@ from abacus.modules.communications.deliveries import (
     send_email,
 )
 from abacus.modules.communications.events import (
+    InboxAttachmentReceived,
     MessageBounced,
     MessageComplained,
     MessageDeliveryStatusChanged,
+    PortalIntakeWithdrawn,
     PortalLinkRenewRequested,
     SendingDomainFailed,
     SendingDomainStatusChanged,
@@ -52,6 +55,7 @@ from abacus.modules.communications.follow_ups import (
     compose_follow_up,
     deliver_follow_up,
 )
+from abacus.modules.communications.inbox_read import inbox_waiting, waiting_for_work_item
 from abacus.modules.communications.intake import (
     Inbound,
     Recorded,
@@ -59,6 +63,11 @@ from abacus.modules.communications.intake import (
     record_inbound_message,
 )
 from abacus.modules.communications.intake_contract import destinations_router, intake_router
+from abacus.modules.communications.intake_purge_workflow import (
+    IntakePurgeInput,
+    IntakeWithdrawalPurgeWorkflow,
+    intake_purge_id,
+)
 from abacus.modules.communications.invitations import deliver_invitation, deliver_staff_invitation
 from abacus.modules.communications.notification_email import (
     NotificationMail,
@@ -68,6 +77,9 @@ from abacus.modules.communications.notification_email import (
 from abacus.modules.communications.notification_email import (
     display_name as engagement_display_name,
 )
+from abacus.modules.communications.portal_intake import ACTIVITIES as PORTAL_INTAKE_ACTIVITIES
+from abacus.modules.communications.portal_intake import WORKFLOWS as PORTAL_INTAKE_WORKFLOWS
+from abacus.modules.communications.portal_intake import on_withdrawn
 from abacus.modules.communications.preview_scope import PreviewSelection, viewer_scoped
 from abacus.modules.communications.render import Block as TemplateBlockContent
 from abacus.modules.communications.render import TemplateContent
@@ -153,6 +165,19 @@ from abacus.modules.communications.templates_contract import (
     templates_router,
 )
 from abacus.modules.communications.transport import LocalMailbox, Transport, configure_transport
+from abacus.modules.communications.triage import ACTIVITIES as TRIAGE_ACTIVITIES
+from abacus.modules.communications.triage import WORKFLOWS as TRIAGE_WORKFLOWS
+from abacus.modules.communications.triage import on_attachment_received
+from abacus.modules.communications.triage_apply import (
+    IntakeDestination,
+    Placement,
+    register_intake_destination,
+)
+from abacus.modules.communications.triage_workflow import (
+    AttachmentTriageWorkflow,
+    TriageInput,
+    attachment_triage_id,
+)
 from abacus.modules.communications.workflows import (
     DrainSesEventsWorkflow,
     SendingDomainVerificationInput,
@@ -168,6 +193,7 @@ from abacus.modules.identity.api import (
     register_contact_links_revoker,
     register_link_claim,
 )
+from abacus.modules.platform.api import register_home_count
 from abacus.modules.requests.api import register_comment_scope_check
 
 # SPEC-015: invitation emails are sent when the relay delivers `client_invitation.issued`.
@@ -180,7 +206,12 @@ SUBSCRIPTIONS = {
     ClientAccessRevoked.event_type: revoke_links_on_access_revoked,  # P-08-T21: links die too
     # R-01-T27: a new domain's verification starts once its row is committed.
     SendingDomainStatusChanged.event_type: on_status_changed,
+    # N-01-T12: a received intake attachment goes through the upload steps (AttachmentTriage).
+    InboxAttachmentReceived.event_type: on_attachment_received,
+    PortalIntakeWithdrawn.event_type: on_withdrawn,  # N-01-T14: the upload's 30-day purge
 }
+# N-01-T13: HOME-01's `inbox_waiting` pill counts the Inbox summary's waiting attachments.
+register_home_count("inbox_waiting", inbox_waiting)
 # P-08-T21: identity's sign-in start uses a portal email's link through this.
 register_link_claim(claim)
 # P-08-T21: organisations revokes a contact's links where their access or address changes.
@@ -193,9 +224,16 @@ SES_EVENTS_ID = "ses_events:platform"
 WORKFLOWS: dict[type, WorkClass] = {
     DrainSesEventsWorkflow: "time_sensitive",
     SendingDomainVerificationWorkflow: "background",  # R-01-T27: every 15 minutes, 72 hours
+    **TRIAGE_WORKFLOWS,
+    **PORTAL_INTAKE_WORKFLOWS,
 }
 register_work_classes(WORKFLOWS)
-ACTIVITIES: tuple[object, ...] = (drain_ses_events_activity, check_sending_domain_activity)
+ACTIVITIES: tuple[object, ...] = (
+    drain_ses_events_activity,
+    check_sending_domain_activity,
+    *TRIAGE_ACTIVITIES,
+    *PORTAL_INTAKE_ACTIVITIES,
+)
 SCHEDULES: tuple[PlatformSchedule, ...] = (
     PlatformSchedule(
         id=SES_EVENTS_ID,
@@ -231,6 +269,7 @@ __all__ = [
     "SUBSCRIPTIONS",
     "TEMPLATE_VARIABLES",
     "WORKFLOWS",
+    "AttachmentTriageWorkflow",
     "ComposedFollowUp",
     "DnsRecord",
     "Draft",
@@ -246,6 +285,9 @@ __all__ = [
     "IdentityStatus",
     "InMemorySesIdentities",
     "Inbound",
+    "IntakeDestination",
+    "IntakePurgeInput",
+    "IntakeWithdrawalPurgeWorkflow",
     "IssuedLink",
     "LocalMailbox",
     "MessageBounced",
@@ -256,6 +298,7 @@ __all__ = [
     "NextSendOut",
     "NotificationMail",
     "OutOfScope",
+    "Placement",
     "PreviewSelection",
     "RecipientRef",
     "Recorded",
@@ -282,9 +325,11 @@ __all__ = [
     "TemplateRegistrationInvalid",
     "TemplateVariable",
     "Transport",
+    "TriageInput",
     "ValueFinding",
     "Violation",
     "add_attachment",
+    "attachment_triage_id",
     "check_scope",
     "client_mail_open",
     "compose_follow_up",
@@ -300,6 +345,7 @@ __all__ = [
     "first_tick_on_or_after",
     "follow_up_policy",
     "import_email_templates",
+    "intake_purge_id",
     "is_suppressed",
     "issue_secure_link",
     "limit_reached_today",
@@ -308,9 +354,11 @@ __all__ = [
     "next_send_on",
     "next_sequence_by_policy",
     "on_sink",
+    "portal_intake",
     "publish_email_template",
     "record_inbound_message",
     "register_email_template",
+    "register_intake_destination",
     "register_reminder_history",
     "registered_templates",
     "resolve_secure_link",
@@ -329,5 +377,6 @@ __all__ = [
     "template_key",
     "templated_outcome",
     "viewer_scoped",
+    "waiting_for_work_item",
     "write_follow_up_policy",
 ]

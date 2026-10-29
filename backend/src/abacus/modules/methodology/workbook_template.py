@@ -89,4 +89,8 @@ def workbook_template() -> bytes:
     return _normalised(buffer.getvalue())
 
 
-__all__ = ["FILENAME", "MEDIA_TYPE", "SHEETS", "workbook_template"]
+# K-01-T12: the program export shares the fixed stamp and the zip normaliser.
+STAMP: Final = _STAMP
+normalised = _normalised
+
+__all__ = ["FILENAME", "MEDIA_TYPE", "SHEETS", "STAMP", "normalised", "workbook_template"]

@@ -1,5 +1,6 @@
-"""The renderer's in-memory assets (ADR-320 §3, §4): the vendored fonts, verified against their
-manifest, served to WeasyPrint under `asset:` URLs and nowhere else.
+"""The renderer's vendored assets (ADR-320 §3, §4): the TrueType faces fontconfig reads (the only
+fonts a render can use), verified against their manifest before every render, and the in-memory
+map the `asset:` fetcher serves (letterhead and signature images join it with P-11-T07).
 """
 
 from __future__ import annotations
@@ -32,13 +33,13 @@ class FontFace:
 # Arimo for form faces, Gelasio for letterheads and signature lines, Geist Mono for figures in
 # trace exports (ADR-320). The paper's body text is a layout choice among these.
 FACES: tuple[FontFace, ...] = (
-    FontFace("Arimo", 400, "arimo-latin-400-normal.woff"),
-    FontFace("Arimo", 700, "arimo-latin-700-normal.woff"),
-    FontFace("Gelasio", 400, "gelasio-latin-400-normal.woff"),
-    FontFace("Gelasio", 500, "gelasio-latin-500-normal.woff"),
-    FontFace("Gelasio", 700, "gelasio-latin-700-normal.woff"),
-    FontFace("Geist Mono", 400, "geist-mono-latin-400-normal.woff"),
-    FontFace("Geist Mono", 500, "geist-mono-latin-500-normal.woff"),
+    FontFace("Arimo", 400, "arimo-latin-400-normal.ttf"),
+    FontFace("Arimo", 700, "arimo-latin-700-normal.ttf"),
+    FontFace("Gelasio", 400, "gelasio-latin-400-normal.ttf"),
+    FontFace("Gelasio", 500, "gelasio-latin-500-normal.ttf"),
+    FontFace("Gelasio", 700, "gelasio-latin-700-normal.ttf"),
+    FontFace("Geist Mono", 400, "geist-mono-latin-400-normal.ttf"),
+    FontFace("Geist Mono", 500, "geist-mono-latin-500-normal.ttf"),
 )
 
 
@@ -68,13 +69,3 @@ def font_assets() -> dict[str, bytes]:
 def fonts_manifest_sha256() -> str:
     """The manifest's own hash: part of `engine_version` (P-11 §4.2)."""
     return hashlib.sha256(MANIFEST.read_bytes()).hexdigest()
-
-
-def font_face_css() -> str:
-    """The @font-face rules for every vendored face, sorted, so the stylesheet is stable."""
-    rules = [
-        f'@font-face {{ font-family: "{f.family}"; font-weight: {f.weight}; '
-        f'font-style: normal; src: url("asset:{f.asset_id}") format("woff"); }}'
-        for f in sorted(FACES, key=lambda x: (x.family, x.weight))
-    ]
-    return "\n".join(rules)

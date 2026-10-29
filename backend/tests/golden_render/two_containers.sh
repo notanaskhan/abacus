@@ -33,4 +33,6 @@ for kind in pdf docx; do
     exit 1
   fi
 done
-docker run --rm --network none "$image" pytest tests/golden_render -q -p no:cacheprovider
+# The goldens as committed (or just recorded) are mounted over the image's copy.
+docker run --rm --network none -v "$here:/app/tests/golden_render:ro" "$image" \
+  pytest tests/golden_render -q -p no:cacheprovider

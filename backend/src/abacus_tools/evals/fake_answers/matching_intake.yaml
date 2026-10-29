@@ -1,0 +1,14 @@
+# The matcher's recorded answers for the intake section's fake route (N-01-T21): request keys, best
+# first; [] is "none fits". Protected with the suite: a change is a reviewed change (N approves).
+# They stand in for the model so `make check` runs extraction, the content rules and the file-name
+# baseline on every intake case without a model call.
+intake_1095c_right_year: [aca_1095c]
+intake_1095c_prior_year: [aca_1095c]
+intake_w2c: [w2]
+intake_1099div_corrected: [div_1099]
+intake_census_to_audit: [census]
+intake_card_receipt: []
+intake_vendor_invoice: []
+intake_cross_client_lookalike: []
+intake_instruction_in_file: [div_1099]
+intake_unicode_1099div: [div_1099]

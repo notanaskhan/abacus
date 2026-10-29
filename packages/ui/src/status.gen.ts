@@ -1705,6 +1705,148 @@ export const STATUS_REGISTRY = {
       "derived": false
     }
   },
+  "tax_authorization": {
+    "not_on_file": {
+      "label": "Not on file",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": true
+    },
+    "requested": {
+      "label": "Requested",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "on_file": {
+      "label": "On file",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "expired": {
+      "label": "Expired",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "revoked": {
+      "label": "Revoked",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "engine_sync": {
+    "not_linked": {
+      "label": "Not linked",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": true
+    },
+    "ready_to_export": {
+      "label": "Ready to export",
+      "variant": "state",
+      "terminal": false,
+      "derived": true
+    },
+    "exported": {
+      "label": "Exported",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": true
+    },
+    "import_pending_approval": {
+      "label": "Import pending approval",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "in_sync": {
+      "label": "In sync",
+      "variant": "green",
+      "terminal": false,
+      "derived": true
+    },
+    "out_of_sync": {
+      "label": "Out of sync",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "failed": {
+      "label": "Export failed",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": true
+    }
+  },
+  "efile_ack": {
+    "accepted": {
+      "label": "Accepted",
+      "variant": "green",
+      "terminal": true,
+      "derived": false
+    },
+    "rejected": {
+      "label": "Rejected",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "firm_standard_version": {
+    "draft": {
+      "label": "Draft",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "published": {
+      "label": "Published",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "soon",
+      "terminal": true,
+      "derived": true
+    },
+    "discarded": {
+      "label": "Discarded",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "reference_set_version": {
+    "draft": {
+      "label": "Draft",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "published": {
+      "label": "Published",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "soon",
+      "terminal": true,
+      "derived": true
+    },
+    "withdrawn": {
+      "label": "Withdrawn",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
   "parse_flag": {
     "low_confidence": {
       "label": "Low confidence",
@@ -2012,6 +2154,18 @@ export const STATUS_REGISTRY = {
       "variant": "soon",
       "terminal": true,
       "derived": false
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    },
+    "not_requested": {
+      "label": "Not requested",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": true
     }
   },
   "consent_purpose": {

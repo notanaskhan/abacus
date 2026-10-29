@@ -34,6 +34,8 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     # SPEC-026: `direct` runs the real model (evaluation environment, synthetic data only).
     parser.add_argument("--route", choices=["fake", "direct"], default="fake")
+    # N-01-T21: the matcher's suite has an audit section and an intake section.
+    parser.add_argument("--section", choices=["audit", "intake"], default="audit")
     args = parser.parse_args(argv)
     if args.agent == "evidence.upload_reviewer":  # SPEC-030 (TASK-058 D4): its own runner
         return review_main(
@@ -52,7 +54,10 @@ def main(argv: list[str]) -> int:
         )
     if args.agent == MATCHER:  # SPEC-033 (TASK-065): its own runner
         return match_main(
-            cast(Tier | None, args.tier), cast(str, args.route), cast(Path, args.out)
+            cast(Tier | None, args.tier),
+            cast(str, args.route),
+            cast(Path, args.out),
+            cast(str, args.section),
         )
     [summary] = run(
         cast(str, args.agent),
@@ -111,13 +116,15 @@ def assess_main(tier: Tier | None, route: str, out: Path) -> int:
     return 0 if results and results[0]["status"] == "passed" else 1
 
 
-def match_main(tier: Tier | None, route: str, out: Path) -> int:
-    """The matcher's suite, on a throwaway stack; real routes only (no fake answers)."""
-    if route == "fake":
-        print("the matcher has no fake answers: run it with --route direct")
+def match_main(tier: Tier | None, route: str, out: Path, section: str = "audit") -> int:
+    """The matcher's suite, on a throwaway stack. The audit section runs on real routes only; the
+    intake section (N-01-T21) also runs on `--route fake` from its recorded matcher answers."""
+    if route == "fake" and section != "intake":
+        print("the matcher's audit section has no fake answers: run it with --route direct")
         return 2
     guard()
-    guard_real(cast(EvalRoute, route))
+    if route != "fake":
+        guard_real(cast(EvalRoute, route))
     chosen: Tier = tier or spec(MATCHER).tier
     suite = matching.load_suite()
     matching.validate(suite)
@@ -125,7 +132,7 @@ def match_main(tier: Tier | None, route: str, out: Path) -> int:
 
     async def record(stack: Stack) -> None:
         world = await prepare(stack)
-        results.append(await matching.evaluate(stack, world, suite, chosen, route, out))
+        results.append(await matching.evaluate(stack, world, suite, chosen, route, out, section))
 
     run_with_stack(record)
     return 0 if results and results[0]["status"] == "passed" else 1

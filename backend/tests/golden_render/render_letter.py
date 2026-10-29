@@ -13,7 +13,7 @@ import sys
 
 import pdfplumber
 
-from abacus.modules.reporting.render.docx import render_docx
+from abacus.modules.reporting.render.docx import DocxBlock, render_docx
 from abacus.modules.reporting.render.pdf import dated_head, render_pdf
 from abacus_tools.synthetic.scenarios.brightwater_hale import render_letter as letter
 
@@ -24,7 +24,8 @@ def render() -> tuple[bytes, bytes]:
         letter.CSS,
         content_hash=letter.CONTENT_HASH,
     )
-    docx = render_docx(letter.blocks(), title=letter.TITLE, as_of=letter.AS_OF)
+    blocks = [DocxBlock(kind, text, level) for kind, text, level in letter.blocks()]
+    docx = render_docx(blocks, title=letter.TITLE, as_of=letter.AS_OF)
     return pdf, docx
 
 
