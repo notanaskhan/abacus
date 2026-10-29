@@ -23,6 +23,7 @@ nothing. A stale level is signed again as a new row (DEC-84); no row is ever upd
 from __future__ import annotations
 
 import re
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Final, Literal, cast
@@ -602,3 +603,73 @@ async def _insert(
         adopted_run_number=facts.adopted_run_number if adopted is not None else None,
         stale=False,
     )
+
+
+# --- Field ticks (P-04-T35; ADR-160 clause 5; SHL-09) ------------------------------------------
+
+
+@dataclass(frozen=True)
+class FieldNow:
+    """A field as its tick sees it: its `field` target id, current hash and whether the current
+    value is unsupported (an agent value without a verified citation)."""
+
+    field_id: UUID
+    content_hash: str
+    unsupported: bool
+
+
+async def tick_field(
+    ctx: AuthContext,
+    target_type: str,
+    target_id: UUID,
+    field_key: str,
+    level: int,
+    seen_hash: str,
+    current: Callable[[UnitOfWork], Awaitable[FieldNow | None]],
+) -> UUID:
+    """`POST /v1/fields/…/ticks`, "Sign off field": a `field_tick` sign-off at L1 or L2 on the
+    field's `field` target, bound to the value's hash. A person only (INV-1); the owner target's
+    engagement authorises `field.sign_off`. An unsupported value is 422 `uncited_change` ("Add a
+    reference before signing off", INV-2); a moved hash is 409 `content_changed`. The same person
+    never ticks a value at both levels (R-SO-3)."""
+    if not _live_human(ctx):
+        raise Forbidden("field.sign_off", "role")
+    if level not in (1, 2):
+        raise SignOffInvalid(facts={"field": "level"})
+    facts, resource = await _target(ctx, target_type, target_id)
+    resource = replace(resource, work_item_id=facts.work_item_id)
+    await authorise(ctx, "field.sign_off", resource)
+    if not await _independent(ctx, facts.engagement_id):
+        raise IndependencePending(facts={"level": LEVEL_CODES[level]})
+    async with uow(ctx.tenant) as tx:
+        now_field = await current(tx)
+        if now_field is None:
+            raise UncitedChange(facts={"count": 1})
+        await lock_target(tx.session, "field", now_field.field_id)
+        if now_field.unsupported:
+            raise UncitedChange(facts={"count": 1})
+        if _hash_in(seen_hash) != now_field.content_hash:
+            raise ContentChanged(facts={"version_no": 1})
+        rows = [
+            r
+            for r in await sign_offs_of(tx.session, "field", [now_field.field_id])
+            if r.kind == "field_tick" and r.content_hash == now_field.content_hash
+        ]
+        if any(r.signed_by == ctx.user_id and r.level == level for r in rows):
+            raise AlreadySigned(facts={"level": LEVEL_CODES[level]})
+        if any(r.signed_by == ctx.user_id and r.level != level for r in rows):
+            raise Segregation(facts={"level": LEVEL_CODES[level]})
+        field_facts = replace(
+            facts,
+            target_type="field",
+            target_id=now_field.field_id,
+            content_hash=now_field.content_hash,
+            adopted_run_id=None,
+        )
+        view = await _insert(tx, ctx, field_facts, resource, level, "field_tick", FIELD_STATEMENT)
+    return view.id
+
+
+# A field tick carries no ladder statement (the tray shows none); a fixed marker keeps the
+# column's meaning: what the person signed is the field's hash.
+FIELD_STATEMENT: Final = "field_tick.v1"
