@@ -46,3 +46,36 @@ class EmailTemplatePublished(DomainEvent):
     event_type: ClassVar[str] = "email_template.published"
     key: Annotated[str, classified("internal")]
     version: Annotated[int, classified("internal")]
+
+
+class SendingDomainStatusChanged(DomainEvent):
+    """A firm's sender domain moved (R-01-T27; C16 v1.1 §7): `pending_dns`, `verified`, `failed`
+    or `revoked`. The From of later client mail follows it."""
+
+    event_type: ClassVar[str] = "sending_domain.status_changed"
+    domain_id: Annotated[UUID, classified("internal")]
+    status: Annotated[str, classified("internal")]
+
+
+class SendingDomainVerified(DomainEvent):
+    """The firm's sender domain passed DKIM and MAIL FROM (R-01-T27): the in-app
+    `sending_domain_verified` for its firm and security admins (R-01 §4.8)."""
+
+    event_type: ClassVar[str] = "sending_domain.verified"
+    domain_id: Annotated[UUID, classified("internal")]
+
+
+class SendingDomainFailed(DomainEvent):
+    """72 hours went by without verification (R-01-T27): the in-app `sending_domain_failed`."""
+
+    event_type: ClassVar[str] = "sending_domain.failed"
+    domain_id: Annotated[UUID, classified("internal")]
+
+
+class MessageDeliveryStatusChanged(DomainEvent):
+    """SES said what happened to a send (R-01-T27; C16 v1.1 §7): `delivered`, `bounced`,
+    `complained` or `rejected`. TXP-12's "Bounced" reads the same status."""
+
+    event_type: ClassVar[str] = "message.delivery_status_changed"
+    message_id: Annotated[UUID, classified("internal")]
+    status: Annotated[str, classified("internal")]

@@ -127489,7 +127489,7 @@
     },
     "/v1/firm/sending-domains": {
       "get": {
-        "description": "ADM-10 d (R-01-T27): the firm's sender domain and its DNS records.",
+        "description": "ADM-10 d (R-01-T27): the firm's sender domains, newest first, with their DNS records.\nNever behind the flag.",
         "operationId": "list_sending_domains",
         "parameters": [
           {
@@ -127575,16 +127575,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Sending Domains Route",
@@ -127594,7 +127584,7 @@
         "x-abacus-action": "sending_domain.read"
       },
       "post": {
-        "description": "An SES identity with Easy DKIM and a custom MAIL FROM; `pending_dns` (R-01-T27); 409\n`sending_domain_exists` while one is pending or verified. Audited `sending_domain.created`.",
+        "description": "An SES identity with Easy DKIM and the custom MAIL FROM `bounce.<domain>`; `pending_dns`\n(R-01-T27); 409 `sending_domain_exists` while this firm has one pending or verified, or the\ndomain is live for any firm (DEC-951); 503 `sending_domain_unavailable` when SES can't be\nreached. Fresh MFA. Audited `sending_domain.created`. A retry with the same key answers the\ndomain it created, after authorising again.",
         "operationId": "create_sending_domain",
         "parameters": [
           {
@@ -127712,7 +127702,7 @@
             },
             "description": "Invalid request"
           },
-          "501": {
+          "503": {
             "content": {
               "application/json": {
                 "schema": {
@@ -127720,7 +127710,7 @@
                 }
               }
             },
-            "description": "Contract stub: not implemented yet"
+            "description": "Service unavailable"
           }
         },
         "summary": "Create Sending Domain Route",
@@ -127732,7 +127722,7 @@
     },
     "/v1/firm/sending-domains/{domain_id}": {
       "delete": {
-        "description": "Revoke (R-01-T27): client mail returns to the neutral sender. Audited\n`sending_domain.revoked`.",
+        "description": "Revoke (R-01-T27): client mail returns to the neutral sender and the SES identity is\ndeleted. Audited `sending_domain.revoked`.",
         "operationId": "revoke_sending_domain",
         "parameters": [
           {
@@ -127828,16 +127818,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Revoke Sending Domain Route",
@@ -127849,7 +127829,7 @@
     },
     "/v1/firm/sending-domains/{domain_id}/check": {
       "post": {
-        "description": "Check the identity now (R-01-T27); the workflow checks every 15 minutes for 72 hours.",
+        "description": "Check the identity now (R-01-T27); the workflow checks every 15 minutes, and fails the\ndomain after 72 hours. Audited `sending_domain.verified` or `.failed` when it moves.",
         "operationId": "check_sending_domain",
         "parameters": [
           {
@@ -127946,7 +127926,7 @@
             },
             "description": "Invalid request"
           },
-          "501": {
+          "503": {
             "content": {
               "application/json": {
                 "schema": {
@@ -127954,7 +127934,7 @@
                 }
               }
             },
-            "description": "Contract stub: not implemented yet"
+            "description": "Service unavailable"
           }
         },
         "summary": "Check Sending Domain Route",
