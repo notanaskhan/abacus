@@ -660,13 +660,18 @@ async def extraction_for(
     *,
     evidence_version_id: UUID | None = None,
     inbox_file_id: UUID | None = None,
+    inbox_attachment_id: UUID | None = None,
     extractor_version: str,
 ) -> UploadExtraction | None:
     """SPEC-029 (TASK-054): the upload's extraction by this extractor version, if made."""
     source = (
         UploadExtraction.evidence_version_id == evidence_version_id
         if evidence_version_id is not None
-        else UploadExtraction.inbox_file_id == inbox_file_id
+        else (
+            UploadExtraction.inbox_attachment_id == inbox_attachment_id
+            if inbox_attachment_id is not None
+            else UploadExtraction.inbox_file_id == inbox_file_id
+        )
     )
     return (
         await session.execute(
@@ -682,6 +687,7 @@ async def newest_extraction(
     *,
     evidence_version_id: UUID | None = None,
     inbox_file_id: UUID | None = None,
+    inbox_attachment_id: UUID | None = None,
 ) -> UploadExtraction | None:
     """TASK-333: the upload's newest extraction by any extractor version. Readers use this: an
     extraction made by an earlier version stays valid data after the extractor improves (bumping
@@ -689,7 +695,11 @@ async def newest_extraction(
     source = (
         UploadExtraction.evidence_version_id == evidence_version_id
         if evidence_version_id is not None
-        else UploadExtraction.inbox_file_id == inbox_file_id
+        else (
+            UploadExtraction.inbox_attachment_id == inbox_attachment_id
+            if inbox_attachment_id is not None
+            else UploadExtraction.inbox_file_id == inbox_file_id
+        )
     )
     return (
         await session.execute(
@@ -703,13 +713,14 @@ async def newest_extraction(
 
 async def insert_extraction(session: AsyncSession, **values: object) -> UploadExtraction | None:
     """The new extraction, or None when this source already has one by this version."""
-    by_version = values.get("evidence_version_id") is not None
-    where = "evidence_version_id" if by_version else "inbox_file_id"
-    present = (
-        UploadExtraction.evidence_version_id.is_not(None)
-        if by_version
-        else UploadExtraction.inbox_file_id.is_not(None)
+    where = (
+        "evidence_version_id"
+        if values.get("evidence_version_id") is not None
+        else "inbox_attachment_id"
+        if values.get("inbox_attachment_id") is not None
+        else "inbox_file_id"
     )
+    present = getattr(UploadExtraction, where).is_not(None)
     return (
         await session.execute(
             pg_insert(UploadExtraction)
@@ -820,6 +831,7 @@ async def preview_for(
     *,
     evidence_version_id: UUID | None = None,
     inbox_file_id: UUID | None = None,
+    inbox_attachment_id: UUID | None = None,
     renderer_version: str,
     derivation_id: UUID | None = None,
 ) -> UploadPreview | None:
@@ -828,7 +840,11 @@ async def preview_for(
     source = (
         UploadPreview.evidence_version_id == evidence_version_id
         if evidence_version_id is not None
-        else UploadPreview.inbox_file_id == inbox_file_id
+        else (
+            UploadPreview.inbox_attachment_id == inbox_attachment_id
+            if inbox_attachment_id is not None
+            else UploadPreview.inbox_file_id == inbox_file_id
+        )
     )
     return (
         await session.execute(
@@ -843,13 +859,14 @@ async def preview_for(
 
 async def insert_preview(session: AsyncSession, **values: object) -> UploadPreview | None:
     """The new preview, or None when this source already has one by this renderer version."""
-    by_version = values.get("evidence_version_id") is not None
-    where = "evidence_version_id" if by_version else "inbox_file_id"
-    present = (
-        UploadPreview.evidence_version_id.is_not(None)
-        if by_version
-        else UploadPreview.inbox_file_id.is_not(None)
+    where = (
+        "evidence_version_id"
+        if values.get("evidence_version_id") is not None
+        else "inbox_attachment_id"
+        if values.get("inbox_attachment_id") is not None
+        else "inbox_file_id"
     )
+    present = getattr(UploadPreview, where).is_not(None)
     return (
         await session.execute(
             pg_insert(UploadPreview)
@@ -977,6 +994,7 @@ async def pages_of(
     *,
     evidence_version_id: UUID | None = None,
     inbox_file_id: UUID | None = None,
+    inbox_attachment_id: UUID | None = None,
     extractor_version: str,
     derivation_id: UUID | None = None,
 ) -> Sequence[EvidencePage]:
@@ -993,7 +1011,11 @@ async def pages_of(
             ),  # P-06-T19: a withdrawn version's word layer is never read
         )
         if evidence_version_id is not None
-        else EvidencePage.inbox_file_id == inbox_file_id
+        else (
+            EvidencePage.inbox_attachment_id == inbox_attachment_id
+            if inbox_attachment_id is not None
+            else EvidencePage.inbox_file_id == inbox_file_id
+        )
     )
     return (
         (
@@ -1210,6 +1232,7 @@ async def pii_regions_of(
     *,
     evidence_version_id: UUID | None = None,
     inbox_file_id: UUID | None = None,
+    inbox_attachment_id: UUID | None = None,
     detector_version: str | None = None,
     derivation_id: UUID | None = None,
 ) -> Sequence[PiiRegion]:
@@ -1218,7 +1241,11 @@ async def pii_regions_of(
     source = (
         PiiRegion.evidence_version_id == evidence_version_id
         if evidence_version_id is not None
-        else PiiRegion.inbox_file_id == inbox_file_id
+        else (
+            PiiRegion.inbox_attachment_id == inbox_attachment_id
+            if inbox_attachment_id is not None
+            else PiiRegion.inbox_file_id == inbox_file_id
+        )
     )
     return (
         (
@@ -1245,6 +1272,7 @@ async def scanned_pages(
     *,
     evidence_version_id: UUID | None = None,
     inbox_file_id: UUID | None = None,
+    inbox_attachment_id: UUID | None = None,
     detector_version: str | None = None,
     derivation_id: UUID | None = None,
 ) -> set[int]:
@@ -1253,7 +1281,11 @@ async def scanned_pages(
     source = (
         PiiScanRun.evidence_version_id == evidence_version_id
         if evidence_version_id is not None
-        else PiiScanRun.inbox_file_id == inbox_file_id
+        else (
+            PiiScanRun.inbox_attachment_id == inbox_attachment_id
+            if inbox_attachment_id is not None
+            else PiiScanRun.inbox_file_id == inbox_file_id
+        )
     )
     rows = (
         await session.execute(
@@ -1274,6 +1306,7 @@ async def unscannable_pages(
     *,
     evidence_version_id: UUID | None = None,
     inbox_file_id: UUID | None = None,
+    inbox_attachment_id: UUID | None = None,
     detector_version: str | None = None,
     derivation_id: UUID | None = None,
 ) -> set[int]:
@@ -1283,7 +1316,11 @@ async def unscannable_pages(
     source = (
         PiiScanRun.evidence_version_id == evidence_version_id
         if evidence_version_id is not None
-        else PiiScanRun.inbox_file_id == inbox_file_id
+        else (
+            PiiScanRun.inbox_attachment_id == inbox_attachment_id
+            if inbox_attachment_id is not None
+            else PiiScanRun.inbox_file_id == inbox_file_id
+        )
     )
     rows = (
         await session.execute(
@@ -1319,6 +1356,7 @@ async def masked_preview_for(
     evidence_version_id: UUID | None = None,
     *,
     inbox_file_id: UUID | None = None,
+    inbox_attachment_id: UUID | None = None,
     renderer_version: str,
     derivation_id: UUID | None = None,
 ) -> UploadPreview | None:
@@ -1328,7 +1366,11 @@ async def masked_preview_for(
     source = (
         UploadPreview.evidence_version_id == evidence_version_id
         if evidence_version_id is not None
-        else UploadPreview.inbox_file_id == inbox_file_id
+        else (
+            UploadPreview.inbox_attachment_id == inbox_attachment_id
+            if inbox_attachment_id is not None
+            else UploadPreview.inbox_file_id == inbox_file_id
+        )
     )
     return (
         await session.execute(
@@ -1574,6 +1616,7 @@ _PII_REGION_ROWS = table(
     column("tenant_id", PgUUID(as_uuid=True)),
     column("evidence_version_id", PgUUID(as_uuid=True)),
     column("inbox_file_id", PgUUID(as_uuid=True)),
+    column("inbox_attachment_id", PgUUID(as_uuid=True)),
     column("derivation_id", PgUUID(as_uuid=True)),
     column("page_no", Integer()),
     column("bbox", ARRAY(Numeric(10, 2))),
@@ -1596,6 +1639,7 @@ async def scan_run_for(
     evidence_version_id: UUID | None,
     inbox_file_id: UUID | None,
     detector_version: str,
+    inbox_attachment_id: UUID | None = None,
     derivation_id: UUID | None = None,
 ) -> PiiScanRun | None:
     """The source's scan run by this detector version (none derived unless named), if any."""
@@ -1604,7 +1648,11 @@ async def scan_run_for(
             select(PiiScanRun).where(
                 PiiScanRun.evidence_version_id == evidence_version_id
                 if evidence_version_id is not None
-                else PiiScanRun.inbox_file_id == inbox_file_id,
+                else (
+                    PiiScanRun.inbox_attachment_id == inbox_attachment_id
+                    if inbox_attachment_id is not None
+                    else PiiScanRun.inbox_file_id == inbox_file_id
+                ),
                 _derived(PiiScanRun.derivation_id, derivation_id),
                 PiiScanRun.detector_version == detector_version,
             )

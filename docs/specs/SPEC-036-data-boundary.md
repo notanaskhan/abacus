@@ -145,3 +145,6 @@ All resolved: the founder approved every recommendation below on 2026-10-16.
 
 ## 10. Status (Q-02-T51, 2026-10-28)
 Done for AC-1 to AC-5, AC-7 and AC-8 (TASK-076's log; Q-02-T07, Q-02-T50). **Left open:** AC-6's screen half and AC-9, handed to Q-04-T351; this spec closes only when they pass. Operations: RB-39 (agent stages), RB-40 (provider terms and Bedrock parity).
+
+**Q-04-T351 (2026-10-29, DEC-1063):** AC-9 has its tests: ADM-04's loading, error and not-allowed states (`apps/web/src/screens/ADM-04/spec036.test.tsx`, the restricted "role" state added for a 403) and the engagement-exclusion control's loading, error, not-allowed and empty states (`apps/web/src/legacy/spec036exclusion.test.tsx`, its blank loading and error replaced by states). AC-6's screen half is tested on the control ("AI is off for this engagement" for everyone on the team), but **no screen mounts it**: ENG-02 has no exclusion control. SPEC-036 stays **open** on AC-6 until a P-07 task mounts `AiExclusionControl` on ENG-02 (no backlog row owns it yet; proposed to P-07 in DEC-1063). Until then no real firm may exclude an engagement from AI through the UI, so none sees an excluded engagement without its AI-off state.
+

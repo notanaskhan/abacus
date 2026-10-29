@@ -27,7 +27,9 @@ async function step(page: Page, name: string): Promise<void> {
 
 test("test_ac9_a_default_board_reads_the_server_counts", async ({ page }) => {
   await board(page, "a");
-  await expect(page.getByText("79 open · 145 done · 224 TY2025 returns · 161 extended")).toBeVisible();
+  await expect(
+    page.getByText("79 open · 145 done · 224 TY2025 returns · 161 extended"),
+  ).toBeVisible();
   await expect(page.getByText("Showing 15 of 79 open")).toBeVisible();
   for (const [label, n] of [
     ["Prepared", "17"],
@@ -39,8 +41,9 @@ test("test_ac9_a_default_board_reads_the_server_counts", async ({ page }) => {
     ["Awaiting signature", "10"],
     ["Filed · Accepted", "145"],
   ] as const) {
-    await expect(page.getByRole("button", { name: new RegExp(`${n}.*${label}|${label}.*${n}`) }))
-      .toBeVisible();
+    await expect(
+      page.getByRole("button", { name: new RegExp(`${n}.*${label}|${label}.*${n}`) }),
+    ).toBeVisible();
   }
   // The window frames the board with Tax Returns lit in the firm toolbar.
   await expect(page.locator("[data-artboard='a'] [data-shell='app']")).toBeVisible();
@@ -49,7 +52,10 @@ test("test_ac9_a_default_board_reads_the_server_counts", async ({ page }) => {
 
 test("test_ac10_b_the_awaiting_signature_tile_filters_to_e1_e10", async ({ page }) => {
   await board(page, "a");
-  await page.getByRole("button", { name: /Awaiting signature/ }).first().click();
+  await page
+    .getByRole("button", { name: /Awaiting signature/ })
+    .first()
+    .click();
   await expect(page.getByText(/Showing 10 of 10/)).toBeVisible();
   await expect(page.getByRole("columnheader", { name: "Signature" })).toBeVisible();
   await board(page, "b");
@@ -59,7 +65,7 @@ test("test_ac10_b_the_awaiting_signature_tile_filters_to_e1_e10", async ({ page 
 
 test("test_ac11_due_cell_explains_its_rule_from_the_keyboard", async ({ page }) => {
   await board(page, "a");
-  const due = page.getByRole("button", { name: "Sep 15, 2026" }).first();
+  const due = page.getByRole("button", { name: "Sep 15", exact: true }).first();
   await due.focus();
   await page.keyboard.press("Enter");
   const popover = page.getByRole("dialog", { name: /^Due date rule for / });

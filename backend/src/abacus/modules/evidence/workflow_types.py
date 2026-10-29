@@ -10,12 +10,13 @@ from typing import Final
 
 VERSION: Final = "version"  # an evidence version (an item upload, or an assigned inbox file)
 INBOX: Final = "inbox"  # an inbox file waiting to be assigned
+INTAKE: Final = "intake"  # N-01-T12: a communications intake attachment (inbox_attachments)
 
 
 @dataclass(frozen=True)
 class UploadInput:
     tenant_id: str
-    kind: str  # VERSION | INBOX
+    kind: str  # VERSION | INBOX | INTAKE
     source_id: str
     # P-03-T15 review L1: whether a first PII scan may re-announce the upload to the reviewer
     # or matcher. True for an upload's own run; the trust-layer backfill passes False, so it never

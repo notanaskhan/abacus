@@ -21563,9 +21563,13 @@ export type RemindIn = {
      */
     envelope_ids: Array<string>;
     /**
+     * Template Version
+     */
+    template_version?: number | null;
+    /**
      * Template Version Id
      */
-    template_version_id: string;
+    template_version_id?: string | null;
 };
 
 /**
@@ -52233,10 +52237,6 @@ export type ListEnvelopesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListEnvelopesError = ListEnvelopesErrors[keyof ListEnvelopesErrors];
@@ -52572,10 +52572,6 @@ export type EnvelopeSummaryErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EnvelopeSummaryError = EnvelopeSummaryErrors[keyof EnvelopeSummaryErrors];
@@ -52628,10 +52624,6 @@ export type GetEnvelopeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetEnvelopeError = GetEnvelopeErrors[keyof GetEnvelopeErrors];
@@ -52874,10 +52866,6 @@ export type EnvelopeEvidenceErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EnvelopeEvidenceError = EnvelopeEvidenceErrors[keyof EnvelopeEvidenceErrors];
@@ -53117,13 +53105,13 @@ export type RevealSignerIpErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RevealSignerIpError = RevealSignerIpErrors[keyof RevealSignerIpErrors];
@@ -53304,10 +53292,6 @@ export type VoidEnvelopeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type VoidEnvelopeError = VoidEnvelopeErrors[keyof VoidEnvelopeErrors];
@@ -61624,10 +61608,6 @@ export type AttachmentContentErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AttachmentContentError = AttachmentContentErrors[keyof AttachmentContentErrors];
@@ -61682,10 +61662,6 @@ export type AttachmentViewerErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AttachmentViewerError = AttachmentViewerErrors[keyof AttachmentViewerErrors];
@@ -61866,10 +61842,6 @@ export type MessageZipErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MessageZipError = MessageZipErrors[keyof MessageZipErrors];
@@ -62039,10 +62011,6 @@ export type InboxSummaryErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type InboxSummaryError = InboxSummaryErrors[keyof InboxSummaryErrors];
@@ -62131,10 +62099,6 @@ export type ListThreadsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListThreadsError = ListThreadsErrors[keyof ListThreadsErrors];
@@ -62187,10 +62151,6 @@ export type GetThreadErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetThreadError = GetThreadErrors[keyof GetThreadErrors];
@@ -62247,10 +62207,6 @@ export type IgnoreThreadErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type IgnoreThreadError = IgnoreThreadErrors[keyof IgnoreThreadErrors];
@@ -62307,10 +62263,6 @@ export type MatchClientErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MatchClientError = MatchClientErrors[keyof MatchClientErrors];
@@ -68250,10 +68202,6 @@ export type ListIntakeUploadsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListIntakeUploadsError = ListIntakeUploadsErrors[keyof ListIntakeUploadsErrors];
@@ -68309,10 +68257,6 @@ export type CreateIntakeUploadErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CreateIntakeUploadError = CreateIntakeUploadErrors[keyof CreateIntakeUploadErrors];
@@ -68387,10 +68331,6 @@ export type AddIntakeUploadFileErrors = {
      */
     422: ValidationErrorOut;
     /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
-    /**
      * Service unavailable
      */
     503: ErrorOut;
@@ -68454,10 +68394,6 @@ export type WithdrawIntakeUploadErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type WithdrawIntakeUploadError = WithdrawIntakeUploadErrors[keyof WithdrawIntakeUploadErrors];

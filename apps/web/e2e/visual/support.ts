@@ -45,8 +45,8 @@ export interface ManifestEntry {
   tier: "A" | "B" | "C" | "D";
   locked?: boolean;
   deviation?: string;
-  /** CSS selectors inside the shot whose boxes are painted out of both the render and the handoff
-   * baseline before they are compared (chapter 04's parity harness masks: spinners, presence
+  /** CSS selectors whose boxes, where they overlap the shot (a portaled dialog included), are
+   * painted out of both the render and the handoff baseline before they are compared (chapter 04's parity harness masks: spinners, presence
    * avatars, upload bars, missing icons; a screen's dock until P-09 locks SHL-13). */
   mask?: string[];
   /** A chrome strip inside the frame (F-06 §5.4 Tier A: envelope header 46, steps pane 300, the
@@ -132,9 +132,17 @@ export async function maskBoxes(
   const scale = pngSize(shot).width / Math.round(frame.width);
   const boxes: Box[] = [];
   for (const selector of selectors) {
-    for (const part of await target.locator(selector).all()) {
+    // Page-wide: an open dialog is portaled outside the shot's element but drawn over it. A box
+    // that misses the shot is skipped; one that overlaps it is painted (the canvas clips the rest).
+    for (const part of await target.page().locator(selector).all()) {
       const box = await part.boundingBox();
       if (box === null) continue;
+      const missesShot =
+        box.x + box.width <= frame.x ||
+        box.y + box.height <= frame.y ||
+        box.x >= frame.x + frame.width ||
+        box.y >= frame.y + frame.height;
+      if (missesShot) continue;
       boxes.push({
         x: Math.round((box.x - Math.round(frame.x)) * scale),
         y: Math.round((box.y - Math.round(frame.y)) * scale),

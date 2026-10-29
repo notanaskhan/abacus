@@ -40,6 +40,7 @@ TABLES: frozenset[str] = frozenset(
         # P-06-T18 (0144; ADR-162): detached keys and client withdrawals.
         "evidence_object_keys",
         "evidence_withdrawals",
+        "evidence_intake_object_keys",  # N-01-T14 (0371): a portal intake file's own key
         "evidence_version_voids",  # R-01 Story 2.2 (0159): retired with its voided rule link
         # A-01-T18 (0191): engagement exports, their downloads and their contents.
         "engagement_exports",
@@ -103,6 +104,10 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     # P-06-T18 (0144): a detached-key version's wrapped data key, with its version.
     "evidence_object_keys": frozenset(
         {"tenant_id", "evidence_version_id", "key_id", "wrapped_key"}
+    ),
+    # N-01-T14 (0371): a portal intake attachment's wrapped data key, with its attachment.
+    "evidence_intake_object_keys": frozenset(
+        {"tenant_id", "inbox_attachment_id", "key_id", "wrapped_key"}
     ),
     # P-06-T19 (0144): the client's withdrawal; the trigger binds the person.
     "evidence_withdrawals": frozenset(
@@ -188,6 +193,8 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "hold_objects": frozenset({"applied_at", "released_at"}),  # each stamped once
     # P-06-T18 (0144): acceptance retains the key, one-way (the guard); erase is the definer's.
     "evidence_object_keys": frozenset({"retained_at"}),
+    # N-01-T14 (0371): the intake purge's erase (key and stamp together, the CHECK) and a hold.
+    "evidence_intake_object_keys": frozenset({"wrapped_key", "destroyed_at", "retained_at"}),
     # P-06-T19 (0144): the purge's stamps only (the guard binds the purge's system actor).
     "evidence_withdrawals": frozenset({"erased_at", "erase_blocked_at", "block_reason"}),
     # A-01-T18 (0191): status forward only and the stamps (the guard trigger).

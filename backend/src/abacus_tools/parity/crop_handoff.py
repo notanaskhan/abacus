@@ -62,7 +62,7 @@ class Entry:
     # gallery specimen; None for a gallery specimen.
     page: str | None = None
     # Chapter 04's parity masks: selectors whose boxes are painted out of both the render and the
-    # handoff baseline before they are compared (spinners, a dock still unlocked).
+    # handoff baseline before they are compared (spinners, a dock still unlocked, an open dialog).
     mask: tuple[str, ...] = ()
     # F-06-T13: a Tier A chrome strip inside the frame. The baseline is the frame's own crop; the
     # parity spec cuts the strip's box out of the render and the baseline at run time.
@@ -133,10 +133,12 @@ def parse_entry(key: str, raw: Json) -> Entry:
     if not isinstance(mask, list) or not all(
         isinstance(m, str) and m.strip() for m in cast("list[object]", mask)
     ):
-        raise ManifestError(f'{key}: "mask" is a list of CSS selectors inside the shot')
+        raise ManifestError(f'{key}: "mask" is a list of CSS selectors drawn over the shot')
     strip = raw.get("strip")
     if strip is not None and not (isinstance(strip, str) and strip.strip()):
-        raise ManifestError(f'{key}: "strip" is a CSS selector for a chrome strip inside the frame')
+        raise ManifestError(
+            f'{key}: "strip" is a CSS selector for a chrome strip inside the frame'
+        )
     return Entry(
         key=key,
         specimen=key.split(".")[0],

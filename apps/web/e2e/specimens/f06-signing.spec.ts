@@ -86,13 +86,19 @@ test.describe("f06-signing at 1440", () => {
     await expect(card).toContainText("paper form");
     await expect(card).toContainText("Dina Sato");
     await expect(card.locator("button")).toHaveCount(0);
-    await expect(page.getByRole("button", { name: /try again|retry|text me|sms/i })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /try again|retry|text me|sms/i })).toHaveCount(
+      0,
+    );
     await step(page, "TPL-16e");
   });
 
   test("test_ac5_f_decline_waits_for_a_reason", async ({ page }) => {
     await board(page, "f");
-    const dialog = page.getByRole("dialog", { name: "Decline to sign?" });
+    // The specimen holds the dialog open in place (`declineForceState`): a named group, not a
+    // modal layer; a click on "Decline…" opens the same content as a dialog.
+    const dialog = page
+      .getByRole("dialog", { name: "Decline to sign?" })
+      .or(page.getByRole("group", { name: "Decline to sign?" }));
     await expect(dialog).toBeVisible();
     const confirm = dialog.locator("[data-signing='decline-confirm']");
     await expect(confirm).toBeDisabled();
@@ -106,7 +112,7 @@ test.describe("f06-signing at 1440", () => {
     }
     await dialog.getByRole("radio", { name: "I have a question first" }).check();
     await expect(confirm).toBeEnabled();
-    await axeStep(page, "f06-signing TPL-16f", { include: "[role='dialog']" });
+    await axeStep(page, "f06-signing TPL-16f", { include: "[data-artboard]" });
   });
 
   test("test_ac7_native_artboards_are_screenshots_only", async ({ page }) => {
@@ -128,12 +134,18 @@ test.describe("f06-signing at 1440", () => {
       await expect(page.locator("[data-actor='agent']")).toHaveCount(0);
       await expect(page.getByText(/Accrued/)).toHaveCount(0);
     }
-    await expect(page.locator("[data-signing='evidence']")).toContainText("Mira");
+    // The completion names the signer; the evidence record never names the firm or the product.
+    await expect(page.locator("[data-signing='completion']")).toContainText("Mira");
+    await expect(page.locator("[data-signing='evidence']")).not.toContainText("Brightwater Hale");
   });
 });
 
 test.describe("f06-signing at 390", () => {
-  test.use({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, reducedMotion: "reduce" });
+  test.use({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 3,
+    reducedMotion: "reduce",
+  });
 
   test("test_ac6_g_fits_the_phone", async ({ page }) => {
     await board(page, "g");

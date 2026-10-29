@@ -24,8 +24,9 @@ async function t16Geometry(frame: Locator): Promise<void> {
   expect((await size(frame.locator("[data-signing='documents']"))).width).toBe(240);
   expect((await size(frame.locator("[data-signing='well']"))).width).toBe(816);
   expect((await size(frame.locator("[data-signing='steps']"))).width).toBe(300);
+  // 64 is a document row's minimum: a two-line title makes it 76, as the handoff draws it.
   for (const row of await frame.locator("[data-signing='documents'] [data-document]").all()) {
-    expect((await size(row)).height).toBe(64);
+    expect((await size(row)).height).toBeGreaterThanOrEqual(64);
   }
 }
 
@@ -39,7 +40,11 @@ async function tpl16(page: Page, st: string): Promise<Locator> {
 for (const st of ["t16b", "t16c"] as const) {
   test(`T16 ${st}: header 46, documents 240, well 816, steps 300, rows 64`, async ({ page }) => {
     await openGallery(page);
-    const frame = specimen(page, "t16-signing-ceremony", `[data-artboard='${st}'] [data-shell='app']`);
+    const frame = specimen(
+      page,
+      "t16-signing-ceremony",
+      `[data-artboard='${st}'] [data-shell='app']`,
+    );
     await frame.first().scrollIntoViewIfNeeded();
     await t16Geometry(frame);
     expect((await size(frame.locator("[data-signing='page']"))).width).toBe(680);

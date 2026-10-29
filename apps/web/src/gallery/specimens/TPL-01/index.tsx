@@ -25,8 +25,8 @@ import {
   boardOrder,
 } from "../../../fixtures/seed/tax";
 import { useSession } from "../../../app-core/session";
-import { useFirmToolbar } from "../../../shell/firm/ToolbarData";
 import type { FixtureParams } from "../../fixture-mode";
+import { specimenToolbar } from "../firm-toolbar";
 import { COPY } from "./copy";
 
 // TPL-01 Tax Returns practice board specimen (F-06-T08; docs/screens/TPL-01.md; F-06 F2): Hannah
@@ -358,14 +358,8 @@ export function Tpl01Specimen({ state }: { state: Tpl01State }): JSX.Element {
  * Tax Returns lit, the 860 window, the T1 list in its body. */
 function Tpl01Frame({ state }: { state: Tpl01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
-  const bar = useFirmToolbar({
-    at: { pathname: "/tax-returns" },
-    firm,
-    navigate: () => undefined,
-    hotkeys: false,
-  });
   return (
-    <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+    <AppShell frame height={860} toolbar={specimenToolbar(firm, "Tax Returns")}>
       <Tpl01Specimen key={state} state={state} />
     </AppShell>
   );
