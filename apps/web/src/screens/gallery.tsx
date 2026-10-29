@@ -49,6 +49,13 @@ import {
   scenarios as adm06Scenarios,
 } from "./ADM-06/scenarios";
 import { ADM07 } from "./ADM-07";
+import { FELD_RETURN_ID } from "../fixtures/seed/tax-compliance";
+import { TAX09 } from "./TAX-09";
+import {
+  type Tax09State,
+  STATES as TAX09_STATES,
+  scenarios as tax09Scenarios,
+} from "./TAX-09/scenarios";
 import { ADM10 } from "./ADM-10";
 import {
   type Adm10State,
@@ -2149,3 +2156,28 @@ function Fil01Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("FIL-01", { title: "Files browser & document drawer", Component: Fil01Artboard });
+
+// TAX-09 a–e, a2, d2 (T-01-T15): the return's subbar with the sync chip's popover open; e opens
+// on the import diff.
+function Tax09Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Tax09State = TAX09_STATES.find((s) => s === params.st) ?? "a2";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      tax09Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? (
+    <div data-artboard={state} className="h-[860px]">
+      <TAX09 key={state} returnId={FELD_RETURN_ID} defaultOpen defaultImportOpen={state === "e"} />
+    </div>
+  ) : null;
+}
+
+registerScreen("TAX-09", { title: "Tax-engine sync", Component: Tax09Artboard });
