@@ -1,8 +1,8 @@
 ---
 id: TASK-1739
 title: A-02-T30 Live ledger pipeline wiring (on-demand pulls)
-spec: A-02 AC-46; docs/contracts/c20-integrations.md
-acceptance_criteria: [A-02-T30]
+spec: SPEC-333
+acceptance_criteria: [AC-46]
 risk_zone: red
 status: in-review
 epic: A-02
