@@ -1,8 +1,8 @@
 ---
 id: TASK-1801
 title: Guidance-draft publish path lands in Needs review (K-01-T08)
-spec: docs/plan/epics/K-01.md (AC3.8)
-acceptance_criteria: [AC3.8]
+spec: SPEC-008
+acceptance_criteria: [AC-1]
 risk_zone: red
 status: in-review
 epic: K-01

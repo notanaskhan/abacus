@@ -83,12 +83,12 @@ async def test_ac38_lifecycle_on_a_published_guidance_draft_waits_in_needs_revie
     )
     assert len(queued) == 1 and str(drafted) in str(queued[0]["payload"])  # quality partners
     audited = await seed.rows(
-        "SELECT after FROM audit_events WHERE tenant_id = $1 AND action = 'methodology.published' "
-        "AND target_id = $2",
+        "SELECT after_ref FROM audit_events WHERE tenant_id = $1 "
+        "AND action = 'methodology.published' AND target_id = $2",
         tenant,
         str(drafted),
     )
-    assert len(audited) == 1 and "needs_review" in str(audited[0]["after"])
+    assert len(audited) == 1 and "needs_review" in str(audited[0]["after_ref"])
 
 
 async def test_lifecycle_off_keeps_task_074_the_drafted_version_is_published(net: Net) -> None:
