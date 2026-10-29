@@ -1,5 +1,6 @@
 # The weekly quality report (Q-03-T003; chapter 10 §10.14.1). Fridays, and on demand. It reads
-# the GitHub API, the last main run's coverage data, eval summaries and Playwright results, and
+# the GitHub API, the last main run's coverage data, eval summaries, Playwright results and the
+# last connector conformance night (A-02-T32), and
 # publishes the report as this job's summary and an artifact. It commits nothing, builds no image
 # and deploys nothing (working agreement): no write permission, no deploy step, nothing pushed.
 name: quality-report
@@ -61,6 +62,17 @@ jobs:
             if ls "$INPUTS"/coverage-data/*/.coverage.* >/dev/null 2>&1; then
               cp "$INPUTS"/coverage-data/*/.coverage.* backend/
               (cd backend && uv run coverage combine && uv run coverage json -o "$INPUTS/coverage.json") || true
+            fi
+          fi
+          # A-02-T32: the last finished night, green or not (a drifted fake fails the night).
+          connectors_run="$(gh run list --repo "$GITHUB_REPOSITORY" --branch main \
+            --workflow connectors-nightly.yml --status completed --limit 1 \
+            --json databaseId --jq '.[0].databaseId // empty')"
+          if [ -n "$connectors_run" ]; then
+            gh run download "$connectors_run" --repo "$GITHUB_REPOSITORY" \
+              --name connector-conformance --dir "$INPUTS/connector-conformance" || true
+            if [ -f "$INPUTS/connector-conformance/connectors.json" ]; then
+              cp "$INPUTS/connector-conformance/connectors.json" "$INPUTS/connectors.json"
             fi
           fi
           evals_run="$(latest evals.yml)"

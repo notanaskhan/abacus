@@ -4,8 +4,9 @@ ADR-026; DEC-121).
 An event's target is a type and an id. A target that belongs to an engagement (the engagement
 itself, its request items, evidence, procedures, findings, comments and so on) is shown only to
 someone who may see that engagement; a target of a client or client entity, or a connection or
-ledger snapshot, only to someone who may see one of the client's engagements. Each module says
-which engagement owns the kinds of target it owns, through its `api.py`. Firm-level events (the
+ledger snapshot, or a row a module places on a client (firm intake, an envelope), only to someone
+who may see one of the client's engagements. Each module says which engagement owns the kinds of
+target it owns, through its `api.py`. Firm-level events (the
 firm, staff, knowledge, methodology, support sessions, walls and the like) stay visible.
 
 Fails closed: a target type nobody here knows, an id that is not a UUID, or an id whose owner
@@ -92,12 +93,17 @@ def _entity_owners() -> dict[str, Owners]:
     return audit_owners.entity_owners()
 
 
+def _client_owners() -> dict[str, Owners]:
+    return audit_owners.client_owners()
+
+
 def known_kinds() -> frozenset[str]:
     """Every target type the explorer can place, firm-level or engagement-owned."""
     return (
         FIRM_LEVEL
         | frozenset(_engagement_owners())
         | frozenset(_entity_owners())
+        | frozenset(_client_owners())
         | engagements.AUDIT_KINDS
         | {WALLS}
     )
@@ -123,6 +129,10 @@ async def _owning_engagements(
         entities = await by_entity[kind](tenant, kind, ids)
         of_entity = await _engagements_of(tenant, "client_entity", sorted(set(entities.values())))
         return {target: of_entity.get(entity, frozenset()) for target, entity in entities.items()}
+    if kind in (by_client := _client_owners()):
+        clients = await by_client[kind](tenant, kind, ids)
+        of_client = await _engagements_of(tenant, "client", sorted(set(clients.values())))
+        return {target: of_client.get(client, frozenset()) for target, client in clients.items()}
     return None
 
 
