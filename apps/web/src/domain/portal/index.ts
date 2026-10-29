@@ -64,4 +64,9 @@ export {
 } from "./RequestSheet";
 export { openRows, roomRows, suggestFor, useRoom, useRoomActions } from "./room";
 export { ScopedRequestRoom, type ScopedRequestRoomProps } from "./ScopedRequestRoom";
-export { PortalPreviewFrame, type PortalPreviewFrameProps, type PreviewDevice, previewBrand } from "./PortalPreviewFrame";
+export {
+  PortalPreviewFrame,
+  type PortalPreviewFrameProps,
+  type PreviewDevice,
+  previewBrand,
+} from "./PortalPreviewFrame";
