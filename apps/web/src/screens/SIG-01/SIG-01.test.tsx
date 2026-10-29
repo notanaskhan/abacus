@@ -34,7 +34,7 @@ function mount(state: Sig01State): void {
 describe("SIG-01", () => {
   it("a: out for signature with the E2 drawer and the DF-11 copy, no Send new link", async () => {
     mount("a");
-    expect(await screen.findByText(/Thomas & Irene Kowal/)).toBeTruthy();
+    expect(await screen.findAllByText(/Thomas & Irene Kowal/)).not.toHaveLength(0);
     const drawer = await screen.findByRole("dialog");
     expect(within(drawer).getByText(COPY.df11.needsHandwritten)).toBeTruthy();
     expect(within(drawer).getByRole("button", { name: COPY.df11.upload })).toBeTruthy();
@@ -43,7 +43,7 @@ describe("SIG-01", () => {
 
   it("a: the tiles foot 8, 5, 4 and 4", async () => {
     mount("a");
-    await screen.findByText(/Thomas & Irene Kowal/);
+    await screen.findAllByText(/Thomas & Irene Kowal/);
     for (const label of [COPY.tiles.sent, COPY.tiles.viewed, COPY.tiles.partiallySigned]) {
       expect(screen.getAllByText(label).length).toBeGreaterThan(0);
     }

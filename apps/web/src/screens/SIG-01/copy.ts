@@ -30,7 +30,7 @@ export const COPY = {
   datedAsOf: "Dated as of report date",
   days: (n: number): string => (n === 1 ? "1 day" : `${String(n)} days`),
   remind: "Remind selected…",
-  newEnvelope: "+ New envelope",
+  newEnvelope: "+ New envelope…",
   reviewSend: "Review & send…",
   drafted: (on: string, by: string): string => `drafted ${on} by ${by}`,
   empty: {
