@@ -204,6 +204,13 @@ import {
 import { PortalRequest } from "./POR-04";
 import { PortalRoom } from "./POR-14";
 import { PortalConnections } from "./POR-16";
+import { KNW02 } from "./KNW-02";
+import {
+  type Knw02State,
+  STATES as KNW02_STATES,
+  OPENS as KNW02_OPENS,
+  scenarios as knw02Scenarios,
+} from "./KNW-02/scenarios";
 import { POR20 } from "./POR-20";
 import {
   OPENS as POR20_OPENS,
@@ -1641,6 +1648,46 @@ function Por20Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
     </div>
   );
 }
+
+// KNW-02 e, f (K-01-T07): the workbook slice on the T3 triad (Prepare preset), each state on its
+// version and search.
+function Knw02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Knw02State = KNW02_STATES.find((s) => s === params.st) ?? "e";
+  const [ready, setReady] = useState<string | null>(null);
+  const [search, setSearch] = useState<Record<string, string | undefined>>({});
+  useEffect(() => {
+    const restore = installFixtureMode(
+      knw02Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    const opens = KNW02_OPENS[state];
+    setSearch(opens.ov === undefined ? {} : { ov: opens.ov });
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div key={state} data-artboard={state} className="h-[900px] p-[20px]">
+      <div data-window="" className="flex h-[860px] w-[1400px] flex-col bg-shell">
+        <KNW02
+          versionId={KNW02_OPENS[state].versionId}
+          search={search}
+          onSearch={(next) => {
+            setSearch({ ...next });
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+registerScreen("KNW-02", {
+  title: "Methodology versions & import review",
+  Component: Knw02Artboard,
+});
 
 registerScreen("POR-20", {
   title: "Transactional email templates · Reminder",
