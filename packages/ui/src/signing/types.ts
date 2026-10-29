@@ -4,6 +4,7 @@
 // EnvelopeVM (C7 v1 has not merged; a missing reserved field is an additive C7 change, not a kit
 // workaround). Counts, statuses and TINs are server values: the kit never counts, never unmasks.
 
+import type { ReactNode } from "react";
 import type { PortalNavItem } from "../layout/portal-toolbar";
 import type { RegistryCode } from "../status";
 
@@ -190,4 +191,13 @@ export interface SigningCeremonyProps {
    * dialog; `declineForceState` holds it open for a specimen. */
   onDecline?: (choice: { reason: string; note: string }) => void;
   declineForceState?: "open";
+  /** N-02-T26 (POR-06): the container's own step control, drawn under the steps at 1400 and as
+   * the sticky footer at 390, in place of the kit's sign call to action: "Continue to sign" while
+   * the viewer reviews, the e-sign consent card, "Withdraw decline". The kit adds no behaviour. */
+  action?: ReactNode;
+  /** N-02-T26: a page of the shown document came at least half into view (review progress: POR-06
+   * enables "Continue to sign" once the last page has been seen). */
+  onPageSeen?: (documentId: string, page: number) => void;
+  /** N-02-T26: a portal nav item (the app's area routing). */
+  onNavigate?: (label: string) => void;
 }

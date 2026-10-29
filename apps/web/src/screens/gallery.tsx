@@ -231,6 +231,13 @@ import {
   scenarios as por03Scenarios,
 } from "./POR-03/scenarios";
 import { PortalRequest } from "./POR-04";
+import { PortalSign } from "./POR-06";
+import {
+  ARTBOARD as POR06_ARTBOARD,
+  STATES as POR06_STATES,
+  type Por06State,
+  scenarios as por06Scenarios,
+} from "./POR-06/scenarios";
 import { PortalRoom } from "./POR-14";
 import { PortalConnections } from "./POR-16";
 import { KNW02 } from "./KNW-02";
@@ -1750,6 +1757,42 @@ function Por14Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 registerScreen("POR-14", {
   title: "Third-party request room · Keystone Retirement Services",
   Component: Por14Artboard,
+});
+
+// POR-06 (N-02-T26): Sign, part 1: a review, b the sign step in the provider's view, c the
+// completion after the return, `pending` the return before the server says signed, g declined,
+// `restricted`, `list`; `&w=390` draws the phone.
+function Por06Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Por06State = POR06_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      por06Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  const board = POR06_ARTBOARD[state];
+  return (
+    <div key={state} data-artboard={state} data-surface="portal">
+      <PortalSign
+        frame
+        mobile={params.w === "390"}
+        {...(board.envelopeId === undefined ? {} : { envelopeId: board.envelopeId })}
+        {...(board.session === undefined ? {} : { session: board.session })}
+      />
+    </div>
+  );
+}
+
+registerScreen("POR-06", {
+  title: "Sign · Ridgeline engagement letter",
+  Component: Por06Artboard,
 });
 
 // POR-16 (A-02-T18): Connections for Copperleaf, a–g; the sheet and the dialog open on b, e, f.

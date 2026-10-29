@@ -1,4 +1,4 @@
-import { type JSX, type ReactNode, useRef, useState } from "react";
+import { type JSX, type ReactNode, type RefObject, useEffect, useRef, useState } from "react";
 import { usePortalBrand } from "../../brand";
 import { EmptyState, ErrorState, Skeleton } from "../../components/states";
 import { AppShell } from "../../layout/app-shell";
@@ -61,6 +61,37 @@ function Loading(): JSX.Element {
   );
 }
 
+/** N-02-T26: each page of the shown document that comes half into view, once per page, reported
+ * to `onPageSeen` (review progress). No observer in the environment (jsdom), no reports. */
+function usePagesSeen(
+  well: RefObject<HTMLElement | null>,
+  documentId: string | undefined,
+  onPageSeen: ((documentId: string, page: number) => void) | undefined,
+): void {
+  useEffect(() => {
+    const root = well.current;
+    if (root === null || documentId === undefined || onPageSeen === undefined) return undefined;
+    if (typeof IntersectionObserver === "undefined") return undefined;
+    const seen = new Set<number>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const n = Number((entry.target as HTMLElement).dataset.page);
+          if (entry.isIntersecting && Number.isInteger(n) && !seen.has(n)) {
+            seen.add(n);
+            onPageSeen(documentId, n);
+          }
+        }
+      },
+      { root, threshold: 0.5 },
+    );
+    for (const page of root.querySelectorAll("[data-signing='page']")) observer.observe(page);
+    return () => {
+      observer.disconnect();
+    };
+  }, [well, documentId, onPageSeen]);
+}
+
 function failed(envelope: EnvelopeVM, viewer: SignerVM | null): boolean {
   return envelope.outcome === "verification_failed" || viewer?.status === "verification_failed";
 }
@@ -72,9 +103,14 @@ export function SigningCeremony(props: SigningCeremonyProps): JSX.Element {
   const [selected, setSelected] = useState(envelope.documents[0]?.id ?? "");
   const [declining, setDeclining] = useState(props.declineForceState === "open");
   const layer = useRef<SignFieldLayerHandle | null>(null);
+  const well = useRef<HTMLElement | null>(null);
   const open = openFieldsOf(envelope.fields, viewer?.id ?? null);
   const nextOpen = open[0] ?? null;
-  const completed = envelope.status === "completed" && envelope.evidence !== undefined;
+  // The completion card once the envelope is completed, or (N-02-T26, POR-06c) once the server
+  // says the viewer signed and another signer still has to (Owen signed; Daniel countersigns).
+  const completed =
+    (envelope.status === "completed" || viewer?.status === "signed") &&
+    envelope.evidence !== undefined;
   const identityFailed = failed(envelope, viewer);
   const canSign =
     viewer !== null && !completed && envelope.outcome === undefined && !identityFailed;
@@ -84,9 +120,15 @@ export function SigningCeremony(props: SigningCeremonyProps): JSX.Element {
   // kit says it is checking, never Completed.
   const confirming =
     props.providerReturned === true && viewer !== null && viewer.status !== "signed" && !completed;
+  // The provider's view hosts identity (the 8879 family's KBA) or, where identity was the portal's
+  // email code (letters, DF-11), the signature: the verify or the sign step (N-02-T26).
   const providerOpen =
-    canSign && !confirming && envelope.signingSession !== undefined && current === "verify";
+    canSign &&
+    !confirming &&
+    envelope.signingSession !== undefined &&
+    (current === "verify" || current === "sign");
   const declineEnabled = canSign && props.onDecline !== undefined && copy !== undefined;
+  usePagesSeen(well, providerOpen ? undefined : doc?.id, props.onPageSeen);
 
   const pages = (width?: number): ReactNode =>
     viewer !== null &&
@@ -148,9 +190,22 @@ export function SigningCeremony(props: SigningCeremonyProps): JSX.Element {
         user={props.user}
         nav={props.nav ?? []}
         active="Sign"
+        {...(props.onNavigate === undefined ? {} : { onNavigate: props.onNavigate })}
         frame={frame}
         {...(height === undefined ? {} : { height })}
-        {...(canSign && current === "sign"
+        {...(props.action !== undefined && props.action !== null && !completed
+          ? {
+              mobileFooter: (
+                <div
+                  data-signing="mobile-action"
+                  style={{ minHeight: props.stickyBarHeight ?? 64 }}
+                  className="flex items-center gap-[8px] px-[12px]"
+                >
+                  {props.action}
+                </div>
+              ),
+            }
+          : canSign && current === "sign"
           ? {
               mobileFooter: (
                 <MobileSignBar
@@ -176,12 +231,16 @@ export function SigningCeremony(props: SigningCeremonyProps): JSX.Element {
           )}
           {/* Scroll padding keeps the active field above the sticky bar (Story 1.6). */}
           <section
+            ref={well}
             aria-label={doc?.name ?? "Document"}
             data-signing="well"
             style={{ scrollPaddingBottom: (props.stickyBarHeight ?? 64) + 16 }}
             className="flex flex-col items-center gap-[10px]"
           >
-            {identityFailed && copy !== undefined ? wellContent() : pages(PHONE_PAGE_PX)}
+            {/* DF-11's card or the provider's view (N-02-T26: POR-06 on a phone) take the well. */}
+            {(identityFailed || providerOpen) && copy !== undefined
+              ? wellContent()
+              : pages(PHONE_PAGE_PX)}
           </section>
           {completed && (
             <CompletionCard
@@ -231,6 +290,7 @@ export function SigningCeremony(props: SigningCeremonyProps): JSX.Element {
         {/* A scrollable region takes keyboard focus so the pages scroll without a pointer (axe
             scrollable-region-focusable; as Pane's scroll region). */}
         <section
+          ref={well}
           aria-label={doc?.name ?? "Document"}
           tabIndex={0}
           data-signing="well"
@@ -257,7 +317,8 @@ export function SigningCeremony(props: SigningCeremonyProps): JSX.Element {
               {confirming && copy !== undefined && (
                 <PendingConfirmation title={copy.pendingTitle} body={copy.pendingBody} />
               )}
-              {canSign && !confirming && current === "sign" && (
+              {props.action}
+              {props.action === undefined && canSign && !confirming && current === "sign" && (
                 <SignCallToAction
                   viewer={viewer}
                   note={SIGNING_NOTE}
@@ -292,6 +353,7 @@ export function SigningCeremony(props: SigningCeremonyProps): JSX.Element {
         user: props.user,
         nav: props.nav ?? portalNav("individual"),
         active: "Sign",
+        ...(props.onNavigate === undefined ? {} : { onNavigate: props.onNavigate }),
         ...(brand.logo === undefined ? {} : { logo: brand.logo }),
         ...(brand.mark === undefined ? {} : { mark: brand.mark }),
       }}
