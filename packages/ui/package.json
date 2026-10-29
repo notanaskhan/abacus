@@ -29,7 +29,8 @@
     "./tokens/*": "./src/tokens/*",
     "./fonts/*": "./src/fonts/*",
     "./specimens": "./src/specimens/index.ts",
-    "./icons": "./src/icons/index.ts"
+    "./icons": "./src/icons/index.ts",
+    "./icons/portal-registry": "./src/icons/portal-registry.ts"
   },
   "peerDependencies": {
     "react": "^19.3.0"

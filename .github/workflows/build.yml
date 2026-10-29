@@ -1,5 +1,7 @@
-# Build once (Q-01-T11; ADR-088; SPEC-050 AC-19). Every push to main builds one release candidate
-# for its SHA, in the `shared` account, and nothing deploys here:
+# Build once (Q-01-T11; ADR-088; SPEC-050 AC-19 as amended by DEC-1007). A dispatch on main builds
+# one release candidate for main's head SHA, in the `shared` account, and nothing deploys here. A
+# push never builds by itself (DEC-1007: deploy less): "Ship batch" or the builder dispatches it
+# once per batch, before deploy-staging.yml, which needs the SHA's release record:
 #   - the backend image, once: if the immutable tag `<sha>` already exists in ECR its digest is
 #     reused, so two runs on one SHA yield one digest; BuildKit SBOM and provenance attestations;
 #   - the Inspector record for that digest (`releases/<sha>/inspector.json`): a fixable critical or
@@ -9,7 +11,7 @@
 #   - `releases/<sha>/release.json` = {git_sha, image_digest, spa_manifest_sha256, alembic_head,
 #     openapi_sha256, infra_sha}: every deploy input by digest, never a tag.
 # Weekly, `base-refresh` opens a PR when python:3.12-slim has a newer digest than the one pinned in
-# backend/Dockerfile; merging it builds the refreshed image here like any other change.
+# backend/Dockerfile; the next batch's dispatch builds the refreshed image like any other change.
 #
 # Needs repository variables (no secrets; OIDC): AWS_BUILD_ROLE (the shared account's CI build
 # role) and ECR_REPOSITORY (`<shared account id>.dkr.ecr.us-east-2.amazonaws.com/abacus-backend`,
@@ -20,8 +22,6 @@
 name: build
 
 on:
-  push:
-    branches: [main]
   schedule:
     - cron: "23 6 * * 1" # Mondays: base image refresh check
   workflow_dispatch:

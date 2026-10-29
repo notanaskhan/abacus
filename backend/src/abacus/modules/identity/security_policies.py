@@ -64,6 +64,7 @@ from abacus.modules.identity.repository import (
     display_names,
     list_support_sessions,
 )
+from abacus.modules.identity.slots import OFFSHORE_DISCLOSURE, consented_count
 
 # The platform maxima the stricter-only check uses (G-02 §4.9; AC-17, AC-19), and the floors
 # that keep a firm from making its own sign-in unusable (the tables' CHECKs hold both).
@@ -514,6 +515,22 @@ class OperatorPosture:
     security_admins: int
     support_requests_allowed: bool
     residency_region: str
+    # G-01-T19 (M9 rows, DEC-903): role templates mapped (P-10), walls configured, the offshore
+    # group behind its consent gate. Counts only.
+    members_without_level: int = 0
+    walls_active: int = 0
+    offshore_members: int = 0
+    offshore_consented_clients: int = 0
+
+
+_M9_COUNTS = text(
+    "SELECT "
+    "(SELECT count(*) FROM memberships WHERE kind = 'staff' AND status = 'active' "
+    "AND level IS NULL) AS without_level, "
+    "(SELECT count(*) FROM ethical_walls WHERE status = 'active') AS walls, "
+    "(SELECT count(*) FROM memberships WHERE kind = 'staff' AND status = 'active' "
+    "AND offshore) AS offshore"
+)
 
 
 async def operator_posture(tenant: TenantContext) -> OperatorPosture:
@@ -525,6 +542,7 @@ async def operator_posture(tenant: TenantContext) -> OperatorPosture:
         seats = await _seats(session)
         mfa = _mfa(seats, await _methods(session), stored)
         region = await _region(session)
+        m9 = (await session.execute(_M9_COUNTS)).one()
     roles = list(seats.values())
     return OperatorPosture(
         sso_enforced=stored.require_sso,
@@ -535,6 +553,10 @@ async def operator_posture(tenant: TenantContext) -> OperatorPosture:
         security_admins=roles.count("security_admin"),
         support_requests_allowed=stored.allow_support_requests,
         residency_region=region,
+        members_without_level=int(m9.without_level),
+        walls_active=int(m9.walls),
+        offshore_members=int(m9.offshore),
+        offshore_consented_clients=await consented_count(tenant, OFFSHORE_DISCLOSURE),
     )
 
 

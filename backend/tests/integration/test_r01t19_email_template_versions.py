@@ -154,6 +154,12 @@ async def _firm(seed: Seeder, *, editor: bool = True) -> Firm:
     engagement = await seed.engagement(tenant, entity, admin.user_id)
     await seed.member(engagement, manager, "manager")
     await _client_user(seed, tenant, recipient, engagement)  # the engagement's client (H)
+    # R-01-T27: a real firm's client mail opens only at its M10 flip (two operators named).
+    await seed.run(
+        "INSERT INTO firm_mail_policies (tenant_id, client_mail_enabled, enabled_by, second_by) "
+        "VALUES ($1, true, 'probe-one', 'probe-two')",
+        tenant,
+    )
     if editor:
         await seed.run(
             "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
