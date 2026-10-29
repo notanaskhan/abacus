@@ -1,8 +1,8 @@
 ---
 id: TASK-1810
 title: Canary walk and M9 checklist rows (G-01-T19)
-spec: docs/plan/epics/G-01.md §10
-acceptance_criteria: [G-01-T19]
+spec: SPEC-000  # no G-01 checklist SPEC: G-01 section 10 and the G-01-T19 row
+acceptance_criteria: [AC-1]  # G-01-T19: the M9 rows are executable
 risk_zone: red
 status: in-review
 epic: G-01
