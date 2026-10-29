@@ -1,8 +1,8 @@
 ---
 id: TASK-2130
 title: Q-03-T092 Front-end supply-chain hygiene 2027 Q2
-spec: Q-03 epic
-acceptance_criteria: [backlog row]
+spec: SPEC-000  # Q-03-T092 row; chapter 10 supply chain
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: amber
 status: in-review
 epic: Q-03
