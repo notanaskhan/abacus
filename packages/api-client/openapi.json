@@ -14837,6 +14837,18 @@
             "title": "Tax Years",
             "type": "array"
           },
+          "template_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Template Name"
+          },
           "template_version_id": {
             "cls": "internal",
             "format": "uuid",
@@ -64201,6 +64213,49 @@
         "title": "TaxElectionOut",
         "type": "object"
       },
+      "TaxProfileIdentityOut": {
+        "description": "CLI-05's Identity band: who the profile is for, by masked TIN (last four; DEC-52).",
+        "properties": {
+          "client_entity_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Client Entity Id",
+            "type": "string"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "cls": "internal",
+            "enum": [
+              "taxpayer",
+              "spouse"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "tin": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MaskedTinOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted"
+          }
+        },
+        "required": [
+          "role",
+          "client_entity_id",
+          "name"
+        ],
+        "title": "TaxProfileIdentityOut",
+        "type": "object"
+      },
       "TaxProfileOut": {
         "description": "CLI-05's rail: consents in force, authorizations on file, elections, a masked identity band\n(last four only; DEC-52) and open notices (planned).",
         "properties": {
@@ -64226,6 +64281,24 @@
             "title": "Client Entity Id",
             "type": "string"
           },
+          "client_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Client Kind"
+          },
+          "client_name": {
+            "cls": "confidential",
+            "default": "",
+            "title": "Client Name",
+            "type": "string"
+          },
           "consents": {
             "cls": "confidential",
             "items": {
@@ -64243,6 +64316,26 @@
             "type": "array",
             "x-tri": true
           },
+          "identity": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/TaxProfileIdentityOut"
+            },
+            "title": "Identity",
+            "type": "array"
+          },
+          "office_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Office Name"
+          },
           "open_notices": {
             "anyOf": [
               {
@@ -64254,6 +64347,42 @@
             ],
             "cls": "internal",
             "title": "Open Notices"
+          },
+          "partner_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Partner Name"
+          },
+          "portal_user_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Portal User Name"
+          },
+          "resident_state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Resident State"
           },
           "taxpayer_tin": {
             "anyOf": [
