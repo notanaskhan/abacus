@@ -149,13 +149,7 @@ class _Firm:
             partner.user_id,
         )
         if accepted:
-            await self.seed.run(
-                "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
-                "decided_by, documented_at) VALUES ($1, $2, 'new_client', 'accepted', "
-                "'Margaret Okonkwo', 'Acceptance memo')",
-                self.tenant,
-                engagement,
-            )
+            await self.seed.open_engagement(self.tenant, engagement, concluded=False)
         return engagement
 
 

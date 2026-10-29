@@ -12,7 +12,6 @@ from uuid import UUID
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.engagements.api import (
     StoredFile,
-    attach_acceptance_file,
     attach_letter_file,
     stored_file,
 )
@@ -21,7 +20,7 @@ from abacus.modules.evidence.item_detail import IntegrityFailed, download_name
 from abacus.modules.evidence.uploads import clean_name, screened
 from abacus.modules.identity.api import AuthContext, refuse_unmasked_read
 
-Which = Literal["acceptance", "letter"]
+Which = Literal["letter"]  # the acceptance file retired with P-07-T59 (DEC-906)
 
 
 async def upload_setup_file(
@@ -38,10 +37,7 @@ async def upload_setup_file(
         clean_name(file_name),
     )
     async with uow(ctx.tenant) as tx:
-        if which == "acceptance":
-            await attach_acceptance_file(tx, ctx, engagement_id, file)
-        else:
-            await attach_letter_file(tx, ctx, engagement_id, file)
+        await attach_letter_file(tx, ctx, engagement_id, file)
 
 
 async def download_setup_file(

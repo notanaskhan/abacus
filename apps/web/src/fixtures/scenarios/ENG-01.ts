@@ -40,7 +40,6 @@ function capabilities(persona: string | undefined): CapabilitiesOut {
       "engagement.read_metadata",
       ...(CREATE.has(slug) ? ["engagement.create"] : []),
     ],
-    flags: { ...base.flags, "engagements.v2": true },
   };
 }
 

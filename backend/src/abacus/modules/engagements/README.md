@@ -1,6 +1,6 @@
 # engagements
 
-One job for one client and one fiscal period (glossary). Owns `engagements`, its work items and their setup records (`registry.py`; ADR-103): `work_items`, `assurance_work_items`, `advisory_projects`, `work_item_assignments`, `engagement_entities`, `engagement_contacts`, `gate_policy_overrides`, `engagement_acceptance`, `independence_confirmations`, `engagement_letters`, and the methodology tables. Map: `docs/architecture/data-model.md`.
+One job for one client and one fiscal period (glossary). Owns `engagements`, its work items and their setup records (`registry.py`; ADR-103): `work_items`, `assurance_work_items`, `advisory_projects`, `work_item_assignments`, `engagement_entities`, `engagement_contacts`, `gate_policy_overrides`, `independence_confirmations`, `engagement_letters`, and the methodology tables. Map: `docs/architecture/data-model.md`.
 
 ## Work items, the lifecycle and gates (C1; F-03, `docs/contracts/work-items.md`)
 - **Work items** (`work_items.py`, migration 0068): the units of work inside an engagement, of kind `assurance`, `tax_return`, `close`, `notice` or `advisory_project`. The `engagement_work_item_defaults` trigger gives every engagement one `primary` `engagement_entities` row and, for the ten attest types, its one `assurance` work item (at most one per engagement).

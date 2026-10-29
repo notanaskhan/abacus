@@ -45,7 +45,6 @@ from .support import Net, Person, Seeder
 pytestmark = pytest.mark.asyncio
 
 Json = dict[str, object]
-FLAG = "engagements.v2"
 TILES = ("prospect", "accepted", "contracted", "active", "on_hold", "delivered", "archived")
 # docs/contracts/engagements-v2.md §3: the 18 catalogue codes, by family.
 TAX = (
@@ -146,15 +145,7 @@ class Firm:
 
     async def accept(self, engagement: uuid.UUID, decided_at: datetime) -> None:
         """G1: the engagement's acceptance decision (SPEC-025), decided at `decided_at`."""
-        await self.seed.run(
-            "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
-            "decided_by, documented_at, independence_concluded_by, independence_concluded_at, "
-            "independence_documented_at, created_at) VALUES ($1, $2, 'new_client', 'accepted', "
-            "'test-seed', 'Seeded', 'test-seed', $3, 'Seeded', $3)",
-            self.tenant,
-            engagement,
-            decided_at,
-        )
+        await self.seed.open_engagement(self.tenant, engagement, decided_at=decided_at)
 
     async def signed_letter(self, engagement: uuid.UUID) -> None:
         await self.seed.run(
@@ -234,16 +225,9 @@ class Firm:
         return await self.seed.actions(self.tenant)
 
 
-async def _firm(net: Net, *, flag: bool = True) -> Firm:
+async def _firm(net: Net) -> Firm:
     tenant = await net.seed.firm()
     admin = await net.seed.person(tenant, "firm_admin")
-    if flag:
-        await net.seed.run(
-            "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
-            "VALUES ($1, $2, 'true', 'test-seed', 'P-07-T14')",
-            tenant,
-            FLAG,
-        )
     return Firm(net.seed, net, tenant, admin)
 
 
@@ -461,8 +445,9 @@ async def test_ac16_the_index_is_a_firm_surface_a_client_principal_is_not_found(
         assert (await firm.call("GET", path, contact)).status_code == 404, path
 
 
-async def test_ac13_with_the_flag_off_the_v2_routes_are_not_found(net: Net) -> None:
-    firm = await _firm(net, flag=False)
+async def test_ac13_the_v2_routes_answer_for_a_firm_with_no_flag_row(net: Net) -> None:
+    """`engagements.v2` retired with P-07-T59 (DEC-905): every route answers without a flag."""
+    firm = await _firm(net)
     engagement = await firm.engagement(await firm.client("Northwind"), status="active")
     for method, path in (
         ("GET", "/v1/engagements/index"),
@@ -470,7 +455,7 @@ async def test_ac13_with_the_flag_off_the_v2_routes_are_not_found(net: Net) -> N
         ("GET", f"/v1/engagements/{engagement}/gates"),
         ("GET", "/v1/engagement-types"),
     ):
-        assert (await firm.call(method, path)).status_code == 404, path
+        assert (await firm.call(method, path)).status_code == 200, path
 
 
 # ================================================================================================
