@@ -40,6 +40,8 @@ Verbatim from the handoff's spec.md (and revision.md) into `screens/TXP-12/copy.
 
 ## Links
 Outbound: SHL-08 (documents), TAX-03 (hand-off), POR-13 (client view). Inbound: TAX-02 K-1s.
+| Opens CLI-02 | CLI-02 | planned (handoff link; tooltip-only) |
+| Opens TXI-02 · K-1 resolver on the Shah 2025 Form 1040 | TXI-02 | planned (handoff link; tooltip-only) |
 
 ## Acceptance
 - TXP-12 acceptance: every artboard renders from its fixture scenario with the persona and clock above.

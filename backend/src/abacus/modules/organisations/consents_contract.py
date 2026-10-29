@@ -43,7 +43,9 @@ from abacus.modules.identity.api import (
     Resource,
     authorise,
     current_context,
+    mask_tins_for,
 )
+from abacus.modules.organisations.contract import MaskedTinOut
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=8, max_length=200)]
@@ -215,7 +217,8 @@ class ConsentExportOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     export_id: Annotated[UUID, classified("internal")]
-    status: Annotated[Literal["queued"], classified("internal")]
+    # The async CSV's lifecycle (C19 `consent.exported`): the 202 answers `queued`.
+    status: Annotated[Literal["queued", "ready", "failed"], classified("internal")]
 
 
 class ConsentDraftsOut(BaseModel):
@@ -291,7 +294,7 @@ class TaxProfileOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     client_entity_id: Annotated[UUID, classified("internal")]
-    tin_last4: Annotated[str | None, classified("confidential")]
+    taxpayer_tin: Annotated[MaskedTinOut | None, classified("restricted")] = None  # last four only
     consents: Annotated[list[ConsentOut], classified("confidential")]
     authorizations: Annotated[list[TaxAuthorizationOut], classified("confidential")]
     elections: Annotated[list[TaxElectionOut], classified("restricted", tri=True)]
@@ -555,6 +558,13 @@ async def publish_consent_template_route(
     errors=(501,),
 )
 async def tax_profile_route(client_entity_id: EntityId, ctx: Ctx) -> TaxProfileOut:
+    # The answer carries the masked TIN, so it goes out through the offshore mask (AC9.4).
+    return await mask_tins_for(ctx, await _tax_profile(ctx, client_entity_id))
+
+
+async def _tax_profile(ctx: AuthContext, client_entity_id: UUID) -> TaxProfileOut:
+    """T-01-T42 reads the profile; until then the stub's order of checks, then 501."""
+    del client_entity_id
     await _stub(ctx, "tax_profile.read", CLIENTS_TAX_PROFILE)
 
 

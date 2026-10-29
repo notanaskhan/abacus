@@ -322,7 +322,9 @@ async def return_intake_route(return_id: ReturnId, ctx: Ctx) -> TaxReturnIntakeO
     response_model=TaxReturnRecordOut,
     errors=(409, 501),
 )
-async def assign_route(return_id: ReturnId, body: AssignmentIn, ctx: Ctx) -> TaxReturnRecordOut:
+async def return_assign_route(
+    return_id: ReturnId, body: AssignmentIn, ctx: Ctx
+) -> TaxReturnRecordOut:
     await _stub(ctx, "tax_return.assign")
 
 

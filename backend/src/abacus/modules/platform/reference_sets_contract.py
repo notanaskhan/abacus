@@ -125,7 +125,8 @@ class LegalHolidaysPayload(BaseModel):
 class PostponementArea(BaseModel):
     model_config = _frozen()
 
-    state: Annotated[str, Field(pattern=r"^[A-Z]{2}$"), classified("public")]
+    # A USPS state code, not a status (named so the status-vocabulary check leaves it alone).
+    state_code: Annotated[str, Field(pattern=r"^[A-Z]{2}$"), classified("public")]
     # Empty: the whole state.
     counties: Annotated[list[str], Field(max_length=300), classified("public")]
 
