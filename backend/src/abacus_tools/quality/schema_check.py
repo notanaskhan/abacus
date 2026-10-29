@@ -80,6 +80,8 @@ NON_TENANT_TABLES = frozenset(
     | {"integration_catalog"}
     # 0242 (G-02-T20): the Pub 4557 control definitions are platform content; definers only.
     | {"safeguards_controls", "safeguards_control_set_log"}
+    # 0400 (K-02-T03, ADR-300): reference sets are public law, two-person published; definers.
+    | {"reference_sets", "reference_set_versions", "reference_set_publications"}
 )
 # Insert-only tables outside the modules (ADR-004); each module lists its own in registry.py.
 _PLATFORM_INSERT_ONLY: frozenset[str] = frozenset(
@@ -177,6 +179,7 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "inbound_messages": "intake_rows_immutable",  # 0293 (N-01-T07)
     "triage_decisions": "intake_rows_immutable",  # 0293 (N-01-T07)
     "inbox_attachment_flags": "intake_rows_immutable",  # 0293 (N-01-T07)
+    "reference_set_publications": "reference_set_publications_immutable",  # 0400 (K-02-T03)
 }
 # Update columns for tables outside the modules (TASK-008); modules declare theirs.
 _PLATFORM_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
@@ -258,6 +261,8 @@ GLOBAL_TABLES = frozenset(
     | {"standards_sets"}  # 0180 (K-01-T02): reference data, K-02's publish path writes it
     | {"integration_catalog"}  # 0194 (A-02-T12)
     | {"safeguards_controls", "safeguards_control_set_log"}  # 0242 (G-02-T20)
+    # 0400 (K-02-T03, ADR-300): the platform reference sets.
+    | {"reference_sets", "reference_set_versions", "reference_set_publications"}
 )
 # SECURITY DEFINER functions: each runs as the owner, bypassing grants, so each is reviewed here.
 DEFINER_FUNCTIONS = frozenset(
@@ -348,10 +353,20 @@ DEFINER_FUNCTIONS = frozenset(
     # 0242 (G-02-T20): staff-imported, two-person-published Pub 4557 controls; the firm's read.
     | {"safeguards_controls_import", "safeguards_controls_publish"}
     | {"safeguards_controls_published"}
+    # 0400 (K-02-T03, ADR-300): the app's readers (published only), and the operators' owner-only
+    # draft, publish, withdraw, tenant list and standards-set apply.
+    | {"reference_set_resolve", "reference_set_list", "reference_set_history"}
+    | {"reference_set_draft", "reference_set_publish", "reference_set_withdraw"}
+    | {"active_tenant_ids", "standards_sets_apply"}
 )
 # Definer functions for operator tooling only (TASK-027 D4): the application role must NOT be able
 # to execute them (they read across firms).
-OWNER_ONLY_FUNCTIONS = frozenset({"support_sessions_review"})
+OWNER_ONLY_FUNCTIONS = frozenset(
+    {"support_sessions_review"}
+    # 0400 (K-02-T03, ADR-300): the operator CLI and the publication fan-out (K-02-T06, T12).
+    | {"reference_set_draft", "reference_set_publish", "reference_set_withdraw"}
+    | {"active_tenant_ids", "standards_sets_apply"}
+)
 # Definer functions for the operator role only (Q-01-T19): `abacus_ops` executes them, the
 # application role must not.
 OPS = "abacus_ops"

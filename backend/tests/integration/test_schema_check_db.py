@@ -1741,6 +1741,8 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "inbound_messages": "intake_rows_immutable",
         "triage_decisions": "intake_rows_immutable",
         "inbox_attachment_flags": "intake_rows_immutable",
+        # K-02-T03 (0400): the reference-set publication log.
+        "reference_set_publications": "reference_set_publications_immutable",
     }
     assert _evidence_problems(evidence) == []
 
@@ -2163,6 +2165,10 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"safeguards_controls_import", "safeguards_controls_publish"}
         | {"safeguards_controls_published"}
         | {"client_import_files_erase"}  # 0250 (P-07-T52): the 30-day erase, a count only
+        # 0400 (K-02-T03): reference-set readers and the operators' owner-only writers.
+        | {"reference_set_resolve", "reference_set_list", "reference_set_history"}
+        | {"reference_set_draft", "reference_set_publish", "reference_set_withdraw"}
+        | {"active_tenant_ids", "standards_sets_apply"}
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
 
