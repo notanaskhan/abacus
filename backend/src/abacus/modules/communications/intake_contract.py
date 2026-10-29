@@ -20,7 +20,6 @@ Rules the shapes carry:
 
 from __future__ import annotations
 
-from contextlib import suppress
 from datetime import UTC, date, datetime, time
 from typing import Annotated, Literal, NoReturn
 from uuid import UUID
@@ -46,9 +45,9 @@ from abacus.modules.communications import intake
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
-    Forbidden,
     Resource,
     authorise,
+    authorise_with_scope,
     current_context,
     in_intake_scope,
     mask_tins_for,
@@ -649,14 +648,16 @@ async def _log_check(ctx: AuthContext, client_id: UUID | None) -> None:
         if client_id is None
         else Resource.client(ctx.tenant_id, client_id)
     )
-    if ctx.tenant.actor_kind != "human" or not await in_intake_scope(ctx.tenant, ctx.user_id):
-        await authorise(ctx, "inbox.log_intake", resource)
-    else:
-        with suppress(Forbidden):  # the intake scope logs for any client (DEC-20) ...
-            await authorise(ctx, "inbox.log_intake", resource)
-        # ... except one its member is walled from: 404, as if it did not exist (DEC-43).
-        if client_id is not None and client_id in await walled_from(ctx.tenant, ctx.user_id):
-            raise NotFound("client")
+    in_scope = ctx.tenant.actor_kind == "human" and await in_intake_scope(ctx.tenant, ctx.user_id)
+    # The intake scope logs for any client (DEC-20) except one its member is walled from: 404,
+    # as if it did not exist (DEC-43).
+    if (
+        in_scope
+        and client_id is not None
+        and client_id in await walled_from(ctx.tenant, ctx.user_id)
+    ):
+        raise NotFound("client")
+    await authorise_with_scope(ctx, "inbox.log_intake", resource, in_scope=in_scope)
     if not await flag_enabled(ctx.tenant, INBOX_FIRM_INTAKE):
         raise NotFound(INBOX_FIRM_INTAKE.name)
 
