@@ -31,13 +31,13 @@ from .p04t28_support import PROBE, World, probe
 pytestmark = pytest.mark.asyncio
 world = t28.world
 # The checkpoint suite's own setup, shared (the targets and seeding, not its assertions).
-return_ = t32._return  # pyright: ignore[reportPrivateUsage]
-save_ = t32._save  # pyright: ignore[reportPrivateUsage]
-propose_ = t32._propose  # pyright: ignore[reportPrivateUsage]
-change_ = t32._change  # pyright: ignore[reportPrivateUsage]
-decide_ = t32._decide  # pyright: ignore[reportPrivateUsage]
-history_ = t32._history  # pyright: ignore[reportPrivateUsage]
-bot_ = t32._bot  # pyright: ignore[reportPrivateUsage]
+return_ = t32._return  # pyright: ignore[reportPrivateUsage] -- the checkpoint suite's shared setup
+save_ = t32._save  # pyright: ignore[reportPrivateUsage] -- the checkpoint suite's shared setup
+propose_ = t32._propose  # pyright: ignore[reportPrivateUsage] -- the checkpoint suite's shared setup
+change_ = t32._change  # pyright: ignore[reportPrivateUsage] -- the checkpoint suite's shared setup
+decide_ = t32._decide  # pyright: ignore[reportPrivateUsage] -- the checkpoint suite's shared setup
+history_ = t32._history  # pyright: ignore[reportPrivateUsage] -- the checkpoint suite's shared setup
+bot_ = t32._bot  # pyright: ignore[reportPrivateUsage] -- the checkpoint suite's shared setup
 Body = dict[str, Any]  # a response body as the contract shapes it
 CHECKPOINTS: Final = "/v1/checkpoints"
 INTERNAL: Final = "Internal: the trust's K-1 still shows the old allocation"
