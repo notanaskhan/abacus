@@ -49,3 +49,6 @@ Acceptance (backlog row): "All six P0 screens are parity-locked at Tier C before
   way), so the row's acceptance ("parity-locked at Tier C") stays open; ENG-03's shell for
   measurement. Screen specs (axe) for the six: 57 of 59 pass; CLI-04 b and e fail on duplicate
   text locators, already on main.
+- 2026-10-29: Ayush chose to lock: the 22 entries under 3 % are `locked` (DEC-1064). The nine
+  between 3 and 5.03 % stay report-only and ENG-03 keeps its deviation, so the acceptance
+  (all six locked) stays open on those.
