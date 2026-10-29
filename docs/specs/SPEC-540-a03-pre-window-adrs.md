@@ -4,7 +4,7 @@ title: A-03 pre-window ADRs (P-57 sampling engine, P-63 multi-entity engagements
 status: draft
 owner: ayushkbhatia
 risk_zone: red
-related_adrs: [ADR-050, ADR-132, ADR-160, ADR-340]
+related_adrs: [ADR-006, ADR-050, ADR-132, ADR-160, ADR-340, ADR-341]
 related_specs: [SPEC-037, SPEC-316]
 created: 2026-10-29
 updated: 2026-10-29
