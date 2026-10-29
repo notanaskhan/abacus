@@ -330,6 +330,8 @@ class ResolvedReference:
         | RetentionMinimumsPayload
         | StandardsSetsPayload
     )
+    # Additive (K-02-T05): the version's tax year, when the set is per tax year.
+    tax_year: int | None = None
 
 
 @dataclass(frozen=True)

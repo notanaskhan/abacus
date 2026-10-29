@@ -384,3 +384,31 @@ async def test_ac19_a_pcaob_or_issuer_set_is_refused() -> None:
         assert refused.value.facts["reason"] == "pcaob_or_issuer"
     with pytest.raises(platform_api.ReferencePayloadInvalid):
         reference_sets.validate_payload("standards_sets", _standards(("pcaob", "PCAOB", "pcaob")))
+
+
+async def test_ac17_references_in_effect_lists_every_set_of_the_kind_on_the_date(
+    owner: asyncpg.Connection,
+) -> None:
+    key = _probe("rules")
+    payload: Json = {
+        "kind": "retention_minimums",
+        "rows": [
+            {
+                "record_type": _probe("record"),
+                "service_line": "probe",
+                "floor_years": 1,
+                "anchor": "probe_anchor",
+                "authority": "Probe authority",
+            }
+        ],
+    }
+    version = await _publish(
+        owner, key, "retention_minimums", payload, effective_from=date(2020, 1, 1), tax_year=2025
+    )
+    found = {
+        r.key: r
+        for r in await platform_api.references_in_effect("retention_minimums", date(2026, 1, 1))
+    }
+    assert (found[key].version_id, found[key].tax_year) == (version, 2025)
+    early = await platform_api.references_in_effect("retention_minimums", date(2019, 12, 31))
+    assert key not in {r.key for r in early}

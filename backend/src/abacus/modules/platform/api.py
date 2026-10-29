@@ -118,6 +118,7 @@ from abacus.modules.platform.reference_sets import (
     information_return_threshold,
     pub1345_tolerances,
     reference_value,
+    references_in_effect,
     retention_minimum,
 )
 from abacus.modules.platform.reference_sets_contract import (
@@ -356,6 +357,7 @@ __all__ = [
     "pub1345_tolerances",
     "record_incident",
     "reference_value",
+    "references_in_effect",
     "register_audit_labeler",
     "register_audit_source",
     "register_audit_value_resolver",

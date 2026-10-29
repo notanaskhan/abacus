@@ -48,7 +48,7 @@ def test_ac10_no_form_set_in_effect_is_refused_never_defaulted(
     async def nothing(*_: object) -> list[object]:
         return []
 
-    monkeypatch.setattr(reference_sets, "_in_effect", nothing)
+    monkeypatch.setattr(reference_sets, "references_in_effect", nothing)
     with pytest.raises(LookupError):
         asyncio.run(platform_api.pub1345_tolerances(2026, as_of=date(2027, 7, 1)))
     with pytest.raises(LookupError):

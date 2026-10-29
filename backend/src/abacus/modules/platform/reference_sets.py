@@ -19,10 +19,8 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Final, cast
-from uuid import UUID
 
 from pydantic import BaseModel, ValidationError
 from sqlalchemy import RowMapping, text
@@ -248,30 +246,29 @@ async def published_standards_codes() -> dict[str, str]:
 # --- the C21 part A module API -------------------------------------------------------------------
 
 
-@dataclass(frozen=True)
-class _InEffect:
-    version_id: UUID
-    effective_from: date
-    version: int
-    payload: Payload
+def _resolved(key: str, as_of: date, row: RowMapping) -> ResolvedReference:
+    kind = cast(ReferenceSetKind, row["kind"])
+    return ResolvedReference(
+        key=key,
+        kind=kind,
+        as_of=as_of,
+        version_id=row["version_id"],
+        version=row["version"],
+        effective_from=row["effective_from"],
+        payload=KINDS[kind].model_validate(row["payload"]),
+        tax_year=row["tax_year"],
+    )
 
 
-async def _in_effect(kind: ReferenceSetKind, as_of: date) -> list[_InEffect]:
-    """Every set of `kind` resolved on `as_of`, latest effective first, then highest version."""
-    model = KINDS[kind]
-    found: list[_InEffect] = []
+async def references_in_effect(kind: ReferenceSetKind, as_of: date) -> list[ResolvedReference]:
+    """Every set of `kind` resolved on `as_of`, latest effective first, then highest version
+    (sets with nothing in effect by then are left out)."""
+    found: list[ResolvedReference] = []
     async with platform_transaction(_ACTOR) as conn:
         for listed in await _list_rows(conn, kind):
             row = await _resolve_row(conn, listed["key"], as_of)
             if row is not None:
-                found.append(
-                    _InEffect(
-                        row["version_id"],
-                        row["effective_from"],
-                        row["version"],
-                        model.model_validate(row["payload"]),
-                    )
-                )
+                found.append(_resolved(listed["key"], as_of, row))
     return sorted(found, key=lambda f: (f.effective_from, f.version), reverse=True)
 
 
@@ -282,16 +279,7 @@ async def reference_value(key: str, as_of: date) -> ResolvedReference:
         row = await _resolve_row(conn, key, as_of)
     if row is None:
         raise LookupError(key)
-    kind = cast(ReferenceSetKind, row["kind"])
-    return ResolvedReference(
-        key=key,
-        kind=kind,
-        as_of=as_of,
-        version_id=row["version_id"],
-        version=row["version"],
-        effective_from=row["effective_from"],
-        payload=KINDS[kind].model_validate(row["payload"]),
-    )
+    return _resolved(key, as_of, row)
 
 
 async def form_8879_for(
@@ -299,7 +287,7 @@ async def form_8879_for(
 ) -> Form8879For:
     """The 8879-family form for a return type and tax year, from the form set in effect on
     `as_of`. No set in effect lists it: `LookupError`."""
-    for found in await _in_effect("form_8879_set", as_of):
+    for found in await references_in_effect("form_8879_set", as_of):
         payload = cast(Form8879SetPayload, found.payload)
         for row in payload.rows:
             if (row.return_type, row.tax_year, row.jurisdiction) == (
@@ -321,7 +309,7 @@ async def form_8879_for(
 async def pub1345_tolerances(tax_year: int, *, as_of: date) -> TolerancesFor:
     """The Pub 1345 relock tolerances for a tax year, from the form set in effect on `as_of`
     whose rows cover that year. None does: `LookupError` (never a default; DEC-85)."""
-    for found in await _in_effect("form_8879_set", as_of):
+    for found in await references_in_effect("form_8879_set", as_of):
         payload = cast(Form8879SetPayload, found.payload)
         if any(row.tax_year == tax_year for row in payload.rows):
             return TolerancesFor(
@@ -337,7 +325,7 @@ async def pub1345_tolerances(tax_year: int, *, as_of: date) -> TolerancesFor:
 
 async def information_return_threshold(form: str, payment_year: int) -> ThresholdFor:
     """The 1099-family reporting threshold for a payment year, from the sets in effect today."""
-    for found in await _in_effect("information_return_thresholds", await today()):
+    for found in await references_in_effect("information_return_thresholds", await today()):
         payload = cast(InformationReturnThresholdsPayload, found.payload)
         for row in payload.rows:
             if (row.form, row.payment_year) == (form, payment_year):
@@ -354,7 +342,7 @@ async def information_return_threshold(form: str, payment_year: int) -> Threshol
 async def retention_minimum(record_type: str, service_line: str) -> RetentionFloor:
     """The counsel-approved retention floor for a record type and service line, from the sets
     in effect today (never a default; DEC-71)."""
-    for found in await _in_effect("retention_minimums", await today()):
+    for found in await references_in_effect("retention_minimums", await today()):
         payload = cast(RetentionMinimumsPayload, found.payload)
         for row in payload.rows:
             if (row.record_type, row.service_line) == (record_type, service_line):
