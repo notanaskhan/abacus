@@ -17010,6 +17010,23 @@
             "title": "Date As Of Mode",
             "type": "string"
           },
+          "document_order": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 20,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Document Order"
+          },
           "expires_on": {
             "anyOf": [
               {
@@ -53950,6 +53967,19 @@
             "cls": "internal",
             "title": "Decline Reason"
           },
+          "email": {
+            "anyOf": [
+              {
+                "maxLength": 320,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Email"
+          },
           "id": {
             "cls": "internal",
             "format": "uuid",
@@ -54043,6 +54073,19 @@
           "status": {
             "$ref": "#/components/schemas/EnvelopeSignerStatus",
             "cls": "internal"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Title"
           },
           "viewed_at": {
             "anyOf": [
@@ -60700,6 +60743,29 @@
         "title": "UploadOut",
         "type": "object"
       },
+      "ValidationCheck": {
+        "description": "One code-computed check SIG-02's Checks band lists (N-02-T21, DEC-1174): an identifier\nthe screen words (`amounts_match`, `ero_efin`, `no_ssn_visible`), never prose.",
+        "properties": {
+          "code": {
+            "cls": "internal",
+            "maxLength": 60,
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "title": "Code",
+            "type": "string"
+          },
+          "ok": {
+            "cls": "internal",
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "ok"
+        ],
+        "title": "ValidationCheck",
+        "type": "object"
+      },
       "ValidationErrorOut": {
         "description": "What a 422 says: where and what, never the submitted value (abacus.api.app).",
         "properties": {
@@ -60719,8 +60785,17 @@
         "type": "object"
       },
       "ValidationOut": {
-        "description": "Code-computed checks before send.",
+        "description": "Code-computed checks before send. `problems` are identifiers\n(`signer_email_missing:<signer_id>`).",
         "properties": {
+          "checks": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ValidationCheck"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
           "ok": {
             "cls": "internal",
             "title": "Ok",

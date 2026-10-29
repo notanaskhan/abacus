@@ -7987,6 +7987,10 @@ export type DraftUpdateIn = {
      */
     date_as_of_mode?: 'none' | 'fixed_date' | 'report_date';
     /**
+     * Document Order
+     */
+    document_order?: Array<string> | null;
+    /**
      * Expires On
      */
     expires_on?: string | null;
@@ -25795,6 +25799,10 @@ export type SignerOut = {
      */
     decline_reason: 'have_questions' | 'something_wrong' | 'someone_else_should_sign' | 'other' | null;
     /**
+     * Email
+     */
+    email?: string | null;
+    /**
      * Id
      */
     id: string;
@@ -25835,6 +25843,10 @@ export type SignerOut = {
      */
     signed_at: string | null;
     status: EnvelopeSignerStatus;
+    /**
+     * Title
+     */
+    title?: string | null;
     /**
      * Viewed At
      */
@@ -28981,6 +28993,23 @@ export type UploadOut = {
 };
 
 /**
+ * ValidationCheck
+ *
+ * One code-computed check SIG-02's Checks band lists (N-02-T21, DEC-1174): an identifier
+ * the screen words (`amounts_match`, `ero_efin`, `no_ssn_visible`), never prose.
+ */
+export type ValidationCheck = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Ok
+     */
+    ok: boolean;
+};
+
+/**
  * ValidationErrorOut
  *
  * What a 422 says: where and what, never the submitted value (abacus.api.app).
@@ -28995,9 +29024,14 @@ export type ValidationErrorOut = {
 /**
  * ValidationOut
  *
- * Code-computed checks before send.
+ * Code-computed checks before send. `problems` are identifiers
+ * (`signer_email_missing:<signer_id>`).
  */
 export type ValidationOut = {
+    /**
+     * Checks
+     */
+    checks?: Array<ValidationCheck>;
     /**
      * Ok
      */
