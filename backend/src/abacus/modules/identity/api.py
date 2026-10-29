@@ -351,6 +351,7 @@ from abacus.modules.identity.slots import (
     register_wall_assignments,
     resolve_scope,
     revoke_contact_links,
+    target_events,
 )
 from abacus.modules.identity.staff import invite_first_admins, issue_staff_invitation_token
 from abacus.modules.identity.support import Staff, staff_from_token
@@ -778,6 +779,7 @@ __all__ = [
     "stored_value",
     "support_session_audit_facts",
     "system_context_for_run",
+    "target_events",
     "team_of",
     "team_standing",
     "token_verifier",
