@@ -32,6 +32,12 @@ from abacus.modules.identity.authz.matrix import Rule
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.repository import FirmPolicy, MemberFacts
 
+_line_reader_cell = authz._line_reader_cell  # pyright: ignore[reportPrivateUsage] -- the rule under test
+_may_read_lines = authz._may_read_lines  # pyright: ignore[reportPrivateUsage] -- the rule under test
+_delegating = authz._delegating  # pyright: ignore[reportPrivateUsage] -- the rule under test
+_line_reader = authz._line_reader  # pyright: ignore[reportPrivateUsage] -- the rule under test
+_line_reach = authz._line_reach  # pyright: ignore[reportPrivateUsage] -- the rule under test
+
 READ = "q03t064.read"
 WRITE = "q03t064.update"
 TENANT, ENGAGEMENT = uuid.uuid4(), uuid.uuid4()
@@ -65,7 +71,7 @@ def _person(
 
 
 def test_the_reader_cell_is_staffs_allow_on_a_plain_read() -> None:
-    assert authz._line_reader_cell(_rule()) == "allow"  # pyright: ignore[reportPrivateUsage]
+    assert _line_reader_cell(_rule()) == "allow"
 
 
 @pytest.mark.parametrize(
@@ -82,15 +88,15 @@ def test_the_reader_cell_is_staffs_allow_on_a_plain_read() -> None:
     ids=["write", "mfa", "reason", "notify", "condition", "staff-denied", "no-staff-cell"],
 )
 def test_anything_but_a_plain_staff_read_has_no_reader_cell(rule: Rule) -> None:
-    assert authz._line_reader_cell(rule) is None  # pyright: ignore[reportPrivateUsage]
+    assert _line_reader_cell(rule) is None
 
 
 # --- who may read through a line -----------------------------------------------------------------
 
 
 def test_a_staff_member_may_read_lines() -> None:
-    assert authz._may_read_lines(_person(), _rule()) is True  # pyright: ignore[reportPrivateUsage]
-    assert authz._may_read_lines(_person("practice_leader"), _rule()) is True  # pyright: ignore[reportPrivateUsage]
+    assert _may_read_lines(_person(), _rule()) is True
+    assert _may_read_lines(_person("practice_leader"), _rule()) is True
 
 
 @pytest.mark.parametrize(
@@ -104,19 +110,19 @@ def test_a_staff_member_may_read_lines() -> None:
     ids=["support", "client", "firm-admin", "security-admin"],
 )
 def test_support_clients_and_metadata_only_roles_never_read_lines(ctx: AuthContext) -> None:
-    assert authz._may_read_lines(ctx, _rule()) is False  # pyright: ignore[reportPrivateUsage]
+    assert _may_read_lines(ctx, _rule()) is False
 
 
 def test_an_agent_delegating_to_a_person_never_inherits_their_line() -> None:
-    token = authz._delegating.set(True)  # pyright: ignore[reportPrivateUsage]
+    token = _delegating.set(True)
     try:
-        assert authz._may_read_lines(_person(), _rule()) is False  # pyright: ignore[reportPrivateUsage]
+        assert _may_read_lines(_person(), _rule()) is False
     finally:
-        authz._delegating.reset(token)  # pyright: ignore[reportPrivateUsage]
+        _delegating.reset(token)
 
 
 def test_a_rule_without_a_reader_cell_reads_no_line() -> None:
-    assert authz._may_read_lines(_person(), _rule(WRITE)) is False  # pyright: ignore[reportPrivateUsage]
+    assert _may_read_lines(_person(), _rule(WRITE)) is False
 
 
 # --- the reader, fact by fact --------------------------------------------------------------------
@@ -156,7 +162,7 @@ def facts(monkeypatch: pytest.MonkeyPatch) -> Iterator[Facts]:
 
 
 async def _reads(ctx: AuthContext | None = None) -> bool:
-    return await authz._line_reader(ctx or _person(), _rule(), ENGAGEMENT)  # pyright: ignore[reportPrivateUsage]
+    return await _line_reader(ctx or _person(), _rule(), ENGAGEMENT)
 
 
 async def test_an_open_line_the_person_holds_on_an_attest_free_client_reads(facts: Facts) -> None:
@@ -232,16 +238,16 @@ def columns(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_the_sql_reach_is_none_when_it_cannot_apply(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(authz.LOOKUPS, "service_line_column", None)
     monkeypatch.setattr(authz.LOOKUPS, "attest_column", _attest_column)
-    assert authz._line_reach(_person(), READ, _rule(), column("engagement_id")) is None  # pyright: ignore[reportPrivateUsage]
+    assert _line_reach(_person(), READ, _rule(), column("engagement_id")) is None
 
 
 def test_the_sql_reach_is_none_for_someone_who_may_not_read_lines(columns: None) -> None:
-    assert authz._line_reach(_person("firm_admin"), READ, _rule(), column("engagement_id")) is None  # pyright: ignore[reportPrivateUsage]
+    assert _line_reach(_person("firm_admin"), READ, _rule(), column("engagement_id")) is None
 
 
 def test_the_sql_reach_states_each_part_of_the_rule(columns: None) -> None:
     ctx = _person()
-    reach = authz._line_reach(ctx, READ, _rule(), column("engagement_id"))  # pyright: ignore[reportPrivateUsage]
+    reach = _line_reach(ctx, READ, _rule(), column("engagement_id"))
     assert reach is not None
     sql = _sql(reach)
     tenant, user = str(ctx.tenant_id), str(ctx.user_id)
