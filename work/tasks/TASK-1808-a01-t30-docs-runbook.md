@@ -1,8 +1,8 @@
 ---
 id: TASK-1808
 title: A-01 docs, binder-export and pilot-rollback runbook, flag plan (A-01-T30)
-spec: docs/specs/SPEC-344-engagement-export-format.md
-acceptance_criteria: [A-01 DoD 9, A-01 DoD 10]
+spec: SPEC-344
+acceptance_criteria: [AC-10]
 risk_zone: red
 status: in-review
 epic: A-01
