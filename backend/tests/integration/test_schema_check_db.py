@@ -1735,6 +1735,10 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "signature_evidence": "signatures_rows_immutable",
         "esign_disclosures": "signatures_rows_immutable",
         "esign_acceptances": "signatures_rows_immutable",
+        # N-01-T07 (0293): the firm inbox's insert-only rows.
+        "inbound_messages": "intake_rows_immutable",
+        "triage_decisions": "intake_rows_immutable",
+        "inbox_attachment_flags": "intake_rows_immutable",
     }
     assert _evidence_problems(evidence) == []
 
