@@ -1,8 +1,8 @@
 ---
 id: TASK-1802
 title: Independent AC tests for K-01-T02, T03, T05, T06 (K-01-T09)
-spec: docs/contracts/methodology-programs.md; docs/contracts/knowledge-catalog.md
-acceptance_criteria: [AC1.6, AC1.9, AC1.10, AC2.3, AC3.3, AC3.5, AC3.6]
+spec: SPEC-008
+acceptance_criteria: [AC-1, AC-2]
 risk_zone: amber
 status: in-review
 epic: K-01

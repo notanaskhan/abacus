@@ -26,7 +26,7 @@ from openpyxl import Workbook
 from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError
 
-from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.db import TenantContext
 from abacus.kernel.db.session import ActorKind
 from abacus.kernel.flags import forget_flags
 from abacus.kernel.uow import Ref, Target, uow
@@ -258,6 +258,10 @@ async def test_ac35_ac36_pins_follow_the_effective_date_and_published_steps_are_
     margaret = await seed.person(tenant, "quality_partner")
     early = await seed.site(tenant, admin.user_id, "Calloway")
     late = await seed.site(tenant, admin.user_id, "Feld")
+    for site in (early, late):  # the template is an EBP one: pin only reaches its own type
+        await seed.run(
+            "UPDATE engagements SET type = 'ebp_audit' WHERE id = $1", site.engagement_id
+        )
     await _flags(net, tenant, "methodology.programs")
     steps = [["BH-EBP-110", 1, "Understand the plan", "Planning", "yes"]]
     status, body = await _post(net, admin, "BH EBP", _book(steps=steps))
@@ -314,9 +318,11 @@ async def test_ac35_ac36_pins_follow_the_effective_date_and_published_steps_are_
     # AC3.6: the app role cannot change a published (or superseded) version's steps.
     for version in (v2, v3):
         with pytest.raises(DBAPIError):
-            async with tenant_session(system) as session:
-                await session.execute(
+            async with uow(system) as tx:
+                await tx.session.execute(
                     text("UPDATE program_steps SET text = 'edited' WHERE version_id = :v"),
                     {"v": version},
                 )
-                await session.flush()
+                tx.record(
+                    "methodology_version.probe", target=Target("methodology_version", version)
+                )
