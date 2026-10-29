@@ -1,3 +1,4 @@
+import { publishPortalSettings } from "@abacus/api-client";
 import { AppShell } from "@abacus/ui";
 import { type JSX, useEffect, useState } from "react";
 import { installFixtureMode } from "../app-core/fixture-mode";
@@ -33,6 +34,14 @@ import {
   scenarios as adm06Scenarios,
 } from "./ADM-06/scenarios";
 import { ADM07 } from "./ADM-07";
+import { ADM10 } from "./ADM-10";
+import {
+  type Adm10State,
+  STATES as ADM10_STATES,
+  OPENS as ADM10_OPENS,
+  PREVIEW_AS as ADM10_PREVIEW_AS,
+  scenarios as adm10Scenarios,
+} from "./ADM-10/scenarios";
 import {
   type Adm07State,
   STATES as ADM07_STATES,
@@ -604,6 +613,72 @@ function Adm06Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("ADM-06", { title: "Security center & data residency", Component: Adm06Artboard });
+
+// ADM-10 a–g (R-01-T28): portal settings on the T12 frame; each state opens with its preview
+// contact, device and drawer. f publishes b's draft before it draws (a step, not a prop).
+function Adm10Frame({ state }: { state: Adm10State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/settings/portal" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  const opens = ADM10_OPENS[state];
+  const [search, setSearch] = useState<Record<string, string | undefined>>(() => ({
+    as: opens.as,
+    device: opens.device,
+    ...(opens.ov === undefined ? {} : { ov: opens.ov }),
+  }));
+  return (
+    <div data-artboard={state}>
+      <AppShell
+        frame
+        height={860}
+        toolbar={{ ...bar.toolbar, active: "", firmPressed: true }}
+        overlay={bar.overlay}
+      >
+        <ADM10
+          search={search}
+          onSearch={(next) => {
+            setSearch({ ...next });
+          }}
+          previewAs={ADM10_PREVIEW_AS}
+        />
+      </AppShell>
+    </div>
+  );
+}
+
+function Adm10Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Adm10State = ADM10_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    const restore = installFixtureMode(
+      adm10Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    const step =
+      ADM10_OPENS[state].publish === true
+        ? publishPortalSettings({ headers: { "Idempotency-Key": `adm10-${state}` } })
+        : Promise.resolve();
+    void step.finally(() => {
+      if (live) setReady(state);
+    });
+    return () => {
+      live = false;
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Adm10Frame key={state} state={state} /> : null;
+}
+
+registerScreen("ADM-10", {
+  title: "Portal branding & client experience",
+  Component: Adm10Artboard,
+});
 
 // ADM-07 a–g (G-02-T13; G-02-T21 screen spec): the audit log on the T12 frame; each state opens
 // with its search.
