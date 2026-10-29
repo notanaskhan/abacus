@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import contextlib
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from types import SimpleNamespace
 from typing import Any
 
@@ -52,7 +52,7 @@ def world(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         return None
 
     @contextlib.asynccontextmanager
-    async def session(_tenant: object) -> AsyncIterator[object]:
+    async def session(_tenant: object) -> AsyncGenerator[object]:
         yield object()
 
     async def get_connection(_session: object, _id: object) -> object:
