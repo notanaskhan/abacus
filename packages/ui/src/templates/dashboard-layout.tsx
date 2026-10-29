@@ -420,7 +420,10 @@ export function DashboardLayout({
   columnsGap = 10,
 }: DashboardLayoutProps): JSX.Element {
   const head = (
-    <div className="flex h-[42px] flex-none items-center gap-[10px] px-(--edge-app)">
+    <div
+      data-dashboard="subbar"
+      className="flex h-[42px] flex-none items-center gap-[10px] px-(--edge-app)"
+    >
       <span className="text-[20px] leading-[1.2] font-medium tracking-[-0.015em] whitespace-nowrap">
         {greeting}
       </span>
@@ -488,6 +491,7 @@ export function DashboardLayout({
         {loading ? <LoadingRows /> : queue.children}
       </Pane>
       <div
+        data-dashboard="side"
         style={columnsGap === 10 ? undefined : { marginLeft: columnsGap - 10 }}
         className="flex w-[420px] flex-none flex-col gap-(--gutter-pane)"
       >
