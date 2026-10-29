@@ -186,7 +186,7 @@ export interface SigningCeremonyProps {
   /** The provider sent the signer back (the return URL's event parameter). A hint only: the kit
    * shows Completed only when the server's envelope says so (Story 1.1). */
   providerReturned?: boolean;
-  /** Decline with a reason (TPL-16f): called once per confirmation. With `copy`, the kit owns the
+  /** Decline with a reason (TPL-16f): called once per confirmation. Given the outcome words, the kit owns the
    * dialog; `declineForceState` holds it open for a specimen. */
   onDecline?: (choice: { reason: string; note: string }) => void;
   declineForceState?: "open";
