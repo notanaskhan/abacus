@@ -1,18 +1,14 @@
-# The fakes register (Q-03-T094): every fake that stands in for an external provider, what it
-# imitates, and when it was last checked against the real thing (a provider sandbox or a recorded
-# exchange from one). A fake not verified within 92 days, or never, is "unverified" and the quality
-# report counts it (`python -m abacus_tools.quality.fakes`). Verifying needs the provider's sandbox
-# credentials, which live in the vault: a person runs the nightly connector suite and records the
-# date here. Synthetic responses written by us do not count as verification.
+# The fakes register (Q-03-T094): the provider fakes that no connector conformance suite covers yet,
+# what each imitates, and when it was last checked against the real thing. Connector fakes with a
+# suite in `backend/tests/connectors/<provider>/` are verified nightly by `connectors-nightly.yml`
+# and counted by `abacus_tools.quality.connector_conformance` (A-02-T32, ADR-044), so they are not
+# listed here. A fake below not verified within 92 days, or never, is "unverified"
+# (`python -m abacus_tools.quality.fakes`); it leaves this list when its conformance suite lands.
+# Synthetic responses written by us do not count as verification.
 max_age_days: 92
 fakes:
-  - fake: backend/src/abacus/modules/connections/fake.py
-    provider: a ledger provider's trial balance (provider-shaped JSON)
-    contract: C20
-    suite: backend/tests/unit/connections/test_qbo_connector.py
-    verified_on: null
   - fake: backend/src/abacus_tools/fakes/ledgers.py
-    provider: QuickBooks Online (recorded transport) and NetSuite (CSV export)
+    provider: NetSuite (CSV export) and the bank, card and sales feeds
     contract: C20
     suite: backend/tests/integration/backfill/test_a02t29_independent_connections.py
     verified_on: null

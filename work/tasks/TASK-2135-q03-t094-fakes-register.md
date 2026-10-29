@@ -27,3 +27,4 @@ Acceptance (backlog row): "No fake is reported unverified at the quarter's end."
   nightly connector workflow, and `verified_on` dates. Consumer suites: C2 frozen with its suite;
   C13 stub with its suite; C21's stub and consumer tests are in the S16 K-02 stack (#670); C10,
   C12 and C18 are planned (S29+), so they have no suite yet.
+- 2026-10-29 (end review): main landed A-02-T32 (connector conformance, `connectors-nightly.yml`, the report's own "Unverified fakes" row). This PR no longer changes `report.py`; the register now lists only the fakes no conformance suite covers yet (5), and each leaves it when its suite lands.
