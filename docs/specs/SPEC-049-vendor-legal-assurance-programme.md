@@ -89,6 +89,7 @@ Every real-data milestone waits on third parties with lead times (vendors, couns
 
 ### Story 6: As the builder I want a recorded M1 result
 - **AC-33** Given Fri Oct 30 (M1), then the builder records the M1 result in `docs/product/decision-log.md`: every chapter 06 section 7.6 application has a submitted date (Xero and NetSuite on Nov 2), counsel is engaged with a dated scope, the compliance tool is contracted, at least 6 conversations are booked, and thresholds W1 to W3 merged before the first call; any unfiled application is named with a date.
+- **AC-37 PW1 AI opt-in briefing (F-09-T127; SPEC-036).** Before Tue Jun 1, 2027, each PW1 firm admin has been walked through the product's own disclosure (provider and region, no training or retention beyond the listed exceptions, sub-processors, letter wording, the register's review date, shadow stages, the per-engagement switch), recorded in `docs/ops/pilot/ai-optin-briefing.md` by pilot code and date, and the opt-in is the firm's own act in the product, read by `make go-live-check` as `ai.client_data_opt_in`.
 
 ## 6. Behaviour and flows
 **Happy path**
