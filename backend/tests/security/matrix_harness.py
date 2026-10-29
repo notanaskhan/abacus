@@ -85,7 +85,16 @@ async def outcome(monkeypatch: pytest.MonkeyPatch, action: str, role: str) -> Ou
 
 # --- P-04-T15: the target conditions, and the principals that may never resolve ---------------
 
-Variant = Literal["preparer", "not_preparer", "holder", "other_person", "other_role", "no_facts"]
+Variant = Literal[
+    "preparer",
+    "not_preparer",
+    "holder",
+    "other_person",
+    "other_role",
+    "no_facts",
+    "owner",  # K-02-T01: `owner_of_target`
+    "not_owner",
+]
 Principal = Literal["agent", "system", "support"]
 
 
@@ -99,6 +108,8 @@ def _target(variant: Variant, ctx: AuthContext, role: str) -> TargetFacts | None
         "holder": TargetFacts(reserved_role=role, reserved_user_id=ctx.user_id),
         "other_person": TargetFacts(reserved_role=role, reserved_user_id=uuid.uuid4()),
         "other_role": TargetFacts(reserved_role=other_role, reserved_user_id=ctx.user_id),
+        "owner": TargetFacts(owner_user_id=ctx.user_id),
+        "not_owner": TargetFacts(owner_user_id=uuid.uuid4()),
         "no_facts": None,
     }[variant]
 
@@ -106,7 +117,17 @@ def _target(variant: Variant, ctx: AuthContext, role: str) -> TargetFacts | None
 async def condition_outcome(
     monkeypatch: pytest.MonkeyPatch, action: str, role: str, variant: Variant
 ) -> Outcome:
-    ctx, resource = arrange(monkeypatch, role)
+    if role == authz.FIRM_PARTNER:
+        # K-02-T01: the derived partner cell (DEC-132), a partner member at firm level.
+        ctx, _ = arrange(monkeypatch, "staff")
+        resource = Resource.firm(ctx.tenant_id)
+
+        async def partner(*_: object) -> bool:
+            return True
+
+        monkeypatch.setattr(authz, "_partner_level", partner)
+    else:
+        ctx, resource = arrange(monkeypatch, role)
     target = replace(resource, target=_target(variant, ctx, role))
     try:
         await authorise(ctx, action, target, reason=REASON)
@@ -137,6 +158,7 @@ async def principal_outcome(
             preparer_user_ids=frozenset(),
             reserved_role="engagement_partner",
             reserved_user_id=initiator.user_id,
+            owner_user_id=initiator.user_id,
         ),
     )
     assert full.engagement_id is not None
@@ -205,6 +227,7 @@ def without_conditions(rule: authz.Rule) -> authz.Rule:
         scope_only=False,
         not_preparer_of_target=False,
         reserved_role=False,
+        owner_of_target=False,
     )
 
 

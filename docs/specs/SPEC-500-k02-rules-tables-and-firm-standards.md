@@ -1,0 +1,57 @@
+---
+id: SPEC-500
+title: "Rules tables and firm standards: C21 reference sets, due dates, firm standards and threshold policies, KNW-04 (K-02)"
+status: in-progress
+owner: ayushkbhatia
+risk_zone: red
+related_adrs: [ADR-300]
+related_specs: []
+created: 2026-10-29
+updated: 2026-10-29
+---
+
+> **Instructions for coding agents**
+> - Implement only what this spec describes. `docs/plan/epics/K-02.md` is the plan of record (§3 user stories, §4 backend, §5 frontend); where they differ, the epic wins and this spec is corrected.
+> - No rule or standard content in code, migrations or seed: rules are database rows loaded through the operator CLI or the import endpoints (AGENTS.md 16).
+> - Nothing in K-02 calls a model (INV-1). Every test names the acceptance criterion it proves.
+
+## 1. Summary
+Two kinds of versioned, effective-dated rules (K-02 short version): **platform reference sets** (C21 part A: due-date rules, legal holidays, disaster postponements, the 8879 form set with Pub 1345 tolerances, information-return thresholds, retention minimums and standards sets), global and published under a two-person rule; and **firm standards and threshold policies** (C21 part B; KNW-04), per tenant, owned by a named partner who alone publishes them.
+
+## 2. Actors
+| Actor | Role |
+|---|---|
+| Owner partner (Priya Raman, Daniel Reyes) | Drafts, imports and publishes the standards they own |
+| QM owner / practice leader (Margaret Okonkwo) | Creates standards, assigns owners, bulk-imports onboarding workbooks |
+| Every firm role | Reads published versions; partners also see drafts |
+| Operator and approver (the two founders) | Draft and publish reference sets through the CLI (K-02-T06) |
+| Accrued Agent | Reads at task scope only; never drafts, imports or publishes |
+| Portal principals | Denied every K-02 route |
+
+## 3. Acceptance criteria
+**Protected bundle (K-02-T01).**
+- **AC-1** Every K-02 write (`firm_standard.create`, `.assign_owner`, `.draft`, `.import`, `.publish`) denies the agent, the system and every client principal; `firm_standard.read`, `reference_set.read` and `due_date.read` allow every firm role and the agent at task scope only (US-3.3, US-3.7).
+- **AC-2** Drafting and publishing are the named owner's, a partner member now (`owner_of_target`); a non-owner partner, a former partner and an actor without owner facts are refused; agents, system runs and support sessions never meet the condition (US-3.3).
+- **AC-3** Flags `knowledge.firm_standards` and `rules.reference_sets` exist, default off, expire within 90 days; `firm_standard.create` and `.publish` require fresh MFA.
+
+**C21 v1 contract stub (K-02-T02).**
+- **AC-4** Pydantic models for the seven reference-set kinds, the eight firm-standard kinds and the due-date result, discriminated by kind, `payload_schema_version` 1, every field classification-tagged (reference payloads `public`, standard payloads `internal`, example rows and BH-TAX-02 applies-to `confidential`); no TRI.
+- **AC-5** Every route of K-02 §4.4 is registered with its matrix action and returns 404 with its flag off and 501 `not_implemented` with it on, until its build task; the generated client carries the models (`make generate`).
+- **AC-6** The module-API signatures of K-02 §4.5 exist and raise `NotImplementedError` until built; T-01's and T-02's consumer contract tests import them and the models and run green against the stub.
+- **AC-7** `docs/contracts/rules-tables.md` lists callers, status words, human-only actions, audit events and the `as_of` rule per consumer; `docs/screens/KNW-04.md` lists states a–i and j.
+
+**Global reference-set tables (K-02-T03).**
+- **AC-8** `reference_sets`, `reference_set_versions` and `reference_set_publications` have no tenant and no `abacus_app` privilege; the app reads published versions only through `reference_set_resolve` and `reference_set_list` and never sees a draft (US-1.2).
+- **AC-9** A version cannot be published unless its approver differs from its drafter; once published its payload, effective date and handles are frozen and `withdrawn` is the only later status; publications are insert-only (US-1.1).
+- **AC-10** `reference_set_draft`, `_publish`, `_withdraw`, `active_tenant_ids` and `standards_sets_apply` are owner-only; publishing a `standards_sets` version inserts new codes into `standards_sets` and updates label and refs of existing ones, never deleting one, and refuses an issuer or PCAOB family (US-1.4). schema_check passes up/down/up.
+
+**Methodology tenant tables (K-02-T04).**
+- **AC-11** `firm_standards`, `firm_standard_versions`, `threshold_policies` and `threshold_policy_versions` are tenant tables with forced RLS; one draft per parent; versions monotonic per parent; a published version is frozen and never deleted; a draft moves only to `published` or `discarded`; `published_actor_kind = 'human'` is a CHECK (US-3.2, US-3.3).
+- **AC-12** The status registry carries `firm_standard_version` (draft, published, superseded computed, discarded hidden) and `reference_set_version` (draft, published, superseded computed, withdrawn).
+
+**KNW-04 read states (K-02-T13).**
+- **AC-13** `/knowledge/standards` renders on the T12 SettingsLayout: the section list, the form header (version chip, Published pill, New version…, Apply to returns…), and states a–h with Fieldsets, ValueRows, display-only policy Toggles linking ADM-04, the Timeline, the example panes with the designed empty state, and planned links to CLS-06, AUD-07 and TAX-14; one fixture scenario and one test per state (US-3.1, US-3.5).
+- **AC-14** With `knowledge.firm_standards` off, the route renders the T12 frame with the C-20 "not turned on" state.
+
+## 4. Out of scope here
+The services, CLI, calendar engine, import and export, fan-out and KNW-04i/j (K-02-T05 to T12, T14 to T20) build against the same contract in later sprints.

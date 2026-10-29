@@ -32,6 +32,7 @@ import type {
   ListPageIssueItemOut,
   ListPageKnowledgeItemOut,
   ListPagePortalEnvelopeRow,
+  ListPageReportTemplateOut,
   ListPageReviewNoteItemOut,
   ListPageReviewQueueItemOut,
   ListPageWallEventOut,
@@ -120,6 +121,7 @@ const LIST_PAGES = {
   ListPage_IssueItemOut_: (p: ListPageIssueItemOut) => envelope(p),
   ListPage_KnowledgeItemOut_: (p: ListPageKnowledgeItemOut) => envelope(p), // K-01: KNW-01
   ListPage_PortalEnvelopeRow_: (p: ListPagePortalEnvelopeRow) => envelope(p), // N-02: POR-06
+  ListPage_ReportTemplateOut_: (p: ListPageReportTemplateOut) => envelope(p), // P-11: C11 templates
   ListPage_ReviewNoteItemOut_: (p: ListPageReviewNoteItemOut) => envelope(p),
   ListPage_ReviewQueueItemOut_: (p: ListPageReviewQueueItemOut) => envelope(p), // K-01: KNW-01
   ListPage_WallEventOut_: (p: ListPageWallEventOut) => envelope(p), // G-01-T02

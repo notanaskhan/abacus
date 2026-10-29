@@ -1,7 +1,7 @@
 // P-11-T04 (SPEC-520 AC-32; F-06 §5.2): the T10 DocumentVM's header and the F-07 field manifest
 // are satisfiable from C11's shapes, on the seed-derived fixture of the Copperleaf engagement
 // letter (fixtures/handlers/reporting.ts). Written from the contract, not the implementation.
-import type { GeneratedDocumentOut } from "@abacus/api-client";
+import type { FieldRegionsOut, GeneratedDocumentOut } from "@abacus/api-client";
 import { describe, expect, it } from "vitest";
 import type { FixtureRequest } from "../../app-core/fixture-mode";
 import { documentHeader, fieldManifest } from "../../domain/documents/c11";
@@ -57,7 +57,7 @@ describe("C11 → F-07 field manifest", () => {
       body: null,
       persona: undefined,
     });
-    const manifest = fieldManifest(await (response as Response).json());
+    const manifest = fieldManifest((await (response as Response).json()) as FieldRegionsOut);
     expect(manifest.length).toBeGreaterThan(0);
     for (const f of manifest) {
       expect(f.page).toBeGreaterThanOrEqual(1);

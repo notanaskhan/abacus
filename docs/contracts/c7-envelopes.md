@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C7 |
 | Version | v1 |
-| Status | stub (N-02-T03, 2026-10-27): every route 404 with `signatures.envelopes` off, 501 with it on until its task lands. **Record mode frozen as v1** (N-02-T09, DEC-820): `POST /v1/envelopes/import`, `POST /v1/envelopes/import/files`, `register_envelope_source`, `envelope_summary_for`, `envelope_gate_facts` (G3) change only additively |
+| Status | stub (N-02-T03, 2026-10-27): every route 404 with `signatures.envelopes` off, 501 with it on until its task lands. **Record mode frozen as v1** (N-02-T09, DEC-820): `POST /v1/envelopes/import`, `POST /v1/envelopes/import/files`, `register_envelope_source`, `envelope_summary_for`, `envelope_gate_facts` (G3) change only additively. **Live since N-02-T13** (DEC-1055): `GET /v1/envelopes`, `/summary`, `/{id}`, `POST /{id}/void`, `POST /{id}/signers/{sid}/reveal-ip`, `GET /{id}/evidence.zip` |
 | Provider epic | N-02 |
 | Consumers | F-06 (signatures shell), T-01 (8879 family, consents "1 of 2 signed"), T-02, P-07 (G3 letter gate), A-07 (governance letters), N-04 (notice responses), I-01 (activity, `signatures_out` home count), R-02 |
 | Freeze sprint | S15 Contract Monday (Mon May 17, 2027) |
@@ -56,3 +56,6 @@ The plan's `portal.envelopes.*` are spelt `portal_envelopes.*` (one dot, DEC-139
 
 ## 8. Stub
 Models and routes: `backend/src/abacus/modules/signatures/contract.py` (`/v1/envelopes*`, `/v1/envelope-policies*`, `/v1/portal/envelopes*`) and `backend/src/abacus/modules/engagements/letter_contract.py` (`/v1/engagements/{id}/letter/composer`, `compare`, `pdf`, `request-approval`, `approve`, `send`, `amend`). `envelope_signer` and `letter` status words are in the vocabulary.
+
+## N-02-T21 additions (DEC-1174)
+Additive, each optional with a default: `SignerOut.title` and `SignerOut.email` (confidential; SIG-02's sub-line and "Email required"), `DraftUpdateIn.document_order` (the builder's reorder), `ValidationOut.checks` (`{code, ok}`, identifiers only; SIG-02 words them). A `problems` entry naming a signer is `signer_email_missing:<signer_id>`.

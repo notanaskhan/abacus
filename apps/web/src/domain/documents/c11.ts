@@ -51,7 +51,7 @@ export interface FieldPlacement {
 
 export function fieldManifest(fields: FieldRegionsOut): FieldPlacement[] {
   return fields.items.map((f) => {
-    const [x0 = 0, top = 0, x1 = 0, bottom = 0] = f.rect_pt;
+    const [x0, top, x1, bottom] = f.rect_pt;
     return {
       key: f.field_key,
       label: f.label,

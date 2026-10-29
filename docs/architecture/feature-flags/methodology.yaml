@@ -44,3 +44,10 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: knowledge.firm_standards
+    description: 'KNW-04 firm standards and thresholds (K-02): the /knowledge/standards route and every /v1/standards* route. Off: 404 and the T12 frame shows the C-20 "not turned on" state; KNW-01 does not link its Firm standards cards. On per pilot firm once the journey slices pass on staging (K-02 §0). K-02-T01, DEC-1150.'
+    owner: ayushkbhatia
+    created: 2026-10-29
+    expires: 2027-01-26
+    kind: boolean
+    default: false

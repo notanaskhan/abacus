@@ -20,8 +20,11 @@ are not registered, or not known for this resource, denies (fail closed).
 - `reserved_role` (P-04-T15): the actor holds the role a decision card is reserved to (an
   engagement role, or the `signer` function on the work item) and, when the card names a person,
   is that person.
+- `owner_of_target` (K-02-T01, DEC-1150): the actor is the target's named owner (a firm
+  standard's `owner_id`, carried on the resource as `TargetFacts.owner_user_id`) and holds a
+  partner membership now.
 
-The two target conditions are a person's: an agent or a system run never meets them, whatever its
+The three target conditions are a person's: an agent or a system run never meets them, whatever its
 initiator could do, and a support session never does either (its facts are not resolved).
 
 `conditions_hold` is pure, so the generated allow and deny tests drive it directly.
@@ -54,6 +57,8 @@ class ConditionFacts:
     # P-04-T15: whether the actor prepared the target; whether they hold its reserved role.
     preparer: bool | None = None
     reserved_holder: bool | None = None
+    # K-02-T01: whether the actor is the target's owner and a partner member now.
+    owner: bool | None = None
 
 
 def conditions_hold(rule: Rule, facts: ConditionFacts, *, person: bool) -> bool:
@@ -62,9 +67,11 @@ def conditions_hold(rule: Rule, facts: ConditionFacts, *, person: bool) -> bool:
     initiator is authorised; the resource conditions apply to every actor. The target
     conditions (`not_preparer_of_target`, `reserved_role`) are a named person's: a non-person
     never meets them."""
-    if (rule.not_preparer_of_target or rule.reserved_role) and not person:
+    if (rule.not_preparer_of_target or rule.reserved_role or rule.owner_of_target) and not person:
         return False
     if person:
+        if rule.owner_of_target and facts.owner is not True:
+            return False
         if rule.not_preparer_of_target and facts.preparer is not False:
             return False
         if rule.reserved_role and facts.reserved_holder is not True:

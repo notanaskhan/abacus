@@ -10,3 +10,10 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: rules.reference_sets
+    description: 'C21 part A over HTTP (K-02): GET /v1/reference-sets*, GET /v1/due-dates and KNW-04 section j. Off: 404. It does not gate the Python module APIs (platform.api, practice.api), which T-01 and T-02 gate with their own flags. K-02-T01, DEC-1150.'
+    owner: ayushkbhatia
+    created: 2026-10-29
+    expires: 2027-01-26
+    kind: boolean
+    default: false

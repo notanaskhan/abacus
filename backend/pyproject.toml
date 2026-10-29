@@ -148,6 +148,7 @@ xfail_strict = true
 markers = [
     "serial: a wall-clock budget; runs alone after the parallel workers (DEC-335)",
     "source_scan: reads source or repository files, not behaviour; left out of mutation runs only (DEC-599)",
+    "quarantine(issue, owner, since): a flaky test held at most 10 working days; it still runs (Q-03-T097)",
 ]
 
 [tool.coverage.run]

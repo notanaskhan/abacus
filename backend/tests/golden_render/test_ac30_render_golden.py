@@ -10,8 +10,10 @@ network, then this file), never against a developer's system libraries.
 from __future__ import annotations
 
 import hashlib
+import io
 from pathlib import Path
 
+import pdfplumber
 import pytest
 
 from abacus.modules.reporting.render.pdf import RenderRefused, dated_head, render_pdf
@@ -46,8 +48,10 @@ def test_ac30_pdf_and_docx_equal_the_recorded_goldens() -> None:
 
 def test_ac6_no_clock_time_in_the_pdf() -> None:
     pdf, _ = render()
-    assert b"/CreationDate (D:20260914142400" in pdf
-    assert b"/ModDate (D:20260914142400" in pdf
+    with pdfplumber.open(io.BytesIO(pdf)) as document:
+        meta = document.metadata
+    assert str(meta["CreationDate"]).startswith("D:20260914142400")
+    assert str(meta["ModDate"]).startswith("D:20260914142400")
 
 
 @pytest.mark.parametrize(

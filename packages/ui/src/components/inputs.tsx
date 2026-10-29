@@ -459,6 +459,7 @@ function SelectValue({
           label: option.label,
           checked: option.value === chosen,
           ...(option.disabled === true ? { disabled: true } : {}),
+          ...(option.hint === undefined ? {} : { hint: option.hint }),
           onSelect: () => {
             set(option.value);
           },
