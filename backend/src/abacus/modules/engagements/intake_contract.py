@@ -316,7 +316,7 @@ class RowDecisionIn(BaseModel):
 async def _gate(ctx: AuthContext, action: str) -> None:
     """DEC-326's order: refuse a client principal, an agent and the system, then authorise
     firm-level (`clients.v2` retired with P-07-T59, DEC-905)."""
-    if ctx.client or ctx.tenant.actor_kind != "human":
+    if ctx.tenant.actor_kind != "human" or ctx.client:
         raise Forbidden(action, "role")
     await authorise(ctx, action, Resource.firm(ctx.tenant_id))
 

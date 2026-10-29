@@ -197,7 +197,7 @@ def grant_digest(export_id: UUID, work_item_id: UUID, kind: str, scope: dict[str
 
 def _human(ctx: AuthContext, action: str) -> None:
     """INV-1: a person's own act, never an agent, the platform, support or a client."""
-    if ctx.client or ctx.is_support or ctx.tenant.actor_kind != "human":
+    if ctx.tenant.actor_kind != "human" or ctx.client or ctx.is_support:
         raise Forbidden(action, "role")
 
 
