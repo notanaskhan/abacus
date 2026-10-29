@@ -1,3 +1,5 @@
 # cloudfront-firm
 
-Skeleton. Implemented in a later Q-01 task (see docs/plan/06-platform-ops-security.md section 1.17). Local modules only; providers limited to hashicorp/aws.
+The firm app edge (Q-01-T15): SPA through OAC, `/v1/*` to the internal ALB via a VPC origin,
+security headers, `/healthz` and `/readyz` refused at the edge. Default CloudFront host until the
+firm domain exists (DEC-1003).
