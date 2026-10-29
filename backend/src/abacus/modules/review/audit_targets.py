@@ -32,6 +32,9 @@ _OWNERS: dict[str, tuple[QueryableAttribute[UUID], QueryableAttribute[UUID]]] = 
         FieldValueVersion.id,
         cast(QueryableAttribute[UUID], FieldValueVersion.engagement_id),
     ),
+    # P-04-T35 (DEC-1050): a field tick's `sign_off.recorded` names the field's `field` target;
+    # its engagement is the tick's (every tick on one field shares it).
+    "field": (SignOff.target_id, SignOff.engagement_id),
 }
 AUDIT_KINDS = frozenset(_OWNERS)
 

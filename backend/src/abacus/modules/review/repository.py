@@ -23,6 +23,7 @@ from abacus.modules.review.models import (
     DecisionAnalysisRequest,
     DecisionCard,
     DecisionCardVersion,
+    FieldValueVersion,
     ReviewableNote,
     ReviewableNoteEvent,
     SignOff,
@@ -94,6 +95,48 @@ async def insert_sign_off(session: AsyncSession, **values: object) -> UUID:
     return (
         await session.execute(insert(SignOff).values(**values).returning(SignOff.id))
     ).scalar_one()
+
+
+async def field_versions_of(
+    session: AsyncSession, target_type: str, target_id: UUID, field_key: str
+) -> Sequence[FieldValueVersion]:
+    """P-04-T35: one field's versions, newest first (LIST_EXEMPT: one field, for a caller
+    authorised on its target's engagement)."""
+    return (
+        (
+            await session.execute(
+                select(FieldValueVersion)
+                .where(
+                    FieldValueVersion.target_type == target_type,
+                    FieldValueVersion.target_id == target_id,
+                    FieldValueVersion.field_key == field_key,
+                )
+                .order_by(FieldValueVersion.seq.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def field_ticks_of(session: AsyncSession, field_id: UUID) -> Sequence[SignOff]:
+    """P-04-T35: a field's ticks (`field_tick` sign-offs on its `field` target), newest first
+    (LIST_EXEMPT: one field, for a caller authorised on its target's engagement)."""
+    return (
+        (
+            await session.execute(
+                select(SignOff)
+                .where(
+                    SignOff.target_type == "field",
+                    SignOff.target_id == field_id,
+                    SignOff.kind == "field_tick",
+                )
+                .order_by(SignOff.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
 
 
 async def notes_of(

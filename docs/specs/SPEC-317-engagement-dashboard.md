@@ -34,6 +34,7 @@ This is K-04 ENG-12, built on what exists: the Board over programs waits for K-0
   - the gate strip;
   - tiles, each linking to where the work lives, with an amber edge on attention;
   - "Next up for you", whose rows open the working paper, trial balance, sign-offs or requests.
+- **AC-4 HOME-01 lite MVP proof (I-01-T14).** HOME-01 a, a2, f and g are parity-locked at Tier C, the geometry holds at Tier D (subbar 42, tiles 120 × 99 r14, pane header 46, rows 44, right column 420), and every scenario is axe clean and keyboard-walkable.
 
 ## 3. Out of scope
 - The program Board (needs K-03).

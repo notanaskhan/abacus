@@ -1,0 +1,71 @@
+// FIL-01 Files browser and document drawer copy (N-01-T16; docs/screens/FIL-01.md Copy): verbatim
+// from the handoff (screens/FIL-01, spec.md and revision R2) with DV-10 to DV-17 applied. Read-only
+// in N-01: no write control's words appear (DV-10). Status words come from the registry
+// (`file_document`).
+
+export const COPY = {
+  title: "Files",
+  allClients: "‹ All clients",
+  searchFiles: "Search files",
+  folders: {
+    source_documents: "Source documents",
+    workpapers: "Workpapers",
+    correspondence: "Correspondence",
+    deliverables: "Deliverables",
+    signed_authorizations: "Signed authorizations",
+  },
+  permanentFile: "Permanent file",
+  otherClients: "Other clients",
+  listCount: (n: number, v: number): string =>
+    `${String(n)} ${n === 1 ? "document" : "documents"} · ${String(v)} virtual`,
+  columns: {
+    document: "Document",
+    classification: "Classification",
+    year: "Year",
+    source: "Source",
+    status: "Status",
+    linkedTo: "Linked to",
+  },
+  channels: {
+    portal: "Portal",
+    email: "Email",
+    firm_upload: "Upload",
+    retrieval: "Retrieved",
+    import: "Import",
+    mobile: "Phone",
+    internal_handoff: "Handoff",
+    generated: "Generated",
+    confirmation_response: "Confirmation",
+  },
+  tie: (account: string): string => `ties to ${account}`,
+  tiePill: "tie",
+  superseded: (name: string, date: string): string => `Replaced by ${name} · ${date}`,
+  processing: "Classifying…",
+  revealButton: "Reveal (logged)",
+  revealNote: (viewer: string): string => `Logged to the audit log as ${viewer}`,
+  emptySignedTitle: "No signed authorizations yet.",
+  emptySignedBody: "Form 8879-PE lands here when Owen Calder signs (SIG-01).",
+  emptyFolderTitle: "Nothing in this folder yet.",
+  archiveLocked: "Locked · sealed",
+  lockedBy: (name: string): string => `Locked · ${name}`,
+  clientAccess: (value: string): string => `Client access: ${value}`,
+  clientAccessValues: { off: "Off", view: "Can view", view_download: "Can view and download" },
+  slots: { preparer: "P", reviewer: "R" },
+  drawer: {
+    open: "Open",
+    document: "Document",
+    virtual: "Virtual documents",
+    linkedTo: "Linked to",
+    versions: "Versions",
+    accessLog: "Access log",
+    retention: "Retention",
+    pages: "Pages",
+    size: "Size",
+    sha: "SHA-256",
+    borrowerTin: "Borrower TIN",
+    version: (n: number, current: boolean): string =>
+      `Version ${String(n)}${current ? " · Current" : ""}`,
+    legalHoldNone: "Legal hold: none",
+    eligible: (policy: string, date: string): string => `${policy} · eligible ${date}`,
+  },
+} as const;

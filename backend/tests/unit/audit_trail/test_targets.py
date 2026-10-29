@@ -25,6 +25,7 @@ from abacus.modules.identity.api import AuthContext
 SRC = Path(__file__).resolve().parents[3] / "src" / "abacus"
 ENGAGEMENT_OWNED = sorted(audit_owners.engagement_owners())
 ENTITY_OWNED = sorted(audit_owners.entity_owners())
+CLIENT_OWNED = sorted(audit_owners.client_owners())  # N-01 intake rows, N-02 envelopes
 MUST_BE_FOUND = [k for k in ENGAGEMENT_OWNED if k not in targets.OPTIONAL_OWNER]
 READER = uuid.uuid4()
 
@@ -49,6 +50,7 @@ class World:
     def __init__(self) -> None:
         self.owner: dict[uuid.UUID, uuid.UUID] = {}  # a target row -> its engagement
         self.entity: dict[uuid.UUID, uuid.UUID] = {}  # a connection or snapshot -> its entity
+        self.client: dict[uuid.UUID, uuid.UUID] = {}  # an intake row or envelope -> its client
         self.of_entity: dict[uuid.UUID, frozenset[uuid.UUID]] = {}
         self.of_client: dict[uuid.UUID, frozenset[uuid.UUID]] = {}
         self.seen: set[uuid.UUID] = set()
@@ -72,6 +74,12 @@ def world(monkeypatch: pytest.MonkeyPatch) -> World:
         w.asked.append(kind)
         return {i: w.entity[i] for i in ids if i in w.entity}
 
+    async def clients(
+        _tenant: object, kind: str, ids: Sequence[uuid.UUID]
+    ) -> dict[uuid.UUID, uuid.UUID]:
+        w.asked.append(kind)
+        return {i: w.client[i] for i in ids if i in w.client}
+
     async def engagements_of(
         _tenant: object, kind: str, ids: Sequence[uuid.UUID]
     ) -> dict[uuid.UUID, frozenset[uuid.UUID]]:
@@ -91,6 +99,7 @@ def world(monkeypatch: pytest.MonkeyPatch) -> World:
         targets, "_engagement_owners", lambda: dict.fromkeys(ENGAGEMENT_OWNED, owners)
     )
     monkeypatch.setattr(targets, "_entity_owners", lambda: dict.fromkeys(ENTITY_OWNED, entities))
+    monkeypatch.setattr(targets, "_client_owners", lambda: dict.fromkeys(CLIENT_OWNED, clients))
     monkeypatch.setattr(targets, "_engagements_of", engagements_of)
     monkeypatch.setattr(targets, "_visible_among", visible_among)
     monkeypatch.setattr(targets, "_hidden_walls", hidden_walls)
@@ -183,6 +192,47 @@ async def test_a_target_of_an_entity_with_no_engagements_is_hidden(
     entity, target = uuid.uuid4(), uuid.uuid4()
     world.entity[target] = entity
     assert await targets.readable(_ctx(), [_row(kind, target)]) == []
+
+
+# --- client-owned targets: shown with any of the client's engagements ---------------------------
+
+
+def test_the_intake_and_envelope_kinds_are_client_owned() -> None:
+    assert set(CLIENT_OWNED) >= {
+        "inbox_thread",
+        "inbound_message",
+        "inbox_attachment",
+        "envelope",
+        "envelope_import_file",
+    }
+
+
+@pytest.mark.parametrize("kind", CLIENT_OWNED)
+async def test_a_target_of_a_client_with_a_visible_engagement_is_shown(
+    world: World, kind: str
+) -> None:
+    client, engagement, target = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+    world.client[target] = client
+    world.of_client[client] = frozenset({engagement, uuid.uuid4()})
+    world.seen.add(engagement)
+    row = _row(kind, target)
+    assert await targets.readable(_ctx(), [row]) == [row]
+
+
+@pytest.mark.parametrize("kind", CLIENT_OWNED)
+async def test_a_target_of_a_client_whose_engagements_are_all_hidden_is_hidden(
+    world: World, kind: str
+) -> None:
+    client, target = uuid.uuid4(), uuid.uuid4()
+    world.client[target] = client
+    world.of_client[client] = frozenset({uuid.uuid4()})
+    assert await targets.readable(_ctx(), [_row(kind, target)]) == []
+
+
+@pytest.mark.parametrize("kind", CLIENT_OWNED)
+async def test_a_target_with_no_client_yet_is_hidden(world: World, kind: str) -> None:
+    """An unmatched intake thread, or an import file no envelope consumed: fail closed."""
+    assert await targets.readable(_ctx(), [_row(kind, uuid.uuid4())]) == []
 
 
 @pytest.mark.parametrize("kind", ["client", "client_entity"])

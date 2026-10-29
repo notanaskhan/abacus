@@ -6,6 +6,14 @@ import { useSession } from "../app-core/session";
 import { type FixtureParams, registerScreen } from "../gallery/fixture-mode";
 import { useFirmToolbar } from "../shell/firm/ToolbarData";
 import { ADM01 } from "./ADM-01";
+import { FilesPage } from "./FIL-01";
+import {
+  FIL01_STATES,
+  type Fil01State,
+  OPENS as FIL01_OPENS,
+  REVEALED_TIN,
+  scenarios as fil01Scenarios,
+} from "../fixtures/scenarios/FIL-01";
 import {
   type Adm01State,
   STATES as ADM01_STATES,
@@ -1912,3 +1920,52 @@ function Shl20Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("SHL-20", { title: "Evidence screening", Component: Shl20Artboard });
+
+// FIL-01 Files browser and document drawer (N-01-T16): a to j; e, h, i and j fixture-only.
+function Fil01Frame({ state }: { state: Fil01State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/files" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  const persona = fil01Scenarios[state].persona ?? "";
+  const viewer = persona
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+  return (
+    <div data-artboard={state}>
+      <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+        <FilesPage
+          node={FIL01_OPENS[state].node}
+          doc={FIL01_OPENS[state].doc}
+          viewer={viewer}
+          reveal={() => Promise.resolve(REVEALED_TIN)}
+          revealedValue={state === "f" ? REVEALED_TIN : null}
+          frame
+        />
+      </AppShell>
+    </div>
+  );
+}
+
+function Fil01Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Fil01State = FIL01_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      fil01Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Fil01Frame key={state} state={state} /> : null;
+}
+
+registerScreen("FIL-01", { title: "Files browser & document drawer", Component: Fil01Artboard });

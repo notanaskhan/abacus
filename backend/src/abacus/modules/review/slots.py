@@ -8,11 +8,15 @@ from __future__ import annotations
 import re
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
-from typing import Final
+from typing import TYPE_CHECKING, Final
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import DomainInvalid, NotFound, ServiceUnavailable
+
+if TYPE_CHECKING:
+    from abacus.kernel.uow import UnitOfWork
+    from abacus.modules.identity.api import AuthContext
 
 # The levels every reviewable needs before completion (L1 preparer, L2 reviewer). K-02's
 # methodology policies will set more per area and risk.
@@ -129,6 +133,12 @@ class UnregisteredKind(DomainInvalid):
 
 GateCheck = Callable[[TenantContext, UUID], Awaitable[bool]]
 FieldValue = Callable[[TenantContext, UUID, str], Awaitable[dict[str, object] | None]]
+# P-04-T35: a person's edit lands in the owner's own record, in the editing unit of work, as the
+# person (the owner authorises its own write). Returns the target's content hash after the edit,
+# for the human checkpoint where the owner checkpoints (SHL-16), or None.
+FieldEdit = Callable[
+    ["UnitOfWork", "AuthContext", UUID, str, dict[str, object]], Awaitable[str | None]
+]
 FixRunner = Callable[[TenantContext, UUID], Awaitable[UUID]]  # the agent run it started
 
 
@@ -224,6 +234,12 @@ class FieldOwner:
     target_type: str
     value_of: FieldValue
     tri_fields: frozenset[str] = frozenset()
+    # P-04-T35 (SHL-09): the tray's label for a field key ("Taxable interest — Halvard
+    # Securities"); without one the key itself. `apply_edit`: with none, a person's edit is
+    # refused (503: nobody writes it). `checkpoints`: a person's edit is also a checkpoint.
+    label_of: Callable[[str], str] | None = None
+    apply_edit: FieldEdit | None = None
+    checkpoints: bool = False
 
 
 _DECISION_KINDS: dict[str, DecisionKind] = {}
@@ -318,6 +334,63 @@ def field_owner(target_type: str) -> FieldOwner:
     if found is None:
         raise UnregisteredKind
     return found
+
+
+# --- P-04-T35 (DEC-1050): a field's citations, through C4 ----------------------------------------
+# `review` never imports `evidence`; the module that composes both (agents) registers how a
+# field's citations are checked, described and written.
+
+
+@dataclass(frozen=True)
+class FieldCitation:
+    """One citation as SHL-09's reference row shows it."""
+
+    id: UUID
+    kind: str  # `document`, `engine_import`, `workpaper` or `prior_return`
+    label: str
+    detail: str | None
+    document_id: UUID | None
+    page: int | None
+
+
+@dataclass(frozen=True)
+class DocumentCitation:
+    """ "Add reference": a document page claimed to show the field's value."""
+
+    engagement_id: UUID
+    work_item_id: UUID | None
+    client_id: UUID | None
+    field_id: UUID
+    field_key: str
+    document_id: UUID
+    page: int | None
+    value: str
+
+
+@dataclass(frozen=True)
+class FieldCitations:
+    # (tenant, engagement, ids) -> the ids that support a value now (verified, shown, valid)
+    supported: Callable[[TenantContext, UUID, list[UUID]], Awaitable[frozenset[UUID]]]
+    # (reader, ids) -> the rows the reader may see
+    describe: Callable[[AuthContext, list[UUID]], Awaitable[dict[UUID, FieldCitation]]]
+    # (the writer's unit of work, the person, the claim) -> (citation id, verified)
+    cite_document: Callable[
+        [UnitOfWork, AuthContext, DocumentCitation], Awaitable[tuple[UUID, bool]]
+    ]
+
+
+_FIELD_CITATIONS: list[FieldCitations] = []
+
+
+def register_field_citations(citations: FieldCitations) -> None:
+    _FIELD_CITATIONS[:] = [citations]
+
+
+def field_citations() -> FieldCitations:
+    """Fail closed: with no reader registered, nothing can say a value is supported (503)."""
+    if not _FIELD_CITATIONS:
+        raise ServiceUnavailable
+    return _FIELD_CITATIONS[0]
 
 
 def register_fix_runner(issue_kind: str, runner: FixRunner) -> None:

@@ -557,6 +557,35 @@ _IDENTITY_ENGINE = frozenset(
 )
 
 
+# FIELD-001 (P-04-T35; ADR-160 clause 10): `review.api.record_value` is the only writer of a
+# field's versions. A SQL write naming the table, or an ORM insert of its model, anywhere else
+# fails.
+_FIELD_WRITE = re.compile(
+    r"\b(insert\s+into|update|delete\s+from)\s+field_value_versions\b", re.IGNORECASE
+)
+
+
+def _check_field_write(src: SourceFile) -> Iterator[Finding]:
+    message = (
+        "a cell or field is written only through review.api.record_value "
+        "(FIELD-001, ADR-160 clause 10)"
+    )
+    for line, value in _string_constants(src):
+        if _FIELD_WRITE.search(value):
+            yield Finding(line, message)
+    for node in ast.walk(src.tree):
+        if (
+            isinstance(node, ast.Call)
+            and _terminal_name(node.func) in {"insert", "update", "delete"}
+            and any(
+                isinstance(a, (ast.Name, ast.Attribute))
+                and _terminal_name(a) == "FieldValueVersion"
+                for a in node.args
+            )
+        ):
+            yield Finding(node.lineno, message)
+
+
 def _check_identity_engine(src: SourceFile) -> Iterator[Finding]:
     for line, name in _names_used(src):
         if name in _IDENTITY_ENGINE:
@@ -1377,6 +1406,10 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/review/repository.py", "checkpoint_diffs_of"),
         ("src/abacus/modules/review/repository.py", "checkpoint_decisions_of"),
         ("src/abacus/modules/review/repository.py", "lock_proposed_for"),
+        # P-04-T35: one field's versions and ticks, after `field.read` (or the write's action)
+        # on its target's engagement (one field, bounded like the sign-off ladder).
+        ("src/abacus/modules/review/repository.py", "field_versions_of"),
+        ("src/abacus/modules/review/repository.py", "field_ticks_of"),
         # SPEC-309 (TASK-320): ledger stays dependency-free (no visible()); the assurance read
         # model authorises `trial_balance.read` on the engagement before any of these run.
         ("src/abacus/modules/ledger/tb_repository.py", "snapshots_of_entity"),
@@ -2177,6 +2210,8 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/agent_tests/support.py",
             "tests/integration/agent_tests/test_work_slots_db.py",  # the ledger, as the app
             "tests/integration/backfill/support.py",  # Q-03 acceptance tests seed as the superuser
+            # N-02-T12: the app role's refusals on the signatures tables, after a real import.
+            "tests/integration/backfill/test_n02t12_signatures_independent.py",
             "tests/integration/trust_kit/support.py",  # P-03-T05, T06: seeds as the superuser
             "tests/security/support.py",  # the security suite seeds as the superuser
             "tests/contracts/undo/support.py",  # P-04-T13: the Undo suite seeds as the superuser
@@ -2354,6 +2389,8 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_p04t13_review_schema_independent.py",
             # N-02-T08: the retention policy's version trigger reads the tenant a session sets.
             "tests/integration/backfill/test_n02t08_record_import.py",
+            # N-02-T12: the app role's refusals on the signatures tables, tenant and actor by hand.
+            "tests/integration/backfill/test_n02t12_signatures_independent.py",
             # Q-04-T008: back-dates seeded audit rows under the actor the immutability guard reads.
             "tests/integration/backfill/test_q04t008_pilot_metrics.py",
             # S13 schema tests: the AI-policy guard (G-02-T23) and pilot grants (Q-04-T007).
@@ -2585,6 +2622,15 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/modules/review/api.py",
             "src/abacus/modules/agents/proposals.py",
         ),
+    ),
+    Rule(
+        id="FIELD-001",
+        description="Only review.api.record_value writes a field's versions",
+        adr="ADR-160",
+        check=_check_field_write,
+        # P-04-T35: the write path itself; any other file naming a write fails.
+        include=("src/abacus/*",),
+        exclude=("src/abacus/modules/review/field_values.py",),
     ),
     Rule(
         id="DECISION-001",

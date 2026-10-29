@@ -5,14 +5,18 @@
 number), the typed value `{t, v}` (decimals as strings), its source and cause, the citations, and a
 human edit's citation note sealed to its own (target, field, seq). The row's actor is the
 transaction's (a CHECK binds it), the `policy` source and actor stay refused
-(`fvv_policy_dormant`), and a human edit without a note is refused by `fvv_human_edits_cite`. The
-provenance read, field ticks and the `FIELD-001` rule are P-04-T35's.
+(`fvv_policy_dormant`), and a human edit without a note is refused by `fvv_human_edits_cite`.
+
+P-04-T35 (DEC-1050): a field's identity for its ticks (`field_target_id`, the `field` target of a
+`field_tick` sign-off) and its content hash (`field_hash`, what a tick signs); the `FIELD-001`
+rule keeps every write of `field_value_versions` in this file.
 """
 
 from __future__ import annotations
 
 import json
 import re
+import uuid
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
@@ -26,6 +30,7 @@ from abacus.kernel.db import transaction_context
 from abacus.kernel.errors import DomainInvalid
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork
 from abacus.modules.review.events import FieldValueRecorded
+from abacus.modules.review.hashing import Json, content_hash
 from abacus.modules.review.sealing import seal_text
 
 ValueSource = Literal["agent_suggested", "human", "formula", "tb_linked", "engine_import"]
@@ -37,6 +42,40 @@ _TARGET: Final = re.compile(r"[a-z][a-z_]{0,39}")
 _FIELD: Final = re.compile(r"[A-Za-z0-9_.!:-]{1,80}")
 _NOTE_LIMIT: Final = 2000
 _VALUE_LIMIT: Final = 200
+
+
+# P-04-T35: a field's ticks are `field_tick` sign-offs on a `field` target whose id is derived
+# from the field (one id per target and key, in every firm: the row's tenant scopes it).
+FIELD_TARGET: Final = "field"
+_FIELD_NAMESPACE: Final = uuid.UUID("0c8f6a3e-2d6b-4f0e-9b7a-35a1d1c5e7f2")
+
+
+def field_target_id(target_type: str, target_id: UUID, field_key: str) -> UUID:
+    """The `field` target id a tick on this field is recorded against."""
+    return uuid.uuid5(_FIELD_NAMESPACE, f"{target_type}:{target_id}:{field_key}")
+
+
+def field_hash(
+    target_type: str,
+    target_id: UUID,
+    field_key: str,
+    value: Mapping[str, object] | None,
+    value_kind: str,
+) -> str:
+    """What a tick signs (bare hex, `review.hashing`): the field and its current typed value and
+    kind. A changed value is a changed hash, so an earlier tick reads stale (ADR-160 clause 3)."""
+    return content_hash(
+        cast(
+            Json,
+            {
+                "target_type": target_type,
+                "target_id": str(target_id),
+                "field_key": field_key,
+                "value": dict(value) if value is not None else None,
+                "value_kind": value_kind,
+            },
+        )
+    )
 
 
 class FieldValueInvalid(DomainInvalid):

@@ -14,6 +14,11 @@ import type { SignFieldVM, SigningPage } from "./types";
 /** The page's drawn width on the well (T16: 680 inside the 816 well). */
 export const PAGE_WIDTH_PX = 680;
 
+/** F-06-T06 (TPL-16g): at 390 a field is drawn small, but its target is 44 tall (WCAG 2.5.5,
+ * Story 1.6): an invisible `::before` centred on the field takes the pointer. */
+const PHONE_TARGET =
+  "relative before:absolute before:inset-x-0 before:top-1/2 before:h-[44px] before:-translate-y-1/2";
+
 export interface SignFieldLayerHandle {
   /** Focus the viewer's next open field after `fromId` (or the first); false when none is left. */
   focusNext: (fromId?: string) => boolean;
@@ -28,6 +33,8 @@ export interface SignFieldLayerProps {
   nextOpenId: string | null;
   onSignField?: (fieldId: string) => void;
   handle?: RefObject<SignFieldLayerHandle | null>;
+  /** The page's drawn width: 680 on the well, the column's width on a phone (F-06-T06). */
+  widthPx?: number;
 }
 
 export function openFieldsOf(
@@ -45,8 +52,10 @@ export function SignFieldLayer({
   nextOpenId,
   onSignField,
   handle,
+  widthPx = PAGE_WIDTH_PX,
 }: SignFieldLayerProps): JSX.Element {
-  const scale = PAGE_WIDTH_PX / page.width_pt;
+  const scale = widthPx / page.width_pt;
+  const phone = widthPx < PAGE_WIDTH_PX;
   const refs = useRef(new Map<string, HTMLButtonElement>());
   const open = openFieldsOf(fields, viewerId);
   useImperativeHandle(
@@ -66,7 +75,7 @@ export function SignFieldLayer({
     <div
       data-signing="page"
       className="relative flex-none bg-card shadow-page"
-      style={{ width: PAGE_WIDTH_PX, height: Math.round(page.height_pt * scale) }}
+      style={{ width: widthPx, height: Math.round(page.height_pt * scale) }}
     >
       {pageSrcAllowed(page.src) ? (
         <img src={page.src} alt={page.alt} className="absolute inset-0 size-full select-none" />
@@ -127,6 +136,7 @@ export function SignFieldLayer({
                 className={cn(
                   "size-full rounded-sheet outline-[1.5px] outline-espresso outline-solid",
                   "hover:bg-tonal-hover focus-visible:outline-[2.5px]",
+                  phone && PHONE_TARGET,
                 )}
               />
             </span>

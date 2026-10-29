@@ -13,7 +13,7 @@ import typing
 import uuid
 from collections.abc import Awaitable, Callable
 from types import ModuleType
-from typing import cast, get_args
+from typing import Final, cast, get_args
 
 import pytest
 from fastapi.routing import APIRoute
@@ -33,6 +33,7 @@ from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag
 from abacus.modules.communications import intake_contract as inbox
 from abacus.modules.evidence import files_contract as files
+from abacus.modules.evidence import files_shapes
 from abacus.modules.identity.api import AbacusRouter, AuthContext
 from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.portal import intake_contract as portal
@@ -106,7 +107,11 @@ def _models(module: ModuleType) -> list[type[BaseModel]]:
     ]
 
 
-MODELS = _models(inbox) + _models(portal) + _models(files)
+# N-01-T19 moved the Files shapes beside the routes into `files_shapes`.
+MODELS = _models(inbox) + _models(portal) + _models(files_shapes)
+# Live with the flag on (no longer 501): N-01-T19 serves the Files routes
+# (tests/integration/backfill/test_n01t19_files.py; DEC-1051).
+LIVE: Final = frozenset({e.__name__ for _p, e in _endpoints(files, files.files_router)})
 
 
 def _ctx(*, client: bool = False) -> AuthContext:
@@ -168,6 +173,8 @@ async def test_n01t02_firm_routes_client_404_then_action_then_flag_then_501(
     with pytest.raises(NotFound):
         await _call(endpoint, _ctx())
     assert seen == [flag] and len(asked) == 1
+    if endpoint.__name__ in LIVE:
+        return  # served with the flag on; its integration tests cover the answers
     state["on"] = True
     with pytest.raises(NotImplementedYet):
         await _call(endpoint, _ctx())
