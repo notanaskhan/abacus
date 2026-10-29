@@ -158,6 +158,11 @@ from abacus.modules.communications.transport import LocalMailbox, Transport, con
 from abacus.modules.communications.triage import ACTIVITIES as TRIAGE_ACTIVITIES
 from abacus.modules.communications.triage import WORKFLOWS as TRIAGE_WORKFLOWS
 from abacus.modules.communications.triage import on_attachment_received
+from abacus.modules.communications.triage_apply import (
+    IntakeDestination,
+    Placement,
+    register_intake_destination,
+)
 from abacus.modules.communications.triage_workflow import (
     AttachmentTriageWorkflow,
     TriageInput,
@@ -269,6 +274,7 @@ __all__ = [
     "IdentityStatus",
     "InMemorySesIdentities",
     "Inbound",
+    "IntakeDestination",
     "IssuedLink",
     "LocalMailbox",
     "MessageBounced",
@@ -279,6 +285,7 @@ __all__ = [
     "NextSendOut",
     "NotificationMail",
     "OutOfScope",
+    "Placement",
     "PreviewSelection",
     "RecipientRef",
     "Recorded",
@@ -337,6 +344,7 @@ __all__ = [
     "publish_email_template",
     "record_inbound_message",
     "register_email_template",
+    "register_intake_destination",
     "register_reminder_history",
     "registered_templates",
     "resolve_secure_link",
