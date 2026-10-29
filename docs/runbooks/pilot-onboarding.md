@@ -181,6 +181,10 @@ Follow `RB-37-onboard-firm-people-and-walls.md` end to end; it is the procedure 
 
 ## Timings (fill in at each rehearsal)
 
+The rehearsals' input files (a 200-client CCH-headed list and a Workbook v2 PBC template) come
+from `python -m abacus_tools.synthetic.onboarding_files --out <scratch dir>`; part AY's step-by-step
+record is `docs/ops/rehearsals/onboarding-content-part-ay.md`.
+
 | Section | T016 rehearsal (N part) | T018 rehearsal | First pilot firm |
 |---|---|---|---|
 | 0 Before day one | | | |

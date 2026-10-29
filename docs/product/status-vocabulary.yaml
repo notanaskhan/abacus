@@ -78,6 +78,29 @@ objects:
       import_pending_approval: {label: "Import pending approval", variant: outline, disc: dot_amber, terminal: false, derived: false}
       failed:                {label: "Export failed", variant: outline, disc: x_brick, terminal: false, derived: false}
 
+  engine_import:   # T-01 §engine bridge; TAX-09 (EngineImportOut.status). Labels not verbatim: no screen word yet
+    source: "T-01 epic (engine imports; `engine_import.pending_approval`)"
+    codes:
+      scanning:         {label: "Scanning", variant: muted, terminal: false, derived: false}
+      pending_approval: {label: "Import pending approval", variant: state, terminal: false, derived: false}   # T-01 §3: the checkpoint "sits in Import pending approval"
+      approved:         {label: "Approved", variant: green-tint, terminal: true, derived: false}
+      rejected:         {label: "Rejected", variant: red-tint, terminal: true, derived: false}
+      routed:           {label: "Sent to the inbox", variant: neutral, terminal: true, derived: false}   # not an engine export: filed through INB-02; label not verbatim
+
+  k3:   # T-02 §k1_packages.k3_status (TXP-12). Labels not verbatim
+    source: "T-02 epic (k1_packages.k3_status)"
+    codes:
+      included:     {label: "K-3 included", variant: green-tint, terminal: false, derived: false}
+      not_required: {label: "Not required", variant: neutral, terminal: false, derived: false}
+      not_included: {label: "No K-3", variant: neutral, terminal: false, derived: false}   # the epic's `none`, renamed: `none` is a portal home code
+
+  transcript_parse:   # T-01 §transcripts.parse_status (CLI-05). Labels not verbatim
+    source: "T-01 epic (transcripts.parse_status)"
+    codes:
+      queued: {label: "Queued", variant: muted, terminal: false, derived: false}
+      parsed: {label: "Read", variant: green-tint, terminal: true, derived: false}
+      failed: {label: "Couldn't read", variant: red-tint, terminal: true, derived: false}
+
   k1_package:
     source: "blueprint 3.3.1; TXP-12"
     codes:

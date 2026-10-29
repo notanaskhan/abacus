@@ -41,6 +41,22 @@ Verbatim from the handoff's spec.md into `screens/ADM-08/copy.ts`. Banned (T-01 
 
 ## Links
 Outbound: ADM-01 (settings), TAX-09 (engine sync). Inbound: Settings nav.
+| Opens ADM-01 · Settings home | ADM-01 | planned (handoff link; tooltip-only) |
+| Opens POR-20 · Reconnect request (Published · v1) | POR-20 | planned (handoff link; tooltip-only) |
+| Opens WB-10 · Connect | WB-10 | planned (handoff link; tooltip-only) |
+| Opens ADM-02 · People | ADM-02 | planned (handoff link; tooltip-only) |
+| Opens ADM-03 · Offices & teams | ADM-03 | planned (handoff link; tooltip-only) |
+| Opens ADM-06 · Security | ADM-06 | planned (handoff link; tooltip-only) |
+| Opens ADM-04 · AI policy | ADM-04 | planned (handoff link; tooltip-only) |
+| Opens ADM-05 · Consents | ADM-05 | planned (handoff link; tooltip-only) |
+| Opens ADM-09 · Developer | ADM-09 | planned (handoff link; tooltip-only) |
+| Opens ADM-10 · Portal | ADM-10 | planned (handoff link; tooltip-only) |
+| Opens ADM-11 · Quality | ADM-11 | planned (handoff link; tooltip-only) |
+| Opens ADM-12 · Monitoring | ADM-12 | planned (handoff link; tooltip-only) |
+| Opens ADM-07 · Audit log | ADM-07 | planned (handoff link; tooltip-only) |
+| Opens TAX-09 · Tax engine sync · Jonah & Claire Feld · 2025 Form 1040 | TAX-09 | planned (handoff link; tooltip-only) |
+| Opens WB-11 · CCH Axcess Tax | WB-11 | planned (handoff link; tooltip-only) |
+| Opens INB-01 · Inbox filtered to unmatched senders | INB-01 | planned (handoff link; tooltip-only) |
 
 ## Acceptance
 - ADM-08 acceptance: every artboard a, b, c, d, e, f, g renders from its fixture scenario with the persona and clock above.

@@ -42,6 +42,15 @@ Verbatim from the handoff's spec.md into `screens/TAX-09/copy.ts`. Banned (T-01 
 
 ## Links
 Outbound: SHL-12 h (final approval), TAX-02, KNW-05 (planned). Inbound: TAX-02 chip, TPL-01 board rows.
+| Open checkpoint ‘Partner approval’ in TAX-07 | TAX-07 | planned (handoff link; tooltip-only) |
+| Opens TAX-06 · no open issues | TAX-06 | planned (handoff link; tooltip-only) |
+| Opens SHL-08 · Ridgeline_2025_K1_JonahFeld.pdf | SHL-08 | planned (handoff link; tooltip-only) |
+| Opens BND-01 · Feld 2025 Binder | BND-01 | planned (handoff link; tooltip-only) |
+| Opens INB-01 · Claire Feld’s email, 2 attachments waiting | INB-01 | planned (handoff link; tooltip-only) |
+| Opens TAX-05 · 1040 Review Checklist v6, L1 sign-off | TAX-05 | planned (handoff link; tooltip-only) |
+| Opens TXP-12 · Ridgeline K-1 package, draft K-1 | TXP-12 | planned (handoff link; tooltip-only) |
+| Opens TAX-12 · Form 4868 and IT-370 acknowledgements | TAX-12 | planned (handoff link; tooltip-only) |
+| Opens SIG-01 · TY2025 engagement letter envelope | SIG-01 | planned (handoff link; tooltip-only) |
 
 ## Acceptance
 - TAX-09 acceptance: every artboard a, a2, b, c, d, d2, e renders from its fixture scenario with the persona and clock above.

@@ -14,6 +14,7 @@ flags:
     description: 'Questionnaires (T-02): organizer templates, team questions and inquiries; POR-05. Off: 404 and POR-05 leaves the portal nav. On: 501 until T-02-T16. T-02-T03, DEC-1162.'
     owner: ayushkbhatia
     created: 2026-10-29
-    expires: 2027-01-26
+    expires: 2027-04-27
+    override: DEC-137
     kind: boolean
     default: false

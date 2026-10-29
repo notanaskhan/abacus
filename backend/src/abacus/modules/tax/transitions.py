@@ -15,8 +15,9 @@ from abacus.kernel._statuses import ReturnStatus, ReturnSyncChipStatus
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Ref, Target, uow
+from abacus.modules.identity.api import Forbidden
 from abacus.modules.tax import repository
-from abacus.modules.tax.status import StaleReturn, next_status
+from abacus.modules.tax.status import StaleReturn, actor_may, next_status
 
 
 async def apply_transition(
@@ -29,7 +30,10 @@ async def apply_transition(
     on_behalf_of: UUID | None = None,
 ) -> ReturnStatus:
     """Move a return on `event`. 404 for an unknown return; 409 `transition_refused` for a move
-    the table does not hold; 409 `stale_version` when the row moved since `seen_version`."""
+    the table does not hold; 409 `stale_version` when the row moved since `seen_version`; 403
+    for the agent or support, and for the system on a person's decision (`final_approved`)."""
+    if not actor_may(event, tenant.actor_kind):
+        raise Forbidden(f"tax_return.{event}", "role")
     keys = {"tenant_id": tenant.tenant_id, "work_item_id": work_item_id}
     async with uow(tenant) as tx:
         found = await repository.status_of(tx.session, keys)
@@ -49,7 +53,7 @@ async def apply_transition(
                 "from_status": current.value,
                 "to_status": to.value,
                 "event": event,
-                "actor_kind": "system" if tenant.actor_kind == "system" else "human",
+                "actor_kind": tenant.actor_kind,
                 "actor_id": tenant.actor_id,
                 "on_behalf_of": on_behalf_of,
                 "reason": reason,
