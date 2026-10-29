@@ -1,8 +1,8 @@
 ---
 id: TASK-2129
 title: Q-03-T091 Threat-model refresh for pen-test delta #1
-spec: ADR-064
-acceptance_criteria: [backlog row]
+spec: SPEC-000  # Q-03-T091 row; ADR-064 governs the model
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: amber
 status: in-review
 epic: Q-03
