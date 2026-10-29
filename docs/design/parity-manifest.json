@@ -1569,6 +1569,130 @@
       "sha256": "f51a6ed6ccb1ef7f04cc5715fddc98bfac039d6909a67d619b478e65cf87985e",
       "crop": "window",
       "tier": "C"
+    },
+    "aud-06a.window": {
+      "page": "screens/AUD-06?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-06 Trial balance and leadsheets/screenshots/AUD-06a.png",
+      "sha256": "dd5f8e2899c9d7c12f795b4277af1d12e1095b20851bcac69e0255e0ed75a520",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-06b.window": {
+      "page": "screens/AUD-06?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-06 Trial balance and leadsheets/screenshots/AUD-06b.png",
+      "sha256": "c2608811fdc171a845874eba29824900b13e6ff2dd61beb864907541606fe178",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-06c.window": {
+      "page": "screens/AUD-06?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-06 Trial balance and leadsheets/screenshots/AUD-06c.png",
+      "sha256": "37e328badfdc42425fad5544bed62aed57e24d1d61c02cfdda32340db6e95033",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-06d.window": {
+      "page": "screens/AUD-06?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-06 Trial balance and leadsheets/screenshots/AUD-06d.png",
+      "sha256": "00145d869e215fd1cf134fd3e7d21d63953f5416b14a38910b2227fd5cade117",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-06e.window": {
+      "page": "screens/AUD-06?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-06 Trial balance and leadsheets/screenshots/AUD-06e.png",
+      "sha256": "86802d9c4bd0809e5ebe2ee62bbbae56ca58de1d63d8cbbc18db03b8280ead68",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-06f.window": {
+      "page": "screens/AUD-06?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-06 Trial balance and leadsheets/screenshots/AUD-06f.png",
+      "sha256": "281ed5f2c837dd80b30a200391451cc43005c304ebf631fdb36ecbf2c816b16d",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-06g.window": {
+      "page": "screens/AUD-06?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-06 Trial balance and leadsheets/screenshots/AUD-06g.png",
+      "sha256": "e32cae0e13a87a0b5543afd48d559df204ff5ee08292feddc70d94913b9bbd73",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "por-16a.window": {
+      "page": "screens/POR-16?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-16 Connections - Copperleaf/screenshots/POR-16a.png",
+      "sha256": "e1326948492f42635f4d089f9e241dcaa118704eaf4d21d3f04b7305cb147397",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "A-02-T31: DF-19 rewords the relationship caption, f's body and e's scopes (read-only: no posting copy) where the handoff draws the posting wording; the parity spec does not read data-parity-mask yet, so the copy masks the row names are recorded here, not applied",
+      "locked": true
+    },
+    "por-16b.window": {
+      "page": "screens/POR-16?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-16 Connections - Copperleaf/screenshots/POR-16b.png",
+      "sha256": "93fa74d5d1336dccab40d1bb961ab8b262d0fe958c0a85a657fd4abdd773f594",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "A-02-T31: DF-19 rewords the relationship caption, f's body and e's scopes (read-only: no posting copy) where the handoff draws the posting wording; the parity spec does not read data-parity-mask yet, so the copy masks the row names are recorded here, not applied"
+    },
+    "por-16c.window": {
+      "page": "screens/POR-16?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-16 Connections - Copperleaf/screenshots/POR-16c.png",
+      "sha256": "1cb2d86dbde052c2dc77a0734f88a1c2c4fcda7ce6ffc7d044d599c58514a35e",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "A-02-T31: DF-19 rewords the relationship caption, f's body and e's scopes (read-only: no posting copy) where the handoff draws the posting wording; the parity spec does not read data-parity-mask yet, so the copy masks the row names are recorded here, not applied",
+      "locked": true
+    },
+    "por-16d.window": {
+      "page": "screens/POR-16?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-16 Connections - Copperleaf/screenshots/POR-16d.png",
+      "sha256": "7dd53323ed344031eeec6b410acb3e0dd4cfc5b9bf6987a456760c232ecb4506",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "A-02-T31: DF-19 rewords the relationship caption, f's body and e's scopes (read-only: no posting copy) where the handoff draws the posting wording; the parity spec does not read data-parity-mask yet, so the copy masks the row names are recorded here, not applied",
+      "locked": true
+    },
+    "por-16e.window": {
+      "page": "screens/POR-16?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-16 Connections - Copperleaf/screenshots/POR-16e.png",
+      "sha256": "fdc002e9844cc88c62285aaa638c8a523cb960534433e43772a7bfee92b0e657",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "A-02-T31: DF-19 rewords the relationship caption, f's body and e's scopes (read-only: no posting copy) where the handoff draws the posting wording; the parity spec does not read data-parity-mask yet, so the copy masks the row names are recorded here, not applied"
+    },
+    "por-16f.window": {
+      "page": "screens/POR-16?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-16 Connections - Copperleaf/screenshots/POR-16f.png",
+      "sha256": "a1f071cdd83288411fd7b94c33ee576ea1414387df22144405c8238b05505ef9",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "A-02-T31: DF-19 rewords the relationship caption, f's body and e's scopes (read-only: no posting copy) where the handoff draws the posting wording; the parity spec does not read data-parity-mask yet, so the copy masks the row names are recorded here, not applied"
+    },
+    "por-16g.window": {
+      "page": "screens/POR-16?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/POR-16 Connections - Copperleaf/screenshots/POR-16g.png",
+      "sha256": "7d39f5cae1390eab3203551aee04997f4f6a58fe496047b6fb2f69391d1efb0c",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "A-02-T31: DF-19 rewords the relationship caption, f's body and e's scopes (read-only: no posting copy) where the handoff draws the posting wording; the parity spec does not read data-parity-mask yet, so the copy masks the row names are recorded here, not applied",
+      "locked": true
     }
   }
 }

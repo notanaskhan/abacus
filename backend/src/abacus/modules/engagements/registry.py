@@ -11,7 +11,6 @@ TABLES: frozenset[str] = frozenset(
     {
         "engagements",
         # The methodology_* tables are the methodology module's since K-01-T02 (0180).
-        "engagement_acceptance",
         "independence_confirmations",
         "work_items",  # F-03-T05 (0068)
         "assurance_work_items",

@@ -224,14 +224,7 @@ async def _engagement(
             by.user_id,
         ),
     )
-    await seed.run(
-        "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
-        "decided_by, documented_at, independence_concluded_by, independence_concluded_at, "
-        "independence_documented_at) VALUES ($1, $2, 'continuance', 'accepted', 'test-seed', "
-        "'Seeded', 'test-seed', clock_timestamp(), 'Seeded')",
-        firm,
-        engagement,
-    )
+    await seed.open_engagement(firm, engagement)
     list_id = await seed.value(
         "INSERT INTO request_lists (tenant_id, engagement_id) VALUES ($1, $2) RETURNING id",
         firm,
