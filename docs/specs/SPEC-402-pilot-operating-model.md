@@ -37,3 +37,8 @@ pilot codes and the W-signal thresholds, for every pilot window from PW1 (Q-04 Â
   policies, AI opt-in and stages, the support-session switch and status subscribers; every step
   names its screen state or CLI, its operator and its evidence, and no step loads firm content
   through a commit or the seed loader (Q-04-T015; Q-04 AC-5.1 to AC-5.7).
+- **AC-3** The onboarding rehearsal's part AY (`docs/ops/rehearsals/onboarding-content-part-ay.md`)
+  takes 200 synthetic clients through CLI-06 g, a PBC template through the KNW-01 importer, POR-20
+  templates to published (l) and ADM-10's sender domain from pending DNS to published (d to f),
+  each step through its screen with its timing recorded and each defect filed on its owning epic;
+  the inputs come from `abacus_tools.synthetic.onboarding_files`, never from a commit (Q-04-T018).
