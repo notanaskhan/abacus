@@ -93,7 +93,9 @@ async def _requests(net: Net, site: Site, days: tuple[int, ...]) -> None:
             async with uow(tenant) as tx:
                 tx.record(action, target=Target("request_item", target))
             await net.seed.run_untriggered(
-                "UPDATE audit_events SET occurred_at = $3 WHERE tenant_id = $1 "
+                "WITH a AS (SELECT set_config('app.actor_kind', 'system', true), "
+                "set_config('app.actor_id', 'q04t008-seed', true)) "
+                "UPDATE audit_events SET occurred_at = $3 FROM a WHERE tenant_id = $1 "
                 "AND target_id = $2 AND action = $4",
                 site.tenant_id,
                 str(target),

@@ -131,7 +131,9 @@ async def compute_week(tenant_id: UUID, week_start: date) -> int:
             tx.record(
                 "pilot_metrics.computed",
                 target=Target("pilot_enrolment", row.id),
-                after=Ref(week_start=week_start.isoformat(), metrics=len(values), new=new),
+                after=Ref(
+                    week_start=int(week_start.strftime("%Y%m%d")), metrics=len(values), new=new
+                ),
             )
         written += new
     return written
