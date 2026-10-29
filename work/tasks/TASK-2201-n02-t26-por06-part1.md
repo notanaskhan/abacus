@@ -2,7 +2,7 @@
 id: TASK-2201
 title: N-02-T26 POR-06 part 1 on T16 in fixture mode
 spec: SPEC-381
-acceptance_criteria: [AC-10, AC-11, AC-12]
+acceptance_criteria: [AC-10, AC-12]
 risk_zone: green
 status: in-review
 epic: N-02
@@ -49,7 +49,7 @@ from a return parameter alone."
 6. [ ] End review: run the suites, axe in the gallery.
 
 Tests to write (mapped to ACs):
-- AC-10 → `test_ac10_a_*` · AC-11 → `test_ac11_b_*` · AC-12 → `test_ac12_c_*`, `test_ac12_a_return_parameter_alone_never_renders_completed`, `test_ac12_g_*`
+- AC-10 → `test_ac10_a_*`, `test_ac10_b_*`, `test_ac10_c_*`, `test_ac10_a_return_parameter_alone_never_renders_completed` · AC-12 → `test_ac12_g_*` (AC-11 is the KBA path, N-02-T27)
 
 ## Progress log
 - `2026-10-29` — Built steps 1–5 on `s17-n02-t26` (build-only; tests run at the S17 end review).

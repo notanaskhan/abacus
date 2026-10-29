@@ -1,4 +1,4 @@
-// POR-06 · Sign, part 1 (N-02-T26; SPEC-381 AC-10..AC-12; docs/screens/POR-06.md). One test per
+// POR-06 · Sign, part 1 (N-02-T26; SPEC-381 AC-10, AC-12; docs/screens/POR-06.md). One test per
 // artboard on its fixture scenario at 1400 and 390, and the task's acceptance: "Scenario tests for
 // a, b, c and g pass at 1400 and 390, and Completed never renders from a return parameter alone."
 // Pages come into view through a stubbed IntersectionObserver (jsdom has none); the provider's
@@ -114,7 +114,7 @@ describe.each(WIDTHS)("POR-06 at %s", (_width, mobile) => {
     ).toBe(true);
   });
 
-  it("test_ac11_b_consent_then_the_providers_view", async () => {
+  it("test_ac10_b_consent_then_the_providers_view", async () => {
     vi.stubGlobal("IntersectionObserver", SeeEverything);
     const seen = show("a", { mobile });
     const go = await continueButton();
@@ -145,7 +145,7 @@ describe.each(WIDTHS)("POR-06 at %s", (_width, mobile) => {
     expect(seen.calls.some((c) => c.path.endsWith("/signing-session"))).toBe(true);
   });
 
-  it("test_ac11_b_opens_in_the_providers_view", async () => {
+  it("test_ac10_b_opens_in_the_providers_view", async () => {
     show("b", { mobile });
     await waitFor(() => {
       expect(document.querySelector("[data-signing='provider-frame']")).not.toBeNull();
@@ -153,7 +153,7 @@ describe.each(WIDTHS)("POR-06 at %s", (_width, mobile) => {
     expect(screen.queryByRole("button", { name: /Adopt signature/ })).toBeNull();
   });
 
-  it("test_ac12_c_the_server_says_signed_the_completion_card", async () => {
+  it("test_ac10_c_the_server_says_signed_the_completion_card", async () => {
     show("c", { mobile });
     const card = await waitFor(() => {
       const found = document.querySelector("[data-signing='completion']");
@@ -166,7 +166,7 @@ describe.each(WIDTHS)("POR-06 at %s", (_width, mobile) => {
     expect(within(card).getByText("Waiting for 1 more signature.")).toBeTruthy();
   });
 
-  it("test_ac12_a_return_parameter_alone_never_renders_completed", async () => {
+  it("test_ac10_a_return_parameter_alone_never_renders_completed", async () => {
     show("pending", { mobile });
     await screen.findByText("Checking your signature");
     expect(document.querySelector("[data-signing='completion']")).toBeNull();
@@ -194,7 +194,7 @@ describe.each(WIDTHS)("POR-06 at %s", (_width, mobile) => {
 });
 
 describe("POR-06 decline (g) from review", () => {
-  it("test_ac12_g_a_reason_is_required_and_sends_cs_code", async () => {
+  it("test_ac12_g_a_reason_is_required_and_sends_c7s_code", async () => {
     const seen = show("a");
     fireEvent.click(await screen.findByRole("button", { name: "Decline…" }));
     const dialog = await screen.findByRole("dialog", { name: "Decline to sign?" });
