@@ -546,6 +546,102 @@ function danielDeadlines(): HomeOut["deadlines"] {
   };
 }
 
+type ActivityRow = HomeOut["client_activity"][number];
+
+const activity = (
+  n: number,
+  at: string,
+  eventType: string,
+  client: string,
+  actor: ActivityRow["actor"],
+  facts: ActivityRow["facts"],
+  labels: Record<string, string>,
+): ActivityRow => ({
+  id: stableId(`home:activity:${String(n)}`),
+  occurred_at: at,
+  event_type: eventType,
+  client_id: clientId(client),
+  client_label: client,
+  engagement_id: null,
+  actor,
+  subject: { type: "request_item", id: stableId(`home:activity:subject:${String(n)}`) },
+  facts,
+  labels,
+});
+
+const contact = (name: string): ActivityRow["actor"] => ({
+  type: "contact",
+  id: stableId(`contact:${name}`),
+  label: name,
+});
+
+/** HOME-01a "Client activity" (docs/screens/HOME-01.md, "Client activity of a"). Inbound mail
+ * and envelope rows are fixture content until S29 adds those sources (I-01-T23). */
+function danielActivity(): ActivityRow[] {
+  return [
+    activity(
+      1,
+      "2026-09-14T09:12:00-05:00",
+      "inbound_mail",
+      "Jonah & Claire Feld",
+      contact("Claire Feld"),
+      { count: 2, document_class: "health_insurance_form" },
+      { context: "Waiting to be filed · Inbox" },
+    ),
+    activity(
+      2,
+      "2026-09-14T08:40:00-05:00",
+      "envelope_sent",
+      RIDGELINE,
+      { type: "user", id: userId("daniel-reyes"), label: "Daniel Reyes" },
+      { document_class: "engagement_letter", due_on: "2026-09-24" },
+      { subject: "Ridgeline cost segregation & §754 analysis", recipient: "Owen Calder" },
+    ),
+    activity(
+      3,
+      "2026-09-11T15:05:00-05:00",
+      "inbound_mail",
+      "Marcus & Dana Whitley",
+      contact("Dana Whitley"),
+      {},
+      { subject: "Re: estimated payments", context: "Filed to 2025 Binder" },
+    ),
+    activity(
+      4,
+      "2026-09-11T10:30:00-05:00",
+      "agent_pre_screen",
+      "Estate of Walter Thornbury",
+      { type: "agent_run", id: null, label: "Accrued Agent" },
+      { flags: 3 },
+      {},
+    ),
+    activity(
+      5,
+      "2026-09-09T16:20:00-05:00",
+      "client_upload",
+      "Estate of Walter Thornbury",
+      contact("Paul Thornbury"),
+      { count: 1 },
+      {
+        subject: "asset summary",
+        context: "New engagement intake · Estate of Walter Thornbury",
+      },
+    ),
+    activity(
+      6,
+      "2026-09-09T11:45:00-05:00",
+      "client_upload",
+      "Calloway Family Trust",
+      contact("Eleanor Calloway"),
+      { count: 1 },
+      {
+        subject: "Harborline Trust Company custodial statements",
+        context: "Calloway 2025 Binder",
+      },
+    ),
+  ];
+}
+
 const FIRST_NAME: Readonly<Record<HomePersona, string>> = {
   "daniel-reyes": "Daniel",
   "margaret-okonkwo": "Margaret",
@@ -569,8 +665,13 @@ export function homeView(persona: string, officeName: OfficeName | null = null):
     tiles: admin ? adminTiles() : officeName === "Denver" ? denverTiles() : firmTiles(),
     your_work: YOUR_WORK[who] ?? null,
     deadlines: who === "daniel-reyes" ? danielDeadlines() : { rows: [], next: null },
-    // Client activity is I-01-T12's projection; its rows arrive with it.
-    client_activity: [],
+    // Live rows are I-01-T12's projection; the a frame's six rows are fixture content (DEC-1001).
+    client_activity:
+      who === "daniel-reyes"
+        ? danielActivity().filter(
+            (row) => officeName === null || CLIENT_OFFICE[row.client_label] === officeName,
+          )
+        : [],
     running_count: admin ? null : 3,
     segments: { deadlines: "planned", capacity: "planned", insights: "entitlement_missing" },
   };

@@ -11,3 +11,9 @@ export {
   usageWords,
 } from "./categories";
 export { type CatalogFilters, useChangeLog, useKnowledgeItems, useReviewQueue } from "./queries";
+export {
+  type WorkbookProblem,
+  XLSX,
+  uploadMethodology,
+  workbookProblems,
+} from "./methodologyUpload";

@@ -383,6 +383,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/methodology/versions/{version_id}", "methodology.read"),
     ("GET", "/v1/methodology/versions/{version_id}/export.xlsx", "methodology.read"),
     ("GET", "/v1/methodology/versions/{version_id}/guidance-drafts", "template_guidance.read"),
+    ("GET", "/v1/methodology/versions/{version_id}/programs", "methodology.read"),
     ("GET", "/v1/methodology/versions/{version_id}/state", "methodology.read"),
     ("GET", "/v1/methodology/workbook-template.xlsx", "methodology.read"),
     ("GET", "/v1/notifications", "own"),

@@ -26,3 +26,4 @@ class Message(Base):
     created_at: Mapped[datetime]
     template_version_id: Mapped[UUID | None]  # R-01-T19 (0196): the version a templated send used
     kind: Mapped[str | None]  # R-01-T19: client | test | staff
+    from_domain: Mapped[str | None]  # R-01-T27 (0340): the domain the message went From

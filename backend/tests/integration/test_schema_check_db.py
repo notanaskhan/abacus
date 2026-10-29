@@ -1217,6 +1217,11 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"stop_on_binder_done", "notify_preparer_after_max", "cc_assigned_preparer", "mode"}
             | {"version", "updated_by", "updated_at"}
         ),
+        # R-01-T27 (0340): a sender domain's state from its checks, and its revoke.
+        "sending_domains": frozenset(
+            {"status", "dkim_records", "dkim_status", "mail_from_status", "verified_at"}
+            | {"last_checked_at", "failure_reason", "revoked_at", "revoked_by"}
+        ),
         "contacts": frozenset(
             {"display_name", "phone", "title", "organisation_name", "user_id", "portal_state"}
             | {"email", "party_kind", "version"}  # P-07-T25 (0146)
@@ -2087,6 +2092,7 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"security_sessions", "security_session_member", "security_sign_in_methods"}
         | {"auth_session_refused_here", "auth_session_owner", "auth_session_purge"}
         | {"access_events_partition"}  # 0105 (Q-02-T20)
+        | {"client_mail_enabled", "set_client_mail"}  # 0340 (R-01-T27): the client-mail gate
         | {"apply_plan_entitlements", "invite_first_admin", "set_plan_module"}  # 0107
         | {"portal_resolve_host", "portal_host_logo", "portal_domain_add"}  # 0111
         | {"portal_domain_activate"}  # 0111

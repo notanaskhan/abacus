@@ -10,7 +10,7 @@
   a `due_risk` code computed here.
 - **Running count**: the registered `agent_runs_running` count, else null.
 - `office_id` narrows every tile, the band and the deadlines (DEC-30); walls leave a client out of
-  all of them with nothing counted for it (DEC-43). Client activity is I-01-T12's (empty here).
+  all of them with nothing counted for it (DEC-43). Client activity is `activity.py` (I-01-T12).
 """
 
 from __future__ import annotations
