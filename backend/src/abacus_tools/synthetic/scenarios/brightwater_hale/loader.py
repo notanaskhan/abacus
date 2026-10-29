@@ -366,6 +366,9 @@ FLAGS_ON: Final = (
     "engagements.roll_forward_v2",  # P-07-T55: ENG-13 v2 on synthetic firms
     # N-02-T17: record mode (SIG-01, the import, the portal reads) on synthetic firms from S15.
     "signatures.envelopes",
+    # N-01-T23: INB-01, INB-02 and FIL-01 live on Brightwater Hale (staging and local).
+    "inbox.firm_intake",
+    "files.browser",
 )
 OFFICE_ZONES: Final = {
     "Chicago": "America/Chicago",
