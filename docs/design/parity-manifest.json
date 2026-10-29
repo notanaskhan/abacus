@@ -1538,6 +1538,38 @@
       "crop": "window",
       "tier": "C"
     },
+    "home-01a.window": {
+      "page": "screens/HOME-01?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/HOME-01 Home dashboard/screenshots/HOME-01a.png",
+      "sha256": "c378b66b275bd2bed4f01086c9787db84d9b91b7647ae9b38e7c6b0fd9e0a2dd",
+      "crop": "window",
+      "tier": "C"
+    },
+    "home-01a2.window": {
+      "page": "screens/HOME-01?st=a2",
+      "selector": "[data-artboard=\"a2\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/HOME-01 Home dashboard/screenshots/HOME-01a2.png",
+      "sha256": "e0eb5e964f22e2e19c99a29048592516c36615a120aec64952f003ec5a8f6a1c",
+      "crop": "window",
+      "tier": "C"
+    },
+    "home-01f.window": {
+      "page": "screens/HOME-01?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/HOME-01 Home dashboard/screenshots/HOME-01f.png",
+      "sha256": "fee84eacbb3c3f05371e0b5c8784cbee6a54fa344255d565f16049a4ac7282ac",
+      "crop": "window",
+      "tier": "C"
+    },
+    "home-01g.window": {
+      "page": "screens/HOME-01?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/HOME-01 Home dashboard/screenshots/HOME-01g.png",
+      "sha256": "f51a6ed6ccb1ef7f04cc5715fddc98bfac039d6909a67d619b478e65cf87985e",
+      "crop": "window",
+      "tier": "C"
+    },
     "aud-06a.window": {
       "page": "screens/AUD-06?st=a",
       "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
