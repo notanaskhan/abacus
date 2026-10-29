@@ -1,8 +1,8 @@
 ---
 id: TASK-1854
 title: P-03-T25 full-stack E2E on staging, trace to source and PII reveal/unlock
-spec: SPEC-020
-acceptance_criteria: [P-03-T25]
+spec: SPEC-322
+acceptance_criteria: [AC-1]
 risk_zone: green
 status: in-review
 epic: P-03
