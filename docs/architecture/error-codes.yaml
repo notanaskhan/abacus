@@ -565,6 +565,11 @@ codes:
     - abacus.modules.evidence.export_currency.ExportStale
     summary: 'Evidence or requests changed after the final export''s snapshot: export again, then record
       the archive (`facts.event_seq` names the newer event).'
+  field_changed:
+    status: 409
+    raised_by:
+    - abacus.modules.review.field_provenance.FieldChanged
+    summary: 'The field has a newer version than the one the person saw: nothing is written.'
   field_value_invalid:
     status: 422
     raised_by:

@@ -37,6 +37,7 @@ from abacus.modules.agents.fake_responses import (
 )
 from abacus.modules.agents.fake_responses import install as install_fake_responses
 from abacus.modules.agents.fake_responses import install_review as install_fake_reviews
+from abacus.modules.agents.field_citations import register_field_citations_reader
 from abacus.modules.agents.follow_up_drafts import on_follow_up_sent
 from abacus.modules.agents.follow_up_routes import follow_ups_router
 from abacus.modules.agents.follow_ups import reminder_history_of
@@ -214,6 +215,8 @@ register_suggestion_lookup()
 register_proposal_state()
 # P-04-T32 (DEC-804): a proposal's checkpoint is decided through the proposal (SHL-16 = SHL-10).
 register_checkpoint_hooks()
+# P-04-T35 (DEC-1050): SHL-09's citations are checked, shown and written through C4 here.
+register_field_citations_reader()
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)
