@@ -166,3 +166,5 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-210](ADR-210-firm-intake-channel-agnostic.md) | Firm intake is channel-agnostic, read by an intake scope, and filed only by people (P-60 part 1) | red | accepted |
 | [ADR-230](ADR-230-structured-agent-output.md) | Structured agent output (AgentBlocks): a closed block schema, numbers by reference, no model markup (amends ADR-065) | red | accepted |
 | [ADR-231](ADR-231-tax-computation-boundary.md) | Tax computation boundary: the engine of record computes tax, credits and filed forms; Accrued shows engine values only from approved imports | amber | accepted |
+| [ADR-320](ADR-320-deterministic-document-generation.md) | Deterministic document generation: WeasyPrint and python-docx in a pinned image, DocBlocks through code-owned layouts, byte-identical goldens, Typst fallback (P-19, DEC-44) | amber | accepted |
+| [ADR-321](ADR-321-ocr-and-document-understanding.md) | OCR and document understanding: Amazon Textract inside the boundary as a document service, gated in code, words as a derived record (P-32, DEC-42) | amber | accepted |

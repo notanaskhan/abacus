@@ -349,6 +349,11 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Term | Meaning | Code name | Don't use |
 |---|---|---|---|
 | Statement document / line item / linked value | Linked values are TB-linked · Formula · Override · Stale override. | `statement_documents`, `statement_versions`, `line_items`, `linked_values`, `tracked_changes` | — |
+| Generated document | A document the platform renders for a consumer record (an engagement letter, a §7216 consent, a representation letter, a report, a notice response, a package): insert-only versions of DocBlocks rendered to PDF and DOCX through a code-owned layout, each file stored as an evidence version. Its status is computed: Drafting · Draft · Approved · Locked, with Out of date (DF-31). A final version needs a human approval (ADR-320, P-11). UI word: "Document" or the consumer's noun ("Letter"). | `generated_documents`, `generated_document_versions`, `generated_document_files`, `generated_document_fields`, `generated_document_events`, `render_jobs` | — |
+| Report template | A firm's wording for a document family as database content: insert-only versions of DocBlocks with a clause library, declared variables and synthetic sample data, imported (dry run, then draft) and published by a person with fresh MFA. Never a constant, a migration or model output (ADR-320). | `report_templates`, `report_template_versions`, `report_template_publications` | — |
+| DocBlock | One block of the closed C11 vocabulary a template and a generated version are made of: section, heading, paragraph (runs of text, variable and citation), clause, list, table, kv, signature block, legend, image, enclosures, page break. No markup. | `DocBlock` | — |
+| Render hash | The SHA-256 of a rendered file's bytes; equal to its evidence fingerprint. Byte stability means the same inputs give the same render hash. Distinct from the content hash (the canonical JSON of the template version, snapshot hash, clause states and overrides). | `render_hash`, `content_hash` | — |
+| Text source | Where a page's words came from: the PDF's own text layer, OCR (ADR-321) or none (`not_scannable`). Shown in SHL-08 as "Text read automatically" for OCR pages. | `evidence_pages.text_source` (`text_layer`, `ocr`, `none`) | — |
 
 ## New terms: tax
 
