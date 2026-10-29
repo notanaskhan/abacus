@@ -1,8 +1,8 @@
 ---
 id: TASK-1726
 title: N-02-T07 Signatures v1 migration (C7 tables)
-spec: N-02 §4.2
-acceptance_criteria: [N-02-T07]
+spec: SPEC-381
+acceptance_criteria: [AC-17]
 risk_zone: red
 status: in-review
 epic: N-02

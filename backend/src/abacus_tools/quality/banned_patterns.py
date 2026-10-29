@@ -2196,6 +2196,9 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_tie_out_schema.py",
             "tests/integration/test_integrations_schema.py",
             "tests/integration/test_entity_connections_schema.py",
+            # N-02-T07 (S14): 0292's round trip; seeds as the superuser and proves the app
+            # role's refusals with the tenant and actor set by hand.
+            "tests/integration/test_n02t07_signatures_schema.py",
             # I-01-T04, K-01-T05 (S11): the human-only snooze and reassignment rows, the card's
             # reassign guard and the frozen methodology content, proved as the app role with the
             # tenant and actor set by hand, as tenant_session sets them.
@@ -2354,6 +2357,9 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_tie_out_schema.py",
             "tests/integration/test_integrations_schema.py",
             "tests/integration/test_entity_connections_schema.py",
+            # N-02-T07 (S14): 0292's round trip; seeds as the superuser and proves the app
+            # role's refusals with the tenant and actor set by hand.
+            "tests/integration/test_n02t07_signatures_schema.py",
             # I-01-T04, K-01-T05 (S11): the human-only snooze and reassignment rows, the card's
             # reassign guard and the frozen methodology content, proved as the app role with the
             # tenant and actor set by hand, as tenant_session sets them.

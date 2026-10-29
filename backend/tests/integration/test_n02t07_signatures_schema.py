@@ -204,7 +204,7 @@ def test_ac_insert_only_tables_refuse_update_delete_and_truncate(
     )
     assert triggers == 2  # row UPDATE or DELETE, and statement TRUNCATE
     with pytest.raises(asyncpg.InsufficientPrivilegeError):
-        asyncio.run(_sql(db, f"TRUNCATE {table}"))
+        asyncio.run(_sql(db, f"TRUNCATE {table} CASCADE"))
 
 
 def test_ac_an_envelope_event_once_written_is_never_changed(db: sc.Database) -> None:
