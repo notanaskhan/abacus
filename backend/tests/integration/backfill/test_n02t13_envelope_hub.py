@@ -348,7 +348,7 @@ async def test_a_void_needs_a_reason_keeps_evidence_and_closes_the_envelope(firm
     assert kept == 1
     again = await firm.net.call("POST", path, firm.grace, body={"reason": "replaced"})
     assert again.status_code == 409
-    assert again.json()["code"] == "envelope_not_open"
+    assert again.json()["detail"] == "envelope_not_open"
     walled = f"/v1/envelopes/{made['walled']}/void"
     assert (
         await firm.net.call("POST", walled, firm.grace, body={"reason": "replaced"})
@@ -393,7 +393,7 @@ async def _imported(firm: Firm) -> str:
             "upload_ids": uploads,
             "attested": True,
         },
-        headers={**firm.net.headers(firm.grace), "Idempotency-Key": "n02t13-import"},
+        headers={**firm.net.headers(firm.grace), "Idempotency-Key": str(uuid.uuid4())},
     )
     assert response.status_code == 201, response.text
     return cast(str, response.json()["row"]["id"])
