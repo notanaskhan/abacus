@@ -23,6 +23,9 @@ import {
   TO_SEND,
 } from "../seed/signatures";
 
+/** The by-type tile's consent bucket (C7 purpose code). */
+const CONSENT_PURPOSE: EnvelopeListRow["purpose"] = "consent_7216";
+
 export const SIG01_PERSONA = "grace-holloway";
 export const SIG01_CLOCK = "2026-09-14T09:24:00-05:00";
 
@@ -93,7 +96,7 @@ export function summaryOf(view: HubView): EnvelopeSummary {
       { key: "efile", n: HUB_COUNTS.byType.efile },
       { key: "engagement_letter", n: HUB_COUNTS.byType.letters },
       { key: "rep_letter", n: HUB_COUNTS.byType.rep },
-      { key: "consent_7216", n: HUB_COUNTS.byType.consents },
+      { key: CONSENT_PURPOSE, n: HUB_COUNTS.byType.consents },
     ],
   };
 }

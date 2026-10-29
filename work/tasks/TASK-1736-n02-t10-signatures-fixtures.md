@@ -1,8 +1,8 @@
 ---
 id: TASK-1736
 title: N-02-T10 Signatures fixtures and scenarios
-spec: docs/screens/SIG-01.md; handoff SIG-01 spec.md
-acceptance_criteria: [N-02-T10]
+spec: SPEC-381
+acceptance_criteria: [AC-4]
 risk_zone: green
 status: in-review
 epic: N-02
