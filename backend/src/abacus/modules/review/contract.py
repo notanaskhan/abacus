@@ -46,6 +46,7 @@ from abacus.modules.identity.api import (
     names_of,
 )
 from abacus.modules.review import checkpoints
+from abacus.modules.review import field_provenance as fields_svc
 from abacus.modules.review import issue_resolutions as resolutions
 from abacus.modules.review import issues as issues_svc
 from abacus.modules.review.bulk import BulkTarget, bulk_sign
@@ -2419,7 +2420,8 @@ async def field_provenance_route(
     target_type: FieldTargetType, target_id: UUID, field_key: FieldKey, ctx: Ctx
 ) -> FieldProvenanceOut:
     """SHL-09 a to f: versions, prior values, citations, ticks and flags with staleness."""
-    await _stub(ctx)
+    await _live(ctx)
+    return _provenance_out(await fields_svc.provenance(ctx, target_type, target_id, field_key))
 
 
 @fields_router.put(
@@ -2434,7 +2436,19 @@ async def field_edit_route(
 ) -> FieldProvenanceOut:
     """SHL-09 c: a person's edit with a citation note (a human checkpoint where the owner
     checkpoints, SHL-16)."""
-    await _stub(ctx)
+    await _live(ctx)
+    return _provenance_out(
+        await fields_svc.edit(
+            ctx,
+            target_type,
+            target_id,
+            field_key,
+            value={"t": body.value.t, "v": body.value.v},
+            value_kind=body.value_kind,
+            citation_note=body.citation_note,
+            seen_seq=body.seen_seq,
+        )
+    )
 
 
 @fields_router.post(
@@ -2452,7 +2466,18 @@ async def field_reference_route(
     ctx: Ctx,
 ) -> FieldProvenanceOut:
     """ "Add reference": a document in this return, verified through C4."""
-    await _stub(ctx)
+    await _live(ctx)
+    return _provenance_out(
+        await fields_svc.add_reference(
+            ctx,
+            target_type,
+            target_id,
+            field_key,
+            document_id=body.document_id,
+            page=body.page,
+            seen_seq=body.seen_seq,
+        )
+    )
 
 
 @fields_router.post(
@@ -2470,4 +2495,94 @@ async def field_tick_route(
     ctx: Ctx,
 ) -> FieldProvenanceOut:
     """ "Sign off field": a `field_tick` sign-off (human only)."""
-    await _stub(ctx)
+    await _live(ctx)
+    return _provenance_out(
+        await fields_svc.tick(
+            ctx,
+            target_type,
+            target_id,
+            field_key,
+            level=LEVEL_OF[body.level],
+            seen_hash=body.seen_hash,
+        )
+    )
+
+
+def _provenance_out(p: fields_svc.Provenance) -> FieldProvenanceOut:
+    return FieldProvenanceOut(
+        target_type=p.target_type,
+        target_id=p.target_id,
+        field_key=p.field_key,
+        label=p.label,
+        current_seq=p.current_seq,
+        content_hash=p.content_hash,
+        versions=[
+            FieldVersionOut(
+                seq=v.seq,
+                value=FieldValueOut(
+                    t=cast(ValueType, v.value.get("t")),
+                    v=_value_text(v.value.get("v")),
+                ),
+                value_kind=cast(ValueKind, v.value_kind),
+                value_source=cast(ValueSource, v.value_source),
+                cause=cast(ValueCause, v.cause),
+                actor_kind=cast(ActorKind, v.actor_kind),
+                actor_user_id=v.actor_user_id,
+                actor_name=v.actor_name,
+                recorded_at=v.recorded_at,
+                citation=v.citation,
+                citation_ids=v.citation_ids,
+                references=[
+                    FieldReferenceOut(
+                        id=r.id,
+                        kind=r.kind,
+                        label=r.label,
+                        detail=r.detail,
+                        citation_id=r.citation_id,
+                        document_id=r.document_id,
+                        page=r.page,
+                    )
+                    for r in v.references
+                ],
+                unsupported=v.unsupported,
+                suggestion_id=v.suggestion_id,
+                checkpoint_id=v.checkpoint_id,
+                issue_id=v.issue_id,
+            )
+            for v in p.versions
+        ],
+        ticks=[
+            FieldTickOut(
+                sign_off_id=t.sign_off_id,
+                level=LEVEL_CODES[t.level],
+                signer_user_id=t.signer_user_id,
+                signer_name=t.signer_name,
+                initials=t.initials,
+                signed_at=t.signed_at,
+                content_hash=t.content_hash,
+                stale=t.stale,
+            )
+            for t in p.ticks
+        ],
+        flags=[
+            FieldFlagOut(
+                note_id=f.note_id,
+                raised_by_user_id=f.raised_by,
+                raised_by_initials=f.raised_by_initials,
+                raised_at=f.raised_at,
+                body=f.body,
+                status=cast(ReviewNoteStatus, f.status),
+            )
+            for f in p.flags
+        ],
+        allowed_actions=p.allowed_actions,
+    )
+
+
+def _value_text(raw: object) -> str | None:
+    """`{t, v}` on the wire: `v` a string (decimals already are), a bool as "true"/"false"."""
+    if raw is None:
+        return None
+    if isinstance(raw, bool):
+        return "true" if raw else "false"
+    return str(raw)

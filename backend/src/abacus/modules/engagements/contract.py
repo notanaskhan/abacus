@@ -1,9 +1,9 @@
 """The engagements family contract, v2: ENG-01, ENG-02 and ENG-03 (P-07-T05 stub; ADR-139,
 P-36). An additive C1 v1.1 note. Contract: `docs/contracts/engagements-v2.md`; spec: SPEC-321.
 
-Behind `engagements.v2`: off, every route here answers 404; on, 501 `not_implemented` until the
-task that implements it (P-07-T15 the index, record, gates and recorded letter; P-07-T16 the type
-catalogue, drafts and create). No seed slice yet (P-07-T11), so no fixtures.
+Live for every firm since P-07-T59 retired `engagements.v2` (DEC-905): P-07-T15 the index,
+record, gates and recorded letter; P-07-T16 the type catalogue, drafts and create. No seed slice
+yet (P-07-T11), so no fixtures.
 
 The live routes stay where they are and keep their shapes: `GET /v1/engagements` (a plain list),
 `GET /v1/engagements/{id}` (C1's `EngagementOut`), `PUT …/letter` (SPEC-025) and `POST
@@ -26,11 +26,8 @@ from uuid import UUID
 from fastapi import Depends, Header, Query
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import ENGAGEMENTS_ACCEPTANCE_V2, ENGAGEMENTS_V2
 from abacus.kernel._statuses import EngagementStatus, LetterRecordStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound
-from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.kernel.text import MultiLineText, SingleLineText
 from abacus.kernel.uow.idempotency import idempotent
@@ -517,16 +514,10 @@ class EngagementFromDraftOut(BaseModel):
     methodology_version_id: Annotated[UUID | None, classified("internal")] = None
 
 
-async def _gate(ctx: AuthContext) -> None:
-    if not await flag_enabled(ctx.tenant, ENGAGEMENTS_V2):
-        raise NotFound("engagements.v2")
-
-
 async def _intake_gate(ctx: AuthContext) -> None:
-    """DEC-326's order for the acceptance half: authorise `client.intake`, then its flag."""
+    """DEC-326's order for the acceptance half: authorise `client.intake` (its flag retired with
+    P-07-T59, DEC-905)."""
     await authorise(ctx, "client.intake", Resource.firm(ctx.tenant_id))
-    if not await flag_enabled(ctx.tenant, ENGAGEMENTS_ACCEPTANCE_V2):
-        raise NotFound(ENGAGEMENTS_ACCEPTANCE_V2.name)
 
 
 def _letter_out(s: index_model.LetterSummary) -> EngagementLetterSummaryOut:
@@ -691,7 +682,6 @@ async def engagement_index_route(
 ) -> EngagementIndexPage:
     """ENG-01 and CLI-02's Engagements tab: past due first, then by next deadline. "Letter │ Not
     signed" lists Accepted engagements without a recorded letter (never a Prospect)."""
-    await _gate(ctx)
     page, summary = await index_model.engagement_index(
         ctx,
         index_model.IndexFilters(
@@ -731,7 +721,6 @@ async def engagement_index_route(
 )
 async def engagement_record_route(engagement_id: UUID, ctx: Ctx) -> EngagementRecordOut:
     """ENG-02: 404 for a walled or unknown engagement or a client principal."""
-    await _gate(ctx)
     return _record_out(await record_model.engagement_record(ctx, engagement_id))
 
 
@@ -742,7 +731,6 @@ async def engagement_record_route(engagement_id: UUID, ctx: Ctx) -> EngagementRe
 )
 async def engagement_gates_route(engagement_id: UUID, ctx: Ctx) -> list[EngagementGateOut]:
     """`[{gate, met, blockers}]` for the registered providers (C1 v1.1)."""
-    await _gate(ctx)
     return _gates_out(await record_model.engagement_gates_v2(ctx, engagement_id))
 
 
@@ -777,7 +765,6 @@ async def hold_engagement_route(
     """A person, with fresh MFA: Active → On hold with a reason; `engagement.held` audited and
     `engagement.status_changed` emitted in one unit of work. 409 `illegal_transition` from any
     other state (archived included)."""
-    await _gate(ctx)
     await transitions.hold(ctx, engagement_id, body.reason)
     return EngagementStatusOut(
         engagement_id=engagement_id, status=EngagementStatus.ON_HOLD, hold_reason=body.reason
@@ -792,7 +779,6 @@ async def hold_engagement_route(
 )
 async def resume_engagement_route(engagement_id: UUID, ctx: Ctx) -> EngagementStatusOut:
     """On hold → Active; `engagement.resumed`. 409 `illegal_transition` unless on hold."""
-    await _gate(ctx)
     await transitions.resume(ctx, engagement_id)
     return EngagementStatusOut(engagement_id=engagement_id, status=EngagementStatus.ACTIVE)
 
@@ -811,7 +797,6 @@ async def record_engagement_letter_route(
     exception unless the firm has `allow_letter_exceptions` on and the caller is the engagement
     partner, 422 `letter_exception_reason_required` without a reason; one `letter.recorded`
     audit event. The exception reads `mode: not_required_this_year`."""
-    await _gate(ctx)
     done = await record_model.record_letter_v2(
         ctx,
         engagement_id,
@@ -848,7 +833,6 @@ async def record_engagement_letter_route(
 async def engagement_types_route(ctx: Ctx) -> EngagementTypeCatalogueOut:
     """The selectable catalogue; an entitlement-gated card (SOC 1, SOC 2) is `needs_entitlement`
     without `attest`. Never `single_audit`."""
-    await _gate(ctx)
     return EngagementTypeCatalogueOut(
         items=[
             EngagementTypeEntryOut(
@@ -879,7 +863,6 @@ async def engagement_types_route(ctx: Ctx) -> EngagementTypeCatalogueOut:
 )
 async def create_engagement_draft_route(body: EngagementDraftIn, ctx: Ctx) -> EngagementDraftOut:
     """422 `unknown_engagement_type` for a code outside the catalogue."""
-    await _gate(ctx)
     return _draft_out(
         await draft_model.create_draft(
             ctx,
@@ -897,7 +880,6 @@ async def create_engagement_draft_route(body: EngagementDraftIn, ctx: Ctx) -> En
 )
 async def get_engagement_draft_route(draft_id: UUID, ctx: Ctx) -> EngagementDraftOut:
     """The owner's own draft; anyone else's answers 404."""
-    await _gate(ctx)
     return _draft_out(await draft_model.get_draft(ctx, draft_id))
 
 
@@ -910,7 +892,6 @@ async def get_engagement_draft_route(draft_id: UUID, ctx: Ctx) -> EngagementDraf
 async def update_engagement_draft_route(
     draft_id: UUID, body: EngagementDraftPatchIn, ctx: Ctx
 ) -> EngagementDraftOut:
-    await _gate(ctx)
     return _draft_out(
         await draft_model.update_draft(
             ctx,
@@ -934,7 +915,6 @@ async def update_engagement_draft_route(
 )
 async def discard_engagement_draft_route(draft_id: UUID, ctx: Ctx) -> EngagementDraftDiscardedOut:
     """ "Discard this draft?" (purged 30 days later, OQ-17)."""
-    await _gate(ctx)
     at = await draft_model.discard_draft(ctx, draft_id)
     return EngagementDraftDiscardedOut(draft_id=draft_id, discarded_at=at)
 
@@ -947,7 +927,6 @@ async def discard_engagement_draft_route(draft_id: UUID, ctx: Ctx) -> Engagement
 async def validate_engagement_draft_route(
     draft_id: UUID, body: DraftValidateIn, ctx: Ctx
 ) -> EngagementDraftValidationOut:
-    await _gate(ctx)
     v = await draft_model.validate_draft(ctx, draft_id, body.step)
     return EngagementDraftValidationOut(
         draft_id=draft_id,
@@ -967,9 +946,8 @@ async def validate_engagement_draft_route(
 )
 async def start_acceptance_from_draft_route(draft_id: UUID, ctx: Ctx) -> AcceptanceStartedOut:
     """Human-only (OQ-2): a Prospect engagement and an acceptance record; nothing is accepted
-    (P-07-T35, DEC-372). Behind `engagements.v2` and `engagements.acceptance_v2`; 409
+    (P-07-T35, DEC-372). 409
     `acceptance_template_missing`, 422 `draft_incomplete`."""
-    await _gate(ctx)
     await _intake_gate(ctx)
     started = await draft_model.start_acceptance(ctx, draft_id)
     return AcceptanceStartedOut(
@@ -992,7 +970,6 @@ async def create_engagement_from_draft_route(
 ) -> EngagementFromDraftOut:
     """Human-only, one unit of work: 409 `possible_duplicate` until `confirm_duplicate`, 409
     `gate_unmet` (G1), 422 `unknown_engagement_type`, 422 `draft_incomplete`."""
-    await _gate(ctx)
     await draft_model.check_create(ctx, draft_id)
 
     async def run() -> tuple[int, dict[str, object]]:

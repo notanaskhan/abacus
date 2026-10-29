@@ -81,15 +81,15 @@ class Firm:
     henry: Person  # also on it
     site: Site
 
-    async def log(self, who: Person, body: Body, key: str = "intake-log-1") -> httpx.Response:
+    async def log(self, who: Person, body: Body, attempt: str = "intake-log-1") -> httpx.Response:
         return await self.net.http.post(
             "/v1/inbox/intake",
             json=body,
-            headers={**self.net.headers(who), "Idempotency-Key": key},
+            headers={**self.net.headers(who), "Idempotency-Key": attempt},
         )
 
     async def file(
-        self, who: Person, message: str, content: bytes, name: str, key: str
+        self, who: Person, message: str, content: bytes, name: str, attempt: str
     ) -> httpx.Response:
         return await self.net.http.post(
             f"/v1/inbox/intake/{message}/files",
@@ -97,7 +97,7 @@ class Firm:
             content=content,
             headers={
                 **self.net.headers(who),
-                "Idempotency-Key": key,
+                "Idempotency-Key": attempt,
                 "Content-Type": "application/octet-stream",
             },
         )

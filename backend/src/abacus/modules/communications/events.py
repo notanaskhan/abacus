@@ -78,6 +78,7 @@ class MessageDeliveryStatusChanged(DomainEvent):
 
     event_type: ClassVar[str] = "message.delivery_status_changed"
     message_id: Annotated[UUID, classified("internal")]
+    status: Annotated[str, classified("internal")]
 
 
 class InboundMessageRecorded(DomainEvent):

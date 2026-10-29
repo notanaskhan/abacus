@@ -1,6 +1,6 @@
 // ENG-01 · Engagements index (P-07-T27). One test per artboard (a–e) on its fixture scenario, the
 // spec's acceptance checklist, P-07 Story 6.1 (tiles and segments foot to the header in every
-// scenario), the error state, tile and segment filtering, and the route behind `engagements.v2`.
+// scenario), the error state, tile and segment filtering, and the route.
 // "Scenarios a to e pass with axe" is e2e/screens/ENG-01.spec.ts.
 import { client } from "@abacus/api-client/client";
 import { toastStore } from "@abacus/ui";
@@ -442,7 +442,7 @@ describe("ENG-01 behaviour", () => {
 });
 
 describe("ENG-01 route /engagements", () => {
-  it("flag on (engagements.v2): ENG-01", async () => {
+  it("serves ENG-01 for every firm (engagements.v2 retired, P-07-T59)", async () => {
     install(scenarios.a);
     const Page = engagementsIndexRoute.options.component as () => JSX.Element;
     render(

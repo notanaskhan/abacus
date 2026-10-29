@@ -25,7 +25,7 @@ DF-03 asked for lettered states with screenshots; none were delivered (the READM
 | f | 6 Uploaded | in (cut-list order 1) |
 | g | 7 More sheet | in |
 | h | 8 Low-quality warning | **deferred (DEC-97 → R-03)** |
-| i | 9 Mobile sign (Mira) | in |
+| i | 9 Mobile sign (Mira) | in · built in F-06-T06 (`/components/screens/TPL-19?st=9`, sticky bar 72) |
 | j | camera permission off (caption only) | **deferred (DEC-97 → R-03)** |
 
 ## States

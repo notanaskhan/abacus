@@ -4,19 +4,21 @@ import {
   PortalBrandProvider,
   type SigningCeremonyProps,
   SigningCeremony,
+  type SigningOutcomeCopy,
 } from "@abacus/ui";
 import type { JSX } from "react";
 import { E6, E6_SIGNERS } from "../../../fixtures/seed/tax";
 import type { FixtureParams } from "../../fixture-mode";
 import { COPY } from "./copy";
 
-// TPL-16 signing ceremony specimen (F-06-T04; docs/screens/TPL-16.md): Mira Kapoor on envelope E6,
-// b (signing, Dev signed Sep 9) and d (completed, six evidence items), from the tax seed. a and c
-// are Tier C screenshots (DF-12); e, f and g are F-06-T05/T06's. The page is a synthetic blank
-// page image until the server's render reaches fixtures (DECISIONS.md, F-06-T04). Registered for
-// /components/screens/TPL-16?st=b|d.
+// TPL-16 signing ceremony specimen (F-06-T04 to T06; docs/screens/TPL-16.md): Mira Kapoor on envelope
+// E6 from the tax seed: b (signing, Dev signed Sep 9), d (completed, six evidence items), e
+// (verification failed, DF-11), f (decline), g (390) and `pending` (the provider returned, the
+// server not yet). a and c are Tier C screenshots (DF-12): no native identity component exists.
+// The page is a synthetic blank page image until the server's render reaches fixtures
+// (DECISIONS.md, F-06-T04). Registered for /components/screens/TPL-16?st=b|d|e|f|g|pending.
 
-export const TPL16_STATES = ["b", "d"] as const;
+export const TPL16_STATES = ["b", "d", "e", "f", "g", "pending"] as const;
 export type Tpl16State = (typeof TPL16_STATES)[number];
 
 const BLANK_PAGE =
@@ -35,6 +37,7 @@ function dollars(value: string): string {
 
 export function e6Envelope(state: Tpl16State): EnvelopeVM {
   const done = state === "d";
+  const failedIdentity = state === "e";
   const devSigned = "Dev Kapoor · signed electronically Sep 9, 2026";
   const miraSigned = "Mira Kapoor · signed electronically Sep 14, 2026";
   return {
@@ -78,7 +81,7 @@ export function e6Envelope(state: Tpl16State): EnvelopeVM {
         id: MIRA.id,
         name: MIRA.name,
         isViewer: true,
-        status: done ? "signed" : "verified",
+        status: done ? "signed" : failedIdentity ? "verification_failed" : "verified",
         method: MIRA.method,
         detail: done
           ? "✓ Signed Sep 14, 9:24 AM · identity verified"
@@ -117,6 +120,7 @@ export function e6Envelope(state: Tpl16State): EnvelopeVM {
       title: COPY.authorizingTitle,
       body: `You authorize ${E6.firm} to file your 2025 federal and New York returns electronically. Your federal refund is ${dollars(E6.partI.refund)} and your New York refund is ${dollars(E6.nyRefund)}.`,
     },
+    ...(failedIdentity ? { outcome: "verification_failed" as const } : {}),
     ...(done
       ? {
           evidence: E6.evidence.map((e) => ({
@@ -128,7 +132,26 @@ export function e6Envelope(state: Tpl16State): EnvelopeVM {
   };
 }
 
-const BRAND: PortalBrand = {
+export const OUTCOME_COPY: SigningOutcomeCopy = {
+  verifyFailedTitle: COPY.verifyFailedTitle,
+  verifyFailedBody: COPY.verifyFailedBody(E6.firm, E6.preparer),
+  pendingTitle: COPY.pendingTitle,
+  pendingBody: COPY.pendingBody,
+  providerTitle: COPY.providerTitle("Form 8879"),
+  providerContinue: COPY.providerContinue,
+  providerUnavailable: COPY.providerUnavailable,
+  decline: {
+    title: COPY.declineTitle,
+    reasons: COPY.declineReasons,
+    reasonsLabel: COPY.declineReasonsLabel,
+    noteLabel: COPY.declineNote,
+    confirm: COPY.declineConfirm,
+    trigger: COPY.decline,
+  },
+  stepNames: COPY.stepNames,
+};
+
+export const BRAND: PortalBrand = {
   name: E6.firm,
   mark: "wave",
   securedFooter: false,
@@ -146,6 +169,11 @@ export function Tpl16Specimen({
         user={MIRA.name}
         backLabel={COPY.back}
         completion={{ title: COPY.completedTitle(MIRA.first), note: COPY.willFile(E6.firm) }}
+        copy={OUTCOME_COPY}
+        onDecline={() => undefined}
+        {...(state === "f" ? { declineForceState: "open" as const } : {})}
+        {...(state === "g" ? { layout: "phone" as const, stickyBarHeight: 64 as const } : {})}
+        {...(state === "pending" ? { providerReturned: true } : {})}
         {...rest}
       />
     </PortalBrandProvider>
@@ -154,5 +182,5 @@ export function Tpl16Specimen({
 
 export function Tpl16Artboard({ params }: { params: FixtureParams }): JSX.Element {
   const state: Tpl16State = TPL16_STATES.find((s) => s === params.st) ?? "b";
-  return <Tpl16Specimen state={state} frame={params.frame} height={860} />;
+  return <Tpl16Specimen state={state} frame={params.frame} height={state === "g" ? 844 : 860} />;
 }

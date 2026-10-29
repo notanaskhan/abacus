@@ -120,12 +120,10 @@ async def test_a_partner_who_has_not_concluded_g2_blocks_signing_on_an_attest_cl
     client = await world.seed.value(
         "SELECT client_id FROM engagements WHERE id = $1", world.team.engagement
     )
-    await world.seed.run(
-        "UPDATE engagement_acceptance SET independence_concluded_at = NULL, "
-        "independence_concluded_by = NULL, independence_documented_at = NULL "
-        "WHERE engagement_id = $1",
-        world.team.engagement,
+    tenant = await world.seed.value(
+        "SELECT tenant_id FROM engagements WHERE id = $1", world.team.engagement
     )
+    await world.seed.withdraw_conclusion(cast(uuid.UUID, tenant), world.team.engagement)
     await world.seed.run("UPDATE clients SET is_attest_client = true WHERE id = $1", client)
     found = await world.sign("marcus", "workpaper", paper, "L1_preparer", seen)
     assert (found.status_code, found.json()["detail"]) == (409, "independence_pending")

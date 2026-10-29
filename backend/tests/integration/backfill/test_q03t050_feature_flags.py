@@ -44,7 +44,7 @@ NAME: Final = re.compile(r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$")
 # ADR-148 names these; the database's CHECK on tenant_entitlements.module is the fixed list.
 NAMED_MODULES: Final = {"attest", "internal_audit", "insights", "office_addins"}
 ROLLOUT_FLAG: Final = "evidence.viewer_v1"  # a registered boolean with default false
-ENGAGEMENTS_V2: Final = "engagements.v2"
+RETIRED: Final = "engagements.v2"  # P-07-T59
 
 
 def _registry() -> list[dict[str, Json]]:
@@ -310,15 +310,17 @@ async def test_t050_with_every_flag_on_soc_engagements_still_need_attest(
     assert entitled["soc2"]["availability"] == "available"
 
 
-async def test_t050_the_catalogue_is_absent_with_its_rollout_flag_off(
+async def test_t050_the_catalogue_answers_once_its_rollout_flag_retires(
     net: Net, seed: Seeder
 ) -> None:
-    """The flag only rolls the surface out: off, the route is absent even for an entitled
-    firm (ADR-089 rollout; the entitlement never switches a flagged surface on either)."""
+    """The flag only rolled the surface out (ADR-089): `engagements.v2` retired with P-07-T59
+    (DEC-905), the catalogue answers for every firm and the entitlement alone still decides
+    what is available."""
     tenant_id = await seed.firm()
-    await _entitle(seed, tenant_id, "attest")
     admin = await seed.person(tenant_id, "firm_admin")
     forget_flags()
     response = await net.call("GET", "/v1/engagement-types", admin)
-    assert response.status_code == 404, response.text
-    assert ENGAGEMENTS_V2 in {e["name"] for e in _registry()}
+    assert response.status_code == 200, response.text
+    items = {i["code"]: i for i in cast(list[Json], response.json()["items"])}
+    assert items["soc1"]["availability"] == "needs_entitlement"
+    assert RETIRED not in {e["name"] for e in _registry()}

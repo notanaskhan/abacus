@@ -28,7 +28,7 @@ from .support import Seeder
 
 pytestmark = pytest.mark.asyncio
 ROLLOUT = "evidence.viewer_v1"  # a registered boolean, default false
-OTHER = "engagements.v2"
+OTHER = "contacts.v2"  # another registered boolean, default false
 ROLLBACK = "docs/ops/flips/2027-09-21-PF-A1.md#rollback"
 
 

@@ -1097,26 +1097,6 @@ class SetupFileOut(BaseModel):
 
 
 @router.post(
-    "/acceptance/file",
-    action="acceptance.record",
-    response_model=SetupFileOut,
-    status_code=201,
-    errors=(409,),
-)
-async def acceptance_file_route(
-    engagement_id: UUID,
-    request: Request,
-    ctx: Ctx,
-    filename: Annotated[str, Query(min_length=1, max_length=1000)],
-) -> SetupFileOut:
-    """The acceptance or continuance documentation, attached to the latest record."""
-    await upload_setup_file(
-        ctx, engagement_id, "acceptance", file_name=filename, content=await _file(request)
-    )
-    return SetupFileOut(stored=True)
-
-
-@router.post(
     "/letter/file",
     action="letter.record",
     response_model=SetupFileOut,
@@ -1137,10 +1117,9 @@ async def letter_file_route(
 
 
 @router.get("/{which}/file", action="setup.read", response_model=bytes, errors=(409,))
-async def setup_file_route(
-    engagement_id: UUID, which: Literal["acceptance", "letter"], ctx: Ctx
-) -> Response:
-    """The file as an attachment, never inline; audited and verified."""
+async def setup_file_route(engagement_id: UUID, which: Literal["letter"], ctx: Ctx) -> Response:
+    """The file as an attachment, never inline; audited and verified. The acceptance file
+    retired with SPEC-025's table (P-07-T59, DEC-906)."""
     content, media_type, name = await download_setup_file(ctx, engagement_id, which)
     return Response(
         content=content,
