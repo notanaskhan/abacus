@@ -217,7 +217,8 @@ export function DocumentOnWell({
         <span className="truncate text-meta text-ink-3">
           {document.approvedBy !== undefined
             ? `${formatActor(document.approvedBy.actor)} · ${document.approvedBy.when}`
-            : document.lockedReason ?? (document.adoptedBy === undefined ? "" : document.adoptedBy)}
+            : (document.lockedReason ??
+              (document.adoptedBy === undefined ? "" : document.adoptedBy))}
         </span>
       </span>
     ) : undefined;
@@ -251,9 +252,7 @@ export function DocumentOnWell({
         aria-busy={drafting ? true : undefined}
         className="flex min-h-full flex-col p-[14px]"
       >
-        <PaperCard
-          {...(document.watermark && !drafting ? { watermark: copy.watermark } : {})}
-        >
+        <PaperCard {...(document.watermark && !drafting ? { watermark: copy.watermark } : {})}>
           {drafting ? <DraftingSkeleton /> : children}
         </PaperCard>
       </div>
@@ -271,7 +270,11 @@ export function DocumentOnWell({
       {...(tabs === undefined ? {} : { tabs })}
     >
       <MatchScope {...(store === undefined ? {} : { store })}>
-        <div data-template="t10" data-status={document.status} className="flex min-h-0 min-w-0 flex-1">
+        <div
+          data-template="t10"
+          data-status={document.status}
+          className="flex min-h-0 min-w-0 flex-1"
+        >
           <SplitLayout
             preset="document"
             height={height === undefined ? "viewport" : height - CHROME}

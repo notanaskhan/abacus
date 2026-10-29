@@ -11,8 +11,8 @@ import {
 } from "@abacus/ui";
 import type { JSX, ReactNode } from "react";
 import { useSession } from "../../../app-core/session";
-import { useFirmToolbar } from "../../../shell/firm/ToolbarData";
 import type { FixtureParams } from "../../fixture-mode";
+import { specimenToolbar } from "../firm-toolbar";
 import { COPY } from "./copy";
 
 // T10 Document on well, the template board (F-06-T14; docs/screens/T10.md; F-06.md §3 F4): a and b
@@ -42,6 +42,7 @@ export const SHEET: KvSheetVM = {
         { key: "Business activity", value: "Rental real estate", match: m("activity") },
         { key: "Business code", value: "531120" },
         { key: "Date business started", value: "March 1, 2014" },
+        // eslint-disable-next-line no-restricted-syntax -- handoff data: the accounting method, not the product's name
         { key: "Accounting method", value: "Accrual" },
       ],
     },
@@ -176,12 +177,6 @@ const ENTITY_TABS = [
 
 export function T10Board({ state }: { state: T10State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
-  const bar = useFirmToolbar({
-    at: { pathname: "/tax-returns" },
-    firm,
-    navigate: () => undefined,
-    hotkeys: false,
-  });
   return (
     <DocumentOnWell
       frame
@@ -195,7 +190,7 @@ export function T10Board({ state }: { state: T10State }): JSX.Element {
         watermark: COPY.watermark,
         variables: COPY.variables,
       }}
-      toolbar={bar.toolbar}
+      toolbar={specimenToolbar(firm, "Tax Returns")}
       record={
         <RecordHeader
           title="2025 Form 1065"
@@ -208,7 +203,10 @@ export function T10Board({ state }: { state: T10State }): JSX.Element {
         />
       }
       tabs={
-        <div data-shell="tabsbar" className="flex h-(--tabs-h) flex-none items-center justify-center px-[12px]">
+        <div
+          data-shell="tabsbar"
+          className="flex h-(--tabs-h) flex-none items-center justify-center px-[12px]"
+        >
           <SegmentedGroup
             size="small"
             label="Partnership return"

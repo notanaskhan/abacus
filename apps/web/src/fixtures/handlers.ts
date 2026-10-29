@@ -138,3 +138,10 @@ export function seedHandlers(seed: Seed = getSeed()): Record<string, FixtureHand
     },
   };
 }
+
+/** The signed-in person (`GET /v1/me`) over the seed: for a screen's own scenario that names its
+ * persona and needs the viewer to be a person (a HumanAction; N-01-T15, N-02-T15). */
+export function meHandlers(seed: Seed = getSeed()): Record<string, FixtureHandler> {
+  const me = seedHandlers(seed)["GET /v1/me"];
+  return me === undefined ? {} : { "GET /v1/me": me };
+}

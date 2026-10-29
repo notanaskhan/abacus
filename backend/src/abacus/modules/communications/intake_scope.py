@@ -17,7 +17,12 @@ from sqlalchemy import text
 
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import NotFound
-from abacus.modules.identity.api import AuthContext, Resource, authorise, in_intake_scope
+from abacus.modules.identity.api import (
+    AuthContext,
+    Resource,
+    authorise_with_scope,
+    in_intake_scope,
+)
 from abacus.modules.organisations.api import readable_client
 
 READ = "inbox.read"
@@ -71,8 +76,14 @@ async def readable_thread(ctx: AuthContext, thread_id: UUID) -> ThreadHeader:
     if header.client_id is None:
         if not await in_intake_scope(ctx.tenant, ctx.user_id):
             raise NotFound("inbox_thread")
+        # Recorded, so a route serving it passes the unchecked-route guard.
+        await authorise_with_scope(ctx, READ, Resource.firm(ctx.tenant_id), in_scope=True)
         return header
     await readable_client(ctx, header.client_id)  # walled or unknown: 404 (DEC-43)
-    if not await in_intake_scope(ctx.tenant, ctx.user_id):
-        await authorise(ctx, READ, Resource.client(ctx.tenant_id, header.client_id))
+    await authorise_with_scope(
+        ctx,
+        READ,
+        Resource.client(ctx.tenant_id, header.client_id),
+        in_scope=await in_intake_scope(ctx.tenant, ctx.user_id),
+    )
     return header

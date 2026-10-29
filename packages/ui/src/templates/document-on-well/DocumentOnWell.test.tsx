@@ -18,8 +18,11 @@ const COPY = {
   variables: "Variables",
 };
 
-const TOOLBAR = { firm: "Brightwater Hale", nav: [], active: "Tax Returns" } as unknown as
-  DocumentOnWellProps["toolbar"];
+const TOOLBAR = {
+  firm: "Brightwater Hale",
+  nav: [],
+  active: "Tax Returns",
+} as unknown as DocumentOnWellProps["toolbar"];
 
 function doc(extra: Partial<DocumentVM> = {}): DocumentVM {
   return {
@@ -66,16 +69,14 @@ describe("T10a: drafting", () => {
     well(doc({ status: "drafting", watermark: false }));
     const drafting = document.querySelector('[data-document="drafting"]') as HTMLElement;
     expect(drafting.children).toHaveLength(3);
-    expect(screen.getByRole("status").textContent).toContain(
-      "Accrued Agent is drafting the memo",
-    );
+    expect(screen.getByRole("status").textContent).toContain("Accrued Agent is drafting the memo");
     expect(screen.queryByText("Paper body")).toBeNull();
   });
 
   it("AC-21: approval and Regenerate are disabled and name the drafting as the reason", () => {
     well(doc({ status: "drafting", watermark: false }));
-    const approve = screen.getByRole("button", { name: "Approve memo…" }) as HTMLButtonElement;
-    const regenerate = screen.getByRole("button", { name: "Regenerate…" }) as HTMLButtonElement;
+    const approve = screen.getByRole<HTMLButtonElement>("button", { name: "Approve memo…" });
+    const regenerate = screen.getByRole<HTMLButtonElement>("button", { name: "Regenerate…" });
     expect(approve.disabled).toBe(true);
     expect(regenerate.disabled).toBe(true);
     const reason = approve.getAttribute("aria-describedby");
@@ -126,7 +127,7 @@ describe("T10b: draft", () => {
         },
       }),
     );
-    const approve = screen.getByRole("button", { name: "Approve memo…" }) as HTMLButtonElement;
+    const approve = screen.getByRole<HTMLButtonElement>("button", { name: "Approve memo…" });
     expect(approve.disabled).toBe(true);
     const id = approve.getAttribute("aria-describedby") ?? "";
     expect(document.getElementById(id)?.textContent).toBe("Only a partner approves the memo.");
@@ -166,10 +167,10 @@ describe("T10 geometry and structure", () => {
         },
       }),
     );
-    expect((screen.getByRole("switch", { name: "Scope of services" }) as HTMLButtonElement).disabled).toBe(
-      true,
-    );
+    expect(
+      screen.getByRole<HTMLButtonElement>("switch", { name: "Scope of services" }).disabled,
+    ).toBe(true);
     expect(screen.getByText("Variables")).toBeTruthy();
-    expect((screen.getByRole("button", { name: "Edit" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Edit" }).disabled).toBe(true);
   });
 });

@@ -637,13 +637,12 @@ Under the same parity-tier reading as the M5 lock (DEC-192: Tier B pixels for fr
 
 ### T10 DocumentOnWell layout, T10a and T10b (F-06-T14)
 
-| Date       | Item           | Decision |
-| ---------- | -------------- | -------- |
-| 2026-10-29 | Preset         | `document` split preset: 470 · 896 (the same widths as `issues-entity`, named for T10) |
-| 2026-10-29 | Drafting       | Edit, Regenerate… and Approve… drawn disabled with `aria-describedby` the spinner line; T10a's board shows the spinner alone: parity deviation on `t10a.window`, spinner masked |
-| 2026-10-29 | Watermark      | "DRAFT" 72 px, 500, `text-espresso/6`, rotated −30°, `aria-hidden` |
-| 2026-10-29 | Placeholder    | The T10 board's own canvas data (Ridgeline general information; 2025 Return Summary with Marrow Point's 40,000); TPL-10 draws the seed memo (F-06-T16) |
-| 2026-10-29 | Citations      | The board's markers cite rows of its own sheet (prior-year return, business activity, number of partners) so each lights through MatchProvider; real locators arrive with F-06-T15's DocBlocks |
-| 2026-10-29 | Fonts          | The paper is Geist; Arimo and Gelasio load with the consumer's paper chunk (`@abacus/ui/fonts-doc.css`), never from the kit or the shell |
-| 2026-10-29 | Tier D added   | `e2e/visual/tier-d-document.spec.ts`: structure 470, paper pane 896, its header 46, paper 600, crumb 32, band 31, KV row 33 |
-
+| Date       | Item         | Decision                                                                                                                                                                                       |
+| ---------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-29 | Preset       | `document` split preset: 470 · 896 (the same widths as `issues-entity`, named for T10)                                                                                                         |
+| 2026-10-29 | Drafting     | Edit, Regenerate… and Approve… drawn disabled with `aria-describedby` the spinner line; T10a's board shows the spinner alone: parity deviation on `t10a.window`, spinner masked                |
+| 2026-10-29 | Watermark    | "DRAFT" 72 px, 500, `text-espresso/6`, rotated −30°, `aria-hidden`                                                                                                                             |
+| 2026-10-29 | Placeholder  | The T10 board's own canvas data (Ridgeline general information; 2025 Return Summary with Marrow Point's 40,000); TPL-10 draws the seed memo (F-06-T16)                                         |
+| 2026-10-29 | Citations    | The board's markers cite rows of its own sheet (prior-year return, business activity, number of partners) so each lights through MatchProvider; real locators arrive with F-06-T15's DocBlocks |
+| 2026-10-29 | Fonts        | The paper is Geist; Arimo and Gelasio load with the consumer's paper chunk (`@abacus/ui/fonts-doc.css`), never from the kit or the shell                                                       |
+| 2026-10-29 | Tier D added | `e2e/visual/tier-d-document.spec.ts`: structure 470, paper pane 896, its header 46, paper 600, crumb 32, band 31, KV row 33                                                                    |

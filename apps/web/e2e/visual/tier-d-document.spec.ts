@@ -21,7 +21,9 @@ for (const st of ["a", "b"] as const) {
     expect((await size(panes.nth(1))).width).toBe(896);
     expect((await size(panes.nth(1).locator("[data-shell='pane-header']"))).height).toBe(46);
     expect((await size(frame.locator("[data-document='paper']"))).width).toBe(600);
-    expect((await size(frame.locator("[data-document='kv-sheet'] > div").first())).height).toBe(32);
+    expect((await size(frame.locator("[data-document='kv-sheet'] > div").first())).height).toBe(
+      32,
+    );
     expect((await size(frame.locator("[data-document='kv-sheet'] h3").first())).height).toBe(31);
     expect((await size(frame.locator("[data-document='kv-sheet'] li").first())).height).toBe(33);
   });

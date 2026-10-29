@@ -3,9 +3,10 @@
 Run: python -m abacus_tools.local.db_guard
 
 Exits 1, naming the setting (never its value), when any database URL the settings resolve to has
-a host outside the local stack. `make migrate`, `make seed`, `make seed-staging` and
-`make loadtest` run it first. Sanctioned operator flows against staging arrive with Q-01, with
-their own checks (deploy in flight, deploy lock).
+a host outside the local stack. `make migrate`, `make seed` and `make seed-staging` run it first;
+the load-test harness applies the same checks in-process before a run (Q-03-T114). Sanctioned
+operator flows against staging arrive with Q-01, with their own checks (deploy in flight, deploy
+lock).
 
 Q-01-T18 (platform-ops contract 3.4): with `ABACUS_DEPLOY_LOCK_ENV` set (`staging` or
 `production`), it also exits 1 while that environment's deploy lock is held, naming the holder:

@@ -4780,7 +4780,7 @@ export const updateEnvelopePolicy = <ThrowOnError extends boolean = false>(optio
 /**
  * List Envelopes Route
  *
- * SIG-01 list (N-02-T13).
+ * SIG-01 list (N-02-T13): wall-safe rows and counts; the Out tab's counts are its tiles.
  */
 export const listEnvelopes = <ThrowOnError extends boolean = false>(options?: Options<ListEnvelopesData, ThrowOnError>): RequestResult<ListEnvelopesResponses, ListEnvelopesErrors, ThrowOnError> => (options?.client ?? client).get<ListEnvelopesResponses, ListEnvelopesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4864,7 +4864,7 @@ export const remindEnvelopesSend = <ThrowOnError extends boolean = false>(option
 /**
  * Envelope Summary Route
  *
- * SIG-01 tiles (N-02-T13).
+ * SIG-01 tabs and the By type tile (N-02-T13), over visible rows only.
  */
 export const envelopeSummary = <ThrowOnError extends boolean = false>(options?: Options<EnvelopeSummaryData, ThrowOnError>): RequestResult<EnvelopeSummaryResponses, EnvelopeSummaryErrors, ThrowOnError> => (options?.client ?? client).get<EnvelopeSummaryResponses, EnvelopeSummaryErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4875,7 +4875,7 @@ export const envelopeSummary = <ThrowOnError extends boolean = false>(options?: 
 /**
  * Get Envelope Route
  *
- * SIG-01 drawer, SIG-02 builder (N-02-T11).
+ * SIG-01 drawer, SIG-02 builder (N-02-T13).
  */
 export const getEnvelope = <ThrowOnError extends boolean = false>(options: Options<GetEnvelopeData, ThrowOnError>): RequestResult<GetEnvelopeResponses, GetEnvelopeErrors, ThrowOnError> => (options.client ?? client).get<GetEnvelopeResponses, GetEnvelopeErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4923,7 +4923,7 @@ export const envelopePage = <ThrowOnError extends boolean = false>(options: Opti
 /**
  * Envelope Evidence Route
  *
- * Packages, certificate, manifest (N-02-T14).
+ * Packages, certificate, manifest (N-02-T13); audited, byte-identical on repeat.
  */
 export const envelopeEvidence = <ThrowOnError extends boolean = false>(options: Options<EnvelopeEvidenceData, ThrowOnError>): RequestResult<EnvelopeEvidenceResponses, EnvelopeEvidenceErrors, ThrowOnError> => (options.client ?? client).get<EnvelopeEvidenceResponses, EnvelopeEvidenceErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4967,7 +4967,7 @@ export const undoEnvelopeSend = <ThrowOnError extends boolean = false>(options: 
 /**
  * Reveal Signer Ip Route
  *
- * 10-second reveal, audited (N-02-T13).
+ * 10-second reveal, audited (N-02-T13); never cached.
  */
 export const revealSignerIp = <ThrowOnError extends boolean = false>(options: Options<RevealSignerIpData, ThrowOnError>): RequestResult<RevealSignerIpResponses, RevealSignerIpErrors, ThrowOnError> => (options.client ?? client).post<RevealSignerIpResponses, RevealSignerIpErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5008,7 +5008,7 @@ export const validateEnvelope = <ThrowOnError extends boolean = false>(options: 
 /**
  * Void Envelope Route
  *
- * Void with a reason; evidence kept (N-02-T28).
+ * Void with a reason; evidence kept (N-02-T13).
  */
 export const voidEnvelope = <ThrowOnError extends boolean = false>(options: Options<VoidEnvelopeData, ThrowOnError>): RequestResult<VoidEnvelopeResponses, VoidEnvelopeErrors, ThrowOnError> => (options.client ?? client).post<VoidEnvelopeResponses, VoidEnvelopeErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -7008,7 +7008,7 @@ export const attachmentContent = <ThrowOnError extends boolean = false>(options:
 /**
  * Attachment Viewer Route
  *
- * SHL-08 over an intake object; masked pages only (N-01-T13).
+ * SHL-08 over an intake object; masked pages only, audited (N-01-T13).
  */
 export const attachmentViewer = <ThrowOnError extends boolean = false>(options: Options<AttachmentViewerData, ThrowOnError>): RequestResult<AttachmentViewerResponses, AttachmentViewerErrors, ThrowOnError> => (options.client ?? client).get<AttachmentViewerResponses, AttachmentViewerErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -7108,7 +7108,7 @@ export const listThreads = <ThrowOnError extends boolean = false>(options?: Opti
 /**
  * Get Thread Route
  *
- * INB-01 reading pane; bodies only with `inbox.read_content` (N-01-T13).
+ * INB-01 reading pane; bodies only with `inbox.read_content`, audited (N-01-T13).
  */
 export const getThread = <ThrowOnError extends boolean = false>(options: Options<GetThreadData, ThrowOnError>): RequestResult<GetThreadResponses, GetThreadErrors, ThrowOnError> => (options.client ?? client).get<GetThreadResponses, GetThreadErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -7119,7 +7119,7 @@ export const getThread = <ThrowOnError extends boolean = false>(options: Options
 /**
  * Ignore Thread Route
  *
- * INB-01 b "Ignore" for an unmatched sender (N-01-T18).
+ * INB-01 b "Ignore" for an unmatched sender (N-01-T13).
  */
 export const ignoreThread = <ThrowOnError extends boolean = false>(options: Options<IgnoreThreadData, ThrowOnError>): RequestResult<IgnoreThreadResponses, IgnoreThreadErrors, ThrowOnError> => (options.client ?? client).post<IgnoreThreadResponses, IgnoreThreadErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -7134,8 +7134,8 @@ export const ignoreThread = <ThrowOnError extends boolean = false>(options: Opti
 /**
  * Match Client Route
  *
- * INB-01 b: attachments New → Waiting; "Remember sender" also needs
- * `inbox_sender_rule.create` (N-01-T18).
+ * INB-01 b: attachments New → Waiting; "Remember this sender" writes a sender rule
+ * (N-01-T13).
  */
 export const matchClient = <ThrowOnError extends boolean = false>(options: Options<MatchClientData, ThrowOnError>): RequestResult<MatchClientResponses, MatchClientErrors, ThrowOnError> => (options.client ?? client).post<MatchClientResponses, MatchClientErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -8514,7 +8514,7 @@ export const listIntakeUploads = <ThrowOnError extends boolean = false>(options:
 /**
  * Create Intake Upload Route
  *
- * POR-03 "Upload something else": the batch (N-01-T14).
+ * POR-03 "IntakeBatch something else": the batch (N-01-T14).
  */
 export const createIntakeUpload = <ThrowOnError extends boolean = false>(options: Options<CreateIntakeUploadData, ThrowOnError>): RequestResult<CreateIntakeUploadResponses, CreateIntakeUploadErrors, ThrowOnError> => (options.client ?? client).post<CreateIntakeUploadResponses, CreateIntakeUploadErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
