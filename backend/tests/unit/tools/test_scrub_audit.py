@@ -245,3 +245,14 @@ def test_check_scans_saved_samples_and_writes_the_report(tmp_path: Path) -> None
             "masked": mask(sa.EIN, "tin"),
         }
     ]
+
+
+def test_a_next_page_off_sentrys_api_is_not_followed() -> None:
+    """The bearer token rides on every page request: only Sentry's own API is followed."""
+    nxt = sa._next_page  # pyright: ignore[reportPrivateUsage] -- the guard under test
+    assert nxt('<https://evil.example.test/x?cursor=2>; rel="next"; results="true"') is None
+    assert nxt(
+        f'<{sa._SENTRY_API}/projects/o/p/events/?cursor=2>; rel="next"; results="true"'
+    ) == (  # pyright: ignore[reportPrivateUsage] -- the base URL under test
+        f"{sa._SENTRY_API}/projects/o/p/events/?cursor=2"  # pyright: ignore[reportPrivateUsage] -- the base URL under test
+    )

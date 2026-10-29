@@ -339,10 +339,12 @@ def sentry_samples(
 
 
 def _next_page(link: str) -> str | None:
+    """The next page's URL, only on Sentry's own API: the bearer token goes with every request, so
+    a Link header pointing anywhere else is not followed (security review)."""
     for part in link.split(","):
         if 'rel="next"' in part and 'results="true"' in part:
             match = re.search(r"<([^>]+)>", part)
-            if match:
+            if match and match.group(1).startswith(f"{_SENTRY_API}/"):
                 return match.group(1)
     return None
 
