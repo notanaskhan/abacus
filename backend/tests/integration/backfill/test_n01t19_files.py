@@ -300,3 +300,19 @@ async def test_ac6_the_access_log_names_who_did_what(net: Net) -> None:
     log = await net.call("GET", f"/v1/evidence-items/{combined}/access-log", olivia)
     assert log.status_code == 200, log.text
     assert isinstance(log.json()["items"], list)
+
+
+async def test_ac7_a_client_scoped_document_names_no_other_engagements_request(net: Net) -> None:
+    """Security review: the permanent file's documents never name request items, which may sit
+    on an engagement the viewer cannot see."""
+    tenant = await net.seed.firm()
+    await _flag(net, tenant)
+    admin = await net.seed.person(tenant, "firm_admin")
+    site = await net.seed.site(tenant, admin.user_id, "Whitley")
+    grace = await net.seed.person(tenant)
+    await net.seed.member(site, grace, "staff")
+    await _work_item(net, site, admin, "TY2025 Form 1040")
+    item, _version = await _document(net, site, None, "Whitley operating agreement.pdf")
+    drawer = await net.call("GET", f"/v1/evidence-items/{item}/drawer", grace)
+    assert drawer.status_code == 200, drawer.text
+    assert drawer.json()["linked_to"] == []

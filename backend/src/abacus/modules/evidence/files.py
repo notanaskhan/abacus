@@ -458,7 +458,10 @@ async def folder_items(
     rows = await _folder_rows(ctx, folder, q)
     listed, children, replaced_by = _documents(rows)
     statuses = await _statuses(ctx, [r.version for r in listed], set(replaced_by))
-    supports = await _supports(ctx, [r.version.id for r in listed])
+    # Security review (S15 end review): a client-scoped document can fulfil requests on any of
+    # the client's engagements, some the viewer may not see; only an engagement-scoped one names
+    # what it supports (its own engagement, which the viewer was just authorised on).
+    supports = await _supports(ctx, [r.version.id for r in listed if r.item.scope == "engagement"])
     listed.sort(key=lambda r: (r.version.created_at, str(r.version.id)), reverse=True)
     size = clamp_limit(limit)
     query = query_hash(folder=folder_ref, q=q or "")
@@ -577,10 +580,14 @@ async def drawer(ctx: AuthContext, item_id: UUID) -> DrawerOut:
     tie = (
         TieOut(total=sum(amounts, Decimal(0)), account_number=None, ties=None) if amounts else None
     )
-    linked = [
-        LinkOut(kind="request", label=r.description, route=f"/requests/items/{r.id}")
-        for r in await fulfilled_items(ctx.tenant, head.id)
-    ]
+    linked = (
+        [
+            LinkOut(kind="request", label=r.description, route=f"/requests/items/{r.id}")
+            for r in await fulfilled_items(ctx.tenant, head.id)
+        ]
+        if item.scope == "engagement"
+        else []  # as `supports`: never another engagement's request (security review)
+    )
     try:
         held = await held_versions(ctx.tenant, [head.id])
     except HoldCheckMissing:
