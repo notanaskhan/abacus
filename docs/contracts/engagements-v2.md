@@ -4,7 +4,7 @@
 |---|---|
 | Register row | Screen-family contracts in `docs/contracts/README.md`; an additive C1 v1.1 note to `work-items.md` (P-07 §8.1) |
 | Version | v2 of the engagement surfaces (C1 stays v1; these are additive operations and models) |
-| Status | live (P-07-T15, P-07-T16, 2026-10-24); start-acceptance live (P-07-T35, 2026-10-26; DEC-372); roll-forward v2 live behind `engagements.roll_forward_v2` (P-07-T55, 2026-10-28; DEC-805) |
+| Status | **frozen 2026-10-29** (v1, P-07-T64, DEC-1054: `backend/tests/contracts/p07_engagements_v2/v1.json`; additions only, a breaking change ships v2 with overlap). live (P-07-T15, P-07-T16, 2026-10-24); start-acceptance live (P-07-T35, 2026-10-26; DEC-372); roll-forward v2 live behind `engagements.roll_forward_v2` (P-07-T55, 2026-10-28; DEC-805) |
 | Provider epic | P-07 (`engagements`) |
 | Consumers | ENG-01, ENG-02, ENG-03 (P-07-T20, T21, T27, T28); CLI-02's Engagements tab; fixtures P-07-T11; A-01 (AUD-02 hangs off ENG-02 and its gates); N-02 (`acceptance_decided_at`, the G3 swap); T-02 and C-01 (tax and CAS through ENG-03) |
 | Freeze sprint | the sprint review after the stub (P-07 §8.1) |

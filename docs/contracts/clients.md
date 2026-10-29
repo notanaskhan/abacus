@@ -4,7 +4,7 @@
 |---|---|
 | Register row | Screen-family contracts in `docs/contracts/README.md` (P-07 owns no C-number; §8.1) |
 | Version | v1 |
-| Status | live (P-07-T08, T09, 2026-10-23; the TIN reveal P-07-T10, 2026-10-24) |
+| Status | **frozen 2026-10-29** (v1, P-07-T64, DEC-1054: `backend/tests/contracts/p07_clients/v1.json`; additions only, a breaking change ships v2 with overlap). live (P-07-T08, T09, 2026-10-23; the TIN reveal P-07-T10, 2026-10-24) |
 | Provider epic | P-07 (`organisations`) |
 | Consumers | CLI-01, CLI-02 (P-07-T12, T19); fixtures P-07-T11; T-01 (CLI-05 TIN columns), T-06 (CLI-03 on `entity_relationships`), P-02 (the `client` search projection) |
 | Freeze sprint | the sprint review after the stub (P-07 §8.1) |

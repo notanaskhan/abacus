@@ -4,7 +4,7 @@
 |---|---|
 | Register row | Screen-family contracts in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | stub (P-07-T29, 2026-10-25); ENG-05's team rows and the confirmation requests live (P-07-T30, 2026-10-25; DEC-327); CLI-07's acceptance live (P-07-T35, 2026-10-26; DEC-372); conflicts and screening live (P-07-T36, 2026-10-26; DEC-373); CLI-08's independence live (P-07-T41, 2026-10-26; DEC-428) |
+| Status | **frozen 2026-10-29** (v1, P-07-T64, DEC-1054: `backend/tests/contracts/p07_acceptance_independence/v1.json`; additions only, a breaking change ships v2 with overlap). stub (P-07-T29, 2026-10-25); ENG-05's team rows and the confirmation requests live (P-07-T30, 2026-10-25; DEC-327); CLI-07's acceptance live (P-07-T35, 2026-10-26; DEC-372); conflicts and screening live (P-07-T36, 2026-10-26; DEC-373); CLI-08's independence live (P-07-T41, 2026-10-26; DEC-428) |
 | Provider epic | P-07 (`engagements` for team, acceptance and independence; `organisations` for conflicts and screening) |
 | Consumers | ENG-05 (P-07-T39), CLI-07 (P-07-T35's screen), CLI-08 (P-07-T48), CLI-06 (conflicts); the consumer suite P-07-T31; HOME-02 gate rows (T47); P-04 sign-off through `independence_cleared` |
 | Freeze sprint | the sprint review after the stub (P-07 §8.1) |
