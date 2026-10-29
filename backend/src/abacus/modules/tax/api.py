@@ -15,6 +15,8 @@ from abacus.modules.tax.engine_contract import (
 from abacus.modules.tax.k1_contract import k1_router, portal_k1_router
 from abacus.modules.tax.kind import TaxReturnKind
 from abacus.modules.tax.returns_contract import returns_router
+from abacus.modules.tax.status import TRANSITIONS, StaleReturn, TransitionRefused, next_status
+from abacus.modules.tax.transitions import apply_transition, record_sync_state
 
 # F-03-T22: the `tax_return` work-item kind.
 register_work_item_kind("tax_return", TaxReturnKind())
@@ -29,7 +31,13 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 
 __all__ = [
     "ROUTERS",
+    "TRANSITIONS",
     "ApprovalBlocker",
+    "StaleReturn",
+    "TransitionRefused",
+    "apply_transition",
     "final_approval_blockers",
+    "next_status",
+    "record_sync_state",
     "register_final_approval_blocker",
 ]
