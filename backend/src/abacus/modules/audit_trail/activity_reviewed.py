@@ -85,6 +85,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "client_invitation.accept_refused",
         "client_invitation.accepted",
         "client_invitation.created",
+        "client_invitation.expiry_notified",  # P-07-T47: the expiry only, never the address
         "client_invitation.renewed",
         "client_invitation.resent",
         "client_invitation.revoked",

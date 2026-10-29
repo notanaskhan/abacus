@@ -52,6 +52,7 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "portal.drop_unsorted",  # R-01-T09 (C16 `portal_drop_unsorted`)
         "follow_up.limit_reached",  # R-01-T24 (C16 `follow_up_limit_reached`, to the leads)
         "membership.access_ending",  # G-01-T13 (C16 `seasonal_access_ending`, to firm admins)
+        "invitation.expiring",  # P-07-T47 (C16 `invitation_expiring`, to firm admins, day 12)
         "third_party.uploaded",  # R-01-T13 (C16 `third_party_uploaded`, to the request owner)
         "sign_off.went_stale",  # P-04-T19 (C16 `sign_off_stale`, to the signer)
         "review_note.raised",  # P-04-T21 (C16 `review_note_raised`, to the assignee)
