@@ -1,8 +1,4 @@
-import type {
-  PortalEnvelopeRow,
-  PortalEnvelopeView,
-  SignerDeclineIn,
-} from "@abacus/api-client";
+import type { PortalEnvelopeRow, PortalEnvelopeView, SignerDeclineIn } from "@abacus/api-client";
 import {
   Button,
   Checkbox,
@@ -23,14 +19,14 @@ import {
 import { type JSX, useCallback, useEffect, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { brandOf, useBranding, usePortalToolbar } from "../../domain/portal";
-import { toEnvelopeVM } from "../../domain/signing/envelope-vm";
 import {
+  toEnvelopeVM,
   useEnvelopeActions,
   usePageUrls,
   usePortalEnvelope,
   usePortalEnvelopes,
   useSigningReturn,
-} from "../../domain/signing/portal";
+} from "../../domain/signing";
 import { COPY } from "./copy";
 
 // POR-06 · Sign, part 1 (N-02-T26; docs/screens/POR-06.md; handoff POR-06; DF-11, DF-12): the
@@ -141,7 +137,12 @@ const EMPTY: EnvelopeVM = {
   steps: [],
 };
 
-function SignList({ mobile, frame, onNavigate, onOpenEnvelope }: POR06Props): JSX.Element | null {
+function SignList({
+  mobile = false,
+  frame = false,
+  onNavigate,
+  onOpenEnvelope,
+}: POR06Props): JSX.Element | null {
   const now = useNow();
   const bar = usePortalToolbar(null);
   const list = usePortalEnvelopes();
@@ -159,7 +160,7 @@ function SignList({ mobile, frame, onNavigate, onOpenEnvelope }: POR06Props): JS
       >
         <span className="flex min-w-0 flex-1 flex-col gap-[2px]">
           <span className="text-body font-medium text-ink">{r.title}</span>
-          {r.due_on !== null && r.due_on !== undefined && (
+          {r.due_on !== null && (
             <span className="text-meta text-ink-3">
               {COPY.due(date(onDay(r.due_on), { now, tz: DEFAULT_TZ }))}
             </span>
@@ -224,7 +225,8 @@ function Envelope({
   const back = useSigningReturn(envelopeId, session);
   const act = useEnvelopeActions(envelopeId);
   const view = envelope.data;
-  const doc = view === undefined ? undefined : [...view.documents].sort((a, b) => a.order - b.order)[0];
+  const doc =
+    view === undefined ? undefined : [...view.documents].sort((a, b) => a.order - b.order)[0];
   const pages = doc?.page_count ?? 0;
   const urls = usePageUrls(envelopeId, doc?.id, pages);
   const [seen, setSeen] = useState(0);
@@ -236,7 +238,6 @@ function Envelope({
     if (envelopeId === "" || returned) return;
     act.viewed().catch(() => undefined);
     // Once per envelope opened.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [envelopeId]);
 
   const onPageSeen = useCallback(
@@ -248,7 +249,6 @@ function Envelope({
       });
     },
     // `act` is rebuilt each render; its calls only read the envelope id.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [envelopeId],
   );
 
@@ -420,7 +420,9 @@ function Envelope({
         user={bar.user}
         nav={bar.nav}
         backLabel={COPY.back}
-        view={envelope.isError || back.isError ? "error" : view === undefined ? "loading" : "ready"}
+        view={
+          envelope.isError || back.isError ? "error" : view === undefined ? "loading" : "ready"
+        }
         copy={outcomeCopy(firm, doc?.title ?? vm.title)}
         completion={{
           title: COPY.completedTitle(first),

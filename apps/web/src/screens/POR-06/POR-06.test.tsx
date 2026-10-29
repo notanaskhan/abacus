@@ -3,6 +3,7 @@
 // a, b, c and g pass at 1400 and 390, and Completed never renders from a return parameter alone."
 // Pages come into view through a stubbed IntersectionObserver (jsdom has none); the provider's
 // view never loads (the `.invalid` host). The walk with axe is N-02-T43's Playwright lock.
+import type { PortalEnvelopeView } from "@abacus/api-client";
 import { Toaster } from "@abacus/ui";
 import { client } from "@abacus/api-client/client";
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
@@ -87,7 +88,7 @@ const WIDTHS = [
 ] as const;
 
 async function continueButton(): Promise<HTMLButtonElement> {
-  return (await screen.findByRole("button", { name: "Continue to sign" })) as HTMLButtonElement;
+  return screen.findByRole<HTMLButtonElement>("button", { name: "Continue to sign" });
 }
 
 describe.each(WIDTHS)("POR-06 at %s", (_width, mobile) => {
@@ -198,7 +199,7 @@ describe("POR-06 decline (g) from review", () => {
     const seen = show("a");
     fireEvent.click(await screen.findByRole("button", { name: "Decline…" }));
     const dialog = await screen.findByRole("dialog", { name: "Decline to sign?" });
-    const confirm = within(dialog).getByRole("button", { name: "Decline" }) as HTMLButtonElement;
+    const confirm = within(dialog).getByRole<HTMLButtonElement>("button", { name: "Decline" });
     expect(confirm.disabled).toBe(true);
     fireEvent.click(within(dialog).getByRole("radio", { name: "Something is wrong" }));
     await act(async () => {
@@ -236,7 +237,11 @@ describe("phases and steps", () => {
   it("the server's view decides the phase; review waits only on the screen's own reading", () => {
     const view = freshScenario("a");
     expect(view.state).toBe("a");
-    expect(stepsOf("review", 0, 3)[1]).toEqual({ key: "review", state: "current", sub: "Page 1 of 3" });
+    expect(stepsOf("review", 0, 3)[1]).toEqual({
+      key: "review",
+      state: "current",
+      sub: "Page 1 of 3",
+    });
     expect(stepsOf("provider", 3, 3).map((s) => s.state)).toEqual([
       "done",
       "done",
@@ -247,7 +252,7 @@ describe("phases and steps", () => {
   });
 
   it("signed only when the server's signer status says so", () => {
-    const base = {
+    const base: PortalEnvelopeView = {
       row: { id: "x", title: "t", status: "sent", my_status: "viewed", due_on: null },
       documents: [],
       my_fields: [],
@@ -259,7 +264,7 @@ describe("phases and steps", () => {
       paper_form_follows: false,
       signing_session: E13_SESSION,
       outcome: "signed",
-    } as const;
+    };
     // A view that says "outcome: signed" while the signer is still viewed is not signed.
     expect(phaseOf({ ...base, row: { ...base.row } }, false)).toBe("provider");
     expect(phaseOf({ ...base, row: { ...base.row, my_status: "signed" } }, false)).toBe("signed");

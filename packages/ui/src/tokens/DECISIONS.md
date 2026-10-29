@@ -637,10 +637,9 @@ Under the same parity-tier reading as the M5 lock (DEC-192: Tier B pixels for fr
 
 ### T16 additions for POR-06 (N-02-T26)
 
-| Date       | Item              | Decision |
-| ---------- | ----------------- | -------- |
-| 2026-10-29 | `action`          | The container's step control: under the steps at 1400, the sticky footer (`data-signing="mobile-action"`, min height = the sticky bar) at 390; it replaces the kit's sign call to action. `null` draws nothing and no footer |
-| 2026-10-29 | `onPageSeen`      | Each page (`data-page`) reports once when half in view in the well; no IntersectionObserver, no reports |
-| 2026-10-29 | Completion        | Also when the viewer is `signed` and the envelope is not yet completed (a countersigner remains); the header keeps the server's "1 of 2 signed" |
-| 2026-10-29 | Provider view     | Opens at the verify or the sign step, and in the phone layout (DEC-1251) |
-
+| Date       | Item          | Decision                                                                                                                                                                                                                     |
+| ---------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-29 | `action`      | The container's step control: under the steps at 1400, the sticky footer (`data-signing="mobile-action"`, min height = the sticky bar) at 390; it replaces the kit's sign call to action. `null` draws nothing and no footer |
+| 2026-10-29 | `onPageSeen`  | Each page (`data-page`) reports once when half in view in the well; no IntersectionObserver, no reports                                                                                                                      |
+| 2026-10-29 | Completion    | Also when the viewer is `signed` and the envelope is not yet completed (a countersigner remains); the header keeps the server's "1 of 2 signed"                                                                              |
+| 2026-10-29 | Provider view | Opens at the verify or the sign step, and in the phone layout (DEC-1251)                                                                                                                                                     |

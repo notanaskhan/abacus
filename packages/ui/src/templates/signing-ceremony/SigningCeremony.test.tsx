@@ -234,3 +234,21 @@ describe("POR-06 additions", () => {
     );
   });
 });
+
+describe("POR-06 phone footer", () => {
+  it("a container's null action leaves no sign bar while the provider's view shows", () => {
+    ceremony(
+      {
+        ...t16Envelope("b"),
+        signingSession: {
+          url: "https://signing.example.invalid/s",
+          presentation: "iframe",
+          expiresAt: "2026-09-14T15:00:00Z",
+        },
+      },
+      { layout: "phone", action: null },
+    );
+    expect(document.querySelector('[data-signing="mobile-sign-bar"]')).toBeNull();
+    expect(document.querySelector('[data-signing="mobile-action"]')).toBeNull();
+  });
+});

@@ -36,9 +36,7 @@ export function usePortalEnvelope(envelopeId: string, returned = false) {
     ...portalViewOptions({ path: { envelope_id: envelopeId } }),
     retry: false,
     refetchInterval: (query) =>
-      returned && (query.state.data as PortalEnvelopeView | undefined)?.row.my_status !== "signed"
-        ? RETURN_POLL_MS
-        : false,
+      returned && query.state.data?.row.my_status !== "signed" ? RETURN_POLL_MS : false,
   });
 }
 
@@ -100,7 +98,6 @@ export function usePageUrls(
       for (const url of Object.values(made)) URL.revokeObjectURL(url);
     };
     // `count` stands for the blobs: a new one arrives, the URLs are made again.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [envelopeId, documentId, count]);
   return urls;
 }
@@ -134,7 +131,13 @@ export function useEnvelopeActions(envelopeId: string) {
           ).data,
         );
       }
-      const session = (await portalSigningSession({ path, throwOnError: true })).data;
+      const session = (
+        await portalSigningSession({
+          path,
+          headers: { "Idempotency-Key": crypto.randomUUID() },
+          throwOnError: true,
+        })
+      ).data;
       const current = queryClient.getQueryData<PortalEnvelopeView>(key);
       if (current !== undefined) keep({ ...current, signing_session: session });
     },

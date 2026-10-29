@@ -64,14 +64,26 @@ export function portalEnvelopeHandlers(
   return {
     "GET /v1/portal/envelopes": ({ query }) => {
       if (options.restricted) {
-        return json({ items: [], next_cursor: null, total: 0 } satisfies ListPagePortalEnvelopeRow);
+        return json({
+          items: [],
+          next_cursor: null,
+          total: 0,
+        } satisfies ListPagePortalEnvelopeRow);
       }
       const done = (r: PortalEnvelopeRow): boolean => r.my_status === "signed";
       const all = [row(), ...SIGNED_ROWS];
       const wanted = query.get("status");
       const items =
-        wanted === "signed" ? all.filter(done) : wanted === "to_sign" ? all.filter((r) => !done(r)) : all;
-      return json({ items, next_cursor: null, total: items.length } satisfies ListPagePortalEnvelopeRow);
+        wanted === "signed"
+          ? all.filter(done)
+          : wanted === "to_sign"
+            ? all.filter((r) => !done(r))
+            : all;
+      return json({
+        items,
+        next_cursor: null,
+        total: items.length,
+      } satisfies ListPagePortalEnvelopeRow);
     },
     "GET /v1/portal/envelopes/{envelope_id}": ({ params }) =>
       mine(params.envelope_id) ? json(view) : json(NOT_FOUND, 404),

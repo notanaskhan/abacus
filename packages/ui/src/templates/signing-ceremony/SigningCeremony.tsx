@@ -205,20 +205,22 @@ export function SigningCeremony(props: SigningCeremonyProps): JSX.Element {
                 </div>
               ),
             }
-          : canSign && current === "sign"
-          ? {
-              mobileFooter: (
-                <MobileSignBar
-                  viewer={viewer.name}
-                  height={props.stickyBarHeight ?? 64}
-                  disabled={nextOpen === null}
-                  onClick={() => {
-                    if (nextOpen !== null) props.onSignField?.(nextOpen.id);
-                  }}
-                />
-              ),
-            }
-          : {})}
+          : // A container that owns the step control (`action`, even `null` while the
+            // provider's view or the return is showing) gets no kit sign bar (N-02-T26).
+            props.action === undefined && canSign && !providerOpen && current === "sign"
+            ? {
+                mobileFooter: (
+                  <MobileSignBar
+                    viewer={viewer.name}
+                    height={props.stickyBarHeight ?? 64}
+                    disabled={nextOpen === null}
+                    onClick={() => {
+                      if (nextOpen !== null) props.onSignField?.(nextOpen.id);
+                    }}
+                  />
+                ),
+              }
+            : {})}
       >
         <div data-template="t16" data-layout="phone" className="flex flex-col gap-[10px]">
           <div className="flex min-h-[44px] flex-wrap items-center gap-[8px]">
