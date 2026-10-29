@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Final, cast
 
@@ -41,6 +41,7 @@ from abacus.modules.communications.api import (
     portal_intake,
     record_inbound_message,
 )
+from abacus.modules.communications.deliveries import address_hash
 from abacus.modules.communications.triage import attachment_triaged
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.api import (
@@ -154,7 +155,18 @@ async def firm(net: Net) -> Firm:
 async def _email(
     firm: Firm, site: Site | None, subject: str, files: int = 1
 ) -> tuple[uuid.UUID, list[uuid.UUID]]:
-    """An email batch matched to `site`'s client (or unmatched), with `files` 1095-C copies."""
+    """An email batch matched to `site`'s client by a sender rule (or unmatched), with `files`
+    1095-C copies."""
+    address = f"claire+{uuid.uuid4().hex[:6]}@example.com"
+    if site is not None:
+        await firm.net.seed.run(
+            "INSERT INTO inbox_sender_rules (tenant_id, address_hmac, address_sealed, client_id, "
+            "created_by) VALUES ($1, $2, '\\x00', $3, $4)",
+            firm.tenant_id,
+            address_hash(address).hex(),
+            site.client_id,
+            firm.grace.user_id,
+        )
     made = await record_inbound_message(
         firm.system,
         Inbound(
@@ -163,8 +175,7 @@ async def _email(
             subject=subject,
             received_at=datetime.now(UTC),
             body="Here are our health forms.",
-            sender_address=f"claire+{uuid.uuid4().hex[:6]}@example.com",
-            client_id=site.client_id if site is not None else None,
+            sender_address=address,
         ),
     )
     ids: list[uuid.UUID] = []
@@ -275,7 +286,7 @@ async def test_t14_claires_upload_reaches_the_inbox_and_a_withdrawal_hides_then_
             "scope_ref": {"kind": "engagement", "id": str(firm.feld.engagement_id)},
             "note": None,
         },
-        headers={**firm.net.headers(claire), "Idempotency-Key": "n01b-batch"},
+        headers={**firm.net.headers(claire), "Idempotency-Key": str(uuid.uuid4())},
     )
     assert batch.status_code == 201, batch.text
     upload = batch.json()["id"]
@@ -285,7 +296,7 @@ async def test_t14_claires_upload_reaches_the_inbox_and_a_withdrawal_hides_then_
         content=F1095C,
         headers={
             **firm.net.headers(claire),
-            "Idempotency-Key": "n01b-file",
+            "Idempotency-Key": str(uuid.uuid4()),
             "Content-Type": "application/octet-stream",
         },
     )
@@ -301,7 +312,7 @@ async def test_t14_claires_upload_reaches_the_inbox_and_a_withdrawal_hides_then_
 
     withdrawn = await firm.net.http.post(
         f"/v1/portal/intake-uploads/{upload}/withdraw",
-        headers={**firm.net.headers(claire), "Idempotency-Key": "n01b-withdraw"},
+        headers={**firm.net.headers(claire), "Idempotency-Key": str(uuid.uuid4())},
     )
     assert withdrawn.status_code == 200, withdrawn.text
     assert withdrawn.json()["status"] == "withdrawn"
@@ -345,7 +356,7 @@ async def test_t14_a_filed_upload_cannot_be_withdrawn(firm: Firm) -> None:
     )
     refused = await firm.net.http.post(
         f"/v1/portal/intake-uploads/{made.id}/withdraw",
-        headers={**firm.net.headers(claire), "Idempotency-Key": "n01b-withdraw-filed"},
+        headers={**firm.net.headers(claire), "Idempotency-Key": str(uuid.uuid4())},
     )
     assert refused.status_code == 409
     assert refused.json()["detail"] == "attachment_filed"
@@ -354,7 +365,7 @@ async def test_t14_a_filed_upload_cannot_be_withdrawn(firm: Firm) -> None:
 async def _client_ctx(firm: Firm, who: Person) -> AuthContext:
     ctx = await member_context(firm.tenant_id, who.user_id)
     assert ctx is not None
-    return ctx
+    return replace(ctx, client=True)  # member_context leaves `client` unset (background work)
 
 
 # --- N-01-T18: triage apply ----------------------------------------------------------------------
@@ -391,7 +402,7 @@ async def test_t18_filing_fulfils_the_request_and_superseding_never_deletes(firm
                 },
             ]
         },
-        headers={**firm.net.headers(firm.grace), "Idempotency-Key": "n01b-apply"},
+        headers={**firm.net.headers(firm.grace), "Idempotency-Key": str(uuid.uuid4())},
     )
     assert applied.status_code == 200, applied.text
     assert (applied.json()["filed"], applied.json()["ignored"]) == (1, 1)
@@ -432,7 +443,7 @@ async def test_t18_filing_fulfils_the_request_and_superseding_never_deletes(firm
                 }
             ]
         },
-        headers={**firm.net.headers(firm.grace), "Idempotency-Key": "n01b-supersede"},
+        headers={**firm.net.headers(firm.grace), "Idempotency-Key": str(uuid.uuid4())},
     )
     assert superseded.status_code == 200, superseded.text
     versions_after = int(

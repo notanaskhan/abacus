@@ -402,7 +402,7 @@ async def _decide(tx: UnitOfWork, ctx: AuthContext, given: Decision, message_id:
             "decision": given.decision,
             "kind": given.destination_kind if given.decision == "file" else None,
             "dest": given.destination_id if given.decision == "file" else None,
-            "mode": given.version_mode if given.decision == "file" else None,
+            "mode": (given.version_mode or "new_document") if given.decision == "file" else None,
             "supersede": given.supersede_version_id if given.decision == "file" else None,
             "keep": given.keep_both,
             "rename": given.rename_to,
