@@ -23,12 +23,12 @@ from temporalio.exceptions import ApplicationError
 from temporalio.worker import Worker
 
 from abacus.kernel.temporal import payload_codec
-from abacus.modules.communications.triage_workflow import (
+from abacus.modules.communications.api import (
     AttachmentTriageWorkflow,
     TriageInput,
     attachment_triage_id,
 )
-from abacus.modules.evidence.workflow_types import UploadInput
+from abacus.modules.evidence.api import UploadInput
 from abacus_tools.stack import Stack, connect, run_with_stack
 from abacus_tools.workflows.histories import decoded_and_scrubbed
 from abacus_tools.workflows.record_retrieval import refuse_overwrite
