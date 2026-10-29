@@ -1,8 +1,8 @@
 ---
 id: TASK-1809
 title: Q-02 runbooks and docs (Q-02-T51)
-spec: docs/specs/SPEC-341-compliance-kernel-real-data-readiness.md; docs/specs/SPEC-036-data-boundary.md
-acceptance_criteria: [Q-02 DoD 9]
+spec: SPEC-341
+acceptance_criteria: [AC-1]
 risk_zone: amber
 status: in-review
 epic: Q-02
