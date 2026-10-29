@@ -235,7 +235,12 @@ export function IndexList<Row>({
   }
 
   return (
-    <div data-template="T1" className="flex min-h-0 flex-1 flex-col bg-shell">
+    // T1 owns everything under the toolbar (tabs bar at 46, its own 12 px insets), so inside the
+    // app shell's body it takes back the body's padding rather than inset twice.
+    <div
+      data-template="T1"
+      className="flex min-h-0 flex-1 flex-col bg-shell in-data-[shell=cols]:-mx-(--edge-app) in-data-[shell=cols]:-mt-(--gutter-pane) in-data-[shell=cols]:-mb-(--edge-app)"
+    >
       {(tabs !== undefined || tabsEnd !== undefined) && (
         <div
           data-list="tabs"
