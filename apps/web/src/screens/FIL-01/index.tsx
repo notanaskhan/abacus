@@ -29,7 +29,9 @@ import {
   time,
 } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { type JSX, type ReactNode, useEffect, useState } from "react";
+import { to } from "../../routes/to";
 import { COPY } from "./copy";
 
 const NOW = Date.parse("2026-09-14T14:24:00Z");
@@ -509,7 +511,9 @@ export function FilesPage({
   return (
     <div data-screen="FIL-01" className="flex min-h-0 flex-1 flex-col">
       <div className="flex h-[42px] items-center gap-[10px] px-[14px]">
-        <span className="text-nav text-ink-2">{COPY.allClients}</span>
+        <Link {...to.CLI01()} className="text-nav text-ink-2 hover:text-ink">
+          {COPY.allClients}
+        </Link>
         <h1 className="mx-auto flex items-center gap-[8px] text-title">
           <span className="font-medium">{COPY.title}</span>
           {client !== undefined && <span className="text-ink-2">{client.label}</span>}

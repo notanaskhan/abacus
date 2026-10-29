@@ -2,8 +2,7 @@
 // the virtual statements foot to 512,400." Each artboard's scenario through the generated client
 // in fixture mode; axe and parity are e2e (N-01-T25 to T28).
 import { client } from "@abacus/api-client/client";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { installFixtureMode } from "../../app-core/fixture-mode";
 import {
@@ -13,7 +12,7 @@ import {
   REVEALED_TIN,
   scenarios,
 } from "../../fixtures/scenarios/FIL-01";
-import { newQueryClient } from "../../testing/support";
+import { renderRoutes } from "../../testing/support";
 import { FilesPage } from ".";
 
 beforeAll(() => {
@@ -31,18 +30,21 @@ const WRITES = /Upload|Move…|Void|Delete|Sign off…|Lock$|Upload new version|
 
 async function show(state: Fil01State): Promise<void> {
   restore = installFixtureMode(scenarios[state]);
-  render(
-    <QueryClientProvider client={newQueryClient()}>
-      <FilesPage
-        node={OPENS[state].node}
-        doc={OPENS[state].doc}
-        viewer="Olivia Brandt"
-        reveal={() => Promise.resolve(REVEALED_TIN)}
-        revealedValue={state === "f" ? REVEALED_TIN : null}
-        frame
-      />
-    </QueryClientProvider>,
-  );
+  renderRoutes([
+    {
+      path: "/",
+      component: () => (
+        <FilesPage
+          node={OPENS[state].node}
+          doc={OPENS[state].doc}
+          viewer="Olivia Brandt"
+          reveal={() => Promise.resolve(REVEALED_TIN)}
+          revealedValue={state === "f" ? REVEALED_TIN : null}
+          frame
+        />
+      ),
+    },
+  ]);
   await waitFor(() => {
     expect(document.querySelector('[data-files="tree"]')).toBeTruthy();
   });
