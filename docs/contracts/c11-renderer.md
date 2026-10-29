@@ -75,7 +75,9 @@ importer), `generated_document.regenerate`, and every final render (`mode=final`
 `render_final` and `lock` raise until P-11-T08); matrix `docs/architecture/permission-matrix/reporting.yaml`;
 flag `docs/architecture/feature-flags/reporting.yaml`; fixtures
 `apps/web/src/fixtures/handlers/reporting.ts`. Stub tests:
-`backend/tests/contracts/c11_renderer/test_c11_stubs.py`; consumer suite beside it (P-11-T04).
+`backend/tests/contracts/c11_renderer/test_c11_stubs.py`; consumer suite
+`backend/tests/contracts/c11_renderer/test_c11_consumer.py` and
+`apps/web/src/fixtures/contracts/c11-renderer.contract.test.ts` (P-11-T04).
 
 ## 9. Versioning
 Additive changes in place (DOCX if descoped, T-06's diagnostic field). A breaking change is C11 v2
