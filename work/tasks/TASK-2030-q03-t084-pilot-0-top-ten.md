@@ -18,8 +18,9 @@ The ten issues in F-09's Pilot 0 log closed (defects fixed) or re-filed against 
 
 ## State on 2026-10-30
 **Blocked on Pilot 0 itself.** No Pilot 0 session has run (the PW0 window is Jan 11 – May 28, 2027
-on the plan's calendar); there is no usability log, no issue and no `pilot-0` label in the
-repository, so there are no defects to fix. Nothing is invented.
+on the plan's calendar). The portal's session log (`docs/product/discovery/
+pilot-0-usability-log-portal.md`, P-08-T29) is a template with no session run; there is no issue and
+no `pilot-0` label, so there are no defects to fix. Nothing is invented.
 
 ## Built so far (so the acceptance can be checked the day the findings exist)
 - `docs/ops/pilot/pilot-0-usability-log.md`: the top-10 table (issue, pilot code, screen, state,
@@ -40,3 +41,4 @@ repository, so there are no defects to fix. Nothing is invented.
 
 ## Progress log
 - 2026-10-30: log, form, checker and AC built; the defect work waits for Pilot 0.
+- 2026-10-30: severities aligned with the session logs' usability scale (S1-S3), not ADR-097's SEV.

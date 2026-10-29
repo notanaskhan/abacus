@@ -10,7 +10,8 @@ Q-03-T084 fixes the defects among them before M9 (Tue Jun 1, 2027); anything tha
 capability goes to its owning epic's cut list instead. This check keeps the log honest:
 
 - every row names its issue (`#n`), a pilot code (never a firm name: PF-A1, PF-T1, ...), a screen
-  the plan knows, a state letter, a severity (SEV1-SEV3, ADR-097), an epic that exists, a kind
+  the plan knows, a state letter, a usability severity (S1-S3, the session logs' scale), an epic
+  that exists, a kind
   (`defect` or `capability`) and a status (`open`, `closed`, `re-filed`);
 - a `closed` row names the fix (`#n`, the PR); a `re-filed` row names the owning epic's issue;
 - a `capability` row is never `closed` by a fix here: it is `re-filed` to the cut list;
@@ -51,7 +52,9 @@ COLUMNS: Final = (
 _ISSUE: Final = re.compile(r"#\d+")
 _PILOT: Final = re.compile(r"PF-[ATC]\d{1,2}")
 _STATE: Final = re.compile(r"[a-z]\d?|—")
-_SEVERITY: Final = frozenset({"SEV1", "SEV2", "SEV3"})
+# The usability severities the session logs use (P-08-T29): S1 blocks the task, S2 slows it or
+# causes a recovered error, S3 is cosmetic or wording. Not ADR-097's incident SEV levels.
+_SEVERITY: Final = frozenset({"S1", "S2", "S3"})
 _KINDS: Final = frozenset({"defect", "capability"})
 _STATUSES: Final = frozenset({"open", "closed", "re-filed"})
 
@@ -118,7 +121,7 @@ def check_row(row: Row, epics: frozenset[str], screens: frozenset[str]) -> list[
     if not _STATE.fullmatch(c.get("State", "")):
         problems.append(f"{where}: State must be the artboard letter (a, a2, ...) or —")
     if c.get("Severity", "") not in _SEVERITY:
-        problems.append(f"{where}: Severity must be SEV1, SEV2 or SEV3")
+        problems.append(f"{where}: Severity must be S1, S2 or S3 (the session logs' scale)")
     if c.get("Owning epic", "") not in epics:
         problems.append(f"{where}: Owning epic {c.get('Owning epic', '')!r} does not exist")
     kind, status = c.get("Kind", ""), c.get("Status", "")

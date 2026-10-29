@@ -1,8 +1,11 @@
 # Pilot 0 usability log: the top ten (PW0)
 
-F-09 §3.7 G3 and Q-03-T084. Every Pilot 0 finding is filed within two business days as an issue
-from the **Pilot 0 usability finding** form (`.github/ISSUE_TEMPLATE/pilot-usability.yml`): screen
-ID, state letter, severity, owning epic. The ten that matter most are the rows below; the list goes
+F-09 §3.7 G3 and Q-03-T084. Each session is recorded in its session log first (the portal's is
+`docs/product/discovery/pilot-0-usability-log-portal.md`, P-08-T29), and every S1 or S2 finding is
+filed within two business days as an issue from the **Pilot 0 usability finding** form
+(`.github/ISSUE_TEMPLATE/pilot-usability.yml`): screen ID, state letter, severity, owning epic.
+Severity is the session logs' usability scale: **S1** blocks the task, **S2** slows it or causes an
+error the person recovered from, **S3** cosmetic or wording. The ten that matter most are the rows below; the list goes
 to the screen owners (P-07, P-08, R-01, A-01, K-01) and is fixed or re-filed before the PW0 exit.
 
 **Rules** (checked by `python -m abacus_tools.quality.pilot_log`; `--exit` at the exit review):

@@ -27,11 +27,11 @@ body:
   - type: dropdown
     id: severity
     attributes:
-      label: Severity (ADR-097)
+      label: Usability severity (the session logs' scale, P-08-T29)
       options:
-        - SEV3 (degraded, one firm)
-        - SEV2 (a major feature)
-        - SEV1 (cross-firm exposure suspected or full outage)
+        - S1 (blocks the task)
+        - S2 (slows it, or an error the person recovered from)
+        - S3 (cosmetic or wording)
     validations:
       required: true
   - type: dropdown
