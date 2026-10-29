@@ -53,7 +53,7 @@ output "github_staging_variables" {
   value = local.enabled ? {
     ECS_CLUSTER             = module.cluster.cluster_name
     API_SERVICE             = module.backend["api"].service_name
-    WORKER_SERVICES         = join(" ", [module.backend["worker"].service_name, module.backend["keyops"].service_name])
+    WORKER_SERVICES         = join(" ", [for k, m in module.backend : m.service_name if k != "api"])
     MIGRATE_TASK_DEFINITION = module.oneoff["migrate"].family
     OPS_TASK_DEFINITION     = module.oneoff["ops"].family
     TASK_SUBNETS            = join(",", module.network.app_subnet_ids)

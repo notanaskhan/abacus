@@ -260,11 +260,20 @@ resource "aws_lb_listener" "api" {
 # --- services and one-off tasks -----------------------------------------------------------------
 
 locals {
-  backend_services = {
-    api    = { cpu = 512, memory = 1024, command = ["api"], role = "api", port = 8000 }
-    worker = { cpu = 512, memory = 1024, command = ["worker", "--classes", "interactive,time_sensitive,background,batch"], role = "worker", port = null }
-    keyops = { cpu = 256, memory = 512, command = ["worker", "--classes", "keyops"], role = "keyops", port = null }
+  worker_classes = var.worker_split ? ["interactive", "time_sensitive", "background", "batch"] : ["all"]
+  workers = {
+    for c in local.worker_classes : (c == "all" ? "worker" : "worker-${replace(c, "_", "-")}") => {
+      cpu     = 512
+      memory  = 1024
+      command = ["worker", "--classes", c == "all" ? "interactive,time_sensitive,background,batch" : c]
+      role    = "worker"
+      port    = null
+    }
   }
+  backend_services = merge(local.workers, {
+    api    = { cpu = 512, memory = 1024, command = ["api"], role = "api", port = 8000 }
+    keyops = { cpu = 256, memory = 512, command = ["worker", "--classes", "keyops"], role = "keyops", port = null }
+  })
   oneoffs = {
     migrate   = { command = ["migrate"], role = "worker" }
     bootstrap = { command = ["bootstrap"], role = "ops" }
@@ -370,6 +379,9 @@ module "firm_edge" {
   web_bucket_regional_domain = module.web.regional_domain_name
   alb_arn                    = aws_lb.api.arn
   alb_dns_name               = aws_lb.api.dns_name
+  web_acl_arn                = module.firm_waf[0].arn
+  firm_host                  = var.firm_certificate_arn == null ? null : var.firm_host
+  certificate_arn            = var.firm_certificate_arn
 }
 
 module "ses" {
