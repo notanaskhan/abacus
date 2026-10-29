@@ -47,6 +47,7 @@ export function SectionRail({
           .label,
       }}
       links={model.links}
+      linksTitle={AUDIT_MESSAGES.bands.overview}
       sections={model.sections}
       selected={selected}
       onOpen={(item) => {

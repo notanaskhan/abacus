@@ -1,4 +1,4 @@
-import { type JSX, type KeyboardEvent, useId, useState } from "react";
+import { type JSX, type KeyboardEvent, type ReactNode, useId, useState } from "react";
 import { cn } from "../cn";
 import { Button } from "../components/button";
 import { Pill } from "../components/pill";
@@ -310,6 +310,8 @@ export interface RecordRailProps {
   bare?: boolean;
   card?: OverviewCardProps;
   links?: readonly RailLink[];
+  /** A collapsing band over the link rows (the T2 cockpit's "Overview ⌄"); none by default. */
+  linksTitle?: string;
   sections?: readonly RailSection[];
   /** The id of the open link or phase. */
   selected?: string;
@@ -387,21 +389,68 @@ function Group({
         />
       )}
       {section.nav !== true && (
-        <div
-          id={id}
-          role="group"
-          aria-label={section.title}
-          {...(shown ? {} : { inert: true, "data-collapsed": "" })}
-          className={cn(
-            "grid transition-[grid-template-rows] duration-[340ms] ease-out",
-            shown ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
-          )}
-        >
-          <div className="flex min-h-0 flex-col overflow-hidden">
-            {phases.map((phase) => row(phase, false))}
-          </div>
-        </div>
+        <Collapse id={id} title={section.title} shown={shown}>
+          {phases.map((phase) => row(phase, false))}
+        </Collapse>
       )}
+    </div>
+  );
+}
+
+/** A band's rows: a collapsed group is `inert`, so its rows leave the tab order. */
+function Collapse({
+  id,
+  title,
+  shown,
+  children,
+}: {
+  id: string;
+  title: string;
+  shown: boolean;
+  children: ReactNode;
+}): JSX.Element {
+  return (
+    <div
+      id={id}
+      role="group"
+      aria-label={title}
+      {...(shown ? {} : { inert: true, "data-collapsed": "" })}
+      className={cn(
+        "grid transition-[grid-template-rows] duration-[340ms] ease-out",
+        shown ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+      )}
+    >
+      <div className="flex min-h-0 flex-col overflow-hidden">{children}</div>
+    </div>
+  );
+}
+
+/** The link rows under their own band (`linksTitle`), collapsing like a group of phases. */
+function LinkBand({
+  title,
+  onToggle,
+  children,
+}: {
+  title: string;
+  onToggle: ((band: string, nowOpen: boolean) => void) | undefined;
+  children: ReactNode;
+}): JSX.Element {
+  const id = useId();
+  const [open, setOpen] = useState(true);
+  return (
+    <div data-rail-section="links" className="flex flex-col">
+      <GroupBand
+        title={title}
+        open={open}
+        controls={id}
+        onToggle={() => {
+          setOpen(!open);
+          onToggle?.(title, !open);
+        }}
+      />
+      <Collapse id={id} title={title} shown={open}>
+        {children}
+      </Collapse>
     </div>
   );
 }
@@ -419,6 +468,7 @@ export function RecordRail({
   bare = false,
   card,
   links = [],
+  linksTitle,
   sections = [],
   selected,
   onOpen,
@@ -434,22 +484,28 @@ export function RecordRail({
     setPending((prev) => new Set(prev).add(phase.id));
     onBegin?.(phase);
   };
+  const linkRows = links.map((link) => (
+    <RailRow
+      key={link.id}
+      link={link}
+      compact={compact}
+      selected={selected === link.id}
+      {...(onOpen === undefined ? {} : { onOpen })}
+    />
+  ));
   const rows = (
     <div data-rail={variant} className="flex flex-col">
       {!bare && card !== undefined && <OverviewCard {...card} />}
-      {links.length > 0 && (
-        <div className={cn("flex flex-col", !bare && card !== undefined && "hairline-t")}>
-          {links.map((link) => (
-            <RailRow
-              key={link.id}
-              link={link}
-              compact={compact}
-              selected={selected === link.id}
-              {...(onOpen === undefined ? {} : { onOpen })}
-            />
-          ))}
-        </div>
-      )}
+      {links.length > 0 &&
+        (linksTitle === undefined ? (
+          <div className={cn("flex flex-col", !bare && card !== undefined && "hairline-t")}>
+            {linkRows}
+          </div>
+        ) : (
+          <LinkBand title={linksTitle} onToggle={onToggle}>
+            {linkRows}
+          </LinkBand>
+        ))}
       {sections.map((section) => (
         <Group
           key={section.id}

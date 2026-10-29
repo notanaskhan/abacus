@@ -1393,7 +1393,8 @@
       "tier": "C",
       "mask": [
         "[data-phase='processing'] svg"
-      ]
+      ],
+      "locked": true
     },
     "aud-01e.window": {
       "page": "screens/AUD-01?st=e",
@@ -1544,7 +1545,8 @@
       "source": "handoff/screens/AUD-03 Source documents - PBC with viewer/screenshots/AUD-03e.png",
       "sha256": "ab056dbc43deae96ac6aaf7cc022f8a1951f5df3205304749649c6dc6d2bf05a",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "locked": true
     },
     "aud-03f.window": {
       "page": "screens/AUD-03?st=f",
