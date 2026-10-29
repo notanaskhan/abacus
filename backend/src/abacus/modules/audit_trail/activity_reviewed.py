@@ -460,5 +460,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "sending_domain.verified",  # R-01-T27
         "firm_mail_policy.client_mail_enabled",  # R-01-T27
         "firm_mail_policy.client_mail_disabled",  # R-01-T27
+        "tax_return.status_changed",  # T-02-T07: a return's move (status events hold the detail)
+        "tax_return.sync_recorded",  # T-02-T07: T-01's sync-chip write
     }
 )

@@ -45,6 +45,8 @@ Verbatim from the handoff's spec.md into `screens/TAX-12/copy.ts`. Banned (T-01 
 
 ## Links
 Outbound: SIG-01/SIG-02 (8879 envelope), SHL-12 h, TAX-13 (planned), POR-02 (client copy). Inbound: TAX-02 Delivery tab.
+| Opens TAX-07 · Activity filtered to approvals | TAX-07 | planned (handoff link; tooltip-only) |
+| Opens TAX-09 · sync history · exported Sep 16, 11:42 AM | TAX-09 | planned (handoff link; tooltip-only) |
 
 ## Acceptance
 - TAX-12 acceptance: every artboard a, a2, b, c, c2, d, e renders from its fixture scenario with the persona and clock above.

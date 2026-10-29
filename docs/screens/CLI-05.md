@@ -43,6 +43,9 @@ Verbatim from the handoff's spec.md into `screens/CLI-05/copy.ts`. Banned (T-01 
 
 ## Links
 Outbound: SHL-08 (difference cells, E5), SIG-01/SIG-02 (consent envelope), NOT-02 (planned), TAX-02 (return). Inbound: CLI-02 Tax profile tab.
+| Open in the viewer (SHL-08) | SHL-08 | planned (handoff link; tooltip-only) |
+| Opens NOT-02 · CP2000 · TY2024 · Marcus & Dana Whitley | NOT-02 | planned (handoff link; tooltip-only) |
+| Form 8821 for 2022–2026 lets the firm receive transcripts and notices, not represent; Draft Form 2848… opens SIG-02 | SIG-02 | planned (handoff link; tooltip-only) |
 
 ## Acceptance
 - CLI-05 acceptance: every artboard a, b, c, d, e, f, g renders from its fixture scenario with the persona and clock above.

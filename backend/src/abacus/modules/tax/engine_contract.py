@@ -49,14 +49,14 @@ IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=8, ma
 ReturnId = Annotated[UUID, Path()]
 Sha256 = Annotated[str, Field(pattern=r"^sha256:[0-9a-f]{64}$")]
 
-# The seven sync-chip states (T-01-T06 adds them to the status registry).
+# The sync chip: the blueprint's `return_sync_chip` codes (status registry; T-02-T04).
 SyncState = Literal[
-    "not_linked",
-    "ready_to_export",
-    "exported",
-    "import_pending_approval",
-    "in_sync",
+    "not_yet_exported",
+    "ready_for_export",
+    "exporting",
+    "synced",
     "out_of_sync",
+    "import_pending_approval",
     "failed",
 ]
 ImportKind = Literal["values", "diagnostics", "pdfs", "acks"]
