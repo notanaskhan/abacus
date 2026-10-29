@@ -1970,6 +1970,44 @@
       "sha256": "48fa52e822af1d9457fdff15a4736a3c25ffbbdf29861f48d2907b7e833bf511",
       "crop": "window",
       "tier": "C"
+    },
+    "t10a.window": {
+      "page": "screens/T10?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T10 Document on well/screenshots/T10a.png",
+      "sha256": "3c86eef5368e4544a29557b8c4a0fe9fbf9c839957012f61760e5b0d4f0bfd42",
+      "crop": "window",
+      "tier": "B",
+      "mask": [
+        "[data-spinner]"
+      ],
+      "deviation": "F-06-T14 (DEC-1252): drafting draws Edit, Regenerate… and Approve… disabled, each naming the drafting as its reason (F-06 Story 4.1), where the board's header shows the spinner line alone"
+    },
+    "t10a.paper-header": {
+      "page": "screens/T10?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T10 Document on well/screenshots/T10a.png",
+      "sha256": "3c86eef5368e4544a29557b8c4a0fe9fbf9c839957012f61760e5b0d4f0bfd42",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-template='t10'] [data-shell='pane-header']"
+    },
+    "t10b.window": {
+      "page": "screens/T10?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T10 Document on well/screenshots/T10b.png",
+      "sha256": "9e4414fcd34d7f3dcee8e3c4f970ad4a29497dabcba9c9d461a7cf6100e0da4b",
+      "crop": "window",
+      "tier": "B"
+    },
+    "t10b.paper-header": {
+      "page": "screens/T10?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T10 Document on well/screenshots/T10b.png",
+      "sha256": "9e4414fcd34d7f3dcee8e3c4f970ad4a29497dabcba9c9d461a7cf6100e0da4b",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-template='t10'] [data-shell='pane-header']"
     }
   }
 }
