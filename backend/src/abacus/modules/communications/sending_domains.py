@@ -73,6 +73,13 @@ FailureReason = Literal["dkim_not_verified", "mail_from_not_verified", "identity
 VERIFY_WINDOW: Final = timedelta(hours=72)
 MAIL_FROM_SUBDOMAIN: Final = "bounce"
 LIVE: Final = frozenset({"pending_dns", "verified"})
+# Audited by index (refs carry identifiers and integers only): append only.
+STATUSES: Final[tuple[DomainStatus, ...]] = ("pending_dns", "verified", "failed", "revoked")
+REASONS: Final[tuple[FailureReason, ...]] = (
+    "dkim_not_verified",
+    "mail_from_not_verified",
+    "identity_missing",
+)
 _READ, _MANAGE = "sending_domain.read", "sending_domain.manage"
 _LIST_LIMIT: Final = 10
 _log = get_logger(__name__)
@@ -300,7 +307,7 @@ async def create_domain(ctx: AuthContext, domain: str, from_local_part: str) -> 
             tx.record(
                 "sending_domain.created",
                 target=Target("sending_domain", domain_id),
-                after=Ref(status="pending_dns"),
+                after=Ref(status=STATUSES.index("pending_dns")),
             )
             tx.emit(SendingDomainStatusChanged(domain_id=domain_id, status="pending_dns"))
     except IntegrityError:
@@ -343,8 +350,8 @@ async def revoke_domain(ctx: AuthContext, domain_id: UUID) -> SendingDomain:
             tx.record(
                 "sending_domain.revoked",
                 target=Target("sending_domain", domain_id),
-                before=Ref(status=current.status),
-                after=Ref(status="revoked"),
+                before=Ref(status=STATUSES.index(current.status)),
+                after=Ref(status=STATUSES.index("revoked")),
             )
             tx.emit(SendingDomainStatusChanged(domain_id=domain_id, status="revoked"))
     # Security review: only a live row owns its identity (one live row per name across firms).
@@ -402,16 +409,27 @@ async def refresh(tenant: TenantContext, domain_id: UUID) -> DomainStatus:
             tx.record(
                 f"sending_domain.{decision.status}",
                 target=Target("sending_domain", domain_id),
-                before=Ref(status=current.status),
-                after=Ref(status=decision.status)
+                before=Ref(status=STATUSES.index(current.status)),
+                after=Ref(status=STATUSES.index(decision.status))
                 if decision.failure_reason is None
-                else Ref(status=decision.status, reason=decision.failure_reason),
+                else Ref(
+                    status=STATUSES.index(decision.status),
+                    reason=REASONS.index(decision.failure_reason),
+                ),
             )
             tx.emit(SendingDomainStatusChanged(domain_id=domain_id, status=decision.status))
             if decision.status == "verified":
                 tx.emit(SendingDomainVerified(domain_id=domain_id))
             elif decision.status == "failed":
                 tx.emit(SendingDomainFailed(domain_id=domain_id))
+        else:
+            # Nothing moved (the check stamped `last_checked_at`, or another check won): the
+            # check itself is the recorded change (ADR-018: every unit of work audits).
+            tx.record(
+                "sending_domain.checked",
+                target=Target("sending_domain", domain_id),
+                after=Ref(status=STATUSES.index(decision.status)),
+            )
     return decision.status if moved is not None else (await _domain(system, domain_id)).status
 
 
@@ -469,7 +487,11 @@ async def sender_for(tenant_id: UUID) -> Sender:
         return Sender(
             display, f"{on_record.from_local_part}@{on_record.domain}", None, on_record.domain
         )
-    reply_to = None if on_record is None else f"{on_record.from_local_part}@{on_record.domain}"
+    reply_to = (
+        f"{on_record.from_local_part}@{on_record.domain}"
+        if on_record is not None and on_record.status == "verified"
+        else None
+    )
     return Sender(display, None, reply_to, neutral_domain())
 
 

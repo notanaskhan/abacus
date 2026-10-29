@@ -21,6 +21,7 @@ from abacus.kernel.clock import frozen, system_now
 from abacus.kernel.config import settings
 from abacus.kernel.db import configure_engine, dispose_engine, tenant_session
 from abacus.kernel.errors import NotFound
+from abacus.kernel.flags import forget_flags
 from abacus.modules.communications import sending_domains
 from abacus.modules.communications.deliveries import (
     delivery_status,
@@ -52,7 +53,12 @@ from .test_r01t19_email_template_versions import (
     _send,  # pyright: ignore[reportPrivateUsage] -- the R-01-T19 helper, reused
 )
 
-DOMAIN = "probe-firm.test"
+
+def _name() -> str:
+    """A probe domain of the test's own: a live name is unique across firms (DEC-951)."""
+    return f"probe-{uuid.uuid4().hex[:10]}.test"
+
+
 SENDER = "communications.firm_sender_domain"
 
 
@@ -126,6 +132,7 @@ async def _outbox(seed: Seeder, tenant: uuid.UUID, event_type: str) -> list[dict
 async def test_ac1_a_domain_moves_from_pending_dns_to_verified_on_the_fake(
     seed: Seeder, ses: InMemorySesIdentities
 ) -> None:
+    DOMAIN = _name()
     firm = await _firm(seed)
     await _sender_on(seed, firm.tenant)
     created = await create_domain(firm.admin, DOMAIN, "clients")
@@ -227,6 +234,7 @@ async def test_ac3_a_bounced_address_is_suppressed_and_its_status_reads_bounced(
 async def test_one_live_domain_per_firm_and_per_name(
     seed: Seeder, ses: InMemorySesIdentities
 ) -> None:
+    DOMAIN = _name()
     del ses
     firm, other = await _firm(seed), await _firm(seed)
     for f in (firm, other):
@@ -242,6 +250,7 @@ async def test_one_live_domain_per_firm_and_per_name(
 async def test_writes_are_404_with_the_flag_off_and_reads_are_not_gated(
     seed: Seeder, ses: InMemorySesIdentities
 ) -> None:
+    DOMAIN = _name()
     del ses
     firm = await _firm(seed)
     with pytest.raises(NotFound):
@@ -252,6 +261,7 @@ async def test_writes_are_404_with_the_flag_off_and_reads_are_not_gated(
 async def test_72_hours_without_verification_is_failed_and_mail_keeps_the_neutral_sender(
     seed: Seeder, ses: InMemorySesIdentities
 ) -> None:
+    DOMAIN = _name()
     firm = await _firm(seed)
     await _sender_on(seed, firm.tenant)
     created = await create_domain(firm.admin, DOMAIN, "clients")
@@ -268,6 +278,7 @@ async def test_72_hours_without_verification_is_failed_and_mail_keeps_the_neutra
 async def test_revoke_ends_the_domain_and_deletes_the_identity(
     seed: Seeder, ses: InMemorySesIdentities
 ) -> None:
+    DOMAIN = _name()
     firm = await _firm(seed)
     await _sender_on(seed, firm.tenant)
     created = await create_domain(firm.admin, DOMAIN, "clients")
@@ -284,6 +295,7 @@ async def test_revoke_ends_the_domain_and_deletes_the_identity(
 async def test_a_verified_domain_with_the_flag_off_is_the_reply_to_of_the_neutral_sender(
     seed: Seeder, ses: InMemorySesIdentities
 ) -> None:
+    DOMAIN = _name()
     firm = await _firm(seed)
     await _sender_on(seed, firm.tenant)
     created = await create_domain(firm.admin, DOMAIN, "clients")
@@ -294,6 +306,7 @@ async def test_a_verified_domain_with_the_flag_off_is_the_reply_to_of_the_neutra
         firm.tenant,
         SENDER,
     )
+    forget_flags()
     sender = await sender_for(firm.tenant)
     assert sender.address is None and sender.reply_to == f"clients@{DOMAIN}"  # RK-52
 
@@ -303,6 +316,7 @@ async def test_revoking_a_failed_row_leaves_a_live_identity_of_the_same_name_alo
 ) -> None:
     """Security review: a failed row's name can be live again (here, re-added); its revoke must not
     delete the identity the live row now uses."""
+    DOMAIN = _name()
     firm = await _firm(seed)
     await _sender_on(seed, firm.tenant)
     first = await create_domain(firm.admin, DOMAIN, "clients")
@@ -317,6 +331,7 @@ async def test_revoking_a_failed_row_leaves_a_live_identity_of_the_same_name_alo
 async def test_another_firms_live_name_is_refused_before_ses_is_asked(
     seed: Seeder, ses: InMemorySesIdentities
 ) -> None:
+    DOMAIN = _name()
     firm, other = await _firm(seed), await _firm(seed)
     for f in (firm, other):
         await _sender_on(seed, f.tenant)
@@ -366,12 +381,13 @@ async def test_the_operator_function_names_two_different_people(seed: Seeder) ->
 async def test_a_revoked_domain_never_moves_again(
     seed: Seeder, ses: InMemorySesIdentities
 ) -> None:
+    DOMAIN = _name()
     del ses
     firm = await _firm(seed)
     await _sender_on(seed, firm.tenant)
     created = await create_domain(firm.admin, DOMAIN, "clients")
     await revoke_domain(firm.admin, created.id)
-    with pytest.raises(DBAPIError):
+    with pytest.raises(Exception, match="not a transition"):
         await seed.run(
             "UPDATE sending_domains SET status = 'verified', verified_at = now() WHERE id = $1",
             created.id,
