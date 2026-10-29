@@ -1,8 +1,8 @@
 ---
 id: TASK-1803
 title: E2E for the K-01 MVP slice (K-01-T11)
-spec: docs/plan/epics/K-01.md §3.1, §10
-acceptance_criteria: [AC1.1, AC1.3, AC1.4, AC1.5, AC1.6, AC1.7]
+spec: SPEC-008
+acceptance_criteria: [AC-1]
 risk_zone: green
 status: in-review
 epic: K-01
@@ -22,3 +22,5 @@ KNW-01 a–f walked in the app with axe and INV-1 to INV-5; j01 5w recorded agai
 
 ## Progress log
 - 2026-10-28: written; run in the end-of-batch pass (S13 leftovers).
+
+- 2026-10-29 (review): the fixture walk found the catalog grid's scrolling pane unreachable by keyboard (axe scrollable-region-focusable, serious); CatalogLayout now passes Pane's existing `scrollLabel`. `/knowledge` carries no tab, category or query in its URL, so the walk opens Methodology, the Review queue and the Change log and types "materiality" as a person does. 4/4 on the fixture project.

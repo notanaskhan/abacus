@@ -44,6 +44,7 @@ test.describe("KNW-01 knowledge catalog", () => {
     });
     await journey.as("margaret-okonkwo", "/knowledge", { scenario: "KNW-01:b", flags: FLAGS });
     await journey.step("KNW-01 b: Methodology 4, card 4 Superseded", async (page) => {
+      await page.getByRole("option", { name: /^Methodology\b/u }).click();
       await expect(page.locator(CARD)).toHaveCount(4);
       await expect(page.locator(CARD).nth(3)).toHaveAttribute(
         "aria-label",
@@ -58,6 +59,8 @@ test.describe("KNW-01 knowledge catalog", () => {
   }) => {
     await journey.as("margaret-okonkwo", "/knowledge", { scenario: "KNW-01:c", flags: FLAGS });
     await journey.step("KNW-01 c: 1040 Review Checklist v7 and the §754 memo", async (page) => {
+      // The route carries no tab in its URL: the walk opens the tab as a person does.
+      await page.getByRole("tab", { name: /Review queue/u }).click();
       const rows = page.locator("[data-review-row]");
       await expect(rows).toHaveCount(2);
       await expect(rows.first()).toContainText("1040 Review Checklist v7 (TY2026)");
@@ -65,6 +68,7 @@ test.describe("KNW-01 knowledge catalog", () => {
     });
     await journey.as("margaret-okonkwo", "/knowledge", { scenario: "KNW-01:d", flags: FLAGS });
     await journey.step("KNW-01 d: newest last, never the agent as approver", async (page) => {
+      await page.getByRole("tab", { name: /Change log/u }).click();
       const lines = page.locator("[data-change]");
       await expect(lines).toHaveCount(4);
       await expect(lines.first()).toContainText(
@@ -88,6 +92,7 @@ test.describe("KNW-01 knowledge catalog", () => {
   }) => {
     await journey.as("margaret-okonkwo", "/knowledge", { scenario: "KNW-01:f", flags: FLAGS });
     await journey.step("KNW-01 f: Materiality ranges, then the EBP methodology", async (page) => {
+      await page.getByLabel("Search knowledge", { exact: true }).fill("materiality");
       await expect(page.locator(CARD)).toHaveCount(2);
       await expect(page.locator(`${CARD} p[title]`).first()).toHaveAttribute(
         "title",
