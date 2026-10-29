@@ -4,27 +4,31 @@ tooling use `kernel.clock.now` for business time and `system_now` for system tim
 
 SPEC-307 AC-7: `now(tenant)` reads a `frozen(at)` block first, and `system_now()` is always real
 time. So under a frozen business instant far from today:
-- the engagements module records the partner's independence conclusion at that instant (business
+- the engagements module records a member's independence confirmation at that instant (business
   time: the demo walks it);
 - the communications mail sink stamps each message with the real time it was written, and the
   founder's tools (signup codes, the quarterly access review) date their expiries and reports in
   real time (system time: security and audit windows).
 
 The static half (only `kernel.clock` reads the wall clock) is CLOCK-001 in `banned_patterns`
-(F-04-T17). Boundaries: the acceptance route over HTTP through `create_app()` on the migrated
-Postgres; `communications.api.LocalMailbox`; the tools' public functions. Expectations come from
-the task row and the spec, not the implementation.
+(F-04-T17). Boundaries: `engagements.api.confirm_independence` on the migrated Postgres;
+`communications.api.LocalMailbox`; the tools' public functions. Expectations come from the task
+row and the spec, not the implementation.
 """
 
 from __future__ import annotations
 
 import json
+import uuid
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Final, cast
 
 from abacus.kernel import clock
+from abacus.kernel.db import TenantContext
 from abacus.modules.communications.api import LocalMailbox
+from abacus.modules.engagements.api import confirm_independence
+from abacus.modules.identity.api import AuthContext
 from abacus_tools import access_review, signup_codes
 
 from .support import Migrated, Net, Seeder
@@ -38,34 +42,40 @@ def _real_now() -> datetime:
     return datetime.now(UTC)
 
 
-async def test_ac7_engagements_record_the_independence_conclusion_in_business_time(
+async def test_ac7_engagements_record_an_independence_confirmation_in_business_time(
     net: Net, seed: Seeder
 ) -> None:
+    """SPEC-025's conclusion route retired with P-07-T59 (DEC-905); CLI-08's confirmation is the
+    engagements write stamped with business time (`kernel.clock.now`)."""
     tenant_id = await seed.firm()
     admin = await seed.person(tenant_id, "firm_admin")
     site = await seed.site(tenant_id, admin.user_id, "accept", opened=False)
     partner = await seed.person(tenant_id)
     await seed.member(site, partner, "engagement_partner")
+    ctx = AuthContext(
+        TenantContext(tenant_id, "human", str(partner.user_id)),
+        partner.user_id,
+        uuid.uuid4(),
+        None,
+        _real_now() - timedelta(minutes=1),
+    )
     with clock.frozen(DEMO):
-        response = await net.call(
-            "PUT",
-            f"/v1/engagements/{site.engagement_id}/acceptance",
-            partner,
-            body={
-                "decision": "accepted",
-                "documented_at": "PPC 1-200",
-                "independence_concluded": True,
-                "independence_documented_at": "Memo 2",
-            },
+        confirmed = await confirm_independence(
+            ctx,
+            site.engagement_id,
+            statement_version="v1",
+            statement_codes=["not_financial_interest", "not_relationship", "not_services"],
+            interests_note=None,
         )
-    assert response.status_code == 200, response.text
-    concluded = await seed.value(
-        "SELECT independence_concluded_at FROM engagement_acceptance "
-        "WHERE tenant_id = $1 AND engagement_id = $2",
+    assert confirmed.answered_at == DEMO
+    answered = await seed.value(
+        "SELECT answered_at FROM independence_confirmations "
+        "WHERE tenant_id = $1 AND engagement_id = $2 AND user_id = $3",
         tenant_id,
         site.engagement_id,
+        partner.user_id,
     )
-    assert concluded == DEMO
+    assert answered == DEMO
 
 
 def test_ac7_the_mail_sink_stamps_each_message_in_system_time(tmp_path: Path) -> None:

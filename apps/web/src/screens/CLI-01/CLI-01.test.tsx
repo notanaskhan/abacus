@@ -1,6 +1,6 @@
 // CLI-01 · Clients index (P-07-T12). One test per artboard (a–f) on its fixture scenario, the
 // spec's acceptance checklist, P-07 Stories 1.1 and 1.2, the error state, "Load more", the row
-// ··· menu and the route behind `clients.v2`.
+// ··· menu and the route.
 import { client } from "@abacus/api-client/client";
 import { toastStore } from "@abacus/ui";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -333,7 +333,7 @@ describe("CLI-01 behaviour", () => {
 });
 
 describe("CLI-01 route /clients", () => {
-  it("flag on (clients.v2): CLI-01", async () => {
+  it("serves CLI-01 for every firm (clients.v2 retired, P-07-T59)", async () => {
     install(scenarios.a);
     const Page = clientsRoute.options.component as () => JSX.Element;
     render(

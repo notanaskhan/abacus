@@ -70,3 +70,13 @@ def test_main_reports_a_missing_input_without_a_traceback(
     monkeypatch.delenv("ABACUS_DB_HOST")
     assert db_bootstrap.main() == 2
     assert "ABACUS_DB_HOST" in capsys.readouterr().err
+
+
+def test_a_stored_large_object_fails_the_guard() -> None:
+    with pytest.raises(db_bootstrap.BootstrapError, match="ED-292"):
+        db_bootstrap._judge(1, 0)  # pyright: ignore[reportPrivateUsage] -- the guard's verdict
+
+
+def test_open_functions_alone_are_reported_not_fatal(capsys: pytest.CaptureFixture[str]) -> None:
+    db_bootstrap._judge(0, 7)  # pyright: ignore[reportPrivateUsage] -- the guard's verdict
+    assert "7 large-object functions" in capsys.readouterr().err

@@ -557,6 +557,35 @@ _IDENTITY_ENGINE = frozenset(
 )
 
 
+# FIELD-001 (P-04-T35; ADR-160 clause 10): `review.api.record_value` is the only writer of a
+# field's versions. A SQL write naming the table, or an ORM insert of its model, anywhere else
+# fails.
+_FIELD_WRITE = re.compile(
+    r"\b(insert\s+into|update|delete\s+from)\s+field_value_versions\b", re.IGNORECASE
+)
+
+
+def _check_field_write(src: SourceFile) -> Iterator[Finding]:
+    message = (
+        "a cell or field is written only through review.api.record_value "
+        "(FIELD-001, ADR-160 clause 10)"
+    )
+    for line, value in _string_constants(src):
+        if _FIELD_WRITE.search(value):
+            yield Finding(line, message)
+    for node in ast.walk(src.tree):
+        if (
+            isinstance(node, ast.Call)
+            and _terminal_name(node.func) in {"insert", "update", "delete"}
+            and any(
+                isinstance(a, (ast.Name, ast.Attribute))
+                and _terminal_name(a) == "FieldValueVersion"
+                for a in node.args
+            )
+        ):
+            yield Finding(node.lineno, message)
+
+
 def _check_identity_engine(src: SourceFile) -> Iterator[Finding]:
     for line, name in _names_used(src):
         if name in _IDENTITY_ENGINE:
@@ -1377,6 +1406,10 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/review/repository.py", "checkpoint_diffs_of"),
         ("src/abacus/modules/review/repository.py", "checkpoint_decisions_of"),
         ("src/abacus/modules/review/repository.py", "lock_proposed_for"),
+        # P-04-T35: one field's versions and ticks, after `field.read` (or the write's action)
+        # on its target's engagement (one field, bounded like the sign-off ladder).
+        ("src/abacus/modules/review/repository.py", "field_versions_of"),
+        ("src/abacus/modules/review/repository.py", "field_ticks_of"),
         # SPEC-309 (TASK-320): ledger stays dependency-free (no visible()); the assurance read
         # model authorises `trial_balance.read` on the engagement before any of these run.
         ("src/abacus/modules/ledger/tb_repository.py", "snapshots_of_entity"),
@@ -2340,6 +2373,8 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus_tools/agent_stage.py",
             # Q-01-T45: writes an entitlement and its audit event as the operator.
             "src/abacus_tools/tenants.py",
+            # DEC-1011: binds a synthetic persona and audits it as the operator, firm by firm.
+            "src/abacus_tools/staging_personas.py",
             # F-04-T13: bootstrap writes carry the event's tenant, actor and business time.
             "src/abacus_tools/synthetic/scenarios/brightwater_hale/loader.py",
             "tests/integration/test_tenancy.py",
@@ -2348,6 +2383,10 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_schema_check_db.py",
             # P-04-T13: the actor GUCs the human-only CHECKs bind, set as a unit of work sets them
             "tests/integration/test_p04t13_review_schema_independent.py",
+            # N-02-T08: the retention policy's version trigger reads the tenant a session sets.
+            "tests/integration/backfill/test_n02t08_record_import.py",
+            # Q-04-T008: back-dates seeded audit rows under the actor the immutability guard reads.
+            "tests/integration/backfill/test_q04t008_pilot_metrics.py",
             # S13 schema tests: the AI-policy guard (G-02-T23) and pilot grants (Q-04-T007).
             "tests/integration/test_g02t23_autonomy_policy_migration.py",
             "tests/integration/test_q04t007_pilot_enrolments.py",
@@ -2370,6 +2409,11 @@ RULES: list[Rule | TreeRule] = [
             # Q-03-T028: plans each list as the app role with the firm's tenant set by hand, as
             # tenant_session sets it, so row-level security adds the tenant predicate.
             "tests/integration/test_q03t028_plan_tests.py",
+            # N-02-T08, Q-04-T008 (S14): seed rows whose triggers read the tenant (the retention
+            # policy's version, a back-dated metric row), set in the same statement as
+            # tenant_session sets it.
+            "tests/integration/backfill/test_n02t08_record_import.py",
+            "tests/integration/backfill/test_q04t008_pilot_metrics.py",
             "tests/unit/kernel/test_migration_helpers.py",
             "tests/unit/quality/test_banned_patterns.py",
         ),
@@ -2570,6 +2614,15 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/modules/review/api.py",
             "src/abacus/modules/agents/proposals.py",
         ),
+    ),
+    Rule(
+        id="FIELD-001",
+        description="Only review.api.record_value writes a field's versions",
+        adr="ADR-160",
+        check=_check_field_write,
+        # P-04-T35: the write path itself; any other file naming a write fails.
+        include=("src/abacus/*",),
+        exclude=("src/abacus/modules/review/field_values.py",),
     ),
     Rule(
         id="DECISION-001",

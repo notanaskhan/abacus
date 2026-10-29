@@ -18,10 +18,10 @@ Code: specimens `apps/web/src/gallery/specimens/TPL-16/` over `apps/web/src/fixt
 | b · Signing (default) | `mira-kapoor` | E0 | E0 | E6: Dev `signed` Sep 9, 6:12 PM; Mira `verified` 9:21 AM with the spouse PIN and spouse signature open on Form 8879 and TR-579-IT ("2 fields left"); `signedCount 1`, `signerCount 2` | built in F-06-T04 |
 | c · Adopt signature | `mira-kapoor` | E0 | E0 | b with the adopt step open. **Superseded (DF-12):** provider-hosted in production; the native 560 dialog (Gelasio italic, consent checkbox) is a Tier C screenshot specimen | deferred (Tier C screenshot) |
 | d · Completed | `mira-kapoor` | E0 | E0 | both signers `signed`; envelope `completed`; `evidence` six rows (Signed, Method, Identity, IP address, Login, Documents) | built in F-06-T04 |
-| e · Verification failed | `mira-kapoor` | E0 | E0 | Mira's signer `verification_failed`, envelope kind 8879 family. **Superseded (DF-11):** the artboard's "try again tomorrow at 9:24 AM" is replaced by the paper-form text; no retry, no countdown, no other method; Dina Sato named | F-06-T05 |
-| f · Decline | `mira-kapoor` | E0 | E0 | b with the Decline dialog open (four reasons + note) | F-06-T05 |
-| g · 390 | `mira-kapoor` | E0 | E0 | b at 390 × 844: header 56, step chips, full-width page, sticky bar 64 | F-06-T06 |
-| pending confirmation | `mira-kapoor` | E0 | — | return event present, Mira's signer still unsigned on refetch | F-06-T05 |
+| e · Verification failed | `mira-kapoor` | E0 | E0 | Mira's signer `verification_failed`, envelope kind 8879 family. **Superseded (DF-11):** the artboard's "try again tomorrow at 9:24 AM" is replaced by the paper-form text; no retry, no countdown, no other method; Dina Sato named | built in F-06-T05 |
+| f · Decline | `mira-kapoor` | E0 | E0 | b with the Decline dialog open (four reasons + note) | built in F-06-T05 |
+| g · 390 | `mira-kapoor` | E0 | E0 | b at 390 × 844: header 56, step chips, full-width page, sticky bar 64 | built in F-06-T06 |
+| pending confirmation | `mira-kapoor` | E0 | — | return event present, Mira's signer still unsigned on refetch (`?st=pending`) | built in F-06-T05 |
 | loading, error, restricted | — | E0 | — | as T16 | F-06-T04 |
 
 ## API
