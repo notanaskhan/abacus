@@ -151,6 +151,11 @@ GUIDANCE_DRAFTING = Flag(
     kind="boolean",
     default="false",
 )
+HOME_APPROVALS = Flag(
+    name="home.approvals",
+    kind="boolean",
+    default="false",
+)
 HOME_DASHBOARD = Flag(
     name="home.dashboard",
     kind="boolean",
@@ -360,6 +365,7 @@ FLAGS: dict[str, Flag] = {
     "files.browser": FILES_BROWSER,
     "follow_ups.scheduled_send": FOLLOW_UPS_SCHEDULED_SEND,
     "guidance.drafting": GUIDANCE_DRAFTING,
+    "home.approvals": HOME_APPROVALS,
     "home.dashboard": HOME_DASHBOARD,
     "inbox.firm_intake": INBOX_FIRM_INTAKE,
     "knowledge.catalog": KNOWLEDGE_CATALOG,
