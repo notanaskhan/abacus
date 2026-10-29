@@ -1553,6 +1553,29 @@ function Shl10Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
   useEffect(() => {
     const restore = installFixtureMode(
       shl10Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div key={state} data-artboard={state} className="h-[900px]">
+      <ApproveSheet
+        proposalRef={SHL10_OPENS[state].ref}
+        initialMode={SHL10_OPENS[state].mode}
+        open
+        onOpenChange={() => undefined}
+      />
+    </div>
+  );
+}
+
+registerScreen("SHL-10", { title: "Approve agent output", Component: Shl10Artboard });
+
 // SIG-02 (N-02-T21): the envelope builder, a, e and f, over an empty frame.
 function Sig02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Sig02State = SIG02_STATES.find((s) => s === params.st) ?? "a";
@@ -1571,18 +1594,11 @@ function Sig02Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
   if (ready !== state) return null;
   return (
     <div key={state} data-artboard={state} className="h-[900px]">
-      <ApproveSheet
-        proposalRef={SHL10_OPENS[state].ref}
-        initialMode={SHL10_OPENS[state].mode}
-        open
-        onOpenChange={() => undefined}
-      />
       <EnvelopeBuilder envelopeId={SIG02_OPENS[state]} open onOpenChange={() => undefined} />
     </div>
   );
 }
 
-registerScreen("SHL-10", { title: "Approve agent output", Component: Shl10Artboard });
 registerScreen("SIG-02", { title: "Envelope builder", Component: Sig02Artboard });
 
 // SHL-14 (P-06-T13, T24): the request composer drawer, opened over an empty frame.
