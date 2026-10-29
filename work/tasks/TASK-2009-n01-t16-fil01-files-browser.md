@@ -2,7 +2,7 @@
 id: TASK-2009
 title: N-01-T16 FIL-01 Files browser and document drawer (fixture)
 spec: SPEC-380
-acceptance_criteria: [Story 7]
+acceptance_criteria: [AC-26]
 risk_zone: green
 status: in-review
 epic: N-01

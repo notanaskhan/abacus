@@ -92,6 +92,7 @@ Clients send documents outside requests: a forwarded 1095-C, a corrected 1099, a
 - **AC-22** Walls answer 404 on threads, attachments, files, tree nodes and destinations (INV-3).
 - **AC-23** Every decision, match, log, upload, withdrawal, content read, reveal and download writes an audit event (INV-5).
 - **AC-24** Each of the four flags off answers 404 on its routes and renders C-20's "This isn't on for ‹firm› yet." state; the Inbox and Files nav items stay.
+- **AC-26 FIL-01 on fixtures (N-01-T16).** Ten scenarios render, no write control appears, and the virtual statements foot to 512,400.
 
 ## 6. Behaviour and flows
 
