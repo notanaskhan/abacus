@@ -9,7 +9,7 @@
 | Epic and tasks | K-02 · contract K-02-T02 (this file); read states a–h T13; draft and publish i T14; deadline rules j T17; content T18; parity, axe and journeys T19 |
 | Spec and ADRs | SPEC-500 AC-13, AC-14; ADR-300; DEC-36, DEC-38, DEC-43, DEC-53 |
 | Flags | `knowledge.firm_standards` (route and every `/v1/standards*`); `rules.reference_sets` (section j) |
-| Manifest status | planned; `fixture` with K-02-T13; `live` with T08 (reads) and T14 (draft and publish) |
+| Manifest status | planned with path `/knowledge/standards` (K-02-T13 built a–h on fixtures; planned until walked on staging, DEC-195); `live` with T08 (reads) and T14 (draft and publish) |
 
 ## States
 Clock E0, Mon Sep 14, 2026, 9:24 AM CT (f: 11:12 AM); viewer Priya Raman (Partner · CAS & Advisory) unless noted.
@@ -101,6 +101,8 @@ Gradients, emoji, saturated blue toggles, heavy shadows, invented colours, lorem
 | D1 | The effective-date control is the F-05 DatePicker, not a free text field | keyboard-operable (K-02 §5) | K-02 §5 |
 | D2 | j "Deadline rules" is composed (no artboard) from T12 grammar | DF-10 | K-02 §2.1 |
 | D3 | Examples are empty in the live product until C-01 and A-04 register providers | no invented rows (US-3.1) | DEC-1151 |
+| D4 | Materiality ranges uses `circle-dot` for lucide Target | the icon set has no Target yet | DEC-1154 |
+| D5 | The version chip and Published pill sit in the T12 pane header's centre slot, not beside the title | `SettingsLayout`'s pane title is text only | DEC-1154 |
 
 ## Parity
 | Artboard | Tier (A/B/D) | Diff % | Notes |

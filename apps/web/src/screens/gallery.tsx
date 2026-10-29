@@ -242,6 +242,13 @@ import { PortalRequest } from "./POR-04";
 import { PortalRoom } from "./POR-14";
 import { PortalConnections } from "./POR-16";
 import { KNW02 } from "./KNW-02";
+import { KNW04 } from "./KNW-04";
+import {
+  type Knw04State,
+  OPENS as KNW04_OPENS,
+  STATES as KNW04_STATES,
+  scenarios as knw04Scenarios,
+} from "./KNW-04/scenarios";
 import {
   type Knw02State,
   STATES as KNW02_STATES,
@@ -1990,6 +1997,44 @@ registerScreen("KNW-02", {
   title: "Methodology versions & import review",
   Component: Knw02Artboard,
 });
+
+// KNW-04 a–h (K-02-T13): the T12 standards page in the firm shell (Knowledge active), each state
+// on its section.
+function Knw04Frame({ state }: { state: Knw04State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/knowledge/standards" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+        <KNW04 initial={KNW04_OPENS[state]} />
+      </AppShell>
+    </div>
+  );
+}
+
+function Knw04Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Knw04State = KNW04_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      knw04Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Knw04Frame key={state} state={state} /> : null;
+}
+
+registerScreen("KNW-04", { title: "Firm standards & thresholds", Component: Knw04Artboard });
 
 registerScreen("POR-20", {
   title: "Transactional email templates · Reminder",

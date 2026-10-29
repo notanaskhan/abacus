@@ -57463,6 +57463,14 @@
       "StandardDetailOut": {
         "description": "KNW-04's form pane: the standard, the version shown, and the Timeline (newest first).",
         "properties": {
+          "labels": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "cls": "confidential",
+            "title": "Labels",
+            "type": "object"
+          },
           "standard": {
             "$ref": "#/components/schemas/StandardOut",
             "cls": "internal"
@@ -57576,6 +57584,26 @@
             "cls": "confidential",
             "title": "Amount Usd"
           },
+          "approver_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Approver Name"
+          },
+          "cells": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "cls": "confidential",
+            "title": "Cells",
+            "type": "object"
+          },
           "client_id": {
             "anyOf": [
               {
@@ -57651,6 +57679,18 @@
       "StandardExamplesOut": {
         "description": "`provider_registered` false: KNW-04's designed empty state, never invented rows.",
         "properties": {
+          "caption": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Caption"
+          },
           "period": {
             "anyOf": [
               {
@@ -57815,6 +57855,18 @@
               }
             ],
             "cls": "internal"
+          },
+          "entries": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Entries"
           },
           "id": {
             "cls": "internal",
@@ -58257,6 +58309,18 @@
           "status": {
             "$ref": "#/components/schemas/FirmStandardVersionStatus",
             "cls": "internal"
+          },
+          "tax_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Tax Year"
           },
           "version": {
             "cls": "internal",

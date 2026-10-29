@@ -23,10 +23,12 @@ export const knwScreens = {
     status: "planned",
     path: null,
   },
+  // K-02-T13: the read states a–h on fixtures at /knowledge/standards behind
+  // `knowledge.firm_standards`; planned until walked on staging (DEC-195), like KNW-02.
   "KNW-04": {
     name: "Firm standards & thresholds", // the handoff adds "· Brightwater Hale"; no seed name ships (dist.test.ts)
     status: "planned",
-    path: null,
+    path: "/knowledge/standards",
   },
   "KNW-05": { name: "Templates & research", status: "planned", path: null },
   "KNW-06": {

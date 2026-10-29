@@ -291,6 +291,9 @@ class StandardVersionSummaryOut(BaseModel):
     published_by: Annotated[StandardPersonOut | None, classified("internal")]
     # INV-5: a person, never the agent; "via Agent" never appears on a standard.
     current: Annotated[bool, classified("internal")]
+    # K-02-T13 (additive): a checklist version's `applies_to.tax_year` ("1040 Review Checklist v7
+    # (TY2026)"); null for other kinds.
+    tax_year: Annotated[int | None, classified("internal")] = None
 
 
 class StandardOut(BaseModel):
@@ -309,6 +312,9 @@ class StandardOut(BaseModel):
     # KNW-04 b's "Applied to" (a registered usage counter's count over `visible()`; null when
     # none is registered, never an invented number).
     usage_count: Annotated[int | None, classified("internal")]
+    # K-02-T13 (additive): how many entries the version in effect holds (a checklist's checks,
+    # KNW-04 b's "Checks"); null with no version in effect.
+    entries: Annotated[int | None, classified("internal")] = None
     allowed_actions: Annotated[list[str], classified("internal")]
 
 
@@ -342,6 +348,9 @@ class StandardDetailOut(BaseModel):
     standard: Annotated[StandardOut, classified("internal")]
     version: Annotated[StandardVersionOut | None, classified("internal")]
     timeline: Annotated[list[StandardVersionSummaryOut], classified("internal")]
+    # K-02-T13 (additive): display names for the ids the payload holds (BH-TAX-02's clients and
+    # approvers), `visible()`-filtered: a walled client's id is absent, and so is its row.
+    labels: Annotated[dict[str, str], classified("confidential")] = Field(default_factory=dict)
 
 
 class StandardChangedCellOut(BaseModel):
@@ -376,6 +385,12 @@ class StandardExampleRowOut(BaseModel):
     outcome: Annotated[str, classified("internal")]
     detail: Annotated[str | None, classified("confidential")]
     route: Annotated[str | None, classified("internal")]
+    # K-02-T13 (additive): who decided the row ("approved as one batch by Raj Malhotra"); never
+    # the agent (INV-5).
+    approver_name: Annotated[str | None, classified("confidential")] = None
+    # K-02-T13 (additive): a provider's further columns, rendered as given (materiality's
+    # `performance` and `clearly_trivial`, a decision's `decided_at`).
+    cells: Annotated[dict[str, str], classified("confidential")] = Field(default_factory=dict)
 
 
 class StandardExamplesOut(BaseModel):
@@ -386,6 +401,9 @@ class StandardExamplesOut(BaseModel):
     standard_id: Annotated[UUID, classified("internal")]
     period: Annotated[str | None, classified("internal")]
     provider_registered: Annotated[bool, classified("internal")]
+    # K-02-T13 (additive): the provider's one-line heading ("1065 Review Checklist v4 · last run
+    # started 9:18 AM · Samuel Ito").
+    caption: Annotated[str | None, classified("confidential")] = None
     rows: Annotated[list[StandardExampleRowOut], classified("confidential")]
 
 
