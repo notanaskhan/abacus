@@ -296,7 +296,7 @@ describe("SHL-01 behaviour (P-01 AC 1.1)", () => {
     const planned = AREAS.filter((a) => !a.routed);
     expect(planned.map((a) => a.label)).toEqual([
       "Tax Returns",
-      "Files",
+      // Files is routed by N-01-T16 (FIL-01); its flag-off page is behind `files.browser`.
       "Workbench",
       "Inbox",
       // Binders is routed by P-06-T09 (BND-01); its flag-off page is BND-01.test.tsx's.
