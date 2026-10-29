@@ -101,6 +101,11 @@ EVIDENCE_CITATIONS_V2 = Flag(
     kind="boolean",
     default="false",
 )
+EVIDENCE_DUPLICATE_REVIEW = Flag(
+    name="evidence.duplicate_review",
+    kind="boolean",
+    default="false",
+)
 EVIDENCE_PII_REVEAL = Flag(
     name="evidence.pii_reveal",
     kind="boolean",
@@ -259,6 +264,11 @@ PROMPT_EVIDENCE_SCREENER = Flag(
         "evidence.screen@v0",
     ),
 )
+QUESTIONNAIRES_V1 = Flag(
+    name="questionnaires.v1",
+    kind="boolean",
+    default="false",
+)
 RETRIEVAL_AUTO = Flag(
     name="retrieval.auto",
     kind="boolean",
@@ -299,6 +309,16 @@ TAX_ENGINE_BRIDGE = Flag(
     kind="boolean",
     default="false",
 )
+TAX_K1_RELEASE = Flag(
+    name="tax.k1_release",
+    kind="boolean",
+    default="false",
+)
+TAX_RETURNS_V1 = Flag(
+    name="tax.returns_v1",
+    kind="boolean",
+    default="false",
+)
 UPLOAD_REVIEW_ENABLED = Flag(
     name="upload_review.enabled",
     kind="boolean",
@@ -330,6 +350,7 @@ FLAGS: dict[str, Flag] = {
     "engagement_agent.enabled": ENGAGEMENT_AGENT_ENABLED,
     "engagements.roll_forward_v2": ENGAGEMENTS_ROLL_FORWARD_V2,
     "evidence.citations_v2": EVIDENCE_CITATIONS_V2,
+    "evidence.duplicate_review": EVIDENCE_DUPLICATE_REVIEW,
     "evidence.pii_reveal": EVIDENCE_PII_REVEAL,
     "evidence.viewer_unlock": EVIDENCE_VIEWER_UNLOCK,
     "evidence.viewer_v1": EVIDENCE_VIEWER_V1,
@@ -361,6 +382,7 @@ FLAGS: dict[str, Flag] = {
     "portal.sign_in_v2": PORTAL_SIGN_IN_V2,
     "portal.third_party_room": PORTAL_THIRD_PARTY_ROOM,
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
+    "questionnaires.v1": QUESTIONNAIRES_V1,
     "retrieval.auto": RETRIEVAL_AUTO,
     "review.grammar_api": REVIEW_GRAMMAR_API,
     "rules.reference_sets": RULES_REFERENCE_SETS,
@@ -369,6 +391,8 @@ FLAGS: dict[str, Flag] = {
     "signatures.envelopes": SIGNATURES_ENVELOPES,
     "tax.delivery_efile": TAX_DELIVERY_EFILE,
     "tax.engine_bridge": TAX_ENGINE_BRIDGE,
+    "tax.k1_release": TAX_K1_RELEASE,
+    "tax.returns_v1": TAX_RETURNS_V1,
     "upload_review.enabled": UPLOAD_REVIEW_ENABLED,
     "uploads.processing": UPLOADS_PROCESSING,
 }

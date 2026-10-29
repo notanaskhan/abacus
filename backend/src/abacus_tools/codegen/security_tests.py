@@ -60,6 +60,9 @@ FRESH_MFA_REGISTER = ROOT.parent / "docs" / "architecture" / "fresh-mfa-actions.
 RESOLUTION_ENTITIES = frozenset(
     {"sign_off", "decision", "proposal", "suggestion", "checkpoint", "review_decision"}
     | {"firm_standard"}  # K-02-T01 (INV-1): drafting, importing and publishing are a person's
+    # T-02-T03 (I-AGENT-NEVER extended): releasing, resending and sharing K-1s, and publishing an
+    # organizer template, are a person's.
+    | {"k1_package", "questionnaire_template"}
 )
 RESOLUTION_ACTIONS = frozenset(
     {"issue.resolve", "issue.verify", "issue.reopen", "evidence.accept", "evidence.reject"}
