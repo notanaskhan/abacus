@@ -2,7 +2,7 @@
 id: TASK-2000
 title: P-04-T35 Field value versions
 spec: SPEC-360
-acceptance_criteria: [F8]
+acceptance_criteria: [AC-10]
 risk_zone: red
 status: in-review
 epic: P-04
