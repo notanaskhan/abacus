@@ -14,7 +14,7 @@ resource "aws_ecr_registry_scanning_configuration" "this" {
     scan_frequency = "CONTINUOUS_SCAN"
 
     repository_filter {
-      filter      = "abacus-backend"
+      filter      = "*"
       filter_type = "WILDCARD"
     }
   }

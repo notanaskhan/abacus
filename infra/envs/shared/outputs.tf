@@ -45,3 +45,8 @@ output "name_servers" {
     portal = try(aws_route53_zone.portal[0].name_servers, null)
   }
 }
+
+output "mirror_repository_urls" {
+  description = "Where the builder copies the pinned third-party images (docker buildx imagetools create)."
+  value       = { for k, r in aws_ecr_repository.mirror : k => r.repository_url }
+}
