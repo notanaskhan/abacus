@@ -71,3 +71,6 @@ Rollback: delete the five files.
   case loses its strict xfail unedited, as the row asks; to be confirmed at the batch's end review.
   The AC-43 staff-route refusal stays a strict xfail: it waits for WorkOS MFA to be on in each
   environment (TASK-1200), a human step, and turning it on before then would lock staff out.
+- 2026-10-29: end review ran the T47 case unedited: it fails (0 of 2 packages; DEC-640 scopes
+  packages to what the approver may read, and the suite's approver reads neither engagement).
+  The strict xfail stays, now citing ED-290 for triage.
