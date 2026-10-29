@@ -82,11 +82,14 @@ class K1PackageOut(BaseModel):
     recipient_kind: Annotated[
         Literal["gp", "lp", "shareholder", "beneficiary"], classified("internal")
     ]
-    tin_last4: Annotated[str | None, classified("confidential")]
+    # No TIN on a list row (MaskedTinOut is never in a list, ADR-031); the recipient detail
+    # carries it masked.
     form: Annotated[Literal["1065", "1120s", "1041"], classified("internal")]
     tax_year: Annotated[int, classified("internal")]
     status: Annotated[K1PackageStatus, classified("internal")]
-    k3_status: Annotated[Literal["included", "not_required", "none"], classified("internal")]
+    k3_status: Annotated[
+        Literal["included", "not_required", "not_included"], classified("internal")
+    ]
     state_codes: Annotated[list[str], classified("internal")]
     released_at: Annotated[datetime | None, classified("confidential")]
     version_no: Annotated[int, classified("internal")]

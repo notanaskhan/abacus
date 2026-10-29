@@ -1,8 +1,8 @@
 ---
 id: TASK-2135
 title: Q-03-T094 Contract and connector upkeep 2027 Q2 (the fakes register)
-spec: docs/contracts/README.md
-acceptance_criteria: [backlog row]
+spec: SPEC-000  # Q-03-T094 row; docs/contracts/README.md
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: amber
 status: in-review
 epic: Q-03

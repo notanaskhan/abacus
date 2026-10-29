@@ -45,6 +45,21 @@ Verbatim from the handoff's spec.md into `screens/ADM-05/copy.ts`. Banned (T-01 
 
 ## Links
 Outbound: CLI-05 d (per taxpayer), SIG-01 (envelopes), ADM-04 D (counts). Inbound: Settings nav, ADM-04.
+| Opens ADM-01 · Settings home | ADM-01 | planned (handoff link; tooltip-only) |
+| Opens KNW-05 · Templates filtered to consents | KNW-05 | planned (handoff link; tooltip-only) |
+| Opens CLI-05 · Consents | CLI-05 | planned (handoff link; tooltip-only) |
+| Opens ADM-02 · People | ADM-02 | planned (handoff link; tooltip-only) |
+| Opens ADM-03 · Offices & teams | ADM-03 | planned (handoff link; tooltip-only) |
+| Opens ADM-06 · Security | ADM-06 | planned (handoff link; tooltip-only) |
+| Opens ADM-04 · AI policy | ADM-04 | planned (handoff link; tooltip-only) |
+| Opens ADM-09 · Developer | ADM-09 | planned (handoff link; tooltip-only) |
+| Opens ADM-08 · Integrations | ADM-08 | planned (handoff link; tooltip-only) |
+| Opens ADM-10 · Portal | ADM-10 | planned (handoff link; tooltip-only) |
+| Opens ADM-11 · Quality | ADM-11 | planned (handoff link; tooltip-only) |
+| Opens ADM-12 · Monitoring | ADM-12 | planned (handoff link; tooltip-only) |
+| Opens ADM-07 · Audit log | ADM-07 | planned (handoff link; tooltip-only) |
+| Opens SIG-02 with a purpose picker | SIG-02 | planned (handoff link; tooltip-only) |
+| Opens SIG-01 · envelope E17 | SIG-01 | planned (handoff link; tooltip-only) |
 
 ## Acceptance
 - ADM-05 acceptance: every artboard a, b, c, d, e, f, g, h renders from its fixture scenario with the persona and clock above.

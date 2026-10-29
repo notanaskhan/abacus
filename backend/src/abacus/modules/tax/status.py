@@ -36,6 +36,16 @@ TRANSITIONS: Final[dict[tuple[S, str], S]] = {
 }
 # The only events a person's request may name; the rest come from the system and T-01.
 REQUESTABLE: Final = frozenset({"start_preparation", "start_review"})
+# A person's decision, never the system's (INV-1): the final approval.
+HUMAN_EVENTS: Final = frozenset({"final_approved"})
+
+
+def actor_may(event: str, actor_kind: str) -> bool:
+    """Who may move a return: a person, or the system for anything but a person's decision. The
+    agent and support never move one (INV-1; the status events record only these two kinds)."""
+    if actor_kind == "human":
+        return True
+    return actor_kind == "system" and event not in HUMAN_EVENTS
 
 
 class TransitionRefused(DomainConflict):

@@ -42,3 +42,8 @@ pilot codes and the W-signal thresholds, for every pilot window from PW1 (Q-04 Â
   unpacked into a new folder and verified by `abacus_tools.package_check` (both checksum files, nothing
   unlisted, the manifest agreeing, nothing written outside the folder); the canary rehearsal sets the
   runbook's `last_rehearsed` (Q-04-T019).
+- **AC-3** The onboarding rehearsal's part AY (`docs/ops/rehearsals/onboarding-content-part-ay.md`)
+  takes 200 synthetic clients through CLI-06 g, a PBC template through the KNW-01 importer, POR-20
+  templates to published (l) and ADM-10's sender domain from pending DNS to published (d to f),
+  each step through its screen with its timing recorded and each defect filed on its owning epic;
+  the inputs come from `abacus_tools.synthetic.onboarding_files`, never from a commit (Q-04-T018).
