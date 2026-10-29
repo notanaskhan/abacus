@@ -78,4 +78,25 @@ class MessageDeliveryStatusChanged(DomainEvent):
 
     event_type: ClassVar[str] = "message.delivery_status_changed"
     message_id: Annotated[UUID, classified("internal")]
+
+
+class InboundMessageRecorded(DomainEvent):
+    """A message reached the firm inbox (N-01-T09): any channel; identifiers only."""
+
+    event_type: ClassVar[str] = "inbound_message.recorded"
+
+    thread_id: Annotated[UUID, classified("internal")]
+    message_id: Annotated[UUID, classified("internal")]
+    channel: Annotated[str, classified("internal")]
+    client_id: Annotated[UUID | None, classified("internal")]
+
+
+class InboxAttachmentReceived(DomainEvent):
+    """A file of an inbound message was scanned and stored (N-01-T09), New or Waiting."""
+
+    event_type: ClassVar[str] = "inbox_attachment.received"
+
+    attachment_id: Annotated[UUID, classified("internal")]
+    message_id: Annotated[UUID, classified("internal")]
+    thread_id: Annotated[UUID, classified("internal")]
     status: Annotated[str, classified("internal")]
