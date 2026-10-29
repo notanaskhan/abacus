@@ -67,3 +67,38 @@ export const COPY = {
       .join(" · "),
   changed: "This changed while you were deciding. Review again.",
 } as const;
+
+// Log received documents (DV-1; docs/screens/INB-02.md § Log received documents). Verbatim.
+export const LOG_COPY = {
+  title: "Log received documents",
+  log: (n: number): string => `Log ${String(n)}`,
+  files: "Drop files or choose…",
+  filesHelp: "PDF, JPG, PNG, HEIC, XLSX, DOCX or CSV · up to 50 MB each",
+  client: "Client",
+  clientHelp: "Leave empty if you're not sure. It waits in Inbox, unmatched.",
+  select: "Select",
+  required: "Required",
+  receivedVia: "Received via",
+  via: {
+    email: "Email",
+    mail: "Mail",
+    fax: "Fax",
+    in_person: "In person",
+    portal: "Portal",
+    other: "Other",
+  },
+  from: "From",
+  received: "Received",
+  subject: "Subject",
+  note: "Note for the team (optional)",
+  footer: (viewer: string): string =>
+    `Logged as ${viewer}. Files are scanned before they're stored.`,
+  errors: {
+    type: "This file type isn't accepted.",
+    size: "This file is over 50 MB.",
+    scanner: "We can't check files right now. Try again in a few minutes.",
+    // Not drawn by the design: the kit's limits and a generic failure.
+    count: "Log at most 20 files at a time.",
+    failed: "These documents couldn't be logged. Try again.",
+  },
+} as const;
