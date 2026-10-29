@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.kernel.dispatch import PlatformSchedule, WorkClass, register_work_classes
+from abacus.modules.communications import portal_intake
 from abacus.modules.communications.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.communications.deliveries import (
     SesEventQueue,
@@ -19,6 +20,7 @@ from abacus.modules.communications.events import (
     MessageBounced,
     MessageComplained,
     MessageDeliveryStatusChanged,
+    PortalIntakeWithdrawn,
     PortalLinkRenewRequested,
     SendingDomainFailed,
     SendingDomainStatusChanged,
@@ -65,6 +67,9 @@ from abacus.modules.communications.notification_email import (
 from abacus.modules.communications.notification_email import (
     display_name as engagement_display_name,
 )
+from abacus.modules.communications.portal_intake import ACTIVITIES as PORTAL_INTAKE_ACTIVITIES
+from abacus.modules.communications.portal_intake import WORKFLOWS as PORTAL_INTAKE_WORKFLOWS
+from abacus.modules.communications.portal_intake import on_withdrawn
 from abacus.modules.communications.preview_scope import PreviewSelection, viewer_scoped
 from abacus.modules.communications.render import Block as TemplateBlockContent
 from abacus.modules.communications.render import TemplateContent
@@ -188,6 +193,7 @@ SUBSCRIPTIONS = {
     SendingDomainStatusChanged.event_type: on_status_changed,
     # N-01-T12: a received intake attachment goes through the upload steps (AttachmentTriage).
     InboxAttachmentReceived.event_type: on_attachment_received,
+    PortalIntakeWithdrawn.event_type: on_withdrawn,  # N-01-T14: the upload's 30-day purge
 }
 # N-01-T13: HOME-01's `inbox_waiting` pill counts the Inbox summary's waiting attachments.
 register_home_count("inbox_waiting", inbox_waiting)
@@ -204,12 +210,14 @@ WORKFLOWS: dict[type, WorkClass] = {
     DrainSesEventsWorkflow: "time_sensitive",
     SendingDomainVerificationWorkflow: "background",  # R-01-T27: every 15 minutes, 72 hours
     **TRIAGE_WORKFLOWS,
+    **PORTAL_INTAKE_WORKFLOWS,
 }
 register_work_classes(WORKFLOWS)
 ACTIVITIES: tuple[object, ...] = (
     drain_ses_events_activity,
     check_sending_domain_activity,
     *TRIAGE_ACTIVITIES,
+    *PORTAL_INTAKE_ACTIVITIES,
 )
 SCHEDULES: tuple[PlatformSchedule, ...] = (
     PlatformSchedule(
@@ -325,6 +333,7 @@ __all__ = [
     "next_send_on",
     "next_sequence_by_policy",
     "on_sink",
+    "portal_intake",
     "publish_email_template",
     "record_inbound_message",
     "register_email_template",

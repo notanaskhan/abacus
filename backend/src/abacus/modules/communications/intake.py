@@ -26,13 +26,17 @@ from uuid import UUID, uuid4
 from sqlalchemy import text
 
 from abacus.kernel.clock import system_now
-from abacus.kernel.crypto import seal
+from abacus.kernel.crypto import DetachedKey, seal
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.communications.deliveries import address_hash
 from abacus.modules.communications.events import InboundMessageRecorded, InboxAttachmentReceived
-from abacus.modules.evidence.api import screen_and_stage
+from abacus.modules.evidence.api import (
+    record_intake_key,
+    screen_and_stage,
+    screen_and_stage_detached,
+)
 from abacus.modules.organisations.api import client_exists, contact_client
 
 Channel = Literal["email", "portal_upload", "staff_logged"]
@@ -58,6 +62,9 @@ class Inbound:
     client_entity_id: UUID | None = None
     from_contact_id: UUID | None = None
     principal_id: UUID | None = None
+    # N-01-T14: the grant a portal batch was sent under (the principal lists its own by scope).
+    portal_scope_kind: str | None = None
+    portal_scope_id: UUID | None = None
     logged_by: UUID | None = None
     received_via: str | None = None
     source_display: str | None = None
@@ -182,9 +189,10 @@ async def record_inbound_message(tenant: TenantContext, given: Inbound) -> Recor
                 "INSERT INTO inbound_messages (id, tenant_id, thread_id, channel, received_via, "
                 "sender_display, sender_address_hmac, sender_contact_id, sender_principal_id, "
                 "logged_by_user_id, internet_message_id, in_reply_to, reference_ids, "
-                "subject_display, body_sealed, body_kind, received_at) VALUES (:id, :tenant, "
-                ":thread, :channel, :via, :sender, :hmac, :contact, :principal, :logged_by, "
-                ":internet_id, :reply_to, :refs, :subject, :body, :body_kind, :at)"
+                "subject_display, body_sealed, body_kind, received_at, portal_scope_kind, "
+                "portal_scope_id) VALUES (:id, :tenant, :thread, :channel, :via, :sender, :hmac, "
+                ":contact, :principal, :logged_by, :internet_id, :reply_to, :refs, :subject, "
+                ":body, :body_kind, :at, :scope_kind, :scope_id)"
             ),
             {
                 "id": message_id,
@@ -206,6 +214,8 @@ async def record_inbound_message(tenant: TenantContext, given: Inbound) -> Recor
                     None if sealed is None else _BODY_KIND.get(given.channel, "staff_note")
                 ),
                 "at": given.received_at,
+                "scope_kind": given.portal_scope_kind,
+                "scope_id": given.portal_scope_id,
             },
         )
         tx.record(
@@ -252,12 +262,21 @@ async def message_facts(tenant: TenantContext, message_id: UUID) -> MessageFacts
 async def add_attachment(
     tenant: TenantContext, message_id: UUID, *, file_name: str, content: bytes
 ) -> Received:
-    """One file of a message: scanned and stored, or refused with nothing stored."""
+    """One file of a message: scanned and stored, or refused with nothing stored. A portal
+    upload is stored under a key of its own (ADR-162 §5; N-01-T14), so a withdrawal can
+    crypto-erase it."""
     facts = await message_facts(tenant, message_id)
-    screened = await screen_and_stage(tenant.tenant_id, content, file_name, None)
+    attachment_id = uuid4()
+    detached = facts.channel == "portal_upload"
+    key: DetachedKey | None = None
+    if detached:
+        screened, key = await screen_and_stage_detached(
+            tenant.tenant_id, attachment_id, content, file_name
+        )
+    else:
+        screened = await screen_and_stage(tenant.tenant_id, content, file_name, None)
     async with tenant_session(tenant) as session:
         duplicate = await session.scalar(_SAME_FINGERPRINT, {"fp": screened.sha256})
-    attachment_id = uuid4()
     status = "new" if facts.client_id is None else "waiting"
     async with uow(tenant) as tx:
         await tx.session.execute(
@@ -265,7 +284,7 @@ async def add_attachment(
                 "INSERT INTO inbox_attachments (id, tenant_id, message_id, thread_id, client_id, "
                 "file_name, media_type, size_bytes, fingerprint, storage_key, "
                 "storage_version_id, key_mode, status) VALUES (:id, :tenant, :message, :thread, "
-                ":client, :name, :media, :size, :fp, :key, :version, 'content', :status)"
+                ":client, :name, :media, :size, :fp, :key, :version, :mode, :status)"
             ),
             {
                 "id": attachment_id,
@@ -279,9 +298,12 @@ async def add_attachment(
                 "fp": screened.sha256,
                 "key": screened.stored.key,
                 "version": screened.stored.version_id,
+                "mode": "detached" if detached else "content",
                 "status": status,
             },
         )
+        if key is not None:
+            await record_intake_key(tx, tenant.tenant_id, attachment_id, key)
         if duplicate is not None:
             await tx.session.execute(
                 text(

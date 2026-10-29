@@ -128,11 +128,16 @@ from abacus.modules.evidence.holds import activate as legal_hold_activate
 from abacus.modules.evidence.holds import apply_batch as legal_hold_apply_batch
 from abacus.modules.evidence.inbox import add_to_inbox, register_match_picks
 from abacus.modules.evidence.inbox import assign as assign_inbox_file
+from abacus.modules.evidence.intake_keys import (
+    destroy_intake_key,
+    live_intake_keys,
+    record_intake_key,
+    screen_and_stage_detached,
+)
 from abacus.modules.evidence.intake_sources import IntakeSource, register_intake_source
-from abacus.modules.evidence.masked_previews import intake_masked_pages
 from abacus.modules.evidence.item_detail import Download as DocumentDownload
 from abacus.modules.evidence.item_detail import latest_document
-from abacus.modules.evidence.masked_previews import masked_preview_upload
+from abacus.modules.evidence.masked_previews import intake_masked_pages, masked_preview_upload
 from abacus.modules.evidence.match_material import (
     Candidate,
     MatchMaterial,
@@ -467,7 +472,6 @@ __all__ = [
     "InboxFileAdded",
     "InboxFileExtracted",
     "IntakeSource",
-    "intake_masked_pages",
     "IntegrityError",
     "LayerExport",
     "LayerLine",
@@ -518,6 +522,7 @@ __all__ = [
     "decide",
     "decided_among",
     "decisions_on_screenings",
+    "destroy_intake_key",
     "drop_batch",
     "effective_decisions",
     "effective_policies",
@@ -533,11 +538,13 @@ __all__ = [
     "firm_router",
     "holds_covering",
     "included_export_versions",
+    "intake_masked_pages",
     "is_version_withdrawn",
     "latest_document",
     "legal_hold_activate",
     "legal_hold_apply_batch",
     "list_holds",
+    "live_intake_keys",
     "mark_sources_superseded",
     "masked_preview_upload",
     "match_material",
@@ -553,6 +560,7 @@ __all__ = [
     "read_staged",
     "read_version",
     "record_citations",
+    "record_intake_key",
     "register_citable",
     "register_export_audit_trail",
     "register_export_section",
@@ -571,6 +579,7 @@ __all__ = [
     "review_material",
     "router",
     "screen_and_stage",
+    "screen_and_stage_detached",
     "screening_facts",
     "set_policy",
     "stage_content",

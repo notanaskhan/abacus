@@ -146996,16 +146996,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Intake Uploads Route",
@@ -147015,7 +147005,7 @@
         "x-abacus-action": "portal_intake.read_own"
       },
       "post": {
-        "description": "POR-03 \"Upload something else\": the batch (N-01-T14).",
+        "description": "POR-03 \"IntakeBatch something else\": the batch (N-01-T14).",
         "operationId": "create_intake_upload",
         "parameters": [
           {
@@ -147132,16 +147122,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Create Intake Upload Route",
@@ -147302,16 +147282,6 @@
             },
             "description": "Invalid request"
           },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
-          },
           "503": {
             "content": {
               "application/json": {
@@ -147449,16 +147419,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Withdraw Intake Upload Route",

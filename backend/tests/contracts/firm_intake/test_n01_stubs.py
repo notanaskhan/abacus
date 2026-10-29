@@ -108,6 +108,10 @@ LIVE_PATHS = frozenset(
         "/v1/inbox/attachments/{attachment_id}/viewer",
         "/v1/inbox/attachments/{attachment_id}/content",
         "/v1/inbox/messages/{message_id}/attachments.zip",
+        # N-01-T14 (DEC-1060): portal intake.
+        "/v1/portal/intake-uploads",
+        "/v1/portal/intake-uploads/{upload_id}/files",
+        "/v1/portal/intake-uploads/{upload_id}/withdraw",
     }
 )
 STUBBED = [f for f in FIRM if f[0] not in LIVE_PATHS]
@@ -194,7 +198,12 @@ async def test_n01t02_firm_routes_client_404_then_action_then_flag_then_501(
         await _call(endpoint, _ctx())
 
 
-@pytest.mark.parametrize(("path", "endpoint"), PORTAL, ids=[e.__name__ for _p, e in PORTAL])
+PORTAL_STUBBED = [f for f in PORTAL if f[0] not in LIVE_PATHS]
+
+
+@pytest.mark.parametrize(
+    ("path", "endpoint"), PORTAL_STUBBED, ids=[e.__name__ for _p, e in PORTAL_STUBBED]
+)
 async def test_n01t02_portal_routes_firm_404_then_flag_then_501(
     path: str, endpoint: Endpoint, monkeypatch: pytest.MonkeyPatch
 ) -> None:
