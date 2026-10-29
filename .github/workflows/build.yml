@@ -122,6 +122,7 @@ jobs:
       AWS_BUILD_ROLE: ${{ vars.AWS_BUILD_ROLE }}
       ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
       DIGEST: ${{ needs.image.outputs.digest }}
+      IMAGE_PLATFORM: ${{ vars.IMAGE_PLATFORM }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -138,20 +139,34 @@ jobs:
       - name: Wait for the scan, then record the gate
         run: |
           repo="${ECR_REPOSITORY#*/}"
+          # The pushed digest is an OCI index (the image plus its provenance and SBOM attestations);
+          # Inspector scans the platform image inside it, never the index (UNSUPPORTED_IMAGE).
+          platform="${IMAGE_PLATFORM:-linux/amd64}"
+          scanned=$(aws ecr batch-get-image --repository-name "$repo" --image-ids imageDigest="$DIGEST" \
+            --accepted-media-types application/vnd.oci.image.index.v1+json \
+              application/vnd.oci.image.manifest.v1+json \
+              application/vnd.docker.distribution.manifest.v2+json \
+            --query 'images[0].imageManifest' --output text \
+            | jq -r --arg os "${platform%%/*}" --arg arch "${platform#*/}" \
+              'if .manifests then [.manifests[] | select(.platform.os == $os and .platform.architecture == $arch)][0].digest // empty else env.DIGEST end')
+          case "$scanned" in sha256:*) ;; *)
+            echo "::error title=inspector scan incomplete::no $platform image in $DIGEST; no Inspector record written"
+            exit 1 ;;
+          esac
           status=""
           for _ in $(seq 1 60); do
             status=$(aws ecr describe-image-scan-findings --repository-name "$repo" \
-              --image-id imageDigest="$DIGEST" --query 'imageScanStatus.status' --output text 2>/dev/null || true)
+              --image-id imageDigest="$scanned" --query 'imageScanStatus.status' --output text 2>/dev/null || true)
             [ "$status" = "COMPLETE" ] || [ "$status" = "ACTIVE" ] && break
             sleep 20
           done
           # No findings from a scan that never finished: no inspector.json, so no promotion.
           case "$status" in COMPLETE|ACTIVE) ;; *)
-            echo "::error title=inspector scan incomplete::scan status '$status' for $DIGEST; no Inspector record written"
+            echo "::error title=inspector scan incomplete::scan status '$status' for $scanned ($DIGEST); no Inspector record written"
             exit 1 ;;
           esac
           aws inspector2 list-findings --filter-criteria \
-            "{\"ecrImageHash\":[{\"comparison\":\"EQUALS\",\"value\":\"$DIGEST\"}],\"findingStatus\":[{\"comparison\":\"EQUALS\",\"value\":\"ACTIVE\"}]}" \
+            "{\"ecrImageHash\":[{\"comparison\":\"EQUALS\",\"value\":\"$scanned\"}],\"findingStatus\":[{\"comparison\":\"EQUALS\",\"value\":\"ACTIVE\"}]}" \
             --output json > findings.json
           (cd backend && uv run --locked python -m abacus_tools.release inspector ../findings.json \
             --image-digest "$DIGEST") > inspector.json
