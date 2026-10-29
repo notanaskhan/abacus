@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C13 in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | home half live (I-01-T10, 2026-10-27; client activity I-01-T12); gate half live (P-04-T16 list; the counts, I-01-T04; filters, presentation facts, snooze and reassign, I-01-T07, 2026-10-27) |
+| Status | home half live (I-01-T10, 2026-10-27; client activity live, I-01-T12, DEC-900); gate half live (P-04-T16 list; the counts, I-01-T04; filters, presentation facts, snooze and reassign, I-01-T07, 2026-10-27) |
 | Provider epic | I-01 (home half, AY) with P-04 (projection and gate half, N) |
 | Consumers | HOME-01, HOME-02, SHL-04 (Approvals tab), I-02 (HOME-05, SHL-23), every gate-producing epic |
 | Freeze sprint | S10 (starts 2027-03-08) |
@@ -29,7 +29,7 @@ Home is answered in this order: a client principal 404; `home.read` at the firm 
 ## 3. Models
 `backend/src/abacus/modules/practice/home_contract.py` (home half). Classification per field:
 
-- **`HomeOut`** (`HomeVM`): `greeting` (Confidential), `tiles[]` (Internal), `your_work` (Confidential, null when the role has no assigned work band), `deadlines` (Confidential), `client_activity[]` (Confidential, the first 20), `running_count` (Internal, null when no owner registered `agent_runs_running`), `segments` (Internal).
+- **`HomeOut`** (`HomeVM`): `greeting` (Confidential), `tiles[]` (Internal), `your_work` (Confidential, null when the role has no assigned work band), `deadlines` (Confidential), `client_activity[]` (Confidential, the first 20; each row's codes and counts in `facts`, and since DEC-1001 an additive `labels` map of read-time names the sentence uses, `subject`, `recipient` and `context`, resolved now and never stored, empty until a source fills them), `running_count` (Internal, null when no owner registered `agent_runs_running`), `segments` (Internal).
 - **`GreetingOut`**: `first_name` (Confidential), `date` (Internal; the firm's time zone on `kernel.clock`).
 - **`HomeTileOut`**: `key` (the registered home count), `label` and `caption` (copy keys), `total`, `by_status[] {code, n, filter}`, `by_office[] {office_id, n}`, `target` (the route the tile opens). All Internal.
 - **`YourWorkOut`**: `label` (copy key, Internal), `rows[] {work_item_id, name, client, status, function, tags}`; `name` and `client` Confidential.

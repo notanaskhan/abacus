@@ -32,9 +32,18 @@ async def test_ac11_a_firm_below_full_mfa_fails_with_the_item_named(seed: Seeder
     items = {i.id: i for i in go_live.evaluate("shadow", facts, at, release_windows.load())}
     assert items["identity.mfa_all_staff"].status == "fail"
     assert items["identity.mfa_all_staff"].value == "0 of 3 staff"
-    assert items["identity.roles_mapped"].status == "pass"
+    # DEC-903 (G-01-T19): roles are mapped only once every active staff member has a role
+    # template (P-10); the seeded members have none, so the row fails and names them.
+    assert facts.members_without_level == 3
+    assert items["identity.roles_mapped"].status == "fail"
+    assert "3 staff without a role template" in items["identity.roles_mapped"].value
     assert items["windows.entry"].status == "fail"
     assert all(i.value for i in items.values())
+
+    await seed.run("UPDATE memberships SET level = 'staff' WHERE tenant_id = $1", tenant)
+    facts = await go_live.collect(tenant, release_windows.load())
+    items = {i.id: i for i in go_live.evaluate("shadow", facts, at, release_windows.load())}
+    assert items["identity.roles_mapped"].status == "pass"
 
 
 async def test_the_reads_are_the_firms_own(seed: Seeder) -> None:

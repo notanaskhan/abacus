@@ -89,10 +89,12 @@ Follow `RB-37-onboard-firm-people-and-walls.md` end to end; it is the procedure 
 |---|---|---|---|
 | 3.1 Offices and teams | Firm admin | ADM-03 **a** | `GET /v1/firm/offices`, `GET /v1/firm/teams` |
 | 3.2 Invite people with level and office; seats respected | Firm admin | ADM-02 **a**, invite drawer **c** (seats full shows when the plan is used up), pending **f** | `GET /v1/firm/staff` tallies match the firm's list |
-| 3.3 Firm roles and security roles mapped | Firm admin, security admin | ADM-02 **b** (Role templates), **d** (user drawer) | Roles mapped (go-live check item) |
+| 3.3 Firm roles and security roles mapped | Firm admin, security admin | ADM-02 **b** (Role templates), **d** (user drawer) | `identity.roles_mapped` in `make go-live-check` (admins present, every staff member on a role template; G-01-T19) |
 | 3.4 Service-line separation | Firm admin or partner | ADM-03 **h** (Service line · Tax narrowed) | `service_line_policy.updated` audit event |
-| 3.5 Offshore group and its preconditions, only if the firm has offshore staff | Firm admin | ADM-03 **d**, **f** | RB-37 §4 checklist in the dossier |
+| 3.5 Offshore group and its preconditions, only if the firm has offshore staff | Firm admin | ADM-03 **d**, **f** | RB-37 §4 checklist in the dossier; `identity.offshore_consent_gated` in `make go-live-check` (G-01-T19) |
 | 3.6 Every declared conflict walled and approved by its named partner; no unresolved conflict | Firm admin, the named partner | ADM-03 **b** (New ethical wall) → partner approves; **c** (Wall conflict) must not remain; **g** (Wall log) | Wall ids in the dossier; `j02-client-onboarding` staging run asserts INV-3 for a walled user (AC-5.5) |
+
+`make go-live-check FIRM=<id> LEVEL=shadow` reads the three M9 rows (G-01-T19, DEC-903): `identity.roles_mapped`, `identity.walls` (pass with an active wall; manual when none, confirmed in the dossier) and `identity.offshore_consent_gated`.
 
 ## 4. Clients and contacts (bulk import)
 

@@ -35,17 +35,26 @@ BEGIN
 END
 $$;
 
--- Enforce attributes even if the roles already existed with others.
-ALTER ROLE abacus_owner NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS NOREPLICATION;
-ALTER ROLE abacus_app   NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS NOREPLICATION NOINHERIT;
--- The outbox relay reads every tenant's unpublished events (TASK-006, founder-approved): it bypasses
--- row-level security, so it is granted privileges on `outbox` only (in migration 0002), nothing else.
-ALTER ROLE abacus_relay NOSUPERUSER NOCREATEDB NOCREATEROLE BYPASSRLS NOREPLICATION NOINHERIT;
--- Sign-in finds a user's memberships before any tenant is chosen (TASK-007, founder-approved): it
--- bypasses row-level security, so it may only read users, memberships and firms (migration 0004).
-ALTER ROLE abacus_identity NOSUPERUSER NOCREATEDB NOCREATEROLE BYPASSRLS NOREPLICATION NOINHERIT;
+-- Enforce attributes even if the roles already existed with others. A managed database's admin
+-- (RDS `rds_superuser`) is not a superuser and may not touch SUPERUSER or REPLICATION at all; roles
+-- it creates never have either, so there it sets only the attributes it may change (Q-01-T20).
+DO $$
+DECLARE
+  super boolean := (SELECT rolsuper FROM pg_roles WHERE rolname = current_user);
+  privileged text := CASE WHEN super THEN ' NOSUPERUSER NOREPLICATION' ELSE '' END;
+BEGIN
+  EXECUTE 'ALTER ROLE abacus_owner NOCREATEDB NOCREATEROLE NOBYPASSRLS' || privileged;
+  EXECUTE 'ALTER ROLE abacus_app NOCREATEDB NOCREATEROLE NOBYPASSRLS NOINHERIT' || privileged;
+  -- The outbox relay reads every tenant's unpublished events (TASK-006, founder-approved): it
+  -- bypasses row-level security, so it is granted privileges on `outbox` only (in migration 0002).
+  EXECUTE 'ALTER ROLE abacus_relay NOCREATEDB NOCREATEROLE BYPASSRLS NOINHERIT' || privileged;
+  -- Sign-in finds a user's memberships before any tenant is chosen (TASK-007, founder-approved): it
+  -- bypasses row-level security, so it may only read users, memberships and firms (migration 0004).
+  EXECUTE 'ALTER ROLE abacus_identity NOCREATEDB NOCREATEROLE BYPASSRLS NOINHERIT' || privileged;
+  EXECUTE 'ALTER ROLE abacus_ops NOCREATEDB NOCREATEROLE NOBYPASSRLS NOINHERIT' || privileged;
+END
+$$;
 ALTER ROLE abacus_identity SET default_transaction_read_only = on;
-ALTER ROLE abacus_ops NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS NOREPLICATION NOINHERIT;
 
 DO $$
 BEGIN

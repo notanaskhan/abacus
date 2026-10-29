@@ -209,4 +209,15 @@ test.describe("J01-core firm onboarding", () => {
       await journey.as("margaret-okonkwo", "/settings/general", { clock: DEMO_INSTANT });
     },
   );
+
+  // K-01-T11 (DEC-902): j01 5w walks KNW-02's workbook slice, which is K-01-T07's (not built:
+  // KNW-02 has no screen yet). The service half (import lands Needs review, the agent's approve is
+  // refused, Margaret approves, v2 is superseded) is proven by K-01-T06 and K-01-T09's suites.
+  test.fixme(
+    "J01 5w: Margaret imports BH EBP v3, the agent's approve is refused, she approves and v2 is superseded (KNW-02)",
+    owner("K-01 · K-01-T07 KNW-02 workbook slice on the T3 Prepare frame · S12, Fri Apr 16, 2027"),
+    async ({ journey }) => {
+      await journey.as("margaret-okonkwo", "/knowledge", { clock: DEMO_INSTANT });
+    },
+  );
 });

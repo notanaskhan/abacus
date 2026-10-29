@@ -59,7 +59,7 @@ def by_id(items: list[go_live.Item]) -> dict[str, go_live.Item]:
 
 def test_ac11_every_shadow_item_reports_a_value_and_a_green_firm_passes() -> None:
     items = evaluate("shadow", GREEN, AT, calendar())
-    assert len(items) == 20
+    assert len(items) == 21  # G-01-T19: + identity.offshore_consent_gated
     assert all(i.value for i in items)
     assert all(i.dossier for i in items if i.status == "manual")
     assert [i.id for i in items if i.status == "fail"] == []
@@ -131,7 +131,7 @@ def test_client_facing_adds_its_items_and_refuses_jan_15_to_apr_15() -> None:
 def test_tax_adds_the_tax_items_on_top_of_client_facing() -> None:
     ids = [i.id for i in evaluate("tax", GREEN, AT, calendar())]
     assert "season.no_client_facing_go_live" in ids and "tax.consent_7216" in ids
-    assert len(ids) == 20 + 8 + 6
+    assert len(ids) == 21 + 8 + 6  # G-01-T19: + identity.offshore_consent_gated
 
 
 def test_season_needs_no_flag_expiring_in_the_coming_window_and_rehearsed_runbooks() -> None:

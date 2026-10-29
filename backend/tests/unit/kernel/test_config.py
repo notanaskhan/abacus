@@ -199,13 +199,34 @@ def test_ac20_validation_errors_do_not_echo_input_values(
 
 
 @pytest.mark.parametrize("environment", ["staging", "production"])
-@pytest.mark.parametrize("missing", ["s3_access_key", "s3_secret_key"])
-def test_ac20_non_local_environment_requires_the_s3_keys(
+@pytest.mark.parametrize("missing", ["s3_access_key", "s3_secret_key", "s3_endpoint_url"])
+def test_ac20_non_local_environment_runs_s3_on_the_task_role(
     monkeypatch: pytest.MonkeyPatch, environment: str, missing: str
 ) -> None:
+    """DEC-1004 (supersedes AC-20's S3-key clause): in AWS the S3 client uses the task role and
+    S3's own endpoint; IAM users and access keys are refused by the organisation."""
     monkeypatch.setenv("ABACUS_ENVIRONMENT", environment)
     _explicit_connection_env(monkeypatch, omit=missing)
-    with pytest.raises(ValueError):
+    assert getattr(Settings(), missing) is None
+
+
+def test_dec1004_staging_may_use_an_in_vpc_temporal_without_tls(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ABACUS_ENVIRONMENT", "staging")
+    _explicit_connection_env(monkeypatch, omit="temporal_api_key")
+    monkeypatch.setenv("ABACUS_TEMPORAL_TLS", "false")
+    with pytest.raises(ValueError, match="TLS and an API key"):
+        Settings()
+    monkeypatch.setenv("ABACUS_TEMPORAL_IN_VPC", "true")
+    assert Settings().temporal_in_vpc is True
+
+
+def test_dec1004_production_refuses_an_in_vpc_temporal(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ABACUS_ENVIRONMENT", "production")
+    _explicit_connection_env(monkeypatch)
+    monkeypatch.setenv("ABACUS_TEMPORAL_IN_VPC", "true")
+    with pytest.raises(ValueError, match="temporal_in_vpc"):
         Settings()
 
 

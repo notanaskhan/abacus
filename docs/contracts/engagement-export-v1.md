@@ -4,7 +4,7 @@
 |---|---|
 | Register row | Screen-family contract "Engagement export" in `docs/contracts/README.md` |
 | Version | v1 (format `accrued.binder-export` 1.0) |
-| Status | create, undo, history and status live (A-01-T18, 2026-10-26); package built by A-01-T19; download, expiry sweep and void on withdrawal live (A-01-T22, 2026-10-27) |
+| Status | **frozen v1** (A-01-T30, 2026-10-28): create, undo, history and status live (A-01-T18, 2026-10-26); package built by A-01-T19; download, expiry sweep and void on withdrawal live (A-01-T22, 2026-10-27). A change is v2 with a new contract file |
 | Provider epic | A-01 (T17 stub; T18 create, undo, reads; T19 package; T22 download) |
 | Consumers | AUD-02, AUD-03 export sheet (A-01-T24); Q-04 rollback path; G-02 and Q-02 firm export (one package per engagement); A-07 archive seal manifest base (P-43); A-04, A-05, A-06 workpaper sections; requests (index rows) and agents (screening) section providers |
 | Freeze sprint | S11 (Fri Apr 2, 2027) |

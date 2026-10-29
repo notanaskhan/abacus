@@ -340,6 +340,8 @@ async def describe_schedule(schedule_id: str) -> ScheduleFacts:
     action = given.action
     if not isinstance(action, ScheduleActionStartWorkflow):
         raise LookupError(f"{schedule_id} does not start a workflow")
+    # temporalio 1.35 types the catch-up window as optional; ours are always set (CATCHUP_WINDOW).
+    window = given.policy.catchup_window
     return ScheduleFacts(
         id=schedule_id,
         paused=given.state.paused,
@@ -348,7 +350,7 @@ async def describe_schedule(schedule_id: str) -> ScheduleFacts:
         task_queue=str(action.task_queue),
         every_seconds=tuple(int(i.every.total_seconds()) for i in given.spec.intervals),
         overlap=given.policy.overlap.name,
-        catchup_window_seconds=int(given.policy.catchup_window.total_seconds()),
+        catchup_window_seconds=0 if window is None else int(window.total_seconds()),
     )
 
 

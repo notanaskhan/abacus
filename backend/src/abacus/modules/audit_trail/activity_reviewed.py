@@ -85,6 +85,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "client_invitation.accept_refused",
         "client_invitation.accepted",
         "client_invitation.created",
+        "client_invitation.expiry_notified",  # P-07-T47: the expiry only, never the address
         "client_invitation.renewed",
         "client_invitation.resent",
         "client_invitation.revoked",
@@ -211,6 +212,8 @@ REVIEWED_FALLBACK: Final = frozenset(
         "guidance_draft.created",
         "guidance_draft.discarded",
         "guidance_draft.requested",
+        "home_activity.projected",  # I-01-T12 (DEC-900): one activity row, the code only
+        "home_activity.pruned",  # I-01-T12: a count of rows past 90 days
         "human_gate.projected",
         "inbox_file.added",
         "inbox_file.assigned",
@@ -437,5 +440,12 @@ REVIEWED_FALLBACK: Final = frozenset(
         "workpaper.created",
         "workpaper.signed_ready",
         "workpaper.signed_reviewed",
+        "sending_domain.checked",  # R-01-T27
+        "sending_domain.created",  # R-01-T27
+        "sending_domain.failed",  # R-01-T27
+        "sending_domain.revoked",  # R-01-T27
+        "sending_domain.verified",  # R-01-T27
+        "firm_mail_policy.client_mail_enabled",  # R-01-T27
+        "firm_mail_policy.client_mail_disabled",  # R-01-T27
     }
 )

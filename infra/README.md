@@ -230,6 +230,24 @@ Written in TASK-1480 and **not yet initialised, validated, planned or applied**.
 4. Set `ABACUS_AUDIT_EXPORT_SIGNING_KEY_ALIAS=alias/abacus/<env>/export-signing` in the worker's environment. Until then every audit export fails `signing_unavailable` (fail closed).
 5. Check it: an audit export on the synthetic tenant reaches `ready`; `openssl dgst -sha256 -verify` with the published key accepts its `manifest.sig`.
 
+## Staging stand-up (Q-01-T07, T14, T15, T20; DEC-1003, DEC-1004)
+
+Minimal staging: one VPC (two zones, one NAT), a single-AZ db.t4g.micro, Fargate tasks for the API, one worker, the keyops worker, the ClamAV scanner and an in-VPC Temporal dev server, the firm SPA on CloudFront's default host, SES in the sandbox with one verified address. Every value that names something goes in an untracked `terraform.tfvars`. A session writes and validates; the builder applies, in this order:
+
+1. **Bootstrap** (section "Terraform bootstrap"), with `staging_account_id` set, so the staging OIDC provider and plan and apply roles exist.
+2. **Shared registry:** `reader_account_ids = ["<staging id>"]` in `envs/shared/terraform.tfvars`, then `AWS_PROFILE=shared terraform -chdir=infra/envs/shared init && terraform -chdir=infra/envs/shared plan -out=shared.tfplan && terraform -chdir=infra/envs/shared apply shared.tfplan`. In GitHub, add the repository variables `AWS_BUILD_ROLE` (`arn:aws:iam::<shared id>:role/<build_role_name output>`) and `ECR_REPOSITORY` (the `ecr_repository_url` output), then run the `build` workflow on main. Its `releases/<sha>/release.json` names the image digest.
+3. **Staging data plane:** `envs/staging/terraform.tfvars` with `shared_account_id`, `ses_verified_address`, and no `image_digest` yet. `AWS_PROFILE=staging terraform -chdir=infra/envs/staging init`, `plan -out=staging.tfplan`, `apply staging.tfplan`. Click the link AWS emails to the verified address.
+4. **Secrets:** `AWS_PROFILE=staging infra/envs/staging/fill-secrets.sh generated`. Once the WorkOS staging environment exists: `fill-secrets.sh workos`, and add `workos_issuer`, `workos_client_id` and `workos_jwks` to the tfvars.
+5. **Compute and edge:** set `image_digest` (`<ecr_repository_url>@<digest>`), `worker_task_role_name = "abacus-staging-worker"`, `api_task_role_name = "abacus-staging-api"`, then plan and apply again.
+6. **Database:** run the bootstrap task once, then migrate: `aws ecs run-task --cluster abacus-staging --launch-type FARGATE --task-definition <bootstrap_task_definition output> --network-configuration "awsvpcConfiguration={subnets=[<app subnets>],securityGroups=[<tasks sg>]}"`, then the same with the migrate family. Before the first migrate, run 0210 to head up, down and up on a snapshot copy (S14 handoff to-do).
+7. **GitHub `staging` environment:** limit it to main with a required reviewer (DEC-360), and set the variables from the `github_staging_variables` output (`AWS_DEPLOY_ROLE` is `arn:aws:iam::<staging id>:role/<DEPLOY_ROLE_NAME>`, `AWS_REGION=us-east-2`). From then on `deploy-staging.yml` deploys.
+
+**Third-party image mirrors (DEC-1008):** after the shared apply, copy the two pinned images into ECR once, keeping their digests: `docker buildx imagetools create --tag <mirror url for thirdparty/clamav/clamav>:1.4 clamav/clamav:1.4@sha256:982e28f9…` and the same for `temporalio/temporal:1.9.1@sha256:ad4c82c9…` (digests in `infra/envs/staging/compute.tf`). Then set `third_party_registry` in the staging tfvars.
+
+**Shared extras (Q-01-T07 remainder):** `abacus-shared-design-baselines` with the F-05 CI read role (`design_baselines_role_name` output; set `vars.AWS_BASELINES_ROLE` when a visual run first reads it), `abacus-shared-backups` with the weekly `git-bundle-backup.yml` (set `vars.AWS_BACKUP_ROLE` to `arn:aws:iam::<shared id>:role/<git_backup_role_name>`), ECR replication to us-west-2 (and to production once `production_account_id` is set), and the Route 53 zones once `firm_domain` and `portal_base_domain` are set (delegate to the `name_servers` output).
+
+Deferred to later passes (DEC-1003): interface endpoints and the DNS Firewall allowlist, ECR replication, the platform key's us-west-2 replica, Route 53 zones and the firm and portal domains (with ACM and WAF on the firm edge), Container Insights, the design-baselines bucket and the git bundle backup.
+
 ## 4. Console log
 
 Every one-time console step, newest last. Operator is the person at the keyboard.
