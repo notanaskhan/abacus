@@ -92,6 +92,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "inbox_attachments": frozenset(
         {"client_id", "status", "classification_id", "filed_evidence_version_id"}
         | {"filed_destination_kind", "filed_destination_id", "data_classes"}
+        | {"withdrawn_at"}  # N-01-T14 (0371): a portal withdrawal's moment
     ),
     "inbox_sender_rules": frozenset({"revoked_at"}),
     "email_suppressions": frozenset({"lifted_at", "lifted_by"}),  # Q-01-T46: lifting only

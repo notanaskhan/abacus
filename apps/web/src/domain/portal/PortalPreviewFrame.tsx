@@ -47,7 +47,6 @@ export function PortalPreviewFrame({
   return (
     <figure
       aria-label={label}
-      aria-readonly="true"
       data-preview-device={device}
       className="relative m-0 overflow-hidden rounded-tile border border-hair bg-nested"
       style={{ height: Math.round(height * scale) }}

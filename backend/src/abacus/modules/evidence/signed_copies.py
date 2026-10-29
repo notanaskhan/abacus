@@ -15,7 +15,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import insert
+from sqlalchemy import insert, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.clock import system_now
 from abacus.kernel.uow import Ref, Target, UnitOfWork
@@ -128,3 +129,16 @@ __all__ = [
     "read_staged",
     "screen_and_stage",
 ]
+
+
+async def version_titles(session: AsyncSession, version_ids: list[UUID]) -> dict[UUID, str]:
+    """Each filed version's item title (N-02-T13: the envelope drawer's documents). For a caller
+    that authorised the envelope the versions are named on; others' rows stay out under RLS."""
+    if not version_ids:
+        return {}
+    rows = await session.execute(
+        select(EvidenceVersion.id, EvidenceItem.title)
+        .join(EvidenceItem, EvidenceItem.id == EvidenceVersion.evidence_item_id)
+        .where(EvidenceVersion.id.in_(version_ids))
+    )
+    return {version: title for version, title in rows.tuples()}
