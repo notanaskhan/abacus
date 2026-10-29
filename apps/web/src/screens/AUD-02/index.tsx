@@ -137,6 +137,7 @@ function SourceDocuments({
             <SourceDocRow
               key={row.request_item_id}
               doc={docOf(row)}
+              tight
               selected={open !== null && row.latest_upload?.evidence_version_id === open}
               onOpen={() => {
                 onOpen(row);

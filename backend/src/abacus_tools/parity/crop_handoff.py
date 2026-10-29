@@ -61,6 +61,9 @@ class Entry:
     # P-01-T02: a screen baseline renders a screen route (`screens/SHL-01?st=a`) rather than a
     # gallery specimen; None for a gallery specimen.
     page: str | None = None
+    # Chapter 04's parity masks: selectors whose boxes are painted out of both the render and the
+    # handoff baseline before they are compared (spinners, a dock still unlocked).
+    mask: tuple[str, ...] = ()
 
 
 def baseline_file(key: str) -> str:
@@ -123,6 +126,11 @@ def parse_entry(key: str, raw: Json) -> Entry:
     page = raw.get("page")
     if page is not None and not (isinstance(page, str) and page.startswith("screens/")):
         raise ManifestError(f'{key}: "page" is a screen route, screens/<ID>?st=<artboard>')
+    mask = raw.get("mask", [])
+    if not isinstance(mask, list) or not all(
+        isinstance(m, str) and m.strip() for m in cast("list[object]", mask)
+    ):
+        raise ManifestError(f'{key}: "mask" is a list of CSS selectors inside the shot')
     return Entry(
         key=key,
         specimen=key.split(".")[0],
@@ -134,6 +142,7 @@ def parse_entry(key: str, raw: Json) -> Entry:
         locked=raw.get("locked") is True,
         deviation=deviation,
         page=page,
+        mask=tuple(cast("list[str]", mask)),
     )
 
 
