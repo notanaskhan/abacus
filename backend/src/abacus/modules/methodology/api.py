@@ -51,7 +51,11 @@ from abacus.modules.methodology.service import (
     version_detail,
     version_in,
 )
-from abacus.modules.methodology.standards import current_version, register_standard_examples
+from abacus.modules.methodology.standards import (
+    current_version,
+    current_version_of_kind,
+    register_standard_examples,
+)
 from abacus.modules.methodology.standards_catalog import register_standards_providers
 from abacus.modules.methodology.standards_contract import (
     ConfidenceDecision,
@@ -145,6 +149,7 @@ __all__ = [
     "classify_entry",
     "confidence_hold",
     "current_version",
+    "current_version_of_kind",
     "import_template",
     "latest_versions",
     "materiality_range_for",

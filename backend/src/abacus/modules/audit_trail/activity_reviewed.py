@@ -423,6 +423,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "team.member_removed",
         "team.portal_visibility_changed",
         "team.updated",
+        "tax_return.due_dates_pinned",  # T-02-T10: dates as integers, the rule count
         "threshold_policy.created",
         "threshold_policy.owner_changed",
         "threshold_policy_version.discarded",

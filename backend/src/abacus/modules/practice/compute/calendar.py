@@ -205,6 +205,24 @@ def due_dates(
     )
 
 
+def _ordinal(n: int) -> str:
+    suffix = "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"
+
+
+def rule_text(rule: Rule, *, extended: bool) -> str:
+    """The Due popover's rule ("15th day, 3rd month + 6 months"; an extension on its own day
+    runs a half month short or long: a 1041's 7004 is "+ 5½ months", a 5558 "+ 2½ months")."""
+    text = f"{_ordinal(rule.original.day)} day, {_ordinal(rule.original.months)} month"
+    if not extended or rule.extension_months is None:
+        return text
+    months = rule.extension_months
+    if rule.extension_day is not None and rule.extension_day != rule.original.day:
+        whole = months if rule.extension_day > rule.original.day else months - 1
+        return f"{text} + {whole}½ months"
+    return f"{text} + {months} months"
+
+
 def clock_due(kind: ClockKind, start: date) -> date:
     """A calendar-day clock's end: never rolled."""
     if kind == "form_8879_retention":

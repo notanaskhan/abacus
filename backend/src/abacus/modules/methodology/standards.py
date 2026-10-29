@@ -912,6 +912,32 @@ async def current_version(tenant_id: UUID, standard_key: str, as_of: date) -> Po
     raise LookupError(standard_key)
 
 
+async def current_version_of_kind(
+    tenant_id: UUID, kind: StandardKind, as_of: date
+) -> PolicyRef | None:
+    """T-02-T10: the version in effect on `as_of` of the firm's standard of `kind` (the
+    return-approval policy, BH-TAX-02, is one per firm); the first by key when there are more.
+    None when nothing of the kind is in effect."""
+    tenant = TenantContext(tenant_id, "system", "standards:current_version_of_kind")
+    family = _family(kind)
+    async with tenant_session(tenant) as session:
+        parents = (
+            await session.execute(
+                select(family.parent).where(family.parent.kind == kind).order_by(family.parent.key)
+            )
+        ).scalars()
+        for parent in parents:
+            found = in_effect(await _versions(session, family, parent.id), as_of)
+            if found is not None:
+                return PolicyRef(
+                    standard_key=parent.key,
+                    version_id=found.id,
+                    version=found.version,
+                    name=parent.name,
+                )
+    return None
+
+
 # --- KNW-01 and C15 registrations ----------------------------------------------------------------
 
 
@@ -1007,6 +1033,7 @@ __all__ = [
     "assign_owner",
     "create_standard",
     "current_version",
+    "current_version_of_kind",
     "diff_cells",
     "discard_draft",
     "draft_version",

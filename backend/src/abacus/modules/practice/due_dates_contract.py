@@ -88,6 +88,9 @@ class DueDates:
     inputs_hash: str
     # Additive (K-02-T07): the date the named postponement moved the return to.
     postponed_to: date | None = None
+    # Additive (T-02-T10): the rule as the Due popover reads it, original and extended.
+    rule_text: str | None = None
+    extended_rule_text: str | None = None
 
 
 @dataclass(frozen=True)
