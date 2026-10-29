@@ -67,7 +67,8 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // envelope_signer, signing_step, envelope_purpose, generated_document, letter and
     // letter_clause (+9; the S14 batch joins N-02's and F-06's envelope_signer, DEC-815).
     // K-02-T02 added firm_standard_version and reference_set_version (+2).
-    expect(Object.keys(REGISTRY)).toHaveLength(102);
+    // T-01-T06 added consent, tax_authorization, engine_sync and efile_ack (+4).
+    expect(Object.keys(REGISTRY)).toHaveLength(106);
     // +21: decision_card 3, suggestion 6, proposal 5, sign_off_slot 2, field_value 4, checkpoint saved.
     // +27 (P-07-T03): client 4, invitation 5, acceptance_record 5, letter_record 2,
     // conflict_assessment 5, nas_evaluation 3, independence_conclusion 3.
@@ -84,7 +85,8 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // envelope_signer 6, signing_step 4, envelope_purpose 4, generated_document 4, letter 7,
     // letter_clause 3, inbox_item +2.
     // +8 (K-02-T02): firm_standard_version 4, reference_set_version 4.
-    expect(ROWS).toHaveLength(479);
+    // +22 (T-01-T06): consent 8, tax_authorization 5, engine_sync 7, efile_ack 2.
+    expect(ROWS).toHaveLength(501);
   });
 
   it("resolves each code to a word, a kit variant or a line, and never to match", () => {

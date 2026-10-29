@@ -385,6 +385,33 @@ class KnowledgeItemStatus(StrEnum):
     SUPERSEDED = "superseded"
 
 
+class ConsentStatus(StrEnum):
+    REQUESTED = "requested"
+    SIGNED = "signed"
+    EXPIRING = "expiring"
+    EXPIRED = "expired"
+    DECLINED = "declined"
+    REVOKED = "revoked"
+
+
+class TaxAuthorizationStatus(StrEnum):
+    REQUESTED = "requested"
+    ON_FILE = "on_file"
+    EXPIRED = "expired"
+    REVOKED = "revoked"
+    # derived, never stored: not_on_file
+
+
+class EngineSyncStatus(StrEnum):
+    pass
+    # derived, never stored: not_linked, ready_to_export, exported, import_pending_approval, in_sync, out_of_sync, failed
+
+
+class EfileAckStatus(StrEnum):
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+
+
 class FirmStandardVersionStatus(StrEnum):
     DRAFT = "draft"
     PUBLISHED = "published"
@@ -456,15 +483,6 @@ class NoticeStatus(StrEnum):
     AWAITING_IRS = "awaiting_irs"
     CLOSED = "closed"
     ESCALATED = "escalated"
-
-
-class ConsentStatus(StrEnum):
-    REQUESTED = "requested"
-    SIGNED = "signed"
-    EXPIRING = "expiring"
-    EXPIRED = "expired"
-    DECLINED = "declined"
-    REVOKED = "revoked"
 
 
 class ConsentPurposeStatus(StrEnum):
@@ -1103,6 +1121,26 @@ STORED: dict[str, tuple[str, ...]] = {
         "published",
         "superseded",
     ),
+    "consent": (
+        "requested",
+        "signed",
+        "expiring",
+        "expired",
+        "declined",
+        "revoked",
+    ),
+    "tax_authorization": (
+        "requested",
+        "on_file",
+        "expired",
+        "revoked",
+    ),
+    "engine_sync": (
+    ),
+    "efile_ack": (
+        "accepted",
+        "rejected",
+    ),
     "firm_standard_version": (
         "draft",
         "published",
@@ -1162,14 +1200,6 @@ STORED: dict[str, tuple[str, ...]] = {
         "awaiting_irs",
         "closed",
         "escalated",
-    ),
-    "consent": (
-        "requested",
-        "signed",
-        "expiring",
-        "expired",
-        "declined",
-        "revoked",
     ),
     "consent_purpose": (
         "use",
