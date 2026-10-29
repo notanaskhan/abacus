@@ -42,3 +42,11 @@ them. Owner: Ayush. Record each high finding here with its ticket and date.
 SLO burn, slow statements, N+1 regressions, queue backlog and outbox lag come from production
 dashboards. Owner: Ayush. Each burn-rate alert since the last sweep gets a closed follow-up or a
 dated ticket, listed here.
+
+## 5. The S16 branches (Q-03-T096)
+
+Re-run on the S16 stack tip (`s16-t02-t08`, which carries K-02, T-01 and T-02 with migrations
+0400–0403 and the `owner_of_target` condition), with that tree's own code on the path:
+`generator_coverage` 0 gaps in all four checks, and `codegen.security_tests --check` current.
+Q-03-T096 found no route, table or condition without its generated allow, deny and cross-tenant
+tests, so it adds none. Re-run after the batch merge re-chains the migrations.
