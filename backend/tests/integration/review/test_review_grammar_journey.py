@@ -58,11 +58,11 @@ DECISION_AUDITS: Final = (
     "checkpoint.restored",
     "issue.resolved",
 )
-row_ = t28._row  # pyright: ignore[reportPrivateUsage]
-return_ = t32._return  # pyright: ignore[reportPrivateUsage]
-propose_ = t32._propose  # pyright: ignore[reportPrivateUsage]
-change_ = t32._change  # pyright: ignore[reportPrivateUsage]
-decide_ = t32._decide  # pyright: ignore[reportPrivateUsage]
+row_ = t28._row  # pyright: ignore[reportPrivateUsage] -- the suites' shared setup
+return_ = t32._return  # pyright: ignore[reportPrivateUsage] -- the suites' shared setup
+propose_ = t32._propose  # pyright: ignore[reportPrivateUsage] -- the suites' shared setup
+change_ = t32._change  # pyright: ignore[reportPrivateUsage] -- the suites' shared setup
+decide_ = t32._decide  # pyright: ignore[reportPrivateUsage] -- the suites' shared setup
 
 
 @pytest.fixture
@@ -98,6 +98,26 @@ async def _feld_k1(world: World, site: Site, *, uncited: bool = False) -> uuid.U
     )
 
 
+# Each decision table's actors, by a fixed query per table (no SQL is built from a name).
+_ACTORS: Final = {
+    "sign_offs": "SELECT DISTINCT actor_kind FROM sign_offs WHERE tenant_id = $1",
+    "decisions": "SELECT DISTINCT actor_kind FROM decisions WHERE tenant_id = $1",
+    "proposal_decisions": (
+        "SELECT DISTINCT actor_kind FROM proposal_decisions WHERE tenant_id = $1"
+    ),
+    "suggestion_decisions": (
+        "SELECT DISTINCT actor_kind FROM suggestion_decisions WHERE tenant_id = $1"
+    ),
+    "checkpoint_decisions": (
+        "SELECT DISTINCT actor_kind FROM checkpoint_decisions WHERE tenant_id = $1"
+    ),
+    "review_note_events": (
+        "SELECT DISTINCT actor_kind FROM review_note_events WHERE tenant_id = $1"
+    ),
+    "issue_events": "SELECT DISTINCT actor_kind FROM issue_events WHERE tenant_id = $1",
+}
+
+
 async def _decision_actors(world: World) -> dict[str, set[str]]:
     out: dict[str, set[str]] = {}
     for table in DECISION_TABLES:
@@ -108,10 +128,7 @@ async def _decision_actors(world: World) -> dict[str, set[str]]:
         )
         if not has:
             continue
-        rows = await world.seed.rows(
-            f"SELECT DISTINCT actor_kind FROM {table} WHERE tenant_id = $1",  # noqa: S608 -- fixed names
-            world.tenant_id,
-        )
+        rows = await world.seed.rows(_ACTORS[table], world.tenant_id)
         out[table] = {str(r["actor_kind"]) for r in rows}
     return out
 
