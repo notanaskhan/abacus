@@ -1496,6 +1496,12 @@ codes:
     raised_by:
     - abacus.modules.review.sign_offs.Segregation
     summary: 'R-SO-3: the target''s preparer never signs L2 or L3 on it.'
+  sending_domain_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.communications.sending_domains.SendingDomainExists
+    summary: 'R-01-T27 (DEC-951): a sender domain is pending or verified for this firm, or the
+      name is live for any firm.'
   service_line_lead_invalid:
     status: 422
     raised_by:
