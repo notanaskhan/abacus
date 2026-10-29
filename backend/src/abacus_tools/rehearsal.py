@@ -53,12 +53,16 @@ from abacus.modules.agents.api import (
     StageNotReady,
     check_live,
     shadow_score,
+    starts_in_shadow,
 )
-from abacus.modules.agents.stages import starts_in_shadow
-from abacus.modules.engagements.service import set_ai_exclusion_of
-from abacus.modules.evidence.access import KIND as EVIDENCE_READ
-from abacus.modules.identity.api import AuthContext, Forbidden, is_synthetic_firm
-from abacus.modules.identity.firm_settings import set_ai_client_data_setting
+from abacus.modules.engagements.api import set_ai_exclusion_of
+from abacus.modules.evidence.api import CONTENT_READ_KIND as EVIDENCE_READ
+from abacus.modules.identity.api import (
+    AuthContext,
+    Forbidden,
+    is_synthetic_firm,
+    set_ai_client_data_setting,
+)
 from abacus_tools.agent_stage import set_stage
 from abacus_tools.db_connect import connect as connect_db
 

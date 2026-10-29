@@ -23,7 +23,7 @@ _IDS = {k: os.environ.get(f"ABACUS_REHEARSAL_{k}") for k in _KEYS}
 
 pytestmark = pytest.mark.skipif(
     any(v is None for v in _IDS.values()) or os.environ.get("ABACUS_ENVIRONMENT") != "staging",
-    reason="the rehearsal runs on staging only, with the rehearsal tenant's ids",
+    reason="the rehearsal runs on staging only, with the rehearsal tenant's ids (#617)",
 )
 
 
