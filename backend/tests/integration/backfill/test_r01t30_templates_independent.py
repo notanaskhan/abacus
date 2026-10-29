@@ -23,7 +23,8 @@ import pytest
 from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError
 
-from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.db import TenantContext
+from abacus.kernel.uow import Target, uow
 from abacus.modules.communications.transport import configure_transport
 
 from .support import Json, Net, Person, Seeder
@@ -40,12 +41,12 @@ CLEAN: Final[Json] = {
     "cta_label": "Open documents",
     "cta_target": "documents",
 }
-SEEDED: Final = (  # Story 7.2's violations, one per block
+SEEDED: Final = (  # Story 7.2's lint violations, one per block
     ("p2", "Your balance is $3,200."),
-    ("p3", "TIN 123-45-6789 on file."),
+    ("p3", "TIN 912-34-5678 on file."),
     ("p4", "Sent with Accrued."),
-    ("p5", "Hello {not_a_variable}."),
 )
+UNKNOWN: Final = ("p5", "Hello {not_a_variable}.")  # refused at render, before any lint
 
 
 @dataclass
@@ -110,23 +111,27 @@ async def test_the_renderer_is_deterministic_and_versions_are_immutable(
         "DELETE FROM email_template_versions",
     ):
         with pytest.raises(DBAPIError):
-            async with tenant_session(system) as session:
-                await session.execute(text(sql))
-                await session.flush()
+            async with uow(system) as tx:
+                await tx.session.execute(text(sql))
+                tx.record("email_template.probe", target=Target("firm", grace.tenant_id))
 
 
 async def test_the_lint_finds_each_seeded_violation_and_never_repeats_the_text(
     net: Net, seed: Seeder, mailbox: Mailbox
 ) -> None:
     grace = await _grace(seed)
-    dirty = {
-        **CLEAN,
-        "blocks": [
-            *cast(list[Json], CLEAN["blocks"]),
-            *({"id": b, "kind": "paragraph", "text": t} for b, t in SEEDED),
-        ],
-    }
-    await _save(net, grace, dirty, 0)
+
+    def with_blocks(*extra: tuple[str, str]) -> Json:
+        blocks = [{"id": b, "kind": "paragraph", "text": t} for b, t in extra]
+        return {**CLEAN, "blocks": [*cast(list[Json], CLEAN["blocks"]), *blocks]}
+
+    # An unknown variable cannot render: preview refuses it outright, without repeating it.
+    await _save(net, grace, with_blocks(*SEEDED, UNKNOWN), 0)
+    unknown = await net.call("POST", f"{BASE}/reminder/preview", grace, body={"width": 600})
+    assert unknown.status_code == 422, unknown.text
+    assert unknown.json()["detail"] == "unknown_template_variable"
+    assert UNKNOWN[1] not in unknown.text
+    await _save(net, grace, with_blocks(*SEEDED), 1)
     preview = await net.call("POST", f"{BASE}/reminder/preview", grace, body={"width": 600})
     assert preview.status_code == 200, preview.text
     findings = cast(list[Json], preview.json()["findings"])
@@ -140,11 +145,13 @@ async def test_the_lint_finds_each_seeded_violation_and_never_repeats_the_text(
         assert refused.json()["detail"] == "template_lint_failed"
         for _, offending in SEEDED:
             assert offending not in refused.text
-        assert "3,200" not in refused.text and "123-45-6789" not in refused.text
+        assert "3,200" not in refused.text and "912-34-5678" not in refused.text
     assert mailbox.sent == []
     assert (
         await seed.value(
-            "SELECT count(*) FROM email_template_versions WHERE tenant_id = $1", grace.tenant_id
+            "SELECT count(*) FROM email_template_versions v "
+            "JOIN email_templates t ON t.id = v.template_id WHERE t.tenant_id = $1",
+            grace.tenant_id,
         )
         == 0
     )

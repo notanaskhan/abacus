@@ -1,8 +1,8 @@
 ---
 id: TASK-1806
 title: Independent AC tests for R-01-T19, T23, T24 (R-01-T30)
-spec: docs/plan/epics/R-01.md §3.7 to §3.9; docs/contracts/email-templates.md
-acceptance_criteria: [Story 7.2, Story 7.3, Story 7.4, Story 8.1, Story 9.1]
+spec: SPEC-345
+acceptance_criteria: [AC-6]
 risk_zone: red
 status: in-review
 epic: R-01
