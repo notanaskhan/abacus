@@ -11726,7 +11726,7 @@ export type FirmTeamIn = {
     /**
      * Kind
      */
-    kind: 'service_line' | 'practice_group' | 'eqr_pool' | 'monitoring_reviewers' | 'reviewer_pool' | 'custom';
+    kind: 'service_line' | 'practice_group' | 'eqr_pool' | 'monitoring_reviewers' | 'reviewer_pool' | 'custom' | 'intake';
     /**
      * Lead User Id
      */
@@ -11776,7 +11776,7 @@ export type FirmTeamOut = {
     /**
      * Kind
      */
-    kind: 'service_line' | 'practice_group' | 'eqr_pool' | 'monitoring_reviewers' | 'reviewer_pool' | 'custom';
+    kind: 'service_line' | 'practice_group' | 'eqr_pool' | 'monitoring_reviewers' | 'reviewer_pool' | 'custom' | 'intake';
     /**
      * Lead User Id
      */

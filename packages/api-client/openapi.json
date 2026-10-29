@@ -25130,7 +25130,8 @@
               "eqr_pool",
               "monitoring_reviewers",
               "reviewer_pool",
-              "custom"
+              "custom",
+              "intake"
             ],
             "title": "Kind",
             "type": "string"
@@ -25253,7 +25254,8 @@
               "eqr_pool",
               "monitoring_reviewers",
               "reviewer_pool",
-              "custom"
+              "custom",
+              "intake"
             ],
             "title": "Kind",
             "type": "string"
