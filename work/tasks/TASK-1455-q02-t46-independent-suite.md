@@ -74,3 +74,6 @@ Rollback: delete the five files.
 - 2026-10-29: end review ran the T47 case unedited: it fails (0 of 2 packages; DEC-640 scopes
   packages to what the approver may read, and the suite's approver reads neither engagement).
   The strict xfail stays, now citing ED-290 for triage.
+- 2026-10-29: ED-290 decided: DEC-640 stands; the fixture puts the named partner on both
+  engagements and the T47 case loses its xfail. Not run (build-only round); confirm at the next
+  targeted pass.

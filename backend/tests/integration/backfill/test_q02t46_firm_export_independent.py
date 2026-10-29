@@ -142,6 +142,10 @@ async def _firm(net: Net, *, flag: bool = True) -> Firm:
     second = await seed.person(tenant, "security_admin")
     staff = await seed.person(tenant)
     sites = [await seed.site(tenant, felix.user_id, f"q02t46-{n}") for n in range(2)]
+    # ED-290 (DEC-640): the archive packages each engagement as the approver may read it, so the
+    # named partner is on both engagements, as a firm-wide export's approver is in a real firm.
+    for site in sites:
+        await seed.member(site, margaret, "engagement_partner")
     engagements = tuple(s.engagement_id for s in sites)
     return Firm(net, tenant, felix, margaret, second, staff, engagements)
 
@@ -495,11 +499,6 @@ async def test_ac41_each_download_leaves_an_access_event(firm: Firm, temporal: C
 # --- Q-02-T47: one verified package per engagement (written before T47; T47 landed in #501) ---
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="ED-290 (TASK-1455): T47 (DEC-640) builds a package only for engagements the "
-    "approver may read; this suite's approver reads neither, so the index lists none (0 of 2)",
-)
 async def test_ac40_t47_the_archive_holds_one_verified_package_per_engagement(
     firm: Firm, temporal: Client
 ) -> None:
