@@ -79,6 +79,8 @@ check-fast:
 	cd backend && uv run python -m abacus_tools.quality.generator_coverage
 	# Q-03-T097: at most 5 flaky tests in quarantine, none past 10 working days.
 	cd backend && uv run python -m abacus_tools.quality.quarantine
+	# Q-04-T021: go-live dossiers are pilot-coded, contact-free and carry every §8.3 section.
+	cd backend && uv run python -m abacus_tools.go_live_dossier check
 	# Q-03-T094: the fakes register names real files (unverified fakes are reported, not failed).
 	cd backend && uv run python -m abacus_tools.quality.fakes
 	cd backend && uv run python -m abacus_tools.quality.mutation_floors

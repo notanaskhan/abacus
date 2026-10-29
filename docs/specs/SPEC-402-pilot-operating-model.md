@@ -37,3 +37,9 @@ pilot codes and the W-signal thresholds, for every pilot window from PW1 (Q-04 ย
   policies, AI opt-in and stages, the support-session switch and status subscribers; every step
   names its screen state or CLI, its operator and its evidence, and no step loads firm content
   through a commit or the seed loader (Q-04-T015; Q-04 AC-5.1 to AC-5.7).
+- **AC-6** Each PW1 firm's `docs/ops/go-live/<pilot-code>.md` (made by `abacus_tools.go_live_dossier
+  new`, from `_TEMPLATE.md`) carries chapter 06 ยง8.3 by section and owner; `fill` writes the
+  `make go-live-check LEVEL=shadow` rows into each section's generated block; `check` (check-fast)
+  refuses a dossier not named by a pilot code, holding an email address or phone number, or missing
+  a section; `check --ready` passes only with a passing check from the last 7 days, every by-hand row
+  green with evidence and the shadow rules acknowledged, before both founders sign (Q-04-T021).
