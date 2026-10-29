@@ -2,7 +2,7 @@
 id: TASK-2003
 title: Q-03-T082 Independent AC tests for the expand-only guard
 spec: SPEC-403
-acceptance_criteria: [F4]
+acceptance_criteria: [AC-14]
 risk_zone: red
 status: in-review
 epic: Q-03
