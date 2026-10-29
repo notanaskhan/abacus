@@ -1,8 +1,8 @@
 ---
 id: TASK-1733
 title: P-04-T33 Independent AC tests for Undo and the effect hold
-spec: P-04 §9 (T33); DEC-713
-acceptance_criteria: [P-04-T33]
+spec: SPEC-360
+acceptance_criteria: [AC-4]
 risk_zone: red
 status: in-review
 epic: P-04
