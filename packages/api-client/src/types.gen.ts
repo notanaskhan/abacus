@@ -79461,10 +79461,6 @@ export type ListReturnsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListReturnsError = ListReturnsErrors[keyof ListReturnsErrors];
@@ -79517,10 +79513,6 @@ export type ReturnsSummaryErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ReturnsSummaryError = ReturnsSummaryErrors[keyof ReturnsSummaryErrors];
@@ -80832,10 +80824,6 @@ export type BulkAssignErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type BulkAssignError = BulkAssignErrors[keyof BulkAssignErrors];

@@ -183,6 +183,11 @@ from abacus.modules.engagements.team import (
     assign_eqr,
     team_approval,
 )
+from abacus.modules.engagements.work_item_facts import (
+    WorkItemFacts,
+    work_item_facts,
+    work_item_offices,
+)
 from abacus.modules.engagements.work_items import (
     WORK_ITEM_FUNCTIONS,
     AdvisoryProjectKind,
@@ -394,6 +399,7 @@ __all__ = [
     "UnknownWorkItemKind",
     "VersionNotLatest",
     "WorkItemExists",
+    "WorkItemFacts",
     "WorkItemProvider",
     "acceptance_decisions_due",
     "acceptance_record",
@@ -487,6 +493,8 @@ __all__ = [
     "version_detail",
     "visible_among",
     "work_item_engagement",
+    "work_item_facts",
     "work_item_index",
+    "work_item_offices",
     "work_item_provider",
 ]

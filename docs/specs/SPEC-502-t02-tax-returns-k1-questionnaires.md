@@ -42,3 +42,10 @@ T-02 is the tax practice board and the return workspace (TAX-01 to TAX-03), K-1 
 
 **Fixtures (T-02-T08).**
 - **AC-9** Fixture seed rows and per-artboard scenarios for the six screens with personas `nora-calloway` and `pell-street-member`, and footing tests.
+
+**Practice-board read models (T-02-T09).**
+- **AC-10** `GET /v1/tax-returns/summary` answers per-status tiles for the year (the latest on file by default), open (every status but `filed` and `accepted`), done (`filed`, `accepted`), extended and office totals; at Brightwater Hale TY2025 they foot to 79 open, 145 done, 224 total.
+- **AC-11** Rows, tiles, totals and office counts are wall-safe: a return whose work item the viewer may not see (`visible()`, walls included) is absent from every one, with no hidden count (INV-3, DEC-43).
+- **AC-12** `GET /v1/tax-returns` filters by status, review level, form, office, partner (signer), preparer, due within n days (business time) and `q` (client name, case-folded substring); sort is an allowlist (`extended_due` default, `client`; anything else 422); `group_by=office` orders by office first. Rows carry people chips (initials and name), the sync chip and tags `ext`, `on_hold`.
+- **AC-13** `POST /v1/tax-returns:bulk-assign` (Idempotency-Key) assigns through `engagements.api.assign_work_item` and answers `assigned` and `refused` (any return the viewer can't see or engagements refuses), never a reason.
+- **AC-14** G-01's office fact `tax_returns` (the latest year's returns per office) and the C15 projection `tax_return` (form and year; metadata only) are registered.

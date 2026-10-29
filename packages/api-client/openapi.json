@@ -170919,6 +170919,7 @@
     },
     "/v1/tax-returns": {
       "get": {
+        "description": "TAX-01's rows, wall-safe; one page (a season's board fits; `cursor` is reserved).",
         "operationId": "list_returns",
         "parameters": [
           {
@@ -171235,16 +171236,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Returns Route",
@@ -171256,6 +171247,7 @@
     },
     "/v1/tax-returns/summary": {
       "get": {
+        "description": "TAX-01's tiles: per status, open and done, extended, office totals (wall-safe).",
         "operationId": "returns_summary",
         "parameters": [
           {
@@ -171359,16 +171351,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Returns Summary Route",
@@ -174129,6 +174111,7 @@
     },
     "/v1/tax-returns:bulk-assign": {
       "post": {
+        "description": "The selection bar's Assign preparer: assigned and refused counts, never a reason.",
         "operationId": "bulk_assign",
         "parameters": [
           {
@@ -174235,16 +174218,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Bulk Assign Route",
