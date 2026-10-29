@@ -20,7 +20,9 @@ for (const st of STATES) {
     const board = page.locator(`[data-artboard='${st}']`);
     await expect(board).toBeVisible();
     await expect(board.locator("[aria-busy='true']")).toHaveCount(0);
-    let builder = new AxeBuilder({ page }).include(`[data-artboard='${st}']`);
+    // Legacy mode: the default multi-frame run never finishes on the template screens (its
+    // results merge stalls; every rule alone completes), and the artboard has no frames to merge.
+    let builder = new AxeBuilder({ page }).setLegacyMode(true).include(`[data-artboard='${st}']`);
     if ((await page.locator("[role='dialog']").count()) > 0)
       builder = builder.include("[role='dialog']");
     const { violations } = await builder.analyze();
