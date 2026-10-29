@@ -18,7 +18,6 @@ from sqlalchemy.exc import DBAPIError, IntegrityError
 
 from abacus.kernel.db import TenantContext
 from abacus.kernel.db.session import ActorKind
-from abacus.kernel.flags import forget_flags
 from abacus.kernel.uow import Target, uow
 
 from .support import Net
@@ -49,9 +48,10 @@ async def nw(net: Net) -> Northwind:
 # --- H1: SPEC-025's route never meets G2 -------------------------------------------------------
 
 
-async def test_h1_with_v2_on_the_old_route_refuses_a_conclusion(nw: Northwind) -> None:
+async def test_h1_the_old_route_is_gone_and_g2_stays_unmet(nw: Northwind) -> None:
+    """SPEC-025's PUT retired with P-07-T59 (DEC-905): nothing reaches the legacy conclusion."""
     refused = await nw.call("PUT", f"/v1/engagements/{nw.eid}/acceptance", nw.margaret, LEGACY)
-    _refusal(refused, 409, "decision_locked")
+    assert refused.status_code == 405, refused.text
     assert (await nw.gate("G2"))["met"] is False
     concluded = await nw.seed.value(
         "SELECT count(*) FROM engagement_acceptance WHERE engagement_id = $1 "
@@ -61,15 +61,20 @@ async def test_h1_with_v2_on_the_old_route_refuses_a_conclusion(nw: Northwind) -
     assert concluded == 0
 
 
-async def test_h1_with_v2_off_a_conclusion_written_now_does_not_meet_g2(nw: Northwind) -> None:
-    await nw.seed.run(
-        "DELETE FROM feature_flag_states WHERE tenant_id = $1 "
-        "AND flag = 'engagements.acceptance_v2'",
-        nw.tenant,
-    )
-    forget_flags()
-    recorded = await nw.call("PUT", f"/v1/engagements/{nw.eid}/acceptance", nw.margaret, LEGACY)
-    assert recorded.status_code == 200, recorded.text
+async def test_h1_a_conclusion_the_app_writes_now_does_not_meet_g2(nw: Northwind) -> None:
+    """The 0175 trigger still marks every row the application writes `legacy_g2 = false`."""
+    partner = TenantContext(nw.tenant, "human", str(nw.margaret.user_id))
+    async with uow(partner) as tx:
+        await tx.session.execute(
+            text(
+                "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
+                "decided_by, documented_at, independence_concluded_by, "
+                "independence_concluded_at, independence_documented_at) VALUES (:t, :e, "
+                "'continuance', 'accepted', :u, 'Memo', :u, clock_timestamp(), 'Memo')"
+            ),
+            {"t": nw.tenant, "e": nw.eid, "u": str(nw.margaret.user_id)},
+        )
+        tx.record("acceptance.probed", target=Target("engagement", nw.eid))
     rows = await nw.seed.rows(
         "SELECT legacy_g2, independence_concluded_at FROM engagement_acceptance "
         "WHERE engagement_id = $1",
@@ -79,7 +84,7 @@ async def test_h1_with_v2_off_a_conclusion_written_now_does_not_meet_g2(nw: Nort
         (False, True)
     ]
     assert (await nw.gate("G2"))["met"] is False
-    # A row from before 0175 (written outside the app) still stands until P-07-T59.
+    # A row from before 0175 (written outside the app) still stands until P-07-T59b.
     await nw.seed.run(
         "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
         "decided_by, documented_at, independence_concluded_by, independence_concluded_at, "

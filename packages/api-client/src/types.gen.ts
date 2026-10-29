@@ -196,90 +196,6 @@ export type AcceptanceFlagOut = {
 };
 
 /**
- * AcceptanceIn
- */
-export type AcceptanceIn = {
-    /**
-     * Decision
-     */
-    decision: 'accepted' | 'declined';
-    /**
-     * Documented At
-     */
-    documented_at: string;
-    /**
-     * Independence Concluded
-     */
-    independence_concluded?: boolean;
-    /**
-     * Independence Documented At
-     */
-    independence_documented_at?: string | null;
-    /**
-     * Kind
-     */
-    kind?: 'new_client' | 'continuance' | null;
-    /**
-     * Predecessor Auditor
-     */
-    predecessor_auditor?: string | null;
-    /**
-     * Predecessor Communicated On
-     */
-    predecessor_communicated_on?: string | null;
-};
-
-/**
- * AcceptanceOut
- */
-export type AcceptanceOut = {
-    /**
-     * Before Act 1
-     */
-    before_act_1: boolean;
-    /**
-     * Created At
-     */
-    created_at: string;
-    /**
-     * Decided By
-     */
-    decided_by: string;
-    /**
-     * Decision
-     */
-    decision: 'accepted' | 'declined';
-    /**
-     * Documented At
-     */
-    documented_at: string;
-    /**
-     * File Name
-     */
-    file_name: string | null;
-    /**
-     * Independence Concluded At
-     */
-    independence_concluded_at: string | null;
-    /**
-     * Independence Documented At
-     */
-    independence_documented_at: string | null;
-    /**
-     * Kind
-     */
-    kind: 'new_client' | 'continuance';
-    /**
-     * Predecessor Auditor
-     */
-    predecessor_auditor: string | null;
-    /**
-     * Predecessor Communicated On
-     */
-    predecessor_communicated_on: string | null;
-};
-
-/**
  * AcceptanceRecordOut
  */
 export type AcceptanceRecordOut = {
@@ -6288,6 +6204,28 @@ export type ConfirmIn = {
      * Statement Version
      */
     statement_version: string;
+};
+
+/**
+ * ConfirmationOut
+ */
+export type ConfirmationOut = {
+    /**
+     * Answered At
+     */
+    answered_at?: string | null;
+    /**
+     * Confirmation
+     */
+    confirmation: 'requested' | 'confirmed' | 'declined';
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * User Id
+     */
+    user_id: string;
 };
 
 /**
@@ -14346,20 +14284,6 @@ export type IndependenceConclusionOut = {
 export type IndependenceConclusionStatus = 'independent' | 'independent_with_safeguards' | 'not_independent';
 
 /**
- * IndependenceIn
- */
-export type IndependenceIn = {
-    /**
-     * Confirm
-     */
-    confirm: boolean;
-    /**
-     * Note
-     */
-    note?: string | null;
-};
-
-/**
  * IndependenceSummaryOut
  *
  * CLI-08 a: "{confirmed} of {total} confirmed", the banner reasons and the conclusion.
@@ -15993,58 +15917,6 @@ export type LetterDraftIn = {
     variables: {
         [key: string]: string;
     };
-};
-
-/**
- * LetterIn
- */
-export type LetterIn = {
-    /**
-     * Letter Date
-     */
-    letter_date?: string | null;
-    /**
-     * Link
-     */
-    link?: string | null;
-    /**
-     * Reason
-     */
-    reason?: string | null;
-    /**
-     * Status
-     */
-    status: 'not_started' | 'sent' | 'signed' | 'not_required_this_year';
-};
-
-/**
- * LetterOut
- */
-export type LetterOut = {
-    /**
-     * File Name
-     */
-    file_name: string | null;
-    /**
-     * Letter Date
-     */
-    letter_date: string | null;
-    /**
-     * Link
-     */
-    link: string | null;
-    /**
-     * Reason
-     */
-    reason: string | null;
-    /**
-     * Recorded At
-     */
-    recorded_at: string;
-    /**
-     * Status
-     */
-    status: string;
 };
 
 /**
@@ -18516,32 +18388,6 @@ export type OnboardingOut = {
      * Steps
      */
     steps: Array<AbacusModulesEngagementsRoutesStepOut>;
-};
-
-/**
- * OpenConfirmationOut
- */
-export type OpenConfirmationOut = {
-    /**
-     * Client Name
-     */
-    client_name: string;
-    /**
-     * Engagement Id
-     */
-    engagement_id: string;
-    /**
-     * Engagement Name
-     */
-    engagement_name: string;
-    /**
-     * Statement
-     */
-    statement: string;
-    /**
-     * Status
-     */
-    status: 'requested' | 'declined';
 };
 
 /**
@@ -25390,66 +25236,6 @@ export type SetupFileOut = {
 };
 
 /**
- * SetupOut
- */
-export type SetupOut = {
-    acceptance: AcceptanceOut | null;
-    /**
-     * Blocked
-     */
-    blocked: string | null;
-    /**
-     * Confirmations
-     */
-    confirmations: Array<AbacusModulesEngagementsRoutesConfirmationOut>;
-    letter: LetterOut | null;
-    /**
-     * Letter Required
-     */
-    letter_required: boolean;
-    /**
-     * Steps
-     */
-    steps: Array<SetupStepOut>;
-    /**
-     * Summary
-     */
-    summary: string;
-};
-
-/**
- * SetupStepOut
- *
- * SPEC-025 AC-10: one checklist step, its state, who acts next, and why it's blocked.
- */
-export type SetupStepOut = {
-    /**
-     * Detail
-     */
-    detail: string | null;
-    /**
-     * Key
-     */
-    key: 'client_and_period' | 'team' | 'request_list' | 'acceptance' | 'independence_conclusion' | 'independence' | 'letter' | 'client_contacts';
-    /**
-     * Label
-     */
-    label: string;
-    /**
-     * Next
-     */
-    next: string | null;
-    /**
-     * Reason
-     */
-    reason: string | null;
-    /**
-     * State
-     */
-    state: 'done' | 'waiting' | 'blocked' | 'warning' | 'not_needed';
-};
-
-/**
  * SeverityIn
  */
 export type SeverityIn = {
@@ -30388,28 +30174,6 @@ export type AbacusModulesConnectionsRoutesStartIn = {
 };
 
 /**
- * ConfirmationOut
- */
-export type AbacusModulesEngagementsAcceptanceContractConfirmationOut = {
-    /**
-     * Answered At
-     */
-    answered_at?: string | null;
-    /**
-     * Confirmation
-     */
-    confirmation: 'requested' | 'confirmed' | 'declined';
-    /**
-     * Engagement Id
-     */
-    engagement_id: string;
-    /**
-     * User Id
-     */
-    user_id: string;
-};
-
-/**
  * EqrOut
  */
 export type AbacusModulesEngagementsAcceptanceContractEqrOut = {
@@ -30425,36 +30189,6 @@ export type AbacusModulesEngagementsAcceptanceContractEqrOut = {
      * Engagement Id
      */
     engagement_id: string;
-    /**
-     * User Id
-     */
-    user_id: string;
-};
-
-/**
- * ConfirmationOut
- */
-export type AbacusModulesEngagementsRoutesConfirmationOut = {
-    /**
-     * Answered At
-     */
-    answered_at: string | null;
-    /**
-     * Before Act 1
-     */
-    before_act_1: boolean;
-    /**
-     * Display Name
-     */
-    display_name: string;
-    /**
-     * Note
-     */
-    note: string | null;
-    /**
-     * Status
-     */
-    status: 'requested' | 'confirmed' | 'declined';
     /**
      * User Id
      */
@@ -36615,58 +36349,6 @@ export type GetAcceptanceResponses = {
 
 export type GetAcceptanceResponse = GetAcceptanceResponses[keyof GetAcceptanceResponses];
 
-export type AcceptanceData = {
-    body: AcceptanceIn;
-    headers?: {
-        /**
-         * Authorization
-         */
-        authorization?: string | null;
-        /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-    };
-    path: {
-        /**
-         * Engagement Id
-         */
-        engagement_id: string;
-    };
-    query?: never;
-    url: '/v1/engagements/{engagement_id}/acceptance';
-};
-
-export type AcceptanceErrors = {
-    /**
-     * Not authenticated
-     */
-    401: ErrorOut;
-    /**
-     * Forbidden
-     */
-    403: ErrorOut;
-    /**
-     * Not found
-     */
-    404: ErrorOut;
-    /**
-     * Invalid request
-     */
-    422: ValidationErrorOut;
-};
-
-export type AcceptanceError = AcceptanceErrors[keyof AcceptanceErrors];
-
-export type AcceptanceResponses = {
-    /**
-     * Successful Response
-     */
-    200: SetupOut;
-};
-
-export type AcceptanceResponse = AcceptanceResponses[keyof AcceptanceResponses];
-
 export type PutAcceptanceAnswersData = {
     body: AcceptanceAnswersIn;
     headers?: {
@@ -41879,58 +41561,6 @@ export type GetIndependenceResponses = {
 
 export type GetIndependenceResponse = GetIndependenceResponses[keyof GetIndependenceResponses];
 
-export type IndependenceData = {
-    body: IndependenceIn;
-    headers?: {
-        /**
-         * Authorization
-         */
-        authorization?: string | null;
-        /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-    };
-    path: {
-        /**
-         * Engagement Id
-         */
-        engagement_id: string;
-    };
-    query?: never;
-    url: '/v1/engagements/{engagement_id}/independence';
-};
-
-export type IndependenceErrors = {
-    /**
-     * Not authenticated
-     */
-    401: ErrorOut;
-    /**
-     * Forbidden
-     */
-    403: ErrorOut;
-    /**
-     * Not found
-     */
-    404: ErrorOut;
-    /**
-     * Invalid request
-     */
-    422: ValidationErrorOut;
-};
-
-export type IndependenceError = IndependenceErrors[keyof IndependenceErrors];
-
-export type IndependenceResponses = {
-    /**
-     * Successful Response
-     */
-    200: SetupOut;
-};
-
-export type IndependenceResponse = IndependenceResponses[keyof IndependenceResponses];
-
 export type LogBreachData = {
     body: BreachIn;
     headers?: {
@@ -42150,7 +41780,7 @@ export type ConfirmIndependenceResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesEngagementsAcceptanceContractConfirmationOut;
+    200: ConfirmationOut;
 };
 
 export type ConfirmIndependenceResponse = ConfirmIndependenceResponses[keyof ConfirmIndependenceResponses];
@@ -42206,7 +41836,7 @@ export type DeclineIndependenceResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesEngagementsAcceptanceContractConfirmationOut;
+    200: ConfirmationOut;
 };
 
 export type DeclineIndependenceResponse = DeclineIndependenceResponses[keyof DeclineIndependenceResponses];
@@ -42426,58 +42056,6 @@ export type GetRotationResponses = {
 };
 
 export type GetRotationResponse = GetRotationResponses[keyof GetRotationResponses];
-
-export type LetterData = {
-    body: LetterIn;
-    headers?: {
-        /**
-         * Authorization
-         */
-        authorization?: string | null;
-        /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-    };
-    path: {
-        /**
-         * Engagement Id
-         */
-        engagement_id: string;
-    };
-    query?: never;
-    url: '/v1/engagements/{engagement_id}/letter';
-};
-
-export type LetterErrors = {
-    /**
-     * Not authenticated
-     */
-    401: ErrorOut;
-    /**
-     * Forbidden
-     */
-    403: ErrorOut;
-    /**
-     * Not found
-     */
-    404: ErrorOut;
-    /**
-     * Invalid request
-     */
-    422: ValidationErrorOut;
-};
-
-export type LetterError = LetterErrors[keyof LetterErrors];
-
-export type LetterResponses = {
-    /**
-     * Successful Response
-     */
-    200: SetupOut;
-};
-
-export type LetterResponse = LetterResponses[keyof LetterResponses];
 
 export type AmendLetterData = {
     body?: never;
@@ -49885,58 +49463,6 @@ export type SelfJoinResponses = {
 
 export type SelfJoinResponse = SelfJoinResponses[keyof SelfJoinResponses];
 
-export type SetupData = {
-    body?: never;
-    headers?: {
-        /**
-         * Authorization
-         */
-        authorization?: string | null;
-        /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-    };
-    path: {
-        /**
-         * Engagement Id
-         */
-        engagement_id: string;
-    };
-    query?: never;
-    url: '/v1/engagements/{engagement_id}/setup';
-};
-
-export type SetupErrors = {
-    /**
-     * Not authenticated
-     */
-    401: ErrorOut;
-    /**
-     * Forbidden
-     */
-    403: ErrorOut;
-    /**
-     * Not found
-     */
-    404: ErrorOut;
-    /**
-     * Invalid request
-     */
-    422: ValidationErrorOut;
-};
-
-export type SetupError = SetupErrors[keyof SetupErrors];
-
-export type SetupResponses = {
-    /**
-     * Successful Response
-     */
-    200: SetupOut;
-};
-
-export type SetupResponse = SetupResponses[keyof SetupResponses];
-
 export type TeamData = {
     body?: never;
     headers?: {
@@ -56201,55 +55727,6 @@ export type SearchClientsResponses = {
 };
 
 export type SearchClientsResponse = SearchClientsResponses[keyof SearchClientsResponses];
-
-export type MyConfirmationsData = {
-    body?: never;
-    headers?: {
-        /**
-         * Authorization
-         */
-        authorization?: string | null;
-        /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-    };
-    path?: never;
-    query?: never;
-    url: '/v1/firm/confirmations';
-};
-
-export type MyConfirmationsErrors = {
-    /**
-     * Not authenticated
-     */
-    401: ErrorOut;
-    /**
-     * Forbidden
-     */
-    403: ErrorOut;
-    /**
-     * Not found
-     */
-    404: ErrorOut;
-    /**
-     * Invalid request
-     */
-    422: ValidationErrorOut;
-};
-
-export type MyConfirmationsError = MyConfirmationsErrors[keyof MyConfirmationsErrors];
-
-export type MyConfirmationsResponses = {
-    /**
-     * Response My Confirmations
-     *
-     * Successful Response
-     */
-    200: Array<OpenConfirmationOut>;
-};
-
-export type MyConfirmationsResponse = MyConfirmationsResponses[keyof MyConfirmationsResponses];
 
 export type ListFirmExportsData = {
     body?: never;

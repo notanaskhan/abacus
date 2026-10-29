@@ -122,7 +122,6 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/walls/{wall_id}/approve", "wall.approve"),
     ("POST", "/v1/walls/{wall_id}/remove", "wall.remove"),
     ("POST", "/v1/work-items/{work_item_id}/exports", "export.create"),
-    ("PUT", "/v1/engagements/{engagement_id}/acceptance", "acceptance.record"),
     ("PUT", "/v1/envelope-policies/{family}", "envelope_policy.manage"),
     ("PUT", "/v1/firm/ai-client-data", "firm.ai_client_data"),
     ("PUT", "/v1/firm/autonomy", "autonomy_policy.update"),

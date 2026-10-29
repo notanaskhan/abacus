@@ -1,7 +1,6 @@
 import { FlagOffState } from "@abacus/ui";
 import { createRoute, useNavigate } from "@tanstack/react-router";
 import type { JSX } from "react";
-import { FeatureGate } from "../../app-core/flags";
 import { AREAS, type Area } from "../../app-core/nav-areas";
 import { appRoute, lazyScreen } from "../root";
 
@@ -9,8 +8,7 @@ import { appRoute, lazyScreen } from "../root";
 // and so on) still has its path, and shows F-05-T19's flag-off state there: never a 404, a blank
 // page or a hidden item. When the landing screen is routed its route replaces this one.
 
-// ENG-01 (P-07-T27) behind `engagements.v2`; off, the flag-off state (P-07-T58 retired the legacy
-// index, DEC-904).
+// ENG-01 (P-07-T27), for every firm since P-07-T59 retired `engagements.v2` (DEC-905).
 const EngagementsIndex = lazyScreen(
   async () => (await import("../../screens/ENG-01")).EngagementsIndex,
 );
@@ -22,16 +20,11 @@ export const engagementsIndexRoute = createRoute({
     const navigate = useNavigate();
     return (
       <div className="flex min-h-0 flex-1 flex-col">
-        <FeatureGate
-          flag="engagements.v2"
-          fallback={<FlagOffState flag="engagements.v2" label="Engagements" />}
-        >
-          <EngagementsIndex
-            onOpen={(engagementId) => {
-              void navigate({ to: "/engagements/$engagementId", params: { engagementId } });
-            }}
-          />
-        </FeatureGate>
+        <EngagementsIndex
+          onOpen={(engagementId) => {
+            void navigate({ to: "/engagements/$engagementId", params: { engagementId } });
+          }}
+        />
       </div>
     );
   },

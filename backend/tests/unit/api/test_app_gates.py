@@ -150,7 +150,6 @@ NOT_CREATING = {
     # SPEC-024 (TASK-042): the checklist's state comes back.
     "/v1/firm/onboarding/{step}/acknowledge",
     "/v1/firm/onboarding/dismiss",
-    "/v1/engagements/{engagement_id}/independence",  # SPEC-025: returns the setup state
     "/v1/engagements/proposal",  # SPEC-025 (TASK-048): a proposal, nothing stored
     # SPEC-312 (TASK-324): a statement review's decisions applied, nothing stored
     "/v1/engagements/{engagement_id}/request-items/{item_id}/uploads/{version_id}/statement/preview",
