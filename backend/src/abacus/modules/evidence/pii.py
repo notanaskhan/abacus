@@ -49,11 +49,10 @@ from abacus.kernel.tin_patterns import scrub_tins, valid_ein, valid_itin, valid_
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.evidence.citations.matching import WordLike
 from abacus.modules.evidence.events import InboxFileExtracted, UploadChecksRecorded
+from abacus.modules.evidence.intake_sources import IntakeSource, source_of, target_type
 from abacus.modules.evidence.masking import mask_token
 from abacus.modules.evidence.models import EvidenceVersion, InboxFile
 from abacus.modules.evidence.repository import (
-    get_inbox_file,
-    get_version,
     insert_pii_regions,
     insert_scan_run,
     is_withdrawn,
@@ -63,7 +62,7 @@ from abacus.modules.evidence.repository import (
     scan_run_for,
 )
 from abacus.modules.evidence.words import WORDS_VERSION, read_page_layer
-from abacus.modules.evidence.workflow_types import INBOX, VERSION, UploadInput
+from abacus.modules.evidence.workflow_types import INBOX, INTAKE, VERSION, UploadInput
 from abacus.modules.requests.api import items_of_version
 
 _log = get_logger(__name__)
@@ -727,26 +726,27 @@ async def pii_scan_upload(given: UploadInput) -> int:
     tenant = _system(tenant_id)
     version_id = source_id if given.kind == VERSION else None
     inbox_id = source_id if given.kind == INBOX else None
+    attachment_id = source_id if given.kind == INTAKE else None
     async with tenant_session(tenant) as session:
         done = await scan_run_for(
             session,
             evidence_version_id=version_id,
             inbox_file_id=inbox_id,
+            inbox_attachment_id=attachment_id,
             detector_version=DETECTOR_VERSION,
         )
         if done is not None:
             return done.region_count
-        source = (
-            await get_version(session, source_id)
-            if version_id is not None
-            else await get_inbox_file(session, source_id)
-        )
+        source = await source_of(session, tenant, given.kind, source_id)
         if source is None:
             if version_id is not None and await is_withdrawn(session, version_id):
                 return 0  # DEC-298: nothing is derived from a withdrawn version
             raise NotFound("upload")
         extraction = await newest_extraction(
-            session, evidence_version_id=version_id, inbox_file_id=inbox_id
+            session,
+            evidence_version_id=version_id,
+            inbox_file_id=inbox_id,
+            inbox_attachment_id=attachment_id,
         )
         if extraction is not None and extraction.reason == "active_content":
             return 0  # DEC-296: kept, never read
@@ -754,6 +754,7 @@ async def pii_scan_upload(given: UploadInput) -> int:
             session,
             evidence_version_id=version_id,
             inbox_file_id=inbox_id,
+            inbox_attachment_id=attachment_id,
             extractor_version=WORDS_VERSION,
         )
     if not pages:
@@ -781,6 +782,7 @@ async def pii_scan_upload(given: UploadInput) -> int:
                 "tenant_id": tenant_id,
                 "evidence_version_id": version_id,
                 "inbox_file_id": inbox_id,
+                "inbox_attachment_id": attachment_id,
                 "derivation_id": None,
                 "page_no": item.page,
                 "bbox": [Decimal(str(v)) for v in item.box],
@@ -799,6 +801,7 @@ async def pii_scan_upload(given: UploadInput) -> int:
             tenant_id=tenant_id,
             evidence_version_id=version_id,
             inbox_file_id=inbox_id,
+            inbox_attachment_id=attachment_id,
             derivation_id=None,
             detector_version=DETECTOR_VERSION,
             pages_scanned=scanned,
@@ -810,6 +813,7 @@ async def pii_scan_upload(given: UploadInput) -> int:
             if (
                 given.announce
                 and extraction is not None
+                and not isinstance(source, IntakeSource)  # an intake file announces on filing
                 and await _announce(tx.session, source, version_id)
             ):
                 # P-03-T15: agents read only masked material, which a document with page text
@@ -825,7 +829,7 @@ async def pii_scan_upload(given: UploadInput) -> int:
                 )
         tx.record(
             "upload.pii_scanned" if first else "upload.pii_scan_exists",
-            target=Target("evidence_version" if version_id else "inbox_file", source_id),
+            target=Target(target_type(given.kind), source_id),
             after=Ref(regions=len(rows), scanned=len(scanned), not_scannable=len(unscannable)),
         )
     _log.info(

@@ -5,3 +5,6 @@ actions:
   # --- C13 home half (I-01-T02; I-01 §4.3): HOME-01 for every firm role; tiles and rows are each
   # owner's, under `visible()`; a client, the agent and the system never read Home ---
   home.read:                {firm_admin: allow, practice_leader: allow, quality_partner: allow, security_admin: allow, firm_partner: allow, firm_manager: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, specialist: allow, client_service: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny}   # GET /v1/home (DEC-404)
+  # --- K-02-T01 (DEC-1150; K-02 §4.4; C21 part A): due dates and clocks computed from the
+  # published reference sets.
+  due_date.read:              {firm_admin: allow, practice_leader: allow, quality_partner: allow, security_admin: allow, firm_partner: allow, firm_manager: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, specialist: allow, client_service: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: task_scope, system: deny}   # GET /v1/due-dates

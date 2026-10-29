@@ -17,6 +17,9 @@ group, and the pass rule's verdict (`stats.verdict`). It is written as JSON and 
 Local only: the API and Temporal targets must be loopback addresses and the environment `local`
 or `test`, and tokens are signed with the local sign-in server's key (`fakes.oidc_server`), which
 only a local API trusts. It never reaches a hosted environment, a database or AWS directly.
+Q-03-T114: before a run (not a dry run) it also applies F-01's `db_guard`: no database setting may
+point at a hosted database, and with `ABACUS_DEPLOY_LOCK_ENV` set it refuses while that
+environment's deploy lock is held, so load never lands while a hosted build or deploy is running.
 Exit codes: 0 passed, 1 the pass rule failed, 2 refused or misconfigured.
 """
 
@@ -42,6 +45,7 @@ from abacus.kernel.config import settings
 from abacus_tools.loadtest.bodies import BODIES
 from abacus_tools.loadtest.scenario import Scenario, Stream, TemporalOp, load, profile
 from abacus_tools.loadtest.stats import GroupResult, Samples, Verdict, summarise, verdict
+from abacus_tools.local import db_guard
 from abacus_tools.stack import is_loopback
 
 OUT = Path(__file__).resolve().parents[3] / ".local" / "loadtest"
@@ -70,6 +74,16 @@ def check_local(
         raise Refused(f"{base_url} is not a loopback address")
     if temporal_target is not None and not is_loopback(temporal_target):
         raise Refused(f"{temporal_target} is not a loopback address")
+
+
+def check_no_hosted_build() -> None:
+    """F-01's `db_guard` checks (Q-03-T114): no hosted database setting, no held deploy lock."""
+    found = db_guard.violations()
+    if found:
+        raise Refused(f"{', '.join(found)} points at a hosted database")
+    holder = db_guard.lock_holder()
+    if holder is not None:
+        raise Refused(f"deploy lock {holder}: wait for the deploy to finish")
 
 
 def _fill(path: str, variables: Mapping[str, str]) -> str:
@@ -370,6 +384,7 @@ def main(argv: Sequence[str]) -> int:
             args.temporal_target if scenario.temporal else None,
             starts_in=args.namespace if starts else None,
         )
+        check_no_hosted_build()
         if any("=" not in v for v in args.var):
             raise ValueError("--var takes NAME=VALUE")
         report = asyncio.run(_main(args, scenario))

@@ -128,6 +128,19 @@ CASES: list[tuple[str, dict[str, str], ConditionFacts, ConditionFacts]] = [
         ConditionFacts(reserved_holder=True),
         ConditionFacts(reserved_holder=None),
     ),
+    # K-02-T01 (DEC-1150): the firm standard's named owner, a partner member now.
+    (
+        "owner_of_target",
+        {**ALLOW, "owner_of_target": "required"},
+        ConditionFacts(owner=True),
+        ConditionFacts(owner=False),
+    ),
+    (
+        "owner_of_target",
+        {**ALLOW, "owner_of_target": "required"},
+        ConditionFacts(owner=True),
+        ConditionFacts(owner=None),
+    ),
 ]
 IDS = [f"{c[0]}-{i}" for i, c in enumerate(CASES)]
 

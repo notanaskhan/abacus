@@ -11,8 +11,6 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from html import escape
 
-from abacus.modules.reporting.render.docx import DocxBlock
-
 AS_OF = datetime(2026, 9, 14, 14, 24, tzinfo=UTC)  # E0, Mon Sep 14, 2026, 9:24 AM CT
 CONTENT_HASH = "sha256:golden-letter-v1"
 TITLE = "Engagement letter · Copperleaf Coffee Roasters, Inc."
@@ -43,13 +41,18 @@ SECTIONS: tuple[tuple[str, tuple[str, ...]], ...] = (
 )
 
 
-def blocks() -> tuple[DocxBlock, ...]:
-    out: list[DocxBlock] = [DocxBlock("heading", TITLE, 1)]
+# (kind, text, level): the renderer's harness maps these onto its DOCX blocks (abacus_tools never
+# imports a module's internals, ADR-101).
+Block = tuple[str, str, int]
+
+
+def blocks() -> tuple[Block, ...]:
+    out: list[Block] = [("heading", TITLE, 1)]
     for i, (heading, paragraphs) in enumerate(SECTIONS):
         if i > 0:
-            out.append(DocxBlock("page_break"))
-        out.append(DocxBlock("heading", heading, 2))
-        out.extend(DocxBlock("paragraph", p) for p in paragraphs)
+            out.append(("page_break", "", 1))
+        out.append(("heading", heading, 2))
+        out.extend(("paragraph", p, 1) for p in paragraphs)
     return tuple(out)
 
 

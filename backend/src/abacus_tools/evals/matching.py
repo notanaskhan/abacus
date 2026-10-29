@@ -61,13 +61,18 @@ from abacus_tools.synthetic.documents import (
     aging_schedule_xlsx,
     bank_statement_pdf,
     board_minutes_pdf,
+    census_xlsx,
     fixed_asset_schedule_xlsx,
     flyer_pdf,
+    form_1095c_pdf,
+    form_1099_div_pdf,
     insurance_certificate_pdf,
+    invoice_pdf,
     lease_pdf,
     loan_agreement_pdf,
     payroll_register_xlsx,
     receipt_pdf,
+    w2c_pdf,
 )
 
 _log = get_logger(__name__)
@@ -136,6 +141,50 @@ def _documents(year_end: date, entity: str) -> dict[str, Callable[[], bytes]]:
 
 DOCUMENTS: Final = frozenset(_documents(date(2026, 12, 31), "Example Company Inc"))
 
+# --- Intake (N-01-T21; matcher v3) ------------------------------------------------------------
+# The intake section's requests: a household's tax intake plus one audit request (the plan census),
+# so a census has a home and a tax document never lands on it. Synthetic only (ADR-085).
+INTAKE_REQUESTS: Final[dict[str, tuple[str, str]]] = {
+    "aca_1095c": ("Form 1095-C from Example Health Partners for 2025", "Health insurance"),
+    "w2": ("2025 W-2 from Example Health Partners", "Wages"),
+    "div_1099": ("2025 Form 1099-DIV from Example Securities LLC", "Investment income"),
+    "est_payments": ("2025 federal and state estimated tax payment confirmations", "Payments"),
+    "donations": ("2025 donation receipts and acknowledgment letters", "Charitable gifts"),
+    "census": ("Employee census for the 2025 plan year", "Participant data"),
+}
+_EMPLOYER: Final = "Example Health Partners"
+
+
+def _intake_documents(tax_year: int, person: str) -> dict[str, Callable[[], bytes]]:
+    """Each intake case's document. `person` is the engagement's client; the lookalike is not."""
+    return {
+        "f1095c": lambda: form_1095c_pdf(tax_year=tax_year, employer=_EMPLOYER, employee=person),
+        "f1095c_prior": lambda: form_1095c_pdf(
+            tax_year=tax_year - 1, employer=_EMPLOYER, employee=person
+        ),
+        "f1095c_lookalike": lambda: form_1095c_pdf(
+            tax_year=tax_year, employer="Example Health Partner Group", employee="Morgan Exampel"
+        ),
+        "w2c": lambda: w2c_pdf(tax_year=tax_year, employer=_EMPLOYER, employee=person),
+        "div_corrected": lambda: form_1099_div_pdf(
+            tax_year=tax_year, recipient=person, corrected=True
+        ),
+        "div_instruction": lambda: form_1099_div_pdf(
+            tax_year=tax_year, recipient=person, notes=(INJECTION,)
+        ),
+        "div_unicode": lambda: form_1099_div_pdf(
+            tax_year=tax_year,
+            recipient=person,
+            title=f"Form 1099-\u00adDIV Divi\u00addends and Distributions {tax_year}",
+        ),
+        "census": lambda: census_xlsx(plan_year=tax_year),
+        "card_receipt": lambda: receipt_pdf(dated=date(tax_year, 12, 18)),
+        "vendor_invoice": lambda: invoice_pdf(dated=date(tax_year, 12, 15)),
+    }
+
+
+INTAKE_DOCUMENTS: Final = frozenset(_intake_documents(2025, "Sam Example"))
+
 
 class Threshold(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -156,6 +205,17 @@ class MatchCase(BaseModel):
     key: bool = False
 
 
+class IntakeSection(BaseModel):
+    """N-01-T21: the intake cases, their own thresholds, run apart from the audit cases (whose
+    thresholds are unchanged). `--route fake` answers from recorded matcher answers."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    covers: frozenset[str]
+    thresholds: tuple[Threshold, ...]
+    cases: tuple[MatchCase, ...]
+
+
 class MatchSuite(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -170,6 +230,7 @@ class MatchSuite(BaseModel):
     repeats: Annotated[int, Field(ge=1, le=20)]
     cost_limit_usd: Annotated[Decimal, Field(gt=0, le=100)]
     cases: tuple[MatchCase, ...]
+    intake: IntakeSection | None = None
 
 
 @dataclass(frozen=True)
@@ -217,8 +278,42 @@ def validate(suite: MatchSuite) -> None:
         problems.append(f"the dangerous error {suite.dangerous_error!r} has no threshold")
     if not any(c.key for c in suite.cases):
         problems.append("no key case: nothing is repeated")
+    if suite.intake is not None:
+        problems.extend(_intake_problems(suite.intake, known))
     if problems:
         raise ValueError("; ".join(problems))
+
+
+def _intake_problems(intake: IntakeSection, known: frozenset[str]) -> list[str]:
+    problems = [f"intake: unknown category {c!r}" for c in sorted(intake.covers - known)]
+    covered: set[str] = set()
+    for case in intake.cases:
+        if case.document not in INTAKE_DOCUMENTS:
+            problems.append(f"intake case {case.id!r}: unknown document {case.document!r}")
+        if case.expected != NONE and case.expected not in INTAKE_REQUESTS:
+            problems.append(f"intake case {case.id!r}: unknown request {case.expected!r}")
+        covered |= case.categories
+    problems.extend(f"intake: no case covers {c!r}" for c in sorted(intake.covers - covered))
+    problems.extend(
+        f"intake: unknown metric {t.metric!r}"
+        for t in intake.thresholds
+        if t.metric not in METRICS
+    )
+    recorded = fake_matcher_answers()
+    problems.extend(
+        f"intake case {c.id!r}: no recorded answer" for c in intake.cases if c.id not in recorded
+    )
+    return problems
+
+
+FAKE_INTAKE: Final = Path(__file__).resolve().parent / "fake_answers" / "matching_intake.yaml"
+
+
+def fake_matcher_answers(path: Path = FAKE_INTAKE) -> dict[str, tuple[str, ...]]:
+    """The fake route's recorded matcher answers for the intake cases: request keys, best first,
+    or an empty list for "none fits". Never a model (N-01-T21)."""
+    raw = cast(dict[str, list[str]], yaml.safe_load(path.read_text(encoding="utf-8")) or {})
+    return {case: tuple(keys) for case, keys in raw.items()}
 
 
 # --- Metrics ------------------------------------------------------------------------------------
@@ -326,11 +421,13 @@ METRICS: Final[dict[str, Callable[[Attempts], float]]] = {
 }
 
 
-def verdict(suite: MatchSuite, attempts: Attempts) -> tuple[str, list[str], dict[str, float]]:
+def verdict(
+    suite: MatchSuite, attempts: Attempts, thresholds: Sequence[Threshold] | None = None
+) -> tuple[str, list[str], dict[str, float]]:
     metrics = {name: round(fn(attempts), 4) for name, fn in METRICS.items()}
     reasons = [
         f"{t.metric}:{metrics[t.metric]}<{t.minimum}"
-        for t in suite.thresholds
+        for t in (suite.thresholds if thresholds is None else thresholds)
         if metrics[t.metric] < t.minimum
     ]
     costs = [s.cost_usd for _, s in attempts if s.stage != "errored"]
@@ -352,11 +449,11 @@ class Fixture:
     entity: str
 
 
-async def fixture(world: Seeded) -> Fixture:
-    """The engagement's 14 requests, created once per run."""
+async def fixture(world: Seeded, requests: dict[str, tuple[str, str]] = REQUESTS) -> Fixture:
+    """The engagement's requests (the audit 14, or the intake section's), created once per run."""
     ctx = world.context()
     keys: dict[uuid.UUID, str] = {}
-    for key, (description, area) in REQUESTS.items():
+    for key, (description, area) in requests.items():
         item = await add_request_item(ctx, world.engagement, NewRequestItem(description, area))
         keys[item.id] = key
     facts = await check_facts(TenantContext(world.tenant, "system", "evals"), world.engagement)
@@ -388,15 +485,28 @@ def _keys(ids: Sequence[uuid.UUID], known: dict[uuid.UUID, str]) -> tuple[str, .
 
 
 async def attempt(
-    case: MatchCase, n: int, world: Seeded, fx: Fixture, stack: Stack, tier: Tier, route: str
+    case: MatchCase,
+    n: int,
+    world: Seeded,
+    fx: Fixture,
+    stack: Stack,
+    tier: Tier,
+    route: str,
+    *,
+    intake: bool = False,
+    recorded: dict[str, tuple[str, ...]] | None = None,
 ) -> Seen:
     seen: list[ModelRequest] = []
     said: list[str] = []
-    configure_route(route, Recording(route_provider(route), seen, said))  # pyright: ignore[reportArgumentType] -- a validated route name
+    if recorded is None:
+        configure_route(route, Recording(route_provider(route), seen, said))  # pyright: ignore[reportArgumentType] -- a validated route name
     run_id: uuid.UUID | None = None
     try:
         ctx = world.context()
-        content = unique_bytes(case.name, _documents(fx.year_end, fx.entity)[case.document]())
+        documents = (
+            _intake_documents(2025, fx.entity) if intake else _documents(fx.year_end, fx.entity)
+        )
+        content = unique_bytes(case.name, documents[case.document]())
         added = await add_to_inbox(ctx, world.engagement, file_name=case.name, content=content)
         given = UploadInput(str(world.tenant), UPLOAD_INBOX, str(added.id))
         await process_upload(given)
@@ -416,6 +526,23 @@ async def attempt(
         )
         if not material.worth_matching:
             return Seen(case.id, n, "skipped", by_name, by_content, (), by_content)
+        if recorded is not None:
+            # The fake route (N-01-T21): the recorded matcher answer stands in for the model; the
+            # extraction, the content rules and the file-name baseline above ran for real.
+            answer = recorded.get(case.id, ())
+            pipeline = (answer + tuple(k for k in by_content if k not in answer)) if answer else ()
+            return Seen(
+                case.id,
+                n,
+                "matched",
+                by_name,
+                by_content,
+                answer,
+                pipeline,
+                not answer,
+                True,
+                True,
+            )
         run_id = await create_match_run(world.tenant, added.id, uuid.uuid4(), world.user)
         if run_id is None:
             raise RuntimeError("no match run was created")
@@ -497,35 +624,54 @@ async def attempt(
             case.id, n, "errored", cost_usd=cost, error=f"{type(exc).__name__}: {exc}"[:300]
         )
     finally:
-        configure_route(route, None)  # pyright: ignore[reportArgumentType] -- a validated route name
+        if recorded is None:
+            configure_route(route, None)  # pyright: ignore[reportArgumentType] -- a validated route name
 
 
 async def evaluate(
-    stack: Stack, world: Seeded, suite: MatchSuite, tier: Tier, route: str, out: Path
+    stack: Stack,
+    world: Seeded,
+    suite: MatchSuite,
+    tier: Tier,
+    route: str,
+    out: Path,
+    section: str = "audit",
 ) -> dict[str, object]:
-    """Every case (key cases `repeats` times), stopping before the cost limit; writes a report."""
+    """Every case of the section (key cases `repeats` times), stopping before the cost limit;
+    writes a report. The intake section on `--route fake` uses the recorded matcher answers."""
     validate(suite)
     started = system_now()
-    fx = await fixture(world)
+    intake = section == "intake"
+    if intake and suite.intake is None:
+        raise ValueError("the suite has no intake section")
+    cases = suite.intake.cases if intake and suite.intake is not None else suite.cases
+    thresholds = suite.intake.thresholds if intake and suite.intake is not None else None
+    recorded = fake_matcher_answers() if route == "fake" else None
+    if recorded is not None and not intake:
+        raise ValueError("only the intake section has recorded answers")
+    fx = await fixture(world, INTAKE_REQUESTS if intake else REQUESTS)
     attempts: list[tuple[MatchCase, Seen]] = []
     total, aborted = Decimal(0), False
     budget = spec(MATCHER).limits.max_cost_usd
-    for case in suite.cases:
-        for n in range(1, (suite.repeats if case.key else 1) + 1):
+    for case in cases:
+        for n in range(1, (suite.repeats if case.key and recorded is None else 1) + 1):
             if total + budget > suite.cost_limit_usd:
                 aborted = True
                 break
-            result = await attempt(case, n, world, fx, stack, tier, route)
+            result = await attempt(
+                case, n, world, fx, stack, tier, route, intake=intake, recorded=recorded
+            )
             total += result.cost_usd
             attempts.append((case, result))
             _log.info(
                 "eval.match.attempt", case=case.id, stage=result.stage, top=result.pipeline[:1]
             )
-    status, reasons, metrics = verdict(suite, attempts)
+    status, reasons, metrics = verdict(suite, attempts, thresholds)
     if aborted:
         status, reasons = "aborted_cost", [*reasons, "cost_limit"]
     report: dict[str, object] = {
         "agent": suite.agent,
+        "section": section,
         "suite_version": suite.version,
         "prompt": spec(MATCHER).prompt,
         "model": model_id(tier, route),  # pyright: ignore[reportArgumentType] -- a validated route name

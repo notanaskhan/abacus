@@ -1,5 +1,5 @@
 import { publishPortalSettings } from "@abacus/api-client";
-import { AppShell } from "@abacus/ui";
+import { AppShell, toast } from "@abacus/ui";
 import { type JSX, useEffect, useState } from "react";
 import { installFixtureMode } from "../app-core/fixture-mode";
 import { useSession } from "../app-core/session";
@@ -65,6 +65,14 @@ import {
   scenarios as sig01Scenarios,
 } from "./SIG-01/scenarios";
 import { INB01 } from "./INB-01";
+import { INB02 } from "./INB-02";
+import { COPY as INB02_COPY } from "./INB-02/copy";
+import {
+  type Inb02State,
+  STATES as INB02_STATES,
+  messageOf as inb02MessageOf,
+  scenarios as inb02Scenarios,
+} from "./INB-02/scenarios";
 import {
   OPENS as INB01_OPENS,
   STATES as INB01_STATES,
@@ -234,6 +242,13 @@ import { PortalRequest } from "./POR-04";
 import { PortalRoom } from "./POR-14";
 import { PortalConnections } from "./POR-16";
 import { KNW02 } from "./KNW-02";
+import { KNW04 } from "./KNW-04";
+import {
+  type Knw04State,
+  OPENS as KNW04_OPENS,
+  STATES as KNW04_STATES,
+  scenarios as knw04Scenarios,
+} from "./KNW-04/scenarios";
 import {
   type Knw02State,
   STATES as KNW02_STATES,
@@ -301,6 +316,20 @@ import {
   type Shl20State,
   scenarios as shl20Scenarios,
 } from "./SHL-20/scenarios";
+import { ApproveSheet } from "./SHL-10";
+import {
+  OPENS as SHL10_OPENS,
+  STATES as SHL10_STATES,
+  type Shl10State,
+  scenarios as shl10Scenarios,
+} from "./SHL-10/scenarios";
+import { EnvelopeBuilder } from "./SIG-02";
+import {
+  OPENS as SIG02_OPENS,
+  STATES as SIG02_STATES,
+  type Sig02State,
+  scenarios as sig02Scenarios,
+} from "./SIG-02/scenarios";
 import { RequestComposer } from "./SHL-14";
 import {
   OPENS as SHL14_OPENS,
@@ -765,7 +794,7 @@ function Adm07Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("ADM-07", { title: "Audit log explorer", Component: Adm07Artboard });
 
-// N-02-T11: SIG-01 · Signatures hub (a–g; r's Import sheet lands with N-02-T15, DEC-827).
+// N-02-T11: SIG-01 · Signatures hub (a–g); f's reminder and r's Import sheet with N-02-T15.
 function Sig01Frame({ state }: { state: Sig01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
   const bar = useFirmToolbar({
@@ -778,7 +807,12 @@ function Sig01Frame({ state }: { state: Sig01State }): JSX.Element {
   return (
     <div data-artboard={state}>
       <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
-        <SIG01 initialTab={open.tab} initialEnvelope={open.envelope} />
+        <SIG01
+          initialTab={open.tab}
+          initialEnvelope={open.envelope}
+          initialChecked={open.checked ?? []}
+          initialImport={open.importing ?? false}
+        />
       </AppShell>
     </div>
   );
@@ -842,6 +876,59 @@ function Inb01Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("INB-01", { title: "Inbox", Component: Inb01Artboard });
+
+// N-01-T15: INB-02 · Attachment triage & File-to, the O3 sheet over INB-01 (a–g, a2; DEC-1062).
+function Inb02Frame({ state }: { state: Inb02State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/inbox" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  const message = inb02MessageOf(state);
+  useEffect(() => {
+    if (state !== "f") return;
+    toast.show({ kind: "success", text: INB02_COPY.toast(1, 1, 0, ["Kevin Osei"]) });
+  }, [state]);
+  return (
+    <div data-artboard={state}>
+      <INB01
+        frame
+        toolbar={bar.toolbar}
+        initialThread={INB01_OPENS[state === "f" ? "d" : "a"] ?? null}
+      />
+      {state !== "f" && (
+        <INB02
+          messageId={message.id}
+          subject={message.subject}
+          sender={message.sender}
+          startDirty={state === "a2"}
+          onClose={() => undefined}
+        />
+      )}
+    </div>
+  );
+}
+
+function Inb02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Inb02State = INB02_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      inb02Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Inb02Frame key={state} state={state} /> : null;
+}
+
+registerScreen("INB-02", { title: "Attachment triage & File-to", Component: Inb02Artboard });
 
 function Adm04Frame({ state }: { state: Adm04State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
@@ -1466,6 +1553,61 @@ function Cli08Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("CLI-08", { title: "Independence & conflicts", Component: Cli08Artboard });
 
+// SHL-10 (P-04-T41): the approve-agent-output sheet, a, b, c and f, over an empty frame.
+function Shl10Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Shl10State = SHL10_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      shl10Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div key={state} data-artboard={state} className="h-[900px]">
+      <ApproveSheet
+        proposalRef={SHL10_OPENS[state].ref}
+        initialMode={SHL10_OPENS[state].mode}
+        open
+        onOpenChange={() => undefined}
+      />
+    </div>
+  );
+}
+
+registerScreen("SHL-10", { title: "Approve agent output", Component: Shl10Artboard });
+
+// SIG-02 (N-02-T21): the envelope builder, a, e and f, over an empty frame.
+function Sig02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Sig02State = SIG02_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      sig02Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div key={state} data-artboard={state} className="h-[900px]">
+      <EnvelopeBuilder envelopeId={SIG02_OPENS[state]} open onOpenChange={() => undefined} />
+    </div>
+  );
+}
+
+registerScreen("SIG-02", { title: "Envelope builder", Component: Sig02Artboard });
+
 // SHL-14 (P-06-T13, T24): the request composer drawer, opened over an empty frame.
 function Shl14Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Shl14State = SHL14_STATES.find((s) => s === params.st) ?? "a";
@@ -1855,6 +1997,44 @@ registerScreen("KNW-02", {
   title: "Methodology versions & import review",
   Component: Knw02Artboard,
 });
+
+// KNW-04 a–h (K-02-T13): the T12 standards page in the firm shell (Knowledge active), each state
+// on its section.
+function Knw04Frame({ state }: { state: Knw04State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/knowledge/standards" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+        <KNW04 initial={KNW04_OPENS[state]} />
+      </AppShell>
+    </div>
+  );
+}
+
+function Knw04Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Knw04State = KNW04_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      knw04Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Knw04Frame key={state} state={state} /> : null;
+}
+
+registerScreen("KNW-04", { title: "Firm standards & thresholds", Component: Knw04Artboard });
 
 registerScreen("POR-20", {
   title: "Transactional email templates · Reminder",

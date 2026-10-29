@@ -53,10 +53,10 @@ CONTRACT_ROUTES = {
 }
 
 
-def _ctx(*, client: bool = False, kind: str = "human") -> AuthContext:
+def _ctx(*, client: bool = False) -> AuthContext:
     user = uuid.uuid4()
     return AuthContext(
-        TenantContext(uuid.uuid4(), kind, str(user)),
+        TenantContext(uuid.uuid4(), "human", str(user)),
         user,
         uuid.uuid4(),
         None,

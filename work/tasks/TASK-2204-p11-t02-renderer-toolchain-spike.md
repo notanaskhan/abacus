@@ -60,10 +60,19 @@ the image, so the in-process test compares two runs and the committed hash is ch
   `two_containers.sh`); `make golden-render`; the CI job `render-golden` in the stage-2 gate.
   The goldens are recorded at the S17 end review's first green two-container run
   (`RECORD_GOLDEN=1`).
+- `2026-10-30` — End review. **Spike finding:** WOFF faces through `@font-face` left fontconfig
+  with no fonts and Pango crashed (exit 139). Fixed by vendoring TrueType faces converted with
+  fontTools from the same @fontsource 5.3.0 WOFF files, listed by `fonts.conf`
+  (`<dir prefix="relative">.</dir>`, no system directory). **Result:** `make golden-render` renders
+  the three-page letter byte-identically in two fresh `--network none` containers: PDF
+  `283cbed1…`, DOCX `b1c8f354…`; recorded in `tests/golden_render/letter.*.sha256`; the in-image
+  suite passes 8/8 (dates from `as_of`, URL refusals incl. the metadata address, `file:`, `data:`,
+  unknown asset). AC-30 met in two containers; the CI half runs with the `render-golden` job.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
 | WOFF faces from the @fontsource packages already locked for the web app | same font binaries as the UI's, licences included, no download | no |
 | The golden suite lives in `tests/golden_render/`, run only in the image (`make golden-render`, CI job) | WeasyPrint's native libraries exist only in the pinned image; a host run would test the wrong Pango | no |
+| TrueType through fontconfig, not WOFF through @font-face | fontconfig cannot read WOFF and Pango crashes with no font | no |
 | apt pins equal the digest-pinned base's candidates | the weekly base refresh moves them together with a re-baseline (ADR-320 §8) | no |

@@ -55,6 +55,16 @@ LIFECYCLE_LIVE: dict[tuple[str, str], tuple[str, Flag]] = {
         METHODOLOGY_LIFECYCLE,
     ),
 }
+# K-01-T12 (TASK-2122): KNW-03's reads, the citation resolve and the export are live.
+PROGRAMS_LIVE: frozenset[tuple[str, str]] = frozenset(
+    {
+        ("get", "/v1/methodology/versions/{version_id}/programs"),
+        ("get", "/v1/methodology/programs/{program_id}"),
+        ("get", "/v1/methodology/programs/{program_id}/steps"),
+        ("get", "/v1/methodology/steps/resolve"),
+        ("get", "/v1/methodology/versions/{version_id}/export.xlsx"),
+    }
+)
 ROUTES: dict[tuple[str, str], tuple[str, Flag]] = {
     ("post", "/v1/methodology/versions/{version_id}/drafts"): (
         "methodology.manage",
@@ -65,16 +75,6 @@ ROUTES: dict[tuple[str, str], tuple[str, Flag]] = {
         METHODOLOGY_PROGRAMS,
     ),
     # K-01-T07 (DEC-957): KNW-02's Programs tree, stubbed for K-01-T12.
-    ("get", "/v1/methodology/versions/{version_id}/programs"): (
-        "methodology.read",
-        METHODOLOGY_PROGRAMS,
-    ),
-    ("get", "/v1/methodology/programs/{program_id}"): ("methodology.read", METHODOLOGY_PROGRAMS),
-    ("get", "/v1/methodology/programs/{program_id}/steps"): (
-        "methodology.read",
-        METHODOLOGY_PROGRAMS,
-    ),
-    ("get", "/v1/methodology/steps/resolve"): ("methodology.read", METHODOLOGY_PROGRAMS),
     ("patch", "/v1/methodology/versions/{version_id}/steps/{step_id}"): (
         "methodology.manage",
         METHODOLOGY_PROGRAMS,
@@ -91,10 +91,6 @@ ROUTES: dict[tuple[str, str], tuple[str, Flag]] = {
         "methodology.approve",
         METHODOLOGY_PROGRAMS,
     ),
-    ("get", "/v1/methodology/versions/{version_id}/export.xlsx"): (
-        "methodology.read",
-        METHODOLOGY_PROGRAMS,
-    ),
 }
 ENDPOINTS: list[tuple[str, Callable[..., Awaitable[object]], Flag]] = []
 for _router in (
@@ -104,7 +100,7 @@ for _router in (
     for _route in _router.routes:
         assert isinstance(_route, APIRoute)
         _method = next(iter(_route.methods or {"GET"})).lower()
-        if (_method, _route.path) in LIFECYCLE_LIVE:
+        if (_method, _route.path) in LIFECYCLE_LIVE or (_method, _route.path) in PROGRAMS_LIVE:
             continue
         ENDPOINTS.append(
             (
@@ -282,3 +278,10 @@ def test_the_spec008_rows_live_in_the_methodology_matrix_file() -> None:
     assert {"methodology.read", "methodology.manage", "methodology.approve"} <= set(mine)
     theirs = cast(Json, yaml.safe_load((MATRIX / "engagements.yaml").read_text())["actions"])
     assert not {a for a in theirs if a.startswith("methodology.")}
+
+
+@pytest.mark.parametrize(("method", "path"), sorted(PROGRAMS_LIVE))
+def test_k01t12_the_programs_reads_are_live(method: str, path: str) -> None:
+    op = PATHS[path][method]
+    assert op["x-abacus-action"] == "methodology.read"
+    assert "501" not in cast(Json, op["responses"])
