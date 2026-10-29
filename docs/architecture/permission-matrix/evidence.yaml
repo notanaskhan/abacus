@@ -118,3 +118,6 @@ actions:
   # --- Files browser v1 (N-01-T02 stub; N-01 §4.4; ADR-158; FIL-01 read-only) ---
   evidence.read_metadata:   {firm_admin: allow, practice_leader: allow, security_admin: allow, quality_partner: in_scope, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, client_service: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny}   # tree, folders, drawer; content fields need evidence.read (DV-11)
   evidence.read_access_log: {engagement_partner: allow, manager: allow, senior: allow, staff: allow, security_admin: allow, quality_partner: in_scope, agent: deny, system: deny}   # the drawer's access-log card
+  # T-02-T03 (DEC-1162): a client channel's duplicate upload, kept or discarded by a person
+  # (unaccepted versions only, in the service).
+  evidence.resolve_duplicate: {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny}

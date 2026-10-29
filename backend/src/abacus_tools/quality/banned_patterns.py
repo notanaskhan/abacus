@@ -2171,6 +2171,15 @@ def _check_tax_final_approval(src: SourceFile) -> Iterator[Finding]:
             yield Finding(call.lineno, "a final_approval sign-off outside tax/approval.py")
 
 
+# T-02-T03 (T-02 §4.10): only tax/k1_release.py writes a K-1 release (approval grant, Undo
+# window, the human-only CHECK); no other product file names the releases table.
+def _check_k1_release(src: SourceFile) -> Iterator[Finding]:
+    for node in ast.walk(src.tree):
+        text = node.value if isinstance(node, ast.Constant) else None
+        if isinstance(text, str) and re.search(r"\bk1_releases\b", text):
+            yield Finding(getattr(node, "lineno", 0), "k1_releases outside tax/k1_release.py")
+
+
 RULES: list[Rule | TreeRule] = [
     Rule(
         id="UOW-001",
@@ -2922,6 +2931,14 @@ RULES: list[Rule | TreeRule] = [
         check=_check_tax_final_approval,
         include=("src/abacus/modules/tax/*", "src/abacus/modules/integrations/*"),
         exclude=("src/abacus/modules/tax/approval.py",),
+    ),
+    Rule(
+        id="K1RELEASE-001",
+        description="Only tax/k1_release.py writes a K-1 release",
+        adr="T-02 §4.10, ADR-005",
+        check=_check_k1_release,
+        include=("src/abacus/*",),
+        exclude=("src/abacus/modules/tax/k1_release.py", "src/abacus/modules/tax/registry.py"),
     ),
     Rule(
         id="ANY-001",

@@ -1699,6 +1699,7 @@ codes:
     - abacus.modules.platform.safeguards.SafeguardsStale
     - abacus.modules.portal.settings.SettingsStale
     - abacus.modules.review.gate_actions.GateStaleVersion
+    - abacus.modules.tax.status.StaleReturn
     summary: 'The record changed since it was read: read it again (409).'
   statement_already_approved:
     status: 409
@@ -1844,6 +1845,11 @@ codes:
     - abacus.modules.organisations.tin.TinKindNotAllowed
     summary: An SSN or ITIN can't be stored for a firm that isn't synthetic until the §7216 consent gate
       (C19) lands; an EIN can (P-07 OQ-4, DEC-52).
+  transition_refused:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.status.TransitionRefused
+    summary: '409: the table holds no move from this status on this event.'
   trial_balance_exists:
     status: 409
     raised_by:

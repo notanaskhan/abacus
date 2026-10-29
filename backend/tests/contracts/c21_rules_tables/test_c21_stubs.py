@@ -141,9 +141,9 @@ def _ctx(*, client: bool = False) -> AuthContext:
 
 def test_inv4_a_client_principal_gets_404_before_anything() -> None:
     for stub in (
-        standards_contract._stub(_ctx(client=True), "firm_standard.read"),  # pyright: ignore[reportPrivateUsage]
-        reference_sets_contract._stub(_ctx(client=True)),  # pyright: ignore[reportPrivateUsage]
-        due_dates_contract._stub(_ctx(client=True)),  # pyright: ignore[reportPrivateUsage]
+        standards_contract._stub(_ctx(client=True), "firm_standard.read"),  # pyright: ignore[reportPrivateUsage] -- the stub's order of checks, read directly
+        reference_sets_contract._stub(_ctx(client=True)),  # pyright: ignore[reportPrivateUsage] -- the stub's order of checks, read directly
+        due_dates_contract._stub(_ctx(client=True)),  # pyright: ignore[reportPrivateUsage] -- the stub's order of checks, read directly
     ):
         with pytest.raises(NotFound):
             asyncio.run(stub)
@@ -171,7 +171,7 @@ def test_ac5_flag_off_is_404_and_on_is_501(
 
         monkeypatch.setattr(module, "flag_enabled", enabled)
         with pytest.raises(error):
-            asyncio.run(module._stub(_ctx()))  # type: ignore[attr-defined]
+            asyncio.run(module._stub(_ctx()))  # type: ignore[attr-defined] -- each contract module defines _stub
 
 
 def test_ac5_the_standards_flag_gates_the_standards_routes(
@@ -189,7 +189,7 @@ def test_ac5_the_standards_flag_gates_the_standards_routes(
 
         monkeypatch.setattr(standards_contract, "flag_enabled", enabled)
         with pytest.raises(error):
-            asyncio.run(standards_contract._stub(_ctx(), "firm_standard.publish"))  # pyright: ignore[reportPrivateUsage]
+            asyncio.run(standards_contract._stub(_ctx(), "firm_standard.publish"))  # pyright: ignore[reportPrivateUsage] -- the stub's order of checks, read directly
 
 
 PART_A = (

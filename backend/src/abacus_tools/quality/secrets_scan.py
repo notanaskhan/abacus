@@ -59,6 +59,11 @@ ALLOW: tuple[tuple[str, str, str], ...] = (
         "K-01-T12: methodology step keys (bh-ebp-110-4) bound as `:key`, not credentials",
     ),
     (
+        "apps/web/src/fixtures/seed/standards.ts",
+        "SECRET-003",
+        "K-02-T13: firm standard keys (bh-tax-02), the standards' identifiers, not credentials",
+    ),
+    (
         "docs/design/parity-manifest.json",
         "PII-003",
         "SHA-256 digests of handoff screenshots: a hex digest can hold a Luhn-valid run of"

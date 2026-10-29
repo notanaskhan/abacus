@@ -1,8 +1,8 @@
 ---
 id: TASK-2134
 title: Q-03-T093 Contract-test upkeep 2027 Q2 (N-provided contracts)
-spec: docs/contracts/README.md
-acceptance_criteria: [backlog row]
+spec: SPEC-000  # Q-03-T093 row; docs/contracts/README.md
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: amber
 status: in-review
 epic: Q-03
