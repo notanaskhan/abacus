@@ -44,16 +44,17 @@ function KvValue({
       </button>
     );
   }
-  return <span className="min-w-0 truncate text-right text-body text-ink tabular-nums">{row.value}</span>;
+  return (
+    <span className="min-w-0 truncate text-right text-body text-ink tabular-nums">
+      {row.value}
+    </span>
+  );
 }
 
 function LitRow({ id, children }: { id: MatchId; children: JSX.Element[] }): JSX.Element {
   const { bind } = useMatch(id);
   return (
-    <li
-      {...bind}
-      className={cn(ROW, "transition-colors duration-[360ms] data-[lit]:bg-match-bg")}
-    >
+    <li {...bind} className={cn(ROW, "transition-colors duration-[360ms] data-[lit]:bg-match-bg")}>
       {children}
     </li>
   );
