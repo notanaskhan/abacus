@@ -2227,6 +2227,10 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_tenancy.py",
             "tests/integration/test_schema_check_db.py",
             "tests/integration/test_migrations_env.py",
+            # K-02-T03/T04, T-01-T08: the schema tests of 0400 to 0402 (owner, app, superuser).
+            "tests/integration/backfill/test_k02t03_reference_sets.py",
+            "tests/integration/backfill/test_k02t04_firm_standards.py",
+            "tests/integration/backfill/test_t01t08_consents.py",
             "tests/integration/test_unit_of_work.py",
             "tests/integration/test_outbox_relay.py",
             "tests/integration/test_identity.py",
@@ -2416,6 +2420,9 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus_tools/staging_personas.py",
             # F-04-T13: bootstrap writes carry the event's tenant, actor and business time.
             "src/abacus_tools/synthetic/scenarios/brightwater_hale/loader.py",
+            # K-02-T04, T-01-T08: the schema tests of 0401 and 0402 act as the app.
+            "tests/integration/backfill/test_k02t04_firm_standards.py",
+            "tests/integration/backfill/test_t01t08_consents.py",
             "tests/integration/test_tenancy.py",
             # P-04-T05: `Seeder.as_actor` drives the database's own actor and clock checks.
             "tests/integration/agent_tests/support.py",
