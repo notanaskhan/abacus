@@ -4,7 +4,7 @@ title: Autonomy policy and the onboarding checklist
 spec: SPEC-024
 acceptance_criteria: [AC-5, AC-7, AC-8]
 risk_zone: red
-status: superseded
+status: done
 branch: task-042-autonomy-checklist
 worktree:
 created: 2026-10-09
