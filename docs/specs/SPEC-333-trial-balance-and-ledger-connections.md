@@ -140,6 +140,7 @@ Built = already on the branch base; the row named finishes the criterion.
 - **AC-49** A catalogue row whose adapter is not registered is never listed as available. *T12.*
 - **AC-50** `execute_write` is refused `write_capability_refused` and audited; a hand edit of `_capabilities.py` fails the drift test; a W1-shaped entry is refused for an attest client. *T15.*
 - **AC-51** Each `integration_secrets` blob is sealed with the tenant key and the owner row id as associated data; deleting it is a crypto-erase. *T12.*
+- **AC-52 Live-ledger production cutover (A-02-T33).** Production refuses a fake connector and QuickBooks Online's sandbox host at boot, and needs the one registered redirect host on the neutral portal domain (`connections_redirect_base_url`); staging and local refuse Intuit's live host; the adapter registers when the app's keys are in Secrets Manager but stays dark behind `connections.live_ledger` (default off); with the flag off for a firm a pull through a networked provider ends `connector_paused` before any credentials are read, the flag read past its cache, and a staging drill records pulls stopping within one minute (`docs/ops/live-ledger-cutover.md`).
 
 ## 6. Data
 - **0073 (built):** `trial_balances`, insert-only `trial_balance_versions` (human-only CHECK), insert-only `trial_balance_annotations`. **0074 (built):** `tie_out_checks`.
