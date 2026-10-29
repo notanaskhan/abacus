@@ -54,7 +54,12 @@ from abacus.modules.identity.authz.conditions import (
     register_gates,
     register_work_item_functions,
 )
-from abacus.modules.identity.authz.matrix import ALLOW_LETTER_EXCEPTIONS, RULES, Rule
+from abacus.modules.identity.authz.matrix import (
+    ALLOW_LETTER_EXCEPTIONS,
+    CONDITION_KEYS,
+    RULES,
+    Rule,
+)
 from abacus.modules.identity.client_access import (
     DELEGATE_ROLES,
     FULL_ROLES,
@@ -474,6 +479,7 @@ __all__ = [
     "ALLOW_LETTER_EXCEPTIONS",
     "AUTH_SESSION_PURGE_ID",
     "CODE_DIGITS",
+    "CONDITION_KEYS",  # the matrix's condition kinds, for the generator-coverage sweep (Q-03-T095)
     "DELEGATE_ROLES",
     "EQR_ROLE",
     "EQR_ROLES",
