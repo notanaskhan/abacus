@@ -1546,6 +1546,17 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "inbox_sender_rules": frozenset({"revoked_at"}),
         # N-02-T08 (0294): a staged import file is consumed once.
         "envelope_import_files": frozenset({"consumed_envelope_id"}),
+        # K-02-T04 (0401): an owner change and a draft's edit, publish or discard.
+        "firm_standards": frozenset({"name", "owner_id", "applies_to", "row_version"}),
+        "threshold_policies": frozenset({"name", "owner_id", "applies_to", "row_version"}),
+        "firm_standard_versions": frozenset(
+            {"status", "effective_from", "payload", "payload_hash", "change_summary"}
+            | {"published_by", "published_actor_kind", "published_at", "row_version"}
+        ),
+        "threshold_policy_versions": frozenset(
+            {"status", "effective_from", "payload", "payload_hash", "change_summary"}
+            | {"published_by", "published_actor_kind", "published_at", "row_version"}
+        ),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
