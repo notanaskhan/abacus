@@ -5,16 +5,13 @@
 
 # The registered egress hosts per environment. Every entry has a row in
 # docs/operations/sub-processors.yaml (make check-generated). Without interface endpoints
-# (DEC-1003) the AWS APIs resolve through *.amazonaws.com. Docker Hub serves the pinned ClamAV and
-# Temporal images (staging only, DEC-1004); production adds Temporal Cloud and drops Docker Hub.
+# (DEC-1003) the AWS APIs resolve through *.amazonaws.com. The pinned ClamAV and Temporal images come
+# from the shared ECR mirrors, not Docker Hub (DEC-1008). Production adds Temporal Cloud.
 locals {
   staging_domains = [
     "*.amazonaws.com",
     "api.workos.com",
     "database.clamav.net",
-    "registry-1.docker.io",
-    "auth.docker.io",
-    "production.cloudflare.docker.com",
   ]
   production_domains = [
     "*.amazonaws.com",
