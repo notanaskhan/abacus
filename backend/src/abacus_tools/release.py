@@ -26,8 +26,9 @@ window (`deploy/windows.yaml`, `abacus_tools.release_windows`), the record must 
 (`defect_only` or `dark_only`) and a `rollback` link, promotion happens only in the Tuesday slot,
 a deadline week refuses promotion unless `hotfix: {reason, requested_by}` is set (and the hotfix
 is counted), and the migrate step waits for 20:00 CT. Outside every window none of this applies.
-Contract operations in a migration are Q-03-T081's guard, the one implementation, which the gate
-calls in window mode once it lands; the gate has no migration rule of its own.
+Contract operations in a migration are Q-03-T081's guard, the one implementation: the gate passes
+the release's new migrations to it in window mode (`--migrations-base`); the gate has no migration
+rule of its own.
 """
 
 from __future__ import annotations
@@ -50,6 +51,7 @@ from alembic.script import ScriptDirectory
 
 from abacus.kernel.clock import system_now
 from abacus_tools import flip_request, release_windows
+from abacus_tools.quality import expand_only
 
 BACKEND = Path(__file__).resolve().parents[2]
 REPO = BACKEND.parent
@@ -335,10 +337,15 @@ class WindowVerdict:
 
 
 def window_gate(
-    release: Mapping[str, object], cal: release_windows.Calendar, at: datetime
+    release: Mapping[str, object],
+    cal: release_windows.Calendar,
+    at: datetime,
+    migrations: Sequence[Path] = (),
 ) -> WindowVerdict:
     """Why `release` may not promote at `at` under P-29 (SPEC-403 AC-5, AC-6), and when its
-    migrate step may run (AC-7). Outside every window nothing is required."""
+    migrate step may run (AC-7). Outside every window nothing is required. Inside one, the
+    release's new `migrations` go through the expand-only guard in window mode (Q-03-T081): a
+    contract operation is refused, labelled or not."""
     check(release, production=True)
     window = release_windows.platform_window(cal, at)
     hotfix = release.get("hotfix") is not None
@@ -353,6 +360,8 @@ def window_gate(
             why.append("deadline_week_without_hotfix")
         elif not release_windows.in_slot(cal, at) and not hotfix:
             why.append("outside_the_tuesday_slot")
+        guarded = expand_only.judge(migrations, today=release_windows.local_day(at), window=window)
+        why += list(guarded.refused)
     return WindowVerdict(
         why=tuple(why),
         window=window,
@@ -468,6 +477,9 @@ def _parser() -> argparse.ArgumentParser:
     windowing.add_argument("--release", required=True)
     windowing.add_argument("--at", default=None, help="ISO 8601 with an offset; now by default")
     windowing.add_argument("--windows", default=str(release_windows.WINDOWS_FILE))
+    windowing.add_argument(
+        "--migrations-base", default=None, help="the git ref the release's migrations are new to"
+    )
     return parser
 
 
@@ -528,7 +540,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             at = system_now() if args.at is None else datetime.fromisoformat(args.at)
             if at.tzinfo is None:
                 raise Refused("--at needs an offset")
-            verdict = window_gate(release, release_windows.load(Path(args.windows)), at)
+            migrations = (
+                expand_only.new_migrations(args.migrations_base) if args.migrations_base else []
+            )
+            verdict = window_gate(
+                release, release_windows.load(Path(args.windows)), at, migrations
+            )
             print(verdict.as_json())
             if verdict.why:
                 print("refused: " + ", ".join(verdict.why), file=sys.stderr)
