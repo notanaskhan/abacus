@@ -6,8 +6,8 @@ import type { Manifest } from "./types";
 export const filScreens = {
   "FIL-01": {
     name: "Files browser & document drawer",
-    status: "planned",
-    path: null,
+    status: "fixture",
+    path: "/files",
     navArea: "Files",
   },
   "FIL-02": { name: "Retention & legal hold", status: "planned", path: null },
