@@ -81,6 +81,14 @@ check-fast:
 	cd backend && uv run python -m abacus_tools.quality.quarantine
 	# F-09-T128: every partner feature request has a written answer naming its epic, deferral or exclusion.
 	cd backend && uv run python -m abacus_tools.quality.feature_requests
+	# Q-04-T021: go-live dossiers are pilot-coded, contact-free and carry every §8.3 section.
+	cd backend && uv run python -m abacus_tools.go_live_dossier check
+	# Q-04-T020: every live-window day has a primary and a named backup; no contacts in git.
+	cd backend && uv run python -m abacus_tools.quality.on_call
+	# Q-03-T087: every decision, escaped-defect and runbook ID appears once (merge damage).
+	cd backend && uv run python -m abacus_tools.quality.register_ids
+	# Q-03-T084: the Pilot 0 top-10 log is well formed (pilot codes, real screens and epics).
+	cd backend && uv run python -m abacus_tools.quality.pilot_log
 	# Q-03-T094: the fakes register names real files (unverified fakes are reported, not failed).
 	cd backend && uv run python -m abacus_tools.quality.fakes
 	cd backend && uv run python -m abacus_tools.quality.mutation_floors
