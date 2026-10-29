@@ -1,10 +1,10 @@
-"""Portal intake: POR-03 "IntakeBatch something else" (N-01-T14; N-01 §3.5; ADR-137, ADR-162, ADR-210;
-DEC-1060).
+"""Portal intake: POR-03 "Upload something else" (N-01-T14; N-01 §3.5; ADR-137, ADR-162,
+ADR-210; DEC-1060).
 
 - **Who:** a portal principal, on one of its own grants (`scope_ref`) with an uploading role;
   the scope is checked against the principal's grants here (`scope_only`, INV-4), since the
   matrix's condition resolves engagement scopes only. A firm principal never reaches these (404).
-- **IntakeBatch:** one batch is one thread with one message (the client's note its sealed body,
+- **Batch:** one batch is one thread with one message (the client's note its sealed body,
   DEC-702), matched to the scope's client; files follow one request each, scanned before storage
   and stored under a key of their own (detached-key mode, ADR-162 §5), New or Waiting. The intake
   scope learns of it through `inbox_attachment.received` (AttachmentTriage, the Inbox).

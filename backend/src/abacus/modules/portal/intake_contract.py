@@ -1,7 +1,7 @@
 """C5 v1.2 intake half: portal intake, the stubs (N-01-T02; N-01 §4.3; ADR-162, ADR-210).
 Contract: `docs/contracts/firm-intake.md` §portal intake.
 
-POR-03 "IntakeBatch something else": a portal principal sends documents that answer no request. One
+POR-03 "Upload something else": a portal principal sends documents that answer no request. One
 upload batch is one thread with one message, the client's note its body (DEC-702); files follow
 one request each (`?filename=`, DEC-703), scanned before storage and refused closed when the
 scanner is down. The principal lists and withdraws only its own uploads (INV-4), withdrawal only
@@ -111,7 +111,7 @@ def _upload_out(u: portal_intake.IntakeBatch) -> IntakeUploadOut:
 async def create_intake_upload_route(
     body: IntakeUploadIn, ctx: Member, idempotency_key: IdempotencyKey
 ) -> IntakeUploadOut:
-    """POR-03 "IntakeBatch something else": the batch (N-01-T14)."""
+    """POR-03 "Upload something else": the batch (N-01-T14)."""
 
     async def run() -> tuple[int, dict[str, object]]:
         made = await portal_intake.create_upload(
