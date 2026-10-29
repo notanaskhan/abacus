@@ -150,7 +150,7 @@ async def _gate(ctx: AuthContext, action: str) -> None:
     """Security review (DEC-326): authorise before the flag is read (the audits contract's
     order). Firm-level: no client principal, agent or system runs or reads a check. The service
     then requires a live person and authorises again."""
-    if ctx.client or ctx.tenant.actor_kind != "human":
+    if ctx.tenant.actor_kind != "human" or ctx.client:
         raise Forbidden(action, "role")
     await authorise(ctx, action, Resource.firm(ctx.tenant_id))
 

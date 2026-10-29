@@ -10,6 +10,7 @@ import pytest
 from abacus.kernel.db import TenantContext
 from abacus.modules.engagements import api as engagements_api
 from abacus.modules.engagements import gates as subject
+from abacus.modules.engagements import slots
 
 # Importing the module's api registers G1 to G3; run alone, nothing else would.
 assert engagements_api.ROUTERS
@@ -58,6 +59,13 @@ def _world(
     monkeypatch.setattr(subject, "g1_decision", g1)
     monkeypatch.setattr(subject, "get_letter", get_letter)
     monkeypatch.setattr(subject, "tenant_session", session)
+    # C1's own providers: once signatures has replaced the interim G3 (N-02-T09, DEC-820) in this
+    # process, the registry would read envelopes; this suite is about P-07's three.
+    monkeypatch.setattr(
+        slots,
+        "_GATES",
+        {"G1": subject._acceptance, "G2": subject._independence, "G3": subject.recorded_letter},  # pyright: ignore[reportPrivateUsage] -- the module's own providers
+    )
 
 
 async def test_c1_nothing_recorded_blocks_every_gate(monkeypatch: pytest.MonkeyPatch) -> None:

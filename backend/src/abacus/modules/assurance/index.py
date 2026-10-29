@@ -225,7 +225,7 @@ async def audits_index(
     """AUD-01's rows, tiles, segments, facets and caption over one `visible()` base. The route has
     refused client principals, agents and the system (INV-4); so does this read model itself,
     since client principals hold `engagement.read_metadata` cells (security review, DEC-311)."""
-    if ctx.client or ctx.tenant.actor_kind != "human":
+    if ctx.tenant.actor_kind != "human" or ctx.client:
         raise Forbidden(READ, "role")
     size = clamp_limit(limit)
     digest = query_hash(filters=asdict(f))  # `q` is hashed, never logged

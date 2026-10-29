@@ -602,7 +602,7 @@ async def _allowed(ctx: AuthContext, action: str, engagement_id: UUID) -> None:
     or the stub answers, so no principal learns a flag state it may not use. No route here
     serves a client principal, an agent or the system (every one is a firm person's); a walled
     or unknown engagement is 404 whatever the flag."""
-    if ctx.client or ctx.tenant.actor_kind != "human":
+    if ctx.tenant.actor_kind != "human" or ctx.client:
         raise Forbidden(action, "role")
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, action, ref.resource())
@@ -620,7 +620,7 @@ async def _review_gate(ctx: AuthContext, engagement_id: UUID) -> None:
     system, authorised on the engagement's client (the derived `firm_partner`; walls apply),
     (`engagements.acceptance_v2` retired with P-07-T59, DEC-905)."""
     action = "acceptance.complete_review"
-    if ctx.client or ctx.tenant.actor_kind != "human":
+    if ctx.tenant.actor_kind != "human" or ctx.client:
         raise Forbidden(action, "role")
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, action, Resource.client(ctx.tenant_id, ref.client_id))
