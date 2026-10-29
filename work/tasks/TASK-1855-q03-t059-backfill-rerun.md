@@ -1,8 +1,8 @@
 ---
 id: TASK-1855
 title: Q-03-T059 re-run the 44 back-filled suites against the final MVP contracts
-spec: SPEC-000
-acceptance_criteria: [Q-03-T059]
+spec: SPEC-045
+acceptance_criteria: [AC-2]
 risk_zone: red
 status: in-review
 epic: Q-03
