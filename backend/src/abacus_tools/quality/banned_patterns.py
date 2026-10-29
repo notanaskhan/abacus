@@ -2340,6 +2340,8 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus_tools/agent_stage.py",
             # Q-01-T45: writes an entitlement and its audit event as the operator.
             "src/abacus_tools/tenants.py",
+            # DEC-1011: binds a synthetic persona and audits it as the operator, firm by firm.
+            "src/abacus_tools/staging_personas.py",
             # F-04-T13: bootstrap writes carry the event's tenant, actor and business time.
             "src/abacus_tools/synthetic/scenarios/brightwater_hale/loader.py",
             "tests/integration/test_tenancy.py",
@@ -2348,6 +2350,10 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_schema_check_db.py",
             # P-04-T13: the actor GUCs the human-only CHECKs bind, set as a unit of work sets them
             "tests/integration/test_p04t13_review_schema_independent.py",
+            # N-02-T08: the retention policy's version trigger reads the tenant a session sets.
+            "tests/integration/backfill/test_n02t08_record_import.py",
+            # Q-04-T008: back-dates seeded audit rows under the actor the immutability guard reads.
+            "tests/integration/backfill/test_q04t008_pilot_metrics.py",
             # S13 schema tests: the AI-policy guard (G-02-T23) and pilot grants (Q-04-T007).
             "tests/integration/test_g02t23_autonomy_policy_migration.py",
             "tests/integration/test_q04t007_pilot_enrolments.py",
