@@ -1,8 +1,8 @@
 ---
 id: TASK-2133
 title: Q-03-T097 Journey and parity reliability 2027 Q2 (quarantine)
-spec: Q-03 epic; quality strategy §10.4
-acceptance_criteria: [backlog row]
+spec: SPEC-000  # Q-03-T097 row; chapter 10 §10.4
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: green
 status: in-review
 epic: Q-03
