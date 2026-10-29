@@ -43,7 +43,7 @@ def test_ac8_a_move_the_table_does_not_hold_is_refused(current: S, event: str) -
 
 
 def test_ac8_a_request_names_only_the_two_person_events() -> None:
-    assert REQUESTABLE == {"start_preparation", "start_review"}
+    assert {"start_preparation", "start_review"} == REQUESTABLE
     assert "final_approved" not in REQUESTABLE  # T-01's approval.py raises it
 
 
