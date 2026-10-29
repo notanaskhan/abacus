@@ -19121,6 +19121,20 @@
       "DueDateExtension": {
         "additionalProperties": false,
         "properties": {
+          "day": {
+            "anyOf": [
+              {
+                "maximum": 31.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Day"
+          },
           "form": {
             "cls": "public",
             "maxLength": 20,
@@ -86979,16 +86993,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Practice Due Dates Route",

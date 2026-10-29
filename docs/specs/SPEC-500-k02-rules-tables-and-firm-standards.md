@@ -61,5 +61,13 @@ Two kinds of versioned, effective-dated rules (K-02 short version): **platform r
 - **AC-19** `check_draft` (the operator CLI's pre-draft check) refuses a `standards_sets` payload that holds a PCAOB or issuer set (by code, label or reference), drops a code any version has published or moves one to another family: 422 `standards_set_refused` with `facts.reason` (X-07, DEC-19).
 - **AC-20** The kind registry maps each of the seven kinds to its payload model; a payload whose kind is unknown or differs from the set's, or that fails its model, is refused (422 `reference_kind_unknown`, `reference_payload_invalid`).
 
+**Calendar engine (K-02-T07).**
+- **AC-21** `practice/compute/calendar.py` is pure (no clock, no database): a due date is the rule's day in the month `months_after_period_end` after the period end (clamped to the month's end); the extension adds its months to the unrolled original, on its own `day` when the rule names one; calendar- and fiscal-year rules come before `any`. Ridgeline's TY2025 1065 is due Mar 16, 2026 and extended to Sep 15, 2026; a June-30 990 is due Nov 16, 2026 and extended to May 17, 2027 (US-2.1).
+- **AC-22** IRC §7503: a Saturday, Sunday or legal holiday rolls to the next business day; federal filings count every published holiday, federal and DC (QK-5).
+- **AC-23** A disaster postponement moves each date in its window for a covered location (a state with no counties covers the whole state) to its postponed-to date, never earlier, and the result names the notice; no location, no postponement.
+- **AC-24** Clocks are calendar days and never roll: AU-C 230 and 265 +60, FTC +30, 8879 retention three years after its start (Feb 29 ends Feb 28); `add_business_days` skips weekends and published holidays (US-2.2).
+- **AC-25** `inputs_hash` is sha256 over the canonical inputs and the version ids read: identical inputs and rules give an identical hash and result.
+- **AC-26** `due_dates_for` reads due-date rules in effect on the period end (a set naming the return's tax year first) and holidays and postponements in effect on the later of today and a fortnight past the latest unrolled date; every result lists the version ids read. `GET /v1/due-dates` is live behind the client 404, `due_date.read` and `rules.reference_sets`; a form with no rule is 404.
+
 ## 4. Out of scope here
-The CLI, calendar engine, firm-standards service, import and export, fan-out and KNW-04i/j (K-02-T06 to T12, T14 to T20) build against the same contract in later sprints.
+The CLI, firm-standards service, import and export, fan-out and KNW-04i/j (K-02-T06 to T12, T14 to T20) build against the same contract in later sprints.
