@@ -92,7 +92,7 @@ async def _notice(
             tx.record(
                 "client_invitation.expiry_notified",
                 target=Target("client_invitation", invitation_id),
-                after=Ref(expires_at=ends.isoformat()),
+                after=Ref(expires_at=int(ends.timestamp())),  # epoch seconds: refs hold no text
             )
             tx.emit(
                 InvitationExpiring(
