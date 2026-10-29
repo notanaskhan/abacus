@@ -497,8 +497,8 @@ async def test_ac41_each_download_leaves_an_access_event(firm: Firm, temporal: C
 
 @pytest.mark.xfail(
     strict=True,
-    reason="ED-290: T47 (DEC-640) builds a package only for engagements the approver may read; "
-    "this suite's approver holds no engagement relationship, so the index lists none (0 of 2)",
+    reason="ED-290 (TASK-1455): T47 (DEC-640) builds a package only for engagements the "
+    "approver may read; this suite's approver reads neither, so the index lists none (0 of 2)",
 )
 async def test_ac40_t47_the_archive_holds_one_verified_package_per_engagement(
     firm: Firm, temporal: Client
