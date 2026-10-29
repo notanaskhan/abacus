@@ -4967,6 +4967,12 @@ export type ClientActivityOut = {
      */
     id: string;
     /**
+     * Labels
+     */
+    labels?: {
+        [key: string]: string;
+    };
+    /**
      * Occurred At
      */
     occurred_at: string;
