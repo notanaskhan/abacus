@@ -1,8 +1,8 @@
 ---
 id: TASK-1811
 title: AUD-01/02/03 parity and accessibility (A-01-T28)
-spec: docs/screens/AUD-01.md; docs/screens/AUD-02.md; docs/screens/AUD-03.md
-acceptance_criteria: [A-01 DoD parity]
+spec: SPEC-330
+acceptance_criteria: [AC-1]
 risk_zone: green
 status: in-review
 epic: A-01
@@ -23,3 +23,5 @@ updated: 2026-10-28
 
 ## Progress log
 - 2026-10-28: manifest entries and specs written; measurement and locks in the end-of-batch pass.
+
+- 2026-10-29 (review): measured on `parity-screens` (AUD added to `BUILT_PLANNED`, as POR-03/04/14/20: the registry keeps them planned for DEC-195). AUD-01 a, b, c, e, f pass 3 % and are locked in the manifest; AUD-01 d (3.01), AUD-02 (2.40 to 7.63) and AUD-03 (3.25 to 12.66) stay report-only, diffs written into each contract's Parity table. The parity report has no masks, so the dock, spinner and viewer masks the contracts name are not applied yet. Axe and keyboard walk 22/22, Tier D hosts 3/3 (AUD-01 uses IndexList's `data-list="tabs"` and the section header, not the shell's tabsbar and PaneHeader).

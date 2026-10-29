@@ -28,8 +28,9 @@ async function size(target: Locator): Promise<{ width: number; height: number }>
 test("AUD-01 a: toolbar 46, tabs bar 44, pane header 46", async ({ page }) => {
   const app = await open(page, "AUD-01", "a");
   expect((await size(app.locator("[data-shell='toolbar']"))).height).toBe(46);
-  expect((await size(app.locator("[data-shell='tabsbar']"))).height).toBe(44);
-  expect((await size(app.locator("[data-shell='pane-header']"))).height).toBe(46);
+  expect((await size(app.locator("[data-list='tabs']"))).height).toBe(44);
+  // IndexList's pane header is the labelled section's own header, not the shell's PaneHeader.
+  expect((await size(app.locator("section[aria-labelledby] > header"))).height).toBe(46);
 });
 
 test("AUD-02 b: audit bar 59, rail 330, canvas 696, dock 330", async ({ page }) => {

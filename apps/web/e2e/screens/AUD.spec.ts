@@ -40,20 +40,29 @@ for (const [screen, states] of Object.entries(SCREENS)) {
         .map((v) => `${v.id}: ${v.help} — ${v.nodes[0]?.target.join(" ") ?? ""}`);
       expect(serious).toEqual([]);
 
-      // Keyboard: start inside the artboard and Tab until a control inside it has focus.
+      // Keyboard: start inside the artboard and Tab until a control inside it has focus. The
+      // shell's rounded corner leaves the stage on top, so focus it rather than click it.
       await board
         .locator("[data-shell='app']")
         .first()
-        .click({ position: { x: 2, y: 2 } });
+        .evaluate((shell: HTMLElement) => {
+          shell.tabIndex = -1;
+          shell.focus();
+        });
       let reached = false;
       for (let i = 0; i < TAB_LIMIT && !reached; i += 1) {
         await page.keyboard.press("Tab");
-        reached = await board.evaluate((root) => {
+        // An artboard that opens on a modal (AUD-02f's Auto mode confirm, AUD-03d's Return
+        // dialog) traps focus in that portalled dialog, so the walk is judged there.
+        reached = await board.evaluate((board) => {
+          const modal = document.querySelector("[role='dialog'], [role='alertdialog']");
+          const root = modal ?? board;
           const active = document.activeElement;
           if (active === null || !root.contains(active)) return false;
           const style = getComputedStyle(active);
           const ring = style.outlineStyle !== "none" || style.boxShadow !== "none";
-          return active.matches("a[href], button, [role='row'], [role='tab'], input") && ring;
+          const control = "a[href], button, [role='row'], [role='tab'], input, textarea";
+          return active.matches(control) && ring;
         });
       }
       expect(reached, `${screen}${st}: Tab reaches a focusable control with a ring`).toBe(true);

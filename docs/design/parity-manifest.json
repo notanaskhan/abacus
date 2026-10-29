@@ -1363,7 +1363,8 @@
       "source": "handoff/screens/AUD-01 Audits index - All Audits/screenshots/AUD-01a.png",
       "sha256": "150ccf3ee623dd07ed4653b29ed51f758b8a62b684677f04d100b39f8cb439ac",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "locked": true
     },
     "aud-01b.window": {
       "page": "screens/AUD-01?st=b",
@@ -1371,7 +1372,8 @@
       "source": "handoff/screens/AUD-01 Audits index - All Audits/screenshots/AUD-01b.png",
       "sha256": "0027efadefed2acb74e8dd53c99e6c036fe0dccc828ef60e08321ae387ff140d",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "locked": true
     },
     "aud-01c.window": {
       "page": "screens/AUD-01?st=c",
@@ -1379,7 +1381,8 @@
       "source": "handoff/screens/AUD-01 Audits index - All Audits/screenshots/AUD-01c.png",
       "sha256": "57ba2bab22bd45330dc901c0befb87bb42e50cc26b9d10bd45f4143881b0cb9d",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "locked": true
     },
     "aud-01d.window": {
       "page": "screens/AUD-01?st=d",
@@ -1395,7 +1398,8 @@
       "source": "handoff/screens/AUD-01 Audits index - All Audits/screenshots/AUD-01e.png",
       "sha256": "0c6a644adb486d6d25ea3bead3f1dfcbcc032b1e2912d5dc541a1c4b26cf70ac",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "locked": true
     },
     "aud-01f.window": {
       "page": "screens/AUD-01?st=f",
@@ -1403,7 +1407,8 @@
       "source": "handoff/screens/AUD-01 Audits index - All Audits/screenshots/AUD-01f.png",
       "sha256": "e81744614fb7fb0cc65c0d13ae585f2047dc0e24de104dcd771427cd6211f700",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "locked": true
     },
     "aud-01g.window": {
       "page": "screens/AUD-01?st=g",
