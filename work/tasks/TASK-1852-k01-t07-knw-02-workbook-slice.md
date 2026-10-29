@@ -1,8 +1,8 @@
 ---
 id: TASK-1852
 title: K-01-T07 KNW-02 workbook slice (e, f)
-spec: SPEC-345
-acceptance_criteria: [K-01-T07]
+spec: SPEC-008
+acceptance_criteria: [AC-1, AC-2]
 risk_zone: green
 status: in-review
 epic: K-01
