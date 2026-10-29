@@ -78062,10 +78062,6 @@ export type ListStandardsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListStandardsError = ListStandardsErrors[keyof ListStandardsErrors];
@@ -78117,10 +78113,6 @@ export type CreateStandardErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CreateStandardError = CreateStandardErrors[keyof CreateStandardErrors];
@@ -78229,10 +78221,6 @@ export type StandardErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type StandardError = StandardErrors[keyof StandardErrors];
@@ -78290,10 +78278,6 @@ export type StandardExamplesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type StandardExamplesError = StandardExamplesErrors[keyof StandardExamplesErrors];
@@ -78402,10 +78386,6 @@ export type AssignOwnerErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AssignOwnerError = AssignOwnerErrors[keyof AssignOwnerErrors];
@@ -78462,10 +78442,6 @@ export type DraftVersionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DraftVersionError = DraftVersionErrors[keyof DraftVersionErrors];
@@ -78530,10 +78506,6 @@ export type StandardDiscardDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type StandardDiscardDraftError = StandardDiscardDraftErrors[keyof StandardDiscardDraftErrors];
@@ -78590,10 +78562,6 @@ export type StandardVersionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type StandardVersionError = StandardVersionErrors[keyof StandardVersionErrors];
@@ -78658,10 +78626,6 @@ export type EditDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EditDraftError = EditDraftErrors[keyof EditDraftErrors];
@@ -78723,10 +78687,6 @@ export type VersionDiffErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type VersionDiffError = VersionDiffErrors[keyof VersionDiffErrors];
@@ -78857,10 +78817,6 @@ export type PublishVersionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PublishVersionError = PublishVersionErrors[keyof PublishVersionErrors];

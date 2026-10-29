@@ -177,3 +177,55 @@ class ProgramStepPbcLink(Base):
     step_id: Mapped[UUID] = mapped_column(primary_key=True)
     request_position: Mapped[int] = mapped_column(primary_key=True)
     version_id: Mapped[UUID]
+
+
+# --- K-02-T04 (0401): firm standards and threshold policies, one pair of tables per family ------
+
+
+class _StandardParent:
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    tenant_id: Mapped[UUID]
+    kind: Mapped[str]
+    key: Mapped[str]
+    name: Mapped[str]
+    owner_id: Mapped[UUID]
+    applies_to: Mapped[dict[str, object]] = mapped_column(JSONB)
+    created_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    row_version: Mapped[int] = mapped_column(server_default=FetchedValue())
+
+
+class _StandardVersion:
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    tenant_id: Mapped[UUID]
+    parent_id: Mapped[UUID]
+    version: Mapped[int]
+    status: Mapped[str] = mapped_column(server_default=FetchedValue())
+    effective_from: Mapped[date | None]
+    payload: Mapped[dict[str, object]] = mapped_column(JSONB)
+    payload_schema_version: Mapped[int] = mapped_column(server_default=FetchedValue())
+    payload_hash: Mapped[str]
+    change_summary: Mapped[str | None]
+    drafted_from_version_id: Mapped[UUID | None]
+    drafted_by: Mapped[UUID]
+    drafted_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    published_by: Mapped[UUID | None]
+    published_actor_kind: Mapped[str | None]
+    published_at: Mapped[datetime | None]
+    row_version: Mapped[int] = mapped_column(server_default=FetchedValue())
+
+
+class FirmStandard(_StandardParent, Base):
+    __tablename__ = "firm_standards"
+
+
+class FirmStandardVersion(_StandardVersion, Base):
+    __tablename__ = "firm_standard_versions"
+
+
+class ThresholdPolicy(_StandardParent, Base):
+    __tablename__ = "threshold_policies"
+
+
+class ThresholdPolicyVersion(_StandardVersion, Base):
+    __tablename__ = "threshold_policy_versions"

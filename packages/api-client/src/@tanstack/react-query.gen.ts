@@ -16134,7 +16134,7 @@ export const listStandardsOptions = (options?: Options<ListStandardsData>) => qu
  * Create Standard Route
  *
  * Create a standard (QM owner or practice leader, fresh MFA); the owner must be a partner
- * member (422 `owner_not_partner`).
+ * member (422 `owner_not_partner`); 409 `standard_key_taken`.
  */
 export const createStandardMutation = (options?: Partial<Options<CreateStandardData>>): UseMutationOptions<CreateStandardResponse, CreateStandardError, Options<CreateStandardData>> => {
     const mutationOptions: UseMutationOptions<CreateStandardResponse, CreateStandardError, Options<CreateStandardData>> = {
@@ -16154,7 +16154,7 @@ export const createStandardMutation = (options?: Partial<Options<CreateStandardD
  * Import Standards Route
  *
  * Onboarding: one sheet per kind, one draft per standard; an owner who is not a partner
- * member is a row problem (`owner_not_partner`).
+ * member is a row problem (`owner_not_partner`; K-02-T11).
  */
 export const importStandardsMutation = (options?: Partial<Options<ImportStandardsData>>): UseMutationOptions<ImportStandardsResponse, ImportStandardsError, Options<ImportStandardsData>> => {
     const mutationOptions: UseMutationOptions<ImportStandardsResponse, ImportStandardsError, Options<ImportStandardsData>> = {
@@ -16214,7 +16214,7 @@ export const standardExamplesOptions = (options: Options<StandardExamplesData>) 
  * Import Standard Route
  *
  * A workbook to a draft of this standard (its owner's; 422 `import_invalid` with
- * problems). Never publishes.
+ * problems). Never publishes (K-02-T11).
  */
 export const importStandardMutation = (options?: Partial<Options<ImportStandardData>>): UseMutationOptions<ImportStandardResponse, ImportStandardError, Options<ImportStandardData>> => {
     const mutationOptions: UseMutationOptions<ImportStandardResponse, ImportStandardError, Options<ImportStandardData>> = {
@@ -16252,8 +16252,8 @@ export const assignOwnerMutation = (options?: Partial<Options<AssignOwnerData>>)
 /**
  * Draft Version Route
  *
- * New version…: a draft from the current version (409 `draft_exists`; 403
- * `not_standard_owner` for anyone but the owner).
+ * New version…: a draft from the current version (409 `draft_exists`,
+ * `no_current_version`; 403 `not_standard_owner` for a partner who is not the owner).
  */
 export const draftVersionMutation = (options?: Partial<Options<DraftVersionData>>): UseMutationOptions<DraftVersionResponse, DraftVersionError, Options<DraftVersionData>> => {
     const mutationOptions: UseMutationOptions<DraftVersionResponse, DraftVersionError, Options<DraftVersionData>> = {
@@ -16352,7 +16352,7 @@ export const standardExportVersionQueryKey = (options: Options<StandardExportVer
 /**
  * Standard Export Version Route
  *
- * The version as a workbook; re-importing it gives an empty diff (US-5.1).
+ * The version as a workbook; re-importing it gives an empty diff (US-5.1; K-02-T11).
  */
 export const standardExportVersionOptions = (options: Options<StandardExportVersionData>) => queryOptions<StandardExportVersionResponse, StandardExportVersionError, StandardExportVersionResponse, ReturnType<typeof standardExportVersionQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -16371,7 +16371,7 @@ export const standardExportVersionOptions = (options: Options<StandardExportVers
  * Publish Version Route
  *
  * Publish vN…: the owner, a person, with fresh MFA (422 `effective_from_backdated`,
- * `effective_from_not_after_current`).
+ * `effective_from_not_after_current`). A retried key answers what the first publish did.
  */
 export const publishVersionMutation = (options?: Partial<Options<PublishVersionData>>): UseMutationOptions<PublishVersionResponse, PublishVersionError, Options<PublishVersionData>> => {
     const mutationOptions: UseMutationOptions<PublishVersionResponse, PublishVersionError, Options<PublishVersionData>> = {
