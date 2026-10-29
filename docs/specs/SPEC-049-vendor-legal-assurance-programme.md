@@ -89,6 +89,7 @@ Every real-data milestone waits on third parties with lead times (vendors, couns
 
 ### Story 6: As the builder I want a recorded M1 result
 - **AC-33** Given Fri Oct 30 (M1), then the builder records the M1 result in `docs/product/decision-log.md`: every chapter 06 section 7.6 application has a submitted date (Xero and NetSuite on Nov 2), counsel is engaged with a dated scope, the compliance tool is contracted, at least 6 conversations are booked, and thresholds W1 to W3 merged before the first call; any unfiled application is named with a date.
+- **AC-39 Mid-year spend and runway review (F-09-T129; RK-05).** By Fri May 28, 2027 the vault ledger shows year-to-date spend against each DEC-03 envelope line and runway in months, and `docs/ops/programme/spend-reviews.md` records the review (date, ledger version by vault reference, lines over their envelope by name, the runway band, whether RK-05 fired and the action), with no amount in git.
 
 ## 6. Behaviour and flows
 **Happy path**
