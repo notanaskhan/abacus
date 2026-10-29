@@ -130,7 +130,8 @@ async def _virtual(
         "fingerprint, storage_key, storage_version_id, size_bytes, media_type, source, method, "
         "parent_version_id, page_range, virtual_label, virtual_amount) VALUES ($1, $2, $3, "
         "(SELECT max(version_no) + 1 FROM evidence_versions WHERE evidence_item_id = $3), $4, "
-        "$5, 'v1', 0, 'application/pdf', 'upload', 'uploaded', $6, $7::int4range, $8, $9)",
+        "$5, 'v1', 0, 'application/pdf', 'upload', 'uploaded', $6, "
+        "CAST($7::text AS int4range), $8, $9)",
         site.tenant_id,
         site.engagement_id,
         item,
