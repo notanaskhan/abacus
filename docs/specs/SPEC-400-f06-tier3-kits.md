@@ -73,6 +73,8 @@ Quality and hand-off (F6):
 - **AC-37** Parity and axe locks (T11, T13, T22).
 - **AC-38** Kit docs and consumer hand-off (T23).
 - **AC-39** ADR P-24 (structured agent output) drafted and accepted (T24).
+- **AC-40 T16 identity and exception states (F-06-T05; DF-11, DF-12; DEC-1053).** Provider mode shows Completed only after the envelope status says so, TPL-16e offers no retry and names the paper-form path, Decline stays disabled until a reason is chosen, and no native identity component is exported.
+- **AC-41 T16 at 390 (F-06-T06).** At 390 px nothing scrolls sideways, the sticky bar never hides the active field, and every control has at least a 44 by 44 target; TPL-19 frame 9 hands off to the same ceremony.
 
 ## 6. Open questions
 - Q1 (iframe or redirect) and Q5 (provider-mode CTA copy): open, decide by Fri Apr 30, 2027; they
