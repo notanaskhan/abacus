@@ -41,3 +41,4 @@ Client data stays in Accrued's AWS account, in the US. DPA status only, no terms
 | Party | Service | Role | Data seen | Client data | Region | DPA | Needed by |
 |---|---|---|---|---|---|---|---|
 | ClamAV project (Cisco Talos) | ClamAV signature database | malware signature downloads for the scanner | none (downloads only) | no | global mirror | not-required | R0 |
+| Docker, Inc. | Docker Hub image registry | pulls the pinned third-party images staging runs (ClamAV, the Temporal dev server), by digest | none (downloads only) | no | global (CDN) | not-required | R0 |

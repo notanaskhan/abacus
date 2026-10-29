@@ -109,3 +109,9 @@ variable "github_repo" {
   type        = string
   default     = "notanaskhan/abacus"
 }
+
+variable "bedrock_enabled" {
+  description = "Let the API and workers call Bedrock through US Geo (after Q-02-T44's clearance)."
+  type        = bool
+  default     = false
+}

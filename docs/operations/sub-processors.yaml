@@ -238,3 +238,16 @@ rows:
     needed_by: R0
     egress_hosts: ["database.clamav.net"]
     references: [ADR-153]
+
+  - id: docker-hub
+    party: Docker, Inc.
+    service: Docker Hub image registry
+    kind: egress-only
+    role: pulls the pinned third-party images staging runs (ClamAV, the Temporal dev server), by digest
+    data_seen: none (downloads only)
+    client_data: false
+    region: global (CDN)
+    dpa: not-required
+    needed_by: R0
+    egress_hosts: ["registry-1.docker.io", "auth.docker.io", "production.cloudflare.docker.com"]
+    references: [ADR-017, ADR-153]

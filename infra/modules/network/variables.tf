@@ -19,3 +19,9 @@ variable "nat_gateways" {
   type        = number
   default     = 1
 }
+
+variable "interface_endpoints" {
+  description = "AWS services to reach through interface endpoints (e.g. ecr.api, ecr.dkr, logs, secretsmanager, kms, sts, ssm, sqs, email). Empty: through NAT."
+  type        = list(string)
+  default     = []
+}
