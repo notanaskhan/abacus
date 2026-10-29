@@ -58,6 +58,11 @@ from abacus.modules.communications.intake import (
     record_inbound_message,
 )
 from abacus.modules.communications.intake_contract import destinations_router, intake_router
+from abacus.modules.communications.intake_purge_workflow import (
+    IntakePurgeInput,
+    IntakeWithdrawalPurgeWorkflow,
+    intake_purge_id,
+)
 from abacus.modules.communications.invitations import deliver_invitation, deliver_staff_invitation
 from abacus.modules.communications.notification_email import (
     NotificationMail,
@@ -275,6 +280,8 @@ __all__ = [
     "InMemorySesIdentities",
     "Inbound",
     "IntakeDestination",
+    "IntakePurgeInput",
+    "IntakeWithdrawalPurgeWorkflow",
     "IssuedLink",
     "LocalMailbox",
     "MessageBounced",
@@ -332,6 +339,7 @@ __all__ = [
     "first_tick_on_or_after",
     "follow_up_policy",
     "import_email_templates",
+    "intake_purge_id",
     "is_suppressed",
     "issue_secure_link",
     "limit_reached_today",
