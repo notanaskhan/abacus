@@ -126,6 +126,14 @@ def _held() -> deploy_lock.Lock:
     )
 
 
+def _lock_held(env: str, params: object = None) -> deploy_lock.Lock:
+    return _held()
+
+
+def _lock_free(env: str, params: object = None) -> None:
+    return None
+
+
 @pytest.fixture
 def no_run(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     """Records any attempt to start the run; the guard must stop before it."""
@@ -171,14 +179,14 @@ def test_ac2_a_dry_run_still_prints_the_plan_while_the_lock_is_held(
     monkeypatch: pytest.MonkeyPatch, no_run: list[str], capsys: pytest.CaptureFixture[str]
 ) -> None:
     monkeypatch.setenv("ABACUS_DEPLOY_LOCK_ENV", "staging")
-    monkeypatch.setattr(deploy_lock, "held", lambda env, params=None: _held())
+    monkeypatch.setattr(deploy_lock, "held", _lock_held)
     assert harness.main(["--profile", "smoke", "--dry-run"]) == 0
     assert no_run == [] and capsys.readouterr().out
 
 
 def test_ac2_a_free_lock_lets_the_run_start(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ABACUS_DEPLOY_LOCK_ENV", "staging")
-    monkeypatch.setattr(deploy_lock, "held", lambda env, params=None: None)
+    monkeypatch.setattr(deploy_lock, "held", _lock_free)
     monkeypatch.setattr(db_guard, "violations", list)
     started: list[str] = []
 
