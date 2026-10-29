@@ -1,4 +1,4 @@
-import { cleanup, render, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { TPL07_REQUESTS } from "../specimens/requests";
 import { TPL19_COPY, Tpl19Specimen } from "../specimens/tpl19";
@@ -73,5 +73,92 @@ describe("TPL-19 frames 1, 2 and 7", () => {
     const { container } = render(<Tpl19Specimen />);
     expect(container.textContent).not.toMatch(/Accrued/u);
     expect(container.innerHTML).not.toMatch(/blue|#6A98E8/iu);
+  });
+});
+
+// F-06-T11 acceptance: "Frame 6 moves the title pill from 2 to do to 1 to do with the green-ink
+// receipt, deferred frames render a Deferred (DEC-97) placeholder, and TPL-19 is parity-locked"
+// (the lock is Tier D: apps/web/e2e/visual/tier-d-tpl19.spec.ts).
+describe("TPL-19 frames 3 to 6, 8 and permission off", () => {
+  it("3, 4, 8 and permission off render the Deferred (DEC-97) placeholder", () => {
+    const { container } = render(<Tpl19Specimen />);
+    for (const id of ["tpl-19-3", "tpl-19-4", "tpl-19-8", "tpl-19-perm"]) {
+      expect(frame(container, id).querySelector('[data-capture="deferred"]')?.textContent).toBe(
+        "Deferred (DEC-97)",
+      );
+    }
+  });
+
+  it("3 to 6 carry the alternate-path caption", () => {
+    const { container } = render(<Tpl19Specimen />);
+    for (const id of ["tpl-19-3", "tpl-19-4", "tpl-19-5", "tpl-19-6"]) {
+      expect(frame(container, id).textContent).toContain(TPL19_COPY.alternate);
+    }
+    expect(frame(container, "tpl-19-1").textContent).not.toContain(TPL19_COPY.alternate);
+  });
+
+  it("5: two pages, the stitched file, the request picker and Upload", () => {
+    const { container } = render(<Tpl19Specimen />);
+    const sheet = within(frame(container, "tpl-19-5")).getByRole("dialog", {
+      name: "Review & assign",
+    });
+    expect(sheet.querySelectorAll("[data-page]")).toHaveLength(2);
+    expect(
+      within(sheet).getByText("Claire_Feld_2025_1095-C_MercerHill.pdf · 2 pages · 3.1 MB"),
+    ).toBeTruthy();
+    expect(
+      within(sheet).getByText(
+        "Combined from Claire_Feld_1095C_Camera_P1.jpg and Claire_Feld_1095C_Camera_P2.jpg",
+      ),
+    ).toBeTruthy();
+    expect(within(sheet).getByRole("button", { name: "Retake page 2" })).toBeTruthy();
+    expect(within(sheet).getByRole("button", { name: "Add a page" })).toBeTruthy();
+    const picker = within(sheet).getByRole("combobox", { name: "Add to request" });
+    const options = Array.from((picker as HTMLSelectElement).options).map((o) => o.text);
+    expect(options).toEqual([
+      "Form 1095-C From Mercer Hill Health",
+      "2025 federal (1040-ES) and New York (IT-2105) estimated payment confirmations",
+      "Something else",
+    ]);
+    expect((picker as HTMLSelectElement).value).toBe("aca");
+    expect(within(sheet).getByRole("button", { name: "Upload" })).toBeTruthy();
+  });
+
+  it("6 in flight: the 1095-C card shows the UploadRing at 70%", () => {
+    const { container } = render(<Tpl19Specimen />);
+    const card = frame(container, "tpl-19-6-ring").querySelector<HTMLElement>(
+      '[data-request="aca"]',
+    );
+    expect(within(card as HTMLElement).getByRole("progressbar", { name: "Uploading" })).toBeTruthy();
+    expect(within(card as HTMLElement).queryByRole("button", { name: /Upload…/u })).toBeNull();
+  });
+
+  it("6: the receipt in green ink and the pill moves from 2 to do to 1 to do", () => {
+    const { container } = render(<Tpl19Specimen />);
+    expect(within(frame(container, "tpl-19-2")).getByText("2 to do")).toBeTruthy();
+    const done = frame(container, "tpl-19-6");
+    expect(within(done).getByText("1 to do")).toBeTruthy();
+    const receipt = within(done).getByText("You uploaded Sep 14");
+    expect(receipt.className).toContain("text-green-ink");
+    expect(within(done).getByText("Matched to this request")).toBeTruthy();
+  });
+});
+
+describe("TPL-19 capture flow on frame 2", () => {
+  it("Upload… opens the action sheet; a photo opens Review & assign; Upload lands the receipt", () => {
+    const { container } = render(<Tpl19Specimen />);
+    const docs = frame(container, "tpl-19-2");
+    fireEvent.click(within(docs).getByRole("button", { name: "Upload… Form 1095-C From Mercer Hill Health" }));
+    const sheet = within(docs).getByRole("dialog", { name: /Upload…/u });
+    const camera = sheet.querySelector<HTMLInputElement>('[data-capture-input="camera"]');
+    expect(camera?.getAttribute("capture")).toBe("environment");
+    expect(camera?.getAttribute("accept")).toBe("image/*");
+    const pages = [new File(["p1"], "p1.jpg", { type: "image/jpeg" }), new File(["p2"], "p2.jpg", { type: "image/jpeg" })];
+    URL.createObjectURL = () => "blob:page";
+    fireEvent.change(camera as HTMLInputElement, { target: { files: pages } });
+    const review = within(docs).getByRole("dialog", { name: "Review & assign" });
+    fireEvent.click(within(review).getByRole("button", { name: "Upload" }));
+    expect(within(docs).getByText("1 to do")).toBeTruthy();
+    expect(within(docs).getByText("You uploaded Sep 14")).toBeTruthy();
   });
 });
