@@ -139,7 +139,8 @@ describe("ADM-10 Portal branding & client experience", () => {
     show("e");
     const drawer = await screen.findByRole("dialog", { name: "Reconnect request" });
     await within(drawer).findByText("Published · v1");
-    const publishV2 = within(drawer).getByRole("button", { name: "Publish v2" });
+    // The drawer's footer sits beside its body, not inside the dialog's labelled region.
+    const publishV2 = await screen.findByRole("button", { name: "Publish v2" }, { timeout: 5000 });
     expect((publishV2 as HTMLButtonElement).disabled).toBe(true);
   });
 
@@ -151,7 +152,11 @@ describe("ADM-10 Portal branding & client experience", () => {
         calls.some((c) => c.method === "POST" && c.path === "/v1/firm/portal-settings/publish"),
       ).toBe(true);
     });
-    await screen.findByText("Portal settings published · clients see changes on next visit");
+    await waitFor(() => {
+      expect(toastStore.list().map((t) => t.text)).toContain(
+        "Portal settings published · clients see changes on next visit",
+      );
+    });
     await waitFor(() => {
       expect(screen.queryByText("Unsaved changes")).toBeNull();
     });

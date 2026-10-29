@@ -292,9 +292,10 @@ function TemplateDrawer({
               {COPY.drawer.sendTest(session.user?.email ?? "")}
             </Button>
           )}
-          {actions.has("publish") && (
+          {/* An editor sees "Publish v{n+1}" disabled until there is a draft to publish (e). */}
+          {(actions.has("publish") || actions.has("edit")) && (
             <Button
-              disabled={t?.draft == null}
+              disabled={t?.draft == null || !actions.has("publish")}
               onClick={() => {
                 publish.mutate({ ...path, headers: idempotency() });
               }}
