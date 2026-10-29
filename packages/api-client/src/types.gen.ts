@@ -21563,9 +21563,13 @@ export type RemindIn = {
      */
     envelope_ids: Array<string>;
     /**
+     * Template Version
+     */
+    template_version?: number | null;
+    /**
      * Template Version Id
      */
-    template_version_id: string;
+    template_version_id?: string | null;
 };
 
 /**
@@ -52229,10 +52233,6 @@ export type ListEnvelopesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListEnvelopesError = ListEnvelopesErrors[keyof ListEnvelopesErrors];
@@ -52568,10 +52568,6 @@ export type EnvelopeSummaryErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EnvelopeSummaryError = EnvelopeSummaryErrors[keyof EnvelopeSummaryErrors];
@@ -52624,10 +52620,6 @@ export type GetEnvelopeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetEnvelopeError = GetEnvelopeErrors[keyof GetEnvelopeErrors];
@@ -52870,10 +52862,6 @@ export type EnvelopeEvidenceErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EnvelopeEvidenceError = EnvelopeEvidenceErrors[keyof EnvelopeEvidenceErrors];
@@ -53113,13 +53101,13 @@ export type RevealSignerIpErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RevealSignerIpError = RevealSignerIpErrors[keyof RevealSignerIpErrors];
@@ -53300,10 +53288,6 @@ export type VoidEnvelopeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type VoidEnvelopeError = VoidEnvelopeErrors[keyof VoidEnvelopeErrors];

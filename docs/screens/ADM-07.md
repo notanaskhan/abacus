@@ -92,8 +92,9 @@ Gradients, emoji, saturated blue, heavy shadows, invented colours, lorem ipsum, 
 
 | Artboard | Tier | Diff % | Notes |
 |---|---|---|---|
-| a, b, c, e, f, g | C (locked) | — | locked 2026-10-27 (G-02-T21; `e2e/screens/ADM-07.spec.ts` renders each with axe clean; the diff is measured by `pnpm parity:screens` once the baselines are fetched); mask IP columns on staging, the content-hash text and times; c persona (DV-1) report-only until the board is revised |
-| d | C report-only | — | fixture mode only |
+| a, b, f | C (locked) | 2.92 / 1.61 / 0.73 | locked 2026-10-29 (G-02-T26), measured on `parity-screens`; mask IP columns on staging, the content-hash text and times |
+| c, e, g | C report-only | 8.77 / 11.64 / 3.67 | G-02-T21 recorded these as locked on 2026-10-27 before any baseline existed; measured 2026-10-29 (G-02-T26) over 3 %: c persona (DV-1) until the board is revised; open gap |
+| d | C report-only | 3.04 | fixture mode only |
 
 ## Open gaps
 

@@ -166,3 +166,5 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-210](ADR-210-firm-intake-channel-agnostic.md) | Firm intake is channel-agnostic, read by an intake scope, and filed only by people (P-60 part 1) | red | accepted |
 | [ADR-230](ADR-230-structured-agent-output.md) | Structured agent output (AgentBlocks): a closed block schema, numbers by reference, no model markup (amends ADR-065) | red | accepted |
 | [ADR-231](ADR-231-tax-computation-boundary.md) | Tax computation boundary: the engine of record computes tax, credits and filed forms; Accrued shows engine values only from approved imports | amber | accepted |
+| [ADR-340](ADR-340-sampling-engine.md) | Sampling engine: a seeded, versioned, frozen in-product sampler; import kept as a path (P-57) | red | proposed |
+| [ADR-341](ADR-341-multi-entity-engagements-and-consolidation.md) | Multi-entity engagements and consolidation: engagement entities, ledger-owned mapping and consolidation, the taxonomy as firm content (P-63) | red | proposed |

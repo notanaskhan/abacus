@@ -51,6 +51,22 @@ def test_med3_the_inspector_gate_fails_when_the_scan_never_completed() -> None:
     assert "::error title=inspector scan incomplete::" in script
 
 
+def test_med3_the_inspector_gate_scans_the_platform_image_not_the_index() -> None:
+    """The pushed digest is an OCI index (image plus attestations); Inspector reports the index
+    itself as UNSUPPORTED_IMAGE, so the gate waits on, and reads findings for, the platform image
+    inside it, while the record still names the release digest."""
+    script = runs(jobs(load("build.yml"))["inspector"])
+    resolve, wait = (
+        script.index("aws ecr batch-get-image"),
+        script.index("describe-image-scan-findings"),
+    )
+    assert resolve < wait
+    assert "select(.platform.os == $os and .platform.architecture == $arch)" in script
+    assert 'imageDigest="$scanned"' in script[wait:]
+    assert '\\"value\\":\\"$scanned\\"' in script
+    assert '--image-digest "$DIGEST"' in script
+
+
 @pytest.mark.parametrize("name", ROLE_WORKFLOWS)
 def test_med4_no_job_holding_aws_credentials_installs_or_runs_node_packages(name: str) -> None:
     for job_name, job in jobs(load(name)).items():
