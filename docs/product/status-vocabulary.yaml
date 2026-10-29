@@ -465,6 +465,32 @@ objects:
       published:  {label: "Published", variant: green-tint, terminal: false, derived: false}
       superseded: {label: "Superseded", variant: soon, terminal: true, derived: false}
 
+  tax_authorization:   # tax_authorizations.status (T-01-T43); CLI-05 rail
+    source: "T-01 section 3.6; CLI-05 handoff"
+    codes:
+      not_on_file: {label: "Not on file", variant: neutral, terminal: false, derived: true}
+      requested:   {label: "Requested", variant: state, terminal: false, derived: false}
+      on_file:     {label: "On file", variant: green-tint, terminal: false, derived: false}
+      expired:     {label: "Expired", variant: red-tint, terminal: true, derived: false}
+      revoked:     {label: "Revoked", variant: muted, terminal: true, derived: false}
+
+  engine_sync:   # the TAX-09 sync chip, derived from engine_sync_events (T-01-T19)
+    source: "T-01 section 3.8 to 3.10; TAX-09 handoff chip"
+    codes:
+      not_linked:              {label: "Not linked", variant: neutral, terminal: false, derived: true}
+      ready_to_export:         {label: "Ready to export", variant: state, terminal: false, derived: true}
+      exported:                {label: "Exported", variant: green-tint, terminal: false, derived: true}
+      import_pending_approval: {label: "Import pending approval", variant: amber, terminal: false, derived: true}
+      in_sync:                 {label: "In sync", variant: green, terminal: false, derived: true}
+      out_of_sync:             {label: "Out of sync", variant: amber, terminal: false, derived: true}
+      failed:                  {label: "Export failed", variant: red-tint, terminal: false, derived: true}
+
+  efile_ack:   # efile_acks.status (T-01-T37); TAX-12 c2, d, e
+    source: "T-01 section 3.13; TAX-12 handoff"
+    codes:
+      accepted: {label: "Accepted", variant: green, terminal: true, derived: false}
+      rejected: {label: "Rejected", variant: red-tint, terminal: true, derived: false}
+
   firm_standard_version:   # firm_standard_versions.status and threshold_policy_versions.status (K-02-T04); KNW-04 header pill and Timeline
     source: "K-02 section 4.2 (migration M-B); KNW-04 a-i handoff pills"
     codes:
@@ -559,6 +585,9 @@ objects:
       expired:   {label: "Expired",   variant: red-tint, terminal: true, derived: false}
       declined:  {label: "Declined",  variant: neutral, terminal: true, derived: false}
       revoked:   {label: "Revoked",   variant: soon, terminal: true, derived: false}
+      # T-01-T06 (DEC-1157): a renewal replaces a signed consent; before any request, nothing is stored.
+      superseded:    {label: "Superseded", variant: muted, terminal: true, derived: false}
+      not_requested: {label: "Not requested", variant: neutral, terminal: false, derived: true}
 
   consent_purpose:   # each purpose is its own signed document; a category, never a state
     source: "blueprint 3.3.1"

@@ -359,6 +359,15 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Document approval (tax) | Distinct from `review_decision` (Q-09). Allowed `document` compound. | `document_approvals` | — |
 | K-1 package / activity | Drafts never reach the portal. | `k1_packages`, `k1_activities`, `k1_treatments` | — |
 | Transmission record | A human record; Accrued never transmits. | `transmissions`, `efile_acks` | — |
+| Consent set | The `use` and `ai_disclosure` consents requested together for a filing unit and its tax years (T-01-T06, DF-31). | `consent_sets` | — |
+| Consent template | Counsel-approved consent text, one purpose per template, versioned and published by a partner; database content. | `consent_templates` | — |
+| Offshore disclosure | The consent purpose that lets TRI reach a preparer outside the US (`offshore_disclosure`). | `offshore_disclosure` | — |
+| E-file acknowledgement | The IRS or state answer to a transmission the ERO made in the engine, recorded from an engine file or by hand. | `efile_acks` | — |
+| Engine import | An engine file (values, diagnostics, PDFs, acks) uploaded to Accrued; values change only through a diff a person approves. | `engine_sync_events`, `engine_import_diffs` | — |
+| Export file | The workbook Accrued generates for the engine after final approval; the firm carries it (W2, file mode). | `engine_export` | — |
+| Amount binding | The 8879's figures at signing; drift beyond the Pub 1345 tolerances supersedes it and relocks the envelope. | `efile_amount_bindings` | — |
+| Delivery packet | The client copy, payment instructions and cover letter a person approves before delivery. | `delivery_packets` | — |
+| ERO | The firm's Electronic Return Originator: the designated person who transmits in the engine. Accrued is never the ERO or a transmitter. | `ero_designated` | — (copy ban: `apps/web/src/copy-bans.test.ts`) |
 
 ## New terms: closes
 
