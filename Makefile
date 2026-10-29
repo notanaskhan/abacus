@@ -77,6 +77,8 @@ check-fast:
 	cd backend && uv run python -m abacus_tools.quality.fresh_mfa
 	# Q-03-T095 (ADR-080): every table and matrix kind the code uses has its generated tests.
 	cd backend && uv run python -m abacus_tools.quality.generator_coverage
+	# Q-03-T097: at most 5 flaky tests in quarantine, none past 10 working days.
+	cd backend && uv run python -m abacus_tools.quality.quarantine
 	cd backend && uv run python -m abacus_tools.quality.mutation_floors
 	cd backend && uv run python -m abacus_tools.quality.coverage_floors
 	cd backend && uv run python -m abacus_tools.release_windows check
