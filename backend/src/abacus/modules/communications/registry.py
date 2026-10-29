@@ -26,6 +26,13 @@ TABLES: frozenset[str] = frozenset(
         # through `client_mail_enabled()` only, written by `abacus_ops` only).
         "sending_domains",
         "firm_mail_policies",
+        # N-01-T07 (0293): the firm inbox (intake): threads, messages, attachments, triage.
+        "inbox_threads",
+        "inbound_messages",
+        "inbox_attachments",
+        "triage_decisions",
+        "inbox_sender_rules",
+        "inbox_attachment_flags",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -33,10 +40,16 @@ INSERT_ONLY: frozenset[str] = frozenset(
     {
         "messages",
         "message_deliveries",
+        "inbound_messages",  # N-01-T07 (0293)
+        "triage_decisions",  # N-01-T07 (0293): a person's decision, never changed
+        "inbox_attachment_flags",  # N-01-T07 (0293)
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
+    "inbox_sender_rules": frozenset(
+        {"tenant_id", "address_hmac", "address_sealed", "client_id", "contact_id", "created_by"}
+    ),
     "messages": frozenset(
         {"id", "tenant_id", "engagement_id", "channel", "recipient_ref", "body", "status"}
         | {"violations", "created_by"}
@@ -71,6 +84,16 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
+    # N-01-T07 (0293): matching a thread, and an attachment's status and filing.
+    "inbox_threads": frozenset(
+        {"client_id", "client_entity_id", "match_method", "matched_by", "matched_at"}
+        | {"ignored_reason", "last_received_at"}
+    ),
+    "inbox_attachments": frozenset(
+        {"client_id", "status", "classification_id", "filed_evidence_version_id"}
+        | {"filed_destination_kind", "filed_destination_id", "data_classes"}
+    ),
+    "inbox_sender_rules": frozenset({"revoked_at"}),
     "email_suppressions": frozenset({"lifted_at", "lifted_by"}),  # Q-01-T46: lifting only
     # P-08-T21: a renewed link's token at delivery, and revocation.
     "secure_links": frozenset({"token_sha256", "revoked_at"}),

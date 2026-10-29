@@ -174,6 +174,9 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "signature_evidence": "signatures_rows_immutable",  # 0292 (N-02-T07)
     "esign_disclosures": "signatures_rows_immutable",  # 0292 (N-02-T07)
     "esign_acceptances": "signatures_rows_immutable",  # 0292 (N-02-T07)
+    "inbound_messages": "intake_rows_immutable",  # 0293 (N-01-T07)
+    "triage_decisions": "intake_rows_immutable",  # 0293 (N-01-T07)
+    "inbox_attachment_flags": "intake_rows_immutable",  # 0293 (N-01-T07)
 }
 # Update columns for tables outside the modules (TASK-008); modules declare theirs.
 _PLATFORM_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
