@@ -233,8 +233,9 @@ class StandardsSetRow(BaseModel):
 
     model_config = _frozen()
 
-    code: Annotated[str, Field(pattern=r"^[a-z0-9_.]{2,60}$"), classified("public")]
-    label: Annotated[str, Field(min_length=1, max_length=120), classified("public")]
+    # K-01's `standards_sets.code` CHECK (0180).
+    code: Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9_.-]{0,59}$"), classified("public")]
+    label: Annotated[str, Field(min_length=1, max_length=200), classified("public")]
     standard_refs: Annotated[list[str], Field(max_length=100), classified("public")]
     family: Annotated[StandardsFamily, classified("public")]
 
