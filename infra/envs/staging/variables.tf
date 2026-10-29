@@ -150,3 +150,15 @@ variable "third_party_registry" {
   type        = string
   default     = null
 }
+
+variable "workos_authorize_url" {
+  description = "AuthKit authorize endpoint (from the environment's OpenID discovery document). Null: staff sign-in answers 503."
+  type        = string
+  default     = null
+}
+
+variable "workos_token_url" {
+  description = "AuthKit token endpoint (from the discovery document)."
+  type        = string
+  default     = null
+}
