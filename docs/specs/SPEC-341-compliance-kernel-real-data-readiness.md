@@ -121,6 +121,7 @@ The compliance kernel is what must be true in code before any firm puts real cli
 ### Story 13: The security stage
 - **AC-46** Given R1, then the `security` stage (generated tenant isolation, permission matrix and route introspection; CodeQL; dependency review; pip-audit; Trivy) is a required check on `main`. **Partial**: the generated suites and `.github/workflows/security.yml` are built (TASK-376, TASK-411); making it a required ruleset check is the human's (F-01).
 - **AC-48 Independent tests for the quality tooling (Q-03-T088; ADR-078).** The report publishes every chapter 10 §10.14.2 area without a commit, mutation jobs run only inside budget, and a PR lowering a mutation floor is refused; a red module below 97% line failing stage 2 waits on Q-03-T066.
+- **AC-50 Pilot 0 top ten resolved before M9 (Q-03-T084; F-09 §3.7 G3).** Given F-09's Pilot 0 usability log (`docs/ops/pilot/pilot-0-usability-log.md`), then before Tue Jun 1, 2027 it holds the top ten, each `closed` with its fix PR or `re-filed` against an owning epic, no capability closed as a defect, pilot codes only (`abacus_tools.quality.pilot_log --exit`; the shape check runs in check-fast).
 - **AC-47 Supply chain at quarter end (Q-03-T086).** No high or critical dependency or image finding is older than its SLA at the quarter's end (`supply_chain report --quarter`).
 
 **Invariants across the spec.** INV-1: every new write action is denied to the agent in the matrix and listed in `human-only-actions.yaml` where it records a human decision. INV-3: every table here is tenant-scoped with forced RLS except the platform reference sets (`retention_floors`, `retention_policy_defaults`), which are read through definers. INV-5: every audit event names a person, "‹person› via Agent", or the system.
@@ -204,6 +205,7 @@ None in this epic. Facts arrive as words and numbers so consumer screens never e
 | AC-42, AC-43 | lint, generated security tests | `unit/quality/test_fresh_mfa_*.py`, `security/test_fresh_mfa_generated.py` |
 | AC-44 | integration, unit, replay | `agent_tests/test_run_records.py`, `unit/agents/test_run_records.py`, `workflows/test_run_record_replay.py`; T46 (not built) |
 | AC-45 | not built | Q-02-T45, T46 |
+| AC-50 | unit; the exit check at the PW0 exit review | `unit/quality/test_pilot_log.py`, `abacus_tools.quality.pilot_log --exit` |
 | AC-46 | generated security tests | `tests/security/` |
 
 ## 19. Rollout
