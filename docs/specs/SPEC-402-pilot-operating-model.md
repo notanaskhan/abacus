@@ -37,6 +37,11 @@ pilot codes and the W-signal thresholds, for every pilot window from PW1 (Q-04 �
   policies, AI opt-in and stages, the support-session switch and status subscribers; every step
   names its screen state or CLI, its operator and its evidence, and no step loads firm content
   through a commit or the seed loader (Q-04-T015; Q-04 AC-5.1 to AC-5.7).
+- **AC-7** Each PW1 dossier's AY sections (communications, content, integrations) are green with the
+  evidence `docs/ops/pilot/shadow-briefing.md` §3 names, and every firm admin has acknowledged the
+  shadow rules (shadow-briefing v1: staff only, no client email, nothing client-facing, agents in
+  shadow, the firm's tools the system of record) in writing, recorded in the dossier by date,
+  version and vault entry (Q-04-T022).
 - **AC-6** Each PW1 firm's `docs/ops/go-live/<pilot-code>.md` (made by `abacus_tools.go_live_dossier
   new`, from `_TEMPLATE.md`) carries chapter 06 §8.3 by section and owner; `fill` writes the
   `make go-live-check LEVEL=shadow` rows into each section's generated block; `check` (check-fast)
