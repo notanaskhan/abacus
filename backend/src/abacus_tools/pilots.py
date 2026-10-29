@@ -6,6 +6,7 @@ behalf of the named operator, and every change is audited.
         --end 2027-07-12 --baseline-days 14 --operator U
     python -m abacus_tools.pilots mode --firm F --enrolment E --mode live --operator U \
         [--confirmed-by U2]
+    python -m abacus_tools.pilots metrics --firm F --week 2027-06-07   (Q-04-T008, a rerun)
 """
 
 from __future__ import annotations
@@ -18,7 +19,12 @@ from typing import cast
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext
-from abacus.modules.platform.api import PilotMode, enrol_pilot, set_pilot_mode
+from abacus.modules.platform.api import (
+    PilotMode,
+    compute_pilot_week,
+    enrol_pilot,
+    set_pilot_mode,
+)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -37,7 +43,13 @@ def main(argv: list[str] | None = None) -> int:
     mode.add_argument("--mode", choices=("live", "system_of_record", "exited"), required=True)
     mode.add_argument("--operator", type=UUID, required=True)
     mode.add_argument("--confirmed-by", type=UUID, default=None)
+    metrics = sub.add_parser("metrics")
+    metrics.add_argument("--firm", type=UUID, required=True)
+    metrics.add_argument("--week", type=date.fromisoformat, required=True)
     args = parser.parse_args(argv)
+    if args.command == "metrics":
+        print(asyncio.run(compute_pilot_week(args.firm, args.week)))
+        return 0
     tenant = TenantContext(args.firm, "system", "operator:pilots", args.operator)
     if args.command == "enrol":
         found = asyncio.run(

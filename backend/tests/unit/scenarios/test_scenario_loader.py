@@ -65,6 +65,42 @@ def test_staging_refuses_while_a_deploy_is_in_flight(monkeypatch: pytest.MonkeyP
         loader.guard("postgresql://u:p@db.example.test/abacus", staging=True)
 
 
+def _no_gh(_name: str) -> None:
+    return None
+
+
+def _free(_env: str) -> None:
+    return None
+
+
+def test_without_gh_the_staging_check_reads_the_ssm_deploy_lock(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """DEC-1005: inside the staging VPC (no gh) the deploy lock decides."""
+    monkeypatch.setattr(loader.shutil, "which", _no_gh)
+    monkeypatch.setattr(loader.deploy_lock, "held", _free)
+    assert loader.deploy_in_flight() is None
+    held = loader.deploy_lock.Lock(
+        "deploy-staging", "run/7", "abc", "2026-10-29T10:00:00+00:00", "deploy"
+    )
+
+    def lock_held(_env: str) -> object:
+        return held
+
+    monkeypatch.setattr(loader.deploy_lock, "held", lock_held)
+    assert loader.deploy_in_flight() == "deploy lock held by deploy-staging (run/7)"
+
+
+def test_without_gh_or_ssm_the_staging_check_refuses(monkeypatch: pytest.MonkeyPatch) -> None:
+    def no_ssm(_env: str) -> None:
+        raise RuntimeError("no credentials")
+
+    monkeypatch.setattr(loader.shutil, "which", _no_gh)
+    monkeypatch.setattr(loader.deploy_lock, "held", no_ssm)
+    with pytest.raises(loader.LoadRefused, match="in flight"):
+        loader.deploy_in_flight()
+
+
 def test_each_event_has_a_stable_32_hex_trace() -> None:
     events = build("E0").events
     traces = [loader.trace_hex(e) for e in events]

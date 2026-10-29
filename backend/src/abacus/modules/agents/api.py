@@ -48,6 +48,7 @@ from abacus.modules.agents.home_counts import register_home_counts
 from abacus.modules.agents.inbox_match import MATCHER, MatchOutcome, create_match_run, match
 from abacus.modules.agents.issue_client_requests import send_issue_to_client
 from abacus.modules.agents.knowledge import KnowledgeHit, knowledge_context, search_knowledge
+from abacus.modules.agents.pilot_w7 import w7_override_rate
 from abacus.modules.agents.proposal_slots import (
     AdoptedValue,
     ApprovedChangeSet,
@@ -116,6 +117,7 @@ from abacus.modules.agents.service import (
 from abacus.modules.agents.shadow_score import (
     OverrideRate,
     ShadowScore,
+    live_override,
     override_rate,
     shadow_score,
 )
@@ -129,7 +131,7 @@ from abacus.modules.agents.stage_admin import (
     check_live,
 )
 from abacus.modules.agents.stage_routes import platform_stages_router
-from abacus.modules.agents.stages import assistants, stage_for
+from abacus.modules.agents.stages import assistants, stage_for, starts_in_shadow
 from abacus.modules.agents.upload_review import (
     REVIEWER,
     ReviewOutcome,
@@ -167,6 +169,7 @@ from abacus.modules.identity.api import (
     register_ai_assistants,
     register_autonomy_level_provider,
 )
+from abacus.modules.platform.api import register_pilot_metric_source
 from abacus.modules.review.api import register_client_request_sender
 
 # Evidence owns review decisions; agents owns what was proposed (TASK-019 D1).
@@ -222,6 +225,7 @@ register_engagement_owners(AUDIT_KINDS, audit_owners)
 # R-01-T24 security review M-a: communications checks a scheduled Reminder against what was sent.
 register_reminder_history(reminder_history_of)
 
+register_pilot_metric_source("w7", w7_override_rate)  # Q-04-T008 (DEC-825)
 register_client_request_sender(send_issue_to_client)  # P-04-T31 (DEC-828)
 
 __all__ = [
@@ -320,6 +324,7 @@ __all__ = [
     "install_fake_reviews",
     "knowledge_context",
     "knowledge_router",
+    "live_override",
     "load_agent_context",
     "match",
     "override_rate",
@@ -343,6 +348,7 @@ __all__ = [
     "spec",
     "start_agents",
     "start_screening",
+    "starts_in_shadow",
     "template_drafts_router",
     "upload_review_available",
     "verify_citations",

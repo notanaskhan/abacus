@@ -213,13 +213,6 @@ export function Overview({ engagementId }: { engagementId: string }): JSX.Elemen
               Team:{" "}
               {g.team.length === 0 ? "nobody yet" : g.team.map((m) => m.display_name).join(", ")}
             </p>
-            <Link
-              to="/engagements/$engagementId/people"
-              params={{ engagementId }}
-              className="text-body text-espresso hover:underline"
-            >
-              Manage people
-            </Link>
           </Panel>
         </div>
       </div>

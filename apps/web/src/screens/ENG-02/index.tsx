@@ -35,6 +35,7 @@ import {
 import { type JSX, type ReactNode, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
+import { RecordActivity } from "../shared/RecordActivity";
 import { useSession } from "../../app-core/session";
 import { useStaff } from "../../domain/clients";
 import {
@@ -75,7 +76,7 @@ import { COPY } from "./copy";
 // P-07-T61 (a track holds at most seven options); "Activity ›" is its placeholder.
 
 export type Eng02Tab =
-  "overview" | "dashboard" | "board" | "work-items" | "team" | "letter" | "budget";
+  "overview" | "dashboard" | "board" | "work-items" | "team" | "letter" | "budget" | "activity";
 
 /** The tabs that render only in fixture builds (their targets are planned). */
 const PLANNED_TABS: ReadonlySet<Eng02Tab> = new Set(["dashboard", "board", "budget"]);
@@ -88,6 +89,7 @@ const TAB_LABEL: Readonly<Record<Eng02Tab, string>> = {
   team: COPY.tabs.team,
   letter: COPY.tabs.letter,
   budget: COPY.tabs.budget,
+  activity: COPY.tabs.activity,
 };
 
 export type Eng02Target = { screen: "CLI-02"; clientId: string } | { screen: "ENG-01" };
@@ -728,11 +730,22 @@ export function ENG02({
     </div>
   );
 
+  // P-07-T61 (DEC-822): Activity is a tab where the track has room (production: five); the
+  // fixture build's R2 track is already seven, so there the canvas's "Activity ›" opens it.
   const shown: Eng02Tab[] = (
-    ["overview", "dashboard", "board", "work-items", "team", "letter", "budget"] as const
-  ).filter((t) => PLANNED_VISIBLE || !PLANNED_TABS.has(t));
+    [
+      "overview",
+      "dashboard",
+      "board",
+      "work-items",
+      "team",
+      "letter",
+      "budget",
+      "activity",
+    ] as const
+  ).filter((t) => (PLANNED_VISIBLE ? t !== "activity" : !PLANNED_TABS.has(t)));
   // A tab this build does not draw (a planned one in production) shows the Overview.
-  const view: Eng02Tab = shown.includes(tab) ? tab : "overview";
+  const view: Eng02Tab = shown.includes(tab) || tab === "activity" ? tab : "overview";
   const countOf = (t: Eng02Tab): number | undefined => {
     if (record === undefined) return undefined;
     if (t === "work-items" && record.tab_counts.work_items > 0)
@@ -862,6 +875,8 @@ export function ENG02({
           />
         ) : view === "work-items" ? (
           workGroup
+        ) : view === "activity" ? (
+          <RecordActivity of={{ engagement: record.id }} now={now} tz={tz} />
         ) : (
           <>
             {audit && (
@@ -937,7 +952,13 @@ export function ENG02({
           ...(PLANNED_VISIBLE
             ? {
                 actions: (
-                  <Button variant="link" size="sm" disabled>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    onClick={() => {
+                      onTab("activity");
+                    }}
+                  >
                     {COPY.canvas.activity}
                   </Button>
                 ),

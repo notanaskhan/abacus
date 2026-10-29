@@ -1,3 +1,4 @@
+import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { type Plugin, loadEnv } from "vite";
@@ -65,6 +66,21 @@ function fontPreload(): Plugin {
   };
 }
 
+// DEC-1006: the portal build swaps the UI kit's icon registry for its portal subset, so a portal
+// page ships only the glyphs portal code can name (src/portal/icon-registry.test.ts holds it
+// complete). The firm app keeps the full registry.
+function portalIcons(): Plugin {
+  return {
+    name: "abacus-portal-icons",
+    enforce: "pre",
+    resolveId(source, importer) {
+      if (source !== "./registry" || importer === undefined) return null;
+      if (!/[\\/]packages[\\/]ui[\\/]src[\\/]icons[\\/][^\\/]+$/.test(importer)) return null;
+      return path.join(path.dirname(importer), "portal-registry.ts");
+    },
+  };
+}
+
 export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, ".", ["VITE_", "ABACUS_PORT_OFFSET"]);
   // `vite build --mode portal` (P-08-T07; `build:portal`): the client portal's own entry,
@@ -77,7 +93,13 @@ export default defineConfig(({ mode, command }) => {
   // This worktree's port offset (F-01-T09; `make worktree-env`): 0 in the primary checkout and CI.
   const offset = Number(env.ABACUS_PORT_OFFSET ?? "0") || 0;
   return {
-    plugins: [react(), tailwindcss(), contentSecurityPolicy(), fontPreload()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      contentSecurityPolicy(),
+      fontPreload(),
+      ...(portal ? [portalIcons()] : []),
+    ],
     define: {
       "import.meta.env.VITE_UI_GALLERY": JSON.stringify(gallery),
       // Fixture mode (F-04-T04, T05): `make dev-fixtures` sets VITE_FIXTURES=1. A build folds it

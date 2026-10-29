@@ -13,6 +13,7 @@ an hour is 429.
 from __future__ import annotations
 
 import dataclasses
+import re
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -45,6 +46,17 @@ DUMPS = (
     "SELECT coalesce(string_agg(t::text, ''), '') FROM access_events t WHERE tenant_id = $1",
     "SELECT coalesce(string_agg(t::text, ''), '') FROM outbox t WHERE tenant_id = $1",
 )
+
+
+_IDS_AND_TIMES = re.compile(
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+    r"|\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[+-]\d{2}(?::?\d{2})?|Z)?"
+)
+
+
+def _scrub(text: str) -> str:
+    """A dump without UUIDs and timestamps, whose digits can hold "6081" by chance."""
+    return _IDS_AND_TIMES.sub("", text)
 
 
 async def _w2(firm: Firm) -> tuple[uuid.UUID, uuid.UUID]:
@@ -128,10 +140,11 @@ async def test_ac26_an_onshore_member_gets_the_value_and_a_logged_record(seed: S
     )
     assert (access["subject_type"], access["subject_id"]) == ("pii_region", region)
     assert "pii_tin" in access["flags"]
-    # The value is in no table but its sealed envelope, and in no log line.
+    # The value is in no table but its sealed envelope, and in no log line. Ids and timestamps are
+    # scrubbed first: a UUID's hex or a timestamp's microseconds can hold "6081" by chance.
     for query in DUMPS:
         dumped = await seed.value(query, firm.tenant_id)
-        assert "6081" not in str(dumped).replace(str(region), ""), query
+        assert "6081" not in _scrub(str(dumped)), query
     assert all("6081" not in str(entry) for entry in logs)
 
 

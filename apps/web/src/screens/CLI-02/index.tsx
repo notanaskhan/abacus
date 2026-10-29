@@ -40,6 +40,7 @@ import { type JSX, type ReactNode, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { useFlag } from "../../app-core/flags";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
+import { RecordActivity } from "../shared/RecordActivity";
 import { useSession } from "../../app-core/session";
 import {
   MaskedTin,
@@ -73,7 +74,7 @@ import { COPY } from "./copy";
 // Planned targets (CLI-04, CLI-05, CLI-07, CLI-08, ENG-01, ENG-03, FIL-01, INB-04, INS-05, BND-04,
 // TAX-02, TXP-10, TXP-12, HOME-03) are hidden in production and disabled with their hint elsewhere.
 
-export type Cli02Tab = "overview" | "engagements" | "relationships" | "contacts";
+export type Cli02Tab = "overview" | "engagements" | "relationships" | "contacts" | "activity";
 
 /** Where a CLI-02 control goes: a `to.<ID>()` link the route navigates to. */
 export type Cli02Target =
@@ -981,7 +982,9 @@ export function CLI02({
                 ...(counts?.messages == null ? {} : { count: counts.messages }),
               },
             ]
-          : []),
+          : // P-07-T61 (DEC-822): Activity where the track has room; the fixture build's
+            // track is already seven (C-05), so there the route's `/activity` opens it.
+            [{ label: COPY.tabs.activity }]),
       ]}
       active={
         tab === "engagements"
@@ -990,7 +993,9 @@ export function CLI02({
             ? COPY.tabs.relationships
             : tab === "contacts" && contactsLive
               ? COPY.tabs.contacts
-              : COPY.tabs.overview
+              : tab === "activity"
+                ? COPY.tabs.activity
+                : COPY.tabs.overview
       }
       onChange={(label) => {
         onTab(
@@ -1000,7 +1005,9 @@ export function CLI02({
               ? "relationships"
               : label === COPY.tabs.contacts
                 ? "contacts"
-                : "overview",
+                : label === COPY.tabs.activity
+                  ? "activity"
+                  : "overview",
         );
       }}
     />
@@ -1029,7 +1036,9 @@ export function CLI02({
       ? COPY.tabs.engagements
       : tab === "relationships"
         ? COPY.tabs.relationships
-        : COPY.canvas.title;
+        : tab === "activity"
+          ? COPY.tabs.activity
+          : COPY.canvas.title;
 
   const subbar = (
     <Subbar
@@ -1118,6 +1127,8 @@ export function CLI02({
               <Relationships clientId={clientId} />
             ) : tab === "engagements" ? (
               <Engagements record={data} onNavigate={onNavigate} />
+            ) : tab === "activity" ? (
+              <RecordActivity of={{ client: clientId }} now={now} tz={tz} />
             ) : overview.data === undefined ? null : (
               <Overview overview={overview.data} now={now} tz={tz} onNavigate={onNavigate} />
             ),

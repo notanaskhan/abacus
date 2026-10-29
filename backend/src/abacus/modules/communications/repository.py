@@ -24,6 +24,7 @@ async def insert_message(
     created_by: UUID,
     template_version_id: UUID | None = None,
     kind: str | None = None,
+    from_domain: str | None = None,
 ) -> None:
     await session.execute(
         insert(Message).values(
@@ -38,5 +39,6 @@ async def insert_message(
             created_by=created_by,
             template_version_id=template_version_id,
             kind=kind,
+            from_domain=from_domain,
         )
     )

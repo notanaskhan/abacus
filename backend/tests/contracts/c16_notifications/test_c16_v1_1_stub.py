@@ -7,7 +7,8 @@ second factor; the agent and system hold none of the actions; every field is cla
 `register_email_template` slot refuses what the whitelist does not allow. R-01-T19 built the list,
 read, draft and publish routes and `send_templated` (their behaviour:
 `tests/integration/test_r01t19_email_template_versions.py`), R-01-T23 preview, test send and
-the import, R-01-T24 the follow-up policy: those routes no longer answer 501,
+the import, R-01-T24 the follow-up policy, R-01-T26 portal settings and R-01-T27 the sending
+domains (`tests/integration/test_r01t27_sending_domains.py`): no route answers 501 any more,
 and `send_templated` refuses an agent or any system send but the scheduled reminder before it
 reads anything. C16 v1 stays frozen (`test_c16_frozen.py`)."""
 
@@ -17,7 +18,6 @@ import inspect
 import json
 import typing
 import uuid
-from types import ModuleType
 from typing import cast
 
 import pytest
@@ -31,9 +31,9 @@ from abacus.kernel._flags import (
 )
 from abacus.kernel.classification import unclassified_fields
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag
-from abacus.modules.communications import template_registry, templates_contract
+from abacus.modules.communications import sending_domains, template_registry, templates_contract
 from abacus.modules.identity.api import AuthContext, Forbidden
 from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.portal import settings_contract
@@ -87,6 +87,11 @@ BUILT = {
     ("post", f"{S}/publish"),
     ("post", f"{S}/logo"),
     ("get", f"{S}/preview"),
+    # R-01-T27 (TASK-1850): sending domains.
+    ("get", D),
+    ("post", D),
+    ("post", f"{D}/{{domain_id}}/check"),
+    ("delete", f"{D}/{{domain_id}}"),
 }
 IDEMPOTENT = {f"{T}/{{key}}/test-send", f"{T}/{{key}}/publish", D, f"{S}/publish"}
 FRESH_MFA = {"email_template.publish", "email_template.import", "sending_domain.manage"} | {
@@ -196,28 +201,24 @@ async def test_ac4_portal_settings_writes_404_with_the_editor_off(
     await settings_contract._editor(_ctx())  # pyright: ignore[reportPrivateUsage] -- the write gate
 
 
-@pytest.mark.parametrize("module", [templates_contract])
-@pytest.mark.parametrize("flag", [EDITOR, SENDER, None])
-async def test_ac4_flag_off_is_404_and_on_is_501(
-    module: ModuleType, flag: Flag | None, monkeypatch: pytest.MonkeyPatch
+async def test_ac4_sending_domain_writes_are_404_with_their_flag_off(
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    async def off(_tenant: object, _f: object) -> bool:
+    """R-01-T27: authorise first (the matrix), then the flag; off is 404 before SES or a read."""
+    seen: list[object] = []
+
+    async def allowed(*_: object) -> None:
+        return None
+
+    async def off(_tenant: object, f: object) -> bool:
+        seen.append(f)
         return False
 
-    async def on(_tenant: object, _f: object) -> bool:
-        return True
-
-    stub = module._stub  # the stub gate, tested directly
-    monkeypatch.setattr(module, "flag_enabled", off)
-    if flag is None:  # ungated reads and the import: 501 whatever the flags say
-        with pytest.raises(NotImplementedYet):
-            await stub(_ctx(), flag)
-    else:
-        with pytest.raises(NotFound):
-            await stub(_ctx(), flag)
-    monkeypatch.setattr(module, "flag_enabled", on)
-    with pytest.raises(NotImplementedYet):
-        await stub(_ctx(), flag)
+    monkeypatch.setattr(sending_domains, "authorise", allowed)
+    monkeypatch.setattr(sending_domains, "flag_enabled", off)
+    with pytest.raises(NotFound):
+        await sending_domains.authorise_write(_ctx())
+    assert seen == [SENDER]
 
 
 def test_ac4_every_new_flag_is_off_by_default() -> None:

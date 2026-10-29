@@ -169,6 +169,14 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "firm_export_downloads": "firm_export_links_immutable",  # 0216 (TASK-1403)
     "assurance_external_releases": "assurance_external_records_immutable",  # 0226 (TASK-1443)
     "assurance_external_archives": "assurance_external_records_immutable",  # 0226 (TASK-1443)
+    "envelope_events": "signatures_rows_immutable",  # 0292 (N-02-T07)
+    "envelope_provider_calls": "signatures_rows_immutable",  # 0292 (N-02-T07)
+    "signature_evidence": "signatures_rows_immutable",  # 0292 (N-02-T07)
+    "esign_disclosures": "signatures_rows_immutable",  # 0292 (N-02-T07)
+    "esign_acceptances": "signatures_rows_immutable",  # 0292 (N-02-T07)
+    "inbound_messages": "intake_rows_immutable",  # 0293 (N-01-T07)
+    "triage_decisions": "intake_rows_immutable",  # 0293 (N-01-T07)
+    "inbox_attachment_flags": "intake_rows_immutable",  # 0293 (N-01-T07)
 }
 # Update columns for tables outside the modules (TASK-008); modules declare theirs.
 _PLATFORM_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
@@ -298,6 +306,8 @@ DEFINER_FUNCTIONS = frozenset(
     | {"security_sessions", "security_session_member", "security_sign_in_methods"}
     | {"auth_session_refused_here", "auth_session_owner", "auth_session_purge"}
     | {"access_events_partition"}  # 0105 (Q-02-T20): next month's partition, ahead of time
+    # 0340 (R-01-T27): whether the session's firm's client mail is open; operators open it.
+    | {"client_mail_enabled", "set_client_mail"}
     # 0107 (Q-01-T45): the provisioning workflow's writers, and operators' plan contents.
     | {"apply_plan_entitlements", "invite_first_admin", "set_plan_module"}
     # 0111 (P-08-T05, ADR-163): branding before sign-in, and a firm's own portal hosts.
@@ -349,6 +359,7 @@ OPS_ONLY_FUNCTIONS = frozenset(
     {"set_platform_control", "provision_firm", "set_plan_module"}
     | {"retention_defaults_backfill"}  # 0112 (Q-02-T23): the one-off back-fill
     | {"integration_catalog_load"}  # 0194 (A-02-T12): the reviewed catalogue document
+    | {"set_client_mail"}  # 0340 (R-01-T27): the M10 flip, two people named
 )
 _DEFINER_SEARCH_PATH = "search_path=pg_catalog, public, pg_temp"
 _DEFINERS = """
