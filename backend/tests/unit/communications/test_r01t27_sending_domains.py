@@ -12,8 +12,8 @@ import pytest
 
 from abacus.modules.communications.sending_domains import (
     VERIFY_WINDOW,
-    decide,
     gated,
+    next_state,
 )
 from abacus.modules.communications.ses_identities import IdentityStatus, State
 from abacus.modules.communications.transport import LocalMailbox
@@ -27,7 +27,9 @@ def _found(dkim: State, mail_from: State) -> IdentityStatus:
 
 
 def test_ac1_dkim_and_mail_from_verified_moves_pending_dns_to_verified() -> None:
-    made = decide("pending_dns", _found("verified", "verified"), ASKED, ASKED + timedelta(hours=1))
+    made = next_state(
+        "pending_dns", _found("verified", "verified"), ASKED, ASKED + timedelta(hours=1)
+    )
     assert (made.status, made.failure_reason) == ("verified", None)
 
 
@@ -36,7 +38,7 @@ def test_ac1_dkim_and_mail_from_verified_moves_pending_dns_to_verified() -> None
     [("pending", "pending"), ("verified", "pending"), ("pending", "verified")],
 )
 def test_ac1_anything_less_stays_pending_inside_the_window(dkim: State, mail_from: State) -> None:
-    made = decide("pending_dns", _found(dkim, mail_from), ASKED, ASKED + timedelta(hours=71))
+    made = next_state("pending_dns", _found(dkim, mail_from), ASKED, ASKED + timedelta(hours=71))
     assert made.status == "pending_dns" and made.failure_reason is None
 
 
@@ -50,31 +52,35 @@ def test_ac1_anything_less_stays_pending_inside_the_window(dkim: State, mail_fro
 def test_ac1_72_hours_without_verification_fails_with_the_reason(
     dkim: State, mail_from: State, reason: str
 ) -> None:
-    made = decide("pending_dns", _found(dkim, mail_from), ASKED, ASKED + VERIFY_WINDOW)
+    made = next_state("pending_dns", _found(dkim, mail_from), ASKED, ASKED + VERIFY_WINDOW)
     assert (made.status, made.failure_reason) == ("failed", reason)
 
 
 def test_ac1_a_missing_identity_waits_then_fails_as_identity_missing() -> None:
-    assert decide("pending_dns", None, ASKED, ASKED + timedelta(hours=1)).status == "pending_dns"
-    made = decide("pending_dns", None, ASKED, ASKED + VERIFY_WINDOW)
+    assert (
+        next_state("pending_dns", None, ASKED, ASKED + timedelta(hours=1)).status == "pending_dns"
+    )
+    made = next_state("pending_dns", None, ASKED, ASKED + VERIFY_WINDOW)
     assert (made.status, made.failure_reason) == ("failed", "identity_missing")
 
 
 def test_ac1_ses_saying_failed_fails_at_once() -> None:
-    made = decide("pending_dns", _found("failed", "pending"), ASKED, ASKED + timedelta(hours=1))
+    made = next_state(
+        "pending_dns", _found("failed", "pending"), ASKED, ASKED + timedelta(hours=1)
+    )
     assert (made.status, made.failure_reason) == ("failed", "dkim_not_verified")
 
 
 def test_a_verified_domain_keeps_its_status_through_a_temporary_failure() -> None:
-    assert decide("verified", _found("pending", "verified"), ASKED, ASKED).status == "verified"
-    made = decide("verified", _found("verified", "failed"), ASKED, ASKED)
+    assert next_state("verified", _found("pending", "verified"), ASKED, ASKED).status == "verified"
+    made = next_state("verified", _found("verified", "failed"), ASKED, ASKED)
     assert (made.status, made.failure_reason) == ("failed", "mail_from_not_verified")
-    assert decide("verified", None, ASKED, ASKED).failure_reason == "identity_missing"
+    assert next_state("verified", None, ASKED, ASKED).failure_reason == "identity_missing"
 
 
 @pytest.mark.parametrize("status", ["failed", "revoked"])
 def test_a_failed_or_revoked_domain_never_moves(status: str) -> None:
-    made = decide(status, _found("verified", "verified"), ASKED, ASKED)  # pyright: ignore[reportArgumentType]
+    made = next_state(status, _found("verified", "verified"), ASKED, ASKED)  # pyright: ignore[reportArgumentType] -- a status string the Literal names
     assert made.status == status
 
 

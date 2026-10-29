@@ -19,7 +19,7 @@ from temporalio import activity
 from temporalio.worker import Worker
 
 from abacus.kernel.temporal import payload_codec
-from abacus.modules.communications.workflows import (
+from abacus.modules.communications.api import (
     SendingDomainVerificationInput,
     SendingDomainVerificationWorkflow,
 )

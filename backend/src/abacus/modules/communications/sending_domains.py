@@ -120,11 +120,12 @@ class Decision:
     failure_reason: FailureReason | None
 
 
-def decide(
+def next_state(
     status: DomainStatus, found: IdentityStatus | None, requested_at: datetime, at: datetime
 ) -> Decision:
-    """The one rule for a check (pure; R-01-T30 tests it directly). `found` None: SES has no
-    identity for the domain. A revoked or failed domain never moves here."""
+    """The one rule for a check (pure; R-01-T30 tests it directly). Not named `decide`: that name
+    is the review grammar's (REVIEW-001). `found` None: SES has no identity for the domain. A
+    revoked or failed domain never moves here."""
     dkim: RecordStatus = "pending" if found is None else found.dkim
     mail_from: RecordStatus = "pending" if found is None else found.mail_from
     if status not in LIVE:
@@ -158,9 +159,15 @@ def workflow_id(tenant_id: UUID, domain_id: UUID) -> str:
 
 # --- reads -----------------------------------------------------------------------------------
 
-_COLUMNS = (
-    "id, domain, from_local_part, mail_from_domain, status, dkim_records, dkim_status, "
-    "mail_from_status, failure_reason, requested_at, verified_at, last_checked_at"
+_LIST = text(
+    "SELECT id, domain, from_local_part, mail_from_domain, status, dkim_records, dkim_status, "
+    "mail_from_status, failure_reason, requested_at, verified_at, last_checked_at "
+    "FROM sending_domains ORDER BY requested_at DESC, id LIMIT :limit"
+)
+_ONE = text(
+    "SELECT id, domain, from_local_part, mail_from_domain, status, dkim_records, dkim_status, "
+    "mail_from_status, failure_reason, requested_at, verified_at, last_checked_at "
+    "FROM sending_domains WHERE id = :id"
 )
 
 
@@ -199,24 +206,13 @@ def _row(row: object) -> SendingDomain:
 
 async def _domains(tenant: TenantContext) -> list[SendingDomain]:
     async with tenant_session(tenant) as session:
-        rows = await session.execute(
-            text(
-                f"SELECT {_COLUMNS} FROM sending_domains "  # noqa: S608 -- fixed columns
-                "ORDER BY requested_at DESC, id LIMIT :limit"
-            ),
-            {"limit": _LIST_LIMIT},
-        )
+        rows = await session.execute(_LIST, {"limit": _LIST_LIMIT})
         return [_row(r) for r in rows]
 
 
 async def _domain(tenant: TenantContext, domain_id: UUID) -> SendingDomain:
     async with tenant_session(tenant) as session:
-        row = (
-            await session.execute(
-                text(f"SELECT {_COLUMNS} FROM sending_domains WHERE id = :id"),  # noqa: S608
-                {"id": domain_id},
-            )
-        ).first()
+        row = (await session.execute(_ONE, {"id": domain_id})).first()
     if row is None:
         raise NotFound("sending_domain")
     return _row(row)
@@ -286,7 +282,7 @@ async def create_domain(ctx: AuthContext, domain: str, from_local_part: str) -> 
             except SesIdentityInvalid:
                 raise NotFound("sending_domain") from None  # unreachable: the model's pattern
             except SesIdentityUnavailable as exc:
-                _log.warning("sending_domain.ses_unavailable", code=str(exc))
+                _log.warning("sending_domain.ses_unavailable", error=exc)
                 raise SendingDomainUnavailable from None
             records = [
                 {"type": r.type, "name": r.name, "value": r.value} for r in setup.dns_records
@@ -374,10 +370,10 @@ async def refresh(tenant: TenantContext, domain_id: UUID) -> DomainStatus:
     except SesIdentityNotFound:
         found = None
     except SesIdentityUnavailable as exc:
-        _log.warning("sending_domain.ses_unavailable", code=str(exc))
+        _log.warning("sending_domain.ses_unavailable", error=exc)
         raise SendingDomainUnavailable from None
     at = await now(system)
-    decision = decide(current.status, found, current.requested_at, at)
+    decision = next_state(current.status, found, current.requested_at, at)
     async with uow(system) as tx:
         moved = (
             await tx.session.execute(

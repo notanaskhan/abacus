@@ -144,6 +144,7 @@ from abacus.modules.communications.templates_contract import (
 from abacus.modules.communications.transport import LocalMailbox, Transport, configure_transport
 from abacus.modules.communications.workflows import (
     DrainSesEventsWorkflow,
+    SendingDomainVerificationInput,
     SendingDomainVerificationWorkflow,
 )
 from abacus.modules.identity.api import (
@@ -252,6 +253,7 @@ __all__ = [
     "SendScope",
     "SendingDomainFailed",
     "SendingDomainStatusChanged",
+    "SendingDomainVerificationInput",
     "SendingDomainVerificationWorkflow",
     "SendingDomainVerified",
     "Sent",

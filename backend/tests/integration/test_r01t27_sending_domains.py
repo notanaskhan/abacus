@@ -48,8 +48,8 @@ from .conftest import MigratedDatabase
 from .test_r01t19_email_template_versions import (
     Recorder,
     _firm,  # pyright: ignore[reportPrivateUsage] -- the R-01-T19 firm, reused
-    _publish,  # pyright: ignore[reportPrivateUsage]
-    _send,  # pyright: ignore[reportPrivateUsage]
+    _publish,  # pyright: ignore[reportPrivateUsage] -- the R-01-T19 helper, reused
+    _send,  # pyright: ignore[reportPrivateUsage] -- the R-01-T19 helper, reused
 )
 
 DOMAIN = "probe-firm.test"
