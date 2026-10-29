@@ -2,7 +2,7 @@
 id: TASK-2008
 title: F-06-T09 C7 and C5 consumer contract tests for the signing kit
 spec: SPEC-400
-acceptance_criteria: [F1]
+acceptance_criteria: [AC-44]
 risk_zone: green
 status: in-review
 epic: F-06

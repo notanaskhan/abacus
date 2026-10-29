@@ -73,6 +73,7 @@ Quality and hand-off (F6):
 - **AC-37** Parity and axe locks (T11, T13, T22).
 - **AC-38** Kit docs and consumer hand-off (T23).
 - **AC-39** ADR P-24 (structured agent output) drafted and accepted (T24).
+- **AC-44 C7 consumer contract (F-06-T09).** A breaking change to any C7 field that EnvelopeVM maps fails the provider's CI before the signing kit breaks.
 
 ## 6. Open questions
 - Q1 (iframe or redirect) and Q5 (provider-mode CTA copy): open, decide by Fri Apr 30, 2027; they
