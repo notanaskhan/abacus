@@ -89,6 +89,7 @@ Every real-data milestone waits on third parties with lead times (vendors, couns
 
 ### Story 6: As the builder I want a recorded M1 result
 - **AC-33** Given Fri Oct 30 (M1), then the builder records the M1 result in `docs/product/decision-log.md`: every chapter 06 section 7.6 application has a submitted date (Xero and NetSuite on Nov 2), counsel is engaged with a dated scope, the compliance tool is contracted, at least 6 conversations are booked, and thresholds W1 to W3 merged before the first call; any unfiled application is named with a date.
+- **AC-34 Contract Monday (F-09-T124; F-09 A4).** Each sprint's note (`docs/ops/programme/contract-monday/`, made by `abacus_tools.contract_monday` from the tracker and the risk register) lists every open application, contract and partner with its status and flags those past their Needed-by date; each named trigger (S15: RK-01, RK-04, RK-05, RK-47, RK-50) carries its early-warning signal and contingency, and a fired one has its pre-agreed action written that day; the note holds no price, contract term, partner name or counsel advice.
 
 ## 6. Behaviour and flows
 **Happy path**
