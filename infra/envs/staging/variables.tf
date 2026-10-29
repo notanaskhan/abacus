@@ -67,3 +67,45 @@ variable "api_task_role_name" {
   type        = string
   default     = null
 }
+
+variable "ses_verified_address" {
+  description = "The one inbox SES (sandbox) may send to and from on staging (DEC-1003). Null: no email identity."
+  type        = string
+  default     = null
+}
+
+variable "workos_issuer" {
+  description = "WorkOS staging environment's token issuer (not a secret)."
+  type        = string
+  default     = null
+}
+
+variable "workos_client_id" {
+  description = "WorkOS staging client ID (not a secret)."
+  type        = string
+  default     = null
+}
+
+variable "image_digest" {
+  description = "The backend image to run, as <repository url>@sha256:... (from the release record). Null: no services are planned."
+  type        = string
+  default     = null
+}
+
+variable "workos_jwks" {
+  description = "WorkOS staging JWKS document (public keys, JSON). Null until WorkOS is set up."
+  type        = string
+  default     = null
+}
+
+variable "shared_account_id" {
+  description = "The shared account (release images and records). From the untracked terraform.tfvars."
+  type        = string
+  default     = null
+}
+
+variable "github_repo" {
+  description = "Repository whose staging environment may assume the deploy role."
+  type        = string
+  default     = "notanaskhan/abacus"
+}

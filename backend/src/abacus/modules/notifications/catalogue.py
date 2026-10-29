@@ -337,6 +337,10 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "wall.approved": Kind("wall_approved", _wall_creator, "ethical_wall", "wall_id", None),
     # G-01-T13 (AC4.5): firm admins, seven days or fewer before seasonal access ends.
     "membership.access_ending": Kind("seasonal_access_ending", _admins, "firm", None, None),
+    # P-07-T47 (DEC-1000): firm admins, on day 12 of a 14-day client invitation.
+    "invitation.expiring": Kind(
+        "invitation_expiring", _admins, "client_invitation", "invitation_id"
+    ),
     # R-01-T09: a client's portal drop the code rule could not sort waits for a person.
     "portal.drop_unsorted": Kind("portal_drop_unsorted", _leads, "inbox_file", "inbox_file_id"),
     # R-01-T24 (DEC-564): the follow-up policy's maximum was reached for a binder's recipient.
@@ -471,6 +475,7 @@ TEMPLATES: Final[dict[str, str]] = {
     "wall.created": "An ethical wall is waiting for your approval.",
     "wall.approved": "The ethical wall you added was approved.",
     "membership.access_ending": "Seasonal access ends within seven days for some of your people.",
+    "invitation.expiring": "A client invitation on {engagement} expires in two days.",
     "portal.drop_unsorted": "A client sent a file for your team to sort on {engagement}.",
     "follow_up.limit_reached": (
         "The last reminder on {engagement} went out; nothing more will go automatically."
@@ -623,8 +628,8 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     # I-01-T07: a gate moved to you; K-01-T06: a methodology version waits for your review.
     NotificationKind("gate_reassigned", "approval", "UserPlus"),
     NotificationKind("methodology_review_requested", "approval", "Scale"),
-    # Day 12 of a 14-day client invitation, to the firm admins; registered for the drawer and
-    # preferences now, produced once an expiry pass exists (P-07 §4.5 has no schedule; DEC-540).
+    # Day 12 of a 14-day client invitation, to the firm admins; produced by the hourly identity
+    # pass (`identity.invitation_expiry`, DEC-1000).
     NotificationKind("invitation_expiring", "deadline", "Clock"),
     # A-01-T22 (A-01 §4.7): in-app; an email, when a person turns it on, deep-links to the
     # export sheet (`notification.export_ready`, imported content), never to a download.

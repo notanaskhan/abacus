@@ -10699,6 +10699,14 @@
             "title": "Id",
             "type": "string"
           },
+          "labels": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "cls": "confidential",
+            "title": "Labels",
+            "type": "object"
+          },
           "occurred_at": {
             "cls": "internal",
             "format": "date-time",
