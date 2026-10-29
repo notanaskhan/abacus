@@ -22,6 +22,10 @@ TABLES: frozenset[str] = frozenset(
         "email_template_drafts",
         # R-01-T24 (0221): the firm's follow-up policy, one row per firm.
         "follow_up_policies",
+        # R-01-T27 (0340): the firm's sender domain; whether its client mail is open (read
+        # through `client_mail_enabled()` only, written by `abacus_ops` only).
+        "sending_domains",
+        "firm_mail_policies",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -37,6 +41,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"id", "tenant_id", "engagement_id", "channel", "recipient_ref", "body", "status"}
         | {"violations", "created_by"}
         | {"template_version_id", "kind"}  # R-01-T19 (0196)
+        | {"from_domain"}  # R-01-T27 (0340)
     ),
     "message_deliveries": frozenset(
         {"tenant_id", "message_id", "provider_event_id", "event", "bounce_kind", "occurred_at"}
@@ -58,6 +63,11 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"cadence_days", "max_reminders", "send_local_time", "weekdays_only"}
         | {"stop_on_binder_done", "notify_preparer_after_max", "cc_assigned_preparer", "mode"}
     ),
+    # R-01-T27 (0340): a domain as requested; its state is set by the checks.
+    "sending_domains": frozenset(
+        {"tenant_id", "domain", "from_local_part", "mail_from_domain", "dkim_records"}
+        | {"ses_identity_ref", "requested_by"}
+    ),
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
@@ -73,5 +83,10 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         {"cadence_days", "max_reminders", "send_local_time", "weekdays_only"}
         | {"stop_on_binder_done", "notify_preparer_after_max", "cc_assigned_preparer", "mode"}
         | {"version", "updated_by", "updated_at"}
+    ),
+    # R-01-T27 (0340): the checks set the state; a revoke stamps who and when.
+    "sending_domains": frozenset(
+        {"status", "dkim_records", "dkim_status", "mail_from_status", "verified_at"}
+        | {"last_checked_at", "failure_reason", "revoked_at", "revoked_by"}
     ),
 }
