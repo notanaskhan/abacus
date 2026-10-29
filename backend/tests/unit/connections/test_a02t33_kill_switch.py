@@ -4,7 +4,8 @@ Acceptance: production refuses fake providers at boot, the adapter is registered
 staging drill shows the kill switch stopping pulls within one minute. Here, the pull itself: with
 the flag off for the firm, a running pull through a networked provider ends `connector_paused`
 before any credentials are read or the provider is called; the flag is read past its cache; a
-networkless provider (the demo ledger, an upload) is not a live ledger and is not stopped.
+networkless provider (the demo ledger, an upload, tooling's `fake_` ledgers) is not a live ledger
+and is not stopped.
 """
 
 from __future__ import annotations
@@ -99,7 +100,7 @@ async def test_the_flag_on_lets_the_pull_reach_the_provider(world: dict[str, Any
     assert world["called"] == ["credentials"] and world["failed"] is None
 
 
-@pytest.mark.parametrize("provider", ["fake", "import"])
+@pytest.mark.parametrize("provider", ["fake", "import", "fake_qbo"])
 async def test_a_networkless_provider_is_not_a_live_ledger(
     world: dict[str, Any], provider: str
 ) -> None:

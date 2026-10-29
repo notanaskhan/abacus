@@ -44,7 +44,7 @@ from abacus.modules.connections.repository import (
     set_raw,
     set_snapshot,
 )
-from abacus.modules.connections.service import NETWORKLESS_PROVIDERS, connector_for
+from abacus.modules.connections.service import connector_for, is_networkless
 from abacus.modules.engagements.api import EngagementRef, get_ref, lock_ref
 from abacus.modules.evidence.api import (
     XLSX_MEDIA_TYPE,
@@ -189,7 +189,7 @@ async def pull_raw(sys: SystemContext) -> StoredObject:
         or connection.client_entity_id != run.client_entity_id
     ):
         raise await fail_run(sys, "failed", "connection_inactive")
-    if connection.provider not in NETWORKLESS_PROVIDERS and not await flag_enabled(
+    if not is_networkless(connection.provider) and not await flag_enabled(
         sys.tenant, CONNECTIONS_LIVE_LEDGER, fresh=True
     ):
         # A-02-T33: `connections.live_ledger` is the live ledger's kill switch. Read past the cache
