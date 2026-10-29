@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     from types_boto3_s3 import S3Client
 
 pytestmark = pytest.mark.asyncio
-Body = dict[str, Any]
+Body = dict[str, Any]  # a response or request body as the contract shapes it
 FLAG: Final = "inbox.firm_intake"
 EVIDENCE: Final = "n01t09-evidence"
 MASTER: Final = b"n01t09-independent-master-key-0123456789"
@@ -103,14 +103,14 @@ class Firm:
         )
 
     async def count(self, table: str) -> int:
-        return int(
-            str(
-                await self.net.seed.value(
-                    f"SELECT count(*) FROM {table} WHERE tenant_id = $1",  # noqa: S608
-                    self.tenant_id,
-                )
-            )
-        )
+        return int(str(await self.net.seed.value(_COUNTS[table], self.tenant_id)))
+
+
+_COUNTS: Final = {
+    "inbox_threads": "SELECT count(*) FROM inbox_threads WHERE tenant_id = $1",
+    "inbound_messages": "SELECT count(*) FROM inbound_messages WHERE tenant_id = $1",
+    "inbox_attachments": "SELECT count(*) FROM inbox_attachments WHERE tenant_id = $1",
+}
 
 
 @pytest.fixture

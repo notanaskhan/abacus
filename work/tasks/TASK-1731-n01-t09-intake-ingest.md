@@ -1,8 +1,8 @@
 ---
 id: TASK-1731
 title: N-01-T09 Intake ingest service
-spec: N-01 §4.3; docs/contracts/firm-intake.md
-acceptance_criteria: [N-01-T09]
+spec: SPEC-380
+acceptance_criteria: [AC-2]
 risk_zone: red
 status: in-review
 epic: N-01
