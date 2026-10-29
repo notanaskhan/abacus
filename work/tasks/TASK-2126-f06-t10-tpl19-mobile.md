@@ -1,8 +1,8 @@
 ---
 id: TASK-2126
 title: F-06-T10 TPL-19 frames 1, 2 and 7 on T7-M
-spec: F-06 epic (TPL-19)
-acceptance_criteria: [backlog row]
+spec: SPEC-000  # F-06-T10 row and the TPL-19 handoff; no SPEC defines the specimen
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: amber
 status: in-review
 epic: F-06
