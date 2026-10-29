@@ -44991,16 +44991,35 @@
             "title": "Envelope Ids",
             "type": "array"
           },
-          "template_version_id": {
+          "template_version": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "cls": "internal",
-            "format": "uuid",
-            "title": "Template Version Id",
-            "type": "string"
+            "title": "Template Version"
+          },
+          "template_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Template Version Id"
           }
         },
         "required": [
-          "envelope_ids",
-          "template_version_id"
+          "envelope_ids"
         ],
         "title": "RemindIn",
         "type": "object"

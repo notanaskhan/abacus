@@ -328,7 +328,11 @@ class RemindIn(BaseModel):
     envelope_ids: Annotated[
         list[UUID], Field(min_length=1, max_length=100), classified("internal")
     ]
-    template_version_id: Annotated[UUID, classified("internal")]
+    # N-02-T15 (DEC-1057, additive): POR-20 numbers a template's published versions and exposes
+    # no version id, so a person's preview names the `signature_reminder` version it showed;
+    # N-02-T28 refuses a stale one. The id stays for callers that hold it.
+    template_version_id: Annotated[UUID | None, classified("internal")] = None
+    template_version: Annotated[int | None, Field(ge=1), classified("internal")] = None
 
 
 class RemindOut(BaseModel):
