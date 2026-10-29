@@ -14,13 +14,13 @@ Code: specimen `apps/web/src/gallery/specimens/TPL-01/` over `apps/web/src/fixtu
 ## States
 | Artboard | Viewer (persona) | Clock | Snapshot | Data condition that produces it | Status |
 |---|---|---|---|---|---|
-| a · Default | `hannah-leclerc` | E0 Mon Sep 14, 2026, 9:24 AM CT | E0 | TY2025 list: 224 returns, 79 open, 145 done, 161 extended; `counts` facet; first page of 15 sorted by extended due date then client | F-06-T08 |
-| b · Filtered by tile | `hannah-leclerc` | E0 | E0 | `search: {tile: "awaiting_signature"}`: 10 of 10, exactly the returns behind E1–E10; Signature column with `SignerChips` | F-06-T08 |
-| c · Filtered empty | `hannah-leclerc` | E0 | E0 | `search: {q: "Schwab"}`: no match; tiles and count hidden | F-06-T08 |
-| d · Loading | `hannah-leclerc` | E0 | E0 | `override: {"GET /tax-returns": never()}`: real header and columns, skeleton tiles and 8 rows after 200 ms | F-06-T08 |
-| e · Season start | `hannah-leclerc` | E0 | E0 | `search: {tax_year: 2026}`: no TY2026 returns; tiles all 0 | F-06-T08 |
-| error | `hannah-leclerc` | E0 | — | the list request fails: `ViewState error` with Try again | F-06-T08 |
-| not allowed | a viewer without `tax_return.read` | E0 | — | the T1 not-allowed state | F-06-T08 |
+| a · Default | `hannah-leclerc` | E0 Mon Sep 14, 2026, 9:24 AM CT | E0 | TY2025 list: 224 returns, 79 open, 145 done, 161 extended; `counts` facet; first page of 15 sorted by extended due date then client | built in F-06-T08 |
+| b · Filtered by tile | `hannah-leclerc` | E0 | E0 | `search: {tile: "awaiting_signature"}`: 10 of 10, exactly the returns behind E1–E10; Signature column with `SignerChips` | built in F-06-T08 |
+| c · Filtered empty | `hannah-leclerc` | E0 | E0 | `search: {q: "Schwab"}`: no match; tiles and count hidden | built in F-06-T08 |
+| d · Loading | `hannah-leclerc` | E0 | E0 | `override: {"GET /tax-returns": never()}`: real header and columns, skeleton tiles and 8 rows after 200 ms | built in F-06-T08 |
+| e · Season start | `hannah-leclerc` | E0 | E0 | `search: {tax_year: 2026}`: no TY2026 returns; tiles all 0 | built in F-06-T08 |
+| error | `hannah-leclerc` | E0 | — | the list request fails: `ViewState error` with Try again | built in F-06-T08 |
+| not allowed | a viewer without `tax_return.read` | E0 | — | the T1 not-allowed state | built in F-06-T08 |
 
 ## API
 | Read or write | Endpoint | Shape | Matrix action | allowed_actions and read-only reasons per role |
