@@ -120,6 +120,7 @@ The compliance kernel is what must be true in code before any firm puts real cli
 
 ### Story 13: The security stage
 - **AC-46** Given R1, then the `security` stage (generated tenant isolation, permission matrix and route introspection; CodeQL; dependency review; pip-audit; Trivy) is a required check on `main`. **Partial**: the generated suites and `.github/workflows/security.yml` are built (TASK-376, TASK-411); making it a required ruleset check is the human's (F-01).
+- **AC-48 Independent tests for the quality tooling (Q-03-T088; ADR-078).** The report publishes every chapter 10 §10.14.2 area without a commit, mutation jobs run only inside budget, and a PR lowering a mutation floor is refused; a red module below 97% line failing stage 2 waits on Q-03-T066.
 
 **Invariants across the spec.** INV-1: every new write action is denied to the agent in the matrix and listed in `human-only-actions.yaml` where it records a human decision. INV-3: every table here is tenant-scoped with forced RLS except the platform reference sets (`retention_floors`, `retention_policy_defaults`), which are read through definers. INV-5: every audit event names a person, "‹person› via Agent", or the system.
 

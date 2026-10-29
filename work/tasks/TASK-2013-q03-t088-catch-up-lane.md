@@ -1,8 +1,8 @@
 ---
 id: TASK-2013
 title: Q-03-T088 ADR-078 catch-up lane 2027 Q2, part 1
-spec: SPEC-317
-acceptance_criteria: [F-catch-up]
+spec: SPEC-341
+acceptance_criteria: [AC-48]
 risk_zone: red
 status: in-review
 epic: Q-03
