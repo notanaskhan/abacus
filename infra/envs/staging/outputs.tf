@@ -37,3 +37,35 @@ output "exports_task_environment" {
   description = "Merge into the API and worker task definitions' environment (Q-01-T15)."
   value       = module.exports.task_environment
 }
+
+output "db_address" {
+  description = "RDS hostname (fill-secrets.sh composes the DSNs from it)."
+  value       = module.db.address
+}
+
+output "firm_host" {
+  description = "The firm app's host (CloudFront default domain) until the firm domain exists."
+  value       = local.enabled ? module.firm_edge[0].domain_name : null
+}
+
+output "github_staging_variables" {
+  description = "Values for the staging GitHub environment's variables (names only; compose ARNs outside git)."
+  value = local.enabled ? {
+    ECS_CLUSTER             = module.cluster.cluster_name
+    API_SERVICE             = module.backend["api"].service_name
+    WORKER_SERVICES         = join(" ", [module.backend["worker"].service_name, module.backend["keyops"].service_name])
+    MIGRATE_TASK_DEFINITION = module.oneoff["migrate"].family
+    OPS_TASK_DEFINITION     = module.oneoff["ops"].family
+    TASK_SUBNETS            = join(",", module.network.app_subnet_ids)
+    TASK_SECURITY_GROUP     = aws_security_group.tasks.id
+    WEB_BUCKET              = module.web.bucket
+    FIRM_DISTRIBUTION_ID    = module.firm_edge[0].distribution_id
+    SMOKE_BASE_URL          = "https://${module.firm_edge[0].domain_name}"
+    DEPLOY_ROLE_NAME        = module.deploy_role[0].role_name
+  } : null
+}
+
+output "bootstrap_task_definition" {
+  description = "Family of the one-off database bootstrap task (Q-01-T20)."
+  value       = local.enabled ? module.oneoff["bootstrap"].family : null
+}
