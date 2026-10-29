@@ -31,6 +31,7 @@ from abacus.modules.methodology.lifecycle import (
     version_effective_on,
     version_state,
 )
+from abacus.modules.methodology.programs import CitedStep, step_at
 from abacus.modules.methodology.routes import methodology_router
 from abacus.modules.methodology.service import (
     ApprovedGuidance,
@@ -82,6 +83,7 @@ __all__ = [
     "CatalogItem",
     "CatalogProvider",
     "ChangeEntry",
+    "CitedStep",
     "Effort",
     "EngagementType",
     "Methodology",
@@ -107,6 +109,7 @@ __all__ = [
     "publish_drafted_version",
     "register_catalog_provider",
     "register_usage_counter",
+    "step_at",
     "submit_version",
     "templates_in_firm",
     "version_detail",

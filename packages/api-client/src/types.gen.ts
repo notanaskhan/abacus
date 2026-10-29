@@ -64241,10 +64241,6 @@ export type ProgramErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ProgramError = ProgramErrors[keyof ProgramErrors];
@@ -64297,10 +64293,6 @@ export type ProgramStepsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ProgramStepsError = ProgramStepsErrors[keyof ProgramStepsErrors];
@@ -64359,10 +64351,6 @@ export type ResolveStepErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ResolveStepError = ResolveStepErrors[keyof ResolveStepErrors];
@@ -64814,10 +64802,6 @@ export type ExportVersionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ExportVersionError = ExportVersionErrors[keyof ExportVersionErrors];
@@ -65038,10 +65022,6 @@ export type VersionProgramsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type VersionProgramsError = VersionProgramsErrors[keyof VersionProgramsErrors];
