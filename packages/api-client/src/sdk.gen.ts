@@ -5023,7 +5023,9 @@ export const voidEnvelope = <ThrowOnError extends boolean = false>(options: Opti
 /**
  * Access Log Route
  *
- * The drawer's access-log card (N-01-T19).
+ * The drawer's access-log card (N-01-T19). The firm gate is metadata (every engagement role
+ * holds it there); `evidence.read_access_log` is checked on the item's own engagement or client
+ * by the read model's `visible()` (its relationship layer needs the engagement).
  */
 export const accessLog = <ThrowOnError extends boolean = false>(options: Options<AccessLogData, ThrowOnError>): RequestResult<AccessLogResponses, AccessLogErrors, ThrowOnError> => (options.client ?? client).get<AccessLogResponses, AccessLogErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
