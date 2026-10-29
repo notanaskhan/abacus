@@ -14,6 +14,7 @@ const HOSTED_URL: Readonly<Record<string, string | undefined>> = {
 
 // ADM-06 (G-02-T16) sits behind this flag, which E0 leaves off (G-02-T21).
 const SECURITY_CENTER = ["security_center.v1"];
+const AI_POLICY = ["ai_policy.v1"];
 // ADM-02f's clock (fixtures/scenarios/ADM-02.ts CLOCK_F): Mon Jan 5, 2026, 10:12 AM CT.
 const JAN_5 = "2026-01-05T10:12:00-06:00";
 
@@ -194,11 +195,58 @@ test.describe("J01-core firm onboarding", () => {
     },
   );
 
-  test.fixme(
-    "J01 4: the AI policy and approval gates are reviewed (ADM-04)",
-    owner("G-02 · G-02-T25 ADM-04 at /settings/ai-policy · S14, Fri May 14, 2027"),
+  test(
+    "J01 4: Margaret requests v4 of the AI policy and Daniel approves it (ADM-04)",
+    owner(
+      "G-02 · G-02-T26 fixture; full stack once E0 turns ai_policy.v1 on, staging after the batch deploy · S14, Fri May 14, 2027",
+    ),
     async ({ journey }) => {
-      await journey.as("margaret-okonkwo", "/settings/general", { clock: DEMO_INSTANT });
+      // ADM-04 sits behind `ai_policy.v1`, which E0 leaves off: in fixture mode each step opens
+      // the real route on the screen's own scenario (DEC-457). The agent principal's refusal at
+      // publish and approve is the server's (G-02-T22's suite), not a fixture's.
+      test.fixme(journey.project !== "fixture", "ai_policy.v1 is not on in E0");
+      await journey.as("margaret-okonkwo", "/settings/ai-policy?screen=ADM-04&st=a", {
+        clock: DEMO_INSTANT,
+        flags: AI_POLICY,
+      });
+      await journey.step(
+        "j01 step 4: v3 reviewed, twelve gates, nothing to save",
+        async (page) => {
+          await expect(page.getByText(/^BH AI policy v3 · published /)).toBeVisible();
+          await expect(page.getByText("5. Proposed AJE within threshold")).toBeVisible();
+          await expect(page.getByRole("button", { name: "Save as v4…" })).toBeDisabled();
+        },
+      );
+      await journey.as("margaret-okonkwo", "/settings/ai-policy?screen=ADM-04&st=b", {
+        clock: DEMO_INSTANT,
+        flags: AI_POLICY,
+      });
+      await journey.step(
+        "j01 step 4: Margaret requests v4 with Daniel as approver",
+        async (page) => {
+          await page.getByRole("button", { name: "Save as v4…" }).click();
+          const sheet = page.getByRole("dialog");
+          await expect(sheet.getByText("Override tolerance 8% → 6%")).toBeVisible();
+          await expect(sheet.getByText("Daniel Reyes")).toBeVisible();
+          await expect(sheet.getByText("Margaret Okonkwo")).toHaveCount(0);
+        },
+      );
+      await journey.as("daniel-reyes", "/settings/ai-policy?screen=ADM-04&st=awaiting", {
+        clock: DEMO_INSTANT,
+        flags: AI_POLICY,
+      });
+      await journey.step("j01 step 4: Daniel Reyes approves v4", async (page) => {
+        await expect(page.getByText("Awaiting approval · Daniel Reyes")).toBeVisible();
+        await expect(page.getByRole("button", { name: "Approve v4" })).toBeVisible();
+      });
+      await journey.as("hannah-leclerc", "/settings/ai-policy?screen=ADM-04&st=e", {
+        clock: DEMO_INSTANT,
+        flags: AI_POLICY,
+      });
+      await journey.step("j01 step 4: a manager reads the policy only", async (page) => {
+        await expect(page.getByText("Only partners can change the AI policy.")).toBeVisible();
+        await expect(page.getByRole("button", { name: /^Save as v/ })).toHaveCount(0);
+      });
     },
   );
 

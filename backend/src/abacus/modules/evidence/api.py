@@ -162,7 +162,13 @@ from abacus.modules.evidence.processing import (
 )
 from abacus.modules.evidence.processing import check_upload as check_upload_content
 from abacus.modules.evidence.processing import workflow_id as upload_workflow_id
-from abacus.modules.evidence.records import RecordClass, StoredRecord, anchor_chain, put_record
+from abacus.modules.evidence.records import (
+    RecordClass,
+    StoredRecord,
+    anchor_chain,
+    get_record,
+    put_record,
+)
 from abacus.modules.evidence.render import (
     CODE_COLUMN,
     CREDIT_COLUMN,
@@ -243,6 +249,7 @@ from abacus.modules.evidence.signed_copies import (
     file_signed_copy,
     read_staged,
     screen_and_stage,
+    version_titles,
 )
 from abacus.modules.evidence.storage import (
     MAX_CONTENT_BYTES,
@@ -531,6 +538,7 @@ __all__ = [
     "final_export_for_archive",
     "firm_export_schedule_id",
     "firm_router",
+    "get_record",
     "holds_covering",
     "included_export_versions",
     "is_version_withdrawn",
@@ -584,6 +592,7 @@ __all__ = [
     "upload_preview",
     "upload_workflow_id",
     "verified_citation_ids",
+    "version_titles",
     "version_view",
     "waiting_among",
     "withdrawn_among",

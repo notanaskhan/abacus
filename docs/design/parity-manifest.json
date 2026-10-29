@@ -1390,7 +1390,11 @@
       "source": "handoff/screens/AUD-01 Audits index - All Audits/screenshots/AUD-01d.png",
       "sha256": "42abc77147fcfda74b88433f76dcc7856e0d857c8283c99d9e194ccd30fee2b8",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-phase='processing'] svg"
+      ],
+      "locked": true
     },
     "aud-01e.window": {
       "page": "screens/AUD-01?st=e",
@@ -1432,7 +1436,10 @@
       "source": "handoff/screens/AUD-02 Audit cockpit - Overview- Source Documents- Agent/screenshots/AUD-02a.png",
       "sha256": "16be38c82a275a70761e6b8efb7f9e014abeee6594b5a4f39063bb7acb6e5c58",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ]
     },
     "aud-02b.window": {
       "page": "screens/AUD-02?st=b",
@@ -1440,7 +1447,10 @@
       "source": "handoff/screens/AUD-02 Audit cockpit - Overview- Source Documents- Agent/screenshots/AUD-02b.png",
       "sha256": "fa6140f097de719e1deb1b6242fe903fc5d5f2916f06f7cb53109e76a52205dd",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ]
     },
     "aud-02c.window": {
       "page": "screens/AUD-02?st=c",
@@ -1448,7 +1458,10 @@
       "source": "handoff/screens/AUD-02 Audit cockpit - Overview- Source Documents- Agent/screenshots/AUD-02c.png",
       "sha256": "ed81209cf5e48b806b195783498f1d4a67df9fc13849c5d31a7f660200e179a7",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ]
     },
     "aud-02d.window": {
       "page": "screens/AUD-02?st=d",
@@ -1456,7 +1469,10 @@
       "source": "handoff/screens/AUD-02 Audit cockpit - Overview- Source Documents- Agent/screenshots/AUD-02d.png",
       "sha256": "88b8d2781ee22ce55407abaef0d9a4d82168aee46a1c8c36bd722f156c995a60",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ]
     },
     "aud-02e.window": {
       "page": "screens/AUD-02?st=e",
@@ -1464,7 +1480,10 @@
       "source": "handoff/screens/AUD-02 Audit cockpit - Overview- Source Documents- Agent/screenshots/AUD-02e.png",
       "sha256": "445a71f759de242a2164108056396537cbc0328bb19359ec27e858b4ad5492dc",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ]
     },
     "aud-02f.window": {
       "page": "screens/AUD-02?st=f",
@@ -1472,7 +1491,10 @@
       "source": "handoff/screens/AUD-02 Audit cockpit - Overview- Source Documents- Agent/screenshots/AUD-02f.png",
       "sha256": "3435b543b018536a07e6e8665ad6aa39d77352aa5d6a20362457fb81c83b5b0b",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ]
     },
     "aud-02g.window": {
       "page": "screens/AUD-02?st=g",
@@ -1480,7 +1502,10 @@
       "source": "handoff/screens/AUD-02 Audit cockpit - Overview- Source Documents- Agent/screenshots/AUD-02g.png",
       "sha256": "11ccf112f124c6f25ccfed742ed545c522c314bc93abf349bb38c43836dd33a4",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ]
     },
     "aud-03a.window": {
       "page": "screens/AUD-03?st=a",
@@ -1488,7 +1513,11 @@
       "source": "handoff/screens/AUD-03 Source documents - PBC with viewer/screenshots/AUD-03a.png",
       "sha256": "665ed1d762803dfb11a5c99843f25b7165ea021076f55fb74ab662fb01b063eb",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ],
+      "locked": true
     },
     "aud-03b.window": {
       "page": "screens/AUD-03?st=b",
@@ -1496,7 +1525,11 @@
       "source": "handoff/screens/AUD-03 Source documents - PBC with viewer/screenshots/AUD-03b.png",
       "sha256": "cd3503f55ad891311f6c27d49e1915b7ab7817a2a1655d763dadaa4e9d97a69d",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ],
+      "locked": true
     },
     "aud-03c.window": {
       "page": "screens/AUD-03?st=c",
@@ -1504,7 +1537,11 @@
       "source": "handoff/screens/AUD-03 Source documents - PBC with viewer/screenshots/AUD-03c.png",
       "sha256": "e65178d470758512f2206c511f4378ef30ed62541f6ab4af103b89cc4f48b60d",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ],
+      "locked": true
     },
     "aud-03d.window": {
       "page": "screens/AUD-03?st=d",
@@ -1512,7 +1549,11 @@
       "source": "handoff/screens/AUD-03 Source documents - PBC with viewer/screenshots/AUD-03d.png",
       "sha256": "ed1aa072abf6824e6a25a56de62f73817feb5d48b8e133578486e836c1aefbd3",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']",
+        "[data-overlay='dialog']"
+      ]
     },
     "aud-03e.window": {
       "page": "screens/AUD-03?st=e",
@@ -1520,7 +1561,11 @@
       "source": "handoff/screens/AUD-03 Source documents - PBC with viewer/screenshots/AUD-03e.png",
       "sha256": "ab056dbc43deae96ac6aaf7cc022f8a1951f5df3205304749649c6dc6d2bf05a",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-cockpit='dock']"
+      ]
     },
     "aud-03f.window": {
       "page": "screens/AUD-03?st=f",
@@ -1528,7 +1573,10 @@
       "source": "handoff/screens/AUD-03 Source documents - PBC with viewer/screenshots/AUD-03f.png",
       "sha256": "b0fd26201cb20b65e379b0ad6c94497b455c1ad7fb682ae88fcd6fe9cc526f20",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ]
     },
     "aud-03g.window": {
       "page": "screens/AUD-03?st=g",
@@ -1536,7 +1584,11 @@
       "source": "handoff/screens/AUD-03 Source documents - PBC with viewer/screenshots/AUD-03g.png",
       "sha256": "802bdd19646ee9cfbd63635e8ff51151ec0c34e0b8465837febd3d2404bab17e",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ],
+      "locked": true
     },
     "home-01a.window": {
       "page": "screens/HOME-01?st=a",
@@ -1693,6 +1745,573 @@
       "tier": "C",
       "deviation": "A-02-T31: DF-19 rewords the relationship caption, f's body and e's scopes (read-only: no posting copy) where the handoff draws the posting wording; the parity spec does not read data-parity-mask yet, so the copy masks the row names are recorded here, not applied",
       "locked": true
+    },
+    "adm-04a.window": {
+      "page": "screens/ADM-04?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-04 AI policy and approval gates/screenshots/ADM-04a.png",
+      "sha256": "5ff8e4b662626971bc4a3ed2cab7f8c1e1bafb3e020837b397cc67e55299d914",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "adm-04b.window": {
+      "page": "screens/ADM-04?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-04 AI policy and approval gates/screenshots/ADM-04b.png",
+      "sha256": "cb63eaebed558f6844a946e0e56b4f67a872986aa7d4385493f8e9c8eef4c1bd",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "adm-04c.window": {
+      "page": "screens/ADM-04?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-04 AI policy and approval gates/screenshots/ADM-04c.png",
+      "sha256": "832fc60c02e2f58122a7633274102594511cf039a3c8f2c08ce021cf7b5d44fc",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-04d.window": {
+      "page": "screens/ADM-04?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-04 AI policy and approval gates/screenshots/ADM-04d.png",
+      "sha256": "b5581e5c9b58deac44ba9d75852f1a19e857e045c739db8873c1108001e2cff0",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-04e.window": {
+      "page": "screens/ADM-04?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-04 AI policy and approval gates/screenshots/ADM-04e.png",
+      "sha256": "3299d1f2e3f5e392777ef7b359729c77d26da0338ca982df97f28e21a86b9044",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "adm-04f.window": {
+      "page": "screens/ADM-04?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-04 AI policy and approval gates/screenshots/ADM-04f.png",
+      "sha256": "2d6c799a6d680822d57afe34e368798df171e374a04bad169348e385b40ae448",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-04g.window": {
+      "page": "screens/ADM-04?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-04 AI policy and approval gates/screenshots/ADM-04g.png",
+      "sha256": "a2627385585c264edb126daa99cfe9124f5e797a97c5f2ae6f99639ce8639002",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-04h.window": {
+      "page": "screens/ADM-04?st=h",
+      "selector": "[data-artboard=\"h\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-04 AI policy and approval gates/screenshots/ADM-04h.png",
+      "sha256": "db51e8f7f575aec227d77dde42c13d5343ad531859bc05258a88d0c8d23123f0",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "adm-04i.window": {
+      "page": "screens/ADM-04?st=i",
+      "selector": "[data-artboard=\"i\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-04 AI policy and approval gates/screenshots/ADM-04i.png",
+      "sha256": "12e72e3fa306dc185909b162b52e46f4c04e9f4c1c18b8a122fcad8b122de8ca",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "adm-04j.window": {
+      "page": "screens/ADM-04?st=j",
+      "selector": "[data-artboard=\"j\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-04 AI policy and approval gates/screenshots/ADM-04j.png",
+      "sha256": "1c1cd536024d6054c920b6276abf74f1c0de42471c4b0d78fe1e0d7110c4a453",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-06a.window": {
+      "page": "screens/ADM-06?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-06 Security center and data residency/screenshots/ADM-06a.png",
+      "sha256": "434f7d14b4b30db2992e4499ef37ef703bf2237dc7ecda1402d159222f55c4eb",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-06b.window": {
+      "page": "screens/ADM-06?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-06 Security center and data residency/screenshots/ADM-06b.png",
+      "sha256": "180893c660790913fc7fa0d97d6d4ab1043fde783019ce06c4e80efa23949a24",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-06c.window": {
+      "page": "screens/ADM-06?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-06 Security center and data residency/screenshots/ADM-06c.png",
+      "sha256": "fe0e51011e6f8d5d23405227435746349e6fae500f5346fbc7012a8746f7818b",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-06d.window": {
+      "page": "screens/ADM-06?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-06 Security center and data residency/screenshots/ADM-06d.png",
+      "sha256": "249ebce0559057dac4a3690e6d766065b330ce3317371fb04ff3588285ee87fc",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-06e.window": {
+      "page": "screens/ADM-06?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-06 Security center and data residency/screenshots/ADM-06e.png",
+      "sha256": "2abfea21392dc7c34719010272c7fe1bf6c422d8e972dd1ad35e4ee8186fde21",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "adm-06f.window": {
+      "page": "screens/ADM-06?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-06 Security center and data residency/screenshots/ADM-06f.png",
+      "sha256": "ca8f680ba41dae84d2ba42813763069775290cf8c38a2bca75c053589b9e03ee",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-06g.window": {
+      "page": "screens/ADM-06?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-06 Security center and data residency/screenshots/ADM-06g.png",
+      "sha256": "6fd2729fd5f4adf1b9b1695abfbd0fd734c4e1b4c62ec6acc9462501ffa35ad3",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-06h.window": {
+      "page": "screens/ADM-06?st=h",
+      "selector": "[data-artboard=\"h\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-06 Security center and data residency/screenshots/ADM-06h.png",
+      "sha256": "6240dc3b55dd09f8f4a7ea0d4e874a9944b70d87f555bf8f63468566330a1f3c",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-06i.window": {
+      "page": "screens/ADM-06?st=i",
+      "selector": "[data-artboard=\"i\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-06 Security center and data residency/screenshots/ADM-06i.png",
+      "sha256": "1a88551306e4584bc63e1bbfc38b6ed4e313864d94a8dfdb29304013144e94f1",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-06j.window": {
+      "page": "screens/ADM-06?st=j",
+      "selector": "[data-artboard=\"j\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-06 Security center and data residency/screenshots/ADM-06j.png",
+      "sha256": "f41182270306cbcaaf8eef33dc07c2522de979fc0997783be3f966e3850cd146",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-07a.window": {
+      "page": "screens/ADM-07?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-07 Audit log explorer/screenshots/ADM-07a.png",
+      "sha256": "338884d22345f1eddee34f1b5dea18acc55de692442056e6226a6b3cf85cc78d",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "adm-07b.window": {
+      "page": "screens/ADM-07?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-07 Audit log explorer/screenshots/ADM-07b.png",
+      "sha256": "d768a509202ac6ad2d514d647c39c1bd59c1d07671262c0802fc80ad2b8e704f",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "adm-07c.window": {
+      "page": "screens/ADM-07?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-07 Audit log explorer/screenshots/ADM-07c.png",
+      "sha256": "e2d72905619af29342e722dec11dcc2ee05e6fdb1562662a47b377d36cd104c5",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-07d.window": {
+      "page": "screens/ADM-07?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-07 Audit log explorer/screenshots/ADM-07d.png",
+      "sha256": "57762e31acc5ba5305a40f573a63a8bc4d8119de757dff7b06434d3d515ae244",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-07e.window": {
+      "page": "screens/ADM-07?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-07 Audit log explorer/screenshots/ADM-07e.png",
+      "sha256": "a2eede8e47d322b52a49a9fb43a6f99c9545cea8d1e267d9087da248f234b3b0",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-07f.window": {
+      "page": "screens/ADM-07?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-07 Audit log explorer/screenshots/ADM-07f.png",
+      "sha256": "7c007c0d1c5d40783d5335a36d4ab8eca7e32593ccbdccc4682a489b7099ea02",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "adm-07g.window": {
+      "page": "screens/ADM-07?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-07 Audit log explorer/screenshots/ADM-07g.png",
+      "sha256": "48fa52e822af1d9457fdff15a4736a3c25ffbbdf29861f48d2907b7e833bf511",
+      "crop": "window",
+      "tier": "C"
+    },
+    "cli-01a.window": {
+      "page": "screens/CLI-01?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-01 Clients index/screenshots/CLI-01a.png",
+      "sha256": "1f620acbfca6d60b9da5ba85ee80e21a26f647c114deba5f6ae94e1b586965fe",
+      "crop": "window",
+      "tier": "C"
+    },
+    "cli-01b.window": {
+      "page": "screens/CLI-01?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-01 Clients index/screenshots/CLI-01b.png",
+      "sha256": "045ed44c3382e6c964ac35840e9a889ae050c7dbd78419a8ce092b0607b15ef4",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "cli-01c.window": {
+      "page": "screens/CLI-01?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-01 Clients index/screenshots/CLI-01c.png",
+      "sha256": "93557f55083758057c3c68c4f4e5c1e0719a29cc61f086bb830bbf500747f398",
+      "crop": "window",
+      "tier": "C"
+    },
+    "cli-01d.window": {
+      "page": "screens/CLI-01?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-01 Clients index/screenshots/CLI-01d.png",
+      "sha256": "816d8e12b4d4e7ba854e9a689bdaf673b922e0263e906e32ab9248283aa8a3c2",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "cli-01e.window": {
+      "page": "screens/CLI-01?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-01 Clients index/screenshots/CLI-01e.png",
+      "sha256": "4652a4f170b8c319151615e3d853aa6406bdbe959d3e9bc1aa1d8c06ca6e8242",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "cli-01f.window": {
+      "page": "screens/CLI-01?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-01 Clients index/screenshots/CLI-01f.png",
+      "sha256": "34b4708d7dbfc3b3e9d86e8f7bf0543d11c422ef60e19932b329a0eb1b1bcd5c",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "cli-02a.window": {
+      "page": "screens/CLI-02?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-02 Client record - Overview/screenshots/CLI-02a.png",
+      "sha256": "d5205413a604b8423d881575302a1d34b8033a1011eead4e41fde15710fee969",
+      "crop": "window",
+      "tier": "C"
+    },
+    "cli-02a2.window": {
+      "page": "screens/CLI-02?st=a2",
+      "selector": "[data-artboard=\"a2\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-02 Client record - Overview/screenshots/CLI-02a2.png",
+      "sha256": "311fe91fc0e2a5bbae3c2d6ab1283fd866c615557322d75292b90299957fe998",
+      "crop": "window",
+      "tier": "C"
+    },
+    "cli-02b.window": {
+      "page": "screens/CLI-02?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-02 Client record - Overview/screenshots/CLI-02b.png",
+      "sha256": "3531aa418b860dbdebbee1eac7b71326b31673a9fd91879691f20f76bbbe86ee",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "cli-02c.window": {
+      "page": "screens/CLI-02?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-02 Client record - Overview/screenshots/CLI-02c.png",
+      "sha256": "2d2c92a13e570461bba1a31aa3611f29b9c62f37294060f1c8597ee31d9ace03",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "cli-02e.window": {
+      "page": "screens/CLI-02?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-02 Client record - Overview/screenshots/CLI-02e.png",
+      "sha256": "4574a47b9f68e094000cf3fe591197d384847f4e4483227de40f6eac542cbd91",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "cli-02f.window": {
+      "page": "screens/CLI-02?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-02 Client record - Overview/screenshots/CLI-02f.png",
+      "sha256": "09cb58d5ea6f7268c0066e4f0d85d98b6e90589c6c351e435735e4be3cfd1fc6",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "cli-04a.window": {
+      "page": "screens/CLI-04?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-04 Contacts and portal access/screenshots/CLI-04a.png",
+      "sha256": "6d1a0e3dc83ffed236c1b3fcdbcb5e3522af52d0d3170f727ca41fdcab1468c5",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "cli-04b.window": {
+      "page": "screens/CLI-04?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-04 Contacts and portal access/screenshots/CLI-04b.png",
+      "sha256": "43a79f7a8f6af1e1a26dd58859ac30872224d95fb4564d5d3655ed4d0cdcbbf7",
+      "crop": "window",
+      "tier": "C"
+    },
+    "cli-04c.window": {
+      "page": "screens/CLI-04?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-04 Contacts and portal access/screenshots/CLI-04c.png",
+      "sha256": "847254585dc4b38d977ba2677c10843979c28cbe367f56f20414c27d16e128c5",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "cli-04d.window": {
+      "page": "screens/CLI-04?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-04 Contacts and portal access/screenshots/CLI-04d.png",
+      "sha256": "cbd8fc25cd3579877643099f102a6b38847ecfe574cbebe235044890b2d670c9",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "cli-04e.window": {
+      "page": "screens/CLI-04?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-04 Contacts and portal access/screenshots/CLI-04e.png",
+      "sha256": "ef335851b29624b500261b0d2ce499b3e96e0eb032b86b4e4766dc3549f6f9e5",
+      "crop": "window",
+      "tier": "C"
+    },
+    "cli-04f.window": {
+      "page": "screens/CLI-04?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-04 Contacts and portal access/screenshots/CLI-04f.png",
+      "sha256": "2b74823966e1de1547520860c67735c3e7bfd7c2bb651c88e9a7aa9dfe82da4c",
+      "crop": "window",
+      "tier": "C"
+    },
+    "cli-04g.window": {
+      "page": "screens/CLI-04?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-04 Contacts and portal access/screenshots/CLI-04g.png",
+      "sha256": "4e3f5b3d4b10516dd62673df3b6b22dfc68f2fdc161477f50849247e63b98078",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "eng-01a.window": {
+      "page": "screens/ENG-01?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ENG-01 Engagements index/screenshots/ENG-01a.png",
+      "sha256": "4df632ab37953d34a521f0f93084f1388180636af451179c44a3d6128ffb0711",
+      "crop": "window",
+      "tier": "C"
+    },
+    "eng-01b.window": {
+      "page": "screens/ENG-01?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ENG-01 Engagements index/screenshots/ENG-01b.png",
+      "sha256": "c47c9a8e25c90ab3890f5065087519939d55c232011bf32226e79994e5060c9b",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "eng-01c.window": {
+      "page": "screens/ENG-01?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ENG-01 Engagements index/screenshots/ENG-01c.png",
+      "sha256": "b3bc5c14c94cc3cb23898631c2eed045b0d2a3a7d960afaa6ebaef509ba715b9",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "eng-01d.window": {
+      "page": "screens/ENG-01?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ENG-01 Engagements index/screenshots/ENG-01d.png",
+      "sha256": "ad3da4f77cc5c1f6d30e2efc8c908bdca62b72d5775ee811b2f3f827c15251ad",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "eng-01e.window": {
+      "page": "screens/ENG-01?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ENG-01 Engagements index/screenshots/ENG-01e.png",
+      "sha256": "49ce6408a6a2b03f6640a27fbf2c35da90fb00eef86370034134a86cf67bc58b",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "eng-02a.window": {
+      "page": "screens/ENG-02?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ENG-02 Engagement record/screenshots/ENG-02a.png",
+      "sha256": "b672767ec392e84a0777a9af96d3272b46147fe7ae7ef59547654030c360227d",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "eng-02b.window": {
+      "page": "screens/ENG-02?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ENG-02 Engagement record/screenshots/ENG-02b.png",
+      "sha256": "930b8f578e772c01b08e841509523f9d27c152c630ee8e124594d07d60d19b22",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "eng-02c.window": {
+      "page": "screens/ENG-02?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ENG-02 Engagement record/screenshots/ENG-02c.png",
+      "sha256": "5a51202e1346611c9fbdf591fdd5357ba1ab8a8ec2decd51fd4ed64b04e328ab",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "eng-02d.window": {
+      "page": "screens/ENG-02?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ENG-02 Engagement record/screenshots/ENG-02d.png",
+      "sha256": "2208e4ef57561bae70e3624988324ed9fad7b807d51928c467e800785e6a1676",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "eng-02e.window": {
+      "page": "screens/ENG-02?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ENG-02 Engagement record/screenshots/ENG-02e.png",
+      "sha256": "983be195ad51e4b36a3f050bd63fae59bb9920249e5970fcf696367fc9760569",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "eng-02f.window": {
+      "page": "screens/ENG-02?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ENG-02 Engagement record/screenshots/ENG-02f.png",
+      "sha256": "87c45a42404f21236ab17ec233cefa8f2012ae14f37cf1e31bb87bc314482485",
+      "crop": "window",
+      "tier": "C"
+    },
+    "eng-02g.window": {
+      "page": "screens/ENG-02?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ENG-02 Engagement record/screenshots/ENG-02g.png",
+      "sha256": "67ed2c2a158e80d2f7dd5590c07e457520697410216ee7dfdcf2836aabd76cf8",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "eng-03a.window": {
+      "page": "screens/ENG-03?st=a",
+      "selector": "[data-artboard=\"a\"]",
+      "source": "handoff/screens/ENG-03 New engagement wizard - Fairhaven Foods 401-k- Plan/screenshots/ENG-03a.png",
+      "sha256": "101218f7f6bba3c902354a7845f919755223e08a404dcda545b99ffcbf08a8f6",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "P-07-T63: ENG-03's gallery artboard draws the wizard on the bare 1440 x 900 stage with no app window (no [data-shell='app']), so the handoff's 1400 x 860 window crop cannot be compared (size mismatch, no diff); measure once the artboard draws the shell behind the wizard, as DEC-832 did for AUD-06"
+    },
+    "eng-03b.window": {
+      "page": "screens/ENG-03?st=b",
+      "selector": "[data-artboard=\"b\"]",
+      "source": "handoff/screens/ENG-03 New engagement wizard - Fairhaven Foods 401-k- Plan/screenshots/ENG-03b.png",
+      "sha256": "ab0f54e24839c2fb9c434f28fc69e7b2f09918709559942cef7dffc60bb8cf25",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "P-07-T63: ENG-03's gallery artboard draws the wizard on the bare 1440 x 900 stage with no app window (no [data-shell='app']), so the handoff's 1400 x 860 window crop cannot be compared (size mismatch, no diff); measure once the artboard draws the shell behind the wizard, as DEC-832 did for AUD-06"
+    },
+    "eng-03c.window": {
+      "page": "screens/ENG-03?st=c",
+      "selector": "[data-artboard=\"c\"]",
+      "source": "handoff/screens/ENG-03 New engagement wizard - Fairhaven Foods 401-k- Plan/screenshots/ENG-03c.png",
+      "sha256": "cdac750f5d0ff6b4bc492de9c953c4c114c2db3941cdb434a1c3c52fb77874ff",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "P-07-T63: ENG-03's gallery artboard draws the wizard on the bare 1440 x 900 stage with no app window (no [data-shell='app']), so the handoff's 1400 x 860 window crop cannot be compared (size mismatch, no diff); measure once the artboard draws the shell behind the wizard, as DEC-832 did for AUD-06"
+    },
+    "eng-03d.window": {
+      "page": "screens/ENG-03?st=d",
+      "selector": "[data-artboard=\"d\"]",
+      "source": "handoff/screens/ENG-03 New engagement wizard - Fairhaven Foods 401-k- Plan/screenshots/ENG-03d.png",
+      "sha256": "a79e0addcbc9b4d413b8e6839d66189c5fb1facf46d03df6f8344c2c076c2d5e",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "P-07-T63: ENG-03's gallery artboard draws the wizard on the bare 1440 x 900 stage with no app window (no [data-shell='app']), so the handoff's 1400 x 860 window crop cannot be compared (size mismatch, no diff); measure once the artboard draws the shell behind the wizard, as DEC-832 did for AUD-06"
+    },
+    "eng-03e.window": {
+      "page": "screens/ENG-03?st=e",
+      "selector": "[data-artboard=\"e\"]",
+      "source": "handoff/screens/ENG-03 New engagement wizard - Fairhaven Foods 401-k- Plan/screenshots/ENG-03e.png",
+      "sha256": "81713ab357ec16d3a05aaa9652228d3a4a56d1821ea1016d91babb2c7d6e7c80",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "P-07-T63: ENG-03's gallery artboard draws the wizard on the bare 1440 x 900 stage with no app window (no [data-shell='app']), so the handoff's 1400 x 860 window crop cannot be compared (size mismatch, no diff); measure once the artboard draws the shell behind the wizard, as DEC-832 did for AUD-06"
+    },
+    "eng-03f.window": {
+      "page": "screens/ENG-03?st=f",
+      "selector": "[data-artboard=\"f\"]",
+      "source": "handoff/screens/ENG-03 New engagement wizard - Fairhaven Foods 401-k- Plan/screenshots/ENG-03f.png",
+      "sha256": "4dfd1f70cb17c35aa20870d726a4deda04ac023e3493d11cc1558eac8b10a6bd",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "P-07-T63: ENG-03's gallery artboard draws the wizard on the bare 1440 x 900 stage with no app window (no [data-shell='app']), so the handoff's 1400 x 860 window crop cannot be compared (size mismatch, no diff); measure once the artboard draws the shell behind the wizard, as DEC-832 did for AUD-06"
+    },
+    "eng-03g.window": {
+      "page": "screens/ENG-03?st=g",
+      "selector": "[data-artboard=\"g\"]",
+      "source": "handoff/screens/ENG-03 New engagement wizard - Fairhaven Foods 401-k- Plan/screenshots/ENG-03g.png",
+      "sha256": "054cea0fe0f8207bef971dd98d5829a9e8055ecb926504fb4e48da960e259315",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "P-07-T63: ENG-03's gallery artboard draws the wizard on the bare 1440 x 900 stage with no app window (no [data-shell='app']), so the handoff's 1400 x 860 window crop cannot be compared (size mismatch, no diff); measure once the artboard draws the shell behind the wizard, as DEC-832 did for AUD-06"
+    },
+    "eng-03h.window": {
+      "page": "screens/ENG-03?st=h",
+      "selector": "[data-artboard=\"h\"]",
+      "source": "handoff/screens/ENG-03 New engagement wizard - Fairhaven Foods 401-k- Plan/screenshots/ENG-03h.png",
+      "sha256": "2ccc1d30d4f094aabc9c2a7361b8a9c0960089ce3119c81ec121736fd37817c2",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "P-07-T63: ENG-03's gallery artboard draws the wizard on the bare 1440 x 900 stage with no app window (no [data-shell='app']), so the handoff's 1400 x 860 window crop cannot be compared (size mismatch, no diff); measure once the artboard draws the shell behind the wizard, as DEC-832 did for AUD-06"
     }
   }
 }

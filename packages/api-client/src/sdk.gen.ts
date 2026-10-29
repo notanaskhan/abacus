@@ -4780,7 +4780,7 @@ export const updateEnvelopePolicy = <ThrowOnError extends boolean = false>(optio
 /**
  * List Envelopes Route
  *
- * SIG-01 list (N-02-T13).
+ * SIG-01 list (N-02-T13): wall-safe rows and counts; the Out tab's counts are its tiles.
  */
 export const listEnvelopes = <ThrowOnError extends boolean = false>(options?: Options<ListEnvelopesData, ThrowOnError>): RequestResult<ListEnvelopesResponses, ListEnvelopesErrors, ThrowOnError> => (options?.client ?? client).get<ListEnvelopesResponses, ListEnvelopesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4864,7 +4864,7 @@ export const remindEnvelopesSend = <ThrowOnError extends boolean = false>(option
 /**
  * Envelope Summary Route
  *
- * SIG-01 tiles (N-02-T13).
+ * SIG-01 tabs and the By type tile (N-02-T13), over visible rows only.
  */
 export const envelopeSummary = <ThrowOnError extends boolean = false>(options?: Options<EnvelopeSummaryData, ThrowOnError>): RequestResult<EnvelopeSummaryResponses, EnvelopeSummaryErrors, ThrowOnError> => (options?.client ?? client).get<EnvelopeSummaryResponses, EnvelopeSummaryErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4875,7 +4875,7 @@ export const envelopeSummary = <ThrowOnError extends boolean = false>(options?: 
 /**
  * Get Envelope Route
  *
- * SIG-01 drawer, SIG-02 builder (N-02-T11).
+ * SIG-01 drawer, SIG-02 builder (N-02-T13).
  */
 export const getEnvelope = <ThrowOnError extends boolean = false>(options: Options<GetEnvelopeData, ThrowOnError>): RequestResult<GetEnvelopeResponses, GetEnvelopeErrors, ThrowOnError> => (options.client ?? client).get<GetEnvelopeResponses, GetEnvelopeErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4923,7 +4923,7 @@ export const envelopePage = <ThrowOnError extends boolean = false>(options: Opti
 /**
  * Envelope Evidence Route
  *
- * Packages, certificate, manifest (N-02-T14).
+ * Packages, certificate, manifest (N-02-T13); audited, byte-identical on repeat.
  */
 export const envelopeEvidence = <ThrowOnError extends boolean = false>(options: Options<EnvelopeEvidenceData, ThrowOnError>): RequestResult<EnvelopeEvidenceResponses, EnvelopeEvidenceErrors, ThrowOnError> => (options.client ?? client).get<EnvelopeEvidenceResponses, EnvelopeEvidenceErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4967,7 +4967,7 @@ export const undoEnvelopeSend = <ThrowOnError extends boolean = false>(options: 
 /**
  * Reveal Signer Ip Route
  *
- * 10-second reveal, audited (N-02-T13).
+ * 10-second reveal, audited (N-02-T13); never cached.
  */
 export const revealSignerIp = <ThrowOnError extends boolean = false>(options: Options<RevealSignerIpData, ThrowOnError>): RequestResult<RevealSignerIpResponses, RevealSignerIpErrors, ThrowOnError> => (options.client ?? client).post<RevealSignerIpResponses, RevealSignerIpErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5008,7 +5008,7 @@ export const validateEnvelope = <ThrowOnError extends boolean = false>(options: 
 /**
  * Void Envelope Route
  *
- * Void with a reason; evidence kept (N-02-T28).
+ * Void with a reason; evidence kept (N-02-T13).
  */
 export const voidEnvelope = <ThrowOnError extends boolean = false>(options: Options<VoidEnvelopeData, ThrowOnError>): RequestResult<VoidEnvelopeResponses, VoidEnvelopeErrors, ThrowOnError> => (options.client ?? client).post<VoidEnvelopeResponses, VoidEnvelopeErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

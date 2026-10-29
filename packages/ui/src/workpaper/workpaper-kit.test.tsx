@@ -296,6 +296,12 @@ describe("C-15 SourceDocGroup and SourceDocRow", () => {
     expect(open?.getAttribute("aria-current")).toBe("true");
     expect(open?.className).toContain("min-h-[52px]");
     expect(compact?.className).toContain("min-h-[40px]");
+    cleanup();
+    // AUD-02's cockpit rows: min 44, padding 8 12 9.
+    render(<SourceDocRow doc={DOCS[0] as SourceDoc} tight />);
+    expect(screen.getByRole("button").className).toContain(
+      "min-h-[44px] px-[12px] pt-[8px] pb-[9px]",
+    );
     expect(compact?.className).toContain("pl-[34px]");
   });
 
