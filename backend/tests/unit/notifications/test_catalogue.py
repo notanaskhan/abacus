@@ -51,6 +51,8 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "wall.approved",  # G-01-T09 (C16 `wall_approved`, to the wall's creator)
         "portal.drop_unsorted",  # R-01-T09 (C16 `portal_drop_unsorted`)
         "follow_up.limit_reached",  # R-01-T24 (C16 `follow_up_limit_reached`, to the leads)
+        "sending_domain.verified",  # R-01-T27 (R-01 §4.8, to the firm and security admins)
+        "sending_domain.failed",  # R-01-T27 (R-01 §4.8, after 72 hours unverified)
         "membership.access_ending",  # G-01-T13 (C16 `seasonal_access_ending`, to firm admins)
         "third_party.uploaded",  # R-01-T13 (C16 `third_party_uploaded`, to the request owner)
         "sign_off.went_stale",  # P-04-T19 (C16 `sign_off_stale`, to the signer)
