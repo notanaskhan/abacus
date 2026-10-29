@@ -117,6 +117,7 @@ The compliance kernel is what must be true in code before any firm puts real cli
 ### Story 12: Run records and the C6 v1 stub (ADR-169, accepted)
 - **AC-44** Given a specialist run completes, then one insert-only `agent_run_records` row holds the capability, spec and prompt versions with the prompt SHA-256, model, route, region, register version, boundary basis, input hashes, records read, citations, outcome, initiator and `record_sha256`, still readable after raw traces expire. **Built** (Q-02-T41, TASK-1287; DEC-396): migration 0171, `agents/run_records.py`, the `run_record_v1` patch in the five specialist workflows, `GET /v1/agent-runs/{run_id}/record`.
 - **AC-45** Given the C6 v1 run reads, then they return the run summary with the legacy state map and `run_record_sha256`, visible only to people who can read the engagement; walled runs answer 404. **Partial**: the C6 v0 routes exist (`agents/runs_routes.py`, `docs/contracts/agent-runs.md`); the v1 stub and `run_record_sha256` are Q-02-T45.
+- **AC-52 Integration and conflict lane (Q-03-T087).** Given the period's `ci` runs on `main` and batch branches, then every red streak ends in a green run within one working day (`abacus_tools.ci.integration_lane`), no generated file is hand-merged (`make check-generated`, the API client's drift check) and every register ID appears once (`abacus_tools.quality.register_ids` in check-fast).
 
 ### Story 13: The security stage
 - **AC-46** Given R1, then the `security` stage (generated tenant isolation, permission matrix and route introspection; CodeQL; dependency review; pip-audit; Trivy) is a required check on `main`. **Partial**: the generated suites and `.github/workflows/security.yml` are built (TASK-376, TASK-411); making it a required ruleset check is the human's (F-01).
@@ -207,6 +208,7 @@ None in this epic. Facts arrive as words and numbers so consumer screens never e
 | AC-42, AC-43 | lint, generated security tests | `unit/quality/test_fresh_mfa_*.py`, `security/test_fresh_mfa_generated.py` |
 | AC-44 | integration, unit, replay | `agent_tests/test_run_records.py`, `unit/agents/test_run_records.py`, `workflows/test_run_record_replay.py`; T46 (not built) |
 | AC-45 | not built | Q-02-T45, T46 |
+| AC-52 | unit; the lane log | `unit/tools/test_integration_lane.py`, `unit/quality/test_register_ids.py`, `docs/quality/integration-lane-2027-q2.md` |
 | AC-50 | unit; the exit check at the PW0 exit review | `unit/quality/test_pilot_log.py`, `abacus_tools.quality.pilot_log --exit` |
 | AC-46 | generated security tests | `tests/security/` |
 | AC-51 | unit; the derived gate rows | `unit/quality/test_m8_evidence.py`, `docs/ops/gates/M8-mvp-code-complete.md` |
