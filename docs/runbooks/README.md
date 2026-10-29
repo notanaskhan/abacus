@@ -70,7 +70,6 @@ Owner is the builder for every row. `Last rehearsed` stays `never` until a rehea
 | RB-40 | Provider-terms `review_by` renewal and Bedrock parity refresh | Q-02-T51 | before the first real-firm model call | never | none | drafted |
 
 Q-02-T51's agent-stage and provider-terms runbooks are RB-39 and RB-40. Give the next runbook the next free number (RB-41 onward; RB-31 is P-01-T17's, RB-32 P-06-T27's, RB-33 A-01-T30's).
-Also owed by Q-02-T51, not yet numbered: agent stage promotion and demotion; Bedrock route-parity refresh. Give each the next free RB number when written (RB-39 onward; RB-31 is P-01-T17's, RB-32 P-06-T27's, RB-33 A-01-T30's).
 
 ## Template
 
