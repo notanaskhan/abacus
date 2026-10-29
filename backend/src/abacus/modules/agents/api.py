@@ -49,6 +49,7 @@ from abacus.modules.agents.home_counts import register_home_counts
 from abacus.modules.agents.inbox_match import MATCHER, MatchOutcome, create_match_run, match
 from abacus.modules.agents.issue_client_requests import send_issue_to_client
 from abacus.modules.agents.knowledge import KnowledgeHit, knowledge_context, search_knowledge
+from abacus.modules.agents.methodology_citations import register_methodology_step
 from abacus.modules.agents.pilot_w7 import w7_override_rate
 from abacus.modules.agents.proposal_slots import (
     AdoptedValue,
@@ -185,6 +186,9 @@ register_ai_assistants(assistants)
 register_autonomy_level_provider(policy_autonomy_level)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
+# K-01-T12: C4's `methodology_step` citable (agents imports evidence and methodology).
+register_methodology_step()
+
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,
     graph_router,

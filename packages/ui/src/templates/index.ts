@@ -17,6 +17,16 @@ export {
   type PortalVariant,
   portalNav,
 } from "./portal-layout";
+// T7-M home cards (F-06-T10; TPL-19 frame 1).
+export {
+  MobileGreeting,
+  type MobileTodo,
+  MobileTodoCard,
+  MobileTeamCard,
+  ReturnProgressCard,
+  type ReturnProgressCardProps,
+  type TeamMember,
+} from "./portal-mobile-home";
 // T15 AuthCard (F-05-T37): the 400 card, the 720 single page and the six code boxes.
 export {
   AUTH_FIELD,

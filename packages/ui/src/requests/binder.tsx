@@ -560,12 +560,24 @@ function MobileRowText({
   );
 }
 
-export function RequestMobile({ binder }: { binder: RequestBinder }): JSX.Element {
+export interface RequestMobileProps {
+  binder: RequestBinder;
+  /** The well's second line (TPL-19: "Photos of multi-page documents are combined into one PDF"). */
+  dropHint?: string;
+  /** TPL-19 frame 2: only the open requests as cards, the rest folded into one row ("4 received ·
+   * 1 provided by Brightwater Hale ›") that opens the full binder. */
+  openOnly?: { onShowAll?: () => void };
+}
+
+export function RequestMobile({ binder, dropHint, openOnly }: RequestMobileProps): JSX.Element {
   const { props, items } = binder;
   const uploads = props.uploads ?? [];
+  const shown = items.filter((r) => r.extra !== true && (openOnly === undefined || !satisfied(r)));
   const groups = props.sections
-    .map((s) => ({ section: s, rows: items.filter((r) => r.sec === s.key && r.extra !== true) }))
+    .map((s) => ({ section: s, rows: shown.filter((r) => r.sec === s.key) }))
     .filter((g) => g.rows.length > 0);
+  const received = items.filter((r) => r.st === "up" || r.st === "acc").length;
+  const provided = items.filter((r) => r.st === "firm").length;
   const line = (r: RequestItem): { text: string; ok: boolean } => {
     if (r.st === "up") return { text: r.upText ?? `You uploaded ${r.on ?? ""}`, ok: true };
     if (r.st === "acc") return { text: `Accepted by ${props.firm} · ${r.on ?? ""}`, ok: true };
@@ -603,7 +615,7 @@ export function RequestMobile({ binder }: { binder: RequestBinder }): JSX.Elemen
             Tap to upload or take a photo
           </span>
           <span className="text-dense leading-[1.4] text-ink-2">
-            Files are sorted into the right request
+            {dropHint ?? "Files are sorted into the right request"}
           </span>
         </span>
       </button>
@@ -663,11 +675,46 @@ export function RequestMobile({ binder }: { binder: RequestBinder }): JSX.Elemen
                     </span>
                   </button>
                 )}
+                {openOnly !== undefined &&
+                  isOpen &&
+                  r.st === "req" &&
+                  props.onOpen !== undefined && (
+                    <button
+                      type="button"
+                      aria-label={`Ignore ${r.title}`}
+                      onClick={() => {
+                        props.onOpen?.(r.id);
+                      }}
+                      className="inline-flex h-[44px] flex-none items-center text-dense text-ink-2"
+                    >
+                      Ignore
+                    </button>
+                  )}
               </div>
             );
           })}
         </section>
       ))}
+      {openOnly !== undefined && received + provided > 0 && (
+        <button
+          type="button"
+          onClick={openOnly.onShowAll}
+          className={cn(
+            "flex min-h-[44px] flex-none items-center gap-[6px] rounded-pane bg-card px-[14px] text-dense text-ink-2 shadow-e1",
+            PRESS,
+          )}
+        >
+          <span className="flex-1 text-left">
+            {[
+              received > 0 ? `${String(received)} received` : null,
+              provided > 0 ? `${String(provided)} provided by ${props.firm}` : null,
+            ]
+              .filter((x) => x !== null)
+              .join(" · ")}
+          </span>
+          <Icon name="chevron-right" size={14} className="text-ink-3" />
+        </button>
+      )}
     </>
   );
 }

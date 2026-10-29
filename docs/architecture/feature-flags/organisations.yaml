@@ -10,3 +10,17 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: consents.registry
+    description: 'C19 consent registry (T-01): /v1/consents*, /v1/consent-templates* and /v1/client-entities/{id}/consents; ADM-05. Off: 404. On: 501 until T-01-T10. T-01-T01, DEC-1155.'
+    owner: ayushkbhatia
+    created: 2026-10-29
+    expires: 2027-01-26
+    kind: boolean
+    default: false
+  - name: clients.tax_profile
+    description: 'CLI-05 tax profile (T-01): the tax-profile read, elections, authorizations and transcripts. Off: 404. On: 501 until T-01-T43. T-01-T01, DEC-1155.'
+    owner: ayushkbhatia
+    created: 2026-10-29
+    expires: 2027-01-26
+    kind: boolean
+    default: false

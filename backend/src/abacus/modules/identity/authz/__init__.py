@@ -240,6 +240,8 @@ class TargetFacts:
     preparer_user_ids: frozenset[UUID] | None = None
     reserved_role: str | None = None
     reserved_user_id: UUID | None = None
+    # K-02-T01 (DEC-1150): the named owner of a firm standard, for `owner_of_target`.
+    owner_user_id: UUID | None = None
 
 
 @dataclass(frozen=True)
@@ -749,6 +751,7 @@ def has_conditions(rule: Rule) -> bool:
         or rule.scope_only
         or rule.not_preparer_of_target
         or rule.reserved_role
+        or rule.owner_of_target
     )
 
 
@@ -778,6 +781,7 @@ async def _condition_facts(
     scope_covered: bool | None = None
     preparer: bool | None = None
     reserved_holder: bool | None = None
+    owner: bool | None = None
     client_actor = bool(roles & CLIENT_ACTOR_ROLES)
     if isinstance(ctx, AuthContext):
         if rule.level_in or rule.not_offshore:
@@ -796,6 +800,10 @@ async def _condition_facts(
                 preparer = ctx.user_id in target.preparer_user_ids
             if rule.reserved_role and target.reserved_role is not None:
                 reserved_holder = await _holds_reserved(ctx, resource, target, roles)
+            if rule.owner_of_target and target.owner_user_id is not None:
+                # K-02-T01: the named owner, and a partner member now (a former partner who
+                # still owns the standard cannot publish it until it is reassigned).
+                owner = target.owner_user_id == ctx.user_id and await _partner_level(ctx)
     attest: bool | None = None
     if rule.attest_client is not None and resource.engagement_id and LOOKUPS.attest:
         attest = await LOOKUPS.attest(ctx.tenant, resource.engagement_id)
@@ -812,6 +820,7 @@ async def _condition_facts(
         client_actor=client_actor,
         preparer=preparer,
         reserved_holder=reserved_holder,
+        owner=owner,
     )
 
 

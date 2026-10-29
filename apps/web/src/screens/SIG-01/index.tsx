@@ -1,7 +1,9 @@
 import type { EnvelopeListRow } from "@abacus/api-client";
 import { envelopeSummaryOptions, listEnvelopesOptions } from "@abacus/api-client/query";
 import {
+  type Actor,
   Button,
+  Checkbox,
   DEFAULT_TZ,
   Drawer,
   DrawerCard,
@@ -22,6 +24,7 @@ import { type JSX, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { useSession } from "../../app-core/session";
 import { COPY } from "./copy";
+import { ImportSheet, RemindDialog } from "./flows";
 
 // SIG-01 · Signatures hub and evidence drawer (N-02-T11; docs/screens/SIG-01.md; DEC-827). T1 over
 // C7's `GET /v1/envelopes` (by tab) and `/summary`: the tabs carry their counts, the tiles filter
@@ -109,16 +112,20 @@ function SignerCard({ row, index }: { row: EnvelopeListRow; index: number }): JS
   );
 }
 
+const OPEN_STATUSES: ReadonlySet<string> = new Set(["sent", "viewed", "partially_signed"]);
+
 function EvidenceDrawer({
   row,
   now,
   tz,
   onClose,
+  onRemind,
 }: {
   row: EnvelopeListRow | null;
   now: Date;
   tz: string;
   onClose: () => void;
+  onRemind: (row: EnvelopeListRow) => void;
 }): JSX.Element {
   return (
     <Drawer
@@ -128,9 +135,22 @@ function EvidenceDrawer({
       }}
       title={row === null ? COPY.drawer.evidence : `${row.number} · ${row.title}`}
       footer={
-        <Button variant="secondary" size="sm">
-          {COPY.drawer.download}
-        </Button>
+        <span className="flex gap-[8px]">
+          {row !== null && OPEN_STATUSES.has(row.status) && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                onRemind(row);
+              }}
+            >
+              {COPY.drawerRemind}
+            </Button>
+          )}
+          <Button variant="secondary" size="sm">
+            {COPY.drawer.download}
+          </Button>
+        </span>
       }
     >
       {row !== null && (
@@ -175,11 +195,26 @@ export interface SIG01Props {
   initialTab?: Sig01Tab;
   /** The envelope number whose drawer is open (a: "E2"). */
   initialEnvelope?: string | null;
+  /** The envelope numbers checked for a bulk reminder (f: E5, E8, E9). */
+  initialChecked?: readonly string[];
+  /** Import signed package open (r; `?ov=import`). */
+  initialImport?: boolean;
 }
 
-export function SIG01({ initialTab = "out", initialEnvelope = null }: SIG01Props): JSX.Element {
+export function SIG01({
+  initialTab = "out",
+  initialEnvelope = null,
+  initialChecked = [],
+  initialImport = false,
+}: SIG01Props): JSX.Element {
   const now = useNow();
-  const tz = useSession().tz ?? DEFAULT_TZ;
+  const session = useSession();
+  const tz = session.tz ?? DEFAULT_TZ;
+  const viewer: Actor =
+    session.user === null ? { kind: "system" } : { kind: "human", name: session.user.displayName };
+  const [checked, setChecked] = useState<ReadonlySet<string>>(new Set(initialChecked));
+  const [reminding, setReminding] = useState<readonly EnvelopeListRow[]>([]);
+  const [importing, setImporting] = useState(initialImport);
   const [tab, setTab] = useState<Sig01Tab>(initialTab);
   const [tile, setTile] = useState<Tile | null>(null);
   const [query, setQuery] = useState("");
@@ -215,7 +250,42 @@ export function SIG01({ initialTab = "out", initialEnvelope = null }: SIG01Props
     counts,
   };
 
+  const toggle = (number: string, on: boolean): void => {
+    const next = new Set(checked);
+    if (on) next.add(number);
+    else next.delete(number);
+    setChecked(next);
+  };
+  const picked = all.filter((r) => checked.has(r.number));
+  const selectColumn: readonly IndexColumn<EnvelopeListRow>[] =
+    tab === "out"
+      ? [
+          {
+            key: "select",
+            header: "",
+            width: 32,
+            cell: (r) => (
+              // A check never opens the drawer.
+              <span
+                role="presentation"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              >
+                <Checkbox
+                  label={COPY.selection.check(r.number)}
+                  checked={checked.has(r.number)}
+                  onChange={(on) => {
+                    toggle(r.number, on);
+                  }}
+                />
+              </span>
+            ),
+          },
+        ]
+      : [];
   const columns: readonly IndexColumn<EnvelopeListRow>[] = [
+    ...selectColumn,
     {
       key: "envelope",
       header: COPY.columns.envelope,
@@ -339,12 +409,52 @@ export function SIG01({ initialTab = "out", initialEnvelope = null }: SIG01Props
         onQuery={setQuery}
         searchPlaceholder={COPY.search}
         actions={
-          tab === "to_send" ? undefined : (
-            <Button variant="secondary" size="sm">
-              {COPY.remind}
+          <span className="flex gap-[8px]">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setImporting(true);
+              }}
+            >
+              {COPY.importOpen}
             </Button>
-          )
+            {tab === "out" && (
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={picked.length === 0}
+                onClick={() => {
+                  setReminding(picked);
+                }}
+              >
+                {COPY.remind}
+              </Button>
+            )}
+          </span>
         }
+        {...(tab === "out" && picked.length > 0
+          ? {
+              footer: (
+                <div
+                  role="region"
+                  aria-label={COPY.selection.selected(picked.length)}
+                  className="flex items-center justify-between px-[12px] py-[8px] hairline-t"
+                >
+                  <span className="text-body">{COPY.selection.selected(picked.length)}</span>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => {
+                      setReminding(picked);
+                    }}
+                  >
+                    {COPY.selection.remind(picked.length)}
+                  </Button>
+                </div>
+              ),
+            }
+          : {})}
         newLabel={COPY.newEnvelope}
         empty={{ title: COPY.empty.title, body: COPY.empty.body }}
       />
@@ -354,6 +464,22 @@ export function SIG01({ initialTab = "out", initialEnvelope = null }: SIG01Props
         tz={tz}
         onClose={() => {
           setOpen(null);
+        }}
+        onRemind={(row) => {
+          setReminding([row]);
+        }}
+      />
+      <RemindDialog
+        rows={reminding}
+        viewer={viewer}
+        onClose={() => {
+          setReminding([]);
+        }}
+      />
+      <ImportSheet
+        open={importing}
+        onClose={() => {
+          setImporting(false);
         }}
       />
     </div>

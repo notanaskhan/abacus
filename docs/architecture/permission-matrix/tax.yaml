@@ -1,0 +1,19 @@
+# The tax module's actions (ADR-027; P-39, F-03-T07). Compiled with every other module's file into
+# identity/authz/_matrix.py by `make regenerate`.
+
+actions:
+  # --- the engine bridge and the e-file record (T-01-T02 stub; T-01 §4.3; DEC-1156). Every write
+  # is a person's: agent, system and client principals are denied (I-AGENT-NEVER). Accrued never
+  # transmits (R-04): `transmission.record` records what the ERO did in the engine. Work-item
+  # conditions narrow the reviewer and signer acts; the ERO designation and BH-TAX-02's named
+  # approver are checked by the service on the return (T-01-T27, T37).
+  tax_return.read:            {firm_admin: allow, practice_leader: allow, quality_partner: allow, firm_partner: allow, firm_manager: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, specialist: allow, client_service: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: task_scope, system: deny}   # final-approval facts, engine sync, imports, delivery
+  tax_return.approve:         {engagement_partner: allow, function_in: signer, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # POST /v1/tax-returns/{id}/final-approval (only tax/approval.py records it)
+  tax_return.export:          {engagement_partner: allow, manager: allow, reviewer: allow, function_in: "detail_reviewer,manager_reviewer,signer", client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # the workbook after final approval
+  engine_import.create:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # upload an engine file
+  engine_import.approve:      {engagement_partner: allow, manager: allow, senior: allow, reviewer: allow, function_in: "first_level_reviewer,detail_reviewer,manager_reviewer,signer", client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # a person approves the diff
+  delivery_packet.prepare:    {client_service: allow, manager: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # assemble, edit, letter, 8879 envelope, ERO notice
+  delivery_packet.approve:    {engagement_partner: allow, manager: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # DEC-38: the signer or a manager-level person (service)
+  transmission.record:        {engagement_partner: allow, manager: allow, function_in: signer, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # the ERO's record; ero_designated checked by the service
+  efile_ack.record:           {engagement_partner: allow, manager: allow, reviewer: allow, client_service: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # a manual ack with evidence
+  deliverable.publish:        {client_service: allow, manager: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # release the client copy to the portal

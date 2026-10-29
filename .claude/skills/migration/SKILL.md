@@ -86,6 +86,16 @@ op.execute("GRANT EXECUTE ON FUNCTION email_template_current(text, text) TO abac
   - `_PLATFORM_TABLE_OWNERS` or a module `registry.py`: its owner.
 - In `backend/tests/integration/test_schema_check_db.py`, add the same names to the expected sets (`test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions`, and the `IMMUTABLE_TABLES` map for an immutable table). The test compares exact sets, so a function added without its line fails.
 
+### 5a. A global reference table published by two people (K-02-T03, 0400)
+
+For platform content that changes without a deploy (ADR-300: rules tables; also retention sets 0112 and Pub 4557 controls 0242):
+
+- Three tables: the set (`key`, `kind`), its versions (`status` draft → published → withdrawn, `effective_from`, `payload jsonb`, `payload_hash`, handles) and an insert-only log of publications. `REVOKE ALL … FROM PUBLIC, abacus_app` on all three; they go in `GLOBAL_TABLES`, `NON_TENANT_TABLES` and the owning module's `registry.TABLES`; the log goes in `IMMUTABLE_TABLES` with a trigger function that only raises.
+- Two people as a CHECK, not just in code: `CHECK (status = 'draft' OR (approved_by IS NOT NULL AND approved_by <> drafted_by))`. One draft per set with a partial unique index `WHERE status = 'draft'`.
+- A freeze trigger on the versions: once `status <> 'draft'`, every column stays as it is except the one allowed move (`published` → `withdrawn`); DELETE of a non-draft and TRUNCATE raise. (It has a `RETURN`, so it is not an `IMMUTABLE_TABLES` function.)
+- Readers the app executes return published versions only, resolved on a date: latest `effective_from <= as_of`, ties to the highest `version`. Writers (draft, publish, withdraw, any cross-firm list) are owner-only: revoke from PUBLIC **and** `abacus_app`, list them in `OWNER_ONLY_FUNCTIONS` as well as `DEFINER_FUNCTIONS`.
+- Never put content in the migration; tests use synthetic `probe.*` keys.
+
 ## 6. Prove it as the app role
 
 Superuser and owner connections bypass grants and row-level security, so a test that runs as them passes while the app fails in production.

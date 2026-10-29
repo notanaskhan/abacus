@@ -9,7 +9,7 @@ import {
   setAiExclusionMutation,
   teamOptions,
 } from "@abacus/api-client/query";
-import { Alert, Button, Label, Panel, Skeleton, StatusPill } from "@abacus/ui";
+import { Alert, Button, Label, Panel, RestrictedState, Skeleton, StatusPill } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
@@ -214,7 +214,12 @@ export function AiExclusionControl({
       setReason("");
     },
   });
-  if (state.data === undefined) return null;
+  // SPEC-036 AC-9 (Q-04-T351): loading, error and not-allowed are states, never a blank.
+  if (state.isPending) return <Skeleton className="h-8" />;
+  if (state.isError) {
+    if (isForbidden(state.error)) return <RestrictedState reason="role" />;
+    return <Alert title="Couldn't load this setting">{errorMessage(state.error)}</Alert>;
+  }
   const role = team.data?.find((m) => m.user_id === me.data?.user_id)?.role;
   const canSwitch = role === "engagement_partner";
   const excluded = state.data.excluded;
