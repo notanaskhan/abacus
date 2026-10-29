@@ -9,6 +9,7 @@ import {
   defineScenarios,
   json,
 } from "../../app-core/fixture-mode";
+import { meHandlers } from "../handlers";
 import { inboxHandlers } from "../handlers/inbox";
 import { type Inb02State, triageOf } from "../seed/inbox-triage";
 import { stableId } from "../seed/prng";
@@ -20,6 +21,7 @@ const KEVIN = stableId("person:kevin-osei");
 function handlers(state: Inb02State): Record<string, FixtureHandler> {
   const message = triageOf(state);
   return {
+    ...meHandlers(),
     ...inboxHandlers(state === "f"),
     "GET /v1/inbox/messages/{message_id}/triage": () => json(message.bundle),
     "POST /v1/inbox/messages/{message_id}/triage/apply": ({ body }) => {

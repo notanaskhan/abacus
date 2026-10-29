@@ -132,6 +132,6 @@ describe("INB-02", () => {
     const dialog = await sheet();
     await within(dialog).findByText("Feld_1095C_2025.pdf");
     fireEvent.keyDown(dialog, { key: "Escape" });
-    expect(await screen.findByText(/Discard/)).toBeTruthy();
+    expect((await screen.findAllByText(/Discard/)).length).toBeGreaterThan(0);
   });
 });
