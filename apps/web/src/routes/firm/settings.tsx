@@ -356,6 +356,26 @@ const settingsPortalPreviewRoute = createRoute({
     );
   },
 });
+// G-02-T25: ADM-04 at /settings/ai-policy behind `ai_policy.v1` (DEC-831).
+const FirmSettingsAiPolicy = lazyScreen(async () => (await import("../../screens/ADM-04")).ADM04);
+const settingsAiPolicyRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/settings/ai-policy",
+  component: function SettingsAiPolicyPage(): JSX.Element {
+    const navigate = useNavigate();
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <FeatureGate flag="ai_policy.v1" fallback={<NotBuilt />}>
+          <FirmSettingsAiPolicy
+            onNavigate={(section) => {
+              void navigate({ to: "/settings/$section", params: { section } });
+            }}
+          />
+        </FeatureGate>
+      </div>
+    );
+  },
+});
 const settingsSectionRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/settings/$section",
@@ -409,6 +429,7 @@ export const settingsRoutes = [
   settingsPortalRoute,
   settingsPortalPreviewRoute,
   settingsEmailTemplatesRoute,
+  settingsAiPolicyRoute,
   settingsSectionRoute,
   adminRoute.addChildren([
     section("/admin/methodology", () => <screens.Methodology />),

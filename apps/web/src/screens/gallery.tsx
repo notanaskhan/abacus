@@ -25,6 +25,13 @@ import {
   OPENS as ADM03_OPENS,
   scenarios as adm03Scenarios,
 } from "./ADM-03/scenarios";
+import { ADM04 } from "./ADM-04";
+import {
+  type Adm04State,
+  STATES as ADM04_STATES,
+  OPENS as ADM04_OPENS,
+  scenarios as adm04Scenarios,
+} from "./ADM-04/scenarios";
 import { ADM06 } from "./ADM-06";
 import {
   type Adm06State,
@@ -827,6 +834,47 @@ function Inb01Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("INB-01", { title: "Inbox", Component: Inb01Artboard });
+
+function Adm04Frame({ state }: { state: Adm04State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/settings/ai-policy" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <AppShell
+        frame
+        height={860}
+        toolbar={{ ...bar.toolbar, active: "", firmPressed: true }}
+        overlay={bar.overlay}
+      >
+        <ADM04 opens={ADM04_OPENS[state] ?? {}} />
+      </AppShell>
+    </div>
+  );
+}
+
+function Adm04Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Adm04State = ADM04_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      adm04Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Adm04Frame key={state} state={state} /> : null;
+}
+
+registerScreen("ADM-04", { title: "AI policy & approval gates", Component: Adm04Artboard });
 
 function Cli01Frame({ state }: { state: Cli01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
