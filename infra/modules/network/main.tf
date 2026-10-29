@@ -14,6 +14,7 @@ locals {
   public = [for i, _ in local.azs : cidrsubnet(var.cidr, 4, i)]
   app    = [for i, _ in local.azs : cidrsubnet(var.cidr, 4, 4 + i)]
   data   = [for i, _ in local.azs : cidrsubnet(var.cidr, 4, 8 + i)]
+  drill  = [for i, _ in local.azs : cidrsubnet(var.cidr, 4, 12 + i)]
 }
 
 resource "aws_vpc" "this" {
@@ -166,4 +167,46 @@ resource "aws_flow_log" "this" {
   traffic_type    = "ALL"
   log_destination = aws_cloudwatch_log_group.flow.arn
   iam_role_arn    = aws_iam_role.flow.arn
+}
+
+resource "aws_subnet" "drill" {
+  count             = length(local.azs)
+  vpc_id            = aws_vpc.this.id
+  cidr_block        = local.drill[count.index]
+  availability_zone = local.azs[count.index]
+  tags              = { Name = "abacus-${var.environment}-drill-${count.index}", tier = "drill" }
+}
+
+resource "aws_route_table_association" "drill" {
+  count          = length(local.azs)
+  subnet_id      = aws_subnet.drill[count.index].id
+  route_table_id = aws_route_table.data.id
+}
+
+resource "aws_security_group" "endpoints" {
+  count       = length(var.interface_endpoints) > 0 ? 1 : 0
+  name        = "abacus-${var.environment}-endpoints"
+  description = "Interface endpoints: HTTPS from the VPC"
+  vpc_id      = aws_vpc.this.id
+}
+
+resource "aws_vpc_security_group_ingress_rule" "endpoints" {
+  count             = length(var.interface_endpoints) > 0 ? 1 : 0
+  security_group_id = aws_security_group.endpoints[0].id
+  cidr_ipv4         = var.cidr
+  ip_protocol       = "tcp"
+  from_port         = 443
+  to_port           = 443
+  description       = "HTTPS from the VPC"
+}
+
+resource "aws_vpc_endpoint" "interface" {
+  for_each            = toset(var.interface_endpoints)
+  vpc_id              = aws_vpc.this.id
+  service_name        = "com.amazonaws.${data.aws_region.current.region}.${each.value}"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = aws_subnet.app[*].id
+  security_group_ids  = [aws_security_group.endpoints[0].id]
+  tags                = { Name = "abacus-${var.environment}-${each.value}" }
 }

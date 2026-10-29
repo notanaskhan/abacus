@@ -110,6 +110,11 @@ variable "github_repo" {
   default     = "notanaskhan/abacus"
 }
 
+variable "bedrock_enabled" {
+  description = "Let the API and workers call Bedrock through US Geo (after Q-02-T44's clearance)."
+  type        = bool
+  default     = false
+}
 variable "firm_managed_rules_action" {
   description = "count for the first weeks of the firm WebACL on staging, then block (chapter 06 section 1.13)."
   type        = string
