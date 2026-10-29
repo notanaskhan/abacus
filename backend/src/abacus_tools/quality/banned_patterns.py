@@ -2370,6 +2370,11 @@ RULES: list[Rule | TreeRule] = [
             # Q-03-T028: plans each list as the app role with the firm's tenant set by hand, as
             # tenant_session sets it, so row-level security adds the tenant predicate.
             "tests/integration/test_q03t028_plan_tests.py",
+            # N-02-T08, Q-04-T008 (S14): seed rows whose triggers read the tenant (the retention
+            # policy's version, a back-dated metric row), set in the same statement as
+            # tenant_session sets it.
+            "tests/integration/backfill/test_n02t08_record_import.py",
+            "tests/integration/backfill/test_q04t008_pilot_metrics.py",
             "tests/unit/kernel/test_migration_helpers.py",
             "tests/unit/quality/test_banned_patterns.py",
         ),
