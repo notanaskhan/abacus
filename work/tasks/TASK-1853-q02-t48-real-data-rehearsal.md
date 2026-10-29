@@ -2,7 +2,7 @@
 id: TASK-1853
 title: Q-02-T48 real-data rehearsal system test on staging
 spec: SPEC-036
-acceptance_criteria: [Q-02-T48]
+acceptance_criteria: [AC-3, AC-5]
 risk_zone: red
 status: in-review
 epic: Q-02
