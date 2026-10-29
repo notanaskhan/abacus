@@ -1999,14 +1999,6 @@
       "crop": "window",
       "tier": "C"
     },
-    "cli-02d.window": {
-      "page": "screens/CLI-02?st=d",
-      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
-      "source": "handoff/screens/CLI-02 Client record - Overview/screenshots/CLI-02d.png",
-      "sha256": "5a54bd14ce48ceebe87e6c5d3026300eab69d559b74fc9158449fb9b74072e5f",
-      "crop": "window",
-      "tier": "C"
-    },
     "cli-02e.window": {
       "page": "screens/CLI-02?st=e",
       "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
@@ -2177,67 +2169,75 @@
     },
     "eng-03a.window": {
       "page": "screens/ENG-03?st=a",
-      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "selector": "[data-artboard=\"a\"]",
       "source": "handoff/screens/ENG-03 New engagement wizard - Fairhaven Foods 401-k- Plan/screenshots/ENG-03a.png",
       "sha256": "101218f7f6bba3c902354a7845f919755223e08a404dcda545b99ffcbf08a8f6",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "deviation": "P-07-T63: ENG-03's gallery artboard draws the wizard on the bare 1440 x 900 stage with no app window (no [data-shell='app']), so the handoff's 1400 x 860 window crop cannot be compared (size mismatch, no diff); measure once the artboard draws the shell behind the wizard, as DEC-832 did for AUD-06"
     },
     "eng-03b.window": {
       "page": "screens/ENG-03?st=b",
-      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "selector": "[data-artboard=\"b\"]",
       "source": "handoff/screens/ENG-03 New engagement wizard - Fairhaven Foods 401-k- Plan/screenshots/ENG-03b.png",
       "sha256": "ab0f54e24839c2fb9c434f28fc69e7b2f09918709559942cef7dffc60bb8cf25",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "deviation": "P-07-T63: ENG-03's gallery artboard draws the wizard on the bare 1440 x 900 stage with no app window (no [data-shell='app']), so the handoff's 1400 x 860 window crop cannot be compared (size mismatch, no diff); measure once the artboard draws the shell behind the wizard, as DEC-832 did for AUD-06"
     },
     "eng-03c.window": {
       "page": "screens/ENG-03?st=c",
-      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "selector": "[data-artboard=\"c\"]",
       "source": "handoff/screens/ENG-03 New engagement wizard - Fairhaven Foods 401-k- Plan/screenshots/ENG-03c.png",
       "sha256": "cdac750f5d0ff6b4bc492de9c953c4c114c2db3941cdb434a1c3c52fb77874ff",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "deviation": "P-07-T63: ENG-03's gallery artboard draws the wizard on the bare 1440 x 900 stage with no app window (no [data-shell='app']), so the handoff's 1400 x 860 window crop cannot be compared (size mismatch, no diff); measure once the artboard draws the shell behind the wizard, as DEC-832 did for AUD-06"
     },
     "eng-03d.window": {
       "page": "screens/ENG-03?st=d",
-      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "selector": "[data-artboard=\"d\"]",
       "source": "handoff/screens/ENG-03 New engagement wizard - Fairhaven Foods 401-k- Plan/screenshots/ENG-03d.png",
       "sha256": "a79e0addcbc9b4d413b8e6839d66189c5fb1facf46d03df6f8344c2c076c2d5e",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "deviation": "P-07-T63: ENG-03's gallery artboard draws the wizard on the bare 1440 x 900 stage with no app window (no [data-shell='app']), so the handoff's 1400 x 860 window crop cannot be compared (size mismatch, no diff); measure once the artboard draws the shell behind the wizard, as DEC-832 did for AUD-06"
     },
     "eng-03e.window": {
       "page": "screens/ENG-03?st=e",
-      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "selector": "[data-artboard=\"e\"]",
       "source": "handoff/screens/ENG-03 New engagement wizard - Fairhaven Foods 401-k- Plan/screenshots/ENG-03e.png",
       "sha256": "81713ab357ec16d3a05aaa9652228d3a4a56d1821ea1016d91babb2c7d6e7c80",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "deviation": "P-07-T63: ENG-03's gallery artboard draws the wizard on the bare 1440 x 900 stage with no app window (no [data-shell='app']), so the handoff's 1400 x 860 window crop cannot be compared (size mismatch, no diff); measure once the artboard draws the shell behind the wizard, as DEC-832 did for AUD-06"
     },
     "eng-03f.window": {
       "page": "screens/ENG-03?st=f",
-      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "selector": "[data-artboard=\"f\"]",
       "source": "handoff/screens/ENG-03 New engagement wizard - Fairhaven Foods 401-k- Plan/screenshots/ENG-03f.png",
       "sha256": "4dfd1f70cb17c35aa20870d726a4deda04ac023e3493d11cc1558eac8b10a6bd",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "deviation": "P-07-T63: ENG-03's gallery artboard draws the wizard on the bare 1440 x 900 stage with no app window (no [data-shell='app']), so the handoff's 1400 x 860 window crop cannot be compared (size mismatch, no diff); measure once the artboard draws the shell behind the wizard, as DEC-832 did for AUD-06"
     },
     "eng-03g.window": {
       "page": "screens/ENG-03?st=g",
-      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "selector": "[data-artboard=\"g\"]",
       "source": "handoff/screens/ENG-03 New engagement wizard - Fairhaven Foods 401-k- Plan/screenshots/ENG-03g.png",
       "sha256": "054cea0fe0f8207bef971dd98d5829a9e8055ecb926504fb4e48da960e259315",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "deviation": "P-07-T63: ENG-03's gallery artboard draws the wizard on the bare 1440 x 900 stage with no app window (no [data-shell='app']), so the handoff's 1400 x 860 window crop cannot be compared (size mismatch, no diff); measure once the artboard draws the shell behind the wizard, as DEC-832 did for AUD-06"
     },
     "eng-03h.window": {
       "page": "screens/ENG-03?st=h",
-      "selector": "[data-artboard=\"h\"] [data-shell=\"app\"]",
+      "selector": "[data-artboard=\"h\"]",
       "source": "handoff/screens/ENG-03 New engagement wizard - Fairhaven Foods 401-k- Plan/screenshots/ENG-03h.png",
       "sha256": "2ccc1d30d4f094aabc9c2a7361b8a9c0960089ce3119c81ec121736fd37817c2",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "deviation": "P-07-T63: ENG-03's gallery artboard draws the wizard on the bare 1440 x 900 stage with no app window (no [data-shell='app']), so the handoff's 1400 x 860 window crop cannot be compared (size mismatch, no diff); measure once the artboard draws the shell behind the wizard, as DEC-832 did for AUD-06"
     }
   }
 }

@@ -33,3 +33,19 @@ Acceptance (backlog row): "All six P0 screens are parity-locked at Tier C before
 
 ## Progress log
 - 2026-10-29: entries added (S15 group B); measurement and locks at the end review.
+- 2026-10-29 (end review): baselines cropped from the handoff (version 2026-10-21) and the 39
+  window entries measured at 1440 x 900, 2x (`parity.spec.ts`, visual project). Diff %:
+  CLI-01 a 3.30 · b 1.90 · c 3.22 · d 0.57 · e 0.50 · f 0.81;
+  CLI-02 a 3.31 · a2 3.33 · b 2.04 · c 1.63 · e 1.63 · f 1.93;
+  CLI-04 a 2.07 · b 5.03 · c 2.72 · d 2.11 · e 5.01 · f 3.84 · g 0.95;
+  ENG-01 a 3.87 · b 1.97 · c 1.23 · d 1.09 · e 0.82;
+  ENG-02 a 2.59 · b 1.61 · c 1.16 · d 1.03 · e 0.85 · f 4.03 · g 1.15.
+  22 under 3 %, 9 between 3 and 5.1 %, none above. Fixes: `cli-02d.window` removed (P-07-T19
+  built CLI-02 a, a2, b, c, e, f; there is no d artboard, so the entry timed out); ENG-03's
+  selectors are the artboard itself (the wizard is a dialog portalled out of it, with no app
+  shell), and its eight entries carry a deviation: the artboard draws the wizard on the bare
+  1440 x 900 stage, so the 1400 x 860 window crop cannot be compared until it draws the shell.
+  Not done: locks (Ayush chose the short check without locks; Tier C stays report-only either
+  way), so the row's acceptance ("parity-locked at Tier C") stays open; ENG-03's shell for
+  measurement. Screen specs (axe) for the six: 57 of 59 pass; CLI-04 b and e fail on duplicate
+  text locators, already on main.
