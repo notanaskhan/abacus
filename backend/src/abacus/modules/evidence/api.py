@@ -128,9 +128,23 @@ from abacus.modules.evidence.holds import activate as legal_hold_activate
 from abacus.modules.evidence.holds import apply_batch as legal_hold_apply_batch
 from abacus.modules.evidence.inbox import add_to_inbox, register_match_picks
 from abacus.modules.evidence.inbox import assign as assign_inbox_file
+from abacus.modules.evidence.intake_filing import (
+    Filed,
+    IntakeObject,
+    SupersedeMismatch,
+    file_intake_object,
+)
+from abacus.modules.evidence.intake_keys import (
+    destroy_intake_key,
+    held_intake_objects,
+    live_intake_keys,
+    record_intake_key,
+    screen_and_stage_detached,
+)
+from abacus.modules.evidence.intake_sources import IntakeSource, register_intake_source
 from abacus.modules.evidence.item_detail import Download as DocumentDownload
 from abacus.modules.evidence.item_detail import latest_document
-from abacus.modules.evidence.masked_previews import masked_preview_upload
+from abacus.modules.evidence.masked_previews import intake_masked_pages, masked_preview_upload
 from abacus.modules.evidence.match_material import (
     Candidate,
     MatchMaterial,
@@ -159,7 +173,14 @@ from abacus.modules.evidence.processing import (
     stale_pdfs,
 )
 from abacus.modules.evidence.processing import check_upload as check_upload_content
-from abacus.modules.evidence.records import RecordClass, StoredRecord, anchor_chain, put_record
+from abacus.modules.evidence.processing import workflow_id as upload_workflow_id
+from abacus.modules.evidence.records import (
+    RecordClass,
+    StoredRecord,
+    anchor_chain,
+    get_record,
+    put_record,
+)
 from abacus.modules.evidence.render import (
     CODE_COLUMN,
     CREDIT_COLUMN,
@@ -240,6 +261,7 @@ from abacus.modules.evidence.signed_copies import (
     file_signed_copy,
     read_staged,
     screen_and_stage,
+    version_titles,
 )
 from abacus.modules.evidence.storage import (
     MAX_CONTENT_BYTES,
@@ -263,8 +285,8 @@ from abacus.modules.evidence.withdrawals import WORKFLOWS as WITHDRAWAL_WORKFLOW
 from abacus.modules.evidence.withdrawals import is_version_withdrawn, withdrawn_among
 from abacus.modules.evidence.words import WORDS_VERSION, start_trust_layer_backfill, words_upload
 from abacus.modules.evidence.workflow_types import INBOX as UPLOAD_INBOX
-from abacus.modules.evidence.workflow_types import VERSION as UPLOAD_VERSION
 from abacus.modules.evidence.workflow_types import (
+    INTAKE,
     BackfillInput,
     EngagementExportInput,
     ExportPackageFacts,
@@ -274,6 +296,7 @@ from abacus.modules.evidence.workflow_types import (
     UploadInput,
     WithdrawalPurgeInput,
 )
+from abacus.modules.evidence.workflow_types import VERSION as UPLOAD_VERSION
 from abacus.modules.evidence.workflow_types import ExportFailure as ExportBuildFailure
 from abacus.modules.evidence.workflows import (
     ANCHOR_ID,
@@ -407,6 +430,7 @@ __all__ = [
     "EXPORT_FORMAT_VERSION",
     "EXPORT_SCHEMA_FILE",
     "FIRST_LINE_ROW",
+    "INTAKE",
     "MAX_CONTENT_BYTES",
     "NAME_COLUMN",
     "RECORD_TYPES",
@@ -448,6 +472,7 @@ __all__ = [
     "ExportExpirySweepWorkflow",
     "ExportPackageFacts",
     "ExportStale",
+    "Filed",
     "FinalExport",
     "FinalExportRequired",
     "FirmExportFacts",
@@ -461,6 +486,8 @@ __all__ = [
     "HoldView",
     "InboxFileAdded",
     "InboxFileExtracted",
+    "IntakeObject",
+    "IntakeSource",
     "IntegrityError",
     "LayerExport",
     "LayerLine",
@@ -486,6 +513,7 @@ __all__ = [
     "SentBack",
     "StoredObject",
     "StoredRecord",
+    "SupersedeMismatch",
     "TrialBalance",
     "TrialBalanceLine",
     "TrustLayerBackfill",
@@ -511,6 +539,7 @@ __all__ = [
     "decide",
     "decided_among",
     "decisions_on_screenings",
+    "destroy_intake_key",
     "drop_batch",
     "effective_decisions",
     "effective_policies",
@@ -520,17 +549,22 @@ __all__ = [
     "export_requester",
     "export_section_csv",
     "extend_retention_for",
+    "file_intake_object",
     "file_signed_copy",
     "final_export_for_archive",
     "firm_export_schedule_id",
     "firm_router",
+    "get_record",
+    "held_intake_objects",
     "holds_covering",
     "included_export_versions",
+    "intake_masked_pages",
     "is_version_withdrawn",
     "latest_document",
     "legal_hold_activate",
     "legal_hold_apply_batch",
     "list_holds",
+    "live_intake_keys",
     "mark_sources_superseded",
     "masked_preview_upload",
     "match_material",
@@ -546,10 +580,12 @@ __all__ = [
     "read_staged",
     "read_version",
     "record_citations",
+    "record_intake_key",
     "register_citable",
     "register_export_audit_trail",
     "register_export_section",
     "register_firm_export_starter",
+    "register_intake_source",
     "register_match_picks",
     "register_proposal_source",
     "render_general_ledger",
@@ -563,6 +599,7 @@ __all__ = [
     "review_material",
     "router",
     "screen_and_stage",
+    "screen_and_stage_detached",
     "screening_facts",
     "set_policy",
     "stage_content",
@@ -574,7 +611,9 @@ __all__ = [
     "undo_review_decision",
     "upload",
     "upload_preview",
+    "upload_workflow_id",
     "verified_citation_ids",
+    "version_titles",
     "version_view",
     "waiting_among",
     "withdrawn_among",

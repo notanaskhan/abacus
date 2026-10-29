@@ -41,6 +41,11 @@ BINDERS_ENGINE = Flag(
     kind="boolean",
     default="false",
 )
+CLIENTS_TAX_PROFILE = Flag(
+    name="clients.tax_profile",
+    kind="boolean",
+    default="false",
+)
 COMMUNICATIONS_FIRM_SENDER_DOMAIN = Flag(
     name="communications.firm_sender_domain",
     kind="boolean",
@@ -68,6 +73,11 @@ CONNECTIONS_LIVE_LEDGER = Flag(
 )
 CONNECTIONS_PORTAL_V2 = Flag(
     name="connections.portal_v2",
+    kind="boolean",
+    default="false",
+)
+CONSENTS_REGISTRY = Flag(
+    name="consents.registry",
     kind="boolean",
     default="false",
 )
@@ -148,6 +158,11 @@ INBOX_FIRM_INTAKE = Flag(
 )
 KNOWLEDGE_CATALOG = Flag(
     name="knowledge.catalog",
+    kind="boolean",
+    default="false",
+)
+KNOWLEDGE_FIRM_STANDARDS = Flag(
+    name="knowledge.firm_standards",
     kind="boolean",
     default="false",
 )
@@ -259,6 +274,11 @@ REVIEW_GRAMMAR_API = Flag(
     kind="boolean",
     default="false",
 )
+RULES_REFERENCE_SETS = Flag(
+    name="rules.reference_sets",
+    kind="boolean",
+    default="false",
+)
 SCREENING_CARD = Flag(
     name="screening.card",
     kind="boolean",
@@ -271,6 +291,16 @@ SECURITY_CENTER_V1 = Flag(
 )
 SIGNATURES_ENVELOPES = Flag(
     name="signatures.envelopes",
+    kind="boolean",
+    default="false",
+)
+TAX_DELIVERY_EFILE = Flag(
+    name="tax.delivery_efile",
+    kind="boolean",
+    default="false",
+)
+TAX_ENGINE_BRIDGE = Flag(
+    name="tax.engine_bridge",
     kind="boolean",
     default="false",
 )
@@ -293,12 +323,14 @@ FLAGS: dict[str, Flag] = {
     "audits.binder_export": AUDITS_BINDER_EXPORT,
     "audits.cockpit": AUDITS_COCKPIT,
     "binders.engine": BINDERS_ENGINE,
+    "clients.tax_profile": CLIENTS_TAX_PROFILE,
     "communications.firm_sender_domain": COMMUNICATIONS_FIRM_SENDER_DOMAIN,
     "compliance.firm_export": COMPLIANCE_FIRM_EXPORT,
     "compliance.incidents": COMPLIANCE_INCIDENTS,
     "compliance.legal_holds": COMPLIANCE_LEGAL_HOLDS,
     "connections.live_ledger": CONNECTIONS_LIVE_LEDGER,
     "connections.portal_v2": CONNECTIONS_PORTAL_V2,
+    "consents.registry": CONSENTS_REGISTRY,
     "contacts.v2": CONTACTS_V2,
     "engagement_agent.enabled": ENGAGEMENT_AGENT_ENABLED,
     "engagements.roll_forward_v2": ENGAGEMENTS_ROLL_FORWARD_V2,
@@ -315,6 +347,7 @@ FLAGS: dict[str, Flag] = {
     "home.dashboard": HOME_DASHBOARD,
     "inbox.firm_intake": INBOX_FIRM_INTAKE,
     "knowledge.catalog": KNOWLEDGE_CATALOG,
+    "knowledge.firm_standards": KNOWLEDGE_FIRM_STANDARDS,
     "ledger.gl_import": LEDGER_GL_IMPORT,
     "ledger.import": LEDGER_IMPORT,
     "ledger.tb_workpaper": LEDGER_TB_WORKPAPER,
@@ -336,9 +369,12 @@ FLAGS: dict[str, Flag] = {
     "reporting.generated_documents": REPORTING_GENERATED_DOCUMENTS,
     "retrieval.auto": RETRIEVAL_AUTO,
     "review.grammar_api": REVIEW_GRAMMAR_API,
+    "rules.reference_sets": RULES_REFERENCE_SETS,
     "screening.card": SCREENING_CARD,
     "security_center.v1": SECURITY_CENTER_V1,
     "signatures.envelopes": SIGNATURES_ENVELOPES,
+    "tax.delivery_efile": TAX_DELIVERY_EFILE,
+    "tax.engine_bridge": TAX_ENGINE_BRIDGE,
     "upload_review.enabled": UPLOAD_REVIEW_ENABLED,
     "uploads.processing": UPLOADS_PROCESSING,
 }

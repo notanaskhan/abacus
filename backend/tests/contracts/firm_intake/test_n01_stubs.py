@@ -95,7 +95,30 @@ FIRM: list[tuple[str, Endpoint, Flag, ModuleType]] = [
 ] + [(p, e, FILES_BROWSER, files) for p, e in _endpoints(files, files.files_router)]
 PORTAL: list[tuple[str, Endpoint]] = _endpoints(portal, portal.intake_router)
 # Live since N-01-T09 (staff-logged intake; DEC-821): their own codes, never 501.
-LIVE_PATHS = frozenset({"/v1/inbox/intake", "/v1/inbox/intake/{message_id}/files"})
+LIVE_PATHS = frozenset(
+    {
+        "/v1/inbox/intake",
+        "/v1/inbox/intake/{message_id}/files",
+        # N-01-T13 (DEC-1059): the read APIs, match-client and ignore.
+        "/v1/inbox/summary",
+        "/v1/inbox/threads",
+        "/v1/inbox/threads/{thread_id}",
+        "/v1/inbox/threads/{thread_id}/match-client",
+        "/v1/inbox/threads/{thread_id}/ignore",
+        "/v1/inbox/attachments/{attachment_id}/viewer",
+        "/v1/inbox/attachments/{attachment_id}/content",
+        "/v1/inbox/messages/{message_id}/attachments.zip",
+        # N-01-T18 (DEC-1061): triage, apply, bulk-file and the destinations picker.
+        "/v1/inbox/messages/{message_id}/triage",
+        "/v1/inbox/messages/{message_id}/triage/apply",
+        "/v1/inbox/attachments/bulk-file",
+        "/v1/destinations",
+        # N-01-T14 (DEC-1060): portal intake.
+        "/v1/portal/intake-uploads",
+        "/v1/portal/intake-uploads/{upload_id}/files",
+        "/v1/portal/intake-uploads/{upload_id}/withdraw",
+    }
+)
 STUBBED = [f for f in FIRM if f[0] not in LIVE_PATHS]
 
 
@@ -180,7 +203,12 @@ async def test_n01t02_firm_routes_client_404_then_action_then_flag_then_501(
         await _call(endpoint, _ctx())
 
 
-@pytest.mark.parametrize(("path", "endpoint"), PORTAL, ids=[e.__name__ for _p, e in PORTAL])
+PORTAL_STUBBED = [f for f in PORTAL if f[0] not in LIVE_PATHS]
+
+
+@pytest.mark.parametrize(
+    ("path", "endpoint"), PORTAL_STUBBED, ids=[e.__name__ for _p, e in PORTAL_STUBBED]
+)
 async def test_n01t02_portal_routes_firm_404_then_flag_then_501(
     path: str, endpoint: Endpoint, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -299,5 +327,7 @@ def test_n01t09_the_live_intake_routes_declare_their_action_and_no_501(
     method: str, path: str
 ) -> None:
     op = PATHS[path][method]
-    assert op["x-abacus-action"] == ROUTES[(method, path)] == "inbox.log_intake"
+    assert op["x-abacus-action"] == ROUTES[(method, path)]
+    if path.startswith("/v1/inbox/intake"):  # N-01-T09's own two
+        assert op["x-abacus-action"] == "inbox.log_intake"
     assert "501" not in set(cast(Json, op["responses"]))

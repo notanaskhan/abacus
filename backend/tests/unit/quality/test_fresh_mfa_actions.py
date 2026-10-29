@@ -22,6 +22,8 @@ GROUPS = frozenset(
     | {"incident"}  # G-02-T02 (Q-02 AC-42): incident decisions
     | {"sign_off"}  # P-04-T22 (DEC-501): bulk sign-off
     | {"release"}  # A-01-T23 (DEC-83): record-mode release and archive
+    | {"standards"}  # K-02-T01 (DEC-1150): a firm standard's create and publish
+    | {"consent"}  # T-01-T01 (DEC-1155): §7216 consent records and templates
 )
 
 

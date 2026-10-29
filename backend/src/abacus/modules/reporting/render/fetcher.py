@@ -11,7 +11,7 @@ from weasyprint.urls import URLFetcher, URLFetcherResponse
 
 ASSET_SCHEME = "asset:"
 
-_TYPES = {".woff": "font/woff", ".png": "image/png", ".css": "text/css"}
+_TYPES = {".ttf": "font/ttf", ".png": "image/png", ".css": "text/css"}
 
 
 class AssetNotAllowed(ValueError):

@@ -172,7 +172,7 @@ const FELD_T7G: readonly RequestItem[] = [
 
 // ---- TPL-07: Claire Feld ------------------------------------------------------------------------
 
-const TPL07_SECTIONS: readonly RequestSectionData[] = [
+export const TPL07_SECTIONS: readonly RequestSectionData[] = [
   { key: "w2", category: "income", title: "W-2s", icon: "banknote" },
   {
     key: "1099",
@@ -187,7 +187,7 @@ const TPL07_SECTIONS: readonly RequestSectionData[] = [
   { key: "est", category: "other", title: "Estimated tax payments", icon: "ellipsis" },
 ];
 
-const TPL07_REQUESTS: readonly RequestItem[] = [
+export const TPL07_REQUESTS: readonly RequestItem[] = [
   {
     id: "w2",
     sec: "w2",

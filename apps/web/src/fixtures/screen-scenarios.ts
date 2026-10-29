@@ -34,6 +34,7 @@ import { OPENS as ENG02_OPENS, scenarios as eng02 } from "./scenarios/ENG-02";
 import { OPENS as ENG13_OPENS, scenarios as eng13 } from "./scenarios/ENG-13";
 import { scenarios as home01 } from "./scenarios/HOME-01";
 import { scenarios as knw01 } from "./scenarios/KNW-01";
+import { scenarios as knw04 } from "./scenarios/KNW-04";
 import { scenarios as shl03 } from "./scenarios/SHL-03";
 import { scenarios as shl04 } from "./scenarios/SHL-04";
 import { OPENS as SHL14_OPENS, scenarios as shl14 } from "./scenarios/SHL-14";
@@ -103,6 +104,7 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
   }, // P-07-T62
   "HOME-01": { scenarios: home01, opens: {} }, // I-01-T05
   "KNW-01": { scenarios: knw01, opens: {} }, // K-01-T04
+  "KNW-04": { scenarios: knw04, opens: {} }, // K-02-T13
   "SHL-03": { scenarios: shl03, opens: {} },
   "SHL-04": { scenarios: shl04, opens: {} },
   "SHL-14": { scenarios: shl14, opens: {}, ids: SHL14_OPENS },
