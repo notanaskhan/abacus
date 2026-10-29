@@ -295,21 +295,26 @@ class DraftUpdateIn(BaseModel):
     date_as_of_mode: Annotated[DateAsOfMode, classified("internal")] = "none"
     date_as_of: Annotated[date | None, classified("internal")] = None
     # N-02-T21 (DEC-1174): SIG-02's document order after a drag or keyboard move; None keeps it.
-    document_order: Annotated[list[UUID] | None, Field(max_length=20), classified("internal")] = None
+    document_order: Annotated[list[UUID] | None, Field(max_length=20), classified("internal")] = (
+        None
+    )
 
 
 class ValidationCheck(BaseModel):
-    """One code-computed check SIG-02's Checks band lists (N-02-T21, DEC-1174): an identifier the
-    screen words (`amounts_match`, `signer_authority`, `ero_efin`, `no_ssn_visible`), never prose."""
+    """One code-computed check SIG-02's Checks band lists (N-02-T21, DEC-1174): an identifier
+    the screen words (`amounts_match`, `ero_efin`, `no_ssn_visible`), never prose."""
 
     model_config = ConfigDict(frozen=True)
 
-    code: Annotated[str, Field(pattern=r"^[a-z][a-z0-9_]*$", max_length=60), classified("internal")]
+    code: Annotated[
+        str, Field(pattern=r"^[a-z][a-z0-9_]*$", max_length=60), classified("internal")
+    ]
     ok: Annotated[bool, classified("internal")]
 
 
 class ValidationOut(BaseModel):
-    """Code-computed checks before send. `problems` are identifiers (`signer_email_missing:<id>`)."""
+    """Code-computed checks before send. `problems` are identifiers
+    (`signer_email_missing:<signer_id>`)."""
 
     model_config = ConfigDict(frozen=True)
 

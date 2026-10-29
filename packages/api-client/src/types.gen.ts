@@ -28995,8 +28995,8 @@ export type UploadOut = {
 /**
  * ValidationCheck
  *
- * One code-computed check SIG-02's Checks band lists (N-02-T21, DEC-1174): an identifier the
- * screen words (`amounts_match`, `signer_authority`, `ero_efin`, `no_ssn_visible`), never prose.
+ * One code-computed check SIG-02's Checks band lists (N-02-T21, DEC-1174): an identifier
+ * the screen words (`amounts_match`, `ero_efin`, `no_ssn_visible`), never prose.
  */
 export type ValidationCheck = {
     /**
@@ -29024,7 +29024,8 @@ export type ValidationErrorOut = {
 /**
  * ValidationOut
  *
- * Code-computed checks before send. `problems` are identifiers (`signer_email_missing:<id>`).
+ * Code-computed checks before send. `problems` are identifiers
+ * (`signer_email_missing:<signer_id>`).
  */
 export type ValidationOut = {
     /**
