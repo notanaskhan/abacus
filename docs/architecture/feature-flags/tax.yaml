@@ -16,3 +16,17 @@ flags:
     expires: 2027-01-26
     kind: boolean
     default: false
+  - name: tax.returns_v1
+    description: 'Tax returns v1 (T-02): /v1/tax-returns rows, summary, record, overview, intake, assignments and transitions; TAX-01 to TAX-03. Off: 404 and the nav item stays absent. On: 501 until T-02-T09 onward. T-02-T03, DEC-1162.'
+    owner: ayushkbhatia
+    created: 2026-10-29
+    expires: 2027-01-26
+    kind: boolean
+    default: false
+  - name: tax.k1_release
+    description: 'K-1 packages (T-02): TXP-12 and POR-13. Off: 404 (TXP-12 read-only, Release hidden). On: 501 until T-02-T20 onward. T-02-T03, DEC-1162.'
+    owner: ayushkbhatia
+    created: 2026-10-29
+    expires: 2027-01-26
+    kind: boolean
+    default: false

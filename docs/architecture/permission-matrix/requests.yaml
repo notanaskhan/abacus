@@ -81,3 +81,11 @@ actions:
   # --- Fulfilments ---
   fulfilment.propose:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: task_scope, system: allow}
   fulfilment.confirm:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny}
+  # --- questionnaires v1 (T-02-T03, DEC-1162; T-02 §4.4): organizer templates are database
+  # content; sending a question is a person's act.
+  questionnaire_template.import:  {firm_admin: allow, firm_partner: allow, firm_manager: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # POST /v1/questionnaire-templates:import
+  questionnaire_template.read:    {firm_admin: allow, firm_partner: allow, firm_manager: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # template list
+  questionnaire_template.publish: {firm_partner: allow, firm_manager: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny, mfa_recent: required}   # publish a template version
+  questionnaire.create:           {engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # attach an organizer, create team questions or an inquiry
+  questionnaire.ask:              {engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # draft and send a question (person-sent)
+  questionnaire.read:             {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, client_service: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # firm read

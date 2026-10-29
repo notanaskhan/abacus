@@ -100,7 +100,8 @@ _FLAG_CONDITIONS = (
     *("not_offshore", "scope_only", "not_preparer_of_target", "reserved_role"),
     "owner_of_target",  # K-02-T01
 )
-_ACTION = re.compile(r"[a-z][a-z_]*\.[a-z][a-z_]*")
+# T-02-T03 (DEC-1162): digits after the first letter (`k1_package.read`).
+_ACTION = re.compile(r"[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*")
 # Verbs that only read: archived engagements still allow them (`archived_write: deny`).
 # DEC-462: `read_firm_level` (DEC-434's firm-level audit events) only reads; the break-glass
 # support roles hold it, and they hold reads only (SPEC-012).
