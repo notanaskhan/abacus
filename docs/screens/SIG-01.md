@@ -21,7 +21,7 @@ Clock E0, Mon Sep 14, 2026, 9:24 AM CT; viewer Grace Holloway (Firm Admin, `clie
 | c | grace-holloway | Completed, last 30 days, with what each unblocked (G3, e-file) | C report | live (T13; record-mode rows from T08) |
 | d | grace-holloway | Expired: an optional consent left to expire | C report | live (T28) |
 | e | grace-holloway | Declined, with the signer's reason | C report | live (T28) |
-| f | grace-holloway | E5, E8, E9 checked; the reminder is a template preview a person sends | C report | live (T14) |
+| f | grace-holloway | E5, E8, E9 checked; the reminder is a template preview a person sends | C report | fixture (T15, DEC-1057); live (T28) |
 | g | grace-holloway | Empty To send | C report | live (T13) |
 | **r (added, DF-12)** | grace-holloway | Import signed package sheet: files, signer facts (name, signed date, identity method), provider name, attestation checkbox; Import writes a `record` envelope, Completed | report-only (no artboard; DF-12 design) | live (T08) |
 
