@@ -1520,6 +1520,32 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         # N-02-T07 (0292): the envelope counter and a signing session's state.
         "envelope_numbers": frozenset({"next_value"}),
         "signing_sessions": frozenset({"state"}),
+        # N-01-T07 (0293): a thread's match, an attachment's status and filing, a rule's revoke.
+        "inbox_threads": frozenset(
+            {
+                "client_entity_id",
+                "client_id",
+                "ignored_reason",
+                "last_received_at",
+                "match_method",
+                "matched_at",
+                "matched_by",
+            }
+        ),
+        "inbox_attachments": frozenset(
+            {
+                "classification_id",
+                "client_id",
+                "data_classes",
+                "filed_destination_id",
+                "filed_destination_kind",
+                "filed_evidence_version_id",
+                "status",
+            }
+        ),
+        "inbox_sender_rules": frozenset({"revoked_at"}),
+        # N-02-T08 (0294): a staged import file is consumed once.
+        "envelope_import_files": frozenset({"consumed_envelope_id"}),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
@@ -1711,6 +1737,10 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "signature_evidence": "signatures_rows_immutable",
         "esign_disclosures": "signatures_rows_immutable",
         "esign_acceptances": "signatures_rows_immutable",
+        # N-01-T07 (0293): the firm inbox's insert-only rows.
+        "inbound_messages": "intake_rows_immutable",
+        "triage_decisions": "intake_rows_immutable",
+        "inbox_attachment_flags": "intake_rows_immutable",
     }
     assert _evidence_problems(evidence) == []
 

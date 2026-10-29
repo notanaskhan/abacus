@@ -1,5 +1,5 @@
 // ENG-05 Team & roles: one fixture scenario per artboard (P-07-T39; docs/screens/ENG-05.md),
-// inside the ENG-02 record on its Team tab, with `engagements.v2` on. Data: the team-roles seed
+// inside the ENG-02 record on its Team tab. Data: the team-roles seed
 // (seed/team-roles.ts) through handlers/team-roles.ts, over ENG-02's record handlers:
 //
 //   a  Hannah Leclerc, Mon Sep 14, 9:24 AM CT: Northwind, five confirmed and Kira Ross pending
@@ -57,8 +57,7 @@ const FAIRHAVEN = fairhavenRecord(seed);
 const GRANITE = granitePlanRecord();
 
 function capabilities(persona: string | undefined): CapabilitiesOut {
-  const base = capabilitiesFor(seed, persona ?? "hannah-leclerc");
-  return { ...base, flags: { ...base.flags, "engagements.v2": true } };
+  return capabilitiesFor(seed, persona ?? "hannah-leclerc");
 }
 
 function northwind(state: "a" | "b" | "d"): TeamFixture {

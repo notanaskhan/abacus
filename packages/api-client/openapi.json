@@ -390,214 +390,6 @@
         "title": "AcceptanceFlagOut",
         "type": "object"
       },
-      "AcceptanceIn": {
-        "additionalProperties": false,
-        "properties": {
-          "decision": {
-            "cls": "internal",
-            "enum": [
-              "accepted",
-              "declined"
-            ],
-            "title": "Decision",
-            "type": "string"
-          },
-          "documented_at": {
-            "cls": "internal",
-            "maxLength": 300,
-            "minLength": 1,
-            "title": "Documented At",
-            "type": "string"
-          },
-          "independence_concluded": {
-            "cls": "internal",
-            "default": false,
-            "title": "Independence Concluded",
-            "type": "boolean"
-          },
-          "independence_documented_at": {
-            "anyOf": [
-              {
-                "maxLength": 300,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Independence Documented At"
-          },
-          "kind": {
-            "anyOf": [
-              {
-                "enum": [
-                  "new_client",
-                  "continuance"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Kind"
-          },
-          "predecessor_auditor": {
-            "anyOf": [
-              {
-                "maxLength": 200,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Predecessor Auditor"
-          },
-          "predecessor_communicated_on": {
-            "anyOf": [
-              {
-                "format": "date",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Predecessor Communicated On"
-          }
-        },
-        "required": [
-          "decision",
-          "documented_at"
-        ],
-        "title": "AcceptanceIn",
-        "type": "object"
-      },
-      "AcceptanceOut": {
-        "properties": {
-          "before_act_1": {
-            "cls": "internal",
-            "title": "Before Act 1",
-            "type": "boolean"
-          },
-          "created_at": {
-            "cls": "internal",
-            "format": "date-time",
-            "title": "Created At",
-            "type": "string"
-          },
-          "decided_by": {
-            "cls": "internal",
-            "title": "Decided By",
-            "type": "string"
-          },
-          "decision": {
-            "cls": "internal",
-            "enum": [
-              "accepted",
-              "declined"
-            ],
-            "title": "Decision",
-            "type": "string"
-          },
-          "documented_at": {
-            "cls": "internal",
-            "title": "Documented At",
-            "type": "string"
-          },
-          "file_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "confidential",
-            "title": "File Name"
-          },
-          "independence_concluded_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Independence Concluded At"
-          },
-          "independence_documented_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Independence Documented At"
-          },
-          "kind": {
-            "cls": "internal",
-            "enum": [
-              "new_client",
-              "continuance"
-            ],
-            "title": "Kind",
-            "type": "string"
-          },
-          "predecessor_auditor": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Predecessor Auditor"
-          },
-          "predecessor_communicated_on": {
-            "anyOf": [
-              {
-                "format": "date",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Predecessor Communicated On"
-          }
-        },
-        "required": [
-          "kind",
-          "decision",
-          "decided_by",
-          "documented_at",
-          "predecessor_auditor",
-          "predecessor_communicated_on",
-          "independence_concluded_at",
-          "independence_documented_at",
-          "file_name",
-          "before_act_1",
-          "created_at"
-        ],
-        "title": "AcceptanceOut",
-        "type": "object"
-      },
       "AcceptanceRecordOut": {
         "properties": {
           "allowed_actions": {
@@ -13646,6 +13438,52 @@
         "title": "ConfirmIn",
         "type": "object"
       },
+      "ConfirmationOut": {
+        "properties": {
+          "answered_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Answered At"
+          },
+          "confirmation": {
+            "cls": "internal",
+            "enum": [
+              "requested",
+              "confirmed",
+              "declined"
+            ],
+            "title": "Confirmation",
+            "type": "string"
+          },
+          "engagement_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Engagement Id",
+            "type": "string"
+          },
+          "user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "engagement_id",
+          "user_id",
+          "confirmation"
+        ],
+        "title": "ConfirmationOut",
+        "type": "object"
+      },
       "ConflictAssessmentStatus": {
         "enum": [
           "pending",
@@ -21359,6 +21197,18 @@
             "title": "Client Name",
             "type": "string"
           },
+          "drafted_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Drafted By Name"
+          },
           "due_on": {
             "anyOf": [
               {
@@ -21395,10 +21245,34 @@
             "title": "Needs Handwritten",
             "type": "boolean"
           },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Note"
+          },
           "number": {
             "cls": "internal",
             "title": "Number",
             "type": "string"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Outcome"
           },
           "provider": {
             "cls": "internal",
@@ -21460,6 +21334,14 @@
             "title": "Signed",
             "type": "integer"
           },
+          "signer_chips": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/SignerChip"
+            },
+            "title": "Signer Chips",
+            "type": "array"
+          },
           "status": {
             "$ref": "#/components/schemas/EnvelopeStatus",
             "cls": "internal"
@@ -21474,6 +21356,19 @@
             "title": "Total",
             "type": "integer"
           },
+          "viewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Viewed At"
+          },
           "work_item_id": {
             "anyOf": [
               {
@@ -21486,6 +21381,18 @@
             ],
             "cls": "internal",
             "title": "Work Item Id"
+          },
+          "work_item_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Work Item Label"
           }
         },
         "required": [
@@ -25130,7 +25037,8 @@
               "eqr_pool",
               "monitoring_reviewers",
               "reviewer_pool",
-              "custom"
+              "custom",
+              "intake"
             ],
             "title": "Kind",
             "type": "string"
@@ -25253,7 +25161,8 @@
               "eqr_pool",
               "monitoring_reviewers",
               "reviewer_pool",
-              "custom"
+              "custom",
+              "intake"
             ],
             "title": "Kind",
             "type": "string"
@@ -28651,6 +28560,46 @@
         "title": "ImportCountsOut",
         "type": "object"
       },
+      "ImportFileOut": {
+        "description": "`POST /v1/envelopes/import/files`: one scanned, stored file an import names by `id`.",
+        "properties": {
+          "file_name": {
+            "cls": "confidential",
+            "title": "File Name",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "media_type": {
+            "cls": "internal",
+            "title": "Media Type",
+            "type": "string"
+          },
+          "sha256": {
+            "cls": "internal",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "size_bytes": {
+            "cls": "internal",
+            "title": "Size Bytes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "file_name",
+          "media_type",
+          "size_bytes",
+          "sha256"
+        ],
+        "title": "ImportFileOut",
+        "type": "object"
+      },
       "ImportOut": {
         "properties": {
           "difference": {
@@ -30305,34 +30254,6 @@
         ],
         "title": "IndependenceConclusionStatus",
         "type": "string"
-      },
-      "IndependenceIn": {
-        "additionalProperties": false,
-        "properties": {
-          "confirm": {
-            "cls": "internal",
-            "title": "Confirm",
-            "type": "boolean"
-          },
-          "note": {
-            "anyOf": [
-              {
-                "maxLength": 1000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "confidential",
-            "title": "Note"
-          }
-        },
-        "required": [
-          "confirm"
-        ],
-        "title": "IndependenceIn",
-        "type": "object"
       },
       "IndependenceSummaryOut": {
         "description": "CLI-08 a: \"{confirmed} of {total} confirmed\", the banner reasons and the conclusion.",
@@ -33853,140 +33774,6 @@
           "variables"
         ],
         "title": "LetterDraftIn",
-        "type": "object"
-      },
-      "LetterIn": {
-        "additionalProperties": false,
-        "properties": {
-          "letter_date": {
-            "anyOf": [
-              {
-                "format": "date",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Letter Date"
-          },
-          "link": {
-            "anyOf": [
-              {
-                "maxLength": 2000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Link"
-          },
-          "reason": {
-            "anyOf": [
-              {
-                "maxLength": 500,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Reason"
-          },
-          "status": {
-            "cls": "internal",
-            "enum": [
-              "not_started",
-              "sent",
-              "signed",
-              "not_required_this_year"
-            ],
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": [
-          "status"
-        ],
-        "title": "LetterIn",
-        "type": "object"
-      },
-      "LetterOut": {
-        "properties": {
-          "file_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "confidential",
-            "title": "File Name"
-          },
-          "letter_date": {
-            "anyOf": [
-              {
-                "format": "date",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Letter Date"
-          },
-          "link": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Link"
-          },
-          "reason": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Reason"
-          },
-          "recorded_at": {
-            "cls": "internal",
-            "format": "date-time",
-            "title": "Recorded At",
-            "type": "string"
-          },
-          "status": {
-            "cls": "internal",
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": [
-          "status",
-          "letter_date",
-          "reason",
-          "link",
-          "file_name",
-          "recorded_at"
-        ],
-        "title": "LetterOut",
         "type": "object"
       },
       "LetterPolicyIn": {
@@ -38874,49 +38661,6 @@
           "complete"
         ],
         "title": "OnboardingOut",
-        "type": "object"
-      },
-      "OpenConfirmationOut": {
-        "properties": {
-          "client_name": {
-            "cls": "confidential",
-            "title": "Client Name",
-            "type": "string"
-          },
-          "engagement_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Engagement Id",
-            "type": "string"
-          },
-          "engagement_name": {
-            "cls": "confidential",
-            "title": "Engagement Name",
-            "type": "string"
-          },
-          "statement": {
-            "cls": "confidential",
-            "title": "Statement",
-            "type": "string"
-          },
-          "status": {
-            "cls": "internal",
-            "enum": [
-              "requested",
-              "declined"
-            ],
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": [
-          "engagement_id",
-          "engagement_name",
-          "client_name",
-          "status",
-          "statement"
-        ],
-        "title": "OpenConfirmationOut",
         "type": "object"
       },
       "OptionRow": {
@@ -53094,164 +52838,6 @@
         "title": "SetupFileOut",
         "type": "object"
       },
-      "SetupOut": {
-        "properties": {
-          "acceptance": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/AcceptanceOut"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal"
-          },
-          "blocked": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Blocked"
-          },
-          "confirmations": {
-            "cls": "confidential",
-            "items": {
-              "$ref": "#/components/schemas/abacus__modules__engagements__routes__ConfirmationOut"
-            },
-            "title": "Confirmations",
-            "type": "array"
-          },
-          "letter": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/LetterOut"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal"
-          },
-          "letter_required": {
-            "cls": "internal",
-            "title": "Letter Required",
-            "type": "boolean"
-          },
-          "steps": {
-            "cls": "confidential",
-            "items": {
-              "$ref": "#/components/schemas/SetupStepOut"
-            },
-            "title": "Steps",
-            "type": "array"
-          },
-          "summary": {
-            "cls": "confidential",
-            "title": "Summary",
-            "type": "string"
-          }
-        },
-        "required": [
-          "acceptance",
-          "letter",
-          "confirmations",
-          "letter_required",
-          "blocked",
-          "steps",
-          "summary"
-        ],
-        "title": "SetupOut",
-        "type": "object"
-      },
-      "SetupStepOut": {
-        "description": "SPEC-025 AC-10: one checklist step, its state, who acts next, and why it's blocked.",
-        "properties": {
-          "detail": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "confidential",
-            "title": "Detail"
-          },
-          "key": {
-            "cls": "internal",
-            "enum": [
-              "client_and_period",
-              "team",
-              "request_list",
-              "acceptance",
-              "independence_conclusion",
-              "independence",
-              "letter",
-              "client_contacts"
-            ],
-            "title": "Key",
-            "type": "string"
-          },
-          "label": {
-            "cls": "internal",
-            "title": "Label",
-            "type": "string"
-          },
-          "next": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "confidential",
-            "title": "Next"
-          },
-          "reason": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "confidential",
-            "title": "Reason"
-          },
-          "state": {
-            "cls": "internal",
-            "enum": [
-              "done",
-              "waiting",
-              "blocked",
-              "warning",
-              "not_needed"
-            ],
-            "title": "State",
-            "type": "string"
-          }
-        },
-        "required": [
-          "key",
-          "label",
-          "state",
-          "detail",
-          "next",
-          "reason"
-        ],
-        "title": "SetupStepOut",
-        "type": "object"
-      },
       "SeverityIn": {
         "additionalProperties": false,
         "properties": {
@@ -54191,6 +53777,27 @@
           "ended"
         ],
         "title": "SignedOutOut",
+        "type": "object"
+      },
+      "SignerChip": {
+        "description": "One signer as SIG-01's chip draws them (\"\u2713 Thomas\" \u00b7 \"\u25cb Irene\").",
+        "properties": {
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "signed": {
+            "cls": "internal",
+            "title": "Signed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "signed"
+        ],
+        "title": "SignerChip",
         "type": "object"
       },
       "SignerDeclineIn": {
@@ -63562,52 +63169,6 @@
         "title": "StartIn",
         "type": "object"
       },
-      "abacus__modules__engagements__acceptance_contract__ConfirmationOut": {
-        "properties": {
-          "answered_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Answered At"
-          },
-          "confirmation": {
-            "cls": "internal",
-            "enum": [
-              "requested",
-              "confirmed",
-              "declined"
-            ],
-            "title": "Confirmation",
-            "type": "string"
-          },
-          "engagement_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Engagement Id",
-            "type": "string"
-          },
-          "user_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "User Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "engagement_id",
-          "user_id",
-          "confirmation"
-        ],
-        "title": "ConfirmationOut",
-        "type": "object"
-      },
       "abacus__modules__engagements__acceptance_contract__EqrOut": {
         "properties": {
           "checks": {
@@ -63647,71 +63208,6 @@
           "checks"
         ],
         "title": "EqrOut",
-        "type": "object"
-      },
-      "abacus__modules__engagements__routes__ConfirmationOut": {
-        "properties": {
-          "answered_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Answered At"
-          },
-          "before_act_1": {
-            "cls": "internal",
-            "title": "Before Act 1",
-            "type": "boolean"
-          },
-          "display_name": {
-            "cls": "confidential",
-            "title": "Display Name",
-            "type": "string"
-          },
-          "note": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "confidential",
-            "title": "Note"
-          },
-          "status": {
-            "cls": "internal",
-            "enum": [
-              "requested",
-              "confirmed",
-              "declined"
-            ],
-            "title": "Status",
-            "type": "string"
-          },
-          "user_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "User Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "user_id",
-          "display_name",
-          "status",
-          "note",
-          "before_act_1",
-          "answered_at"
-        ],
-        "title": "ConfirmationOut",
         "type": "object"
       },
       "abacus__modules__engagements__routes__StepOut": {
@@ -76541,7 +76037,7 @@
     },
     "/v1/engagement-drafts/{draft_id}/start-acceptance": {
       "post": {
-        "description": "Human-only (OQ-2): a Prospect engagement and an acceptance record; nothing is accepted\n(P-07-T35, DEC-372). Behind `engagements.v2` and `engagements.acceptance_v2`; 409\n`acceptance_template_missing`, 422 `draft_incomplete`.",
+        "description": "Human-only (OQ-2): a Prospect engagement and an acceptance record; nothing is accepted\n(P-07-T35, DEC-372). 409\n`acceptance_template_missing`, 422 `draft_incomplete`.",
         "operationId": "start_acceptance_from_draft",
         "parameters": [
           {
@@ -77711,121 +77207,6 @@
           "acceptance"
         ],
         "x-abacus-action": "acceptance.read"
-      },
-      "put": {
-        "description": "SPEC-025 AC-4: the engagement partner's decision and independence conclusion.",
-        "operationId": "acceptance",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "engagement_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Engagement Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "authorization",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "in": "header",
-            "name": "X-Abacus-Tenant",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Abacus-Tenant"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AcceptanceIn"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SetupOut"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not authenticated"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationErrorOut"
-                }
-              }
-            },
-            "description": "Invalid request"
-          }
-        },
-        "summary": "Acceptance Route",
-        "tags": [
-          "engagements"
-        ],
-        "x-abacus-action": "acceptance.record"
       }
     },
     "/v1/engagements/{engagement_id}/acceptance/answers/{section_code}": {
@@ -78227,134 +77608,6 @@
           "acceptance"
         ],
         "x-abacus-action": "acceptance.decide"
-      }
-    },
-    "/v1/engagements/{engagement_id}/acceptance/file": {
-      "post": {
-        "description": "The acceptance or continuance documentation, attached to the latest record.",
-        "operationId": "acceptance_file",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "engagement_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Engagement Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "filename",
-            "required": true,
-            "schema": {
-              "maxLength": 1000,
-              "minLength": 1,
-              "title": "Filename",
-              "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "authorization",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "in": "header",
-            "name": "X-Abacus-Tenant",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Abacus-Tenant"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SetupFileOut"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not authenticated"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Conflict with the resource's state"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationErrorOut"
-                }
-              }
-            },
-            "description": "Invalid request"
-          }
-        },
-        "summary": "Acceptance File Route",
-        "tags": [
-          "evidence"
-        ],
-        "x-abacus-action": "acceptance.record"
       }
     },
     "/v1/engagements/{engagement_id}/acceptance/flags": {
@@ -83399,16 +82652,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Ledger Pull Route",
@@ -89118,121 +88361,6 @@
           "independence"
         ],
         "x-abacus-action": "independence.read"
-      },
-      "post": {
-        "description": "SPEC-025 AC-5: for oneself: confirm, or decline with a note for the partner.",
-        "operationId": "independence",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "engagement_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Engagement Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "authorization",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "in": "header",
-            "name": "X-Abacus-Tenant",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Abacus-Tenant"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IndependenceIn"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SetupOut"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not authenticated"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationErrorOut"
-                }
-              }
-            },
-            "description": "Invalid request"
-          }
-        },
-        "summary": "Independence Route",
-        "tags": [
-          "engagements"
-        ],
-        "x-abacus-action": "independence.confirm"
       }
     },
     "/v1/engagements/{engagement_id}/independence/breaches": {
@@ -89679,7 +88807,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__engagements__acceptance_contract__ConfirmationOut"
+                  "$ref": "#/components/schemas/ConfirmationOut"
                 }
               }
             },
@@ -89806,7 +88934,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__engagements__acceptance_contract__ConfirmationOut"
+                  "$ref": "#/components/schemas/ConfirmationOut"
                 }
               }
             },
@@ -90116,7 +89244,7 @@
     },
     "/v1/engagements/{engagement_id}/independence/reminders": {
       "post": {
-        "description": "Sent by the person clicking (no schedule); `independence.reminded` per member and the\n`independence.requested` notification again. Live with ENG-05 (P-07-T30) behind\n`engagements.v2`; 422 for a member whose confirmation is not requested or declined.",
+        "description": "Sent by the person clicking (no schedule); `independence.reminded` per member and the\n`independence.requested` notification again. Live with ENG-05 (P-07-T30); 422 for a member\nwhose confirmation is not requested or declined.",
         "operationId": "send_reminders",
         "parameters": [
           {
@@ -90336,123 +89464,6 @@
           "independence"
         ],
         "x-abacus-action": "independence.read"
-      }
-    },
-    "/v1/engagements/{engagement_id}/letter": {
-      "put": {
-        "description": "SPEC-025 AC-6: the letter's status, date, and where the signed copy lives.",
-        "operationId": "letter",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "engagement_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Engagement Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "authorization",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "in": "header",
-            "name": "X-Abacus-Tenant",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Abacus-Tenant"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LetterIn"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SetupOut"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not authenticated"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationErrorOut"
-                }
-              }
-            },
-            "description": "Invalid request"
-          }
-        },
-        "summary": "Letter Route",
-        "tags": [
-          "engagements"
-        ],
-        "x-abacus-action": "letter.record"
       }
     },
     "/v1/engagements/{engagement_id}/letter/amend": {
@@ -106549,113 +105560,6 @@
         "x-abacus-action": "engagement.self_join"
       }
     },
-    "/v1/engagements/{engagement_id}/setup": {
-      "get": {
-        "description": "SPEC-025: acceptance, the letter, everyone's independence, and why it isn't open yet.",
-        "operationId": "setup",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "engagement_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Engagement Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "authorization",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "in": "header",
-            "name": "X-Abacus-Tenant",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Abacus-Tenant"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SetupOut"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not authenticated"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationErrorOut"
-                }
-              }
-            },
-            "description": "Invalid request"
-          }
-        },
-        "summary": "Setup Route",
-        "tags": [
-          "engagements"
-        ],
-        "x-abacus-action": "setup.read"
-      }
-    },
     "/v1/engagements/{engagement_id}/team": {
       "get": {
         "description": "SPEC-017; P-07-T30 adds ENG-05's hours, portal flag, joined date and independence.",
@@ -112281,7 +111185,7 @@
     },
     "/v1/engagements/{engagement_id}/{which}/file": {
       "get": {
-        "description": "The file as an attachment, never inline; audited and verified.",
+        "description": "The file as an attachment, never inline; audited and verified. The acceptance file\nretired with SPEC-025's table (P-07-T59, DEC-906).",
         "operationId": "setup_file",
         "parameters": [
           {
@@ -112299,10 +111203,7 @@
             "name": "which",
             "required": true,
             "schema": {
-              "enum": [
-                "acceptance",
-                "letter"
-              ],
+              "const": "letter",
               "title": "Which",
               "type": "string"
             }
@@ -113029,7 +111930,7 @@
     },
     "/v1/envelopes/import": {
       "post": {
-        "description": "Record mode (SIG-01 r; N-02-T08).",
+        "description": "Record mode (SIG-01 r; N-02-T08): the signed package lands Completed with its evidence.",
         "operationId": "import_envelope_record",
         "parameters": [
           {
@@ -113146,8 +112047,103 @@
               }
             },
             "description": "Invalid request"
+          }
+        },
+        "summary": "Import Envelope Record Route",
+        "tags": [
+          "signatures"
+        ],
+        "x-abacus-action": "envelope.import_record"
+      }
+    },
+    "/v1/envelopes/import/files": {
+      "post": {
+        "description": "One file for a record-mode import into this client (and engagement) (the completed document\nor the certificate), the raw bytes as the body: authorised as the import is, scanned before\nstorage, refused closed (N-02-T08; DEC-818).",
+        "operationId": "stage_envelope_import_file",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "filename",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Filename",
+              "type": "string"
+            }
           },
-          "501": {
+          {
+            "in": "query",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "engagement_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Engagement Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportFileOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
             "content": {
               "application/json": {
                 "schema": {
@@ -113155,10 +112151,60 @@
                 }
               }
             },
-            "description": "Contract stub: not implemented yet"
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "The file is too large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service unavailable"
           }
         },
-        "summary": "Import Envelope Record Route",
+        "summary": "Stage Envelope Import File Route",
         "tags": [
           "signatures"
         ],
@@ -120313,107 +119359,6 @@
           "firm"
         ],
         "x-abacus-action": "client.read"
-      }
-    },
-    "/v1/firm/confirmations": {
-      "get": {
-        "description": "The person's own independence requests still to answer.",
-        "operationId": "my_confirmations",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "authorization",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "in": "header",
-            "name": "X-Abacus-Tenant",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Abacus-Tenant"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/OpenConfirmationOut"
-                  },
-                  "title": "Response My Confirmations",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not authenticated"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationErrorOut"
-                }
-              }
-            },
-            "description": "Invalid request"
-          }
-        },
-        "summary": "My Confirmations Route",
-        "tags": [
-          "firm"
-        ],
-        "x-abacus-action": "own"
       }
     },
     "/v1/firm/data-exports": {
@@ -133614,7 +132559,7 @@
     },
     "/v1/inbox/intake": {
       "post": {
-        "description": "Log received documents (DV-1): the batch; files follow (N-01-T09).",
+        "description": "Log received documents (DV-1): the batch, one thread and one message; files follow\n(N-01-T09). The intake scope or `inbox.log_intake` on the named client; people only.",
         "operationId": "log_intake",
         "parameters": [
           {
@@ -133731,16 +132676,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Log Intake Route",
@@ -133752,7 +132687,7 @@
     },
     "/v1/inbox/intake/{message_id}/files": {
       "post": {
-        "description": "One file of a staff-logged batch, scanned before storage, fail closed (N-01-T09).",
+        "description": "One file of a staff-logged batch, scanned before storage, fail closed (N-01-T09). Only the\nperson who logged the batch adds to it.",
         "operationId": "log_intake_file",
         "parameters": [
           {
@@ -133881,16 +132816,6 @@
             },
             "description": "The file is too large"
           },
-          "415": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "The file type is not accepted"
-          },
           "422": {
             "content": {
               "application/json": {
@@ -133900,16 +132825,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           },
           "503": {
             "content": {

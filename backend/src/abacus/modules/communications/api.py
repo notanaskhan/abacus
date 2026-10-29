@@ -47,6 +47,12 @@ from abacus.modules.communications.follow_ups import (
     compose_follow_up,
     deliver_follow_up,
 )
+from abacus.modules.communications.intake import (
+    Inbound,
+    Recorded,
+    add_attachment,
+    record_inbound_message,
+)
 from abacus.modules.communications.intake_contract import destinations_router, intake_router
 from abacus.modules.communications.invitations import deliver_invitation, deliver_staff_invitation
 from abacus.modules.communications.notification_email import (
@@ -233,6 +239,7 @@ __all__ = [
     "IdentitySetup",
     "IdentityStatus",
     "InMemorySesIdentities",
+    "Inbound",
     "IssuedLink",
     "LocalMailbox",
     "MessageBounced",
@@ -245,6 +252,7 @@ __all__ = [
     "OutOfScope",
     "PreviewSelection",
     "RecipientRef",
+    "Recorded",
     "ReminderHistory",
     "ScheduledReminder",
     "SecureLinkView",
@@ -270,6 +278,7 @@ __all__ = [
     "Transport",
     "ValueFinding",
     "Violation",
+    "add_attachment",
     "check_scope",
     "client_mail_open",
     "compose_follow_up",
@@ -294,6 +303,7 @@ __all__ = [
     "next_sequence_by_policy",
     "on_sink",
     "publish_email_template",
+    "record_inbound_message",
     "register_email_template",
     "register_reminder_history",
     "registered_templates",

@@ -17,10 +17,9 @@ import pytest
 import yaml
 
 from abacus.api.export_openapi import document
-from abacus.kernel._flags import ENGAGEMENTS_ACCEPTANCE_V2, ENGAGEMENTS_V2
+from abacus.kernel._flags import FLAGS
 from abacus.kernel.db import TenantContext
 from abacus.kernel.db.session import ActorKind
-from abacus.kernel.errors import NotFound
 from abacus.modules.engagements import acceptance_contract
 from abacus.modules.identity.api import AuthContext, Forbidden
 from abacus.modules.identity.authz.matrix import RULES
@@ -264,8 +263,8 @@ def _ctx(kind: ActorKind = "human", *, client: bool = False) -> AuthContext:
 E_ID = uuid.uuid4()
 
 
-async def test_the_flags_gate_each_half_after_authorise(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Security review (DEC-326): authorise first, then the flag, then 501 (the audits order)."""
+async def test_each_half_authorises_and_reads_no_flag(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Security review (DEC-326) order kept; the flags retired with P-07-T59 (DEC-905)."""
     seen: list[object] = []
 
     async def allowed(_ctx: object, action: str, _engagement_id: object) -> None:
@@ -274,52 +273,20 @@ async def test_the_flags_gate_each_half_after_authorise(monkeypatch: pytest.Monk
     async def authorised(_ctx: object, action: str, _resource: object) -> None:
         seen.append(action)
 
-    async def off(_tenant: object, flag: object) -> bool:
-        seen.append(flag)
-        return False
-
-    async def on(_tenant: object, _flag: object) -> bool:
-        return True
-
     monkeypatch.setattr(acceptance_contract, "_allowed", allowed)
     monkeypatch.setattr(conflicts_contract, "authorise", authorised)
-    for module in (acceptance_contract, conflicts_contract):
-        monkeypatch.setattr(module, "flag_enabled", off)
-    with pytest.raises(NotFound):
-        await acceptance_contract._acceptance_gate(_ctx(), "acceptance.read", E_ID)  # pyright: ignore[reportPrivateUsage] -- the gate
-    with pytest.raises(NotFound):
-        await acceptance_contract._team_gate(_ctx(), "team.approve", E_ID)  # pyright: ignore[reportPrivateUsage] -- the gate
-    with pytest.raises(NotFound):
-        await conflicts_contract._gate(_ctx(), "conflict.run")  # pyright: ignore[reportPrivateUsage] -- the gate
-    assert seen == [
-        "acceptance.read",
-        ENGAGEMENTS_ACCEPTANCE_V2,
-        "team.approve",
-        ENGAGEMENTS_V2,
-        "conflict.run",
-        ENGAGEMENTS_ACCEPTANCE_V2,
-    ]
-    for module in (acceptance_contract, conflicts_contract):
-        monkeypatch.setattr(module, "flag_enabled", on)
     await acceptance_contract._acceptance_gate(_ctx(), "acceptance.read", E_ID)  # pyright: ignore[reportPrivateUsage] -- live (P-07-T41)
     await acceptance_contract._team_gate(_ctx(), "team.approve", E_ID)  # pyright: ignore[reportPrivateUsage] -- live
     await conflicts_contract._gate(_ctx(), "conflict.run")  # pyright: ignore[reportPrivateUsage] -- live
-
-
-@pytest.mark.parametrize("flag_on", [False, True])
-@pytest.mark.parametrize("who", ["agent", "system", "client"])
-async def test_agent_system_and_client_are_refused_whatever_the_flag(
-    monkeypatch: pytest.MonkeyPatch, flag_on: bool, who: str
-) -> None:
-    """Security review (DEC-326): refused before the flag is read or any row is looked up."""
-    flags: list[object] = []
-
-    async def flag(_tenant: object, f: object) -> bool:
-        flags.append(f)
-        return flag_on
-
+    assert seen == ["acceptance.read", "team.approve", "conflict.run"]
+    assert not {"engagements.v2", "engagements.acceptance_v2"} & set(FLAGS)
     for module in (acceptance_contract, conflicts_contract):
-        monkeypatch.setattr(module, "flag_enabled", flag)
+        assert not hasattr(module, "flag_enabled")
+
+
+@pytest.mark.parametrize("who", ["agent", "system", "client"])
+async def test_agent_system_and_client_are_refused_first(who: str) -> None:
+    """Security review (DEC-326): refused before any row is looked up."""
     ctx = _ctx("human", client=True) if who == "client" else _ctx(cast(ActorKind, who))
     with pytest.raises(Forbidden):
         await acceptance_contract._acceptance_gate(ctx, "acceptance.decide", E_ID)  # pyright: ignore[reportPrivateUsage] -- the gate
@@ -327,7 +294,6 @@ async def test_agent_system_and_client_are_refused_whatever_the_flag(
         await acceptance_contract._team_gate(ctx, "engagement.read_metadata", E_ID)  # pyright: ignore[reportPrivateUsage] -- the gate
     with pytest.raises(Forbidden):
         await conflicts_contract._gate(ctx, "conflict.clear")  # pyright: ignore[reportPrivateUsage] -- the gate
-    assert flags == []
 
 
 def test_the_new_codes_are_in_the_catalogue() -> None:

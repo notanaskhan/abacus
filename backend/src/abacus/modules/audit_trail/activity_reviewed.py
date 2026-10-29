@@ -99,6 +99,8 @@ REVIEWED_FALLBACK: Final = frozenset(
         "comment_thread.read",
         "conflict.cleared",
         "decision.refused_non_human",  # K-01-T06: an agent or the platform asked to approve
+        "envelope.imported",  # N-02-T08: record-mode import (SIG-01 r)
+        "envelope_import_file.staged",  # N-02-T08: a scanned file for an import
         "human_gate.reassigned",  # I-01-T07: a person moved a gate to someone else (user ids)
         "conflict_check.run",
         "connection.checked",
@@ -215,6 +217,8 @@ REVIEWED_FALLBACK: Final = frozenset(
         "home_activity.projected",  # I-01-T12 (DEC-900): one activity row, the code only
         "home_activity.pruned",  # I-01-T12: a count of rows past 90 days
         "human_gate.projected",
+        "inbound_message.recorded",  # N-01-T09: a message reached the inbox
+        "inbox_attachment.received",  # N-01-T09: a scanned, stored file
         "inbox_file.added",
         "inbox_file.assigned",
         "inbox_file.discarded",
@@ -222,6 +226,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "inbox_file.flagged",
         "inbox_match.created",
         "inbox_match.requested",
+        "inbox_thread.created",  # N-01-T09: a new inbox thread
         "incident.propagated",
         "incident.recorded",
         "independence.annual_",
@@ -237,12 +242,19 @@ REVIEWED_FALLBACK: Final = frozenset(
         "integration_secret.stored",
         "invitation.resent",
         "invitation.revoked",
+        "issue.fix_instructions_set",  # P-04-T31
+        "issue.marked_not_applicable",  # P-04-T31
+        "issue.reopened",  # P-04-T31
+        "issue.resolved",  # P-04-T31
+        "issue.sent_to_client",  # P-04-T31
+        "issue.verified",  # P-04-T31
         "item.signed",
         "knowledge_chunk.embedded",
         "knowledge_document.added",
         "knowledge_document.failed",
         "knowledge_document.ready",
         "knowledge_document.withdrawn",
+        "ledger.pull_requested",  # A-02-T30: an on-demand pull
         "ledger_import.duplicate",
         "ledger_import.failed",
         "ledger_import.received",
@@ -283,6 +295,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "methodology_version.submitted",
         "methodology_version.superseded",
         # R-01-T26: ADM-10's settings and the read-only preview (versions and ids only)
+        "pilot_metrics.computed",  # Q-04-T008: a week's pilot snapshots
         "portal.preview_viewed",
         "portal_settings.draft_discarded",
         "portal_settings.draft_saved",

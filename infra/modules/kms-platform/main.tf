@@ -31,6 +31,25 @@ data "aws_iam_policy_document" "platform" {
     }
   }
 
+  # CloudFront reads the SSE-KMS SPA objects through origin access control, for this account's
+  # distributions only (the firm edge; Q-01-T15). Without it every object answers AccessDenied.
+  statement {
+    sid       = "CloudFrontDecrypt"
+    actions   = ["kms:Decrypt"]
+    resources = ["*"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["cloudfront.amazonaws.com"]
+    }
+
+    condition {
+      test     = "StringLike"
+      variable = "aws:SourceArn"
+      values   = ["arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/*"]
+    }
+  }
+
   # SES publishes delivery events to an encrypted SNS topic, which delivers to an encrypted queue.
   statement {
     sid       = "MessagingServices"

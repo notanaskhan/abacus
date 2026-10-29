@@ -80,9 +80,28 @@ def _same(a: Callable[..., object], b: Callable[..., object]) -> bool:
 def register_gate_provider(gate: str, provider: GateProvider) -> None:
     if gate not in GATES:
         raise ValueError(f"gate {gate!r} is unknown")
+    if gate in _REPLACED:
+        return  # the owner's provider stays (a reload of the interim registers again)
     if gate in _GATES and not _same(_GATES[gate], provider):
         raise ValueError(f"gate {gate!r} is already registered")
     _GATES[gate] = provider
+
+
+# N-02-T09 (DEC-820): an interim provider its owner replaces once. P-07's G3 reads the recorded
+# letter until signatures registers the envelope-backed G3 (which still honours the record).
+_REPLACEABLE: Final = frozenset({"G3"})
+_REPLACED: set[str] = set()
+
+
+def replace_gate_provider(gate: str, provider: GateProvider) -> None:
+    """The gate's owner takes over an interim provider, once (the same provider again is a
+    reload and replaces itself)."""
+    if gate not in _REPLACEABLE:
+        raise ValueError(f"gate {gate!r} has no interim provider to replace")
+    if gate in _REPLACED and not _same(_GATES[gate], provider):
+        raise ValueError(f"gate {gate!r} was already replaced")
+    _GATES[gate] = provider
+    _REPLACED.add(gate)
 
 
 def gate_registered(gate: str) -> bool:

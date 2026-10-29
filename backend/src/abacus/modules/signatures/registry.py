@@ -21,6 +21,7 @@ TABLES: frozenset[str] = frozenset(
         "signing_sessions",
         "esign_disclosures",
         "esign_acceptances",
+        "envelope_import_files",  # N-02-T08 (0294): record-mode import's staged files
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004); each also carries a
@@ -36,6 +37,10 @@ INSERT_ONLY: frozenset[str] = frozenset(
 )
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
+    "envelope_import_files": frozenset(
+        {"id", "tenant_id", "uploaded_by", "file_name", "media_type", "size_bytes", "sha256"}
+        | {"storage_key", "storage_version_id"}
+    ),
     "envelope_numbers": frozenset({"tenant_id", "next_value"}),
     "signing_sessions": frozenset(
         {"tenant_id", "envelope_id", "signer_id", "principal_id", "presentation"}
@@ -44,6 +49,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
+    "envelope_import_files": frozenset({"consumed_envelope_id"}),  # set once (trigger)
     "envelope_numbers": frozenset({"next_value"}),  # the row-locked counter
     "signing_sessions": frozenset({"state"}),  # returned, confirmed or abandoned
 }

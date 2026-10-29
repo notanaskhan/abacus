@@ -248,14 +248,7 @@ async def test_a_re_version_moves_only_its_own_engagements_citations(env: Env) -
             env.admin.user_id,
         ),
     )
-    await seed.run(
-        "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
-        "decided_by, documented_at, independence_concluded_by, independence_concluded_at, "
-        "independence_documented_at) VALUES ($1, $2, 'continuance', 'accepted', 'test-seed', "
-        "'Seeded', 'test-seed', clock_timestamp(), 'Seeded')",
-        env.tenant_id,
-        other,
-    )
+    await seed.open_engagement(env.tenant_id, other)
     await seed.member(replace(env.a, engagement_id=other), manager, "manager")
     actor = _ctx(manager)
     claim = CitationClaim(

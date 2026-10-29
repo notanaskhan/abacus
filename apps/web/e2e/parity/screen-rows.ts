@@ -107,7 +107,8 @@ export function statusesFromSource(
 /** Screens built on fixtures that the registry keeps `planned` because their paths live in the
  * portal entry or under a firm settings path the link checker reads separately (DEC-347,
  * DEC-567): R-01-T31 measures them all the same. AUD-01 to AUD-03 stay planned for want of a
- * to.<ID>() builder for SHL-14 (DEC-195); A-01-T28 measures them all the same. */
+ * to.<ID>() builder for SHL-14 (DEC-195); A-01-T28 measures them all the same. AUD-06 (inside the
+ * AUD-02 cockpit) and POR-16 (portal entry) likewise; A-02-T31 measures them (DEC-832). */
 export const BUILT_PLANNED: readonly string[] = [
   "POR-03",
   "POR-04",
@@ -116,6 +117,8 @@ export const BUILT_PLANNED: readonly string[] = [
   "AUD-01",
   "AUD-02",
   "AUD-03",
+  "AUD-06",
+  "POR-16",
 ];
 
 /** Every artboard of every `fixture` or `live` screen, and of `also`, in screen then state order.

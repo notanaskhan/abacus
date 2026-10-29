@@ -500,6 +500,14 @@ async def tenant_value(conn: asyncpg.Connection, tenant: UUID, sql: str, *args: 
         return await conn.fetchval(sql, *args)
 
 
+async def tenant_row(
+    conn: asyncpg.Connection, tenant: UUID, sql: str, *args: object
+) -> asyncpg.Record | None:
+    """One row read as `tenant` (`as_tenant`)."""
+    async with as_tenant(conn, tenant):
+        return await conn.fetchrow(sql, *args)
+
+
 async def tenant_rows(
     conn: asyncpg.Connection, tenant: UUID, sql: str, *args: object
 ) -> list[asyncpg.Record]:
@@ -829,16 +837,18 @@ _PORTAL: Final = {u.name: u for u in PORTAL_USERS}
 
 
 async def _client_id(conn: asyncpg.Connection, name: str) -> UUID:
-    found = await conn.fetchval(
-        "SELECT id FROM clients WHERE tenant_id = $1 AND name = $2", TENANT, name
+    found = await tenant_value(
+        conn, TENANT, "SELECT id FROM clients WHERE tenant_id = $1 AND name = $2", TENANT, name
     )
     if found is None:
         raise LookupError(f"no client {name!r}")
-    return found
+    return cast(UUID, found)
 
 
 async def _entity_id(conn: asyncpg.Connection, client: UUID, name: str) -> UUID:
-    found = await conn.fetchval(
+    found = await tenant_value(
+        conn,
+        TENANT,
         "SELECT id FROM client_entities WHERE tenant_id = $1 AND client_id = $2 AND name = $3",
         TENANT,
         client,
@@ -846,7 +856,7 @@ async def _entity_id(conn: asyncpg.Connection, client: UUID, name: str) -> UUID:
     )
     if found is None:
         raise LookupError(f"no entity {name!r}")
-    return found
+    return cast(UUID, found)
 
 
 def engagement_id_of(audit: Audit) -> UUID:
@@ -1438,8 +1448,12 @@ async def _portal_scope(
     """The grant's scope id and the audit target the grant service names (firm or engagement)."""
     if person.scope_kind == "work_item":
         item = UUID(work_item_of(person))
-        engagement = await conn.fetchval(
-            "SELECT engagement_id FROM work_items WHERE tenant_id = $1 AND id = $2", TENANT, item
+        engagement = await tenant_value(
+            conn,
+            TENANT,
+            "SELECT engagement_id FROM work_items WHERE tenant_id = $1 AND id = $2",
+            TENANT,
+            item,
         )
         if engagement is None:
             raise LookupError(f"no work item for {person.scope!r}")
@@ -1516,7 +1530,9 @@ async def _client_invitation_created(conn: asyncpg.Connection, _: Scenario, even
     }
 
     async def write() -> tuple[str, str, str]:
-        client = await conn.fetchval(
+        client = await tenant_value(
+            conn,
+            TENANT,
             "SELECT client_id FROM engagements WHERE tenant_id = $1 AND id = $2",
             TENANT,
             engagement,
@@ -1572,8 +1588,12 @@ async def _item_retitled(conn: asyncpg.Connection, _: Scenario, event: Event) ->
     engagement = engagement_id_of(BY_LABEL[pbc.engagement])
     item = UUID(pbc.request_id(int(cast(int, event.data["position"]))))
     title = str(event.data["title"])
-    status = await conn.fetchval(
-        "SELECT status FROM request_items WHERE tenant_id = $1 AND id = $2", TENANT, item
+    status = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT status FROM request_items WHERE tenant_id = $1 AND id = $2",
+        TENANT,
+        item,
     )
     if status != "received":
         ctx = await _staff_context(conn, event)
@@ -1618,7 +1638,9 @@ async def _items_delegated(conn: asyncpg.Connection, _: Scenario, event: Event) 
 
     async def write() -> tuple[str, str, str]:
         if delegation.org != KEYSTONE:  # Keystone's is Sam Ortiz's contact (`portal`)
-            client = await conn.fetchval(
+            client = await tenant_value(
+                conn,
+                TENANT,
                 "SELECT client_id FROM engagements WHERE tenant_id = $1 AND id = $2",
                 TENANT,
                 engagement,
@@ -1902,7 +1924,9 @@ async def _phase_advanced(conn: asyncpg.Connection, _: Scenario, event: Event) -
     at = datetime.combine(date.fromisoformat(str(on)), event.at.timetz()) if on else event.at
 
     async def write() -> tuple[str, str, str]:
-        found = await conn.fetchrow(
+        found = await tenant_row(
+            conn,
+            TENANT,
             "SELECT work_item_id, phase FROM assurance_work_items "
             "WHERE tenant_id = $1 AND engagement_id = $2",
             TENANT,
@@ -1989,9 +2013,11 @@ async def _staff_context(conn: asyncpg.Connection, event: Event) -> AuthContext:
     a second factor just verified (`authorise` checks its recency against the system clock, not
     the event's business time)."""
     user = user_id_of(_SEATS[event.actor])
-    role = await conn.fetchval(
-        "SELECT firm_role FROM memberships WHERE tenant_id = $1 AND user_id = $2", TENANT, user
-    )
+    # As the tenant: the owner role does not bypass row-level security on staging (DEC-455).
+    async with as_tenant(conn, TENANT):
+        role = await conn.fetchval(
+            "SELECT firm_role FROM memberships WHERE tenant_id = $1 AND user_id = $2", TENANT, user
+        )
     return AuthContext(
         TenantContext(TENANT, "human", str(user)), user, UUID(int=0), role, system_now()
     )
@@ -2235,7 +2261,9 @@ async def _member_independence_confirmed(
 async def _draft_of(conn: asyncpg.Connection, event: Event) -> tuple[UUID, UUID | None]:
     """The scenario draft the event names (by its creator and name) and its prospect."""
     _, payload = DRAFTS[str(event.data["draft"])]
-    row = await conn.fetchrow(
+    row = await tenant_row(
+        conn,
+        TENANT,
         "SELECT id, prospect_engagement_id FROM engagement_drafts WHERE tenant_id = $1 "
         "AND created_by = $2 AND payload->>'name' = $3 AND discarded_at IS NULL "
         "ORDER BY saved_at DESC LIMIT 1",
@@ -2260,10 +2288,15 @@ async def _draft_created(conn: asyncpg.Connection, _: Scenario, event: Event) ->
     prior_label = payload.get("prior_audit")
     if prior_label is not None:
         prior = engagement_id_of(BY_LABEL[str(prior_label)])
-        entity = await conn.fetchval(
-            "SELECT client_entity_id FROM engagements WHERE tenant_id = $1 AND id = $2",
-            TENANT,
-            prior,
+        entity = cast(
+            UUID | None,
+            await tenant_value(
+                conn,
+                TENANT,
+                "SELECT client_entity_id FROM engagements WHERE tenant_id = $1 AND id = $2",
+                TENANT,
+                prior,
+            ),
         )
     else:
         prior, entity = None, await _entity_id(conn, client, client_name)

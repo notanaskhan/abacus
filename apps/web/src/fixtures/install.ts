@@ -21,7 +21,7 @@ export interface SeedInstall {
   clock?: string | undefined;
   /** Milliseconds added to every answer (`?latency=`). */
   latency?: string | number | undefined;
-  /** Comma-separated flags the firm reads as on (`?flags=clients.v2,engagements.v2`): a journey
+  /** Comma-separated flags the firm reads as on (`?flags=contacts.v2,binders.engine`): a journey
    * walks a screen built on fixtures whose flag E0 leaves off (P-07-T22). */
   flags?: string | undefined;
 }
@@ -78,7 +78,7 @@ export function installSeedFixtures(
 }
 
 /** The same, from a URL query string (`?as=lena-park&clock=2026-09-14T09:41:00-05:00&latency=250`,
- * `&flags=clients.v2`). `?screen=ADM-03&st=b` serves that screen's scenario instead (G-01-T16;
+ * `&flags=contacts.v2`). `?screen=ADM-03&st=b` serves that screen's scenario instead (G-01-T16;
  * screen-scenarios.ts) and, in a browser, opens the state's search when the URL has none of its
  * own and resolves `_key_` ids to the records the state opens. */
 export function installSeedFromSearch(search: string): () => void {

@@ -274,7 +274,7 @@ async def _open(tenant: TenantContext, sealed: bytes | None, kind: str, *parts: 
 def _live_human(ctx: AuthContext, action: str) -> None:
     """INV-1 (`require_live_human`): a person's own act, never an agent, the platform, a client
     principal or a break-glass support session."""
-    if ctx.client or ctx.tenant.actor_kind != "human" or ctx.is_support:
+    if ctx.tenant.actor_kind != "human" or ctx.client or ctx.is_support:
         raise Forbidden(action, "role")
 
 

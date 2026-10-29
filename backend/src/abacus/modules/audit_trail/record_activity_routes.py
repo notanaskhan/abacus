@@ -14,9 +14,7 @@ from uuid import UUID
 
 from fastapi import Query
 
-from abacus.kernel._flags import CLIENTS_V2, ENGAGEMENTS_V2
 from abacus.kernel.errors import NotFound
-from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.modules.audit_trail import explorer
 from abacus.modules.audit_trail.audit_log_contract import AuditEventRow, Ctx
@@ -37,7 +35,7 @@ async def client_activity_route(
     client_id: UUID, ctx: Ctx, cursor: Cursor = None, limit: Limit = 50
 ) -> ListPage[AuditEventRow]:
     """The client's own events and its engagements' events the reader may see."""
-    if ctx.client or not await flag_enabled(ctx.tenant, CLIENTS_V2):
+    if ctx.client:
         raise NotFound("client")
     await engagements.readable_client(ctx, client_id)  # 404 for a walled or unknown client
     return await explorer.record_events(ctx, client_id=client_id, cursor=cursor, limit=limit)
@@ -52,7 +50,7 @@ async def engagement_activity_route(
     engagement_id: UUID, ctx: Ctx, cursor: Cursor = None, limit: Limit = 50
 ) -> ListPage[AuditEventRow]:
     """The engagement's events (its scope, or the engagement as target)."""
-    if ctx.client or not await flag_enabled(ctx.tenant, ENGAGEMENTS_V2):
+    if ctx.client:
         raise NotFound("engagement")
     ref = await engagements.get_ref(ctx, engagement_id)
     await authorise(ctx, explorer.RECORD_READ, ref.resource())

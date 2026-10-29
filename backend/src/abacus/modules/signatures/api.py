@@ -1,20 +1,34 @@
 """Public interface of the signatures module; other modules import only this (ADR-008).
 
-C7 v1 (N-02-T03 stub): the routers, and the slots sources register with. A source (engagement
-letters, consents, e-file authorizations, rep letters, notices) registers a resolver that drafts
-an envelope's documents and signers from its own record; it gets its gate facts back from
-`envelope_gate_facts`. The bodies land with N-02-T08 and T09.
+C7 v1: the routers, and the slot sources register with (`sources.py`, N-02-T09). A source
+(engagement letters, consents, e-file authorizations, rep letters, notices) registers providers
+for an envelope's documents and signers, its gate, retention record type, checks and completed
+label; it gets its summary from `envelope_summary_for` and its gate facts from
+`envelope_gate_facts`. Record mode (N-02-T08) is frozen as C7 v1 (DEC-820).
 """
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from uuid import UUID
 
-from abacus.kernel.errors import NotImplementedYet
+from sqlalchemy import text
+
+from abacus.kernel.db import tenant_session
 from abacus.modules.identity.api import AbacusRouter, AuthContext
 from abacus.modules.signatures.contract import policies_router, portal_router, router
+from abacus.modules.signatures.sources import (
+    LETTER,
+    LETTER_GATE,
+    EnvelopeSource,
+    UnknownEnvelopeSource,
+    envelope_source,
+    letter_envelope,
+    letter_gate,
+    register_envelope_source,
+    register_letter_source,
+    registered_sources,
+)
 
 
 @dataclass(frozen=True)
@@ -36,27 +50,47 @@ class GateFacts:
     completed_on: str | None
 
 
-EnvelopeSource = Callable[[AuthContext, UUID], Awaitable[object]]
-_sources: dict[str, EnvelopeSource] = {}
-
-
-def register_envelope_source(kind: str, resolver: EnvelopeSource) -> None:
-    """A source registers once, at import (a second registration is a programming error)."""
-    if kind in _sources:
-        raise RuntimeError(f"envelope source {kind!r} is already registered")
-    _sources[kind] = resolver
+_NEWEST = text(
+    "SELECT e.id, e.status, "
+    "(SELECT count(*) FROM envelope_signers s WHERE s.envelope_id = e.id AND s.status = 'signed') "
+    "AS signed, (SELECT count(*) FROM envelope_signers s WHERE s.envelope_id = e.id) AS total "
+    "FROM envelopes e WHERE e.source_kind = :kind AND e.source_id = :source "
+    "ORDER BY e.created_at DESC LIMIT 1"
+)
 
 
 async def envelope_summary_for(
     ctx: AuthContext, source_kind: str, source_id: UUID
 ) -> EnvelopeSummary | None:
-    """The newest envelope for a source record (N-02-T09)."""
-    raise NotImplementedYet
+    """The newest envelope for a source record, for a caller that authorised reading the source
+    (identifiers, the status code and counts only)."""
+    envelope_source(source_kind)
+    async with tenant_session(ctx.tenant) as session:
+        row = (
+            await session.execute(_NEWEST, {"kind": source_kind, "source": source_id})
+        ).one_or_none()
+    if row is None:
+        return None
+    return EnvelopeSummary(row.id, row.status, int(row.signed), int(row.total))
+
+
+_COMPLETED_ON = text("SELECT completed_at::date FROM envelopes WHERE id = :id")
 
 
 async def envelope_gate_facts(ctx: AuthContext, gate_kind: str, target_ref: UUID) -> GateFacts:
-    """Gate facts for G3 and the e-file authorization (N-02-T09)."""
-    raise NotImplementedYet
+    """Gate facts for G3 (the engagement letter); other gates arrive with their sources."""
+    if gate_kind != LETTER_GATE:
+        return GateFacts(met=False, envelope_id=None, completed_on=None)
+    envelope = await letter_envelope(ctx.tenant, target_ref)
+    if envelope is None:
+        fact = await letter_gate(ctx.tenant, target_ref)
+        return GateFacts(met=fact.met, envelope_id=None, completed_on=None)
+    async with tenant_session(ctx.tenant) as session:
+        on = await session.scalar(_COMPLETED_ON, {"id": envelope})
+    return GateFacts(met=True, envelope_id=envelope, completed_on=on.isoformat() if on else None)
+
+
+register_letter_source()
 
 
 # The routers the API mounts, in order (P-39; F-03-T07). `/import` and `/summary` are declared
@@ -64,10 +98,15 @@ async def envelope_gate_facts(ctx: AuthContext, gate_kind: str, target_ref: UUID
 ROUTERS: tuple[AbacusRouter, ...] = (router, policies_router, portal_router)
 
 __all__ = [
+    "LETTER",
     "ROUTERS",
+    "EnvelopeSource",
     "EnvelopeSummary",
     "GateFacts",
+    "UnknownEnvelopeSource",
     "envelope_gate_facts",
+    "envelope_source",
     "envelope_summary_for",
     "register_envelope_source",
+    "registered_sources",
 ]

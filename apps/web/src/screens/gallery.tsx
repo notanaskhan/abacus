@@ -25,6 +25,13 @@ import {
   OPENS as ADM03_OPENS,
   scenarios as adm03Scenarios,
 } from "./ADM-03/scenarios";
+import { ADM04 } from "./ADM-04";
+import {
+  type Adm04State,
+  STATES as ADM04_STATES,
+  OPENS as ADM04_OPENS,
+  scenarios as adm04Scenarios,
+} from "./ADM-04/scenarios";
 import { ADM06 } from "./ADM-06";
 import {
   type Adm06State,
@@ -42,6 +49,20 @@ import {
   PREVIEW_AS as ADM10_PREVIEW_AS,
   scenarios as adm10Scenarios,
 } from "./ADM-10/scenarios";
+import { SIG01 } from "./SIG-01";
+import {
+  OPENS as SIG01_OPENS,
+  STATES as SIG01_STATES,
+  type Sig01State,
+  scenarios as sig01Scenarios,
+} from "./SIG-01/scenarios";
+import { INB01 } from "./INB-01";
+import {
+  OPENS as INB01_OPENS,
+  STATES as INB01_STATES,
+  type Inb01State,
+  scenarios as inb01Scenarios,
+} from "./INB-01/scenarios";
 import {
   type Adm07State,
   STATES as ADM07_STATES,
@@ -736,6 +757,125 @@ function Adm07Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("ADM-07", { title: "Audit log explorer", Component: Adm07Artboard });
 
+// N-02-T11: SIG-01 · Signatures hub (a–g; r's Import sheet lands with N-02-T15, DEC-827).
+function Sig01Frame({ state }: { state: Sig01State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/signatures" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  const open = SIG01_OPENS[state];
+  return (
+    <div data-artboard={state}>
+      <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+        <SIG01 initialTab={open.tab} initialEnvelope={open.envelope} />
+      </AppShell>
+    </div>
+  );
+}
+
+function Sig01Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Sig01State = SIG01_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      sig01Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Sig01Frame key={state} state={state} /> : null;
+}
+
+registerScreen("SIG-01", { title: "Signatures hub & evidence drawer", Component: Sig01Artboard });
+
+// N-01-T10: INB-01 · Inbox on T8 (a–g; DEC-830).
+function Inb01Frame({ state }: { state: Inb01State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/inbox" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <INB01
+        frame
+        toolbar={bar.toolbar}
+        initialThread={INB01_OPENS[state] ?? null}
+        initialClientId={state === "f" ? "00000000-0000-4000-8000-000000000f00" : null}
+      />
+    </div>
+  );
+}
+
+function Inb01Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Inb01State = INB01_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      inb01Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Inb01Frame key={state} state={state} /> : null;
+}
+
+registerScreen("INB-01", { title: "Inbox", Component: Inb01Artboard });
+
+function Adm04Frame({ state }: { state: Adm04State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/settings/ai-policy" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <AppShell
+        frame
+        height={860}
+        toolbar={{ ...bar.toolbar, active: "", firmPressed: true }}
+        overlay={bar.overlay}
+      >
+        <ADM04 opens={ADM04_OPENS[state] ?? {}} />
+      </AppShell>
+    </div>
+  );
+}
+
+function Adm04Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Adm04State = ADM04_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      adm04Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Adm04Frame key={state} state={state} /> : null;
+}
+
+registerScreen("ADM-04", { title: "AI policy & approval gates", Component: Adm04Artboard });
+
 function Cli01Frame({ state }: { state: Cli01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
   const bar = useFirmToolbar({
@@ -998,6 +1138,25 @@ registerScreen("AUD-03", {
 
 // AUD-06's fixture frames (A-02-T05): persona, clock and figures per artboard until A-02-T09 and
 // A-02-T14 draw the screen on the same scenarios.
+// A-02-T31: the artboard inside the app shell at 1440 × 860, as AUD-01 to AUD-03 draw theirs, so
+// parity, axe and Tier D find `[data-artboard] [data-shell='app']` (DEC-832).
+function Aud06Shell({ state }: { state: Aud06State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/audits" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+        <AUD06Frame state={state} />
+      </AppShell>
+    </div>
+  );
+}
+
 function Aud06Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Aud06State = AUD06_STATES.find((s) => s === params.st) ?? "a";
   const [ready, setReady] = useState<string | null>(null);
@@ -1012,7 +1171,7 @@ function Aud06Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
       restore();
     };
   }, [state, params.as]);
-  return ready === state ? <AUD06Frame key={state} state={state} /> : null;
+  return ready === state ? <Aud06Shell key={state} state={state} /> : null;
 }
 
 registerScreen("AUD-06", { title: "Trial balance & leadsheets", Component: Aud06Artboard });

@@ -86,19 +86,41 @@ ALTER DEFAULT PRIVILEGES FOR ROLE abacus_owner IN SCHEMA public
 ALTER DEFAULT PRIVILEGES FOR ROLE abacus_owner REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
 
 -- Large objects are not tenant-scoped (no row-level security), so nobody but the admin may use them.
+-- A managed admin (RDS) does not own the catalogue functions and may not revoke on them: each one it
+-- cannot revoke is reported, and the application never calls large objects (ED-292, Q-01-T20).
 DO $$
-DECLARE f regprocedure;
+DECLARE
+  f regprocedure;
+  kept integer := 0;
 BEGIN
   FOR f IN
     SELECT p.oid::regprocedure FROM pg_proc p
     WHERE p.pronamespace = 'pg_catalog'::regnamespace
       AND (p.proname LIKE 'lo\_%' OR p.proname IN ('loread', 'lowrite'))
   LOOP
-    EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM PUBLIC', f);
+    BEGIN
+      EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM PUBLIC', f);
+    EXCEPTION WHEN insufficient_privilege THEN
+      kept := kept + 1;
+    END;
   END LOOP;
+  IF kept > 0 THEN
+    RAISE NOTICE 'large-object functions left executable by PUBLIC (managed admin): %', kept;
+  END IF;
 END
 $$;
 
--- The application has no business in the maintenance databases.
-REVOKE CONNECT, TEMPORARY ON DATABASE postgres FROM PUBLIC;
-REVOKE CONNECT, TEMPORARY ON DATABASE template1 FROM PUBLIC;
+-- The application has no business in the maintenance databases. On RDS `template1` belongs to
+-- `rdsadmin`, which the managed admin cannot revoke for: reported, not fatal (Q-01-T20).
+DO $$
+DECLARE d text;
+BEGIN
+  FOREACH d IN ARRAY ARRAY['postgres', 'template1'] LOOP
+    BEGIN
+      EXECUTE format('REVOKE CONNECT, TEMPORARY ON DATABASE %I FROM PUBLIC', d);
+    EXCEPTION WHEN insufficient_privilege THEN
+      RAISE NOTICE 'could not revoke PUBLIC access to database % (managed admin)', d;
+    END;
+  END LOOP;
+END
+$$;

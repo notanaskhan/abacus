@@ -409,3 +409,21 @@ async def revoke_contact_links(tx: UnitOfWork, contact_ids: Sequence[UUID]) -> i
     if not _LINKS_REVOKER or not contact_ids:
         return 0
     return await _LINKS_REVOKER[0](tx, contact_ids)
+
+
+# --- N-01-T08 (DEC-20, P-10; N-01 §4.4): the intake scope -------------------------------------
+# A person is in the intake scope when they are on a team of kind `intake`. `organisations` owns
+# teams and registers the check; with nothing registered nobody is in it (fail closed).
+IntakeScope = Callable[[TenantContext, UUID], Awaitable[bool]]
+_INTAKE: list[IntakeScope] = []
+
+
+def register_intake_scope(check: IntakeScope) -> None:
+    if _INTAKE and not _same(_INTAKE[0], check):
+        raise ValueError("the intake scope is already registered")
+    _INTAKE[:] = [check]
+
+
+async def in_intake_scope(tenant: TenantContext, user_id: UUID) -> bool:
+    """Whether the person is on an intake team now; False when nothing is registered."""
+    return bool(_INTAKE) and await _INTAKE[0](tenant, user_id)
