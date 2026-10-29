@@ -77,7 +77,7 @@ def test_ac2_recorded_answers_meet_the_intake_thresholds() -> None:
 
 
 def test_documents_carry_what_each_case_is_about() -> None:
-    docs = matching._intake_documents(2025, "Sam Example")  # pyright: ignore[reportPrivateUsage]
+    docs = matching._intake_documents(2025, "Sam Example")  # pyright: ignore[reportPrivateUsage] -- the builders the cases name
     assert "W-2c" in _text(docs["w2c"]())
     assert "CORRECTED" in _text(docs["div_corrected"]())
     assert "2024" in _text(docs["f1095c_prior"]())
