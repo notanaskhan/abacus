@@ -23,7 +23,9 @@ export const COPY = {
   next60: "Next 60 days",
   bulkActions: "Bulk actions",
   bulk: { assign: "Assign preparer…", extend: "Extend…", standards: "Run firm standards…" },
-  newReturn: "+ New return",
+  // The handoff draws "+ New return"; it opens the new-return dialog, so the kit's ellipsis rule
+  // applies and IndexList draws the "+" itself (as "New Return…" in the T1 specimen).
+  newReturn: "New return…",
   columns: {
     return: "Return",
     client: "Client",
