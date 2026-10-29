@@ -61,6 +61,8 @@ function moveFocus(event: KeyboardEvent<HTMLElement>): void {
 export interface RailRowProps {
   link: RailLink;
   compact?: boolean;
+  /** Two-line rows at 44 (the audit cockpit's rail) rather than 48; one line stays 38. */
+  tight?: boolean;
   selected?: boolean;
   onOpen?: (link: RailLink) => void;
   forceState?: Extract<ForceState, "hover" | "focus" | "pressed">;
@@ -70,6 +72,7 @@ export interface RailRowProps {
 export function RailRow({
   link,
   compact = false,
+  tight = false,
   selected = false,
   onOpen,
   forceState,
@@ -86,7 +89,8 @@ export function RailRow({
       }}
       onKeyDown={moveFocus}
       className={cn(
-        "flex min-h-[38px] w-full items-center gap-[10px] px-[12px] py-[7px] text-left hairline-b",
+        "flex min-h-[38px] w-full items-center gap-[10px] px-[12px] text-left hairline-b",
+        tight ? "py-[5px]" : "py-[7px]",
         ROW_STATE,
         FOCUS_IN,
       )}
@@ -121,6 +125,8 @@ export interface PhaseRowProps {
   outline?: boolean;
   /** A version under its phase: padding-left 30. */
   child?: boolean;
+  /** Two-line rows at 44 (the audit cockpit's rail) rather than 48; one line stays 38. */
+  tight?: boolean;
   selected?: boolean;
   onOpen?: (phase: Phase) => void;
   onBegin?: (phase: Phase) => void;
@@ -135,6 +141,7 @@ export function PhaseRow({
   phase,
   outline = false,
   child = false,
+  tight = false,
   selected = false,
   onOpen,
   onBegin,
@@ -153,7 +160,8 @@ export function PhaseRow({
       {...(selected ? { "data-selected": "" } : {})}
       {...forceAttr(forceState === "focus" ? undefined : forceState)}
       className={cn(
-        "group/row flex min-h-[38px] items-center gap-[9px] py-[7px] pr-[10px] hairline-b",
+        "group/row flex min-h-[38px] items-center gap-[9px] pr-[10px] hairline-b",
+        tight ? "py-[5px]" : "py-[7px]",
         child ? "pl-[30px]" : "pl-[12px]",
         ROW_STATE,
       )}
@@ -312,6 +320,8 @@ export interface RecordRailProps {
   links?: readonly RailLink[];
   /** A collapsing band over the link rows (the T2 cockpit's "Overview ⌄"); none by default. */
   linksTitle?: string;
+  /** Link and phase rows at the audit cockpit's 44 (`RailRow` and `PhaseRow` `tight`). */
+  tight?: boolean;
   sections?: readonly RailSection[];
   /** The id of the open link or phase. */
   selected?: string;
@@ -326,6 +336,7 @@ export interface RecordRailProps {
 function Group({
   section,
   outline,
+  tight,
   selected,
   pending,
   onOpen,
@@ -336,6 +347,7 @@ function Group({
 }: {
   section: RailSection;
   outline: boolean;
+  tight: boolean;
   selected: string | undefined;
   pending: ReadonlySet<string>;
   onOpen: ((item: RailLink | Phase) => void) | undefined;
@@ -359,6 +371,7 @@ function Group({
           phase={view}
           outline={outline}
           child={child}
+          tight={tight}
           selected={selected === phase.id}
           {...(onOpen === undefined ? {} : { onOpen })}
           onBegin={onBegin}
@@ -469,6 +482,7 @@ export function RecordRail({
   card,
   links = [],
   linksTitle,
+  tight = false,
   sections = [],
   selected,
   onOpen,
@@ -489,6 +503,7 @@ export function RecordRail({
       key={link.id}
       link={link}
       compact={compact}
+      tight={tight}
       selected={selected === link.id}
       {...(onOpen === undefined ? {} : { onOpen })}
     />
@@ -511,6 +526,7 @@ export function RecordRail({
           key={section.id}
           section={section}
           outline={outline}
+          tight={tight}
           selected={selected}
           pending={pending}
           onOpen={onOpen}

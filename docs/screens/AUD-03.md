@@ -164,8 +164,8 @@ Each becomes a test in `AUD-03.test.tsx` ("AUD-03 avoid: …"): gradients in pro
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| e | C (threshold 0.20, maxDiffPixelRatio 3 %) | 2.97 | locked (A-01-T28, measured Thu Oct 29, 2026 after DEC-908 put the audit bar and panes at the handoff's 46 / 115) |
-| a–d, f, g | C | 5.45 / 4.23 / 6.15 / 12.78 / 5.62 / 3.09 | report-only (d opens on the Return dialog); locked by Fri Apr 30, 2027 once the viewer and dialog regions are masked; SHL-20's card is parity-checked inside b and c |
+| e | C (threshold 0.20, maxDiffPixelRatio 3 %) | 2.99 | locked (A-01-T28, measured Thu Oct 29, 2026 after DEC-908 put the audit bar and panes at the handoff's 46 / 115; the rail's 44 rows as AUD-02's) |
+| a–d, f, g | C | 5.47 / 4.25 / 6.18 / 12.82 / 5.64 / 3.11 | report-only (d opens on the Return dialog); locked by Fri Apr 30, 2027 once the viewer and dialog regions are masked; SHL-20's card is parity-checked inside b and c |
 | host | D | — | audit bar 59, rail 330, canvas 536, viewer 490, rows 52, group bands 32, evbar 44, pills 19, radius 12 |
 
 ## Open gaps
