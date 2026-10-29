@@ -62,6 +62,10 @@ P-01-T03 and P-01-T04, so the loader checks the schema first and refuses the who
 Refuses: `environment = production`; outside `--staging`, any database URL that is not loopback;
 with `--staging`, an environment other than staging, a firm that is not synthetic, or a staging
 deploy in flight (F-04.16, F-04.17).
+
+With `--staging`, each firm the timeline creates gets its tenant key before anything else is
+written for it: the loader starts (or attaches to) the firm's `TenantKeyWorkflow` and waits for
+the verified key (DEC-1012), since staging seals every write with the firm's own KMS key.
 """
 
 from __future__ import annotations
@@ -75,7 +79,7 @@ import shutil
 import subprocess
 import sys
 from collections.abc import AsyncGenerator, Awaitable, Callable, Generator
-from contextlib import asynccontextmanager, contextmanager
+from contextlib import asynccontextmanager, contextmanager, suppress
 from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
@@ -87,16 +91,23 @@ import asyncpg
 from opentelemetry import trace
 from opentelemetry.trace import NonRecordingSpan, SpanContext, TraceFlags
 from sqlalchemy import text
+from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
+from temporalio.exceptions import WorkflowAlreadyStartedError
 
 from abacus.kernel.clock import frozen, system_now
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext
+from abacus.kernel.dispatch import dispatch
+from abacus.kernel.temporal import temporal_client
 from abacus.kernel.uow import Target, uow
 from abacus.modules.assurance.api import record_phase, update_profile
 from abacus.modules.communications.api import (
+    Inbound,
     TemplateContent,
+    add_attachment,
     email_template_state,
     publish_email_template,
+    record_inbound_message,
     save_email_template_draft,
 )
 from abacus.modules.connections.api import seed_synthetic_connection
@@ -159,7 +170,13 @@ from abacus.modules.organisations.api import (
     run_conflict_check,
     set_client_record,
 )
-from abacus.modules.platform.api import IncidentFacts, record_incident
+from abacus.modules.platform.api import (
+    IncidentFacts,
+    TenantKeyInput,
+    TenantKeyWorkflow,
+    record_incident,
+    tenant_key_workflow_id,
+)
 from abacus.modules.portal.api import (
     BrandingSlots,
     activate_portal_host,
@@ -242,6 +259,15 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.email_templates import (
     SLICE as EMAIL_TEMPLATES_SLICE,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import snapshot
+from abacus_tools.synthetic.scenarios.brightwater_hale.firm_inbox import (
+    NEEDS as FIRM_INBOX_NEEDS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.firm_inbox import (
+    SLICE as FIRM_INBOX_SLICE,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.firm_inbox import (
+    TRIAGER as INBOX_TRIAGER,
+)
 from abacus_tools.synthetic.scenarios.brightwater_hale.firm_people import (
     SERVICE_LINE_OF_TEAM,
     Level,
@@ -320,6 +346,8 @@ DEFAULT_SUPERUSER: Final = "postgresql://postgres:postgres@127.0.0.1:55432/abacu
 LOOPBACK: Final = frozenset({"127.0.0.1", "localhost", "::1"})
 LOADER: Final = "scenario-loader"
 SETTLE_SECONDS: Final = 120.0
+# DEC-1012: how long a staging load waits for a firm's tenant key (create, replicate, verify).
+KEY_SECONDS: Final = 600.0
 # The flags `seed_dev` turns on for the local firm (F-04 §1: rollout only, renewed Dec 14 to 18).
 FLAGS_ON: Final = (
     "retrieval.auto",
@@ -353,6 +381,10 @@ class LoadRefused(RuntimeError):
 
 class SettleTimeout(RuntimeError):
     """The tenant's outbox did not drain within the barrier's timeout."""
+
+
+class KeyTimeout(RuntimeError):
+    """A firm's tenant key was not verified within the wait (staging, DEC-1012)."""
 
 
 class SchemaPending(RuntimeError):
@@ -1398,6 +1430,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     CONNECTIONS_SLICE: CONNECTIONS_NEEDS,  # A-02-T27: Copperleaf's POR-16a connections
     ACCEPTANCE_SLICE: ACCEPTANCE_NEEDS,
     INTAKE_SLICE: INTAKE_NEEDS,  # P-07-T50: wave 3 (drafts, the open Harborline hit, Meridian)
+    FIRM_INBOX_SLICE: FIRM_INBOX_NEEDS,  # N-01-T11: docs@ rows 1-17 and the Intake team
     EMAIL_TEMPLATES_SLICE: (),  # R-01-T22: Grace's firm admin role is audit_core's
 }
 
@@ -2147,6 +2180,87 @@ async def _incident_recorded(conn: asyncpg.Connection, _: Scenario, event: Event
     await record_incident(await _staff_context(conn, event), facts)
 
 
+# --- the firm_inbox slice (N-01-T11; DEC-836) ----------------------------------------------------
+# The Intake team is a bootstrap write (no team service is exported); every docs@ message goes
+# through the intake service as the transport would deliver it, every file through
+# `add_attachment` (scanned, stored write-once). W0's ignored file is a bootstrap status write
+# (no ignore service before N-01-T15); W0's filed files wait for a filing service (DEC-836).
+
+
+async def _intake_team_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    name = str(event.data["name"])
+    members = [user_id_of(_SEATS[str(i)]) for i in cast(list[str], event.data["members"])]
+
+    async def write() -> tuple[str, str, str]:
+        team = team_id_of(name)
+        await conn.execute(
+            "INSERT INTO teams (id, tenant_id, name, kind) VALUES ($1, $2, $3, 'intake') "
+            "ON CONFLICT DO NOTHING",
+            team,
+            TENANT,
+            name,
+        )
+        for user in members:
+            await conn.execute(
+                "INSERT INTO team_rosters (tenant_id, team_id, user_id) SELECT $1, $2, $3 "
+                "WHERE NOT EXISTS (SELECT 1 FROM team_rosters WHERE tenant_id = $1 "
+                "AND team_id = $2 AND user_id = $3)",
+                TENANT,
+                team,
+                user,
+            )
+        return "team.created", "team", str(team)
+
+    await _bootstrap(conn, event, write)
+
+
+def _synthetic_file(name: str) -> bytes:
+    """A small synthetic PDF per file name (no real document is ever loaded)."""
+    return f"%PDF-1.4\n% Brightwater Hale scenario file: {name}\n%%EOF\n".encode()
+
+
+async def _inbound_email_recorded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    data = event.data
+    client = data["client"]
+    tenant = TenantContext(TENANT, "system", "transport:docs@")
+    recorded = await record_inbound_message(
+        tenant,
+        Inbound(
+            channel="email",
+            sender_display=str(data["sender"]),
+            subject=str(data["subject"]),
+            received_at=datetime.fromisoformat(str(data["received_at"])),
+            body=None if data["body"] is None else str(data["body"]),
+            sender_address=str(data["sender"]),
+            internet_message_id=str(data["internet_message_id"]),
+            in_reply_to=None if data["in_reply_to"] is None else str(data["in_reply_to"]),
+            client_id=None if client is None else await _client_id(conn, str(client)),
+            # A named client is a staff match, so it names who matched (Grace, DEC-836).
+            logged_by=None if client is None else user_id_of(_SEATS[INBOX_TRIAGER]),
+            received_via="email",
+            source_display="docs@",
+        ),
+    )
+    for attachment in cast(list[dict[str, str]], data["attachments"]):
+        if attachment["state"] == "filed":
+            continue  # DEC-836: a filed row needs its evidence version (N-01-T15's filing)
+        received = await add_attachment(
+            tenant,
+            recorded.message_id,
+            file_name=attachment["name"],
+            content=_synthetic_file(attachment["name"]),
+        )
+        if attachment["state"] == "ignored":
+
+            async def ignore(found: UUID = received.attachment_id) -> tuple[str, str, str]:
+                await conn.execute(
+                    "UPDATE inbox_attachments SET status = 'ignored' WHERE id = $1", found
+                )
+                return "inbox_attachment.ignored", "inbox_attachment", str(found)
+
+            await _bootstrap(conn, event, ignore)
+
+
 # --- the acceptance slice (P-07-T40; DEC-412) ---------------------------------------------------
 # Each act goes through the owning service as the person the handoff names, signed in with a
 # fresh second factor (`_staff_context`). The questionnaire templates have no service (firm
@@ -2455,6 +2569,8 @@ HANDLERS: Final[dict[str, Handler]] = {
     "platform.incident_recorded": _incident_recorded,
     # A-02-T27 (`--slice connections`): Copperleaf's POR-16a connections.
     "connections.connection_seeded": _connection_seeded,
+    "organisations.intake_team_created": _intake_team_created,  # N-01-T11
+    "communications.inbound_email_recorded": _inbound_email_recorded,  # N-01-T11
     # P-07-T40 (`--slice acceptance`): templates, Calloway's custodian, the Northwind team's
     # history, the conflict searches, independence, contacts, then Thornbury and Meridian.
     "engagements.questionnaire_template_added": _questionnaire_template_added,
@@ -2530,6 +2646,32 @@ async def settle(conn: asyncpg.Connection, timeout: float = SETTLE_SECONDS) -> N
         await asyncio.sleep(0.25)
 
 
+# The events that bootstrap a firm row: on staging each firm needs its tenant key next (DEC-1012).
+FIRM_KINDS: Final = frozenset({"identity.firm_created", "identity.sandbox_firm_created"})
+
+
+async def ensure_tenant_key(tenant: UUID, *, timeout: float = KEY_SECONDS) -> str:
+    """DEC-1012: start (or attach to) the firm's `TenantKeyWorkflow` and wait for its verified key.
+
+    Provisioning starts that workflow (Q-01-T27); the loader bootstraps the firm without
+    provisioning, so on staging, where every sealed write needs the firm's KMS key, it asks for
+    the key itself. A run that already completed is not started again: its result is the key."""
+    workflow_id = tenant_key_workflow_id(str(tenant))
+    with suppress(WorkflowAlreadyStartedError):
+        await dispatch(
+            TenantKeyWorkflow,
+            TenantKeyInput(str(tenant), LOADER),
+            id=workflow_id,
+            id_reuse_policy=WorkflowIDReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY,
+            id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
+        )
+    handle = (await temporal_client()).get_workflow_handle(workflow_id)
+    try:
+        return str(await asyncio.wait_for(handle.result(), timeout))
+    except TimeoutError:
+        raise KeyTimeout(f"the tenant key was not verified within {timeout:.0f}s") from None
+
+
 async def load(
     dsn: str,
     at: str = "E0",
@@ -2564,12 +2706,15 @@ async def load(
                 raise NotImplementedError(f"no loader handler for {event.kind}")
             if await _already_loaded(conn, event):
                 skipped += 1
-                continue
-            with frozen(event.at), _traced(event):
-                await handler(conn, scenario, event)
-            replayed += 1
-            if wait:
-                await settle(conn)
+            else:
+                with frozen(event.at), _traced(event):
+                    await handler(conn, scenario, event)
+                replayed += 1
+                if wait:
+                    await settle(conn)
+            # A firm loaded by an earlier run may still lack its key, so this runs either way.
+            if staging and event.kind in FIRM_KINDS:
+                await ensure_tenant_key(tenant_of(event))
     finally:
         await conn.close()
     if replayed:
@@ -2615,7 +2760,7 @@ def main(argv: list[str] | None = None) -> int:
                 wait=not args.no_settle,
             )
         )
-    except (LoadRefused, SchemaPending) as refused:
+    except (LoadRefused, SchemaPending, KeyTimeout) as refused:
         print(f"refused: {refused}", file=sys.stderr)
         return 1
     print(

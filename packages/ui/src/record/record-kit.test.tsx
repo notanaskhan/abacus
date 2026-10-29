@@ -146,6 +146,37 @@ describe("C-03 RecordRail", () => {
     expect(onNavigate).toHaveBeenCalledWith("Activity");
   });
 
+  it("linksTitle puts the links under a collapsing band; tight draws two-line rows at 44", () => {
+    const onToggle = vi.fn();
+    const links = [
+      { id: "client", icon: "user-round" as const, title: "Client", sub: "Northwind" },
+    ];
+    render(
+      <RecordRail
+        links={links}
+        linksTitle="Overview"
+        tight
+        sections={SECTIONS}
+        onToggle={onToggle}
+      />,
+    );
+    const band = screen.getByRole("button", { name: "Overview" });
+    expect(band.getAttribute("aria-expanded")).toBe("true");
+    const group = document.getElementById(band.getAttribute("aria-controls") ?? "");
+    expect(group?.contains(rowOf("Client"))).toBe(true);
+    expect(rowOf("Client").className).toContain("py-[5px]");
+    expect(rowOf("Trial Balance").className).toContain("py-[5px]");
+    fireEvent.click(band);
+    expect(onToggle).toHaveBeenCalledWith("Overview", false);
+    expect(group?.hasAttribute("inert")).toBe(true);
+    // Without either: no band over the links, and the 48 rows.
+    cleanup();
+    render(<RecordRail links={links} sections={SECTIONS} />);
+    expect(screen.queryByRole("button", { name: "Overview" })).toBeNull();
+    expect(rowOf("Client").className).toContain("py-[7px]");
+    expect(rowOf("Trial Balance").className).toContain("py-[7px]");
+  });
+
   it("moves focus with ↑ and ↓ across visible rows and bands, skipping a collapsed group", () => {
     render(
       <RecordRail

@@ -1,0 +1,23 @@
+# A-02-T32 golden normalisation (ADR-044): the recording beside it, normalised by hand.
+# A negative debit (the allowance) is a credit; a negative credit (the deposits) is a debit; a
+# blank amount is zero; the code is the QuickBooks account id; names are kept as written.
+period_start: 2026-01-01
+period_end: 2026-08-31
+currency: USD
+declared_debit: "550304.82"
+declared_credit: "550304.82"
+lines:
+  - {code: "35", name: "Operating Checking", debit: "152340.18", credit: "0.00"}
+  - {code: "84", name: "Accounts Receivable (A/R)", debit: "48210.00", credit: "0.00"}
+  - {code: "86", name: "Allowance for Doubtful Accounts", debit: "0.00", credit: "2410.50"}
+  - {code: "12", name: "Prepaid Expenses", debit: "9600.00", credit: "0.00"}
+  - {code: "40", name: "Accumulated Depreciation", debit: "0.00", credit: "38150.00"}
+  - {code: "33", name: "Accounts Payable (A/P)", debit: "0.00", credit: "27445.32"}
+  - {code: "52", name: "Customer Deposits", debit: "1200.00", credit: "0.00"}
+  - {code: "55", name: "Payroll Liabilities", debit: "0.00", credit: "0.00"}
+  - {code: "3", name: "Retained Earnings", debit: "0.00", credit: "63599.00"}
+  - {code: "79", name: "Sales — Services", debit: "0.00", credit: "418700.00"}
+  - {code: "91", name: "Café Supplies", debit: "3120.45", credit: "0.00"}
+  - {code: "80", name: "Cost of Services", debit: "201540.00", credit: "0.00"}
+  - {code: "17", name: "Rent or Lease", debit: "48000.00", credit: "0.00"}
+  - {code: "18", name: "Wages", debit: "86294.19", credit: "0.00"}
