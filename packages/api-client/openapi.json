@@ -111567,7 +111567,7 @@
     },
     "/v1/envelopes": {
       "get": {
-        "description": "SIG-01 list (N-02-T13).",
+        "description": "SIG-01 list (N-02-T13): wall-safe rows and counts; the Out tab's counts are its tiles.",
         "operationId": "list_envelopes",
         "parameters": [
           {
@@ -111784,16 +111784,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Envelopes Route",
@@ -112468,7 +112458,7 @@
     },
     "/v1/envelopes/summary": {
       "get": {
-        "description": "SIG-01 tiles (N-02-T13).",
+        "description": "SIG-01 tabs and the By type tile (N-02-T13), over visible rows only.",
         "operationId": "envelope_summary",
         "parameters": [
           {
@@ -112554,16 +112544,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Envelope Summary Route",
@@ -112575,7 +112555,7 @@
     },
     "/v1/envelopes/{envelope_id}": {
       "get": {
-        "description": "SIG-01 drawer, SIG-02 builder (N-02-T11).",
+        "description": "SIG-01 drawer, SIG-02 builder (N-02-T13).",
         "operationId": "get_envelope",
         "parameters": [
           {
@@ -112671,16 +112651,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Envelope Route",
@@ -113103,7 +113073,7 @@
     },
     "/v1/envelopes/{envelope_id}/evidence.zip": {
       "get": {
-        "description": "Packages, certificate, manifest (N-02-T14).",
+        "description": "Packages, certificate, manifest (N-02-T13); audited, byte-identical on repeat.",
         "operationId": "envelope_evidence",
         "parameters": [
           {
@@ -113201,16 +113171,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Envelope Evidence Route",
@@ -113614,7 +113574,7 @@
     },
     "/v1/envelopes/{envelope_id}/signers/{signer_id}/reveal-ip": {
       "post": {
-        "description": "10-second reveal, audited (N-02-T13).",
+        "description": "10-second reveal, audited (N-02-T13); never cached.",
         "operationId": "reveal_signer_ip",
         "parameters": [
           {
@@ -113721,6 +113681,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -113730,16 +113700,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Reveal Signer Ip Route",
@@ -114026,7 +113986,7 @@
     },
     "/v1/envelopes/{envelope_id}/void": {
       "post": {
-        "description": "Void with a reason; evidence kept (N-02-T28).",
+        "description": "Void with a reason; evidence kept (N-02-T13).",
         "operationId": "void_envelope",
         "parameters": [
           {
@@ -114142,16 +114102,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Void Envelope Route",
