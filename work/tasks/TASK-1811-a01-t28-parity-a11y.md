@@ -4,7 +4,7 @@ title: AUD-01/02/03 parity and accessibility (A-01-T28)
 spec: SPEC-330
 acceptance_criteria: [AC-1]
 risk_zone: green
-status: in-review
+status: done
 epic: A-01
 plan_key: A-01-T28
 branch: s13r-a01-t28
@@ -31,3 +31,5 @@ updated: 2026-10-28
 - 2026-10-29 (layout): the residue was mostly a double inset. The app shell's body pads 10 12 12, and `IndexList` (T1) and the bare `RecordCockpit` (T2) inset again inside it, so AUD-01 sat 12 px in and 10 px down, and AUD-02/03's audit bar sat at 56 with the panes at 125 (handoff 46 / 115). Both now take back the body's padding inside `[data-shell=cols]`; the rail gains the spec's "Overview ⌄" band (`RecordRail.linksTitle`). DEC-908. Re-measured: AUD-01 a–h 0.64 to 2.54 (d now locks), AUD-02 1.13 to 6.37, AUD-03 2.97 to 12.78 (e now locks). Row order (DEC-340), the Source Documents sort (DEC-341) and the kit row heights stay; recorded in DEC-908 and the contracts. Checks: kit vitest (jsdom) 235/235, screen and domain vitest 249/249 (AUD-01/02/03, ENG-01, CLI-01/04/08, SIG-01, BND-01, ENG-05), Tier D 64/64, TPL-01/02 specimen parity 5/5.
 
 - 2026-10-29 (row heights): the kits keep their defaults and gain `tight` (DEC-908): rail link and phase rows at 44 (padding 5), and Source Documents cockpit rows min 44, padding 8 12 9 (AUD-02's spec). The audit cockpit's rail (AUD-02, AUD-03) and AUD-02's canvas use it. Re-measured: AUD-02 b / g 3.13 / 3.14 (from 3.55 / 3.61), a, c, e 3.13 to 3.19, f 6.01; AUD-03 e 2.99, still under. Nothing new locks. What keeps AUD-02 b / g over is the Source Documents order (DEC-341) and the OverviewCard's height. Kit tests for `tight` and `linksTitle` added. Checks: kit vitest 235 + 2 new, AUD-02/03 and domain vitest 86/86, Tier D audits 3/3, TPL-02 specimen parity 5/5.
+
+- 2026-10-29 (close): AUD-03 masks the viewer (`[data-cockpit='dock']`) and, in d, the open dialog (`[data-overlay='dialog']`). Mask selectors now match page-wide and keep the boxes that overlap the shot, because dialogs are portaled out of the shell. Re-measured AUD-03 a 2.91, b 2.91, c 2.81, e 2.92, g 2.93 (locked), d 7.51, f 3.18. A-01-T28 closes on AUD-01 a–f and AUD-03 a, b, c, e, g; AUD-02 a–e and g, AUD-03 d and f move to A-01-T33 in S34 after P-09-T18 (DEC-909; backlog, epic and sprint plan updated). Status: done.

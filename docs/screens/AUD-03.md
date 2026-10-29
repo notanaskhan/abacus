@@ -164,8 +164,8 @@ Each becomes a test in `AUD-03.test.tsx` ("AUD-03 avoid: …"): gradients in pro
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| e | C (threshold 0.20, maxDiffPixelRatio 3 %) | 2.99 | locked (A-01-T28, measured Thu Oct 29, 2026 after DEC-908 put the audit bar and panes at the handoff's 46 / 115; the rail's 44 rows as AUD-02's) |
-| a–d, f, g | C | 5.47 / 4.25 / 6.18 / 12.82 / 5.64 / 3.11 | report-only (d opens on the Return dialog); locked by Fri Apr 30, 2027 once the viewer and dialog regions are masked; SHL-20's card is parity-checked inside b and c |
+| a, b, c, e, g | C (threshold 0.20, maxDiffPixelRatio 3 %) | 2.91 / 2.91 / 2.81 / 2.92 / 2.93 | locked (A-01-T28, measured Thu Oct 29, 2026) with the viewer masked (`[data-cockpit='dock']`: DV-13's 46 header, and the page drawn by P-03's EvidenceViewer later); SHL-20's card is checked by its C-34 specimen |
+| d, f | C | 7.51 / 3.18 | report-only; A-01-T33 (S34, DEC-909) locks them. d masks the viewer and the open dialog (`[data-overlay='dialog']`); P-06's ReturnDialog differs in layout and copy from the artboard's "Return to uploader" sheet |
 | host | D | — | audit bar 59, rail 330, canvas 536, viewer 490, rows 52, group bands 32, evbar 44, pills 19, radius 12 |
 
 ## Open gaps
