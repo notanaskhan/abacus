@@ -17,6 +17,7 @@ module "firm_waf" {
 
   name                 = "abacus-staging-firm"
   managed_rules_action = var.firm_managed_rules_action
+  enable_logging       = true
   log_destination_arn  = module.firm_waf_logs[0].bucket_arn
 }
 

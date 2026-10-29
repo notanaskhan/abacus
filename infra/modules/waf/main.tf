@@ -252,7 +252,8 @@ resource "aws_wafv2_web_acl" "this" {
 
 # Rule 7: logs go to log-archive through Firehose, never with the credentials or session cookies.
 resource "aws_wafv2_web_acl_logging_configuration" "this" {
-  count = var.log_destination_arn == null ? 0 : 1
+  # A flag, not the ARN: a destination created in the same apply is unknown at plan time.
+  count = var.enable_logging ? 1 : 0
 
   region                  = local.edge_region
   resource_arn            = aws_wafv2_web_acl.this.arn

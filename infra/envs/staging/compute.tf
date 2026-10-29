@@ -20,7 +20,7 @@ locals {
   dns                   = "abacus-staging.internal"
   # DEC-1008: the pinned third-party images come from the shared ECR mirrors once copied.
   third_party = var.third_party_registry == null ? "" : "${trimsuffix(var.third_party_registry, "/")}/thirdparty/"
-  secret                = { for k, v in aws_secretsmanager_secret.this : k => v.arn }
+  secret      = { for k, v in aws_secretsmanager_secret.this : k => v.arn }
 
   # Settings every backend process reads (kernel/config.py). Nothing secret: those are `secrets`.
   common_env = local.enabled ? merge(module.exports.task_environment, {
