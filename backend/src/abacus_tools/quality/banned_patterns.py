@@ -2136,6 +2136,41 @@ def _check_glossary_identifiers(src: SourceFile) -> Iterator[Finding]:
         )
 
 
+# T-01-T07 (R-04; T-01 §3.15): Accrued is never an ERO or a transmitter. No code names an IRS
+# e-file channel or the identifiers only an ERO or transmitter holds.
+_ERO_WORDS = re.compile(r"\b(?:MeF|A2A|ETIN|EFIN|IRIS[ _-]?TCC)\b")
+_ERO_IDENTIFIERS = re.compile(r"(?:^|_)(?:mef|a2a|etin|efin|iris_tcc)(?:_|$)")
+
+
+def _check_never_ero(src: SourceFile) -> Iterator[Finding]:
+    for node in ast.walk(src.tree):
+        text = node.value if isinstance(node, ast.Constant) else None
+        if isinstance(text, str) and _ERO_WORDS.search(text):
+            yield Finding(
+                getattr(node, "lineno", 0),
+                "an e-file transmitter identifier; Accrued never transmits",
+            )
+        name: str | None = None
+        if isinstance(node, ast.Name):
+            name = node.id
+        elif isinstance(node, ast.Attribute):
+            name = node.attr
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            name = node.name
+        if name is not None and _ERO_IDENTIFIERS.search(name.lower()):
+            yield Finding(
+                getattr(node, "lineno", 0), f"{name}: an ERO or transmitter identifier (R-04)"
+            )
+
+
+# T-01-T07 (T-01 §4.9): only tax/approval.py records a tax return's `final_approval` sign-off.
+def _check_tax_final_approval(src: SourceFile) -> Iterator[Finding]:
+    for call in _calls(src.tree):
+        values = [*call.args, *(k.value for k in call.keywords)]
+        if any(isinstance(v, ast.Constant) and v.value == "final_approval" for v in values):
+            yield Finding(call.lineno, "a final_approval sign-off outside tax/approval.py")
+
+
 RULES: list[Rule | TreeRule] = [
     Rule(
         id="UOW-001",
@@ -2865,6 +2900,21 @@ RULES: list[Rule | TreeRule] = [
         check=_check_classification_flag_keys,
         include=("src/abacus/*",),
         exclude=("src/abacus/kernel/classification.py",),
+    ),
+    Rule(
+        id="NEVER-ERO-001",
+        description="No IRS e-file channel or ERO/transmitter identifier: Accrued never transmits",
+        adr="R-04, ADR-231",
+        check=_check_never_ero,
+        include=("src/abacus/*",),
+    ),
+    Rule(
+        id="TAXAPPROVE-001",
+        description="Only tax/approval.py records a tax return's final_approval sign-off",
+        adr="T-01 §4.9, ADR-005",
+        check=_check_tax_final_approval,
+        include=("src/abacus/modules/tax/*", "src/abacus/modules/integrations/*"),
+        exclude=("src/abacus/modules/tax/approval.py",),
     ),
     Rule(
         id="ANY-001",
