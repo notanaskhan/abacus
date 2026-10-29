@@ -1,8 +1,8 @@
 ---
 id: TASK-2012
 title: Q-03-T086 Supply-chain hygiene, 2027 Q2
-spec: SPEC-317
-acceptance_criteria: [I2]
+spec: SPEC-341
+acceptance_criteria: [AC-47]
 risk_zone: red
 status: in-review
 epic: Q-03
