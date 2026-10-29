@@ -551,6 +551,7 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/portal/intake-uploads/{upload_id}/files",
         "/v1/envelopes",
         "/v1/envelopes/import",
+        "/v1/envelopes/import/files",  # N-02: one stored file a record-mode import names
         "/v1/envelopes/{envelope_id}/resend",
         "/v1/engagements/{engagement_id}/letter/amend",
     }
