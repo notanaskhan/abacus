@@ -25,6 +25,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0 # the expand-only guard diffs against the PR's base (Q-03-T081)
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
@@ -35,6 +36,17 @@ jobs:
       - run: corepack enable
       - run: make setup
       - run: make check-fast
+      # Q-03-T081: from Jun 1, 2027 a PR's new migrations only expand the schema, unless the PR
+      # is labelled contract-step (DEC-1052). Inert before that date.
+      - name: expand-only migration guard
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ' ') }}
+        run: |
+          set -- --base "$BASE_SHA"
+          for l in $LABELS; do set -- "$@" --label "$l"; done
+          cd backend && uv run python -m abacus_tools.quality.expand_only check "$@"
 
   # Stage 2 runs on pushes to main, ready (non-draft) pull requests and the merge queue
   # (F-01-T06); a draft gets stage 1 only. It is `make check` split into parallel jobs (TASK-017):
