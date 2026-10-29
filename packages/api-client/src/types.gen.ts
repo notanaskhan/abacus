@@ -52877,6 +52877,14 @@ export type StageEnvelopeImportFileData = {
          * Filename
          */
         filename: string;
+        /**
+         * Client Id
+         */
+        client_id: string;
+        /**
+         * Engagement Id
+         */
+        engagement_id?: string | null;
     };
     url: '/v1/envelopes/import/files';
 };

@@ -113197,7 +113197,7 @@
     },
     "/v1/envelopes/import/files": {
       "post": {
-        "description": "One file for a record-mode import (the completed document or the certificate), the raw\nbytes as the body: scanned before storage, refused closed (N-02-T08; DEC-818).",
+        "description": "One file for a record-mode import into this client (and engagement) (the completed document\nor the certificate), the raw bytes as the body: authorised as the import is, scanned before\nstorage, refused closed (N-02-T08; DEC-818).",
         "operationId": "stage_envelope_import_file",
         "parameters": [
           {
@@ -113209,6 +113209,33 @@
               "minLength": 1,
               "title": "Filename",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "engagement_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Engagement Id"
             }
           },
           {
