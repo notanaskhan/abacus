@@ -37,3 +37,8 @@ pilot codes and the W-signal thresholds, for every pilot window from PW1 (Q-04 Â
   policies, AI opt-in and stages, the support-session switch and status subscribers; every step
   names its screen state or CLI, its operator and its evidence, and no step loads firm content
   through a commit or the seed loader (Q-04-T015; Q-04 AC-5.1 to AC-5.7).
+- **AC-4** `docs/runbooks/firm-rollback.md` takes a firm back inside 60 minutes: every flag off in
+  one audited unit of work (`make flag â€¦ ALL_OFF=1`), an A-01 export per engagement, and each package
+  unpacked into a new folder and verified by `abacus_tools.package_check` (both checksum files, nothing
+  unlisted, the manifest agreeing, nothing written outside the folder); the canary rehearsal sets the
+  runbook's `last_rehearsed` (Q-04-T019).
