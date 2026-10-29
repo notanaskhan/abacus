@@ -64,9 +64,9 @@ def test_the_pbc_template_is_workbook_v2(tmp_path: Path) -> None:
     areas = [r for r in book["Areas"].iter_rows(values_only=True)]
     requests = [r for r in book["Requests"].iter_rows(values_only=True)]
     assert areas[0] == ("code", "name") and requests[0] == ("area_code", "description", "tier")
-    codes = {r[0] for r in areas[1:]}
+    codes = {str(r[0]) for r in areas[1:]}
     assert len(requests) - 1 == count
-    assert all(r[0] in codes and str(r[2]) in TIERS for r in requests[1:])
+    assert all(str(r[0]) in codes and str(r[2]) in TIERS for r in requests[1:])
 
 
 def test_the_command_writes_the_manifest_and_refuses_an_oversized_list(tmp_path: Path) -> None:
