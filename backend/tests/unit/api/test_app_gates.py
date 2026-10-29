@@ -117,6 +117,18 @@ NOT_CREATING = {
     "/v1/platform/retention/defaults/{set_version}/publish",
     # G-02-T20: publishing a Pub 4557 control set changes a draft's status, so 200.
     "/v1/platform/safeguards-controls/{set_version}/publish",
+    # T-02-T02 (K-1 and questionnaire stubs): sharing, undoing, resending, a details review,
+    # publishing, sending and the portal's done, submit and consent change records, so 200.
+    "/v1/tax-returns/{return_id}/k1-packages:share-internal",
+    "/v1/k1-releases/{release_id}:undo",
+    "/v1/k1-packages/{package_id}:resend",
+    "/v1/recipient-details-changes/{change_id}:accept",
+    "/v1/recipient-details-changes/{change_id}:reject",
+    "/v1/questionnaire-templates/{template_id}/versions/{version}:publish",
+    "/v1/questions/{question_id}:send",
+    "/v1/portal/questionnaires/{questionnaire_id}:mark-done",
+    "/v1/portal/questionnaires/{questionnaire_id}:submit",
+    "/v1/portal/k1s/{package_id}/e-furnishing-consent",
     # T-02-T01 (tax-returns stub): a bulk assignment, an assignment and a transition change the
     # returns and return them, so 200.
     "/v1/tax-returns:bulk-assign",
@@ -363,6 +375,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/firm/email-templates/{key}/test-send",
         # P-07-T37: an import run starts ClientImportWorkflow, so 202.
         "/v1/client-imports/{import_id}/run",
+        # T-02-T02: a K-1 release waits out its Undo window, so 202.
+        "/v1/tax-returns/{return_id}/k1-packages:release",
         # T-01-T01 (C19 stub): a consent export builds later, so 202.
         "/v1/consents/exports",
         # G-02-T11 (security-center stub): a WISP pack is built later, so 202.
@@ -376,6 +390,14 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/request-items",
         # K-01-T01 (C21 stub): a methodology draft and a program step.
         "/v1/methodology/versions/{version_id}/drafts",
+        # T-02-T02: a template import, an organizer, a questionnaire, a question, a portal
+        # attachment and a recipient's details change.
+        "/v1/questionnaire-templates:import",
+        "/v1/request-lists/{request_list_id}/questionnaires",
+        "/v1/questionnaires",
+        "/v1/questionnaires/{questionnaire_id}/questions",
+        "/v1/portal/questionnaires/{questionnaire_id}/questions/{question_id}/attachments",
+        "/v1/portal/k1-recipients/{recipient_id}/details-changes",
         # T-01-T02 (engine-bridge stub): an export, an import, a packet, the 8879 envelope, an ERO
         # notice, a transmission record and an ack.
         "/v1/tax-returns/{return_id}/engine-exports",

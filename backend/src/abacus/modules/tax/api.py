@@ -12,6 +12,7 @@ from abacus.modules.tax.engine_contract import (
     final_approval_blockers,
     register_final_approval_blocker,
 )
+from abacus.modules.tax.k1_contract import k1_router, portal_k1_router
 from abacus.modules.tax.kind import TaxReturnKind
 from abacus.modules.tax.returns_contract import returns_router
 
@@ -22,6 +23,8 @@ register_work_item_kind("tax_return", TaxReturnKind())
 ROUTERS: tuple[AbacusRouter, ...] = (
     returns_router,  # tax returns v1 (T-02-T01 stub); `/summary` before `/{return_id}`
     engine_router,  # the engine bridge and the e-file record (T-01-T02 stub)
+    k1_router,  # K-1 packages (T-02-T02 stub)
+    portal_k1_router,  # POR-13 (T-02-T02 stub)
 )
 
 __all__ = [
