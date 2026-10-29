@@ -27,7 +27,7 @@ from . import test_p04t28_proposals_independent as t28
 from .p04t28_support import PROBE, World, probe
 
 world = t28.world
-Body = dict[str, Any]
+Body = dict[str, Any]  # a response body as the contract shapes it
 INTERNAL = "Internal: K-1 line 14 still ties to the old detail"
 WORDING = "Please send the corrected 2025 K-1 for the plan."
 

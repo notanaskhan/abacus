@@ -1,8 +1,8 @@
 ---
 id: TASK-1738
 title: P-04-T31 Issues service part 2
-spec: docs/contracts/review-grammar.md (issues); SHL-15
-acceptance_criteria: [P-04-T31]
+spec: SPEC-360
+acceptance_criteria: [AC-1]
 risk_zone: red
 status: in-review
 epic: P-04
