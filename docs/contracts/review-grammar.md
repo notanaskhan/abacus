@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C3 in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | live; services v1 **frozen 2026-10-27** (P-04-T27, DEC-606: `backend/tests/contracts/review_grammar/v1.json`). Stubs: part 1 (sign-offs, review notes, human gates) is P-04-T07. Part 2 (decision cards, proposals, suggestions) is P-04-T08. Part 3 (issues and fix instructions, checkpoints, field provenance) is P-04-T11, an additive extension of the schema |
+| Status | live; services v1 **frozen 2026-10-27** (P-04-T27, DEC-606: `backend/tests/contracts/review_grammar/v1.json`). Stubs: part 1 (sign-offs, review notes, human gates) is P-04-T07. Part 2 (decision cards, proposals, suggestions) is P-04-T08. Part 3 (issues and fix instructions, checkpoints, field provenance) is P-04-T11, an additive extension of the schema. The field provenance routes are live from P-04-T35 (DEC-1050) |
 | Provider epic | P-04 (`review` module; `agents` for suggestions and proposals, ADR-161) |
 | Consumers | SHL-09, SHL-10, SHL-11, SHL-12, SHL-15, SHL-16 (P-04 UI); AUD-17 (A-06); HOME-01/02 (I-01); A-04, A-05, A-07, T-01, T-02, T-04, C-01, C-02, K-03, K-04 |
 | Freeze sprint | Schema S3: recorded frozen by Fri Dec 11, 2026 (P-04-T09). Services S12: Fri Apr 16, 2027 (P-04-T27) |
