@@ -80,4 +80,4 @@ export const CALC_CARD = {
 } as const;
 
 /** "Waiting on you" bands for Daniel Reyes: 3 decisions + 6 sign-offs + 2 agent outputs. */
-export const DANIEL_BANDS = { decisions: 3, sign_offs: 6, agent_outputs: 2 } as const;
+export const DANIEL_BANDS = { decisions: 3, sign_offs: 6, approvals_sends: 2 } as const;

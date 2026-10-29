@@ -15,7 +15,9 @@ describe("HOME-02 figures", () => {
     expect(sum((r) => r.liabilityShare)).toBe(BASIS_TOTAL.liabilityShare);
     expect(sum((r) => r.outsideBasis)).toBe(BASIS_TOTAL.outsideBasis);
     expect(sum((r) => r.insideShare)).toBe(BASIS_TOTAL.insideShare);
-    for (const r of BASIS_ROWS) expect(r.taxCapital + r.liabilityShare).toBe(r.outsideBasis);
+    // Capital plus the liability share is the inside share; a transferee's outside basis also
+    // carries the price paid (Pell Street II: 913,820 outside, 885,225 inside).
+    for (const r of BASIS_ROWS) expect(r.taxCapital + r.liabilityShare).toBe(r.insideShare);
     expect(BASIS_TOTAL.outsideBasis - BASIS_TOTAL.insideShare).toBe(BASIS_TOTAL.difference);
   });
 
@@ -35,7 +37,7 @@ describe("HOME-02 figures", () => {
     const counts = countsOf(gatesFor(getSeed(), "daniel-reyes"));
     expect(counts.bands.decisions).toBe(DANIEL_BANDS.decisions);
     expect(counts.bands.sign_offs).toBe(DANIEL_BANDS.sign_offs);
-    expect(counts.bands.agent_outputs).toBe(DANIEL_BANDS.agent_outputs);
+    expect(counts.bands.approvals_sends).toBe(DANIEL_BANDS.approvals_sends);
     expect(counts.total).toBe(11);
   });
 
