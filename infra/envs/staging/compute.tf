@@ -129,7 +129,7 @@ data "aws_iam_policy_document" "app" {
 }
 
 resource "aws_iam_role_policy" "app" {
-  for_each = toset(["api", "worker", "keyops"])
+  for_each = toset(["api", "worker", "keyops", "ops"])
   name     = "app"
   role     = aws_iam_role.task[each.key].name
   policy   = data.aws_iam_policy_document.app.json
@@ -166,6 +166,20 @@ resource "aws_iam_role_policy" "keyops" {
   name   = "tenant-keys"
   role   = aws_iam_role.task["keyops"].name
   policy = data.aws_iam_policy_document.keyops.json
+}
+
+# The ops task (the scenario loader, DEC-1005) reads the deploy lock before it loads anything.
+data "aws_iam_policy_document" "ops" {
+  statement {
+    actions   = ["ssm:GetParameter"]
+    resources = ["arn:aws:ssm:${local.region}:${local.account}:parameter/abacus/staging/deploy-lock"]
+  }
+}
+
+resource "aws_iam_role_policy" "ops" {
+  name   = "deploy-lock-read"
+  role   = aws_iam_role.task["ops"].name
+  policy = data.aws_iam_policy_document.ops.json
 }
 
 # --- internal load balancer ---------------------------------------------------------------------
