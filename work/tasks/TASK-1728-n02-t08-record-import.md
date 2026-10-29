@@ -1,8 +1,8 @@
 ---
 id: TASK-1728
 title: N-02-T08 Record-mode import
-spec: N-02 §3.1; docs/contracts/c7-envelopes.md
-acceptance_criteria: [N-02-T08]
+spec: SPEC-381
+acceptance_criteria: [AC-1, AC-3]
 risk_zone: red
 status: in-review
 epic: N-02

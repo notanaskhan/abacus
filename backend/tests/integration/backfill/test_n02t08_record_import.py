@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from types_boto3_s3 import S3Client
 
 pytestmark = pytest.mark.asyncio
-Body = dict[str, Any]
+Body = dict[str, Any]  # a response or request body as the contract shapes it
 FLAG: Final = "signatures.envelopes"
 EVIDENCE: Final = "n02t08-evidence"
 RECORDS: Final = "n02t08-records"
@@ -90,11 +90,11 @@ class Firm:
             headers={**self.net.headers(who), "Content-Type": "application/octet-stream"},
         )
 
-    async def import_(self, who: Person, body: Body, key: str = "import-1") -> httpx.Response:
+    async def import_(self, who: Person, body: Body, attempt: str = "import-1") -> httpx.Response:
         return await self.net.http.post(
             "/v1/envelopes/import",
             json=body,
-            headers={**self.net.headers(who), "Idempotency-Key": key},
+            headers={**self.net.headers(who), "Idempotency-Key": attempt},
         )
 
 
@@ -269,7 +269,7 @@ async def test_another_persons_staged_file_cannot_be_imported(firm: Firm) -> Non
 async def test_a_file_is_consumed_by_one_import_only(firm: Firm) -> None:
     uploads = await _staged(firm)
     assert (await firm.import_(firm.grace, _body(firm, uploads))).status_code == 201
-    again = await firm.import_(firm.grace, _body(firm, uploads), key="import-2")
+    again = await firm.import_(firm.grace, _body(firm, uploads), attempt="import-2")
     assert again.status_code == 409
     assert again.json()["detail"]["code"] == "import_file_unavailable"
 
