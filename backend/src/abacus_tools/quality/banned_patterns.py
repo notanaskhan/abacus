@@ -2240,6 +2240,8 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/backfill/test_k02t03_reference_sets.py",
             "tests/integration/backfill/test_k02t04_firm_standards.py",
             "tests/integration/backfill/test_t01t08_consents.py",
+            # K-02-T09: 0400's privileges read from the catalog as the owner and tried as the app.
+            "tests/integration/backfill/test_k02t09_reference_sets_independent.py",
             "tests/integration/test_unit_of_work.py",
             "tests/integration/test_outbox_relay.py",
             "tests/integration/test_identity.py",
