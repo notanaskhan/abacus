@@ -1,8 +1,8 @@
 ---
 id: TASK-1805
 title: Independent AC tests for R-01-T22 and T26 (R-01-T29)
-spec: docs/contracts/portal-settings.md; docs/architecture/permission-matrix/portal.yaml
-acceptance_criteria: [R-01 §3 ADM-10]
+spec: SPEC-345
+acceptance_criteria: [AC-12]
 risk_zone: amber
 status: in-review
 epic: R-01

@@ -13,16 +13,17 @@ from the implementing suites.
 
 from __future__ import annotations
 
+import json
 import uuid
 from typing import Final, cast
 
 import pytest
-from fastapi.routing import APIRoute
 from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError
 
-from abacus.api.app import create_app
-from abacus.kernel.db import TenantContext, tenant_session
+from abacus.api.export_openapi import document
+from abacus.kernel.db import TenantContext
+from abacus.kernel.uow import Target, uow
 
 from .support import Json, Net, Person
 
@@ -71,9 +72,8 @@ async def test_publish_is_atomic_and_versions_are_insert_only(net: Net) -> None:
     )
     assert [r["version"] for r in versions] == [1, 2]
 
-    nothing = await net.http.post(
-        f"{S}/publish", headers={**net.headers(grace), "Idempotency-Key": "r01t29-none"}
-    )
+    retry = {**net.headers(grace), "Idempotency-Key": f"r01t29-{uuid.uuid4().hex[:8]}"}
+    nothing = await net.http.post(f"{S}/publish", headers=retry)
     assert nothing.status_code == 409, nothing.text  # no draft: nothing half-published
     assert (
         await seed.value(
@@ -88,9 +88,9 @@ async def test_publish_is_atomic_and_versions_are_insert_only(net: Net) -> None:
         "DELETE FROM portal_settings_versions WHERE version = 1",
     ):
         with pytest.raises(DBAPIError):
-            async with tenant_session(system) as session:
-                await session.execute(text(sql))
-                await session.flush()
+            async with uow(system) as tx:
+                await tx.session.execute(text(sql))
+                tx.record("portal_settings.probe", target=Target("firm", tenant))
 
 
 async def test_writes_need_fresh_mfa_and_a_firm_admin(net: Net) -> None:
@@ -112,10 +112,10 @@ async def test_writes_need_fresh_mfa_and_a_firm_admin(net: Net) -> None:
 
 
 def test_preview_has_no_mutation_route() -> None:
-    routes = [r for r in create_app().routes if isinstance(r, APIRoute)]
-    methods = {m for r in routes if r.path.startswith(f"{S}/preview") for m in r.methods or ()}
+    paths = cast(dict[str, dict[str, object]], json.loads(document())["paths"])
+    methods = {m for path, item in paths.items() if path.startswith(f"{S}/preview") for m in item}
     assert methods, "the preview route is mounted"
-    assert methods <= {"GET", "HEAD"}
+    assert methods <= {"get", "head"}
 
 
 async def test_a_firm_admin_without_client_access_cannot_preview_that_client(net: Net) -> None:
@@ -158,13 +158,12 @@ async def test_published_toggles_reach_the_read_model_and_unknown_fields_are_ref
     )
     assert saved.status_code == 200, saved.text
     await _publish(net, grace)
-    row = (
-        await seed.rows(
-            "SELECT show_team_card, phone_capture FROM portal_client_experience "
-            "WHERE tenant_id = $1",
-            tenant,
-        )
-    )[0]
+    stored = await seed.value(
+        "SELECT client_experience FROM portal_settings_versions WHERE tenant_id = $1 "
+        "ORDER BY version DESC LIMIT 1",
+        tenant,
+    )
+    row = cast(Json, json.loads(stored) if isinstance(stored, str) else stored)
     assert (row["show_team_card"], row["phone_capture"]) == (False, False)
     out = cast(Json, (await net.call("GET", S, grace)).json())
     experience = cast(Json, cast(Json, out["published"])["client_experience"])
