@@ -8,6 +8,7 @@ The workbooks are the K-01-T05 suite's synthetic ones (no firm content: rule 16)
 
 from __future__ import annotations
 
+import contextlib
 import uuid
 from datetime import UTC, datetime
 from typing import cast
@@ -17,7 +18,7 @@ import pytest
 from abacus.kernel.db import TenantContext
 from abacus.kernel.uow import uow
 from abacus.modules.agents.methodology_citations import verify_methodology_step
-from abacus.modules.evidence.api import CitationAnchor, CitationClaim
+from abacus.modules.evidence.api import CitationAnchor, CitationClaim, CitationVerdict
 from abacus.modules.identity.api import AuthContext
 
 from .support import Net
@@ -107,11 +108,24 @@ async def test_ac_a_methodology_step_citation_verifies_at_v3(net: Net) -> None:
         quote="Step 4 of program 1",
     )
     anchor = CitationAnchor("workpaper", uuid.uuid4())
-    async with uow(ctx.tenant) as tx:
-        verdict = await verify_methodology_step(tx, ctx, claim, anchor)
+    verdict = await _verify(ctx, claim, anchor)
     assert verdict.verified, verdict.reason
     assert verdict.match_id is not None and verdict.match_id.startswith("step:bh-ebp-110-4@v")
     wrong = CitationClaim(claim.kind, claim.locator, quote="not in the step")
-    async with uow(ctx.tenant) as tx:
-        refused = await verify_methodology_step(tx, ctx, wrong, anchor)
+    refused = await _verify(ctx, wrong, anchor)
     assert refused.reason == "quote_not_found"
+
+
+class _ReadOnly(Exception):
+    """Rolls back a unit of work that only read: the verifier writes nothing to audit."""
+
+
+async def _verify(
+    ctx: AuthContext, claim: CitationClaim, anchor: CitationAnchor
+) -> CitationVerdict:
+    found: list[CitationVerdict] = []
+    with contextlib.suppress(_ReadOnly):
+        async with uow(ctx.tenant) as tx:
+            found.append(await verify_methodology_step(tx, ctx, claim, anchor))
+            raise _ReadOnly
+    return found[0]
