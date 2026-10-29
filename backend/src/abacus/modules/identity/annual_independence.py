@@ -188,7 +188,7 @@ async def annual(ctx: AuthContext, year: int) -> AnnualView:
 
 async def _own_member(ctx: AuthContext) -> None:
     """A signed-in staff member of this firm reading their own status (`OWN`)."""
-    if ctx.client or ctx.is_support or ctx.tenant.actor_kind != "human":
+    if ctx.tenant.actor_kind != "human" or ctx.client or ctx.is_support:
         raise NotFound("annual_independence")
     async with tenant_session(ctx.tenant) as session:
         found = await session.scalar(

@@ -10,7 +10,7 @@ import hashlib
 import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from typing import Final, Literal, Protocol, cast
 
 import asyncpg
@@ -19,6 +19,7 @@ from sqlalchemy import text
 
 from abacus.kernel.db import TenantContext
 from abacus.kernel.uow import Target, uow
+from abacus_tools.fakes.acceptance import Decision, open_engagement
 from abacus_tools.fakes.identity import ISSUER, FakeIdentityProvider
 
 Json = dict[str, object]
@@ -67,6 +68,31 @@ class Site:
 class Seeder:
     def __init__(self, dsn: str) -> None:
         self._dsn = dsn
+
+    async def open_engagement(
+        self,
+        tenant_id: uuid.UUID,
+        engagement_id: uuid.UUID,
+        *,
+        decided_by: uuid.UUID | None = None,
+        decision: Decision = "accept",
+        concluded: bool = True,
+        decided_at: datetime | None = None,
+    ) -> None:
+        """CLI-07's decision and CLI-08's conclusion, seeded (P-07-T59, DEC-906)."""
+        conn = await asyncpg.connect(self._dsn)
+        try:
+            await open_engagement(
+                conn,
+                tenant_id,
+                engagement_id,
+                decided_by=decided_by,
+                decision=decision,
+                concluded=concluded,
+                decided_at=decided_at,
+            )
+        finally:
+            await conn.close()
 
     async def run(self, sql: str, *args: object) -> None:
         conn = await asyncpg.connect(self._dsn)
@@ -210,15 +236,7 @@ class Seeder:
             ),
         )
         if opened:  # SPEC-025 AC-7: open to client data (accepted, independence concluded)
-            await self.run(
-                "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
-                "decided_by, documented_at, independence_concluded_by, "
-                "independence_concluded_at, independence_documented_at) VALUES ($1, $2, "
-                "'continuance', 'accepted', 'test-seed', 'Seeded', 'test-seed', "
-                "clock_timestamp(), 'Seeded')",
-                tenant_id,
-                engagement_id,
-            )
+            await self.open_engagement(tenant_id, engagement_id)
         list_id = await self.value(
             "INSERT INTO request_lists (tenant_id, engagement_id) VALUES ($1, $2) RETURNING id",
             tenant_id,

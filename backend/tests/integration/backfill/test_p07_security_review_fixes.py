@@ -22,7 +22,6 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
 from abacus.kernel.db import TenantContext
-from abacus.kernel.flags import forget_flags
 from abacus.kernel.uow import Target, uow
 from abacus.modules.organisations import conflicts
 
@@ -351,7 +350,7 @@ async def test_m3_a_partner_demoted_before_the_decision_cannot_decide(net: Net) 
 # --- L1, L2 -------------------------------------------------------------------------------------
 
 
-async def test_l1_l2_the_review_completion_honours_the_flag_and_fresh_mfa(net: Net) -> None:
+async def test_l1_l2_the_review_completion_needs_fresh_mfa(net: Net) -> None:
     w = await _world(net)
     assert (await w.start()).status_code == 201
     requested = await w.call(
@@ -361,14 +360,9 @@ async def test_l1_l2_the_review_completion_honours_the_flag_and_fresh_mfa(net: N
     complete = f"{w.acc}/risk-partner-review/complete"
     stale = await w.call("POST", complete, w.rita, {}, mfa=False)
     assert stale.status_code == 403, stale.text
-    await net.seed.run(
-        "UPDATE feature_flag_states SET value = 'false' WHERE tenant_id = $1 "
-        "AND flag = 'engagements.acceptance_v2'",
-        w.tenant,
-    )
-    forget_flags()  # the process caches flag values for 30 s
-    off = await w.call("POST", complete, w.rita, {})
-    assert off.status_code == 404, off.text
+    # The flag half retired with P-07-T59 (DEC-905): fresh, the completion goes through.
+    fresh = await w.call("POST", complete, w.rita, {})
+    assert fresh.status_code == 200, fresh.text
 
 
 # --- M2, L3, L4 ---------------------------------------------------------------------------------

@@ -40,6 +40,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Final, Literal
 
+from abacus.kernel.clock import system_now
 from abacus_tools import release_windows
 
 BACKEND: Final = Path(__file__).resolve().parents[3]
@@ -262,7 +263,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             p.add_argument("--windows", type=Path, default=release_windows.WINDOWS_FILE)
     args = parser.parse_args(argv)
     if args.command == "check":
-        today = args.today or release_windows.local_day(datetime.now(release_windows.CT))
+        today = args.today or release_windows.local_day(system_now())
         if today < ACTIVE_FROM and not args.file:
             print(f"expand-only guard inactive until {ACTIVE_FROM.isoformat()}")
             return 0

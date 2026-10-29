@@ -27,6 +27,7 @@ dependencies = [
     "temporalio",
     "uvicorn>=0.40",
     "workos>=10.6.0",
+    "pyyaml",  # ECS ops tasks run abacus_tools (tenants, flags, release) that read YAML
 ]
 
 [dependency-groups]
@@ -40,7 +41,6 @@ dev = [
     "pytest-xdist>=3.8.0",
     "hypothesis",
     "bandit",
-    "pyyaml",
     "types-PyYAML",
     "testcontainers",
     "types-boto3[kms,s3,secretsmanager,sesv2,sqs,ssm]",

@@ -427,3 +427,8 @@ async def record_engine_issue(
         source_ref=source_ref,
         work_item_id=work_item_id,
     )
+
+
+# P-04-T31: the part-2 service reads an issue and its record the same way.
+issue_row = _one
+issue_record = _record

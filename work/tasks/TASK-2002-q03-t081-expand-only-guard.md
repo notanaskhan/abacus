@@ -2,7 +2,7 @@
 id: TASK-2002
 title: Q-03-T081 Expand-only migration guard
 spec: SPEC-403
-acceptance_criteria: [F4]
+acceptance_criteria: [AC-14]
 risk_zone: red
 status: in-review
 epic: Q-03

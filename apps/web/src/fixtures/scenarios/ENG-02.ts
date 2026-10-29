@@ -36,8 +36,7 @@ const seed = getSeed();
 const RECORDS = engagementRecords(seed);
 
 function capabilities(persona: string | undefined): CapabilitiesOut {
-  const base = capabilitiesFor(seed, persona ?? "priya-raman");
-  return { ...base, flags: { ...base.flags, "engagements.v2": true } };
+  return capabilitiesFor(seed, persona ?? "priya-raman");
 }
 
 /** f's clock (revision R2): Tue Oct 6, 2026, 11:20 AM CT. */

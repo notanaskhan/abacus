@@ -596,11 +596,9 @@ async def test_ac_the_guard_lets_a_synthetic_firm_and_an_ein_form_through(net: N
     ).status_code == 201
 
 
-async def test_ac_the_flag_off_answers_404(intake: Intake) -> None:
-    await intake.seed.run(
-        "UPDATE feature_flag_states SET value = 'false' "
-        "WHERE tenant_id = $1 AND flag = 'clients.v2'",
-        intake.tenant,
-    )
+async def test_ac_the_routes_answer_without_a_flag(intake: Intake) -> None:
+    """`clients.v2` retired with P-07-T59 (DEC-905): no flag row stands between Grace and a
+    draft."""
+    await intake.seed.run("DELETE FROM feature_flag_states WHERE tenant_id = $1", intake.tenant)
     found = await intake.call("POST", DRAFTS, intake.grace, {"step": "entity", "payload": {}})
-    assert found.status_code == 404, found.text
+    assert found.status_code == 201, found.text

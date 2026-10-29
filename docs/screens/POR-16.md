@@ -44,7 +44,9 @@ h and i (Tessellate, HR and ticketing) are X-02's.
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a–g | C (report only) | not run | locked at A-02 exit (A-02-T31) with the DF-19 copy masks |
+| a, c, d, g | C (threshold 0.20, maxDiffPixelRatio 3 %) | 2.23 / 1.85 / 2.04 / 2.03 | locked (A-02-T31, measured Thu Oct 29, 2026); the DF-19 copy differences are a recorded deviation (the parity spec applies no masks yet) |
+| b, e, f | C | 16.62 / 17.89 / 7.77 | report-only: the sheet (b, e) and the dialog (f) over the page, plus the DF-19 rewording; not locked |
+| host | D | — | one pane 720 under the portal toolbar, no rail: holds (a, c, d, g) |
 | h, i | — | — | X-02 |
 
 ## Deviations
