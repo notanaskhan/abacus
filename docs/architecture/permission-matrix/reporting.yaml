@@ -1,0 +1,17 @@
+# The reporting module's actions (ADR-027; P-39, F-03-T07). Compiled with every other module's
+# file into identity/authz/_matrix.py by `make regenerate`.
+#
+# C11 renderer and templates (P-11-T03; P-11 §4.3; ADR-320; SPEC-520). Reading a generated
+# document follows the engagement team; regenerating is a person's (AC-18); importing and
+# publishing templates are firm content rights (DEC-20; OQ-4 decided: import by firm_admin,
+# quality_partner or practice_leader; publish by quality_partner or practice_leader with a fresh
+# second factor, never the agent, the system or firm_admin). Final renders are not a route: they
+# are `reporting.api.render_final` with a human approval (AC-15). The glossary keeps "document"
+# in compounds, so the actions are `generated_document.*`; approvals are each consumer's own.
+
+actions:
+  generated_document.read:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, practice_leader: in_scope, quality_partner: in_scope, client_service: allow, agent: task_scope, independence: required}   # GET generated documents, fields, compare, changes; client roles and platform support deny
+  generated_document.regenerate: {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny, independence: required}   # human-only, Idempotency-Key, 409 document_locked
+  report_template.read:          {firm_admin: allow, practice_leader: allow, quality_partner: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, specialist: allow, client_service: allow, agent: deny, system: deny}   # list, version, SAMPLE preview
+  report_template.import:        {firm_admin: allow, practice_leader: allow, quality_partner: allow, agent: deny, system: deny}   # dry run or draft version; never a migration
+  report_template.publish:       {practice_leader: allow, quality_partner: allow, firm_admin: deny, agent: deny, system: deny, mfa_recent: required}   # human-only with a fresh second factor; a different person from the importer (the service's check)

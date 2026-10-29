@@ -244,6 +244,11 @@ PROMPT_EVIDENCE_SCREENER = Flag(
         "evidence.screen@v0",
     ),
 )
+REPORTING_GENERATED_DOCUMENTS = Flag(
+    name="reporting.generated_documents",
+    kind="boolean",
+    default="false",
+)
 RETRIEVAL_AUTO = Flag(
     name="retrieval.auto",
     kind="boolean",
@@ -328,6 +333,7 @@ FLAGS: dict[str, Flag] = {
     "portal.sign_in_v2": PORTAL_SIGN_IN_V2,
     "portal.third_party_room": PORTAL_THIRD_PARTY_ROOM,
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
+    "reporting.generated_documents": REPORTING_GENERATED_DOCUMENTS,
     "retrieval.auto": RETRIEVAL_AUTO,
     "review.grammar_api": REVIEW_GRAMMAR_API,
     "screening.card": SCREENING_CARD,

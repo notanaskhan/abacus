@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C11 |
 | Version | v1 |
-| Status | skeleton (P-11-T01, 2026-10-29). The stub lands with P-11-T03: every route 404 with `reporting.generated_documents` off, fixtures with it on until each route's task lands |
+| Status | stub (P-11-T03, 2026-10-29): every route 404 for a client principal, then its matrix action, then 404 with `reporting.generated_documents` off and 501 with it on until P-11-T06 (templates) and T11 (generated documents). Fixture mode serves the shapes from the Brightwater Hale seed (`apps/web/src/fixtures/handlers/reporting.ts`) |
 | Provider epic | P-11 |
 | Consumers | N-02 (ENG-04 letters, §7216 consent documents), A-07 (AUD-20…23), T-01/T-02 (TAX-12 delivery cover letter), N-04 (NOT-03), C-01/C-02 (CLS-08), A-10 (FSP-06), P-10 (trace.pdf, P-10-T44), F-06 (T10 `DocumentVM`), F-07 (field manifest), T-06 (form-face previews) |
 | Freeze sprint | S18 Contract Monday (Mon Jun 28, 2027) |
@@ -70,9 +70,12 @@ importer), `generated_document.regenerate`, and every final render (`mode=final`
 `renderer_unavailable`.
 
 ## 8. Stub
-Lands with P-11-T03: `backend/src/abacus/modules/reporting/contract.py` (models and routes),
-seed-derived fixtures, the matrix rows and the flag; `make generate`. Consumer suite:
-`backend/tests/contracts/c11_renderer/` (P-11-T04).
+`backend/src/abacus/modules/reporting/contract.py` (models and routes) and `reporting/api.py`
+(the in-process shapes, `register_document_kind`, `check_render_request`; `render`,
+`render_final` and `lock` raise until P-11-T08); matrix `docs/architecture/permission-matrix/reporting.yaml`;
+flag `docs/architecture/feature-flags/reporting.yaml`; fixtures
+`apps/web/src/fixtures/handlers/reporting.ts`. Stub tests:
+`backend/tests/contracts/c11_renderer/test_c11_stubs.py`; consumer suite beside it (P-11-T04).
 
 ## 9. Versioning
 Additive changes in place (DOCX if descoped, T-06's diagnostic field). A breaking change is C11 v2

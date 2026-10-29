@@ -1,0 +1,13 @@
+# The reporting module's flags (ADR-089; P-39, F-03-T07). Compiled with every other module's
+# file into kernel/_flags.py by `make regenerate`. P-11 §4.10: `reporting.generated_documents`
+# lands with the C11 stub (P-11-T03).
+
+flags:
+  - name: reporting.generated_documents
+    description: 'C11 renderer and templates (P-11; docs/contracts/c11-renderer.md; ADR-320): /v1/report-templates* and /v1/generated-documents*. Off: 404, and consumers keep record mode (upload the signed letter). On: 501 not_implemented until P-11-T06 (templates) and T11 (generated-document reads and regenerate).'
+    owner: ayushkbhatia
+    created: 2026-10-29
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false
