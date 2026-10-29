@@ -2,7 +2,7 @@
 id: TASK-2011
 title: P-07-T64 Docs freeze, onboarding runbook and hand-off
 spec: SPEC-321
-acceptance_criteria: [P-07 §8 item 8]
+acceptance_criteria: [AC-31]
 risk_zone: amber
 status: in-review
 epic: P-07
