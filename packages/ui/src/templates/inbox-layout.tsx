@@ -16,7 +16,10 @@ import type { ToolbarProps } from "../layout/toolbar";
 const CHROME = 46 + 40 + 22;
 
 export interface InboxLayoutProps {
-  toolbar: ToolbarProps;
+  /** Without it (N-01-T23), the layout sits inside a shell that already draws the toolbar (the
+   * app's workspace): the filter bar and the columns, with no second window, as RecordCockpit
+   * does when it has no toolbar. */
+  toolbar?: ToolbarProps;
   /** The filter bar's chips: "← All Messages", Client, Status, Received, Channel. */
   filters: ReactNode;
   rail: {
@@ -46,6 +49,79 @@ export function InboxLayout({
   height,
   className,
 }: InboxLayoutProps): JSX.Element {
+  const filterBar = (
+    <div
+      data-inbox="filters"
+      role="toolbar"
+      aria-label="Filters"
+      className="-mb-[10px] flex h-(--tabs-h) flex-none items-center gap-[8px] px-[12px]"
+    >
+      {filters}
+    </div>
+  );
+  const columns = (
+    <div data-inbox="frame" className="flex min-h-0 min-w-0 flex-1">
+      <SplitLayout
+        preset="inbox"
+        height={height === undefined ? "viewport" : height - CHROME}
+        narrow={false}
+        className="w-full bg-transparent p-0"
+      >
+        {[
+          <Pane
+            key="rail"
+            title={rail.title ?? "Inbox"}
+            {...(rail.left === undefined ? {} : { left: rail.left })}
+            {...(rail.right === undefined ? {} : { right: rail.right })}
+            className="min-h-0"
+          >
+            <div data-inbox="rail" className="flex min-h-0 flex-1 flex-col">
+              {rail.search !== undefined && (
+                <div className="flex h-[44px] flex-none items-center gap-[8px] px-[12px] hairline-b">
+                  {rail.search}
+                </div>
+              )}
+              <div className="min-h-0 flex-1 overflow-auto pt-[8px]">{rail.body}</div>
+            </div>
+          </Pane>,
+          <Pane key="reading" header={false} className="min-h-0">
+            <div data-inbox="reading" className="flex min-h-0 flex-1 flex-col">
+              {reading.header !== undefined && (
+                <div
+                  className={cn(
+                    "flex h-(--pane-hd-h) flex-none items-center px-[12px] hairline-b",
+                  )}
+                >
+                  {reading.header}
+                </div>
+              )}
+              <div className="min-h-0 flex-1 overflow-auto">{reading.body}</div>
+            </div>
+          </Pane>,
+        ]}
+      </SplitLayout>
+    </div>
+  );
+  if (toolbar === undefined) {
+    return (
+      <div
+        data-inbox="bare"
+        className={cn(
+          "flex min-h-0 flex-1 flex-col in-data-[shell=cols]:-mx-(--edge-app) in-data-[shell=cols]:-mt-(--gutter-pane) in-data-[shell=cols]:-mb-(--edge-app)",
+          className,
+        )}
+        {...(height === undefined ? {} : { style: { height } })}
+      >
+        {filterBar}
+        <div
+          data-shell="cols"
+          className="flex min-h-0 flex-1 items-stretch gap-(--gutter-pane) pt-(--gutter-pane) in-data-[shell=cols]:px-(--edge-app) in-data-[shell=cols]:pb-(--edge-app)"
+        >
+          {columns}
+        </div>
+      </div>
+    );
+  }
   return (
     <AppShell
       toolbar={toolbar}
@@ -53,58 +129,9 @@ export function InboxLayout({
       embedded={embedded}
       {...(height === undefined ? {} : { height })}
       {...(className === undefined ? {} : { className })}
-      tabs={
-        <div
-          data-inbox="filters"
-          role="toolbar"
-          aria-label="Filters"
-          className="-mb-[10px] flex h-(--tabs-h) flex-none items-center gap-[8px] px-[12px]"
-        >
-          {filters}
-        </div>
-      }
+      tabs={filterBar}
     >
-      <div data-inbox="frame" className="flex min-h-0 min-w-0 flex-1">
-        <SplitLayout
-          preset="inbox"
-          height={height === undefined ? "viewport" : height - CHROME}
-          narrow={false}
-          className="w-full bg-transparent p-0"
-        >
-          {[
-            <Pane
-              key="rail"
-              title={rail.title ?? "Inbox"}
-              {...(rail.left === undefined ? {} : { left: rail.left })}
-              {...(rail.right === undefined ? {} : { right: rail.right })}
-              className="min-h-0"
-            >
-              <div data-inbox="rail" className="flex min-h-0 flex-1 flex-col">
-                {rail.search !== undefined && (
-                  <div className="flex h-[44px] flex-none items-center gap-[8px] px-[12px] hairline-b">
-                    {rail.search}
-                  </div>
-                )}
-                <div className="min-h-0 flex-1 overflow-auto pt-[8px]">{rail.body}</div>
-              </div>
-            </Pane>,
-            <Pane key="reading" header={false} className="min-h-0">
-              <div data-inbox="reading" className="flex min-h-0 flex-1 flex-col">
-                {reading.header !== undefined && (
-                  <div
-                    className={cn(
-                      "flex h-(--pane-hd-h) flex-none items-center px-[12px] hairline-b",
-                    )}
-                  >
-                    {reading.header}
-                  </div>
-                )}
-                <div className="min-h-0 flex-1 overflow-auto">{reading.body}</div>
-              </div>
-            </Pane>,
-          ]}
-        </SplitLayout>
-      </div>
+      {columns}
     </AppShell>
   );
 }

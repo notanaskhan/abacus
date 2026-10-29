@@ -78,3 +78,4 @@ firm pauses and the next cut tier is invoked (never the hardening reserve).
 - [ ] A test request to the shared inbox is labelled (screen, pilot code, severity), answered
       inside 2 business hours, and holds no client data.
 - [ ] `docs/ops/on-call.md` names the backup for every PW1 day (Q-04-T020).
+- [ ] Every PW1 firm admin has acknowledged `shadow-briefing.md` (current version) in writing (Q-04-T022).
