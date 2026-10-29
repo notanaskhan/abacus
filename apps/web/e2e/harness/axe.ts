@@ -28,7 +28,9 @@ export async function settle(page: Page): Promise<void> {
 
 async function blocking(page: Page, include: string | undefined): Promise<string[]> {
   await settle(page);
-  let builder = new AxeBuilder({ page });
+  // Legacy mode (R-01-T32): the default multi-frame run never finishes on R-01's template screens
+  // (POR-20, ADM-10; every rule alone completes), and the SPA renders no frames to merge.
+  let builder = new AxeBuilder({ page }).setLegacyMode(true);
   if (include !== undefined) builder = builder.include(include);
   const { violations } = await builder.analyze();
   return violations

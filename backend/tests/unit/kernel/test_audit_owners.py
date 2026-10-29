@@ -24,6 +24,7 @@ async def _other(tenant: TenantContext, kind: str, ids: Sequence[UUID]) -> dict[
 def clean(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(audit_owners, "_ENGAGEMENT", {})
     monkeypatch.setattr(audit_owners, "_ENTITY", {})
+    monkeypatch.setattr(audit_owners, "_CLIENT", {})
 
 
 def test_a_registered_kind_is_listed_under_its_owner_type() -> None:
@@ -50,3 +51,15 @@ def test_a_second_owner_for_a_kind_is_refused() -> None:
 def test_the_lists_are_copies() -> None:
     audit_owners.engagement_owners()["x"] = _owners
     assert audit_owners.engagement_owners() == {}
+
+
+def test_a_client_owned_kind_is_listed_and_has_one_owner_type() -> None:
+    """P-07 follow-up: firm intake rows and envelopes belong to a client before any engagement."""
+    audit_owners.register_client_owners(["inbox_thread"], _owners)
+    audit_owners.register_client_owners(["inbox_thread"], _owners)  # the same again: harmless
+    assert audit_owners.client_owners() == {"inbox_thread": _owners}
+    with pytest.raises(RuntimeError):
+        audit_owners.register_engagement_owners(["inbox_thread"], _other)
+    audit_owners.register_engagement_owners(["thing"], _owners)
+    with pytest.raises(RuntimeError):
+        audit_owners.register_client_owners(["thing"], _other)

@@ -102,8 +102,10 @@ Gradients, emoji, saturated blue, heavy shadows, invented colours, lorem ipsum, 
 
 | Artboard | Tier | Diff % | Notes |
 |---|---|---|---|
-| a–h | C (locked) | — | locked 2026-10-27 (G-02-T21; `e2e/screens/ADM-06.spec.ts` renders each with axe clean; the diff is measured by `pnpm parity:screens` once the baselines are fetched); fieldset B copy (DV-1, DV-2) report-only until the boards are revised |
-| i, j | C report-only | — | fixture mode only |
+| e | C (locked) | 2.84 | locked 2026-10-29 (G-02-T26), measured on `parity-screens` |
+| a, c, f, g, h | C report-only | 3.09 / 3.08 / 3.10 / 3.31 / 3.09 | G-02-T21 recorded these as locked on 2026-10-27 before any baseline existed; measured 2026-10-29 (G-02-T26) each is 0.08–0.31 points over 3 %: fieldset B copy (DV-1, DV-2) until the boards are revised (open gap) |
+| b, d | C report-only | 12.38 / 6.26 | over 3 % (measured 2026-10-29); open gap |
+| i, j | C report-only | 3.30 / 3.25 | fixture mode only |
 
 ## Open gaps
 

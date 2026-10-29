@@ -2,10 +2,15 @@
 
 from datetime import timedelta
 
-from abacus.kernel.audit_owners import register_engagement_owners
+from abacus.kernel.audit_owners import register_client_owners, register_engagement_owners
 from abacus.kernel.dispatch import PlatformSchedule, WorkClass, register_work_classes
 from abacus.modules.communications import portal_intake
-from abacus.modules.communications.audit_targets import AUDIT_KINDS, audit_owners
+from abacus.modules.communications.audit_targets import (
+    AUDIT_KINDS,
+    CLIENT_KINDS,
+    audit_clients,
+    audit_owners,
+)
 from abacus.modules.communications.deliveries import (
     SesEventQueue,
     configure_ses_event_queue,
@@ -241,6 +246,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)
+register_client_owners(CLIENT_KINDS, audit_clients)  # N-01 intake rows (0293)
 
 __all__ = [
     "ACTIVITIES",

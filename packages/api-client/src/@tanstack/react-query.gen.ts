@@ -7960,7 +7960,7 @@ export const listEnvelopesQueryKey = (options?: Options<ListEnvelopesData>) => c
 /**
  * List Envelopes Route
  *
- * SIG-01 list (N-02-T13).
+ * SIG-01 list (N-02-T13): wall-safe rows and counts; the Out tab's counts are its tiles.
  */
 export const listEnvelopesOptions = (options?: Options<ListEnvelopesData>) => queryOptions<ListEnvelopesResponse, ListEnvelopesError, ListEnvelopesResponse, ReturnType<typeof listEnvelopesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -7980,7 +7980,7 @@ export const listEnvelopesInfiniteQueryKey = (options?: Options<ListEnvelopesDat
 /**
  * List Envelopes Route
  *
- * SIG-01 list (N-02-T13).
+ * SIG-01 list (N-02-T13): wall-safe rows and counts; the Out tab's counts are its tiles.
  */
 export const listEnvelopesInfiniteOptions = (options?: Options<ListEnvelopesData>) => {
     const opts = infiniteQueryOptions<ListEnvelopesResponse, ListEnvelopesError, InfiniteData<ListEnvelopesResponse>, QueryKey<Options<ListEnvelopesData>>, string | null | Pick<QueryKey<Options<ListEnvelopesData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -8109,7 +8109,7 @@ export const envelopeSummaryQueryKey = (options?: Options<EnvelopeSummaryData>) 
 /**
  * Envelope Summary Route
  *
- * SIG-01 tiles (N-02-T13).
+ * SIG-01 tabs and the By type tile (N-02-T13), over visible rows only.
  */
 export const envelopeSummaryOptions = (options?: Options<EnvelopeSummaryData>) => queryOptions<EnvelopeSummaryResponse, EnvelopeSummaryError, EnvelopeSummaryResponse, ReturnType<typeof envelopeSummaryQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -8129,7 +8129,7 @@ export const getEnvelopeQueryKey = (options: Options<GetEnvelopeData>) => create
 /**
  * Get Envelope Route
  *
- * SIG-01 drawer, SIG-02 builder (N-02-T11).
+ * SIG-01 drawer, SIG-02 builder (N-02-T13).
  */
 export const getEnvelopeOptions = (options: Options<GetEnvelopeData>) => queryOptions<GetEnvelopeResponse, GetEnvelopeError, GetEnvelopeResponse, ReturnType<typeof getEnvelopeQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -8207,7 +8207,7 @@ export const envelopeEvidenceQueryKey = (options: Options<EnvelopeEvidenceData>)
 /**
  * Envelope Evidence Route
  *
- * Packages, certificate, manifest (N-02-T14).
+ * Packages, certificate, manifest (N-02-T13); audited, byte-identical on repeat.
  */
 export const envelopeEvidenceOptions = (options: Options<EnvelopeEvidenceData>) => queryOptions<EnvelopeEvidenceResponse, EnvelopeEvidenceError, EnvelopeEvidenceResponse, ReturnType<typeof envelopeEvidenceQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -8282,7 +8282,7 @@ export const undoEnvelopeSendMutation = (options?: Partial<Options<UndoEnvelopeS
 /**
  * Reveal Signer Ip Route
  *
- * 10-second reveal, audited (N-02-T13).
+ * 10-second reveal, audited (N-02-T13); never cached.
  */
 export const revealSignerIpMutation = (options?: Partial<Options<RevealSignerIpData>>): UseMutationOptions<RevealSignerIpResponse, RevealSignerIpError, Options<RevealSignerIpData>> => {
     const mutationOptions: UseMutationOptions<RevealSignerIpResponse, RevealSignerIpError, Options<RevealSignerIpData>> = {
@@ -8339,7 +8339,7 @@ export const validateEnvelopeMutation = (options?: Partial<Options<ValidateEnvel
 /**
  * Void Envelope Route
  *
- * Void with a reason; evidence kept (N-02-T28).
+ * Void with a reason; evidence kept (N-02-T13).
  */
 export const voidEnvelopeMutation = (options?: Partial<Options<VoidEnvelopeData>>): UseMutationOptions<VoidEnvelopeResponse, VoidEnvelopeError, Options<VoidEnvelopeData>> => {
     const mutationOptions: UseMutationOptions<VoidEnvelopeResponse, VoidEnvelopeError, Options<VoidEnvelopeData>> = {
