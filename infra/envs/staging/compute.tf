@@ -18,6 +18,8 @@ locals {
   deploy_role_arns      = local.enabled ? ["${local.role}/abacus-staging-deploy"] : []
   firm_distribution_arn = local.enabled ? module.firm_edge[0].distribution_arn : null
   dns                   = "abacus-staging.internal"
+  # DEC-1008: the pinned third-party images come from the shared ECR mirrors once copied.
+  third_party = var.third_party_registry == null ? "" : "${trimsuffix(var.third_party_registry, "/")}/thirdparty/"
   secret                = { for k, v in aws_secretsmanager_secret.this : k => v.arn }
 
   # Settings every backend process reads (kernel/config.py). Nothing secret: those are `secrets`.
@@ -338,7 +340,7 @@ module "scanner" {
   name                   = "scanner"
   cluster_arn            = module.cluster.cluster_arn
   execution_role_arn     = module.cluster.execution_role_arn
-  image                  = "clamav/clamav:1.4@sha256:982e28f90061d0e66eb03276419f589a47c9fa601e985e472fc2f6c64b497ca0"
+  image                  = "${local.third_party}clamav/clamav:1.4@sha256:982e28f90061d0e66eb03276419f589a47c9fa601e985e472fc2f6c64b497ca0"
   cpu                    = 1024
   memory                 = 3072
   port                   = 3310
@@ -358,7 +360,7 @@ module "temporal" {
   name                   = "temporal"
   cluster_arn            = module.cluster.cluster_arn
   execution_role_arn     = module.cluster.execution_role_arn
-  image                  = "temporalio/temporal:1.9.1@sha256:ad4c82c97bd12b417d1ea942610dbcd511afb250c4d5ed26c694009533df447e"
+  image                  = "${local.third_party}temporalio/temporal:1.9.1@sha256:ad4c82c97bd12b417d1ea942610dbcd511afb250c4d5ed26c694009533df447e"
   command                = ["server", "start-dev", "--ip", "0.0.0.0", "--headless"]
   cpu                    = 512
   memory                 = 1024

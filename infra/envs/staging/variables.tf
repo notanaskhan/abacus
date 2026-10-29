@@ -139,3 +139,9 @@ variable "worker_split" {
   type        = bool
   default     = false
 }
+
+variable "third_party_registry" {
+  description = "The shared ECR registry host (<account>.dkr.ecr.us-east-2.amazonaws.com) holding the third-party mirrors. Null: Docker Hub."
+  type        = string
+  default     = null
+}
