@@ -2,7 +2,7 @@
 id: TASK-1850
 title: R-01-T27 sender domains, delivery events and the client-mail gate
 spec: SPEC-345
-acceptance_criteria: [R-01-T27]
+acceptance_criteria: [AC-1, AC-3, AC-4]
 risk_zone: red
 status: in-review
 epic: R-01
