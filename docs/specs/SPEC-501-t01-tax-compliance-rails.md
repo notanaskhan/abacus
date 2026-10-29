@@ -49,3 +49,12 @@ T-01 gives Accrued the §7216 consent registry and the gate that keeps tax retur
 **Consents migration (T-01-T08).**
 - **AC-15** `consent_sets`, `consents`, `consent_signers` and insert-only `consent_events` are tenant tables with forced RLS; a consent names one purpose and at least one tax year; a second open request for a purpose the taxpayer declined is refused by a partial unique index.
 - **AC-16** schema_check passes up/down/up; the app never deletes a consent or updates an event.
+
+**The gate: condition 6 and the TRI rails (T-01-T11).**
+- **AC-17** An `AssembledContext` carrying TRI `data_subjects` is refused with `DataBoundaryRefused(reason="consent_7216")` unless every subject holds `use` and `ai_disclosure` in force for its year; on every route (`fake` included) and for every firm, before the synthetic pass; audited (`ai.boundary_refused`, reason index 9: the recorded indices are append-only), counted, never retried or rerouted; unregistered means refused.
+- **AC-18** With both consents in force for every subject (both spouses on a joint unit, every required signer signed), the call proceeds to the existing boundary conditions unchanged; every allowed call writes one `tri.agent_read` access event per subject and per covering consent.
+- **AC-19** Nothing is cached: a revocation, an expiry (business time) or a year not covered refuses the next call; a consent signed under other material provider terms (the covering Bedrock entry's `material` hash) is refused (re-consent).
+- **AC-20** A TRI field whose subject or year could not be resolved is refused (fail closed); `require_tri_consent` raises 409 `consent_required` naming the client entity and purpose, and writes `tri.tool_read` access events when it allows.
+- **AC-21** The matrix condition `consent: <purposes>` takes only the six §7216 purposes; it is a resource condition binding every actor, held only when every `TargetFacts.consent_subjects` entity holds every listed purpose now (none: refused); the generated security cases cover it (consented allow; not consented and no subjects deny).
+- **AC-22** An agent spec declaring `data_classes: [tri]` loads only while the `use` and `ai_disclosure` consent checks are registered.
+- **AC-23** Model text is stored with every unmasked SSN, ITIN or EIN form masked (`•••-••-1234`) and the hit counted (`abacus.ai.tin_masked`); a TIN in the assembled context still refuses the call (`pii_in_context`, ADR-167 §2).

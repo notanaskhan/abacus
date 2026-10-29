@@ -94,6 +94,18 @@ CONDITION_KEYS: frozenset[str] = frozenset(
     | {"not_preparer_of_target", "reserved_role"}
     # K-02-T01 (DEC-1150): the target's named owner, a current partner (firm standards).
     | {"owner_of_target"}
+    # T-01-T11 (C19; ADR P-12): `consent: use,ai_disclosure` - every data subject of the target
+    # holds a consent for each listed purpose, signed and in force now.
+    | {"consent"}
+)
+# T-01-T11: the §7216 purposes a `consent` condition may list (0402's `consents.purpose`).
+CONSENT_PURPOSES: tuple[str, ...] = (
+    "use",
+    "ai_disclosure",
+    "offshore_disclosure",
+    "third_party_disclosure",
+    "other_services_use",
+    "firm_defined",
 )
 # P-04-T15: `required` flags a condition takes (no list of values).
 _FLAG_CONDITIONS = (
@@ -132,6 +144,8 @@ class Rule:
     reserved_role: bool = False
     # K-02-T01 (DEC-1150): the actor is the target's named owner and a partner member now.
     owner_of_target: bool = False
+    # T-01-T11 (C19): the §7216 purposes every data subject of the target must hold.
+    consent: frozenset[str] = frozenset()
     # The firm setting each `firm_setting(<name>)` role decision names.
     firm_settings: tuple[tuple[str, str], ...] = ()
 
@@ -165,6 +179,7 @@ def _rule(action: str, entries: dict[str, str]) -> Rule:
     level_in: frozenset[str] = frozenset()
     function_in: frozenset[str] = frozenset()
     gates_met: tuple[str, ...] = ()
+    consent: frozenset[str] = frozenset()
     attest_client: Literal["deny", "only"] | None = None
     flags: set[str] = set()
     settings: list[tuple[str, str]] = []
@@ -175,6 +190,8 @@ def _rule(action: str, entries: dict[str, str]) -> Rule:
             function_in = frozenset(_listed(action, key, value, FUNCTIONS))
         elif key == "gates_met":
             gates_met = tuple(_listed(action, key, value, GATES))
+        elif key == "consent":
+            consent = frozenset(_listed(action, key, value, CONSENT_PURPOSES))
         elif key == "attest_client":
             if value not in ("deny", "only"):
                 raise ValueError(f"permission matrix: {action}.{key}: unknown value {value!r}")
@@ -216,6 +233,7 @@ def _rule(action: str, entries: dict[str, str]) -> Rule:
         not_preparer_of_target="not_preparer_of_target" in flags,
         reserved_role="reserved_role" in flags,
         owner_of_target="owner_of_target" in flags,
+        consent=consent,
         firm_settings=tuple(settings),
     )
 

@@ -20,6 +20,14 @@ every real route, a call attributed to an engagement holding a `tax_return` work
 Tax-return information (§7216) may reach a model only with the client's consent, and C19 will
 register that consent. Until then, none exists, so this fails closed for every agent. Engagements
 registers the fact, uncached; unregistered means refused.
+
+`consent_7216` (C19 condition 6; T-01-T11; ADR P-12): a call whose context names TRI data
+subjects is refused unless every subject holds both `use` and `ai_disclosure` consents, signed
+by every required signer and in force for the year. It is evaluated on every route, `fake`
+included, and for every firm, before the synthetic pass: a synthetic tenant's TRI is gated too.
+Organisations registers the check (`register_tri_consent_check`); unregistered, or a subject
+that could not be resolved, means refused. Nothing is cached: a revocation takes effect on the
+next call. Every allowed call writes a `tri.agent_read` access event per subject.
 """
 
 from __future__ import annotations
@@ -27,11 +35,14 @@ from __future__ import annotations
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from datetime import datetime
 from typing import ClassVar, Final, Literal, NoReturn, cast
 from uuid import UUID
 
 from abacus.ai_gateway.admission import NotAdmitted
+from abacus.ai_gateway.context import DataSubject
 from abacus.kernel import provider_terms
+from abacus.kernel.clock import now as business_now
 from abacus.kernel.clock import system_now
 from abacus.kernel.config import Route, settings
 from abacus.kernel.controls import control_state
@@ -47,6 +58,11 @@ FirmCheck = Callable[[TenantContext], Awaitable[bool]]
 EngagementCheck = Callable[[TenantContext, UUID], Awaitable[bool]]
 StageCheck = Callable[[TenantContext, str], Awaitable[str | None]]
 AgentCheck = Callable[[str], bool]
+# C19 condition 6: (firm, subjects, at) -> the consent ids that cover every subject, or None when
+# any subject lacks `use` or `ai_disclosure` for its year (organisations; T-01-T11).
+TriConsentCheck = Callable[
+    [TenantContext, tuple[DataSubject, ...], datetime], Awaitable[tuple[UUID, ...] | None]
+]
 Reason = Literal[
     "route",
     "terms",
@@ -57,6 +73,7 @@ Reason = Literal[
     "pii_in_context",
     "tax_return_information",
     "ai_paused",
+    "consent_7216",
 ]
 # Audited by index: append only, so the indices already recorded keep their meaning.
 REASONS: Final[tuple[Reason, ...]] = (
@@ -69,6 +86,7 @@ REASONS: Final[tuple[Reason, ...]] = (
     "pii_in_context",
     "tax_return_information",  # P-06-T20 security review (DEC-324)
     "ai_paused",  # Q-01-T36 (P-66): the platform's or the firm's AI kill switch
+    "consent_7216",  # T-01-T11 (C19 condition 6): TRI without both §7216 consents
 )
 CLIENT_DATA_ROUTES: Final[frozenset[Route]] = frozenset({"bedrock"})  # ADR-113
 _CACHE_SECONDS: Final = 60.0
@@ -84,6 +102,7 @@ _excluded: EngagementCheck | None = None
 _stage: StageCheck | None = None
 _cleared: AgentCheck | None = None
 _tax_return: EngagementCheck | None = None
+_tri_consent: TriConsentCheck | None = None
 _cache: dict[object, tuple[bool, float]] = {}
 _facts: dict[tuple[object, ...], tuple[object, float]] = {}
 _log = get_logger(__name__)
@@ -113,6 +132,37 @@ def register_synthetic_tenants(check: SyntheticCheck) -> None:
     if _check is not None and _check is not check:
         raise RuntimeError("the synthetic-tenant check is already registered")
     _check = check
+
+
+def register_tri_consent_check(check: TriConsentCheck) -> None:
+    """C19 condition 6: organisations answers whether TRI subjects hold both consents."""
+    global _tri_consent
+    if _tri_consent is not None and _tri_consent is not check:
+        raise RuntimeError("the TRI consent check is already registered")
+    _tri_consent = check
+
+
+def tri_consent_registered() -> bool:
+    """Whether condition 6 can pass at all (agent specs declaring `tri` need it)."""
+    return _tri_consent is not None
+
+
+async def enforce_tri_consent(
+    tenant: TenantContext, route: Route, prompt: str, subjects: tuple[DataSubject, ...]
+) -> tuple[UUID, ...]:
+    """Condition 6, on every route and for every firm, before the synthetic pass: the consent
+    ids covering the subjects, or audit, count and raise `consent_7216`. No subjects: ()."""
+    if not subjects:
+        return ()
+    check = _tri_consent
+    covered = (
+        None
+        if check is None or any(s.entity_id is None or s.tax_year is None for s in subjects)
+        else await check(tenant, subjects, await business_now(tenant))
+    )
+    if covered is None:
+        await _refuse(tenant, route, prompt, "consent_7216")
+    return covered
 
 
 def register_client_data_facts(
@@ -210,12 +260,15 @@ async def enforce_boundary(
     *,
     agent_id: str | None = None,
     engagement_id: UUID | None = None,
+    subjects: tuple[DataSubject, ...] = (),
 ) -> Basis | None:
     """Return why `route` may see this firm's data (None for `fake`); else audit, count and
     raise with the reason. AI paused for the platform or the firm (Q-01-T36, `ai_pause`) refuses
-    every route first, the fake one too; then an engagement its partner excluded refuses every
-    route, for every firm (SPEC-036 AC-6). Every provider call passes here just before it leaves,
-    so with AI paused none does once the controls cache (10 s) has caught up."""
+    every route first, the fake one too; then TRI without both §7216 consents (`consent_7216`,
+    every route and firm, before the synthetic pass); then an engagement its partner excluded
+    refuses every route, for every firm (SPEC-036 AC-6). Every provider call passes here just
+    before it leaves, so with AI paused none does once the controls cache (10 s) has caught
+    up."""
     excluded = _excluded
     paused = await control_state("ai_pause", tenant.tenant_id)
     if paused == "unknown":
@@ -223,8 +276,10 @@ async def enforce_boundary(
         # a pause, so the run waits and retries instead of ending (DEC-338, security review).
         raise NotAdmitted("controls_unavailable", 10)
     if paused == "on":
-        reason: Reason | None = "ai_paused"
-    elif (
+        await _refuse(tenant, route, prompt, "ai_paused")
+    await enforce_tri_consent(tenant, route, prompt, subjects)
+    reason: Reason | None
+    if (
         engagement_id is not None
         and excluded is not None
         and await _cached(
