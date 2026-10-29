@@ -10,10 +10,13 @@ export const knwScreens = {
     path: "/knowledge",
     navArea: "Knowledge",
   }, // legacy Knowledge
+  // K-01-T07: the workbook slice (e, f) on fixtures at /knowledge/methodology/$versionId behind
+  // `methodology.lifecycle`; planned until walked on staging (DEC-195), and the importer's states
+  // (a–d) arrive with K-01-T18 to T25.
   "KNW-02": {
     name: "Methodology versions & import review · BH Audit Methodology · EBP v3",
     status: "planned",
-    path: null,
+    path: "/knowledge/methodology/$versionId",
   },
   "KNW-03": {
     name: "Program editor · BH-EBP-110 General Planning",

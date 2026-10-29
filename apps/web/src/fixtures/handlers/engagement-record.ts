@@ -57,6 +57,12 @@ export function engagementRecordHandlers(
     return walled ? undefined : found;
   };
   return {
+    // P-07-T61: the Activity tab's lines (P-07-T57). The handoff draws no Activity artboard, so
+    // the fixture invents no lines: an empty page, 404 as the record is.
+    "GET /v1/engagements/{engagement_id}/record-activity": (request) =>
+      find(request) === undefined
+        ? json({ detail: "not found" }, 404)
+        : json({ items: [], total: 0 }),
     "GET /v1/engagements/{engagement_id}/record": (request) => {
       const found = find(request);
       return found === undefined ? json(NOT_FOUND, 404) : json(found.record);

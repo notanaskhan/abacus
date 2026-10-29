@@ -36,15 +36,18 @@ def s3_client(
     s = settings()
     key = access_key or (s.s3_access_key.get_secret_value() if s.s3_access_key else None)
     secret = secret_key or (s.s3_secret_key.get_secret_value() if s.s3_secret_key else None)
+    endpoint = endpoint_url or s.s3_endpoint_url
+    # No endpoint: S3 itself on the task role (DEC-1004), with virtual-hosted addressing; the
+    # local gateway keeps path addressing.
     # boto3-stubs overloads name every AWS service; only the s3 stub package is installed.
     return boto3.client(  # pyright: ignore[reportUnknownMemberType] -- see comment above
         "s3",
-        endpoint_url=endpoint_url or s.s3_endpoint_url,
+        endpoint_url=endpoint,
         aws_access_key_id=key,
         aws_secret_access_key=secret,
         region_name=region or s.s3_region,
         config=Config(
-            s3={"addressing_style": "path"},
+            s3={"addressing_style": "path" if endpoint else "virtual"},
             retries={"mode": "standard", "max_attempts": 3},
             connect_timeout=5,
             read_timeout=30,

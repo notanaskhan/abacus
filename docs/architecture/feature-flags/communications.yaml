@@ -3,7 +3,7 @@
 
 flags:
   - name: communications.firm_sender_domain
-    description: 'Client mail From the firm''s verified sender domain (R-01; C16 v1.1; docs/contracts/email-templates.md §sending domains; DEC-59): POST /v1/firm/sending-domains, POST …/{id}/check and DELETE …/{id}, and the From selection. Off: those writes answer 404 and client mail goes from the neutral sender with the firm''s display name and Reply-To. On: 501 not_implemented until R-01-T27 lands. Off until a founder switches it on per firm; on for a pilot firm once its domain verifies.'
+    description: 'Client mail From the firm''s verified sender domain (R-01; C16 v1.1; docs/contracts/email-templates.md §sending domains; DEC-59): POST /v1/firm/sending-domains, POST …/{id}/check and DELETE …/{id}, and the From selection. Off: those writes answer 404 and client mail goes from the neutral sender with the firm''s display name and Reply-To. On: live (R-01-T27, DEC-950 to DEC-955). Off until a founder switches it on per firm; on for a pilot firm once its domain verifies.'
     owner: notanaskhan
     created: 2026-10-26
     expires: 2027-04-21

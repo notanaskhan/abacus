@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: shadow-report pilot-metrics go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr
+.PHONY: backfill-rerun shadow-report pilot-metrics go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr
 
 setup:
 	cd backend && uv sync --locked
@@ -307,6 +307,10 @@ release-pr:
 	git commit -m "release: promote $(SHA) to production"
 	git push -u origin release/$(SHA)
 	gh pr create --title "Release $(SHA)" --body "Promotes $(SHA) (deploy/production/release.json). deploy-production.yml checks the staging-verified, replay and Inspector gates."
+
+# Q-03-T059: re-run the 44 back-filled suites and write docs/quality/backfill-rerun-<date>.md.
+backfill-rerun:
+	cd backend && uv run python -m abacus_tools.quality.backfill_rerun
 
 # SPEC-010: the route parity check, with real credentials (costs a little). ROUTE=direct|bedrock
 route-parity:
