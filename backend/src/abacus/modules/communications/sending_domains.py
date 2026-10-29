@@ -79,6 +79,9 @@ _log = get_logger(__name__)
 
 
 class SendingDomainExists(DomainConflict):
+    """R-01-T27 (DEC-951): a sender domain is pending or verified for this firm, or the name is
+    live for any firm."""
+
     code = "sending_domain_exists"
 
 

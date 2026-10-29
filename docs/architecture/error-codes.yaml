@@ -1500,8 +1500,8 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.communications.sending_domains.SendingDomainExists
-    summary: 'R-01-T27 (DEC-951): a sender domain is pending or verified for this firm, or the
-      name is live for any firm.'
+    summary: 'R-01-T27 (DEC-951): a sender domain is pending or verified for this firm, or the name is
+      live for any firm.'
   service_line_lead_invalid:
     status: 422
     raised_by:
