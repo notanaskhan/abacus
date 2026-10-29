@@ -218,3 +218,13 @@ async def pending_masks(given: BackfillInput) -> list[UploadInput]:
 
 
 __all__ = ["UNSCANNED", "PreviewOutdated", "masked_preview_upload", "pending_masks"]
+
+
+async def intake_masked_pages(tenant: TenantContext, attachment_id: UUID) -> int | None:
+    """N-01-T13: the page count of an intake attachment's masked rendition; None until
+    AttachmentTriage has made it (the viewer then shows nothing, never an unmasked page)."""
+    async with tenant_session(tenant) as session:
+        found = await preview_for(
+            session, inbox_attachment_id=attachment_id, renderer_version=MASKED_RENDERER_VERSION
+        )
+    return None if found is None else found.page_count

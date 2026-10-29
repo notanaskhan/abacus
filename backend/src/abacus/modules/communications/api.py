@@ -53,6 +53,7 @@ from abacus.modules.communications.follow_ups import (
     compose_follow_up,
     deliver_follow_up,
 )
+from abacus.modules.communications.inbox_read import inbox_waiting, waiting_for_work_item
 from abacus.modules.communications.intake import (
     Inbound,
     Recorded,
@@ -177,6 +178,7 @@ from abacus.modules.identity.api import (
     register_contact_links_revoker,
     register_link_claim,
 )
+from abacus.modules.platform.api import register_home_count
 from abacus.modules.requests.api import register_comment_scope_check
 
 # SPEC-015: invitation emails are sent when the relay delivers `client_invitation.issued`.
@@ -192,6 +194,8 @@ SUBSCRIPTIONS = {
     # N-01-T12: a received intake attachment goes through the upload steps (AttachmentTriage).
     InboxAttachmentReceived.event_type: on_attachment_received,
 }
+# N-01-T13: HOME-01's `inbox_waiting` pill counts the Inbox summary's waiting attachments.
+register_home_count("inbox_waiting", inbox_waiting)
 # P-08-T21: identity's sign-in start uses a portal email's link through this.
 register_link_claim(claim)
 # P-08-T21: organisations revokes a contact's links where their access or address changes.
@@ -348,5 +352,6 @@ __all__ = [
     "template_key",
     "templated_outcome",
     "viewer_scoped",
+    "waiting_for_work_item",
     "write_follow_up_policy",
 ]

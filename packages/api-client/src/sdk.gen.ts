@@ -7008,7 +7008,7 @@ export const attachmentContent = <ThrowOnError extends boolean = false>(options:
 /**
  * Attachment Viewer Route
  *
- * SHL-08 over an intake object; masked pages only (N-01-T13).
+ * SHL-08 over an intake object; masked pages only, audited (N-01-T13).
  */
 export const attachmentViewer = <ThrowOnError extends boolean = false>(options: Options<AttachmentViewerData, ThrowOnError>): RequestResult<AttachmentViewerResponses, AttachmentViewerErrors, ThrowOnError> => (options.client ?? client).get<AttachmentViewerResponses, AttachmentViewerErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -7108,7 +7108,7 @@ export const listThreads = <ThrowOnError extends boolean = false>(options?: Opti
 /**
  * Get Thread Route
  *
- * INB-01 reading pane; bodies only with `inbox.read_content` (N-01-T13).
+ * INB-01 reading pane; bodies only with `inbox.read_content`, audited (N-01-T13).
  */
 export const getThread = <ThrowOnError extends boolean = false>(options: Options<GetThreadData, ThrowOnError>): RequestResult<GetThreadResponses, GetThreadErrors, ThrowOnError> => (options.client ?? client).get<GetThreadResponses, GetThreadErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -7119,7 +7119,7 @@ export const getThread = <ThrowOnError extends boolean = false>(options: Options
 /**
  * Ignore Thread Route
  *
- * INB-01 b "Ignore" for an unmatched sender (N-01-T18).
+ * INB-01 b "Ignore" for an unmatched sender (N-01-T13).
  */
 export const ignoreThread = <ThrowOnError extends boolean = false>(options: Options<IgnoreThreadData, ThrowOnError>): RequestResult<IgnoreThreadResponses, IgnoreThreadErrors, ThrowOnError> => (options.client ?? client).post<IgnoreThreadResponses, IgnoreThreadErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -7134,8 +7134,8 @@ export const ignoreThread = <ThrowOnError extends boolean = false>(options: Opti
 /**
  * Match Client Route
  *
- * INB-01 b: attachments New → Waiting; "Remember sender" also needs
- * `inbox_sender_rule.create` (N-01-T18).
+ * INB-01 b: attachments New → Waiting; "Remember this sender" writes a sender rule
+ * (N-01-T13).
  */
 export const matchClient = <ThrowOnError extends boolean = false>(options: Options<MatchClientData, ThrowOnError>): RequestResult<MatchClientResponses, MatchClientErrors, ThrowOnError> => (options.client ?? client).post<MatchClientResponses, MatchClientErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

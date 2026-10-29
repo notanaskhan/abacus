@@ -61608,10 +61608,6 @@ export type AttachmentContentErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AttachmentContentError = AttachmentContentErrors[keyof AttachmentContentErrors];
@@ -61666,10 +61662,6 @@ export type AttachmentViewerErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AttachmentViewerError = AttachmentViewerErrors[keyof AttachmentViewerErrors];
@@ -61850,10 +61842,6 @@ export type MessageZipErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MessageZipError = MessageZipErrors[keyof MessageZipErrors];
@@ -62023,10 +62011,6 @@ export type InboxSummaryErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type InboxSummaryError = InboxSummaryErrors[keyof InboxSummaryErrors];
@@ -62115,10 +62099,6 @@ export type ListThreadsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListThreadsError = ListThreadsErrors[keyof ListThreadsErrors];
@@ -62171,10 +62151,6 @@ export type GetThreadErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetThreadError = GetThreadErrors[keyof GetThreadErrors];
@@ -62231,10 +62207,6 @@ export type IgnoreThreadErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type IgnoreThreadError = IgnoreThreadErrors[keyof IgnoreThreadErrors];
@@ -62291,10 +62263,6 @@ export type MatchClientErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MatchClientError = MatchClientErrors[keyof MatchClientErrors];

@@ -11694,7 +11694,7 @@ export const attachmentViewerQueryKey = (options: Options<AttachmentViewerData>)
 /**
  * Attachment Viewer Route
  *
- * SHL-08 over an intake object; masked pages only (N-01-T13).
+ * SHL-08 over an intake object; masked pages only, audited (N-01-T13).
  */
 export const attachmentViewerOptions = (options: Options<AttachmentViewerData>) => queryOptions<AttachmentViewerResponse, AttachmentViewerError, AttachmentViewerResponse, ReturnType<typeof attachmentViewerQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -11887,7 +11887,7 @@ export const getThreadQueryKey = (options: Options<GetThreadData>) => createQuer
 /**
  * Get Thread Route
  *
- * INB-01 reading pane; bodies only with `inbox.read_content` (N-01-T13).
+ * INB-01 reading pane; bodies only with `inbox.read_content`, audited (N-01-T13).
  */
 export const getThreadOptions = (options: Options<GetThreadData>) => queryOptions<GetThreadResponse, GetThreadError, GetThreadResponse, ReturnType<typeof getThreadQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -11905,7 +11905,7 @@ export const getThreadOptions = (options: Options<GetThreadData>) => queryOption
 /**
  * Ignore Thread Route
  *
- * INB-01 b "Ignore" for an unmatched sender (N-01-T18).
+ * INB-01 b "Ignore" for an unmatched sender (N-01-T13).
  */
 export const ignoreThreadMutation = (options?: Partial<Options<IgnoreThreadData>>): UseMutationOptions<IgnoreThreadResponse, IgnoreThreadError, Options<IgnoreThreadData>> => {
     const mutationOptions: UseMutationOptions<IgnoreThreadResponse, IgnoreThreadError, Options<IgnoreThreadData>> = {
@@ -11924,8 +11924,8 @@ export const ignoreThreadMutation = (options?: Partial<Options<IgnoreThreadData>
 /**
  * Match Client Route
  *
- * INB-01 b: attachments New → Waiting; "Remember sender" also needs
- * `inbox_sender_rule.create` (N-01-T18).
+ * INB-01 b: attachments New → Waiting; "Remember this sender" writes a sender rule
+ * (N-01-T13).
  */
 export const matchClientMutation = (options?: Partial<Options<MatchClientData>>): UseMutationOptions<MatchClientResponse, MatchClientError, Options<MatchClientData>> => {
     const mutationOptions: UseMutationOptions<MatchClientResponse, MatchClientError, Options<MatchClientData>> = {
