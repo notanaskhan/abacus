@@ -16,8 +16,9 @@ from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import DomainConflict
 from abacus.kernel.uow import UnitOfWork
 from abacus.modules.engagements import transitions as t
+from abacus.modules.engagements.acceptance_tables import G1Decision
 from abacus.modules.engagements.gate_policy import required_gates
-from abacus.modules.engagements.models import EngagementAcceptance, EngagementLetter
+from abacus.modules.engagements.models import EngagementLetter
 from abacus.modules.engagements.setup import (
     _blocked,  # pyright: ignore[reportPrivateUsage] -- the gate's pure rule, tested directly
 )
@@ -174,15 +175,9 @@ def test_hold_reasons_are_codes() -> None:
 # --- the per-type gate policy opens client data (§3.1.3) ----------------------------------------
 
 
-def _acceptance(concluded: bool) -> EngagementAcceptance:
-    return cast(
-        EngagementAcceptance,
-        SimpleNamespace(
-            decision="accepted",
-            independence_concluded_at=datetime.now(UTC) if concluded else None,
-            legacy_g2=True,  # a row from before 0175 (DEC-429)
-        ),
-    )
+def _accepted() -> G1Decision:
+    """CLI-07's accept decision (G1's one source since P-07-T59, DEC-906)."""
+    return G1Decision(True, datetime.now(UTC), None)
 
 
 def _signed() -> EngagementLetter:
@@ -191,10 +186,11 @@ def _signed() -> EngagementLetter:
 
 def _opens(engagement_type: str, *, concluded: bool, letter: bool) -> str | None:
     blocked = _blocked(
-        _acceptance(concluded),
+        _accepted(),
         _signed() if letter else None,
         gates=frozenset(required_gates(engagement_type)),
         needs_letter=True,
+        g2=concluded,
     )
     return None if blocked is None else blocked.code
 
@@ -215,6 +211,8 @@ def test_tax_opens_without_g2_too() -> None:
 
 
 def test_each_blocker_names_its_gate() -> None:
-    blocked = _blocked(None, None, gates=frozenset({"G1", "G2", "G3"}), needs_letter=True)
+    blocked = _blocked(
+        None, None, gates=frozenset({"G1", "G2", "G3"}), needs_letter=True, g2=False
+    )
     assert blocked is not None
     assert blocked.facts == {"gate": "G1"}

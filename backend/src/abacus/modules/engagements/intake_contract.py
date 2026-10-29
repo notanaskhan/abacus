@@ -1,7 +1,7 @@
 """The intake and import contract, v1: CLI-06 single intake and bulk import (P-07-T37 stub;
 ADR-139, P-36). Contract: `docs/contracts/intake-import.md`; spec: SPEC-332; DEC-374.
 
-Behind `clients.v2` (CLI-06's flag): off, every route here answers 404. Dedupe, the intake
+Live for every firm since P-07-T59 retired `clients.v2` (DEC-905). Dedupe, the intake
 drafts and the commit are live (P-07-T42, `intake.py`, DEC-430); the client imports are live
 (P-07-T52, `client_import.py`, DEC-643).
 
@@ -31,11 +31,8 @@ from uuid import UUID
 from fastapi import Depends, Header, Query, Request
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import CLIENTS_V2
 from abacus.kernel._statuses import EngagementStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound
-from abacus.kernel.flags import flag_enabled
 from abacus.kernel.text import SingleLineText
 from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.engagements import client_import
@@ -317,13 +314,11 @@ class RowDecisionIn(BaseModel):
 
 
 async def _gate(ctx: AuthContext, action: str) -> None:
-    """DEC-326's order: refuse a client principal, an agent and the system, authorise firm-level,
-    then read the flag (404 when off)."""
+    """DEC-326's order: refuse a client principal, an agent and the system, then authorise
+    firm-level (`clients.v2` retired with P-07-T59, DEC-905)."""
     if ctx.client or ctx.tenant.actor_kind != "human":
         raise Forbidden(action, "role")
     await authorise(ctx, action, Resource.firm(ctx.tenant_id))
-    if not await flag_enabled(ctx.tenant, CLIENTS_V2):
-        raise NotFound(CLIENTS_V2.name)
 
 
 dedupe_router = AbacusRouter(prefix="/v1/clients", tags=["intake"])

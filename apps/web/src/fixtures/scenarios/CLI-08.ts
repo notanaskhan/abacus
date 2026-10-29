@@ -210,11 +210,7 @@ export const OPENS: Readonly<Record<Cli08State, { tab: Cli08Tab; sheet?: boolean
 };
 
 function capabilities(persona: string | undefined): CapabilitiesOut {
-  const base = capabilitiesFor(seed, persona ?? "hannah-leclerc");
-  return {
-    ...base,
-    flags: { ...base.flags, "engagements.v2": true, "engagements.acceptance_v2": true },
-  };
+  return capabilitiesFor(seed, persona ?? "hannah-leclerc");
 }
 
 function build(state: Cli08State): Scenario {

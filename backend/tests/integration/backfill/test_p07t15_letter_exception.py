@@ -107,15 +107,7 @@ class Firm:
             ),
         )
         decided = datetime.now(UTC).replace(microsecond=0) - timedelta(days=10)
-        await self.seed.run(
-            "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
-            "decided_by, documented_at, independence_concluded_by, independence_concluded_at, "
-            "independence_documented_at, created_at) VALUES ($1, $2, 'new_client', 'accepted', "
-            "'test-seed', 'Seeded', 'test-seed', $3, 'Seeded', $3)",
-            self.tenant,
-            engagement,
-            decided,
-        )
+        await self.seed.open_engagement(self.tenant, engagement, decided_at=decided)
         return engagement
 
 

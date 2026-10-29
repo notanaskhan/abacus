@@ -1,5 +1,5 @@
 """The engagements family contract stub, v2 (P-07-T05; SPEC-321 AC-10 to AC-15): every route exists
-with its one matrix action and answers 404 with `engagements.v2` off and 501 with it on; the
+with its one matrix action and answers for every firm (`engagements.v2` retired, P-07-T59); the
 catalogue has no single_audit entry; the human-only actions deny agent and system; the v2 routes
 sit beside the live ones without shadowing them. The consumers' own tests are P-07-T06's."""
 
@@ -17,9 +17,8 @@ from fastapi.routing import APIRoute
 
 from abacus.api import create_app
 from abacus.api.export_openapi import document
-from abacus.kernel._flags import ENGAGEMENTS_ACCEPTANCE_V2, ENGAGEMENTS_V2
+from abacus.kernel._flags import FLAGS
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound
 from abacus.modules.engagements import contract
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.identity.authz.matrix import RULES
@@ -113,39 +112,25 @@ def test_ac12_client_intake_is_the_firm_admin_partners_and_managers() -> None:
     assert granted == {"firm_admin", "firm_partner", "firm_manager"}
 
 
-async def test_ac13_flag_off_is_404_and_start_acceptance_authorises_before_its_flag(
+async def test_ac13_the_flags_are_retired_and_start_acceptance_still_authorises_first(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Every route answers 404 with `engagements.v2` off. Start-acceptance (P-07-T35) also needs
-    `engagements.acceptance_v2`, read only after `client.intake` is authorised (DEC-326)."""
+    """P-07-T59 (DEC-905): every route answers for every firm; start-acceptance still authorises
+    `client.intake` (DEC-326) and reads no flag."""
     user = uuid.uuid4()
     ctx = AuthContext(
         TenantContext(uuid.uuid4(), "human", str(user)), user, uuid.uuid4(), None, None
     )
     seen: list[object] = []
 
-    async def off(_tenant: object, flag: object) -> bool:
-        seen.append(flag)
-        return False
-
-    async def on(_tenant: object, _flag: object) -> bool:
-        return True
-
     async def authorised(_ctx: object, action: str, _resource: object) -> None:
         seen.append(action)
 
-    monkeypatch.setattr(contract, "flag_enabled", off)
     monkeypatch.setattr(contract, "authorise", authorised)
-    with pytest.raises(NotFound):
-        await contract._gate(ctx)  # pyright: ignore[reportPrivateUsage] -- the flag gate
-    assert seen == [ENGAGEMENTS_V2]
-    seen.clear()
-    with pytest.raises(NotFound):
-        await contract._intake_gate(ctx)  # pyright: ignore[reportPrivateUsage] -- the gate
-    assert seen == ["client.intake", ENGAGEMENTS_ACCEPTANCE_V2]
-    monkeypatch.setattr(contract, "flag_enabled", on)
-    await contract._gate(ctx)  # pyright: ignore[reportPrivateUsage] -- the flag gate
     await contract._intake_gate(ctx)  # pyright: ignore[reportPrivateUsage] -- the gate
+    assert seen == ["client.intake"]
+    assert not {"engagements.v2", "engagements.acceptance_v2"} & set(FLAGS)
+    assert not hasattr(contract, "flag_enabled")
 
 
 class _RouteContext(Protocol):
@@ -189,7 +174,9 @@ def test_ac14_the_live_engagement_routes_keep_their_shapes() -> None:
         "title": "Response List Engagements",
     }
     assert model(EID, "get") == {"$ref": "#/components/schemas/EngagementOut"}
-    assert PATHS[f"{EID}/letter"]["put"]["x-abacus-action"] == "letter.record"
+    # SPEC-025's `PUT …/letter` retired with P-07-T59 (DEC-905); the recorded letter is ENG-02's.
+    assert f"{EID}/letter" not in PATHS
+    assert PATHS[f"{EID}/letter/record"]["put"]["x-abacus-action"] == "letter.record"
 
 
 def test_ac15_the_new_codes_are_in_the_catalogue() -> None:
