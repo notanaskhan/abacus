@@ -9,8 +9,9 @@ data while confirmed members are not; adding someone later restricts only them.
 
 HTTP through `create_app()` against a real Postgres (the real independence SQL in `visible()` and
 the real confirmation lookup in `authorise`). Expectations come from the spec. SPEC-025's routes
-retired with P-07-T59 (DEC-905): acceptance is seeded as a legacy row (G1 and G2 still read it
-until T59b) and a member answers through `answer_independence`, the service those routes called.
+retired with P-07-T59 (DEC-905): acceptance and the conclusion are seeded as CLI-07 and CLI-08
+records (DEC-906) and a member answers through `answer_independence`, the service those routes
+called.
 """
 
 from __future__ import annotations
@@ -28,6 +29,7 @@ from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext
 from abacus.modules.engagements.api import answer_independence
 from abacus.modules.identity.api import AuthContext
+from abacus_tools.fakes.acceptance import Decision
 
 from .support import Net, Person, Seeder, Site
 
@@ -136,16 +138,14 @@ async def _team(net: Net, seed: Seeder, *, opened: bool) -> Team:
 # --- the engagement is open or it is not ---------------------------------------------------------
 
 
-async def _record(team: Team, decision: str = "accepted") -> None:
-    """The partner's decision without an independence conclusion, as SPEC-025 recorded it."""
-    await team.net.seed.run(
-        "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
-        "decided_by, documented_at) VALUES ($1, $2, 'continuance', $3, $4, "
-        "'Acceptance memo, 12 Oct')",
+async def _record(team: Team, *, decision: Decision = "accept", concluded: bool = False) -> None:
+    """The partner's CLI-07 decision and, when `concluded`, CLI-08's conclusion (DEC-906)."""
+    await team.net.seed.open_engagement(
         team.tenant_id,
         team.site.engagement_id,
-        decision,
-        str(team.partner.user_id),
+        decided_by=team.partner.user_id,
+        decision=decision,
+        concluded=concluded,
     )
 
 
@@ -161,29 +161,13 @@ async def _answer(who: Person, engagement_id: uuid.UUID, note: str | None = None
     await answer_independence(ctx, engagement_id, confirm=note is None, note=note)
 
 
-async def _concluded_before_v2(team: Team) -> None:
-    """The partner's SPEC-025 conclusion as a row written before independence v2 (0175): since
-    DEC-429 (P-07-T41 security review) a row the app writes through SPEC-025's route no longer
-    meets G2, so the open engagement is seeded the way rows from before 0175 stand."""
-    await team.net.seed.run(
-        "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
-        "decided_by, documented_at, independence_concluded_by, independence_concluded_at, "
-        "independence_documented_at) VALUES ($1, $2, 'continuance', 'accepted', $3, "
-        "'Acceptance memo, 12 Oct', $3, clock_timestamp(), 'Memo 2')",
-        team.tenant_id,
-        team.site.engagement_id,
-        str(team.partner.user_id),
-    )
-
-
 async def _closed_by(team: Team, reason: str) -> None:
     if reason == "acceptance_declined":
-        await _record(team, decision="declined")
+        await _record(team, decision="decline")
     elif reason == "independence_conclusion_missing":
         await _record(team)
     elif reason == "letter_missing":
-        await _record(team)
-        await _concluded_before_v2(team)
+        await _record(team, concluded=True)
         policy = await team.net.call(
             "PUT", "/v1/firm/letter-policy", team.admin, body={"required": True}
         )
@@ -220,8 +204,7 @@ async def test_ac7_once_the_engagement_is_open_the_actions_reach_their_own_check
 ) -> None:
     team = await _team(net, seed, opened=False)
     assert [r.status_code for r in await team.attempts(team.partner)] == [409] * 5
-    await _record(team)
-    await _concluded_before_v2(team)
+    await _record(team, concluded=True)
     invited = await team.attempt(team.partner, "invite")
     assert invited.status_code == 201, invited.text  # the gate is open: the invitation is made
     started = await team.attempt(team.partner, "connect")

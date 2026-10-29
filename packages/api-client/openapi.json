@@ -77610,134 +77610,6 @@
         "x-abacus-action": "acceptance.decide"
       }
     },
-    "/v1/engagements/{engagement_id}/acceptance/file": {
-      "post": {
-        "description": "The acceptance or continuance documentation, attached to the latest record.",
-        "operationId": "acceptance_file",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "engagement_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Engagement Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "filename",
-            "required": true,
-            "schema": {
-              "maxLength": 1000,
-              "minLength": 1,
-              "title": "Filename",
-              "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "authorization",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "in": "header",
-            "name": "X-Abacus-Tenant",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Abacus-Tenant"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SetupFileOut"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not authenticated"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Conflict with the resource's state"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationErrorOut"
-                }
-              }
-            },
-            "description": "Invalid request"
-          }
-        },
-        "summary": "Acceptance File Route",
-        "tags": [
-          "evidence"
-        ],
-        "x-abacus-action": "acceptance.record"
-      }
-    },
     "/v1/engagements/{engagement_id}/acceptance/flags": {
       "post": {
         "description": "AC-2: an insert-only flag authored by the caller; `acceptance.flag_added`.",
@@ -111313,7 +111185,7 @@
     },
     "/v1/engagements/{engagement_id}/{which}/file": {
       "get": {
-        "description": "The file as an attachment, never inline; audited and verified.",
+        "description": "The file as an attachment, never inline; audited and verified. The acceptance file\nretired with SPEC-025's table (P-07-T59, DEC-906).",
         "operationId": "setup_file",
         "parameters": [
           {
@@ -111331,10 +111203,7 @@
             "name": "which",
             "required": true,
             "schema": {
-              "enum": [
-                "acceptance",
-                "letter"
-              ],
+              "const": "letter",
               "title": "Which",
               "type": "string"
             }

@@ -1,9 +1,8 @@
 """The acceptance tables (migration 0163, P-07-T35) and the G1 decision they answer.
 
-`g1_decision` is G1's one source (DEC-372): an engagement with an acceptance record reads that
-record's decision (none yet: G1 unmet, whatever SPEC-025's table says); an engagement without one
-reads SPEC-025's latest `engagement_acceptance` row, until P-07-T59 converts those rows and drops
-the table with its adapter.
+`g1_decision` is G1's one source (DEC-372): the engagement's acceptance record's decision, or
+none while it has none. SPEC-025's `engagement_acceptance` fallback dropped with P-07-T59
+(migration 0321; DEC-906).
 """
 
 from __future__ import annotations
@@ -18,8 +17,6 @@ from sqlalchemy.dialects.postgresql import BYTEA, JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.types import Boolean, Date, DateTime, Integer, SmallInteger, Text
-
-from abacus.modules.engagements.repository import latest_acceptance
 
 _meta = MetaData()
 
@@ -206,11 +203,4 @@ async def g1_decision(session: AsyncSession, engagement_id: UUID) -> G1Decision 
         if row is None:
             return None
         return G1Decision(row.option != "decline", row.decided_at, row.decided_by)
-    legacy = await latest_acceptance(session, engagement_id)
-    if legacy is None:
-        return None
-    try:
-        by: UUID | None = UUID(legacy.decided_by)
-    except ValueError:
-        by = None
-    return G1Decision(legacy.decision == "accepted", legacy.created_at, by)
+    return None

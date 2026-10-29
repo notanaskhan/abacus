@@ -36525,67 +36525,6 @@ export type DecideAcceptanceResponses = {
 
 export type DecideAcceptanceResponse = DecideAcceptanceResponses[keyof DecideAcceptanceResponses];
 
-export type AcceptanceFileData = {
-    body?: never;
-    headers?: {
-        /**
-         * Authorization
-         */
-        authorization?: string | null;
-        /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-    };
-    path: {
-        /**
-         * Engagement Id
-         */
-        engagement_id: string;
-    };
-    query: {
-        /**
-         * Filename
-         */
-        filename: string;
-    };
-    url: '/v1/engagements/{engagement_id}/acceptance/file';
-};
-
-export type AcceptanceFileErrors = {
-    /**
-     * Not authenticated
-     */
-    401: ErrorOut;
-    /**
-     * Forbidden
-     */
-    403: ErrorOut;
-    /**
-     * Not found
-     */
-    404: ErrorOut;
-    /**
-     * Conflict with the resource's state
-     */
-    409: ErrorOut;
-    /**
-     * Invalid request
-     */
-    422: ValidationErrorOut;
-};
-
-export type AcceptanceFileError = AcceptanceFileErrors[keyof AcceptanceFileErrors];
-
-export type AcceptanceFileResponses = {
-    /**
-     * Successful Response
-     */
-    201: SetupFileOut;
-};
-
-export type AcceptanceFileResponse = AcceptanceFileResponses[keyof AcceptanceFileResponses];
-
 export type AddAcceptanceFlagData = {
     body: AcceptanceFlagIn;
     headers?: {
@@ -52076,7 +52015,7 @@ export type SetupFileData = {
         /**
          * Which
          */
-        which: 'acceptance' | 'letter';
+        which: 'letter';
     };
     query?: never;
     url: '/v1/engagements/{engagement_id}/{which}/file';

@@ -22,19 +22,18 @@ from sqlalchemy.orm import QueryableAttribute
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
+from abacus.modules.engagements.acceptance_tables import G1Decision, g1_decision
 from abacus.modules.engagements.contacts import attest_of
 from abacus.modules.engagements.events import IndependenceRequested
 from abacus.modules.engagements.gate_policy import required_gates
-from abacus.modules.engagements.independence_tables import g2_met, legacy_concluded
-from abacus.modules.engagements.models import Engagement, EngagementAcceptance, EngagementLetter
+from abacus.modules.engagements.independence_tables import g2_met
+from abacus.modules.engagements.models import Engagement, EngagementLetter
 from abacus.modules.engagements.repository import (
     answer_confirmation,
     client_column,
     confirmed_column,
     get_letter,
-    insert_acceptance,
     is_confirmed,
-    latest_acceptance,
     put_letter,
     request_confirmation,
 )
@@ -79,22 +78,21 @@ class LetterMissing(EngagementNotOpen):
 
 
 def _blocked(
-    acceptance: EngagementAcceptance | None,
+    acceptance: G1Decision | None,
     letter: EngagementLetter | None,
     *,
     gates: frozenset[str],
     needs_letter: bool,
-    g2: bool | None = None,
+    g2: bool,
 ) -> EngagementNotOpen | None:
     """The first gate the engagement's type requires that is not met (F-03-T13: the per-type gate
-    policy, so a tax or non-attest CAS engagement opens on G1 and G3 without G2)."""
+    policy, so a tax or non-attest CAS engagement opens on G1 and G3 without G2). G1 is CLI-07's
+    decision and G2 CLI-08's conclusion (P-07-T59, DEC-906)."""
     if "G1" in gates:
         if acceptance is None:
             return AcceptanceMissing("acceptance", facts={"gate": "G1"})
-        if acceptance.decision != "accepted":
+        if not acceptance.accepted:
             return AcceptanceDeclined("acceptance", facts={"gate": "G1"})
-    if g2 is None:  # SPEC-025's conclusion alone (the rule's pure form)
-        g2 = legacy_concluded(acceptance) is not None
     if "G2" in gates and not g2:  # P-07-T41: callers pass `g2_met` (DEC-428)
         return IndependenceConclusionMissing("independence", facts={"gate": "G2"})
     if (
@@ -115,7 +113,7 @@ async def require_open(tenant: TenantContext, engagement_id: UUID) -> None:
         ).scalar_one_or_none()
         if engagement_type is None:
             raise NotFound("engagement")
-        acceptance = await latest_acceptance(session, engagement_id)
+        acceptance = await g1_decision(session, engagement_id)
         letter = await get_letter(session, engagement_id)
         g2 = await g2_met(session, engagement_id)
     gates = frozenset(required_gates(engagement_type))
@@ -187,43 +185,6 @@ class StoredFile:
         }
 
 
-async def attach_acceptance_file(
-    tx: UnitOfWork, ctx: AuthContext, engagement_id: UUID, file: StoredFile
-) -> None:
-    """Inside evidence's unit of work, after the file is stored write-once (D2)."""
-    ref = await lock_ref(tx, engagement_id)
-    await authorise(ctx, "acceptance.record", ref.resource())
-    previous = await latest_acceptance(tx.session, engagement_id)
-    if previous is None:
-        raise NotFound("acceptance")
-    values = {
-        c: getattr(previous, c)
-        for c in (
-            "kind",
-            "decision",
-            "decided_by",
-            "documented_at",
-            "predecessor_auditor",
-            "predecessor_communicated_on",
-            "independence_concluded_by",
-            "independence_concluded_at",
-            "independence_documented_at",
-        )
-    }
-    await insert_acceptance(
-        tx.session,
-        tenant_id=ctx.tenant_id,
-        engagement_id=engagement_id,
-        **values,
-        **file.columns(),
-    )
-    tx.record(
-        "engagement.acceptance_file_attached",
-        target=Target("engagement", engagement_id),
-        after=Ref(fingerprint=file.fingerprint),
-    )
-
-
 # --- The engagement letter (AC-6) -------------------------------------------------------------
 
 
@@ -254,17 +215,14 @@ async def attach_letter_file(
 
 
 async def stored_file(
-    ctx: AuthContext, engagement_id: UUID, which: Literal["acceptance", "letter"]
+    ctx: AuthContext, engagement_id: UUID, which: Literal["letter"]
 ) -> StoredFile:
-    """The file's reference, for evidence's verified download (`setup.read`)."""
+    """The file's reference, for evidence's verified download (`setup.read`). The acceptance
+    file retired with SPEC-025's table (P-07-T59, DEC-906)."""
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, "setup.read", ref.resource())
     async with tenant_session(ctx.tenant) as session:
-        row = (
-            await latest_acceptance(session, engagement_id)
-            if which == "acceptance"
-            else await get_letter(session, engagement_id)
-        )
+        row = await get_letter(session, engagement_id)
     if row is None or row.file_key is None:
         raise NotFound("file")
     return StoredFile(

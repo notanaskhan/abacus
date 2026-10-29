@@ -423,7 +423,6 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/inbox",  # SPEC-023: an inbox file
         "/v1/signup",  # SPEC-024: a firm
         "/v1/firm/staff/invitations",  # SPEC-024: a staff invitation
-        "/v1/engagements/{engagement_id}/acceptance/file",  # SPEC-025: a stored file
         "/v1/engagements/{engagement_id}/letter/file",
         "/v1/engagements/{engagement_id}/inbox/{file_id}/assign",  # SPEC-023: evidence
         "/v1/engagements/{engagement_id}/connection/import",  # SPEC-028: a ledger import

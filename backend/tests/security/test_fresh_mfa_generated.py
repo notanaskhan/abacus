@@ -87,7 +87,6 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/contacts/{contact_id}/unlock", "contact.unlock"),
     ("POST", "/v1/decision-cards/{card_id}/decide", "decision.decide"),
     ("POST", "/v1/engagements/{engagement_id}/acceptance/decision", "acceptance.decide"),
-    ("POST", "/v1/engagements/{engagement_id}/acceptance/file", "acceptance.record"),
     (
         "POST",
         "/v1/engagements/{engagement_id}/acceptance/risk-partner-review/complete",

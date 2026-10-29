@@ -145,15 +145,7 @@ class Firm:
 
     async def accept(self, engagement: uuid.UUID, decided_at: datetime) -> None:
         """G1: the engagement's acceptance decision (SPEC-025), decided at `decided_at`."""
-        await self.seed.run(
-            "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
-            "decided_by, documented_at, independence_concluded_by, independence_concluded_at, "
-            "independence_documented_at, created_at) VALUES ($1, $2, 'new_client', 'accepted', "
-            "'test-seed', 'Seeded', 'test-seed', $3, 'Seeded', $3)",
-            self.tenant,
-            engagement,
-            decided_at,
-        )
+        await self.seed.open_engagement(self.tenant, engagement, decided_at=decided_at)
 
     async def signed_letter(self, engagement: uuid.UUID) -> None:
         await self.seed.run(

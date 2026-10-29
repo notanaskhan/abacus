@@ -1,4 +1,5 @@
-"""P-07-T41 security review (DEC-429; TASK-1325): SPEC-025's route can no longer meet G2 (H1), an
+"""P-07-T41 security review (DEC-429; TASK-1325): SPEC-025's route can no longer meet G2 (H1; the
+route retired with P-07-T59 and its table with migration 0321, DEC-906), an
 independence answer is the acting person's own at the database (M1), a conclusion supersedes one
 of the same engagement (L1), a decided NAS row is the partner's (L2), and conflict hits on a
 client the reader is walled from carry no result id in the banner (L4).
@@ -45,7 +46,7 @@ async def nw(net: Net) -> Northwind:
     return await _world(net)
 
 
-# --- H1: SPEC-025's route never meets G2 -------------------------------------------------------
+# --- H1: SPEC-025's route never meets G2 (route retired by P-07-T59; table dropped by 0321) ---
 
 
 async def test_h1_the_old_route_is_gone_and_g2_stays_unmet(nw: Northwind) -> None:
@@ -53,47 +54,8 @@ async def test_h1_the_old_route_is_gone_and_g2_stays_unmet(nw: Northwind) -> Non
     refused = await nw.call("PUT", f"/v1/engagements/{nw.eid}/acceptance", nw.margaret, LEGACY)
     assert refused.status_code == 405, refused.text
     assert (await nw.gate("G2"))["met"] is False
-    concluded = await nw.seed.value(
-        "SELECT count(*) FROM engagement_acceptance WHERE engagement_id = $1 "
-        "AND independence_concluded_at IS NOT NULL",
-        nw.eid,
-    )
-    assert concluded == 0
-
-
-async def test_h1_a_conclusion_the_app_writes_now_does_not_meet_g2(nw: Northwind) -> None:
-    """The 0175 trigger still marks every row the application writes `legacy_g2 = false`."""
-    partner = TenantContext(nw.tenant, "human", str(nw.margaret.user_id))
-    async with uow(partner) as tx:
-        await tx.session.execute(
-            text(
-                "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
-                "decided_by, documented_at, independence_concluded_by, "
-                "independence_concluded_at, independence_documented_at) VALUES (:t, :e, "
-                "'continuance', 'accepted', :u, 'Memo', :u, clock_timestamp(), 'Memo')"
-            ),
-            {"t": nw.tenant, "e": nw.eid, "u": str(nw.margaret.user_id)},
-        )
-        tx.record("acceptance.probed", target=Target("engagement", nw.eid))
-    rows = await nw.seed.rows(
-        "SELECT legacy_g2, independence_concluded_at FROM engagement_acceptance "
-        "WHERE engagement_id = $1",
-        nw.eid,
-    )
-    assert [(r["legacy_g2"], r["independence_concluded_at"] is not None) for r in rows] == [
-        (False, True)
-    ]
-    assert (await nw.gate("G2"))["met"] is False
-    # A row from before 0175 (written outside the app) still stands until P-07-T59b.
-    await nw.seed.run(
-        "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
-        "decided_by, documented_at, independence_concluded_by, independence_concluded_at, "
-        "independence_documented_at) VALUES ($1, $2, 'continuance', 'accepted', 'seed', "
-        "'Memo', 'seed', clock_timestamp(), 'Memo')",
-        nw.tenant,
-        nw.eid,
-    )
-    assert (await nw.gate("G2"))["met"] is True
+    tables = await nw.seed.value("SELECT to_regclass('engagement_acceptance') IS NULL")
+    assert tables is True  # migration 0321 (DEC-906): no legacy table to write
 
 
 # --- M1: an answer is the acting person's own ----------------------------------------------------

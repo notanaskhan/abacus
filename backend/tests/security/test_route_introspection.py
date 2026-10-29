@@ -493,7 +493,6 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "acceptance.prepare",
     ),
     ("POST", "/v1/engagements/{engagement_id}/acceptance/decision", "acceptance.decide"),
-    ("POST", "/v1/engagements/{engagement_id}/acceptance/file", "acceptance.record"),
     ("POST", "/v1/engagements/{engagement_id}/acceptance/flags", "acceptance.prepare"),
     (
         "POST",
