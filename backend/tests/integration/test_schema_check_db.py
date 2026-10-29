@@ -1700,6 +1700,12 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "assurance_external_archives": "assurance_external_records_immutable",  # 0226 (TASK-1443)
         "human_gate_snoozes": "human_gate_acts_immutable",  # 0223 (I-01-T04)
         "human_gate_reassignments": "human_gate_acts_immutable",  # 0223 (I-01-T04)
+        # N-02-T07 (0292): the signatures module's insert-only rows.
+        "envelope_events": "signatures_rows_immutable",
+        "envelope_provider_calls": "signatures_rows_immutable",
+        "signature_evidence": "signatures_rows_immutable",
+        "esign_disclosures": "signatures_rows_immutable",
+        "esign_acceptances": "signatures_rows_immutable",
     }
     assert _evidence_problems(evidence) == []
 
