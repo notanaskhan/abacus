@@ -309,6 +309,13 @@ import {
   type Shl20State,
   scenarios as shl20Scenarios,
 } from "./SHL-20/scenarios";
+import { ApproveSheet } from "./SHL-10";
+import {
+  OPENS as SHL10_OPENS,
+  STATES as SHL10_STATES,
+  type Shl10State,
+  scenarios as shl10Scenarios,
+} from "./SHL-10/scenarios";
 import { EnvelopeBuilder } from "./SIG-02";
 import {
   OPENS as SIG02_OPENS,
@@ -1538,6 +1545,36 @@ function Cli08Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("CLI-08", { title: "Independence & conflicts", Component: Cli08Artboard });
+
+// SHL-10 (P-04-T41): the approve-agent-output sheet, a, b, c and f, over an empty frame.
+function Shl10Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Shl10State = SHL10_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      shl10Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div key={state} data-artboard={state} className="h-[900px]">
+      <ApproveSheet
+        proposalRef={SHL10_OPENS[state].ref}
+        initialMode={SHL10_OPENS[state].mode}
+        open
+        onOpenChange={() => undefined}
+      />
+    </div>
+  );
+}
+
+registerScreen("SHL-10", { title: "Approve agent output", Component: Shl10Artboard });
 
 // SIG-02 (N-02-T21): the envelope builder, a, e and f, over an empty frame.
 function Sig02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {

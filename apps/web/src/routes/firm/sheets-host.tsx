@@ -3,8 +3,11 @@ import { FeatureGate } from "../../app-core/flags";
 import type { OverlayRenderProps } from "../../app-core/overlays";
 
 // The sheets `sheets.tsx` registers, loaded when one opens: each behind its flag
-// (`signatures.envelopes` for SIG-02) and its own screen chunk.
+// (`review.grammar_api` for SHL-10, `signatures.envelopes` for SIG-02) and its own screen chunk.
 
+const ApproveSheet = lazy(async () => ({
+  default: (await import("../../screens/SHL-10")).ApproveSheet,
+}));
 const EnvelopeBuilder = lazy(async () => ({
   default: (await import("../../screens/SIG-02")).EnvelopeBuilder,
 }));
@@ -15,6 +18,15 @@ export default function SheetsHost({ ref, close }: OverlayRenderProps): JSX.Elem
   const onOpenChange = (open: boolean): void => {
     if (!open) close();
   };
+  if (ref.key === "approve") {
+    return (
+      <FeatureGate flag="review.grammar_api">
+        <Suspense fallback={null}>
+          <ApproveSheet proposalRef={id} open onOpenChange={onOpenChange} />
+        </Suspense>
+      </FeatureGate>
+    );
+  }
   return (
     <FeatureGate flag="signatures.envelopes">
       <Suspense fallback={null}>

@@ -26,7 +26,7 @@ export interface UseGateOptions<T> {
   /** The gate command, over the generated client. */
   command: () => Promise<T>;
   /** The compensating command Undo calls (it writes `*.undone`); omit when the gate has none. */
-  compensate?: () => Promise<unknown>;
+  compensate?: (result: T) => Promise<unknown>;
   /** The toast's text once the command lands. */
   doneText: (result: T) => string;
   /** The toast's text when the command fails for any other reason. */
@@ -82,7 +82,7 @@ export function useGate<T>({
           compensate === undefined
             ? undefined
             : () => {
-                void compensate().then(
+                void compensate(result).then(
                   () => {
                     setPhase("idle");
                   },

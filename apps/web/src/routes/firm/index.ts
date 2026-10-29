@@ -10,7 +10,8 @@ import { settingsRoutes } from "./settings";
 // SHL-08 (P-03-T14): registers the `?ov=viewer` drawer for every firm route.
 import "./viewer";
 import "./run-trace";
-// SIG-02 (N-02-T21): the `?ov=envelope` sheet, registered lazily (the 250 KB initial budget).
+// SHL-10 and SIG-02 (P-04-T41, N-02-T21): the `?ov=approve` and `?ov=envelope` sheets,
+// registered lazily (the 250 KB initial budget).
 import "./sheets";
 
 // The firm's areas, once, in the bar's order (chapter 04 §2.2; F-03-T17). An area without
