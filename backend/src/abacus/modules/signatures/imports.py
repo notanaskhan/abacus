@@ -451,7 +451,6 @@ async def import_record(ctx: AuthContext, request: ImportRequest) -> Imported:
             target=Target("envelope", envelope_id),
             after=Ref(
                 number=number,
-                purpose=request.purpose,
                 files=len(files),
                 signers=len(signer_ids),
                 package_sha256=package_sha,

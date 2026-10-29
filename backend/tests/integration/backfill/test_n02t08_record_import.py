@@ -99,10 +99,12 @@ class Firm:
 
 
 async def _floor(firm: Firm) -> None:
+    # The policy's version trigger reads the tenant, as tenant_session sets it.
     await firm.net.seed.run(
+        "WITH t AS (SELECT set_config('app.tenant_id', $1::text, true)) "
         "INSERT INTO retention_policies (tenant_id, record_type, service_line, firm_years, "
-        "clock_start_event, updated_by) VALUES ($1, 'signature_evidence', 'any', 7, "
-        "'event_date', 'test-seed')",
+        "clock_start_event, updated_by) SELECT $1, 'signature_evidence', 'any', 7, "
+        "'event_date', 'test-seed' FROM t",
         firm.tenant_id,
     )
 
@@ -253,7 +255,7 @@ async def test_an_infected_file_is_refused_and_nothing_is_stored(firm: Firm) -> 
     inject_verdict(hashlib.sha256(bad).hexdigest(), "infected")
     response = await firm.stage(firm.grace, bad, "letter.pdf")
     assert response.status_code == 422
-    assert response.json()["detail"]["code"] == "file_refused"
+    assert response.json()["detail"] == "file_refused"
     count = await firm.net.seed.value(
         "SELECT count(*) FROM envelope_import_files WHERE tenant_id = $1", firm.tenant_id
     )
@@ -263,7 +265,7 @@ async def test_an_infected_file_is_refused_and_nothing_is_stored(firm: Firm) -> 
 async def test_another_persons_staged_file_cannot_be_imported(firm: Firm) -> None:
     response = await firm.import_(firm.grace, _body(firm, await _staged(firm, firm.other)))
     assert response.status_code == 409
-    assert response.json()["detail"]["code"] == "import_file_unavailable"
+    assert response.json()["detail"] == "import_file_unavailable"
 
 
 async def test_a_file_is_consumed_by_one_import_only(firm: Firm) -> None:
@@ -271,14 +273,14 @@ async def test_a_file_is_consumed_by_one_import_only(firm: Firm) -> None:
     assert (await firm.import_(firm.grace, _body(firm, uploads))).status_code == 201
     again = await firm.import_(firm.grace, _body(firm, uploads), attempt="import-2")
     assert again.status_code == 409
-    assert again.json()["detail"]["code"] == "import_file_unavailable"
+    assert again.json()["detail"] == "import_file_unavailable"
 
 
 async def test_no_retention_floor_means_no_import(firm: Firm, raw: S3Client) -> None:
     await firm.net.seed.run("DELETE FROM retention_policies WHERE tenant_id = $1", firm.tenant_id)
     response = await firm.import_(firm.grace, _body(firm, await _staged(firm)))
     assert response.status_code == 409
-    assert response.json()["detail"]["code"] == "retention_floor_missing"
+    assert response.json()["detail"] == "retention_floor_missing"
     assert _records(raw, firm.tenant_id) == {}
 
 
