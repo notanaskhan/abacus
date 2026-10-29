@@ -152,8 +152,8 @@ def _decisions(firm: Firm) -> list[tuple[str, str, dict[str, object] | None]]:
         ("POST", f"{e}/evidence-versions/{v}/decision/reject", {"reason_code": "other"}),
         ("POST", f"{e}/evidence-versions/{v}/decision/send-back", {"reason_code": "other"}),
         ("POST", f"{e}/review-queue/{v}/assign", {"user_id": str(firm.initiator.user_id)}),
-        ("PUT", f"{e}/acceptance", {"decision": "accepted", "documented_at": "Memo 1"}),
-        ("POST", f"{e}/independence", {"confirm": True}),
+        # SPEC-025's acceptance and independence adapters retired with P-07-T59 (DEC-905); the v2
+        # routes refuse an agent at their gates (contracts/acceptance_independence).
         ("POST", f"{e}/team", {"user_id": str(firm.initiator.user_id), "role": "staff"}),
         ("POST", f"{e}/client-invitations", {"email": "x@client.example", "role": "client_admin"}),
         ("POST", f"{e}/materiality/decide", {"rationale": "Benchmark."}),
@@ -178,7 +178,7 @@ async def _audit_rows(seed: Seeder, tenant_id: uuid.UUID) -> object:
     return await seed.value("SELECT count(*) FROM audit_events WHERE tenant_id = $1", tenant_id)
 
 
-@pytest.mark.parametrize("index", range(19))
+@pytest.mark.parametrize("index", range(17))
 async def test_adr005_an_agent_calling_a_human_only_route_gets_403_and_changes_nothing(
     firm: Firm, as_agent: httpx.AsyncClient, seed: Seeder, index: int
 ) -> None:
@@ -190,7 +190,7 @@ async def test_adr005_an_agent_calling_a_human_only_route_gets_403_and_changes_n
     assert await _audit_rows(seed, firm.tenant_id) == before
 
 
-@pytest.mark.parametrize("index", range(19))
+@pytest.mark.parametrize("index", range(17))
 async def test_adr005_the_same_route_is_reachable_by_the_person_it_acts_for(
     firm: Firm, net: Net, index: int
 ) -> None:

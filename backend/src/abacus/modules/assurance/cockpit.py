@@ -125,7 +125,7 @@ def refuse_non_firm(ctx: AuthContext, action: str) -> None:
     """INV-4 and the security review (DEC-312): a client principal holds
     `engagement.read_metadata` cells (SPEC-020), so the read models refuse client principals,
     agents and the system themselves, not only their routes."""
-    if ctx.client or ctx.tenant.actor_kind != "human":
+    if ctx.tenant.actor_kind != "human" or ctx.client:
         raise Forbidden(action, "role")
 
 

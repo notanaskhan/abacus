@@ -1,7 +1,7 @@
 """The clients family contract, v1: CLI-01 and CLI-02 (P-07-T04 stub; ADR-139, P-36). Contract:
 `docs/contracts/clients.md`; spec: SPEC-321.
 
-Behind `clients.v2`: off, every route here answers 404; on, every route is live (P-07-T08 the
+Every route is live for every firm since P-07-T59 retired `clients.v2` (P-07-T08 the
 index, P-07-T09 the record, overview, relationships and PATCH, P-07-T10 the TIN reveal). The
 live client picker (`GET /v1/firm/clients/search`) stays
 where it is.
@@ -21,11 +21,8 @@ from uuid import UUID
 from fastapi import Depends, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import CLIENTS_V2
 from abacus.kernel._statuses import ClientStatus, EngagementStatus, InvitationStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound
-from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.kernel.text import SingleLineText
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context, mask_tins_for
@@ -293,11 +290,6 @@ class TinRevealOut(BaseModel):
     remask_after_seconds: Annotated[int, classified("internal")] = 10
 
 
-async def _gate(ctx: AuthContext) -> None:
-    if not await flag_enabled(ctx.tenant, CLIENTS_V2):
-        raise NotFound("clients.v2")
-
-
 def _row(r: live.ClientRow) -> ClientRowOut:
     return ClientRowOut.model_validate(r, from_attributes=True)
 
@@ -374,7 +366,6 @@ async def list_clients_route(
     """CLI-01: rows, `counts` per client status and, on request, `facets` (kind, office,
     partner, service line), after `visible(scope=client)`. `total` is exact (DEC-47); `q` is
     never logged."""
-    await _gate(ctx)
     found = await live.list_clients(
         ctx,
         live.ClientFilters(
@@ -402,7 +393,6 @@ async def list_clients_route(
 
 @clients_router.get("/{client_id}", action="client.read", response_model=ClientRecordOut)
 async def get_client_route(client_id: UUID, ctx: Ctx) -> ClientRecordOut:
-    await _gate(ctx)
     return await mask_tins_for(ctx, _record(await live.client_record(ctx, client_id)))
 
 
@@ -412,7 +402,6 @@ async def get_client_route(client_id: UUID, ctx: Ctx) -> ClientRecordOut:
 async def client_overview_route(client_id: UUID, ctx: Ctx) -> ClientOverviewOut:
     """Per-kind profile from registered section providers, each filtered by its own read action;
     an unregistered section is absent and an unregistered column renders "—" (fail closed)."""
-    await _gate(ctx)
     profile, sections = await live.client_overview(ctx, client_id)
     return ClientOverviewOut(
         client_id=client_id,
@@ -452,7 +441,6 @@ async def client_overview_route(client_id: UUID, ctx: Ctx) -> ClientOverviewOut:
 async def update_client_route(client_id: UUID, body: ClientPatchIn, ctx: Ctx) -> ClientRecordOut:
     """Descriptor, office, relationship partner and status; 409 `stale_version`, 409
     `illegal_transition`; one `client.updated` audit event."""
-    await _gate(ctx)
     await live.update_client(
         ctx,
         client_id,
@@ -475,7 +463,6 @@ async def update_client_route(client_id: UUID, body: ClientPatchIn, ctx: Ctx) ->
 async def client_relationships_route(
     client_id: UUID, ctx: Ctx, cursor: Annotated[str | None, Query(max_length=512)] = None
 ) -> ListPage[ClientRelationshipOut]:
-    await _gate(ctx)
     found = await live.client_relationships(ctx, client_id, cursor)
     return ListPage[ClientRelationshipOut](
         items=[ClientRelationshipOut.model_validate(r, from_attributes=True) for r in found.items],
@@ -497,7 +484,6 @@ async def reveal_tin_route(
     `tin_reveal_rate_limited` past 20 reveals an hour (DEC-232). One `tin_reveals` row and one
     `tin.revealed` audit event in the same unit of work (the reason, never the value);
     `Cache-Control: no-store`."""
-    await _gate(ctx)
     revealed = await tin.reveal_tin(ctx, entity_id, body.reason)
     response.headers["Cache-Control"] = "no-store"
     response.headers["Pragma"] = "no-cache"

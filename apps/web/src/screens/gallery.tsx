@@ -1138,6 +1138,25 @@ registerScreen("AUD-03", {
 
 // AUD-06's fixture frames (A-02-T05): persona, clock and figures per artboard until A-02-T09 and
 // A-02-T14 draw the screen on the same scenarios.
+// A-02-T31: the artboard inside the app shell at 1440 × 860, as AUD-01 to AUD-03 draw theirs, so
+// parity, axe and Tier D find `[data-artboard] [data-shell='app']` (DEC-832).
+function Aud06Shell({ state }: { state: Aud06State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/audits" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+        <AUD06Frame state={state} />
+      </AppShell>
+    </div>
+  );
+}
+
 function Aud06Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Aud06State = AUD06_STATES.find((s) => s === params.st) ?? "a";
   const [ready, setReady] = useState<string | null>(null);
@@ -1152,7 +1171,7 @@ function Aud06Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
       restore();
     };
   }, [state, params.as]);
-  return ready === state ? <AUD06Frame key={state} state={state} /> : null;
+  return ready === state ? <Aud06Shell key={state} state={state} /> : null;
 }
 
 registerScreen("AUD-06", { title: "Trial balance & leadsheets", Component: Aud06Artboard });

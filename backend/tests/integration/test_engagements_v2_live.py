@@ -158,14 +158,7 @@ class _Firm:
         return engagement
 
     async def accept(self, engagement: uuid.UUID, at: datetime) -> None:
-        await self.seed.run(
-            "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
-            "decided_by, documented_at, created_at) VALUES ($1, $2, 'new_client', 'accepted', "
-            "'Margaret Okonkwo', 'Acceptance memo', $3)",
-            self.tenant,
-            engagement,
-            at,
-        )
+        await self.seed.open_engagement(self.tenant, engagement, concluded=False, decided_at=at)
 
 
 async def _firm(migrated_db: MigratedDatabase) -> _Firm:

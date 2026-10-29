@@ -2,10 +2,10 @@
 ADR-139, ADR-164, P-36). Contract: `docs/contracts/acceptance-independence.md`; spec: SPEC-332;
 DEC-326. The conflict and screening half is `organisations.conflicts_contract`.
 
-- **Acceptance (CLI-07)** and **independence (CLI-08)** routes sit behind
-  `engagements.acceptance_v2`: off, 404; on, live (P-07-T35 acceptance, P-07-T41 independence).
-- **Team and roles (ENG-05)** routes, and the confirmation requests, sit behind `engagements.v2`
-  (the ENG-05 screen's flag): off, 404; on, live since P-07-T30 (`engagements.team`).
+- **Acceptance (CLI-07)** and **independence (CLI-08)** routes are live (P-07-T35 acceptance,
+  P-07-T41 independence); their flag retired with P-07-T59 (DEC-905).
+- **Team and roles (ENG-05)** routes, and the confirmation requests, are live since P-07-T30
+  (`engagements.team`).
 
 Every decision and confirmation here is a person's: `acceptance.decide`, `independence.confirm`,
 `independence.conclude`, `team.approve` and `eqr.approve_eligibility` deny the agent and the
@@ -24,15 +24,13 @@ from uuid import UUID
 from fastapi import Depends
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import ENGAGEMENTS_ACCEPTANCE_V2, ENGAGEMENTS_V2
 from abacus.kernel._statuses import (
     AcceptanceRecordStatus,
     IndependenceConclusionStatus,
     NasEvaluationStatus,
 )
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import DomainConflict, NotFound
-from abacus.kernel.flags import flag_enabled
+from abacus.kernel.errors import DomainConflict
 from abacus.kernel.text import MultiLineText, SingleLineText
 from abacus.modules.engagements import acceptance as acceptance_model
 from abacus.modules.engagements import independence as independence_model
@@ -604,32 +602,28 @@ async def _allowed(ctx: AuthContext, action: str, engagement_id: UUID) -> None:
     or the stub answers, so no principal learns a flag state it may not use. No route here
     serves a client principal, an agent or the system (every one is a firm person's); a walled
     or unknown engagement is 404 whatever the flag."""
-    if ctx.client or ctx.tenant.actor_kind != "human":
+    if ctx.tenant.actor_kind != "human" or ctx.client:
         raise Forbidden(action, "role")
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, action, ref.resource())
 
 
 async def _acceptance_gate(ctx: AuthContext, action: str, engagement_id: UUID) -> None:
-    """CLI-07's routes are live (P-07-T35) behind `engagements.acceptance_v2`, after the same
-    check; the service then requires a live person and authorises again inside its unit of
+    """CLI-07's routes are live (P-07-T35; their flag retired with P-07-T59, DEC-905) after the
+    same check; the service then requires a live person and authorises again inside its unit of
     work."""
     await _allowed(ctx, action, engagement_id)
-    if not await flag_enabled(ctx.tenant, ENGAGEMENTS_ACCEPTANCE_V2):
-        raise NotFound(ENGAGEMENTS_ACCEPTANCE_V2.name)
 
 
 async def _review_gate(ctx: AuthContext, engagement_id: UUID) -> None:
     """The risk partner's completion (DEC-375, L1): refused to a client, an agent and the
     system, authorised on the engagement's client (the derived `firm_partner`; walls apply),
-    then `engagements.acceptance_v2` (404 off)."""
+    (`engagements.acceptance_v2` retired with P-07-T59, DEC-905)."""
     action = "acceptance.complete_review"
-    if ctx.client or ctx.tenant.actor_kind != "human":
+    if ctx.tenant.actor_kind != "human" or ctx.client:
         raise Forbidden(action, "role")
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, action, Resource.client(ctx.tenant_id, ref.client_id))
-    if not await flag_enabled(ctx.tenant, ENGAGEMENTS_ACCEPTANCE_V2):
-        raise NotFound(ENGAGEMENTS_ACCEPTANCE_V2.name)
 
 
 def _record_out(view: acceptance_model.RecordView) -> AcceptanceRecordOut:
@@ -637,10 +631,8 @@ def _record_out(view: acceptance_model.RecordView) -> AcceptanceRecordOut:
 
 
 async def _team_gate(ctx: AuthContext, action: str, engagement_id: UUID) -> None:
-    """ENG-05's rows are live (P-07-T30) behind the screen's flag, after the same check."""
+    """ENG-05's rows are live (P-07-T30) after the same check."""
     await _allowed(ctx, action, engagement_id)
-    if not await flag_enabled(ctx.tenant, ENGAGEMENTS_V2):
-        raise NotFound(ENGAGEMENTS_V2.name)
 
 
 acceptance_router = AbacusRouter(prefix="/v1/engagements", tags=["acceptance"])
@@ -904,8 +896,8 @@ async def decline_independence_route(
 )
 async def send_reminders_route(engagement_id: UUID, body: RemindersIn, ctx: Ctx) -> RemindersOut:
     """Sent by the person clicking (no schedule); `independence.reminded` per member and the
-    `independence.requested` notification again. Live with ENG-05 (P-07-T30) behind
-    `engagements.v2`; 422 for a member whose confirmation is not requested or declined."""
+    `independence.requested` notification again. Live with ENG-05 (P-07-T30); 422 for a member
+    whose confirmation is not requested or declined."""
     await _team_gate(ctx, "independence.remind", engagement_id)
     reminded = await team_model.remind_independence(ctx, engagement_id, body.user_ids)
     return RemindersOut(reminded_user_ids=reminded)

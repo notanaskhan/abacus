@@ -24,6 +24,7 @@ from abacus.modules.evidence.api import (
 )
 from abacus.modules.evidence.pii import DETECTOR_VERSION
 from abacus.modules.identity.api import AuthContext
+from abacus_tools.fakes.acceptance import Decision, open_engagement
 
 MASTER = b"trust-layer-test-master-key-0123456789abcd"
 BUCKET = f"trust-layer-{uuid.uuid4().hex[:12]}"
@@ -41,6 +42,31 @@ class Seeder:
 
     def __init__(self, dsn: str) -> None:
         self._dsn = dsn
+
+    async def open_engagement(
+        self,
+        tenant_id: uuid.UUID,
+        engagement_id: uuid.UUID,
+        *,
+        decided_by: uuid.UUID | None = None,
+        decision: Decision = "accept",
+        concluded: bool = True,
+        decided_at: datetime | None = None,
+    ) -> None:
+        """CLI-07's decision and CLI-08's conclusion, seeded (P-07-T59, DEC-906)."""
+        conn = await asyncpg.connect(self._dsn)
+        try:
+            await open_engagement(
+                conn,
+                tenant_id,
+                engagement_id,
+                decided_by=decided_by,
+                decision=decision,
+                concluded=concluded,
+                decided_at=decided_at,
+            )
+        finally:
+            await conn.close()
 
     async def run(self, sql: str, *args: object) -> None:
         conn = await asyncpg.connect(self._dsn)
@@ -226,14 +252,7 @@ async def engagement(
         f"Seeded {uuid.uuid4().hex[:6]}",
         user_id,
     )
-    await seed.run(
-        "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
-        "decided_by, documented_at, independence_concluded_by, independence_concluded_at, "
-        "independence_documented_at) VALUES ($1, $2, 'continuance', 'accepted', 'test-seed', "
-        "'Seeded', 'test-seed', clock_timestamp(), 'Seeded')",
-        tenant_id,
-        engagement_id,
-    )
+    await seed.open_engagement(tenant_id, engagement_id)
     await seed.run(
         "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
         "VALUES ($1, $2, $3, 'staff')",
