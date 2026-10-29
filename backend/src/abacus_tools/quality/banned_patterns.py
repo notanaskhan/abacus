@@ -2177,6 +2177,8 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/agent_tests/support.py",
             "tests/integration/agent_tests/test_work_slots_db.py",  # the ledger, as the app
             "tests/integration/backfill/support.py",  # Q-03 acceptance tests seed as the superuser
+            # N-02-T12: the app role's refusals on the signatures tables, after a real import.
+            "tests/integration/backfill/test_n02t12_signatures_independent.py",
             "tests/integration/trust_kit/support.py",  # P-03-T05, T06: seeds as the superuser
             "tests/security/support.py",  # the security suite seeds as the superuser
             "tests/contracts/undo/support.py",  # P-04-T13: the Undo suite seeds as the superuser
@@ -2352,6 +2354,8 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_p04t13_review_schema_independent.py",
             # N-02-T08: the retention policy's version trigger reads the tenant a session sets.
             "tests/integration/backfill/test_n02t08_record_import.py",
+            # N-02-T12: the app role's refusals on the signatures tables, tenant and actor by hand.
+            "tests/integration/backfill/test_n02t12_signatures_independent.py",
             # Q-04-T008: back-dates seeded audit rows under the actor the immutability guard reads.
             "tests/integration/backfill/test_q04t008_pilot_metrics.py",
             # S13 schema tests: the AI-policy guard (G-02-T23) and pilot grants (Q-04-T007).

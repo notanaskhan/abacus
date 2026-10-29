@@ -102,6 +102,29 @@ SIGNATURES_TABLES: Final = (
     "envelope_import_files",
 )
 INSERT_ONLY: Final = ("signature_evidence", "envelope_events")
+# Each statement written out in full, per table (no SQL built from strings).
+PLANTED: Final[dict[str, tuple[str, str]]] = {
+    "signature_evidence": (
+        "UPDATE signature_evidence SET envelope_id = envelope_id WHERE envelope_id = $1",
+        "DELETE FROM signature_evidence WHERE envelope_id = $1",
+    ),
+    "envelope_events": (
+        "UPDATE envelope_events SET envelope_id = envelope_id WHERE envelope_id = $1",
+        "DELETE FROM envelope_events WHERE envelope_id = $1",
+    ),
+}
+ROWS_OF_ENVELOPE: Final[dict[str, str]] = {
+    "signature_evidence": "SELECT count(*) FROM signature_evidence WHERE envelope_id = $1",
+    "envelope_events": "SELECT count(*) FROM envelope_events WHERE envelope_id = $1",
+}
+ROWS_OF_TENANT: Final[dict[str, str]] = {
+    "envelopes": "SELECT count(*) FROM envelopes WHERE tenant_id = $1",
+    "envelope_documents": "SELECT count(*) FROM envelope_documents WHERE tenant_id = $1",
+    "envelope_signers": "SELECT count(*) FROM envelope_signers WHERE tenant_id = $1",
+    "envelope_events": "SELECT count(*) FROM envelope_events WHERE tenant_id = $1",
+    "signature_evidence": "SELECT count(*) FROM signature_evidence WHERE tenant_id = $1",
+    "envelope_import_files": "SELECT count(*) FROM envelope_import_files WHERE tenant_id = $1",
+}
 
 
 @pytest.fixture(scope="module")
@@ -280,18 +303,12 @@ async def test_ac_the_app_role_cannot_update_or_delete_insert_only_rows(
     firm: Firm, app_role: asyncpg.Connection, table: str
 ) -> None:
     envelope = await firm.imported()
-    for statement in (
-        f"UPDATE {table} SET envelope_id = envelope_id WHERE envelope_id = $1",  # noqa: S608  # table names are this module's constants
-        f"DELETE FROM {table} WHERE envelope_id = $1",  # noqa: S608
-    ):
+    for statement in PLANTED[table]:
         with pytest.raises(asyncpg.PostgresError):
             await _as_app(
                 app_role, firm.tenant_id, statement, envelope, actor_id=firm.grace.user_id
             )
-    count = await firm.net.seed.value(
-        f"SELECT count(*) FROM {table} WHERE envelope_id = $1",  # noqa: S608
-        envelope,
-    )
+    count = await firm.net.seed.value(ROWS_OF_ENVELOPE[table], envelope)
     assert cast(int, count) >= 1
 
 
@@ -299,10 +316,7 @@ async def test_ac_the_app_role_cannot_update_or_delete_insert_only_rows(
 async def test_ac_the_owner_cannot_update_insert_only_rows_either(firm: Firm, table: str) -> None:
     envelope = await firm.imported()
     with pytest.raises(asyncpg.PostgresError, match="insert-only"):
-        await firm.net.seed.run(
-            f"UPDATE {table} SET envelope_id = envelope_id WHERE envelope_id = $1",  # noqa: S608
-            envelope,
-        )
+        await firm.net.seed.run(PLANTED[table][0], envelope)
 
 
 async def test_ac_signature_evidence_is_unchanged_after_the_attempts(
@@ -447,25 +461,10 @@ async def test_another_firms_envelope_rows_are_invisible_to_the_app_role(
     mine = await firm.imported()
     theirs = await _firm(net, "Ridgeline")
     await theirs.imported()
-    for table in (
-        "envelopes",
-        "envelope_documents",
-        "envelope_signers",
-        "envelope_events",
-        "signature_evidence",
-        "envelope_import_files",
-    ):
-        seen = await _as_app(
-            app_role,
-            firm.tenant_id,
-            f"SELECT count(*) FROM {table} WHERE tenant_id = $1",  # noqa: S608
-            theirs.tenant_id,
-        )
+    for table, count in ROWS_OF_TENANT.items():
+        seen = await _as_app(app_role, firm.tenant_id, count, theirs.tenant_id)
         assert seen == 0, table
-        owned = await net.seed.value(
-            f"SELECT count(*) FROM {table} WHERE tenant_id = $1",  # noqa: S608
-            theirs.tenant_id,
-        )
+        owned = await net.seed.value(count, theirs.tenant_id)
         assert cast(int, owned) >= 1, table  # the rows exist; RLS hides them
     assert (
         await _as_app(
