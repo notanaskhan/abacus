@@ -4,7 +4,7 @@
 |---|---|
 | Register row | Screen-family contracts in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | live (P-07-T25, 2026-10-24; DEC-300 to DEC-302); stub P-07-T17 |
+| Status | **frozen 2026-10-29** (v1, P-07-T64, DEC-1054: `backend/tests/contracts/p07_contacts_access/v1.json`; additions only, a breaking change ships v2 with overlap). live (P-07-T25, 2026-10-24; DEC-300 to DEC-302); stub P-07-T17 |
 | Provider epic | P-07 (`organisations` for contacts, `identity` for grants and unlocks) |
 | Consumers | CLI-04 (P-07-T24); the consumer suite P-07-T18; P-08 (portal sign-in reads the grants); P-09 (delegated requests) |
 | Freeze sprint | the sprint review after the stub (P-07 §8.1) |

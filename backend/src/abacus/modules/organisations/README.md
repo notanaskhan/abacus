@@ -16,3 +16,13 @@ Clients and client entities (glossary). Owns `clients`, `client_entities`, `cont
 - **Record:** `set_client_record(tx, client_id, ClientRecordChange(...))` sets kind, status, primary office, relationship partner, risk tier, portal status and practice-management reference (`client.record_changed`); `set_entity_attributes` sets entity type, fiscal year end (`MM-DD`), state of formation, plan number, date of death and grantor status (`client_entity.attributes_changed`). Both run in the caller's unit of work, authorised there. **No TIN column**: taxpayer IDs arrive sealed (P-12), and an integration test fails if one appears.
 - **Attest client:** `is_attest_client` is derived by a database trigger on `engagements` (DEC-128); the app can't set it. `attest_client_of(tenant, client_id)` reads it.
 - **Contacts:** `add_contact(tx, tenant_id, client_id, NewContact(...))` (`contact.created`; 409 `contact_exists` for a second contact with the same email, case-insensitive). `client_record(session, client_id)` returns the record with its contacts. A contact's designations on an engagement (approver of record and the rest) live in engagements' `engagement_contacts`.
+
+## Frozen contracts (P-07-T64; DEC-1054)
+
+Frozen at v1 on 2026-10-29; the snapshots under `backend/tests/contracts/p07_*/v1.json` fail the
+contract tests on any removed or retyped field, newly required field or removed enum member. A
+breaking change ships the next version with overlap (`python -m abacus_tools.contracts --freeze`).
+
+- `docs/contracts/clients.md`
+- `docs/contracts/contacts-access.md`
+- `docs/contracts/acceptance-independence.md (conflict checks)`

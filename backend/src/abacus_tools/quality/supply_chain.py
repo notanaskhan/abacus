@@ -9,6 +9,10 @@ runs from the first-seen day: critical 7 days, high 30 days.
 
 - `check [--as-of DATE] [--base-register FILE]`: the register parses, no open finding is past its
   SLA, and (on a pull request) nothing is loosened against the base's register (exit 1).
+- `report --quarter 2027Q2` (Q-03-T086): the quarter's evidence, one line per source: findings
+  first seen, closed and still open in the quarter, and every one past its SLA on the quarter's
+  last day (exit 1 if any). The row's acceptance: "No high or critical dependency or image
+  finding is older than its SLA at the quarter's end."
 - `ignores --tool pip-audit|trivy`: the scanner's ignore list, made of the open findings for that
   tool that are still inside their SLA. The scanners fail CI on any other high or critical
   finding, so a finding is either fixed, inside its SLA in the register, or a red build; once the
@@ -161,6 +165,34 @@ def ignores(findings: list[Finding], tool: str, day: date) -> list[str]:
     )
 
 
+_QUARTER = re.compile(r"^(?P<year>20[0-9]{2})Q(?P<q>[1-4])$")
+
+
+def quarter_span(quarter: str) -> tuple[date, date]:
+    """`2027Q2` -> (2027-04-01, 2027-06-30)."""
+    m = _QUARTER.match(quarter)
+    if m is None:
+        raise RegisterInvalid(f"{quarter!r} is not a quarter like 2027Q2")
+    year, q = int(m.group("year")), int(m.group("q"))
+    first = date(year, 3 * q - 2, 1)
+    last = (date(year + 1, 1, 1) if q == 4 else date(year, 3 * q + 1, 1)) - timedelta(days=1)
+    return first, last
+
+
+def quarter_report(findings: list[Finding], quarter: str) -> tuple[list[str], list[str]]:
+    """Per source: seen, closed and open in the quarter; and every finding past its SLA on the
+    quarter's last day."""
+    first, last = quarter_span(quarter)
+    lines: list[str] = []
+    for source in sorted(SOURCES):
+        mine = [f for f in findings if f.source == source]
+        seen = sum(1 for f in mine if first <= f.first_seen <= last)
+        closed = sum(1 for f in mine if f.closed is not None and first <= f.closed <= last)
+        still = sum(1 for f in mine if f.first_seen <= last and f.open_on(last))
+        lines.append(f"{source}: {seen} seen, {closed} closed, {still} open on {last}")
+    return lines, overdue(findings, last)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     commands = parser.add_subparsers(dest="command", required=True)
@@ -168,18 +200,32 @@ def main(argv: list[str] | None = None) -> int:
     check.add_argument("--as-of", type=date.fromisoformat)
     check.add_argument("--register", type=Path, default=REGISTER)
     check.add_argument("--base-register", type=Path, help="the base's register: nothing loosened")
+    report = commands.add_parser("report")
+    report.add_argument("--quarter", required=True)
+    report.add_argument("--register", type=Path, default=REGISTER)
     ignore = commands.add_parser("ignores")
     ignore.add_argument("--tool", choices=sorted(TOOLS), required=True)
     ignore.add_argument("--as-of", type=date.fromisoformat)
     ignore.add_argument("--register", type=Path, default=REGISTER)
     ignore.add_argument("--out", type=Path, help="write one id per line (a .trivyignore)")
     args = parser.parse_args(argv)
-    day = cast(date | None, args.as_of) or system_now().date()
+    day = cast(date | None, getattr(args, "as_of", None)) or system_now().date()
     try:
         findings = parse(cast(Path, args.register).read_text(encoding="utf-8"))
     except RegisterInvalid as exc:
         print(f"supply-chain register: {exc}")
         return 1
+    if args.command == "report":
+        try:
+            lines, late = quarter_report(findings, cast(str, args.quarter))
+        except RegisterInvalid as exc:
+            print(f"supply-chain report: {exc}")
+            return 1
+        for line in lines:
+            print(line)
+        for line in late:
+            print(f"past SLA at quarter end: {line}")
+        return 1 if late else 0
     if args.command == "check":
         late = overdue(findings, day)
         base_path = cast(Path | None, args.base_register)

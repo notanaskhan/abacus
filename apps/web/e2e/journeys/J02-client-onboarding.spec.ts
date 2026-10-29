@@ -15,8 +15,6 @@ const HOSTED_URL: Readonly<Record<string, string | undefined>> = {
 };
 const WALLED = "Ashford Manufacturing Co."; // ADM-03's wall for Lena Park (INV-3)
 // The fixture project turns on the flags E0 leaves off, so the screens built on fixtures walk.
-const CLIENTS_V2 = ["clients.v2"];
-const ENGAGEMENTS_V2 = ["clients.v2", "engagements.v2"];
 // ENG-02b's record: Northwind Robotics 401(k) Plan's PY2025 EBP Audit, opened from ENG-01.
 const NORTHWIND_EBP = "PY2025 EBP Audit";
 
@@ -91,7 +89,7 @@ test.describe("J02-audit-core", () => {
         journey.project !== "fixture",
         "clients.v2 is off in E0 and the live record is P-07-T15's",
       );
-      await journey.as("grace-holloway", "/clients", { clock: DEMO_INSTANT, flags: CLIENTS_V2 });
+      await journey.as("grace-holloway", "/clients", { clock: DEMO_INSTANT });
       await journey.step("J02 step 3b: Northwind's record from its row", async (page) => {
         await page.getByRole("button", { name: "Northwind Robotics, Inc. actions" }).click();
         await page.getByRole("menuitem", { name: "Open" }).click();
@@ -111,7 +109,6 @@ test.describe("J02-audit-core", () => {
     async ({ journey }) => {
       await journey.as("hannah-leclerc", "/engagements/new", {
         clock: DEMO_INSTANT,
-        flags: ENGAGEMENTS_V2,
       });
       await journey.step("J02 step 4: the wizard opens with G1 met", async (page) => {
         await expect(page.getByRole("dialog")).toBeVisible();
@@ -141,7 +138,6 @@ test.describe("J02-audit-core", () => {
       // Northwind's PY2025 EBP audit (ENG-02b): accepted, independence confirmed, letter signed.
       await journey.as("hannah-leclerc", "/engagements", {
         clock: DEMO_INSTANT,
-        flags: ENGAGEMENTS_V2,
       });
       await journey.step("J02 step 5: G1 to G3 read met on the record", async (page) => {
         await page

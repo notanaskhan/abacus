@@ -3,6 +3,7 @@ import { auditRoutes } from "./audits";
 import { binderRoutes } from "./binders";
 import { clientRoutes } from "./clients";
 import { engagementRoutes } from "./engagements";
+import { filesRoutes } from "./files";
 import { homeRoutes } from "./home";
 import { knowledgeRoutes } from "./knowledge";
 import { settingsRoutes } from "./settings";
@@ -16,7 +17,7 @@ export const FIRM_AREAS = [
   { key: "home", label: "Home", routes: homeRoutes },
   { key: "engagements", label: "Engagements", routes: engagementRoutes },
   { key: "tax_returns", label: "Tax Returns", routes: [] },
-  { key: "files", label: "Files", routes: [] },
+  { key: "files", label: "Files", routes: filesRoutes },
   { key: "knowledge", label: "Knowledge", routes: knowledgeRoutes },
   { key: "workbench", label: "Workbench", routes: [] },
   { key: "inbox", label: "Inbox", routes: [] },
@@ -35,6 +36,8 @@ export const firmRoutes = [
   ...knowledgeRoutes,
   ...clientRoutes,
   ...binderRoutes,
+  // N-01-T16: FIL-01 behind `files.browser`.
+  ...filesRoutes,
   ...settingsRoutes,
   // A-01-T11, A-01-T12: AUD-01 and AUD-02 behind `audits.cockpit`.
   ...auditRoutes,

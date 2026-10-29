@@ -49,7 +49,6 @@ function capabilities(persona: string | undefined): CapabilitiesOut {
   return {
     ...base,
     capabilities: [...base.capabilities, "client.read"],
-    flags: { ...base.flags, "clients.v2": true },
     entitlements:
       slug === "margaret-okonkwo" ? [...base.entitlements, "insights"] : base.entitlements,
   };

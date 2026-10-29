@@ -147,6 +147,14 @@ async def _firm(net: Net, *, flag: bool = True) -> Firm:
     for site in sites:
         await seed.member(site, margaret, "engagement_partner")
     engagements = tuple(s.engagement_id for s in sites)
+    # DEC-640 packages only an engagement with an asked PBC binder: each site's request list (a
+    # PBC binder on the engagement's assurance work item) is published, as the client was asked.
+    await seed.run(
+        "UPDATE request_lists SET status = 'published', published_at = clock_timestamp() "
+        "WHERE tenant_id = $1 AND engagement_id = ANY($2::uuid[])",
+        tenant,
+        list(engagements),
+    )
     return Firm(net, tenant, felix, margaret, second, staff, engagements)
 
 
@@ -499,11 +507,6 @@ async def test_ac41_each_download_leaves_an_access_event(firm: Firm, temporal: C
 # --- Q-02-T47: one verified package per engagement (written before T47; T47 landed in #501) ---
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="ED-290 (TASK-1455): the approver now reads both engagements, but DEC-640 also omits "
-    "an engagement with no asked PBC binder, and the seeded sites have none (both no_binders)",
-)
 async def test_ac40_t47_the_archive_holds_one_verified_package_per_engagement(
     firm: Firm, temporal: Client
 ) -> None:

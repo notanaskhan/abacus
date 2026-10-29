@@ -133,3 +133,23 @@ def test_t029_a_change_may_not_loosen_the_base_register(tmp_path: Path) -> None:
     common = ["check", "--as-of", "2027-01-05", "--register", str(head_file)]
     assert supply_chain.main([*common, "--base-register", str(base_file)]) == 1
     assert supply_chain.main(common) == 0
+
+
+# --- Q-03-T086: the quarter's evidence -----------------------------------------------------------
+
+
+def test_t086_quarter_span_is_the_calendar_quarter() -> None:
+    assert supply_chain.quarter_span("2027Q2") == (date(2027, 4, 1), date(2027, 6, 30))
+    assert supply_chain.quarter_span("2026Q4") == (date(2026, 10, 1), date(2026, 12, 31))
+    with pytest.raises(RegisterInvalid):
+        supply_chain.quarter_span("2027-Q2")
+
+
+def test_t086_a_finding_open_past_its_sla_at_quarter_end_fails_the_report(tmp_path: Path) -> None:
+    lines, late = supply_chain.quarter_report(parse(REGISTER), "2027Q1")
+    assert "pip-audit: 1 seen, 0 closed, 1 open on 2027-03-31" in lines
+    assert any(line.startswith("GHSA-aaaa-bbbb-cccc") for line in late)
+    path = tmp_path / "register.yaml"
+    path.write_text(REGISTER, encoding="utf-8")
+    assert supply_chain.main(["report", "--quarter", "2027Q1", "--register", str(path)]) == 1
+    assert supply_chain.main(["report", "--quarter", "2026Q4", "--register", str(path)]) == 0

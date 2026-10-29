@@ -165,3 +165,11 @@ On removal, the hook that evidence registers (`register_member_removed`) release
 - The MFA floor is code, not the flag: owners, signers and approvers always pass the second step once the firm is on v2.
 - Retirement removes the flag and the legacy path in one PR after the canary walk (the checklist is TASK-1359's); until then `docs/architecture/feature-flags/identity.yaml` keeps its expiry.
 - A locked-out client: RB-35. Pausing a firm's portal sign-in: RB-36. Both are linked from RB-22.
+
+## Frozen contracts (P-07-T64; DEC-1054)
+
+Frozen at v1 on 2026-10-29; the snapshots under `backend/tests/contracts/p07_*/v1.json` fail the
+contract tests on any removed or retyped field, newly required field or removed enum member. A
+breaking change ships the next version with overlap (`python -m abacus_tools.contracts --freeze`).
+
+- `docs/contracts/contacts-access.md (portal access and invitations)`

@@ -75,3 +75,7 @@ The client portal is a second Vite entry, not an area of the firm tree. To add a
   `scripts/portal-dist-check.mjs`: no firm chunk, no "Accrued", no fixture string in dist/portal;
   then the portal's bundle budget) and the L7 crawl.
 - Then follow the `portal-screen` skill for branding, shells and the three widths.
+
+## Frozen contracts (P-07-T64, DEC-1054)
+
+A frozen contract (`docs/contracts/*.md` with **frozen**, snapshot under `backend/tests/contracts/<family>/v<n>.json`) takes additions only. A rename, retype, newly required field or removed enum member ships the next version with overlap: `python -m abacus_tools.contracts --freeze <family> v<n+1>`, never an edit of the old snapshot.

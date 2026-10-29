@@ -81,6 +81,7 @@ import {
   Search,
   Settings,
   Sheet,
+  ShieldAlert,
   ShieldCheck,
   Signature,
   SlidersHorizontal,
@@ -181,6 +182,7 @@ const PORTAL_ICONS = {
   search: Search,
   settings: Settings,
   sheet: Sheet,
+  "shield-alert": ShieldAlert, // F-06-T05: DF-11's verification-failed card (POR-06)
   "shield-check": ShieldCheck,
   signature: Signature,
   "sliders-horizontal": SlidersHorizontal,

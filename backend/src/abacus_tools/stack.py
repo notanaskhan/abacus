@@ -31,6 +31,7 @@ from abacus.kernel.temporal import configure_temporal_client, data_converter
 from abacus.modules.connections.api import Period
 from abacus.modules.evidence.storage import configure_storage
 from abacus.modules.identity.api import AuthContext
+from abacus_tools.fakes.acceptance import open_engagement
 from abacus_tools.quality.schema_check import compose_image, provisioned_database
 from abacus_tools.synthetic import generate
 from abacus_tools.synthetic.model import TrialBalance
@@ -125,17 +126,10 @@ async def seed(superuser: str) -> Seeded:
             engagement,
             user,
         )
-        # SPEC-025: the engagement is open to client data (acceptance and the partner's
-        # conclusion recorded), and the recorder has confirmed independence (TASK-045), as in
-        # any engagement past setup.
-        await conn.execute(
-            "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
-            "decided_by, documented_at, independence_concluded_by, independence_concluded_at) "
-            "VALUES ($1, $2, 'new_client', 'accepted', $3, 'synthetic', $3, now())",
-            tenant,
-            engagement,
-            str(user),
-        )
+        # The engagement is open to client data (CLI-07's decision and CLI-08's conclusion,
+        # DEC-906), and the recorder has confirmed independence (TASK-045), as in any
+        # engagement past setup.
+        await open_engagement(conn, tenant, engagement, decided_by=user)
         await conn.execute(
             "INSERT INTO independence_confirmations (tenant_id, engagement_id, user_id, status, "
             "statement_version, answered_at) VALUES ($1, $2, $3, 'confirmed', 'v1', now())",
