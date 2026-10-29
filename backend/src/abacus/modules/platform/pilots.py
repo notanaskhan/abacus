@@ -25,6 +25,10 @@ _NEXT: Final[dict[str, frozenset[str]]] = {
 }
 
 
+# The audit trail's references hold UUIDs and integers only, so a mode is recorded by its number.
+MODE_NUMBER: Final[dict[str, int]] = {"shadow": 1, "live": 2, "system_of_record": 3, "exited": 4}
+
+
 class PilotModeRefused(DomainConflict):
     """The enrolment cannot move to that mode from where it is (or without a confirming person)."""
 
@@ -58,7 +62,7 @@ async def enrol(
         tx.record(
             "pilot.enrolled",
             target=Target("pilot_enrolment", enrolment),
-            after=Ref(work_item=work_item_id, mode="shadow"),
+            after=Ref(work_item=work_item_id, mode=MODE_NUMBER["shadow"]),
         )
     return enrolment
 
@@ -87,6 +91,8 @@ async def set_mode(
         tx.record(
             "pilot.mode_changed",
             target=Target("pilot_enrolment", enrolment_id),
-            before=Ref(mode=str(current)),
-            after=Ref(mode=mode),
+            before=Ref(mode=MODE_NUMBER[str(current)]),
+            after=Ref(mode=MODE_NUMBER[mode], confirmed_by=confirmed_by)
+            if confirmed_by is not None
+            else Ref(mode=MODE_NUMBER[mode]),
         )

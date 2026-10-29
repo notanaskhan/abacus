@@ -1,0 +1,37 @@
+{
+  "Header": {
+    "Time": "2026-09-14T09:24:00-07:00",
+    "ReportName": "TrialBalance",
+    "DateMacro": "",
+    "StartPeriod": "2026-01-01",
+    "EndPeriod": "2026-08-31",
+    "Currency": "USD",
+    "Option": [{"Name": "NoReportData", "Value": "false"}]
+  },
+  "Columns": {
+    "Column": [
+      {"ColTitle": "", "ColType": "Account"},
+      {"ColTitle": "Debit", "ColType": "Money"},
+      {"ColTitle": "Credit", "ColType": "Money"}
+    ]
+  },
+  "Rows": {
+    "Row": [
+      {"ColData": [{"value": "Operating Checking", "id": "35"}, {"value": "152340.18"}, {"value": ""}]},
+      {"ColData": [{"value": "Accounts Receivable (A/R)", "id": "84"}, {"value": "48210.00"}, {"value": ""}]},
+      {"ColData": [{"value": "Allowance for Doubtful Accounts", "id": "86"}, {"value": "-2410.50"}, {"value": ""}]},
+      {"ColData": [{"value": "Prepaid Expenses", "id": "12"}, {"value": "9600.00"}, {"value": ""}]},
+      {"ColData": [{"value": "Accumulated Depreciation", "id": "40"}, {"value": ""}, {"value": "38150.00"}]},
+      {"ColData": [{"value": "Accounts Payable (A/P)", "id": "33"}, {"value": ""}, {"value": "27445.32"}]},
+      {"ColData": [{"value": "Customer Deposits", "id": "52"}, {"value": ""}, {"value": "-1200.00"}]},
+      {"ColData": [{"value": "Payroll Liabilities", "id": "55"}, {"value": ""}, {"value": ""}]},
+      {"ColData": [{"value": "Retained Earnings", "id": "3"}, {"value": ""}, {"value": "63599.00"}]},
+      {"ColData": [{"value": "Sales — Services", "id": "79"}, {"value": ""}, {"value": "418700.00"}]},
+      {"ColData": [{"value": "Café Supplies", "id": "91"}, {"value": "3120.45"}, {"value": ""}]},
+      {"ColData": [{"value": "Cost of Services", "id": "80"}, {"value": "201540.00"}, {"value": ""}]},
+      {"ColData": [{"value": "Rent or Lease", "id": "17"}, {"value": "48000.00"}, {"value": ""}]},
+      {"ColData": [{"value": "Wages", "id": "18"}, {"value": "86294.19"}, {"value": ""}]},
+      {"Summary": {"ColData": [{"value": "TOTAL"}, {"value": "550304.82"}, {"value": "550304.82"}]}, "type": "Section", "group": "GrandTotal"}
+    ]
+  }
+}

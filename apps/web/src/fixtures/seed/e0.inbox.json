@@ -1,0 +1,350 @@
+{
+  "scenario": "brightwater_hale",
+  "snapshot": "E0",
+  "inbox": {
+    "waiting": 23,
+    "unmatched": 4,
+    "unmatched_rows": [
+      9,
+      13,
+      16,
+      17
+    ],
+    "waiting_after_feld_applied": 21,
+    "threads": [
+      {
+        "key": "feld",
+        "subject": "Re: 2025 tax documents",
+        "sender": "claire.feld@gmail.com",
+        "state": "new",
+        "client": "Jonah & Claire Feld",
+        "waiting": 2,
+        "messages": 2,
+        "attachments": [
+          {
+            "name": "Claire_Feld_2025_W2_MercerHill.pdf",
+            "state": "filed"
+          },
+          {
+            "name": "Claire_Feld_2025_1098_HudsonMutual.pdf",
+            "state": "filed"
+          },
+          {
+            "name": "Feld_1095C_2025.pdf",
+            "state": "wait"
+          },
+          {
+            "name": "Feld_1095C_2024.pdf",
+            "state": "wait"
+          }
+        ]
+      },
+      {
+        "key": "shah",
+        "subject": "Schedule C expenses — 2025",
+        "sender": "meera.shah@shahadvisory.com",
+        "state": "wait",
+        "client": "Meera Shah",
+        "waiting": 1,
+        "messages": 1,
+        "attachments": [
+          {
+            "name": "Shah_2025_ScheduleC_Expenses.pdf",
+            "state": "wait"
+          }
+        ]
+      },
+      {
+        "key": "stein",
+        "subject": "Re: IRS letter — the 1099s you asked for",
+        "sender": "harold.stein@outlook.com",
+        "state": "wait",
+        "client": "Harold Stein",
+        "waiting": 3,
+        "messages": 1,
+        "attachments": [
+          {
+            "name": "Stein_1099B_2024_Corrected.pdf",
+            "state": "wait"
+          },
+          {
+            "name": "Stein_1099DIV_2024.pdf",
+            "state": "wait"
+          },
+          {
+            "name": "Stein_CP2000_2024_copy.pdf",
+            "state": "wait"
+          }
+        ]
+      },
+      {
+        "key": "copper",
+        "subject": "Receipts for August Amex charges",
+        "sender": "ben.ashby@copperleafcoffee.com",
+        "state": "wait",
+        "client": "Copperleaf Coffee Roasters, Inc.",
+        "waiting": 3,
+        "messages": 1,
+        "attachments": [
+          {
+            "name": "Amex_Receipt_Aug04.pdf",
+            "state": "wait"
+          },
+          {
+            "name": "Amex_Receipt_Aug12.pdf",
+            "state": "wait"
+          },
+          {
+            "name": "Amex_Receipt_Aug26.pdf",
+            "state": "wait"
+          }
+        ]
+      },
+      {
+        "key": "north",
+        "subject": "Census corrections for the 401(k) audit",
+        "sender": "dana.kowalski@northwindrobotics.com",
+        "state": "wait",
+        "client": "Northwind Robotics, Inc.",
+        "waiting": 2,
+        "messages": 1,
+        "attachments": [
+          {
+            "name": "Northwind_Census_PY2025_v2.pdf",
+            "state": "wait"
+          },
+          {
+            "name": "Northwind_Census_Changes.pdf",
+            "state": "wait"
+          }
+        ]
+      },
+      {
+        "key": "kowal",
+        "subject": "Re: signing our 8879",
+        "sender": "irene.kowal@gmail.com",
+        "state": "wait",
+        "client": "Irene Kowal",
+        "waiting": 2,
+        "messages": 1,
+        "attachments": [
+          {
+            "name": "Kowal_8879_Signed.pdf",
+            "state": "wait"
+          },
+          {
+            "name": "Kowal_IL-8453_Signed.pdf",
+            "state": "wait"
+          }
+        ]
+      },
+      {
+        "key": "collins",
+        "subject": "Avery’s corrected W-2",
+        "sender": "wren.collins@icloud.com",
+        "state": "wait",
+        "client": "Wren Collins",
+        "waiting": 2,
+        "messages": 1,
+        "attachments": [
+          {
+            "name": "Avery_W2_Front.pdf",
+            "state": "wait"
+          },
+          {
+            "name": "Avery_W2_Back.pdf",
+            "state": "wait"
+          }
+        ]
+      },
+      {
+        "key": "mendez",
+        "subject": "Documents for 2025",
+        "sender": "gloria.mendez@yahoo.com",
+        "state": "wait",
+        "client": "Gloria Mendez",
+        "waiting": 2,
+        "messages": 1,
+        "attachments": [
+          {
+            "name": "Mendez_2025_1099-R.pdf",
+            "state": "wait"
+          },
+          {
+            "name": "Mendez_2025_1098-T.pdf",
+            "state": "wait"
+          }
+        ]
+      },
+      {
+        "key": "sound",
+        "subject": "Invoice SE-1187",
+        "sender": "billing@soundelectricco.com",
+        "state": "new",
+        "client": null,
+        "waiting": 0,
+        "messages": 1,
+        "attachments": [
+          {
+            "name": "SoundElectric_INV-SE-1187.pdf",
+            "state": "new"
+          }
+        ]
+      },
+      {
+        "key": "oster",
+        "subject": "Brokerage statement",
+        "sender": "ben.osterberg@gmail.com",
+        "state": "wait",
+        "client": "Benjamin Osterberg",
+        "waiting": 1,
+        "messages": 1,
+        "attachments": [
+          {
+            "name": "Osterberg_2025_Brokerage_Statement.pdf",
+            "state": "wait"
+          }
+        ]
+      },
+      {
+        "key": "okonjo",
+        "subject": "Fwd: my partnership K-1",
+        "sender": "juliet.okonjo@gmail.com",
+        "state": "wait",
+        "client": "Juliet Okonjo",
+        "waiting": 1,
+        "messages": 1,
+        "attachments": [
+          {
+            "name": "Okonjo_2025_K-1.pdf",
+            "state": "wait"
+          }
+        ]
+      },
+      {
+        "key": "iyer",
+        "subject": "NY notice and 1099s",
+        "sender": "priyanka.iyer@gmail.com",
+        "state": "wait",
+        "client": "Priyanka Iyer",
+        "waiting": 4,
+        "messages": 1,
+        "attachments": [
+          {
+            "name": "NY_Notice_DTF-160.pdf",
+            "state": "wait"
+          },
+          {
+            "name": "Iyer_2025_1099-B.pdf",
+            "state": "wait"
+          },
+          {
+            "name": "Iyer_2025_1099-INT.pdf",
+            "state": "wait"
+          },
+          {
+            "name": "Iyer_2025_1099-DIV.pdf",
+            "state": "wait"
+          }
+        ]
+      },
+      {
+        "key": "summit",
+        "subject": "Draft Form 5500 — Northwind Robotics 401(k) Plan",
+        "sender": "j.ortega@summitplanadmin.com",
+        "state": "new",
+        "client": null,
+        "waiting": 0,
+        "messages": 1,
+        "attachments": [
+          {
+            "name": "Northwind_Draft_5500_ScheduleH.pdf",
+            "state": "new"
+          }
+        ]
+      },
+      {
+        "key": "whitley",
+        "subject": "Re: estimated payments",
+        "sender": "dana.whitley@gmail.com",
+        "state": "filed",
+        "client": "Marcus & Dana Whitley",
+        "waiting": 0,
+        "messages": 1,
+        "attachments": [
+          {
+            "name": "Whitley_2026_Q3_Estimates.pdf",
+            "state": "filed"
+          }
+        ]
+      },
+      {
+        "key": "varga",
+        "subject": "Donation receipt (duplicate)",
+        "sender": "elena.varga@me.com",
+        "state": "ignored",
+        "client": "Elena Varga",
+        "waiting": 0,
+        "messages": 1,
+        "attachments": [
+          {
+            "name": "Varga_Donation_Receipt.pdf",
+            "state": "ignored"
+          }
+        ]
+      },
+      {
+        "key": "ferris",
+        "subject": "Signed consent?",
+        "sender": "kai.ferris@protonmail.com",
+        "state": "new",
+        "client": null,
+        "waiting": 0,
+        "messages": 1,
+        "attachments": [
+          {
+            "name": "Ferris_7216_Consent_signed.pdf",
+            "state": "new"
+          }
+        ]
+      },
+      {
+        "key": "tallgrass",
+        "subject": "Elm Street site visit photos",
+        "sender": "appraisals@tallgrasscost.com",
+        "state": "new",
+        "client": null,
+        "waiting": 0,
+        "messages": 1,
+        "attachments": [
+          {
+            "name": "Elm_Street_site_photos.pdf",
+            "state": "new"
+          }
+        ]
+      }
+    ]
+  },
+  "files": {
+    "ridgeline_folders": {
+      "permanent_file": 6,
+      "workpapers": 3,
+      "correspondence": 4,
+      "deliverables": 5,
+      "signed_authorizations": 0
+    },
+    "ridgeline_source_documents": 12,
+    "ridgeline_virtual": 7,
+    "mortgage_statements": [
+      "214600",
+      "168300",
+      "129500"
+    ],
+    "mortgage_total": "512400",
+    "mortgage_account": "5500",
+    "iyer_dividends": {
+      "box_1a": "5120.00",
+      "box_1b": "3310.00"
+    }
+  }
+}
