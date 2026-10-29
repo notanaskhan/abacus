@@ -19,14 +19,17 @@ from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.reporting import contract as c11
 
 Json = dict[str, object]
-SCHEMAS = cast(dict[str, Json], cast(Json, json.loads(document()))["components"])["schemas"]
+SCHEMAS = cast(
+    dict[str, Json],
+    cast(dict[str, Json], cast(Json, json.loads(document()))["components"])["schemas"],
+)
 CONTRACT = (Path(__file__).resolve().parents[4] / "docs/contracts/c11-renderer.md").read_text(
     encoding="utf-8"
 )
 
 
 def _schema(name: str) -> Json:
-    return cast(Json, cast(dict[str, Json], SCHEMAS)[name])
+    return SCHEMAS[name]
 
 
 def _required(name: str) -> set[str]:
