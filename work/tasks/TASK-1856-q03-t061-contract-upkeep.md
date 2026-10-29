@@ -1,8 +1,8 @@
 ---
 id: TASK-1856
 title: Q-03-T061 contract-test upkeep, fixture-versus-live drift
-spec: SPEC-000
-acceptance_criteria: [Q-03-T061]
+spec: SPEC-045
+acceptance_criteria: [AC-2]
 risk_zone: amber
 status: in-review
 epic: Q-03
