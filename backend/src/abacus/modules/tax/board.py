@@ -78,6 +78,8 @@ FUNCTION_OF: Final[Mapping[AssignmentRole, str]] = {
     "signer": "signer",
 }
 _REVIEWERS: Final = ("detail_reviewer", "first_level_reviewer", "manager_reviewer")
+# After an e-file rejection: no tile of their own until a return is in one (TAX-01's ten tiles).
+_AFTER_FILING: Final = frozenset({"rejected", "fixing"})
 Sort = Literal["extended_due", "client"]
 
 _RETURNS = text(
@@ -276,7 +278,12 @@ async def summary(ctx: AuthContext, tax_year: int | None) -> TaxReturnSummaryOut
         open=total - done,
         done=done,
         extended=extended,
-        tiles=[StatusTileOut(status=s, count=n) for s, n in counts.items()],  # type: ignore[arg-type] -- the registry's codes
+        # The board's ten tiles; `rejected` and `fixing` only once a return holds one.
+        tiles=[
+            StatusTileOut(status=s, count=n)  # type: ignore[arg-type] -- the registry's codes
+            for s, n in counts.items()
+            if s not in _AFTER_FILING or n
+        ],
         offices=[
             OfficeTotalOut(office_id=office, open=tally[0], done=tally[1])
             for office, tally in sorted(offices.items(), key=lambda kv: str(kv[0]))
