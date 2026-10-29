@@ -1557,6 +1557,12 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"status", "effective_from", "payload", "payload_hash", "change_summary"}
             | {"published_by", "published_actor_kind", "published_at", "row_version"}
         ),
+        # T-01-T08 (0402): a consent's lifecycle and a signer's signature.
+        "consents": frozenset(
+            {"status", "signed_at", "expires_at", "declined_at", "revoked_at", "copy_delivered_at"}
+            | {"copy_delivered_channel", "row_version"}
+        ),
+        "consent_signers": frozenset({"signed_at", "method", "evidence_version_id"}),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
@@ -1754,6 +1760,8 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "inbox_attachment_flags": "intake_rows_immutable",
         # K-02-T03 (0400): the reference-set publication log.
         "reference_set_publications": "reference_set_publications_immutable",
+        # T-01-T08 (0402): the consent event log.
+        "consent_events": "consent_events_immutable",
     }
     assert _evidence_problems(evidence) == []
 

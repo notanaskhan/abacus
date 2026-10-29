@@ -180,6 +180,7 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "triage_decisions": "intake_rows_immutable",  # 0293 (N-01-T07)
     "inbox_attachment_flags": "intake_rows_immutable",  # 0293 (N-01-T07)
     "reference_set_publications": "reference_set_publications_immutable",  # 0400 (K-02-T03)
+    "consent_events": "consent_events_immutable",  # 0402 (T-01-T08)
 }
 # Update columns for tables outside the modules (TASK-008); modules declare theirs.
 _PLATFORM_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
