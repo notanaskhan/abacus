@@ -1,8 +1,8 @@
 ---
 id: TASK-2124
 title: P-04-T40 E7 human-gate kit and useGate
-spec: SPEC-360
-acceptance_criteria: [backlog row]
+spec: SPEC-000  # P-04-T40 row; SPEC-360 holds the gates' ACs, the kit's own is the backlog row
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: amber
 status: in-review
 epic: P-04
