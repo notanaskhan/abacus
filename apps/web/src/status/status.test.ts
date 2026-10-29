@@ -66,7 +66,8 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // S13 (N-01, N-02) and F-06-T03 added inbox_thread, portal_intake_upload, file_document,
     // envelope_signer, signing_step, envelope_purpose, generated_document, letter and
     // letter_clause (+9; the S14 batch joins N-02's and F-06's envelope_signer, DEC-815).
-    expect(Object.keys(REGISTRY)).toHaveLength(100);
+    // K-02-T02 added firm_standard_version and reference_set_version (+2).
+    expect(Object.keys(REGISTRY)).toHaveLength(102);
     // +21: decision_card 3, suggestion 6, proposal 5, sign_off_slot 2, field_value 4, checkpoint saved.
     // +27 (P-07-T03): client 4, invitation 5, acceptance_record 5, letter_record 2,
     // conflict_assessment 5, nas_evaluation 3, independence_conclusion 3.
@@ -82,7 +83,8 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // +41 (S13, F-06-T03): inbox_thread 3, portal_intake_upload 3, file_document 5,
     // envelope_signer 6, signing_step 4, envelope_purpose 4, generated_document 4, letter 7,
     // letter_clause 3, inbox_item +2.
-    expect(ROWS).toHaveLength(471);
+    // +8 (K-02-T02): firm_standard_version 4, reference_set_version 4.
+    expect(ROWS).toHaveLength(479);
   });
 
   it("resolves each code to a word, a kit variant or a line, and never to match", () => {

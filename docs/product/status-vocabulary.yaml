@@ -465,6 +465,22 @@ objects:
       published:  {label: "Published", variant: green-tint, terminal: false, derived: false}
       superseded: {label: "Superseded", variant: soon, terminal: true, derived: false}
 
+  firm_standard_version:   # firm_standard_versions.status and threshold_policy_versions.status (K-02-T04); KNW-04 header pill and Timeline
+    source: "K-02 section 4.2 (migration M-B); KNW-04 a-i handoff pills"
+    codes:
+      draft:      {label: "Draft", variant: neutral, terminal: false, derived: false}
+      published:  {label: "Published", variant: green-tint, terminal: false, derived: false}
+      superseded: {label: "Superseded", variant: soon, terminal: true, derived: true}   # computed: a later published version is effective on or before as_of
+      discarded:  {label: "Discarded", variant: muted, terminal: true, derived: false}   # hidden: a discarded draft leaves the lists
+
+  reference_set_version:   # reference_set_versions.status (K-02-T03); KNW-04 j
+    source: "K-02 section 4.2 (migration M-A); ADR-300"
+    codes:
+      draft:      {label: "Draft", variant: neutral, terminal: false, derived: false}
+      published:  {label: "Published", variant: green-tint, terminal: false, derived: false}
+      superseded: {label: "Superseded", variant: soon, terminal: true, derived: true}   # computed, never stored
+      withdrawn:  {label: "Withdrawn", variant: muted, terminal: true, derived: false}
+
   parse_flag:   # program_steps.parse_flag (K-01-T05); the ⚑ amber flag on KNW-02 rows
     source: "K-01 section 4.2 (migration B); KNW-02 c"
     codes:

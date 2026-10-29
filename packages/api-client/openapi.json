@@ -3077,6 +3077,93 @@
         "title": "AiPolicyVersionPageOut",
         "type": "object"
       },
+      "AjeThresholdRow": {
+        "additionalProperties": false,
+        "description": "One account class. `limit` rows are within threshold up to `limit_usd`; the last two rows\nof every version (\"All other classes \u00b7 Review required\" and \"Attest clients \u00b7 Always held\")\ncannot be removed (K-02-T05 validates).",
+        "properties": {
+          "account_class": {
+            "cls": "internal",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Account Class",
+            "type": "string"
+          },
+          "approver_level": {
+            "cls": "internal",
+            "enum": [
+              "senior_or_above",
+              "manager_or_partner",
+              "partner"
+            ],
+            "title": "Approver Level",
+            "type": "string"
+          },
+          "batch": {
+            "cls": "internal",
+            "title": "Batch",
+            "type": "boolean"
+          },
+          "limit_usd": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Limit Usd"
+          },
+          "rule": {
+            "cls": "internal",
+            "enum": [
+              "limit",
+              "review_required",
+              "always_held"
+            ],
+            "title": "Rule",
+            "type": "string"
+          }
+        },
+        "required": [
+          "account_class",
+          "rule",
+          "limit_usd",
+          "approver_level",
+          "batch"
+        ],
+        "title": "AjeThresholdRow",
+        "type": "object"
+      },
+      "AjeThresholdsPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "const": "aje_thresholds",
+            "title": "Kind",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/AjeThresholdRow"
+            },
+            "maxItems": 50,
+            "minItems": 2,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "rows"
+        ],
+        "title": "AjeThresholdsPayload",
+        "type": "object"
+      },
       "AnalysisRequestIn": {
         "additionalProperties": false,
         "properties": {
@@ -9068,6 +9155,64 @@
           "ref_item_id"
         ],
         "title": "CheckOut",
+        "type": "object"
+      },
+      "ChecklistAppliesTo": {
+        "additionalProperties": false,
+        "properties": {
+          "form": {
+            "cls": "internal",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Form",
+            "type": "string"
+          },
+          "tax_year": {
+            "cls": "internal",
+            "maximum": 2100.0,
+            "minimum": 2000.0,
+            "title": "Tax Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "form",
+          "tax_year"
+        ],
+        "title": "ChecklistAppliesTo",
+        "type": "object"
+      },
+      "ChecklistItem": {
+        "additionalProperties": false,
+        "description": "Firm-authored text only (ADR-056).",
+        "properties": {
+          "key": {
+            "cls": "internal",
+            "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+            "title": "Key",
+            "type": "string"
+          },
+          "section": {
+            "cls": "internal",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Section",
+            "type": "string"
+          },
+          "text": {
+            "cls": "internal",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "section",
+          "text"
+        ],
+        "title": "ChecklistItem",
         "type": "object"
       },
       "CheckpointApproveIn": {
@@ -16551,6 +16696,81 @@
         "title": "DigestCardOut",
         "type": "object"
       },
+      "DisasterPostponement": {
+        "additionalProperties": false,
+        "properties": {
+          "acts": {
+            "cls": "public",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Acts",
+            "type": "array"
+          },
+          "areas": {
+            "cls": "public",
+            "items": {
+              "$ref": "#/components/schemas/PostponementArea"
+            },
+            "minItems": 1,
+            "title": "Areas",
+            "type": "array"
+          },
+          "notice_id": {
+            "cls": "public",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Notice Id",
+            "type": "string"
+          },
+          "postponed_to": {
+            "cls": "public",
+            "format": "date",
+            "title": "Postponed To",
+            "type": "string"
+          },
+          "window": {
+            "$ref": "#/components/schemas/PostponementWindow",
+            "cls": "public"
+          }
+        },
+        "required": [
+          "notice_id",
+          "areas",
+          "window",
+          "postponed_to",
+          "acts"
+        ],
+        "title": "DisasterPostponement",
+        "type": "object"
+      },
+      "DisasterPostponementsPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "cls": "public",
+            "const": "disaster_postponements",
+            "title": "Kind",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "public",
+            "items": {
+              "$ref": "#/components/schemas/DisasterPostponement"
+            },
+            "maxItems": 500,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "rows"
+        ],
+        "title": "DisasterPostponementsPayload",
+        "type": "object"
+      },
       "DiscardedOut": {
         "properties": {
           "id": {
@@ -16691,6 +16911,100 @@
           "status"
         ],
         "title": "DnsRecordOut",
+        "type": "object"
+      },
+      "DocumentConfidencePayload-Input": {
+        "additionalProperties": false,
+        "description": "`auto_accept_enabled` stays false while the policy principal is dormant (P-08).",
+        "properties": {
+          "auto_accept_above_pct": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Auto Accept Above Pct"
+          },
+          "auto_accept_enabled": {
+            "cls": "internal",
+            "const": false,
+            "title": "Auto Accept Enabled",
+            "type": "boolean"
+          },
+          "hold_below_pct": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Hold Below Pct"
+          },
+          "kind": {
+            "cls": "internal",
+            "const": "document_confidence",
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "hold_below_pct",
+          "auto_accept_above_pct",
+          "auto_accept_enabled"
+        ],
+        "title": "DocumentConfidencePayload",
+        "type": "object"
+      },
+      "DocumentConfidencePayload-Output": {
+        "additionalProperties": false,
+        "description": "`auto_accept_enabled` stays false while the policy principal is dormant (P-08).",
+        "properties": {
+          "auto_accept_above_pct": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+            "title": "Auto Accept Above Pct",
+            "type": "string"
+          },
+          "auto_accept_enabled": {
+            "cls": "internal",
+            "const": false,
+            "title": "Auto Accept Enabled",
+            "type": "boolean"
+          },
+          "hold_below_pct": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+            "title": "Hold Below Pct",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "const": "document_confidence",
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "hold_below_pct",
+          "auto_accept_above_pct",
+          "auto_accept_enabled"
+        ],
+        "title": "DocumentConfidencePayload",
         "type": "object"
       },
       "DocumentKindIn": {
@@ -17446,6 +17760,251 @@
           "file_name"
         ],
         "title": "DropFileOut",
+        "type": "object"
+      },
+      "DueDateExtension": {
+        "additionalProperties": false,
+        "properties": {
+          "form": {
+            "cls": "public",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Form",
+            "type": "string"
+          },
+          "months": {
+            "cls": "public",
+            "maximum": 12.0,
+            "minimum": 1.0,
+            "title": "Months",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "form",
+          "months"
+        ],
+        "title": "DueDateExtension",
+        "type": "object"
+      },
+      "DueDateOffset": {
+        "additionalProperties": false,
+        "description": "When a return is due: the day of the month that falls this many months after period end.",
+        "properties": {
+          "day": {
+            "cls": "public",
+            "maximum": 31.0,
+            "minimum": 1.0,
+            "title": "Day",
+            "type": "integer"
+          },
+          "months_after_period_end": {
+            "cls": "public",
+            "maximum": 24.0,
+            "minimum": 0.0,
+            "title": "Months After Period End",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "months_after_period_end",
+          "day"
+        ],
+        "title": "DueDateOffset",
+        "type": "object"
+      },
+      "DueDateOut": {
+        "description": "A return's original and extended due dates, with the rules that produced them.",
+        "properties": {
+          "extended_due_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Extended Due On"
+          },
+          "extended_rolled": {
+            "cls": "public",
+            "title": "Extended Rolled",
+            "type": "boolean"
+          },
+          "extension_form": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Extension Form"
+          },
+          "form": {
+            "cls": "public",
+            "title": "Form",
+            "type": "string"
+          },
+          "inputs_hash": {
+            "cls": "internal",
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "title": "Inputs Hash",
+            "type": "string"
+          },
+          "jurisdiction": {
+            "cls": "public",
+            "enum": [
+              "US",
+              "DC"
+            ],
+            "title": "Jurisdiction",
+            "type": "string"
+          },
+          "original_due_on": {
+            "cls": "public",
+            "format": "date",
+            "title": "Original Due On",
+            "type": "string"
+          },
+          "original_rolled": {
+            "cls": "public",
+            "title": "Original Rolled",
+            "type": "boolean"
+          },
+          "period_end": {
+            "cls": "public",
+            "format": "date",
+            "title": "Period End",
+            "type": "string"
+          },
+          "postponement": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PostponementOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public"
+          },
+          "reference_set_version_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Reference Set Version Ids",
+            "type": "array"
+          },
+          "tax_year": {
+            "cls": "public",
+            "title": "Tax Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "form",
+          "tax_year",
+          "period_end",
+          "jurisdiction",
+          "original_due_on",
+          "original_rolled",
+          "extension_form",
+          "extended_due_on",
+          "extended_rolled",
+          "postponement",
+          "reference_set_version_ids",
+          "inputs_hash"
+        ],
+        "title": "DueDateOut",
+        "type": "object"
+      },
+      "DueDateRuleRow": {
+        "additionalProperties": false,
+        "description": "One form's rule: 1040/4868, 1041/7004, 1065/7004, 1120-S/7004, 1120/7004, 990/8868,\n5500/5558, 706/4768, 709 (each verified per season, outside the repo).",
+        "properties": {
+          "authority": {
+            "cls": "public",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Authority",
+            "type": "string"
+          },
+          "extension": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DueDateExtension"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public"
+          },
+          "form": {
+            "cls": "public",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Form",
+            "type": "string"
+          },
+          "fye_rule": {
+            "cls": "public",
+            "enum": [
+              "calendar_year",
+              "fiscal_year",
+              "any"
+            ],
+            "title": "Fye Rule",
+            "type": "string"
+          },
+          "original": {
+            "$ref": "#/components/schemas/DueDateOffset",
+            "cls": "public"
+          }
+        },
+        "required": [
+          "form",
+          "fye_rule",
+          "original",
+          "extension",
+          "authority"
+        ],
+        "title": "DueDateRuleRow",
+        "type": "object"
+      },
+      "DueDateRulesPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "cls": "public",
+            "const": "due_date_rules",
+            "title": "Kind",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "public",
+            "items": {
+              "$ref": "#/components/schemas/DueDateRuleRow"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "rows"
+        ],
+        "title": "DueDateRulesPayload",
         "type": "object"
       },
       "DueDatesIn": {
@@ -25042,6 +25601,15 @@
         "title": "FirmRoleIn",
         "type": "object"
       },
+      "FirmStandardVersionStatus": {
+        "enum": [
+          "draft",
+          "published",
+          "discarded"
+        ],
+        "title": "FirmStandardVersionStatus",
+        "type": "string"
+      },
       "FirmTeamIn": {
         "additionalProperties": false,
         "description": "A `service_line` team names its line, and only it does (422 `org_structure_invalid`);\n409 `team_name_taken`. PATCH sends the `version` it read.",
@@ -26024,6 +26592,90 @@
           "ids"
         ],
         "title": "FollowUpSendManyIn",
+        "type": "object"
+      },
+      "Form8879Row": {
+        "additionalProperties": false,
+        "description": "Which authorization form a return type uses (older revisions allowed: 8879-C and 8879-S\nfor TY2025).",
+        "properties": {
+          "authorization_form": {
+            "cls": "public",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Authorization Form",
+            "type": "string"
+          },
+          "jurisdiction": {
+            "cls": "public",
+            "enum": [
+              "US",
+              "DC"
+            ],
+            "title": "Jurisdiction",
+            "type": "string"
+          },
+          "return_type": {
+            "cls": "public",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Return Type",
+            "type": "string"
+          },
+          "revision": {
+            "cls": "public",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Revision",
+            "type": "string"
+          },
+          "tax_year": {
+            "cls": "public",
+            "maximum": 2100.0,
+            "minimum": 2000.0,
+            "title": "Tax Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "return_type",
+          "tax_year",
+          "jurisdiction",
+          "authorization_form",
+          "revision"
+        ],
+        "title": "Form8879Row",
+        "type": "object"
+      },
+      "Form8879SetPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "cls": "public",
+            "const": "form_8879_set",
+            "title": "Kind",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "public",
+            "items": {
+              "$ref": "#/components/schemas/Form8879Row"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          },
+          "tolerances": {
+            "$ref": "#/components/schemas/Pub1345Tolerances",
+            "cls": "public"
+          }
+        },
+        "required": [
+          "kind",
+          "rows",
+          "tolerances"
+        ],
+        "title": "Form8879SetPayload",
         "type": "object"
       },
       "FormatOut": {
@@ -30357,6 +31009,79 @@
         "title": "IndependenceSummaryOut",
         "type": "object"
       },
+      "InformationReturnThreshold": {
+        "additionalProperties": false,
+        "properties": {
+          "form": {
+            "cls": "public",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Form",
+            "type": "string"
+          },
+          "min_transactions": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Min Transactions"
+          },
+          "payment_year": {
+            "cls": "public",
+            "maximum": 2100.0,
+            "minimum": 2000.0,
+            "title": "Payment Year",
+            "type": "integer"
+          },
+          "threshold_usd": {
+            "cls": "public",
+            "minimum": 0.0,
+            "title": "Threshold Usd",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "form",
+          "payment_year",
+          "threshold_usd",
+          "min_transactions"
+        ],
+        "title": "InformationReturnThreshold",
+        "type": "object"
+      },
+      "InformationReturnThresholdsPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "cls": "public",
+            "const": "information_return_thresholds",
+            "title": "Kind",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "public",
+            "items": {
+              "$ref": "#/components/schemas/InformationReturnThreshold"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "rows"
+        ],
+        "title": "InformationReturnThresholdsPayload",
+        "type": "object"
+      },
       "IntakeCommitIn": {
         "additionalProperties": false,
         "description": "\"Create & start acceptance\" (`start_acceptance`) or \"Create\".",
@@ -33678,6 +34403,67 @@
         "title": "LegalHoldsOut",
         "type": "object"
       },
+      "LegalHoliday": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "cls": "public",
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "jurisdiction": {
+            "cls": "public",
+            "enum": [
+              "US",
+              "DC"
+            ],
+            "title": "Jurisdiction",
+            "type": "string"
+          },
+          "name": {
+            "cls": "public",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "name",
+          "jurisdiction"
+        ],
+        "title": "LegalHoliday",
+        "type": "object"
+      },
+      "LegalHolidaysPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "cls": "public",
+            "const": "legal_holidays",
+            "title": "Kind",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "public",
+            "items": {
+              "$ref": "#/components/schemas/LegalHoliday"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "rows"
+        ],
+        "title": "LegalHolidaysPayload",
+        "type": "object"
+      },
       "LetterClause": {
         "description": "One clause of the template version and its state.",
         "properties": {
@@ -35300,6 +36086,126 @@
         "title": "ListPage[PortalEnvelopeRow]",
         "type": "object"
       },
+      "ListPage_ReferenceSetOut_": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "facets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Facet"
+              },
+              "type": "array"
+            },
+            "cls": "internal",
+            "title": "Facets",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ReferenceSetOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_capped": {
+            "cls": "internal",
+            "default": false,
+            "title": "Total Capped",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListPage[ReferenceSetOut]",
+        "type": "object"
+      },
+      "ListPage_ReferenceSetVersionOut_": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "facets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Facet"
+              },
+              "type": "array"
+            },
+            "cls": "internal",
+            "title": "Facets",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ReferenceSetVersionOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_capped": {
+            "cls": "internal",
+            "default": false,
+            "title": "Total Capped",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListPage[ReferenceSetVersionOut]",
+        "type": "object"
+      },
       "ListPage_ReviewNoteItemOut_": {
         "properties": {
           "counts": {
@@ -35418,6 +36324,66 @@
           "total"
         ],
         "title": "ListPage[ReviewQueueItemOut]",
+        "type": "object"
+      },
+      "ListPage_StandardOut_": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "facets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Facet"
+              },
+              "type": "array"
+            },
+            "cls": "internal",
+            "title": "Facets",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/StandardOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_capped": {
+            "cls": "internal",
+            "default": false,
+            "title": "Total Capped",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListPage[StandardOut]",
         "type": "object"
       },
       "ListPage_WallEventOut_": {
@@ -36471,6 +37437,191 @@
           "set_at"
         ],
         "title": "MaterialityOut",
+        "type": "object"
+      },
+      "MaterialityRange-Input": {
+        "additionalProperties": false,
+        "properties": {
+          "benchmark": {
+            "cls": "internal",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Benchmark",
+            "type": "string"
+          },
+          "engagement_kind": {
+            "cls": "internal",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Engagement Kind",
+            "type": "string"
+          },
+          "high_pct": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "High Pct"
+          },
+          "low_pct": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Low Pct"
+          }
+        },
+        "required": [
+          "engagement_kind",
+          "benchmark",
+          "low_pct",
+          "high_pct"
+        ],
+        "title": "MaterialityRange",
+        "type": "object"
+      },
+      "MaterialityRange-Output": {
+        "additionalProperties": false,
+        "properties": {
+          "benchmark": {
+            "cls": "internal",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Benchmark",
+            "type": "string"
+          },
+          "engagement_kind": {
+            "cls": "internal",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Engagement Kind",
+            "type": "string"
+          },
+          "high_pct": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+            "title": "High Pct",
+            "type": "string"
+          },
+          "low_pct": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+            "title": "Low Pct",
+            "type": "string"
+          }
+        },
+        "required": [
+          "engagement_kind",
+          "benchmark",
+          "low_pct",
+          "high_pct"
+        ],
+        "title": "MaterialityRange",
+        "type": "object"
+      },
+      "MaterialityRangesPayload-Input": {
+        "additionalProperties": false,
+        "description": "Decisions stay the engagement partner's: these are the ranges a decision is validated\nagainst (A-04's AUD-07).",
+        "properties": {
+          "clearly_trivial_pct": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Clearly Trivial Pct"
+          },
+          "kind": {
+            "cls": "internal",
+            "const": "materiality_ranges",
+            "title": "Kind",
+            "type": "string"
+          },
+          "performance_materiality": {
+            "$ref": "#/components/schemas/StandardPctRange-Input",
+            "cls": "internal"
+          },
+          "rows": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/MaterialityRange-Input"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "rows",
+          "performance_materiality",
+          "clearly_trivial_pct"
+        ],
+        "title": "MaterialityRangesPayload",
+        "type": "object"
+      },
+      "MaterialityRangesPayload-Output": {
+        "additionalProperties": false,
+        "description": "Decisions stay the engagement partner's: these are the ranges a decision is validated\nagainst (A-04's AUD-07).",
+        "properties": {
+          "clearly_trivial_pct": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+            "title": "Clearly Trivial Pct",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "const": "materiality_ranges",
+            "title": "Kind",
+            "type": "string"
+          },
+          "performance_materiality": {
+            "$ref": "#/components/schemas/StandardPctRange-Output",
+            "cls": "internal"
+          },
+          "rows": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/MaterialityRange-Output"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "rows",
+          "performance_materiality",
+          "clearly_trivial_pct"
+        ],
+        "title": "MaterialityRangesPayload",
         "type": "object"
       },
       "MaterialityVersionOut": {
@@ -42893,6 +44044,77 @@
         "title": "PortalVisibilityOut",
         "type": "object"
       },
+      "PostponementArea": {
+        "additionalProperties": false,
+        "properties": {
+          "counties": {
+            "cls": "public",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 300,
+            "title": "Counties",
+            "type": "array"
+          },
+          "state": {
+            "cls": "public",
+            "pattern": "^[A-Z]{2}$",
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state",
+          "counties"
+        ],
+        "title": "PostponementArea",
+        "type": "object"
+      },
+      "PostponementOut": {
+        "description": "The disaster postponement that moved a date, by its notice.",
+        "properties": {
+          "notice_id": {
+            "cls": "public",
+            "title": "Notice Id",
+            "type": "string"
+          },
+          "postponed_to": {
+            "cls": "public",
+            "format": "date",
+            "title": "Postponed To",
+            "type": "string"
+          }
+        },
+        "required": [
+          "notice_id",
+          "postponed_to"
+        ],
+        "title": "PostponementOut",
+        "type": "object"
+      },
+      "PostponementWindow": {
+        "additionalProperties": false,
+        "properties": {
+          "end": {
+            "cls": "public",
+            "format": "date",
+            "title": "End",
+            "type": "string"
+          },
+          "start": {
+            "cls": "public",
+            "format": "date",
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "PostponementWindow",
+        "type": "object"
+      },
       "PostureOut": {
         "description": "The Posture card's five facts (AC-30); the same read feeds ADM-01's At a glance and the\nM9 checklist. Counts agree with the fieldsets by construction.",
         "properties": {
@@ -44061,6 +45283,30 @@
         "title": "ProviderOut",
         "type": "object"
       },
+      "Pub1345Tolerances": {
+        "additionalProperties": false,
+        "description": "DEC-85: the amounts past which a signed 8879 must be relocked (verified each season,\nnever defaulted).",
+        "properties": {
+          "tax_withholding_refund_balance_usd": {
+            "cls": "public",
+            "minimum": 0.0,
+            "title": "Tax Withholding Refund Balance Usd",
+            "type": "integer"
+          },
+          "total_income_or_agi_usd": {
+            "cls": "public",
+            "minimum": 0.0,
+            "title": "Total Income Or Agi Usd",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total_income_or_agi_usd",
+          "tax_withholding_refund_balance_usd"
+        ],
+        "title": "Pub1345Tolerances",
+        "type": "object"
+      },
       "PublishedVersionOut": {
         "properties": {
           "version": {
@@ -44793,6 +46039,316 @@
           "reason"
         ],
         "title": "RedactionOut",
+        "type": "object"
+      },
+      "ReferenceSetOut": {
+        "description": "A set and the version in effect today (none before its first publish).",
+        "properties": {
+          "content_owner": {
+            "cls": "internal",
+            "title": "Content Owner",
+            "type": "string"
+          },
+          "current_effective_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Current Effective From"
+          },
+          "current_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Current Version"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Description"
+          },
+          "jurisdiction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Jurisdiction"
+          },
+          "key": {
+            "cls": "public",
+            "title": "Key",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "public",
+            "enum": [
+              "due_date_rules",
+              "legal_holidays",
+              "disaster_postponements",
+              "form_8879_set",
+              "information_return_thresholds",
+              "retention_minimums",
+              "standards_sets"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "title": {
+            "cls": "public",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "kind",
+          "jurisdiction",
+          "title",
+          "content_owner",
+          "description",
+          "current_version",
+          "current_effective_from"
+        ],
+        "title": "ReferenceSetOut",
+        "type": "object"
+      },
+      "ReferenceSetResolvedOut": {
+        "description": "The version in effect on `as_of`: the latest `effective_from` on or before it, ties to the\nhighest version.",
+        "properties": {
+          "as_of": {
+            "cls": "public",
+            "format": "date",
+            "title": "As Of",
+            "type": "string"
+          },
+          "set": {
+            "$ref": "#/components/schemas/ReferenceSetOut",
+            "cls": "public"
+          },
+          "version": {
+            "$ref": "#/components/schemas/ReferenceSetVersionOut",
+            "cls": "public"
+          }
+        },
+        "required": [
+          "set",
+          "as_of",
+          "version"
+        ],
+        "title": "ReferenceSetResolvedOut",
+        "type": "object"
+      },
+      "ReferenceSetVersionOut": {
+        "description": "One published (or withdrawn) version. Drafts are never served (ADR-300); superseded is\ncomputed at read time: a later published version is effective on or before `as_of`.",
+        "properties": {
+          "approved_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Approved By"
+          },
+          "change_reason": {
+            "cls": "internal",
+            "title": "Change Reason",
+            "type": "string"
+          },
+          "drafted_by": {
+            "cls": "internal",
+            "title": "Drafted By",
+            "type": "string"
+          },
+          "effective_from": {
+            "cls": "public",
+            "format": "date",
+            "title": "Effective From",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "payload": {
+            "cls": "public",
+            "discriminator": {
+              "mapping": {
+                "disaster_postponements": "#/components/schemas/DisasterPostponementsPayload",
+                "due_date_rules": "#/components/schemas/DueDateRulesPayload",
+                "form_8879_set": "#/components/schemas/Form8879SetPayload",
+                "information_return_thresholds": "#/components/schemas/InformationReturnThresholdsPayload",
+                "legal_holidays": "#/components/schemas/LegalHolidaysPayload",
+                "retention_minimums": "#/components/schemas/RetentionMinimumsPayload",
+                "standards_sets": "#/components/schemas/StandardsSetsPayload"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/DueDateRulesPayload"
+              },
+              {
+                "$ref": "#/components/schemas/LegalHolidaysPayload"
+              },
+              {
+                "$ref": "#/components/schemas/DisasterPostponementsPayload"
+              },
+              {
+                "$ref": "#/components/schemas/Form8879SetPayload"
+              },
+              {
+                "$ref": "#/components/schemas/InformationReturnThresholdsPayload"
+              },
+              {
+                "$ref": "#/components/schemas/RetentionMinimumsPayload"
+              },
+              {
+                "$ref": "#/components/schemas/StandardsSetsPayload"
+              }
+            ],
+            "title": "Payload"
+          },
+          "payload_hash": {
+            "cls": "internal",
+            "title": "Payload Hash",
+            "type": "string"
+          },
+          "payload_schema_version": {
+            "cls": "internal",
+            "title": "Payload Schema Version",
+            "type": "integer"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Published At"
+          },
+          "set_key": {
+            "cls": "public",
+            "title": "Set Key",
+            "type": "string"
+          },
+          "source_citations": {
+            "cls": "public",
+            "items": {
+              "$ref": "#/components/schemas/ReferenceSourceCitationOut"
+            },
+            "title": "Source Citations",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReferenceSetVersionStatus",
+            "cls": "internal"
+          },
+          "tax_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Tax Year"
+          },
+          "version": {
+            "cls": "public",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "set_key",
+          "version",
+          "status",
+          "tax_year",
+          "effective_from",
+          "payload_schema_version",
+          "payload_hash",
+          "source_citations",
+          "drafted_by",
+          "approved_by",
+          "change_reason",
+          "published_at",
+          "payload"
+        ],
+        "title": "ReferenceSetVersionOut",
+        "type": "object"
+      },
+      "ReferenceSetVersionStatus": {
+        "enum": [
+          "draft",
+          "published",
+          "withdrawn"
+        ],
+        "title": "ReferenceSetVersionStatus",
+        "type": "string"
+      },
+      "ReferenceSourceCitationOut": {
+        "description": "Where a version's rows come from, e.g. \"Pub 1345 (rev.) \u2014 verify\".",
+        "properties": {
+          "label": {
+            "cls": "public",
+            "title": "Label",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Url"
+          }
+        },
+        "required": [
+          "label"
+        ],
+        "title": "ReferenceSourceCitationOut",
         "type": "object"
       },
       "RejectIn": {
@@ -46744,6 +48300,83 @@
         "title": "RetentionFloorSetIn",
         "type": "object"
       },
+      "RetentionMinimum": {
+        "additionalProperties": false,
+        "description": "DEC-71 (counsel-approved, never defaulted): a legal floor per record type and line.",
+        "properties": {
+          "anchor": {
+            "cls": "public",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Anchor",
+            "type": "string"
+          },
+          "authority": {
+            "cls": "public",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Authority",
+            "type": "string"
+          },
+          "floor_years": {
+            "cls": "public",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Floor Years",
+            "type": "integer"
+          },
+          "record_type": {
+            "cls": "public",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Record Type",
+            "type": "string"
+          },
+          "service_line": {
+            "cls": "public",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Service Line",
+            "type": "string"
+          }
+        },
+        "required": [
+          "record_type",
+          "service_line",
+          "floor_years",
+          "anchor",
+          "authority"
+        ],
+        "title": "RetentionMinimum",
+        "type": "object"
+      },
+      "RetentionMinimumsPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "cls": "public",
+            "const": "retention_minimums",
+            "title": "Kind",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "public",
+            "items": {
+              "$ref": "#/components/schemas/RetentionMinimum"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "rows"
+        ],
+        "title": "RetentionMinimumsPayload",
+        "type": "object"
+      },
       "RetentionOut": {
         "description": "The retention policy, eligible date and any legal hold (read only).",
         "properties": {
@@ -47240,6 +48873,77 @@
         "title": "RetrievalOut",
         "type": "object"
       },
+      "ReturnApprovalAssignment": {
+        "additionalProperties": false,
+        "description": "A client and the partner who gives its final approval (client ids are confidential).",
+        "properties": {
+          "approver_user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Approver User Id",
+            "type": "string"
+          },
+          "client_id": {
+            "cls": "confidential",
+            "format": "uuid",
+            "title": "Client Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "client_id",
+          "approver_user_id"
+        ],
+        "title": "ReturnApprovalAssignment",
+        "type": "object"
+      },
+      "ReturnApprovalPolicyPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "applies_to": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/ReturnApprovalAssignment"
+            },
+            "maxItems": 2000,
+            "title": "Applies To",
+            "type": "array"
+          },
+          "code": {
+            "cls": "internal",
+            "pattern": "^[A-Z0-9-]{2,20}$",
+            "title": "Code",
+            "type": "string"
+          },
+          "export_condition": {
+            "cls": "internal",
+            "const": "after_final_approval",
+            "title": "Export Condition",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "const": "return_approval_policy",
+            "title": "Kind",
+            "type": "string"
+          },
+          "rule": {
+            "cls": "internal",
+            "const": "signing_partner_final_approval",
+            "title": "Rule",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "code",
+          "rule",
+          "applies_to",
+          "export_condition"
+        ],
+        "title": "ReturnApprovalPolicyPayload",
+        "type": "object"
+      },
       "ReturnToClientIn": {
         "additionalProperties": false,
         "properties": {
@@ -47299,6 +49003,38 @@
           "expires_at"
         ],
         "title": "RevealOut",
+        "type": "object"
+      },
+      "ReviewChecklistPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "applies_to": {
+            "$ref": "#/components/schemas/ChecklistAppliesTo",
+            "cls": "internal"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ChecklistItem"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          },
+          "kind": {
+            "cls": "internal",
+            "const": "review_checklist",
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "applies_to",
+          "items"
+        ],
+        "title": "ReviewChecklistPayload",
         "type": "object"
       },
       "ReviewFlagCountOut": {
@@ -47361,6 +49097,33 @@
           "quotes"
         ],
         "title": "ReviewFlagOut",
+        "type": "object"
+      },
+      "ReviewLevelsPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "const": "review_levels",
+            "title": "Kind",
+            "type": "string"
+          },
+          "tiers": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ReviewTier"
+            },
+            "maxItems": 5,
+            "minItems": 1,
+            "title": "Tiers",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "tiers"
+        ],
+        "title": "ReviewLevelsPayload",
         "type": "object"
       },
       "ReviewMatrixOut": {
@@ -47899,6 +49662,61 @@
           "evidence_version_id"
         ],
         "title": "ReviewRequestedOut",
+        "type": "object"
+      },
+      "ReviewTier": {
+        "additionalProperties": false,
+        "properties": {
+          "criteria": {
+            "cls": "internal",
+            "maxLength": 500,
+            "title": "Criteria",
+            "type": "string"
+          },
+          "name": {
+            "cls": "internal",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "required_levels": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "L1",
+                "L2",
+                "L3",
+                "L4",
+                "L5"
+              ],
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Required Levels",
+            "type": "array"
+          },
+          "second_partner_review": {
+            "cls": "internal",
+            "title": "Second Partner Review",
+            "type": "boolean"
+          },
+          "tier": {
+            "cls": "internal",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Tier",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "tier",
+          "name",
+          "required_levels",
+          "second_partner_review",
+          "criteria"
+        ],
+        "title": "ReviewTier",
         "type": "object"
       },
       "RiskBody": {
@@ -54745,6 +56563,29 @@
         "title": "SpendOut",
         "type": "object"
       },
+      "SsarsCasSettingsPayload": {
+        "additionalProperties": false,
+        "description": "SSARS 27's boundary: periods ending on or after Dec 15, 2026 (K-02 \u00a74.3).",
+        "properties": {
+          "early_adopt_ssars27": {
+            "cls": "internal",
+            "title": "Early Adopt Ssars27",
+            "type": "boolean"
+          },
+          "kind": {
+            "cls": "internal",
+            "const": "ssars_cas_settings",
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "early_adopt_ssars27"
+        ],
+        "title": "SsarsCasSettingsPayload",
+        "type": "object"
+      },
       "SsoExemptAccountIn": {
         "additionalProperties": false,
         "description": "Designate the one SSO-exempt account, or clear it with `user_id: null`.",
@@ -55529,6 +57370,983 @@
           "seasonal"
         ],
         "title": "StaffTalliesOut",
+        "type": "object"
+      },
+      "StandardChangedCellOut": {
+        "description": "One changed value for KNW-04 i: the amber cell with the struck prior value. `path` is a\nJSON pointer into the payload; values are rendered strings.",
+        "properties": {
+          "after": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "After"
+          },
+          "before": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Before"
+          },
+          "path": {
+            "cls": "internal",
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "before",
+          "after"
+        ],
+        "title": "StandardChangedCellOut",
+        "type": "object"
+      },
+      "StandardCreateIn": {
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "cls": "internal",
+            "pattern": "^[a-z0-9][a-z0-9_.-]{2,79}$",
+            "title": "Key",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "review_checklist",
+              "review_levels",
+              "return_approval_policy",
+              "ssars_cas_settings",
+              "aje_thresholds",
+              "variance_thresholds",
+              "materiality_ranges",
+              "document_confidence"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "cls": "internal",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "owner_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Owner Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "key",
+          "name",
+          "owner_id"
+        ],
+        "title": "StandardCreateIn",
+        "type": "object"
+      },
+      "StandardDetailOut": {
+        "description": "KNW-04's form pane: the standard, the version shown, and the Timeline (newest first).",
+        "properties": {
+          "standard": {
+            "$ref": "#/components/schemas/StandardOut",
+            "cls": "internal"
+          },
+          "timeline": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/StandardVersionSummaryOut"
+            },
+            "title": "Timeline",
+            "type": "array"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StandardVersionOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "standard",
+          "version",
+          "timeline"
+        ],
+        "title": "StandardDetailOut",
+        "type": "object"
+      },
+      "StandardDraftPatchIn": {
+        "additionalProperties": false,
+        "properties": {
+          "change_summary": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Change Summary"
+          },
+          "payload": {
+            "cls": "internal",
+            "discriminator": {
+              "mapping": {
+                "aje_thresholds": "#/components/schemas/AjeThresholdsPayload",
+                "document_confidence": "#/components/schemas/DocumentConfidencePayload-Input",
+                "materiality_ranges": "#/components/schemas/MaterialityRangesPayload-Input",
+                "return_approval_policy": "#/components/schemas/ReturnApprovalPolicyPayload",
+                "review_checklist": "#/components/schemas/ReviewChecklistPayload",
+                "review_levels": "#/components/schemas/ReviewLevelsPayload",
+                "ssars_cas_settings": "#/components/schemas/SsarsCasSettingsPayload",
+                "variance_thresholds": "#/components/schemas/VarianceThresholdsPayload-Input"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AjeThresholdsPayload"
+              },
+              {
+                "$ref": "#/components/schemas/VarianceThresholdsPayload-Input"
+              },
+              {
+                "$ref": "#/components/schemas/MaterialityRangesPayload-Input"
+              },
+              {
+                "$ref": "#/components/schemas/DocumentConfidencePayload-Input"
+              },
+              {
+                "$ref": "#/components/schemas/ReviewChecklistPayload"
+              },
+              {
+                "$ref": "#/components/schemas/ReviewLevelsPayload"
+              },
+              {
+                "$ref": "#/components/schemas/ReturnApprovalPolicyPayload"
+              },
+              {
+                "$ref": "#/components/schemas/SsarsCasSettingsPayload"
+              }
+            ],
+            "title": "Payload"
+          }
+        },
+        "required": [
+          "payload"
+        ],
+        "title": "StandardDraftPatchIn",
+        "type": "object"
+      },
+      "StandardExampleRowOut": {
+        "description": "One example a registered provider gives (KNW-04 a, e, f, g, h), filtered by `visible()`\nwith no hidden counts (DEC-43): a walled client's row is absent and totals are recomputed.",
+        "properties": {
+          "amount_usd": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Amount Usd"
+          },
+          "client_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Client Id"
+          },
+          "client_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Client Name"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Detail"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "outcome": {
+            "cls": "internal",
+            "title": "Outcome",
+            "type": "string"
+          },
+          "route": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Route"
+          }
+        },
+        "required": [
+          "client_id",
+          "client_name",
+          "label",
+          "amount_usd",
+          "outcome",
+          "detail",
+          "route"
+        ],
+        "title": "StandardExampleRowOut",
+        "type": "object"
+      },
+      "StandardExamplesOut": {
+        "description": "`provider_registered` false: KNW-04's designed empty state, never invented rows.",
+        "properties": {
+          "period": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Period"
+          },
+          "provider_registered": {
+            "cls": "internal",
+            "title": "Provider Registered",
+            "type": "boolean"
+          },
+          "rows": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/StandardExampleRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "standard_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Standard Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "standard_id",
+          "period",
+          "provider_registered",
+          "rows"
+        ],
+        "title": "StandardExamplesOut",
+        "type": "object"
+      },
+      "StandardImportIn": {
+        "additionalProperties": false,
+        "description": "A workbook already uploaded and scanned through the upload flow (an upload intent).",
+        "properties": {
+          "upload_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Upload Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "upload_id"
+        ],
+        "title": "StandardImportIn",
+        "type": "object"
+      },
+      "StandardImportProblemOut": {
+        "description": "A workbook problem: where, and a fixed code, never the cell's content (ADR-052).",
+        "properties": {
+          "code": {
+            "cls": "internal",
+            "title": "Code",
+            "type": "string"
+          },
+          "column": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Column"
+          },
+          "row": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Row"
+          },
+          "sheet": {
+            "cls": "internal",
+            "title": "Sheet",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sheet",
+          "row",
+          "column",
+          "code"
+        ],
+        "title": "StandardImportProblemOut",
+        "type": "object"
+      },
+      "StandardImportResultOut": {
+        "description": "An import makes drafts; it never publishes.",
+        "properties": {
+          "drafts": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/StandardVersionSummaryOut"
+            },
+            "title": "Drafts",
+            "type": "array"
+          },
+          "problems": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/StandardImportProblemOut"
+            },
+            "title": "Problems",
+            "type": "array"
+          }
+        },
+        "required": [
+          "drafts",
+          "problems"
+        ],
+        "title": "StandardImportResultOut",
+        "type": "object"
+      },
+      "StandardOut": {
+        "description": "A section row: the standard, its owner, the version in effect, and the partner-only draft\n(absent for anyone else). `allowed_actions` drives New version\u2026, Publish and Import.",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "current_version": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StandardVersionSummaryOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StandardVersionSummaryOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "cls": "internal",
+            "title": "Key",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "review_checklist",
+              "review_levels",
+              "return_approval_policy",
+              "ssars_cas_settings",
+              "aje_thresholds",
+              "variance_thresholds",
+              "materiality_ranges",
+              "document_confidence"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "cls": "internal",
+            "title": "Name",
+            "type": "string"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/StandardPersonOut",
+            "cls": "internal"
+          },
+          "usage_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Usage Count"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "key",
+          "name",
+          "owner",
+          "current_version",
+          "draft_version",
+          "usage_count",
+          "allowed_actions"
+        ],
+        "title": "StandardOut",
+        "type": "object"
+      },
+      "StandardOwnerIn": {
+        "additionalProperties": false,
+        "properties": {
+          "owner_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Owner Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_id"
+        ],
+        "title": "StandardOwnerIn",
+        "type": "object"
+      },
+      "StandardPctRange-Input": {
+        "additionalProperties": false,
+        "properties": {
+          "high_pct": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "High Pct"
+          },
+          "low_pct": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Low Pct"
+          }
+        },
+        "required": [
+          "low_pct",
+          "high_pct"
+        ],
+        "title": "StandardPctRange",
+        "type": "object"
+      },
+      "StandardPctRange-Output": {
+        "additionalProperties": false,
+        "properties": {
+          "high_pct": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+            "title": "High Pct",
+            "type": "string"
+          },
+          "low_pct": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+            "title": "Low Pct",
+            "type": "string"
+          }
+        },
+        "required": [
+          "low_pct",
+          "high_pct"
+        ],
+        "title": "StandardPctRange",
+        "type": "object"
+      },
+      "StandardPersonOut": {
+        "properties": {
+          "name": {
+            "cls": "internal",
+            "title": "Name",
+            "type": "string"
+          },
+          "user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "name"
+        ],
+        "title": "StandardPersonOut",
+        "type": "object"
+      },
+      "StandardPublishIn": {
+        "additionalProperties": false,
+        "description": "`effective_from` on or after today (business time) and after the current version's.",
+        "properties": {
+          "change_summary": {
+            "cls": "internal",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Change Summary",
+            "type": "string"
+          },
+          "effective_from": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Effective From",
+            "type": "string"
+          }
+        },
+        "required": [
+          "effective_from",
+          "change_summary"
+        ],
+        "title": "StandardPublishIn",
+        "type": "object"
+      },
+      "StandardVersionDiffOut": {
+        "properties": {
+          "against_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Against Version Id",
+            "type": "string"
+          },
+          "cells": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/StandardChangedCellOut"
+            },
+            "title": "Cells",
+            "type": "array"
+          },
+          "version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version_id",
+          "against_version_id",
+          "cells"
+        ],
+        "title": "StandardVersionDiffOut",
+        "type": "object"
+      },
+      "StandardVersionOut": {
+        "description": "One version in full.",
+        "properties": {
+          "change_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Change Summary"
+          },
+          "drafted_by": {
+            "$ref": "#/components/schemas/StandardPersonOut",
+            "cls": "internal"
+          },
+          "drafted_from_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Drafted From Version Id"
+          },
+          "effective_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Effective From"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "payload": {
+            "cls": "internal",
+            "discriminator": {
+              "mapping": {
+                "aje_thresholds": "#/components/schemas/AjeThresholdsPayload",
+                "document_confidence": "#/components/schemas/DocumentConfidencePayload-Output",
+                "materiality_ranges": "#/components/schemas/MaterialityRangesPayload-Output",
+                "return_approval_policy": "#/components/schemas/ReturnApprovalPolicyPayload",
+                "review_checklist": "#/components/schemas/ReviewChecklistPayload",
+                "review_levels": "#/components/schemas/ReviewLevelsPayload",
+                "ssars_cas_settings": "#/components/schemas/SsarsCasSettingsPayload",
+                "variance_thresholds": "#/components/schemas/VarianceThresholdsPayload-Output"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AjeThresholdsPayload"
+              },
+              {
+                "$ref": "#/components/schemas/VarianceThresholdsPayload-Output"
+              },
+              {
+                "$ref": "#/components/schemas/MaterialityRangesPayload-Output"
+              },
+              {
+                "$ref": "#/components/schemas/DocumentConfidencePayload-Output"
+              },
+              {
+                "$ref": "#/components/schemas/ReviewChecklistPayload"
+              },
+              {
+                "$ref": "#/components/schemas/ReviewLevelsPayload"
+              },
+              {
+                "$ref": "#/components/schemas/ReturnApprovalPolicyPayload"
+              },
+              {
+                "$ref": "#/components/schemas/SsarsCasSettingsPayload"
+              }
+            ],
+            "title": "Payload"
+          },
+          "payload_hash": {
+            "cls": "internal",
+            "title": "Payload Hash",
+            "type": "string"
+          },
+          "payload_schema_version": {
+            "cls": "internal",
+            "title": "Payload Schema Version",
+            "type": "integer"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Published At"
+          },
+          "published_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StandardPersonOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "row_version": {
+            "cls": "internal",
+            "title": "Row Version",
+            "type": "integer"
+          },
+          "standard_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Standard Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/FirmStandardVersionStatus",
+            "cls": "internal"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "standard_id",
+          "version",
+          "status",
+          "effective_from",
+          "payload_schema_version",
+          "payload_hash",
+          "change_summary",
+          "drafted_from_version_id",
+          "drafted_by",
+          "published_by",
+          "published_at",
+          "row_version",
+          "payload"
+        ],
+        "title": "StandardVersionOut",
+        "type": "object"
+      },
+      "StandardVersionSummaryOut": {
+        "description": "A version on the header and the Timeline. `status` is the C2 code: `superseded` is\ncomputed (a later published version is in effect).",
+        "properties": {
+          "current": {
+            "cls": "internal",
+            "title": "Current",
+            "type": "boolean"
+          },
+          "effective_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Effective From"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Published At"
+          },
+          "published_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StandardPersonOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "status": {
+            "$ref": "#/components/schemas/FirmStandardVersionStatus",
+            "cls": "internal"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "status",
+          "effective_from",
+          "published_at",
+          "published_by",
+          "current"
+        ],
+        "title": "StandardVersionSummaryOut",
+        "type": "object"
+      },
+      "StandardsSetRow": {
+        "additionalProperties": false,
+        "description": "A standards set K-01's KNW-02d maps to. No PCAOB or issuer family exists (X-07, DEC-19);\na published code is never removed or moved to another family (K-02-T05 validates).",
+        "properties": {
+          "code": {
+            "cls": "public",
+            "pattern": "^[a-z0-9_.]{2,60}$",
+            "title": "Code",
+            "type": "string"
+          },
+          "family": {
+            "cls": "public",
+            "enum": [
+              "gaas_nonissuer",
+              "ssars",
+              "sqms"
+            ],
+            "title": "Family",
+            "type": "string"
+          },
+          "label": {
+            "cls": "public",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "standard_refs": {
+            "cls": "public",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Standard Refs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "code",
+          "label",
+          "standard_refs",
+          "family"
+        ],
+        "title": "StandardsSetRow",
+        "type": "object"
+      },
+      "StandardsSetsPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "cls": "public",
+            "const": "standards_sets",
+            "title": "Kind",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "public",
+            "items": {
+              "$ref": "#/components/schemas/StandardsSetRow"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "rows"
+        ],
+        "title": "StandardsSetsPayload",
         "type": "object"
       },
       "StartMappingBody": {
@@ -60879,6 +63697,139 @@
           "field"
         ],
         "title": "ValueRow",
+        "type": "object"
+      },
+      "VarianceRow-Input": {
+        "additionalProperties": false,
+        "description": "A variance is exceeded only when both the percent and the amount are (K-02 \u00a74.3).",
+        "properties": {
+          "amount_usd": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Amount Usd",
+            "type": "integer"
+          },
+          "context": {
+            "cls": "internal",
+            "enum": [
+              "close_flux",
+              "ssars_review_analytics",
+              "tax_two_year"
+            ],
+            "title": "Context",
+            "type": "string"
+          },
+          "pct": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Pct"
+          }
+        },
+        "required": [
+          "context",
+          "pct",
+          "amount_usd"
+        ],
+        "title": "VarianceRow",
+        "type": "object"
+      },
+      "VarianceRow-Output": {
+        "additionalProperties": false,
+        "description": "A variance is exceeded only when both the percent and the amount are (K-02 \u00a74.3).",
+        "properties": {
+          "amount_usd": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Amount Usd",
+            "type": "integer"
+          },
+          "context": {
+            "cls": "internal",
+            "enum": [
+              "close_flux",
+              "ssars_review_analytics",
+              "tax_two_year"
+            ],
+            "title": "Context",
+            "type": "string"
+          },
+          "pct": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+            "title": "Pct",
+            "type": "string"
+          }
+        },
+        "required": [
+          "context",
+          "pct",
+          "amount_usd"
+        ],
+        "title": "VarianceRow",
+        "type": "object"
+      },
+      "VarianceThresholdsPayload-Input": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "const": "variance_thresholds",
+            "title": "Kind",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/VarianceRow-Input"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "rows"
+        ],
+        "title": "VarianceThresholdsPayload",
+        "type": "object"
+      },
+      "VarianceThresholdsPayload-Output": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "const": "variance_thresholds",
+            "title": "Kind",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/VarianceRow-Output"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "rows"
+        ],
+        "title": "VarianceThresholdsPayload",
         "type": "object"
       },
       "VersionBody": {
@@ -75536,6 +78487,193 @@
           "inbox"
         ],
         "x-abacus-action": "inbox.triage"
+      }
+    },
+    "/v1/due-dates": {
+      "get": {
+        "description": "Due dates with provenance: a state (and county) apply a covered postponement.",
+        "operationId": "practice_due_dates",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "form",
+            "required": true,
+            "schema": {
+              "maxLength": 20,
+              "minLength": 1,
+              "title": "Form",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tax_year",
+            "required": true,
+            "schema": {
+              "maximum": 2100,
+              "minimum": 2000,
+              "title": "Tax Year",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "period_end",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Period End",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "jurisdiction",
+            "required": false,
+            "schema": {
+              "default": "US",
+              "enum": [
+                "US",
+                "DC"
+              ],
+              "title": "Jurisdiction",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^[A-Z]{2}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          },
+          {
+            "in": "query",
+            "name": "county",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 60,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "County"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DueDateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Practice Due Dates Route",
+        "tags": [
+          "due-dates"
+        ],
+        "x-abacus-action": "due_date.read"
       }
     },
     "/v1/engagement-drafts": {
@@ -149104,6 +152242,389 @@
         "x-abacus-action": "proposal.read"
       }
     },
+    "/v1/reference-sets": {
+      "get": {
+        "description": "KNW-04 j: the published sets, by kind.",
+        "operationId": "list_reference_sets",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "due_date_rules",
+                    "legal_holidays",
+                    "disaster_postponements",
+                    "form_8879_set",
+                    "information_return_thresholds",
+                    "retention_minimums",
+                    "standards_sets"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPage_ReferenceSetOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "List Reference Sets Route",
+        "tags": [
+          "reference-sets"
+        ],
+        "x-abacus-action": "reference_set.read"
+      }
+    },
+    "/v1/reference-sets/{key}": {
+      "get": {
+        "description": "The version in effect on `as_of` (today, in business time, when absent).",
+        "operationId": "resolve_reference_set",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "pattern": "^[a-z0-9_.]{3,80}$",
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "as_of",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "As Of"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferenceSetResolvedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Resolve Reference Set Route",
+        "tags": [
+          "reference-sets"
+        ],
+        "x-abacus-action": "reference_set.read"
+      }
+    },
+    "/v1/reference-sets/{key}/versions": {
+      "get": {
+        "description": "The published and withdrawn versions, newest first (never a draft).",
+        "operationId": "reference_set_versions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "pattern": "^[a-z0-9_.]{3,80}$",
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPage_ReferenceSetVersionOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Reference Set Versions Route",
+        "tags": [
+          "reference-sets"
+        ],
+        "x-abacus-action": "reference_set.read"
+      }
+    },
     "/v1/retention/policies": {
       "get": {
         "operationId": "list_retention_policies",
@@ -151011,6 +154532,1898 @@
           "signup"
         ],
         "x-abacus-action": "identity"
+      }
+    },
+    "/v1/standards": {
+      "get": {
+        "description": "KNW-04's section list and rows; drafts appear for partners only.",
+        "operationId": "list_standards",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "review_checklist",
+                    "review_levels",
+                    "return_approval_policy",
+                    "ssars_cas_settings",
+                    "aje_thresholds",
+                    "variance_thresholds",
+                    "materiality_ranges",
+                    "document_confidence"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPage_StandardOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "List Standards Route",
+        "tags": [
+          "standards"
+        ],
+        "x-abacus-action": "firm_standard.read"
+      },
+      "post": {
+        "description": "Create a standard (QM owner or practice leader, fresh MFA); the owner must be a partner\nmember (422 `owner_not_partner`).",
+        "operationId": "create_standard",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StandardCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Create Standard Route",
+        "tags": [
+          "standards"
+        ],
+        "x-abacus-action": "firm_standard.create"
+      }
+    },
+    "/v1/standards/imports": {
+      "post": {
+        "description": "Onboarding: one sheet per kind, one draft per standard; an owner who is not a partner\nmember is a row problem (`owner_not_partner`).",
+        "operationId": "import_standards",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StandardImportIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardImportResultOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Import Standards Route",
+        "tags": [
+          "standards"
+        ],
+        "x-abacus-action": "firm_standard.import"
+      }
+    },
+    "/v1/standards/{standard_id}": {
+      "get": {
+        "description": "The form pane: the version in effect (or `?version=`) and the Timeline.",
+        "operationId": "standard",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "standard_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Standard Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Version"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Standard Route",
+        "tags": [
+          "standards"
+        ],
+        "x-abacus-action": "firm_standard.read"
+      }
+    },
+    "/v1/standards/{standard_id}/examples": {
+      "get": {
+        "description": "Registered example providers' rows, `visible()`-filtered with no hidden counts.",
+        "operationId": "standard_examples",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "standard_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Standard Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "period",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^\\d{4}-\\d{2}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Period"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardExamplesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Standard Examples Route",
+        "tags": [
+          "standards"
+        ],
+        "x-abacus-action": "firm_standard.read"
+      }
+    },
+    "/v1/standards/{standard_id}/imports": {
+      "post": {
+        "description": "A workbook to a draft of this standard (its owner's; 422 `import_invalid` with\nproblems). Never publishes.",
+        "operationId": "import_standard",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "standard_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Standard Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StandardImportIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardImportResultOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Import Standard Route",
+        "tags": [
+          "standards"
+        ],
+        "x-abacus-action": "firm_standard.import"
+      }
+    },
+    "/v1/standards/{standard_id}/owner": {
+      "put": {
+        "description": "Assign the owner (a partner member; 422 `owner_not_partner`).",
+        "operationId": "assign_owner",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "standard_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Standard Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StandardOwnerIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Assign Owner Route",
+        "tags": [
+          "standards"
+        ],
+        "x-abacus-action": "firm_standard.assign_owner"
+      }
+    },
+    "/v1/standards/{standard_id}/versions": {
+      "post": {
+        "description": "New version\u2026: a draft from the current version (409 `draft_exists`; 403\n`not_standard_owner` for anyone but the owner).",
+        "operationId": "draft_version",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "standard_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Standard Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardVersionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Draft Version Route",
+        "tags": [
+          "standards"
+        ],
+        "x-abacus-action": "firm_standard.draft"
+      }
+    },
+    "/v1/standards/{standard_id}/versions/{version_id}": {
+      "delete": {
+        "description": "Discard draft: status `discarded`; the row stays (never deleted).",
+        "operationId": "discard_draft",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "standard_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Standard Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "If-Match",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardVersionSummaryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Discard Draft Route",
+        "tags": [
+          "standards"
+        ],
+        "x-abacus-action": "firm_standard.draft"
+      },
+      "get": {
+        "description": "One version; a draft is 404 for anyone but a partner (US-3.4).",
+        "operationId": "standard_version",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "standard_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Standard Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardVersionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Standard Version Route",
+        "tags": [
+          "standards"
+        ],
+        "x-abacus-action": "firm_standard.read"
+      },
+      "patch": {
+        "description": "Edit the draft (409 `stale_version` or `not_draft`, 422 `payload_invalid`).",
+        "operationId": "edit_draft",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "standard_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Standard Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "If-Match",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StandardDraftPatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardVersionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Edit Draft Route",
+        "tags": [
+          "standards"
+        ],
+        "x-abacus-action": "firm_standard.draft"
+      }
+    },
+    "/v1/standards/{standard_id}/versions/{version_id}/diff": {
+      "get": {
+        "description": "Cell-level diff for KNW-04 i, against the version the draft came from by default.",
+        "operationId": "version_diff",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "standard_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Standard Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "against",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Against"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardVersionDiffOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Version Diff Route",
+        "tags": [
+          "standards"
+        ],
+        "x-abacus-action": "firm_standard.read"
+      }
+    },
+    "/v1/standards/{standard_id}/versions/{version_id}/export.xlsx": {
+      "get": {
+        "description": "The version as a workbook; re-importing it gives an empty diff (US-5.1).",
+        "operationId": "export_version",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "standard_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Standard Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "contentMediaType": "application/octet-stream",
+                  "title": "Response Export Version",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Export Version Route",
+        "tags": [
+          "standards"
+        ],
+        "x-abacus-action": "firm_standard.read"
+      }
+    },
+    "/v1/standards/{standard_id}/versions/{version_id}/publish": {
+      "post": {
+        "description": "Publish vN\u2026: the owner, a person, with fresh MFA (422 `effective_from_backdated`,\n`effective_from_not_after_current`).",
+        "operationId": "publish_version",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "standard_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Standard Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "If-Match",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StandardPublishIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardVersionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Publish Version Route",
+        "tags": [
+          "standards"
+        ],
+        "x-abacus-action": "firm_standard.publish"
       }
     },
     "/v1/suggestions/{suggestion_id}/adopt": {

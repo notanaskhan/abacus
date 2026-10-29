@@ -1705,6 +1705,58 @@ export const STATUS_REGISTRY = {
       "derived": false
     }
   },
+  "firm_standard_version": {
+    "draft": {
+      "label": "Draft",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "published": {
+      "label": "Published",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "soon",
+      "terminal": true,
+      "derived": true
+    },
+    "discarded": {
+      "label": "Discarded",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "reference_set_version": {
+    "draft": {
+      "label": "Draft",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "published": {
+      "label": "Published",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "soon",
+      "terminal": true,
+      "derived": true
+    },
+    "withdrawn": {
+      "label": "Withdrawn",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
   "parse_flag": {
     "low_confidence": {
       "label": "Low confidence",

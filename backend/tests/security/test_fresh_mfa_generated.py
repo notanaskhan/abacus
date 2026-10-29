@@ -119,6 +119,8 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/legal-holds/{hold_id}/release", "legal_hold.lift"),
     ("POST", "/v1/sign-offs", "sign_off.create"),
     ("POST", "/v1/sign-offs:bulk", "sign_off.bulk"),
+    ("POST", "/v1/standards", "firm_standard.create"),
+    ("POST", "/v1/standards/{standard_id}/versions/{version_id}/publish", "firm_standard.publish"),
     ("POST", "/v1/walls", "wall.create"),
     ("POST", "/v1/walls/{wall_id}/approve", "wall.approve"),
     ("POST", "/v1/walls/{wall_id}/remove", "wall.remove"),
