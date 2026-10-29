@@ -148,7 +148,7 @@ ISSUES: Final = frozenset(
     {"issue_list_route", "issue_route", "issue_create_route", "issue_update_route"}
 )
 _STUBBED = [e for e in _ENDPOINTS if e.__name__ not in ISSUES]
-# Live with the flag on (no longer 501): P-04-T32 serves the checkpoints
+# Live with the flag on (no longer 501): P-04-T32 serves the checkpoints, P-04-T35 the fields
 # (tests/integration/backfill/test_p04t32_checkpoints.py; DEC-804).
 LIVE: Final = frozenset(
     {
@@ -159,6 +159,12 @@ LIVE: Final = frozenset(
         "checkpoint_reject_route",
         "checkpoint_restore_route",
         "checkpoint_rename_route",
+        # P-04-T35 serves the field routes (tests/integration/backfill/test_p04t35_field_values.py;
+        # DEC-1050).
+        "field_provenance_route",
+        "field_edit_route",
+        "field_reference_route",
+        "field_tick_route",
         # P-04-T31 (DEC-828): resolutions, fix instructions and send-to-client
         # (tests/integration/backfill/test_p04t31_issues_part2.py).
         "issue_resolve_route",
