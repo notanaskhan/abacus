@@ -1,8 +1,8 @@
 ---
 id: TASK-1727
 title: N-01-T07 Firm intake migration (inbox tables)
-spec: N-01 §4.2
-acceptance_criteria: [N-01-T07]
+spec: SPEC-380
+acceptance_criteria: [AC-12]
 risk_zone: red
 status: in-review
 epic: N-01

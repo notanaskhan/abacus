@@ -221,7 +221,7 @@ def test_insert_only_tables_refuse_update_delete_and_truncate(db: sc.Database, t
         )
         assert granted is False, (table, privilege)
     with pytest.raises(asyncpg.InsufficientPrivilegeError):
-        asyncio.run(_sql(db, f"TRUNCATE {table}"))
+        asyncio.run(_sql(db, f"TRUNCATE {table} CASCADE"))
 
 
 def test_a_thread_is_matched_exactly_when_it_names_a_client(db: sc.Database) -> None:
