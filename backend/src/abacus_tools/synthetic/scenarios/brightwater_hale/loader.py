@@ -94,9 +94,12 @@ from abacus.kernel.db import TenantContext
 from abacus.kernel.uow import Target, uow
 from abacus.modules.assurance.api import record_phase, update_profile
 from abacus.modules.communications.api import (
+    Inbound,
     TemplateContent,
+    add_attachment,
     email_template_state,
     publish_email_template,
+    record_inbound_message,
     save_email_template_draft,
 )
 from abacus.modules.connections.api import seed_synthetic_connection
@@ -242,6 +245,15 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.email_templates import (
     SLICE as EMAIL_TEMPLATES_SLICE,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import snapshot
+from abacus_tools.synthetic.scenarios.brightwater_hale.firm_inbox import (
+    NEEDS as FIRM_INBOX_NEEDS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.firm_inbox import (
+    SLICE as FIRM_INBOX_SLICE,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.firm_inbox import (
+    TRIAGER as INBOX_TRIAGER,
+)
 from abacus_tools.synthetic.scenarios.brightwater_hale.firm_people import (
     SERVICE_LINE_OF_TEAM,
     Level,
@@ -1398,6 +1410,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     CONNECTIONS_SLICE: CONNECTIONS_NEEDS,  # A-02-T27: Copperleaf's POR-16a connections
     ACCEPTANCE_SLICE: ACCEPTANCE_NEEDS,
     INTAKE_SLICE: INTAKE_NEEDS,  # P-07-T50: wave 3 (drafts, the open Harborline hit, Meridian)
+    FIRM_INBOX_SLICE: FIRM_INBOX_NEEDS,  # N-01-T11: docs@ rows 1-17 and the Intake team
     EMAIL_TEMPLATES_SLICE: (),  # R-01-T22: Grace's firm admin role is audit_core's
 }
 
@@ -2147,6 +2160,87 @@ async def _incident_recorded(conn: asyncpg.Connection, _: Scenario, event: Event
     await record_incident(await _staff_context(conn, event), facts)
 
 
+# --- the firm_inbox slice (N-01-T11; DEC-836) ----------------------------------------------------
+# The Intake team is a bootstrap write (no team service is exported); every docs@ message goes
+# through the intake service as the transport would deliver it, every file through
+# `add_attachment` (scanned, stored write-once). W0's ignored file is a bootstrap status write
+# (no ignore service before N-01-T15); W0's filed files wait for a filing service (DEC-836).
+
+
+async def _intake_team_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    name = str(event.data["name"])
+    members = [user_id_of(_SEATS[str(i)]) for i in cast(list[str], event.data["members"])]
+
+    async def write() -> tuple[str, str, str]:
+        team = team_id_of(name)
+        await conn.execute(
+            "INSERT INTO teams (id, tenant_id, name, kind) VALUES ($1, $2, $3, 'intake') "
+            "ON CONFLICT DO NOTHING",
+            team,
+            TENANT,
+            name,
+        )
+        for user in members:
+            await conn.execute(
+                "INSERT INTO team_rosters (tenant_id, team_id, user_id) SELECT $1, $2, $3 "
+                "WHERE NOT EXISTS (SELECT 1 FROM team_rosters WHERE tenant_id = $1 "
+                "AND team_id = $2 AND user_id = $3)",
+                TENANT,
+                team,
+                user,
+            )
+        return "team.created", "team", str(team)
+
+    await _bootstrap(conn, event, write)
+
+
+def _synthetic_file(name: str) -> bytes:
+    """A small synthetic PDF per file name (no real document is ever loaded)."""
+    return f"%PDF-1.4\n% Brightwater Hale scenario file: {name}\n%%EOF\n".encode()
+
+
+async def _inbound_email_recorded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    data = event.data
+    client = data["client"]
+    tenant = TenantContext(TENANT, "system", "transport:docs@")
+    recorded = await record_inbound_message(
+        tenant,
+        Inbound(
+            channel="email",
+            sender_display=str(data["sender"]),
+            subject=str(data["subject"]),
+            received_at=datetime.fromisoformat(str(data["received_at"])),
+            body=None if data["body"] is None else str(data["body"]),
+            sender_address=str(data["sender"]),
+            internet_message_id=str(data["internet_message_id"]),
+            in_reply_to=None if data["in_reply_to"] is None else str(data["in_reply_to"]),
+            client_id=None if client is None else await _client_id(conn, str(client)),
+            # A named client is a staff match, so it names who matched (Grace, DEC-836).
+            logged_by=None if client is None else user_id_of(_SEATS[INBOX_TRIAGER]),
+            received_via="email",
+            source_display="docs@",
+        ),
+    )
+    for attachment in cast(list[dict[str, str]], data["attachments"]):
+        if attachment["state"] == "filed":
+            continue  # DEC-836: a filed row needs its evidence version (N-01-T15's filing)
+        received = await add_attachment(
+            tenant,
+            recorded.message_id,
+            file_name=attachment["name"],
+            content=_synthetic_file(attachment["name"]),
+        )
+        if attachment["state"] == "ignored":
+
+            async def ignore(found: UUID = received.attachment_id) -> tuple[str, str, str]:
+                await conn.execute(
+                    "UPDATE inbox_attachments SET status = 'ignored' WHERE id = $1", found
+                )
+                return "inbox_attachment.ignored", "inbox_attachment", str(found)
+
+            await _bootstrap(conn, event, ignore)
+
+
 # --- the acceptance slice (P-07-T40; DEC-412) ---------------------------------------------------
 # Each act goes through the owning service as the person the handoff names, signed in with a
 # fresh second factor (`_staff_context`). The questionnaire templates have no service (firm
@@ -2455,6 +2549,8 @@ HANDLERS: Final[dict[str, Handler]] = {
     "platform.incident_recorded": _incident_recorded,
     # A-02-T27 (`--slice connections`): Copperleaf's POR-16a connections.
     "connections.connection_seeded": _connection_seeded,
+    "organisations.intake_team_created": _intake_team_created,  # N-01-T11
+    "communications.inbound_email_recorded": _inbound_email_recorded,  # N-01-T11
     # P-07-T40 (`--slice acceptance`): templates, Calloway's custodian, the Northwind team's
     # history, the conflict searches, independence, contacts, then Thornbury and Meridian.
     "engagements.questionnaire_template_added": _questionnaire_template_added,
