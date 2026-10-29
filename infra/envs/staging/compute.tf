@@ -96,6 +96,13 @@ data "aws_iam_policy_document" "app" {
     resources = flatten([for b in [module.evidence.arn, module.records.arn] : [b, "${b}/*"]])
   }
 
+  # The worker's startup check (evidence.check_ready) refuses a bucket without Object Lock.
+  statement {
+    sid       = "ObjectLockRead"
+    actions   = ["s3:GetBucketObjectLockConfiguration"]
+    resources = [module.evidence.arn]
+  }
+
   statement {
     sid       = "PlatformKey"
     actions   = ["kms:Encrypt", "kms:Decrypt", "kms:GenerateDataKey", "kms:DescribeKey"]
