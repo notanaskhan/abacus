@@ -25,7 +25,7 @@ information (IRC §7216); everything else Internal. No data is inserted: the pol
 written at tenant provisioning and the ERSD text through an import, never by a migration.
 
 Revision ID: 0292
-Revises: 0291
+Revises: 0340 (S12r R-01-T27; re-chained from 0291 for the S12–S14 batch)
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, insert_only, tenant_table
 
 revision = "0292"
-down_revision = "0291"
+down_revision = "0340"
 branch_labels = None
 depends_on = None
 
