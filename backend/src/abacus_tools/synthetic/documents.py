@@ -852,3 +852,82 @@ def pii_corpus() -> tuple[PiiDocument, ...]:
             ((1, "routing_number", "0001"), (1, "bank_account", "7731"), (1, "dob", None)),
         ),
     )
+
+
+# --- Intake matching cases (N-01-T21; matcher v3) ----------------------------------------------
+
+
+def w2c_pdf(
+    *,
+    tax_year: int = 2025,
+    employer: str = "Example Company Inc",
+    employee: str = "Sam Example",
+    previous: Decimal = Decimal("48250.00"),
+    corrected: Decimal = Decimal("49100.00"),
+) -> bytes:
+    """A corrected wage statement (Form W-2c): it answers the W-2 request, as a correction.
+    Identification numbers are masked letters."""
+    return _pdf(
+        [
+            _text_page(
+                [
+                    f"Form W-2c Corrected Wage and Tax Statement {tax_year}",
+                    f"Employer: {employer}",
+                    "Employer identification number: XX-XXXXXXX",
+                    f"Employee: {employee}",
+                    "Employee's social security number: XXX-XX-XXXX",
+                    "Box 1 Wages, tips, other compensation",
+                    f"Previously reported {_money(previous)}",
+                    f"Correct information {_money(corrected)}",
+                ]
+            )
+        ]
+    )
+
+
+def form_1099_div_pdf(
+    *,
+    tax_year: int = 2025,
+    payer: str = "Example Securities LLC",
+    recipient: str = "Sam Example",
+    corrected: bool = False,
+    ordinary: Decimal = Decimal("1840.22"),
+    qualified: Decimal = Decimal("1512.90"),
+    title: str | None = None,
+    notes: Sequence[str] = (),
+) -> bytes:
+    """A dividends statement (Form 1099-DIV), optionally marked CORRECTED; `title` replaces the
+    form's heading (a unicode deception case) and `notes` add lines (an instruction in the
+    file)."""
+    head = title or f"Form 1099-DIV Dividends and Distributions {tax_year}"
+    return _pdf(
+        [
+            _text_page(
+                [
+                    *(["CORRECTED"] if corrected else []),
+                    head,
+                    f"Payer: {payer}",
+                    "Payer's TIN: XX-XXXXXXX",
+                    f"Recipient: {recipient}",
+                    "Recipient's TIN: XXX-XX-XXXX",
+                    f"Box 1a Total ordinary dividends {_money(ordinary)}",
+                    f"Box 1b Qualified dividends {_money(qualified)}",
+                    *notes,
+                ]
+            )
+        ]
+    )
+
+
+def census_xlsx(*, plan: str = "Example Company 401(k) Plan", plan_year: int = 2025) -> bytes:
+    """A plan's employee census: one row per participant, synthetic names, masked identifiers."""
+    return _sheet(
+        "Census",
+        [
+            [f"{plan} employee census, plan year {plan_year}"],
+            ["Employee", "Identifier", "Hire date", "Status", "Compensation", "Deferrals"],
+            ["Avery Example", "XXX-XX-XXXX", "2019-04-01", "Active", 72500, 4350],
+            ["Jordan Example", "XXX-XX-XXXX", "2021-08-16", "Active", 58200, 2910],
+            ["Riley Example", "XXX-XX-XXXX", "2024-02-05", "Terminated", 21400, 0],
+        ],
+    )

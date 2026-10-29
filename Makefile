@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: backfill-rerun shadow-report pilot-metrics go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr
+.PHONY: backfill-rerun shadow-report pilot-metrics go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast evals-match-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr
 
 setup:
 	cd backend && uv sync --locked
@@ -132,6 +132,7 @@ check: check-fast
 	cd backend && uv run pytest $(SERIAL) $(UNIT_TESTS) $(INTEGRATION_TESTS) --cov --cov-append --cov-fail-under=0
 	cd backend && uv run python -m abacus_tools.ci.coverage_floor
 	$(MAKE) evals-review-fast
+	$(MAKE) evals-match-fast
 	$(MAKE) ci-contracts ci-frontend
 
 # CI stage 2 runs `check` as parallel jobs (TASK-017). Each suite is split into SHARDS by recorded
@@ -220,6 +221,11 @@ evals:
 # throwaway containers, no model call, no cost). Part of `check`; CI's stage 3 runs it too.
 evals-review-fast:
 	cd backend && uv run python -m abacus_tools.evals --agent evidence.upload_reviewer --route fake --subset fast
+
+# N-01-T21: the matcher's intake section on its recorded answers (extraction, the content rules and
+# the file-name baseline run for real; the matcher's answer is recorded, no model call, no cost).
+evals-match-fast:
+	cd backend && uv run python -m abacus_tools.evals --agent evidence.matcher --route fake --section intake
 
 # SPEC-012: the quarterly break-glass access review (owner credentials). QUARTER=2026Q4
 access-review:
