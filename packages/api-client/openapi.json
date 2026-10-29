@@ -75435,16 +75435,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Destinations Route",
@@ -132302,16 +132292,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Bulk File Route",
@@ -133031,16 +133011,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Message Triage Route",
@@ -133179,16 +133149,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Triage Apply Route",
@@ -147005,7 +146965,7 @@
         "x-abacus-action": "portal_intake.read_own"
       },
       "post": {
-        "description": "POR-03 \"IntakeBatch something else\": the batch (N-01-T14).",
+        "description": "POR-03 \"Upload something else\": the batch (N-01-T14).",
         "operationId": "create_intake_upload",
         "parameters": [
           {

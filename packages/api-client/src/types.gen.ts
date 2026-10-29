@@ -35557,10 +35557,6 @@ export type DestinationsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DestinationsError = DestinationsErrors[keyof DestinationsErrors];
@@ -61568,10 +61564,6 @@ export type BulkFileErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type BulkFileError = BulkFileErrors[keyof BulkFileErrors];
@@ -61912,10 +61904,6 @@ export type MessageTriageErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MessageTriageError = MessageTriageErrors[keyof MessageTriageErrors];
@@ -61976,10 +61964,6 @@ export type TriageApplyErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TriageApplyError = TriageApplyErrors[keyof TriageApplyErrors];
