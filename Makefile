@@ -76,6 +76,7 @@ check-fast:
 	cd backend && uv run python -m abacus_tools.quality.seed_contamination
 	cd backend && uv run python -m abacus_tools.quality.fresh_mfa
 	cd backend && uv run python -m abacus_tools.quality.mutation_floors
+	cd backend && uv run python -m abacus_tools.quality.coverage_floors
 	cd backend && uv run python -m abacus_tools.release_windows check
 	$(MAKE) check-generated check-heads
 	cd backend && uv run python -m abacus_tools.quality.secrets_scan
@@ -170,6 +171,7 @@ ci-integration:
 # The floor (95) with DEC-10's dated exception, if any: backend/coverage-exception.toml.
 ci-coverage:
 	cd backend && uv run coverage combine && uv run python -m abacus_tools.ci.coverage_floor
+	cd backend && uv run python -m abacus_tools.quality.coverage_floors --measure
 
 ci-contracts:
 	cd backend && uv run python -m abacus_tools.quality.schema_check

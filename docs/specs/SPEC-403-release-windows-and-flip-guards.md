@@ -54,6 +54,7 @@ Dates in heads drift. A promotion in a deadline week, a flip outside the Tuesday
 
 **Independent tests (Q-04-T011).**
 - **AC-13** A suite written from the P-29 note covers Sep 1 00:00 CT, Oct 20 23:59 CT, every deadline week and the Tuesday slot edges, and fails when any guard is removed.
+- **AC-14 Expand-only migrations (Q-03-T081, T082; DEC-1052).** From Jun 1, 2027 a migration with a DROP, RENAME, type change, NOT NULL without default or a CHECK value removal fails stage 1 unless the PR is labelled `contract-step`, and the same labelled migration fails in window mode on an in-window date.
 
 ## 5. Out of scope
 The pilot tables and metrics workflow (T006 to T008, T012), Q-03-T081's migration guard itself, PLT-01 (G-04), the firm-facing metrics reads (I-03).

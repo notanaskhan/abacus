@@ -53,4 +53,14 @@ export const COPY = {
   cancel: "Cancel",
   declineConfirm: "Decline",
   mobileStepChips: "Verify ✓ · Review ✓ · Sign · Done",
+  // F-06-T05 (DEC-1053): words no artboard draws. The provider frame's title, its redirect call to
+  // action and its unavailable line; the state after the provider returns until the server
+  // confirms; the decline group's name. White-labelled: no provider or product name.
+  providerTitle: (document: string): string => `Verify your identity and sign: ${document}`,
+  providerContinue: "Continue to verify",
+  providerUnavailable: "Signing isn't available right now. Try again in a few minutes.",
+  pendingTitle: "Checking your signature",
+  pendingBody: "This page updates as soon as your signature is recorded.",
+  declineReasonsLabel: "Why are you declining?",
+  stepNames: { verify: "Verify", review: "Review", sign: "Sign", done: "Done" },
 } as const;
