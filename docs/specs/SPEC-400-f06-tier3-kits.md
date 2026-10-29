@@ -75,6 +75,7 @@ Quality and hand-off (F6):
 - **AC-39** ADR P-24 (structured agent output) drafted and accepted (T24).
 - **AC-40 T16 identity and exception states (F-06-T05; DF-11, DF-12; DEC-1053).** Provider mode shows Completed only after the envelope status says so, TPL-16e offers no retry and names the paper-form path, Decline stays disabled until a reason is chosen, and no native identity component is exported.
 - **AC-41 T16 at 390 (F-06-T06).** At 390 px nothing scrolls sideways, the sticky bar never hides the active field, and every control has at least a 44 by 44 target; TPL-19 frame 9 hands off to the same ceremony.
+- **AC-42 The signing kit's independent suite (F-06-T07; ADR-078).** One spouse cannot act on the other's fields, the frame is titled and sandboxed with return parameters never trusted, no full TIN renders, and every state is axe clean.
 
 ## 6. Open questions
 - Q1 (iframe or redirect) and Q5 (provider-mode CTA copy): open, decide by Fri Apr 30, 2027; they
