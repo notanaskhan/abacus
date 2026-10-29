@@ -63,6 +63,10 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("letter.approve", "release", "engagement_partner"),
     ("firm_standard.create", "standards", "practice_leader"),
     ("firm_standard.publish", "standards", "firm_partner"),
+    ("consent.record", "consent", "engagement_partner"),
+    ("consent.export", "export", "firm_admin"),
+    ("consent_template.manage", "consent", "security_admin"),
+    ("consent_template.publish", "consent", "firm_partner"),
 )
 ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/audit-events/exports/{export_id}/download", "audit_event.export"),
@@ -86,6 +90,12 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/client-entities/{entity_id}/tin/reveal", "tin.reveal"),
     ("POST", "/v1/clients/{client_id}/contacts/{contact_id}/mfa-reset", "contact.mfa_reset"),
     ("POST", "/v1/clients/{client_id}/contacts/{contact_id}/portal-unlock", "contact.unlock"),
+    ("POST", "/v1/consent-templates/imports", "consent_template.manage"),
+    ("POST", "/v1/consent-templates/{template_id}/publish", "consent_template.publish"),
+    ("POST", "/v1/consents/exports", "consent.export"),
+    ("POST", "/v1/consents/records", "consent.record"),
+    ("POST", "/v1/consents/{consent_id}/declines", "consent.record"),
+    ("POST", "/v1/consents/{consent_id}/revocations", "consent.record"),
     ("POST", "/v1/contacts/{contact_id}/unlock", "contact.unlock"),
     ("POST", "/v1/decision-cards/{card_id}/decide", "decision.decide"),
     ("POST", "/v1/engagements/{engagement_id}/acceptance/decision", "acceptance.decide"),
