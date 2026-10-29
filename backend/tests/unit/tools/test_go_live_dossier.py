@@ -106,7 +106,7 @@ def test_a_missing_section_or_block_is_refused() -> None:
 
 def _ready_text() -> str:
     text = gd.fill(gd.template("PF-A1"), REPORT)
-    lines = []
+    lines: list[str] = []
     for line in text.splitlines():
         cells = line.split(" | ")
         if (
