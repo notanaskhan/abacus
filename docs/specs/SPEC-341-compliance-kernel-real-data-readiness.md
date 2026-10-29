@@ -1,7 +1,7 @@
 ---
 id: SPEC-341
 title: "Compliance kernel and real-data readiness (Q-02): classification flags, attribution, the human-only guard, access events, the audit hash chain, retention, Object Lock classes, legal holds, the incident register, firm export, the fresh-MFA list and run records"
-status: draft
+status: done
 owner: ayushkbhatia
 risk_zone: red
 related_adrs: [ADR-004, ADR-005, ADR-007, ADR-016, ADR-031, ADR-032, ADR-033, ADR-034, ADR-036, ADR-097, ADR-113, ADR-114, ADR-115, ADR-159, ADR-161, ADR-167, ADR-169]

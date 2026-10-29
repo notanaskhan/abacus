@@ -132,10 +132,15 @@ async def test_i01t02_flag_off_is_404_and_on_answers_home(monkeypatch: pytest.Mo
         narrowed.append(office_id)
         return HomeView("Daniel", date(2026, 9, 14), [], None, [], [], None, None)
 
+    async def client_activity(_ctx: object, office_id: uuid.UUID | None) -> list[object]:
+        narrowed.append(office_id)
+        return []
+
     monkeypatch.setattr(contract, "home_view", home_view)
+    monkeypatch.setattr(contract, "client_activity", client_activity)  # I-01-T12
     office = uuid.uuid4()
     out = await contract.home_route(_ctx(), office)
-    assert narrowed == [office]  # DEC-30: the office reaches every read
+    assert narrowed == [office, office]  # DEC-30: the office reaches every read
     assert (out.greeting.first_name, out.your_work, out.running_count) == ("Daniel", None, None)
 
 

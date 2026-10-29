@@ -4967,6 +4967,12 @@ export type ClientActivityOut = {
      */
     id: string;
     /**
+     * Labels
+     */
+    labels?: {
+        [key: string]: string;
+    };
+    /**
      * Occurred At
      */
     occurred_at: string;
@@ -11744,7 +11750,7 @@ export type FirmTeamIn = {
     /**
      * Kind
      */
-    kind: 'service_line' | 'practice_group' | 'eqr_pool' | 'monitoring_reviewers' | 'reviewer_pool' | 'custom';
+    kind: 'service_line' | 'practice_group' | 'eqr_pool' | 'monitoring_reviewers' | 'reviewer_pool' | 'custom' | 'intake';
     /**
      * Lead User Id
      */
@@ -11794,7 +11800,7 @@ export type FirmTeamOut = {
     /**
      * Kind
      */
-    kind: 'service_line' | 'practice_group' | 'eqr_pool' | 'monitoring_reviewers' | 'reviewer_pool' | 'custom';
+    kind: 'service_line' | 'practice_group' | 'eqr_pool' | 'monitoring_reviewers' | 'reviewer_pool' | 'custom' | 'intake';
     /**
      * Lead User Id
      */
@@ -13536,6 +13542,34 @@ export type ImportCountsOut = {
      * Unmatched Areas
      */
     unmatched_areas: number;
+};
+
+/**
+ * ImportFileOut
+ *
+ * `POST /v1/envelopes/import/files`: one scanned, stored file an import names by `id`.
+ */
+export type ImportFileOut = {
+    /**
+     * File Name
+     */
+    file_name: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Media Type
+     */
+    media_type: string;
+    /**
+     * Sha256
+     */
+    sha256: string;
+    /**
+     * Size Bytes
+     */
+    size_bytes: number;
 };
 
 /**
@@ -52852,10 +52886,6 @@ export type ImportEnvelopeRecordErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ImportEnvelopeRecordError = ImportEnvelopeRecordErrors[keyof ImportEnvelopeRecordErrors];
@@ -52868,6 +52898,74 @@ export type ImportEnvelopeRecordResponses = {
 };
 
 export type ImportEnvelopeRecordResponse = ImportEnvelopeRecordResponses[keyof ImportEnvelopeRecordResponses];
+
+export type StageEnvelopeImportFileData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Filename
+         */
+        filename: string;
+        /**
+         * Client Id
+         */
+        client_id: string;
+        /**
+         * Engagement Id
+         */
+        engagement_id?: string | null;
+    };
+    url: '/v1/envelopes/import/files';
+};
+
+export type StageEnvelopeImportFileErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * The file is too large
+     */
+    413: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
+};
+
+export type StageEnvelopeImportFileError = StageEnvelopeImportFileErrors[keyof StageEnvelopeImportFileErrors];
+
+export type StageEnvelopeImportFileResponses = {
+    /**
+     * Successful Response
+     */
+    201: ImportFileOut;
+};
+
+export type StageEnvelopeImportFileResponse = StageEnvelopeImportFileResponses[keyof StageEnvelopeImportFileResponses];
 
 export type RemindEnvelopesPreviewData = {
     body: RemindIn;
@@ -59456,10 +59554,6 @@ export type ListSendingDomainsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListSendingDomainsError = ListSendingDomainsErrors[keyof ListSendingDomainsErrors];
@@ -59516,9 +59610,9 @@ export type CreateSendingDomainErrors = {
      */
     422: ValidationErrorOut;
     /**
-     * Contract stub: not implemented yet
+     * Service unavailable
      */
-    501: ErrorOut;
+    503: ErrorOut;
 };
 
 export type CreateSendingDomainError = CreateSendingDomainErrors[keyof CreateSendingDomainErrors];
@@ -59571,10 +59665,6 @@ export type RevokeSendingDomainErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RevokeSendingDomainError = RevokeSendingDomainErrors[keyof RevokeSendingDomainErrors];
@@ -59628,9 +59718,9 @@ export type CheckSendingDomainErrors = {
      */
     422: ValidationErrorOut;
     /**
-     * Contract stub: not implemented yet
+     * Service unavailable
      */
-    501: ErrorOut;
+    503: ErrorOut;
 };
 
 export type CheckSendingDomainError = CheckSendingDomainErrors[keyof CheckSendingDomainErrors];
@@ -62239,10 +62329,6 @@ export type LogIntakeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type LogIntakeError = LogIntakeErrors[keyof LogIntakeErrors];
@@ -62309,17 +62395,9 @@ export type LogIntakeFileErrors = {
      */
     413: ErrorOut;
     /**
-     * The file type is not accepted
-     */
-    415: ErrorOut;
-    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
     /**
      * Service unavailable
      */
@@ -65572,6 +65650,64 @@ export type DiscardTemplateDraftsResponses = {
 };
 
 export type DiscardTemplateDraftsResponse = DiscardTemplateDraftsResponses[keyof DiscardTemplateDraftsResponses];
+
+export type VersionProgramsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}/programs';
+};
+
+export type VersionProgramsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type VersionProgramsError = VersionProgramsErrors[keyof VersionProgramsErrors];
+
+export type VersionProgramsResponses = {
+    /**
+     * Response Version Programs
+     *
+     * Successful Response
+     */
+    200: Array<ProgramOut>;
+};
+
+export type VersionProgramsResponse = VersionProgramsResponses[keyof VersionProgramsResponses];
 
 export type AddStepData = {
     body: StepCreateIn;
