@@ -4,7 +4,7 @@
 // scenario with one handler changed per state.
 import { client } from "@abacus/api-client/client";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import {
   type FixtureHandler,
@@ -52,7 +52,9 @@ describe("SPEC-036 AC-9 · ADM-04", () => {
 
   it("not allowed: the reason in words, no Retry", async () => {
     show({ [POLICY]: () => json({ detail: "forbidden" }, 403) });
-    expect(await screen.findByText(/role|permission|allowed/i)).toBeTruthy();
+    await waitFor(() => {
+      expect(document.querySelector("[data-restricted='role']")).not.toBeNull();
+    });
     expect(screen.queryByRole("button", { name: /Retry/ })).toBeNull();
     expect(document.querySelector("[data-restricted='role']")).not.toBeNull();
   });

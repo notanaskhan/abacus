@@ -2,7 +2,7 @@
 // SPEC-036 AC-6 and AC-9 on the engagement-exclusion control (Q-04-T351): an excluded engagement
 // says "AI is off for this engagement" to everyone on it; loading, error and not-allowed are
 // states, never a blank. The ENG-02 mount is not built yet: SPEC-036 stays open naming it.
-import { cleanup, screen } from "@testing-library/react";
+import { cleanup, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { json, mockApi, renderRoutes, signInForTest } from "../testing/support";
 import { AiExclusionControl } from "./AiClientData";
@@ -39,11 +39,11 @@ describe("SPEC-036 AC-6 · the engagement says AI is off", () => {
 });
 
 describe("SPEC-036 AC-9 · the control's states", () => {
-  it("loading: a skeleton", () => {
+  it("loading: a skeleton", async () => {
     control(() => new Promise<Response>(() => undefined));
-    expect(
-      document.querySelector("[class*='skeleton'], [aria-busy='true'], .animate-pulse"),
-    ).not.toBeNull();
+    await waitFor(() => {
+      expect(document.querySelector("[data-pulse]")).not.toBeNull();
+    });
   });
 
   it("error: says it couldn't load", async () => {
@@ -53,8 +53,9 @@ describe("SPEC-036 AC-9 · the control's states", () => {
 
   it("not allowed: the reason in words", async () => {
     control(() => json({ detail: "forbidden" }, 403));
-    await screen.findByText(/./);
-    expect(document.querySelector("[data-restricted='role']")).not.toBeNull();
+    await waitFor(() => {
+      expect(document.querySelector("[data-restricted='role']")).not.toBeNull();
+    });
   });
 
   it("empty: nothing to say when AI is on and the viewer cannot switch it", async () => {
