@@ -14586,7 +14586,11 @@
           },
           "status": {
             "cls": "internal",
-            "const": "queued",
+            "enum": [
+              "queued",
+              "ready",
+              "failed"
+            ],
             "title": "Status",
             "type": "string"
           }
@@ -36021,7 +36025,7 @@
             "enum": [
               "included",
               "not_required",
-              "none"
+              "not_included"
             ],
             "title": "K3 Status",
             "type": "string"
@@ -36078,18 +36082,6 @@
             "title": "Tax Year",
             "type": "integer"
           },
-          "tin_last4": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "confidential",
-            "title": "Tin Last4"
-          },
           "version_no": {
             "cls": "internal",
             "title": "Version No",
@@ -36101,7 +36093,6 @@
           "recipient_id",
           "recipient_name",
           "recipient_kind",
-          "tin_last4",
           "form",
           "tax_year",
           "status",
@@ -47441,15 +47432,15 @@
             "title": "Counties",
             "type": "array"
           },
-          "state": {
+          "state_code": {
             "cls": "public",
             "pattern": "^[A-Z]{2}$",
-            "title": "State",
+            "title": "State Code",
             "type": "string"
           }
         },
         "required": [
-          "state",
+          "state_code",
           "counties"
         ],
         "title": "PostponementArea",
@@ -64218,22 +64209,20 @@
             "cls": "internal",
             "title": "Open Notices"
           },
-          "tin_last4": {
+          "taxpayer_tin": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/MaskedTinOut"
               },
               {
                 "type": "null"
               }
             ],
-            "cls": "confidential",
-            "title": "Tin Last4"
+            "cls": "restricted"
           }
         },
         "required": [
           "client_entity_id",
-          "tin_last4",
           "consents",
           "authorizations",
           "elections",
@@ -164291,7 +164280,7 @@
     },
     "/v1/questionnaire-templates": {
       "get": {
-        "operationId": "list_templates",
+        "operationId": "questionnaire_list_templates",
         "parameters": [
           {
             "in": "header",
@@ -164334,7 +164323,7 @@
                   "items": {
                     "$ref": "#/components/schemas/QuestionnaireTemplateOut"
                   },
-                  "title": "Response List Templates",
+                  "title": "Response Questionnaire List Templates",
                   "type": "array"
                 }
               }
@@ -164392,7 +164381,7 @@
             "description": "Contract stub: not implemented yet"
           }
         },
-        "summary": "List Templates Route",
+        "summary": "Questionnaire List Templates Route",
         "tags": [
           "questionnaires"
         ],
@@ -164537,7 +164526,7 @@
     },
     "/v1/questionnaire-templates:import": {
       "post": {
-        "operationId": "import_template",
+        "operationId": "questionnaire_import_template",
         "parameters": [
           {
             "in": "query",
@@ -164654,7 +164643,7 @@
             "description": "Contract stub: not implemented yet"
           }
         },
-        "summary": "Import Template Route",
+        "summary": "Questionnaire Import Template Route",
         "tags": [
           "questionnaires"
         ],
@@ -169011,7 +169000,7 @@
     "/v1/standards/{standard_id}/versions/{version_id}": {
       "delete": {
         "description": "Discard draft: status `discarded`; the row stays (never deleted).",
-        "operationId": "discard_draft",
+        "operationId": "standard_discard_draft",
         "parameters": [
           {
             "in": "path",
@@ -169148,7 +169137,7 @@
             "description": "Contract stub: not implemented yet"
           }
         },
-        "summary": "Discard Draft Route",
+        "summary": "Standard Discard Draft Route",
         "tags": [
           "standards"
         ],
@@ -169582,7 +169571,7 @@
     "/v1/standards/{standard_id}/versions/{version_id}/export.xlsx": {
       "get": {
         "description": "The version as a workbook; re-importing it gives an empty diff (US-5.1).",
-        "operationId": "export_version",
+        "operationId": "standard_export_version",
         "parameters": [
           {
             "in": "path",
@@ -169643,7 +169632,7 @@
               "application/json": {
                 "schema": {
                   "contentMediaType": "application/octet-stream",
-                  "title": "Response Export Version",
+                  "title": "Response Standard Export Version",
                   "type": "string"
                 }
               }
@@ -169701,7 +169690,7 @@
             "description": "Contract stub: not implemented yet"
           }
         },
-        "summary": "Export Version Route",
+        "summary": "Standard Export Version Route",
         "tags": [
           "standards"
         ],
@@ -171654,7 +171643,7 @@
     },
     "/v1/tax-returns/{return_id}/assignments": {
       "post": {
-        "operationId": "assign",
+        "operationId": "return_assign",
         "parameters": [
           {
             "in": "path",
@@ -171781,7 +171770,7 @@
             "description": "Contract stub: not implemented yet"
           }
         },
-        "summary": "Assign Route",
+        "summary": "Return Assign Route",
         "tags": [
           "tax-returns"
         ],

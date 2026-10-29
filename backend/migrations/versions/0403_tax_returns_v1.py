@@ -130,7 +130,7 @@ def upgrade() -> None:
         CREATE FUNCTION tax_return_events_immutable() RETURNS trigger
         LANGUAGE plpgsql SET search_path = pg_catalog, public, pg_temp AS $$
         BEGIN
-            RAISE EXCEPTION 'tax return events are insert-only'
+            RAISE EXCEPTION 'insert-only: status events and engine summaries never change'
                 USING ERRCODE = 'insufficient_privilege';
         END $$
         """

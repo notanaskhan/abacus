@@ -81,6 +81,10 @@ check-fast:
 	cd backend && uv run python -m abacus_tools.quality.quarantine
 	# Q-04-T020: every live-window day has a primary and a named backup; no contacts in git.
 	cd backend && uv run python -m abacus_tools.quality.on_call
+	# Q-03-T087: every decision, escaped-defect and runbook ID appears once (merge damage).
+	cd backend && uv run python -m abacus_tools.quality.register_ids
+	# Q-03-T084: the Pilot 0 top-10 log is well formed (pilot codes, real screens and epics).
+	cd backend && uv run python -m abacus_tools.quality.pilot_log
 	# Q-03-T094: the fakes register names real files (unverified fakes are reported, not failed).
 	cd backend && uv run python -m abacus_tools.quality.fakes
 	cd backend && uv run python -m abacus_tools.quality.mutation_floors

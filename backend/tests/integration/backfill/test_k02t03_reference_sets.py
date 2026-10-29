@@ -94,9 +94,13 @@ def test_ac10_the_migration_passes_up_down_up(db: sc.Database) -> None:
 async def test_ac8_the_app_has_no_privilege_on_the_tables(db: sc.Database) -> None:
     app = await asyncpg.connect(_dsn(db.app_url))
     try:
-        for table in ("reference_sets", "reference_set_versions", "reference_set_publications"):
+        for statement in (
+            "SELECT * FROM reference_sets",
+            "SELECT * FROM reference_set_versions",
+            "SELECT * FROM reference_set_publications",
+        ):
             with pytest.raises(asyncpg.InsufficientPrivilegeError):
-                await app.fetch(f"SELECT * FROM {table}")  # noqa: S608 -- fixed names
+                await app.fetch(statement)
         with pytest.raises(asyncpg.InsufficientPrivilegeError):
             await app.execute(
                 "INSERT INTO reference_sets (key, kind, title, content_owner) "

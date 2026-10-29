@@ -51,6 +51,26 @@ class ReturnSyncChipStatus(StrEnum):
     FAILED = "failed"
 
 
+class EngineImportStatus(StrEnum):
+    SCANNING = "scanning"
+    PENDING_APPROVAL = "pending_approval"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    ROUTED = "routed"
+
+
+class K3Status(StrEnum):
+    INCLUDED = "included"
+    NOT_REQUIRED = "not_required"
+    NOT_INCLUDED = "not_included"
+
+
+class TranscriptParseStatus(StrEnum):
+    QUEUED = "queued"
+    PARSED = "parsed"
+    FAILED = "failed"
+
+
 class K1PackageStatus(StrEnum):
     NOT_PREPARED = "not_prepared"
     DRAFT = "draft"
@@ -854,6 +874,23 @@ STORED: dict[str, tuple[str, ...]] = {
         "synced",
         "out_of_sync",
         "import_pending_approval",
+        "failed",
+    ),
+    "engine_import": (
+        "scanning",
+        "pending_approval",
+        "approved",
+        "rejected",
+        "routed",
+    ),
+    "k3": (
+        "included",
+        "not_required",
+        "not_included",
+    ),
+    "transcript_parse": (
+        "queued",
+        "parsed",
         "failed",
     ),
     "k1_package": (

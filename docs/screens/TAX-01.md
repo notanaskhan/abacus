@@ -39,6 +39,13 @@ Verbatim from the handoff's spec.md (and revision.md) into `screens/TAX-01/copy.
 
 ## Links
 Outbound: TAX-02 (row), TAX-09 (sync chip), SIG-01 (awaiting signature). Inbound: SHL-01 nav (Tax Returns), HOME-01 tiles.
+| Opens ENG-03 · new engagement wizard | ENG-03 | planned (handoff link; tooltip-only) |
+| Opens TXP-12 · K-1 package | TXP-12 | planned (handoff link; tooltip-only) |
+| Opens TAX-06 · return issues | TAX-06 | planned (handoff link; tooltip-only) |
+| Opens TAX-09 · engine sync, anchored to this chip | TAX-09 | planned (handoff link; tooltip-only) |
+| Opens SIG-01 · this envelope | SIG-01 | planned (handoff link; tooltip-only) |
+| Opens ENG-07 · season setup and roll-forward | ENG-07 | planned (handoff link; tooltip-only) |
+| Opens TAX-02 · Estate of Walter Thornbury | TAX-02 | planned (handoff link; tooltip-only) |
 
 ## Acceptance
 - TAX-01 acceptance: every artboard renders from its fixture scenario with the persona and clock above.
