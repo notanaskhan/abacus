@@ -27,7 +27,7 @@ from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import Depends, Query
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import HOME_DASHBOARD
 from abacus.kernel.classification import classified
@@ -159,6 +159,10 @@ class ClientActivityOut(BaseModel):
     actor: Annotated[ActivityActorOut, classified("confidential")]
     subject: Annotated[ActivityRefOut, classified("internal")]
     facts: Annotated[dict[str, str | int | bool], classified("internal")]
+    # I-01-T05/T06 (DEC-1001): read-time labels the row's sentence names, resolved by the reader
+    # now and never stored: `subject` (a document or engagement name), `recipient` (who it went
+    # to) and `context` (the second line, e.g. a binder). Empty until a source resolves them.
+    labels: Annotated[dict[str, str], classified("confidential")] = Field(default_factory=dict)
 
 
 class SegmentsOut(BaseModel):

@@ -1,3 +1,5 @@
 # rds-postgres
 
-Skeleton. Implemented in a later Q-01 task (see docs/plan/06-platform-ops-security.md section 1.17). Local modules only; providers limited to hashicorp/aws.
+PostgreSQL 17 (Q-01-T14): private, `rds.force_ssl`, statement logging off, encrypted with the
+platform key, master password managed by RDS. Extensions and roles come from the bootstrap task
+(`migrations/bootstrap.sql`, Q-01-T20).

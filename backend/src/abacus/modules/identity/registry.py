@@ -49,6 +49,8 @@ TABLES: frozenset[str] = frozenset(
         # G-02-T14 (0220): the firm's security policies and per-firm session sign-outs.
         "security_policies",
         "auth_session_tenant_revocations",
+        # P-07-T47 (0360): the invitation-expiry pass's notices (DEC-1000).
+        "invitation_expiry_notices",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -58,6 +60,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
     # G-01-T13 (0168)
     | {"independence_statements", "independence_annual_confirmations", "access_end_notices"}
     | {"auth_session_tenant_revocations"}  # G-02-T14 (0220)
+    | {"invitation_expiry_notices"}  # P-07-T47 (0360)
 )
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -125,6 +128,8 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"tenant_id", "user_id", "year", "decision", "note", "statement_version"}
     ),
     "access_end_notices": frozenset({"tenant_id", "access_ends_on", "members"}),
+    # P-07-T47 (0360): one notice per invitation and expiry.
+    "invitation_expiry_notices": frozenset({"tenant_id", "invitation_id", "expires_at"}),
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
