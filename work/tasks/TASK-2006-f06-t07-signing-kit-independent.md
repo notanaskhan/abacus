@@ -2,7 +2,7 @@
 id: TASK-2006
 title: F-06-T07 Independent AC tests for the signing kit
 spec: SPEC-400
-acceptance_criteria: [Story 1.1, 1.2, 1.4, 1.6, 1.7, 1.8]
+acceptance_criteria: [AC-42]
 risk_zone: amber
 status: in-review
 epic: F-06
