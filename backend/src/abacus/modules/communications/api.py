@@ -152,6 +152,11 @@ from abacus.modules.communications.transport import LocalMailbox, Transport, con
 from abacus.modules.communications.triage import ACTIVITIES as TRIAGE_ACTIVITIES
 from abacus.modules.communications.triage import WORKFLOWS as TRIAGE_WORKFLOWS
 from abacus.modules.communications.triage import on_attachment_received
+from abacus.modules.communications.triage_workflow import (
+    AttachmentTriageWorkflow,
+    TriageInput,
+    attachment_triage_id,
+)
 from abacus.modules.communications.workflows import (
     DrainSesEventsWorkflow,
     SendingDomainVerificationInput,
@@ -236,6 +241,7 @@ __all__ = [
     "SUBSCRIPTIONS",
     "TEMPLATE_VARIABLES",
     "WORKFLOWS",
+    "AttachmentTriageWorkflow",
     "ComposedFollowUp",
     "DnsRecord",
     "Draft",
@@ -287,9 +293,11 @@ __all__ = [
     "TemplateRegistrationInvalid",
     "TemplateVariable",
     "Transport",
+    "TriageInput",
     "ValueFinding",
     "Violation",
     "add_attachment",
+    "attachment_triage_id",
     "check_scope",
     "client_mail_open",
     "compose_follow_up",
