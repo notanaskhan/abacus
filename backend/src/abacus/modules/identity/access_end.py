@@ -17,6 +17,8 @@ For each firm:
   refuses).
 - **Tells firm admins once**, seven days or fewer before an end date (`seasonal_access_ending`),
   one notice per firm and date (`access_end_notices`).
+- **Then** runs the day-12 client invitation notice (`invitation_expiry`, P-07-T47, DEC-1000),
+  whose failure never fails this pass.
 
 Firms are listed through the identity role, which already reads `firms.tenant_id`; everything
 else runs inside each firm's own session (row-level security). A failing firm is logged at error
@@ -55,6 +57,7 @@ from abacus.modules.identity.events import (
     MembershipDeactivated,
     SeasonalAccessEnding,
 )
+from abacus.modules.identity.invitation_expiry import sweep_invitation_expiry
 from abacus.modules.identity.invitations import revoke_invitations_by
 from abacus.modules.identity.people import revoke_invitations_of
 from abacus.modules.identity.repository import (
@@ -246,4 +249,9 @@ async def sweep_access_ends_activity() -> int:
         _sweeps.add(1, {"outcome": "failed"})
         raise
     _sweeps.add(1, {"outcome": "partial" if swept.failed_firms else "ok"})
+    # P-07-T47 (DEC-1000): the day-12 invitation notice rides this pass; it never fails it.
+    try:
+        await sweep_invitation_expiry()
+    except Exception as exc:
+        _log.error("invitation_expiry.failed", error=type(exc).__name__)
     return swept.ended

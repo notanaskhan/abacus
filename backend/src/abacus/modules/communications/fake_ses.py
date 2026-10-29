@@ -83,6 +83,7 @@ class FakeSesTransport:
         reply_to: str | None = None,
         tenant_id: UUID | None = None,
         message_id: UUID | None = None,
+        from_address: str | None = None,
     ) -> None:
         if tenant_id is None or message_id is None:
             raise ValueError("a send carries its tenant ID and message ID")
@@ -93,6 +94,9 @@ class FakeSesTransport:
             header_safe(sender_name, "sender name")
         if reply_to:
             header_safe(reply_to, "reply-to")
+        extra = {"tenant_id": str(tenant_id), "message_id": str(message_id)}
+        if from_address:
+            extra["from_address"] = header_safe(from_address, "from address")
         write_mailbox_record(
             self._dir,
             to=to,
@@ -100,7 +104,7 @@ class FakeSesTransport:
             body=body,
             sender_name=sender_name,
             reply_to=reply_to,
-            extra={"tenant_id": str(tenant_id), "message_id": str(message_id)},
+            extra=extra,
         )
         event, section = _outcome(to)
         tags = {"tenant_id": [str(tenant_id)], "message_id": [str(message_id)]}

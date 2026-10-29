@@ -36,7 +36,11 @@ from abacus.kernel.errors import ServiceUnavailable
 from abacus.kernel.logging import get_logger
 from abacus.kernel.storage import sqs_client
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
-from abacus.modules.communications.events import MessageBounced, MessageComplained
+from abacus.modules.communications.events import (
+    MessageBounced,
+    MessageComplained,
+    MessageDeliveryStatusChanged,
+)
 from abacus.modules.communications.sink import sink_address
 from abacus.modules.communications.transport import transport
 from abacus.modules.identity.api import is_synthetic_firm
@@ -50,6 +54,8 @@ _EVENTS: Final = {
     "Reject": "rejected",
     "DeliveryDelay": "delayed",
 }
+# R-01-T27 (DEC-952): the events that set a message's delivery status, read from its latest one.
+_STATUS_EVENTS: Final = frozenset({"delivered", "bounced", "complained", "rejected"})
 _EVENT_ID: Final = re.compile(r"[A-Za-z0-9._:/-]{1,200}")
 _BATCH: Final = 10
 # The violation a message records when its address is suppressed: a kind, never the address.
@@ -95,6 +101,7 @@ async def deliver(
     body: str,
     sender_name: str | None = None,
     reply_to: str | None = None,
+    from_address: str | None = None,
 ) -> dict[str, str] | None:
     """Send through the transport, or say why not: the violation the caller records the message
     `blocked` with. Email paused for the platform or the firm (`platform_paused`, Q-01-T36) is
@@ -123,6 +130,7 @@ async def deliver(
         reply_to=reply_to,
         tenant_id=tenant_id,
         message_id=message_id,
+        from_address=from_address,
     )
     return None
 
@@ -282,6 +290,10 @@ async def record_ses_event(event: SesEvent) -> bool:
                             "reason": reason,
                         },
                     )
+            if event.event in _STATUS_EVENTS:  # R-01-T27: a delay changes no status
+                tx.emit(
+                    MessageDeliveryStatusChanged(message_id=event.message_id, status=event.event)
+                )
             if event.event == "bounced":
                 tx.emit(MessageBounced(message_id=event.message_id))
             elif event.event == "complained":
@@ -294,6 +306,21 @@ async def record_ses_event(event: SesEvent) -> bool:
         return True
     except MissingAuditEvent:  # unreachable: every new row is audited above
         return False
+
+
+_DELIVERY_STATUS = text(
+    "SELECT event FROM message_deliveries WHERE message_id = :message "
+    "AND event IN ('delivered', 'bounced', 'complained', 'rejected') "
+    "ORDER BY occurred_at DESC, recorded_at DESC LIMIT 1"
+)
+
+
+async def delivery_status(tenant: TenantContext, message_id: UUID) -> str | None:
+    """A sent message's delivery status (R-01-T27, DEC-952): its latest delivery event, or None
+    while SES has said nothing yet. `messages` stays insert-only; TXP-12's "Bounced" reads this."""
+    async with tenant_session(tenant) as session:
+        found = (await session.execute(_DELIVERY_STATUS, {"message": message_id})).scalar()
+    return None if found is None else str(found)
 
 
 @dataclass(frozen=True)

@@ -172,6 +172,10 @@ async def _flags_on() -> None:
     await set_flag(FIRM, "review.grammar_api", "true", "seed", "local development")
     # P-07-T55: ENG-13's roll-forward v2 routes on the Dev firm.
     await set_flag(FIRM, "engagements.roll_forward_v2", "true", "seed", "local development")
+    # P-07-T58 (DEC-904): the legacy engagement screens are gone, so the Dev firm lands on CLI-01,
+    # ENG-01 and ENG-02 and records acceptance in CLI-07; E0 keeps its own flags until P-07-T59.
+    for flag in ("clients.v2", "engagements.v2", "engagements.acceptance_v2"):
+        await set_flag(FIRM, flag, "true", "seed", "local development")
 
 
 def main() -> int:
