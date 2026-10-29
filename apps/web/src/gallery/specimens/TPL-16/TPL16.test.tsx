@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { Tpl16Specimen } from ".";
+import { Tpl16Specimen, e6Envelope } from ".";
 
 // F-06-T04 (SPEC-400 AC-1, AC-2, AC-3): TPL-16b reads "1 of 2 signed" with only Mira's fields
 // actionable, and TPL-16d lists all six evidence items, from envelope E6 in the tax seed.
@@ -40,5 +40,86 @@ describe("TPL-16d: completed", () => {
     expect(screen.getByText("Signed. Thank you, Mira.")).toBeTruthy();
     expect(document.querySelector("[data-envelope-pill]")?.textContent).toContain("Completed");
     expect(document.body.textContent).not.toMatch(/Accrued/);
+  });
+});
+
+// F-06-T05 (Stories 1.1, 1.4, 1.5, 1.7): identity and exception states. F-06-T06 (Story 1.6): 390.
+
+describe("TPL-16e: verification failed (DF-11)", () => {
+  it("names the paper-form path and Dina Sato, and offers no retry, countdown or method", () => {
+    render(<Tpl16Specimen state="e" />);
+    const card = document.querySelector('[data-signing="verification-failed"]');
+    expect(card?.textContent).toContain("We couldn't verify your identity.");
+    expect(card?.textContent).toContain("paper form");
+    expect(card?.textContent).toContain("Dina Sato");
+    expect(card?.querySelector("button")).toBeNull();
+    expect(document.body.textContent).not.toMatch(/try again|tomorrow|SMS|text message/i);
+    expect(screen.queryAllByRole("button", { name: /^Sign here:/ })).toHaveLength(0);
+  });
+});
+
+describe("TPL-16f: decline", () => {
+  it("offers the four reasons and keeps Decline disabled until one is chosen", () => {
+    const decided: { reason: string; note: string }[] = [];
+    render(<Tpl16Specimen state="f" onDecline={(c) => decided.push(c)} />);
+    for (const reason of [
+      "The amounts look wrong",
+      "I have a question first",
+      "Someone else should sign",
+      "Other",
+    ]) {
+      expect(screen.getByRole("radio", { name: reason })).toBeTruthy();
+    }
+    const confirm = document.querySelector<HTMLButtonElement>('[data-signing="decline-confirm"]');
+    expect(confirm?.disabled).toBe(true);
+    screen.getByRole("radio", { name: "I have a question first" }).click();
+    expect(confirm?.disabled).toBe(false);
+    confirm?.click();
+    confirm?.click();
+    expect(decided).toEqual([{ reason: "I have a question first", note: "" }]);
+  });
+});
+
+describe("provider mode: the return is a hint (Story 1.1)", () => {
+  it("shows Checking, never Completed, while the server says Mira hasn't signed", () => {
+    render(<Tpl16Specimen state="pending" />);
+    expect(document.querySelector('[data-signing="pending-confirmation"]')).toBeTruthy();
+    expect(document.querySelector("[data-envelope-pill]")?.textContent).toBe("1 of 2 signed");
+    expect(document.querySelector('[data-signing="evidence"]')).toBeNull();
+  });
+
+  it("hosts the provider in a titled, sandboxed frame during verify", () => {
+    const base = e6Envelope("b");
+    render(
+      <Tpl16Specimen
+        state="b"
+        envelope={{
+          ...base,
+          steps: base.steps.map((s) => ({ ...s, state: s.key === "verify" ? "current" : "todo" })),
+          signingSession: {
+            url: "https://provider.example/session/abc",
+            presentation: "iframe",
+            expiresAt: "2026-09-14T15:00:00Z",
+          },
+        }}
+      />,
+    );
+    const frame = document.querySelector<HTMLIFrameElement>('[data-signing="provider-frame"]');
+    expect(frame?.title).toBe("Verify your identity and sign: Form 8879");
+    expect(frame?.getAttribute("sandbox")).toContain("allow-scripts");
+    expect(frame?.getAttribute("sandbox")).not.toContain("allow-top-navigation");
+  });
+});
+
+describe("TPL-16g: 390", () => {
+  it("one column with the step chips and a 64 sticky bar holding the sign control", () => {
+    render(<Tpl16Specimen state="g" frame />);
+    expect(document.querySelector('[data-layout="phone"]')).toBeTruthy();
+    expect(document.querySelector('[data-signing="step-chips"]')?.textContent).toBe(
+      "Verify ✓·Review ✓·Sign·Done",
+    );
+    const bar = document.querySelector('[data-signing="mobile-sign-bar"]');
+    expect(bar?.getAttribute("data-height")).toBe("64");
+    expect(bar?.querySelector("button")?.textContent).toBe("Adopt signature & sign…");
   });
 });
