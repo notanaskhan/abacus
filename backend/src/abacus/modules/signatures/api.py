@@ -14,8 +14,10 @@ from uuid import UUID
 
 from sqlalchemy import text
 
+from abacus.kernel.audit_owners import register_client_owners
 from abacus.kernel.db import tenant_session
 from abacus.modules.identity.api import AbacusRouter, AuthContext
+from abacus.modules.signatures.audit_targets import CLIENT_KINDS, audit_clients
 from abacus.modules.signatures.contract import policies_router, portal_router, router
 from abacus.modules.signatures.sources import (
     LETTER,
@@ -91,6 +93,8 @@ async def envelope_gate_facts(ctx: AuthContext, gate_kind: str, target_ref: UUID
 
 
 register_letter_source()
+# The trail places an envelope, and a consumed import file, on its client (SPEC-304; DEC-121).
+register_client_owners(CLIENT_KINDS, audit_clients)
 
 
 # The routers the API mounts, in order (P-39; F-03-T07). `/import` and `/summary` are declared
