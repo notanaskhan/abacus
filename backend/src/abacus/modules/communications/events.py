@@ -101,3 +101,11 @@ class InboxAttachmentReceived(DomainEvent):
     message_id: Annotated[UUID, classified("internal")]
     thread_id: Annotated[UUID, classified("internal")]
     status: Annotated[str, classified("internal")]
+
+
+class PortalIntakeWithdrawn(DomainEvent):
+    """A portal principal withdrew an upload (N-01-T14): its purge starts."""
+
+    event_type: ClassVar[str] = "portal_intake.withdrawn"
+
+    upload_id: Annotated[UUID, classified("internal")]

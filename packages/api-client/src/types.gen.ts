@@ -68202,10 +68202,6 @@ export type ListIntakeUploadsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListIntakeUploadsError = ListIntakeUploadsErrors[keyof ListIntakeUploadsErrors];
@@ -68261,10 +68257,6 @@ export type CreateIntakeUploadErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CreateIntakeUploadError = CreateIntakeUploadErrors[keyof CreateIntakeUploadErrors];
@@ -68339,10 +68331,6 @@ export type AddIntakeUploadFileErrors = {
      */
     422: ValidationErrorOut;
     /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
-    /**
      * Service unavailable
      */
     503: ErrorOut;
@@ -68406,10 +68394,6 @@ export type WithdrawIntakeUploadErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type WithdrawIntakeUploadError = WithdrawIntakeUploadErrors[keyof WithdrawIntakeUploadErrors];
