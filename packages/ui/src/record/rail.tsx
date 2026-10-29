@@ -1,4 +1,4 @@
-import { type JSX, type KeyboardEvent, useId, useState } from "react";
+import { type JSX, type KeyboardEvent, type ReactNode, useId, useState } from "react";
 import { cn } from "../cn";
 import { Button } from "../components/button";
 import { Pill } from "../components/pill";
@@ -61,6 +61,8 @@ function moveFocus(event: KeyboardEvent<HTMLElement>): void {
 export interface RailRowProps {
   link: RailLink;
   compact?: boolean;
+  /** Two-line rows at 44 (the audit cockpit's rail) rather than 48; one line stays 38. */
+  tight?: boolean;
   selected?: boolean;
   onOpen?: (link: RailLink) => void;
   forceState?: Extract<ForceState, "hover" | "focus" | "pressed">;
@@ -70,6 +72,7 @@ export interface RailRowProps {
 export function RailRow({
   link,
   compact = false,
+  tight = false,
   selected = false,
   onOpen,
   forceState,
@@ -86,7 +89,8 @@ export function RailRow({
       }}
       onKeyDown={moveFocus}
       className={cn(
-        "flex min-h-[38px] w-full items-center gap-[10px] px-[12px] py-[7px] text-left hairline-b",
+        "flex min-h-[38px] w-full items-center gap-[10px] px-[12px] text-left hairline-b",
+        tight ? "py-[5px]" : "py-[7px]",
         ROW_STATE,
         FOCUS_IN,
       )}
@@ -121,6 +125,8 @@ export interface PhaseRowProps {
   outline?: boolean;
   /** A version under its phase: padding-left 30. */
   child?: boolean;
+  /** Two-line rows at 44 (the audit cockpit's rail) rather than 48; one line stays 38. */
+  tight?: boolean;
   selected?: boolean;
   onOpen?: (phase: Phase) => void;
   onBegin?: (phase: Phase) => void;
@@ -135,6 +141,7 @@ export function PhaseRow({
   phase,
   outline = false,
   child = false,
+  tight = false,
   selected = false,
   onOpen,
   onBegin,
@@ -153,7 +160,8 @@ export function PhaseRow({
       {...(selected ? { "data-selected": "" } : {})}
       {...forceAttr(forceState === "focus" ? undefined : forceState)}
       className={cn(
-        "group/row flex min-h-[38px] items-center gap-[9px] py-[7px] pr-[10px] hairline-b",
+        "group/row flex min-h-[38px] items-center gap-[9px] pr-[10px] hairline-b",
+        tight ? "py-[5px]" : "py-[7px]",
         child ? "pl-[30px]" : "pl-[12px]",
         ROW_STATE,
       )}
@@ -310,6 +318,10 @@ export interface RecordRailProps {
   bare?: boolean;
   card?: OverviewCardProps;
   links?: readonly RailLink[];
+  /** A collapsing band over the link rows (the T2 cockpit's "Overview ⌄"); none by default. */
+  linksTitle?: string;
+  /** Link and phase rows at the audit cockpit's 44 (`RailRow` and `PhaseRow` `tight`). */
+  tight?: boolean;
   sections?: readonly RailSection[];
   /** The id of the open link or phase. */
   selected?: string;
@@ -324,6 +336,7 @@ export interface RecordRailProps {
 function Group({
   section,
   outline,
+  tight,
   selected,
   pending,
   onOpen,
@@ -334,6 +347,7 @@ function Group({
 }: {
   section: RailSection;
   outline: boolean;
+  tight: boolean;
   selected: string | undefined;
   pending: ReadonlySet<string>;
   onOpen: ((item: RailLink | Phase) => void) | undefined;
@@ -357,6 +371,7 @@ function Group({
           phase={view}
           outline={outline}
           child={child}
+          tight={tight}
           selected={selected === phase.id}
           {...(onOpen === undefined ? {} : { onOpen })}
           onBegin={onBegin}
@@ -387,21 +402,68 @@ function Group({
         />
       )}
       {section.nav !== true && (
-        <div
-          id={id}
-          role="group"
-          aria-label={section.title}
-          {...(shown ? {} : { inert: true, "data-collapsed": "" })}
-          className={cn(
-            "grid transition-[grid-template-rows] duration-[340ms] ease-out",
-            shown ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
-          )}
-        >
-          <div className="flex min-h-0 flex-col overflow-hidden">
-            {phases.map((phase) => row(phase, false))}
-          </div>
-        </div>
+        <Collapse id={id} title={section.title} shown={shown}>
+          {phases.map((phase) => row(phase, false))}
+        </Collapse>
       )}
+    </div>
+  );
+}
+
+/** A band's rows: a collapsed group is `inert`, so its rows leave the tab order. */
+function Collapse({
+  id,
+  title,
+  shown,
+  children,
+}: {
+  id: string;
+  title: string;
+  shown: boolean;
+  children: ReactNode;
+}): JSX.Element {
+  return (
+    <div
+      id={id}
+      role="group"
+      aria-label={title}
+      {...(shown ? {} : { inert: true, "data-collapsed": "" })}
+      className={cn(
+        "grid transition-[grid-template-rows] duration-[340ms] ease-out",
+        shown ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+      )}
+    >
+      <div className="flex min-h-0 flex-col overflow-hidden">{children}</div>
+    </div>
+  );
+}
+
+/** The link rows under their own band (`linksTitle`), collapsing like a group of phases. */
+function LinkBand({
+  title,
+  onToggle,
+  children,
+}: {
+  title: string;
+  onToggle: ((band: string, nowOpen: boolean) => void) | undefined;
+  children: ReactNode;
+}): JSX.Element {
+  const id = useId();
+  const [open, setOpen] = useState(true);
+  return (
+    <div data-rail-section="links" className="flex flex-col">
+      <GroupBand
+        title={title}
+        open={open}
+        controls={id}
+        onToggle={() => {
+          setOpen(!open);
+          onToggle?.(title, !open);
+        }}
+      />
+      <Collapse id={id} title={title} shown={open}>
+        {children}
+      </Collapse>
     </div>
   );
 }
@@ -419,6 +481,8 @@ export function RecordRail({
   bare = false,
   card,
   links = [],
+  linksTitle,
+  tight = false,
   sections = [],
   selected,
   onOpen,
@@ -434,27 +498,35 @@ export function RecordRail({
     setPending((prev) => new Set(prev).add(phase.id));
     onBegin?.(phase);
   };
+  const linkRows = links.map((link) => (
+    <RailRow
+      key={link.id}
+      link={link}
+      compact={compact}
+      tight={tight}
+      selected={selected === link.id}
+      {...(onOpen === undefined ? {} : { onOpen })}
+    />
+  ));
   const rows = (
     <div data-rail={variant} className="flex flex-col">
       {!bare && card !== undefined && <OverviewCard {...card} />}
-      {links.length > 0 && (
-        <div className={cn("flex flex-col", !bare && card !== undefined && "hairline-t")}>
-          {links.map((link) => (
-            <RailRow
-              key={link.id}
-              link={link}
-              compact={compact}
-              selected={selected === link.id}
-              {...(onOpen === undefined ? {} : { onOpen })}
-            />
-          ))}
-        </div>
-      )}
+      {links.length > 0 &&
+        (linksTitle === undefined ? (
+          <div className={cn("flex flex-col", !bare && card !== undefined && "hairline-t")}>
+            {linkRows}
+          </div>
+        ) : (
+          <LinkBand title={linksTitle} onToggle={onToggle}>
+            {linkRows}
+          </LinkBand>
+        ))}
       {sections.map((section) => (
         <Group
           key={section.id}
           section={section}
           outline={outline}
+          tight={tight}
           selected={selected}
           pending={pending}
           onOpen={onOpen}

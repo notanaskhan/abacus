@@ -1,5 +1,5 @@
 // The visual-parity harness's shared pieces (F-05-T16; chapter 04 §9.3, F-05 §3.I2).
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { type Locator, type Page } from "@playwright/test";
 
 /** The gallery as the harness renders it: no chrome, frozen, the handoff's ink ladder. */
@@ -45,6 +45,10 @@ export interface ManifestEntry {
   tier: "A" | "B" | "C" | "D";
   locked?: boolean;
   deviation?: string;
+  /** CSS selectors whose boxes, where they overlap the shot (a portaled dialog included), are
+   * painted out of both the render and the handoff baseline before they are compared (chapter 04's parity harness masks: spinners, presence
+   * avatars, upload bars, missing icons; a screen's dock until P-09 locks SHL-13). */
+  mask?: string[];
 }
 
 /** The checked-in manifest (docs/design/parity-manifest.json), read from apps/web. */
@@ -98,4 +102,110 @@ export async function shootWhole(page: Page, target: Locator): Promise<Buffer> {
 export function pngSize(png: Uint8Array): { width: number; height: number } {
   const view = new DataView(png.buffer, png.byteOffset, png.byteLength);
   return { width: view.getUint32(16), height: view.getUint32(20) };
+}
+
+/** A rectangle in a shot's device pixels. */
+export interface Box {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** The colour a mask paints: opaque, and in no Accrued token, so it never matches by chance. */
+export const MASK_COLOUR = "#ff00ff";
+
+/** The boxes of `selectors` inside `target`, in the device pixels of `shot` (the target's own
+ * screenshot), so the same boxes can be painted on the shot and on its baseline. */
+export async function maskBoxes(
+  target: Locator,
+  selectors: string[],
+  shot: Uint8Array,
+): Promise<Box[]> {
+  const frame = await target.boundingBox();
+  if (frame === null) return [];
+  const scale = pngSize(shot).width / Math.round(frame.width);
+  const boxes: Box[] = [];
+  for (const selector of selectors) {
+    // Page-wide: an open dialog is portaled outside the shot's element but drawn over it. A box
+    // that misses the shot is skipped; one that overlaps it is painted (the canvas clips the rest).
+    for (const part of await target.page().locator(selector).all()) {
+      const box = await part.boundingBox();
+      if (box === null) continue;
+      const missesShot =
+        box.x + box.width <= frame.x ||
+        box.y + box.height <= frame.y ||
+        box.x >= frame.x + frame.width ||
+        box.y >= frame.y + frame.height;
+      if (missesShot) continue;
+      boxes.push({
+        x: Math.round((box.x - Math.round(frame.x)) * scale),
+        y: Math.round((box.y - Math.round(frame.y)) * scale),
+        width: Math.round(box.width * scale),
+        height: Math.round(box.height * scale),
+      });
+    }
+  }
+  return boxes;
+}
+
+/** `png` with `boxes` filled in MASK_COLOUR, drawn on a blank page's canvas (no app CSP, and no
+ * PNG library: chapter 04 keeps the comparator Playwright's own). */
+function toBase64(bytes: Uint8Array): string {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary);
+}
+
+// A Buffer, not a bare Uint8Array: Playwright's toMatchSnapshot refuses anything else.
+function fromBase64(text: string): Buffer {
+  return Buffer.from(Uint8Array.from(atob(text), (c) => c.charCodeAt(0)));
+}
+
+export async function paintBoxes(page: Page, png: Uint8Array, boxes: Box[]): Promise<Uint8Array> {
+  if (boxes.length === 0) return png;
+  const scratch = await page.context().newPage();
+  try {
+    const painted = await scratch.evaluate(
+      async ({ data, rects, colour }) => {
+        const image = new Image();
+        image.src = `data:image/png;base64,${data}`;
+        await image.decode();
+        const canvas = document.createElement("canvas");
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const context = canvas.getContext("2d");
+        if (context === null) throw new Error("no 2d canvas");
+        context.drawImage(image, 0, 0);
+        context.fillStyle = colour;
+        for (const r of rects) context.fillRect(r.x, r.y, r.width, r.height);
+        return canvas.toDataURL("image/png").slice("data:image/png;base64,".length);
+      },
+      { data: toBase64(png), rects: boxes, colour: MASK_COLOUR },
+    );
+    return fromBase64(painted);
+  } finally {
+    await scratch.close();
+  }
+}
+
+/**
+ * For an entry with masks: the render and its baseline with the same boxes painted out, the
+ * painted baseline written beside the original (`<name>.masked.png`, never committed: `.visual` is
+ * local) and that name to compare against. Without masks, the shot and its own name unchanged.
+ */
+export async function masked(
+  page: Page,
+  target: Locator,
+  selectors: string[] | undefined,
+  shot: Uint8Array,
+  name: string,
+  snapshotPath: (name: string) => string,
+): Promise<{ actual: Uint8Array; name: string }> {
+  if (selectors === undefined || selectors.length === 0) return { actual: shot, name };
+  const boxes = await maskBoxes(target, selectors, shot);
+  const maskedName = name.replace(/\.png$/u, ".masked.png");
+  const baseline = await paintBoxes(page, readFileSync(snapshotPath(name)), boxes);
+  writeFileSync(snapshotPath(maskedName), baseline);
+  return { actual: await paintBoxes(page, shot, boxes), name: maskedName };
 }

@@ -120,6 +120,29 @@ async def put_record(
     return StoredRecord(key, version, digest, retain_until)
 
 
+async def get_record(tenant_id: UUID, record_class: RecordClass, digest: str) -> bytes | None:
+    """A stored record's body, verified against the digest its key names; None when absent
+    (N-02-T13: the evidence package reads back what the import or the provider wrote). The
+    caller authorised its own action and holds the row that names the digest."""
+    if record_class not in RECORD_CLASSES:
+        raise ValueError(f"unknown record class {record_class!r}")
+    target = _target()
+    try:
+        got = await asyncio.to_thread(
+            target.client.get_object,
+            Bucket=target.bucket,
+            Key=record_key(tenant_id, record_class, digest),
+        )
+    except StorageError as exc:
+        if error_code(exc) in ("NoSuchKey", "404"):
+            return None
+        raise
+    body = got["Body"].read()
+    if hashlib.sha256(body).hexdigest() != digest:
+        raise RecordsUnavailable  # a stored record never differs from its digest
+    return body
+
+
 async def anchor_chain(tenant_id: UUID, retain_until: datetime) -> StoredRecord | None:
     """Publish the firm's newest checkpoint as an anchor (C-09); None before its first one. One
     `audit_chain.anchored` event names the checkpoint and the stored version."""
