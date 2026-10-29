@@ -29,9 +29,14 @@ for (const st of ["a", "a2", "f", "g"]) {
   }) => {
     const app = await open(page, st);
     expect((await box(app.locator("[data-dashboard='subbar']"))).height).toBe(42);
-    const tile = app.locator("[data-dashboard='tiles'] [data-tile]").first();
-    expect(await box(tile)).toEqual({ width: 120, height: 99 });
-    expect(await tile.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe("14px");
+    // g is the loading state: skeleton bars stand where the tiles go (aria-busy), no tile yet.
+    if (st === "g") {
+      await expect(app.locator("[data-dashboard='tiles'][aria-busy='true']")).toBeVisible();
+    } else {
+      const tile = app.locator("[data-dashboard='tiles'] [data-tile]").first();
+      expect(await box(tile)).toEqual({ width: 120, height: 99 });
+      expect(await tile.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe("14px");
+    }
     expect((await box(app.locator("[data-shell='pane-header']"))).height).toBe(46);
     expect((await box(app.locator("[data-dashboard='side']"))).width).toBe(420);
   });
