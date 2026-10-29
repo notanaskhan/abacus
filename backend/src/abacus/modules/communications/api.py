@@ -20,6 +20,7 @@ from abacus.modules.communications.deliveries import (
     send_email,
 )
 from abacus.modules.communications.events import (
+    InboxAttachmentReceived,
     MessageBounced,
     MessageComplained,
     MessageDeliveryStatusChanged,
@@ -153,6 +154,14 @@ from abacus.modules.communications.templates_contract import (
     templates_router,
 )
 from abacus.modules.communications.transport import LocalMailbox, Transport, configure_transport
+from abacus.modules.communications.triage import ACTIVITIES as TRIAGE_ACTIVITIES
+from abacus.modules.communications.triage import WORKFLOWS as TRIAGE_WORKFLOWS
+from abacus.modules.communications.triage import on_attachment_received
+from abacus.modules.communications.triage_workflow import (
+    AttachmentTriageWorkflow,
+    TriageInput,
+    attachment_triage_id,
+)
 from abacus.modules.communications.workflows import (
     DrainSesEventsWorkflow,
     SendingDomainVerificationInput,
@@ -180,6 +189,8 @@ SUBSCRIPTIONS = {
     ClientAccessRevoked.event_type: revoke_links_on_access_revoked,  # P-08-T21: links die too
     # R-01-T27: a new domain's verification starts once its row is committed.
     SendingDomainStatusChanged.event_type: on_status_changed,
+    # N-01-T12: a received intake attachment goes through the upload steps (AttachmentTriage).
+    InboxAttachmentReceived.event_type: on_attachment_received,
 }
 # P-08-T21: identity's sign-in start uses a portal email's link through this.
 register_link_claim(claim)
@@ -193,9 +204,14 @@ SES_EVENTS_ID = "ses_events:platform"
 WORKFLOWS: dict[type, WorkClass] = {
     DrainSesEventsWorkflow: "time_sensitive",
     SendingDomainVerificationWorkflow: "background",  # R-01-T27: every 15 minutes, 72 hours
+    **TRIAGE_WORKFLOWS,
 }
 register_work_classes(WORKFLOWS)
-ACTIVITIES: tuple[object, ...] = (drain_ses_events_activity, check_sending_domain_activity)
+ACTIVITIES: tuple[object, ...] = (
+    drain_ses_events_activity,
+    check_sending_domain_activity,
+    *TRIAGE_ACTIVITIES,
+)
 SCHEDULES: tuple[PlatformSchedule, ...] = (
     PlatformSchedule(
         id=SES_EVENTS_ID,
@@ -231,6 +247,7 @@ __all__ = [
     "SUBSCRIPTIONS",
     "TEMPLATE_VARIABLES",
     "WORKFLOWS",
+    "AttachmentTriageWorkflow",
     "ComposedFollowUp",
     "DnsRecord",
     "Draft",
@@ -282,9 +299,11 @@ __all__ = [
     "TemplateRegistrationInvalid",
     "TemplateVariable",
     "Transport",
+    "TriageInput",
     "ValueFinding",
     "Violation",
     "add_attachment",
+    "attachment_triage_id",
     "check_scope",
     "client_mail_open",
     "compose_follow_up",

@@ -46,6 +46,7 @@ from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.active_content import is_active
+from abacus.modules.evidence.intake_sources import source_of, target_type
 from abacus.modules.evidence.models import EvidencePage
 from abacus.modules.evidence.object_keys import under_key
 from abacus.modules.evidence.pdf_layout import (
@@ -60,14 +61,18 @@ from abacus.modules.evidence.pdf_layout import (
     upright,
 )
 from abacus.modules.evidence.repository import (
-    get_inbox_file,
-    get_version,
     insert_pages,
     is_withdrawn,
     pages_of,
     sources_without_words,
 )
-from abacus.modules.evidence.workflow_types import INBOX, VERSION, BackfillInput, UploadInput
+from abacus.modules.evidence.workflow_types import (
+    INBOX,
+    INTAKE,
+    VERSION,
+    BackfillInput,
+    UploadInput,
+)
 from abacus.modules.evidence.workflows import BACKFILL_BATCH, TrustLayerBackfill
 
 if TYPE_CHECKING:
@@ -358,20 +363,18 @@ async def words_upload(given: UploadInput) -> int:
     tenant = _system(tenant_id)
     version_id = source_id if given.kind == VERSION else None
     inbox_id = source_id if given.kind == INBOX else None
+    attachment_id = source_id if given.kind == INTAKE else None
     async with tenant_session(tenant) as session:
         done = await pages_of(
             session,
             evidence_version_id=version_id,
             inbox_file_id=inbox_id,
+            inbox_attachment_id=attachment_id,
             extractor_version=WORDS_VERSION,
         )
         if done:
             return len(done)
-        source = (
-            await get_version(session, source_id)
-            if version_id is not None
-            else await get_inbox_file(session, source_id)
-        )
+        source = await source_of(session, tenant, given.kind, source_id)
     if source is None:
         if version_id is not None:
             async with tenant_session(tenant) as session:
@@ -398,6 +401,7 @@ async def words_upload(given: UploadInput) -> int:
             "tenant_id": tenant_id,
             "evidence_version_id": version_id,
             "inbox_file_id": inbox_id,
+            "inbox_attachment_id": attachment_id,
             "derivation_id": None,
             "page_no": page.page,
             "width_pt": Decimal(str(page.width)),
@@ -419,7 +423,7 @@ async def words_upload(given: UploadInput) -> int:
         # A concurrent run that got there first adds nothing: still one audited write.
         tx.record(
             "upload.words_extracted" if added else "upload.words_exist",
-            target=Target("evidence_version" if version_id else "inbox_file", source_id),
+            target=Target(target_type(given.kind), source_id),
             after=Ref(pages=added, words=sum(len(p.words) for p in layer.pages)),
         )
     _log.info("upload.words_extracted", kind=given.kind, pages=len(rows))

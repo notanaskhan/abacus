@@ -14,6 +14,7 @@ from sqlalchemy import select
 
 from abacus.kernel.crypto import DetachedKey
 from abacus.kernel.db import TenantContext, tenant_session
+from abacus.modules.evidence.intake_sources import IntakeSource
 from abacus.modules.evidence.models import EvidenceObjectKey, EvidenceVersion, InboxFile
 
 
@@ -33,9 +34,12 @@ async def key_for(tenant_id: UUID, version_id: UUID) -> DetachedKey | None:
     return DetachedKey(row.key_id, row.wrapped_key)
 
 
-def under_key(source: EvidenceVersion | InboxFile) -> UUID | None:
+def under_key(source: EvidenceVersion | InboxFile | IntakeSource) -> UUID | None:
     """ADR-162 §6: a detached-key version's derived records are sealed under its own key, so
-    its erase covers them; anything else's are content-addressed."""
+    its erase covers them; anything else's are content-addressed. An intake attachment sealed
+    under its own key (ADR-137, N-01-T14) keeps its derivations under it too."""
+    if isinstance(source, IntakeSource):
+        return source.detached_key
     if isinstance(source, EvidenceVersion) and source.storage_mode == "detached_key":
         return source.id
     return None

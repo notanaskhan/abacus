@@ -201,9 +201,10 @@ class UploadExtraction(Base):
 
     id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
     tenant_id: Mapped[UUID]
-    engagement_id: Mapped[UUID]
+    engagement_id: Mapped[UUID | None]  # none for an intake attachment (0370)
     evidence_version_id: Mapped[UUID | None]
     inbox_file_id: Mapped[UUID | None]
+    inbox_attachment_id: Mapped[UUID | None]  # N-01-T12 (0370): an intake attachment
     extractor_version: Mapped[str]
     status: Mapped[str]
     reason: Mapped[str | None]
@@ -257,9 +258,10 @@ class UploadPreview(Base):
 
     id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
     tenant_id: Mapped[UUID]
-    engagement_id: Mapped[UUID]
+    engagement_id: Mapped[UUID | None]  # none for an intake attachment (0370)
     evidence_version_id: Mapped[UUID | None]
     inbox_file_id: Mapped[UUID | None]
+    inbox_attachment_id: Mapped[UUID | None]  # N-01-T12 (0370): an intake attachment
     renderer_version: Mapped[str]
     kind: Mapped[str]
     reason: Mapped[str | None]
@@ -344,6 +346,7 @@ class EvidencePage(Base):
     tenant_id: Mapped[UUID]
     evidence_version_id: Mapped[UUID | None]
     inbox_file_id: Mapped[UUID | None]
+    inbox_attachment_id: Mapped[UUID | None]  # N-01-T12 (0370): an intake attachment
     derivation_id: Mapped[UUID | None]
     page_no: Mapped[int]
     width_pt: Mapped[Decimal] = mapped_column(Numeric(8, 2))
@@ -444,6 +447,7 @@ class PiiScanRun(Base):
     tenant_id: Mapped[UUID]
     evidence_version_id: Mapped[UUID | None]
     inbox_file_id: Mapped[UUID | None]
+    inbox_attachment_id: Mapped[UUID | None]  # N-01-T12 (0370): an intake attachment
     derivation_id: Mapped[UUID | None]
     detector_version: Mapped[str]
     pages_scanned: Mapped[list[int]] = mapped_column(ARRAY(Integer))
@@ -463,6 +467,7 @@ class PiiRegion(Base):
     tenant_id: Mapped[UUID]
     evidence_version_id: Mapped[UUID | None]
     inbox_file_id: Mapped[UUID | None]
+    inbox_attachment_id: Mapped[UUID | None]  # N-01-T12 (0370): an intake attachment
     derivation_id: Mapped[UUID | None]
     page_no: Mapped[int]
     bbox: Mapped[list[Decimal]] = mapped_column(ARRAY(Numeric(10, 2)))
