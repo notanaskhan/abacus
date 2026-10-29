@@ -84,10 +84,13 @@ Gradients, emoji, saturated blue, heavy shadows, invented colours, truncated num
 | D7 | b's draft pill reads "Draft · Accrued Agent" from the marks (every tick the agent's); C9 v1 has no pre-adoption draft shape | the view carries tick actors, not a draft flag | DEC-342 |
 
 ## Parity
-| Artboard | Tier (A/B/D) | Diff % | Notes |
+| Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a, c | B | not measured | Playwright not run locally (chromium 1243 not cached) |
-| b, d, e, g, h | B | not measured | Playwright not run locally (S10 wave B) |
+| g | C (threshold 0.20, maxDiffPixelRatio 3 %) | 2.20 | locked (A-02-T31, measured Thu Oct 29, 2026) |
+| a, c, e | C | 7.93 / 6.84 / 4.29 | report-only: over Tier C's 3 %, so not locked at A-02 exit as the row asked; the gallery draws the standard cockpit (canvas 742, dock 330), not the audit split |
+| b, d, f | C | 4.95 / 6.58 / 7.77 | report-only |
+| h | — | — | the handoff's AUD-06h is a 2880 × 580 strip (the pane detail), not a window; no window baseline, unmeasured |
+| host | D | — | audit bar 59 and rail 330 hold; workpaper 536 and viewer 490 do not (canvas 742, dock 330): an expected failure in `tier-d-connections.spec.ts` until the split lands (DEC-832) |
 
 ## Open gaps
 - The rail's "Prepared · MD" sub-line for the Trial Balance row is the cockpit provider's (A-01); the fixture rail reads the run grammar.

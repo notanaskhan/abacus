@@ -1592,15 +1592,8 @@
       "source": "handoff/screens/AUD-06 Trial balance and leadsheets/screenshots/AUD-06g.png",
       "sha256": "e32cae0e13a87a0b5543afd48d559df204ff5ee08292feddc70d94913b9bbd73",
       "crop": "window",
-      "tier": "C"
-    },
-    "aud-06h.window": {
-      "page": "screens/AUD-06?st=h",
-      "selector": "[data-artboard=\"h\"] [data-shell=\"app\"]",
-      "source": "handoff/screens/AUD-06 Trial balance and leadsheets/screenshots/AUD-06h.png",
-      "sha256": "ea3a2cd395ccd5fda15e1c4b1ab4b633ec72432c15743411f5b7590c67c35b77",
-      "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "locked": true
     },
     "por-16a.window": {
       "page": "screens/POR-16?st=a",
@@ -1609,7 +1602,8 @@
       "sha256": "e1326948492f42635f4d089f9e241dcaa118704eaf4d21d3f04b7305cb147397",
       "crop": "window",
       "tier": "C",
-      "deviation": "A-02-T31: DF-19 rewords the relationship caption, f's body and e's scopes (read-only: no posting copy) where the handoff draws the posting wording; the parity spec does not read data-parity-mask yet, so the copy masks the row names are recorded here, not applied"
+      "deviation": "A-02-T31: DF-19 rewords the relationship caption, f's body and e's scopes (read-only: no posting copy) where the handoff draws the posting wording; the parity spec does not read data-parity-mask yet, so the copy masks the row names are recorded here, not applied",
+      "locked": true
     },
     "por-16b.window": {
       "page": "screens/POR-16?st=b",
@@ -1627,7 +1621,8 @@
       "sha256": "1cb2d86dbde052c2dc77a0734f88a1c2c4fcda7ce6ffc7d044d599c58514a35e",
       "crop": "window",
       "tier": "C",
-      "deviation": "A-02-T31: DF-19 rewords the relationship caption, f's body and e's scopes (read-only: no posting copy) where the handoff draws the posting wording; the parity spec does not read data-parity-mask yet, so the copy masks the row names are recorded here, not applied"
+      "deviation": "A-02-T31: DF-19 rewords the relationship caption, f's body and e's scopes (read-only: no posting copy) where the handoff draws the posting wording; the parity spec does not read data-parity-mask yet, so the copy masks the row names are recorded here, not applied",
+      "locked": true
     },
     "por-16d.window": {
       "page": "screens/POR-16?st=d",
@@ -1636,7 +1631,8 @@
       "sha256": "7dd53323ed344031eeec6b410acb3e0dd4cfc5b9bf6987a456760c232ecb4506",
       "crop": "window",
       "tier": "C",
-      "deviation": "A-02-T31: DF-19 rewords the relationship caption, f's body and e's scopes (read-only: no posting copy) where the handoff draws the posting wording; the parity spec does not read data-parity-mask yet, so the copy masks the row names are recorded here, not applied"
+      "deviation": "A-02-T31: DF-19 rewords the relationship caption, f's body and e's scopes (read-only: no posting copy) where the handoff draws the posting wording; the parity spec does not read data-parity-mask yet, so the copy masks the row names are recorded here, not applied",
+      "locked": true
     },
     "por-16e.window": {
       "page": "screens/POR-16?st=e",
@@ -1663,7 +1659,8 @@
       "sha256": "7d39f5cae1390eab3203551aee04997f4f6a58fe496047b6fb2f69391d1efb0c",
       "crop": "window",
       "tier": "C",
-      "deviation": "A-02-T31: DF-19 rewords the relationship caption, f's body and e's scopes (read-only: no posting copy) where the handoff draws the posting wording; the parity spec does not read data-parity-mask yet, so the copy masks the row names are recorded here, not applied"
+      "deviation": "A-02-T31: DF-19 rewords the relationship caption, f's body and e's scopes (read-only: no posting copy) where the handoff draws the posting wording; the parity spec does not read data-parity-mask yet, so the copy masks the row names are recorded here, not applied",
+      "locked": true
     }
   }
 }

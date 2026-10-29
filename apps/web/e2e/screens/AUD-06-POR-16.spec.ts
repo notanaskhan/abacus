@@ -1,8 +1,8 @@
 // AUD-06 a–h and POR-16 a–g in fixture mode (A-02-T31; A-02 §10 DoD): every artboard and its open
 // overlay from the /components gallery on fixtures, with axe at zero serious or critical findings
 // and a keyboard path (Tab from the top of the artboard reaches a control with a visible focus
-// ring); the segmented suite (AUD-06's Audit area and Layer tablists: arrows move the selection,
-// disabled options are skipped), the grid suite (Tab reaches the lines table's formula cells) and
+// ring); the segmented suite (AUD-06's Trial Balance view tablist: arrows move the selection, one
+// tab in the Tab order), the grid suite (Tab reaches a line's account button) and
 // the toggle suite (POR-16's authorisation switch: Space flips it, the label names it). POR-16
 // also stays white-labelled and read-only (DF-19): no "Accrued", no posting copy. Tier C parity is
 // reported by e2e/parity/screens.spec.ts (`aud-06x.window`, `por-16x.window`) and the hosts'
@@ -82,11 +82,11 @@ for (const [screen, states] of Object.entries(SCREENS)) {
   }
 }
 
-test("AUD-06a segmented: arrows move the Audit area selection and skip disabled options", async ({
+test("AUD-06a segmented: arrows move the Trial Balance view selection, one tab in the Tab order", async ({
   page,
 }) => {
   const board = await open(page, "AUD-06", "a");
-  const list = board.getByRole("tablist", { name: "Audit area" });
+  const list = board.getByRole("tablist", { name: "Trial Balance view" });
   const selected = list.locator("[role='tab'][aria-selected='true']");
   const before = await selected.innerText();
   await selected.focus();
@@ -100,9 +100,9 @@ test("AUD-06a segmented: arrows move the Audit area selection and skip disabled 
   expect(await list.locator("[role='tab'][tabindex='0']").count()).toBe(1);
 });
 
-test("AUD-06a grid: Tab reaches a formula cell in the lines table", async ({ page }) => {
+test("AUD-06a grid: Tab reaches a line's account button in the lines table", async ({ page }) => {
   const board = await open(page, "AUD-06", "a");
-  const cells = board.locator("[data-aud06='lines'] [tabindex='0']");
+  const cells = board.locator("[data-aud06='lines'] button");
   expect(await cells.count()).toBeGreaterThan(0);
   await board.locator("[data-aud06='lines']").evaluate((table: HTMLElement) => {
     table.tabIndex = -1;
