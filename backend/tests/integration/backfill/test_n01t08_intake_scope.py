@@ -68,7 +68,7 @@ async def firm(net: Net) -> Firm:
     seed = net.seed
     tenant = await seed.firm()
     admin = await seed.person(tenant, "firm_admin")
-    grace = await seed.person(tenant)
+    grace = await seed.person(tenant, "firm_admin")  # INB-01: Grace Holloway, Firm Admin
     henry = await seed.person(tenant)
     site = await seed.site(tenant, admin.user_id, "Intake")
     team = cast(
