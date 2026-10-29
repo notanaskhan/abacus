@@ -23469,11 +23469,30 @@
         "description": "One engine figure from an approved import only (ADR-231).",
         "properties": {
           "amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "cls": "restricted",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Amount",
-            "type": "string",
             "x-tri": true
+          },
+          "indent": {
+            "cls": "internal",
+            "default": false,
+            "title": "Indent",
+            "type": "boolean"
+          },
+          "issue": {
+            "cls": "internal",
+            "default": false,
+            "title": "Issue",
+            "type": "boolean"
           },
           "label": {
             "cls": "internal",
@@ -23484,6 +23503,47 @@
             "cls": "internal",
             "title": "Line Key",
             "type": "string"
+          },
+          "line_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Line Ref"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Note",
+            "x-tri": true
+          },
+          "total": {
+            "anyOf": [
+              {
+                "enum": [
+                  "total",
+                  "grand"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Total"
           }
         },
         "required": [
@@ -26605,6 +26665,59 @@
           "route"
         ],
         "title": "FiledDestinationOut",
+        "type": "object"
+      },
+      "FilingRowOut": {
+        "description": "A Filing band KV row (and the gathering state's pro forma rows).",
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Detail"
+          },
+          "key": {
+            "cls": "internal",
+            "enum": [
+              "due",
+              "extension",
+              "jurisdictions",
+              "engine",
+              "consents",
+              "office"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "pill": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Pill"
+          },
+          "value": {
+            "cls": "confidential",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "title": "FilingRowOut",
         "type": "object"
       },
       "FinalApprovalIn": {
@@ -35867,12 +35980,106 @@
         "title": "K1BoxLineOut",
         "type": "object"
       },
-      "K1DependencyOut": {
+      "K1ClassificationOut": {
         "properties": {
           "issuer_name": {
             "cls": "confidential",
             "title": "Issuer Name",
             "type": "string"
+          },
+          "pill": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Pill"
+          },
+          "pill_tone": {
+            "anyOf": [
+              {
+                "enum": [
+                  "state",
+                  "green"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Pill Tone"
+          },
+          "tags": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
+          }
+        },
+        "required": [
+          "issuer_name",
+          "tags"
+        ],
+        "title": "K1ClassificationOut",
+        "type": "object"
+      },
+      "K1DependencyOut": {
+        "properties": {
+          "blocking": {
+            "cls": "internal",
+            "default": false,
+            "title": "Blocking",
+            "type": "boolean"
+          },
+          "issuer_name": {
+            "cls": "confidential",
+            "title": "Issuer Name",
+            "type": "string"
+          },
+          "short_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Short Name"
+          },
+          "source_due_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Source Due On"
+          },
+          "source_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Source Label"
           },
           "source_return_id": {
             "anyOf": [
@@ -36776,6 +36983,28 @@
         "title": "KvRow",
         "type": "object"
       },
+      "LabelValueOut": {
+        "description": "A KV row whose key is the import's own label (the pro forma's \"2024 AGI\").",
+        "properties": {
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "cls": "restricted",
+            "title": "Value",
+            "type": "string",
+            "x-tri": true
+          }
+        },
+        "required": [
+          "label",
+          "value"
+        ],
+        "title": "LabelValueOut",
+        "type": "object"
+      },
       "LadderLevelOut": {
         "properties": {
           "expected_signer_name": {
@@ -36844,6 +37073,30 @@
       },
       "LadderStepOut": {
         "properties": {
+          "blocked_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Blocked By"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Note"
+          },
           "person": {
             "anyOf": [
               {
@@ -36877,6 +37130,36 @@
             ],
             "cls": "confidential",
             "title": "Signed Off At"
+          },
+          "state": {
+            "cls": "internal",
+            "default": "not_started",
+            "enum": [
+              "done",
+              "in_progress",
+              "not_started"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "step": {
+            "anyOf": [
+              {
+                "enum": [
+                  "preparer",
+                  "detail_review",
+                  "manager_review",
+                  "partner_review",
+                  "final_approval"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Step"
           }
         },
         "required": [
@@ -43195,6 +43478,50 @@
         "title": "OverdueCountOut",
         "type": "object"
       },
+      "OverviewIssueOut": {
+        "description": "One of the top open C3 issues (severity drives the flag's colour).",
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "missing_information",
+              "action_required",
+              "review_point"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "severity": {
+            "cls": "internal",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "title": "Severity",
+            "type": "string"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "kind",
+          "severity"
+        ],
+        "title": "OverviewIssueOut",
+        "type": "object"
+      },
       "PageLineOut": {
         "properties": {
           "box": {
@@ -43806,6 +44133,43 @@
           "revealed_at"
         ],
         "title": "PiiRevealOut",
+        "type": "object"
+      },
+      "PipelineStepOut": {
+        "properties": {
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "done",
+              "in_progress",
+              "not_started"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "step": {
+            "cls": "internal",
+            "enum": [
+              "gather",
+              "prepare",
+              "review",
+              "deliver"
+            ],
+            "title": "Step",
+            "type": "string"
+          },
+          "sub": {
+            "cls": "confidential",
+            "title": "Sub",
+            "type": "string"
+          }
+        },
+        "required": [
+          "step",
+          "state",
+          "sub"
+        ],
+        "title": "PipelineStepOut",
         "type": "object"
       },
       "PlanStepOut": {
@@ -49749,6 +50113,47 @@
           "model_calls"
         ],
         "title": "RecordInputHashesOut",
+        "type": "object"
+      },
+      "RecordLinkOut": {
+        "description": "A Record band row on TAX-02's rail (Client, Engagement, Binder, Files, Relationships).",
+        "properties": {
+          "key": {
+            "cls": "internal",
+            "enum": [
+              "client",
+              "engagement",
+              "binder",
+              "files",
+              "relationships"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "sub": {
+            "cls": "confidential",
+            "title": "Sub",
+            "type": "string"
+          },
+          "target_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Target Id"
+          }
+        },
+        "required": [
+          "key",
+          "sub"
+        ],
+        "title": "RecordLinkOut",
         "type": "object"
       },
       "RecordOutcomeOut": {
@@ -64155,6 +64560,44 @@
         "title": "TaxElectionOut",
         "type": "object"
       },
+      "TaxPlanRowOut": {
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Detail",
+            "x-tri": true
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "done",
+              "in_progress",
+              "not_started"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "state"
+        ],
+        "title": "TaxPlanRowOut",
+        "type": "object"
+      },
       "TaxProfileOut": {
         "description": "CLI-05's rail: consents in force, authorizations on file, elections, a masked identity band\n(last four only; DEC-52) and open notices (planned).",
         "properties": {
@@ -64307,6 +64750,19 @@
             "title": "Allowed Actions",
             "type": "array"
           },
+          "carryforwards": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Carryforwards",
+            "x-tri": true
+          },
           "consent_ok": {
             "anyOf": [
               {
@@ -64319,6 +64775,19 @@
             "cls": "internal",
             "title": "Consent Ok"
           },
+          "engine_footnote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Engine Footnote",
+            "x-tri": true
+          },
           "engine_summary": {
             "cls": "restricted",
             "items": {
@@ -64327,6 +64796,19 @@
             "title": "Engine Summary",
             "type": "array",
             "x-tri": true
+          },
+          "engine_synced_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Engine Synced On"
           },
           "engine_version": {
             "anyOf": [
@@ -64339,6 +64821,30 @@
             ],
             "cls": "confidential",
             "title": "Engine Version"
+          },
+          "filing": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/FilingRowOut"
+            },
+            "title": "Filing",
+            "type": "array"
+          },
+          "issues": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/OverviewIssueOut"
+            },
+            "title": "Issues",
+            "type": "array"
+          },
+          "k1_classifications": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/K1ClassificationOut"
+            },
+            "title": "K1 Classifications",
+            "type": "array"
           },
           "k1_dependencies": {
             "cls": "confidential",
@@ -64361,11 +64867,66 @@
             "title": "Open Issues",
             "type": "integer"
           },
+          "pipeline": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/PipelineStepOut"
+            },
+            "title": "Pipeline",
+            "type": "array"
+          },
+          "plan": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/TaxPlanRowOut"
+            },
+            "title": "Plan",
+            "type": "array",
+            "x-tri": true
+          },
+          "pro_forma": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/LabelValueOut"
+            },
+            "title": "Pro Forma",
+            "type": "array",
+            "x-tri": true
+          },
+          "pro_forma_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Pro Forma Label"
+          },
+          "record_links": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/RecordLinkOut"
+            },
+            "title": "Record Links",
+            "type": "array"
+          },
           "return_id": {
             "cls": "internal",
             "format": "uuid",
             "title": "Return Id",
             "type": "string"
+          },
+          "two_year": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/TwoYearStatOut"
+            },
+            "title": "Two Year",
+            "type": "array",
+            "x-tri": true
           }
         },
         "required": [
@@ -64405,6 +64966,18 @@
             "cls": "internal",
             "title": "Approval Policy Version Id"
           },
+          "card_detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Card Detail"
+          },
           "engagement_id": {
             "cls": "internal",
             "format": "uuid",
@@ -64422,6 +64995,18 @@
             ],
             "cls": "confidential",
             "title": "Engine Return Id"
+          },
+          "engine_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Engine Url"
           },
           "row": {
             "$ref": "#/components/schemas/TaxReturnRowOut",
@@ -68672,6 +69257,56 @@
           "snapshots"
         ],
         "title": "TrialBalancesOut",
+        "type": "object"
+      },
+      "TwoYearStatOut": {
+        "properties": {
+          "change_pct": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Change Pct",
+            "x-tri": true
+          },
+          "current": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Current",
+            "type": "string",
+            "x-tri": true
+          },
+          "key": {
+            "cls": "internal",
+            "enum": [
+              "agi",
+              "total_tax",
+              "refund"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "prior": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Prior",
+            "type": "string",
+            "x-tri": true
+          }
+        },
+        "required": [
+          "key",
+          "prior",
+          "current",
+          "change_pct"
+        ],
+        "title": "TwoYearStatOut",
         "type": "object"
       },
       "UncorrectedOut": {

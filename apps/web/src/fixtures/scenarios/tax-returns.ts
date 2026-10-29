@@ -4,15 +4,21 @@
 import { type Scenario, defineScenarios } from "../../app-core/fixture-mode";
 import { taxReturnHandlers } from "../handlers/tax-returns";
 import { seedScenario } from "../scenario";
+import type { OverviewVariant } from "../seed/tax-return-overview";
 
 const E0_CLOCK = "2026-09-14T09:24:00-05:00";
 const E0 = seedScenario();
 
-const at = (state: string, persona: string, clock = E0_CLOCK): Scenario => ({
+const at = (
+  state: string,
+  persona: string,
+  clock = E0_CLOCK,
+  variant?: OverviewVariant,
+): Scenario => ({
   state,
   persona,
   clock,
-  handlers: { ...E0.handlers, ...taxReturnHandlers() },
+  handlers: { ...E0.handlers, ...taxReturnHandlers(variant) },
 });
 
 export const tax01 = defineScenarios({
@@ -32,13 +38,22 @@ export const tax01 = defineScenarios({
   },
 });
 
+// TAX-02 (T-02-T14): each artboard answers its return's record and overview (seed
+// tax-return-overview.ts); f is a's return whose record and overview never answer.
 export const tax02 = defineScenarios({
-  a: at("a", "samuel-ito"),
-  b: at("b", "samuel-ito"),
-  c: at("c", "samuel-ito", "2026-02-03T09:24:00-06:00"),
-  d: at("d", "samuel-ito"),
-  e: at("e", "samuel-ito", "2026-09-19T09:24:00-05:00"),
-  f: at("f", "samuel-ito"),
+  a: at("a", "samuel-ito", E0_CLOCK, "a"),
+  b: at("b", "samuel-ito", E0_CLOCK, "b"),
+  c: at("c", "samuel-ito", "2026-02-03T09:24:00-06:00", "c"),
+  d: at("d", "samuel-ito", E0_CLOCK, "d"),
+  e: at("e", "samuel-ito", "2026-09-19T09:24:00-05:00", "e"),
+  f: {
+    ...at("f", "samuel-ito", E0_CLOCK, "a"),
+    handlers: {
+      ...at("f", "samuel-ito", E0_CLOCK, "a").handlers,
+      "GET /v1/tax-returns/{return_id}": () => new Promise<Response>(() => undefined),
+      "GET /v1/tax-returns/{return_id}/overview": () => new Promise<Response>(() => undefined),
+    },
+  },
 });
 
 export const tax03 = defineScenarios({

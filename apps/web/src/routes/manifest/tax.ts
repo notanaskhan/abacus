@@ -10,7 +10,8 @@ export const taxScreens = {
     path: "/tax-returns",
     navArea: "Tax Returns",
   },
-  "TAX-02": { name: "Return › Overview", status: "planned", path: null },
+  // T-02-T14: a–f on fixtures behind `tax.returns_v1`; live once T-02-T13's read model lands.
+  "TAX-02": { name: "Return › Overview", status: "fixture", path: "/tax-returns/$returnId" },
   "TAX-03": { name: "Return › Intake · Feld 2025 Form 1040", status: "planned", path: null },
   "TAX-04": {
     name: "Return › Review · Prepare preset · Feld 2025 Form 1040",
