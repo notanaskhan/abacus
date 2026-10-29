@@ -19,12 +19,13 @@ Rules the shapes carry:
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
+from abacus.kernel import listing
 from abacus.kernel._flags import SIGNATURES_ENVELOPES
 from abacus.kernel._statuses import EnvelopeSignerStatus, EnvelopeStatus
 from abacus.kernel.classification import classified
@@ -40,7 +41,7 @@ from abacus.modules.identity.api import (
     current_context,
     current_member,
 )
-from abacus.modules.signatures import imports
+from abacus.modules.signatures import hub, imports
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 Member = Annotated[AuthContext, Depends(current_member)]
@@ -464,7 +465,112 @@ policies_router = AbacusRouter(prefix="/v1/envelope-policies", tags=["signatures
 EnvelopeId = UUID
 
 
-@router.get("", action="envelope.read", response_model=ListPage[EnvelopeListRow], errors=(501,))
+def _row_out(row: hub.EnvelopeRow) -> EnvelopeListRow:
+    return EnvelopeListRow(
+        id=row.id,
+        number=f"E{row.number}",
+        purpose=cast(Purpose, row.purpose),
+        form_code=row.form_code,
+        title=row.title,
+        client_id=row.client_id,
+        client_name=row.client_name,
+        work_item_id=row.work_item_id,
+        provider=cast(Provider, row.provider),
+        status=cast(EnvelopeStatus, row.status),
+        signed=row.signed,
+        total=row.total,
+        sent_by_name=row.sent_by_name,
+        sent_at=row.sent_at,
+        due_on=row.due_on,
+        needs_handwritten=row.needs_handwritten,
+        allowed_actions=list(row.allowed_actions),
+        signer_chips=[SignerChip(name=c.name, signed=c.signed) for c in row.signer_chips],
+        viewed_at=row.viewed_at,
+        work_item_label=row.work_item_label,
+        drafted_by_name=row.drafted_by_name,
+        outcome=row.outcome,
+    )
+
+
+def _drawer_out(d: hub.Drawer) -> EnvelopeOut:
+    return EnvelopeOut(
+        row=_row_out(d.row),
+        policy_family=cast(PolicyFamily, d.policy_family),
+        source_kind=d.source_kind,
+        source_id=d.source_id,
+        engagement_id=d.row.engagement_id,
+        signer_order=cast(SignerOrder, d.signer_order),
+        date_as_of_mode=cast(DateAsOfMode, d.date_as_of_mode),
+        date_as_of=d.date_as_of,
+        expires_at=d.expires_at,
+        message=d.message,
+        reminder_cadence=d.reminder_cadence,
+        documents=[
+            EnvelopeDocumentOut(
+                id=x.id,
+                order=x.order,
+                title=x.title,
+                page_count=x.page_count,
+                sha256=x.sha256,
+                read_only=x.read_only,
+                tri=x.tri,
+            )
+            for x in d.documents
+        ],
+        signers=[
+            SignerOut(
+                id=x.id,
+                order=x.order,
+                routing_group=x.routing_group,
+                name=x.name,
+                role=cast(SignerRole, x.role),
+                identity_method=cast(IdentityMethod, x.identity_method),
+                status=cast(EnvelopeSignerStatus, x.status),
+                kba_failures=x.kba_failures,
+                viewed_at=x.viewed_at,
+                signed_at=x.signed_at,
+                signature_method=cast(SignatureMethod | None, x.signature_method),
+                decline_reason=cast(DeclineReason | None, x.decline_reason),
+                provider_recipient_id=x.provider_recipient_id,
+            )
+            for x in d.signers
+        ],
+        fields=[
+            FieldOut(
+                id=x.id,
+                document_id=x.document_id,
+                signer_id=x.signer_id,
+                kind=cast(FieldKind, x.kind),
+                page=x.page,
+                x=x.x,
+                y=x.y,
+                w=x.w,
+                h=x.h,
+                anchor=x.anchor,
+            )
+            for x in d.fields
+        ],
+        evidence=[
+            EvidenceItem(
+                signer_id=x.signer_id,
+                signed_at=x.signed_at,
+                ip_masked=x.ip_masked,
+                identity_result=x.identity_result,
+                signature_method=cast(SignatureMethod, x.signature_method),
+                user_agent_family=x.user_agent_family,
+                device_label=x.device_label,
+                package_sha256=x.package_sha256,
+            )
+            for x in d.evidence
+        ],
+        provider_envelope_id=d.provider_envelope_id,
+        superseded_at=d.superseded_at,
+        voided_reason=cast(VoidReason | None, d.voided_reason),
+        version=d.version,
+    )
+
+
+@router.get("", action="envelope.read", response_model=ListPage[EnvelopeListRow])
 async def list_envelopes_route(
     ctx: Ctx,
     tab: HubTab | None = None,
@@ -475,14 +581,40 @@ async def list_envelopes_route(
     cursor: str | None = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
 ) -> ListPage[EnvelopeListRow]:
-    """SIG-01 list (N-02-T13)."""
-    await _stub(ctx, "envelope.read")
+    """SIG-01 list (N-02-T13): wall-safe rows and counts; the Out tab's counts are its tiles."""
+    page = await hub.list_envelopes(
+        ctx,
+        tab=tab,
+        purpose=purpose,
+        status=status,
+        client_id=client_id,
+        q=q,
+        cursor=cursor,
+        limit=limit,
+    )
+    return listing.envelope(
+        [_row_out(r) for r in page.rows],
+        next_position=page.next_position,
+        tenant_id=ctx.tenant_id,
+        resource=hub.LIST_RESOURCE,
+        query=page.query,
+        total=page.total,
+        counts=page.counts,
+    )
 
 
-@router.get("/summary", action="envelope.read", response_model=EnvelopeSummary, errors=(501,))
+@router.get("/summary", action="envelope.read", response_model=EnvelopeSummary)
 async def envelope_summary_route(ctx: Ctx) -> EnvelopeSummary:
-    """SIG-01 tiles (N-02-T13)."""
-    await _stub(ctx, "envelope.read")
+    """SIG-01 tabs and the By type tile (N-02-T13), over visible rows only."""
+    made = await hub.summary(ctx)
+    return EnvelopeSummary(
+        to_send=made.to_send,
+        out=made.out,
+        completed=made.completed,
+        expired=made.expired,
+        needs_handwritten=made.needs_handwritten,
+        by_type=[TileCount(key=k, n=n) for k, n in made.by_type],
+    )
 
 
 @router.post(
@@ -645,10 +777,10 @@ async def remind_envelopes_send_route(
     await _stub(ctx, "envelope.remind")
 
 
-@router.get("/{envelope_id}", action="envelope.read", response_model=EnvelopeOut, errors=(501,))
+@router.get("/{envelope_id}", action="envelope.read", response_model=EnvelopeOut)
 async def get_envelope_route(envelope_id: EnvelopeId, ctx: Ctx) -> EnvelopeOut:
-    """SIG-01 drawer, SIG-02 builder (N-02-T11)."""
-    await _stub(ctx, "envelope.read")
+    """SIG-01 drawer, SIG-02 builder (N-02-T13)."""
+    return _drawer_out(await hub.drawer(ctx, envelope_id))
 
 
 @router.post(
@@ -724,35 +856,46 @@ async def resend_envelope_route(envelope_id: EnvelopeId, ctx: Ctx) -> EnvelopeOu
 
 
 @router.post(
-    "/{envelope_id}/void", action="envelope.void", response_model=EnvelopeOut, errors=(409, 501)
+    "/{envelope_id}/void", action="envelope.void", response_model=EnvelopeOut, errors=(409,)
 )
 async def void_envelope_route(envelope_id: EnvelopeId, body: VoidIn, ctx: Ctx) -> EnvelopeOut:
-    """Void with a reason; evidence kept (N-02-T28)."""
-    await _stub(ctx, "envelope.void")
+    """Void with a reason; evidence kept (N-02-T13)."""
+    await hub.void(ctx, envelope_id, body.reason)
+    return _drawer_out(await hub.drawer(ctx, envelope_id))
 
 
 @router.post(
     "/{envelope_id}/signers/{signer_id}/reveal-ip",
     action="signer.reveal_ip",
     response_model=RevealOut,
-    errors=(501,),
+    errors=(409,),
 )
 async def reveal_signer_ip_route(
-    envelope_id: EnvelopeId, signer_id: UUID, body: RevealIn, ctx: Ctx
+    envelope_id: EnvelopeId, signer_id: UUID, body: RevealIn, ctx: Ctx, response: Response
 ) -> RevealOut:
-    """10-second reveal, audited (N-02-T13)."""
-    await _stub(ctx, "signer.reveal_ip")
+    """10-second reveal, audited (N-02-T13); never cached."""
+    revealed = await hub.reveal_ip(ctx, envelope_id, signer_id, body.reason)
+    response.headers["Cache-Control"] = "no-store"
+    return RevealOut(ip=revealed.ip, expires_at=revealed.expires_at)
 
 
 @router.get(
     "/{envelope_id}/evidence.zip",
     action="envelope.evidence_download",
     response_model=bytes,
-    errors=(501,),
 )
 async def envelope_evidence_route(envelope_id: EnvelopeId, ctx: Ctx) -> Response:
-    """Packages, certificate, manifest (N-02-T14)."""
-    await _stub(ctx, "envelope.evidence_download")
+    """Packages, certificate, manifest (N-02-T13); audited, byte-identical on repeat."""
+    made = await hub.evidence_package(ctx, envelope_id)
+    return Response(
+        made.body,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{made.file_name}"',
+            "Cache-Control": "no-store",
+            "X-Content-SHA256": made.sha256,
+        },
+    )
 
 
 @router.post(

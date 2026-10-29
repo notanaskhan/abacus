@@ -7,6 +7,9 @@ behalf of the named operator, and every change is audited.
     python -m abacus_tools.pilots mode --firm F --enrolment E --mode live --operator U \
         [--confirmed-by U2]
     python -m abacus_tools.pilots metrics --firm F --week 2027-06-07   (Q-04-T008, a rerun)
+
+`--confirmed-by` names the firm person (the champion) who confirms the system of record (Q-04
+AC-8.4): an active member of that firm, checked here before the mode moves (Q-04-T012, DEC-834).
 """
 
 from __future__ import annotations
@@ -19,12 +22,18 @@ from typing import cast
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext
+from abacus.modules.identity.api import member_context
 from abacus.modules.platform.api import (
     PilotMode,
     compute_pilot_week,
     enrol_pilot,
     set_pilot_mode,
 )
+
+
+async def confirmer_is_member(firm: UUID, person: UUID) -> bool:
+    """Whether the confirming person holds an active membership in the firm (Q-04 AC-8.4)."""
+    return await member_context(firm, person) is not None
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -59,9 +68,18 @@ def main(argv: list[str] | None = None) -> int:
         )
         print(found)
         return 0
-    asyncio.run(
-        set_pilot_mode(tenant, args.enrolment, cast(PilotMode, args.mode), args.confirmed_by)
-    )
+    mode_ = cast(PilotMode, args.mode)
+    return asyncio.run(_mode(tenant, args.enrolment, mode_, args.confirmed_by))
+
+
+async def _mode(
+    tenant: TenantContext, enrolment: UUID, mode: PilotMode, confirmed_by: UUID | None
+) -> int:
+    """One event loop for the check and the change (the engine's connections belong to it)."""
+    if confirmed_by is not None and not await confirmer_is_member(tenant.tenant_id, confirmed_by):
+        print(f"{confirmed_by} is not an active member of the firm", file=sys.stderr)
+        return 2
+    await set_pilot_mode(tenant, enrolment, mode, confirmed_by)
     return 0
 
 

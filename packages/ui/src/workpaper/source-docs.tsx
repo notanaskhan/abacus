@@ -103,6 +103,9 @@ export interface SourceDocRowProps {
   size?: SourceDocSize;
   /** The document open in the viewer. */
   selected?: boolean;
+  /** Cockpit rows at the audit cockpit's geometry (AUD-02: min 44, padding 8 12 9) rather than
+   * TPL-02's and AUD-03's 52. */
+  tight?: boolean;
   /** Opens the document in the viewer (SHL-08). */
   onOpen?: (doc: SourceDoc) => void;
   forceState?: Extract<ForceState, "hover" | "focus">;
@@ -113,6 +116,7 @@ export function SourceDocRow({
   doc,
   size = "cockpit",
   selected = false,
+  tight = false,
   onOpen,
   forceState,
 }: SourceDocRowProps): JSX.Element {
@@ -131,7 +135,9 @@ export function SourceDocRow({
           "hover:bg-nav-fill data-[force=hover]:bg-nav-fill",
           selected && "bg-sel-bg hover:bg-sel-bg",
           cockpit
-            ? "min-h-[52px] px-[14px] py-[8px]"
+            ? tight
+              ? "min-h-[44px] px-[12px] pt-[8px] pb-[9px]"
+              : "min-h-[52px] px-[14px] py-[8px]"
             : "min-h-[40px] py-[6px] pr-[12px] pl-[34px]",
         )}
       >

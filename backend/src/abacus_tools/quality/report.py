@@ -23,6 +23,8 @@ Inputs in DIR, each optional:
   journeys.json    the Playwright JSON reporter's output
   evals/*.json     eval run summaries (`abacus_tools.evals`)
   loadtest-trend.json  the x1 load smoke's p95 trend (`abacus_tools.loadtest.trend --out`)
+  connectors.json  connector conformance outcomes, fake and sandbox per provider
+                   (`abacus_tools.quality.connector_conformance record`, A-02-T32)
 And from the repository: docs/quality/backfill.md, docs/quality/escaped-defects.md, the
 capacity ledger's refused-requests table, and the `# ac-test-author:` headers and strict xfails in
 the test trees.
@@ -43,6 +45,7 @@ from pathlib import Path
 from typing import Literal, cast
 
 from abacus.kernel.clock import system_now
+from abacus_tools.quality import connector_conformance
 
 REPO = Path(__file__).resolve().parents[4]
 AREAS = (
@@ -443,7 +446,7 @@ def security_rows(repo: Path) -> Iterator[Row]:
     )
 
 
-def contract_rows(repo: Path) -> Iterator[Row]:
+def contract_rows(repo: Path, connectors: object = None) -> Iterator[Row]:
     root = repo / "backend" / "tests" / "contracts"
     suites = sorted(p.name for p in root.iterdir() if p.is_dir() and p.name != "__pycache__")
     yield Row(
@@ -457,12 +460,29 @@ def contract_rows(repo: Path) -> Iterator[Row]:
     drift = fixture_drift(repo)
     yield Row(
         "Contracts",
-        "Fixture-versus-live drift; unverified fakes",
-        "no data" if drift is None else f"{len(drift)} routes; not measured",
-        "0; 0",
+        "Fixture-versus-live drift",
+        "no data" if drift is None else f"{len(drift)} routes",
+        "0",
         "no data" if drift is None else "reported",
         "fixture handler keys against packages/api-client/openapi.json (Q-03-T061)",
     )
+    yield _unverified_fakes_row(connectors)
+
+
+def _unverified_fakes_row(connectors: object) -> Row:
+    """A-02-T32 (chapter 10 §10.7.4): a fake whose sandbox run failed while it passed has
+    drifted, and the journeys that depend on it read "unverified" until it is fixed."""
+    source = "connectors-nightly.yml, connector-conformance artifact (ADR-044, A-02-T32)"
+    if connectors is None:
+        return Row("Contracts", "Unverified fakes", "no data", "0", "no data", source)
+    drifted = connector_conformance.unverified(connectors)
+    broken = connector_conformance.failing_fakes(connectors)
+    parts = [
+        f"{d.provider} (journeys unverified: {', '.join(d.journeys) or 'none listed'})"
+        for d in drifted
+    ] + [f"{p} (fake failing)" for p in broken]
+    value = f"{len(drifted)}" + (f": {'; '.join(parts)}" if parts else "")
+    return Row("Contracts", "Unverified fakes", value, "0", "breach" if parts else "ok", source)
 
 
 _FIXTURE_KEY = re.compile(r"[\"'`](GET|POST|PUT|PATCH|DELETE) (/v1/[a-z][A-Za-z0-9_{}./-]*)[\"'`]")
@@ -673,7 +693,7 @@ def build(inputs: Path, window: Window, repo: Path = REPO) -> list[Row]:
         *mutation_rows(_load_json(inputs / "mutation.json")),
         *authorship_rows(repo),
         *security_rows(repo),
-        *contract_rows(repo),
+        *contract_rows(repo, _load_json(inputs / "connectors.json")),
         *journey_rows(_load_json(inputs / "journeys.json")),
         *design_rows(_load_json(inputs / "parity.json")),
         *placeholder_rows(),

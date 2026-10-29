@@ -112,6 +112,7 @@ recorded in the vault, never here.
 |---|---|
 | `loadtest refused: ... is not a loopback address` or `environment ... is not local` | The harness is pointed somewhere it must never load. Stop. On a laptop, check `ABACUS_ENVIRONMENT=local` and the base URL. On the perf stack, the runner of Q-03-T036 is the only way in. |
 | `refused: a staging deploy is in flight` | Wait for the deploy to finish; never cancel it to make room. |
+| `loadtest refused: deploy lock held: ...` or `ABACUS_..._URL points at a hosted database` | The harness applies `db_guard` before every run (Q-03-T114): a deploy holds the lock of `ABACUS_DEPLOY_LOCK_ENV`, or a database setting names a hosted host. Wait for the deploy to finish (`make deploy-lock ENV=staging`); never point a local run at a hosted database. A dry run still works. |
 | `refused: ... exists and is not synthetic` | A fleet id is held by a real firm. Stop and treat it as an incident (RB-08): a fleet id must never collide. |
 | `needs --var <name>=...` | The profile reads an id `make loadtest` did not pass. Add `VARS="name=value"`. |
 | The error rate is all `401` | The persona has no user on that stack: seed it (section 1 step 3) or check the subject in the profile. |
