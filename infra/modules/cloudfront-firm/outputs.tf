@@ -12,3 +12,8 @@ output "domain_name" {
   description = "The firm app's host until the firm domain exists."
   value       = aws_cloudfront_distribution.firm.domain_name
 }
+
+output "api_vpc_origin_id" {
+  description = "The API's CloudFront VPC origin (the portal edge reuses it)."
+  value       = aws_cloudfront_vpc_origin.api.id
+}
