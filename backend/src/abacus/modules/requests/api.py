@@ -12,7 +12,7 @@ from abacus.modules.identity.api import (
     register_scope_resolver,
     register_scopes_resolver,
 )
-from abacus.modules.platform.api import register_audit_value_resolver
+from abacus.modules.platform.api import register_audit_value_resolver, register_pilot_metric_source
 from abacus.modules.requests.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.requests.audit_values import request_item_values
 from abacus.modules.requests.availability import register_available_datasets
@@ -68,6 +68,7 @@ from abacus.modules.requests.lifecycle import (
     update_item,
 )
 from abacus.modules.requests.pbc_contract import pbc_portal_router
+from abacus.modules.requests.pilot_w5 import w5_pbc_via_portal
 from abacus.modules.requests.portal_documents import (
     PortalBinder,
     PortalBinderRef,
@@ -185,6 +186,8 @@ register_audit_value_resolver("request_item", request_item_values)
 
 # I-01-T08: this module's HOME-01 tile or pill (platform.register_home_count).
 register_home_counts()
+
+register_pilot_metric_source("w5", w5_pbc_via_portal)  # Q-04-T008 (DEC-825)
 
 __all__ = [
     "ACTIVITIES",

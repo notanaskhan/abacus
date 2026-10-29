@@ -47,6 +47,7 @@ from abacus.modules.agents.handoff import Citation, Handoff, ScreeningOutput, Ve
 from abacus.modules.agents.home_counts import register_home_counts
 from abacus.modules.agents.inbox_match import MATCHER, MatchOutcome, create_match_run, match
 from abacus.modules.agents.knowledge import KnowledgeHit, knowledge_context, search_knowledge
+from abacus.modules.agents.pilot_w7 import w7_override_rate
 from abacus.modules.agents.proposal_slots import (
     AdoptedValue,
     ApprovedChangeSet,
@@ -115,6 +116,7 @@ from abacus.modules.agents.service import (
 from abacus.modules.agents.shadow_score import (
     OverrideRate,
     ShadowScore,
+    live_override,
     override_rate,
     shadow_score,
 )
@@ -166,6 +168,7 @@ from abacus.modules.identity.api import (
     register_ai_assistants,
     register_autonomy_level_provider,
 )
+from abacus.modules.platform.api import register_pilot_metric_source
 
 # Evidence owns review decisions; agents owns what was proposed (TASK-019 D1).
 register_proposal_source(proposals_for, proposal_of)
@@ -219,6 +222,8 @@ register_checkpoint_hooks()
 register_engagement_owners(AUDIT_KINDS, audit_owners)
 # R-01-T24 security review M-a: communications checks a scheduled Reminder against what was sent.
 register_reminder_history(reminder_history_of)
+
+register_pilot_metric_source("w7", w7_override_rate)  # Q-04-T008 (DEC-825)
 
 __all__ = [
     "ACTIVITIES",
@@ -316,6 +321,7 @@ __all__ = [
     "install_fake_reviews",
     "knowledge_context",
     "knowledge_router",
+    "live_override",
     "load_agent_context",
     "match",
     "override_rate",

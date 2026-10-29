@@ -79,6 +79,19 @@ from abacus.modules.platform.incidents import WORKFLOWS as INCIDENT_WORKFLOWS
 from abacus.modules.platform.jobs import ACTIVITIES as JOB_ACTIVITIES
 from abacus.modules.platform.jobs import SCHEDULES
 from abacus.modules.platform.jobs import WORKFLOWS as JOB_WORKFLOWS
+from abacus.modules.platform.pilot_metrics import (
+    PLACES as PILOT_PLACES,
+)
+from abacus.modules.platform.pilot_metrics import (
+    PilotWeek,
+    register_pilot_metric_source,
+)
+from abacus.modules.platform.pilot_metrics import (
+    compute_week as compute_pilot_week,
+)
+from abacus.modules.platform.pilot_metrics import (
+    ratio as pilot_ratio,
+)
 from abacus.modules.platform.pilots import Mode as PilotMode
 from abacus.modules.platform.pilots import PilotModeRefused
 from abacus.modules.platform.pilots import enrol as enrol_pilot
@@ -213,6 +226,7 @@ __all__ = [
     "MODULES",
     "NOTIFY_THRESHOLD",
     "OPERATOR_HANDLE",
+    "PILOT_PLACES",
     "ROUTERS",
     "SCHEDULES",
     "SPEND_ANOMALY_ID",
@@ -262,6 +276,7 @@ __all__ = [
     "Module",
     "PilotMode",
     "PilotModeRefused",
+    "PilotWeek",
     "PropagationStarted",
     "ProvisionTenantInput",
     "ProvisionTenantResult",
@@ -284,6 +299,7 @@ __all__ = [
     "canary_workflow_id",
     "check_entitlement",
     "clock_day",
+    "compute_pilot_week",
     "configure_canary_probe",
     "configure_heartbeat",
     "configure_tenant_key_ops",
@@ -300,6 +316,7 @@ __all__ = [
     "inv2_violations",
     "mask_value",
     "operator_context",
+    "pilot_ratio",
     "propagate_into",
     "propagation_log",
     "provisioning_workflow_id",
@@ -308,6 +325,7 @@ __all__ = [
     "register_audit_source",
     "register_audit_value_resolver",
     "register_home_count",
+    "register_pilot_metric_source",
     "register_search_projection",
     "register_wisp_document_reader",
     "registered_audit_types",

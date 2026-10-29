@@ -96,6 +96,7 @@ from abacus.modules.engagements.intake_contract import (
     dedupe_router,
 )
 from abacus.modules.engagements.letter_contract import letter_router
+from abacus.modules.engagements.pilot_w4 import w4_portal_activation
 from abacus.modules.engagements.roll_forward import (
     PriorItem,
     TemplateSeed,
@@ -252,6 +253,7 @@ from abacus.modules.organisations.api import (
     register_overview_section,
     register_screening_evidence,
 )
+from abacus.modules.platform.api import register_pilot_metric_source
 
 # Identity owns ethical walls; this module owns which client an engagement belongs to (TASK-016).
 register_engagement_client(client_subquery, client_of)
@@ -343,6 +345,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 # P-07-T52: the bulk import's workflow, activities and daily erase make engagements a module with
 # worker parts; it subscribes to nothing.
 SUBSCRIPTIONS: dict[str, Callable[[OutboxEvent], Awaitable[None]]] = {}
+
+register_pilot_metric_source("w4", w4_portal_activation)  # Q-04-T008 (DEC-825)
 
 __all__ = [
     "ACCEPTANCE_DECISION_DUE",
