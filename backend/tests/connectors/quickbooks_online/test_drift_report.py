@@ -127,8 +127,8 @@ def test_ac_the_recordings_in_the_tree_are_clean_and_include_this_suites() -> No
 @pytest.mark.parametrize(
     ("planted", "named"),
     [
-        ('"access_token": "eyJhbGciOiJkaXIi.eyJleHAiOjE3MDAw.abc"', "JWT-shaped"),
-        ('"refresh_token": "AB11730000000000aBcDeFgHiJkLmNoPqRsTuVwX"', "Intuit-shaped"),
+        ('"value": "eyJhbGciOiJkaXIi.eyJleHAiOjE3MDAw.abc"', "JWT-shaped"),
+        ('"value": "AB11730000000000aBcDeFgHiJkLmNoPqRsTuVwX"', "Intuit-shaped"),
         ('"realmId": "9130354677812345"', "not a synthetic realm"),
         ('"PrimaryEmailAddr": "controller@copperleaf-books.com"', "reserved example domains"),
         ('"PrimaryPhone": "(415) 867-5309"', "phone number"),
