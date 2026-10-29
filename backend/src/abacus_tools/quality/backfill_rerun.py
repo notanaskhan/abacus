@@ -153,20 +153,24 @@ def _group(path: str) -> str:
     )
 
 
-def _run_python(paths: Iterable[str], junit_dir: Path) -> list[Path]:
-    """One pytest invocation per folder; the JUnit files written."""
+def _run_python(paths: Iterable[str], junit_dir: Path) -> dict[str, list[str]]:
+    """One pytest invocation per folder; the failures, read as each folder finishes (a JUnit file
+    that goes missing later can't lose a finished folder's result)."""
     unique = sorted({p for p in paths if (BACKEND / p).exists()})
     groups: dict[str, list[str]] = {}
     for path in unique:
         groups.setdefault(_group(path), []).append(path)
-    written: list[Path] = []
-    for n, (_, files) in enumerate(sorted(groups.items())):
+    failures: dict[str, list[str]] = {}
+    for n, (folder, files) in enumerate(sorted(groups.items())):
         junit = junit_dir / f"backfill-rerun-{n}.xml"
         argv = ["uv", "run", "pytest", "-q", f"--junitxml={junit}", *files]
-        subprocess.call(argv, cwd=BACKEND)
+        code = subprocess.call(argv, cwd=BACKEND)
         if junit.exists():
-            written.append(junit)
-    return written
+            for module, names in _junit_failures(junit).items():
+                failures.setdefault(module, []).extend(names)
+        elif code != 0:
+            failures.setdefault(folder, []).append(f"pytest exit {code}, no JUnit file")
+    return failures
 
 
 def _run_web(paths: Iterable[str]) -> set[str]:
@@ -218,10 +222,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     junit_dir = BACKEND / ".backfill-rerun"
     junit_dir.mkdir(exist_ok=True)
-    failures: dict[str, list[str]] = {}
-    for junit in _run_python((s for p in plans for s in p.python), junit_dir):
-        for module, names in _junit_failures(junit).items():
-            failures.setdefault(module, []).extend(names)
+    failures = _run_python((s for p in plans for s in p.python), junit_dir)
     web_failed = _run_web(s for p in plans for s in p.web)
     out = ROOT / "docs" / "quality" / f"backfill-rerun-{system_now().date().isoformat()}.md"
     out.write_text(report(plans, failures, web_failed), encoding="utf-8")

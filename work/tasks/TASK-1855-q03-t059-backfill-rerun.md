@@ -4,7 +4,7 @@ title: Q-03-T059 re-run the 44 back-filled suites against the final MVP contract
 spec: SPEC-045
 acceptance_criteria: [AC-2]
 risk_zone: red
-status: in-review
+status: done
 epic: Q-03
 branch: s12r-q03-t059
 created: 2026-10-28
@@ -25,9 +25,11 @@ All 44 suites are green on main or each failure has a defect ticket with an owne
 - TASK-059 AC-10's suite `legacy/spec030review.test.tsx` was deleted with the legacy screens
   (#464, S10 wave C); the re-run reports it missing. Triage at the run.
 
-## Open
-- The run itself and its triage: at the end review (session rule), defects into
-  `escaped-defects.md`.
+## Result (2026-10-29)
+All 44 suites green on the S12 batch's combined tree: `docs/quality/backfill-rerun-2026-10-29.md`.
+One transient setup error (re-run 36/36); TASK-059 AC-10's retired legacy suite re-pointed to
+SHL-20 and AUD-03 (DEC-442), 56/56. No defect opened.
 
 ## Progress log
 - 2026-10-28: tool built; run pending.
+- 2026-10-29: run, triaged, report committed; runner reads each JUnit file as its folder ends.
