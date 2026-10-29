@@ -131,18 +131,23 @@ export function RecordCockpit({
   );
   if (toolbar === undefined) {
     // Inside a shell that already draws the toolbar (the app's workspace): the bar, the tabs and
-    // the same three columns, without a second window.
+    // the same three columns, without a second window. In the shell's body it takes back the
+    // body's padding, so the bar spans the window under the toolbar as AppShell's `record` slot
+    // does (audit bar 46–105, panes from 115) and the columns carry the insets themselves.
     return (
       <div
         data-cockpit="bare"
-        className={cn("flex min-h-0 flex-1 flex-col", className)}
+        className={cn(
+          "flex min-h-0 flex-1 flex-col in-data-[shell=cols]:-mx-(--edge-app) in-data-[shell=cols]:-mt-(--gutter-pane) in-data-[shell=cols]:-mb-(--edge-app)",
+          className,
+        )}
         {...(height === undefined ? {} : { style: { height } })}
       >
         {bar}
         {tabs}
         <div
           data-shell="cols"
-          className="flex min-h-0 flex-1 items-stretch gap-(--gutter-pane) pt-(--gutter-pane)"
+          className="flex min-h-0 flex-1 items-stretch gap-(--gutter-pane) pt-(--gutter-pane) in-data-[shell=cols]:px-(--edge-app) in-data-[shell=cols]:pb-(--edge-app)"
         >
           {panes}
         </div>
