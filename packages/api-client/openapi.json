@@ -64520,6 +64520,18 @@
             "title": "Id",
             "type": "string"
           },
+          "issues": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Issues"
+          },
           "office_id": {
             "anyOf": [
               {
@@ -64601,6 +64613,14 @@
             ],
             "cls": "confidential"
           },
+          "signers": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/TaxReturnSignerOut"
+            },
+            "title": "Signers",
+            "type": "array"
+          },
           "status": {
             "$ref": "#/components/schemas/ReturnStatus",
             "cls": "internal"
@@ -64651,6 +64671,27 @@
           "tags"
         ],
         "title": "TaxReturnRowOut",
+        "type": "object"
+      },
+      "TaxReturnSignerOut": {
+        "description": "A C7 signer chip on a row awaiting signature (T-02-T12): who, and whether they signed.",
+        "properties": {
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "signed": {
+            "cls": "internal",
+            "title": "Signed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "signed"
+        ],
+        "title": "TaxReturnSignerOut",
         "type": "object"
       },
       "TaxReturnSummaryOut": {

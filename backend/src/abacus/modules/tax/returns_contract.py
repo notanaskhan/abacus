@@ -44,6 +44,15 @@ class PersonChipOut(BaseModel):
     name: Annotated[str, classified("confidential")]
 
 
+class TaxReturnSignerOut(BaseModel):
+    """A C7 signer chip on a row awaiting signature (T-02-T12): who, and whether they signed."""
+
+    model_config = ConfigDict(frozen=True)
+
+    name: Annotated[str, classified("confidential")]
+    signed: Annotated[bool, classified("internal")]
+
+
 class TaxReturnRowOut(BaseModel):
     """One TAX-01 row."""
 
@@ -68,6 +77,11 @@ class TaxReturnRowOut(BaseModel):
     # The C21 rule that produced the due date, as a code ("1065 · 15th day of 3rd month").
     due_rule_code: Annotated[str | None, classified("internal")]
     tags: Annotated[list[str], classified("internal")]
+    # T-02-T12 (additive): the C3 open-issue count (null renders "—") and the C7 signer chips.
+    issues: Annotated[int | None, classified("internal")] = None
+    signers: Annotated[list[TaxReturnSignerOut], classified("confidential")] = Field(
+        default_factory=list[TaxReturnSignerOut]
+    )
 
 
 class StatusTileOut(BaseModel):

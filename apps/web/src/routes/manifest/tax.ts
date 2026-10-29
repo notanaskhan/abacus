@@ -6,8 +6,8 @@ import type { Manifest } from "./types";
 export const taxScreens = {
   "TAX-01": {
     name: "Tax Returns · practice board",
-    status: "planned",
-    path: null,
+    status: "fixture", // T-02-T12 a–g behind `tax.returns_v1`; live once walked on staging
+    path: "/tax-returns",
     navArea: "Tax Returns",
   },
   "TAX-02": { name: "Return › Overview", status: "planned", path: null },

@@ -6,7 +6,7 @@
 import type { TaxReturnSummaryOut } from "@abacus/api-client";
 import { stableId } from "./prng";
 
-const office = (name: string): string => stableId(`office:${name.toLowerCase()}`);
+const office = (name: string): string => stableId(`office:${name}`);
 
 export const TY2025_SUMMARY: TaxReturnSummaryOut = {
   tax_year: 2025,
