@@ -11,6 +11,7 @@ from abacus.modules.evidence.anchor_job import SCHEDULES as ANCHOR_SCHEDULES
 from abacus.modules.evidence.anchor_job import WORKFLOWS as ANCHOR_WORKFLOWS
 from abacus.modules.evidence.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.evidence.audit_values import evidence_version_values, pii_reveal_values
+from abacus.modules.evidence.citations.display import citation_display
 from abacus.modules.evidence.citations.ledger_line import on_trial_balance_version_created
 from abacus.modules.evidence.citations.matching import (
     cell_reason as citation_cell_reason,
@@ -502,6 +503,7 @@ __all__ = [
     "check_upload_content",
     "citation_cell_reason",
     "citation_cell_text",
+    "citation_display",
     "citation_sources",
     "client_pre_checks",
     "column_letters",

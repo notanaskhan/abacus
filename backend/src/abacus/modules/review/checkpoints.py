@@ -654,6 +654,37 @@ async def save(ctx: Actor, target_type: str, target_id: UUID, name: str | None) 
     return await _card(person, checkpoint_id)
 
 
+async def record_human_edit(
+    tx: UnitOfWork,
+    person: AuthContext,
+    facts: ReviewableFacts,
+    change: ProposedChange,
+    *,
+    content_hash: str,
+) -> UUID:
+    """P-04-T35 (SHL-09 c, SHL-16): where the owner checkpoints, a person's field edit is also
+    a person's checkpoint (cause `human_edit`, status `saved`: in effect at once), in the edit's
+    own unit of work. The field service has authorised `field.edit` on the target."""
+    checkpoint_id, seq = await _insert(
+        tx,
+        person,
+        facts,
+        author_kind="person",
+        author_ref=str(person.user_id),
+        cause="human_edit",
+        status="saved",
+        content_hash=content_hash.removeprefix("sha256:"),
+        changes=(change,),
+    )
+    tx.record(
+        "checkpoint.saved",
+        target=Target(SUBJECT, checkpoint_id),
+        after=Ref(seq=seq, target=facts.target_id, changes=1),
+        scope=_scope(facts),
+    )
+    return checkpoint_id
+
+
 async def propose(
     ctx: Actor,
     target_type: str,
