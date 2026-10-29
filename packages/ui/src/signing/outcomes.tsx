@@ -6,7 +6,7 @@ import { ValueRow } from "../components/inputs";
 import { RadioGroup } from "../components/toggles";
 import { Icon } from "../icons/icon";
 import { Dialog } from "../overlays/dialog";
-import type { SigningSession, SigningStepVM } from "./types";
+import type { SigningSession, SigningStepVM, StepKey } from "./types";
 
 // The T16 kit's identity, exception and phone parts (F-06-T05, F-06-T06; F-06.md §3 Stories 1.1,
 // 1.4 to 1.6; DF-11, DF-12). Provider mode only: identity and the signature run in the provider's
@@ -234,7 +234,7 @@ export function DeclineDialog({
 export interface StepChipsProps {
   steps: readonly SigningStepVM[];
   /** Each step's name ("Verify", "Review", "Sign", "Done"). */
-  names: Readonly<Record<SigningStepVM["key"], string>>;
+  names: Readonly<Record<StepKey, string>>;
 }
 
 /** The 390 step row: "Verify ✓ · Review ✓ · Sign · Done". The current step is 500. */
