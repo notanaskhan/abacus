@@ -42,6 +42,12 @@ from abacus.modules.platform.canary import (
     should_page,
 )
 from abacus.modules.platform.canary import WORKFLOWS as CANARY_WORKFLOWS
+from abacus.modules.platform.reference_fanout import ACTIVITIES as FANOUT_ACTIVITIES
+from abacus.modules.platform.reference_fanout import start_fanout as start_reference_fanout
+from abacus.modules.platform.reference_fanout_workflow import (
+    FanOutInput,
+    ReferenceSetFanOutWorkflow,
+)
 from abacus.modules.platform.canary import boundary as canary_boundary
 from abacus.modules.platform.entitlements import (
     MODULES,
@@ -219,10 +225,17 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 # incident propagation (time_sensitive); Q-01-T26 the hourly spend-anomaly job (background), on
 # its Schedule (`SCHEDULES`, ensured by `abacus_tools.schedules`).
 # Q-01-T30: the canary (time_sensitive), on its own Schedule when this environment names one.
-WORKFLOWS = {**PROVISIONING_WORKFLOWS, **INCIDENT_WORKFLOWS, **JOB_WORKFLOWS, **CANARY_WORKFLOWS}
+WORKFLOWS = {
+    **PROVISIONING_WORKFLOWS,
+    **INCIDENT_WORKFLOWS,
+    **JOB_WORKFLOWS,
+    **CANARY_WORKFLOWS,
+    ReferenceSetFanOutWorkflow: "background",  # K-02-T12
+}
 # G-02-T20: `wisp_pack.requested` starts the WISP pack's build.
 SUBSCRIPTIONS: dict[str, Handler] = {**WISP_SUBSCRIPTIONS}
 ACTIVITIES: tuple[object, ...] = (
+    *FANOUT_ACTIVITIES,  # K-02-T12
     emit_tenant_provisioned_activity,
     set_plan_entitlements_activity,  # Q-01-T45 (0107)
     invite_first_admins_activity,
@@ -258,6 +271,8 @@ __all__ = [
     "SPEND_ANOMALY_ID",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
+    "start_reference_fanout",
+    "FanOutInput",
     "AuditEventRef",
     "AuditLabel",
     "AuditLabeler",

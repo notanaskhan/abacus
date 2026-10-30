@@ -9,6 +9,7 @@ from abacus.modules.engagements.api import register_work_item_kind
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.organisations.api import register_office_facts
 from abacus.modules.platform.api import register_search_projection
+from abacus.modules.tax import consent_capture
 from abacus.modules.tax.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.tax.board import KIND as SEARCH_TYPE
 from abacus.modules.tax.board import return_search_document, returns_by_office
@@ -29,7 +30,11 @@ from abacus.modules.tax.k1_contract import k1_router, portal_k1_router
 from abacus.modules.tax.kind import TaxReturnKind
 from abacus.modules.tax.returns_routes import returns_router
 from abacus.modules.tax.status import TRANSITIONS, StaleReturn, TransitionRefused, next_status
+from abacus.modules.tax.tax_profile import register as register_tax_profile
 from abacus.modules.tax.transitions import apply_transition, record_sync_state
+
+# T-01-T10: §7216 consent capture behind C19's routes, and the `consent_set` envelope source.
+consent_capture.register()
 
 # F-03-T22: the `tax_return` work-item kind.
 register_work_item_kind("tax_return", TaxReturnKind())
@@ -39,6 +44,8 @@ register_engagement_owners(AUDIT_KINDS, audit_owners)
 # T-02-T09: ADM-03a's per-office "TY returns" count (G-01) and the C15 search projection.
 register_office_facts("tax_returns", returns_by_office)
 register_search_projection(SEARCH_TYPE, return_search_document)
+# T-01-T43: CLI-05's authorizations, elections, transcripts and comparisons (DEC-1651).
+register_tax_profile()
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
@@ -50,13 +57,23 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 
 # T-02-T10: a published reference-set correction recomputes every unfiled return's due dates
 # (K-02-T12 fans `reference_set.published` out per tenant).
-SUBSCRIPTIONS = {"reference_set.published": on_reference_set_published}
+SUBSCRIPTIONS = {
+    "reference_set.published": on_reference_set_published,
+    # T-01-T10: a completed `consent_set` envelope signs its consents (C7 → C19).
+    "envelope.completed": consent_capture.on_envelope_completed,
+}
+# The worker collects every module's parts once it has subscriptions; tax has no workflows or
+# activities of its own yet (an absent attribute stopped the worker at start).
+WORKFLOWS: dict[type, str] = {}
+ACTIVITIES: tuple[object, ...] = ()
 
 __all__ = [
+    "ACTIVITIES",
     "FORM_FOR_RULES",
     "ROUTERS",
     "SUBSCRIPTIONS",
     "TRANSITIONS",
+    "WORKFLOWS",
     "ApprovalBlocker",
     "StaleReturn",
     "TransitionRefused",
