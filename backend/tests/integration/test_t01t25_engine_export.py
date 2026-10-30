@@ -328,7 +328,7 @@ async def test_ac_the_same_checkpoint_yields_byte_identical_files(
     assert first.json()["id"] == second.json()["id"]
     assert first.json()["sha256"] == second.json()["sha256"]
     book = export.workbook(
-        engine_id="2025I:FeldJ:V3",
+        engine_id="2025I:FeldJ",
         tax_year=2025,
         form="1040",
         values={
@@ -338,7 +338,7 @@ async def test_ac_the_same_checkpoint_yields_byte_identical_files(
         at=datetime(2026, 1, 1, tzinfo=UTC),
     )
     assert book == export.workbook(
-        engine_id="2025I:FeldJ:V3",
+        engine_id="2025I:FeldJ",
         tax_year=2025,
         form="1040",
         values={
@@ -420,6 +420,21 @@ async def test_switches_and_people_only(migrated_db: MigratedDatabase) -> None:
             "0" * 64,
             feld.samuel.user_id,
         )
+
+
+def test_the_fake_engine_reads_the_workbook() -> None:
+    from abacus_tools.fakes.cch_axcess import read_export
+
+    book = export.workbook(
+        engine_id="2025I:FeldJ",
+        tax_year=2025,
+        form="1040",
+        values={"f1040.l1z": {"t": "decimal", "v": "123223"}},
+        at=datetime(2026, 1, 1, tzinfo=UTC),
+    )
+    read = read_export(book)
+    assert (read.return_id, read.tax_year, read.form) == ("2025I:FeldJ", 2025, "1040")
+    assert [(f.field_key, f.value) for f in read.fields] == [("f1040.l1z", "123223")]
 
 
 def test_client_codes() -> None:
