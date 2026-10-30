@@ -89,6 +89,7 @@ from abacus.modules.methodology.service import (
 from abacus.modules.methodology.standards import (
     current_version,
     current_version_of_kind,
+    policy_payload,
     register_standard_examples,
 )
 from abacus.modules.methodology.standards_catalog import register_standards_providers
@@ -102,6 +103,7 @@ from abacus.modules.methodology.standards_contract import (
     PolicyRef,
     RequiredLevels,
     ReturnApproval,
+    ReturnApprovalPolicyPayload,
     SsarsFramework,
     StandardKind,
     VarianceResult,
@@ -174,6 +176,7 @@ __all__ = [
     "ReportTemplateVersionView",
     "RequiredLevels",
     "ReturnApproval",
+    "ReturnApprovalPolicyPayload",
     "ReviewItem",
     "SsarsFramework",
     "StandardKind",
@@ -203,6 +206,7 @@ __all__ = [
     "methodology_templates",
     "methodology_version",
     "parse_workbook",
+    "policy_payload",
     "publish_drafted_version",
     "published_consent_template",
     "publish_report_template",

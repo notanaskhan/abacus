@@ -82568,10 +82568,6 @@ export type FinalApprovalErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type FinalApprovalError = FinalApprovalErrors[keyof FinalApprovalErrors];
@@ -82632,10 +82628,6 @@ export type ApproveReturnErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ApproveReturnError = ApproveReturnErrors[keyof ApproveReturnErrors];
