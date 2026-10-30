@@ -1,5 +1,5 @@
 import { type JSX, type ReactNode, useId } from "react";
-import { formatActor } from "../../attribution/actor";
+import { formatActor, isPerson } from "../../attribution/actor";
 import { HumanAction } from "../../attribution/human-action";
 import { Button } from "../../components/button";
 import { Spinner } from "../../components/motion";
@@ -223,16 +223,22 @@ export function DocumentOnWell({
   );
 
   // The header's left: the status pill and its sub-line, when the document says more than its
-  // title (TPL-10: "Draft" with "Adopted by Olivia Brandt"; approved; locked).
+  // title (TPL-10: "Draft" with "Adopted by Olivia Brandt"; approved; locked). Only a person
+  // approves (INV-1), so an approval naming the agent, a policy or the system names no one: no
+  // approval ever reads "by Accrued Agent" (INV-5; F-06-T17).
+  const approvedBy =
+    document.approvedBy !== undefined && isPerson(document.approvedBy.actor)
+      ? document.approvedBy
+      : undefined;
   const statusLine =
     document.adoptedBy !== undefined ||
-    document.approvedBy !== undefined ||
+    approvedBy !== undefined ||
     document.lockedReason !== undefined ? (
       <span data-document="status" className="flex min-w-0 items-center gap-[8px] pl-[6px]">
         <RegistryStatus object="generated_document" code={document.status} withDisc={false} />
         <span className="truncate text-meta text-ink-3">
-          {document.approvedBy !== undefined
-            ? `${formatActor(document.approvedBy.actor)} · ${document.approvedBy.when}`
+          {approvedBy !== undefined
+            ? `${formatActor(approvedBy.actor)} · ${approvedBy.when}`
             : (document.lockedReason ??
               (document.adoptedBy === undefined ? "" : document.adoptedBy))}
         </span>
