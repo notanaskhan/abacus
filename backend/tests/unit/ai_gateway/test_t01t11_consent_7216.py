@@ -11,7 +11,7 @@ from __future__ import annotations
 import uuid
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 
@@ -42,6 +42,16 @@ def audited(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     monkeypatch.setattr(boundary, "uow", fake_uow)
     monkeypatch.setattr(boundary, "_check", None)
     monkeypatch.setattr(boundary, "_tri_consent", None)
+
+    # A unit test touches no database: AI is not paused, and the business clock is the wall's.
+    async def not_paused(_name: str, _tenant_id: object = None, **_: object) -> str:
+        return "off"
+
+    async def wall_clock(_tenant: object) -> datetime:
+        return datetime.now(UTC)
+
+    monkeypatch.setattr(boundary, "control_state", not_paused)
+    monkeypatch.setattr(boundary, "business_now", wall_clock)
     boundary.clear_cache()
     return records
 
