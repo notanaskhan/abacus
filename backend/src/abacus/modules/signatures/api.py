@@ -38,10 +38,15 @@ from abacus.modules.signatures.provider import (
     register_firm_provider,
 )
 from abacus.modules.signatures.reminders import ReminderSender, register_reminder_sender
+from abacus.modules.signatures.builder import create_draft
+from abacus.modules.signatures.imports import StagedFile, staged_files
 from abacus.modules.signatures.sources import (
     LETTER,
     LETTER_GATE,
     EnvelopeSource,
+    SourceDocument,
+    SourceDraft,
+    SourceSigner,
     UnknownEnvelopeSource,
     envelope_source,
     letter_envelope,
@@ -174,6 +179,10 @@ __all__ = [
     "Created",
     "EnvelopeInput",
     "EnvelopeSource",
+    "SourceDocument",
+    "SourceDraft",
+    "SourceSigner",
+    "StagedFile",
     "EnvelopeSpec",
     "EnvelopeSummary",
     "EnvelopeWorkflow",
@@ -193,6 +202,8 @@ __all__ = [
     "envelope_workflow_id",
     "hint_envelope",
     "register_docusign_install",
+    "create_draft",
+    "staged_files",
     "register_envelope_source",
     "register_reminder_sender",
     "registered_sources",

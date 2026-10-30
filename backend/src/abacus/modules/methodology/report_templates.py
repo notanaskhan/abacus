@@ -511,3 +511,72 @@ async def current_version_id(tenant: TenantContext, template_id: UUID) -> UUID |
     async with tenant_session(tenant) as session:
         current = current_of(await _publications(session, template_id))
     return current.version_id if current is not None else None
+
+
+# --- T-01-T10: what consent capture reads -------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class PublishedConsentTemplate:
+    template_id: UUID
+    name: str
+    version: TemplateVersionView
+
+
+async def published_consent_template(
+    ctx: AuthContext, purpose: str
+) -> PublishedConsentTemplate | None:
+    """The firm's current published `consent_7216` template for `purpose`, or None (T-01-T10).
+    Two templates for one purpose: the most recently published wins."""
+    async with tenant_session(ctx.tenant) as session:
+        rows = (
+            await session.execute(
+                select(ReportTemplate.id, ReportTemplate.name, ReportTemplateVersion.version_no)
+                .join(
+                    ReportTemplateVersion, ReportTemplateVersion.template_id == ReportTemplate.id
+                )
+                .join(
+                    ReportTemplateConsentTerms,
+                    ReportTemplateConsentTerms.template_version_id == ReportTemplateVersion.id,
+                )
+                .where(
+                    ReportTemplate.family == CONSENT_FAMILY,
+                    ReportTemplateConsentTerms.purpose == purpose,
+                )
+            )
+        ).all()
+        best: tuple[datetime, UUID, str, UUID] | None = None
+        numbers = {(r.id, r.version_no) for r in rows}
+        for template_id in {r.id for r in rows}:
+            current = current_of(await _publications(session, template_id))
+            if current is None:
+                continue
+            candidate = (current.at, template_id, "", current.version_id)
+            if best is None or candidate[0] > best[0]:
+                name = next(r.name for r in rows if r.id == template_id)
+                best = (current.at, template_id, name, current.version_id)
+        if best is None:
+            return None
+        version_no = (
+            await session.execute(
+                select(ReportTemplateVersion.version_no).where(ReportTemplateVersion.id == best[3])
+            )
+        ).scalar_one()
+    if (best[1], version_no) not in numbers:
+        return None  # the current version carries no terms for this purpose
+    view = await version_view(ctx, best[1], version_no)
+    return PublishedConsentTemplate(best[1], best[2], view)
+
+
+async def consent_expiry_months(
+    tenant: TenantContext, version_ids: list[UUID]
+) -> dict[UUID, int | None]:
+    """Each consent template version's stated expiry in months (C-17), for the signing consumer."""
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            select(
+                ReportTemplateConsentTerms.template_version_id,
+                ReportTemplateConsentTerms.expiry_months,
+            ).where(ReportTemplateConsentTerms.template_version_id.in_(version_ids))
+        )
+        return {r.template_version_id: r.expiry_months for r in rows}
