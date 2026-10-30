@@ -59,10 +59,11 @@ def _user(actor_id: str) -> UUID | None:
         return None
 
 
-def _arrived(source: str, method: str) -> str:
+def _arrived(source: str, method: str, channel: str | None = None) -> str:
     if method in CONNECTED_METHODS:
         return "connection"
-    if source in EMAILED_SOURCES:
+    # R-01-T33: a file the firm filed from an emailed intake (N-01) keeps its email channel.
+    if source in EMAILED_SOURCES or channel == "email":
         return "email"
     if source == SOURCE:
         return "client_upload"
@@ -91,7 +92,7 @@ async def portal_files(
                 version_id=version.id,
                 name=item.title,
                 size_bytes=version.size_bytes,
-                arrived=_arrived(version.source, version.method),
+                arrived=_arrived(version.source, version.method, version.channel),
                 uploader_user_id=_user(item.created_by_id)
                 if item.created_by_kind == "human"
                 else None,

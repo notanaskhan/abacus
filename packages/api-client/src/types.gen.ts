@@ -21158,6 +21158,10 @@ export type PortalBinderOut = {
      */
     done_count: number;
     /**
+     * Engagement Id
+     */
+    engagement_id?: string | null;
+    /**
      * Filter
      */
     filter: 'requested' | 'all' | 'uploaded_by_me' | 'needs_follow_up';
@@ -21186,6 +21190,10 @@ export type PortalBinderOut = {
      * Total
      */
     total: number;
+    /**
+     * Upload Something Else
+     */
+    upload_something_else?: boolean;
 };
 
 /**
@@ -58103,10 +58111,6 @@ export type CreateEnvelopeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CreateEnvelopeDraftError = CreateEnvelopeDraftErrors[keyof CreateEnvelopeDraftErrors];
@@ -58499,10 +58503,6 @@ export type UpdateEnvelopeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UpdateEnvelopeDraftError = UpdateEnvelopeDraftErrors[keyof UpdateEnvelopeDraftErrors];
@@ -58620,13 +58620,13 @@ export type EnvelopePageErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EnvelopePageError = EnvelopePageErrors[keyof EnvelopePageErrors];
@@ -58803,10 +58803,6 @@ export type SendEnvelopeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SendEnvelopeError = SendEnvelopeErrors[keyof SendEnvelopeErrors];
@@ -58863,10 +58859,6 @@ export type UndoEnvelopeSendErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UndoEnvelopeSendError = UndoEnvelopeSendErrors[keyof UndoEnvelopeSendErrors];
@@ -59047,10 +59039,6 @@ export type ValidateEnvelopeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ValidateEnvelopeError = ValidateEnvelopeErrors[keyof ValidateEnvelopeErrors];

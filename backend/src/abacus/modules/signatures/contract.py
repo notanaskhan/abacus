@@ -3,7 +3,8 @@ Contract: `docs/contracts/c7-envelopes.md`.
 
 Every route answers 404 with `signatures.envelopes` off and 501 `not_implemented` with it on
 until its task lands: record-mode import N-02-T08; the hub, drawer, evidence and reminders
-T11-T15; drafts, validate, sends, void T18-T22, T30; portal signing T23-T29; policies T13.
+T11-T15; drafts, edits, validate, send, Undo and page previews T20; resend T28; portal
+signing T23-T29; policies T13.
 
 Rules the shapes carry:
 - **Record mode first** (ADR-149): `provider` is `record`, `docusign` or `fake`; a record-mode
@@ -22,7 +23,7 @@ from datetime import date, datetime
 from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
-from fastapi import Depends, Header, Query, Request, Response
+from fastapi import Depends, Header, Path, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel import listing
@@ -41,7 +42,7 @@ from abacus.modules.identity.api import (
     current_context,
     current_member,
 )
-from abacus.modules.signatures import hub, imports
+from abacus.modules.signatures import builder, hub, imports
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 Member = Annotated[AuthContext, Depends(current_member)]
@@ -554,6 +555,8 @@ def _drawer_out(d: hub.Drawer) -> EnvelopeOut:
                 signature_method=cast(SignatureMethod | None, x.signature_method),
                 decline_reason=cast(DeclineReason | None, x.decline_reason),
                 provider_recipient_id=x.provider_recipient_id,
+                title=x.title,
+                email=x.email,
             )
             for x in d.signers
         ],
@@ -806,63 +809,117 @@ async def get_envelope_route(envelope_id: EnvelopeId, ctx: Ctx) -> EnvelopeOut:
 
 
 @router.post(
-    "", action="envelope.draft", response_model=EnvelopeOut, status_code=201, errors=(409, 501)
+    "",
+    action="envelope.draft",
+    response_model=EnvelopeOut,
+    status_code=201,
+    errors=(409,),
 )
 async def create_envelope_draft_route(body: DraftIn, ctx: Ctx) -> EnvelopeOut:
     """A draft from a registered source; the agent may call this (N-02-T20)."""
-    await _stub(ctx, "envelope.draft")
+    envelope_id = await builder.create_draft(ctx, body.source_kind, body.source_id)
+    return _drawer_out(await hub.drawer(ctx, envelope_id))
 
 
-@router.put(
-    "/{envelope_id}", action="envelope.draft", response_model=EnvelopeOut, errors=(409, 501)
-)
+@router.put("/{envelope_id}", action="envelope.draft", response_model=EnvelopeOut, errors=(409,))
 async def update_envelope_draft_route(
     envelope_id: EnvelopeId, body: DraftUpdateIn, ctx: Ctx, if_match: IfMatch
 ) -> EnvelopeOut:
-    """SIG-02 edits (N-02-T20)."""
-    await _stub(ctx, "envelope.draft")
+    """SIG-02 edits (N-02-T20): 409 `stale_version` when `If-Match` is not the current
+    version; 409 `envelope_not_draft` after Send."""
+    edit = builder.DraftEdit(
+        signers=tuple(
+            builder.SignerEdit(
+                s.order, s.routing_group, s.contact_id, s.user_id, s.role, s.identity_method
+            )
+            for s in body.signers
+        ),
+        signer_order=body.signer_order,
+        message=body.message,
+        reminder_cadence=body.reminder_cadence,
+        expires_on=body.expires_on,
+        date_as_of_mode=body.date_as_of_mode,
+        date_as_of=body.date_as_of,
+        document_order=tuple(body.document_order) if body.document_order is not None else None,
+    )
+    await builder.update_draft(ctx, envelope_id, edit, if_match)
+    return _drawer_out(await hub.drawer(ctx, envelope_id))
 
 
-@router.post(
-    "/{envelope_id}/validate", action="envelope.draft", response_model=ValidationOut, errors=(501,)
-)
+@router.post("/{envelope_id}/validate", action="envelope.draft", response_model=ValidationOut)
 async def validate_envelope_route(envelope_id: EnvelopeId, ctx: Ctx) -> ValidationOut:
     """Code-computed checks (N-02-T20)."""
-    await _stub(ctx, "envelope.draft")
+    found = await builder.validate(ctx, envelope_id)
+    return ValidationOut(
+        ok=found.ok,
+        problems=list(found.problems),
+        checks=[ValidationCheck(code=c.code, ok=c.ok) for c in found.checks],
+    )
 
 
 @router.get(
     "/{envelope_id}/documents/{document_id}/pages/{page_no}",
     action="envelope.read",
     response_model=bytes,
-    errors=(501,),
+    errors=(409,),
 )
 async def envelope_page_route(
-    envelope_id: EnvelopeId, document_id: UUID, page_no: int, ctx: Ctx
+    envelope_id: EnvelopeId,
+    document_id: UUID,
+    page_no: Annotated[int, Path(ge=1, le=2000)],
+    ctx: Ctx,
 ) -> Response:
-    """Rendered preview page (N-02-T21)."""
-    await _stub(ctx, "envelope.read")
+    """SIG-02's preview page: the document's masked page image as the evidence viewer renders it
+    (`no-store`, `nosniff`); 409 `preview_unavailable` for a generated document until P-11, 409
+    `preview_outdated` before masking; 403 for a reader who may not read the evidence."""
+    page = await builder.document_page(ctx, envelope_id, document_id, page_no)
+    return Response(
+        content=page,
+        media_type="image/png",
+        headers={
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "private, no-store",
+            "Content-Security-Policy": "default-src 'none'",
+        },
+    )
 
 
-@router.post(
-    "/{envelope_id}/send", action="envelope.send", response_model=SendOut, errors=(409, 501)
-)
+@router.post("/{envelope_id}/send", action="envelope.send", response_model=SendOut, errors=(409,))
 async def send_envelope_route(
     envelope_id: EnvelopeId, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> SendOut:
-    """Human send through a single-use grant, +10 s (N-02-T22)."""
-    await _stub(ctx, "envelope.send")
+    """Human send through a single-use grant, +10 s (N-02-T20): 409 `validation_failed` with
+    each check in `facts`; the provider is called after the window (N-02-T22)."""
+
+    await builder.check_send(ctx, envelope_id)
+
+    async def run() -> tuple[int, dict[str, object]]:
+        sent = await builder.send(ctx, envelope_id)
+        out = SendOut(
+            envelope_id=sent.envelope_id, grant_id=sent.grant_id, not_before=sent.not_before
+        )
+        return 200, out.model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="envelope.send",
+        key=idempotency_key,
+        body={"envelope_id": str(envelope_id)},
+        run=run,
+    )
+    return SendOut.model_validate(stored.body)
 
 
 @router.post(
     "/{envelope_id}/send/undo",
     action="envelope.send",
     response_model=EnvelopeOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def undo_envelope_send_route(envelope_id: EnvelopeId, ctx: Ctx) -> EnvelopeOut:
-    """Undo inside the window (N-02-T22)."""
-    await _stub(ctx, "envelope.send")
+    """Undo inside the window (N-02-T20): no provider call is made."""
+    await builder.undo_send(ctx, envelope_id)
+    return _drawer_out(await hub.drawer(ctx, envelope_id))
 
 
 @router.post(

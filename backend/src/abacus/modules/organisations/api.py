@@ -84,6 +84,7 @@ from abacus.modules.organisations.service import (
     FirmName,
     NewClient,
     NewContact,
+    SignerContact,
     activate_contact,
     add_contact,
     attest_client_ids,
@@ -99,6 +100,7 @@ from abacus.modules.organisations.service import (
     contacts_of_user,
     create_client,
     entity_display_name,
+    entity_tin_last4s,
     find_clients,
     firm_names,
     firm_offices,
@@ -106,6 +108,7 @@ from abacus.modules.organisations.service import (
     portal_activation,
     set_client_record,
     set_entity_attributes,
+    signer_contacts,
 )
 from abacus.modules.organisations.settings_contract import offices_glance, org_settings_router
 from abacus.modules.organisations.slots import (
@@ -195,6 +198,7 @@ __all__ = [
     "OverviewSection",
     "RoleAsked",
     "SectionRows",
+    "SignerContact",
     "SubjectNames",
     "TinConflict",
     "TinInvalid",
@@ -227,6 +231,7 @@ __all__ = [
     "ein_matches",
     "entity_display_name",
     "entity_name_column",
+    "entity_tin_last4s",
     "find_clients",
     "fingerprint_tin",
     "firm_names",
@@ -247,6 +252,7 @@ __all__ = [
     "seal_tin",
     "set_client_record",
     "set_entity_attributes",
+    "signer_contacts",
     "standing_conflict_results",
     "tri_consent_verdict",
 ]

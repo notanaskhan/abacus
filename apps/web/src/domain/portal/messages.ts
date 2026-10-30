@@ -91,6 +91,7 @@ export const DOCUMENT_WORDS = {
 export const SHEET_WORDS = {
   header: { request: "Request", question: "Question", decision: "Decision" },
   upload: "Upload…",
+  uploadCard: "Upload",
   why: "Why we need it",
   toDo: (requested: string) => `To do · requested ${requested}`,
   dropTitle: "Drop the file here",

@@ -123,6 +123,6 @@ describe("TPL-16g: 390", () => {
     );
     const bar = document.querySelector('[data-signing="mobile-sign-bar"]');
     expect(bar?.getAttribute("data-height")).toBe("64");
-    expect(bar?.querySelector("button")?.textContent).toBe("Adopt signature & sign…");
+    expect(bar?.querySelector("button")?.textContent).toBe("Adopt signature & sign");
   });
 });

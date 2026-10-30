@@ -69,17 +69,22 @@ from abacus.modules.audit_trail.api import events_for_work_item
 from abacus.modules.evidence.api import check_ready, register_export_audit_trail
 from abacus.modules.integrations.api import (
     assert_egress_declared,
+    docusign_install_secret,
     egress_allowlist,
     egress_hosts_by_connector,
     egress_read_posts,
 )
 from abacus.modules.platform.api import configure_canary_probe
+from abacus.modules.signatures.api import register_docusign_install
 from abacus.worker.canary_probe import ServiceProbe
 
 GRACEFUL_SHUTDOWN = timedelta(seconds=60)
 # A-01-T19 (DEC-433): the export build reads its audit-trail section through audit_trail
 # (see api/app.py).
 register_export_audit_trail(events_for_work_item)
+# N-02-T18 (ADR-008): signatures may not import integrations, so the worker gives the DocuSign
+# adapter integrations' answer: the install secret when W7 is enabled and the install connected.
+register_docusign_install(docusign_install_secret)
 # The modules with worker parts (subscriptions, workflows, activities), in MODULES order (P-39;
 # F-03-T07): a module's api.py declares them, so adding one never edits the worker.
 MODULES = tuple(

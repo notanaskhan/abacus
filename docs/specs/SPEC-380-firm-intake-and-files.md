@@ -94,6 +94,7 @@ Clients send documents outside requests: a forwarded 1095-C, a corrected 1099, a
 - **AC-24** Each of the four flags off answers 404 on its routes and renders C-20's "This isn't on for ‹firm› yet." state; the Inbox and Files nav items stay.
 - **AC-26 FIL-01 on fixtures (N-01-T16).** Ten scenarios render, no write control appears, and the virtual statements foot to 512,400.
 - **AC-25 Files read model (N-01-T19; DEC-1051).** Olivia Brandt sees Ridgeline's 12 documents and 7 virtual children, and Felix Andersen gets metadata only; counts run under `visible()` (client-scoped files under the client scope kind), a client-scoped document never names another engagement's request, and walls, other firms and client principals see nothing.
+- **AC-27 INB-01, INB-02 and FIL-01 live (N-01-T23).** `/inbox` behind `inbox.firm_intake` (`?thread`, `?ov=file&message` for INB-02's sheet, `?ov=log-intake` for Log received documents, DV-1) and `/files` behind `files.browser`; the rail polls every 10 s and the triage sheet every 2 s while visible (DEC-23); Log received documents logs the batch and then each file, scanned, with the scanner's and the limits' refusals in the design's words; both flags are on for Brightwater Hale in the scenario load (staging and local), and on staging Grace logs, files and ignores live with the audit log naming Grace for every decision.
 
 ## 6. Behaviour and flows
 

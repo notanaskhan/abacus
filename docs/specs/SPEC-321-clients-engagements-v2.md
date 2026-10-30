@@ -86,6 +86,7 @@ on the model gateway and agents for `organisations`.
 - **AC-29** No contacts schema carries a wall field or a Restricted field.
 - **AC-30** Roll-forward v2 (P-07-T55; ENG-13; DEC-805): Northwind PY2025 rolls into PY2026 with 24 requests as Draft, no evidence copied, and an active source answers 409 `roll_forward_source_not_released`; Create makes a Prospect with `prior_engagement_id`, the carried team and a continuance acceptance record, once per draft; a walled person gets 404; agent and system are refused.
 - **AC-31 Contracts frozen and the onboarding kit (P-07-T64; DEC-1054).** The five P-07 contracts are frozen at v1 with snapshots under `backend/tests/contracts/p07_*`, and a fresh session can onboard a firm's client list using only RB-41 and the contract docs.
+- **AC-32 Onboarding dry run on the production canary (P-07-T65).** Before Fri May 28, 2027, `docs/ops/rehearsals/canary-onboarding-dry-run.md` records every step completed on the canary: the synthetic CCH export imported through CLI-06 (g), two contacts invited through CLI-04 with their mail in the synthetic sink, a contact's first sign-in, acceptance (CLI-07) and independence (CLI-08) walked by people, each audit event naming the person, and the timings in the onboarding kit for M8 and M9.
 
 ## 6. Behaviour and flows
 | From | Event | To | Who can trigger |

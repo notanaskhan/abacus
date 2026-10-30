@@ -5,6 +5,7 @@ import { clientRoutes } from "./clients";
 import { engagementRoutes } from "./engagements";
 import { filesRoutes } from "./files";
 import { homeRoutes } from "./home";
+import { inboxRoutes } from "./inbox";
 import { knowledgeRoutes } from "./knowledge";
 import { settingsRoutes } from "./settings";
 // SHL-08 (P-03-T14): registers the `?ov=viewer` drawer for every firm route.
@@ -23,7 +24,7 @@ export const FIRM_AREAS = [
   { key: "files", label: "Files", routes: filesRoutes },
   { key: "knowledge", label: "Knowledge", routes: knowledgeRoutes },
   { key: "workbench", label: "Workbench", routes: [] },
-  { key: "inbox", label: "Inbox", routes: [] },
+  { key: "inbox", label: "Inbox", routes: inboxRoutes },
   { key: "clients", label: "Clients", routes: clientRoutes },
   { key: "binders", label: "Binders", routes: binderRoutes },
   { key: "notices", label: "Notices", routes: [] },
@@ -41,6 +42,7 @@ export const firmRoutes = [
   ...binderRoutes,
   // N-01-T16: FIL-01 behind `files.browser`.
   ...filesRoutes,
+  ...inboxRoutes,
   ...settingsRoutes,
   // A-01-T11, A-01-T12: AUD-01 and AUD-02 behind `audits.cockpit`.
   ...auditRoutes,

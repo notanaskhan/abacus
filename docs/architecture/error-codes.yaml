@@ -435,6 +435,11 @@ codes:
     raised_by:
     - abacus.modules.identity.settings_registry.DisplayNameRequired
     summary: The name clients see in the portal can't be empty (AC1.3).
+  document_order_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.signatures.builder.DocumentOrderInvalid
+    summary: A new document order must name every document of the envelope exactly once.
   draft_already_decided:
     status: 409
     raised_by:
@@ -474,6 +479,7 @@ codes:
     - abacus.modules.agents.proposal_undo.EffectStarted
     - abacus.modules.evidence.exports.ExportEffectStarted
     - abacus.modules.requests.binders.EffectStarted
+    - abacus.modules.signatures.builder.EffectStarted
     summary: 'The publish''s delivery has started (its grant was consumed): it can no longer be undone.'
   effective_from_too_early:
     status: 422
@@ -508,6 +514,11 @@ codes:
     raised_by:
     - abacus.modules.engagements.drafts.EntityOutsideClient
     summary: The client entity is not one of the draft's client's entities.
+  envelope_not_draft:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.builder.EnvelopeNotDraft
+    summary: Only a draft no one has pressed Send on is edited, checked for sending or sent.
   envelope_not_open:
     status: 409
     raised_by:
@@ -735,6 +746,11 @@ codes:
     raised_by:
     - abacus.kernel.uow.idempotency.IdempotencyKeyReused
     summary: This key already answered a different request.
+  identity_method_not_allowed:
+    status: 422
+    raised_by:
+    - abacus.modules.signatures.builder.IdentityMethodNotAllowed
+    summary: The policy does not allow this identity method for this signer (DF-11).
   ignore_notes_exhausted:
     status: 409
     raised_by:
@@ -1335,6 +1351,11 @@ codes:
     - abacus.modules.evidence.masked_previews.PreviewOutdated
     summary: 'The page was rendered before masking existed: it is never served (SPEC-322 AC-24) until
       the backfill re-renders it.'
+  preview_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.builder.PreviewUnavailable
+    summary: The document has no rendered preview to show yet (a generated document until P-11).
   prior_mismatch:
     status: 409
     raised_by:
@@ -1621,6 +1642,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.review.service.SignOffInvalid
+  signer_outside_client:
+    status: 422
+    raised_by:
+    - abacus.modules.signatures.builder.SignerOutsideClient
+    summary: A contact signer must be the envelope's client's, and a party is named exactly once.
   signoff_invalid:
     status: 422
     raised_by:
@@ -1658,6 +1684,11 @@ codes:
     raised_by:
     - abacus.modules.review.gate_actions.SnoozePastDue
     summary: A snooze ends no later than the gate's due date (and within 30 days).
+  source_cannot_draft:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.builder.SourceCannotDraft
+    summary: The source is registered but drafts nothing yet (the letter until N-02-T32).
   sso_exempt_needs_hardware_key:
     status: 409
     raised_by:
@@ -1709,6 +1740,7 @@ codes:
     - abacus.modules.platform.safeguards.SafeguardsStale
     - abacus.modules.portal.settings.SettingsStale
     - abacus.modules.review.gate_actions.GateStaleVersion
+    - abacus.modules.signatures.builder.StaleEnvelope
     - abacus.modules.tax.status.StaleReturn
     summary: 'The record changed since it was read: read it again (409).'
   standards_set_refused:
@@ -1887,6 +1919,7 @@ codes:
     - abacus.modules.evidence.exports.ExportUndoClosed
     - abacus.modules.evidence.service.UndoWindowClosed
     - abacus.modules.requests.binders.UndoWindowClosed
+    - abacus.modules.signatures.builder.UndoWindowClosed
     summary: Undo is possible for 10 seconds after a publish, and only once.
   unknown_agent:
     status: 422
@@ -1971,6 +2004,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.evidence.uploads.UploadTypeNotAllowed
+  validation_failed:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.builder.ValidationFailed
+    summary: A code-computed check failed; `facts` holds each check's result by its code.
   version_frozen:
     status: 409
     raised_by:

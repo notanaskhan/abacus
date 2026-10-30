@@ -5,6 +5,7 @@
 // "All twelve POR-03 states render from fixtures and … Claire's three-file drop reproduces c and d
 // with the outcome announced in a live region".
 import { client } from "@abacus/api-client/client";
+import { toastStore } from "@abacus/ui";
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import {
@@ -245,6 +246,25 @@ describe("POR-03 behaviour", () => {
     await waitFor(() => {
       expect(seen.calls.some((c) => c.path.endsWith("/withdraw"))).toBe(true);
     });
+  });
+
+  it("Upload something else sends Claire's file to the firm's Inbox and toasts the firm (R-01-T33)", async () => {
+    const seen = show("a");
+    await screen.findByText("Form 1095-C From Mercer Hill Health");
+    fireEvent.click(screen.getByRole("button", { name: "Upload something else" }));
+    const input = document.querySelector<HTMLInputElement>("input[type='file']");
+    expect(input).not.toBeNull();
+    const file = new File(["%PDF-1.7"], "Feld_note_to_firm.pdf", { type: "application/pdf" });
+    fireEvent.change(input as HTMLInputElement, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(seen.calls.some((c) => c.path.endsWith("/files"))).toBe(true);
+    });
+    const batch = seen.calls.find((c) => c.path === "/v1/portal/intake-uploads");
+    expect((batch?.body as { scope_ref?: { kind?: string } }).scope_ref?.kind).toBe("engagement");
+    await waitFor(() => {
+      expect(toastStore.list().some((t) => t.text === "Sent to Brightwater Hale")).toBe(true);
+    });
+    noFirmWords();
   });
 
   it("no Withdraw on an emailed or another contact's file", async () => {
