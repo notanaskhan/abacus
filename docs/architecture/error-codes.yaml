@@ -311,10 +311,10 @@ codes:
   consent_required:
     status: 409
     raised_by:
+    - abacus.modules.organisations.consent_gate.TriConsentRequired
     - abacus.modules.requests.lifecycle.ConsentRequired
-    summary: '§7216 (ADR P-12, R-01-T13): a request of an engagement that holds a tax return goes to
-      a third party only under the client''s `third_party_disclosure` consent (C19). Until T-01 registers
-      that consent nobody holds it, so such a delegation is refused (fail closed).'
+    summary: A read of tax return information without the taxpayer's `use` and `ai_disclosure` consents
+      in force (`facts.client_entity_id`, `facts.purpose`).
   consent_version_stale:
     status: 409
     raised_by:

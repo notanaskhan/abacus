@@ -46,3 +46,11 @@ Audit: `consent.requested`, `.signer_signed`, `.signed`, `.recorded`, `.declined
 
 ## 6. Classification
 Consent rows `confidential`; return and transcript figures TRI (`restricted`, `x-tri`); CAF last four only; no TIN.
+
+## Live since T-01-T11 (DEC-1257)
+- **Read half built:** `organisations/consent_gate.py` implements `consent_state`, `tri_consent_verdict(tenant, subjects, at, *, tax_year=None)` (additive keyword), `covering_consents(tenant, [TriSubject], at)` and `require_tri_consent(tenant, [TriSubject], *, run_id, engagement_id)` (409 `consent_required`). Capture (request, sign, record, renew) stays T-01-T10.
+- **In force:** `signed`, `signed_at <= at`, not revoked, unexpired, every required signer signed, the year covered, and `provider_terms_version` equal to the covering Bedrock entry's `material` hash (compared only while an entry covers Bedrock). Business time (`kernel.clock.now`); never cached.
+- **Gateway:** `AssembledContext.data_subjects` (`DataSubject(entity_id, tax_year)`); `boundary.register_tri_consent_check` (engagements registers organisations' `covering_consents`: organisations never imports the gateway, P-07-T04); reason `consent_7216` at index 9; access kind `tri.agent_read` (gateway) and `tri.tool_read` (tool layer), both flagged `tri`.
+- **Matrix:** condition `consent: <purposes>` over `TargetFacts.consent_subjects`; consent checks for `use` and `ai_disclosure` registered by organisations. No row carries it yet: the first agent TRI actions arrive with T-04 and P-10-T22.
+- **Agent specs:** `data_classes: [tri]` needs both checks registered.
+
