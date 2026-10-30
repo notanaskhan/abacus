@@ -32,7 +32,7 @@ from abacus.modules.methodology import api as methodology_api
 from abacus.modules.methodology import standards
 from abacus.modules.methodology.standards_contract import ExampleRow
 
-from .agent_tests.support import Seeder
+from .agent_tests.support import Person, Seeder
 from .conftest import MigratedDatabase
 
 # The demo clock: Mon Sep 14, 2026, 9:24 AM CT.
@@ -157,6 +157,10 @@ async def world(seed: Seeder, as_: Callable[[object], Call]) -> World:
     priya = await _member(seed, tenant, "Priya Raman", firm_role=None, level="partner")
     daniel = await _member(seed, tenant, "Daniel Reyes", firm_role=None, level="partner")
     cole = await _member(seed, tenant, "Cole Hart", firm_role=None, level="staff")
+    # SPEC-014: a firm-level read by a staff-level person counts their engagement roles, so Cole
+    # is on one engagement (with no firm role, nothing else lets him read the standards).
+    engagement = await seed.engagement(tenant, await seed.entity(tenant), margaret.user_id)
+    await seed.member(engagement, Person(cole.user_id, tenant), "staff")
     with frozen(DEMO):
         created = await as_(margaret)(
             "POST",

@@ -62200,8 +62200,17 @@
             "type": "string"
           },
           "status": {
-            "$ref": "#/components/schemas/FirmStandardVersionStatus",
-            "cls": "internal"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FirmStandardVersionStatus"
+              },
+              {
+                "const": "superseded",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Status"
           },
           "version": {
             "cls": "internal",
@@ -62280,8 +62289,17 @@
             "cls": "internal"
           },
           "status": {
-            "$ref": "#/components/schemas/FirmStandardVersionStatus",
-            "cls": "internal"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FirmStandardVersionStatus"
+              },
+              {
+                "const": "superseded",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Status"
           },
           "tax_year": {
             "anyOf": [

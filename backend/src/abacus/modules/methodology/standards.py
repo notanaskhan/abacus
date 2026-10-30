@@ -617,7 +617,6 @@ async def create_standard(ctx: AuthContext, body: StandardCreateIn) -> StandardO
                 created_by=ctx.user_id,
             )
         )
-        await tx.session.flush()
         tx.record(
             family.created,
             target=Target(family.subject, standard_id),
@@ -714,7 +713,6 @@ async def draft_version(ctx: AuthContext, standard_id: UUID) -> StandardVersionO
                 drafted_by=ctx.user_id,
             )
         )
-        await tx.session.flush()
         tx.record(
             item.family.drafted,
             target=Target(item.family.version_subject, version_id),
@@ -750,8 +748,9 @@ async def edit_draft(
         tx.record(
             item.family.edited,
             target=Target(item.family.version_subject, version_id),
-            before=Ref(payload=version.payload_hash),
-            after=Ref(payload=digest),
+            # Audit refs take the bare SHA-256 (64 hex), not the stored "sha256:" form.
+            before=Ref(payload=version.payload_hash.removeprefix("sha256:")),
+            after=Ref(payload=digest.removeprefix("sha256:")),
         )
     return await _version_view(ctx, standard_id, version_id)
 

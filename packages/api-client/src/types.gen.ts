@@ -29862,7 +29862,10 @@ export type StandardVersionOut = {
      * Standard Id
      */
     standard_id: string;
-    status: FirmStandardVersionStatus;
+    /**
+     * Status
+     */
+    status: FirmStandardVersionStatus | 'superseded';
     /**
      * Version
      */
@@ -29893,7 +29896,10 @@ export type StandardVersionSummaryOut = {
      */
     published_at: string | null;
     published_by: StandardPersonOut | null;
-    status: FirmStandardVersionStatus;
+    /**
+     * Status
+     */
+    status: FirmStandardVersionStatus | 'superseded';
     /**
      * Tax Year
      */
