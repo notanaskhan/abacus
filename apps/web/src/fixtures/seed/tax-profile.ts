@@ -3,6 +3,8 @@
 // Ferris household (f: envelope E17, Morgan ✓ Sep 9, Kai ○). The consents are ADM-05's rows
 // (`seed/consents.ts`), so the registry and the profile agree. The identity band carries the last
 // four only (DEC-52); a reveal answers the seed's synthetic value, never a real TIN.
+// T-01-T34 adds the 8821's designees with CAF last four only (c), Ridgeline's elections (e)
+// and Aurelio Santos with no authorization on file (g).
 import type { ConsentOut, TaxProfileOut } from "@abacus/api-client";
 import { REGISTRY_CONSENTS } from "./consents";
 import { stableId } from "./prng";
@@ -17,18 +19,66 @@ export const WHITLEY_SPOUSE_ENTITY = stableId("client-entity:dana-whitley");
 export const FERRIS_CLIENT_ID = stableId("client:morgan-kai-ferris");
 export const FERRIS_ENTITY = stableId("client-entity:morgan-kai-ferris");
 export const FERRIS_SPOUSE_ENTITY = stableId("client-entity:kai-ferris");
+export const RIDGELINE_ENTITY = stableId("client-entity:ridgeline-property-partners");
+export const SANTOS_ENTITY = stableId("client-entity:aurelio-santos");
 
 const AUTHORIZATION_8821: TaxProfileOut["authorizations"][number] = {
   id: stableId("tax-authorization:whitley-8821"),
   form: "8821",
   state_form_code: null,
-  designees: [],
+  // The CAF numbers are sealed; the profile carries their last four only (T-01 §4.3).
+  designees: [
+    { user_id: stableId("user:daniel-reyes"), name: "Daniel Reyes", caf_last4: "0912" },
+    { user_id: stableId("user:kevin-osei"), name: "Kevin Osei", caf_last4: "4471" },
+  ],
   tax_matters: ["Income · Form 1040"],
   tax_years: [2022, 2023, 2024, 2025, 2026],
   received_on: "2026-02-03",
   expires_on: null,
   status: "on_file",
 };
+
+/** Ridgeline's elections for TY2025 (e; blueprint §9.8): the server's codes, worded by CLI-05. */
+const RIDGELINE_ELECTIONS: TaxProfileOut["elections"] = [
+  {
+    kind: "section_754",
+    status_code: "pending",
+    jurisdiction: null,
+    amount: null,
+    tax_year: 2025,
+  },
+  { kind: "ptet", status_code: "elected", jurisdiction: "IL", amount: "28044", tax_year: 2025 },
+  { kind: "ptet", status_code: "elected", jurisdiction: "CO", amount: "17070", tax_year: 2025 },
+  { kind: "ptet", status_code: "elected", jurisdiction: "NY", amount: "18982", tax_year: 2025 },
+  {
+    kind: "bba_representative",
+    status_code: "designated",
+    jurisdiction: null,
+    amount: null,
+    tax_year: 2025,
+  },
+  {
+    kind: "bba_opt_out",
+    status_code: "not_eligible",
+    jurisdiction: null,
+    amount: null,
+    tax_year: 2025,
+  },
+  {
+    kind: "section_163j",
+    status_code: "exempt",
+    jurisdiction: null,
+    amount: null,
+    tax_year: 2025,
+  },
+  {
+    kind: "accounting_method",
+    status_code: "accrual",
+    jurisdiction: null,
+    amount: null,
+    tax_year: 2025,
+  },
+];
 
 export const TAX_PROFILES: Readonly<Record<string, TaxProfileOut>> = {
   [WHITLEY_ENTITY]: {
@@ -88,6 +138,52 @@ export const TAX_PROFILES: Readonly<Record<string, TaxProfileOut>> = {
     ],
     portal_user_name: "Morgan Ferris",
     resident_state: "Illinois",
+  },
+  [RIDGELINE_ENTITY]: {
+    client_entity_id: RIDGELINE_ENTITY,
+    taxpayer_tin: { kind: "ein", presence: "on_file", last4: "2716" },
+    consents: [],
+    authorizations: [],
+    elections: RIDGELINE_ELECTIONS,
+    open_notices: 0,
+    allowed_actions: ["tax_profile.read", "consent.read", "tax_election.manage"],
+    client_name: "Ridgeline Property Partners, LP",
+    client_kind: "Partnership",
+    partner_name: "Daniel Reyes",
+    office_name: "Chicago",
+    identity: [
+      {
+        role: "taxpayer",
+        client_entity_id: RIDGELINE_ENTITY,
+        name: "Ridgeline Property Partners, LP",
+        masked_tin: { kind: "ein", presence: "on_file", last4: "2716" },
+      },
+    ],
+    portal_user_name: null,
+    resident_state: null,
+  },
+  [SANTOS_ENTITY]: {
+    client_entity_id: SANTOS_ENTITY,
+    taxpayer_tin: null,
+    consents: [],
+    authorizations: [],
+    elections: [],
+    open_notices: 0,
+    allowed_actions: ["tax_profile.read", "consent.read", "tax_authorization.manage"],
+    client_name: "Aurelio Santos",
+    client_kind: "Individual",
+    partner_name: null,
+    office_name: "Chicago",
+    identity: [
+      {
+        role: "taxpayer",
+        client_entity_id: SANTOS_ENTITY,
+        name: "Aurelio Santos",
+        masked_tin: null,
+      },
+    ],
+    portal_user_name: null,
+    resident_state: null,
   },
 };
 

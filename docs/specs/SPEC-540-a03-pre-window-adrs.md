@@ -47,4 +47,4 @@ reconciles the plan with what is on `main`. `docs/plan/epics/A-03.md` §0.1, §4
   and T08 cite it.
 
 ## 6. Open questions
-- None. Acceptance by the builder and the audit CPA is the remaining step for each ADR.
+- None. ADR-340 and ADR-341 were accepted on 2026-10-29.

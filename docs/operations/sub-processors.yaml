@@ -96,18 +96,18 @@ rows:
     egress_hosts: ["uptime.betterstack.com"]
     references: [ADR-154]
 
-  - id: docusign
-    party: DocuSign
-    service: DocuSign eSignature and ID Verification
+  - id: docuseal
+    party: DocuSeal
+    service: DocuSeal (cloud API, signing form, KBA)
     kind: sub-processor
     role: e-signature and signer identity verification
-    data_seen: signed documents and signer evidence
+    data_seen: documents sent for signature, signer identity answers (KBA) and signer evidence (IP, user agent)
     client_data: true
-    region: US account
+    region: US (to verify)
     dpa: to-confirm
     needed_by: R3
-    egress_hosts: []
-    references: []
+    egress_hosts: ["api.docuseal.com", "docuseal.com"]
+    references: [ADR-342]
 
   - id: microsoft-graph
     party: Microsoft
