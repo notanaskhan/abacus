@@ -30772,6 +30772,7 @@ export type TaxProfileIdentityOut = {
      * Client Entity Id
      */
     client_entity_id: string;
+    masked_tin?: MaskedTinOut | null;
     /**
      * Name
      */
@@ -30780,7 +30781,6 @@ export type TaxProfileIdentityOut = {
      * Role
      */
     role: 'taxpayer' | 'spouse';
-    tin?: MaskedTinOut | null;
 };
 
 /**

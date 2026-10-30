@@ -150,7 +150,7 @@ function Rail({
         {who.name}
         <span aria-hidden="true">·</span>
         <MaskedTin
-          entity={{ id: who.client_entity_id, name: who.name, tin: who.tin ?? null }}
+          entity={{ id: who.client_entity_id, name: who.name, tin: who.masked_tin ?? null }}
           canReveal={canReveal && who.role === "taxpayer"}
         />
       </span>

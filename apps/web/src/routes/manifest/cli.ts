@@ -29,7 +29,9 @@ export const cliScreens = {
   // T-01-T14 built d and f (the consents section) on fixtures; a, b, c, e, g with T-01-T43 to T46.
   "CLI-05": {
     name: "Tax profile, authorizations & consents · with Transcripts",
-    status: "fixture",
+    // Fixture-built (T-01-T14); planned until its designed links are wired (link-contract rule 1)
+    // and walked on staging (DEC-195; DEC-1272).
+    status: "planned",
     path: "/clients/$clientId/tax-profile/$sub",
     navArea: "Clients",
   },

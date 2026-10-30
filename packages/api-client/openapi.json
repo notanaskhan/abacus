@@ -64222,6 +64222,17 @@
             "title": "Client Entity Id",
             "type": "string"
           },
+          "masked_tin": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MaskedTinOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted"
+          },
           "name": {
             "cls": "confidential",
             "title": "Name",
@@ -64235,17 +64246,6 @@
             ],
             "title": "Role",
             "type": "string"
-          },
-          "tin": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/MaskedTinOut"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "restricted"
           }
         },
         "required": [

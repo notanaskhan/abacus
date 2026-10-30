@@ -307,7 +307,8 @@ class TaxProfileIdentityOut(BaseModel):
     role: Annotated[Literal["taxpayer", "spouse"], classified("internal")]
     client_entity_id: Annotated[UUID, classified("internal")]
     name: Annotated[str, classified("confidential")]
-    tin: Annotated[MaskedTinOut | None, classified("restricted")] = None
+    # Named for what it holds: C19 keeps a field called `tin` (or ssn, ein, itin) for plaintext.
+    masked_tin: Annotated[MaskedTinOut | None, classified("restricted")] = None
 
 
 class TaxProfileOut(BaseModel):
