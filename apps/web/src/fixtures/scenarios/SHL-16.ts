@@ -3,9 +3,10 @@
 // checkpoint it opens and the dialog it holds.
 import type { Scenario } from "../../app-core/fixture-mode";
 import { reviewScenarios } from "../handlers/review";
-import { SHL16 } from "../seed/review";
+import { SHL16, importCp } from "../seed/review";
 
-export const STATES = ["a", "b", "c", "d", "e", "f"] as const;
+// P-04-T47 adds ia, ib and ie: the CCH import variant of a, b and e.
+export const STATES = ["a", "b", "c", "d", "e", "f", "ia", "ib", "ie"] as const;
 export type Shl16State = (typeof STATES)[number];
 
 const all = reviewScenarios("SHL-16");
@@ -25,4 +26,7 @@ export const OPENS: Record<
   d: { type: "tax_return", id: SHL16.d.target_id, seq: 5, dialog: "rename" },
   e: { type: "tax_return", id: SHL16.e.target_id, seq: 6 },
   f: { type: "tax_return", id: SHL16.f.target_id },
+  ia: { type: "tax_return", id: importCp.target_id, seq: 7 },
+  ib: { type: "tax_return", id: importCp.target_id, seq: 7 },
+  ie: { type: "tax_return", id: importCp.target_id, seq: 7 },
 };

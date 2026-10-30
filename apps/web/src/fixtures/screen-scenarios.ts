@@ -21,6 +21,7 @@ import { OPENS as ADM07_OPENS, scenarios as adm07 } from "./scenarios/ADM-07";
 import { scenarios as aud01 } from "./scenarios/AUD-01";
 import { IDS as AUD03_IDS, scenarios as aud03 } from "./scenarios/AUD-03";
 import { scenarios as bnd01 } from "./scenarios/BND-01";
+import { OPENS as TAX02_OPENS, j06Scenario } from "./scenarios/TAX-02";
 import { OPENS as BND02_OPENS, scenarios as bnd02 } from "./scenarios/BND-02";
 import { OPENS as CLI04_OPENS, scenarios as cli04 } from "./scenarios/CLI-04";
 import { scenarios as cli06 } from "./scenarios/CLI-06";
@@ -106,6 +107,12 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
   "KNW-01": { scenarios: knw01, opens: {} }, // K-01-T04
   "KNW-04": { scenarios: knw04, opens: {} }, // K-02-T13
   "SHL-03": { scenarios: shl03, opens: {} },
+  // P-04-T47: j06 coordination, the CCH import approved as a checkpoint on SHL-16 over TAX-02.
+  "TAX-02": {
+    scenarios: { j06: j06Scenario() },
+    opens: {},
+    ids: { j06: { returnId: TAX02_OPENS.a } },
+  },
   "SHL-04": { scenarios: shl04, opens: {} },
   "SHL-14": { scenarios: shl14, opens: {}, ids: SHL14_OPENS },
 };

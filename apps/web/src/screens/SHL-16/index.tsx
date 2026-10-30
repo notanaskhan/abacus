@@ -197,7 +197,14 @@ function Card({
 }): JSX.Element {
   const [name, setName] = useState(cp.name ?? "");
   const canRename = cp.allowed_actions.includes("checkpoint.rename");
-  const author = cp.author_kind === "agent" ? formatActor({ kind: "agent" }) : cp.author_name;
+  // An import's author line names the engine version it came from (P-04-T47: "Imported from CCH
+  // Axcess 2025I:FeldJ:V3"); an agent's is the Agent; a person's is their name.
+  const author =
+    cp.author_kind === "agent"
+      ? formatActor({ kind: "agent" })
+      : cp.author_kind === "import"
+        ? (cp.summary ?? cp.author_name)
+        : cp.author_name;
   const decided = cp.decision;
   const when = formatDate(cp.created_at, { now });
   const meta = [
