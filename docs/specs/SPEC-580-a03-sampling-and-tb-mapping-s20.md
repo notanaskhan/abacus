@@ -60,7 +60,7 @@ stand on. `docs/plan/epics/A-03.md` §0, §3, §4, §8, §9.
   seed, canonical population and version; every output carries `engine_version` and `inputs_hash`.
 - **AC-8** (A-03-T04) `attribute_size(0.90, 0.10, 0)` is 22; `udl(0, 25, 0.90)` is 8.8% and
   `udl(2, 25, 0.90)` is 19.9% (exact binomial, ROUND_HALF_UP to one decimal for display);
-  `project(2140, 25, 412)` is 35,267.20 (ratio estimate; QA-3 keeps the display rounding open).
+  `projected_misstatement(2140, 25, 412)` is 35,267.20 (ratio estimate; QA-3 keeps the display rounding open).
 - **AC-9** (A-03-T04) Code under `sampling/compute/` references no `random` member other than
   `Random` and `getrandbits`; `SAMPLER_VERSIONS` registers `2.3` frozen.
 - **AC-10** (A-03-T04) Strata partition the population (Σ counts = N, Σ amounts = total); a
