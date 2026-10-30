@@ -53,6 +53,12 @@ Migration 0079 adds:
   - The preparer's sign-off, refused while any account is unmapped, records `mapping_set.confirmed`.
   - Only line keys cross from the prior year, never its figures.
 
+- **AC-9 Staleness on a new trial balance version (A-03-T14; TASK-5010).**
+  - When `trial_balance.version_created` brings version 2 or later and the mapping's newest sign-offs were on other content, assurance emits `mapping_set.went_stale` once per version. The audit records the version and the unmapped count.
+  - Review's stale detector then tells each signer (`sign_off.went_stale`, notification `sign_off_stale`).
+  - Human edits persist by account code, and new accounts read unmapped.
+  - Version 1, a trial balance with no mapping, and an unsigned mapping announce nothing.
+
 ## 3. Out of scope
 - XLSX import.
 - Prior-year mapping match.

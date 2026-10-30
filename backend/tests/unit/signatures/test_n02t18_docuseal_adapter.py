@@ -4,7 +4,8 @@ A two-signer envelope is created exactly once under a retried send (the second c
 first by its submitters' external id and idempotency key), DocuSeal sends no email or SMS,
 KBA is asked once per e-file signer before the signature, fields go as page fractions, anchors
 and hosts outside DocuSeal's are refused before any request, the API key never reaches a file
-host, and void is an archive.
+host, and void is an archive. Shapes follow the sandbox run of 2026-10-30 (TASK-2151): events
+carry no data, so each signer's IP and device come from the audit log's text.
 """
 
 from __future__ import annotations
@@ -24,6 +25,7 @@ from abacus.modules.signatures.docuseal import (
     HostNotAllowed,
     PlacedField,
     SourceFile,
+    audit_entries,
 )
 from abacus.modules.signatures.provider import EnvelopeSpec, SignerSpec
 
@@ -33,6 +35,25 @@ SHA = hashlib.sha256(PDF).hexdigest()
 LETTER = (612.0, 792.0)
 Json = dict[str, Any]  # Any: DocuSeal-shaped JSON, built and read key by key
 KEY = "test-key-not-a-secret"
+UA = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)\n"
+    "Chrome/130.0.0.0 Safari/537.36"
+)
+# DocuSeal's audit log text as pdfium reads it (sandbox layout; synthetic values).
+AUDIT = f"""DocuSeal Audit Log
+Envelope ID: 41
+Document 1 Original SHA256:
+Signer 1
+s-1@signers.invalid
+IP: 203.0.113.9
+Session ID: 94005e505ec359c4
+User agent: {UA}
+Time zone: America/Chicago
+SIGNATURE
+s-2@signers.invalid
+Event Log
+October 30, 2026 at 5:51 PM Submission completed by s-1@signers.invalid
+"""
 
 
 def _account(host: str = "api.docuseal.com") -> DocuSealAccount:
@@ -70,11 +91,7 @@ class _DocuSeal:
             ],
             "submission_events": [
                 {"submitter_id": 100, "event_type": "complete_verification", "data": {}},
-                {
-                    "submitter_id": 100,
-                    "event_type": "complete_form",
-                    "data": {"ip": "203.0.113.9"},
-                },
+                {"submitter_id": 100, "event_type": "complete_form", "data": {}},
             ],
         }
 
@@ -114,6 +131,7 @@ def _adapter(
     fake: Callable[[httpx.Request], httpx.Response],
     placed: Sequence[PlacedField] | None = None,
     mode: str = "parallel",
+    audit: str = AUDIT,
 ) -> DocuSealProvider:
     async def documents(_envelope: str) -> Sequence[SourceFile]:
         return [SourceFile("Document 1", PDF, SHA, (LETTER, LETTER))]
@@ -130,12 +148,17 @@ def _adapter(
     async def order(_envelope: str) -> str:
         return mode
 
+    async def audit_text(content: bytes) -> str:
+        assert content == b"bytes:/file/audit.pdf"  # the certificate, read as stored
+        return audit
+
     return DocuSealProvider(
         _account(),
         httpx.AsyncClient(transport=httpx.MockTransport(fake)),
         documents=documents,
         fields=fields,
         signer_order=order,
+        audit_text=audit_text,
     )
 
 
@@ -163,6 +186,25 @@ async def test_ac_two_signer_envelope_is_created_once_under_a_retried_send() -> 
     assert all(s["send_email"] is False and s["send_sms"] is False for s in submitters)
     assert [s["order"] for s in submitters] == [0, 0]  # parallel: one routing group
     assert "phone" not in json.dumps(created) and "2fa" not in json.dumps(created)
+    assert all("name" not in s for s in submitters)  # nothing pre-filled into a signature
+    assert [s["email"] for s in submitters] == ["s-1@signers.invalid", "s-2@signers.invalid"]
+
+
+async def test_signers_see_titles_and_the_date_is_the_read_only_signing_date() -> None:
+    fake = _DocuSeal()
+    await _adapter(fake, mode="sequential").create_and_send(SPEC)
+    created = fake.creates[0]
+    fields = created["documents"][0]["fields"]
+    assert [f["title"] for f in fields] == [
+        "Identity check",
+        "Signature",
+        "Date signed",
+        "Signature",
+    ]
+    assert all(f["name"] != f["title"] for f in fields)  # our names stay internal
+    first, second = created["submitters"]
+    assert first["fields"] == [{"name": "date 1.2", "readonly": True, "default_value": "{{date}}"}]
+    assert second["fields"] == []
 
 
 async def test_sequential_signers_are_ordered_and_fields_are_page_fractions() -> None:
@@ -216,9 +258,27 @@ async def test_status_completion_and_void() -> None:
     (signer,) = done.signers  # only the completed submitter
     assert signer.signer_id == "s-1" and signer.signed_image == b"bytes:/file/s.png"
     assert signer.ip == "203.0.113.9" and signer.identity_result == "kba_verified"
+    assert signer.user_agent_family == "Chrome" and signer.device_label == "Chrome · macOS"
     assert len(fake.files) == 3
     await adapter.void("41", "expired")
     assert fake.deleted == ["/submissions/41"]
+
+
+async def test_a_completed_signer_with_no_ip_in_the_audit_log_is_never_recorded() -> None:
+    fake = _DocuSeal()
+    await _adapter(fake).create_and_send(SPEC)
+    no_ip = AUDIT.replace("IP: 203.0.113.9\n", "")
+    with pytest.raises(Exception, match="audit_log"):
+        await _adapter(fake, audit=no_ip).completed("41")
+
+
+async def test_audit_entries_read_each_signer_block_and_a_wrapped_user_agent() -> None:
+    entries = audit_entries(AUDIT)
+    assert entries["s-1@signers.invalid"].ip == "203.0.113.9"
+    assert entries["s-1@signers.invalid"].user_agent == UA.replace("\n", " ")
+    assert entries["s-2@signers.invalid"].ip is None  # not signed yet: no IP line
+    spoofed = audit_entries(AUDIT.replace("203.0.113.9", "not-an-ip"))
+    assert spoofed["s-1@signers.invalid"].ip is None
 
 
 async def test_a_file_url_off_docuseal_hosts_is_refused() -> None:
@@ -244,6 +304,9 @@ async def test_a_host_outside_docuseal_is_refused_before_any_request() -> None:
     async def order(_envelope: str) -> str:
         return "sequential"
 
+    async def audit_text(_content: bytes) -> str:
+        return ""
+
     for host in ("api.docuseal.eu", "docuseal.example.com"):
         with pytest.raises(HostNotAllowed):
             DocuSealProvider(
@@ -252,6 +315,7 @@ async def test_a_host_outside_docuseal_is_refused_before_any_request() -> None:
                 documents=documents,
                 fields=fields,
                 signer_order=order,
+                audit_text=audit_text,
             )
 
 
