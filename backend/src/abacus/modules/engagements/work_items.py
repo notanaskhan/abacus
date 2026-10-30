@@ -597,3 +597,17 @@ async def holds_tax_return(tenant: TenantContext, engagement_id: UUID) -> bool:
             .limit(1)
         )
     return found is not None
+
+
+async def client_tax_years(tenant: TenantContext, client_id: UUID) -> frozenset[int]:
+    """N-01-T17: the tax years of the client's active work items (the year each period ends
+    in), for intake's `wrong_year`; empty when none has a period."""
+    async with tenant_session(tenant) as session:
+        ends = await session.scalars(
+            select(WorkItem.period_end).where(
+                WorkItem.client_id == client_id,
+                WorkItem.status == "active",
+                WorkItem.period_end.is_not(None),
+            )
+        )
+        return frozenset(end.year for end in ends if end is not None)

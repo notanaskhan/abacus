@@ -122,6 +122,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "decision.reassessed",
         "decision_card.raised",
         "decision_card.superseded",
+        "document.classified",  # N-01-T17: a rule classification (ids and a page count)
         "email_template.draft_discarded",  # R-01-T19
         "email_template.draft_saved",  # R-01-T19
         "email_template.imported",  # R-01-T23
@@ -218,6 +219,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "home_activity.pruned",  # I-01-T12: a count of rows past 90 days
         "human_gate.projected",
         "inbound_message.recorded",  # N-01-T09: a message reached the inbox
+        "inbox_attachment.flagged",  # N-01-T17: one code-flag run (ids and a count)
         "inbox_attachment.received",  # N-01-T09: a scanned, stored file
         "inbox_file.added",
         "inbox_file.assigned",

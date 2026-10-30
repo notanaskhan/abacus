@@ -1772,6 +1772,8 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         # T-02-T07 (0403): the return status events and engine summaries.
         "tax_return_status_events": "tax_return_events_immutable",
         "return_engine_summaries": "tax_return_events_immutable",
+        # N-01-T17 (0404): rule and agent classifications.
+        "document_classifications": "trust_kit_immutable",
     }
     assert _evidence_problems(evidence) == []
 

@@ -489,6 +489,23 @@ async def client_of_entity(tenant: TenantContext, entity_id: UUID) -> UUID | Non
     return entity.client_id if entity is not None else None
 
 
+async def entity_tin_last4s(
+    tenant: TenantContext, client_id: UUID, entity_id: UUID | None = None
+) -> frozenset[str]:
+    """N-01-T17: the last fours on file for one of the client's entities, or for every entity
+    of the client when none is named (a household's members), for intake's `tin_mismatch`.
+    The masked form only; never the sealed TIN."""
+    async with tenant_session(tenant) as session:
+        rows = await session.scalars(
+            text(
+                "SELECT tin_last4 FROM client_entities WHERE client_id = :client "
+                "AND (CAST(:entity AS uuid) IS NULL OR id = :entity) AND tin_last4 IS NOT NULL"
+            ),
+            {"client": client_id, "entity": entity_id},
+        )
+        return frozenset(str(r) for r in rows)
+
+
 async def firm_offices(tenant: TenantContext) -> list[tuple[UUID, str]]:
     """P-01-T04: the firm's offices for identity's `/v1/me` (registered as its office list)."""
     async with tenant_session(tenant) as session:

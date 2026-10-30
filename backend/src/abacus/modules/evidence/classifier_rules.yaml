@@ -1,0 +1,76 @@
+# Rule classification of received documents (N-01-T17; N-01 §3.4; DEC-1177).
+#
+# A repo parameter file, not firm content: the IRS form families and notice codes every firm
+# receives. `classifier.py` reads it once. A change here is a code change: bump `version`, so
+# every classification row names the rules that produced it (`rules_version`).
+#
+# Each family: `family` (form_family), `code` (form_code), `kind`, `names` (regexes over the file
+# name, matched case-insensitively with separators normalised to one space) and `texts`
+# (regexes over the first pages' text layer). `corrected: true` marks a corrected form (W-2c).
+# The first family whose patterns match wins, so a corrected or more specific form comes first.
+version: c1
+families:
+  - {family: 1095-C, code: 1095-C, kind: tax_form, names: ['\b1095 ?c\b'],
+     texts: ['form 1095-c\b', 'employer-provided health insurance offer and coverage']}
+  - {family: 1095-B, code: 1095-B, kind: tax_form, names: ['\b1095 ?b\b'],
+     texts: ['form 1095-b\b', 'health coverage\b']}
+  - {family: 1095-A, code: 1095-A, kind: tax_form, names: ['\b1095 ?a\b'],
+     texts: ['form 1095-a\b', 'health insurance marketplace statement']}
+  - {family: W-2, code: W-2c, kind: tax_form, corrected: true, names: ['\bw ?2 ?c\b'],
+     texts: ['form w-2c\b', 'corrected wage and tax statement']}
+  - {family: W-2, code: W-2, kind: tax_form, names: ['\bw ?2\b'],
+     texts: ['form w-2\b', 'wage and tax statement']}
+  - {family: W-2G, code: W-2G, kind: tax_form, names: ['\bw ?2 ?g\b'],
+     texts: ['form w-2g\b', 'certain gambling winnings']}
+  - {family: 1099-DIV, code: 1099-DIV, kind: tax_form, names: ['\b1099 ?div\b'],
+     texts: ['form 1099-div\b', 'dividends and distributions']}
+  - {family: 1099-INT, code: 1099-INT, kind: tax_form, names: ['\b1099 ?int\b'],
+     texts: ['form 1099-int\b', 'interest income']}
+  - {family: 1099-B, code: 1099-B, kind: tax_form, names: ['\b1099 ?b\b'],
+     texts: ['form 1099-b\b', 'proceeds from broker and barter exchange']}
+  - {family: 1099-R, code: 1099-R, kind: tax_form, names: ['\b1099 ?r\b'],
+     texts: ['form 1099-r\b', 'distributions from pensions, annuities']}
+  - {family: 1099-NEC, code: 1099-NEC, kind: tax_form, names: ['\b1099 ?nec\b'],
+     texts: ['form 1099-nec\b', 'nonemployee compensation']}
+  - {family: 1099-MISC, code: 1099-MISC, kind: tax_form, names: ['\b1099 ?misc\b'],
+     texts: ['form 1099-misc\b', 'miscellaneous information']}
+  - {family: 1099-K, code: 1099-K, kind: tax_form, names: ['\b1099 ?k\b'],
+     texts: ['form 1099-k\b', 'payment card and third party network']}
+  - {family: 1099-G, code: 1099-G, kind: tax_form, names: ['\b1099 ?g\b'],
+     texts: ['form 1099-g\b', 'certain government payments']}
+  - {family: 1099-SA, code: 1099-SA, kind: tax_form, names: ['\b1099 ?sa\b'],
+     texts: ['form 1099-sa\b']}
+  - {family: SSA-1099, code: SSA-1099, kind: tax_form, names: ['\bssa ?1099\b'],
+     texts: ['form ssa-1099\b', 'social security benefit statement']}
+  - {family: 1098-T, code: 1098-T, kind: tax_form, names: ['\b1098 ?t\b'],
+     texts: ['form 1098-t\b', 'tuition statement']}
+  - {family: 1098-E, code: 1098-E, kind: tax_form, names: ['\b1098 ?e\b'],
+     texts: ['form 1098-e\b', 'student loan interest statement']}
+  - {family: '1098', code: '1098', kind: tax_form, names: ['\b1098\b'],
+     texts: ['form 1098\b', 'mortgage interest statement']}
+  - {family: K-1, code: K-1 1065, kind: tax_form, names: ['\bk ?1\b.*\b1065\b', '\b1065\b.*\bk ?1\b'],
+     texts: ['schedule k-1 \(form 1065\)']}
+  - {family: K-1, code: K-1 1120-S, kind: tax_form, names: ['\bk ?1\b.*\b1120 ?s\b'],
+     texts: ['schedule k-1 \(form 1120-s\)']}
+  - {family: K-1, code: K-1 1041, kind: tax_form, names: ['\bk ?1\b.*\b1041\b'],
+     texts: ['schedule k-1 \(form 1041\)']}
+  - {family: K-1, code: null, kind: tax_form, names: ['\bk ?1\b'], texts: ['schedule k-1\b']}
+  - {family: CP2000, code: CP2000, kind: notice, names: ['\bcp ?2000\b'], texts: ['\bcp2000\b']}
+  - {family: CP14, code: CP14, kind: notice, names: ['\bcp ?14\b'], texts: ['\bcp14\b']}
+  - {family: IRS notice, code: null, kind: notice, names: ['\birs notice\b', '\bnotice cp ?\d+'],
+     texts: ['internal revenue service.*\bnotice\b']}
+  - {family: Census, code: null, kind: census, names: ['\bcensus\b'], texts: ['\bcensus\b']}
+  - {family: Invoice, code: null, kind: invoice, names: ['\binvoice\b'], texts: ['\binvoice\b']}
+  - {family: Receipt, code: null, kind: receipt, names: ['\breceipt\b'], texts: ['\breceipt\b']}
+  - {family: Statement, code: null, kind: statement, names: ['\bstatement\b'],
+     texts: ['\bstatement period\b', '\baccount statement\b']}
+# Tax-year cues in the text layer, tried in order; the first group is the year.
+year_texts:
+  - '\b(?:tax|calendar) year\s+((?:19|20)\d\d)\b'
+  - '\bfor (?:the )?year\s+((?:19|20)\d\d)\b'
+  - '\bform\s+[0-9a-z-]+\s+((?:19|20)\d\d)\b'
+  - '\b((?:19|20)\d\d)\s+form\b'
+# Corrected-form cues beyond a family's own (`corrected: true`).
+corrected_names: ['\bcorrected\b', '\bcorr\b']
+# The overall confidence below which code raises `low_confidence`.
+low_confidence_below: 0.6
