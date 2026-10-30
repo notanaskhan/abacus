@@ -27073,6 +27073,10 @@ export type ScreeningCardOut = {
      * Period Start
      */
     period_start: string | null;
+    /**
+     * Proposal Ref
+     */
+    proposal_ref?: string | null;
     provenance: ScreeningProvenanceOut;
     /**
      * Request Item Id

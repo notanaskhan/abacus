@@ -546,6 +546,13 @@ export const decidedBy = (by: string, name: string, at: string) => ({
 });
 export const AJE05 = ["12,600.00", "1,480.00", "820.00"]; // §8 SHL-10 d
 export const BATCH = "20,020.00"; // SHL-10 e: 4 entries, tie
+/** SHL-10 e's four entries (spec frame E), verbatim. */
+const BATCH_ROWS: ProposalRowOut[] = [
+  row(1, "je.payroll_accrual", "Payroll accrual — Aug 24–31", "Dr 6000 Wages & salaries 11,860.00", "Cr 2110 Accrued payroll 11,860.00", "Within threshold · ≤ $15,000 payroll accruals", 1),
+  row(2, "je.prepaid_insurance", "Prepaid insurance — Cedar Mutual BOP ($8,400 ÷ 12)", "Dr 6400 Insurance 700.00", "Cr 1300 Prepaid insurance 700.00", "Within threshold · ≤ $10,000", 1),
+  row(3, "je.depreciation", "Depreciation — August", "Dr 6500 Depreciation 2,140.00", "Cr 1590 Accumulated depreciation 2,140.00", "Within threshold · ≤ $10,000", 1),
+  row(4, "je.deferred_revenue", "Deferred revenue — August subscriptions shipped", "Dr 2300 Deferred revenue 5,320.00", "Cr 4200 Subscription revenue 5,320.00", "Within threshold · ≤ $10,000", 1),
+];
 
 export const SHL10 = {
   a: k1,
@@ -558,36 +565,51 @@ export const SHL10 = {
     change_count: 5,
     allowed_actions: ["proposal.reject", "proposal.follow_up"],
   },
+  // d: AJE-05 over threshold (Copperleaf August close, Raj Malhotra; spec frame D): the JE lines
+  // as rows (label = account, After = amount), the cause on the first, the policy row's words.
   d: {
     ...k1,
     kind: "adjusting_entry",
-    title: "AJE-05",
+    title: "AJE-05 Accrued expenses — Received-not-invoiced coffee, utilities, legal",
     context_label: "Copperleaf",
-    rows: [],
-    change_count: 0,
-    totals: [{ label: "AJE-05", value: "14900.00", ties: true }],
+    reasoning:
+      "Receiving log Aug 28 (1,800 lb green coffee at $7.00/lb) · utility bills Sep 1 (August service) · Hartwell & Lowe engagement letter (4.1 h at $200, unbilled)",
+    rows: [
+      row(1, "je.dr.inventory_green_coffee", "Dr Inventory — Green Coffee", null, "12600.00", "Receiving log Aug 28", 1),
+      row(2, "je.dr.utilities_facilities", "Dr Utilities & Facilities", null, "1480.00", "utility bills Sep 1", 1),
+      row(3, "je.dr.legal_professional", "Dr Legal & Professional Fees", null, "820.00", "Hartwell & Lowe engagement letter", 1),
+      row(4, "je.cr.accrued_expenses", "Cr Accrued Expenses", null, "14900.00", "auto-reverses Sep 1", 1),
+    ],
+    change_count: 1,
+    totals: [{ label: "Total", value: "14900.00", ties: true }],
+    evidence: [],
     policy: {
       policy_name: "BH AJE thresholds v2",
       result: "review_required",
       routed_to_user_id: PRIYA,
       routed_to_name: "Priya Raman",
-      note: null,
+      note: "Review required · above $10,000 other accruals (BH AJE thresholds v2)",
     },
     allowed_actions: ["proposal.route", "proposal.reject", "proposal.follow_up"],
   },
+  // e: the within-threshold batch (spec frame E): one row per entry; Before is the debit line,
+  // After the credit line, Cause the entry's threshold.
   e: {
     ...k1,
     kind: "adjusting_entry_batch",
     title: "Approve 4 under BH AJE thresholds v2",
-    rows: [],
-    change_count: 0,
-    totals: [{ label: "4 entries", value: "20020.00", ties: true }],
+    context_label: "Copperleaf",
+    reasoning: "",
+    rows: BATCH_ROWS,
+    change_count: 4,
+    totals: [{ label: "Total", value: "20020.00", ties: true }],
+    evidence: [],
     policy: {
       policy_name: "BH AJE thresholds v2",
       result: "within_threshold",
       routed_to_user_id: null,
       routed_to_name: null,
-      note: null,
+      note: "Accrued expenses $14,900.00 is Review required and is not in this batch. Copperleaf is not an attest client, so batch approval is allowed. Entries post to QuickBooks Online only after a posting batch.",
     },
     allowed_actions: ["proposal.approve", "proposal.reject", "proposal.follow_up"],
   },
@@ -595,10 +617,13 @@ export const SHL10 = {
     ...k1,
     kind: "adjusting_entry_batch",
     title: "Approve 4 under BH AJE thresholds v2",
-    rows: [],
-    change_count: 0,
+    context_label: "Copperleaf",
+    reasoning: "",
+    rows: BATCH_ROWS,
+    change_count: 4,
     state: "approved",
-    totals: [{ label: "4 entries", value: "20020.00", ties: true }],
+    totals: [{ label: "Total", value: "20020.00", ties: true }],
+    evidence: [],
     policy: {
       policy_name: "BH AJE thresholds v2",
       result: "within_threshold",
@@ -624,11 +649,30 @@ export const SHL10 = {
     },
     allowed_actions: [],
   },
+  // g: part of a set (R2 frame G; Granite Peak FY2026 · BH-FS-430, Hannah Leclerc, Oct 1).
   g: {
     ...k1,
     kind: "procedure_conclusion",
     title: "Front Range Freight Co.",
-    context_label: "Granite Peak FY2026",
+    context_label: "BH-FS-430 · Granite Peak",
+    change_count: 1,
+    reasoning:
+      "Invoice FRF-30418 from Front Range Freight Co. is dated Jun 29, 2026 and bills June inbound freight. It was paid Jul 22 and recorded in July, so the $68,400 liability existed at June 30 and is not in June accounts payable.",
+    rows: [
+      row(1, "conclusion.front_range_freight", "Conclusion · Front Range Freight Co.", null, "Improperly excluded", "invoice date and service period", 2),
+    ],
+    totals: [],
+    evidence: [
+      { evidence_version_id: id(121), label: "Invoice FRF-30418 — Front Range Freight Co.", citation_count: 2 },
+      { evidence_version_id: id(122), label: "NetSuite payment Jul 22, 2026", citation_count: 1 },
+    ],
+    policy: {
+      policy_name: null,
+      result: null,
+      routed_to_user_id: null,
+      routed_to_name: null,
+      note: "Adopting the conclusion changes only the sheet. Any adjustment is proposed by a person in AUD-15 / AUD-16.",
+    },
     set: {
       set_type: "procedure_result_set",
       set_id: id(120),
@@ -1482,13 +1526,19 @@ export const REVIEW_ARTBOARDS: readonly ReviewArtboard[] = [
     "SHL-10",
     "d",
     "Over threshold",
-    null,
+    "raj-malhotra",
     oct1,
     [PROPOSAL(SHL10.d)],
     [send("POST /v1/proposals/{proposal_id}/route", "RouteProposalIn", ROUTE_D)],
   ),
-  board("SHL-10", "e", "Within-threshold batch", null, oct1, [PROPOSAL(SHL10.e)]),
-  board("SHL-10", "ep", "Batch approved", null, oct1, [PROPOSAL(SHL10.e_prime)]),
+  board("SHL-10", "e", "Within-threshold batch", "raj-malhotra", oct1, [
+    PROPOSAL(SHL10.e),
+    post("/v1/proposals/{proposal_id}/approve", "AgentProposalOut", SHL10.e_prime),
+  ]),
+  board("SHL-10", "ep", "Batch approved", "raj-malhotra", oct1, [
+    PROPOSAL(SHL10.e_prime),
+    post("/v1/proposals/{proposal_id}/undo", "AgentProposalOut", SHL10.e),
+  ]),
   board(
     "SHL-10",
     "f",
@@ -1498,7 +1548,7 @@ export const REVIEW_ARTBOARDS: readonly ReviewArtboard[] = [
     [PROPOSAL(SHL10.f), post("/v1/proposals/{proposal_id}/reject", "AgentProposalOut", SHL10.f)],
     [send("POST /v1/proposals/{proposal_id}/reject", "RejectProposalIn", REJECT_F)],
   ),
-  board("SHL-10", "g", "Part of a set", null, oct1, [PROPOSAL(SHL10.g)]),
+  board("SHL-10", "g", "Part of a set", "hannah-leclerc", oct1, [PROPOSAL(SHL10.g)]),
   // SHL-11 Decision card (10:01 AM; d at the Oct 6 reassessment).
   board(
     "SHL-11",

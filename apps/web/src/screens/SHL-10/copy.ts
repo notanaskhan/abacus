@@ -47,6 +47,24 @@ export const COPY = {
     failed: "Couldn't save. Try again.",
     changed: "The agent revised this proposal. Review the new version.",
   },
+  // d, e, e′, g (P-04-T42; spec frames D and E, R2 frame G).
+  proposedEntries: (n: number, policy: string) =>
+    `proposed ${String(n)} entries within ${policy}`,
+  approveBatch: (n: number, policy: string) => `${String(n)} under ${policy}`,
+  approveConclusion: "conclusion",
+  batchTitle: (n: number) => `Approve ${String(n)} entries`,
+  sendTo: (name: string) => `Send to ${name} for approval`,
+  sentTo: (name: string) => `Sent to ${name} for approval`,
+  yourLimit: "Your limit: within-threshold batches only.",
+  approvedUnder: (by: string, policy: string, at: string) =>
+    `✓ Approved by ${by} under ${policy} · ${at}`,
+  undo: "Undo",
+  undone: "Approval undone",
+  je: { entry: "Entry", debit: "Debit", credit: "Credit", policy: "Policy" },
+  setRow: (label: string, results: number, exceptions: number) =>
+    `Part of ${label} · ${String(results)} results · ${String(exceptions)} ${exceptions === 1 ? "exception" : "exceptions"}`,
+  reviewAll: "Review all in package",
+  reviewAllHint: "Opens SHL-19 on this set",
   loading: "Loading the proposal",
   missing: "This proposal isn't available.",
 } as const;

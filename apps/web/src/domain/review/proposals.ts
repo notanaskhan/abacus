@@ -11,6 +11,7 @@ import {
   proposalApproveMutation,
   proposalFollowUpMutation,
   proposalRejectMutation,
+  proposalRouteToMutation,
   proposalUndoMutation,
 } from "@abacus/api-client/query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -38,6 +39,8 @@ export interface ProposalWrites {
   reject: (reason: RejectReason, note: string | null) => Promise<AgentProposalOut>;
   followUp: (text: string) => Promise<unknown>;
   undo: (decisionId: string) => Promise<unknown>;
+  /** Over threshold (SHL-10 d): send to the policy's approver; the person approves nothing. */
+  route: (approverUserId: string) => Promise<unknown>;
 }
 
 export function useProposalWrites(proposal: AgentProposalOut | undefined): ProposalWrites {
@@ -50,6 +53,7 @@ export function useProposalWrites(proposal: AgentProposalOut | undefined): Propo
   const reject = useMutation({ ...proposalRejectMutation(), onSuccess: refresh });
   const followUp = useMutation({ ...proposalFollowUpMutation(), onSuccess: refresh });
   const undo = useMutation({ ...proposalUndoMutation(), onSuccess: refresh });
+  const route = useMutation({ ...proposalRouteToMutation(), onSuccess: refresh });
   const seen = proposal?.version ?? 0;
   const at = { path: { proposal_id: ref } };
   return {
@@ -78,6 +82,12 @@ export function useProposalWrites(proposal: AgentProposalOut | undefined): Propo
       undo.mutateAsync({
         ...at,
         body: { decision_id: decisionId },
+        headers: { "Idempotency-Key": idempotencyKey() },
+      }),
+    route: (approverUserId) =>
+      route.mutateAsync({
+        ...at,
+        body: { approver_user_id: approverUserId, seen_version: seen },
         headers: { "Idempotency-Key": idempotencyKey() },
       }),
   };
