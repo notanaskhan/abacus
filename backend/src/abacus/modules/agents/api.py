@@ -47,6 +47,7 @@ from abacus.modules.agents.guidance_draft import DRAFTER, DraftOutcome, create_d
 from abacus.modules.agents.handoff import Citation, Handoff, ScreeningOutput, VerifiedCitation
 from abacus.modules.agents.home_counts import register_home_counts
 from abacus.modules.agents.inbox_match import MATCHER, MatchOutcome, create_match_run, match
+from abacus.modules.agents.intake_match import IntakeOutcome, create_intake_match_run, match_intake
 from abacus.modules.agents.issue_client_requests import send_issue_to_client
 from abacus.modules.agents.knowledge import KnowledgeHit, knowledge_context, search_knowledge
 from abacus.modules.agents.methodology_citations import register_methodology_step
@@ -276,6 +277,7 @@ __all__ = [
     "HandleResult",
     "Handoff",
     "InboxMatchWorkflow",
+    "IntakeOutcome",
     "KnowledgeHit",
     "MatchInput",
     "MatchOutcome",
@@ -317,6 +319,7 @@ __all__ = [
     "check_live",
     "check_suggestion_target",
     "create_draft_run",
+    "create_intake_match_run",
     "create_match_run",
     "create_proposal",
     "create_review_run",
@@ -334,6 +337,7 @@ __all__ = [
     "live_override",
     "load_agent_context",
     "match",
+    "match_intake",
     "override_rate",
     "register_change_set_applier",
     "register_engagement_run_agent",

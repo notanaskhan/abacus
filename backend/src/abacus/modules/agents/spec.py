@@ -41,6 +41,19 @@ class ConfidenceRouting(BaseModel):
     ]
 
 
+class AgentMode(BaseModel):
+    """N-01-T22 (DEC-1282): another mode of the same agent, with its own prompt, schemas and
+    budget (the matcher's `engagement` mode keeps v2 while the spec describes `intake`). Its
+    prompt is eligible on its own evaluation (`_eval_suites.EVAL_SUITE_MODES`)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    prompt: Annotated[str, classified("internal")]
+    input_schema: Annotated[Literal["MatchInput"], classified("internal")]
+    output_schema: Annotated[Literal["MatchOutput"], classified("internal")]
+    max_cost_usd: Annotated[Decimal, Field(gt=0), classified("internal")]
+
+
 class AgentSpec(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -61,6 +74,7 @@ class AgentSpec(BaseModel):
             "ScreeningInput",
             "UploadReviewInput",
             "MatchInput",
+            "IntakeMatchInput",
             "GuidanceDraftInput",
             "EntryAssessInput",
         ],
@@ -72,6 +86,7 @@ class AgentSpec(BaseModel):
             "ScreeningOutput",
             "UploadReviewOutput",
             "MatchOutput",
+            "IntakeMatchOutput",
             "GuidanceDraft",
             "EntryAssessment",
         ],
@@ -107,12 +122,18 @@ class AgentSpec(BaseModel):
     # data subjects and gateway condition 6 gates every call; the spec loads only while the
     # `use` and `ai_disclosure` consent checks are registered.
     data_classes: Annotated[frozenset[Literal["tri"]], classified("internal")] = frozenset()
+    # N-01-T22 (DEC-1282): other modes by name; the spec's own fields are the default mode.
+    modes: Annotated[dict[str, AgentMode], classified("internal")] = Field(
+        default_factory=dict[str, AgentMode]
+    )
 
 
 def _load() -> dict[str, AgentSpec]:
     loaded = {agent_id: AgentSpec.model_validate(raw) for agent_id, raw in SPECS.items()}
     for spec in loaded.values():
         prompt(spec.prompt)  # a spec must name a registered prompt version
+        for mode in spec.modes.values():
+            prompt(mode.prompt)
         if len(set(spec.routes)) != len(spec.routes):
             raise ValueError(f"agent {spec.id}: routes are listed once each")
         if spec.shape == "single_call" and spec.limits.max_steps != 1:

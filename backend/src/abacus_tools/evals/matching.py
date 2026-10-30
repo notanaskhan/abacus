@@ -32,10 +32,21 @@ from abacus.ai_gateway import ModelRequest, NotAdmitted, Tier, evaluation, model
 from abacus.ai_gateway.routes import configure_route, route_provider
 from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext
+from abacus.kernel.flags import forget_flags
 from abacus.kernel.logging import get_logger
-from abacus.modules.agents.api import MATCHER, create_match_run, load_agent_context, match, spec
+from abacus.modules.agents.api import (
+    MATCHER,
+    create_intake_match_run,
+    create_match_run,
+    load_agent_context,
+    match,
+    match_intake,
+    spec,
+)
+from abacus.modules.communications.api import Inbound, add_attachment, record_inbound_message
 from abacus.modules.engagements.api import check_facts
 from abacus.modules.evidence.api import (
+    INTAKE,
     SUGGESTION_MIN_SCORE,
     UPLOAD_INBOX,
     UploadInput,
@@ -439,6 +450,80 @@ def verdict(
     return ("passed" if not reasons else "failed"), reasons, metrics
 
 
+# --- Intake mode on a real route (N-01-T22) ----------------------------------------------------
+
+
+async def intake_world(stack: Stack, world: Seeded) -> uuid.UUID:
+    """The world's client as an intake client: its relationship partner is the evaluation's
+    member (who may triage), and `inbox.firm_intake` and `matching.firm_intake` are on."""
+    conn = await connect_db(stack.superuser)
+    try:
+        client = cast(
+            uuid.UUID,
+            await conn.fetchval(
+                "SELECT client_id FROM engagements WHERE id = $1", world.engagement
+            ),
+        )
+        await conn.execute(
+            "UPDATE clients SET relationship_partner_id = $2 WHERE id = $1", client, world.user
+        )
+        await conn.execute(
+            "UPDATE memberships SET firm_role = 'firm_admin' "
+            "WHERE tenant_id = $1 AND user_id = $2",
+            world.tenant,
+            world.user,
+        )
+        for flag in ("inbox.firm_intake", "matching.firm_intake"):
+            await conn.execute(
+                "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
+                "VALUES ($1, $2, 'true', 'evals', 'N-01-T22 intake section')",
+                world.tenant,
+                flag,
+            )
+    finally:
+        await conn.close()
+    forget_flags()
+    return client
+
+
+async def intake_attachment(
+    stack: Stack, world: Seeded, client: uuid.UUID, name: str, content: bytes
+) -> uuid.UUID:
+    """The document as an email attachment, its thread matched to the client (as a person's
+    Match client leaves it), through the upload steps AttachmentTriage runs (extraction, word
+    layer, PII scan): the matcher reads masked text."""
+    system = TenantContext(world.tenant, "system", "evals.intake")
+    made = await record_inbound_message(
+        system,
+        Inbound(
+            channel="email",
+            sender_display="Client",
+            subject="Documents",
+            received_at=system_now(),
+            body="Attached.",
+            sender_address=f"evals+{uuid.uuid4().hex[:8]}@example.com",
+        ),
+    )
+    got = await add_attachment(system, made.message_id, file_name=name, content=content)
+    conn = await connect_db(stack.superuser)
+    try:
+        await conn.execute(
+            "UPDATE inbox_threads SET client_id = $2 WHERE id = $1", made.thread_id, client
+        )
+        await conn.execute(
+            "UPDATE inbox_attachments SET client_id = $2, status = 'waiting' WHERE id = $1",
+            got.attachment_id,
+            client,
+        )
+    finally:
+        await conn.close()
+    given = UploadInput(str(world.tenant), INTAKE, str(got.attachment_id))
+    await process_upload(given)
+    await words_upload(given)
+    await pii_scan_upload(given)
+    return got.attachment_id
+
+
 # --- One attempt ---------------------------------------------------------------------------------
 
 
@@ -495,6 +580,7 @@ async def attempt(
     *,
     intake: bool = False,
     recorded: dict[str, tuple[str, ...]] | None = None,
+    intake_client: uuid.UUID | None = None,
 ) -> Seen:
     seen: list[ModelRequest] = []
     said: list[str] = []
@@ -543,7 +629,16 @@ async def attempt(
                 True,
                 True,
             )
-        run_id = await create_match_run(world.tenant, added.id, uuid.uuid4(), world.user)
+        # N-01-T22: the intake section runs the matcher's intake mode (v3) on the same document
+        # received as an attachment of the client; the audit section, its engagement mode (v2).
+        attachment: uuid.UUID | None = None
+        if intake and intake_client is not None:
+            attachment = await intake_attachment(stack, world, intake_client, case.name, content)
+            run_id = await create_intake_match_run(
+                world.tenant, attachment, intake_client, uuid.uuid4()
+            )
+        else:
+            run_id = await create_match_run(world.tenant, added.id, uuid.uuid4(), world.user)
         if run_id is None:
             raise RuntimeError("no match run was created")
         started = time.monotonic()
@@ -551,16 +646,27 @@ async def attempt(
         for _ in range(ADMISSION_TRIES):
             try:
                 with evaluation(tier, route):  # pyright: ignore[reportArgumentType] -- a validated route name
-                    outcome = await match(await load_agent_context(world.tenant, run_id), added.id)
+                    agent = await load_agent_context(world.tenant, run_id)
+                    if attachment is not None:
+                        found = await match_intake(agent, attachment)
+                        outcome = (
+                            found.status,
+                            found.none_fit,
+                            tuple(i for kind, i in found.shown if kind == "request"),
+                        )
+                    else:
+                        engaged = await match(agent, added.id)
+                        outcome = engaged.status, engaged.none_fit, engaged.shown
                 break
             except NotAdmitted as refused:
                 await asyncio.sleep(min(max(float(refused.retry_after or 5), 2.0), 30.0))
         if outcome is None:
             raise RuntimeError("not admitted after waiting")
+        status, none_fit, shown = outcome
         latency = round((time.monotonic() - started) * 1000)
         rows, cost = await _matched(stack.superuser, run_id)
         cited, resolved = await region_counts(stack.superuser, run_id)
-        if outcome.status != "completed":
+        if status != "completed":
             return Seen(
                 case.id,
                 n,
@@ -568,13 +674,13 @@ async def attempt(
                 by_name,
                 by_content,
                 cost_usd=cost,
-                error=outcome.status,
+                error=status,
                 rationales=tuple(said),
             )
-        by_matcher = _keys(list(outcome.shown), fx.keys)
+        by_matcher = _keys(list(shown), fx.keys)
         if by_matcher:
             pipeline = by_matcher + tuple(k for k in by_content if k not in by_matcher)
-        elif outcome.none_fit:
+        elif none_fit:
             pipeline = ()
         else:
             pipeline = by_content
@@ -599,7 +705,7 @@ async def attempt(
             by_content,
             by_matcher,
             pipeline,
-            outcome.none_fit,
+            none_fit,
             verified,
             bool(seen) and all(contained(r) for r in seen),
             cost,
@@ -650,16 +756,30 @@ async def evaluate(
     if recorded is not None and not intake:
         raise ValueError("only the intake section has recorded answers")
     fx = await fixture(world, INTAKE_REQUESTS if intake else REQUESTS)
+    # N-01-T22: the intake section's real route drives mode intake (v3) for the world's client;
+    # the audit section stays on mode engagement (v2), at its own prompt and budget.
+    client = await intake_world(stack, world) if intake and recorded is None else None
+    matcher = spec(MATCHER)
+    prompt_ref = matcher.prompt if intake else matcher.modes["engagement"].prompt
     attempts: list[tuple[MatchCase, Seen]] = []
     total, aborted = Decimal(0), False
-    budget = spec(MATCHER).limits.max_cost_usd
+    budget = matcher.limits.max_cost_usd if intake else matcher.modes["engagement"].max_cost_usd
     for case in cases:
         for n in range(1, (suite.repeats if case.key and recorded is None else 1) + 1):
             if total + budget > suite.cost_limit_usd:
                 aborted = True
                 break
             result = await attempt(
-                case, n, world, fx, stack, tier, route, intake=intake, recorded=recorded
+                case,
+                n,
+                world,
+                fx,
+                stack,
+                tier,
+                route,
+                intake=intake,
+                recorded=recorded,
+                intake_client=client,
             )
             total += result.cost_usd
             attempts.append((case, result))
@@ -673,7 +793,7 @@ async def evaluate(
         "agent": suite.agent,
         "section": section,
         "suite_version": suite.version,
-        "prompt": spec(MATCHER).prompt,
+        "prompt": prompt_ref,
         "model": model_id(tier, route),  # pyright: ignore[reportArgumentType] -- a validated route name
         "tier": tier,
         "route": route,

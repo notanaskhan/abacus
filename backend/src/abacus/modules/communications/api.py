@@ -21,6 +21,7 @@ from abacus.modules.communications.deliveries import (
     send_email,
 )
 from abacus.modules.communications.events import (
+    InboxAttachmentMatchable,
     InboxAttachmentReceived,
     MessageBounced,
     MessageComplained,
@@ -63,6 +64,12 @@ from abacus.modules.communications.intake import (
     record_inbound_message,
 )
 from abacus.modules.communications.intake_contract import destinations_router, intake_router
+from abacus.modules.communications.intake_matching import (
+    FolderDestination,
+    IntakeAttachmentFacts,
+    intake_attachment_facts,
+    intake_folder_destinations,
+)
 from abacus.modules.communications.intake_purge_workflow import (
     IntakePurgeInput,
     IntakeWithdrawalPurgeWorkflow,
@@ -278,6 +285,7 @@ __all__ = [
     "EmailTemplateRegistration",
     "FakeSesEventQueue",
     "FakeSesTransport",
+    "FolderDestination",
     "FollowUpPolicy",
     "FollowUpPolicyFields",
     "FollowUpTemplateMissing",
@@ -285,6 +293,8 @@ __all__ = [
     "IdentityStatus",
     "InMemorySesIdentities",
     "Inbound",
+    "InboxAttachmentMatchable",
+    "IntakeAttachmentFacts",
     "IntakeDestination",
     "IntakePurgeInput",
     "IntakeWithdrawalPurgeWorkflow",
@@ -345,6 +355,8 @@ __all__ = [
     "first_tick_on_or_after",
     "follow_up_policy",
     "import_email_templates",
+    "intake_attachment_facts",
+    "intake_folder_destinations",
     "intake_purge_id",
     "is_suppressed",
     "issue_secure_link",
