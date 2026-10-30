@@ -48,8 +48,7 @@ export const COPY = {
     changed: "The agent revised this proposal. Review the new version.",
   },
   // d, e, e′, g (P-04-T42; spec frames D and E, R2 frame G).
-  proposedEntries: (n: number, policy: string) =>
-    `proposed ${String(n)} entries within ${policy}`,
+  proposedEntries: (n: number, policy: string) => `proposed ${String(n)} entries within ${policy}`,
   approveBatch: (n: number, policy: string) => `${String(n)} under ${policy}`,
   approveConclusion: "conclusion",
   batchTitle: (n: number) => `Approve ${String(n)} entries`,
