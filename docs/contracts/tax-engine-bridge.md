@@ -47,3 +47,6 @@ What staff carry between Accrued and CCH Axcess. `abacus_tools/fakes/cch_axcess.
 
 ## 7. Live since T-01-T19
 The engine-sync read, the values and diagnostics imports, the import read and its approve and reject are live behind `tax.engine_bridge`. 409 `engine_return_mismatch`, `engine_version_behind`, `import_pending`, `import_decided`, `stale_version`; 422 `engine_file_invalid` (`facts.reason`, never the file's content), `import_kind_unavailable` (PDFs and acks land with T-01-T26 and T-01-T27), `nothing_accepted`; 413 past 10 MB.
+
+## 8. ADM-08 settings, live since T-01-T20
+Cells (stored as `integration_mappings`): `return_id_template` (default `{Tax year}{Type}:{Client code}:V{n}`; must keep `{Tax year}`, `{Client code}` and end `:V{n}`), `client_code_rule`, `type_letter.<form>`, `who_may_export` (`reviewer_manager_signer`, `manager_signer` or `signer`: narrower only), and the locked `export_after_final_approval`, `import_requires_approval` (`stricter_only`) and `status_push` (`file_mode_has_no_push`). Mappings replace the kind's rows; `workflow_status` keys are return status codes. Every save carries the install's `version`. 409 `setting_locked`, `mapping_conflict`, `stale_version`; 422 `setting_invalid`. `POST …/test` returns codes only (`no_engine_file`, `check_failed`, or the holder's) and `returns_read` (additive).

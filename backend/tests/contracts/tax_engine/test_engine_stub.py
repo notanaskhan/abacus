@@ -39,6 +39,15 @@ WRITES = (
     "integration.test",
     "member.set_ero",
 )
+# T-01-T20 built ADM-08's settings, mappings and format check.
+SETTINGS_LIVE = [
+    ("get", "/v1/firm/integrations/{key}/settings", "integration.read"),
+    ("put", "/v1/firm/integrations/{key}/settings", "integration.configure"),
+    ("put", "/v1/firm/integrations/{key}/user-mapping", "integration.configure"),
+    ("put", "/v1/firm/integrations/{key}/office-mapping", "integration.configure"),
+    ("put", "/v1/firm/integrations/{key}/status-mirror", "integration.configure"),
+    ("post", "/v1/firm/integrations/{key}/test", "integration.test"),
+]
 # T-01-T18 built final approval (`tax/approval.py`).
 LIVE = [
     ("get", "/v1/tax-returns/{return_id}/final-approval", "tax_return.read"),
@@ -65,12 +74,6 @@ ROUTES = [
     ("post", "/v1/tax-returns/{return_id}/acks", "efile_ack.record"),
     ("post", "/v1/tax-returns/{return_id}/deliverables:publish", "deliverable.publish"),
     ("put", "/v1/firm/members/{user_id}/ero", "member.set_ero"),
-    ("get", "/v1/firm/integrations/{key}/settings", "integration.read"),
-    ("put", "/v1/firm/integrations/{key}/settings", "integration.configure"),
-    ("put", "/v1/firm/integrations/{key}/user-mapping", "integration.configure"),
-    ("put", "/v1/firm/integrations/{key}/office-mapping", "integration.configure"),
-    ("put", "/v1/firm/integrations/{key}/status-mirror", "integration.configure"),
-    ("post", "/v1/firm/integrations/{key}/test", "integration.test"),
 ]
 
 
@@ -87,6 +90,13 @@ def test_ac5_every_route_declares_its_action_and_is_a_stub(
 def test_ac5_a_built_route_keeps_its_action_and_is_no_stub(
     method: str, path: str, action: str
 ) -> None:
+    op = PATHS[path][method]
+    assert op["x-abacus-action"] == action
+    assert "501" not in cast(Json, op["responses"])
+
+
+@pytest.mark.parametrize(("method", "path", "action"), SETTINGS_LIVE)
+def test_t01t20_the_settings_routes_are_live(method: str, path: str, action: str) -> None:
     op = PATHS[path][method]
     assert op["x-abacus-action"] == action
     assert "501" not in cast(Json, op["responses"])

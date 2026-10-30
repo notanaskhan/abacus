@@ -1088,6 +1088,11 @@ codes:
     raised_by:
     - abacus.modules.methodology.drafts.MandatoryLocked
     summary: Only the QM owner can remove or unlock mandatory steps.
+  mapping_conflict:
+    status: 409
+    raised_by:
+    - abacus.modules.integrations.engine_settings.MappingConflict
+    summary: Two Accrued statuses would mirror onto one engine status.
   mapping_invalid:
     status: 422
     raised_by:
@@ -1742,7 +1747,13 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.identity.settings_registry.SettingInvalid
+    - abacus.modules.integrations.engine_settings.SettingInvalid
     summary: A value of the wrong kind, or too long.
+  setting_locked:
+    status: 409
+    raised_by:
+    - abacus.modules.integrations.engine_settings.SettingLocked
+    summary: A stricter-only rule stays on (`facts.key`).
   shadow_report_changed:
     status: 409
     raised_by:
@@ -1859,6 +1870,7 @@ codes:
     - abacus.modules.identity.security_policies.StalePolicy
     - abacus.modules.identity.service_lines.StalePolicy
     - abacus.modules.identity.settings_registry.StaleSection
+    - abacus.modules.integrations.engine_settings.SettingsStale
     - abacus.modules.methodology.lifecycle.VersionStale
     - abacus.modules.methodology.standards.StaleVersion
     - abacus.modules.organisations.live.StaleVersion

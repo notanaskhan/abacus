@@ -29939,6 +29939,18 @@
             },
             "title": "Problems",
             "type": "array"
+          },
+          "returns_read": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Returns Read"
           }
         },
         "required": [
@@ -138507,6 +138519,7 @@
     },
     "/v1/firm/integrations/{key}/office-mapping": {
       "put": {
+        "description": "ADM-08 b: the office mapping, replaced with the rows sent.",
         "operationId": "put_office_mapping",
         "parameters": [
           {
@@ -138622,16 +138635,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Put Office Mapping Route",
@@ -138643,6 +138646,7 @@
     },
     "/v1/firm/integrations/{key}/settings": {
       "get": {
+        "description": "ADM-08 a: the cells with their locks and the mappings.",
         "operationId": "engine_settings",
         "parameters": [
           {
@@ -138738,16 +138742,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Engine Settings Route",
@@ -138757,6 +138751,7 @@
         "x-abacus-action": "integration.read"
       },
       "put": {
+        "description": "ADM-08 a: save cells (fresh MFA). 409 `setting_locked`, `stale_version`; 422\n`setting_invalid`.",
         "operationId": "put_engine_settings",
         "parameters": [
           {
@@ -138872,16 +138867,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Put Engine Settings Route",
@@ -139009,16 +138994,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Put Status Mirror Route",
@@ -139030,6 +139005,7 @@
     },
     "/v1/firm/integrations/{key}/test": {
       "post": {
+        "description": "ADM-08 d: a format check of the latest engine file (codes only).",
         "operationId": "test_engine",
         "parameters": [
           {
@@ -139125,16 +139101,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Test Engine Route",
@@ -139146,6 +139112,7 @@
     },
     "/v1/firm/integrations/{key}/user-mapping": {
       "put": {
+        "description": "ADM-08 b: the user mapping, replaced with the rows sent.",
         "operationId": "put_user_mapping",
         "parameters": [
           {
@@ -139261,16 +139228,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Put User Mapping Route",

@@ -10373,6 +10373,8 @@ export const publishIndependenceStatementMutation = (options?: Partial<Options<P
 
 /**
  * Put Office Mapping Route
+ *
+ * ADM-08 b: the office mapping, replaced with the rows sent.
  */
 export const putOfficeMappingMutation = (options?: Partial<Options<PutOfficeMappingData>>): UseMutationOptions<PutOfficeMappingResponse, PutOfficeMappingError, Options<PutOfficeMappingData>> => {
     const mutationOptions: UseMutationOptions<PutOfficeMappingResponse, PutOfficeMappingError, Options<PutOfficeMappingData>> = {
@@ -10392,6 +10394,8 @@ export const engineSettingsQueryKey = (options: Options<EngineSettingsData>) => 
 
 /**
  * Engine Settings Route
+ *
+ * ADM-08 a: the cells with their locks and the mappings.
  */
 export const engineSettingsOptions = (options: Options<EngineSettingsData>) => queryOptions<EngineSettingsResponse, EngineSettingsError, EngineSettingsResponse, ReturnType<typeof engineSettingsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -10408,6 +10412,9 @@ export const engineSettingsOptions = (options: Options<EngineSettingsData>) => q
 
 /**
  * Put Engine Settings Route
+ *
+ * ADM-08 a: save cells (fresh MFA). 409 `setting_locked`, `stale_version`; 422
+ * `setting_invalid`.
  */
 export const putEngineSettingsMutation = (options?: Partial<Options<PutEngineSettingsData>>): UseMutationOptions<PutEngineSettingsResponse, PutEngineSettingsError, Options<PutEngineSettingsData>> => {
     const mutationOptions: UseMutationOptions<PutEngineSettingsResponse, PutEngineSettingsError, Options<PutEngineSettingsData>> = {
@@ -10444,6 +10451,8 @@ export const putStatusMirrorMutation = (options?: Partial<Options<PutStatusMirro
 
 /**
  * Test Engine Route
+ *
+ * ADM-08 d: a format check of the latest engine file (codes only).
  */
 export const testEngineMutation = (options?: Partial<Options<TestEngineData>>): UseMutationOptions<TestEngineResponse, TestEngineError, Options<TestEngineData>> => {
     const mutationOptions: UseMutationOptions<TestEngineResponse, TestEngineError, Options<TestEngineData>> = {
@@ -10461,6 +10470,8 @@ export const testEngineMutation = (options?: Partial<Options<TestEngineData>>): 
 
 /**
  * Put User Mapping Route
+ *
+ * ADM-08 b: the user mapping, replaced with the rows sent.
  */
 export const putUserMappingMutation = (options?: Partial<Options<PutUserMappingData>>): UseMutationOptions<PutUserMappingResponse, PutUserMappingError, Options<PutUserMappingData>> => {
     const mutationOptions: UseMutationOptions<PutUserMappingResponse, PutUserMappingError, Options<PutUserMappingData>> = {
