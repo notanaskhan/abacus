@@ -140,3 +140,68 @@ cache; DEC-440), alphabetical with `Unassigned` last; group subtotals, the layer
 P-04's field ticks reach the view (A-02-T35); `flags` mark the accounts of a check that is `off`
 (`issue_id` with A-02-T17). The SPEC-309 view (`GET P/{tb_id}`) is unchanged; the AUD-06 tab reads
 the C9 routes.
+
+## Taxonomy half, live v0 (A-03; SPEC-316; TASK-345, TASK-5009, TASK-5010; notanaskhan)
+
+These operations run today and are not flagged. C9 v2 (A-03-T03) extends them on the same paths before the S20 freeze; it does not replace them. Code: `assurance/mapping_routes.py` (routes), `assurance/mapping.py` (service) and `ledger/mapping.py` (rules and statements).
+
+### Who may call it
+
+| Operation | Method and path | Matrix action | Agent |
+|---|---|---|---|
+| Grouping-set versions | `GET /v1/grouping-sets` | `grouping_set.import` | denied |
+| Import a draft (CSV) | `POST /v1/grouping-sets/imports` (201) | `grouping_set.import` | denied |
+| Publish a draft | `POST /v1/grouping-sets/versions/{version_id}/publish` (201) | `grouping_set.publish` (fresh MFA) | denied |
+| The mapping | `GET P/{tb_id}/mapping` | `trial_balance.read` | denied |
+| Start it on a published version | `POST P/{tb_id}/mapping` (201) | `mapping_set.edit` | deny |
+| Map accounts (up to 500; a null line returns the account to the rules) | `PUT P/{tb_id}/mapping/accounts` | `mapping_set.edit` | deny |
+| Preparer sign-off (L1; confirms) | `POST P/{tb_id}/mapping/sign-offs/prepare` (201) | `sign_off.prepare` | deny |
+| Reviewer sign-off (L2) | `POST P/{tb_id}/mapping/sign-offs/review` (201) | `sign_off.review` | deny |
+| Draft statements by layer | `GET P/{tb_id}/statements?layer=` | `trial_balance.read` | denied |
+
+`P` is `/v1/engagements/{engagement_id}/trial-balances`. Each engagement route runs `get_ref` and `authorise` on the engagement first.
+
+### How an account is mapped (computed on read; ADR-050)
+
+An account takes the first of these that applies:
+1. A person's newest edit (`mapping_set_edits`, insert-only).
+2. The FS line the same normalised code sat on in the engagement this one rolled forward from (`prior_engagement_id`), matched by FS-line key. Only keys cross from the prior year, never its figures.
+3. The published version's number ranges, first rule wins.
+4. Otherwise it is unmapped.
+
+`MappingOut` carries:
+- `accounts[]`, each with `method`: `manual`, `prior_year`, `number_range` or null;
+- the tallies `mapped`, `unmapped`, `manual`, `prior_year` and `number_range`;
+- `tb_balanced`;
+- `content_hash`, the SHA-256 of the version and each account's line. A sign-off is stale when this hash moves.
+
+Statements present each line on its normal side, from the chosen layer.
+
+### Human-only
+
+Publishing, mapping and both sign-offs are human-only: the matrix denies the agent. The L1 sign-off is refused with 409 `unmapped_accounts` while any account is unmapped. A successful L1 records `mapping_set.confirmed`.
+
+### Errors
+
+| Status | Code | When |
+|---|---|---|
+| 422 | `grouping_set_invalid` | The CSV doesn't parse (row problems are kept on the draft) |
+| 409 | `grouping_set_has_problems` | Publishing a draft that has problems |
+| 409 | `grouping_set_published` | Publishing a version already published |
+| 409 | `mapping_set_exists` | Starting a second mapping on the same trial balance |
+| 422 | `mapping_invalid` | An unpublished version, a foreign FS line, or no edits / more than 500 |
+| 409 | `unmapped_accounts` | L1 while accounts are unmapped |
+
+### Audit and outbox events
+
+- **Audit:** `grouping_set.imported`, `grouping_set.published`, `mapping_set.created`, `account_mapping.edited` (`accounts`), `sign_off.recorded`, `mapping_set.confirmed` (`accounts`), `mapping_set.went_stale` (`version_no`, `unmapped`).
+- **Outbox:** `mapping_set.went_stale` (`mapping_set_id`, `engagement_id`, `trial_balance_id`, `version_no`). It is emitted once per trial balance version, on `trial_balance.version_created` from version 2 on, when the mapping's newest sign-offs are on other content. Review's stale detector consumes it and tells each signer (`sign_off_stale`).
+
+### C9 v2 will add (A-03-T03, T08, T14)
+
+- account states including the reserved `suggested` / `adopted` (with A-09);
+- `TbMappingWorkflow` with progress;
+- the `group_by=fs_line` option on the TB view;
+- auto-creating the set on version 1 (needs a firm-default grouping set);
+- the `mapping_set_stale` C16 kind (ayushkbhatia);
+- the AUD-31 screen's shapes.
