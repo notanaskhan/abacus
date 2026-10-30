@@ -821,6 +821,11 @@ codes:
     raised_by:
     - abacus.modules.signatures.imports.ImportFileUnavailable
     summary: A named file is not the importer's own staged file, or another import used it.
+  import_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.standards_import.ImportInvalid
+    summary: The workbook has problems; nothing was drafted.
   import_row_invalid:
     status: 422
     raised_by:

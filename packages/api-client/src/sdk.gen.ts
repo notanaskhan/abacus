@@ -9868,16 +9868,12 @@ export const createStandard = <ThrowOnError extends boolean = false>(options: Op
  * Import Standards Route
  *
  * Onboarding: one sheet per kind, one draft per standard; an owner who is not a partner
- * member is a row problem (`owner_not_partner`; K-02-T11).
+ * member is a row problem (`owner_not_partner`; K-02-T11). The other rows still import.
  */
-export const importStandards = <ThrowOnError extends boolean = false>(options: Options<ImportStandardsData, ThrowOnError>): RequestResult<ImportStandardsResponses, ImportStandardsErrors, ThrowOnError> => (options.client ?? client).post<ImportStandardsResponses, ImportStandardsErrors, ThrowOnError>({
+export const importStandards = <ThrowOnError extends boolean = false>(options?: Options<ImportStandardsData, ThrowOnError>): RequestResult<ImportStandardsResponses, ImportStandardsErrors, ThrowOnError> => (options?.client ?? client).post<ImportStandardsResponses, ImportStandardsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/standards/imports',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
+    ...options
 });
 
 /**
@@ -9906,16 +9902,12 @@ export const standardExamples = <ThrowOnError extends boolean = false>(options: 
  * Import Standard Route
  *
  * A workbook to a draft of this standard (its owner's; 422 `import_invalid` with
- * problems). Never publishes (K-02-T11).
+ * problems). Never publishes (K-02-T11). The workbook is the raw body (DEC-1357).
  */
 export const importStandard = <ThrowOnError extends boolean = false>(options: Options<ImportStandardData, ThrowOnError>): RequestResult<ImportStandardResponses, ImportStandardErrors, ThrowOnError> => (options.client ?? client).post<ImportStandardResponses, ImportStandardErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/standards/{standard_id}/imports',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
+    ...options
 });
 
 /**

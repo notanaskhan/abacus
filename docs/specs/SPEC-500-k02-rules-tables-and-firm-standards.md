@@ -88,6 +88,10 @@ Two kinds of versioned, effective-dated rules (K-02 short version): **platform r
 - **AC-42** (K-02-T10) `confidence_hold` holds below the floor and never auto-accepts while the payload cannot enable it.
 - **AC-43** (K-02-T10) `required_review_levels` and `return_approval_policy` answer a tier's levels and the client's signing partner (None when unassigned, never a default); a missing row is 422 `standard_row_missing`.
 - **AC-44** (K-02-T10) `ssars_framework_for` answers CAS by-product for periods ending on or after Dec 15, 2026 (or any period once SSARS 27 is adopted early), AR-C 70 preparation before.
+- **AC-45** (K-02-T11) `GET …/versions/{id}/export.xlsx` writes the version in the import format (a `Rows` sheet for the payload's list, a `Settings` sheet of `field`/`value` for the rest), byte-stable for the same payload; importing it again drafts a payload with the same hash (an empty diff).
+- **AC-46** (K-02-T11) Imports read the raw XLSX or CSV body: cached values only, bounded, every problem 422 `import_invalid` as sheet, row, column and code, never a cell's content.
+- **AC-47** (K-02-T11) `POST /v1/standards/{id}/imports` drafts the owner's next version (409 `draft_exists` with a draft open); an import never publishes or changes a published version.
+- **AC-48** (K-02-T11) `POST /v1/standards/imports` (onboarding) reads a `Standards` sheet and one sheet per key, creates each standard with its first draft, and reports an owner who is not a partner member as that row's `owner_not_partner` while the other rows import.
 
 ## 4. Out of scope here
 The CLI, import and export, fan-out and KNW-04i/j (K-02-T06 to T12, T14 to T20) build against the same contract in later sprints.

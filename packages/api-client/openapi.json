@@ -64340,23 +64340,6 @@
         "title": "StandardExamplesOut",
         "type": "object"
       },
-      "StandardImportIn": {
-        "additionalProperties": false,
-        "description": "A workbook already uploaded and scanned through the upload flow (an upload intent).",
-        "properties": {
-          "upload_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Upload Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "upload_id"
-        ],
-        "title": "StandardImportIn",
-        "type": "object"
-      },
       "StandardImportProblemOut": {
         "description": "A workbook problem: where, and a fixed code, never the cell's content (ADR-052).",
         "properties": {
@@ -173683,7 +173666,7 @@
     },
     "/v1/standards/imports": {
       "post": {
-        "description": "Onboarding: one sheet per kind, one draft per standard; an owner who is not a partner\nmember is a row problem (`owner_not_partner`; K-02-T11).",
+        "description": "Onboarding: one sheet per kind, one draft per standard; an owner who is not a partner\nmember is a row problem (`owner_not_partner`; K-02-T11). The other rows still import.",
         "operationId": "import_standards",
         "parameters": [
           {
@@ -173719,16 +173702,6 @@
             }
           }
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/StandardImportIn"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "201": {
             "content": {
@@ -173779,16 +173752,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Import Standards Route",
@@ -174048,7 +174011,7 @@
     },
     "/v1/standards/{standard_id}/imports": {
       "post": {
-        "description": "A workbook to a draft of this standard (its owner's; 422 `import_invalid` with\nproblems). Never publishes (K-02-T11).",
+        "description": "A workbook to a draft of this standard (its owner's; 422 `import_invalid` with\nproblems). Never publishes (K-02-T11). The workbook is the raw body (DEC-1357).",
         "operationId": "import_standard",
         "parameters": [
           {
@@ -174058,6 +174021,20 @@
             "schema": {
               "format": "uuid",
               "title": "Standard Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "default": "xlsx",
+              "enum": [
+                "xlsx",
+                "csv"
+              ],
+              "title": "Format",
               "type": "string"
             }
           },
@@ -174094,16 +174071,6 @@
             }
           }
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/StandardImportIn"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "201": {
             "content": {
@@ -174145,6 +174112,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -174154,16 +174131,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Import Standard Route",
@@ -175048,16 +175015,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Standard Export Version Route",
