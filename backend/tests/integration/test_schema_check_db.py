@@ -1368,6 +1368,8 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         ),
         "hold_objects": frozenset({"applied_at", "released_at"}),  # Q-02-T29: stamped once
         "evidence_object_keys": frozenset({"retained_at"}),  # P-06-T18 (0144): one-way
+        # N-01-T14 (0371): the intake purge's erase and a hold.
+        "evidence_intake_object_keys": frozenset({"wrapped_key", "destroyed_at", "retained_at"}),
         "evidence_withdrawals": frozenset(  # P-06-T19 (0144): the purge's stamps
             {"erased_at", "erase_blocked_at", "block_reason"}
         ),
@@ -1541,6 +1543,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "filed_destination_kind",
                 "filed_evidence_version_id",
                 "status",
+                "withdrawn_at",  # N-01-T14 (0371): a portal withdrawal's moment
             }
         ),
         "inbox_sender_rules": frozenset({"revoked_at"}),
