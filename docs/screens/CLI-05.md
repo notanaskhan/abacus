@@ -9,7 +9,7 @@
 | Epic and tasks | T-01 · contract T-01-T05 (this file); fixtures T09; build T43–T46 |
 | Spec and ADRs | SPEC-501 AC-11; ADR-231; R-04 |
 | Flags | `clients.tax_profile`; consents from `consents.registry` |
-| Manifest status | planned; built on fixtures with T-01-T09's scenarios, `live` with its build tasks (pilot posture: agents off) |
+| Manifest status | `fixture` since T-01-T14 (d, f: the consents section; a, b, c, e, g with T-01-T43 to T46); `live` with C19's routes (pilot posture: agents off) |
 
 ## States
 | Artboard | Viewer | Clock (CT) | Data condition | Parity tier | Status |
@@ -70,3 +70,5 @@ Gradients, emoji, blue, heavy shadows, invented colours or data, boxed inputs, t
 
 ## Open gaps
 - Status objects live in the registry since T-01-T06; the contracts move from `Literal` types to the registry's enums when the routes go live.
+- T-01-T14 (DEC-1263): TaxProfileOut gains the subbar facts (`client_name`, `client_kind`, `partner_name`, `office_name`), the Identity band (`identity`, `portal_user_name`, `resident_state`) and ConsentOut `template_name`, additively. The route takes `?entity=`; without it the record's first entity opens. The partially signed banner keeps the handoff's words (DF-04's agents-off words arrive with the copy registry). Resend…, Request consent… and the Open notices row are planned links (tooltip-only).
+

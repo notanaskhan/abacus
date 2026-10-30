@@ -14660,6 +14660,19 @@
             "cls": "internal",
             "title": "Consent Set Id"
           },
+          "declined_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Declined At"
+          },
           "envelope_id": {
             "anyOf": [
               {
@@ -14742,6 +14755,19 @@
             "title": "Requested At",
             "type": "string"
           },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Revoked At"
+          },
           "scope": {
             "additionalProperties": {
               "type": "string"
@@ -14773,6 +14799,14 @@
             "title": "Signer Count",
             "type": "integer"
           },
+          "signers": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/ConsentSignerOut"
+            },
+            "title": "Signers",
+            "type": "array"
+          },
           "source": {
             "cls": "internal",
             "enum": [
@@ -14802,6 +14836,18 @@
             },
             "title": "Tax Years",
             "type": "array"
+          },
+          "template_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Template Name"
           },
           "template_version_id": {
             "cls": "internal",
@@ -15143,6 +15189,18 @@
             ],
             "cls": "confidential",
             "title": "Signed At"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Title"
           }
         },
         "required": [
@@ -19121,6 +19179,20 @@
       "DueDateExtension": {
         "additionalProperties": false,
         "properties": {
+          "day": {
+            "anyOf": [
+              {
+                "maximum": 31.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Day"
+          },
           "form": {
             "cls": "public",
             "maxLength": 20,
@@ -23469,11 +23541,30 @@
         "description": "One engine figure from an approved import only (ADR-231).",
         "properties": {
           "amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "cls": "restricted",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Amount",
-            "type": "string",
             "x-tri": true
+          },
+          "indent": {
+            "cls": "internal",
+            "default": false,
+            "title": "Indent",
+            "type": "boolean"
+          },
+          "issue": {
+            "cls": "internal",
+            "default": false,
+            "title": "Issue",
+            "type": "boolean"
           },
           "label": {
             "cls": "internal",
@@ -23484,6 +23575,47 @@
             "cls": "internal",
             "title": "Line Key",
             "type": "string"
+          },
+          "line_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Line Ref"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Note",
+            "x-tri": true
+          },
+          "total": {
+            "anyOf": [
+              {
+                "enum": [
+                  "total",
+                  "grand"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Total"
           }
         },
         "required": [
@@ -23514,11 +23646,55 @@
             "title": "At",
             "type": "string"
           },
+          "engine_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Engine Version"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Errors"
+          },
+          "field_keys": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Field Keys",
+            "type": "array"
+          },
           "id": {
             "cls": "internal",
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "informational": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Informational"
           },
           "kind": {
             "cls": "internal",
@@ -23530,7 +23706,8 @@
               "import_rejected",
               "diagnostics",
               "pdfs",
-              "acks"
+              "acks",
+              "changed_after_import"
             ],
             "title": "Kind",
             "type": "string"
@@ -23556,6 +23733,26 @@
             "title": "Allowed Actions",
             "type": "array"
           },
+          "approver_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Approver Name"
+          },
+          "blockers": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ApprovalBlockerOut"
+            },
+            "title": "Blockers",
+            "type": "array"
+          },
           "diagnostics": {
             "cls": "restricted",
             "items": {
@@ -23564,6 +23761,18 @@
             "title": "Diagnostics",
             "type": "array",
             "x-tri": true
+          },
+          "draft_k1_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Draft K1 Source"
           },
           "engine_return_id": {
             "anyOf": [
@@ -23591,6 +23800,18 @@
             "title": "Mode",
             "type": "string"
           },
+          "policy_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Policy Code"
+          },
           "return_id": {
             "cls": "internal",
             "format": "uuid",
@@ -23610,6 +23831,19 @@
             ],
             "title": "State",
             "type": "string"
+          },
+          "synced_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Synced At"
           }
         },
         "required": [
@@ -26605,6 +26839,59 @@
           "route"
         ],
         "title": "FiledDestinationOut",
+        "type": "object"
+      },
+      "FilingRowOut": {
+        "description": "A Filing band KV row (and the gathering state's pro forma rows).",
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Detail"
+          },
+          "key": {
+            "cls": "internal",
+            "enum": [
+              "due",
+              "extension",
+              "jurisdictions",
+              "engine",
+              "consents",
+              "office"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "pill": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Pill"
+          },
+          "value": {
+            "cls": "confidential",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "title": "FilingRowOut",
         "type": "object"
       },
       "FinalApprovalIn": {
@@ -31550,6 +31837,15 @@
             "cls": "internal",
             "title": "Cause Code"
           },
+          "cause_facts": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "cls": "restricted",
+            "title": "Cause Facts",
+            "type": "object",
+            "x-tri": true
+          },
           "engine": {
             "anyOf": [
               {
@@ -31562,6 +31858,19 @@
             ],
             "cls": "restricted",
             "title": "Engine",
+            "x-tri": true
+          },
+          "engine_display": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Engine Display",
             "x-tri": true
           },
           "field_key": {
@@ -35867,12 +36176,106 @@
         "title": "K1BoxLineOut",
         "type": "object"
       },
-      "K1DependencyOut": {
+      "K1ClassificationOut": {
         "properties": {
           "issuer_name": {
             "cls": "confidential",
             "title": "Issuer Name",
             "type": "string"
+          },
+          "pill": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Pill"
+          },
+          "pill_tone": {
+            "anyOf": [
+              {
+                "enum": [
+                  "state",
+                  "green"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Pill Tone"
+          },
+          "tags": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
+          }
+        },
+        "required": [
+          "issuer_name",
+          "tags"
+        ],
+        "title": "K1ClassificationOut",
+        "type": "object"
+      },
+      "K1DependencyOut": {
+        "properties": {
+          "blocking": {
+            "cls": "internal",
+            "default": false,
+            "title": "Blocking",
+            "type": "boolean"
+          },
+          "issuer_name": {
+            "cls": "confidential",
+            "title": "Issuer Name",
+            "type": "string"
+          },
+          "short_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Short Name"
+          },
+          "source_due_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Source Due On"
+          },
+          "source_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Source Label"
           },
           "source_return_id": {
             "anyOf": [
@@ -36776,6 +37179,28 @@
         "title": "KvRow",
         "type": "object"
       },
+      "LabelValueOut": {
+        "description": "A KV row whose key is the import's own label (the pro forma's \"2024 AGI\").",
+        "properties": {
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "cls": "restricted",
+            "title": "Value",
+            "type": "string",
+            "x-tri": true
+          }
+        },
+        "required": [
+          "label",
+          "value"
+        ],
+        "title": "LabelValueOut",
+        "type": "object"
+      },
       "LadderLevelOut": {
         "properties": {
           "expected_signer_name": {
@@ -36844,6 +37269,30 @@
       },
       "LadderStepOut": {
         "properties": {
+          "blocked_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Blocked By"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Note"
+          },
           "person": {
             "anyOf": [
               {
@@ -36877,6 +37326,36 @@
             ],
             "cls": "confidential",
             "title": "Signed Off At"
+          },
+          "state": {
+            "cls": "internal",
+            "default": "not_started",
+            "enum": [
+              "done",
+              "in_progress",
+              "not_started"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "step": {
+            "anyOf": [
+              {
+                "enum": [
+                  "preparer",
+                  "detail_review",
+                  "manager_review",
+                  "partner_review",
+                  "final_approval"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Step"
           }
         },
         "required": [
@@ -43195,6 +43674,50 @@
         "title": "OverdueCountOut",
         "type": "object"
       },
+      "OverviewIssueOut": {
+        "description": "One of the top open C3 issues (severity drives the flag's colour).",
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "missing_information",
+              "action_required",
+              "review_point"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "severity": {
+            "cls": "internal",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "title": "Severity",
+            "type": "string"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "kind",
+          "severity"
+        ],
+        "title": "OverviewIssueOut",
+        "type": "object"
+      },
       "PageLineOut": {
         "properties": {
           "box": {
@@ -43808,6 +44331,43 @@
         "title": "PiiRevealOut",
         "type": "object"
       },
+      "PipelineStepOut": {
+        "properties": {
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "done",
+              "in_progress",
+              "not_started"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "step": {
+            "cls": "internal",
+            "enum": [
+              "gather",
+              "prepare",
+              "review",
+              "deliver"
+            ],
+            "title": "Step",
+            "type": "string"
+          },
+          "sub": {
+            "cls": "confidential",
+            "title": "Sub",
+            "type": "string"
+          }
+        },
+        "required": [
+          "step",
+          "state",
+          "sub"
+        ],
+        "title": "PipelineStepOut",
+        "type": "object"
+      },
       "PlanStepOut": {
         "properties": {
           "key": {
@@ -44074,6 +44634,19 @@
             "title": "Done Count",
             "type": "integer"
           },
+          "engagement_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Engagement Id"
+          },
           "filter": {
             "cls": "internal",
             "enum": [
@@ -44130,6 +44703,12 @@
             "cls": "internal",
             "title": "Total",
             "type": "integer"
+          },
+          "upload_something_else": {
+            "cls": "internal",
+            "default": false,
+            "title": "Upload Something Else",
+            "type": "boolean"
           }
         },
         "required": [
@@ -49749,6 +50328,47 @@
           "model_calls"
         ],
         "title": "RecordInputHashesOut",
+        "type": "object"
+      },
+      "RecordLinkOut": {
+        "description": "A Record band row on TAX-02's rail (Client, Engagement, Binder, Files, Relationships).",
+        "properties": {
+          "key": {
+            "cls": "internal",
+            "enum": [
+              "client",
+              "engagement",
+              "binder",
+              "files",
+              "relationships"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "sub": {
+            "cls": "confidential",
+            "title": "Sub",
+            "type": "string"
+          },
+          "target_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Target Id"
+          }
+        },
+        "required": [
+          "key",
+          "sub"
+        ],
+        "title": "RecordLinkOut",
         "type": "object"
       },
       "RecordOutcomeOut": {
@@ -56538,6 +57158,19 @@
             "cls": "internal",
             "title": "Period Start"
           },
+          "proposal_ref": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Proposal Ref"
+          },
           "provenance": {
             "$ref": "#/components/schemas/ScreeningProvenanceOut",
             "cls": "internal"
@@ -62186,8 +62819,17 @@
             "type": "string"
           },
           "status": {
-            "$ref": "#/components/schemas/FirmStandardVersionStatus",
-            "cls": "internal"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FirmStandardVersionStatus"
+              },
+              {
+                "const": "superseded",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Status"
           },
           "version": {
             "cls": "internal",
@@ -62266,8 +62908,17 @@
             "cls": "internal"
           },
           "status": {
-            "$ref": "#/components/schemas/FirmStandardVersionStatus",
-            "cls": "internal"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FirmStandardVersionStatus"
+              },
+              {
+                "const": "superseded",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Status"
           },
           "tax_year": {
             "anyOf": [
@@ -64155,6 +64806,87 @@
         "title": "TaxElectionOut",
         "type": "object"
       },
+      "TaxPlanRowOut": {
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Detail",
+            "x-tri": true
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "done",
+              "in_progress",
+              "not_started"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "state"
+        ],
+        "title": "TaxPlanRowOut",
+        "type": "object"
+      },
+      "TaxProfileIdentityOut": {
+        "description": "CLI-05's Identity band: who the profile is for, by masked TIN (last four; DEC-52).",
+        "properties": {
+          "client_entity_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Client Entity Id",
+            "type": "string"
+          },
+          "masked_tin": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MaskedTinOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "cls": "internal",
+            "enum": [
+              "taxpayer",
+              "spouse"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "client_entity_id",
+          "name"
+        ],
+        "title": "TaxProfileIdentityOut",
+        "type": "object"
+      },
       "TaxProfileOut": {
         "description": "CLI-05's rail: consents in force, authorizations on file, elections, a masked identity band\n(last four only; DEC-52) and open notices (planned).",
         "properties": {
@@ -64180,6 +64912,24 @@
             "title": "Client Entity Id",
             "type": "string"
           },
+          "client_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Client Kind"
+          },
+          "client_name": {
+            "cls": "confidential",
+            "default": "",
+            "title": "Client Name",
+            "type": "string"
+          },
           "consents": {
             "cls": "confidential",
             "items": {
@@ -64197,6 +64947,26 @@
             "type": "array",
             "x-tri": true
           },
+          "identity": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/TaxProfileIdentityOut"
+            },
+            "title": "Identity",
+            "type": "array"
+          },
+          "office_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Office Name"
+          },
           "open_notices": {
             "anyOf": [
               {
@@ -64208,6 +64978,42 @@
             ],
             "cls": "internal",
             "title": "Open Notices"
+          },
+          "partner_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Partner Name"
+          },
+          "portal_user_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Portal User Name"
+          },
+          "resident_state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Resident State"
           },
           "taxpayer_tin": {
             "anyOf": [
@@ -64307,6 +65113,19 @@
             "title": "Allowed Actions",
             "type": "array"
           },
+          "carryforwards": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Carryforwards",
+            "x-tri": true
+          },
           "consent_ok": {
             "anyOf": [
               {
@@ -64319,6 +65138,19 @@
             "cls": "internal",
             "title": "Consent Ok"
           },
+          "engine_footnote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Engine Footnote",
+            "x-tri": true
+          },
           "engine_summary": {
             "cls": "restricted",
             "items": {
@@ -64327,6 +65159,19 @@
             "title": "Engine Summary",
             "type": "array",
             "x-tri": true
+          },
+          "engine_synced_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Engine Synced On"
           },
           "engine_version": {
             "anyOf": [
@@ -64339,6 +65184,30 @@
             ],
             "cls": "confidential",
             "title": "Engine Version"
+          },
+          "filing": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/FilingRowOut"
+            },
+            "title": "Filing",
+            "type": "array"
+          },
+          "issues": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/OverviewIssueOut"
+            },
+            "title": "Issues",
+            "type": "array"
+          },
+          "k1_classifications": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/K1ClassificationOut"
+            },
+            "title": "K1 Classifications",
+            "type": "array"
           },
           "k1_dependencies": {
             "cls": "confidential",
@@ -64361,11 +65230,66 @@
             "title": "Open Issues",
             "type": "integer"
           },
+          "pipeline": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/PipelineStepOut"
+            },
+            "title": "Pipeline",
+            "type": "array"
+          },
+          "plan": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/TaxPlanRowOut"
+            },
+            "title": "Plan",
+            "type": "array",
+            "x-tri": true
+          },
+          "pro_forma": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/LabelValueOut"
+            },
+            "title": "Pro Forma",
+            "type": "array",
+            "x-tri": true
+          },
+          "pro_forma_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Pro Forma Label"
+          },
+          "record_links": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/RecordLinkOut"
+            },
+            "title": "Record Links",
+            "type": "array"
+          },
           "return_id": {
             "cls": "internal",
             "format": "uuid",
             "title": "Return Id",
             "type": "string"
+          },
+          "two_year": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/TwoYearStatOut"
+            },
+            "title": "Two Year",
+            "type": "array",
+            "x-tri": true
           }
         },
         "required": [
@@ -64405,6 +65329,18 @@
             "cls": "internal",
             "title": "Approval Policy Version Id"
           },
+          "card_detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Card Detail"
+          },
           "engagement_id": {
             "cls": "internal",
             "format": "uuid",
@@ -64422,6 +65358,18 @@
             ],
             "cls": "confidential",
             "title": "Engine Return Id"
+          },
+          "engine_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Engine Url"
           },
           "row": {
             "$ref": "#/components/schemas/TaxReturnRowOut",
@@ -64520,6 +65468,18 @@
             "title": "Id",
             "type": "string"
           },
+          "issues": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Issues"
+          },
           "office_id": {
             "anyOf": [
               {
@@ -64601,6 +65561,14 @@
             ],
             "cls": "confidential"
           },
+          "signers": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/TaxReturnSignerOut"
+            },
+            "title": "Signers",
+            "type": "array"
+          },
           "status": {
             "$ref": "#/components/schemas/ReturnStatus",
             "cls": "internal"
@@ -64651,6 +65619,27 @@
           "tags"
         ],
         "title": "TaxReturnRowOut",
+        "type": "object"
+      },
+      "TaxReturnSignerOut": {
+        "description": "A C7 signer chip on a row awaiting signature (T-02-T12): who, and whether they signed.",
+        "properties": {
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "signed": {
+            "cls": "internal",
+            "title": "Signed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "signed"
+        ],
+        "title": "TaxReturnSignerOut",
         "type": "object"
       },
       "TaxReturnSummaryOut": {
@@ -68631,6 +69620,56 @@
           "snapshots"
         ],
         "title": "TrialBalancesOut",
+        "type": "object"
+      },
+      "TwoYearStatOut": {
+        "properties": {
+          "change_pct": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Change Pct",
+            "x-tri": true
+          },
+          "current": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Current",
+            "type": "string",
+            "x-tri": true
+          },
+          "key": {
+            "cls": "internal",
+            "enum": [
+              "agi",
+              "total_tax",
+              "refund"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "prior": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Prior",
+            "type": "string",
+            "x-tri": true
+          }
+        },
+        "required": [
+          "key",
+          "prior",
+          "current",
+          "change_pct"
+        ],
+        "title": "TwoYearStatOut",
         "type": "object"
       },
       "UncorrectedOut": {
@@ -86979,16 +88018,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Practice Due Dates Route",
@@ -124086,16 +125115,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Create Envelope Draft Route",
@@ -124847,7 +125866,7 @@
         "x-abacus-action": "envelope.read"
       },
       "put": {
-        "description": "SIG-02 edits (N-02-T20).",
+        "description": "SIG-02 edits (N-02-T20): 409 `stale_version` when `If-Match` is not the current\nversion; 409 `envelope_not_draft` after Send.",
         "operationId": "update_envelope_draft",
         "parameters": [
           {
@@ -124974,16 +125993,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Update Envelope Draft Route",
@@ -125122,7 +126131,7 @@
     },
     "/v1/envelopes/{envelope_id}/documents/{document_id}/pages/{page_no}": {
       "get": {
-        "description": "Rendered preview page (N-02-T21).",
+        "description": "SIG-02's preview page: the document's masked page image as the evidence viewer renders it\n(`no-store`, `nosniff`); 409 `preview_unavailable` for a generated document until P-11, 409\n`preview_outdated` before masking; 403 for a reader who may not read the evidence.",
         "operationId": "envelope_page",
         "parameters": [
           {
@@ -125150,6 +126159,8 @@
             "name": "page_no",
             "required": true,
             "schema": {
+              "maximum": 2000,
+              "minimum": 1,
               "title": "Page No",
               "type": "integer"
             }
@@ -125230,6 +126241,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -125239,16 +126260,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Envelope Page Route",
@@ -125496,7 +126507,7 @@
     },
     "/v1/envelopes/{envelope_id}/send": {
       "post": {
-        "description": "Human send through a single-use grant, +10 s (N-02-T22).",
+        "description": "Human send through a single-use grant, +10 s (N-02-T20): 409 `validation_failed` with\neach check in `facts`; the provider is called after the window (N-02-T22).",
         "operationId": "send_envelope",
         "parameters": [
           {
@@ -125613,16 +126624,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Send Envelope Route",
@@ -125634,7 +126635,7 @@
     },
     "/v1/envelopes/{envelope_id}/send/undo": {
       "post": {
-        "description": "Undo inside the window (N-02-T22).",
+        "description": "Undo inside the window (N-02-T20): no provider call is made.",
         "operationId": "undo_envelope_send",
         "parameters": [
           {
@@ -125740,16 +126741,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Undo Envelope Send Route",
@@ -126152,16 +127143,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Validate Envelope Route",
@@ -157432,7 +158413,7 @@
     },
     "/v1/portal/binders/{binder_id}": {
       "get": {
-        "description": "POR-03. A binder outside the caller's grant, a draft or a forged id answers 404.",
+        "description": "POR-03. A binder outside the caller's grant, a draft or a forged id answers 404.\n`upload_something_else` (R-01-T33): the firm's published toggle and the intake flag.",
         "operationId": "get_portal_binder",
         "parameters": [
           {
@@ -160598,7 +161579,7 @@
         "x-abacus-action": "portal_intake.read_own"
       },
       "post": {
-        "description": "POR-03 \"Upload something else\": the batch (N-01-T14).",
+        "description": "POR-03 \"Upload something else\": the batch (N-01-T14). R-01-T33: 404 while the firm has\nnot published the toggle on (as if the route were absent).",
         "operationId": "create_intake_upload",
         "parameters": [
           {
@@ -165429,7 +166410,7 @@
     },
     "/v1/reference-sets": {
       "get": {
-        "description": "KNW-04 j: the published sets, by kind.",
+        "description": "KNW-04 j: the published sets, by kind then key, each with the version in effect today.",
         "operationId": "list_reference_sets",
         "parameters": [
           {
@@ -165540,16 +166521,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Reference Sets Route",
@@ -165674,16 +166645,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Resolve Reference Set Route",
@@ -165791,16 +166752,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Reference Set Versions Route",
@@ -168087,16 +169038,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Standards Route",
@@ -168106,7 +169047,7 @@
         "x-abacus-action": "firm_standard.read"
       },
       "post": {
-        "description": "Create a standard (QM owner or practice leader, fresh MFA); the owner must be a partner\nmember (422 `owner_not_partner`).",
+        "description": "Create a standard (QM owner or practice leader, fresh MFA); the owner must be a partner\nmember (422 `owner_not_partner`); 409 `standard_key_taken`.",
         "operationId": "create_standard",
         "parameters": [
           {
@@ -168212,16 +169153,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Create Standard Route",
@@ -168233,7 +169164,7 @@
     },
     "/v1/standards/imports": {
       "post": {
-        "description": "Onboarding: one sheet per kind, one draft per standard; an owner who is not a partner\nmember is a row problem (`owner_not_partner`).",
+        "description": "Onboarding: one sheet per kind, one draft per standard; an owner who is not a partner\nmember is a row problem (`owner_not_partner`; K-02-T11).",
         "operationId": "import_standards",
         "parameters": [
           {
@@ -168463,16 +169394,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Standard Route",
@@ -168597,16 +169518,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Standard Examples Route",
@@ -168618,7 +169529,7 @@
     },
     "/v1/standards/{standard_id}/imports": {
       "post": {
-        "description": "A workbook to a draft of this standard (its owner's; 422 `import_invalid` with\nproblems). Never publishes.",
+        "description": "A workbook to a draft of this standard (its owner's; 422 `import_invalid` with\nproblems). Never publishes (K-02-T11).",
         "operationId": "import_standard",
         "parameters": [
           {
@@ -168851,16 +169762,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Assign Owner Route",
@@ -168872,7 +169773,7 @@
     },
     "/v1/standards/{standard_id}/versions": {
       "post": {
-        "description": "New version\u2026: a draft from the current version (409 `draft_exists`; 403\n`not_standard_owner` for anyone but the owner).",
+        "description": "New version\u2026: a draft from the current version (409 `draft_exists`,\n`no_current_version`; 403 `not_standard_owner` for a partner who is not the owner).",
         "operationId": "draft_version",
         "parameters": [
           {
@@ -168978,16 +169879,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Draft Version Route",
@@ -169125,16 +170016,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Standard Discard Draft Route",
@@ -169250,16 +170131,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Standard Version Route",
@@ -169405,16 +170276,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Edit Draft Route",
@@ -169549,16 +170410,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Version Diff Route",
@@ -169570,7 +170421,7 @@
     },
     "/v1/standards/{standard_id}/versions/{version_id}/export.xlsx": {
       "get": {
-        "description": "The version as a workbook; re-importing it gives an empty diff (US-5.1).",
+        "description": "The version as a workbook; re-importing it gives an empty diff (US-5.1; K-02-T11).",
         "operationId": "standard_export_version",
         "parameters": [
           {
@@ -169699,7 +170550,7 @@
     },
     "/v1/standards/{standard_id}/versions/{version_id}/publish": {
       "post": {
-        "description": "Publish vN\u2026: the owner, a person, with fresh MFA (422 `effective_from_backdated`,\n`effective_from_not_after_current`).",
+        "description": "Publish vN\u2026: the owner, a person, with fresh MFA (422 `effective_from_backdated`,\n`effective_from_not_after_current`). A retried key answers what the first publish did.",
         "operationId": "publish_version",
         "parameters": [
           {
@@ -169846,16 +170697,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Publish Version Route",
@@ -170919,6 +171760,7 @@
     },
     "/v1/tax-returns": {
       "get": {
+        "description": "TAX-01's rows, wall-safe; one page (a season's board fits; `cursor` is reserved).",
         "operationId": "list_returns",
         "parameters": [
           {
@@ -171235,16 +172077,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Returns Route",
@@ -171256,6 +172088,7 @@
     },
     "/v1/tax-returns/summary": {
       "get": {
+        "description": "TAX-01's tiles: per status, open and done, extended, office totals (wall-safe).",
         "operationId": "returns_summary",
         "parameters": [
           {
@@ -171359,16 +172192,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Returns Summary Route",
@@ -174129,6 +174952,7 @@
     },
     "/v1/tax-returns:bulk-assign": {
       "post": {
+        "description": "The selection bar's Assign preparer: assigned and refused counts, never a reason.",
         "operationId": "bulk_assign",
         "parameters": [
           {
@@ -174235,16 +175059,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Bulk Assign Route",

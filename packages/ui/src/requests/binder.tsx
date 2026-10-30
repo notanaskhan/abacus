@@ -2,6 +2,7 @@ import { type DragEvent, type JSX, type ReactNode, useMemo, useRef, useState } f
 import type { Actor } from "../attribution";
 import { cn } from "../cn";
 import { PRESS } from "../components/control-classes";
+import { UploadRing } from "../components/progress";
 import { StatusDisc } from "../components/status";
 import { Icon } from "../icons";
 import { Pane } from "../layout/pane";
@@ -92,6 +93,8 @@ export interface RequestBinderProps {
   onBlocked?: (open: number) => void;
   /** "Upload something else": files for the firm's Inbox, not the list. */
   onUploadOther?: (files: readonly File[]) => void;
+  /** Whether "Upload something else" is offered (the firm's setting; R-01-T33). Default on. */
+  uploadOther?: boolean;
   /** The client's own uploads are withdrawn (DF-15): the portal's screens set it. */
   withdraw?: boolean;
   /** A closed binder: no upload, Ignore, Withdraw or Mark as Done anywhere. */
@@ -225,7 +228,7 @@ function BinderPicker({
           "inline-flex items-center gap-[6px] rounded-pill font-medium tracking-[-0.012em] whitespace-nowrap hover:bg-nav-fill aria-expanded:bg-nav-fill",
           size === "pane"
             ? "h-[30px] pr-[10px] pl-[12px] text-pane"
-            : "h-[36px] pr-[6px] pl-[2px] text-title",
+            : "h-[44px] pr-[6px] pl-[2px] text-title", // 44 x 44 touch target (F-06-T12)
           PRESS,
         )}
       >
@@ -377,19 +380,21 @@ export function RequestDocuments({
       right={
         items.length === 0 || props.readOnly === true ? undefined : (
           <>
-            <button
-              type="button"
-              onClick={() => {
-                binder.chooseOther();
-              }}
-              className={cn(
-                "inline-flex h-[30px] items-center gap-[6px] rounded-pill bg-card pr-[13px] pl-[11px] text-body whitespace-nowrap shadow-e1 hover:bg-nav-fill",
-                PRESS,
-              )}
-            >
-              <Icon name="upload" size={13} />
-              {reduced ? "Upload…" : "Upload something else"}
-            </button>
+            {props.uploadOther !== false && (
+              <button
+                type="button"
+                onClick={() => {
+                  binder.chooseOther();
+                }}
+                className={cn(
+                  "inline-flex h-[30px] items-center gap-[6px] rounded-pill bg-card pr-[13px] pl-[11px] text-body whitespace-nowrap shadow-e1 hover:bg-nav-fill",
+                  PRESS,
+                )}
+              >
+                <Icon name="upload" size={13} />
+                {reduced ? "Upload…" : "Upload something else"}
+              </button>
+            )}
             <MarkAsDone view={view} onClick={onDone} />
           </>
         )
@@ -553,7 +558,7 @@ function MobileRowText({
       type="button"
       data-open-title=""
       onClick={onOpen}
-      className="-my-[8px] flex min-w-0 flex-1 flex-col justify-center gap-[3px] self-stretch py-[8px] text-left"
+      className="-my-[8px] flex min-h-[44px] min-w-0 flex-1 flex-col justify-center gap-[3px] self-stretch py-[8px] text-left"
     >
       {text}
     </button>
@@ -566,17 +571,42 @@ export interface RequestMobileProps {
   dropHint?: string;
   /** TPL-19 frame 2: only the open requests as cards, the rest folded into one row ("4 received ·
    * 1 provided by Brightwater Hale ›") that opens the full binder. */
-  openOnly?: { onShowAll?: () => void };
+  openOnly?: {
+    onShowAll?: () => void;
+    /** TPL-19 frame 6: requests answered this visit that stay as cards to show their receipt. */
+    keep?: readonly string[];
+  };
+  /** TPL-19 frame 5 (F-06-T11): "Upload…" and the DropZone card open the caller's action sheet
+   * (camera or file) instead of the binder's file input; the id is the request's, null the card's. */
+  onUpload?: (requestId: string | null) => void;
+  /** TPL-19 frame 6: a request whose upload is in flight, 0 to 1; its card shows the UploadRing in
+   * place of "Upload…" until the receipt. */
+  progress?: Readonly<Record<string, number>>;
 }
 
-export function RequestMobile({ binder, dropHint, openOnly }: RequestMobileProps): JSX.Element {
+export function RequestMobile({
+  binder,
+  dropHint,
+  openOnly,
+  onUpload,
+  progress,
+}: RequestMobileProps): JSX.Element {
+  const choose = (id: string | null): void => {
+    if (onUpload === undefined) binder.choose(id);
+    else onUpload(id);
+  };
   const { props, items } = binder;
   const uploads = props.uploads ?? [];
-  const shown = items.filter((r) => r.extra !== true && (openOnly === undefined || !satisfied(r)));
+  const kept = new Set(openOnly?.keep ?? []);
+  const shown = items.filter(
+    (r) => r.extra !== true && (openOnly === undefined || !satisfied(r) || kept.has(r.id)),
+  );
   const groups = props.sections
     .map((s) => ({ section: s, rows: shown.filter((r) => r.sec === s.key) }))
     .filter((g) => g.rows.length > 0);
-  const received = items.filter((r) => r.st === "up" || r.st === "acc").length;
+  const received = items.filter(
+    (r) => (r.st === "up" || r.st === "acc") && !kept.has(r.id),
+  ).length;
   const provided = items.filter((r) => r.st === "firm").length;
   const line = (r: RequestItem): { text: string; ok: boolean } => {
     if (r.st === "up") return { text: r.upText ?? `You uploaded ${r.on ?? ""}`, ok: true };
@@ -605,7 +635,7 @@ export function RequestMobile({ binder, dropHint, openOnly }: RequestMobileProps
         type="button"
         aria-label="Tap to upload or take a photo"
         onClick={() => {
-          binder.choose(null);
+          choose(null);
         }}
         className="flex h-[96px] flex-none items-center gap-[14px] rounded-pane bg-card px-[16px] text-left shadow-e1"
       >
@@ -634,6 +664,7 @@ export function RequestMobile({ binder, dropHint, openOnly }: RequestMobileProps
           {rows.map((r) => {
             const l = line(r);
             const isOpen = !satisfied(r);
+            const inFlight = progress?.[r.id];
             return (
               <div
                 key={r.id}
@@ -651,22 +682,32 @@ export function RequestMobile({ binder, dropHint, openOnly }: RequestMobileProps
                       })}
                 >
                   {l.ok ? (
-                    <span className="flex items-center gap-[5px] text-pill text-green-ink">
-                      <StatusDisc state="done" size={13} />
-                      {l.text}
-                    </span>
+                    <>
+                      <span className="flex items-center gap-[5px] text-pill text-green-ink">
+                        <StatusDisc state="done" size={13} />
+                        {l.text}
+                      </span>
+                      {r.st === "up" && r.matched === true && (
+                        <span className="text-meta text-ink-3">Matched to this request</span>
+                      )}
+                    </>
                   ) : (
                     <span className="text-pill leading-[1.35] font-normal text-ink-3">
                       {l.text}
                     </span>
                   )}
                 </MobileRowText>
-                {isOpen && r.st === "req" && (
+                {inFlight !== undefined && (
+                  <span className="flex-none">
+                    <UploadRing fraction={inFlight} caption="Uploading" />
+                  </span>
+                )}
+                {inFlight === undefined && isOpen && r.st === "req" && (
                   <button
                     type="button"
                     aria-label={`Upload… ${r.title}`}
                     onClick={() => {
-                      binder.choose(r.id);
+                      choose(r.id);
                     }}
                     className={cn("inline-flex h-[44px] flex-none items-center", PRESS)}
                   >
@@ -676,6 +717,7 @@ export function RequestMobile({ binder, dropHint, openOnly }: RequestMobileProps
                   </button>
                 )}
                 {openOnly !== undefined &&
+                  inFlight === undefined &&
                   isOpen &&
                   r.st === "req" &&
                   props.onOpen !== undefined && (
@@ -685,7 +727,7 @@ export function RequestMobile({ binder, dropHint, openOnly }: RequestMobileProps
                       onClick={() => {
                         props.onOpen?.(r.id);
                       }}
-                      className="inline-flex h-[44px] flex-none items-center text-dense text-ink-2"
+                      className="inline-flex h-[44px] min-w-[44px] flex-none items-center justify-center text-dense text-ink-2"
                     >
                       Ignore
                     </button>

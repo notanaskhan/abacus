@@ -1,5 +1,5 @@
-"""T-02-T01 (TASK-2116; SPEC-502 AC-4): the tax-returns v1 stub on the wire
-(`docs/contracts/tax-returns.md`)."""
+"""T-02-T01 (TASK-2116; SPEC-502 AC-4): the tax-returns v1 contract on the wire
+(`docs/contracts/tax-returns.md`); the board's routes are live since T-02-T09."""
 
 from __future__ import annotations
 
@@ -30,13 +30,17 @@ ROUTES = [
 ]
 
 
+# Built: T-02-T09 serves the board (rows, tiles, bulk assignment); the rest wait for T-02-T13.
+LIVE = {"/v1/tax-returns", "/v1/tax-returns/summary", "/v1/tax-returns:bulk-assign"}
+
+
 @pytest.mark.parametrize(("method", "path", "action"), ROUTES)
-def test_ac4_every_route_declares_its_action_and_is_a_stub(
+def test_ac4_every_route_declares_its_action_and_is_a_stub_until_built(
     method: str, path: str, action: str
 ) -> None:
     op = PATHS[path][method]
     assert op["x-abacus-action"] == action
-    assert "501" in cast(Json, op["responses"])
+    assert ("501" in cast(Json, op["responses"])) is (path not in LIVE)
 
 
 def test_ac4_t02_declares_no_final_approval_route() -> None:

@@ -3,6 +3,8 @@
 // The few strings no artboard draws are marked, with their decision.
 
 export const COPY = {
+  // P-04-T42: opens the screening's pending proposal in SHL-10 (`?ov=approve:<ref>`).
+  reviewProposal: "Review…",
   canvas: {
     title: "Source Documents",
     add: "+ Add",

@@ -67,6 +67,8 @@ export interface PortalLayoutProps {
   onMoreChange?: (open: boolean) => void;
   /** Mobile: hold the More sheet open for a specimen. */
   moreForceState?: "open";
+  /** Mobile: a sheet over the whole phone (TPL-19's upload action sheet; F-06-T11). */
+  overlay?: ReactNode;
   /** Presentation only (the gallery): a 1400 window, or a 390 phone, on the presentation ground. */
   frame?: boolean;
   /** A fixed frame height in px, framed only (860 for the window, 844 for the phone). */
@@ -134,6 +136,7 @@ function MobileFrame({
   moreOpen,
   onMoreChange,
   moreForceState,
+  overlay,
   frame = false,
   height,
   className,
@@ -185,6 +188,7 @@ function MobileFrame({
           {...(moreForceState === undefined ? {} : { forceState: moreForceState })}
         />
       )}
+      {overlay}
     </div>
   );
   if (!frame) return phone;

@@ -25,10 +25,12 @@ from pydantic import BaseModel, ConfigDict, Field
 from abacus.kernel import listing
 from abacus.kernel._statuses import PortalIntakeUploadStatus
 from abacus.kernel.classification import classified
+from abacus.kernel.errors import NotFound
 from abacus.kernel.listing import ListPage
 from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.communications.api import portal_intake
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_member
+from abacus.modules.portal.settings import upload_something_else
 
 Member = Annotated[AuthContext, Depends(current_member)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -111,7 +113,10 @@ def _upload_out(u: portal_intake.IntakeBatch) -> IntakeUploadOut:
 async def create_intake_upload_route(
     body: IntakeUploadIn, ctx: Member, idempotency_key: IdempotencyKey
 ) -> IntakeUploadOut:
-    """POR-03 "Upload something else": the batch (N-01-T14)."""
+    """POR-03 "Upload something else": the batch (N-01-T14). R-01-T33: 404 while the firm has
+    not published the toggle on (as if the route were absent)."""
+    if not await upload_something_else(ctx.tenant):
+        raise NotFound("portal intake")
 
     async def run() -> tuple[int, dict[str, object]]:
         made = await portal_intake.create_upload(

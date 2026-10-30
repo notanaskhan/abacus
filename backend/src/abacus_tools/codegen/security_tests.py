@@ -77,6 +77,8 @@ RESERVED_VARIANTS = (
 )
 # K-02-T01: the owner of a firm standard, a current partner, or not; or no facts at all.
 OWNER_VARIANTS = (("owner", "allow"), ("not_owner", "deny"), ("no_facts", "deny"))
+# T-01-T11 (C19): every data subject consented, one not, or no subjects at all (fail closed).
+CONSENT_VARIANTS = (("consented", "allow"), ("not_consented", "deny"), ("no_subjects", "deny"))
 # The derived partner cell (DEC-132), as `identity.authz` spells it: the only role an
 # `owner_of_target` row allows, so the condition's cases are generated for it too (K-02-T01).
 FIRM_PARTNER = "firm_partner"
@@ -118,6 +120,8 @@ def expected(rule: Rule, role: str) -> str:
         return "deny"
     if rule.not_preparer_of_target or rule.reserved_role or rule.owner_of_target:
         return "deny"  # P-04-T15, K-02-T01: no target facts in the harness (fail closed)
+    if rule.consent:
+        return "deny"  # T-01-T11: no data subjects in the harness (fail closed)
     return "allow"
 
 
@@ -139,12 +143,19 @@ def condition_cases(rules: dict[str, Rule]) -> list[tuple[str, str, str, str]]:
     """Allow and deny for each target condition, for every role its row would otherwise allow."""
     cases: list[tuple[str, str, str, str]] = []
     for action, rule in sorted(rules.items()):
-        if not (rule.not_preparer_of_target or rule.reserved_role or rule.owner_of_target):
+        targeted = rule.not_preparer_of_target or rule.reserved_role or rule.owner_of_target
+        if not (targeted or rule.consent):
             continue
         others = replace(
-            rule, not_preparer_of_target=False, reserved_role=False, owner_of_target=False
+            rule,
+            not_preparer_of_target=False,
+            reserved_role=False,
+            owner_of_target=False,
+            consent=frozenset(),
         )
-        if rule.owner_of_target:
+        if rule.consent and not targeted:
+            variants = CONSENT_VARIANTS
+        elif rule.owner_of_target:
             variants = OWNER_VARIANTS
         elif rule.not_preparer_of_target:
             variants = PREPARER_VARIANTS

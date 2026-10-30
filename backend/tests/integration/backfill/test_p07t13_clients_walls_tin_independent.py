@@ -47,6 +47,7 @@ from abacus.modules.identity.context import (
     _ISSUER,  # pyright: ignore[reportPrivateUsage] -- a test-only agent principal
 )
 from abacus.modules.organisations import slots
+from abacus.modules.organisations import tin as tin_module
 from abacus.modules.organisations.api import (
     NewRelationship,
     OverviewItem,
@@ -635,8 +636,10 @@ async def test_inv1_the_agent_and_the_system_never_reveal_read_or_edit(net: Net)
 
 @pytest.mark.parametrize(("raw", "kind"), [(SSN, "ssn"), (ITIN, "itin")])
 async def test_ac9_an_ssn_or_itin_on_a_real_firm_answers_422(
-    net: Net, raw: str, kind: str
+    net: Net, raw: str, kind: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    # Before C19's gate is registered (T-01-T12 lifts the refusal once it is).
+    monkeypatch.setattr(tin_module, "_c19_registered", lambda: False)
     w = await _world(net)
     with pytest.raises(TinKindNotAllowed) as refused:
         await w.seal(w.ridgeline, raw, kind)

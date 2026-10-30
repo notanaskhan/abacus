@@ -98,6 +98,7 @@ from abacus.modules.identity.repository import (
     service_line_policies,
     walled_clients,
 )
+from abacus.modules.identity.slots import consent_given
 
 MFA_RECENT = timedelta(minutes=15)
 # Ethical walls (ADR-026; SPEC-002) are enforced below, before roles: the API may start in
@@ -242,6 +243,8 @@ class TargetFacts:
     reserved_user_id: UUID | None = None
     # K-02-T01 (DEC-1150): the named owner of a firm standard, for `owner_of_target`.
     owner_user_id: UUID | None = None
+    # T-01-T11 (C19): the client entities whose §7216 consents a `consent` condition reads.
+    consent_subjects: frozenset[UUID] | None = None
 
 
 @dataclass(frozen=True)
@@ -752,6 +755,7 @@ def has_conditions(rule: Rule) -> bool:
         or rule.not_preparer_of_target
         or rule.reserved_role
         or rule.owner_of_target
+        or bool(rule.consent)
     )
 
 
@@ -810,6 +814,9 @@ async def _condition_facts(
     gates: dict[str, bool] | None = None
     if rule.gates_met and resource.engagement_id and LOOKUPS.gates:
         gates = await LOOKUPS.gates(ctx.tenant, resource.engagement_id, rule.gates_met)
+    consents: frozenset[str] | None = None
+    if rule.consent:
+        consents = await _consents_held(ctx, resource, rule.consent)
     return ConditionFacts(
         level=level,
         offshore=offshore,
@@ -821,7 +828,28 @@ async def _condition_facts(
         preparer=preparer,
         reserved_holder=reserved_holder,
         owner=owner,
+        consents=consents,
     )
+
+
+async def _consents_held(
+    ctx: Actor, resource: Resource, purposes: frozenset[str]
+) -> frozenset[str] | None:
+    """T-01-T11: the purposes every data subject of the target holds now; None without
+    subjects (fail closed). Read fresh every time: a revocation binds the next check."""
+    target = resource.target
+    if target is None or not target.consent_subjects:
+        return None
+    at = system_now()
+    held: set[str] = set()
+    for purpose in sorted(purposes):
+        given = [
+            await consent_given(ctx.tenant, entity, purpose, at)
+            for entity in sorted(target.consent_subjects)
+        ]
+        if all(given):
+            held.add(purpose)
+    return frozenset(held)
 
 
 # The function a `signer`-reserved card needs on its work item; the other reserved roles are

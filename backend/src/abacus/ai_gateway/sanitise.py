@@ -5,6 +5,11 @@ can still carry out of the page, so every link whose host isn't in `output_link_
 (empty by default, SPEC-006 Q1) becomes `[link removed]`: bare URLs, `www.` hosts, markdown
 links and images, and HTML anchors and images. An allowed link stays as plain text. Nothing is
 ever fetched. Other markup is left alone: it is inert as plain text.
+
+TIN masking (T-01-T11; C19 story 2.3): an unmasked SSN, ITIN or EIN form in model text becomes
+its mask (`•••-••-1234`) and the hit is counted (`abacus.ai.tin_masked`), so a full TIN is
+never stored or shown from model output. Input is stricter: a TIN in the assembled context
+refuses the call before any route (`pii_in_context`, ADR-167 §2), so agents never receive one.
 """
 
 from __future__ import annotations
@@ -13,8 +18,13 @@ import re
 from urllib.parse import urlsplit
 
 from abacus.kernel.config import settings
+from abacus.kernel.metrics import meter
+from abacus.kernel.tin_patterns import find_tins, scrub_tins
 
 REMOVED = "[link removed]"
+_masked = meter(__name__).create_counter(
+    "abacus.ai.tin_masked", description="TIN forms masked in model text (T-01-T11)"
+)
 _MD_LINK = re.compile(r"!?\[[^\]\n]{0,500}\]\(\s*([^)\s]{1,2000})[^)]{0,500}\)")
 _HTML_LINK = re.compile(
     r"<\s*(?:a|img|iframe|script|link|source)\b[^>]{0,2000}?(?:href|src)\s*=\s*['\"]?([^'\"\s>]{1,2000})[^>]{0,2000}>",
@@ -39,8 +49,19 @@ def _allowed(link: str) -> bool:
     return bool(host) and any(host == a or host.endswith("." + a) for a in allow)
 
 
+def mask_tins(text: str) -> str:
+    """`text` with every unmasked TIN form masked; each hit counted, never logged."""
+    hits = len(find_tins(text))
+    if not hits:
+        return text
+    _masked.add(hits)
+    return scrub_tins(text)
+
+
 def sanitise_text(text: str) -> str:
-    """The text with every non-allowlisted link replaced by `[link removed]`."""
+    """The text with every non-allowlisted link replaced by `[link removed]` and every TIN form
+    masked."""
+    text = mask_tins(text)
 
     def markup(match: re.Match[str]) -> str:
         return match.group(0) if _allowed(match.group(1)) else REMOVED
