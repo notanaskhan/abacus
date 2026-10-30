@@ -4,6 +4,8 @@
 #   0  auth and code rate: 30 requests per 5 minutes per IP on the auth prefixes; the 31st is
 #      blocked with 429 (T56). Always block: it protects sign-in codes from guessing.
 #   1  general rate: 2,000 per 5 minutes per IP, block.
+#   2  provider webhook rate: 300 per 5 minutes per IP on /v1/webhooks/ (ADR-152, DEC-1281), block
+#      with 429, which the provider retries; the receiver also caps hints per envelope.
 #  10  AmazonIpReputationList          } count or block (managed_rules_action): count for two
 #  20  CommonRuleSet                   } weeks on a new environment, then block. The body-size
 #  21  body size outside upload routes } rule of the common set always counts; rule 21 blocks
@@ -112,6 +114,50 @@ resource "aws_wafv2_web_acl" "this" {
     visibility_config {
       cloudwatch_metrics_enabled = true
       metric_name                = "${var.name}-general-rate"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  rule {
+    name     = "provider-webhook-rate"
+    priority = 2
+
+    action {
+      block {
+        custom_response {
+          response_code            = 429
+          custom_response_body_key = "rate_limited"
+        }
+      }
+    }
+
+    statement {
+      rate_based_statement {
+        limit                 = var.webhook_rate_limit
+        evaluation_window_sec = var.rate_window_seconds
+        aggregate_key_type    = "IP"
+
+        scope_down_statement {
+          byte_match_statement {
+            search_string         = "/v1/webhooks/"
+            positional_constraint = "STARTS_WITH"
+
+            field_to_match {
+              uri_path {}
+            }
+
+            text_transformation {
+              priority = 0
+              type     = "LOWERCASE"
+            }
+          }
+        }
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "${var.name}-provider-webhook-rate"
       sampled_requests_enabled   = true
     }
   }

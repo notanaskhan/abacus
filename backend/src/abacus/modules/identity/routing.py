@@ -87,6 +87,11 @@ PRE_SESSION_PATHS: Final = frozenset(
 # carry this marker.
 PORTAL_PUBLIC: Final = "portal_public"
 PORTAL_PUBLIC_PATHS: Final = frozenset({"/v1/portal/branding", "/v1/portal/branding/logo"})
+# ADR-152 (accepted with its amendment 2026-10-30, DEC-1281; on the ROUTE-001 exception list): an
+# e-signature provider's webhook. No principal: the receiver verifies the provider's signature
+# with the firm's install key before anything else and treats the body as a hint only (ADR-041).
+PROVIDER_WEBHOOK: Final = "provider_webhook"
+PROVIDER_WEBHOOK_PATHS: Final = frozenset({"/v1/webhooks/docuseal/{tenant_id}/{install_id}"})
 # SPEC-013 (Q3): a firm member acting only on their own rows (their notifications). No firm matrix
 # action applies; the service filters to the caller, and support contexts are refused.
 OWN: Final = "own"
@@ -180,6 +185,10 @@ async def pre_session() -> None:
 
 async def portal_public() -> None:
     """No principal (P-08-T05): the branding routes answer Public fields to anyone."""
+
+
+async def provider_webhook() -> None:
+    """No principal (ADR-152, DEC-1281): the receiver authenticates the provider's signature."""
 
 
 async def current_signed_in(
@@ -348,7 +357,8 @@ class AbacusRoute(APIRoute):
             with recording_checks() as checked:
                 response = await handler(request)
             if (
-                action not in (SELF, STAFF, OWN, IDENTITY, PRE_SESSION, PORTAL_PUBLIC)
+                action
+                not in (SELF, STAFF, OWN, IDENTITY, PRE_SESSION, PORTAL_PUBLIC, PROVIDER_WEBHOOK)
                 and action not in checked
                 and response.status_code < 400
             ):
@@ -376,13 +386,15 @@ class AbacusRouter(APIRouter):
         status_code: int | None = None,
         errors: Sequence[int] = (),
     ) -> None:
-        markers = (SELF, STAFF, OWN, IDENTITY, PRE_SESSION, PORTAL_PUBLIC)
+        markers = (SELF, STAFF, OWN, IDENTITY, PRE_SESSION, PORTAL_PUBLIC, PROVIDER_WEBHOOK)
         if action not in markers and action not in RULES:
             raise ValueError(f"route {path}: action {action!r} is not in the permission matrix")
         if action == PRE_SESSION and self.prefix + path not in PRE_SESSION_PATHS:
             raise ValueError(f"route {path}: only the sign-in routes are pre-session (ADR-165)")
         if action == PORTAL_PUBLIC and self.prefix + path not in PORTAL_PUBLIC_PATHS:
             raise ValueError(f"route {path}: only portal branding is public (ADR-163)")
+        if action == PROVIDER_WEBHOOK and self.prefix + path not in PROVIDER_WEBHOOK_PATHS:
+            raise ValueError(f"route {path}: only the listed provider webhooks (ADR-152)")
         if response_model is None:
             raise ValueError(f"route {path}: a response model is required")
         auth = {
@@ -392,6 +404,7 @@ class AbacusRouter(APIRouter):
             IDENTITY: current_invitee,
             PRE_SESSION: pre_session,
             PORTAL_PUBLIC: portal_public,
+            PROVIDER_WEBHOOK: provider_webhook,
         }.get(action, current_context)
         dependencies = [Depends(auth)]
         writes = any(m not in _READS for m in methods)
