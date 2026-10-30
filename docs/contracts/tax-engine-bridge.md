@@ -33,3 +33,14 @@ not_yet_exported · ready_for_export · exporting · synced · out_of_sync · im
 
 ## 5. Events
 Outbox: `tax_return.approved`, `engine_sync.exported`, `engine_sync.failed`, `engine_sync.imported`, `engine_import.pending_approval` (identifiers and counts only). Audit: `return.final_approved`, `engine_export.generated`, `.downloaded`, `.marked_exported`, `engine_import.uploaded`, `.approved`, `.rejected`, `engine.diagnostic_received`, `integration.settings_updated`, `.mapping_updated`, `.tested`.
+
+## 6. Engine files (file mode; T-01-T22)
+What staff carry between Accrued and CCH Axcess. `abacus_tools/fakes/cch_axcess.py` emits these from Accrued's export in synthetic environments; `conformance(name, bytes)` is the check the adapter's suite runs on the fake's files and on the partner-validated samples (F-09-T120) once filed. Engine return id: `<tax-year><type>:<client-code>:V<n>` (`2025I:FeldJ:V3`).
+
+| File | Format | Columns or content |
+|---|---|---|
+| Export workbook (Accrued → engine; built by T-01-T25) | `.xlsx` | Sheet `Return`: key/value rows `return_id`, `tax_year`, `form`. Sheet `Fields`: `field_key`, `form`, `line`, `value` |
+| Values (`values`) | CSV, UTF-8, `\n` | `return_id, version, field_key, form, line, value`; `version` reads `V<n>` |
+| Diagnostics (`diagnostics`) | CSV | `return_id, version, severity, code, form, field_key, message`; severity `error`, `warning` or `informational` |
+| PDFs (`pdfs`) | PDF | One file per kind: client copy, Form 8879, NY TR-579-IT, next year's 1040-ES and IT-2105 vouchers, K-1; named `<engine id with _>_<kind>.pdf` |
+| E-file status report (`acks`) | CSV | `return_id, jurisdiction, submission_last4, status, status_at, reject_code, reject_text`; status `accepted` or `rejected`, a rejection carries its code; the submission id is never stored beyond its last four |
