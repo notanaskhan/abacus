@@ -20,10 +20,11 @@ import { COPY } from "./copy";
 // with each kind of variance cell; c: the agent building the schedule (Pending pills, skeleton
 // rows, the running row). The board's own data (canvas `#t6`, `t6data` and `t6tally`), as T10
 // keeps its own (DECISIONS.md, F-06-T14): TPL-06 (F-06-T20) draws the seeded capital accounts.
-// d (signed off) is F-06-T20's and e (calculation) F-06-T19's. Registered for
-// /components/screens/T6?st=a|b|c. Every figure is a server value in this fixture (ADR-050).
+// d (signed off: "✓ OB", "✓ DR", P before R) is F-06-T20's and e (calculation) F-06-T19's.
+// Registered for /components/screens/T6?st=a|b|c|d. Every figure is a server value in this
+// fixture (ADR-050).
 
-export const T6_STATES = ["a", "b", "c"] as const;
+export const T6_STATES = ["a", "b", "c", "d"] as const;
 export type T6State = (typeof T6_STATES)[number];
 
 const RIDGELINE = "Ridgeline Property Partners, LP";
@@ -193,7 +194,14 @@ const VIEW_OF: Record<T6State, string> = {
   a: COPY.views.byPartner,
   b: COPY.views.byMovement,
   c: COPY.views.byPartner,
+  d: COPY.views.byPartner,
 };
+
+/** T6d: Olivia Brandt prepared (L1), Daniel Reyes reviewed (L2); P before R. */
+export const T6_SIGN_OFFS = [
+  { level: "L2", initials: "DR", name: "Daniel Reyes", when: "Sep 14, 9:40 AM" },
+  { level: "L1", initials: "OB", name: "Olivia Brandt", when: "Sep 10, 4:12 PM" },
+] as const;
 
 export function t6Workbook(state: T6State, view: string = VIEW_OF[state]): WorkbookVM {
   const byMovement = view === COPY.views.byMovement && state !== "c";
@@ -221,15 +229,21 @@ export function t6Workbook(state: T6State, view: string = VIEW_OF[state]): Workb
       },
     ],
     ...(state === "c" ? { building: { label: COPY.running } } : {}),
+    ...(state === "d" ? { signOffs: T6_SIGN_OFFS } : {}),
   };
 }
+
+export const SIGN_OFF_TARGET = "workpaper:ridgeline-2025-capital-accounts";
 
 export function T6Board({
   state,
   onOpenIssue,
+  onOpenSignOff,
 }: {
   state: T6State;
   onOpenIssue?: (issue: string) => void;
+  /** SHL-12 (P-04): the chips and Sign off… only hand off; nothing here signs. */
+  onOpenSignOff?: (target: string, level?: string) => void;
 }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
   const [view, setView] = useState(VIEW_OF[state]);
@@ -244,7 +258,18 @@ export function T6Board({
         signOff: COPY.signOff,
         views: COPY.viewsLabel,
         scroller: COPY.scroller,
+        signOffChips: {
+          label: COPY.signOffs,
+          changedAfter: COPY.changedAfterSignOff,
+          open: COPY.openSignOff,
+        },
       }}
+      {...(state === "d"
+        ? {
+            signOff: { actor: { kind: "human", name: "Daniel Reyes" }, target: SIGN_OFF_TARGET },
+            onOpenSignOff: onOpenSignOff ?? (() => undefined),
+          }
+        : {})}
       toolbar={specimenToolbar(firm, "Tax Returns")}
       record={
         <RecordHeader
@@ -278,9 +303,20 @@ export function T6Board({
 export function T6Artboard({ params }: { params: FixtureParams }): JSX.Element {
   const state: T6State = T6_STATES.find((s) => s === params.st) ?? "a";
   const [opened, setOpened] = useState<string | null>(null);
+  const [signOff, setSignOff] = useState<string | null>(null);
   return (
-    <div data-artboard={state} {...(opened === null ? {} : { "data-opened-issue": opened })}>
-      <T6Board state={state} onOpenIssue={setOpened} />
+    <div
+      data-artboard={state}
+      {...(opened === null ? {} : { "data-opened-issue": opened })}
+      {...(signOff === null ? {} : { "data-opened-sign-off": signOff })}
+    >
+      <T6Board
+        state={state}
+        onOpenIssue={setOpened}
+        onOpenSignOff={(target, level) => {
+          setSignOff(`${target}:${level ?? ""}`);
+        }}
+      />
     </div>
   );
 }

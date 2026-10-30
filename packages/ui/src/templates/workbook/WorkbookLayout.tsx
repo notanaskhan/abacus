@@ -11,6 +11,7 @@ import { AppShell } from "../../layout/app-shell";
 import type { ToolbarProps } from "../../layout/toolbar";
 import { useMotion } from "../../motion";
 import { cn } from "../../cn";
+import { SignOffSlotChips } from "../../signoff";
 import type {
   TablePayload,
   WorkbookCopy,
@@ -383,6 +384,19 @@ export function WorkbookLayout({
         )}
       </>
     );
+  // F-06-T20 (C-25): who signed, P before R; a chip only hands off to SHL-12.
+  const chips =
+    signOff === undefined ||
+    onOpenSignOff === undefined ||
+    copy.signOffChips === undefined ||
+    workbook.signOffs === undefined ? null : (
+      <SignOffSlotChips
+        target={signOff.target}
+        slots={workbook.signOffs}
+        copy={copy.signOffChips}
+        onOpenSignOff={onOpenSignOff}
+      />
+    );
 
   return (
     <AppShell
@@ -411,6 +425,7 @@ export function WorkbookLayout({
             onOpenInExcel={onOpenInExcel}
             onDownload={onDownload}
           >
+            {chips}
             {signOffControl}
           </ControlBar>
           <div data-workbook="tally" className="h-[52px] flex-none px-[12px]">

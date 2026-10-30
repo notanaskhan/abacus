@@ -7,6 +7,7 @@
 import type { Opt } from "../../components/tabs";
 import type { TableColumn, TableRow } from "../../data/types";
 import type { TallyItem } from "../../data/tally-strip";
+import type { SignOffChipsCopy } from "../../signoff";
 
 /** A tally card. `issue` is the issue the card's difference is linked to ("2"): the card gains an
  * "Issue 2" link that calls `onOpenIssue` with it (Story 5.2). */
@@ -78,4 +79,6 @@ export interface WorkbookCopy {
   views: string;
   /** The pane scroller's accessible name ("Partners"). */
   scroller: string;
+  /** The sign-off chips' words (F-06-T20); needed when `WorkbookVM.signOffs` has slots. */
+  signOffChips?: SignOffChipsCopy;
 }
