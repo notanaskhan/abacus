@@ -10137,6 +10137,8 @@ export const returnsSummary = <ThrowOnError extends boolean = false>(options?: O
 
 /**
  * Return Record Route
+ *
+ * TAX-02's record: the row, the engine id, the policy pin, the tabs (T-02-T13).
  */
 export const returnRecord = <ThrowOnError extends boolean = false>(options: Options<ReturnRecordData, ThrowOnError>): RequestResult<ReturnRecordResponses, ReturnRecordErrors, ThrowOnError> => (options.client ?? client).get<ReturnRecordResponses, ReturnRecordErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -10337,6 +10339,9 @@ export const shareK1 = <ThrowOnError extends boolean = false>(options: Options<S
 
 /**
  * Return Overview Route
+ *
+ * TAX-02's overview (T-02-T13): metadata for every reader of the return; the engine figures
+ * only with `tax_return.read` (absent, not masked, otherwise).
  */
 export const returnOverview = <ThrowOnError extends boolean = false>(options: Options<ReturnOverviewData, ThrowOnError>): RequestResult<ReturnOverviewResponses, ReturnOverviewErrors, ThrowOnError> => (options.client ?? client).get<ReturnOverviewResponses, ReturnOverviewErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -10346,6 +10351,9 @@ export const returnOverview = <ThrowOnError extends boolean = false>(options: Op
 
 /**
  * Transition Route
+ *
+ * `start_preparation` or `start_review` at the version seen (T-02-T13). 409
+ * `transition_refused`, `stale_version`.
  */
 export const transition = <ThrowOnError extends boolean = false>(options: Options<TransitionData, ThrowOnError>): RequestResult<TransitionResponses, TransitionErrors, ThrowOnError> => (options.client ?? client).post<TransitionResponses, TransitionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

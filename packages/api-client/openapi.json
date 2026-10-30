@@ -175771,6 +175771,7 @@
     },
     "/v1/tax-returns/{return_id}": {
       "get": {
+        "description": "TAX-02's record: the row, the engine id, the policy pin, the tabs (T-02-T13).",
         "operationId": "return_record",
         "parameters": [
           {
@@ -175866,16 +175867,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Return Record Route",
@@ -178120,6 +178111,7 @@
     },
     "/v1/tax-returns/{return_id}/overview": {
       "get": {
+        "description": "TAX-02's overview (T-02-T13): metadata for every reader of the return; the engine figures\nonly with `tax_return.read` (absent, not masked, otherwise).",
         "operationId": "return_overview",
         "parameters": [
           {
@@ -178215,27 +178207,18 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Return Overview Route",
         "tags": [
           "tax-returns"
         ],
-        "x-abacus-action": "tax_return.read"
+        "x-abacus-action": "tax_return.read_metadata"
       }
     },
     "/v1/tax-returns/{return_id}/transitions": {
       "post": {
+        "description": "`start_preparation` or `start_review` at the version seen (T-02-T13). 409\n`transition_refused`, `stale_version`.",
         "operationId": "transition",
         "parameters": [
           {
@@ -178351,16 +178334,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Transition Route",

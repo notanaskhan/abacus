@@ -478,7 +478,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/tax-returns/{return_id}/intake", "tax_return.read"),
     ("GET", "/v1/tax-returns/{return_id}/k1-packages", "k1_package.read"),
     ("GET", "/v1/tax-returns/{return_id}/k1-packages/release-check", "k1_package.read"),
-    ("GET", "/v1/tax-returns/{return_id}/overview", "tax_return.read"),
+    ("GET", "/v1/tax-returns/{return_id}/overview", "tax_return.read_metadata"),
     ("GET", "/v1/walls", "wall.list"),
     ("GET", "/v1/walls/preview", "wall.create"),
     ("GET", "/v1/walls/{wall_id}/events", "wall.list"),
