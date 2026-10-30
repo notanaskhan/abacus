@@ -11,7 +11,7 @@ rehearse_by: 2027-08-02
 
 | Field | Value |
 |---|---|
-| Owner | builder (written by Q-04: Q-04-T055 the operator half; Q-04-T056 adds the partner-facing section) |
+| Owner | builder (written by Q-04: Q-04-T055 the operator half, Q-04-T056 the partner-facing half) |
 | Severity range | n/a: a readiness procedure, run before each window; a failure found here is a SEV3 on the owning epic, or a SEV2 when it would break a live path inside the window |
 | Linked from | the R4 dossier (`docs/ops/go-live/<pilot-code>.md`, Operations, `operations-5`), `make go-live-check LEVEL=season` (`season.runbooks_rehearsed`), `docs/ops/release-windows.md` |
 | SLO affected | all, for the window it protects |
@@ -166,6 +166,76 @@ At each season retro (Q-04-T087/T088 and their successors), in writing:
 - Every in-window hotfix: its reason, its recurrence test, and the layer that missed it (Q-03's
   escaped-defect rule).
 - Whether the partner notice answered firms' questions; update the partner section, both approving.
+
+## Partner-facing section (Q-04-T056)
+
+This section is what firms are told. It is reused **unchanged** in every window notice (Q-04-T064
+and its successors): change it here first, both founders approving, then send. It names no firm,
+person, price or contact; the notice adds the firm's pilot-desk address from the vault and the dates
+from `docs/ops/release-windows.md` §6.
+
+### The window notice
+
+> **Subject:** Our change window for <window dates>
+>
+> From <window start> to <window end>, we keep the platform steady for your busiest weeks.
+>
+> **What changes, and when.** We release changes only on Tuesday evenings at 7:00 PM CT, and only
+> fixes for problems you or we have found ("defect-only"). New features stay off until the window
+> ends, unless you asked for one and agreed a date with us in writing.
+>
+> **Quiet weeks.** In the weeks of your filing deadlines (<deadline weeks>) we release nothing and
+> turn nothing on or off. In the eight days before each extended deadline (<mini-freeze dates>) we
+> change nothing that you use day to day.
+>
+> **If something breaks.** A serious problem (you cannot work, or you think another firm's data could
+> be involved) gets an answer within 15 minutes at any hour; anything else within 2 business hours.
+> If we must fix something urgently, we tell you before we do and again when it is done.
+>
+> **Getting help.** Write to your pilot desk at any time. Office hours run every Tuesday and Thursday,
+> 11:00 AM to 12:00 PM CT, through the window, and every weekday in the quiet weeks.
+>
+> Please reply to confirm you received this notice.
+
+### Office hours
+
+| When | Hours (CT) | Who |
+|---|---|---|
+| Every Tuesday and Thursday inside a live window | 11:00 AM–12:00 PM | AY hosts; N joins in the window's first week and for any open SEV2 |
+| Every weekday of a deadline week | 11:00 AM–12:00 PM | AY hosts; N on call |
+| Shared inbox in a deadline week | 7:00 AM–8:00 PM, Monday to Friday | AY first response; N for SEV1/2 |
+
+Outside these hours the shared inbox is answered within the service levels in
+`docs/ops/pilot/README.md` (2 business hours in season), and SEV1 is answered 24x7.
+
+### Escalation path
+
+1. **The shared inbox** (the pilot desk): every request, labelled with screen, pilot code and
+   severity. First response within 2 business hours in season (AY).
+2. **SEV2** (a major feature or a provider is down): the on-call primary acknowledges within 15
+   minutes in working hours; unacknowledged, the named backup is paged.
+3. **SEV1** (you cannot work in a deadline week, or you suspect another firm's data is involved):
+   both founders are paged at once, at any hour; the status page is updated within 30 minutes.
+4. **If an Accrued incident touched your firm's data:** we tell you within 72 hours, with an entry in
+   your incident register (ADM-06), so your own clock starts with facts (RB-27).
+
+### What "defect-only" means for your firm
+
+- We fix things that are broken: a wrong figure, an error, a screen that will not load, a slow page.
+- We do not add features, move buttons, change wording or turn on agent capabilities you have not
+  asked for inside the window.
+- A fix that needs a database change waits for a Tuesday evening and never runs in a quiet week,
+  unless your work is stopped and you ask for it.
+- Anything we planned that is not finished by the window stays off until the window ends.
+- Your engagement records stay where they are: your firm's own systems remain the record until a named
+  person at your firm confirms otherwise.
+
+### Approval
+
+| Founder | Approved on |
+|---|---|
+| notanaskhan | |
+| ayushkbhatia | |
 
 ## Rehearsal log
 | Date | Kind (drill, staging walk-through, tabletop) | Result | Changes made |
