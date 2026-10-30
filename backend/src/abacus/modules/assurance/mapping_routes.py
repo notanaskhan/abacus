@@ -91,7 +91,9 @@ class MappedAccountOut(BaseModel):
     final: Annotated[Decimal | None, classified("confidential")]
     boy: Annotated[Decimal | None, classified("confidential")]
     fs_line_id: Annotated[UUID | None, classified("internal")]
-    method: Annotated[Literal["manual", "number_range"] | None, classified("internal")]
+    method: Annotated[
+        Literal["manual", "prior_year", "number_range"] | None, classified("internal")
+    ]
     edited_by: Annotated[UUID | None, classified("internal")]
     edited_at: Annotated[datetime | None, classified("internal")]
 
@@ -106,6 +108,10 @@ class MappingOut(BaseModel):
     mapped: Annotated[int, classified("internal")]
     unmapped: Annotated[int, classified("internal")]
     manual: Annotated[int, classified("internal")]
+    # A-03-T08 tallies, computed on read.
+    prior_year: Annotated[int, classified("internal")] = 0
+    number_range: Annotated[int, classified("internal")] = 0
+    tb_balanced: Annotated[bool, classified("internal")] = True
     content_hash: Annotated[str | None, classified("internal")]
     published_versions: Annotated[list[GroupingVersionOut], classified("internal")]
 

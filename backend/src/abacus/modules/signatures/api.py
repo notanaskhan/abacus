@@ -23,7 +23,7 @@ from abacus.modules.identity.api import AbacusRouter, AuthContext
 from abacus.modules.signatures.activities import ACTIVITIES as ENVELOPE_ACTIVITIES
 from abacus.modules.signatures.audit_targets import CLIENT_KINDS, audit_clients
 from abacus.modules.signatures.contract import policies_router, portal_router, router
-from abacus.modules.signatures.docusign_firm import firm_provider, register_docusign_install
+from abacus.modules.signatures.docuseal_firm import firm_provider, register_esign_install
 from abacus.modules.signatures.events import EnvelopeSendApproved
 from abacus.modules.signatures.hub import seal_ip
 from abacus.modules.signatures.provider import (
@@ -139,7 +139,7 @@ WORKFLOWS: dict[type, WorkClass] = {
 register_work_classes(WORKFLOWS)
 ACTIVITIES: tuple[object, ...] = (*ENVELOPE_ACTIVITIES, *STATUS_POLL_ACTIVITIES)
 SCHEDULES = STATUS_POLL_SCHEDULES
-# N-02-T18: the provider for a firm with no process-wide one is its own DocuSign account, built
+# N-02-T18: the provider for a firm with no process-wide one is its own DocuSeal account, built
 # only when the kill switch, W7 and a connected install allow (ProviderUnavailable otherwise).
 register_firm_provider(firm_provider)
 
@@ -201,10 +201,10 @@ __all__ = [
     "envelope_summary_for",
     "envelope_workflow_id",
     "hint_envelope",
-    "register_docusign_install",
     "create_draft",
     "staged_files",
     "register_envelope_source",
+    "register_esign_install",
     "register_reminder_sender",
     "registered_sources",
     "seal_ip",

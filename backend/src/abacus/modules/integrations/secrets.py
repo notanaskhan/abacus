@@ -83,7 +83,7 @@ async def erase_secret(tx: UnitOfWork, firm_integration_id: UUID) -> bool:
 
 
 async def connected_integration(tenant: TenantContext, catalog_key: str) -> UUID | None:
-    """N-02-T18: the firm's connected install of `catalog_key` (DocuSign's per-firm enablement),
+    """N-02-T18: the firm's connected install of `catalog_key` (DocuSeal's per-firm enablement),
     or None when it has none or it needs attention or was disconnected."""
     async with tenant_session(tenant) as session:
         return await session.scalar(
@@ -93,17 +93,17 @@ async def connected_integration(tenant: TenantContext, catalog_key: str) -> UUID
         )
 
 
-DOCUSIGN_W7: Final = "esignature_envelope_send"
-DOCUSIGN_CATALOG: Final = "docusign"
+ESIGN_W7: Final = "esignature_envelope_send"
+ESIGN_CATALOG: Final = "docuseal"  # ADR-342
 
 
-async def docusign_install_secret(tenant: TenantContext) -> bytes | None:
-    """N-02-T18: the firm's opened DocuSign install secret, only when the W7 capability is enabled
+async def esign_install_secret(tenant: TenantContext) -> bytes | None:
+    """N-02-T18: the firm's opened DocuSeal install secret, only when the W7 capability is enabled
     (v1: never) and the install is connected; for the worker to give signatures (ADR-008)."""
-    entry = write_capability(DOCUSIGN_W7)
+    entry = write_capability(ESIGN_W7)
     if entry is None or not entry.enabled:
         return None
-    install = await connected_integration(tenant, DOCUSIGN_CATALOG)
+    install = await connected_integration(tenant, ESIGN_CATALOG)
     if install is None:
         return None
     return await open_secret(tenant, install)

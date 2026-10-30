@@ -17,7 +17,8 @@ from __future__ import annotations
 import csv
 import hashlib
 import io
-from collections.abc import Sequence
+import re
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
@@ -237,7 +238,7 @@ class MappedAccount:
     final: Decimal | None
     boy: Decimal | None
     fs_line_id: UUID | None
-    method: Literal["manual", "number_range"] | None
+    method: Literal["manual", "prior_year", "number_range"] | None
     edited_by: UUID | None
     edited_at: datetime | None
 
@@ -252,6 +253,11 @@ class MappingView:
     unmapped: int
     manual: int
     content_hash: str
+    # A-03-T08 tallies, computed on read.
+    prior_year: int = 0
+    number_range: int = 0
+    tb_balanced: bool = True
+    fs_line_keys: dict[UUID, str] | None = None
 
 
 @dataclass(frozen=True)
@@ -540,10 +546,41 @@ async def mapping_set_authors(
     )
 
 
+Method = Literal["manual", "prior_year", "number_range"]
+
+
+def resolve_line(
+    code: str,
+    edited: UUID | None,
+    prior: Mapping[str, str],
+    by_key: Mapping[str, UUID],
+    ranges: Sequence[tuple[str, str, UUID]],
+) -> tuple[UUID | None, Method | None]:
+    """One account's FS line and how it was found (A-03-T08): a person's edit, then the prior
+    year's line for the same normalised code, then the number ranges, else unmapped."""
+    if edited is not None:
+        return edited, "manual"
+    key = prior.get(normalised_code(code))
+    if key is not None and key in by_key:
+        return by_key[key], "prior_year"
+    found = rule_line(code, ranges)
+    return (found, "number_range") if found is not None else (None, None)
+
+
+def normalised_code(code: str) -> str:
+    """An account code as the prior-year match compares it: letters and digits, lower case."""
+    return re.sub(r"[^0-9a-z]", "", code.lower())
+
+
 async def mapping_view(
-    tenant: TenantContext, engagement_id: UUID, tb_id: UUID
+    tenant: TenantContext,
+    engagement_id: UUID,
+    tb_id: UUID,
+    prior: Mapping[str, str] | None = None,
 ) -> MappingView | None:
-    """The trial balance's current version mapped: edits first, then the version's ranges."""
+    """The trial balance's current version mapped (A-03-T08): a person's edit first, then the
+    prior year's line for the same normalised code (matched by FS-line key, so a later version
+    of the grouping set still matches), then the version's number ranges, else unmapped."""
     async with tenant_session(tenant) as session:
         found = await mapping_set_for(session, tb_id)
         if found is None:
@@ -554,14 +591,17 @@ async def mapping_view(
     version = next(
         v for v in await grouping_set_versions(tenant) if v.id == found.grouping_set_version_id
     )
+    by_key = {line.key: line.id for g in groupings for line in g.lines}
     accounts: list[MappedAccount] = []
     for line in tb.lines:
         edit = edits.get(line.account_code)
-        if edit is not None and edit.fs_line_id is not None:
-            fs_line, method = edit.fs_line_id, "manual"
-        else:
-            fs_line = rule_line(line.account_code, ranges)
-            method = "number_range" if fs_line is not None else None
+        fs_line, method = resolve_line(
+            line.account_code,
+            edit.fs_line_id if edit is not None else None,
+            prior or {},
+            by_key,
+            ranges,
+        )
         accounts.append(
             MappedAccount(
                 line.account_code,
@@ -587,7 +627,21 @@ async def mapping_view(
         content_hash(
             found.grouping_set_version_id, [(a.account_code, a.fs_line_id) for a in accounts]
         ),
+        sum(1 for a in accounts if a.method == "prior_year"),
+        sum(1 for a in accounts if a.method == "number_range"),
+        sum((a.eoy for a in accounts), Decimal(0)) == 0,
+        {v: k for k, v in by_key.items()},
     )
+
+
+def prior_keys(view: MappingView) -> dict[str, str]:
+    """A finished mapping as the next year's prior: normalised code to FS-line key."""
+    keys = view.fs_line_keys or {}
+    return {
+        normalised_code(a.account_code): keys[a.fs_line_id]
+        for a in view.accounts
+        if a.fs_line_id is not None and a.fs_line_id in keys
+    }
 
 
 async def published_versions(tenant: TenantContext) -> list[VersionView]:
@@ -634,9 +688,13 @@ async def edit_mappings(
 
 
 async def statements_for(
-    tenant: TenantContext, engagement_id: UUID, tb_id: UUID, layer: str
+    tenant: TenantContext,
+    engagement_id: UUID,
+    tb_id: UUID,
+    layer: str,
+    prior: Mapping[str, str] | None = None,
 ) -> Statements | None:
-    found = await mapping_view(tenant, engagement_id, tb_id)
+    found = await mapping_view(tenant, engagement_id, tb_id, prior)
     if found is None:
         return None
     return build_statements(found.groupings, found.accounts, layer)

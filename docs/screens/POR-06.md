@@ -8,7 +8,7 @@
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/POR-06 Sign - Ridgeline engagement letter/` · HANDOFF_VERSION 2026-10-21; DF-11 and DF-12 applied |
 | Epic and tasks | N-02 · contract T05; stub T03; list and review T23; ERSD T24; provider view and return T26; KBA and joint filers T25, T27; dated letters T31; decline T28; download T29; 390 px T43 |
 | Spec and ADRs | SPEC-381 AC-10..AC-12; ADR-149; ADR-146 (portal MFA) |
-| Flags | `signatures.envelopes` (list, review); `signatures.docusign` (signing) |
+| Flags | `signatures.envelopes` (list, review); `signatures.esign_provider` (signing) |
 | Manifest status | planned (portal paths are not in the firm tree, DEC-347); the portal entry mounts `/sign`, `/sign/$envelopeId` and `/sign/$envelopeId/return` since N-02-T26 (fixture data; live with T23) |
 
 ## States
