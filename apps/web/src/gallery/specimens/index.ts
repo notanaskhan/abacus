@@ -4,6 +4,7 @@ import { registerScreen } from "../fixture-mode";
 import { T6Artboard } from "./T6";
 import { T10Artboard } from "./T10";
 import { Tpl01Artboard } from "./TPL-01";
+import { Tpl10Artboard } from "./TPL-10";
 import { Tpl16Artboard } from "./TPL-16";
 import { Tpl19Artboard } from "./TPL-19";
 
@@ -28,6 +29,12 @@ registerScreen("TPL-01", {
 registerScreen("T10", {
   title: "Document on well · Ridgeline return summary",
   Component: T10Artboard,
+});
+
+// F-06-T16: TPL-10, the Ridgeline preparer memo on DocBlocks (a–c) and the ENG-04 letter (d).
+registerScreen("TPL-10", {
+  title: "Document on well · Ridgeline preparer memo",
+  Component: Tpl10Artboard,
 });
 
 // F-06-T18: the T6 template board, a (ties), b (off) and c (building).
