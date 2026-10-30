@@ -1829,6 +1829,12 @@ codes:
     raised_by:
     - abacus.modules.methodology.standards.StandardKeyTaken
     summary: The firm already has a standard with this key.
+  standard_row_missing:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.standards_contract.StandardRowMissing
+    summary: 'The policy version has no row for what was asked (an engagement kind, a tier, a context):
+      a consumer asked a question the firm''s standard does not answer.'
   standards_set_refused:
     status: 422
     raised_by:

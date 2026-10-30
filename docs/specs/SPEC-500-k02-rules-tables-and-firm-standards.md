@@ -82,6 +82,12 @@ Two kinds of versioned, effective-dated rules (K-02 short version): **platform r
 - **AC-36** (K-02-T06) A draft file is JSON, or a CSV or XLSX whose first sheet's header names the kind's row fields; XLSX cells are read as cached values only (a formula is never evaluated), files are bounded, and problems name sheet, row, column and code, never contents; the rows parse as the kind's payload before any write.
 - **AC-37** (K-02-T06) `refdata diff` lists every added, removed and changed row against the version in effect, by each kind's identity fields.
 - **AC-38** (K-02-T06) The CLI refuses while `ABACUS_DEPLOY_LOCK_ENV`'s deploy lock is held and, outside the ops task, when a database setting points at a hosted host.
+- **AC-39** (K-02-T10) `classify_entry`: an attest client's entry is always held (`attest_client`, the always-held row's approver) whatever the amount; a listed class is within threshold up to its limit inclusive and review required above it (`over_limit`); an unlisted class is review required (`unlisted_class`); every result names its policy version.
+- **AC-40** (K-02-T10) `variance_exceeded` is true only when the change is strictly over both the percent and the amount for its context (a zero prior: the amount alone).
+- **AC-41** (K-02-T10) `materiality_range_for` and `validate_materiality` answer the firm's range per engagement kind and whether a partner's chosen percentages sit inside it (inclusive), with performance materiality and the clearly-trivial percentage.
+- **AC-42** (K-02-T10) `confidence_hold` holds below the floor and never auto-accepts while the payload cannot enable it.
+- **AC-43** (K-02-T10) `required_review_levels` and `return_approval_policy` answer a tier's levels and the client's signing partner (None when unassigned, never a default); a missing row is 422 `standard_row_missing`.
+- **AC-44** (K-02-T10) `ssars_framework_for` answers CAS by-product for periods ending on or after Dec 15, 2026 (or any period once SSARS 27 is adopted early), AR-C 70 preparation before.
 
 ## 4. Out of scope here
 The CLI, import and export, fan-out and KNW-04i/j (K-02-T06 to T12, T14 to T20) build against the same contract in later sprints.
