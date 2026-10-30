@@ -96,6 +96,12 @@ ALLOW: tuple[tuple[str, str, str], ...] = (
         "T-01-T15: TAX-09 diagnostics carry a `field_key` tax-form line code (f8995a.ubia),"
         " not credentials",
     ),
+    (
+        "apps/web/src/fixtures/seed/reference-sets.ts",
+        "SECRET-003",
+        "K-02-T17: C21 reference sets carry a `key` / `set_key` set code"
+        " (us.due_date_rules.ty2025), never a credential",
+    ),
 )
 DATA_SUFFIXES = frozenset({".csv", ".json", ".yaml", ".yml", ".txt", ".tsv"})
 CONFIG_SUFFIXES = frozenset(
