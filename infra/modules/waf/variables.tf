@@ -31,6 +31,12 @@ variable "auth_rate_limit" {
   }
 }
 
+variable "webhook_rate_limit" {
+  description = "Provider webhook deliveries per IP per window on /v1/webhooks/ (ADR-152, DEC-1281)"
+  type        = number
+  default     = 300
+}
+
 variable "rate_window_seconds" {
   description = "Evaluation window of both rate rules, in seconds (5 minutes)."
   type        = number

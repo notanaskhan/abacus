@@ -117,15 +117,25 @@ class HostNotAllowed(ValueError):
 
 @dataclass(frozen=True)
 class DocuSealAccount:
-    """The sealed install secret, opened for one call (Restricted; never logged)."""
+    """The sealed install secret, opened for one call (Restricted; never logged). The webhook
+    keys (DocuSeal's `whsec_…` per webhook, used whole as the HMAC key) verify deliveries to the
+    install's receiver (ADR-152, DEC-1281); more than one while a key rotates."""
 
     api_key: str
     api_host: str  # e.g. api.docuseal.com
+    webhook_keys: tuple[str, ...] = ()
 
     @classmethod
     def from_secret(cls, raw: bytes) -> DocuSealAccount:
-        body = cast(dict[str, str], json.loads(raw))
-        return cls(api_key=body["api_key"], api_host=body["api_host"].lower())
+        body = cast(dict[str, object], json.loads(raw))
+        keys = body.get("webhook_keys")
+        return cls(
+            api_key=str(body["api_key"]),
+            api_host=str(body["api_host"]).lower(),
+            webhook_keys=tuple(str(k) for k in cast(list[object], keys))
+            if isinstance(keys, list)
+            else (),
+        )
 
 
 @dataclass(frozen=True)
