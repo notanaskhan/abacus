@@ -1,10 +1,10 @@
-import type { ReactNode } from "react";
 // The T16 signing kit's prop API (F-06-T04; F-06.md §5.2, SPEC-400 AC-1…AC-8): the contract the
 // F-06-T07 acceptance tests and N-02's POR-06 container build against. L2 rule: generic shapes
 // only, no @abacus/api-client types, no role names. N-02 maps C7's PortalEnvelopeView onto
 // EnvelopeVM (C7 v1 has not merged; a missing reserved field is an additive C7 change, not a kit
 // workaround). Counts, statuses and TINs are server values: the kit never counts, never unmasks.
 
+import type { ReactNode } from "react";
 import type { PortalNavItem } from "../layout/portal-toolbar";
 import type { RegistryCode } from "../status";
 
@@ -200,6 +200,15 @@ export interface SigningCeremonyProps {
    * dialog; `declineForceState` holds it open for a specimen. */
   onDecline?: (choice: { reason: string; note: string }) => void;
   declineForceState?: "open";
+  /** N-02-T26 (POR-06): the container's own step control, drawn under the steps at 1400 and as
+   * the sticky footer at 390, in place of the kit's sign call to action: "Continue to sign" while
+   * the viewer reviews, the e-sign consent card, "Withdraw decline". The kit adds no behaviour. */
+  action?: ReactNode;
+  /** N-02-T26: a page of the shown document came at least half into view (review progress: POR-06
+   * enables "Continue to sign" once the last page has been seen). */
+  onPageSeen?: (documentId: string, page: number) => void;
+  /** N-02-T26: a portal nav item (the app's area routing). */
+  onNavigate?: (label: string) => void;
   /** With `declineForceState`: the held dialog sits over the frame on the scrim (TPL-16f). */
   declineHeldScrim?: boolean;
 }

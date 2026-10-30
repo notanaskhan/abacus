@@ -104,6 +104,17 @@ def test_a_mask_lists_selectors_painted_out_of_both_images() -> None:
     assert entry.mask == ("[data-spinner]", "[data-cockpit='dock']")
 
 
+def test_a_strip_names_a_chrome_strip_inside_the_frame() -> None:
+    # F-06-T13: a Tier A strip keeps the frame's window crop; the spec cuts the strip at run time.
+    entry = parse_entry(
+        "tpl-16b.envelope-header",
+        {**GOOD, "crop": "window", "strip": "[data-signing='envelope-header']"},
+    )
+    assert entry.strip == "[data-signing='envelope-header']"
+    assert entry.crop == WINDOW_CROP
+    assert parse_entry("k", GOOD).strip is None
+
+
 def test_the_window_alias_is_the_plans_crop() -> None:
     entry = parse_entry("tpl-01", {**GOOD, "crop": "window", "locked": True})
     assert entry.crop == WINDOW_CROP == (40, 40, 2840, 1760)
@@ -126,6 +137,8 @@ def test_the_window_alias_is_the_plans_crop() -> None:
         ("k", {"mask": "[data-spinner]"}, '"mask"'),
         ("k", {"mask": ["[data-spinner]", " "]}, '"mask"'),
         ("k", {"mask": [3]}, '"mask"'),
+        ("k", {"strip": " "}, '"strip"'),
+        ("k", {"strip": ["[data-signing]"]}, '"strip"'),
         ("k", {"crop": [1, 2, 3]}, '"crop"'),
         ("k", {"crop": [1, 2, 3, "4"]}, '"crop"'),
         ("k", {"crop": [1, 2, True, 4]}, '"crop"'),

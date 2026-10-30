@@ -48,6 +48,7 @@ describe("presets (plan 04 §3.11)", () => {
       "issues-individual": [546, 433, 377],
       "close-review": [790, 576],
       "issues-entity": [470, 896],
+      document: [470, 896],
       workbench: [358, 998],
       agents: [320, 1036],
       library: [358, 998],
