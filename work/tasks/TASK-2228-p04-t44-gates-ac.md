@@ -1,8 +1,8 @@
 ---
 id: TASK-2228
 title: P-04-T44 independent AC tests for the E7 kit, SHL-10 and SHL-16
-spec: SPEC-360
-acceptance_criteria: []
+spec: SPEC-000  # the backlog row; SPEC-360 and the handoff
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: amber
 status: in-review
 epic: P-04

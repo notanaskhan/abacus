@@ -198,10 +198,10 @@ describe("3 · never optimistic", () => {
     fireEvent.click(await screen.findByRole("button", { name: /^Approve adjustments/u }));
     await new Promise((r) => setTimeout(r, 50));
     expect(screen.queryByText(/^Approved by/u)).toBeNull();
-    expect(screen.queryByText("Proposal approved")).toBeNull();
+    expect(toastStore.list().map((t) => t.text)).not.toContain("Proposal approved");
     server.release();
     await waitFor(() => {
-      expect(screen.getByText("Proposal approved")).toBeTruthy();
+      expect(toastStore.list().map((t) => t.text)).toContain("Proposal approved");
     });
   });
 
@@ -258,9 +258,14 @@ describe("5 · Undo calls only the compensating command", () => {
       "POST /v1/proposals/{proposal_id}/undo": () => json(SHL10.a),
     });
     fireEvent.click(await screen.findByRole("button", { name: /^Approve adjustments/u }));
-    const undo = await screen.findByRole("button", { name: "Undo" });
+    // The Undo is the approved toast's action (no toaster is mounted in a unit test).
+    const toast = await waitFor(() => {
+      const found = toastStore.list().find((t) => t.action === "Undo");
+      if (found === undefined) throw new Error("no Undo toast");
+      return found;
+    });
     const before = calls.filter((c) => c.method !== "GET").length;
-    fireEvent.click(undo);
+    toastStore.act(toast.id);
     await waitFor(() => {
       expect(calls.filter((c) => c.method !== "GET").length).toBeGreaterThan(before);
     });
