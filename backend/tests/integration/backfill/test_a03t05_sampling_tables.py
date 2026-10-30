@@ -74,9 +74,12 @@ APPROVE = (
     "approved_actor_kind = $3 WHERE id = $1"
 )
 SUPERSEDE = "UPDATE sample_set_versions SET status = 'superseded' WHERE id = $1"
-FROZEN = {
+# seed and parameters are never granted for update: the grant refuses them before the trigger.
+UNGRANTED = {
     "seed": "UPDATE sample_set_versions SET seed = 1 WHERE id = $1",
     "parameters": "UPDATE sample_set_versions SET parameters = '{\"x\": 1}'::jsonb WHERE id = $1",
+}
+FROZEN = {
     "items_hash": (
         "UPDATE sample_set_versions SET items_hash = "
         "'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' WHERE id = $1"
@@ -210,6 +213,9 @@ async def test_ac14_a_draft_refuses_any_change_but_its_status_moves(
     app: asyncpg.Connection, world: World
 ) -> None:
     _, _, vid = await _drawn(app, world)
+    for statement in UNGRANTED.values():
+        with pytest.raises(asyncpg.InsufficientPrivilegeError):
+            await app.execute(statement, vid)
     for statement in FROZEN.values():
         with pytest.raises(asyncpg.PostgresError, match="version_frozen"):
             await app.execute(statement, vid)
