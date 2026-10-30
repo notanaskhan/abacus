@@ -19,9 +19,10 @@ PACKAGES = ("sampling", "ledger")
 ALLOWED = {"abacus.kernel.numeric", "abacus.kernel.calendar"}
 
 
-def _contract() -> dict[str, Any]:
+def _contract() -> dict[str, Any]:  # Any: parsed TOML
     config = tomllib.loads((BACKEND / "pyproject.toml").read_text(encoding="utf-8"))
-    contracts = cast(list[dict[str, Any]], config["tool"]["importlinter"]["contracts"])
+    raw = config["tool"]["importlinter"]["contracts"]
+    contracts = cast(list[dict[str, Any]], raw)  # Any: TOML
     return next(c for c in contracts if str(c["name"]).startswith("Compute packages import only"))
 
 
