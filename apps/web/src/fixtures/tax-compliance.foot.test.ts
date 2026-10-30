@@ -62,7 +62,8 @@ describe("T-01 fixture figures", () => {
     expect(Object.keys(cli05)).toEqual(["a", "b", "c", "d", "e", "f", "g"]);
     expect(Object.keys(adm05)).toEqual(["a", "b", "c", "d", "e", "f", "g", "h"]);
     expect(Object.keys(adm08)).toEqual(["a", "b", "c", "d", "e", "f", "g"]);
-    expect(Object.keys(tax09)).toEqual(["a", "a2", "b", "c", "d", "d2", "e"]);
+    // T-01-T15 adds one non-artboard condition after the seven (the chip before any export).
+    expect(Object.keys(tax09)).toEqual(["a", "a2", "b", "c", "d", "d2", "e", "not_yet_exported"]);
     expect(Object.keys(tax12)).toEqual(["a", "a2", "b", "c", "c2", "d", "e"]);
     expect(adm05.e.persona).toBe("harold-stein");
     expect(tax12.c2.persona).toBe("daniel-reyes");

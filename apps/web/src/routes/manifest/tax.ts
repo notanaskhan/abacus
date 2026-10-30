@@ -38,8 +38,11 @@ export const taxScreens = {
     status: "planned",
     path: null,
   },
+  // T-01-T15: the sync chip, O1 popover and O4 import diff on fixtures (a–e, a2, d2).
   "TAX-09": {
     name: "Return › Tax-engine sync · Feld 2025 Form 1040",
+    // Planned until its designed links are wired (link-contract rule 1) and walked on staging
+    // (DEC-195; DEC-1272).
     status: "planned",
     path: null,
   },

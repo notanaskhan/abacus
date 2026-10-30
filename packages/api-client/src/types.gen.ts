@@ -11029,13 +11029,29 @@ export type EngineSyncEventOut = {
      */
     at: string;
     /**
+     * Engine Version
+     */
+    engine_version?: string | null;
+    /**
+     * Errors
+     */
+    errors?: number | null;
+    /**
+     * Field Keys
+     */
+    field_keys?: Array<string>;
+    /**
      * Id
      */
     id: string;
     /**
+     * Informational
+     */
+    informational?: number | null;
+    /**
      * Kind
      */
-    kind: 'export_generated' | 'marked_exported' | 'import_uploaded' | 'import_approved' | 'import_rejected' | 'diagnostics' | 'pdfs' | 'acks';
+    kind: 'export_generated' | 'marked_exported' | 'import_uploaded' | 'import_approved' | 'import_rejected' | 'diagnostics' | 'pdfs' | 'acks' | 'changed_after_import';
 };
 
 /**
@@ -11049,9 +11065,21 @@ export type EngineSyncOut = {
      */
     allowed_actions: Array<string>;
     /**
+     * Approver Name
+     */
+    approver_name?: string | null;
+    /**
+     * Blockers
+     */
+    blockers?: Array<ApprovalBlockerOut>;
+    /**
      * Diagnostics
      */
     diagnostics: Array<EngineDiagnosticOut>;
+    /**
+     * Draft K1 Source
+     */
+    draft_k1_source?: string | null;
     /**
      * Engine Return Id
      */
@@ -11065,6 +11093,10 @@ export type EngineSyncOut = {
      */
     mode: 'file_bridge';
     /**
+     * Policy Code
+     */
+    policy_code?: string | null;
+    /**
      * Return Id
      */
     return_id: string;
@@ -11072,6 +11104,10 @@ export type EngineSyncOut = {
      * State
      */
     state: 'not_yet_exported' | 'ready_for_export' | 'exporting' | 'synced' | 'out_of_sync' | 'import_pending_approval' | 'failed';
+    /**
+     * Synced At
+     */
+    synced_at?: string | null;
 };
 
 /**
@@ -15050,9 +15086,19 @@ export type ImportDiffRowOut = {
      */
     cause_code: string | null;
     /**
+     * Cause Facts
+     */
+    cause_facts?: {
+        [key: string]: string;
+    };
+    /**
      * Engine
      */
     engine: string | null;
+    /**
+     * Engine Display
+     */
+    engine_display?: string | null;
     /**
      * Field Key
      */

@@ -23646,11 +23646,55 @@
             "title": "At",
             "type": "string"
           },
+          "engine_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Engine Version"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Errors"
+          },
+          "field_keys": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Field Keys",
+            "type": "array"
+          },
           "id": {
             "cls": "internal",
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "informational": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Informational"
           },
           "kind": {
             "cls": "internal",
@@ -23662,7 +23706,8 @@
               "import_rejected",
               "diagnostics",
               "pdfs",
-              "acks"
+              "acks",
+              "changed_after_import"
             ],
             "title": "Kind",
             "type": "string"
@@ -23688,6 +23733,26 @@
             "title": "Allowed Actions",
             "type": "array"
           },
+          "approver_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Approver Name"
+          },
+          "blockers": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ApprovalBlockerOut"
+            },
+            "title": "Blockers",
+            "type": "array"
+          },
           "diagnostics": {
             "cls": "restricted",
             "items": {
@@ -23696,6 +23761,18 @@
             "title": "Diagnostics",
             "type": "array",
             "x-tri": true
+          },
+          "draft_k1_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Draft K1 Source"
           },
           "engine_return_id": {
             "anyOf": [
@@ -23723,6 +23800,18 @@
             "title": "Mode",
             "type": "string"
           },
+          "policy_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Policy Code"
+          },
           "return_id": {
             "cls": "internal",
             "format": "uuid",
@@ -23742,6 +23831,19 @@
             ],
             "title": "State",
             "type": "string"
+          },
+          "synced_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Synced At"
           }
         },
         "required": [
@@ -31735,6 +31837,15 @@
             "cls": "internal",
             "title": "Cause Code"
           },
+          "cause_facts": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "cls": "restricted",
+            "title": "Cause Facts",
+            "type": "object",
+            "x-tri": true
+          },
           "engine": {
             "anyOf": [
               {
@@ -31747,6 +31858,19 @@
             ],
             "cls": "restricted",
             "title": "Engine",
+            "x-tri": true
+          },
+          "engine_display": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Engine Display",
             "x-tri": true
           },
           "field_key": {

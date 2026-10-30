@@ -118,11 +118,18 @@ class EngineSyncEventOut(BaseModel):
             "diagnostics",
             "pdfs",
             "acks",
+            "changed_after_import",  # T-01-T15 (additive): Accrued changed after the last import
         ],
         classified("internal"),
     ]
     actor_name: Annotated[str | None, classified("confidential")]
     at: Annotated[datetime, classified("confidential")]
+    # T-01-T15 (additive): the engine's return version ("2025I:FeldJ:V3"), and the fields a
+    # change or a diagnostics run counts ("3 fields", "0 errors · 2 informational").
+    engine_version: Annotated[str | None, classified("confidential")] = None
+    field_keys: Annotated[list[str], classified("internal")] = Field(default_factory=list[str])
+    errors: Annotated[int | None, classified("internal")] = None
+    informational: Annotated[int | None, classified("internal")] = None
 
 
 class EngineDiagnosticOut(BaseModel):
@@ -148,6 +155,15 @@ class EngineSyncOut(BaseModel):
     history: Annotated[list[EngineSyncEventOut], classified("confidential")]
     diagnostics: Annotated[list[EngineDiagnosticOut], classified("restricted", tri=True)]
     allowed_actions: Annotated[list[str], classified("internal")]
+    # T-01-T15 (additive): why Export is not open yet (codes, and the names they need: the
+    # approver of record and the policy, the source of a draft K-1), and the synced date.
+    blockers: Annotated[list[ApprovalBlockerOut], classified("internal")] = Field(
+        default_factory=list[ApprovalBlockerOut]
+    )
+    approver_name: Annotated[str | None, classified("confidential")] = None
+    policy_code: Annotated[str | None, classified("internal")] = None  # "BH-TAX-02"
+    draft_k1_source: Annotated[str | None, classified("confidential")] = None
+    synced_at: Annotated[datetime | None, classified("confidential")] = None
 
 
 class EngineExportOut(BaseModel):
@@ -190,6 +206,12 @@ class ImportDiffRowOut(BaseModel):
     accrued: Annotated[Decimal | None, classified("restricted", tri=True)]
     engine: Annotated[Decimal | None, classified("restricted", tri=True)]
     cause_code: Annotated[str | None, classified("internal")]
+    # T-01-T15 (additive): a value that is not one amount (four vouchers, a masked account, a
+    # method), and the figures the cause line cites, as the engine file gave them.
+    engine_display: Annotated[str | None, classified("restricted", tri=True)] = None
+    cause_facts: Annotated[dict[str, str], classified("restricted", tri=True)] = Field(
+        default_factory=dict[str, str]
+    )
 
 
 class EngineImportOut(BaseModel):
