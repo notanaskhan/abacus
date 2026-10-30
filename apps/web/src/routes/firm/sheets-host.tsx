@@ -1,7 +1,7 @@
 import { type JSX, Suspense, lazy } from "react";
 import { FeatureGate } from "../../app-core/flags";
 import type { OverlayRenderProps } from "../../app-core/overlays";
-import { levelOf } from "../../domain/review/signoffs";
+import { levelOf } from "../../domain/review";
 
 // The sheets `sheets.tsx` registers, loaded when one opens: each behind its flag
 // (`review.grammar_api` for SHL-10 and SHL-12, `review.checkpoints` for SHL-16, `signatures.envelopes` for
