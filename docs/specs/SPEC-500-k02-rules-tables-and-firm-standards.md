@@ -99,6 +99,9 @@ Two kinds of versioned, effective-dated rules (K-02 short version): **platform r
 - **AC-53** (K-02-T14) The sticky Save bar reads "Draft vN · n changes from vM · visible to partners only" with the Effective date, Discard draft and Publish vN… (owner only, after a change summary; ConfirmDialog; a 403 opens the step-up); New version… is disabled while a draft is open.
 - **AC-54** (K-02-T14) Typed editors per kind edit the draft in place (AJE limits, variance percent and amount, materiality ranges, document confidence, SSARS early adoption); a save sends If-Match and a 409 `stale_version` shows "Changed by … Reload to see the latest draft." instead of overwriting.
 - **AC-55** (K-02-T14) Staff never see a draft or Publish; Export downloads the draft's workbook for the owner.
+- **AC-56** (K-02-T15) The calendar engine reproduces every golden due date in `backend/tests/golden/calendar/i_clocks.yaml` (TY2025 and TY2026 for 1040, 1065, 1120-S, 1120, 1041, 990/8868, 5500/5558, and 706/4768), including IRC §7503 rolls and extensions run from the unrolled date, and every case cites its source.
+- **AC-57** (K-02-T15) The clocks (AU-C 230 assembly and AU-C 265 communication +60, FTC notice +30, 8879 retention three years with Feb 29 ending on Feb 28) match their golden cases and never roll.
+- **AC-58** (K-02-T15) A disaster postponement moves only a covered date in a covered place, never earlier.
 
 ## 4. Out of scope here
 The CLI, import and export, fan-out and KNW-04i/j (K-02-T06 to T12, T14 to T20) build against the same contract in later sprints.
