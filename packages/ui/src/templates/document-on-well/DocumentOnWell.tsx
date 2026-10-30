@@ -138,12 +138,18 @@ export function DocumentOnWell({
 }: DocumentOnWellProps): JSX.Element {
   const busyId = useId();
   const reasonId = useId();
+  const lockedId = useId();
   const drafting = document.status === "drafting";
   const agentRun = agentDrafting(document);
   const locked = document.status === "locked";
   const busyLine = agentRun ? copy.drafting : copy.rendering;
-  // Why the controls are off, said once and named by each (aria-describedby).
-  const blockedBy = drafting ? busyId : undefined;
+  // Why the controls are off, said once and named by each (aria-describedby): the run while
+  // drafting, the lock's reason when locked (T10d).
+  const blockedBy = drafting
+    ? busyId
+    : locked && document.lockedReason !== undefined
+      ? lockedId
+      : undefined;
   const approveReason = document.actions.approve?.disabledReason;
   const readOnlyReason = locked ? document.lockedReason : drafting ? busyLine : undefined;
   const approve = document.actions.approve;
@@ -198,9 +204,19 @@ export function DocumentOnWell({
           {...(onApprove === undefined ? {} : { onClick: onApprove })}
         />
       )}
+      {approve !== undefined && document.status === "approved" && (
+        <Button variant="secondary" size="sm" icon="check" disabled>
+          {copy.approved ?? "Approved"}
+        </Button>
+      )}
       {approveReason !== undefined && (
         <span id={reasonId} className="sr-only">
           {approveReason}
+        </span>
+      )}
+      {locked && document.lockedReason !== undefined && (
+        <span id={lockedId} className="sr-only">
+          {document.lockedReason}
         </span>
       )}
     </>
