@@ -1719,16 +1719,6 @@ export type ApprovalBlockerOut = {
 };
 
 /**
- * ApproveIn
- */
-export type ApproveIn = {
-    /**
-     * Note
-     */
-    note?: string | null;
-};
-
-/**
  * ApproveProposalIn
  */
 export type ApproveProposalIn = {
@@ -6366,6 +6356,56 @@ export type CompleteOut = {
 };
 
 /**
+ * CompletenessTieOut
+ *
+ * One tie, computed by code: `tie`, `off {amount}` or `Check` (completeness_tie_result).
+ */
+export type CompletenessTieOut = {
+    /**
+     * Comparisons
+     */
+    comparisons: Array<TieComparisonOut>;
+    /**
+     * Difference
+     */
+    difference: string | null;
+    /**
+     * Engine Version
+     */
+    engine_version: string;
+    /**
+     * Explanation
+     */
+    explanation: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Inputs Hash
+     */
+    inputs_hash: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Left Amount
+     */
+    left_amount: string | null;
+    /**
+     * Position
+     */
+    position: number;
+    result: CompletenessTieResultStatus;
+};
+
+/**
+ * CompletenessTieResultStatus
+ */
+export type CompletenessTieResultStatus = 'tie' | 'off' | 'check';
+
+/**
  * CompletionOut
  */
 export type CompletionOut = {
@@ -9143,6 +9183,35 @@ export type DraftedOut = {
      * Drafted
      */
     drafted: number;
+};
+
+/**
+ * DrawProgressOut
+ *
+ * `…/draw`: what AUD-11e polls once a second until the version is Draft or Failed.
+ */
+export type DrawProgressOut = {
+    /**
+     * Failure Code
+     */
+    failure_code: string | null;
+    /**
+     * Items
+     */
+    items: Array<SampleItemOut>;
+    /**
+     * Items Done
+     */
+    items_done: number;
+    /**
+     * Items Total
+     */
+    items_total: number;
+    status: SampleSetVersionStatus;
+    /**
+     * Version No
+     */
+    version_no: number;
 };
 
 /**
@@ -14474,6 +14543,40 @@ export type GateRowOut = {
 };
 
 /**
+ * GeneralLedgerSourceIn
+ */
+export type GeneralLedgerSourceIn = {
+    /**
+     * Account Codes
+     */
+    account_codes: Array<string>;
+    /**
+     * Gl Snapshot Id
+     */
+    gl_snapshot_id: string;
+    /**
+     * Kind
+     */
+    kind?: 'general_ledger';
+    /**
+     * Kinds
+     */
+    kinds?: Array<string>;
+    /**
+     * Posted From
+     */
+    posted_from: string;
+    /**
+     * Posted To
+     */
+    posted_to: string;
+    /**
+     * Side
+     */
+    side: 'debit' | 'credit';
+};
+
+/**
  * GeneratedDocumentOut
  *
  * One generated document: its computed status (DF-31) and its insert-only versions.
@@ -17572,6 +17675,82 @@ export type ItemOut = {
 };
 
 /**
+ * ItemRequestPreviewOut
+ */
+export type ItemRequestPreviewOut = {
+    /**
+     * By Surface
+     */
+    by_surface: {
+        [key: string]: number;
+    };
+    /**
+     * Recipients
+     */
+    recipients: Array<RecipientPreviewOut>;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * ItemRequestTemplateIn
+ */
+export type ItemRequestTemplateIn = {
+    /**
+     * Contact Id
+     */
+    contact_id?: string | null;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Third Party Contact Id
+     */
+    third_party_contact_id?: string | null;
+};
+
+/**
+ * ItemRequestsCreatedOut
+ */
+export type ItemRequestsCreatedOut = {
+    /**
+     * Batch Id
+     */
+    batch_id: string;
+    /**
+     * By Surface
+     */
+    by_surface: {
+        [key: string]: number;
+    };
+    /**
+     * Created
+     */
+    created: number;
+};
+
+/**
+ * ItemRequestsIn
+ */
+export type ItemRequestsIn = {
+    /**
+     * Due On
+     */
+    due_on: string;
+    /**
+     * Templates
+     */
+    templates: Array<ItemRequestTemplateIn>;
+    /**
+     * Wave
+     */
+    wave?: 'sample';
+};
+
+/**
  * ItemVersionOut
  */
 export type ItemVersionOut = {
@@ -19662,6 +19841,74 @@ export type ListPageReviewQueueItemOut = {
 };
 
 /**
+ * ListPage[SampleItemOut]
+ */
+export type ListPageSampleItemOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<SampleItemOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
+ * ListPage[SampleSetSummaryOut]
+ */
+export type ListPageSampleSetSummaryOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<SampleSetSummaryOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
  * ListPage[StandardOut]
  */
 export type ListPageStandardOut = {
@@ -21537,6 +21784,20 @@ export type OverdueCountOut = {
 };
 
 /**
+ * OverrideIn
+ */
+export type OverrideIn = {
+    /**
+     * Rationale
+     */
+    rationale: string;
+    /**
+     * Size
+     */
+    size: number;
+};
+
+/**
  * OverviewIssueOut
  *
  * One of the top open C3 issues (severity drives the flag's colour).
@@ -21631,6 +21892,96 @@ export type ParagraphPart = {
      * Segments
      */
     segments: Array<TextSeg | CiteSeg | FactSeg>;
+};
+
+/**
+ * ParametersIn
+ */
+export type ParametersIn = {
+    /**
+     * Confidence
+     */
+    confidence?: number | string | null;
+    /**
+     * Expected Rate
+     */
+    expected_rate?: number | string | null;
+    /**
+     * Rmm
+     */
+    rmm?: 'low' | 'moderate' | 'high' | null;
+    /**
+     * Tolerable Rate
+     */
+    tolerable_rate?: number | string | null;
+};
+
+/**
+ * ParametersOut
+ *
+ * Card 2: the method and parameters behind the size, each with its citation.
+ */
+export type ParametersOut = {
+    /**
+     * Citations
+     */
+    citations: Array<AbacusModulesSamplingContractCitationOut>;
+    /**
+     * Computed Size
+     */
+    computed_size: number;
+    /**
+     * Confidence
+     */
+    confidence: string | null;
+    /**
+     * Expected Rate
+     */
+    expected_rate: string | null;
+    /**
+     * Final Size
+     */
+    final_size: number;
+    /**
+     * Method
+     */
+    method: 'attribute_nonstatistical' | 'attribute_statistical' | 'threshold_random_stratified';
+    /**
+     * Override Rationale
+     */
+    override_rationale: string | null;
+    /**
+     * Override Size
+     */
+    override_size: number | null;
+    /**
+     * Rmm
+     */
+    rmm: 'low' | 'moderate' | 'high' | null;
+    /**
+     * Sampler Version
+     */
+    sampler_version: string;
+    /**
+     * Seed
+     */
+    seed: number;
+    /**
+     * Seed Hex
+     */
+    seed_hex: string;
+    /**
+     * Seed Source
+     */
+    seed_source: 'server' | 'scenario';
+    /**
+     * Statistical Crosscheck Size
+     */
+    statistical_crosscheck_size: number | null;
+    /**
+     * Tolerable Rate
+     */
+    tolerable_rate: string | null;
 };
 
 /**
@@ -21780,6 +22131,28 @@ export type PersonPatchIn = {
      * Version
      */
     version: number;
+};
+
+/**
+ * PersonStampOut
+ */
+export type PersonStampOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Initials
+     */
+    initials: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * User Id
+     */
+    user_id: string;
 };
 
 /**
@@ -21976,37 +22349,100 @@ export type PolicyPrincipalSection = {
 };
 
 /**
- * PopulationOut
+ * PopulationIn
  */
-export type PopulationOut = {
+export type PopulationIn = {
     /**
-     * Entry Count
+     * Deviation Definition
      */
-    entry_count: number;
+    deviation_definition: string;
     /**
-     * Failure
+     * Sampling Unit
      */
-    failure?: string | null;
+    sampling_unit: string;
+    /**
+     * Source
+     */
+    source: ({
+        kind: 'upload';
+    } & UploadSourceIn) | ({
+        kind: 'general_ledger';
+    } & GeneralLedgerSourceIn);
+};
+
+/**
+ * PopulationQueryOut
+ *
+ * A general-ledger population's query (AUD-11f): accounts, side, kinds and window.
+ */
+export type PopulationQueryOut = {
+    /**
+     * Account Codes
+     */
+    account_codes: Array<string>;
+    /**
+     * Kinds
+     */
+    kinds: Array<string>;
+    /**
+     * Posted From
+     */
+    posted_from: string;
+    /**
+     * Posted To
+     */
+    posted_to: string;
+    /**
+     * Side
+     */
+    side: 'debit' | 'credit';
+};
+
+/**
+ * PopulationSourceOut
+ */
+export type PopulationSourceOut = {
+    /**
+     * Connection Label
+     */
+    connection_label?: string | null;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id?: string | null;
+    /**
+     * File Name
+     */
+    file_name?: string | null;
+    /**
+     * File Version No
+     */
+    file_version_no?: number | null;
     /**
      * Gl Snapshot Id
      */
-    gl_snapshot_id: string;
+    gl_snapshot_id?: string | null;
     /**
-     * Line Count
+     * Kind
      */
-    line_count: number;
+    kind: 'upload' | 'general_ledger';
     /**
-     * Tied
+     * Pulled At
      */
-    tied: boolean;
+    pulled_at?: string | null;
+    query?: PopulationQueryOut | null;
     /**
-     * Total Credit
+     * Query Label
      */
-    total_credit: string;
+    query_label?: string | null;
     /**
-     * Total Debit
+     * Uploaded By Name
      */
-    total_debit: string;
+    uploaded_by_name?: string | null;
+    /**
+     * Uploaded On
+     */
+    uploaded_on?: string | null;
 };
 
 /**
@@ -23930,7 +24366,7 @@ export type ProcedureOut = {
     parameters: {
         [key: string]: unknown;
     };
-    population?: PopulationOut | null;
+    population?: AbacusModulesFieldworkRoutesPopulationOut | null;
     selection?: SelectionOut | null;
     /**
      * Status
@@ -24785,6 +25221,30 @@ export type RecipientDetailsChangeOut = {
  * RecipientDetailsChangeStatus
  */
 export type RecipientDetailsChangeStatus = 'pending' | 'accepted' | 'rejected';
+
+/**
+ * RecipientPreviewOut
+ *
+ * What one recipient will see: their requests and nothing of the sample (INV-4).
+ */
+export type RecipientPreviewOut = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Organisation
+     */
+    organisation: string | null;
+    /**
+     * Requests
+     */
+    requests: number;
+    /**
+     * Surface
+     */
+    surface: 'POR-03' | 'POR-14';
+};
 
 /**
  * RecipientsIn
@@ -28072,6 +28532,217 @@ export type SafeguardsOut = {
     version: number;
     wisp?: WispOut | null;
 };
+
+/**
+ * SampleItemOut
+ *
+ * One selected item; display fields only (Restricted columns are never copied, ADR-031).
+ */
+export type SampleItemOut = {
+    /**
+     * Amount
+     */
+    amount: string | null;
+    /**
+     * Hire Date
+     */
+    hire_date: string | null;
+    /**
+     * Name
+     */
+    name: string | null;
+    /**
+     * Position
+     */
+    position: number;
+    /**
+     * Record Key
+     */
+    record_key: string;
+    /**
+     * Selection Reason
+     */
+    selection_reason: 'random' | 'threshold';
+    /**
+     * Stratum Position
+     */
+    stratum_position: number | null;
+};
+
+/**
+ * SampleSetIn
+ */
+export type SampleSetIn = {
+    /**
+     * Program Step Key
+     */
+    program_step_key?: string | null;
+    /**
+     * Purpose
+     */
+    purpose?: string | null;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * SampleSetOut
+ *
+ * `GET /v1/sample-sets/{sid}?version=n`: AUD-11's projection of one version.
+ */
+export type SampleSetOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<'sample_set.create' | 'sample_set.approve' | 'sample_set.export' | 'sample_set.generate_requests' | 'population.create' | 'sign_off.prepare'>;
+    /**
+     * Content Hash
+     */
+    content_hash: string | null;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Inputs Hash
+     */
+    inputs_hash: string;
+    /**
+     * Items Amount
+     */
+    items_amount: string | null;
+    /**
+     * Items Hash
+     */
+    items_hash: string | null;
+    /**
+     * Items Total
+     */
+    items_total: number;
+    parameters: ParametersOut;
+    population: AbacusModulesSamplingContractPopulationOut;
+    /**
+     * Program Step Key
+     */
+    program_step_key: string | null;
+    /**
+     * Purpose
+     */
+    purpose: string | null;
+    status: SampleSetVersionStatus;
+    /**
+     * Strata
+     */
+    strata: Array<StratumOut>;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Version No
+     */
+    version_no: number;
+    /**
+     * Versions
+     */
+    versions: Array<SampleSetVersionOut>;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
+ * SampleSetSummaryOut
+ *
+ * The header picker's row (DF-05): "Participants · 25 of 412 · Approved".
+ */
+export type SampleSetSummaryOut = {
+    /**
+     * Current Version No
+     */
+    current_version_no: number;
+    /**
+     * Final Size
+     */
+    final_size: number;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Population Count
+     */
+    population_count: number;
+    status: SampleSetVersionStatus;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * SampleSetVersionOut
+ *
+ * Card 4's row: a version with its seed, population and computed tie summary.
+ */
+export type SampleSetVersionOut = {
+    approved: PersonStampOut | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Created By Name
+     */
+    created_by_name: string;
+    /**
+     * Final Size
+     */
+    final_size: number;
+    /**
+     * Override Pending
+     */
+    override_pending: boolean;
+    /**
+     * Population Id
+     */
+    population_id: string;
+    /**
+     * Population Label
+     */
+    population_label: string;
+    prepared: PersonStampOut | null;
+    /**
+     * Record Count
+     */
+    record_count: number;
+    /**
+     * Seed Hex
+     */
+    seed_hex: string;
+    status: SampleSetVersionStatus;
+    /**
+     * Tie Difference
+     */
+    tie_difference: string | null;
+    tie_result: CompletenessTieResultStatus;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
+ * SampleSetVersionStatus
+ */
+export type SampleSetVersionStatus = 'drawing' | 'draft' | 'approved' | 'superseded' | 'failed';
 
 /**
  * ScheduleApprovalOut
@@ -31393,6 +32064,66 @@ export type StepResolveOut = {
 };
 
 /**
+ * StratumIn
+ */
+export type StratumIn = {
+    /**
+     * Max Amount
+     */
+    max_amount?: number | string | null;
+    /**
+     * Min Amount
+     */
+    min_amount?: number | string | null;
+    /**
+     * Random Count
+     */
+    random_count?: number | null;
+    /**
+     * Test Rule
+     */
+    test_rule: 'all' | 'random' | 'none';
+};
+
+/**
+ * StratumOut
+ */
+export type StratumOut = {
+    /**
+     * Max Amount
+     */
+    max_amount: string | null;
+    /**
+     * Min Amount
+     */
+    min_amount: string | null;
+    /**
+     * Population Amount
+     */
+    population_amount: string | null;
+    /**
+     * Population Count
+     */
+    population_count: number;
+    /**
+     * Position
+     */
+    position: number;
+    /**
+     * Random Count
+     */
+    random_count: number | null;
+    /**
+     * Selected Count
+     */
+    selected_count: number;
+    /**
+     * Test Rule
+     */
+    test_rule: 'all' | 'random' | 'none';
+};
+
+/**
  * SubProcessorOut
  *
  * A sub-processor row, generated from the provider-terms register (DF-16): "Amazon Web
@@ -33433,6 +34164,65 @@ export type ThreadReadOut = {
 };
 
 /**
+ * TieComparisonIn
+ */
+export type TieComparisonIn = {
+    /**
+     * Amount
+     */
+    amount: number | string;
+    /**
+     * Citation Id
+     */
+    citation_id?: string | null;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Ledger Ref
+     */
+    ledger_ref?: string | null;
+};
+
+/**
+ * TieComparisonOut
+ */
+export type TieComparisonOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    citation: AbacusModulesSamplingContractCitationOut | null;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Ledger Ref
+     */
+    ledger_ref: string | null;
+};
+
+/**
+ * TieIn
+ */
+export type TieIn = {
+    /**
+     * Comparisons
+     */
+    comparisons: Array<TieComparisonIn>;
+    /**
+     * Explanation
+     */
+    explanation?: string | null;
+    /**
+     * Label
+     */
+    label: string;
+};
+
+/**
  * TieIssueLinkIn
  */
 export type TieIssueLinkIn = {
@@ -34602,6 +35392,26 @@ export type UploadOut = {
 };
 
 /**
+ * UploadSourceIn
+ */
+export type UploadSourceIn = {
+    /**
+     * Column Map
+     */
+    column_map: {
+        [key: string]: string;
+    };
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Kind
+     */
+    kind?: 'upload';
+};
+
+/**
  * ValidationCheck
  *
  * One code-computed check SIG-02's Checks band lists (N-02-T21, DEC-1174): an identifier
@@ -34809,6 +35619,28 @@ export type VersionBody = {
 };
 
 /**
+ * VersionIn
+ *
+ * A draw request. No field carries a seed: the server draws it (ADR-340 §5).
+ */
+export type VersionIn = {
+    /**
+     * Method
+     */
+    method: 'attribute_nonstatistical' | 'attribute_statistical' | 'threshold_random_stratified';
+    override?: OverrideIn | null;
+    parameters: ParametersIn;
+    /**
+     * Population Id
+     */
+    population_id: string;
+    /**
+     * Strata
+     */
+    strata?: Array<StratumIn>;
+};
+
+/**
  * VersionOut
  */
 export type VersionOut = {
@@ -34824,6 +35656,20 @@ export type VersionOut = {
      * Version
      */
     version: number;
+};
+
+/**
+ * VersionStartedOut
+ */
+export type VersionStartedOut = {
+    /**
+     * Status Url
+     */
+    status_url: string;
+    /**
+     * Version No
+     */
+    version_no: number;
 };
 
 /**
@@ -36032,6 +36878,50 @@ export type AbacusModulesFieldworkRoutesApprovalOut = {
 };
 
 /**
+ * ApproveIn
+ */
+export type AbacusModulesFieldworkRoutesApproveIn = {
+    /**
+     * Note
+     */
+    note?: string | null;
+};
+
+/**
+ * PopulationOut
+ */
+export type AbacusModulesFieldworkRoutesPopulationOut = {
+    /**
+     * Entry Count
+     */
+    entry_count: number;
+    /**
+     * Failure
+     */
+    failure?: string | null;
+    /**
+     * Gl Snapshot Id
+     */
+    gl_snapshot_id: string;
+    /**
+     * Line Count
+     */
+    line_count: number;
+    /**
+     * Tied
+     */
+    tied: boolean;
+    /**
+     * Total Credit
+     */
+    total_credit: string;
+    /**
+     * Total Debit
+     */
+    total_debit: string;
+};
+
+/**
  * StartIn
  */
 export type AbacusModulesFieldworkRoutesStartIn = {
@@ -36156,6 +37046,97 @@ export type AbacusModulesReportingContractApprovalOut = {
      * By
      */
     by: string;
+};
+
+/**
+ * ApproveIn
+ */
+export type AbacusModulesSamplingContractApproveIn = {
+    /**
+     * Acknowledge Override
+     */
+    acknowledge_override?: boolean;
+    /**
+     * Seen Hash
+     */
+    seen_hash: string;
+};
+
+/**
+ * CitationOut
+ *
+ * A cited source: the program step a parameter comes from, or the cell a tie agrees to.
+ */
+export type AbacusModulesSamplingContractCitationOut = {
+    /**
+     * Citation Id
+     */
+    citation_id: string | null;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Verified
+     */
+    verified: boolean;
+};
+
+/**
+ * PopulationOut
+ *
+ * `GET /v1/populations/{pid}`: the population, its source facts and its ties.
+ */
+export type AbacusModulesSamplingContractPopulationOut = {
+    /**
+     * Amount Total
+     */
+    amount_total: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Created By Name
+     */
+    created_by_name: string;
+    /**
+     * Deviation Definition
+     */
+    deviation_definition: string | null;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Record Count
+     */
+    record_count: number;
+    /**
+     * Record Unit
+     */
+    record_unit: string;
+    /**
+     * Sampling Unit
+     */
+    sampling_unit: string;
+    /**
+     * Sha256
+     */
+    sha256: string;
+    source: PopulationSourceOut;
+    /**
+     * Ties
+     */
+    ties: Array<CompletenessTieOut>;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
 };
 
 /**
@@ -50473,7 +51454,7 @@ export type AdoptResponses = {
 export type AdoptResponse = AdoptResponses[keyof AdoptResponses];
 
 export type ApproveData = {
-    body: ApproveIn;
+    body: AbacusModulesFieldworkRoutesApproveIn;
     headers?: {
         /**
          * Authorization
@@ -74903,6 +75884,118 @@ export type PublishSafeguardsControlsResponses = {
 
 export type PublishSafeguardsControlsResponse = PublishSafeguardsControlsResponses[keyof PublishSafeguardsControlsResponses];
 
+export type PopulationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Population Id
+         */
+        population_id: string;
+    };
+    query?: never;
+    url: '/v1/populations/{population_id}';
+};
+
+export type PopulationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PopulationError = PopulationErrors[keyof PopulationErrors];
+
+export type PopulationResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesSamplingContractPopulationOut;
+};
+
+export type PopulationResponse = PopulationResponses[keyof PopulationResponses];
+
+export type TieCreateData = {
+    body: TieIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Population Id
+         */
+        population_id: string;
+    };
+    query?: never;
+    url: '/v1/populations/{population_id}/ties';
+};
+
+export type TieCreateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TieCreateError = TieCreateErrors[keyof TieCreateErrors];
+
+export type TieCreateResponses = {
+    /**
+     * Successful Response
+     */
+    201: CompletenessTieOut;
+};
+
+export type TieCreateResponse = TieCreateResponses[keyof TieCreateResponses];
+
 export type PortalMfaData = {
     body: PortalMfaIn;
     headers?: {
@@ -80080,6 +81173,518 @@ export type ReviewNoteWithdrawResponses = {
 
 export type ReviewNoteWithdrawResponse = ReviewNoteWithdrawResponses[keyof ReviewNoteWithdrawResponses];
 
+export type SampleSetData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sample Set Id
+         */
+        sample_set_id: string;
+    };
+    query?: {
+        /**
+         * Version
+         */
+        version?: number | null;
+    };
+    url: '/v1/sample-sets/{sample_set_id}';
+};
+
+export type SampleSetErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SampleSetError = SampleSetErrors[keyof SampleSetErrors];
+
+export type SampleSetResponses = {
+    /**
+     * Successful Response
+     */
+    200: SampleSetOut;
+};
+
+export type SampleSetResponse = SampleSetResponses[keyof SampleSetResponses];
+
+export type VersionCreateData = {
+    body: VersionIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sample Set Id
+         */
+        sample_set_id: string;
+    };
+    query?: never;
+    url: '/v1/sample-sets/{sample_set_id}/versions';
+};
+
+export type VersionCreateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type VersionCreateError = VersionCreateErrors[keyof VersionCreateErrors];
+
+export type VersionCreateResponses = {
+    /**
+     * Successful Response
+     */
+    202: VersionStartedOut;
+};
+
+export type VersionCreateResponse = VersionCreateResponses[keyof VersionCreateResponses];
+
+export type Approve2Data = {
+    body: AbacusModulesSamplingContractApproveIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sample Set Id
+         */
+        sample_set_id: string;
+        /**
+         * Version No
+         */
+        version_no: number;
+    };
+    query?: never;
+    url: '/v1/sample-sets/{sample_set_id}/versions/{version_no}/approve';
+};
+
+export type Approve2Errors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type Approve2Error = Approve2Errors[keyof Approve2Errors];
+
+export type Approve2Responses = {
+    /**
+     * Successful Response
+     */
+    200: SampleSetOut;
+};
+
+export type Approve2Response = Approve2Responses[keyof Approve2Responses];
+
+export type DrawProgressData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sample Set Id
+         */
+        sample_set_id: string;
+        /**
+         * Version No
+         */
+        version_no: number;
+    };
+    query?: never;
+    url: '/v1/sample-sets/{sample_set_id}/versions/{version_no}/draw';
+};
+
+export type DrawProgressErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DrawProgressError = DrawProgressErrors[keyof DrawProgressErrors];
+
+export type DrawProgressResponses = {
+    /**
+     * Successful Response
+     */
+    200: DrawProgressOut;
+};
+
+export type DrawProgressResponse = DrawProgressResponses[keyof DrawProgressResponses];
+
+export type ExportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sample Set Id
+         */
+        sample_set_id: string;
+        /**
+         * Version No
+         */
+        version_no: number;
+    };
+    query?: never;
+    url: '/v1/sample-sets/{sample_set_id}/versions/{version_no}/export.xlsx';
+};
+
+export type ExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ExportError = ExportErrors[keyof ExportErrors];
+
+export type ExportResponses = {
+    /**
+     * Response Export
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type ExportResponse = ExportResponses[keyof ExportResponses];
+
+export type ItemRequestsData = {
+    body: ItemRequestsIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sample Set Id
+         */
+        sample_set_id: string;
+        /**
+         * Version No
+         */
+        version_no: number;
+    };
+    query?: never;
+    url: '/v1/sample-sets/{sample_set_id}/versions/{version_no}/item-requests';
+};
+
+export type ItemRequestsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ItemRequestsError = ItemRequestsErrors[keyof ItemRequestsErrors];
+
+export type ItemRequestsResponses = {
+    /**
+     * Successful Response
+     */
+    201: ItemRequestsCreatedOut;
+};
+
+export type ItemRequestsResponse = ItemRequestsResponses[keyof ItemRequestsResponses];
+
+export type ItemRequestsPreviewData = {
+    body: ItemRequestsIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sample Set Id
+         */
+        sample_set_id: string;
+        /**
+         * Version No
+         */
+        version_no: number;
+    };
+    query?: never;
+    url: '/v1/sample-sets/{sample_set_id}/versions/{version_no}/item-requests/preview';
+};
+
+export type ItemRequestsPreviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ItemRequestsPreviewError = ItemRequestsPreviewErrors[keyof ItemRequestsPreviewErrors];
+
+export type ItemRequestsPreviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: ItemRequestPreviewOut;
+};
+
+export type ItemRequestsPreviewResponse = ItemRequestsPreviewResponses[keyof ItemRequestsPreviewResponses];
+
+export type Items2Data = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sample Set Id
+         */
+        sample_set_id: string;
+        /**
+         * Version No
+         */
+        version_no: number;
+    };
+    query?: {
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/sample-sets/{sample_set_id}/versions/{version_no}/items';
+};
+
+export type Items2Errors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type Items2Error = Items2Errors[keyof Items2Errors];
+
+export type Items2Responses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageSampleItemOut;
+};
+
+export type Items2Response = Items2Responses[keyof Items2Responses];
+
 export type RecordScreeningData = {
     body: ScreeningRecordIn;
     headers?: {
@@ -83925,3 +85530,171 @@ export type CreateExportResponses = {
 };
 
 export type CreateExportResponse = CreateExportResponses[keyof CreateExportResponses];
+
+export type PopulationCreateData = {
+    body: PopulationIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/work-items/{work_item_id}/populations';
+};
+
+export type PopulationCreateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PopulationCreateError = PopulationCreateErrors[keyof PopulationCreateErrors];
+
+export type PopulationCreateResponses = {
+    /**
+     * Successful Response
+     */
+    201: AbacusModulesSamplingContractPopulationOut;
+};
+
+export type PopulationCreateResponse = PopulationCreateResponses[keyof PopulationCreateResponses];
+
+export type SampleSetsListData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/work-items/{work_item_id}/sample-sets';
+};
+
+export type SampleSetsListErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SampleSetsListError = SampleSetsListErrors[keyof SampleSetsListErrors];
+
+export type SampleSetsListResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageSampleSetSummaryOut;
+};
+
+export type SampleSetsListResponse = SampleSetsListResponses[keyof SampleSetsListResponses];
+
+export type SampleSetCreateData = {
+    body: SampleSetIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/work-items/{work_item_id}/sample-sets';
+};
+
+export type SampleSetCreateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SampleSetCreateError = SampleSetCreateErrors[keyof SampleSetCreateErrors];
+
+export type SampleSetCreateResponses = {
+    /**
+     * Successful Response
+     */
+    201: SampleSetSummaryOut;
+};
+
+export type SampleSetCreateResponse = SampleSetCreateResponses[keyof SampleSetCreateResponses];

@@ -3507,6 +3507,59 @@ export const STATUS_REGISTRY = {
       "terminal": true,
       "derived": false
     }
+  },
+  "sample_set_version": {
+    "drawing": {
+      "label": "Drawing",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "spinner"
+    },
+    "draft": {
+      "label": "Draft",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "soon",
+      "terminal": true,
+      "derived": false
+    },
+    "failed": {
+      "label": "Failed",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "completeness_tie_result": {
+    "tie": {
+      "label": "tie",
+      "variant": "green",
+      "terminal": false,
+      "derived": false
+    },
+    "off": {
+      "label": "off {amount}",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "check": {
+      "label": "Check",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    }
   }
 } as const;
 

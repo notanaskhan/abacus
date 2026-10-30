@@ -167,3 +167,14 @@ Keyboard: `src/screens/SHL-14/SHL-14.keyboard.test.tsx` (P-06-T26; vitest, passi
 - The Underlay differs per state (a, b, e Northwind cockpit with Toolbar "Audits"; d CLS-03 Copperleaf Intake with Toolbar "Closes"; f Granite Peak audit). In P-06 the drawer is hosted from BND-02; the AUD-03 and CLS-03 hosts come with A-01 and C-01.
 - P-06 §3.8 has Raj add "Sound Electric invoice — Aug 18 ($3,200)" to the Copperleaf binder (J10 step 2). That request is journey data for the d scenario's binder; artboard d itself shows the Square payouts request as the handoff draws it.
 - Personas `marcus-delaney` and `cole-hart` are added to the scenario by P-06-T08 if F-04 has not.
+
+## Addendum: c Sample-driven bulk (A-03-T02; built by A-03-T15)
+| Field | Value |
+|---|---|
+| State | c · Marcus Delaney · Mon Sep 14, 2026, 9:41 AM CT (revision wins) |
+| Data condition | wave "Sample" selected: a picker of **approved** sample-set versions only (`GET /v1/work-items/{wid}/sample-sets`); Northwind Participants Version 2 shows "25 participants" and "Creates 25 requests in 'Sample-driven'"; "Create 25 requests" calls `POST /v1/sample-sets/{sid}/versions/{n}/item-requests` (`sample_set.generate_requests`, `Idempotency-Key`) |
+| Flag | the "Sample" wave reads `sampling.sample_sets` from `/v1/me/capabilities`; off, the option is absent |
+
+| ID | State | Deviation | Reason |
+|---|---|---|---|
+| DV-C1 | c | The linked row names the sample version instead of "EBP-04 Participant data" | EBP-04 lands in A-05 |

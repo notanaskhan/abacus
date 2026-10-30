@@ -80,6 +80,7 @@ Contracts one screen family needs that are not among C1 to C21 (P-07 owns no C-n
 | Intake and import: CLI-06 dedupe, single-client intake drafts and commit, bulk client import (upload, rows, decisions, run) | `intake-import.md` | P-07 (P-07-T37) | CLI-06, P-07-T42, P-07-T45, P-07-T49, P-07-T52, P-07-T54 | v1 | stub behind `clients.v2` (P-07-T37, 2026-10-26) |
 | Firm intake (C5 v1.2 intake half): inbox threads, staff-logged and portal intake, triage, destinations | `firm-intake.md` | N-01 (N-01-T02) | R-01, T-02, I-01, P-11, N-02, A-07, N-03, N-04, C-01 | v1.2 | stub behind `inbox.firm_intake` and `portal.intake_upload` (N-01-T02, 2026-10-27) |
 | Files browser: tree, folders, drawer, access log (read-only) | `files-browser.md` | N-01 (N-01-T02) | FIL-01, A-07, R-02, N-02 | v1 | stub behind `files.browser` (N-01-T02, 2026-10-27) |
+| Sampling API: populations and completeness ties, sample sets and frozen versions, draw progress, items, approval, export, the item-request fan-out | `sampling.md` | A-03 (A-03-T02) | AUD-11, SHL-14 c, AUD-02, AUD-03, A-05, A-06, A-08, K-03, A-11 | v1 | stub behind `sampling.sample_sets` (A-03-T02, 2026-10-30) |
 
 ## The handshake (chapter 01 §1.3.2, solo edition)
 

@@ -835,6 +835,20 @@ class ClientInvitationStatus(StrEnum):
     EXPIRED = "expired"
 
 
+class SampleSetVersionStatus(StrEnum):
+    DRAWING = "drawing"
+    DRAFT = "draft"
+    APPROVED = "approved"
+    SUPERSEDED = "superseded"
+    FAILED = "failed"
+
+
+class CompletenessTieResultStatus(StrEnum):
+    TIE = "tie"
+    OFF = "off"
+    CHECK = "check"
+
+
 # Each object's stored codes, and their SQL CHECK list.
 STORED: dict[str, tuple[str, ...]] = {
     "engagement": (
@@ -1529,6 +1543,18 @@ STORED: dict[str, tuple[str, ...]] = {
         "accepted",
         "revoked",
         "expired",
+    ),
+    "sample_set_version": (
+        "drawing",
+        "draft",
+        "approved",
+        "superseded",
+        "failed",
+    ),
+    "completeness_tie_result": (
+        "tie",
+        "off",
+        "check",
     ),
 }
 CHECKS: dict[str, str] = {
