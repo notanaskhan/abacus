@@ -2319,7 +2319,10 @@
       "sha256": "5a60ecde7bd3e1da4f49a34c1f10d4d2f65065d87c0d0d5aa8bc20b6d3487ec6",
       "crop": "window",
       "tier": "B",
-      "locked": false
+      "locked": true,
+      "mask": [
+        "[data-signing='page']"
+      ]
     },
     "t16-signing-ceremony.t16c": {
       "selector": "[data-artboard=\"t16c\"] [data-shell=\"app\"]",
@@ -2327,7 +2330,10 @@
       "sha256": "21a55b78734de749f48f5cf00c1378d374f7e3bae36a154d6ba1c0cf8d774eaa",
       "crop": "window",
       "tier": "B",
-      "locked": true
+      "locked": true,
+      "mask": [
+        "[data-signing='page']"
+      ]
     },
     "tpl-16.b": {
       "page": "screens/TPL-16?st=b",
@@ -2336,7 +2342,10 @@
       "sha256": "1f7d0ac2d721266d794b11cab4d6a7bb1b59a02eff92dd0f91590bbb003bb244",
       "crop": "window",
       "tier": "B",
-      "locked": false
+      "locked": true,
+      "mask": [
+        "[data-signing='page']"
+      ]
     },
     "tpl-16.d": {
       "page": "screens/TPL-16?st=d",
@@ -2345,7 +2354,10 @@
       "sha256": "6c6ccac1c63865a1621da10c40338b7eeb22c0f5add49588a8c8efaab158cb75",
       "crop": "window",
       "tier": "B",
-      "locked": false
+      "locked": true,
+      "mask": [
+        "[data-signing='page']"
+      ]
     },
     "tpl-16.e": {
       "page": "screens/TPL-16?st=e",
@@ -2354,7 +2366,10 @@
       "sha256": "6ecc2dc9636bf85796dc8b34203b23fb9f40a4f666070d2007bc3c9c96663171",
       "crop": "window",
       "tier": "B",
-      "locked": true
+      "locked": true,
+      "mask": [
+        "[data-signing='page']"
+      ]
     },
     "tpl-16.f": {
       "page": "screens/TPL-16?st=f",
@@ -2363,8 +2378,10 @@
       "sha256": "f94393a42fcef941034f7dff5b63f11307fadba7efad627a9b41e8ffe0aa84cc",
       "crop": "window",
       "tier": "B",
-      "locked": false,
-      "deviation": "F-06-T13 end review: the decline dialog is drawn in place (forceState, no layer or scrim) where the board draws it over a scrim: 81.75 % at Tier B; reported only"
+      "locked": true,
+      "mask": [
+        "[data-signing='page']"
+      ]
     },
     "tpl-16.g": {
       "page": "screens/TPL-16?st=g",
@@ -2378,7 +2395,11 @@
         1744
       ],
       "tier": "B",
-      "locked": false
+      "locked": false,
+      "mask": [
+        "[data-signing='page']"
+      ],
+      "deviation": "F-06 parity follow-up (DEC-1183): 3.59 % at Tier B; the handoff's phone header (title with firm and count, pill step chips, the pinch hint) is a different mobile layout from the kit's portal toolbar: reported only"
     },
     "tpl-01.a": {
       "page": "screens/TPL-01?st=a",
