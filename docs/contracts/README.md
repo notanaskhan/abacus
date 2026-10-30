@@ -20,7 +20,7 @@ Status values: `planned` (no stub), `stub` (models, 501 routes, matrix actions, 
 | C8 | Adjustments: proposed entries (8 states), threshold-policy versions, named-human batch approval | `adjustments.md` | A-06 | EBP-06, T-05, C-02, A-09 eliminations | S24 | 2027-09-20 | v1 | planned |
 | C9 | Ledger: TB layers, groupings and FS-line taxonomy, account mapping | `c09-ledger.md` | A-02, A-03 | A-04, A-06, T-05, C-01, A-10 | layers S10, taxonomy S20 | 2027-03-08, 2027-07-26 | v1 | stub (layers half: A-02-T03, 2026-10-25; the SPEC-309 to SPEC-311 operations live, DEC-314) |
 | C10 | Deliverables and release registry with download audit | `deliverables.md` | R-02 | A-07, T-02 (K-1), C-02, X-01 | S29 | 2027-11-29 | v1 | planned |
-| C11 | Deterministic PDF/DOCX renderer; templates in the database | `renderer.md` | P-11 | ENG-04, AUD-20 to AUD-23, TAX-12, NOT-03, CLS-08, FSP-06 | S18 | 2027-06-28 | v1 | planned |
+| C11 | Deterministic PDF/DOCX renderer; templates in the database | `c11-renderer.md` | P-11 | ENG-04, AUD-20 to AUD-23, TAX-12, NOT-03, CLS-08, FSP-06 | S18 | 2027-06-28 | v1 | skeleton (P-11-T01, 2026-10-29) |
 | C12 | TB hand-off into tax | `tb-handoff.md` | T-06 | AUD-38, CLS-12 | S50 | 2028-09-18 | v1 | planned |
 | C13 | Human-gate projection registration slot (Home) | `home-and-gates.md` | I-01 with P-04 | every module | S10 | 2027-03-08 | v1 | stub (home half: I-01-T02, 2026-10-26; gate-half AC suite I-01-T03) |
 | C14 | Board and program-status read model | `board-status.md` | K-04 | AUD-01/02, TAX-01, CLS-01/02, ATT-04 | S59 | 2029-01-22 | v1 | planned |
