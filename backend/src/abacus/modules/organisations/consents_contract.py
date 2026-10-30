@@ -135,6 +135,9 @@ class ConsentOut(BaseModel):
     signers: Annotated[list[ConsentSignerOut], classified("confidential")] = Field(
         default_factory=list[ConsentSignerOut]
     )
+    # T-01-T14 (additive): the counsel-approved template's name ("BH §7216 Consent to Use v2"),
+    # database content, for CLI-05's per-document sub-rows.
+    template_name: Annotated[str | None, classified("internal")] = None
 
 
 class ConsentDocumentOut(BaseModel):
@@ -295,6 +298,18 @@ class TaxElectionOut(BaseModel):
     status_code: Annotated[str, classified("internal")]
 
 
+class TaxProfileIdentityOut(BaseModel):
+    """CLI-05's Identity band: who the profile is for, by masked TIN (last four; DEC-52)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    role: Annotated[Literal["taxpayer", "spouse"], classified("internal")]
+    client_entity_id: Annotated[UUID, classified("internal")]
+    name: Annotated[str, classified("confidential")]
+    # Named for what it holds: C19 keeps a field called `tin` (or ssn, ein, itin) for plaintext.
+    masked_tin: Annotated[MaskedTinOut | None, classified("restricted")] = None
+
+
 class TaxProfileOut(BaseModel):
     """CLI-05's rail: consents in force, authorizations on file, elections, a masked identity band
     (last four only; DEC-52) and open notices (planned)."""
@@ -308,6 +323,16 @@ class TaxProfileOut(BaseModel):
     elections: Annotated[list[TaxElectionOut], classified("restricted", tri=True)]
     open_notices: Annotated[int | None, classified("internal")]
     allowed_actions: Annotated[list[str], classified("internal")]
+    # T-01-T14 (additive): the subbar and the Identity band.
+    client_name: Annotated[str, classified("confidential")] = ""
+    client_kind: Annotated[str | None, classified("internal")] = None  # "Household"
+    partner_name: Annotated[str | None, classified("confidential")] = None
+    office_name: Annotated[str | None, classified("internal")] = None
+    identity: Annotated[list[TaxProfileIdentityOut], classified("restricted")] = Field(
+        default_factory=list[TaxProfileIdentityOut]
+    )
+    portal_user_name: Annotated[str | None, classified("confidential")] = None
+    resident_state: Annotated[str | None, classified("internal")] = None
 
 
 class TaxElectionIn(BaseModel):

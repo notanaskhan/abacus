@@ -5,6 +5,7 @@ import type { ConsentOut } from "@abacus/api-client";
 import { type FixtureHandler, json } from "../../app-core/fixture-mode";
 import { REGISTRY_CONSENTS, REGISTRY_TOTAL } from "../seed/consents";
 import { CONSENT_SUMMARY, FELD_PAYMENTS, FELD_RETURN_ID } from "../seed/tax-compliance";
+import { SYNTHETIC_TINS, TAX_PROFILES } from "../seed/tax-profile";
 
 /** E0 (Mon Sep 14, 2026, 9:24 AM CT): "expiring" is signed and ending within 30 days. */
 const E0 = Date.parse("2026-09-14T09:24:00-05:00");
@@ -37,6 +38,20 @@ export function taxComplianceHandlers(): Record<string, FixtureHandler> {
   return {
     "GET /v1/consents/summary": () => json(CONSENT_SUMMARY),
     "GET /v1/consents": ({ query }) => registry(query),
+    // T-01-T14: CLI-05's profiles, and a logged reveal of their synthetic TINs (P-07's shape).
+    "GET /v1/client-entities/{client_entity_id}/tax-profile": ({ params }) => {
+      const found = TAX_PROFILES[params.client_entity_id ?? ""];
+      return found === undefined ? json(NOT_FOUND, 404) : json(found);
+    },
+    "POST /v1/client-entities/{entity_id}/tin/reveal": ({ params, body }) => {
+      const entityId = params.entity_id ?? "";
+      const value = SYNTHETIC_TINS[entityId];
+      if (value === undefined) return json(NOT_FOUND, 404);
+      if ((body as { reason?: string } | null)?.reason === undefined) {
+        return json({ detail: "validation" }, 422);
+      }
+      return json({ entity_id: entityId, kind: "ssn", value, remask_after_seconds: 10 });
+    },
     "GET /v1/tax-returns/{return_id}/delivery": ({ params }) =>
       params.return_id === FELD_RETURN_ID
         ? json({

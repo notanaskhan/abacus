@@ -49,6 +49,13 @@ import {
   scenarios as adm06Scenarios,
 } from "./ADM-06/scenarios";
 import { ADM05 } from "./ADM-05";
+import { CLI05 } from "./CLI-05";
+import {
+  type Cli05State,
+  ENTITY as CLI05_ENTITY,
+  STATES as CLI05_STATES,
+  scenarios as cli05Scenarios,
+} from "./CLI-05/scenarios";
 import {
   type Adm05State,
   STATES as ADM05_STATES,
@@ -864,6 +871,33 @@ function Adm05Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("ADM-05", { title: "Consent registry (§7216)", Component: Adm05Artboard });
+
+// CLI-05 d and f (T-01-T14): the client's Tax profile cockpit on the consents section.
+function Cli05Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Cli05State = CLI05_STATES.find((s) => s === params.st) ?? "d";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      cli05Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? (
+    <div data-artboard={state}>
+      <CLI05 key={state} frame clientEntityId={CLI05_ENTITY[state]} section="consents" />
+    </div>
+  ) : null;
+}
+
+registerScreen("CLI-05", {
+  title: "Tax profile, authorizations & consents",
+  Component: Cli05Artboard,
+});
 
 // N-02-T11: SIG-01 · Signatures hub (a–g); f's reminder and r's Import sheet with N-02-T15.
 function Sig01Frame({ state }: { state: Sig01State }): JSX.Element {

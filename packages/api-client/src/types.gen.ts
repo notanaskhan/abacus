@@ -6929,6 +6929,10 @@ export type ConsentOut = {
      */
     tax_years: Array<number>;
     /**
+     * Template Name
+     */
+    template_name?: string | null;
+    /**
      * Template Version Id
      */
     template_version_id: string;
@@ -30971,6 +30975,27 @@ export type TaxPlanRowOut = {
 };
 
 /**
+ * TaxProfileIdentityOut
+ *
+ * CLI-05's Identity band: who the profile is for, by masked TIN (last four; DEC-52).
+ */
+export type TaxProfileIdentityOut = {
+    /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    masked_tin?: MaskedTinOut | null;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Role
+     */
+    role: 'taxpayer' | 'spouse';
+};
+
+/**
  * TaxProfileOut
  *
  * CLI-05's rail: consents in force, authorizations on file, elections, a masked identity band
@@ -30990,6 +31015,14 @@ export type TaxProfileOut = {
      */
     client_entity_id: string;
     /**
+     * Client Kind
+     */
+    client_kind?: string | null;
+    /**
+     * Client Name
+     */
+    client_name?: string;
+    /**
      * Consents
      */
     consents: Array<ConsentOut>;
@@ -30998,9 +31031,29 @@ export type TaxProfileOut = {
      */
     elections: Array<TaxElectionOut>;
     /**
+     * Identity
+     */
+    identity?: Array<TaxProfileIdentityOut>;
+    /**
+     * Office Name
+     */
+    office_name?: string | null;
+    /**
      * Open Notices
      */
     open_notices: number | null;
+    /**
+     * Partner Name
+     */
+    partner_name?: string | null;
+    /**
+     * Portal User Name
+     */
+    portal_user_name?: string | null;
+    /**
+     * Resident State
+     */
+    resident_state?: string | null;
     taxpayer_tin?: MaskedTinOut | null;
 };
 

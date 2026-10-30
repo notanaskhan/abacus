@@ -238,6 +238,12 @@ const ROWS: readonly Row[] = [
   },
 ];
 
+/** The firm's published consent templates (database content in a live firm; KNW-05). */
+const TEMPLATES: Partial<Record<Purpose, string>> = {
+  use: "BH §7216 Consent to Use v2",
+  ai_disclosure: "BH §7216 Consent to Disclose — AI sub-processors v2",
+};
+
 function slug(name: string): string {
   return name
     .toLowerCase()
@@ -287,6 +293,7 @@ function consentsOf(row: Row): ConsentOut[] {
     offshore: false,
     allowed_actions:
       row.status === "declined" ? ["consent.read"] : ["consent.read", "consent.request"],
+    template_name: TEMPLATES[purpose] ?? null,
     declined_at: row.declinedAt ?? null,
     revoked_at: row.revokedAt ?? null,
     signers,
