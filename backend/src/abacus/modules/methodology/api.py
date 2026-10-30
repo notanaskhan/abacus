@@ -35,6 +35,9 @@ from abacus.modules.methodology.lifecycle import (
 )
 from abacus.modules.methodology.programs import CitedStep, step_at
 from abacus.modules.methodology.report_templates import (
+    ConsentTerms as ReportTemplateConsentTerms,
+)
+from abacus.modules.methodology.report_templates import (
     ImportedVersion as ImportedReportTemplateVersion,
 )
 from abacus.modules.methodology.report_templates import (
@@ -47,6 +50,9 @@ from abacus.modules.methodology.report_templates import (
 )
 from abacus.modules.methodology.report_templates import (
     current_version_id as current_report_template_version,
+)
+from abacus.modules.methodology.report_templates import (
+    deprecate_version as deprecate_report_template,
 )
 from abacus.modules.methodology.report_templates import (
     import_template as import_report_template,
@@ -156,6 +162,7 @@ __all__ = [
     "PolicyRef",
     "Problem",
     "ReportTemplateBundle",
+    "ReportTemplateConsentTerms",
     "ReportTemplatePublicationView",
     "ReportTemplateSummary",
     "ReportTemplateVersionView",
@@ -180,6 +187,7 @@ __all__ = [
     "current_report_template_version",
     "current_version",
     "current_version_of_kind",
+    "deprecate_report_template",
     "import_report_template",
     "import_template",
     "latest_versions",

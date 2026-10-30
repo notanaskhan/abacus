@@ -330,6 +330,11 @@ codes:
     - abacus.modules.requests.lifecycle.ConsentRequired
     summary: A read of tax return information without the taxpayer's `use` and `ai_disclosure` consents
       in force (`facts.client_entity_id`, `facts.purpose`).
+  consent_terms_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.report_templates.ConsentTermsMissing
+    summary: A consent template version without its terms is never published.
   consent_version_stale:
     status: 409
     raised_by:
@@ -1145,6 +1150,11 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.completion.NotConcluded
     summary: A deficiency is communicated only once the partner has concluded its severity.
+  not_current:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.report_templates.NotCurrent
+    summary: Only the current version can be deprecated.
   not_draft:
     status: 409
     raised_by:

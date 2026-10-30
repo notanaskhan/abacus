@@ -276,3 +276,19 @@ class ReportTemplatePublication(Base):
     by_user_id: Mapped[UUID]
     mfa_at: Mapped[datetime | None]
     at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class ReportTemplateConsentTerms(Base):
+    """T-01-T17 (0461): a `consent_7216` version's terms; recipients come from the register."""
+
+    __tablename__ = "report_template_consent_terms"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    tenant_id: Mapped[UUID]
+    template_version_id: Mapped[UUID]
+    purpose: Mapped[str]
+    statement_version: Mapped[str]
+    counsel_attested_by_user_id: Mapped[UUID]
+    counsel_attested_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    recipients_source: Mapped[str] = mapped_column(server_default=FetchedValue())
+    expiry_months: Mapped[int | None]

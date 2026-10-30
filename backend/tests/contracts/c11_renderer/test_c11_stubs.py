@@ -40,6 +40,7 @@ LIVE = {
     "get_report_template_version_route",
     "import_report_template_route",
     "publish_report_template_route",
+    "deprecate_report_template_route",  # T-01-T17 (C11 v1.1 additive)
 }
 STUBS = [r for r in ROUTES if r.name not in LIVE]
 MODELS = [
@@ -53,6 +54,7 @@ CONTRACT_ROUTES = {
     ("get", "/v1/report-templates/{template_id}/versions/{version_no}"),
     ("post", "/v1/report-templates/import"),
     ("post", "/v1/report-templates/{template_id}/versions/{version_no}/publish"),
+    ("post", "/v1/report-templates/{template_id}/versions/{version_no}/deprecate"),  # T-01-T17
     ("post", "/v1/report-templates/{template_id}/versions/{version_no}/preview"),
     ("get", "/v1/generated-documents/{document_id}"),
     ("get", "/v1/generated-documents/{document_id}/versions/{version_no}/fields"),

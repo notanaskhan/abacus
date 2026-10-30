@@ -29,6 +29,7 @@ TABLES: frozenset[str] = frozenset(
         "report_templates",
         "report_template_versions",
         "report_template_publications",
+        "report_template_consent_terms",  # T-01-T17 (0461)
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -45,6 +46,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "report_templates",  # P-11-T06 (0460): identity never moves
         "report_template_versions",  # P-11-T06 (0460)
         "report_template_publications",  # P-11-T06 (0460)
+        "report_template_consent_terms",  # T-01-T17 (0461)
     }
 )
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -115,6 +117,11 @@ INSERT_COLUMNS["report_template_versions"] = frozenset(
 )
 INSERT_COLUMNS["report_template_publications"] = frozenset(
     {"id", "tenant_id", "version_id", "action", "by_user_id", "mfa_at"}
+)
+# T-01-T17 (0461): a consent template version's terms, frozen with it.
+INSERT_COLUMNS["report_template_consent_terms"] = frozenset(
+    {"id", "tenant_id", "template_version_id", "purpose", "statement_version"}
+    | {"counsel_attested_by_user_id", "expiry_months"}
 )
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     # K-01-T05 (0224): a draft step's content (K-01-T14 edits it); the frozen trigger refuses

@@ -87,7 +87,22 @@ ImportErrorCode = Literal[
     "markup_not_allowed",
     "clause_conflict",
     "too_large",
+    # T-01-T17 (C11 v1.1 additive): a `consent_7216` template's own rules (DF-16).
+    "consent_terms_required",
+    "recipients_block_required",
+    "recipient_in_text",
 ]
+# T-01-T17: the one purpose a consent document asks for (C19's purposes; Rev. Proc. 2013-14).
+ConsentPurpose = Literal[
+    "use",
+    "ai_disclosure",
+    "offshore_disclosure",
+    "third_party_disclosure",
+    "other_services_use",
+    "firm_defined",
+]
+# The variable a consent template places where the recipient block prints (DF-16).
+CONSENT_RECIPIENTS_KEY = "consent.recipients"
 
 # C11 §5: the audit events the service writes (P-11-T08 onward); never a Restricted value.
 AUDIT_EVENTS = (
@@ -464,6 +479,32 @@ class ClauseDefOut(BaseModel):
     default_enabled: Annotated[bool, classified("internal")]
 
 
+class ConsentTermsIn(BaseModel):
+    """A `consent_7216` template's terms (T-01-T17; C11 v1.1 additive): one purpose, the
+    mandatory-statement version, the counsel attestation and the stated expiry. Recipients are
+    never fixed text: they come from the provider-terms register at render time."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    purpose: Annotated[ConsentPurpose, classified("internal")]
+    statement_version: Annotated[
+        str, Field(pattern=r"^[A-Za-z0-9 ._-]{1,40}$"), classified("internal")
+    ]
+    counsel_attestation: Annotated[Literal[True], classified("internal")]
+    expiry_months: Annotated[int | None, Field(ge=1, le=36), classified("internal")] = None
+
+
+class ConsentTermsOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    purpose: Annotated[ConsentPurpose, classified("internal")]
+    statement_version: Annotated[str, classified("internal")]
+    counsel_attested_by: Annotated[str, classified("confidential")]
+    counsel_attested_at: Annotated[datetime, classified("internal")]
+    recipients_source: Annotated[Literal["provider_terms_register"], classified("internal")]
+    expiry_months: Annotated[int | None, classified("internal")]
+
+
 class PublicationOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -494,6 +535,8 @@ class ReportTemplateVersionOut(BaseModel):
     variables: Annotated[list[VariableDeclOut], classified("internal")]
     publications: Annotated[list[PublicationOut], classified("confidential")]
     content_sha256: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$"), classified("internal")]
+    # T-01-T17 (additive): a `consent_7216` version's terms.
+    consent: Annotated[ConsentTermsOut | None, classified("internal")] = None
 
 
 class TemplateImportIn(BaseModel):
@@ -510,6 +553,8 @@ class TemplateImportIn(BaseModel):
     clauses: Annotated[list[ClauseDefOut], Field(max_length=200), classified("internal")] = []
     variables: Annotated[list[VariableDeclOut], Field(max_length=200), classified("internal")] = []
     sample_data: Annotated[dict[str, str], classified("internal")] = {}
+    # T-01-T17 (additive): required for the `consent_7216` family, refused for any other.
+    consent: Annotated[ConsentTermsIn | None, classified("internal")] = None
 
 
 class ImportErrorOut(BaseModel):
@@ -610,6 +655,22 @@ async def publish_report_template_route(
     from abacus.modules.reporting import templates
 
     return await templates.publish(ctx, template_id, version_no)
+
+
+@templates_router.post(
+    "/{template_id}/versions/{version_no}/deprecate",
+    action="report_template.publish",
+    response_model=ReportTemplateVersionOut,
+    errors=(409,),
+)
+async def deprecate_report_template_route(
+    ctx: Ctx, template_id: UUID, version_no: int
+) -> ReportTemplateVersionOut:
+    """T-01-T17 (C11 v1.1 additive): withdraw the current version; nothing is current until a
+    version is published again. Human-only, fresh second factor; 409 `not_current`."""
+    from abacus.modules.reporting import templates
+
+    return await templates.deprecate(ctx, template_id, version_no)
 
 
 @templates_router.post(

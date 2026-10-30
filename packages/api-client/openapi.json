@@ -15884,6 +15884,119 @@
         "title": "ConsentTemplateOut",
         "type": "object"
       },
+      "ConsentTermsIn": {
+        "additionalProperties": false,
+        "description": "A `consent_7216` template's terms (T-01-T17; C11 v1.1 additive): one purpose, the\nmandatory-statement version, the counsel attestation and the stated expiry. Recipients are\nnever fixed text: they come from the provider-terms register at render time.",
+        "properties": {
+          "counsel_attestation": {
+            "cls": "internal",
+            "const": true,
+            "title": "Counsel Attestation",
+            "type": "boolean"
+          },
+          "expiry_months": {
+            "anyOf": [
+              {
+                "maximum": 36.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Expiry Months"
+          },
+          "purpose": {
+            "cls": "internal",
+            "enum": [
+              "use",
+              "ai_disclosure",
+              "offshore_disclosure",
+              "third_party_disclosure",
+              "other_services_use",
+              "firm_defined"
+            ],
+            "title": "Purpose",
+            "type": "string"
+          },
+          "statement_version": {
+            "cls": "internal",
+            "pattern": "^[A-Za-z0-9 ._-]{1,40}$",
+            "title": "Statement Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "purpose",
+          "statement_version",
+          "counsel_attestation"
+        ],
+        "title": "ConsentTermsIn",
+        "type": "object"
+      },
+      "ConsentTermsOut": {
+        "properties": {
+          "counsel_attested_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Counsel Attested At",
+            "type": "string"
+          },
+          "counsel_attested_by": {
+            "cls": "confidential",
+            "title": "Counsel Attested By",
+            "type": "string"
+          },
+          "expiry_months": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Expiry Months"
+          },
+          "purpose": {
+            "cls": "internal",
+            "enum": [
+              "use",
+              "ai_disclosure",
+              "offshore_disclosure",
+              "third_party_disclosure",
+              "other_services_use",
+              "firm_defined"
+            ],
+            "title": "Purpose",
+            "type": "string"
+          },
+          "recipients_source": {
+            "cls": "internal",
+            "const": "provider_terms_register",
+            "title": "Recipients Source",
+            "type": "string"
+          },
+          "statement_version": {
+            "cls": "internal",
+            "title": "Statement Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "purpose",
+          "statement_version",
+          "counsel_attested_by",
+          "counsel_attested_at",
+          "recipients_source",
+          "expiry_months"
+        ],
+        "title": "ConsentTermsOut",
+        "type": "object"
+      },
       "ContactAccessIn": {
         "additionalProperties": false,
         "description": "CLI-04 e \"Change scope\": the contact's whole grant set after the change.",
@@ -32822,7 +32935,10 @@
               "unknown_block",
               "markup_not_allowed",
               "clause_conflict",
-              "too_large"
+              "too_large",
+              "consent_terms_required",
+              "recipients_block_required",
+              "recipient_in_text"
             ],
             "title": "Code",
             "type": "string"
@@ -52796,6 +52912,17 @@
             },
             "title": "Clauses",
             "type": "array"
+          },
+          "consent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConsentTermsOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
           },
           "content_sha256": {
             "cls": "internal",
@@ -75521,6 +75648,17 @@
             "maxItems": 200,
             "title": "Clauses",
             "type": "array"
+          },
+          "consent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConsentTermsIn"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
           },
           "description": {
             "cls": "internal",
@@ -170752,6 +170890,132 @@
           "reporting"
         ],
         "x-abacus-action": "report_template.read"
+      }
+    },
+    "/v1/report-templates/{template_id}/versions/{version_no}/deprecate": {
+      "post": {
+        "description": "T-01-T17 (C11 v1.1 additive): withdraw the current version; nothing is current until a\nversion is published again. Human-only, fresh second factor; 409 `not_current`.",
+        "operationId": "deprecate_report_template",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "template_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Template Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_no",
+            "required": true,
+            "schema": {
+              "title": "Version No",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportTemplateVersionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Deprecate Report Template Route",
+        "tags": [
+          "reporting"
+        ],
+        "x-abacus-action": "report_template.publish"
       }
     },
     "/v1/report-templates/{template_id}/versions/{version_no}/preview": {

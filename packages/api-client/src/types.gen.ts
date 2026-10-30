@@ -7357,6 +7357,62 @@ export type ConsentTemplateOut = {
 };
 
 /**
+ * ConsentTermsIn
+ *
+ * A `consent_7216` template's terms (T-01-T17; C11 v1.1 additive): one purpose, the
+ * mandatory-statement version, the counsel attestation and the stated expiry. Recipients are
+ * never fixed text: they come from the provider-terms register at render time.
+ */
+export type ConsentTermsIn = {
+    /**
+     * Counsel Attestation
+     */
+    counsel_attestation: true;
+    /**
+     * Expiry Months
+     */
+    expiry_months?: number | null;
+    /**
+     * Purpose
+     */
+    purpose: 'use' | 'ai_disclosure' | 'offshore_disclosure' | 'third_party_disclosure' | 'other_services_use' | 'firm_defined';
+    /**
+     * Statement Version
+     */
+    statement_version: string;
+};
+
+/**
+ * ConsentTermsOut
+ */
+export type ConsentTermsOut = {
+    /**
+     * Counsel Attested At
+     */
+    counsel_attested_at: string;
+    /**
+     * Counsel Attested By
+     */
+    counsel_attested_by: string;
+    /**
+     * Expiry Months
+     */
+    expiry_months: number | null;
+    /**
+     * Purpose
+     */
+    purpose: 'use' | 'ai_disclosure' | 'offshore_disclosure' | 'third_party_disclosure' | 'other_services_use' | 'firm_defined';
+    /**
+     * Recipients Source
+     */
+    recipients_source: 'provider_terms_register';
+    /**
+     * Statement Version
+     */
+    statement_version: string;
+};
+
+/**
  * ContactAccessIn
  *
  * CLI-04 e "Change scope": the contact's whole grant set after the change.
@@ -15504,7 +15560,7 @@ export type ImportErrorOut = {
     /**
      * Code
      */
-    code: 'unknown_variable' | 'unknown_layout' | 'unknown_block' | 'markup_not_allowed' | 'clause_conflict' | 'too_large';
+    code: 'unknown_variable' | 'unknown_layout' | 'unknown_block' | 'markup_not_allowed' | 'clause_conflict' | 'too_large' | 'consent_terms_required' | 'recipients_block_required' | 'recipient_in_text';
     /**
      * Path
      */
@@ -25320,6 +25376,7 @@ export type ReportTemplateVersionOut = {
      * Clauses
      */
     clauses: Array<ClauseDefOutOutput>;
+    consent?: ConsentTermsOut | null;
     /**
      * Content Sha256
      */
@@ -36000,6 +36057,7 @@ export type AbacusModulesReportingContractTemplateImportIn = {
      * Clauses
      */
     clauses?: Array<ClauseDefOutInput>;
+    consent?: ConsentTermsIn | null;
     /**
      * Description
      */
@@ -79227,6 +79285,66 @@ export type GetReportTemplateVersionResponses = {
 };
 
 export type GetReportTemplateVersionResponse = GetReportTemplateVersionResponses[keyof GetReportTemplateVersionResponses];
+
+export type DeprecateReportTemplateData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Template Id
+         */
+        template_id: string;
+        /**
+         * Version No
+         */
+        version_no: number;
+    };
+    query?: never;
+    url: '/v1/report-templates/{template_id}/versions/{version_no}/deprecate';
+};
+
+export type DeprecateReportTemplateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type DeprecateReportTemplateError = DeprecateReportTemplateErrors[keyof DeprecateReportTemplateErrors];
+
+export type DeprecateReportTemplateResponses = {
+    /**
+     * Successful Response
+     */
+    200: ReportTemplateVersionOut;
+};
+
+export type DeprecateReportTemplateResponse = DeprecateReportTemplateResponses[keyof DeprecateReportTemplateResponses];
 
 export type PreviewReportTemplateData = {
     body?: never;
