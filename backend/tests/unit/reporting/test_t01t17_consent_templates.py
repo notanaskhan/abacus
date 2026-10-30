@@ -72,6 +72,7 @@ BEDROCK = TermsEntry(
     region="us-east-1",
     approved_on=date(2026, 9, 1),
     review_by=date(2027, 8, 31),
+    material="f" * 64,
 )
 
 
@@ -152,7 +153,7 @@ def test_ac29_the_recipient_line_comes_from_the_register(monkeypatch: pytest.Mon
     _register(monkeypatch, BEDROCK)
     found = consent.recipients(ON)
     assert found.line == "Amazon Web Services (Bedrock) · model inference · US"
-    assert found.provider_terms_version
+    assert found.provider_terms_version == "f" * 64  # the material hash the gate compares
 
 
 def test_ac29_with_no_covering_entry_a_consent_does_not_render(
@@ -163,7 +164,12 @@ def test_ac29_with_no_covering_entry_a_consent_does_not_render(
         consent.recipients(ON)
     assert refused.value.code == "recipients_unavailable"
     expired = TermsEntry(
-        "bedrock", "Amazon Web Services", "us-east-1", date(2025, 1, 1), date(2025, 12, 31)
+        "bedrock",
+        "Amazon Web Services",
+        "us-east-1",
+        date(2025, 1, 1),
+        date(2025, 12, 31),
+        material="f" * 64,
     )
     _register(monkeypatch, expired)
     with pytest.raises(consent.RecipientsUnavailable):

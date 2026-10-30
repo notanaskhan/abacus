@@ -3,7 +3,7 @@ AC-28 to AC-31).
 
 A consent's recipient block is never wording a firm types: it is the line the provider-terms
 register gives on the day the document renders ("Amazon Web Services (Bedrock) · model inference
-· US"), and the register's version is stored on the consent (`provider_terms_version`). The
+· US"), and the register's material-terms hash is stored on the consent (`provider_terms_version`). The
 template places the `consent.recipients` variable exactly once where the block prints, and no
 fixed text in it may name a model provider or sub-processor as a recipient: "Anthropic" in a
 template is refused at import (only the register's eligible route ever carries client data,
@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Final
 
-from abacus.kernel.provider_terms import covering, version
+from abacus.kernel.provider_terms import covering
 from abacus.modules.reporting.contract import CONSENT_RECIPIENTS_KEY
 from abacus.modules.reporting.render.head import RenderRefused
 
@@ -62,6 +62,8 @@ class RecipientsUnavailable(RenderRefused):
 @dataclass(frozen=True)
 class Recipients:
     line: str
+    # The covering entry's material-terms hash: what the consent gate compares a signed consent
+    # with (a material change means re-consent; organisations.consent_gate).
     provider_terms_version: str
 
 
@@ -78,8 +80,10 @@ def recipients(on: date) -> Recipients:
     entry = covering(ROUTE, on)
     if entry is None:
         raise RecipientsUnavailable
+    if not entry.material:
+        raise RecipientsUnavailable
     line = f"{entry.provider} ({ROUTE.title()}) · {_SERVICE} · {_country(entry.region)}"
-    return Recipients(line, version())
+    return Recipients(line, entry.material)
 
 
 def recipient_values(on: date) -> dict[str, str]:
