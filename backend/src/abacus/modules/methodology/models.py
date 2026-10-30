@@ -201,7 +201,9 @@ class _StandardVersion:
     parent_id: Mapped[UUID]
     version: Mapped[int]
     status: Mapped[str] = mapped_column(server_default=FetchedValue())
-    effective_from: Mapped[date | None]
+    # Set only by publish (an UPDATE); the app role may not insert them (0401's column grants),
+    # so a draft's INSERT must leave them out.
+    effective_from: Mapped[date | None] = mapped_column(server_default=FetchedValue())
     payload: Mapped[dict[str, object]] = mapped_column(JSONB)
     payload_schema_version: Mapped[int] = mapped_column(server_default=FetchedValue())
     payload_hash: Mapped[str]
@@ -209,9 +211,9 @@ class _StandardVersion:
     drafted_from_version_id: Mapped[UUID | None]
     drafted_by: Mapped[UUID]
     drafted_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
-    published_by: Mapped[UUID | None]
-    published_actor_kind: Mapped[str | None]
-    published_at: Mapped[datetime | None]
+    published_by: Mapped[UUID | None] = mapped_column(server_default=FetchedValue())
+    published_actor_kind: Mapped[str | None] = mapped_column(server_default=FetchedValue())
+    published_at: Mapped[datetime | None] = mapped_column(server_default=FetchedValue())
     row_version: Mapped[int] = mapped_column(server_default=FetchedValue())
 
 

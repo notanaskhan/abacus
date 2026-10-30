@@ -82,6 +82,10 @@ def _frozen() -> ConfigDict:
 
 # --- payloads, one per kind (payload_schema_version 1) -------------------------------------------
 
+# The stored codes plus C2's derived `superseded` (a later published version is in effect; the
+# registry marks it derived, so the generated enum leaves it out). K-02-T08.
+VersionShownStatus = FirmStandardVersionStatus | Literal["superseded"]
+
 
 class AjeThresholdRow(BaseModel):
     """One account class. `limit` rows are within threshold up to `limit_usd`; the last two rows
@@ -271,7 +275,7 @@ class StandardVersionSummaryOut(BaseModel):
 
     id: Annotated[UUID, classified("internal")]
     version: Annotated[int, classified("internal")]
-    status: Annotated[FirmStandardVersionStatus, classified("internal")]
+    status: Annotated[VersionShownStatus, classified("internal")]
     effective_from: Annotated[date | None, classified("internal")]
     published_at: Annotated[datetime | None, classified("internal")]
     published_by: Annotated[StandardPersonOut | None, classified("internal")]
@@ -312,7 +316,7 @@ class StandardVersionOut(BaseModel):
     id: Annotated[UUID, classified("internal")]
     standard_id: Annotated[UUID, classified("internal")]
     version: Annotated[int, classified("internal")]
-    status: Annotated[FirmStandardVersionStatus, classified("internal")]
+    status: Annotated[VersionShownStatus, classified("internal")]
     effective_from: Annotated[date | None, classified("internal")]
     payload_schema_version: Annotated[int, classified("internal")]
     payload_hash: Annotated[str, classified("internal")]
