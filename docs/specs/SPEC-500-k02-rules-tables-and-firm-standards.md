@@ -78,6 +78,9 @@ Two kinds of versioned, effective-dated rules (K-02 short version): **platform r
 - **AC-32** Discard keeps the row as `discarded`; the diff lists changed cells by JSON pointer with before and after strings, against the version a draft came from by default.
 - **AC-33** The examples slot (`register_standard_examples`) answers `provider_registered: false` with no rows until a provider registers; a provider's rows are already `visible()`-filtered, and no hidden count is shown (DEC-43, US-3.6).
 - **AC-34** `current_version(tenant_id, key, as_of)` names the version in effect (`LookupError` before the first effective date or for an unknown key); a standard's owner must be a partner member (422 `owner_not_partner`), and a key is one standard per firm (409 `standard_key_taken`). KNW-01's `firm_standards` category lists one card per published standard and a change-log entry per published version; the C15 projection `firm_standard` carries the name and kind only.
+- **AC-56** (K-02-T15) The calendar engine reproduces every golden due date in `backend/tests/golden/calendar/i_clocks.yaml` (TY2025 and TY2026 for 1040, 1065, 1120-S, 1120, 1041, 990/8868, 5500/5558, and 706/4768), including IRC §7503 rolls and extensions run from the unrolled date, and every case cites its source.
+- **AC-57** (K-02-T15) The clocks (AU-C 230 assembly and AU-C 265 communication +60, FTC notice +30, 8879 retention three years with Feb 29 ending on Feb 28) match their golden cases and never roll.
+- **AC-58** (K-02-T15) A disaster postponement moves only a covered date in a covered place, never earlier.
 
 ## 4. Out of scope here
 The CLI, import and export, fan-out and KNW-04i/j (K-02-T06 to T12, T14 to T20) build against the same contract in later sprints.
