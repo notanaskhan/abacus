@@ -1,8 +1,8 @@
 ---
 id: TASK-2227
 title: P-04-T43 SHL-16 Checkpoint diff drawer a–f and the restore dialog
-spec: SPEC-360
-acceptance_criteria: []
+spec: SPEC-000  # the backlog row; SPEC-360 and the handoff
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: green
 status: in-review
 epic: P-04

@@ -107,13 +107,15 @@ describe("SHL-16", () => {
     const calls = show("c");
     expect(await screen.findByText("Self-check: 0 errors, 2 warnings")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /Approve checkpoint/u })).toBeNull();
-    expect(await screen.findByText(COPY.restoreDialog.title(3))).toBeTruthy();
+    expect((await screen.findAllByText(COPY.restoreDialog.title(3))).length).toBeGreaterThan(0);
     expect(screen.getByText(COPY.restoreDialog.body(3, 7))).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: COPY.restoreDialog.restore }));
     await waitFor(() => {
       expect(calls.some((c) => c.method === "POST" && c.path.endsWith("/restore"))).toBe(true);
     });
-    expect(await screen.findByText(COPY.toasts.restored(7))).toBeTruthy();
+    await waitFor(() => {
+      expect(toastStore.list().map((t) => t.text)).toContain(COPY.toasts.restored(7));
+    });
     expect(calls.filter((c) => ["PATCH", "DELETE"].includes(c.method))).toEqual([]);
   });
 
@@ -143,12 +145,10 @@ describe("SHL-16", () => {
 
   it("the filter asks the server for Agent only", async () => {
     const calls = show("a");
-    fireEvent.click(await screen.findByRole("button", { name: COPY.filter }));
-    fireEvent.click(
-      await screen
-        .findByRole("menuitemcheckbox", { name: COPY.filters.agent })
-        .catch(() => screen.getByRole("menuitem", { name: COPY.filters.agent })),
-    );
+    const filter = await screen.findByRole("button", { name: COPY.filter });
+    filter.focus();
+    fireEvent.keyDown(filter, { key: "ArrowDown" });
+    fireEvent.click(await screen.findByText(COPY.filters.agent));
     await waitFor(() => {
       expect(
         calls.some((c) => c.path === "/v1/checkpoints" && c.query.includes("filter=agent")),

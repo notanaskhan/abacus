@@ -1269,9 +1269,24 @@ export const DETAIL_C3: CheckpointDetailOut | undefined =
         compare: "current",
         compared_to_id: cards.find((c) => c.current)?.id ?? null,
         steps: [
-          { kind: "created_worksheet", title: "Created worksheet", detail: "Federal › Income › Wages (W-2)", at: "2026-09-03T16:03:00Z" },
-          { kind: "created_worksheet", title: "Created worksheet", detail: "Sch E, p 2 › Ridgeline", at: "2026-09-03T16:04:00Z" },
-          { kind: "self_check", title: "Self-check: 0 errors, 2 warnings", detail: null, at: "2026-09-03T16:05:00Z" },
+          {
+            kind: "created_worksheet",
+            title: "Created worksheet",
+            detail: "Federal › Income › Wages (W-2)",
+            at: "2026-09-03T16:03:00Z",
+          },
+          {
+            kind: "created_worksheet",
+            title: "Created worksheet",
+            detail: "Sch E, p 2 › Ridgeline",
+            at: "2026-09-03T16:04:00Z",
+          },
+          {
+            kind: "self_check",
+            title: "Self-check: 0 errors, 2 warnings",
+            detail: null,
+            at: "2026-09-03T16:05:00Z",
+          },
         ],
         diff: cp6Detail.diff,
         totals: cp6Detail.totals,
@@ -1649,7 +1664,11 @@ export const REVIEW_ARTBOARDS: readonly ReviewArtboard[] = [
     "Agent proposed",
     "samuel-ito",
     e0,
-    [HISTORY(SHL16.a), DETAIL(cp6Detail)],
+    [
+      HISTORY(SHL16.a),
+      DETAIL(cp6Detail),
+      post("/v1/checkpoints/{checkpoint_id}/approve", "CheckpointItemOut", seqOf(SHL16.b, 6)),
+    ],
     [send("POST /v1/checkpoints/{checkpoint_id}/approve", "CheckpointApproveIn", APPROVE_A)],
   ),
   board("SHL-16", "b", "Approved", "samuel-ito", e0, [

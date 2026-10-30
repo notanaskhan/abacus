@@ -2,6 +2,7 @@ import type { CheckpointDetailOut, CheckpointItemOut } from "@abacus/api-client"
 import { checkpointCreateMutation } from "@abacus/api-client/query";
 import {
   type Actor,
+  AgentText,
   Button,
   Dialog,
   Drawer,
@@ -65,6 +66,8 @@ function shown(v: string | null): string {
 }
 
 function Detail({ detail }: { detail: CheckpointDetailOut }): JSX.Element {
+  // An agent-authored checkpoint's steps are the agent's words: plain text through AgentText.
+  const agent = detail.checkpoint.author_kind === "agent";
   return (
     <div
       data-checkpoint-detail={detail.checkpoint.seq}
@@ -83,10 +86,21 @@ function Detail({ detail }: { detail: CheckpointDetailOut }): JSX.Element {
             />
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="flex items-baseline gap-[8px]">
-                <span className="flex-1 text-body font-medium">{s.title}</span>
+                <span className="flex-1 text-body font-medium">
+                  {agent ? (
+                    <AgentText text={s.title} inline className="text-body text-ink" />
+                  ) : (
+                    s.title
+                  )}
+                </span>
                 <span className="text-meta text-ink-3">{time(s.at)}</span>
               </span>
-              {s.detail !== null && <span className="text-dense text-ink-2">{s.detail}</span>}
+              {s.detail !== null &&
+                (agent ? (
+                  <AgentText text={s.detail} inline className="text-dense text-ink-2" />
+                ) : (
+                  <span className="text-dense text-ink-2">{s.detail}</span>
+                ))}
             </span>
           </li>
         ))}
