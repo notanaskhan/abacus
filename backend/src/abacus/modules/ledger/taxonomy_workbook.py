@@ -16,6 +16,7 @@ from __future__ import annotations
 import io
 from collections.abc import Iterator
 from typing import Final
+from zipfile import BadZipFile
 
 from openpyxl import load_workbook
 from openpyxl.utils.exceptions import InvalidFileException
@@ -71,8 +72,8 @@ def parse_grouping_workbook(data: bytes) -> ParsedGroupingSet:
     if len(data) > MAX_BYTES:
         return ParsedGroupingSet([], [], [], [Problem(0, "too_large", str(MAX_BYTES))], "0" * 64)
     try:
-        book = load_workbook(io.BytesIO(data), read_only=True, data_only=True)
-    except (InvalidFileException, KeyError, OSError, ValueError, TypeError):
+        book = load_workbook(io.BytesIO(data), read_only=True, data_only=True, keep_vba=False)
+    except (InvalidFileException, BadZipFile, KeyError, OSError, ValueError, TypeError):
         return ParsedGroupingSet([], [], [], [Problem(0, "workbook_unreadable", "")], "0" * 64)
     problems: list[Problem] = []
     sheets: dict[str, list[tuple[object, ...]]] = {}

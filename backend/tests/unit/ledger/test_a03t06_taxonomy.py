@@ -110,9 +110,25 @@ def test_ac17_a_missing_sheet_a_bad_header_and_an_unreadable_file() -> None:
 
 
 def test_a_formula_looking_cell_is_kept_as_text() -> None:
-    parsed = parse_grouping_workbook(
-        _book(groupings=[*GROUPINGS, ("x", "=HYPERLINK(1)", "expenses")])
-    )
+    # A text cell that begins with "=" (Excel stores it as a string, not a formula).
+    book = Workbook()
+    first = book.active
+    assert first is not None
+    book.remove(first)
+    for name, rows in (
+        ("Groupings", [*GROUPINGS, ("x", "placeholder", "expenses")]),
+        ("FS lines", LINES),
+        ("Number ranges", RANGES),
+    ):
+        sheet = book.create_sheet(name)
+        for row in rows:
+            sheet.append(list(row))
+    label = book["Groupings"].cell(row=len(GROUPINGS) + 1, column=2)
+    label.value = "=HYPERLINK(1)"
+    label.data_type = "s"
+    out = io.BytesIO()
+    book.save(out)
+    parsed = parse_grouping_workbook(out.getvalue())
     assert parsed.problems == []
     assert {g.key: g.label for g in parsed.groupings}["x"] == "=HYPERLINK(1)"
 

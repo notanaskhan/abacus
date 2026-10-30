@@ -430,11 +430,7 @@ async def grouping_lines_route(
         grouping_set_id=grouping_set_id,
         version_id=version_id,
         version_no=version_no,
-        classes=[
-            GroupingClassOut(class_=c, groupings=classes[c])
-            for c in order
-            if c in classes
-        ],
+        classes=[GroupingClassOut(class_=c, groupings=classes[c]) for c in order if c in classes],
         recently_used=[options[i] for i in recent if i in options],
     )
 
