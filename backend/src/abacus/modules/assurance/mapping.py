@@ -14,8 +14,8 @@ from uuid import UUID
 
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import DomainConflict, NotFound
-from abacus.kernel.uow import uow
-from abacus.modules.engagements.api import get_ref, lock_ref
+from abacus.kernel.uow import Ref, Target, uow
+from abacus.modules.engagements.api import get_ref, lock_ref, prior_engagement_of
 from abacus.modules.identity.api import AuthContext, Resource, authorise
 from abacus.modules.ledger.api import (
     MappingView,
@@ -29,6 +29,7 @@ from abacus.modules.ledger.api import (
     mapping_set_authors,
     mapping_set_of,
     mapping_view,
+    prior_keys,
     publish_version,
     published_versions,
     statements_for,
@@ -36,6 +37,26 @@ from abacus.modules.ledger.api import (
 from abacus.modules.review.api import Reviewable, ReviewableFacts, record_sign_off
 
 TARGET = "mapping_set"
+
+
+async def _prior(tenant: TenantContext, engagement_id: UUID) -> dict[str, str]:
+    """A-03-T08: the prior year's mapping as normalised code to FS-line key, from the engagement
+    this one rolled forward from (its first mapped trial balance). Only line keys cross over,
+    never figures, and only into the mapping of an engagement the caller was authorised on."""
+    prior = await prior_engagement_of(tenant, engagement_id)
+    if prior is None:
+        return {}
+    for tb in await engagement_trial_balances(tenant, prior):
+        found = await mapping_view(tenant, prior, tb.id)
+        if found is not None:
+            return prior_keys(found)
+    return {}
+
+
+async def mapping_with_prior(
+    tenant: TenantContext, engagement_id: UUID, tb_id: UUID
+) -> MappingView | None:
+    return await mapping_view(tenant, engagement_id, tb_id, await _prior(tenant, engagement_id))
 
 
 class Unmapped(DomainConflict):
@@ -71,7 +92,7 @@ async def mapping_for(
     """The mapping (None before it starts) and the published versions to start it on."""
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, "trial_balance.read", ref.resource())
-    found = await mapping_view(ctx.tenant, engagement_id, tb_id)
+    found = await mapping_with_prior(ctx.tenant, engagement_id, tb_id)
     return found, (await published_versions(ctx.tenant) if found is None else [])
 
 
@@ -112,7 +133,7 @@ async def edit(
 
 
 async def sign_mapping(ctx: AuthContext, engagement_id: UUID, tb_id: UUID, level: int) -> None:
-    found = await mapping_view(ctx.tenant, engagement_id, tb_id)
+    found = await mapping_with_prior(ctx.tenant, engagement_id, tb_id)
     if found is None:
         raise NotFound("mapping_set")
     if found.unmapped:
@@ -129,6 +150,12 @@ async def sign_mapping(ctx: AuthContext, engagement_id: UUID, tb_id: UUID, level
             level,
             found.content_hash,
         )
+        if level == 1:  # A-03-T08: the preparer's sign-off confirms the mapping
+            tx.record(
+                "mapping_set.confirmed",
+                target=Target("mapping_set", found.mapping_set_id),
+                after=Ref(accounts=len(found.accounts)),
+            )
 
 
 async def statements(
@@ -136,7 +163,8 @@ async def statements(
 ) -> Statements | None:
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, "trial_balance.read", ref.resource())
-    return await statements_for(ctx.tenant, engagement_id, tb_id, layer)
+    prior = await _prior(ctx.tenant, engagement_id)
+    return await statements_for(ctx.tenant, engagement_id, tb_id, layer, prior)
 
 
 async def mapping_facts(tenant: TenantContext, mapping_set_id: UUID) -> ReviewableFacts | None:
@@ -145,7 +173,7 @@ async def mapping_facts(tenant: TenantContext, mapping_set_id: UUID) -> Reviewab
     authors = await mapping_set_authors(tenant, mapping_set_id)
     if authors is None:
         return None
-    found = await mapping_view(tenant, authors.engagement_id, authors.trial_balance_id)
+    found = await mapping_with_prior(tenant, authors.engagement_id, authors.trial_balance_id)
     if found is None or found.mapping_set_id != mapping_set_id:
         return None
     return ReviewableFacts(
@@ -162,7 +190,7 @@ async def mapping_reviewables(tenant: TenantContext, engagement_id: UUID) -> lis
     """Each mapping set with its content hash, for the matrix and G5."""
     out: list[Reviewable] = []
     for tb in await engagement_trial_balances(tenant, engagement_id):
-        found = await mapping_view(tenant, engagement_id, tb.id)
+        found = await mapping_with_prior(tenant, engagement_id, tb.id)
         if found is not None:
             out.append(
                 Reviewable(

@@ -19871,7 +19871,7 @@ export type MappedAccountOut = {
     /**
      * Method
      */
-    method: 'manual' | 'number_range' | null;
+    method: 'manual' | 'prior_year' | 'number_range' | null;
 };
 
 /**
@@ -19943,9 +19943,21 @@ export type MappingOut = {
      */
     mapping_set_id: string | null;
     /**
+     * Number Range
+     */
+    number_range?: number;
+    /**
+     * Prior Year
+     */
+    prior_year?: number;
+    /**
      * Published Versions
      */
     published_versions: Array<GroupingVersionOut>;
+    /**
+     * Tb Balanced
+     */
+    tb_balanced?: boolean;
     /**
      * Unmapped
      */
