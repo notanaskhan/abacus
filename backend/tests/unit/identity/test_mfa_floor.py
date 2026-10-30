@@ -106,4 +106,6 @@ def test_ac10_a_name_registers_one_predicate() -> None:
 
 
 def test_ac10_the_floor_is_owner_grants_and_signing_and_approving_designations() -> None:
-    assert {"owner_grant", "engagement_designation"} == FLOOR
+    # T-01-T12 adds the TRI-bearing scopes (a K-1 package, a tax return work item or an
+    # engagement holding one).
+    assert {"owner_grant", "engagement_designation", "tri_scope"} == FLOOR

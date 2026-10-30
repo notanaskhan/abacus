@@ -50,9 +50,9 @@ objects:
       gathering:       {label: "Gathering",   variant: state,   terminal: false, derived: false}
       preparing:       {label: "Preparing",   variant: state,   terminal: false, derived: false, context_labels: {subbar_1040_1041: "Draft", subbar_entity_returns: "Working"}}   # Working = 1065/1120-S/1120/990 while the Agent tab builds the workbook
       prepared:        {label: "Prepared",    variant: neutral, terminal: false, derived: false, context_variants: {subbar: state}}
-      in_review:       {label: "In review",   variant: state,   terminal: false, derived: false, context_labels: {subbar_rail_rows: "In review · {level}"}}   # level: Detail, Manager, Partner
+      in_review:       {label: "In review",   variant: state,   terminal: false, derived: false, context_labels: {subbar_rail_rows: "In review · {level}", tax_board_rows: "In review · {level}"}}   # level: Detail, Manager, Partner; tax_board_rows: TPL-01/TAX-01 rows (DEC-1182)
       action_required: {label: "Action required", variant: red-tint, terminal: false, derived: false, context_labels: {home_and_tax_tiles: "Issues"}}
-      approved:        {label: "Approved",    variant: green-tint, terminal: false, derived: false, context_labels: {home_and_tax_tiles: "Ready"}}   # T-02-T04: the TAX-01 tile word
+      approved:        {label: "Approved",    variant: green-tint, terminal: false, derived: false, context_labels: {home_and_tax_tiles: "Ready", tax_board_rows: "Ready"}}   # T-02-T04: the TAX-01 tile word; the board's rows say it too (DEC-1182)
       awaiting_signature: {label: "Awaiting signature", variant: amber, terminal: false, derived: false}
       filed:           {label: "Filed",       variant: green-tint, terminal: false, derived: false}   # transmitted, acknowledgement pending
       accepted:        {label: "Accepted",    variant: green,  terminal: true,  derived: false}

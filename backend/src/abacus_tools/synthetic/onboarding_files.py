@@ -30,7 +30,9 @@ import csv
 import hashlib
 import io
 import json
+import re
 import sys
+import zipfile
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Final
@@ -40,6 +42,11 @@ from openpyxl import Workbook
 from abacus_tools.synthetic.names import client_base, client_name
 from abacus_tools.synthetic.requests import request_list
 from abacus_tools.synthetic.rng import stream
+
+# openpyxl stamps the save time into each zip entry and into docProps/core.xml; a fixed time keeps
+# the same seed's bytes the same (the record's checksums).
+_ZIP_TIME: Final = (2000, 1, 1, 0, 0, 0)
+_STAMP: Final = re.compile(rb"(<dcterms:(?:created|modified)[^>]*>)[^<]*(<)")
 
 CLIENT_HEADINGS: Final = ("Client Name", "Entity Type", "Primary Contact", "Email Address")
 # CCH's client-type words the import maps (`ENTITY_TYPE_WORDS`), in a firm-like mix.
@@ -119,8 +126,17 @@ def pbc_workbook() -> tuple[bytes, int]:
     items = request_list().items
     for item in items:
         requests.append((item.audit_area, item.description, item.retrievability_tier))
+    saved = io.BytesIO()
+    workbook.save(saved)
     out = io.BytesIO()
-    workbook.save(out)
+    with zipfile.ZipFile(saved) as src, zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as dst:
+        for info in src.infolist():
+            body = src.read(info)
+            if info.filename == "docProps/core.xml":
+                body = _STAMP.sub(rb"\g<1>2000-01-01T00:00:00Z\g<2>", body)
+            fixed = zipfile.ZipInfo(info.filename, date_time=_ZIP_TIME)
+            fixed.compress_type = zipfile.ZIP_DEFLATED
+            dst.writestr(fixed, body)
     return out.getvalue(), len(items)
 
 

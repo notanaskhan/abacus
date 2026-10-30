@@ -113,6 +113,11 @@ def register_consent_check(
         _CONSENT_COUNTS[purpose] = count
 
 
+def consent_registered(purpose: str) -> bool:
+    """Whether a check for `purpose` is registered (T-01-T11: agent specs declaring `tri`)."""
+    return purpose in _CONSENTS
+
+
 async def consented_count(tenant: TenantContext, purpose: str) -> int:
     counter = _CONSENT_COUNTS.get(purpose)
     return 0 if counter is None else await counter(tenant, purpose)
