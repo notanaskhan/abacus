@@ -203,6 +203,7 @@ from abacus.modules.engagements.work_items import (
     holds_tax_return,
     lock_assurance_item,
     lock_engagement,
+    mfa_tri_scope,
     portal_work_items,
     set_assurance_profile,
     wall_assignment_count,
@@ -332,6 +333,9 @@ register_invitation_parties(invitation_parties)
 register_contact_activation(activate_contact)
 # P-08-T17 (DEC-34, DEC-63): approvers, signing officers and SKE designees need the second step.
 register_mfa_requirement("engagement_designation", mfa_designated)
+# T-01-T12 (C19): a grant reaching tax return information (a K-1 package, a tax return work
+# item or an engagement holding one) needs the second step too.
+register_mfa_requirement("tri_scope", mfa_tri_scope)
 # F-03-T27 (ADR-145): the `client` scope kind reads through engagement visibility.
 register_clients_of_engagements(clients_of_engagements)
 register_engagements_of_scope(engagements_of_scope)
