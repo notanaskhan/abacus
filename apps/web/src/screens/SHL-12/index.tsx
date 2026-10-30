@@ -25,6 +25,7 @@ import { useSession } from "../../app-core/session";
 import {
   type SignOffLevel,
   type SignOffTarget,
+  levelOf,
   useGate,
   useSignOffEligibility,
   useSignOffLadder,
@@ -323,8 +324,9 @@ function CheckRow({
 
 export interface SignOffSheetProps {
   target: SignOffTarget;
-  /** The level asked for (`?ov=signoff:…:L2`); the server answers the levels the viewer may sign. */
-  level?: SignOffLevel;
+  /** The level asked for, long or short (`?ov=signoff:…:L2`); the server answers the levels the
+   * viewer may sign. */
+  level?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** The header's right ("AUD-06", "2025 Form 1065 · Ridgeline"). */
@@ -341,7 +343,7 @@ export function SignOffSheet({
   onSigned,
 }: SignOffSheetProps): JSX.Element {
   const session = useSession();
-  const [asked, setAsked] = useState<SignOffLevel>(level ?? "L1_preparer");
+  const [asked, setAsked] = useState<SignOffLevel>(levelOf(level) ?? "L1_preparer");
   const query = useSignOffEligibility(target, asked);
   const eligibility = query.data;
   const actor: Actor =

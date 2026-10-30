@@ -1,7 +1,6 @@
 import { type JSX, Suspense, lazy } from "react";
 import { FeatureGate } from "../../app-core/flags";
 import type { OverlayRenderProps } from "../../app-core/overlays";
-import { levelOf } from "../../domain/review";
 
 // The sheets `sheets.tsx` registers, loaded when one opens: each behind its flag
 // (`review.grammar_api` for SHL-10 and SHL-12, `review.checkpoints` for SHL-16, `signatures.envelopes` for
@@ -40,7 +39,7 @@ export default function SheetsHost({ ref, close }: OverlayRenderProps): JSX.Elem
   if (ref.key === "signoff") {
     const targetId = ref.args[1];
     if (targetId === undefined) return null;
-    const level = levelOf(ref.args[2]);
+    const level = ref.args[2];
     return (
       <FeatureGate flag="review.grammar_api">
         <Suspense fallback={null}>
