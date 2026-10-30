@@ -34,6 +34,9 @@ export interface DecisionCardProps {
   onRequestMore?: () => void;
   requestMoreLabel?: string;
   recommendationLabel?: string;
+  /** The dock variant (P-04-T49; SHL-11 frame 5): instead of Decide, one primary control that
+   * opens the decision sheet, where the reserved person decides. Options are read-only here. */
+  openDecision?: { label: string; onOpen: () => void };
   className?: string;
 }
 
@@ -52,6 +55,7 @@ export function DecisionCard({
   onRequestMore,
   requestMoreLabel = "Request more analysis…",
   recommendationLabel = "Agent recommendation",
+  openDecision,
   className,
 }: DecisionCardProps): JSX.Element {
   const recommended = options.find((o) => o.recommended === true);
@@ -79,9 +83,13 @@ export function DecisionCard({
         <>
           <RadioGroup
             label={title}
-            options={options.map((o) => ({ value: o.key, label: o.label }))}
+            options={options.map((o) => ({
+              value: o.key,
+              label: o.label,
+              ...(openDecision === undefined ? {} : { disabled: true }),
+            }))}
             {...(value === undefined ? {} : { value })}
-            {...(onChange === undefined ? {} : { onChange })}
+            {...(onChange === undefined || openDecision !== undefined ? {} : { onChange })}
           />
           {recommended !== undefined && (
             <p className="text-meta text-ink-3">
@@ -91,19 +99,27 @@ export function DecisionCard({
               {recommended.label}
             </p>
           )}
-          <footer className="flex items-center gap-[8px]">
-            <HumanAction
-              verb="Decide"
-              actor={actor}
-              disabled={busy || value === undefined}
-              onClick={onDecide}
-            />
-            {onRequestMore !== undefined && (
-              <Button variant="secondary" opensDialog onClick={onRequestMore} disabled={busy}>
-                {requestMoreLabel}
+          {openDecision !== undefined ? (
+            <footer className="flex items-center gap-[8px]">
+              <Button variant="primary" opensDialog onClick={openDecision.onOpen}>
+                {openDecision.label}
               </Button>
-            )}
-          </footer>
+            </footer>
+          ) : (
+            <footer className="flex items-center gap-[8px]">
+              <HumanAction
+                verb="Decide"
+                actor={actor}
+                disabled={busy || value === undefined}
+                onClick={onDecide}
+              />
+              {onRequestMore !== undefined && (
+                <Button variant="secondary" opensDialog onClick={onRequestMore} disabled={busy}>
+                  {requestMoreLabel}
+                </Button>
+              )}
+            </footer>
+          )}
         </>
       )}
       <p className="text-meta text-ink-3">{reservedNote}</p>

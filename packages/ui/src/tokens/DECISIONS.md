@@ -496,6 +496,7 @@ The lock follows the parity-tier reading the plan records for Decision Day (F-05
 | 2026-10-24 | Sort control    | A secondary sm button that flips Missing first and Received first, as the canvas logic does, with the up-down glyph                                                                                                                                          |
 | 2026-10-24 | Add             | Opens SHL-14's drawer, not a dialog, so the label stays "Add" without the ellipsis                                                                                                                                                                           |
 | 2026-10-24 | Open decision   | A 28px secondary button where TPL-02c draws a text link: the link's 21px hit area meets a document row of TPL-02b scrolled out of view in the gallery, so SC 2.5.8 needs the 24px box                                                                        |
+| 2026-10-30 | Dock unmask (R4) | P-04-T49 unmasks the decision card: TPL-02c's dock shows SHL-11's inline card (frame 5: the question, two compact options with "Recommended by Accrued Agent", "Open decision" primary, read-only radios) above the run thread; the thread stays masked until C-12 (P-09). DEC-1559 |
 
 ### DataTable grammars 3: grid, leadsheet, field rows, virtualisation (F-05-T52)
 

@@ -4,15 +4,20 @@
 // `content_changed` when the target changed since) and the statement version they read. Nothing
 // here signs for anyone: the screen calls `sign` only from a HumanAction (INV-1).
 
-import type { SignOffEligibilityOut, SignOffOut } from "@abacus/api-client";
+import type {
+  BulkSignOffOut,
+  SignOffEligibilityOut,
+  SignOffOut,
+} from "@abacus/api-client";
 import {
   signOffEligibilityOptions,
   signOffEligibilityQueryKey,
   signOffLadderOptions,
   signOffLadderQueryKey,
+  signOffBulkMutation,
   signOffMutation,
 } from "@abacus/api-client/query";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export type SignOffLevel = SignOffEligibilityOut["level"];
 
@@ -79,6 +84,49 @@ export function useSignOffWrite(
         kind,
         seen_hash: eligibility.target.content_hash,
         statement_version: eligibility.statement.version,
+      },
+    });
+  };
+}
+
+/** SHL-12 f (P-04-T49): each picked target's eligibility at one level, in order. */
+export function useBulkEligibility(targets: readonly SignOffTarget[], level: SignOffLevel) {
+  return useQueries({
+    queries: targets.map((t) =>
+      signOffEligibilityOptions({ query: { target_type: t.type, target_id: t.id, level } }),
+    ),
+  });
+}
+
+/** SHL-12 f: sign the eligible targets at one level in one request (R-SO-7). Each item is decided
+ * on its own by the server; the key makes a retried click return the same answer. Called only
+ * from the sheet's HumanAction (INV-1). */
+export function useBulkSignOffWrite(): (
+  eligible: readonly SignOffEligibilityOut[],
+  key: string,
+) => Promise<BulkSignOffOut> {
+  const queryClient = useQueryClient();
+  const bulk = useMutation({
+    ...signOffBulkMutation(),
+    onSuccess: () => {
+      // Every ladder and eligibility read may have moved (one per signed target).
+      void queryClient.invalidateQueries({ queryKey: [{ _id: "signOffLadder" }] });
+      void queryClient.invalidateQueries({ queryKey: [{ _id: "signOffEligibility" }] });
+    },
+  });
+  return (eligible, key) => {
+    const first = eligible[0];
+    if (first === undefined) return Promise.reject(new Error("nothing_to_sign"));
+    return bulk.mutateAsync({
+      headers: { "Idempotency-Key": key },
+      body: {
+        level: first.level,
+        statement_version: first.statement.version,
+        targets: eligible.map((e) => ({
+          target_type: e.target.target_type,
+          target_id: e.target.target_id,
+          seen_hash: e.target.content_hash,
+        })),
       },
     });
   };

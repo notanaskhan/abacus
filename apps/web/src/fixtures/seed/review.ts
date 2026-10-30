@@ -1482,15 +1482,116 @@ export const RETURN_LADDER: SignOffLadderOut = {
   levels: returnLadder,
   allowed_actions: ["sign_off.create"],
 };
-const BULK_REASONS = ["incomplete", "open_review_notes", "segregation"] as const;
-/** SHL-12 f (Thu Sep 24): six selected, three signed and three excluded with their reasons. */
+/** SHL-12 f (Thu Sep 24, after materiality v2): the six workpapers Hannah picked, in the sheet's
+ * order. Three can be signed at L2; Service Organizations & SOC 1 waits on inputs (no L1 yet), General
+ * Audit Planning has 1 open note, and Hannah prepared Investments & Certification (P-04-T49). */
+const BULK_ROWS = [
+  { n: 0, label: "Trial Balance", version: 1, hash: HASH, prep: ["Marcus Delaney", "MD"] },
+  {
+    n: 1,
+    label: "Service Organizations & SOC 1",
+    version: 1,
+    hash: "sha256:51ac" + "0".repeat(56) + "7e02",
+    prep: null,
+  },
+  {
+    n: 2,
+    label: "Materiality",
+    version: 2,
+    hash: "sha256:c39d" + "0".repeat(56) + "a4b8",
+    prep: ["Marcus Delaney", "MD"],
+  },
+  {
+    n: 3,
+    label: "General Audit Planning",
+    version: 1,
+    hash: "sha256:8e17" + "0".repeat(56) + "0f5c",
+    prep: ["Ana Cruz", "AC"],
+  },
+  {
+    n: 4,
+    label: "Internal Control",
+    version: 1,
+    hash: "sha256:a6f0" + "0".repeat(56) + "d213",
+    prep: ["Ana Cruz", "AC"],
+  },
+  {
+    n: 5,
+    label: "Investments & Certification",
+    version: 1,
+    hash: "sha256:4b9e" + "0".repeat(56) + "16a7",
+    prep: ["Hannah Leclerc", "HL"],
+  },
+] as const;
+export const BULK_TARGET_IDS: readonly string[] = BULK_ROWS.map((r) => id(60 + r.n));
+
+function bulkEligibility(row: (typeof BULK_ROWS)[number]): SignOffEligibilityOut {
+  const rowTarget = {
+    ...target,
+    target_id: id(60 + row.n),
+    label: row.label,
+    version_no: row.version,
+    content_hash: row.hash,
+  };
+  const preparer: SignOffOut | null =
+    row.prep === null
+      ? null
+      : {
+          ...marcusL1,
+          id: id(80 + row.n),
+          target_id: rowTarget.target_id,
+          signer_user_id: row.prep[1] === "MD" ? MARCUS : row.prep[1] === "AC" ? ANA : HANNAH,
+          signer_name: row.prep[0],
+          initials: row.prep[1],
+          content_hash: row.hash,
+          version_no: row.version,
+          adopted_run_id: null,
+          adopted_run_number: null,
+        };
+  const levels = ladder(null).map((l) =>
+    l.level === "L1_preparer"
+      ? {
+          ...l,
+          latest: preparer,
+          ...(row.prep === null
+            ? { expected_signer_user_id: MARCUS, expected_signer_name: "Marcus Delaney" }
+            : {}),
+        }
+      : l,
+  );
+  const checks =
+    row.n === 3
+      ? withCheck({ code: "open_review_notes", result: "fail", facts: { count: 1 }, refs: [] })
+      : row.n === 5
+        ? withCheck({
+            code: "segregation",
+            result: "fail",
+            facts: { preparer: "Hannah Leclerc" },
+            refs: [],
+          })
+        : passing;
+  return eligibility({
+    target: rowTarget,
+    ladder: levels,
+    checks,
+    eligible: row.n === 0 || row.n === 2 || row.n === 4,
+  });
+}
+export const BULK_ELIGIBILITY: readonly SignOffEligibilityOut[] = BULK_ROWS.map(bulkEligibility);
+
+const BULK_REASONS: Readonly<Record<number, BulkSignOffOut["results"][number]["detail"]>> = {
+  1: "incomplete",
+  3: "open_review_notes",
+  5: "segregation",
+};
+/** SHL-12 f: six selected, three signed and three excluded with their reasons (R-SO-7). */
 export const BULK_F: BulkSignOffOut = {
-  results: [0, 1, 2, 3, 4, 5].map((n) => ({
+  results: BULK_ROWS.map(({ n }) => ({
     target_type: "workpaper",
     target_id: id(60 + n),
-    ok: n < 3,
-    sign_off_id: n < 3 ? id(70 + n) : null,
-    detail: n < 3 ? null : (BULK_REASONS[n - 3] ?? null),
+    ok: BULK_REASONS[n] === undefined,
+    sign_off_id: BULK_REASONS[n] === undefined ? id(70 + n) : null,
+    detail: BULK_REASONS[n] ?? null,
   })),
   signed: 3,
   excluded: 3,
@@ -1691,6 +1792,8 @@ export interface ReviewFrame {
   status: number;
   body: unknown;
   params?: Readonly<Record<string, string>>;
+  /** Query values the request must carry (SHL-12 f: one eligibility per target). */
+  query?: Readonly<Record<string, string>>;
 }
 
 /** A request body an artboard sends, typed with the generated client. */
@@ -1741,6 +1844,14 @@ const CARD = (frame: DecisionCardOut) =>
   get("/v1/decision-cards/{card_id}", "DecisionCardOut", frame, { card_id: frame.card.id });
 const ELIGIBILITY = (frame: SignOffEligibilityOut) =>
   get("/v1/sign-offs/eligibility", "SignOffEligibilityOut", frame);
+/** One target's eligibility among several on the same route (SHL-12 f): matched on the query. */
+const ELIGIBILITY_OF = (
+  frame: SignOffEligibilityOut,
+  query: Record<string, string>,
+): ReviewFrame => ({
+  ...ELIGIBILITY(frame),
+  query,
+});
 const ISSUE = (frame: IssueDetailOut) =>
   get("/v1/issues/{issue_id}", "IssueDetailOut", frame, { issue_id: frame.issue.id });
 const HISTORY = (frame: CheckpointHistoryOut) =>
@@ -1907,6 +2018,9 @@ export const REVIEW_ARTBOARDS: readonly ReviewArtboard[] = [
     get("/v1/sign-offs", "SignOffLadderOut", STALE_LADDER),
   ]),
   board("SHL-12", "f", "Bulk", "hannah-leclerc", sep24, [
+    ...BULK_ELIGIBILITY.map((e) =>
+      ELIGIBILITY_OF(e, { target_id: e.target.target_id, level: "L2_reviewer" }),
+    ),
     post("/v1/sign-offs:bulk", "BulkSignOffOut", BULK_F),
   ]),
   board("SHL-12", "g", "EQR viewer", "thomas-whitcombe", signOff, [
