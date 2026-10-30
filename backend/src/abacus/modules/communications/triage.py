@@ -23,6 +23,7 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import OutboxEvent, Ref, Target, uow
+from abacus.modules.communications.triage_classify import ACTIVITIES as CLASSIFY_ACTIVITIES
 from abacus.modules.communications.triage_workflow import (
     AttachmentTriageWorkflow,
     TriageInput,
@@ -117,4 +118,4 @@ async def attachment_triaged(given: TriageInput) -> str:
     return str(status)
 
 
-ACTIVITIES: Final = (attachment_triaged,)
+ACTIVITIES: Final = (attachment_triaged, *CLASSIFY_ACTIVITIES)

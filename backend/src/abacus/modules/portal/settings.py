@@ -29,8 +29,10 @@ from uuid import UUID
 
 from sqlalchemy import RowMapping, text
 
-from abacus.kernel.db import tenant_session
+from abacus.kernel._flags import PORTAL_INTAKE_UPLOAD
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
+from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.communications.api import (
     FollowUpPolicy,
@@ -171,6 +173,23 @@ _LATEST = text(
     "SELECT version, brand, client_experience, follow_up_policy, content_sha256, published_at, "
     "published_by FROM portal_settings_versions ORDER BY version DESC LIMIT 1"
 )
+
+
+async def upload_something_else(tenant: TenantContext) -> bool:
+    """R-01-T33: the published client experience's "Upload something else" (off until a person
+    publishes it on), for the portal's binder read and the intake route's refusal."""
+    async with tenant_session(tenant) as session:
+        found = (await session.execute(_LATEST)).mappings().one_or_none()
+    if found is None:
+        return False
+    experience = cast(dict[str, object], found["client_experience"] or {})
+    return experience.get("allow_upload_something_else") is True
+
+
+async def upload_something_else_offered(tenant: TenantContext) -> bool:
+    """POR-03 offers the button only when the toggle is published on and N-01's portal intake
+    is live (`portal.intake_upload`)."""
+    return await flag_enabled(tenant, PORTAL_INTAKE_UPLOAD) and await upload_something_else(tenant)
 
 
 async def read_settings(ctx: AuthContext) -> Settings:

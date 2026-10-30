@@ -1,4 +1,5 @@
 import type { JSX } from "react";
+import { Button } from "../components/button";
 import { PortalBrandProvider } from "../brand";
 import type { EnvelopeVM, SignerVM, SigningStepVM } from "../signing/types";
 import { SigningCeremony } from "../templates/signing-ceremony/SigningCeremony";
@@ -47,8 +48,38 @@ const STEPS_SIGN: SigningStepVM[] = [
   { key: "done", state: "todo", sub: "" },
 ];
 
+/** T16b's steps carry no second line (the handoff); c keeps the template's. */
+const STEPS_B: SigningStepVM[] = STEPS_SIGN.map((s) => ({ ...s, sub: "" }));
+
+/** T16b's documents column: the couple's two forms with initials chips, as the handoff draws. */
+function t16bDocuments(): EnvelopeVM["documents"] {
+  const chips = [
+    { signerId: JONAH, name: "JF", status: "signed" as const },
+    { signerId: CLAIRE, name: "CF", status: "pending" as const },
+  ];
+  return [
+    {
+      id: "t16-8879",
+      name: "Form 8879 · federal",
+      pages: [page("Form 8879, page 1")],
+      signerChips: chips,
+    },
+    {
+      id: "t16-il8453",
+      name: "Form IL-8453 · Illinois",
+      pages: [page("Form IL-8453, page 1")],
+      signerChips: chips,
+    },
+  ];
+}
+
 export function t16Envelope(state: "b" | "c"): EnvelopeVM {
   const done = state === "c";
+  const b = t16Base(done);
+  return state === "b" ? { ...b, documents: t16bDocuments(), steps: STEPS_B } : b;
+}
+
+function t16Base(done: boolean): EnvelopeVM {
   return {
     id: "t16-feld",
     title: "2025 e-file authorizations",
@@ -104,6 +135,32 @@ export function t16Envelope(state: "b" | "c"): EnvelopeVM {
   };
 }
 
+/** T16b's native adopt panel (the template frame; production adopts in the provider's view, DF-12):
+ * the name as typed, its signature preview, Sign and the firm's note. */
+function AdoptPanel(): JSX.Element {
+  return (
+    <section
+      aria-label="Adopt your signature"
+      className="-mx-[12px] flex flex-col gap-[12px] border-t-[0.5px] border-hair px-[12px] pt-[16px]"
+    >
+      <h3 className="text-section">Adopt your signature</h3>
+      <div className="flex h-[40px] items-center rounded-nested bg-nested px-[12px] text-body text-ink">
+        Claire M Feld
+      </div>
+      <div className="flex h-[56px] items-center rounded-nested bg-card px-[16px] font-legal text-dashboard text-ink italic shadow-[inset_0_0_0_0.5px_var(--color-hair)]">
+        Claire M Feld
+      </div>
+      <Button variant="primary" size="xl" className="w-full">
+        Sign
+      </Button>
+      <p className="text-meta text-ink-3">
+        Signing applies this signature to both forms. Brightwater Hale files them once both of you
+        have signed.
+      </p>
+    </section>
+  );
+}
+
 export function T16Specimen(): JSX.Element {
   return (
     <PortalBrandProvider brand={BRIGHTWATER_BRAND}>
@@ -127,7 +184,10 @@ export function T16Specimen(): JSX.Element {
           <SigningCeremony
             envelope={t16Envelope("b")}
             user="Claire Feld"
-            backLabel="All documents to sign"
+            documentsTitle="Documents"
+            stepsTitle="Steps"
+            showSigners={false}
+            signPanel={<AdoptPanel />}
             frame
             height={860}
           />
