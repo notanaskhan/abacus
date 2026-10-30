@@ -272,6 +272,10 @@ class Settings(BaseSettings):
     qbo_environment: Annotated[Literal["sandbox", "production"], classified("internal")] = (
         "sandbox"
     )
+    # A-02-T33: the one host Intuit's app registration names as its redirect (the neutral portal
+    # domain, never a firm's white-label host), e.g. `https://connect.<neutral-domain>`. Unset, the
+    # callback is on `app_base_url` (local and staging); production requires it with QuickBooks.
+    connections_redirect_base_url: Annotated[str | None, classified("internal")] = None
     temporal_target: Annotated[str | None, classified("internal")] = None
     temporal_namespace: Annotated[str, classified("internal")] = "default"
     # The base name of the task queues: one per work class, `<base>-<class>` (ADR-071, SPEC-003).
@@ -438,6 +442,25 @@ class Settings(BaseSettings):
     def _fake_connector_local_only(self) -> Self:
         if self.fake_connector_dir is not None and self.environment not in SYNTHETIC_ENVIRONMENTS:
             raise ValueError("fake_connector_dir is for local runs, tests and evaluations only")
+        return self
+
+    @model_validator(mode="after")
+    def _live_ledger_host_matches_environment(self) -> Self:
+        """A-02-T33: production reads only Intuit's live host and every other environment only its
+        sandbox, so a deployment can't serve a firm from a test company, or point staging at a
+        firm's real books. Checked at boot, when the app is registered (`qbo_client_id`)."""
+        if self.qbo_client_id is None:
+            return self
+        if self.environment == "production" and self.qbo_environment != "production":
+            raise ValueError("production refuses qbo_environment 'sandbox' (A-02-T33)")
+        if self.environment == "production" and self.connections_redirect_base_url is None:
+            raise ValueError(
+                "production needs connections_redirect_base_url with QuickBooks (A-02-T33)"
+            )
+        if self.environment != "production" and self.qbo_environment == "production":
+            raise ValueError(
+                f"{self.environment!r} refuses qbo_environment 'production' (A-02-T33)"
+            )
         return self
 
     @model_validator(mode="after")

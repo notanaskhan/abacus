@@ -5,6 +5,9 @@ export const COPY = {
   search: "Search messages",
   showIgnored: "Show ignored",
   showFiled: "Show filed",
+  logIntake: "Log received documents…",
+  // INB-02's sheet title, as the reading header's File… item (N-01-T23).
+  fileAttachments: "File attachments…",
   summary: (waiting: number, unmatched: number): string =>
     `${String(waiting)} waiting · ${String(unmatched)} unmatched`,
   empty: {

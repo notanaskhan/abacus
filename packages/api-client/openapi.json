@@ -44088,6 +44088,19 @@
             "title": "Done Count",
             "type": "integer"
           },
+          "engagement_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Engagement Id"
+          },
           "filter": {
             "cls": "internal",
             "enum": [
@@ -44144,6 +44157,12 @@
             "cls": "internal",
             "title": "Total",
             "type": "integer"
+          },
+          "upload_something_else": {
+            "cls": "internal",
+            "default": false,
+            "title": "Upload Something Else",
+            "type": "boolean"
           }
         },
         "required": [
@@ -124108,16 +124127,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Create Envelope Draft Route",
@@ -124869,7 +124878,7 @@
         "x-abacus-action": "envelope.read"
       },
       "put": {
-        "description": "SIG-02 edits (N-02-T20).",
+        "description": "SIG-02 edits (N-02-T20): 409 `stale_version` when `If-Match` is not the current\nversion; 409 `envelope_not_draft` after Send.",
         "operationId": "update_envelope_draft",
         "parameters": [
           {
@@ -124996,16 +125005,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Update Envelope Draft Route",
@@ -125144,7 +125143,7 @@
     },
     "/v1/envelopes/{envelope_id}/documents/{document_id}/pages/{page_no}": {
       "get": {
-        "description": "Rendered preview page (N-02-T21).",
+        "description": "SIG-02's preview page: the document's masked page image as the evidence viewer renders it\n(`no-store`, `nosniff`); 409 `preview_unavailable` for a generated document until P-11, 409\n`preview_outdated` before masking; 403 for a reader who may not read the evidence.",
         "operationId": "envelope_page",
         "parameters": [
           {
@@ -125172,6 +125171,8 @@
             "name": "page_no",
             "required": true,
             "schema": {
+              "maximum": 2000,
+              "minimum": 1,
               "title": "Page No",
               "type": "integer"
             }
@@ -125252,6 +125253,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -125261,16 +125272,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Envelope Page Route",
@@ -125518,7 +125519,7 @@
     },
     "/v1/envelopes/{envelope_id}/send": {
       "post": {
-        "description": "Human send through a single-use grant, +10 s (N-02-T22).",
+        "description": "Human send through a single-use grant, +10 s (N-02-T20): 409 `validation_failed` with\neach check in `facts`; the provider is called after the window (N-02-T22).",
         "operationId": "send_envelope",
         "parameters": [
           {
@@ -125635,16 +125636,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Send Envelope Route",
@@ -125656,7 +125647,7 @@
     },
     "/v1/envelopes/{envelope_id}/send/undo": {
       "post": {
-        "description": "Undo inside the window (N-02-T22).",
+        "description": "Undo inside the window (N-02-T20): no provider call is made.",
         "operationId": "undo_envelope_send",
         "parameters": [
           {
@@ -125762,16 +125753,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Undo Envelope Send Route",
@@ -126174,16 +126155,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Validate Envelope Route",
@@ -157454,7 +157425,7 @@
     },
     "/v1/portal/binders/{binder_id}": {
       "get": {
-        "description": "POR-03. A binder outside the caller's grant, a draft or a forged id answers 404.",
+        "description": "POR-03. A binder outside the caller's grant, a draft or a forged id answers 404.\n`upload_something_else` (R-01-T33): the firm's published toggle and the intake flag.",
         "operationId": "get_portal_binder",
         "parameters": [
           {
@@ -160620,7 +160591,7 @@
         "x-abacus-action": "portal_intake.read_own"
       },
       "post": {
-        "description": "POR-03 \"Upload something else\": the batch (N-01-T14).",
+        "description": "POR-03 \"Upload something else\": the batch (N-01-T14). R-01-T33: 404 while the firm has\nnot published the toggle on (as if the route were absent).",
         "operationId": "create_intake_upload",
         "parameters": [
           {

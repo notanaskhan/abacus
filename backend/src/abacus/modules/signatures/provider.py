@@ -2,17 +2,20 @@
 
 EnvelopeWorkflow's activities talk to one `EsignProvider`, configured at startup: the fake
 (`abacus_tools.fakes.esign`, synthetic environments only) until the DocuSign adapter lands
-through W7 (N-02-T18). With none configured, a send is refused (`provider_unavailable`) and
-nothing leaves. The webhook is a hint and the poll is the truth (ADR-041's pattern): state comes
+through W7 (N-02-T18: `provider_for` builds the firm's own adapter only when its kill switch,
+W7 and a connected install allow). With none, a send is recorded as not sent and nothing
+leaves. The webhook is a hint and the poll is the truth (ADR-041's pattern): state comes
 only from `status`, never from a signal's payload. The provider sees identifiers, routing,
 identity methods and document hashes; document bytes stay in our stores.
 """
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol
+from uuid import UUID
 
 from abacus.kernel.errors import ServiceUnavailable
 
@@ -95,6 +98,8 @@ class EsignProvider(Protocol):
 
 
 _provider: EsignProvider | None = None
+FirmProvider = Callable[[UUID], Awaitable[EsignProvider]]
+_firm_provider: FirmProvider | None = None
 
 
 def configure_provider(provider: EsignProvider | None) -> None:
@@ -107,3 +112,20 @@ def provider() -> EsignProvider:
     if _provider is None:
         raise ProviderUnavailable
     return _provider
+
+
+def register_firm_provider(resolver: FirmProvider | None) -> None:
+    """N-02-T18: how a firm's own provider (DocuSign) is built when no provider is configured for
+    the whole process; None removes it."""
+    global _firm_provider
+    _firm_provider = resolver
+
+
+async def provider_for(tenant_id: UUID) -> EsignProvider:
+    """The provider for one firm's call: the process-wide one (the fake, synthetic environments
+    and tests), else the firm's own when every switch is on, else `ProviderUnavailable`."""
+    if _provider is not None:
+        return _provider
+    if _firm_provider is None:
+        raise ProviderUnavailable
+    return await _firm_provider(tenant_id)

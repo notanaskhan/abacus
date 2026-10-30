@@ -99,7 +99,13 @@ REVIEWED_FALLBACK: Final = frozenset(
         "comment_thread.read",
         "conflict.cleared",
         "decision.refused_non_human",  # K-01-T06: an agent or the platform asked to approve
+        "envelope.draft_saved",  # N-02-T20: SIG-02's edit of a draft (version, signer count)
+        "envelope.drafted",  # N-02-T20: a draft from a registered source (number, counts)
         "envelope.imported",  # N-02-T08: record-mode import (SIG-01 r)
+        "envelope.provider_hint",  # N-02-T19: a verified Connect hint (duplicate flag only)
+        "envelope.provider_unavailable",  # N-02-T18: kill switch, W7 or install off; not sent
+        "envelope.send_requested",  # N-02-T20: a person's Send, waiting its grant (+10 s)
+        "envelope.send_undone",  # N-02-T20: Undo inside the window; no provider call
         "envelope_import_file.staged",  # N-02-T08: a scanned file for an import
         "human_gate.reassigned",  # I-01-T07: a person moved a gate to someone else (user ids)
         "conflict_check.run",
@@ -122,6 +128,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "decision.reassessed",
         "decision_card.raised",
         "decision_card.superseded",
+        "document.classified",  # N-01-T17: a rule classification (ids and a page count)
         "email_template.draft_discarded",  # R-01-T19
         "email_template.draft_saved",  # R-01-T19
         "email_template.imported",  # R-01-T23
@@ -225,6 +232,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "home_activity.pruned",  # I-01-T12: a count of rows past 90 days
         "human_gate.projected",
         "inbound_message.recorded",  # N-01-T09: a message reached the inbox
+        "inbox_attachment.flagged",  # N-01-T17: one code-flag run (ids and a count)
         "inbox_attachment.received",  # N-01-T09: a scanned, stored file
         "inbox_file.added",
         "inbox_file.assigned",
@@ -475,5 +483,21 @@ REVIEWED_FALLBACK: Final = frozenset(
         "firm_mail_policy.client_mail_disabled",  # R-01-T27
         "tax_return.status_changed",  # T-02-T07: a return's move (status events hold the detail)
         "tax_return.sync_recorded",  # T-02-T07: T-01's sync-chip write
+        "envelope.evidence_recorded",  # N-02-T13/T14 (S15)
+        "envelope.expired",  # N-02-T13/T14 (S15)
+        "envelope.polled",  # N-02-T13/T14 (S15)
+        "envelope.reminder_skipped",  # N-02-T13/T14 (S15)
+        "envelope.voided",  # N-02-T13/T14 (S15)
+        "evidence.downloaded",  # N-02-T13: the evidence zip (S15)
+        "inbound_message.downloaded",  # N-01-T12 to T18 (S15)
+        "inbox_attachment.downloaded",  # N-01-T12 to T18 (S15)
+        "inbox_attachment.key_destroyed",  # N-01-T12 to T18 (S15)
+        "inbox_attachment.triaged",  # N-01-T12 to T18 (S15)
+        "inbox_attachment.viewed",  # N-01-T12 to T18 (S15)
+        "inbox_attachment.waiting",  # N-01-T12 to T18 (S15)
+        "inbox_sender_rule.created",  # N-01-T12 to T18 (S15)
+        "inbox_thread.client_matched",  # N-01-T12 to T18 (S15)
+        "inbox_thread.ignored",  # N-01-T12 to T18 (S15)
+        "portal_intake.withdrawn",  # N-01-T12 to T18 (S15)
     }
 )

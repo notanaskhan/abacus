@@ -9,7 +9,7 @@ from datetime import date
 from typing import Final, Literal
 from uuid import UUID, uuid4
 
-from sqlalchemy import Select, text
+from sqlalchemy import Select, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -419,6 +419,28 @@ class ContactFacts:
     organisation_name: str | None = None  # a third party's organisation (P-08-T18: POR-01 d)
 
 
+@dataclass(frozen=True)
+class SignerContact:
+    """N-02-T20: what SIG-02 shows and checks of a contact who signs: its client, name, title
+    and email (Confidential), for a caller that authorised the envelope."""
+
+    client_id: UUID
+    display_name: str
+    title: str | None
+    email: str | None
+
+
+async def signer_contacts(
+    tenant: TenantContext, contact_ids: list[UUID]
+) -> dict[UUID, SignerContact]:
+    """The firm's contacts among `contact_ids` (others left out)."""
+    if not contact_ids:
+        return {}
+    async with tenant_session(tenant) as session:
+        found = await session.scalars(select(Contact).where(Contact.id.in_(contact_ids)))
+        return {c.id: SignerContact(c.client_id, c.display_name, c.title, c.email) for c in found}
+
+
 async def contact_facts(
     session: AsyncSession, contact_ids: list[UUID]
 ) -> dict[UUID, ContactFacts]:
@@ -487,6 +509,23 @@ async def client_of_entity(tenant: TenantContext, entity_id: UUID) -> UUID | Non
     async with tenant_session(tenant) as session:
         entity = await get_entity(session, entity_id)
     return entity.client_id if entity is not None else None
+
+
+async def entity_tin_last4s(
+    tenant: TenantContext, client_id: UUID, entity_id: UUID | None = None
+) -> frozenset[str]:
+    """N-01-T17: the last fours on file for one of the client's entities, or for every entity
+    of the client when none is named (a household's members), for intake's `tin_mismatch`.
+    The masked form only; never the sealed TIN."""
+    async with tenant_session(tenant) as session:
+        rows = await session.scalars(
+            text(
+                "SELECT tin_last4 FROM client_entities WHERE client_id = :client "
+                "AND (CAST(:entity AS uuid) IS NULL OR id = :entity) AND tin_last4 IS NOT NULL"
+            ),
+            {"client": client_id, "entity": entity_id},
+        )
+        return frozenset(str(r) for r in rows)
 
 
 async def firm_offices(tenant: TenantContext) -> list[tuple[UUID, str]]:
