@@ -51,13 +51,21 @@ const Room = lazy(async () => ({
 const Connections = lazy(async () => ({
   default: (await import("../../screens/POR-16")).PortalConnections,
 }));
+// POR-06 (N-02-T26): the Sign area, its own chunk.
+const SignScreen = lazy(async () => ({
+  default: (await import("../../screens/POR-06")).PortalSign,
+}));
 // POR-04 (R-01-T12): the request sheet over Documents, its own chunk.
 const RequestSheetScreen = lazy(async () => ({
   default: (await import("../../screens/POR-04")).POR04,
 }));
 
 /** The portal's built areas by nav label; the others stay the shell's planned page. */
-export const AREA_PATHS: Readonly<Record<string, string>> = { Home: "/", Documents: "/documents" };
+export const AREA_PATHS: Readonly<Record<string, string>> = {
+  Home: "/",
+  Documents: "/documents",
+  Sign: "/sign",
+};
 
 function Root(): JSX.Element {
   return (
@@ -172,6 +180,7 @@ function Area({ area }: { area: string }): JSX.Element | null {
   if (area === "Request") return <RequestPage />;
   if (area === "Requests") return <RoomPage />;
   if (area === "Connections") return <ConnectionsPage />;
+  if (area === "Sign") return <SignPage />;
   return <Shell area={area} />;
 }
 
@@ -293,6 +302,34 @@ function RoomPage(): JSX.Element {
   );
 }
 
+/** POR-06 (N-02-T26; docs/screens/POR-06.md): the Sign list at `/sign`, an envelope at
+ * `/sign/$envelopeId`, and the provider's return at `/sign/$envelopeId/return?session=` (a hint:
+ * the screen reads the server's view until it says signed). */
+function SignPage(): JSX.Element {
+  const { history } = useRouter();
+  const mobile = useMobileViewport();
+  const navigateTo = useAreaNavigate();
+  const params: { envelopeId?: string } = useParams({ strict: false });
+  const [session] = useState(() => {
+    if (!window.location.pathname.endsWith("/return")) return undefined;
+    return new URLSearchParams(window.location.search).get("session") ?? undefined;
+  });
+  return (
+    <SignScreen
+      {...(params.envelopeId === undefined ? {} : { envelopeId: params.envelopeId })}
+      {...(session === undefined ? {} : { session })}
+      mobile={mobile}
+      onNavigate={navigateTo}
+      onOpenEnvelope={(id) => {
+        history.push(`/sign/${encodeURIComponent(id)}`);
+      }}
+      onBack={() => {
+        history.push("/sign");
+      }}
+    />
+  );
+}
+
 /** The portal's 390 layout (T7-M, DEC-45) below 768 px wide (DEC-346). */
 export const PORTAL_MOBILE_QUERY = "(max-width: 767px)";
 
@@ -347,6 +384,9 @@ export const portalTree = rootRoute.addChildren([
   page("/requests", () => <Area area="Requests" />), // POR-14
   page("/requests/$requestId", () => <Area area="Requests" />),
   page("/connections", () => <Area area="Connections" />), // POR-16 (A-02-T28)
+  page("/sign", () => <Area area="Sign" />), // POR-06 (N-02-T26)
+  page("/sign/$envelopeId", () => <Area area="Sign" />),
+  page("/sign/$envelopeId/return", () => <Area area="Sign" />),
   page("/k1s", NotBuilt),
   page("/governance", NotBuilt),
   page("/intake", NotBuilt),

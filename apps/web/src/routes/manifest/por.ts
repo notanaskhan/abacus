@@ -26,6 +26,9 @@ export const porScreens = {
   // a null path for the reason POR-03 gives (DEC-347).
   "POR-04": { name: "Request detail · ignore reason sheet", status: "planned", path: null },
   "POR-05": { name: "Questions · Feld 2025 Tax Organizer", status: "planned", path: null },
+  // N-02-T26: part 1 (list, review, ERSD, the provider's view, the return, decline) renders in the
+  // gallery on fixtures, and the portal entry mounts /sign. Planned with a null path for the reason
+  // POR-03 gives (DEC-347).
   "POR-06": { name: "Sign · Ridgeline engagement letter", status: "planned", path: null },
   "POR-07": { name: "Messages · Feld household", status: "planned", path: null },
   "POR-08": { name: "Approvals · Copperleaf August 2026 Close", status: "planned", path: null },
