@@ -19,7 +19,7 @@ may hold Restricted values, sealed in storage); `approval_ref`, hashes and ids I
 is inserted: templates are database content loaded through P-11-T06's import, never here.
 
 Revision ID: 0430
-Revises: 0402 (main's head at the S17 end review; re-chain again if S16's 0403 lands first)
+Revises: 0405 (main's head at the S17 end review; re-chain again if S16's 0403 lands first)
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, insert_only, tenant_table
 
 revision = "0430"
-down_revision = "0402"
+down_revision = "0405"
 branch_labels = None
 depends_on = None
 
