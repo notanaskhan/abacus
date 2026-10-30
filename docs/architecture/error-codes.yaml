@@ -138,6 +138,10 @@ codes:
     raised_by:
     - abacus.modules.identity.annual_independence.AnnualConfirmationInvalid
     summary: Only the current year can be confirmed, and a decline needs a note.
+  answer_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.requests.portal_questionnaires.AnswerInvalid
   approver_invalid:
     status: 422
     raised_by:
@@ -1423,7 +1427,12 @@ codes:
   questionnaire_closed:
     status: 409
     raised_by:
+    - abacus.modules.requests.portal_questionnaires.QuestionnaireLocked
     - abacus.modules.requests.questionnaires.QuestionnaireClosed
+  questionnaire_incomplete:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.portal_questionnaires.Incomplete
   rationale_required:
     status: 422
     raised_by:
@@ -1783,6 +1792,7 @@ codes:
     - abacus.modules.organisations.org_structure.StaleOrgStructure
     - abacus.modules.platform.safeguards.SafeguardsStale
     - abacus.modules.portal.settings.SettingsStale
+    - abacus.modules.requests.portal_questionnaires.AnswerStale
     - abacus.modules.review.gate_actions.GateStaleVersion
     - abacus.modules.signatures.builder.StaleEnvelope
     - abacus.modules.tax.status.StaleReturn

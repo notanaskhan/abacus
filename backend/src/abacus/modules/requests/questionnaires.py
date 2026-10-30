@@ -499,7 +499,7 @@ async def create_questionnaire(
     return await questionnaire(ctx, questionnaire_id)
 
 
-async def _head(session: AsyncSession, questionnaire_id: UUID) -> TextRow:
+async def head_of(session: AsyncSession, questionnaire_id: UUID) -> TextRow:
     found = (
         await session.execute(
             text(
@@ -526,7 +526,7 @@ async def draft_question(
 ) -> QuestionView:
     _person(ctx, ASK)
     async with tenant_session(ctx.tenant) as session:
-        head = await _head(session, questionnaire_id)
+        head = await head_of(session, questionnaire_id)
     await _engagement(ctx, head.engagement_id, head.work_item_id, ASK)
     if head.status != QuestionnaireStatus.OPEN:
         raise QuestionnaireClosed(facts={"status": head.status})
@@ -591,7 +591,7 @@ async def send_question(ctx: AuthContext, question_id: UUID) -> QuestionView:
         ).first()
         if found is None:
             raise NotFound("question")
-        head = await _head(session, found.questionnaire_id)
+        head = await head_of(session, found.questionnaire_id)
     await _engagement(ctx, head.engagement_id, head.work_item_id, ASK)
     if found.sent_at is not None:
         raise AlreadySent(facts={"question_id": str(question_id)})
@@ -637,7 +637,7 @@ def _question_view(r: TextRow) -> QuestionView:
     )
 
 
-async def _view(session: AsyncSession, head: TextRow) -> QuestionnaireView:
+async def view_of(session: AsyncSession, head: TextRow) -> QuestionnaireView:
     rows = (await session.execute(_QUESTIONS, {"q": head.id})).all()
     questions = tuple(_question_view(r) for r in rows)
     return QuestionnaireView(
@@ -657,10 +657,10 @@ async def questionnaire(ctx: AuthContext, questionnaire_id: UUID) -> Questionnai
     if ctx.client:
         raise NotFound(SUBJECT)
     async with tenant_session(ctx.tenant) as session:
-        head = await _head(session, questionnaire_id)
+        head = await head_of(session, questionnaire_id)
     await _engagement(ctx, head.engagement_id, head.work_item_id, READ)
     async with tenant_session(ctx.tenant) as session:
-        return await _view(session, head)
+        return await view_of(session, head)
 
 
 async def _question(ctx: AuthContext, question_id: UUID) -> QuestionView:
@@ -670,7 +670,7 @@ async def _question(ctx: AuthContext, question_id: UUID) -> QuestionView:
                 text("SELECT questionnaire_id FROM questions WHERE id = :id"), {"id": question_id}
             )
         ).scalar_one()
-        view = await _view(session, await _head(session, q))
+        view = await view_of(session, await head_of(session, q))
     return next(x for x in view.questions if x.id == question_id)
 
 
@@ -700,7 +700,7 @@ async def questionnaires_of_list(
                 {"l": request_list_id},
             )
         ).all()
-        return [await _view(session, h) for h in heads]
+        return [await view_of(session, h) for h in heads]
 
 
 __all__ = [
@@ -713,13 +713,16 @@ __all__ = [
     "QuestionnaireClosed",
     "QuestionnaireView",
     "TemplateView",
+    "TextRow",
     "attach_organizer",
     "create_questionnaire",
     "draft_question",
+    "head_of",
     "import_template",
     "publish_version",
     "questionnaire",
     "questionnaires_of_list",
     "send_question",
     "templates",
+    "view_of",
 ]

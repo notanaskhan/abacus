@@ -165841,6 +165841,7 @@
     },
     "/v1/portal/questionnaires": {
       "get": {
+        "description": "POR-05's list: the caller's questionnaires, sent questions only (T-02-T22).",
         "operationId": "portal_questionnaires",
         "parameters": [
           {
@@ -165930,16 +165931,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal Questionnaires Route",
@@ -165951,6 +165942,7 @@
     },
     "/v1/portal/questionnaires/{questionnaire_id}": {
       "get": {
+        "description": "POR-05: one questionnaire, filtered (unanswered) or by section; another client user's\ninquiry is 404 (INV-4).",
         "operationId": "portal_questionnaire",
         "parameters": [
           {
@@ -166083,16 +166075,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal Questionnaire Route",
@@ -166104,7 +166086,7 @@
     },
     "/v1/portal/questionnaires/{questionnaire_id}/answers/{question_id}": {
       "put": {
-        "description": "Autosave (409 `stale_version` when the answer moved).",
+        "description": "Autosave: `If-Match` is the version this save makes (409 `stale_version` when the answer\nmoved; `questionnaire_closed` once submitted); 422 `answer_invalid` for the wrong type.",
         "operationId": "portal_answer",
         "parameters": [
           {
@@ -166240,16 +166222,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal Answer Route",
@@ -166397,6 +166369,7 @@
     },
     "/v1/portal/questionnaires/{questionnaire_id}:mark-done": {
       "post": {
+        "description": "Mark as Done once every question is answered (409 `questionnaire_incomplete`).",
         "operationId": "portal_mark_done",
         "parameters": [
           {
@@ -166502,16 +166475,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal Mark Done Route",
@@ -166523,7 +166486,7 @@
     },
     "/v1/portal/questionnaires/{questionnaire_id}:submit": {
       "post": {
-        "description": "An inquiry's addressee submits and locks it.",
+        "description": "An inquiry's addressee submits and locks it (anyone else: 404).",
         "operationId": "portal_submit",
         "parameters": [
           {
@@ -166629,16 +166592,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal Submit Route",

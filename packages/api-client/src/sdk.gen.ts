@@ -9169,6 +9169,8 @@ export const updatePortalPreferences = <ThrowOnError extends boolean = false>(op
 
 /**
  * Portal Questionnaires Route
+ *
+ * POR-05's list: the caller's questionnaires, sent questions only (T-02-T22).
  */
 export const portalQuestionnaires = <ThrowOnError extends boolean = false>(options?: Options<PortalQuestionnairesData, ThrowOnError>): RequestResult<PortalQuestionnairesResponses, PortalQuestionnairesErrors, ThrowOnError> => (options?.client ?? client).get<PortalQuestionnairesResponses, PortalQuestionnairesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9178,6 +9180,9 @@ export const portalQuestionnaires = <ThrowOnError extends boolean = false>(optio
 
 /**
  * Portal Questionnaire Route
+ *
+ * POR-05: one questionnaire, filtered (unanswered) or by section; another client user's
+ * inquiry is 404 (INV-4).
  */
 export const portalQuestionnaire = <ThrowOnError extends boolean = false>(options: Options<PortalQuestionnaireData, ThrowOnError>): RequestResult<PortalQuestionnaireResponses, PortalQuestionnaireErrors, ThrowOnError> => (options.client ?? client).get<PortalQuestionnaireResponses, PortalQuestionnaireErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9188,7 +9193,8 @@ export const portalQuestionnaire = <ThrowOnError extends boolean = false>(option
 /**
  * Portal Answer Route
  *
- * Autosave (409 `stale_version` when the answer moved).
+ * Autosave: `If-Match` is the version this save makes (409 `stale_version` when the answer
+ * moved; `questionnaire_closed` once submitted); 422 `answer_invalid` for the wrong type.
  */
 export const portalAnswer = <ThrowOnError extends boolean = false>(options: Options<PortalAnswerData, ThrowOnError>): RequestResult<PortalAnswerResponses, PortalAnswerErrors, ThrowOnError> => (options.client ?? client).put<PortalAnswerResponses, PortalAnswerErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9215,6 +9221,8 @@ export const portalAttachment = <ThrowOnError extends boolean = false>(options: 
 
 /**
  * Portal Mark Done Route
+ *
+ * Mark as Done once every question is answered (409 `questionnaire_incomplete`).
  */
 export const portalMarkDone = <ThrowOnError extends boolean = false>(options: Options<PortalMarkDoneData, ThrowOnError>): RequestResult<PortalMarkDoneResponses, PortalMarkDoneErrors, ThrowOnError> => (options.client ?? client).post<PortalMarkDoneResponses, PortalMarkDoneErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9225,7 +9233,7 @@ export const portalMarkDone = <ThrowOnError extends boolean = false>(options: Op
 /**
  * Portal Submit Route
  *
- * An inquiry's addressee submits and locks it.
+ * An inquiry's addressee submits and locks it (anyone else: 404).
  */
 export const portalSubmit = <ThrowOnError extends boolean = false>(options: Options<PortalSubmitData, ThrowOnError>): RequestResult<PortalSubmitResponses, PortalSubmitErrors, ThrowOnError> => (options.client ?? client).post<PortalSubmitResponses, PortalSubmitErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
