@@ -338,16 +338,16 @@ export function SigningCeremony(props: SigningCeremonyProps): JSX.Element {
                 !confirming &&
                 current === "sign" &&
                 props.signPanel === undefined && (
-                <SignCallToAction
-                  viewer={viewer}
-                  note={SIGNING_NOTE}
-                  disabled={nextOpen === null}
-                  onClick={() => {
-                    if (nextOpen === null) return;
-                    props.onSignField?.(nextOpen.id);
-                  }}
-                />
-              )}
+                  <SignCallToAction
+                    viewer={viewer}
+                    note={SIGNING_NOTE}
+                    disabled={nextOpen === null}
+                    onClick={() => {
+                      if (nextOpen === null) return;
+                      props.onSignField?.(nextOpen.id);
+                    }}
+                  />
+                )}
             </SigningSteps>
           )}
         </aside>

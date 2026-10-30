@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 // The T16 signing kit's prop API (F-06-T04; F-06.md §5.2, SPEC-400 AC-1…AC-8): the contract the
 // F-06-T07 acceptance tests and N-02's POR-06 container build against. L2 rule: generic shapes
 // only, no @abacus/api-client types, no role names. N-02 maps C7's PortalEnvelopeView onto
