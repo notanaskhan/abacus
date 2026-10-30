@@ -82,6 +82,7 @@ def test_no_canary_schedule_without_a_canary_firm() -> None:
     assert [job.id for job in platform.schedules()] == [
         "spend_anomaly:platform",
         "incident_reminders:platform",  # G-02-T18: the incident register's FTC clock reminders
+        "pilot_metrics:platform",  # Q-04-T008: the weekly pilot metrics
     ]
 
 
@@ -107,7 +108,9 @@ def test_the_canary_runs_every_15_minutes_on_the_time_sensitive_queue(
         "export_expiry:platform",  # A-01-T22: the daily engagement export expiry sweep
         "home_activity_prune:platform",  # I-01-T12 (DEC-900): Home client activity, daily
         "incident_reminders:platform",  # G-02-T18: the incident register's FTC clock reminders
+        "envelope_status_poll:platform",  # N-02-T19: provider status truth, every 5 minutes
         "notification_purge:platform",
+        "pilot_metrics:platform",  # Q-04-T008: the weekly pilot metrics
         "ses_events:platform",
         "spend_anomaly:platform",
         f"canary:{canary_firm}",

@@ -9012,6 +9012,10 @@ export type DropFileOut = {
  */
 export type DueDateExtension = {
     /**
+     * Day
+     */
+    day?: number | null;
+    /**
      * Form
      */
     form: string;
@@ -21154,6 +21158,10 @@ export type PortalBinderOut = {
      */
     done_count: number;
     /**
+     * Engagement Id
+     */
+    engagement_id?: string | null;
+    /**
      * Filter
      */
     filter: 'requested' | 'all' | 'uploaded_by_me' | 'needs_follow_up';
@@ -21182,6 +21190,10 @@ export type PortalBinderOut = {
      * Total
      */
     total: number;
+    /**
+     * Upload Something Else
+     */
+    upload_something_else?: boolean;
 };
 
 /**
@@ -29858,7 +29870,10 @@ export type StandardVersionOut = {
      * Standard Id
      */
     standard_id: string;
-    status: FirmStandardVersionStatus;
+    /**
+     * Status
+     */
+    status: FirmStandardVersionStatus | 'superseded';
     /**
      * Version
      */
@@ -29889,7 +29904,10 @@ export type StandardVersionSummaryOut = {
      */
     published_at: string | null;
     published_by: StandardPersonOut | null;
-    status: FirmStandardVersionStatus;
+    /**
+     * Status
+     */
+    status: FirmStandardVersionStatus | 'superseded';
     /**
      * Tax Year
      */
@@ -41084,10 +41102,6 @@ export type PracticeDueDatesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PracticeDueDatesError = PracticeDueDatesErrors[keyof PracticeDueDatesErrors];
@@ -58103,10 +58117,6 @@ export type CreateEnvelopeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CreateEnvelopeDraftError = CreateEnvelopeDraftErrors[keyof CreateEnvelopeDraftErrors];
@@ -58499,10 +58509,6 @@ export type UpdateEnvelopeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UpdateEnvelopeDraftError = UpdateEnvelopeDraftErrors[keyof UpdateEnvelopeDraftErrors];
@@ -58620,13 +58626,13 @@ export type EnvelopePageErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EnvelopePageError = EnvelopePageErrors[keyof EnvelopePageErrors];
@@ -58803,10 +58809,6 @@ export type SendEnvelopeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SendEnvelopeError = SendEnvelopeErrors[keyof SendEnvelopeErrors];
@@ -58863,10 +58865,6 @@ export type UndoEnvelopeSendErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UndoEnvelopeSendError = UndoEnvelopeSendErrors[keyof UndoEnvelopeSendErrors];
@@ -59047,10 +59045,6 @@ export type ValidateEnvelopeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ValidateEnvelopeError = ValidateEnvelopeErrors[keyof ValidateEnvelopeErrors];
@@ -76942,10 +76936,6 @@ export type ListReferenceSetsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListReferenceSetsError = ListReferenceSetsErrors[keyof ListReferenceSetsErrors];
@@ -77003,10 +76993,6 @@ export type ResolveReferenceSetErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ResolveReferenceSetError = ResolveReferenceSetErrors[keyof ResolveReferenceSetErrors];
@@ -77059,10 +77045,6 @@ export type ReferenceSetVersionsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ReferenceSetVersionsError = ReferenceSetVersionsErrors[keyof ReferenceSetVersionsErrors];
@@ -78074,10 +78056,6 @@ export type ListStandardsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListStandardsError = ListStandardsErrors[keyof ListStandardsErrors];
@@ -78129,10 +78107,6 @@ export type CreateStandardErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CreateStandardError = CreateStandardErrors[keyof CreateStandardErrors];
@@ -78241,10 +78215,6 @@ export type StandardErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type StandardError = StandardErrors[keyof StandardErrors];
@@ -78302,10 +78272,6 @@ export type StandardExamplesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type StandardExamplesError = StandardExamplesErrors[keyof StandardExamplesErrors];
@@ -78414,10 +78380,6 @@ export type AssignOwnerErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AssignOwnerError = AssignOwnerErrors[keyof AssignOwnerErrors];
@@ -78474,10 +78436,6 @@ export type DraftVersionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DraftVersionError = DraftVersionErrors[keyof DraftVersionErrors];
@@ -78542,10 +78500,6 @@ export type StandardDiscardDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type StandardDiscardDraftError = StandardDiscardDraftErrors[keyof StandardDiscardDraftErrors];
@@ -78602,10 +78556,6 @@ export type StandardVersionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type StandardVersionError = StandardVersionErrors[keyof StandardVersionErrors];
@@ -78670,10 +78620,6 @@ export type EditDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EditDraftError = EditDraftErrors[keyof EditDraftErrors];
@@ -78735,10 +78681,6 @@ export type VersionDiffErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type VersionDiffError = VersionDiffErrors[keyof VersionDiffErrors];
@@ -78869,10 +78811,6 @@ export type PublishVersionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PublishVersionError = PublishVersionErrors[keyof PublishVersionErrors];

@@ -31,7 +31,7 @@ export const COPY = {
   more: ["Questions", "Deliverables", "People & access", "Security", "Sign out"],
   envelopeTitle: "Form 8879 · TY2025",
   stepChips: "Verify ✓ · Review ✓ · Sign · Done",
-  adoptAndSign: "Adopt signature & sign…",
+  adoptAndSign: "Adopt signature & sign",
   deferred: "Deferred (DEC-97)",
   alternateCaption:
     "Alternate: client uploads by camera instead of email (not the seeded demo day)",
