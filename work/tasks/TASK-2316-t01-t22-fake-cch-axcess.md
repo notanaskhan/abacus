@@ -2,7 +2,7 @@
 id: TASK-2316
 title: T-01-T22 fake CCH Axcess
 spec: SPEC-501
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: amber
 status: in-review
 epic: T-01

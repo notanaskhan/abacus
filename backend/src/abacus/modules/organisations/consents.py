@@ -182,10 +182,8 @@ async def filing_unit(ctx: AuthContext, entity_id: UUID) -> FilingUnit:
     joint = unit.entity_type == _JOINT
     if not signers or (joint and not {"taxpayer", "spouse"} <= roles):
         raise SignersMissing(facts={"client_entity_id": str(entity_id)})
-    if joint:
-        signers = [s for s in signers if s.role in ("taxpayer", "spouse")]
-    else:
-        signers = signers[:1]  # one signer for a single taxpayer or an entity
+    # A joint return's two spouses; one signer for a single taxpayer or an entity.
+    signers = [s for s in signers if s.role in ("taxpayer", "spouse")] if joint else signers[:1]
     return FilingUnit(unit.client_id, entity_id, unit.name, unit.entity_type, tuple(signers))
 
 
@@ -338,7 +336,7 @@ async def record_request(
             tx.record(
                 f"consent.{kind}",
                 target=Target("consent", consent_id),
-                after=Ref(purpose=draft.purpose, envelope=envelope_id, set=set_id),
+                after=Ref(envelope=envelope_id, set=set_id),  # identifiers only
             )
     return ids
 
@@ -398,7 +396,7 @@ async def envelope_completed(
                     "channel": "portal" if method != "record" else "paper",
                 },
             )
-            if not moved.rowcount:  # pyright: ignore[reportAttributeAccessIssue] -- CursorResult
+            if not moved.rowcount:  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType] -- CursorResult
                 continue
             signed.append(row.id)
             contacts.update(
@@ -427,7 +425,7 @@ async def envelope_completed(
             tx.record(
                 "consent.signed",
                 target=Target("consent", row.id),
-                after=Ref(envelope=envelope_id, method=method),
+                after=Ref(envelope=envelope_id),  # identifiers only; the method is on the row
             )
         if contacts:
             users = (
@@ -504,7 +502,8 @@ async def record_signed(
         tx.record(
             "consent.recorded",
             target=Target("consent", consent_id),
-            after=Ref(purpose=draft.purpose, text_sha256=draft.text_sha256),
+            # A reference carries identifiers only: the purpose is on the consent row.
+            after=Ref(text_sha256=draft.text_sha256),
         )
     return consent_id
 
@@ -598,7 +597,8 @@ _CONSENT_ROW = text(
     "c.purpose, c.tax_years, c.scope, c.recipients, c.provider_terms_version, "
     "c.template_version_id, c.source, c.envelope_id, c.status, c.requested_at, c.signed_at, "
     "c.expires_at, c.renewal_of_id, c.declined_at, c.revoked_at, c.row_version, "
-    "(SELECT count(*) FROM consent_signers s WHERE s.consent_id = c.id AND s.signed_at IS NOT NULL) "
+    "(SELECT count(*) FROM consent_signers s "
+    "WHERE s.consent_id = c.id AND s.signed_at IS NOT NULL) "
     "AS signed_count, "
     "(SELECT count(*) FROM consent_signers s WHERE s.consent_id = c.id) AS signer_count "
     "FROM consents c JOIN clients cl ON cl.id = c.client_id WHERE c.id = ANY(:ids) "

@@ -42,7 +42,6 @@ from abacus.modules.identity.api import (
     Resource,
     authorise,
     current_context,
-    mask_tins_for,
     names_of,
 )
 from abacus.modules.organisations import consent_registry
@@ -527,45 +526,39 @@ async def consent_outs(ctx: AuthContext, ids: list[UUID]) -> list[ConsentOut]:
     """C19's `ConsentOut` for consents just written (T-01-T10; the registry reads are T16's)."""
     rows = await consent_rows(ctx.tenant, ids)
     out: list[ConsentOut] = []
+    copied = (
+        "id", "client_id", "client_entity_id", "consent_set_id", "purpose", "template_version_id",
+        "source", "envelope_id", "status", "requested_at", "signed_at", "expires_at",
+        "renewal_of_id", "declined_at", "revoked_at",
+    )  # fmt: skip
     for row in rows:
         v = row.values
+        # Pydantic validates the SQL's column values into C19's types.
         out.append(
-            ConsentOut(
-                id=v["id"],  # type: ignore[arg-type]  # columns typed by the SQL
-                client_id=v["client_id"],  # type: ignore[arg-type]
-                client_entity_id=v["client_entity_id"],  # type: ignore[arg-type]
-                client_name=str(v["client_name"]),
-                consent_set_id=v["consent_set_id"],  # type: ignore[arg-type]
-                purpose=v["purpose"],  # type: ignore[arg-type]
-                tax_years=list(v["tax_years"]),  # type: ignore[call-overload]
-                scope=dict(v["scope"]),  # type: ignore[call-overload]
-                recipients=[ConsentRecipientOut.model_validate(r) for r in v["recipients"]],  # type: ignore[attr-defined]
-                provider_terms_version=str(v["provider_terms_version"]),
-                template_version_id=v["template_version_id"],  # type: ignore[arg-type]
-                source=v["source"],  # type: ignore[arg-type]
-                envelope_id=v["envelope_id"],  # type: ignore[arg-type]
-                status=v["status"],  # type: ignore[arg-type]
-                signed_count=int(v["signed_count"]),  # type: ignore[call-overload]
-                signer_count=int(v["signer_count"]),  # type: ignore[call-overload]
-                requested_at=v["requested_at"],  # type: ignore[arg-type]
-                signed_at=v["signed_at"],  # type: ignore[arg-type]
-                expires_at=v["expires_at"],  # type: ignore[arg-type]
-                renewal_of_id=v["renewal_of_id"],  # type: ignore[arg-type]
-                offshore=v["purpose"] == "offshore_disclosure",
-                allowed_actions=[],
-                declined_at=v["declined_at"],  # type: ignore[arg-type]
-                revoked_at=v["revoked_at"],  # type: ignore[arg-type]
-                signers=[
-                    ConsentSignerOut(
-                        contact_id=s["contact_id"],  # type: ignore[arg-type]
-                        name=str(s["display_name"]),
-                        role=s["signer_role"],  # type: ignore[arg-type]
-                        required=bool(s["required"]),
-                        signed_at=s["signed_at"],  # type: ignore[arg-type]
-                        method=s["method"],  # type: ignore[arg-type]
-                    )
-                    for s in row.signers
-                ],
+            ConsentOut.model_validate(
+                {
+                    **{k: v[k] for k in copied},
+                    "client_name": str(v["client_name"]),
+                    "tax_years": v["tax_years"],
+                    "scope": v["scope"],
+                    "recipients": v["recipients"],
+                    "provider_terms_version": str(v["provider_terms_version"]),
+                    "signed_count": v["signed_count"],
+                    "signer_count": v["signer_count"],
+                    "offshore": v["purpose"] == "offshore_disclosure",
+                    "allowed_actions": [],
+                    "signers": [
+                        {
+                            "contact_id": s["contact_id"],
+                            "name": str(s["display_name"]),
+                            "role": s["signer_role"],
+                            "required": bool(s["required"]),
+                            "signed_at": s["signed_at"],
+                            "method": s["method"],
+                        }
+                        for s in row.signers
+                    ],
+                }
             )
         )
     return out

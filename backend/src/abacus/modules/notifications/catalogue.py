@@ -475,7 +475,9 @@ def register_kind_source(
 
 
 TEMPLATES: Final[dict[str, str]] = {
-    "consent.expiring": "A §7216 consent expires within 30 days. Renew it from the consent registry.",
+    "consent.expiring": (
+        "A §7216 consent expires within 30 days. Renew it from the consent registry."
+    ),
     "reference_set.published": "A rules table Accrued maintains was updated. Due dates follow it.",
     "support_session.requested": "Platform support asked for access to your firm.",
     "support_session.emergency_approved": (
@@ -552,6 +554,9 @@ TEMPLATES: Final[dict[str, str]] = {
 # owners add facts and pending resolvers through `notifications.api` as their screens need them.
 _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("support_session.requested", "system", "LifeBuoy"),
+    # T-01-T16: a signed §7216 consent 30 days from expiry; K-02-T12: a platform rules table.
+    NotificationKind("consent_expiring", "deadline", "CalendarClock"),
+    NotificationKind("rules_table_updated", "system", "BookOpen"),
     NotificationKind("support_session.emergency_approved", "system", "LifeBuoy"),
     NotificationKind("budget.soft_crossed", "system", "Gauge"),
     NotificationKind("budget.anomaly", "system", "Gauge"),

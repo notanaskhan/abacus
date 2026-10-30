@@ -38,6 +38,7 @@ from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.engagements.api import WorkItemFacts, work_item_facts
 from abacus.modules.identity.api import (
     AuthContext,
+    Forbidden,
     Resource,
     allowed_actions,
     authorise,
@@ -101,12 +102,18 @@ async def _load(ctx: AuthContext, return_id: UUID) -> Loaded:
     """The return as the viewer may see it (404 otherwise, INV-3)."""
     if ctx.client:
         raise NotFound(KIND)
-    await authorise(ctx, METADATA, Resource.firm(ctx.tenant_id))
     facts = next(
-        (f for f in await work_item_facts(ctx, KIND) if f.work_item_id == return_id), None
+        (f for f in await work_item_facts(ctx, KIND, METADATA) if f.work_item_id == return_id),
+        None,
     )
     if facts is None:
         raise NotFound(KIND)
+    # On the return's engagement: an engagement role grants it to staff with no firm role.
+    resource = await engagement_resource(ctx.tenant, facts.engagement_id)
+    try:
+        await authorise(ctx, METADATA, replace(resource, work_item_id=return_id))
+    except Forbidden:
+        raise NotFound(KIND) from None
     async with tenant_session(ctx.tenant) as session:
         found = (await session.execute(_ONE, {"id": return_id})).first()
     if found is None:

@@ -107,7 +107,7 @@ async def flag(tx: UnitOfWork, ctx: AuthContext, engagement_id: UUID, version_id
     tx.record(
         "evidence_version.flagged",
         target=Target("evidence_version", version_id),
-        after=Ref(reason=CHECK),
+        after=Ref(),  # identifiers only: the check and its checker are on the review flag
     )
 
 

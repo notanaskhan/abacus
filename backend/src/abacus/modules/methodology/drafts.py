@@ -23,6 +23,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -354,7 +355,8 @@ async def create_draft(ctx: AuthContext, version_id: UUID) -> VersionState:
                 tenant_id=ctx.tenant_id,
                 template_id=source.template_id,
                 version=number,
-                source_fingerprint=f"draft:{version_id}",
+                # A draft has no source file: its fingerprint is its lineage's (64 hex).
+                source_fingerprint=hashlib.sha256(f"draft:{version_id}".encode()).hexdigest(),
                 imported_by=ctx.user_id,
                 label=f"v{number}",
                 origin="draft",

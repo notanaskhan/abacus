@@ -157,7 +157,8 @@ class ProgramStep(Base):
     level: Mapped[str]
     mandatory: Mapped[bool]
     lock_note: Mapped[str | None]
-    guidance: Mapped[list[dict[str, object]] | None] = mapped_column(JSONB)
+    # SQL NULL for None (the column refuses a JSON null; K-01-T14 copies steps in bulk).
+    guidance: Mapped[list[dict[str, object]] | None] = mapped_column(JSONB(none_as_null=True))
     prepopulates: Mapped[list[str]] = mapped_column(ARRAY(String))
     depends_on_step_keys: Mapped[list[str]] = mapped_column(ARRAY(String))
     publisher_step_id: Mapped[UUID | None]
@@ -165,6 +166,9 @@ class ProgramStep(Base):
     proposed_by_run_id: Mapped[UUID | None]
     parse_flag: Mapped[str | None]
     flag_resolution: Mapped[str | None]
+    # K-01-T05 (0224): who last edited a draft step, and when (K-01-T14 writes them).
+    edited_by: Mapped[UUID | None]
+    edited_at: Mapped[datetime | None]
     row_version: Mapped[int] = mapped_column(server_default=FetchedValue())
 
 

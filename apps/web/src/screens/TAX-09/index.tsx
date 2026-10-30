@@ -24,7 +24,7 @@ import {
   useReducedMotion,
 } from "@abacus/ui";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { type JSX, useEffect, useRef, useState } from "react";
+import { type JSX, useCallback, useEffect, useRef, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { CAUSES, COPY, FIELDS } from "./copy";
 
@@ -45,6 +45,9 @@ import { CAUSES, COPY, FIELDS } from "./copy";
 
 const EXPORTING_MS = 1240;
 const UPLOAD_ID = "3f9a5e62-1c4d-4b8e-9f20-7a6b5c4d3e21";
+// T-01-T19: an engine import posts the engine's values CSV as the request body. Artboard e opens on
+// the fixture's pending import; its handler answers whatever file it is sent.
+const SPECIMEN_FILE = "2025I_FeldJ_V3_values.csv";
 
 type Chip = EngineSyncOut["state"];
 
@@ -308,26 +311,36 @@ export function TAX09({
   const [importing, setImporting] = useState<EngineImportOut | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const asked = useRef(false);
+  const picker = useRef<HTMLInputElement>(null);
   const data = sync.data;
+
+  const upload = useCallback(
+    (file: File) => {
+      uploading.mutate(
+        {
+          path: { return_id: returnId },
+          query: { kind: "values" },
+          headers: { "X-File-Name": file.name, "Content-Type": file.type || "text/csv" },
+          body: file as never,
+          bodySerializer: null,
+        },
+        {
+          onSuccess: (found) => {
+            setImporting(found);
+            setSheetOpen(true);
+          },
+        },
+      );
+    },
+    [returnId, uploading],
+  );
 
   useEffect(() => {
     if (!defaultImportOpen || data === undefined || asked.current) return;
     asked.current = true;
-    uploading.mutate(
-      {
-        path: { return_id: returnId },
-        body: { kind: "values", upload_id: UPLOAD_ID },
-        headers: { "Idempotency-Key": crypto.randomUUID() },
-      },
-      {
-        onSuccess: (found) => {
-          setImporting(found);
-          setSheetOpen(true);
-        },
-      },
-    );
+    upload(new File([], SPECIMEN_FILE, { type: "text/csv" }));
     // Open e's diff once, when the sync state has loaded.
-  }, [defaultImportOpen, data, returnId, uploading]);
+  }, [defaultImportOpen, data, upload]);
 
   if (data === undefined) return <div className="h-[42px]" />;
   const state: Chip = chip ?? data.state;
@@ -410,20 +423,17 @@ export function TAX09({
               title={COPY.importTitle}
               body={COPY.importBody}
               disabled={!data.allowed_actions.some((a) => a.startsWith("engine_import"))}
-              onClick={() => {
-                uploading.mutate(
-                  {
-                    path: { return_id: returnId },
-                    body: { kind: "values", upload_id: UPLOAD_ID },
-                    headers: { "Idempotency-Key": crypto.randomUUID() },
-                  },
-                  {
-                    onSuccess: (found) => {
-                      setImporting(found);
-                      setSheetOpen(true);
-                    },
-                  },
-                );
+              onClick={() => picker.current?.click()}
+            />
+            <input
+              ref={picker}
+              type="file"
+              accept=".csv,text/csv"
+              hidden
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (file !== undefined) upload(file);
               }}
             />
           </Section>

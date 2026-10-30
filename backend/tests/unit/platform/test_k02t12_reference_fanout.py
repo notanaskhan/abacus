@@ -35,8 +35,8 @@ def test_ac49_one_run_per_version_and_action() -> None:
 
 def test_ac50_an_announcement_is_written_once_per_tenant_and_version() -> None:
     source = inspect.getsource(reference_fanout.reference_set_announce)
-    assert "_SEEN" in source and "return False" in source
-    assert source.index("_SEEN") < source.index("tx.record(")
+    assert "audit_of_targets(" in source and "return False" in source
+    assert source.index("audit_of_targets(") < source.index("tx.record(")
     assert reference_fanout.ReferenceSetPublished.event_type == "reference_set.published"
     fields = set(reference_fanout.ReferenceSetPublished.model_fields)
     assert fields >= {"version_id", "set_key"}  # identifiers only, never a rule's value
@@ -51,7 +51,7 @@ def test_ac51_firm_admins_hear_a_rules_table_was_updated() -> None:
 async def test_ac49_a_publish_whose_fanout_failed_says_how_to_restart(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    async def down(version: object, action: str) -> None:
+    async def down(request: object) -> None:
         raise ConnectionError
 
     import abacus.modules.platform.api as platform_api

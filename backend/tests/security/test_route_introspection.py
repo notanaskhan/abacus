@@ -479,7 +479,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/tax-returns/{return_id}/intake", "tax_return.read"),
     ("GET", "/v1/tax-returns/{return_id}/k1-packages", "k1_package.read"),
     ("GET", "/v1/tax-returns/{return_id}/k1-packages/release-check", "k1_package.read"),
-    ("GET", "/v1/tax-returns/{return_id}/overview", "tax_return.read"),
+    ("GET", "/v1/tax-returns/{return_id}/overview", "tax_return.read_metadata"),
     ("GET", "/v1/transcripts/{transcript_id}/comparison", "tax_profile.read"),
     ("GET", "/v1/walls", "wall.list"),
     ("GET", "/v1/walls/preview", "wall.create"),
@@ -667,13 +667,6 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/withdraw",
         "evidence.withdraw",
     ),
-    # T-02-T17: a person resolves a flagged duplicate upload.
-    (
-        "POST",
-        "/v1/engagements/{engagement_id}/request-items/{item_id}/evidence-versions/{version_id}"
-        "/duplicate-resolution",
-        "evidence.resolve_duplicate",
-    ),
     ("POST", "/v1/engagements/{engagement_id}/findings", "finding.raise"),
     (
         "POST",
@@ -852,6 +845,11 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "POST",
         "/v1/engagements/{engagement_id}/request-items/{item_id}/delegate",
         "request_item.delegate",
+    ),
+    (
+        "POST",
+        "/v1/engagements/{engagement_id}/request-items/{item_id}/evidence-versions/{version_id}/duplicate-resolution",
+        "evidence.resolve_duplicate",
     ),
     (
         "POST",
@@ -1226,6 +1224,11 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/recipient-details-changes/{change_id}:accept", "k1_recipient.review_details"),
     ("POST", "/v1/recipient-details-changes/{change_id}:reject", "k1_recipient.review_details"),
     ("POST", "/v1/report-templates/import", "report_template.import"),
+    (
+        "POST",
+        "/v1/report-templates/{template_id}/versions/{version_no}/deprecate",
+        "report_template.publish",
+    ),
     (
         "POST",
         "/v1/report-templates/{template_id}/versions/{version_no}/preview",

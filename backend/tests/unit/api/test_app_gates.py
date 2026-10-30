@@ -93,6 +93,8 @@ NOT_CREATING = {
     "/v1/report-templates/import",
     "/v1/report-templates/{template_id}/versions/{version_no}/preview",
     "/v1/report-templates/{template_id}/versions/{version_no}/publish",
+    # T-01-T17 (C11 v1.1): deprecating a version creates nothing, so 200.
+    "/v1/report-templates/{template_id}/versions/{version_no}/deprecate",
     "/v1/generated-documents/{document_id}/regenerate",
     "/v1/platform/email-templates/import",  # TASK-401: idempotent, may write nothing, so 200
     # I-01-T07: a snooze, an unsnooze and a reassign change who a gate waits on, so 200.

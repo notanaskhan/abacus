@@ -197,9 +197,9 @@ function Editor({
               row.account_class,
               row.rule === "limit" ? (
                 <Figure
-                  label={`${row.account_class} · ${COPY.aje.head[1] ?? ""}`}
+                  label={`${row.account_class} · ${COPY.aje.head[1]}`}
                   value={String(row.limit_usd ?? 0)}
-                  was={was[i]?.limit_usd === undefined ? null : String(was[i]?.limit_usd ?? "")}
+                  was={was.at(i) === undefined ? null : String(was.at(i)?.limit_usd ?? "")}
                   format={(v) => whole(Number(v))}
                   onChange={(next) => {
                     const rows = payload.rows.map((r, j) =>
@@ -232,25 +232,25 @@ function Editor({
               <Figure
                 key="p"
                 label={`${row.context} percent`}
-                value={String(row.pct)}
-                was={was[i] === undefined ? null : String(was[i]?.pct)}
+                value={row.pct}
+                was={was.at(i)?.pct ?? null}
                 format={(v) => `${v}%`}
                 onChange={(next) => {
                   const rows = payload.rows.map((r, j) => (j === i ? { ...r, pct: next } : r));
-                  onChange({ ...payload, rows } as Payload);
+                  onChange({ ...payload, rows });
                 }}
               />,
               <Figure
                 key="a"
                 label={`${row.context} amount`}
                 value={String(row.amount_usd)}
-                was={was[i] === undefined ? null : String(was[i]?.amount_usd)}
+                was={was.at(i) === undefined ? null : String(was.at(i)?.amount_usd)}
                 format={(v) => whole(Number(v))}
                 onChange={(next) => {
                   const rows = payload.rows.map((r, j) =>
                     j === i ? { ...r, amount_usd: Number(next) } : r,
                   );
-                  onChange({ ...payload, rows } as Payload);
+                  onChange({ ...payload, rows });
                 }}
               />,
             ],
@@ -273,14 +273,14 @@ function Editor({
                 <Figure
                   key={field}
                   label={`${row.engagement_kind} ${field === "low_pct" ? "low" : "high"}`}
-                  value={String(row[field])}
-                  was={was[i] === undefined ? null : String(was[i]?.[field])}
+                  value={row[field]}
+                  was={was.at(i)?.[field] ?? null}
                   format={(v) => `${v}%`}
                   onChange={(next) => {
                     const rows = payload.rows.map((r, j) =>
                       j === i ? { ...r, [field]: next } : r,
                     );
-                    onChange({ ...payload, rows } as Payload);
+                    onChange({ ...payload, rows });
                   }}
                 />
               )),
@@ -302,11 +302,11 @@ function Editor({
                 <Figure
                   key={field}
                   label={field === "hold_below_pct" ? "Hold below" : "Auto-accept above"}
-                  value={String(payload[field])}
-                  was={was === undefined ? null : String(was[field])}
+                  value={payload[field]}
+                  was={was === undefined ? null : was[field]}
                   format={(v) => `${v}%`}
                   onChange={(next) => {
-                    onChange({ ...payload, [field]: next } as Payload);
+                    onChange({ ...payload, [field]: next });
                   }}
                 />
               )),
@@ -336,7 +336,7 @@ function isStatus(error: unknown, code: string): boolean {
     typeof error === "object" &&
     error !== null &&
     "detail" in error &&
-    JSON.stringify((error as { detail: unknown }).detail).includes(code)
+    JSON.stringify(error.detail).includes(code)
   );
 }
 
@@ -372,6 +372,8 @@ export function DraftPane({
   );
   const [changeSummary, setChangeSummary] = useState("");
   const [confirm, setConfirm] = useState(false);
+  // One key per draft on screen: a retried publish replays, never publishes twice.
+  const [publishKey] = useState(() => crypto.randomUUID());
   const [stepUp, setStepUp] = useState(false);
   const [stale, setStale] = useState<string | null>(null);
   useEffect(() => {
@@ -543,7 +545,7 @@ export function DraftPane({
         onConfirm={() => {
           publish.mutate({
             path: { standard_id: standard.id, version_id: draft.id },
-            headers: { "If-Match": draft.row_version },
+            headers: { "If-Match": draft.row_version, "Idempotency-Key": publishKey },
             body: { effective_from: effective, change_summary: changeSummary },
           });
         }}

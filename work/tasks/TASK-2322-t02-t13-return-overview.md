@@ -2,7 +2,7 @@
 id: TASK-2322
 title: T-02-T13 return overview read model and record projection
 spec: SPEC-502
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: amber
 status: in-review
 epic: T-02

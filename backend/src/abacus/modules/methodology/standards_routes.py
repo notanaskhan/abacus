@@ -8,7 +8,8 @@ K-02-T11.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+import asyncio
+from collections.abc import Callable, Sequence
 from typing import Annotated, Literal, NoReturn
 from uuid import UUID
 
@@ -19,6 +20,7 @@ from pydantic import ValidationError
 from abacus.kernel._flags import KNOWLEDGE_FIRM_STANDARDS
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.flags import flag_enabled
+from abacus.kernel.isolation import IsolationFailed, run_isolated
 from abacus.kernel.listing import ListPage
 from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.identity.api import (
@@ -77,6 +79,19 @@ async def _import_gate(ctx: AuthContext) -> None:
     await authorise(ctx, standards.IMPORT, Resource.firm(ctx.tenant_id))
     if not await flag_enabled(ctx.tenant, KNOWLEDGE_FIRM_STANDARDS):
         raise NotFound(KNOWLEDGE_FIRM_STANDARDS.name)
+
+
+async def _parsed[**P, T](
+    parser: Callable[P, tuple[T, list[standards_import.Problem]]],
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> tuple[T, list[standards_import.Problem]]:
+    """A workbook parsed in the isolated child (hostile content; ADR-052): a child that crashes or
+    runs out of time or memory is one `not_a_workbook` problem."""
+    try:
+        return await asyncio.to_thread(run_isolated, parser, *args, **kwargs)
+    except IsolationFailed:
+        _invalid([standards_import.Problem("", None, None, "not_a_workbook")])
 
 
 async def _body(request: Request) -> bytes:
@@ -318,10 +333,11 @@ async def import_standard_route(
     await _import_gate(ctx)
     data = await _body(request)
     kind = (await standards.standard_detail(ctx, standard_id, None)).standard.kind
-    try:
-        payload = standards_import.read_payload(kind, data, csv_file=format == "csv")
-    except standards_import.ImportInvalid as invalid:
-        _invalid(invalid.problems)
+    payload, problems = await _parsed(
+        standards_import.read_payload_isolated, kind, data, format == "csv"
+    )
+    if payload is None:
+        _invalid(problems)
     draft = await standards.import_draft(ctx, standard_id, payload)
     return StandardImportResultOut(drafts=[draft], problems=[])
 
@@ -336,7 +352,7 @@ async def import_standards_route(request: Request, ctx: Ctx) -> StandardImportRe
     """Onboarding: one sheet per kind, one draft per standard; an owner who is not a partner
     member is a row problem (`owner_not_partner`; K-02-T11). The other rows still import."""
     await _import_gate(ctx)
-    rows, problems = standards_import.read_onboarding(await _body(request))
+    rows, problems = await _parsed(standards_import.read_onboarding_isolated, await _body(request))
     if problems:
         _invalid(problems)
     owners = await partner_members(ctx.tenant_id)

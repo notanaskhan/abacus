@@ -19,7 +19,7 @@ for every role (ADR-004). Classification (ADR-031): bodies, clauses and variable
 Internal firm content; sample data is synthetic by rule (Internal).
 
 Revision ID: 0460
-Revises: 0430
+Revises: 0550
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, insert_only, tenant_table
 
 revision = "0460"
-down_revision = "0430"
+down_revision = "0550"
 branch_labels = None
 depends_on = None
 

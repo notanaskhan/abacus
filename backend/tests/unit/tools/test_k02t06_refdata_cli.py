@@ -41,9 +41,7 @@ def test_ac36_a_csv_is_rows_by_header_and_problems_name_cells_not_contents(
     assert (
         problems == []
         and payload["rows"] == [{"form": "1099-NEC", "payment_year": 2026, "threshold_usd": 600}]
-        or payload["rows"]
-        == [{"form": "1099-NEC", "payment_year": "2026", "threshold_usd": "600"}]
-    )
+    ) or payload["rows"] == [{"form": "1099-NEC", "payment_year": "2026", "threshold_usd": "600"}]
     bad = tmp_path / "b.csv"
     bad.write_text("form,,form\nx,y,z\n")
     _, found = refdata.payload_from("form_8879_set", bad)

@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, date, datetime
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -22,6 +22,8 @@ from abacus.modules.organisations import consents as rows
 from abacus.modules.organisations.consents import ConsentDraft, FilingUnit, Signer
 from abacus.modules.organisations.consents_contract import ConsentRequestIn
 from abacus.modules.tax import consent_capture as capture
+
+Seen = dict[str, list[Any]]  # Any: stand-in records the test reads loosely
 
 TENANT = uuid.uuid4()
 ON = datetime(2026, 9, 14, 14, 24, tzinfo=UTC)
@@ -44,9 +46,16 @@ class _Ctx:
 
 
 @pytest.fixture
-def wired(monkeypatch: pytest.MonkeyPatch) -> dict[str, list[Any]]:
+def wired(
+    monkeypatch: pytest.MonkeyPatch,
+) -> Seen:
     """Every collaborator stubbed at its API; records what the capture asked."""
-    seen: dict[str, list[Any]] = {"drafts": [], "records": [], "stored": [], "rendered": []}
+    seen: Seen = {
+        "drafts": [],
+        "records": [],
+        "stored": [],
+        "rendered": [],
+    }
 
     async def filing_unit(ctx: object, entity_id: uuid.UUID) -> FilingUnit:
         return FELD
@@ -57,7 +66,7 @@ def wired(monkeypatch: pytest.MonkeyPatch) -> dict[str, list[Any]]:
     async def template(ctx: object, purpose: str) -> object:
         return _template(purpose)
 
-    def render(request: Any) -> Any:
+    def render(request: object) -> object:
         seen["rendered"].append(request)
         sha = format(len(seen["rendered"]), "064x")
         return type("Out", (), {"pdf": b"%PDF", "render_hash": sha, "page_count": 2})()
@@ -73,9 +82,9 @@ def wired(monkeypatch: pytest.MonkeyPatch) -> dict[str, list[Any]]:
         seen["drafts"].append((kind, draft))
         return uuid.uuid4()
 
-    async def record_request(*args: Any, **kwargs: Any) -> list[uuid.UUID]:
+    async def record_request(*args: object, **kwargs: object) -> list[uuid.UUID]:
         seen["records"].append((args, kwargs))
-        return [uuid.uuid4() for _ in args[3]]
+        return [uuid.uuid4() for _ in cast(list[object], args[3])]
 
     async def consent_outs(ctx: object, ids: list[uuid.UUID]) -> list[object]:
         return []
@@ -86,7 +95,10 @@ def wired(monkeypatch: pytest.MonkeyPatch) -> dict[str, list[Any]]:
     recipients = type("R", (), {"line": "Amazon Web Services (Bedrock) · model inference · US"})
     recipients.provider_terms_version = "f" * 64  # type: ignore[attr-defined]  # a stand-in
 
-    for name, value in {
+    def recipients_on(on: object) -> object:
+        return recipients
+
+    stand_ins: dict[str, object] = {
         "filing_unit": filing_unit,
         "refuse_declined": refuse_declined,
         "_template": template,
@@ -97,13 +109,14 @@ def wired(monkeypatch: pytest.MonkeyPatch) -> dict[str, list[Any]]:
         "record_request": record_request,
         "consent_outs": consent_outs,
         "now": now,
-        "consent_recipients": lambda on: recipients,
-    }.items():
+        "consent_recipients": recipients_on,
+    }
+    for name, value in stand_ins.items():
         monkeypatch.setattr(capture, name, value)
     return seen
 
 
-def _template(purpose: str) -> Any:
+def _template(purpose: str) -> object:
     terms = type("T", (), {"purpose": purpose, "expiry_months": None})()
     version = type(
         "V",
@@ -122,7 +135,9 @@ def _template(purpose: str) -> Any:
     )()
 
 
-async def test_ac32_feld_gets_two_documents_in_one_envelope(wired: dict[str, list[Any]]) -> None:
+async def test_ac32_feld_gets_two_documents_in_one_envelope(
+    wired: Seen,
+) -> None:
     body = ConsentRequestIn(
         client_entity_id=FELD.entity_id, purposes=["use", "ai_disclosure"], tax_years=[2025]
     )
@@ -132,7 +147,7 @@ async def test_ac32_feld_gets_two_documents_in_one_envelope(wired: dict[str, lis
     assert len(draft.documents) == 2  # one document per purpose
     assert {s.contact_id for s in draft.signers} == {CLAIRE, DANIEL}  # both spouses
     assert draft.signer_order == "parallel"
-    [(args, kwargs)] = wired["records"]
+    [(args, _kwargs)] = wired["records"]
     drafts: list[ConsentDraft] = args[3]
     assert [d.purpose for d in drafts] == ["use", "ai_disclosure"]
     assert all(d.provider_terms_version == "f" * 64 for d in drafts)
@@ -140,7 +155,7 @@ async def test_ac32_feld_gets_two_documents_in_one_envelope(wired: dict[str, lis
 
 
 async def test_ac33_values_come_from_the_database_and_the_register(
-    wired: dict[str, list[Any]],
+    wired: Seen,
 ) -> None:
     body = ConsentRequestIn(
         client_entity_id=FELD.entity_id, purposes=["use"], tax_years=[2024, 2025]
@@ -153,7 +168,9 @@ async def test_ac33_values_come_from_the_database_and_the_register(
     assert request.values["consent.recipients"].startswith("Amazon Web Services (Bedrock)")
 
 
-async def test_ac32_a_purpose_named_twice_is_one_document(wired: dict[str, list[Any]]) -> None:
+async def test_ac32_a_purpose_named_twice_is_one_document(
+    wired: Seen,
+) -> None:
     body = ConsentRequestIn(
         client_entity_id=FELD.entity_id, purposes=["use", "use"], tax_years=[2025]
     )
@@ -162,7 +179,8 @@ async def test_ac32_a_purpose_named_twice_is_one_document(wired: dict[str, list[
 
 
 async def test_ac34_a_render_refusal_drafts_nothing(
-    wired: dict[str, list[Any]], monkeypatch: pytest.MonkeyPatch
+    wired: Seen,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     from abacus.modules.reporting.api import RenderingRefused
 
@@ -228,9 +246,10 @@ async def test_ac37_only_consent_set_envelopes_sign_consents(
 
 
 def test_ac38_the_capture_and_the_source_are_registered() -> None:
-    import abacus.modules.tax.api  # noqa: F401 -- registration happens at import
+    import abacus.modules.tax.api as tax_api  # registration happens at import
     from abacus.modules.organisations.slots import consent_capture
     from abacus.modules.signatures.api import envelope_source
 
+    assert tax_api.ROUTERS
     assert consent_capture() is capture.CAPTURE
     assert envelope_source("consent_set").draft is not None

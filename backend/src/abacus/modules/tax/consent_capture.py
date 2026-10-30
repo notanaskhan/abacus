@@ -189,7 +189,8 @@ async def _render(
         raise ConsentRenderRefused(facts={"code": refused.code}) from None
     await put_record(ctx.tenant_id, RECORD_TYPE, out.pdf, await _retain_until(ctx.tenant))
     terms = version.consent
-    assert terms is not None  # published_consent_template returns consent versions only
+    if terms is None:  # published_consent_template returns consent versions only
+        raise ConsentRenderRefused(facts={"code": "not_a_consent_template"})
     draft = ConsentDraft(
         purpose=terms.purpose,
         template_version_id=version.version_id,

@@ -2,7 +2,7 @@
 id: TASK-2317
 title: T-01-T19 engine import and diff (W2 file mode)
 spec: SPEC-501
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: red
 status: in-review
 epic: T-01

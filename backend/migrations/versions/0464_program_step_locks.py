@@ -9,7 +9,7 @@ draft's step kinds (`step_added`, `step_edited`, `step_removed`, `mandatory_chan
 Activity tab. No data is touched.
 
 Revision ID: 0464
-Revises: 0430 (main's head when built; re-chain onto the S18 lane's 0463 at the batch merge)
+Revises: 0463
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ from __future__ import annotations
 from alembic import op
 
 revision = "0464"
-down_revision = "0430"
+down_revision = "0463"
 branch_labels = None
 depends_on = None
 

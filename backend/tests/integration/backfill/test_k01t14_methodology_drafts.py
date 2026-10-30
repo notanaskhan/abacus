@@ -185,6 +185,8 @@ async def test_ac5_hannah_drafts_margaret_locks_and_the_published_version_stays(
     } <= audited
 
     # AC5.7: a discarded draft keeps its number; the next draft takes the one after.
+    # The version state read is KNW-02's, behind the lifecycle flag (on once the drafts exist).
+    await _flags(net, tenant, "methodology.lifecycle")
     state = cast(
         Json, (await net.call("GET", f"/v1/methodology/versions/{draft}/state", hannah)).json()
     )

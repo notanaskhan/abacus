@@ -1,5 +1,6 @@
 """Public interface of the organisations module; other modules import only this (ADR-008)."""
 
+from abacus.kernel.dispatch import WorkClass, register_work_classes
 from abacus.kernel.uow.placement import register_client_placer
 from abacus.modules.identity.api import (
     AbacusRouter,
@@ -9,6 +10,8 @@ from abacus.modules.identity.api import (
     register_office_list,
     register_settings_area,
 )
+from abacus.modules.organisations.activities import ACTIVITIES as CONSENT_ACTIVITIES
+from abacus.modules.organisations.activities import SCHEDULES as CONSENT_SCHEDULES
 from abacus.modules.organisations.audit_placement import client_offices
 from abacus.modules.organisations.conflicts import (
     check_clear_for,
@@ -42,16 +45,13 @@ from abacus.modules.organisations.consents import (
     renewal_basis,
 )
 from abacus.modules.organisations.consents_contract import (
+    AgreeingFormOut,
+    AuthorizationForm,
+    AuthorizationStatus,
     ConsentDraftsOut,
     ConsentRecordIn,
     ConsentRenewalIn,
     ConsentRequestIn,
-    consent_outs,
-)
-from abacus.modules.organisations.consents_contract import (
-    AgreeingFormOut,
-    AuthorizationForm,
-    AuthorizationStatus,
     ConsentState,
     TaxAuthorizationDesigneeOut,
     TaxAuthorizationIn,
@@ -66,6 +66,7 @@ from abacus.modules.organisations.consents_contract import (
     TranscriptTransactionOut,
     TranscriptUploadIn,
     TriVerdict,
+    consent_outs,
     consents_router,
 )
 from abacus.modules.organisations.contacts import RoleAsked, contact_portal_facts, create_contact
@@ -152,14 +153,6 @@ from abacus.modules.organisations.service import (
     signer_contacts,
 )
 from abacus.modules.organisations.settings_contract import offices_glance, org_settings_router
-from abacus.kernel.dispatch import WorkClass, register_work_classes
-from abacus.modules.organisations.activities import ACTIVITIES as CONSENT_ACTIVITIES
-from abacus.modules.organisations.activities import SCHEDULES as CONSENT_SCHEDULES
-from abacus.modules.organisations.slots import register_consent_capture
-from abacus.modules.organisations.workflows import (
-    ConsentExportWorkflow,
-    ConsentLifecycleSweepWorkflow,
-)
 from abacus.modules.organisations.slots import (
     OverviewItem,
     OverviewSection,
@@ -168,6 +161,7 @@ from abacus.modules.organisations.slots import (
     register_client_engagements,
     register_conflict_subject,
     register_conflict_subject_names,
+    register_consent_capture,
     register_office_facts,
     register_open_requests,
     register_overview_section,
@@ -188,6 +182,10 @@ from abacus.modules.organisations.tin import (
     fingerprint_tin,
     mask_tin,
     seal_tin,
+)
+from abacus.modules.organisations.workflows import (
+    ConsentExportWorkflow,
+    ConsentLifecycleSweepWorkflow,
 )
 
 # The routers the API mounts, in order (P-39; F-03-T07).
@@ -237,37 +235,26 @@ for _section in (
 register_consent_gate()
 
 __all__ = [
-    "ConsentDraft",
-    "ConsentDraftsOut",
-    "ConsentRecordIn",
-    "ConsentRenewalIn",
-    "ConsentRequestIn",
-    "FilingUnit",
-    "check_scope",
-    "consent_outs",
-    "consent_template_versions_on",
-    "envelope_completed",
-    "filing_unit",
-    "record_request",
-    "record_signed",
-    "refuse_declined",
-    "register_consent_capture",
-    "renewal_basis",
+    "ACTIVITIES",
     "CONTACT_ROLES",
     "ENTITY_TYPES",
     "RELATIONSHIP_KINDS",
-    "ACTIVITIES",
     "ROUTERS",
+    "SCHEDULES",
+    "WORKFLOWS",
     "AgreeingFormOut",
     "AuthorizationForm",
     "AuthorizationStatus",
-    "SCHEDULES",
-    "WORKFLOWS",
     "ClientChoice",
     "ClientNames",
     "ClientRecord",
     "ClientRecordChange",
     "ClientRecordInvalid",
+    "ConsentDraft",
+    "ConsentDraftsOut",
+    "ConsentRecordIn",
+    "ConsentRenewalIn",
+    "ConsentRequestIn",
     "ConsentState",
     "ContactExists",
     "ContactFacts",
@@ -277,6 +264,7 @@ __all__ = [
     "DedupeMatch",
     "EntityAttributes",
     "EntityChoice",
+    "FilingUnit",
     "FirmName",
     "MaskedTin",
     "MaskedTinOut",
@@ -316,6 +304,7 @@ __all__ = [
     "attest_client_ids",
     "attest_client_of",
     "check_clear_for",
+    "check_scope",
     "clear_conflict_result",
     "clear_tin",
     "client_exists",
@@ -324,7 +313,9 @@ __all__ = [
     "client_of_entity",
     "client_record",
     "client_with_entity",
+    "consent_outs",
     "consent_state",
+    "consent_template_versions_on",
     "contact_client",
     "contact_facts",
     "contact_portal_facts",
@@ -337,6 +328,8 @@ __all__ = [
     "entity_display_name",
     "entity_name_column",
     "entity_tin_last4s",
+    "envelope_completed",
+    "filing_unit",
     "find_clients",
     "fingerprint_tin",
     "firm_names",
@@ -345,14 +338,19 @@ __all__ = [
     "office_name_column",
     "portal_activation",
     "readable_client",
+    "record_request",
+    "record_signed",
+    "refuse_declined",
     "register_client_engagements",
     "register_conflict_subject",
     "register_conflict_subject_names",
+    "register_consent_capture",
     "register_office_facts",
     "register_open_requests",
     "register_overview_section",
     "register_screening_evidence",
     "register_tax_profile_backend",
+    "renewal_basis",
     "require_tri_consent",
     "run_conflict_check",
     "same_name_client",

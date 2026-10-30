@@ -2,7 +2,7 @@
 id: TASK-2325
 title: T-02-T17 duplicate-upload policy (red, evidence)
 spec: SPEC-502
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: red
 status: in-review
 epic: T-02

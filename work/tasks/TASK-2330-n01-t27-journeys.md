@@ -2,7 +2,7 @@
 id: TASK-2330
 title: N-01-T27 inbox and files journey legs
 spec: SPEC-380
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: green
 status: in-review
 epic: N-01

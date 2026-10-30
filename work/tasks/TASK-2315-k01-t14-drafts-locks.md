@@ -2,7 +2,7 @@
 id: TASK-2315
 title: K-01-T14 methodology drafts and mandatory locks
 spec: SPEC-008
-acceptance_criteria: [K-01 AC5.1, AC5.2, AC5.3, AC5.4, AC5.7]
+acceptance_criteria: [AC-5]  # SPEC-008 AC-5 (K-01 epic AC5.1–5.4, 5.7), quoted under Objective
 risk_zone: amber
 status: in-review
 epic: K-01

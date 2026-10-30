@@ -2,7 +2,7 @@
 id: TASK-2327
 title: F-06-T16 TPL-10 specimens
 spec: SPEC-400
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: green
 status: in-review
 epic: F-06

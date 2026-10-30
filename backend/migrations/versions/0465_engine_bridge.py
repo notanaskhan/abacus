@@ -16,7 +16,7 @@ Values, diffs and diagnostics are TRI (ADR-031): restricted, never logged. The e
 text is client-system content (ADR-052). Forced RLS on all four.
 
 Revision ID: 0465
-Revises: 0430 (main's head when built; re-chain onto the S18 lane's 0464 at the batch merge)
+Revises: 0464
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, insert_only, tenant_table
 
 revision = "0465"
-down_revision = "0430"
+down_revision = "0464"
 branch_labels = None
 depends_on = None
 
@@ -154,6 +154,11 @@ def upgrade() -> None:
     op.execute(
         "CREATE TRIGGER engine_sync_events_immutable BEFORE UPDATE OR DELETE ON "
         "engine_sync_events FOR EACH ROW EXECUTE FUNCTION tax_return_events_immutable()"
+    )
+    op.execute("REVOKE TRUNCATE ON engine_sync_events FROM abacus_app")
+    op.execute(
+        "CREATE TRIGGER engine_sync_events_no_truncate BEFORE TRUNCATE ON engine_sync_events "
+        "FOR EACH STATEMENT EXECUTE FUNCTION tax_return_events_immutable()"
     )
     insert_columns(
         op,

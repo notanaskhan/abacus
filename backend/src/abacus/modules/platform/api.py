@@ -42,12 +42,6 @@ from abacus.modules.platform.canary import (
     should_page,
 )
 from abacus.modules.platform.canary import WORKFLOWS as CANARY_WORKFLOWS
-from abacus.modules.platform.reference_fanout import ACTIVITIES as FANOUT_ACTIVITIES
-from abacus.modules.platform.reference_fanout import start_fanout as start_reference_fanout
-from abacus.modules.platform.reference_fanout_workflow import (
-    FanOutInput,
-    ReferenceSetFanOutWorkflow,
-)
 from abacus.modules.platform.canary import boundary as canary_boundary
 from abacus.modules.platform.entitlements import (
     MODULES,
@@ -114,6 +108,12 @@ from abacus.modules.platform.provisioning import (
 )
 from abacus.modules.platform.provisioning import (
     WORKFLOWS as PROVISIONING_WORKFLOWS,
+)
+from abacus.modules.platform.reference_fanout import ACTIVITIES as FANOUT_ACTIVITIES
+from abacus.modules.platform.reference_fanout import start_fanout as start_reference_fanout
+from abacus.modules.platform.reference_fanout_workflow import (
+    FanOutInput,
+    ReferenceSetFanOutWorkflow,
 )
 from abacus.modules.platform.reference_sets import (
     ReferenceKindUnknown,
@@ -271,8 +271,6 @@ __all__ = [
     "SPEND_ANOMALY_ID",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
-    "start_reference_fanout",
-    "FanOutInput",
     "AuditEventRef",
     "AuditLabel",
     "AuditLabeler",
@@ -299,6 +297,7 @@ __all__ = [
     "DueDateRulesPayload",
     "Entitlement",
     "EntitlementRequired",
+    "FanOutInput",
     "Form8879For",
     "Heartbeat",
     "HomeCount",
@@ -398,5 +397,6 @@ __all__ = [
     "should_page",
     "start_propagation",
     "start_provisioning",
+    "start_reference_fanout",
     "tenant_key_workflow_id",
 ]

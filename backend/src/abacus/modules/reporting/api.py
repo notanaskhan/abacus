@@ -16,9 +16,10 @@ from dataclasses import dataclass, field
 from typing import Literal, NoReturn, get_args
 from uuid import UUID
 
-from abacus.modules.reporting.consent import Recipients, RecipientsUnavailable
-from abacus.modules.reporting.consent import recipients as consent_recipients
-from abacus.modules.reporting.contract import CONSENT_RECIPIENTS_KEY
+from abacus.modules.reporting.consent import Recipients as Recipients
+from abacus.modules.reporting.consent import RecipientsUnavailable as RecipientsUnavailable
+from abacus.modules.reporting.consent import recipients as _consent_recipients
+from abacus.modules.reporting.contract import CONSENT_RECIPIENTS_KEY as CONSENT_RECIPIENTS_KEY
 from abacus.modules.reporting.contract import (
     GeneratedDocumentKind,
     LayoutKey,
@@ -28,14 +29,16 @@ from abacus.modules.reporting.contract import (
     templates_router,
 )
 
-# The routers the API mounts, in order (P-39; F-03-T07).
-from abacus.modules.reporting.render.core import (  # noqa: E402 -- T-01-T10's consumer API
-    RenderInput,
-    RenderOutput,
-    render_isolated,
-)
-from abacus.modules.reporting.render.head import RenderRefused as RenderingRefused  # noqa: E402
+# T-01-T10's consumer API (re-exported).
+from abacus.modules.reporting.render.core import RenderInput as RenderInput
+from abacus.modules.reporting.render.core import RenderOutput as RenderOutput
+from abacus.modules.reporting.render.core import render_isolated as render_isolated
+from abacus.modules.reporting.render.head import RenderRefused as _RenderingRefused
 
+consent_recipients = _consent_recipients
+RenderingRefused = _RenderingRefused
+
+# The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS = (templates_router, documents_router)
 
 KINDS: frozenset[str] = frozenset(get_args(GeneratedDocumentKind))

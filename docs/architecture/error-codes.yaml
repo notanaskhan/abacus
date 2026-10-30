@@ -327,6 +327,21 @@ codes:
     raised_by:
     - abacus.modules.connections.entity.ConnectorNotAvailable
     summary: No adapter for this system is registered here (catalogue honesty, AC-49).
+  consent_declined:
+    status: 409
+    raised_by:
+    - abacus.modules.organisations.consents.ConsentDeclined
+    summary: 'The taxpayer declined this purpose for these years: no re-solicitation (Story 1.4).'
+  consent_open:
+    status: 409
+    raised_by:
+    - abacus.modules.organisations.consents.ConsentOpen
+    summary: A request for this purpose and these years is already open.
+  consent_render_refused:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.consent_capture.ConsentRenderRefused
+    summary: The renderer refused the document (its code in the facts); nothing was drafted.
   consent_required:
     status: 409
     raised_by:
@@ -334,6 +349,21 @@ codes:
     - abacus.modules.requests.lifecycle.ConsentRequired
     summary: A read of tax return information without the taxpayer's `use` and `ai_disclosure` consents
       in force (`facts.client_entity_id`, `facts.purpose`).
+  consent_retention_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.consent_capture.ConsentRetentionMissing
+    summary: 'No retention floor covers consent evidence yet: COMPLIANCE storage needs a date.'
+  consent_status_conflict:
+    status: 409
+    raised_by:
+    - abacus.modules.organisations.consents.WrongStatus
+    summary: Declines apply to an open request, revocations to a signed consent.
+  consent_template_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.consent_capture.ConsentTemplateMissing
+    summary: No published consent template covers this purpose yet (counsel-approved content).
   consent_terms_missing:
     status: 409
     raised_by:
@@ -1593,6 +1623,11 @@ codes:
     raised_by:
     - abacus.modules.evidence.citations.moved.RelinkUnverified
     summary: 'The cited text is not on the successor: the popover offers "Open source" instead.'
+  renewal_spans_entities:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.consent_capture.RenewalSpansEntities
+    summary: One renewal drafts one envelope, so its consents belong to one taxpayer.
   request_already_sent:
     status: 409
     raised_by:
@@ -1721,6 +1756,11 @@ codes:
     raised_by:
     - abacus.modules.evidence.firm_export_schedule.SchedulePaused
     summary: 'A paused schedule is not approved: unpause it (which waits for both again) first.'
+  scope_not_in_existence:
+    status: 422
+    raised_by:
+    - abacus.modules.organisations.consents.ScopeNotInExistence
+    summary: A third-party scope may name only return information that existed when signed.
   scope_outside_client:
     status: 422
     raised_by:
@@ -1811,6 +1851,11 @@ codes:
     raised_by:
     - abacus.modules.signatures.builder.SignerOutsideClient
     summary: A contact signer must be the envelope's client's, and a party is named exactly once.
+  signers_missing:
+    status: 422
+    raised_by:
+    - abacus.modules.organisations.consents.SignersMissing
+    summary: The entity has no signing contact, or a joint filing unit lacks one spouse.
   signoff_invalid:
     status: 422
     raised_by:
@@ -1901,6 +1946,7 @@ codes:
     - abacus.modules.integrations.engine_settings.SettingsStale
     - abacus.modules.methodology.lifecycle.VersionStale
     - abacus.modules.methodology.standards.StaleVersion
+    - abacus.modules.organisations.consents.StaleVersion
     - abacus.modules.organisations.live.StaleVersion
     - abacus.modules.organisations.org_structure.StaleOrgStructure
     - abacus.modules.platform.safeguards.SafeguardsStale
@@ -2221,8 +2267,8 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.methodology.drafts.NotPublished
-    summary: A draft starts from a published version.
     - abacus.modules.requests.questionnaires.NotPublished
+    summary: A draft starts from a published version.
   version_published:
     status: 409
     raised_by:

@@ -291,7 +291,7 @@ async def _all(session: AsyncSession, kind: StandardKind | None) -> list[_Loaded
 
 async def _is_partner(ctx: AuthContext) -> bool:
     """Drafts are partners' only (US-3.4): a partner-level staff member of this firm."""
-    if ctx.client or ctx.tenant.actor_kind != "human":
+    if ctx.tenant.actor_kind != "human" or ctx.client:
         return False
     member = await member_facts(ctx.tenant, ctx.user_id)
     return member is not None and not member.client and member.level == "partner"
@@ -1059,7 +1059,7 @@ async def import_draft(
     ctx: AuthContext, standard_id: UUID, payload: Mapping[str, object]
 ) -> StandardVersionSummaryOut:
     """A workbook's payload as this standard's next draft (its owner's; one draft at a time,
-    409 `draft_exists`). An import never publishes and never touches a published version."""
+    409 `draft_exists`). An import never publishes and never changes a released version."""
     await _human(ctx, IMPORT, standard_id)
     version_id = uuid4()
     async with uow(ctx.tenant) as tx:
@@ -1087,7 +1087,7 @@ async def import_draft(
         tx.record(
             item.family.drafted,
             target=Target(item.family.version_subject, version_id),
-            after=Ref(standard=standard_id, version=number, source="import"),
+            after=Ref(standard=standard_id, version=number),  # identifiers only
         )
     on = await today(ctx.tenant)
     async with tenant_session(ctx.tenant) as session:

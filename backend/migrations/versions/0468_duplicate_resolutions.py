@@ -9,7 +9,7 @@ discard voids and hides the version through P-31's path and never deletes it; an
 is never discarded or superseded (the service, and the fulfilment's own accept guard).
 
 Revision ID: 0468
-Revises: 0430 (main's head when built; re-chain after the S18 lane's 0467 at the batch merge)
+Revises: 0467
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, insert_only, tenant_table
 
 revision = "0468"
-down_revision = "0430"
+down_revision = "0467"
 branch_labels = None
 depends_on = None
 
@@ -66,6 +66,12 @@ def upgrade() -> None:
     op.execute(
         "CREATE TRIGGER duplicate_resolutions_immutable BEFORE UPDATE OR DELETE ON "
         "duplicate_resolutions FOR EACH ROW EXECUTE FUNCTION duplicate_resolutions_immutable()"
+    )
+    op.execute("REVOKE TRUNCATE ON duplicate_resolutions FROM abacus_app")
+    op.execute(
+        "CREATE TRIGGER duplicate_resolutions_no_truncate BEFORE TRUNCATE "
+        "ON duplicate_resolutions FOR EACH STATEMENT "
+        "EXECUTE FUNCTION duplicate_resolutions_immutable()"
     )
 
 

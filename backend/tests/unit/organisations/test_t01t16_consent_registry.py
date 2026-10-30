@@ -27,14 +27,18 @@ AT = datetime(2026, 9, 14, 14, 24, tzinfo=UTC)
 
 
 def _sql(clause: object) -> str:
-    return str(clause.compile(dialect=postgresql.dialect()))  # type: ignore[attr-defined]  # a ColumnElement
+    return str(
+        clause.compile(  # type: ignore[attr-defined]  # a ColumnElement
+            dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True}
+        )
+    )
 
 
 def test_ac39_the_tiles_are_six_and_signed_excludes_expiring() -> None:
     assert TILES == ("signed", "expiring", "requested", "expired", "declined", "revoked")
     sql = _sql(display_status(AT))
     assert "CASE WHEN" in sql and "expiring" in sql
-    assert EXPIRING_WITHIN == timedelta(days=30)  # Rao at 16 days is Expiring
+    assert timedelta(days=30) == EXPIRING_WITHIN  # Rao at 16 days is Expiring
 
 
 def test_ac39_needs_attention_comes_first() -> None:

@@ -67,10 +67,10 @@ const V3 =
         ),
       }
     : undefined;
-const DRAFT_V3: StandardsOptions["draft"] =
+const DRAFT_V3: Pick<StandardsOptions, "draft"> =
   V3 === undefined
-    ? undefined
-    : { key: "bh-aje-thresholds", version: 3, payload: V3, effective: "2026-10-01" };
+    ? {}
+    : { draft: { key: "bh-aje-thresholds", version: 3, payload: V3, effective: "2026-10-01" } };
 
 export const scenarios = defineScenarios({
   a: at("a"),
@@ -85,8 +85,8 @@ export const scenarios = defineScenarios({
   draft_hidden: at("draft_hidden", "cole-hart"),
   no_examples: at("no_examples", "priya-raman", { noExamples: true }),
   flag_off: at("flag_off", "priya-raman", { flag: false }),
-  i: at("i", "priya-raman", { draft: DRAFT_V3 }),
-  i_stale: at("i_stale", "priya-raman", { draft: DRAFT_V3, staleOnSave: true }),
+  i: at("i", "priya-raman", DRAFT_V3),
+  i_stale: at("i_stale", "priya-raman", { ...DRAFT_V3, staleOnSave: true }),
 });
 
 export type Knw04State = keyof typeof scenarios;

@@ -896,7 +896,7 @@ export function KNW04({ initial = {}, onBack, onSection, onNewVersion }: Knw04Pr
     },
   ];
   const owner = chosen?.allowed_actions.includes("firm_standard.draft") === true;
-  const draftOpen = owner && chosen?.draft_version != null && section !== "review_checklists";
+  const draftOpen = owner && chosen.draft_version != null && section !== "review_checklists";
   const canDraft = owner && !draftOpen;
   const newVersion = useNewVersion(chosen?.id);
   const actions = (
@@ -945,7 +945,7 @@ export function KNW04({ initial = {}, onBack, onSection, onNewVersion }: Knw04Pr
         <Skeleton className="h-[90px]" />
       </div>
     );
-  } else if (draftOpen && chosen !== undefined) {
+  } else if (draftOpen) {
     body = (
       <DraftPane
         standard={chosen}
@@ -991,7 +991,7 @@ export function KNW04({ initial = {}, onBack, onSection, onNewVersion }: Knw04Pr
       readOnly={false}
       headerCenter={
         on && !rules ? (
-          draftOpen && chosen?.draft_version != null ? (
+          draftOpen && chosen.draft_version != null ? (
             <span className="flex items-center gap-[8px]">
               <span className="rounded-full bg-chip px-[7px] py-[1px] text-pill-sm text-ink-2">
                 {COPY.version(chosen.draft_version.version)}

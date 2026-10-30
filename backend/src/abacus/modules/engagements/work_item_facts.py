@@ -41,7 +41,12 @@ class WorkItemFacts:
     assignees: Mapping[str, tuple[UUID, ...]]
 
 
-async def work_item_facts(ctx: AuthContext, kind: str) -> list[WorkItemFacts]:
+async def work_item_facts(
+    ctx: AuthContext, kind: str, action: str = "work_item.read_metadata"
+) -> list[WorkItemFacts]:
+    """The visible work items of `kind`. A module whose own read action names who may see its
+    items (T-02-T13: `tax_return.read_metadata` lets a security admin see a return's metadata)
+    filters by that action instead; it must be a read without conditions (`visible()`)."""
     stmt = select(
         WorkItem.id,
         WorkItem.engagement_id,
@@ -51,7 +56,7 @@ async def work_item_facts(ctx: AuthContext, kind: str) -> list[WorkItemFacts]:
     ).where(
         WorkItem.kind == kind,
         WorkItem.archived_at.is_(None),
-        visible(ctx, "work_item.read_metadata", WorkItem.engagement_id),
+        visible(ctx, action, WorkItem.engagement_id),
     )
     async with tenant_session(ctx.tenant) as session:
         rows = (await session.execute(stmt)).all()

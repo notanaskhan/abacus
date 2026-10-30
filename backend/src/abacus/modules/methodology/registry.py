@@ -130,6 +130,8 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         {"number", "text", "assertions", "standard_refs", "level", "guidance", "prepopulates"}
         | {"depends_on_step_keys", "flag_resolution", "flag_resolved_by", "flag_resolved_at"}
         | {"edited_by", "edited_at", "row_version"}
+        # K-01-T14 (0464): mandatory locks, set by a person only (the lock trigger).
+        | {"mandatory", "lock_note"}
     ),
     "methodology_version_states": frozenset(
         {"status", "effective_from", "effective_to", "approved_by", "approved_at"}

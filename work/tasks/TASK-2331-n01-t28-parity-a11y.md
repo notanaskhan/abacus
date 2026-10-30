@@ -2,7 +2,7 @@
 id: TASK-2331
 title: N-01-T28 parity and accessibility for INB-01, INB-02, FIL-01
 spec: SPEC-380
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: green
 status: in-review
 epic: N-01
