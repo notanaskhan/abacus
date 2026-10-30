@@ -166,7 +166,7 @@ export const passing: EligibilityCheckOut[] = [
   {
     code: "independence",
     result: "pass",
-    facts: { person: "Hannah Leclerc", confirmed_on: "2026-08-03" },
+    facts: { person: "Hannah Leclerc", confirmed_on: "2026-08-03", client: "Northwind" },
     refs: [],
   },
   { code: "segregation", result: "pass", facts: { preparer: "Marcus Delaney" }, refs: [] },
@@ -193,6 +193,70 @@ export const eligibility = (over: Partial<SignOffEligibilityOut>): SignOffEligib
 });
 export const withCheck = (check: EligibilityCheckOut): EligibilityCheckOut[] =>
   passing.map((c) => (c.code === check.code ? check : c));
+
+/** SHL-12 h: Ridgeline's 2025 Form 1065 at its partner's final approval (BH-TAX-02). */
+export const RIDGELINE_RETURN = id(91);
+const OLIVIA = id(92);
+const DANIEL = id(93);
+const SAMUEL_ITO = id(18); // SAMUEL, declared with SHL-10's people below
+const RETURN_HASH = "sha256:7a1e" + "0".repeat(56) + "93fb"; // SHL-12h shows sha256:7a1e…93fb
+export const returnTarget = {
+  target_type: "tax_return",
+  target_id: RIDGELINE_RETURN,
+  label: "2025 Form 1065",
+  context_label: "Ridgeline Property Partners, LP · TY2025",
+  version_no: 2,
+  content_hash: RETURN_HASH,
+  cell_count: 0,
+  citation_count: 0,
+};
+const returnSign = (
+  n: number,
+  level: SignOffOut["level"],
+  user: string,
+  name: string,
+  initials: string,
+  at: string,
+): SignOffOut => ({
+  ...marcusL1,
+  id: id(n),
+  target_type: "tax_return",
+  target_id: RIDGELINE_RETURN,
+  kind: "final_approval",
+  level,
+  signer_user_id: user,
+  signer_name: name,
+  initials,
+  signed_at: at,
+  content_hash: RETURN_HASH,
+  version_no: 2,
+  statement_version: "bh-tax-final-v1",
+  adopted_run_id: null,
+  adopted_run_number: null,
+});
+export const returnLadder: LadderLevelOut[] = [
+  {
+    level: "L1_preparer",
+    required: true,
+    expected_signer_user_id: OLIVIA,
+    expected_signer_name: "Olivia Brandt",
+    latest: returnSign(94, "L1_preparer", OLIVIA, "Olivia Brandt", "OB", "2026-09-10T21:00:00Z"),
+  },
+  {
+    level: "L2_reviewer",
+    required: true,
+    expected_signer_user_id: SAMUEL_ITO,
+    expected_signer_name: "Samuel Ito",
+    latest: returnSign(95, "L2_reviewer", SAMUEL_ITO, "Samuel Ito", "SI", "2026-09-11T19:30:00Z"),
+  },
+  {
+    level: "L4_partner",
+    required: true,
+    expected_signer_user_id: DANIEL,
+    expected_signer_name: "Daniel Reyes",
+    latest: null,
+  },
+];
 
 export const SHL12 = {
   a: eligibility({}),
@@ -221,17 +285,49 @@ export const SHL12 = {
     checks: withCheck({
       code: "independence",
       result: "fail",
-      facts: { person: "Hannah Leclerc", confirmed_on: null },
+      facts: { person: "Hannah Leclerc", confirmed_on: null, client: "Northwind" },
       refs: [],
     }),
     eligible: false,
   }),
-  g: eligibility({ level: "L5_eqr", levels_allowed: ["L5_eqr"] }),
+  g: eligibility({
+    level: "L5_eqr",
+    levels_allowed: ["L5_eqr"],
+    statement: {
+      version: "bh-eqr-v1",
+      text: "I objectively evaluated the significant judgments and the conclusions reached.",
+    },
+  }),
   h: eligibility({
+    target: returnTarget,
     level: "L4_partner",
     levels_allowed: ["L4_partner"],
-    checks: [{ code: "open_issues", result: "fail", facts: { count: 11 }, refs: [] }],
+    ladder: returnLadder,
+    checks: [
+      {
+        code: "open_issues",
+        result: "fail",
+        facts: {
+          count: 11,
+          waiting_on_client: 5,
+          review_points: 6,
+          rule: "BH-TAX-02",
+          top: "Tax-exempt interest 6,200 omitted from the capital rollforward (M-2 off 6,200)",
+        },
+        refs: [],
+      },
+      {
+        code: "segregation",
+        result: "pass",
+        facts: { preparer: "Olivia Brandt", reviewer: "Samuel Ito" },
+        refs: [],
+      },
+    ],
     eligible: false,
+    statement: {
+      version: "bh-tax-final-v1",
+      text: "I reviewed this return and approve it for signature and filing.",
+    },
   }),
 } satisfies Record<string, SignOffEligibilityOut>;
 
@@ -1300,6 +1396,17 @@ export const STALE_LADDER: SignOffLadderOut = {
   levels: ladder({ ...hannahL2, stale: true }),
   allowed_actions: ["sign_off.create"],
 };
+/** SHL-12 e: Re-sign as Reviewer (L2) on the changed Trial Balance; a re-sign is a new row. */
+export const STALE_ELIGIBILITY: SignOffEligibilityOut = eligibility({
+  target: STALE_LADDER.target,
+  ladder: STALE_LADDER.levels,
+});
+/** SHL-12 h: the return's ladder (Olivia Brandt ✓ OB, Samuel Ito ✓ SI, Daniel Reyes now). */
+export const RETURN_LADDER: SignOffLadderOut = {
+  target: returnTarget,
+  levels: returnLadder,
+  allowed_actions: ["sign_off.create"],
+};
 const BULK_REASONS = ["incomplete", "open_review_notes", "segregation"] as const;
 /** SHL-12 f (Thu Sep 24): six selected, three signed and three excluded with their reasons. */
 export const BULK_F: BulkSignOffOut = {
@@ -1706,6 +1813,7 @@ export const REVIEW_ARTBOARDS: readonly ReviewArtboard[] = [
   ),
   board("SHL-12", "b", "Blocked · open notes", "hannah-leclerc", signOff, [
     ELIGIBILITY(SHL12.b),
+    get("/v1/sign-offs", "SignOffLadderOut", LADDER_A),
     get("/v1/review-notes", "ListPage_ReviewNoteItemOut_", notes),
     get("/v1/review-notes/{note_id}", "ReviewNoteDetailOut", NOTE_DETAIL, {
       note_id: NOTE_DETAIL.note.id,
@@ -1713,18 +1821,27 @@ export const REVIEW_ARTBOARDS: readonly ReviewArtboard[] = [
   ]),
   board("SHL-12", "c", "Blocked · same preparer", "marcus-delaney", signOff, [
     ELIGIBILITY(SHL12.c),
+    get("/v1/sign-offs", "SignOffLadderOut", LADDER_A),
   ]),
   board("SHL-12", "d", "Blocked · independence", "hannah-leclerc", signOff, [
     ELIGIBILITY(SHL12.d),
+    get("/v1/sign-offs", "SignOffLadderOut", LADDER_A),
   ]),
   board("SHL-12", "e", "Stale after change", "hannah-leclerc", sep24, [
+    ELIGIBILITY(STALE_ELIGIBILITY),
     get("/v1/sign-offs", "SignOffLadderOut", STALE_LADDER),
   ]),
   board("SHL-12", "f", "Bulk", "hannah-leclerc", sep24, [
     post("/v1/sign-offs:bulk", "BulkSignOffOut", BULK_F),
   ]),
-  board("SHL-12", "g", "EQR viewer", "thomas-whitcombe", signOff, [ELIGIBILITY(SHL12.g)]),
-  board("SHL-12", "h", "Tax · final approval", "daniel-reyes", signOff, [ELIGIBILITY(SHL12.h)]),
+  board("SHL-12", "g", "EQR viewer", "thomas-whitcombe", signOff, [
+    ELIGIBILITY(SHL12.g),
+    get("/v1/sign-offs", "SignOffLadderOut", LADDER_A),
+  ]),
+  board("SHL-12", "h", "Tax · final approval", "daniel-reyes", signOff, [
+    ELIGIBILITY(SHL12.h),
+    get("/v1/sign-offs", "SignOffLadderOut", RETURN_LADDER),
+  ]),
   // SHL-15 Issue composer and fix instructions (E0).
   board(
     "SHL-15",
