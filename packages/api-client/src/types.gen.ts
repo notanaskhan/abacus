@@ -11470,7 +11470,7 @@ export type EnvelopeListRow = {
     /**
      * Provider
      */
-    provider: 'docusign' | 'record' | 'fake';
+    provider: 'docuseal' | 'docusign' | 'record' | 'fake';
     /**
      * Purpose
      */
@@ -19871,7 +19871,7 @@ export type MappedAccountOut = {
     /**
      * Method
      */
-    method: 'manual' | 'number_range' | null;
+    method: 'manual' | 'prior_year' | 'number_range' | null;
 };
 
 /**
@@ -19943,9 +19943,21 @@ export type MappingOut = {
      */
     mapping_set_id: string | null;
     /**
+     * Number Range
+     */
+    number_range?: number;
+    /**
+     * Prior Year
+     */
+    prior_year?: number;
+    /**
      * Published Versions
      */
     published_versions: Array<GroupingVersionOut>;
+    /**
+     * Tb Balanced
+     */
+    tb_balanced?: boolean;
     /**
      * Unmapped
      */
@@ -22303,7 +22315,7 @@ export type PortalEnvelopeRow = {
  * PortalEnvelopeView
  *
  * `EnvelopeVM`: steps, documents, fields, signers, my state; `signing_session` and `outcome`
- * reserved (null in record mode and until `signatures.docusign`).
+ * reserved (null in record mode and until `signatures.esign_provider`).
  */
 export type PortalEnvelopeView = {
     /**
@@ -29787,7 +29799,7 @@ export type SignerOut = {
 /**
  * SigningSessionOut
  *
- * A one-time, short-lived provider view (reserved until `signatures.docusign`).
+ * A one-time, short-lived provider view (reserved until `signatures.esign_provider`).
  */
 export type SigningSessionOut = {
     /**

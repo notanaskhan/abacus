@@ -9,7 +9,7 @@
 | Epic and tasks | T-01 · contract T-01-T05 (this file); fixtures T09; build T43–T46 |
 | Spec and ADRs | SPEC-501 AC-11; ADR-231; R-04 |
 | Flags | `clients.tax_profile`; consents from `consents.registry` |
-| Manifest status | `fixture` since T-01-T14 (d, f: the consents section; a, b, c, e, g with T-01-T43 to T46); `live` with C19's routes (pilot posture: agents off) |
+| Manifest status | `fixture` since T-01-T14 (d, f: the consents section); b, c, e and g in fixture mode with T-01-T34 (DEC-1452); a with T-01-T43/T45's transcript routes; `live` with C19's routes (pilot posture: agents off) |
 
 ## States
 | Artboard | Viewer | Clock (CT) | Data condition | Parity tier | Status |
@@ -72,3 +72,4 @@ Gradients, emoji, blue, heavy shadows, invented colours or data, boxed inputs, t
 - Status objects live in the registry since T-01-T06; the contracts move from `Literal` types to the registry's enums when the routes go live.
 - T-01-T14 (DEC-1263): TaxProfileOut gains the subbar facts (`client_name`, `client_kind`, `partner_name`, `office_name`), the Identity band (`identity`, `portal_user_name`, `resident_state`) and ConsentOut `template_name`, additively. The route takes `?entity=`; without it the record's first entity opens. The partially signed banner keeps the handoff's words (DF-04's agents-off words arrive with the copy registry). Resend…, Request consent… and the Open notices row are planned links (tooltip-only).
 
+- T-01-T34 (DEC-1452): b, c, e and g in fixture mode. TaxElectionOut carries codes and amounts only, so e's words come from the copy module by `kind:status_code`; the BBA representative's name, the PTET payment date and the §754 due date wait on an additive election detail (T-01-T43). There is no transcript list route yet, so Transcripts shows b's empty state until T-01-T43/T45; the State fieldset reads "<resident state> · not on file" (the state form code, DR 0145, is reference data from K-02). The 8821 note names the profile's taxpayers. Draft Form 2848…, Request Form 8821…, + Add and Upload transcript… are planned controls (tooltip-only).

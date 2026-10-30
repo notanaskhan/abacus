@@ -23,6 +23,8 @@ export const COPY = {
     consents: "Consents",
     transcripts: "Transcripts",
     noElections: "No elections on file",
+    electionsOnFile: "On file",
+    noTranscripts: "None yet",
     authorizationLine: (form: string, years: string): string =>
       `Form ${form} · ${years} · on file`,
     noAuthorization: "No 8821 or 2848 on file",
@@ -79,6 +81,67 @@ export const COPY = {
       `§7216 consents (use · AI disclosure) partially signed — ${unsigned} has not signed. Agents cannot read return information until both sign (firm policy).`,
     resend: "Resend…",
     resendTip: "Opens SIG-01 · envelope E17",
+  },
+  // T-01-T34: Elections (e), Authorizations (c, g) and Transcripts (b), verbatim from the spec.
+  elections: {
+    title: "Elections",
+    rows: {
+      section_754: "§754",
+      ptet: (year: number): string => `PTET TY${String(year)}`,
+      bba_representative: "Partnership representative (BBA)",
+      bba_opt_out: "Election out of BBA (§6221(b))",
+      section_163j: "§163(j)",
+      accounting_method: "Accounting method",
+    } as const,
+    pending754: (year: number): string =>
+      `Not made — decision pending (due with the TY${String(year)} return)`,
+    elected: "Elected",
+    designated: "Designated",
+    optOutNotEligible:
+      "Not eligible — a partner is a partnership or disregarded entity for tax, which is not an eligible partner under §6221(b)(1)(C)",
+    exempt163j: "Exempt — small business (average gross receipts under $31M)",
+    // eslint-disable-next-line no-restricted-syntax -- the accounting method, not the product's name
+    accrual: "Accrual",
+    cash: "Cash",
+  },
+  authorizations: {
+    title: "Authorizations",
+    federal: "Federal",
+    state: "State",
+    form: (form: string): string => `Form ${form}`,
+    formName: {
+      "8821": "Tax information authorization",
+      "2848": "Power of attorney and declaration of representative",
+      state: "State authorization",
+    } as const,
+    designees: "Designees",
+    designee: (name: string, last4: string | null): string =>
+      last4 === null ? name : `${name} (CAF ••••${last4})`,
+    taxMatters: "Tax matters",
+    years: "Years",
+    received: "Received",
+    status: "Status",
+    // The signers are the profile's taxpayers ("Marcus and Dana"), never copy.
+    note8821: (signers: string): string =>
+      `An 8821 lets us receive transcripts and notices, not represent. The CP2000 response will be signed by ${signers}, or file Form 2848 to represent them.`,
+    draft2848: "Draft Form 2848…",
+    draft2848Tip: "Opens SIG-02 · Envelope builder",
+    stateOnFile: (code: string): string => `${code} · on file`,
+    stateNotOnFile: (state: string): string => `${state} · not on file`,
+    add: "+ Add",
+    addTip: "Opens in a later build",
+    none: "No 8821 or 2848 on file",
+    request8821: "Request Form 8821…",
+    request8821Tip: "Opens SIG-02 · Envelope builder",
+  },
+  transcripts: {
+    title: "Transcripts",
+    pulledHint:
+      "Transcripts are pulled by a practitioner from IRS e-Services (TDS) under the 8821 and uploaded here",
+    none: "No transcripts yet.",
+    noneBody: "Pull them from IRS e-Services (TDS) under the 8821 on file, then upload here.",
+    upload: "Upload transcript…",
+    uploadTip: "Opens in a later build",
   },
   error: "The tax profile couldn't load.",
   retry: "Try again",

@@ -24705,6 +24705,7 @@
           "provider": {
             "cls": "internal",
             "enum": [
+              "docuseal",
               "docusign",
               "record",
               "fake"
@@ -41736,6 +41737,7 @@
               {
                 "enum": [
                   "manual",
+                  "prior_year",
                   "number_range"
                 ],
                 "type": "string"
@@ -41890,6 +41892,18 @@
             "cls": "internal",
             "title": "Mapping Set Id"
           },
+          "number_range": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Number Range",
+            "type": "integer"
+          },
+          "prior_year": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Prior Year",
+            "type": "integer"
+          },
           "published_versions": {
             "cls": "internal",
             "items": {
@@ -41897,6 +41911,12 @@
             },
             "title": "Published Versions",
             "type": "array"
+          },
+          "tb_balanced": {
+            "cls": "internal",
+            "default": true,
+            "title": "Tb Balanced",
+            "type": "boolean"
           },
           "unmapped": {
             "cls": "internal",
@@ -46713,7 +46733,7 @@
         "type": "object"
       },
       "PortalEnvelopeView": {
-        "description": "`EnvelopeVM`: steps, documents, fields, signers, my state; `signing_session` and `outcome`\nreserved (null in record mode and until `signatures.docusign`).",
+        "description": "`EnvelopeVM`: steps, documents, fields, signers, my state; `signing_session` and `outcome`\nreserved (null in record mode and until `signatures.esign_provider`).",
         "properties": {
           "date_as_of": {
             "anyOf": [
@@ -62379,7 +62399,7 @@
         "type": "object"
       },
       "SigningSessionOut": {
-        "description": "A one-time, short-lived provider view (reserved until `signatures.docusign`).",
+        "description": "A one-time, short-lived provider view (reserved until `signatures.esign_provider`).",
         "properties": {
           "expires_at": {
             "cls": "internal",

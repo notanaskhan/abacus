@@ -57,8 +57,8 @@ from abacus.modules.integrations.qbo_adapter import register_if_configured
 from abacus.modules.integrations.routes import firm_router, portal_router
 from abacus.modules.integrations.secrets import (
     connected_integration,
-    docusign_install_secret,
     erase_secret,
+    esign_install_secret,
     open_secret,
     store_secret,
 )
@@ -98,11 +98,11 @@ __all__ = [
     "catalog_rows",
     "client_catalog",
     "connected_integration",
-    "docusign_install_secret",
     "egress_allowlist",
     "egress_hosts_by_connector",
     "egress_read_posts",
     "erase_secret",
+    "esign_install_secret",
     "execute_write",
     "is_available",
     "listed",

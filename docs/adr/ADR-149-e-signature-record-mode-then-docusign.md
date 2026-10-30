@@ -1,7 +1,7 @@
 ---
 id: ADR-149
 title: E-signature - record mode first, then DocuSign embedded with ID Verification behind an EnvelopeProvider port
-status: accepted
+status: superseded by ADR-342
 date: 2026-10-27
 deciders: ayushkbhatia
 risk_zone: red
