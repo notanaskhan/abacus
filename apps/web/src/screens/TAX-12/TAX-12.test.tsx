@@ -1,0 +1,88 @@
+// TAX-12 · Delivery & e-file, part 1 (T-01-T24). One test per built artboard (a, a2, b) on its
+// fixture scenario, plus the row's acceptance: the gate is disabled while 1 of 2 has signed, and the
+// payment figures foot to 253 and 1,269.
+import { client } from "@abacus/api-client/client";
+import { toastStore } from "@abacus/ui";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { installFixtureMode } from "../../app-core/fixture-mode";
+import { FELD_NY, FELD_REFUND, FELD_RETURN_ID } from "../../fixtures/seed/tax-compliance";
+import { newQueryClient } from "../../testing/support";
+import { TAX12 } from ".";
+import { COPY } from "./copy";
+import { type Tax12State, scenarios } from "./scenarios";
+
+beforeAll(() => {
+  client.setConfig({ baseUrl: window.location.origin, throwOnError: true });
+});
+
+let restore: (() => void) | undefined;
+afterEach(() => {
+  cleanup();
+  restore?.();
+  restore = undefined;
+  toastStore.clear();
+});
+
+function show(state: Tax12State, reminder = false): void {
+  restore = installFixtureMode(scenarios[state]);
+  render(
+    <QueryClientProvider client={newQueryClient()}>
+      <TAX12 returnId={FELD_RETURN_ID} defaultReminderOpen={reminder} />
+    </QueryClientProvider>,
+  );
+}
+
+describe("TAX-12 delivery", () => {
+  it("a · Awaiting signature: 1 of 2 signed and the gate locked", async () => {
+    show("a");
+    const envelope = await screen.findByRole("region", {
+      name: "Form 8879 + TR-579-IT · TY2025 · Jonah & Claire Feld",
+    });
+    expect(within(envelope).getByText("Claire Feld (spouse)")).toBeTruthy();
+    expect(within(envelope).getByText(COPY.envelope.claire)).toBeTruthy();
+    expect(within(envelope).getByText(COPY.envelope.jonah)).toBeTruthy();
+    expect(await screen.findByText(COPY.rows.authorizationsSub(1, 2))).toBeTruthy();
+    const gate = within(screen.getByRole("region", { name: COPY.gate.title }));
+    expect(gate.getByRole<HTMLButtonElement>("button", { name: COPY.gate.button }).disabled).toBe(
+      true,
+    );
+    expect(screen.getByText(COPY.acks.none)).toBeTruthy();
+  });
+
+  it("a · the payment figures foot to 253 and 1,269", async () => {
+    show("a");
+    await screen.findByRole("region", { name: COPY.payments.title });
+    expect(FELD_REFUND.paid - FELD_REFUND.tax).toBe(253);
+    expect(FELD_NY.tax - FELD_NY.withheld).toBe(1269);
+    expect(screen.getByText(/^253 · direct deposit/)).toBeTruthy();
+    expect(screen.getByText(/^1,269 due/)).toBeTruthy();
+  });
+
+  it("a2 · the pre-approved reminder, Grace sends", async () => {
+    show("a2", true);
+    const dialog = await screen.findByRole("dialog", { name: COPY.reminder.title });
+    expect(within(dialog).getByText(COPY.reminder.recipient)).toBeTruthy();
+    expect(within(dialog).getByText(COPY.reminder.approved)).toBeTruthy();
+    expect(within(dialog).getByText(COPY.reminder.body)).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button", { name: COPY.reminder.send }));
+    await waitFor(() => {
+      expect(toastStore.list().map((t) => t.text)).toContain(COPY.reminder.sent);
+    });
+  });
+
+  it("b · blocked before final approval", async () => {
+    show("b");
+    expect(await screen.findByText(COPY.canvas.blockedTitle)).toBeTruthy();
+    expect(screen.getByText(COPY.canvas.blockedBody)).toBeTruthy();
+    expect(screen.getByText(COPY.rows.blockedK1)).toBeTruthy();
+    expect(screen.queryByRole("region", { name: COPY.gate.title })).toBeNull();
+  });
+
+  it("never says Accrued or the agent transmits or files", () => {
+    const text = JSON.stringify(COPY);
+    expect(text).not.toMatch(/Accrued (transmits|e-files|files)/);
+    expect(text).not.toMatch(/Agent (transmits|e-files|files)/);
+  });
+});

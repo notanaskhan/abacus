@@ -25,6 +25,13 @@ TABLES: frozenset[str] = frozenset(
         "request_upload_intents",
         "binder_activity",
         "fulfilment_withdrawals",  # P-06-T19 (0145; ADR-162)
+        # T-02-T16 (0467): questionnaires v1.
+        "questionnaire_templates",
+        "questionnaire_template_versions",
+        "questionnaires",
+        "questionnaire_sections",
+        "questions",
+        "answer_versions",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -39,6 +46,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "comment_redactions",  # SPEC-032 (TASK-062): ADR-109
         "binder_recipients",  # P-06-T05 (0100): a removal is a new row
         "fulfilment_withdrawals",  # P-06-T19 (0145): a withdrawn version's voided links
+        "answer_versions",  # T-02-T16 (0467): the current answer is the highest version
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
@@ -132,3 +140,30 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "comment_reads": frozenset({"last_read_at"}),  # SPEC-032 (TASK-062)
 }
+
+# T-02-T16 (0467): questionnaires v1.
+INSERT_COLUMNS["questionnaire_templates"] = frozenset({"tenant_id", "name", "created_by"})
+INSERT_COLUMNS["questionnaire_template_versions"] = frozenset(
+    {"tenant_id", "template_id", "version", "content", "source_file_sha256", "imported_by"}
+)
+INSERT_COLUMNS["questionnaires"] = frozenset(
+    {"tenant_id", "engagement_id", "work_item_id", "request_list_id", "kind"}
+    | {"template_version_id", "title", "due_on", "addressed_to_contact_id", "data_class"}
+    | {"created_by"}
+)
+INSERT_COLUMNS["questionnaire_sections"] = frozenset(
+    {"id", "tenant_id", "questionnaire_id", "name", "icon_key", "position"}
+)
+INSERT_COLUMNS["questions"] = frozenset(
+    {"id", "tenant_id", "questionnaire_id", "section_id", "question_key", "position", "type"}
+    | {"client_wording", "help_text", "conditional_on_question_id", "conditional_value"}
+    | {"prior_year_value", "linked_request_item_id", "origin", "created_by"}
+)
+INSERT_COLUMNS["answer_versions"] = frozenset(
+    {"tenant_id", "question_id", "value", "version_no", "answered_by"}
+)
+UPDATE_COLUMNS["questionnaire_template_versions"] = frozenset({"published_by", "published_at"})
+UPDATE_COLUMNS["questionnaires"] = frozenset(
+    {"status", "completed_by", "completed_at", "submitted_by", "submitted_at", "row_version"}
+)
+UPDATE_COLUMNS["questions"] = frozenset({"sent_by", "sent_at"})

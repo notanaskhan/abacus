@@ -65,6 +65,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/client-entities/{client_entity_id}/authorizations", "tax_authorization.manage"),
     ("GET", "/v1/client-entities/{client_entity_id}/consents", "consent.read"),
     ("GET", "/v1/client-entities/{client_entity_id}/tax-profile", "tax_profile.read"),
+    ("GET", "/v1/client-entities/{client_entity_id}/transcripts", "tax_profile.read"),
     ("GET", "/v1/client-imports/{import_id}", "client_import.run"),
     ("GET", "/v1/client-imports/{import_id}/rows", "client_import.run"),
     ("GET", "/v1/client-intake-drafts/{draft_id}", "client.intake"),
@@ -479,6 +480,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/tax-returns/{return_id}/k1-packages", "k1_package.read"),
     ("GET", "/v1/tax-returns/{return_id}/k1-packages/release-check", "k1_package.read"),
     ("GET", "/v1/tax-returns/{return_id}/overview", "tax_return.read"),
+    ("GET", "/v1/transcripts/{transcript_id}/comparison", "tax_profile.read"),
     ("GET", "/v1/walls", "wall.list"),
     ("GET", "/v1/walls/preview", "wall.create"),
     ("GET", "/v1/walls/{wall_id}/events", "wall.list"),
@@ -527,10 +529,16 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/client-entities/{client_entity_id}/authorizations", "tax_authorization.manage"),
     (
         "POST",
+        "/v1/client-entities/{client_entity_id}/authorizations/files",
+        "tax_authorization.manage",
+    ),
+    (
+        "POST",
         "/v1/client-entities/{client_entity_id}/authorizations/requests",
         "tax_authorization.manage",
     ),
     ("POST", "/v1/client-entities/{client_entity_id}/transcripts", "transcript.upload"),
+    ("POST", "/v1/client-entities/{client_entity_id}/transcripts/files", "transcript.upload"),
     ("POST", "/v1/client-entities/{entity_id}/tin/reveal", "tin.reveal"),
     ("POST", "/v1/client-imports", "client_import.run"),
     ("POST", "/v1/client-imports/{import_id}/run", "client_import.run"),
@@ -658,6 +666,13 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "POST",
         "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/withdraw",
         "evidence.withdraw",
+    ),
+    # T-02-T17: a person resolves a flagged duplicate upload.
+    (
+        "POST",
+        "/v1/engagements/{engagement_id}/request-items/{item_id}/evidence-versions/{version_id}"
+        "/duplicate-resolution",
+        "evidence.resolve_duplicate",
     ),
     ("POST", "/v1/engagements/{engagement_id}/findings", "finding.raise"),
     (

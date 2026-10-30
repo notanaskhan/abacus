@@ -196,7 +196,7 @@ async def test_ac_the_database_refuses_any_change_to_a_published_versions_steps(
     # Even the superuser's seeding is held to it: only the owner's migrations are not.
     with pytest.raises(asyncpg.InsufficientPrivilegeError):
         await net.seed.run("UPDATE program_steps SET text = 'x' WHERE version_id = $1", published)
-    # The mandatory lock is not the app's to change at all (its own human-only act, K-01-T14).
+    # A published step's lock never changes; in a draft only a person changes it (K-01-T14, 0464).
     with pytest.raises(asyncpg.InsufficientPrivilegeError):
         await _as_app(
             migrated_db,

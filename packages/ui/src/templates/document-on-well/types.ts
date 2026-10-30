@@ -102,4 +102,6 @@ export interface DocumentOnWellCopy {
   watermark: string;
   /** "Variables" */
   variables: string;
+  /** T10c's disabled control once approved (F-06-T15); default "Approved". */
+  approved?: string;
 }

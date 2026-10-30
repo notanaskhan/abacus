@@ -212,3 +212,69 @@ test.describe("J04-fs-audit (A-01's audits index)", () => {
     });
   });
 });
+
+// P-04-T45: the j04 pbc-ai step on the full stack and staging. Granite Peak's screened upload (the
+// Sep 24 snapshot's) carries the screening agent's flag; on AUD-03 its pending C3 proposal opens in
+// SHL-10 through "Review…", every change cited and none unsupported, and Hannah approves it as a
+// person (INV-1: the control is a HumanAction, never the agent's). While the screening agent is at
+// shadow stage for the firm, nothing of the proposal shows. INV-1 to INV-5 and axe after each step.
+test.describe("J04-fs-audit pbc-ai through SHL-10 (P-04-T45)", () => {
+  test.beforeEach(({ journey }) => {
+    const hosted = journey.project === "staging" || journey.project === "canary";
+    test.skip(
+      hosted && HOSTED_URL[journey.project] === undefined,
+      `ABACUS_${journey.project.toUpperCase()}_URL is not set`,
+    );
+    test.fixme(
+      journey.project === "fixture",
+      "Granite Peak's screened upload and its proposal are the Sep 24 snapshot's: full stack only",
+    );
+  });
+
+  test(
+    "j04 pbc-ai: the screening flag is approved through SHL-10 with verified citations",
+    owner("P-04 · P-04-T45 SHL-10 live on staging · S18, before the Tue Jul 13 flip"),
+    async ({ journey }) => {
+      await journey.as("hannah-leclerc", "/audits", { clock: SEP_24 });
+      const page = journey.page;
+      await journey.step(
+        "j04 pbc-ai step 1: Granite Peak's cockpit (AUD-01 → AUD-03)",
+        async () => {
+          await page
+            .getByRole("row", { name: new RegExp(GRANITE_PEAK.split(",")[0] ?? "Granite") })
+            .first()
+            .getByRole("button", { name: "Open row" })
+            .click();
+          await expect(page).toHaveURL(/\/audits\/[^/]+/);
+        },
+      );
+      const sheet = page.getByRole("dialog", { name: "Approve agent output" });
+      await journey.step("j04 pbc-ai step 2: Review… opens the proposal in SHL-10", async () => {
+        await page.getByRole("button", { name: "Review…" }).first().click();
+        await expect(sheet).toBeVisible();
+        await expect(sheet.getByText(/\d+ citations?/)).toBeVisible();
+        await expect(sheet.getByText("Unsupported")).toHaveCount(0);
+      });
+      await journey.step(
+        "j04 pbc-ai step 3: Hannah approves; the proposal becomes a checkpoint (INV-1)",
+        async () => {
+          const approve = sheet.getByRole("button", { name: /^Approve/ });
+          await expect(approve).toBeEnabled();
+          await approve.click();
+          await expect(page.getByText(/^Approved by Hannah Leclerc/).first()).toBeVisible();
+        },
+      );
+    },
+  );
+
+  test.fixme(
+    "j04 pbc-ai shadow: at shadow stage the proposal is hidden",
+    owner(
+      "P-04 · P-04-T45 shadow-stage hiding check: needs the staging firm's screening agent set to shadow (platform agent-stage control, an operator step) · S18",
+    ),
+    async ({ journey }) => {
+      await journey.as("hannah-leclerc", "/audits", { clock: SEP_24 });
+      await expect(journey.page.getByRole("button", { name: "Review…" })).toHaveCount(0);
+    },
+  );
+});
