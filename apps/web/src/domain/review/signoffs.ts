@@ -4,11 +4,7 @@
 // `content_changed` when the target changed since) and the statement version they read. Nothing
 // here signs for anyone: the screen calls `sign` only from a HumanAction (INV-1).
 
-import type {
-  BulkSignOffOut,
-  SignOffEligibilityOut,
-  SignOffOut,
-} from "@abacus/api-client";
+import type { BulkSignOffOut, SignOffEligibilityOut, SignOffOut } from "@abacus/api-client";
 import {
   signOffEligibilityOptions,
   signOffEligibilityQueryKey,

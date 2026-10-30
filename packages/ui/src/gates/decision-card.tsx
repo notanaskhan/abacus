@@ -101,7 +101,7 @@ export function DecisionCard({
           )}
           {openDecision !== undefined ? (
             <footer className="flex items-center gap-[8px]">
-              <Button variant="primary" opensDialog onClick={openDecision.onOpen}>
+              <Button variant="primary" onClick={openDecision.onOpen}>
                 {openDecision.label}
               </Button>
             </footer>

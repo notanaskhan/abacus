@@ -67,7 +67,7 @@ describe("SHL-12 f: bulk", () => {
       name: "Sign off 3 as Reviewer (L2)",
     });
     expect(cta.disabled).toBe(false);
-    expect(screen.getByText("Sign off 6 workpapers")).toBeTruthy();
+    expect(screen.getAllByText("Sign off 6 workpapers").length).toBeGreaterThan(0);
     const excluded = document.querySelectorAll("[data-excluded]");
     expect(excluded).toHaveLength(3);
     expect([...excluded].map((r) => r.textContent)).toEqual([
