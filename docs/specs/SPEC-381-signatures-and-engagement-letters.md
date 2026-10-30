@@ -84,7 +84,7 @@ Engagement letters, §7216 consents, Forms 8879 and 2848, rep letters and govern
 Tables per `docs/plan/epics/N-02.md` §4.2 (`signatures_v1`, N-02-T07; `engagement_letter_versions`, T32). Classification: `ip_sealed`, `decline_note`, `email_at_send` restricted or confidential as listed there; no SSN or TIN in any signer packet.
 
 ## 8. API
-`docs/contracts/c7-envelopes.md` (C7 v1; stub with N-02-T03). Webhook receiver `POST /v1/webhooks/docusign-connect` only after the ADR-152 amendment is accepted (N-02-T19).
+`docs/contracts/c7-envelopes.md` (C7 v1; stub with N-02-T03). Webhook receiver `POST /v1/webhooks/docuseal` (ADR-342, DEC-1277; was DocuSign Connect) only after the ADR-152 amendment is accepted (N-02-T19).
 
 ## 9. Permissions
 `docs/architecture/permission-matrix/signatures.yaml` (N-02-T02) and the letter rows in `engagements.yaml`. Human-only: `envelope.send`, `envelope.remind`, `envelope.void`, `envelope.import_record`, `envelope.record_wet_signature`, `envelope.countersign`, `letter.approve`, `letter.send`, `letter.amend`, and every portal signing verb.
@@ -93,7 +93,7 @@ Tables per `docs/plan/epics/N-02.md` §4.2 (`signatures_v1`, N-02-T07; `engageme
 As `docs/plan/epics/N-02.md` §4.6, identifiers only.
 
 ## 11. Differences from the epic, and decisions
-- ADR-149 (P-26) accepted 2026-10-27 by the builder (AMENDMENT-solo, DEC-706). Its counsel fallback stands: the DocuSign path stays behind `signatures.docusign` until counsel answers and F-09-T41's go/no-go; record mode does not wait.
+- ADR-149 (P-26) accepted 2026-10-27 by the builder (AMENDMENT-solo, DEC-706). Its counsel fallback stands: the provider path (DocuSeal since ADR-342) stays behind `signatures.esign_provider` until counsel answers and F-09-T41's go/no-go; record mode does not wait.
 - The P-45 amendment (the provider webhook receiver) is drafted into ADR-152, still proposed (DEC-707); decide-by Fri Jun 11, 2027. If refused: poll only.
 - Solo edition: no CODEOWNERS lines; `protected-paths.md` lists `modules/signatures/` (N-02-T02).
 

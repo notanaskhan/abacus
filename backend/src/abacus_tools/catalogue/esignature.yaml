@@ -1,0 +1,20 @@
+# The platform's e-signature provider in the integration catalogue (ADR-342; TASK-2152; DEC-1279).
+# Reviewed content, loaded by `abacus_tools.esign_install` through the catalogue's operator load
+# (`integration_catalog_load`, as abacus_ops); never a seed or a migration. Hidden: firms do not
+# pick it from a list, an operator connects it; it is no read adapter, so it is never a portal card.
+version: 1
+rows:
+  - key: docuseal
+    name: DocuSeal
+    category: esignature
+    ownership_mode: firm
+    surfaces: [workbench]
+    adapter_key: docuseal
+    listing_status: hidden
+    scopes:
+      read:
+        - code: submissions.read
+          label: Submission status and signed documents
+    icon: signature
+    tone: espresso
+    sort_order: 900
