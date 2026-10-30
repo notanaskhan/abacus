@@ -14430,6 +14430,7 @@ export const getPortalBinderQueryKey = (options: Options<GetPortalBinderData>) =
  * Get Portal Binder Route
  *
  * POR-03. A binder outside the caller's grant, a draft or a forged id answers 404.
+ * `upload_something_else` (R-01-T33): the firm's published toggle and the intake flag.
  */
 export const getPortalBinderOptions = (options: Options<GetPortalBinderData>) => queryOptions<GetPortalBinderResponse, GetPortalBinderError, GetPortalBinderResponse, ReturnType<typeof getPortalBinderQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -14990,7 +14991,8 @@ export const listIntakeUploadsInfiniteOptions = (options: Options<ListIntakeUplo
 /**
  * Create Intake Upload Route
  *
- * POR-03 "Upload something else": the batch (N-01-T14).
+ * POR-03 "Upload something else": the batch (N-01-T14). R-01-T33: 404 while the firm has
+ * not published the toggle on (as if the route were absent).
  */
 export const createIntakeUploadMutation = (options?: Partial<Options<CreateIntakeUploadData>>): UseMutationOptions<CreateIntakeUploadResponse, CreateIntakeUploadError, Options<CreateIntakeUploadData>> => {
     const mutationOptions: UseMutationOptions<CreateIntakeUploadResponse, CreateIntakeUploadError, Options<CreateIntakeUploadData>> = {

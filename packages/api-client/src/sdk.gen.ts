@@ -8673,6 +8673,7 @@ export const listPortalBinders = <ThrowOnError extends boolean = false>(options?
  * Get Portal Binder Route
  *
  * POR-03. A binder outside the caller's grant, a draft or a forged id answers 404.
+ * `upload_something_else` (R-01-T33): the firm's published toggle and the intake flag.
  */
 export const getPortalBinder = <ThrowOnError extends boolean = false>(options: Options<GetPortalBinderData, ThrowOnError>): RequestResult<GetPortalBinderResponses, GetPortalBinderErrors, ThrowOnError> => (options.client ?? client).get<GetPortalBinderResponses, GetPortalBinderErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -8978,7 +8979,8 @@ export const listIntakeUploads = <ThrowOnError extends boolean = false>(options:
 /**
  * Create Intake Upload Route
  *
- * POR-03 "Upload something else": the batch (N-01-T14).
+ * POR-03 "Upload something else": the batch (N-01-T14). R-01-T33: 404 while the firm has
+ * not published the toggle on (as if the route were absent).
  */
 export const createIntakeUpload = <ThrowOnError extends boolean = false>(options: Options<CreateIntakeUploadData, ThrowOnError>): RequestResult<CreateIntakeUploadResponses, CreateIntakeUploadErrors, ThrowOnError> => (options.client ?? client).post<CreateIntakeUploadResponses, CreateIntakeUploadErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

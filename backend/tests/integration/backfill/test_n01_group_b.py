@@ -279,6 +279,15 @@ async def test_t13_counts_exclude_walled_clients_and_content_reads_are_audited(f
 async def test_t14_claires_upload_reaches_the_inbox_and_a_withdrawal_hides_then_erases(
     firm: Firm, raw: S3Client
 ) -> None:
+    # R-01-T33: the route answers only once the firm publishes "Upload something else".
+    await firm.net.seed.run(
+        "INSERT INTO portal_settings_versions (tenant_id, version, brand, client_experience, "
+        "follow_up_policy, content_sha256, published_by) VALUES ($1, 1, '{}'::jsonb, "
+        "'{\"allow_upload_something_else\": true}'::jsonb, '{}'::jsonb, $2, $3)",
+        firm.tenant_id,
+        "0" * 64,
+        firm.admin.user_id,
+    )
     claire = await firm.net.seed.client_contact(firm.feld, "client_admin")
     batch = await firm.net.http.post(
         "/v1/portal/intake-uploads",

@@ -21154,6 +21154,10 @@ export type PortalBinderOut = {
      */
     done_count: number;
     /**
+     * Engagement Id
+     */
+    engagement_id?: string | null;
+    /**
      * Filter
      */
     filter: 'requested' | 'all' | 'uploaded_by_me' | 'needs_follow_up';
@@ -21182,6 +21186,10 @@ export type PortalBinderOut = {
      * Total
      */
     total: number;
+    /**
+     * Upload Something Else
+     */
+    upload_something_else?: boolean;
 };
 
 /**
