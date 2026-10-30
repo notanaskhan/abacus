@@ -566,7 +566,7 @@ async def eligible(
     if known is None:
         return False
     if known[0] != prompt_version:
-        # N-01-T22 (DEC-1278): another mode of the same agent, on its own prompt and evaluation.
+        # N-01-T22 (DEC-1282): another mode of the same agent, on its own prompt and evaluation.
         suite = EVAL_SUITE_MODES.get(agent_id, {}).get(prompt_version)
         if suite is None:
             return False

@@ -770,8 +770,8 @@ async def match_client(
         matched = (
             await tx.session.execute(
                 text(
-                    "UPDATE inbox_attachments SET client_id = :client, status = CASE WHEN status = "
-                    "'new' THEN 'waiting' ELSE status END WHERE thread_id = :id "
+                    "UPDATE inbox_attachments SET client_id = :client, status = CASE "
+                    "WHEN status = 'new' THEN 'waiting' ELSE status END WHERE thread_id = :id "
                     "AND status IN ('new', 'waiting', 'ignored') "
                     "RETURNING id, classification_id"
                 ),

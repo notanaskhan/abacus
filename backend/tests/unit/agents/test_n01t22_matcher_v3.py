@@ -1,4 +1,4 @@
-"""N-01-T22 (TASK-2230; DEC-1278): the matcher's v3 spec, its two modes and its intake module's
+"""N-01-T22 (TASK-2230; DEC-1282): the matcher's v3 spec, its two modes and its intake module's
 reach. No code path in intake mode files, ignores, holds or supersedes (the row's acceptance)."""
 
 from __future__ import annotations

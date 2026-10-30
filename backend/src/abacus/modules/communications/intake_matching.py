@@ -74,7 +74,7 @@ async def intake_folder_destinations(ctx: AuthContext, client_id: UUID) -> list[
             out.append(FolderDestination(node.kind, node.id, node.label))
         elif node.has_children:
             out.extend(
-                FolderDestination(child.kind, child.id, f"{node.label} › {child.label}")
+                FolderDestination(child.kind, child.id, f"{node.label}: {child.label}")
                 for child in await _children(ctx, client_id, node)
                 if child.selectable and child.kind != "request"
             )

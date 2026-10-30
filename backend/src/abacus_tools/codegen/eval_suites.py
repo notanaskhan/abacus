@@ -1,7 +1,8 @@
 """Generate `abacus.ai_gateway._eval_suites` from the agent specs and their evaluation suites
 (SPEC-005 AC-13; TASK-020 review): for each agent with a suite, its prompt reference and the
-suite's version, and each other mode's prompt (N-01-T22). The gateway can't read `evals/` (ADR-101), so it reads this constant to key
-eligibility on the agent's own prompt and current suite. A test fails when they drift.
+suite's version, and each other mode's prompt (N-01-T22). The gateway can't read `evals/`
+(ADR-101), so it reads this constant to key eligibility on the agent's own prompt and current
+suite. A test fails when they drift.
 
 Run: python -m abacus_tools.codegen.eval_suites [--check]
 """
@@ -31,7 +32,7 @@ Regenerate: python -m abacus_tools.codegen.eval_suites
 
 def render() -> str:
     suites: dict[str, tuple[str, int]] = {}
-    # N-01-T22 (DEC-1278): an agent's other modes, each prompt on the same suite and version.
+    # N-01-T22 (DEC-1282): an agent's other modes, each prompt on the same suite and version.
     modes: dict[str, dict[str, int]] = {}
     for agent_id, spec in sorted(AGENTS.items()):
         path = REPO / spec.evaluation_suite / "suite.yaml"

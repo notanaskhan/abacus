@@ -1,4 +1,4 @@
-"""N-01-T22 (TASK-2230; DEC-1278): `evidence.matcher` v3 intake mode.
+"""N-01-T22 (TASK-2230; DEC-1282): `evidence.matcher` v3 intake mode.
 
 Acceptance (the task row): "The direct-route suite passes at the protected thresholds and no code
 path lets the agent file, ignore, hold or supersede." The direct-route run is `make evals` in the
