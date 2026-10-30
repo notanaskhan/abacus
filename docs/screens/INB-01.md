@@ -98,3 +98,15 @@ Inbound: SHL-01 nav "Inbox", HOME-01 `inbox_waiting` tile, SHL-04 client-upload 
 ## Open gaps
 - Row 4's Copperleaf receipts need C-01-T58's close-receipt destination; until S48 the row renders from fixtures and cannot be filed live (DV-7).
 - The design of the Log received documents O3 sheet is in `docs/screens/INB-02.md` § Log received documents.
+
+## Parity
+| Artboard | Tier | Diff % | Notes |
+|---|---|---|---|
+| a | C (locked) | — | N-01-T28; write controls masked (Approve, File, Ignore, Reveal and the bulk bar) |
+| b | C | — | report |
+| c | C | — | report |
+| d | C (locked) | — | N-01-T28; write controls masked (Approve, File, Ignore, Reveal and the bulk bar) |
+| e | C (locked) | — | N-01-T28; write controls masked (Approve, File, Ignore, Reveal and the bulk bar) |
+| f | C (locked) | — | N-01-T28; write controls masked (Approve, File, Ignore, Reveal and the bulk bar) |
+| g | C (locked) | — | N-01-T28; write controls masked (Approve, File, Ignore, Reveal and the bulk bar) |
+| host | D | — | N-01-T28: T8 inbox layout (rail 392, reading pane), computed styles (e2e/visual/tier-d.spec.ts) |
