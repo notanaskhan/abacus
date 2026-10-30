@@ -21,6 +21,6 @@ standard library, `kernel.numeric` and `kernel.calendar` (import-linter, A-03-T2
   output carries `engine_version`, `inputs_hash` and `items_hash`.
 - The only random primitive is `random.Random(seed).getrandbits(32)` (`draw.Stream`); rejection
   sampling and the partial Fisher–Yates walk are ours. Seeds are 24-bit.
-- `attribute_size`, `udl`/`udl_percent` (exact binomial), `project`/`project_ratio`.
+- `attribute_size`, `udl`/`udl_percent` (exact binomial), `projected_misstatement`/`projected_misstatement_ratio`.
 - `SAMPLER_VERSIONS` registers `2.3` frozen; new behaviour is a new version. `seeded_v1` (journal
   entries, ADR-132) is separate and unchanged.

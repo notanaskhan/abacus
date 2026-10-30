@@ -7,7 +7,8 @@ SPEC-580 AC-8).
   few when the true rate is the tolerable rate: 22 at 90% confidence, 10% tolerable, 0% expected.
 - `udl`: the exact binomial (Clopper-Pearson) upper deviation limit, solved by bisection in the
   shared Decimal context: 8.8% for 0 of 25 and 19.9% for 2 of 25 at 90%.
-- `project` and `project_ratio`: misstatement projected to the population, by count or by amount.
+- `projected_misstatement` and `projected_misstatement_ratio`: misstatement projected to the
+  population, by count or by amount.
 
 Inputs are taken as Decimal through `str()`, so 0.90 means 0.90 and never 0.9000000000000000222.
 """
@@ -87,7 +88,9 @@ def udl_percent(deviations: int, size: int, confidence: Number) -> Decimal:
     return quantize_half_up(udl(deviations, size, confidence) * 100, 1)
 
 
-def project(misstatement: Number, sample_count: int, population_count: int) -> Decimal:
+def projected_misstatement(
+    misstatement: Number, sample_count: int, population_count: int
+) -> Decimal:
     """Projected misstatement by count: 2,140 in 25 of 412 is 35,267.20 (QA-3: display open)."""
     if sample_count <= 0 or population_count < sample_count:
         raise ValueError("the sample must be a non-empty part of the population")
@@ -95,7 +98,7 @@ def project(misstatement: Number, sample_count: int, population_count: int) -> D
         return quantize_half_up(_dec(misstatement) * population_count / sample_count, 2)
 
 
-def project_ratio(
+def projected_misstatement_ratio(
     misstatement: Number, sample_amount: Number, population_amount: Number
 ) -> Decimal:
     """Projected misstatement by amount (ratio estimate): misstatement x population ÷ sample."""

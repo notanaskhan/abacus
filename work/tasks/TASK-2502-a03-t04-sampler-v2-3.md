@@ -31,10 +31,10 @@ everything below is new.
 - `compute/v2_3.py`: `select()` for `attribute_nonstatistical`, `attribute_statistical`,
   `threshold_random_stratified` (min inclusive, max exclusive; all/random/none); `inputs_hash`,
   `items_hash`, `engine_version`.
-- `compute/stats.py`: `binomial_cdf`, `attribute_size`, `udl`, `udl_percent`, `project`,
-  `project_ratio` in `kernel.numeric`'s context.
+- `compute/stats.py`: `binomial_cdf`, `attribute_size`, `udl`, `udl_percent`, `projected_misstatement`,
+  `projected_misstatement_ratio` in `kernel.numeric`'s context.
 - `compute/versions.py`: read-only `SAMPLER_VERSIONS` with `2.3` frozen; `sampler(id)`.
-- `sampling.api` re-exports `attribute_size`, `udl`, `udl_percent`, `project`, `SAMPLER_VERSIONS`,
+- `sampling.api` re-exports `attribute_size`, `udl`, `udl_percent`, `projected_misstatement`, `SAMPLER_VERSIONS`,
   `SAMPLER_CURRENT` (A-03 §4.3 module API). README section.
 - Not here: the golden corpus and the designed Northwind/Granite Peak fixtures (T09, T16: built by
   inverse construction so the honest algorithm lands on the designed lists).

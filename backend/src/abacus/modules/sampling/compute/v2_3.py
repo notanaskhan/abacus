@@ -69,7 +69,7 @@ class Item:
 
 
 @dataclass(frozen=True)
-class Selection:
+class SampleDraw:
     engine_version: str
     method: Method
     seed: int
@@ -139,7 +139,7 @@ def select(
     seed: int,
     size: int | None = None,
     strata: Sequence[StratumRule] = (),
-) -> Selection:
+) -> SampleDraw:
     """The items version 2.3 selects; the same inputs always give byte-identical output."""
     if method not in METHODS:
         raise ValueError(f"unknown method {method!r}")
@@ -196,7 +196,7 @@ def select(
         ):
             items.append(Item(position, ordinal, records[ordinal].key, "random", None))
     frozen = tuple(items)
-    return Selection(
+    return SampleDraw(
         engine_version=VERSION,
         method=method,
         seed=seed,

@@ -17,8 +17,8 @@ from abacus.modules.sampling.compute import (
     attribute_size,
     canonical,
     normalise_key,
-    project,
-    project_ratio,
+    projected_misstatement,
+    projected_misstatement_ratio,
     sampler,
     udl,
     udl_percent,
@@ -68,9 +68,9 @@ def test_ac8_the_designed_size_limits_and_projection() -> None:
     assert attribute_size(0.90, 0.10, 0) == 22
     assert udl_percent(0, 25, 0.90) == Decimal("8.8")
     assert udl_percent(2, 25, 0.90) == Decimal("19.9")
-    assert project(2140, 25, 412) == Decimal("35267.20")
+    assert projected_misstatement(2140, 25, 412) == Decimal("35267.20")
     assert Decimal("0.0879") < udl(0, 25, 0.90) < Decimal("0.0881")
-    assert project_ratio(100, 1_000, 50_000) == Decimal("5000.00")
+    assert projected_misstatement_ratio(100, 1_000, 50_000) == Decimal("5000.00")
 
 
 def test_ac8_refusals() -> None:
@@ -81,7 +81,7 @@ def test_ac8_refusals() -> None:
         udl(3, 2, 0.9)
     assert udl(5, 5, 0.9) == Decimal(1)
     with pytest.raises(ValueError):
-        project(1, 0, 10)
+        projected_misstatement(1, 0, 10)
 
 
 _RNG_METHODS = {
@@ -131,7 +131,7 @@ def test_ac9_the_registry_freezes_2_3() -> None:
     with pytest.raises(KeyError, match="unknown_sampler_version"):
         sampler("2.4")
     with pytest.raises(TypeError):
-        SAMPLER_VERSIONS["9.9"] = version  # type: ignore[index]
+        SAMPLER_VERSIONS["9.9"] = version  # type: ignore[index] -- proves the registry is read-only
 
 
 def test_ac10_threshold_strata_take_all_above_sixteen_inside_and_none_below() -> None:
@@ -189,4 +189,4 @@ def test_seeds_are_24_bit_and_the_walk_is_bounded() -> None:
 def test_the_module_api_re_exports_the_compute_helpers() -> None:
     assert api.attribute_size is attribute_size
     assert api.udl is udl
-    assert api.project is project
+    assert api.projected_misstatement is projected_misstatement

@@ -10,7 +10,7 @@ from abacus.modules.sampling.compute import (
 from abacus.modules.sampling.compute import (
     SAMPLER_VERSIONS,
     attribute_size,
-    project,
+    projected_misstatement,
     udl,
     udl_percent,
 )
@@ -67,7 +67,7 @@ __all__ = [
     "build_payments",
     "build_population",
     "manual_kinds_for",
-    "project",
+    "projected_misstatement",
     "recorded_bill",
     "seeded_v1",
     "select",

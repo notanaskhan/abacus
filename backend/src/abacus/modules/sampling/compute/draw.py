@@ -23,7 +23,7 @@ class Stream:
     def __init__(self, seed: int) -> None:
         if not 0 <= seed <= SEED_MAX:
             raise ValueError("a seed is a 24-bit value")
-        self._rng = random.Random(seed)  # noqa: S311 - re-performable selection, not secrecy (ADR-340)
+        self._rng = random.Random(seed)
 
     def below(self, bound: int) -> int:
         """A uniform integer in [0, bound): words at or above the largest multiple are redrawn."""

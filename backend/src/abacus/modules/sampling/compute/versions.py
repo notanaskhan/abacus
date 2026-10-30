@@ -19,7 +19,7 @@ from abacus.modules.sampling.compute import v2_3
 class SamplerVersion:
     identifier: str
     methods: tuple[str, ...]
-    select: Callable[..., v2_3.Selection]
+    select: Callable[..., v2_3.SampleDraw]
     frozen: bool
 
 
