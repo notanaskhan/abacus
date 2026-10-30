@@ -37,3 +37,8 @@ serious or critical findings on every state."
   Axe and the Tab walk pass 15/15. Segmented, grid and toggle suites pass. Tier D: POR-16 holds 4/4.
   AUD-06 draws rail 330, canvas 742 and dock 330, not the contract's 536 / 490 split; that case is
   kept as `test.fail` and recorded in the contract as an open gap.
+- 2026-10-30: the split landed (DEC-838). The AUD-02 cockpit widens the dock to `--ev-w` on the
+  Trial Balance row and takes `min-w-0` so the workpaper shrinks to 536. Tier D AUD-06 a, c, e pass
+  without `test.fail`. Locked: a 2.71 and c 2.86 (dock, rail and audit bar masked; the chrome is
+  AUD-02's, A-01-T33), b 2.93 and e 2.53 (dock masked). Report-only: d 4.59, f 10.34 (no sign-off
+  dialog on the artboard). The row's "lock a, c, e and g" is met.

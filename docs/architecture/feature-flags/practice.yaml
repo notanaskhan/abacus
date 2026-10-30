@@ -10,3 +10,11 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: home.approvals
+    description: 'HOME-02 My approvals (I-01-T16): `/home/approvals`, the human-gate queue on T9 close-review. Off: the route shows the flag-off state and HOME-01 rows open their host gates (I-01 AC2.4). On for Dev and synthetic firms with I-01-T22; per-firm flips Tue Nov 2 and Nov 9, 2027; retired with the legacy Review screen (I-01-T23).'
+    owner: ayushkbhatia
+    created: 2026-10-30
+    expires: 2027-04-28
+    override: DEC-137
+    kind: boolean
+    default: false

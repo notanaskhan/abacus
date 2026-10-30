@@ -4,8 +4,9 @@
 - `seal_tin` writes a client entity's TIN: an envelope under the firm's key (`kernel.crypto.seal`,
   bound to the entity), the last four digits, the kind and a fingerprint (HMAC-SHA256 under a
   per-firm key) that keeps one TIN on file once per firm. An SSN or ITIN on a firm that is not
-  synthetic answers 422 `tin_kind_not_allowed` until C19's consent gate lands; an EIN is
-  accepted (P-07 OQ-4).
+  synthetic answers 422 `tin_kind_not_allowed` unless C19's consent gate is registered (the
+  `use`, `ai_disclosure` and `offshore_disclosure` checks, T-01-T12); an EIN is accepted
+  (P-07 OQ-4).
 - Every payload carries only `mask_tin`'s last four digits (`MaskedTinOut`, Restricted).
 - `reveal_tin` is the only path that opens an envelope: a live, onshore person with recent MFA,
   a reason code and `tin.reveal` on one of the client's open engagements. One `tin_reveals` row
@@ -44,11 +45,13 @@ from abacus.kernel.logging import get_logger
 from abacus.kernel.metrics import meter
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
 from abacus.modules.identity.api import (
+    OFFSHORE_DISCLOSURE,
     AuthContext,
     Forbidden,
     Resource,
     allowed_actions,
     authorise,
+    consent_registered,
     is_synthetic_firm,
     visible_clients,
 )
@@ -74,8 +77,16 @@ _TIN_UNIQUE_INDEX: Final = "client_entities_one_tin"
 WriteAction = Literal[
     "client.update", "client.intake", "client_import.run"
 ]  # P-07-T52: the import
-# Until C19 (T-01) gates §7216 consent, only a synthetic firm may hold an individual's TIN.
+# Until C19's gate is registered (T-01-T12), only a synthetic firm may hold an individual's TIN.
 _GATED_KINDS: Final = frozenset({"ssn", "itin"})
+_C19_PURPOSES: Final = ("use", "ai_disclosure", OFFSHORE_DISCLOSURE)
+
+
+def _c19_registered() -> bool:
+    """Whether C19's consent checks are registered (organisations' `consent_gate`, at import)."""
+    return all(consent_registered(purpose) for purpose in _C19_PURPOSES)
+
+
 _SEPARATORS: Final = re.compile(r"[\s-]")
 _NINE: Final = re.compile(r"[0-9]{9}")
 # Public, like the local master key: it fingerprints only data on this machine (DEC-223).
@@ -231,7 +242,7 @@ async def seal_tin(
     as it is, never read as a conflict (DEC-232)."""
     await _writable_entity(tx.session, ctx, entity_id, action)
     digits = normalise_tin(raw)
-    if kind in _GATED_KINDS and not await is_synthetic_firm(ctx.tenant):
+    if kind in _GATED_KINDS and not (_c19_registered() or await is_synthetic_firm(ctx.tenant)):
         raise TinKindNotAllowed(facts={"client_entity_id": str(entity_id)})
     sealed = await seal(ctx.tenant_id, digits.encode(), _aad(entity_id))
     try:
