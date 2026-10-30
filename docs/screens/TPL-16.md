@@ -65,9 +65,12 @@ Gradients, emoji, saturated blue, yellow sign-here flags, heavy shadows, invente
 | Artboard | Tier (A/B/D) | Diff % | Notes |
 |---|---|---|---|
 | a, c | C screenshot + A chrome | not run | identity and adopt region masked |
-| b, d, e, f | B frame · A strips · D geometry | not run | provider-frame region masked where present; locked in F-06-T13 |
-| g | B · D (390, 44 × 44 targets, 48 primary, bar 64) | not run | F-06-T13 |
+| b, d, e, f | B frame · A strips · D geometry | not run | provider-frame region masked where present; e locked at Tier B (F-06-T13); b 5.72 %, d 5.02 % over Tier B and f drawn in place (81.75 %) at the end review: report-only until closed |
+| g | B · D (390, 44 × 44 targets, 48 primary, bar 64) | not run | over Tier B at the end review (F-06-T13): report-only until closed |
 
 ## Open gaps
 - Q5 (provider-mode CTA label): open, decide by Fri Apr 30, 2027. The specimen keeps the built label.
 - DF-11 paper-form sentence: counsel confirms the Pub 1345 text (DF-11); the copy module carries the plan's sentence until then.
+
+## Hand-off (F-06-T13, 2026-10-30)
+- **N-02 (POR-06 e, h and the joint 8879):** the specimen's frames are locked at Tier B against the handoff PNGs (`docs/design/parity-manifest.json`, pinned SHA-256); the consumer screen composes the same template, so the template's own geometry and chrome are fixed. Masks per F-06 §5.4 (provider frame, KBA timer, spinners).
