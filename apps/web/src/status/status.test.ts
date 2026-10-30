@@ -66,7 +66,11 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // S13 (N-01, N-02) and F-06-T03 added inbox_thread, portal_intake_upload, file_document,
     // envelope_signer, signing_step, envelope_purpose, generated_document, letter and
     // letter_clause (+9; the S14 batch joins N-02's and F-06's envelope_signer, DEC-815).
-    expect(Object.keys(REGISTRY)).toHaveLength(100);
+    // K-02-T02 added firm_standard_version and reference_set_version (+2).
+    // T-01-T06 added tax_authorization and efile_ack (+2; the sync chip is the blueprint's
+    // return_sync_chip). T-02-T04 added questionnaire, recipient_details_change, k1_handoff (+3).
+    // The S16 end review added engine_import and transcript_parse (T-01) and k3 (T-02) (+3).
+    expect(Object.keys(REGISTRY)).toHaveLength(110);
     // +21: decision_card 3, suggestion 6, proposal 5, sign_off_slot 2, field_value 4, checkpoint saved.
     // +27 (P-07-T03): client 4, invitation 5, acceptance_record 5, letter_record 2,
     // conflict_assessment 5, nas_evaluation 3, independence_conclusion 3.
@@ -82,7 +86,11 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // +41 (S13, F-06-T03): inbox_thread 3, portal_intake_upload 3, file_document 5,
     // envelope_signer 6, signing_step 4, envelope_purpose 4, generated_document 4, letter 7,
     // letter_clause 3, inbox_item +2.
-    expect(ROWS).toHaveLength(471);
+    // +8 (K-02-T02): firm_standard_version 4, reference_set_version 4.
+    // +9 (T-01-T06): consent superseded and not_requested, tax_authorization 5, efile_ack 2.
+    // +8 (T-02-T04): questionnaire 3, recipient_details_change 3, k1_handoff 2.
+    // +11 (S16 end review): engine_import 5, transcript_parse 3 (T-01), k3 3 (T-02).
+    expect(ROWS).toHaveLength(507);
   });
 
   it("resolves each code to a word, a kit variant or a line, and never to match", () => {

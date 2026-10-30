@@ -77,7 +77,7 @@ export interface RequestSheetProps {
   mobile?: boolean;
   /** The file input's accepted types (the portal's upload policy). */
   accept: string;
-  /** A specimen held open in place (the gallery): no layer, no scrim. */
+  /** Held open in place (the gallery's window): no layer and no focus move; still the dialog. */
   forceOpen?: boolean;
 }
 
@@ -261,7 +261,7 @@ function RequestBody({
         )}
         {request.guidance != null && request.guidance !== "" && (
           <>
-            <div className="flex h-[30px] items-center bg-band-hd px-[14px] text-dense font-medium text-ink-2 hairline-t">
+            <div className="flex h-[33px] items-center bg-band-hd px-[14px] text-section hairline-t">
               {SHEET_WORDS.why}
             </div>
             <p className="px-[14px] py-[10px] text-dense leading-[1.55] text-ink-2">
@@ -271,8 +271,8 @@ function RequestBody({
         )}
       </Card>
       {allowed.has("upload") && (
-        <Card label={SHEET_WORDS.dropTitle}>
-          <div className="flex flex-col gap-[8px] p-[12px]">
+        <Card title={SHEET_WORDS.uploadCard}>
+          <div className="flex flex-col gap-[8px] px-[14px] pt-[12px] pb-[14px]">
             <button
               type="button"
               aria-label={`${SHEET_WORDS.dropTitle}. ${SHEET_WORDS.dropTypes}`}
@@ -331,7 +331,7 @@ function RequestBody({
                 </span>
                 <span className="text-meta text-ink-3">{day(c.created_at.slice(0, 10))}</span>
               </span>
-              <span className="text-dense leading-[1.5]">{c.text ?? ""}</span>
+              <span className="pl-[20px] text-dense leading-[1.5]">{c.text ?? ""}</span>
             </li>
           ))}
         </ul>
@@ -588,8 +588,9 @@ export function RequestSheet({
       }}
       title={title}
       description={label}
+      descriptionHidden
       fullScreen={mobile}
-      {...(forceOpen ? { forceState: "open" as const } : {})}
+      {...(forceOpen ? { forceState: "open" as const, heldRole: "dialog" as const } : {})}
       {...(canUpload
         ? {
             action: mobile ? (
@@ -597,7 +598,7 @@ export function RequestSheet({
                 {SHEET_WORDS.upload}
               </Button>
             ) : (
-              <Button variant="primary" size="md" onClick={choose}>
+              <Button variant="primary" size="md" icon="upload" onClick={choose}>
                 {SHEET_WORDS.upload}
               </Button>
             ),

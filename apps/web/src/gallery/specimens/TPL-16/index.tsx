@@ -201,7 +201,7 @@ export function Tpl16Specimen({
         completion={{ title: COPY.completedTitle(MIRA.first), note: COPY.willFile(E6.firm) }}
         copy={OUTCOME_COPY}
         onDecline={() => undefined}
-        {...(state === "f" ? { declineForceState: "open" as const } : {})}
+        {...(state === "f" ? { declineForceState: "open" as const, declineHeldScrim: true } : {})}
         {...(state === "g" ? { layout: "phone" as const, stickyBarHeight: 64 as const } : {})}
         {...(state === "pending" ? { providerReturned: true } : {})}
         {...rest}

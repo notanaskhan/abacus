@@ -25,7 +25,7 @@ export const COPY = {
   pinPlaceholder: "Enter any five digits except all zeros",
   authorizingTitle: "What you're authorizing",
   // Q7: the action opens a step, so it carries the ellipsis (DECISIONS.md, F-06-T01).
-  adoptAndSign: "Adopt signature & sign…",
+  adoptAndSign: "Adopt signature & sign",
   recordsNote: "Signing records the date, time, your IP address and the verification result.",
   nextDocument: "Next document →",
   completedTitle: (first: string): string => `Signed. Thank you, ${first}.`,

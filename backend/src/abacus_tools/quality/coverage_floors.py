@@ -187,7 +187,11 @@ def _report() -> dict[str, object]:
         raise RuntimeError("coverage is not installed")
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp) / "coverage.json"
-        subprocess.run([coverage, "json", "-q", "-o", str(out)], cwd=BACKEND, check=True)
+        # `--fail-under=0`: the global floor is coverage_floor's to judge (with its dated DEC-10
+        # exception); here `coverage json` must write the report, not exit 2 below pyproject's 95.
+        subprocess.run(
+            [coverage, "json", "-q", "--fail-under=0", "-o", str(out)], cwd=BACKEND, check=True
+        )
         return cast(dict[str, object], json.loads(out.read_text(encoding="utf-8")))
 
 

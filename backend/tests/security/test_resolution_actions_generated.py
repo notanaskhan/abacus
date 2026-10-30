@@ -4,8 +4,9 @@
 run and a support session are denied each one, whatever facts a person would need are
 given. And the target conditions, allow and deny: a preparer never signs L2 or L3 on
 their own target (`not_preparer_of_target`), and only the person holding a card's
-reserved role decides it (`reserved_role`). Reviewing this diff is reviewing the
-rule."""
+reserved role decides it (`reserved_role`). Only a firm standard's owner, a partner
+now, drafts or publishes it (`owner_of_target`, K-02-T01). Reviewing this diff is
+reviewing the rule."""
 
 from __future__ import annotations
 
@@ -47,6 +48,21 @@ NEVER: tuple[tuple[str, str], ...] = (
     ("evidence.reject", "agent"),
     ("evidence.reject", "system"),
     ("evidence.reject", "support"),
+    ("firm_standard.assign_owner", "agent"),
+    ("firm_standard.assign_owner", "system"),
+    ("firm_standard.assign_owner", "support"),
+    ("firm_standard.create", "agent"),
+    ("firm_standard.create", "system"),
+    ("firm_standard.create", "support"),
+    ("firm_standard.draft", "agent"),
+    ("firm_standard.draft", "system"),
+    ("firm_standard.draft", "support"),
+    ("firm_standard.import", "agent"),
+    ("firm_standard.import", "system"),
+    ("firm_standard.import", "support"),
+    ("firm_standard.publish", "agent"),
+    ("firm_standard.publish", "system"),
+    ("firm_standard.publish", "support"),
     ("issue.reopen", "agent"),
     ("issue.reopen", "system"),
     ("issue.reopen", "support"),
@@ -56,6 +72,15 @@ NEVER: tuple[tuple[str, str], ...] = (
     ("issue.verify", "agent"),
     ("issue.verify", "system"),
     ("issue.verify", "support"),
+    ("k1_package.release", "agent"),
+    ("k1_package.release", "system"),
+    ("k1_package.release", "support"),
+    ("k1_package.resend", "agent"),
+    ("k1_package.resend", "system"),
+    ("k1_package.resend", "support"),
+    ("k1_package.share_internal", "agent"),
+    ("k1_package.share_internal", "system"),
+    ("k1_package.share_internal", "support"),
     ("proposal.approve", "agent"),
     ("proposal.approve", "system"),
     ("proposal.approve", "support"),
@@ -74,6 +99,12 @@ NEVER: tuple[tuple[str, str], ...] = (
     ("proposal.undo", "agent"),
     ("proposal.undo", "system"),
     ("proposal.undo", "support"),
+    ("questionnaire_template.import", "agent"),
+    ("questionnaire_template.import", "system"),
+    ("questionnaire_template.import", "support"),
+    ("questionnaire_template.publish", "agent"),
+    ("questionnaire_template.publish", "system"),
+    ("questionnaire_template.publish", "support"),
     ("review_decision.undo", "agent"),
     ("review_decision.undo", "system"),
     ("review_decision.undo", "support"),
@@ -115,6 +146,12 @@ CONDITIONS: tuple[tuple[str, str, str, str], ...] = (
     ("decision.decide", "eqr_reviewer", "other_person", "deny"),
     ("decision.decide", "eqr_reviewer", "other_role", "deny"),
     ("decision.decide", "eqr_reviewer", "no_facts", "deny"),
+    ("firm_standard.draft", "firm_partner", "owner", "allow"),
+    ("firm_standard.draft", "firm_partner", "not_owner", "deny"),
+    ("firm_standard.draft", "firm_partner", "no_facts", "deny"),
+    ("firm_standard.publish", "firm_partner", "owner", "allow"),
+    ("firm_standard.publish", "firm_partner", "not_owner", "deny"),
+    ("firm_standard.publish", "firm_partner", "no_facts", "deny"),
     ("sign_off.manager", "engagement_partner", "preparer", "deny"),
     ("sign_off.manager", "engagement_partner", "not_preparer", "allow"),
     ("sign_off.manager", "engagement_partner", "no_facts", "deny"),

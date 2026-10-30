@@ -56,3 +56,6 @@ The plan's `portal.envelopes.*` are spelt `portal_envelopes.*` (one dot, DEC-139
 
 ## 8. Stub
 Models and routes: `backend/src/abacus/modules/signatures/contract.py` (`/v1/envelopes*`, `/v1/envelope-policies*`, `/v1/portal/envelopes*`) and `backend/src/abacus/modules/engagements/letter_contract.py` (`/v1/engagements/{id}/letter/composer`, `compare`, `pdf`, `request-approval`, `approve`, `send`, `amend`). `envelope_signer` and `letter` status words are in the vocabulary.
+
+## N-02-T21 additions (DEC-1174)
+Additive, each optional with a default: `SignerOut.title` and `SignerOut.email` (confidential; SIG-02's sub-line and "Email required"), `DraftUpdateIn.document_order` (the builder's reorder), `ValidationOut.checks` (`{code, ok}`, identifiers only; SIG-02 words them). A `problems` entry naming a signer is `signer_email_missing:<signer_id>`.

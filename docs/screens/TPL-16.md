@@ -66,10 +66,12 @@ Gradients, emoji, saturated blue, yellow sign-here flags, heavy shadows, invente
 |---|---|---|---|
 | a | B frame (chrome only) · D geometry | measured at the end review | the well (provider's view) and the verify step row masked; lock F-06-T13 (DEC-1250) |
 | c | C (deviation) | report only | native Adopt dialog and scrim not built (DF-12); never locks |
-| b, d, f | B frame · A strips on b (envelope header 46, document row 64, steps 300) · D geometry | measured at the end review | `[data-signing='page']` masked (provider frame region); lock F-06-T13 |
-| e | B frame · D geometry | measured at the end review | no mask; lock F-06-T13 |
-| g | B · A sticky bar 64 · D (390 × 844, 48 primary; 44 × 44 targets in TPL-16.spec.ts) | measured at the end review | page masked; lock F-06-T13 |
+| b, d, e, f | B frame · A strips · D geometry | b 1.26 %, d 0.94 %, e 0.92 %, f 1.82 % | locked at Tier B (DEC-1183); the server-rendered document page is masked |
+| g | B · D (390, 44 × 44 targets, 48 primary, bar 64) | 3.59 % | report-only (DEC-1183): the handoff's phone header is a different mobile layout |
 
 ## Open gaps
 - Q5 (provider-mode CTA label): open, decide by Fri Apr 30, 2027. The specimen keeps the built label.
 - DF-11 paper-form sentence: counsel confirms the Pub 1345 text (DF-11); the copy module carries the plan's sentence until then.
+
+## Hand-off (F-06-T13, 2026-10-30)
+- **N-02 (POR-06 e, h and the joint 8879):** the specimen's frames are locked at Tier B against the handoff PNGs (`docs/design/parity-manifest.json`, pinned SHA-256); the consumer screen composes the same template, so the template's own geometry and chrome are fixed. Masks per F-06 §5.4 (provider frame, KBA timer, spinners).

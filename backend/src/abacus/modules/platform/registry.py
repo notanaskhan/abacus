@@ -24,6 +24,8 @@ TABLES: frozenset[str] = frozenset(
     | {"safeguards_control_set_log"}  # global staff record; definers only
     | {"wisp_packs"}
     | {"pilot_enrolments", "pilot_metric_snapshots"}  # Q-04-T007 (0276): pilot enrolments
+    # K-02-T03 (0400, ADR-300): the global reference sets; definers only.
+    | {"reference_sets", "reference_set_versions", "reference_set_publications"}
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
 # G-02-T18 (0240): an incident's status changes only with its decisions (column grants and the

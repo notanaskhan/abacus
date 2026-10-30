@@ -36,12 +36,20 @@ export function surfaceOf(id: string): CopySurface {
   return id.startsWith("POR-") || id.endsWith(".portal") ? "portal" : "firm";
 }
 
+/** Keys outside the close screens that name the close run's tasks (glossary "Close task (UI)"),
+ * never a to-do, for copy modules that cannot register their own rules. One entry per key, each
+ * verbatim from its handoff (DEC-1274). */
+const CLOSE_TASK_KEYS: Readonly<Record<string, readonly string[]>> = {
+  // ADM-04 gate row 2: "Draft a return, workpaper or close task" (handoff spec.md, gates table).
+  "ADM-04": ["COPY.rows.2"],
+};
+
 function rulesFor(id: string, rules: Partial<CopyRules> | undefined): CopyRules {
   return {
     surface: rules?.surface ?? surfaceOf(id),
     agent: rules?.agent ?? [],
     opensDialog: rules?.opensDialog ?? [],
-    task: rules?.task ?? [],
+    task: rules?.task ?? CLOSE_TASK_KEYS[id] ?? [],
   };
 }
 

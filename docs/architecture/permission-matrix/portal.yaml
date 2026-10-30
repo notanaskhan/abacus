@@ -29,3 +29,14 @@ actions:
   portal_intake.upload:     {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}   # POR-03 "Upload something else"
   portal_intake.read_own:   {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}   # the principal's own uploads, client words
   portal_intake.withdraw:   {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}   # the uploader, or the scope's owner (client_admin); only while unfiled
+  # --- POR-05 questionnaires and POR-13 K-1s (T-02-T03, DEC-1162; T-02 §4.4). Client people in
+  # scope; an inquiry is answered and submitted by its addressee only, and a K-1 recipient sees
+  # only their own packages: both checked by the service on the record (the matrix has no
+  # addressee or own-record condition). The MFA floor for K-1s is the portal session's.
+  portal_questionnaire.read:      {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}
+  portal_questionnaire.answer:    {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}
+  portal_questionnaire.complete:  {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}
+  portal_questionnaire.submit:    {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}
+  portal_k1.read:                 {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}
+  portal_k1.download:             {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}
+  portal_k1.update_details:       {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}

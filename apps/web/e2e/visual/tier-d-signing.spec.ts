@@ -86,7 +86,7 @@ test.describe("TPL-16g at 390", () => {
 for (const st of ["a", "b", "c", "d", "e"] as const) {
   test(`TPL-01${st}: the 1400 × 860 window`, async ({ page }) => {
     await openGallery(page, `screens/TPL-01?st=${st}`);
-    const frame = page.locator(`[data-artboard='${st}'] [data-shell='app']`).first();
+    const frame = page.locator(`[data-artboard='tpl-01${st}'] [data-shell='app']`).first();
     expect(await size(frame)).toEqual({ width: 1400, height: 860 });
   });
 }

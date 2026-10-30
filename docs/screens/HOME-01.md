@@ -120,14 +120,14 @@ Undesigned strings (no handoff source; added by T06/T11 and marked as such in `c
 ## Links
 | From | To (manifest builder) | Planned or live |
 |---|---|---|
-| Segmented "Approvals" / "Open queue →" / any Waiting-on-you row (flag on) | HOME-02 (`/home/approvals?gate=`) | planned until I-01-T21 (`home.approvals`) |
+| Segmented "Approvals" / "Open queue →" / any Waiting-on-you row (flag on) | HOME-02 (`/home/approvals?gate=`) | the segment is wired (DEC-1273; HOME-02 answers its flag-off state while `home.approvals` is off); "Open queue →" and the rows wait for I-01-T21 |
 | Waiting-on-you rows, flag off (AC2.4) | AUD-03 (evidence review on a PBC list), CLI-07 (acceptance), CLI-08 (independence, EQR eligibility), BND-02 (uploads awaiting review on a binder), the follow-up drafts screen (sends) | live from I-01-T13 (DEC-803): AUD-03 and BND-02 through `subject_route`, CLI-07 and CLI-08 by the gate's ids; sends stay text until their host is built |
 | Decision 1 / Decision 3 / sign-off rows / row 10 / row 11 (HOME-02 interactions) | SHL-11 inline · CLI-07 · SHL-12 over TXP-01 · SHL-12 final approval · SIG-01 "To send" | through HOME-02; tax hosts fixture-only until T-04/T-05 |
 | Segmented "Deadlines" / "Calendar →" | HOME-03 | planned → T-08; hidden in production |
 | Segmented "Capacity" | HOME-04 | planned → I-04; hidden in production |
 | Segmented "Insights" | INS-01 | planned → I-03, behind the `insights` entitlement; hidden in production |
 | "Open Today →" | HOME-05 | planned → I-02, behind `today_brief.enabled` |
-| Tax tiles (Issues filters to Action required) | TAX-01 filtered by status | planned (tile exists once T-02 registers) |
+| Tax tiles (Issues filters to Action required) | TAX-01 filtered by status | wired (DEC-1273): `?tile=<status>`; a tile with an office breakdown opens it from its popover's All offices line |
 | Audits columns | AUD-01 filtered by phase | per manifest (A-01) |
 | Closes tile / Notices tile | CLS-01 / NOT-01 | planned (C-01 S51 / N-04 S29) |
 | "3 running" | WB-01 filtered to running | planned → W-02 (S42) |

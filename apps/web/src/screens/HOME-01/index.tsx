@@ -21,9 +21,12 @@ import { type JSX, type ReactNode, useState } from "react";
 import { useNow, useToday } from "../../app-core/clock";
 import { useFlag } from "../../app-core/flags";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
+import { useOpenHref } from "../../app-core/open";
 import { useSession } from "../../app-core/session";
+import { hrefOf as linkOf, to } from "../../routes/to";
 import { hostHref } from "./hosts";
 import {
+  HOME_SEGMENTS,
   HomeSegmented,
   WaitingOnYou,
   useGateCounts,
@@ -79,14 +82,32 @@ function ByOffice({
   tile,
   name,
   label,
+  href,
+  n,
   children,
 }: {
   tile: HomeTileOut;
   name: OfficeName;
   label: string;
+  /** Where the tile opens (HOME-01 R3: a tax tile opens TAX-01 filtered by its status). */
+  href?: string | undefined;
+  /** The tile's own number, for the popover's All offices line. */
+  n?: number;
   children: ReactNode;
 }): JSX.Element {
-  if (tile.by_office.length === 0) return <>{children}</>;
+  if (tile.by_office.length === 0) {
+    return href === undefined ? (
+      <>{children}</>
+    ) : (
+      <a
+        href={href}
+        data-home="tile-link"
+        className="block rounded-dialog focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+      >
+        {children}
+      </a>
+    );
+  }
   return (
     <Popover
       width={266}
@@ -110,6 +131,15 @@ function ByOffice({
           </li>
         ))}
       </ul>
+      {href !== undefined && n !== undefined && (
+        <a
+          href={href}
+          data-home="tile-link"
+          className="mt-[8px] block text-body font-medium tabular-nums hover:underline"
+        >
+          {COPY.byOffice.row(COPY.office.all, n)}
+        </a>
+      )}
     </Popover>
   );
 }
@@ -121,7 +151,14 @@ function Tiles({ home, name }: { home: HomeOut; name: OfficeName }): JSX.Element
       {home.tiles.flatMap((tile) => {
         if (tile.key === "returns") {
           return TAX_TILES.map((code) => (
-            <ByOffice key={`returns:${code}`} tile={tile} name={name} label={COPY.tiles.tax[code]}>
+            <ByOffice
+              key={`returns:${code}`}
+              tile={tile}
+              name={name}
+              label={COPY.tiles.tax[code]}
+              href={linkOf(to.TAX01(), { tile: code })}
+              n={statusN(tile, code)}
+            >
               <DashTile
                 kind="single"
                 value={String(statusN(tile, code))}
@@ -398,6 +435,7 @@ export function HOME01({
   const now = useNow();
   const briefOn = useFlag("today_brief.enabled") === true;
   const tz = session.tz ?? "America/Chicago";
+  const open = useOpenHref();
   const loading = home.isPending || counts.isPending;
   const view = home.data;
   const greetingName = view?.greeting.first_name ?? "";
@@ -425,7 +463,13 @@ export function HOME01({
         </span>
       )}
       <span className="ml-[12px]">
-        <HomeSegmented total={total} segments={view?.segments} />
+        <HomeSegmented
+          total={total}
+          segments={view?.segments}
+          onChange={(label) => {
+            if (label === HOME_SEGMENTS.approvals) open(linkOf(to.HOME02()));
+          }}
+        />
       </span>
     </>
   );

@@ -93,7 +93,8 @@ export const STATUS_REGISTRY = {
       "terminal": false,
       "derived": false,
       "contextLabels": {
-        "subbar_rail_rows": "In review · {level}"
+        "subbar_rail_rows": "In review · {level}",
+        "tax_board_rows": "In review · {level}"
       }
     },
     "action_required": {
@@ -109,7 +110,11 @@ export const STATUS_REGISTRY = {
       "label": "Approved",
       "variant": "green-tint",
       "terminal": false,
-      "derived": false
+      "derived": false,
+      "contextLabels": {
+        "home_and_tax_tiles": "Ready",
+        "tax_board_rows": "Ready"
+      }
     },
     "awaiting_signature": {
       "label": "Awaiting signature",
@@ -225,6 +230,78 @@ export const STATUS_REGISTRY = {
       "disc": "x_brick"
     }
   },
+  "engine_import": {
+    "scanning": {
+      "label": "Scanning",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "pending_approval": {
+      "label": "Import pending approval",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "rejected": {
+      "label": "Rejected",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "routed": {
+      "label": "Sent to the inbox",
+      "variant": "neutral",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "k3": {
+    "included": {
+      "label": "K-3 included",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "not_required": {
+      "label": "Not required",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "not_included": {
+      "label": "No K-3",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "transcript_parse": {
+    "queued": {
+      "label": "Queued",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "parsed": {
+      "label": "Read",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "failed": {
+      "label": "Couldn't read",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
+    }
+  },
   "k1_package": {
     "not_prepared": {
       "label": "Not prepared",
@@ -267,6 +344,60 @@ export const STATUS_REGISTRY = {
     "superseded": {
       "label": "Superseded (amended K-1)",
       "variant": "soon",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "questionnaire": {
+    "open": {
+      "label": "Open",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "complete": {
+      "label": "Complete",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "submitted": {
+      "label": "Submitted",
+      "variant": "green",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "recipient_details_change": {
+    "pending": {
+      "label": "Pending review",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "accepted": {
+      "label": "Accepted",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "rejected": {
+      "label": "Rejected",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "k1_handoff": {
+    "awaiting": {
+      "label": "Awaiting K-1",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "received": {
+      "label": "Received",
+      "variant": "green-tint",
       "terminal": true,
       "derived": false
     }
@@ -1705,6 +1836,104 @@ export const STATUS_REGISTRY = {
       "derived": false
     }
   },
+  "tax_authorization": {
+    "not_on_file": {
+      "label": "Not on file",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": true
+    },
+    "requested": {
+      "label": "Requested",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "on_file": {
+      "label": "On file",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "expired": {
+      "label": "Expired",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "revoked": {
+      "label": "Revoked",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "efile_ack": {
+    "accepted": {
+      "label": "Accepted",
+      "variant": "green",
+      "terminal": true,
+      "derived": false
+    },
+    "rejected": {
+      "label": "Rejected",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "firm_standard_version": {
+    "draft": {
+      "label": "Draft",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "published": {
+      "label": "Published",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "soon",
+      "terminal": true,
+      "derived": true
+    },
+    "discarded": {
+      "label": "Discarded",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "reference_set_version": {
+    "draft": {
+      "label": "Draft",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "published": {
+      "label": "Published",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "soon",
+      "terminal": true,
+      "derived": true
+    },
+    "withdrawn": {
+      "label": "Withdrawn",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
   "parse_flag": {
     "low_confidence": {
       "label": "Low confidence",
@@ -2012,6 +2241,18 @@ export const STATUS_REGISTRY = {
       "variant": "soon",
       "terminal": true,
       "derived": false
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    },
+    "not_requested": {
+      "label": "Not requested",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": true
     }
   },
   "consent_purpose": {

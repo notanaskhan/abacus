@@ -564,6 +564,7 @@ async def read_binder(
         mark_done=mark_done,
         other_parties=other_parties,
         allowed_actions=allowed,
+        engagement_id=ref.engagement_id,
     )
 
 
