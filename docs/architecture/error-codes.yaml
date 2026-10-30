@@ -545,6 +545,19 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.engagements.setup.EngagementNotOpen
+  engine_file_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.engine_import.EngineFileRefused
+    summary: '422: the file is not the engine''s file of that kind (`facts.reason`, never its content).'
+  engine_return_mismatch:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.engine_import.EngineReturnMismatch
+  engine_version_behind:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.engine_import.EngineVersionBehind
   entity_exists:
     status: 409
     raised_by:
@@ -817,6 +830,10 @@ codes:
     raised_by:
     - abacus.modules.engagements.client_import.ImportAlreadyRun
     summary: 'The import ran: its rows are final.'
+  import_decided:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.engine_import.ImportDecided
   import_file_invalid:
     status: 422
     raised_by:
@@ -832,6 +849,15 @@ codes:
     raised_by:
     - abacus.modules.methodology.standards_import.ImportInvalid
     summary: The workbook has problems; nothing was drafted.
+  import_kind_unavailable:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.engine_import.KindNotBuilt
+    summary: '422: PDFs and acknowledgements arrive with the delivery and e-file tasks.'
+  import_pending:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.engine_import.ImportPending
   import_row_invalid:
     status: 422
     raised_by:
@@ -1254,6 +1280,10 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.notes.NotesOpen
     summary: 'AC-4, AC-5: clear the review notes before signing as reviewer.'
+  nothing_accepted:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.engine_import.NothingAccepted
   nothing_to_approve:
     status: 409
     raised_by:
@@ -1837,6 +1867,7 @@ codes:
     - abacus.modules.portal.settings.SettingsStale
     - abacus.modules.review.gate_actions.GateStaleVersion
     - abacus.modules.signatures.builder.StaleEnvelope
+    - abacus.modules.tax.engine_import.ImportStale
     - abacus.modules.tax.status.StaleReturn
     - abacus.modules.tax.tax_profile.TaxProfileStale
     summary: 'The record changed since it was read: read it again (409).'

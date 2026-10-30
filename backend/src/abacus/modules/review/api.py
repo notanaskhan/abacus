@@ -16,7 +16,9 @@ from abacus.modules.review.checkpoints import (
     ProposedChange,
     approved_values,
     checkpoint_deltas,
+    decide_import,
     follow_proposal_decision,
+    record_import_proposal,
 )
 from abacus.modules.review.checkpoints import propose as propose_checkpoint
 from abacus.modules.review.contract import (
@@ -38,6 +40,8 @@ from abacus.modules.review.engagement_gates import register_engagement_gates
 from abacus.modules.review.field_values import (
     FieldValueInvalid,
     PreviousValue,
+    changed_since,
+    current_values,
     previous_value,
     record_value,
     typed_value,
@@ -225,9 +229,12 @@ __all__ = [
     "blocking_issues",
     "approved_values",
     "canonical_json",
+    "changed_since",
     "checkpoint_deltas",
     "content_hash",
     "current_checkpoint",
+    "current_values",
+    "decide_import",
     "decision_kind",
     "detect_stale",
     "field_owner",
@@ -242,6 +249,7 @@ __all__ = [
     "propose_checkpoint",
     "raise_decision_card",
     "rebuild_human_gates",
+    "record_import_proposal",
     "record_sign_off",
     "record_text_reads",
     "record_value",

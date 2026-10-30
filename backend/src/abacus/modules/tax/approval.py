@@ -58,6 +58,7 @@ from abacus.modules.methodology.api import (
 from abacus.modules.review.api import (
     ReviewableFacts,
     blocking_issues,
+    content_hash,
     current_checkpoint,
     pending_imports,
     record_sign_off,
@@ -75,6 +76,7 @@ REQUIRED_BEFORE: Final = (1, 2, 3)
 UNDO_WINDOW: Final = timedelta(seconds=10)
 GRANT_LIFETIME: Final = timedelta(days=30)
 GATE_KIND: Final = "tax_final_approval"
+EMPTY_HASH: Final = content_hash({})
 
 
 @dataclass(frozen=True)
@@ -291,14 +293,15 @@ async def approve(
 
 
 async def _reviewable_facts(tenant: TenantContext, return_id: UUID) -> ReviewableFacts:
+    """The return's current checkpoint hash; before its first checkpoint, the hash of nothing
+    (T-01-T19: an engine import can be a return's first checkpoint)."""
+    engagement_id = await _engagement_of(tenant, return_id)
     checkpoint = await current_checkpoint(tenant, TARGET, return_id)
-    if checkpoint is None:
-        raise NotFound(TARGET)
     return ReviewableFacts(
         target_type=TARGET,
         target_id=return_id,
-        engagement_id=await _engagement_of(tenant, return_id),
-        content_hash=checkpoint[1],
+        engagement_id=engagement_id,
+        content_hash=checkpoint[1] if checkpoint else EMPTY_HASH,
         version_no=1,
         preparer_user_ids=frozenset(),
         required_levels=(1, 2, 3, 4),

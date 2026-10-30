@@ -5046,6 +5046,8 @@ export const markExported = <ThrowOnError extends boolean = false>(options: Opti
 
 /**
  * Engine Import Route
+ *
+ * TAX-09 O4: the import's diff rows (T-01-T19).
  */
 export const engineImport = <ThrowOnError extends boolean = false>(options: Options<EngineImportData, ThrowOnError>): RequestResult<EngineImportResponses, EngineImportErrors, ThrowOnError> => (options.client ?? client).get<EngineImportResponses, EngineImportErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5055,6 +5057,9 @@ export const engineImport = <ThrowOnError extends boolean = false>(options: Opti
 
 /**
  * Approve Import Route
+ *
+ * TAX-09 c: approve the accepted rows only (a person). 409 `import_decided`,
+ * `stale_version`; 422 `nothing_accepted`.
  */
 export const approveImport = <ThrowOnError extends boolean = false>(options: Options<ApproveImportData, ThrowOnError>): RequestResult<ApproveImportResponses, ApproveImportErrors, ThrowOnError> => (options.client ?? client).post<ApproveImportResponses, ApproveImportErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5068,6 +5073,9 @@ export const approveImport = <ThrowOnError extends boolean = false>(options: Opt
 
 /**
  * Reject Import Route
+ *
+ * TAX-09 e: reject the import with a reason (a person). 409 `import_decided`,
+ * `stale_version`.
  */
 export const rejectImport = <ThrowOnError extends boolean = false>(options: Options<RejectImportData, ThrowOnError>): RequestResult<RejectImportResponses, RejectImportErrors, ThrowOnError> => (options.client ?? client).post<RejectImportResponses, RejectImportErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -10236,19 +10244,22 @@ export const exportReturn = <ThrowOnError extends boolean = false>(options: Opti
 
 /**
  * Upload Import Route
+ *
+ * An engine file as the raw body (no multipart; DEC-1363): scanned and stored, parsed in the
+ * isolated child; values wait as "Import pending approval" (T-01-T19). 409
+ * `engine_return_mismatch`, `engine_version_behind`, `import_pending`; 422
+ * `engine_file_invalid`, `import_kind_unavailable`.
  */
 export const uploadImport = <ThrowOnError extends boolean = false>(options: Options<UploadImportData, ThrowOnError>): RequestResult<UploadImportResponses, UploadImportErrors, ThrowOnError> => (options.client ?? client).post<UploadImportResponses, UploadImportErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/tax-returns/{return_id}/engine-imports',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
+    ...options
 });
 
 /**
  * Engine Sync Route
+ *
+ * TAX-09's chip, history and diagnostics, derived (T-01-T19).
  */
 export const engineSync = <ThrowOnError extends boolean = false>(options: Options<EngineSyncData, ThrowOnError>): RequestResult<EngineSyncResponses, EngineSyncErrors, ThrowOnError> => (options.client ?? client).get<EngineSyncResponses, EngineSyncErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

@@ -11144,20 +11144,6 @@ export type EngineExportOut = {
 };
 
 /**
- * EngineImportIn
- */
-export type EngineImportIn = {
-    /**
-     * Kind
-     */
-    kind: 'values' | 'diagnostics' | 'pdfs' | 'acks';
-    /**
-     * Upload Id
-     */
-    upload_id: string;
-};
-
-/**
  * EngineImportOut
  */
 export type EngineImportOut = {
@@ -59500,10 +59486,6 @@ export type EngineImportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EngineImportError = EngineImportErrors[keyof EngineImportErrors];
@@ -59560,10 +59542,6 @@ export type ApproveImportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ApproveImportError = ApproveImportErrors[keyof ApproveImportErrors];
@@ -59620,10 +59598,6 @@ export type RejectImportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RejectImportError = RejectImportErrors[keyof RejectImportErrors];
@@ -82330,12 +82304,12 @@ export type ExportReturnResponses = {
 export type ExportReturnResponse = ExportReturnResponses[keyof ExportReturnResponses];
 
 export type UploadImportData = {
-    body: EngineImportIn;
+    body?: never;
     headers: {
         /**
-         * Idempotency-Key
+         * X-File-Name
          */
-        'Idempotency-Key': string;
+        'X-File-Name': string;
         /**
          * Authorization
          */
@@ -82351,7 +82325,12 @@ export type UploadImportData = {
          */
         return_id: string;
     };
-    query?: never;
+    query: {
+        /**
+         * Kind
+         */
+        kind: 'values' | 'diagnostics' | 'pdfs' | 'acks';
+    };
     url: '/v1/tax-returns/{return_id}/engine-imports';
 };
 
@@ -82369,13 +82348,13 @@ export type UploadImportErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UploadImportError = UploadImportErrors[keyof UploadImportErrors];
@@ -82428,10 +82407,6 @@ export type EngineSyncErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EngineSyncError = EngineSyncErrors[keyof EngineSyncErrors];

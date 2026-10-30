@@ -21,7 +21,7 @@ CCH Axcess Tax is the engine of record; the link is a **file bridge** (W2 `cch_a
 | Sync chip, history, diagnostics | `GET /v1/tax-returns/{id}/engine-sync` | `tax_return.read` |
 | Export (consumes the write grant) | `POST /v1/tax-returns/{id}/engine-exports` | `tax_return.export` |
 | Audited download · a person marks it exported | `GET /v1/engine-exports/{id}/file` · `POST …/mark-exported` | `tax_return.export` |
-| Upload an engine file (`values`, `diagnostics`, `pdfs`, `acks`) | `POST /v1/tax-returns/{id}/engine-imports` | `engine_import.create` |
+| Upload an engine file (`values`, `diagnostics`, `pdfs`, `acks`): the file is the raw body, `?kind=`, `X-File-Name` (no multipart; T-01-T19, DEC-1363) | `POST /v1/tax-returns/{id}/engine-imports` | `engine_import.create` |
 | Diff · approve · reject | `GET /v1/engine-imports/{id}` · `POST …/approve` · `POST …/reject` | `tax_return.read` · `engine_import.approve` |
 | Settings (locked cells), mappings (409 `mapping_conflict`), format check | `GET`/`PUT /v1/firm/integrations/{key}/settings`, `PUT …/user-mapping`, `…/office-mapping`, `…/status-mirror`, `POST …/test` | `integration.read`, `integration.configure` (fresh MFA), `integration.test` |
 
@@ -44,3 +44,6 @@ What staff carry between Accrued and CCH Axcess. `abacus_tools/fakes/cch_axcess.
 | Diagnostics (`diagnostics`) | CSV | `return_id, version, severity, code, form, field_key, message`; severity `error`, `warning` or `informational` |
 | PDFs (`pdfs`) | PDF | One file per kind: client copy, Form 8879, NY TR-579-IT, next year's 1040-ES and IT-2105 vouchers, K-1; named `<engine id with _>_<kind>.pdf` |
 | E-file status report (`acks`) | CSV | `return_id, jurisdiction, submission_last4, status, status_at, reject_code, reject_text`; status `accepted` or `rejected`, a rejection carries its code; the submission id is never stored beyond its last four |
+
+## 7. Live since T-01-T19
+The engine-sync read, the values and diagnostics imports, the import read and its approve and reject are live behind `tax.engine_bridge`. 409 `engine_return_mismatch`, `engine_version_behind`, `import_pending`, `import_decided`, `stale_version`; 422 `engine_file_invalid` (`facts.reason`, never the file's content), `import_kind_unavailable` (PDFs and acks land with T-01-T26 and T-01-T27), `nothing_accepted`; 413 past 10 MB.
