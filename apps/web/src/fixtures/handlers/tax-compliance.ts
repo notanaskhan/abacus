@@ -5,6 +5,12 @@ import type { ConsentOut } from "@abacus/api-client";
 import { type FixtureHandler, json } from "../../app-core/fixture-mode";
 import { REGISTRY_CONSENTS, REGISTRY_TOTAL } from "../seed/consents";
 import { ENGINE_SYNC, FELD_IMPORT, FELD_IMPORT_ID } from "../seed/engine-sync";
+import {
+  FELD_ENVELOPE_ID,
+  feldDelivery,
+  feldEnvelope,
+  feldFinalApproval,
+} from "../seed/tax/feld-delivery";
 import { CONSENT_SUMMARY, FELD_PAYMENTS, FELD_RETURN_ID } from "../seed/tax-compliance";
 import { SYNTHETIC_TINS, TAX_PROFILES, WHITLEY_ENTITY } from "../seed/tax-profile";
 import { WHITLEY_COMPARISON_2024, WHITLEY_TRANSCRIPTS } from "../seed/transcripts";
@@ -97,21 +103,15 @@ export function taxComplianceHandlers(state = "a"): Record<string, FixtureHandle
       }
       return json({ entity_id: entityId, kind: "ssn", value, remask_after_seconds: 10 });
     },
+    // T-01-T24: TAX-12's delivery, final approval and the 8879 envelope (C7's view), by artboard.
     "GET /v1/tax-returns/{return_id}/delivery": ({ params }) =>
-      params.return_id === FELD_RETURN_ID
-        ? json({
-            return_id: FELD_RETURN_ID,
-            packet_id: null,
-            packet_status: null,
-            items: [],
-            payments: FELD_PAYMENTS,
-            envelope_id: null,
-            binding_id: null,
-            binding_superseded: false,
-            transmitted_on: null,
-            acks: [],
-            allowed_actions: [],
-          })
-        : json(NOT_FOUND, 404),
+      params.return_id === FELD_RETURN_ID ? json(feldDelivery(state)) : json(NOT_FOUND, 404),
+    "GET /v1/tax-returns/{return_id}/final-approval": ({ params }) =>
+      params.return_id === FELD_RETURN_ID ? json(feldFinalApproval(state)) : json(NOT_FOUND, 404),
+    "GET /v1/envelopes/{envelope_id}": ({ params }) =>
+      params.envelope_id === FELD_ENVELOPE_ID ? json(feldEnvelope()) : json(NOT_FOUND, 404),
+    // a2: Grace sends the pre-approved reminder (a person's click, INV-1).
+    "POST /v1/envelopes/remind/send": ({ body }) =>
+      json({ count: (body as { envelope_ids: string[] }).envelope_ids.length, skipped: [] }),
   };
 }
