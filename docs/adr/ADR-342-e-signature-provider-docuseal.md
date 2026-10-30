@@ -1,7 +1,7 @@
 ---
 id: ADR-342
 title: E-signature provider - DocuSeal (cloud) replaces DocuSign behind the EsignProvider port
-status: proposed
+status: accepted
 date: 2026-10-30
 deciders: ayushkbhatia
 risk_zone: red
@@ -116,7 +116,7 @@ The `signatures` module already speaks to providers only through `EsignProvider`
 
 ## Guidance for agents
 
-Until accepted, keep building record mode and the provider-neutral parts. Do not extend `docusign.py`.
+Accepted on 2026-10-30 by ayushkbhatia. The N-02-T18 rework replaces `docusign.py` with the DocuSeal adapter; do not extend `docusign.py`. Until that rework lands, keep building record mode and the provider-neutral parts.
 
 **Do**
 

@@ -36,7 +36,7 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 | P-23 | Workbench sessions | red | P-10 | next free | Fri 13 Nov; re-dated 2026-10-22: drafted with P-10's first task, owner ayushkbhatia | DEC-40 | to draft (re-dated) |
 | P-24 | Structured agent output | red | F-06 | ADR-230 | drafted and accepted 2026-10-28 with F-06-T24 (TASK-1704), before F-06-T15 | DEC-41 | accepted |
 | P-25 | Model-drafted text to clients | red | Q-03 | next free | Fri 11 Dec | DEC-79 | to draft |
-| P-26 | E-signature | red | F-02 | ADR-149, then ADR-342 | ADR-149 drafted 2026-10-20 and accepted 2026-10-27 (DEC-706); ADR-342 (DocuSeal replaces DocuSign, DEC-1275) drafted 2026-10-30 with TASK-2148, supersedes ADR-149 on acceptance | DEC-25, DEC-1275 | ADR-342 proposed (acceptance: ayushkbhatia) |
+| P-26 | E-signature | red | F-02 | ADR-149, then ADR-342 | ADR-149 drafted 2026-10-20 and accepted 2026-10-27 (DEC-706); ADR-342 (DocuSeal replaces DocuSign, DEC-1275) drafted with TASK-2148 and accepted 2026-10-30; ADR-149 superseded | DEC-25, DEC-1275 | ADR-342 accepted |
 | P-27 | Payments and billing boundary | amber | F-09 | next free | Fri 11 Dec | DEC-89 | to draft |
 | P-28 | Entitlements, agent-minutes, two-layer budgets | amber | F-03 | ADR-148 | Fri 13 Nov | DEC-51, DEC-55 | accepted |
 | P-29 | Busy-season change policy | amber | F-02 | ADR-151 | drafted 2026-10-20 (M1 draft by Fri 30 Oct); accept in the Dec 14-18 bundle | DEC-68 | proposed (acceptance: ayushkbhatia) |

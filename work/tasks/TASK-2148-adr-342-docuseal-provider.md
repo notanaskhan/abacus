@@ -4,7 +4,7 @@ title: ADR-342 DocuSeal replaces DocuSign as the e-signature provider; N-02 and 
 spec: SPEC-381
 acceptance_criteria: [AC-1]
 risk_zone: red
-status: in-review
+status: done
 epic: N-02
 plan_key: P-26
 branch: adr-docuseal
@@ -15,14 +15,14 @@ updated: 2026-10-30
 ## Objective
 
 The builder decided on 2026-10-30 that DocuSign is too expensive and that a self-built ceremony is
-too slow; DocuSeal's hosted API is the replacement. AC-1: ADR-342 is drafted (proposed, superseding
+too slow; DocuSeal's hosted API is the replacement. AC-1: ADR-342 is drafted and accepted (superseding
 ADR-149), DEC-1275 records the decision, and every N-02 and F-09 row that names DocuSign is
 re-scoped to DocuSeal in `backlog.csv` and the epic task files, with an amendment note on both epic
 specs and the M8 gate's c2 and c3 rows.
 
 ## Plan
 
-- `docs/adr/ADR-342-e-signature-provider-docuseal.md` (proposed); `docs/adr/README.md` and
+- `docs/adr/ADR-342-e-signature-provider-docuseal.md` (accepted 2026-10-30); `docs/adr/README.md` and
   `docs/adr/backlog.md` index rows.
 - `docs/product/decision-log.md`: DEC-1275.
 - `docs/plan/backlog.csv`, `docs/plan/epics/N-02.tasks.csv`, `docs/plan/epics/F-09.tasks.csv`: the
@@ -36,7 +36,6 @@ specs and the M8 gate's c2 and c3 rows.
 
 ## Human to-dos
 
-- Accept ADR-342 (then ADR-149 becomes `superseded by ADR-342` and DEC-25's artefact moves).
 - Open a DocuSeal account (sandbox now; Pro when the adapter is ready) and store the API key in the
   vault, never in git.
 - Ask DocuSeal support in writing for the KBA method: question source, pass threshold, attempts and
@@ -49,3 +48,5 @@ specs and the M8 gate's c2 and c3 rows.
 - 2026-10-30: drafted from DocuSeal's public docs (API, signing API, embedded form, form webhook,
   pricing, KBA pages). Rows re-scoped by `tools` script in the session scratchpad; CSV bytes
   otherwise unchanged (CRLF round-trip checked).
+- 2026-10-30: ayushkbhatia accepted ADR-342; ADR-149 marked `superseded by ADR-342`; DEC-25 and DEC-1275
+  rows, the ADR index and backlog, and both epic amendment notes updated.
