@@ -148,6 +148,13 @@ _FORM_OF_KIND: Final[dict[ClientKind, str]] = {
     "business": "1120-S",
     "partnership": "1065",
 }
+# T-02-T11: three named returns sit on another office's board than their client's (TPL-01 and
+# §9.7 place them there; the fixture seed's NAMED rows), and the office quota counts them there.
+_BOARD_OFFICE: Final[dict[str, OfficeName]] = {
+    "Corinne Abbott": "Denver",
+    "Dev & Mira Kapoor": "New York",
+    "Hugo Brandvold": "Denver",
+}
 RETURNS_TOTAL: Final = 224
 ENGAGEMENTS_TOTAL: Final = 214
 OPEN_RETURNS: Final = 79  # §9.5: open 79 · done 145
@@ -222,7 +229,8 @@ def build_returns() -> tuple[tuple[Return, ...], tuple[TaxEngagement, ...]]:
         form, done = _KNOWN[c.name] if known else (_FORM_OF_KIND[c.kind], False)
         slug = slug_of_client(c.name)
         # Unknown states are settled below; mark them open for now.
-        first.append(Return(slug, c.name, c.entities[0], form, c.office, slug, done and known))
+        office = _BOARD_OFFICE.get(c.name, c.office)
+        first.append(Return(slug, c.name, c.entities[0], form, office, slug, done and known))
     unknown = {r.label for r in first if r.client not in _KNOWN}
     # The second returns: filler clients by office, in roster order, until each office foots.
     need = Counter[str](dict(RETURNS_BY_OFFICE)) - Counter[str](r.office for r in first)

@@ -299,6 +299,11 @@ SECURITY_CENTER_V1 = Flag(
     kind="boolean",
     default="false",
 )
+SIGNATURES_DOCUSIGN = Flag(
+    name="signatures.docusign",
+    kind="boolean",
+    default="false",
+)
 SIGNATURES_ENVELOPES = Flag(
     name="signatures.envelopes",
     kind="boolean",
@@ -394,6 +399,7 @@ FLAGS: dict[str, Flag] = {
     "rules.reference_sets": RULES_REFERENCE_SETS,
     "screening.card": SCREENING_CARD,
     "security_center.v1": SECURITY_CENTER_V1,
+    "signatures.docusign": SIGNATURES_DOCUSIGN,
     "signatures.envelopes": SIGNATURES_ENVELOPES,
     "tax.delivery_efile": TAX_DELIVERY_EFILE,
     "tax.engine_bridge": TAX_ENGINE_BRIDGE,

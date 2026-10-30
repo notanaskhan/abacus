@@ -1,5 +1,6 @@
 import { createRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import type { JSX } from "react";
+import { FeatureGate } from "../../app-core/flags";
 import { useParam } from "../params";
 import { appRoute, lazyScreen } from "../root";
 
@@ -165,7 +166,45 @@ const clientIndependenceRoute = createRoute({
   },
 });
 
+// CLI-05 (T-01-T14): the client's Tax profile behind `clients.tax_profile` (the consents section
+// reads `consents.registry`). `?entity=` names the taxpayer entity whose profile opens; the record
+// resolves its first entity otherwise.
+const TaxProfile = lazyScreen(async () => (await import("../../screens/CLI-05")).TaxProfilePage);
+const clientTaxProfileRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/clients/$clientId/tax-profile/$sub",
+  component: function ClientTaxProfilePage(): JSX.Element {
+    const clientId = useParam("clientId");
+    const sub = useParam("sub");
+    const navigate = useNavigate();
+    const search: Record<string, unknown> = useSearch({ strict: false });
+    const entity = typeof search.entity === "string" ? search.entity : undefined;
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <FeatureGate flag="clients.tax_profile" fallback={null}>
+          <TaxProfile
+            clientId={clientId}
+            {...(entity === undefined ? {} : { clientEntityId: entity })}
+            section={sub}
+            onSection={(next) => {
+              void navigate({
+                to: "/clients/$clientId/tax-profile/$sub",
+                params: { clientId, sub: next },
+                search: { ...search },
+              });
+            }}
+            onBack={() => {
+              void navigate({ to: "/clients" });
+            }}
+          />
+        </FeatureGate>
+      </div>
+    );
+  },
+});
+
 export const clientRoutes = [
+  clientTaxProfileRoute,
   clientsRoute,
   clientRoute,
   clientContactsRoute,

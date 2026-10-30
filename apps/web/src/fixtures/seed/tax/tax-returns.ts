@@ -599,9 +599,19 @@ function build(): SeedTaxReturn[] {
 
 export const TAX_RETURNS: readonly SeedTaxReturn[] = build();
 
-/** The open returns in board order: extended due date, then client (TPL-01a). */
+/** The named returns in the order TPL-01 draws them (rows a 1 to 15, then b's others). */
+const NAMED_ORDER: readonly string[] = Object.keys(NAMED);
+
+/** The open returns in board order (TPL-01a): the named returns as the handoff lists them, then
+ * the rest by extended due date, then client. */
 export function boardOrder(rows: readonly SeedTaxReturn[]): SeedTaxReturn[] {
-  return [...rows].sort((a, b) =>
-    a.due === b.due ? a.client.localeCompare(b.client) : a.due < b.due ? -1 : 1,
-  );
+  const rank = (r: SeedTaxReturn): number => {
+    const i = NAMED_ORDER.indexOf(r.client);
+    return i === -1 ? NAMED_ORDER.length : i;
+  };
+  return [...rows].sort((a, b) => {
+    const named = rank(a) - rank(b);
+    if (named !== 0) return named;
+    return a.due === b.due ? a.client.localeCompare(b.client) : a.due < b.due ? -1 : 1;
+  });
 }

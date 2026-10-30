@@ -90,6 +90,12 @@ ALLOW: tuple[tuple[str, str, str], ...] = (
         "SECRET-003",
         "CLI-02 overview items carry a `key` row code (form_7004.filed), never a credential",
     ),
+    (
+        "apps/web/src/fixtures/seed/engine-sync.ts",
+        "SECRET-003",
+        "T-01-T15: TAX-09 diagnostics carry a `field_key` tax-form line code (f8995a.ubia),"
+        " not credentials",
+    ),
 )
 DATA_SUFFIXES = frozenset({".csv", ".json", ".yaml", ".yml", ".txt", ".tsv"})
 CONFIG_SUFFIXES = frozenset(

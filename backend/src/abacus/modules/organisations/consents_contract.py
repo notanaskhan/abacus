@@ -33,7 +33,6 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import CLIENTS_TAX_PROFILE, CONSENTS_REGISTRY
 from abacus.kernel.classification import classified
-from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.kernel.listing import ListPage
@@ -98,6 +97,8 @@ class ConsentSignerOut(BaseModel):
     required: Annotated[bool, classified("internal")]
     signed_at: Annotated[datetime | None, classified("confidential")]
     method: Annotated[Literal["email_code", "kba", "wet", "record"] | None, classified("internal")]
+    # T-01-T13 (additive): the line under the name ("trustee", "CEO", "for Ridgeline GP LLC").
+    title: Annotated[str | None, classified("confidential")] = None
 
 
 class ConsentOut(BaseModel):
@@ -127,6 +128,16 @@ class ConsentOut(BaseModel):
     renewal_of_id: Annotated[UUID | None, classified("internal")]
     offshore: Annotated[bool, classified("internal")]
     allowed_actions: Annotated[list[str], classified("internal")]
+    # T-01-T13 (additive): ADM-05's rows: when a decline or revocation was recorded, and who
+    # signs ("Morgan ✓ Sep 9 · Kai ○"; the signer line under the client's name).
+    declined_at: Annotated[datetime | None, classified("confidential")] = None
+    revoked_at: Annotated[datetime | None, classified("confidential")] = None
+    signers: Annotated[list[ConsentSignerOut], classified("confidential")] = Field(
+        default_factory=list[ConsentSignerOut]
+    )
+    # T-01-T14 (additive): the counsel-approved template's name ("BH §7216 Consent to Use v2"),
+    # database content, for CLI-05's per-document sub-rows.
+    template_name: Annotated[str | None, classified("internal")] = None
 
 
 class ConsentDocumentOut(BaseModel):
@@ -287,6 +298,18 @@ class TaxElectionOut(BaseModel):
     status_code: Annotated[str, classified("internal")]
 
 
+class TaxProfileIdentityOut(BaseModel):
+    """CLI-05's Identity band: who the profile is for, by masked TIN (last four; DEC-52)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    role: Annotated[Literal["taxpayer", "spouse"], classified("internal")]
+    client_entity_id: Annotated[UUID, classified("internal")]
+    name: Annotated[str, classified("confidential")]
+    # Named for what it holds: C19 keeps a field called `tin` (or ssn, ein, itin) for plaintext.
+    masked_tin: Annotated[MaskedTinOut | None, classified("restricted")] = None
+
+
 class TaxProfileOut(BaseModel):
     """CLI-05's rail: consents in force, authorizations on file, elections, a masked identity band
     (last four only; DEC-52) and open notices (planned)."""
@@ -300,6 +323,16 @@ class TaxProfileOut(BaseModel):
     elections: Annotated[list[TaxElectionOut], classified("restricted", tri=True)]
     open_notices: Annotated[int | None, classified("internal")]
     allowed_actions: Annotated[list[str], classified("internal")]
+    # T-01-T14 (additive): the subbar and the Identity band.
+    client_name: Annotated[str, classified("confidential")] = ""
+    client_kind: Annotated[str | None, classified("internal")] = None  # "Household"
+    partner_name: Annotated[str | None, classified("confidential")] = None
+    office_name: Annotated[str | None, classified("internal")] = None
+    identity: Annotated[list[TaxProfileIdentityOut], classified("restricted")] = Field(
+        default_factory=list[TaxProfileIdentityOut]
+    )
+    portal_user_name: Annotated[str | None, classified("confidential")] = None
+    resident_state: Annotated[str | None, classified("internal")] = None
 
 
 class TaxElectionIn(BaseModel):
@@ -648,7 +681,7 @@ async def compare_transcript_route(
     await _stub(ctx, "transcript.compare", CLIENTS_TAX_PROFILE)
 
 
-# --- C19 module API (frozen with v1; T-01-T10 and T-01-T12 implement) ---------------------------
+# --- C19 module API (frozen with v1; `consent_gate.py` reads, T-01-T11; T-01-T10 captures) -----
 
 
 @dataclass(frozen=True)
@@ -670,20 +703,3 @@ class TriVerdict:
 
     valid: bool
     missing: tuple[tuple[UUID, str], ...]
-
-
-def _unbuilt() -> NoReturn:
-    raise NotImplementedError("C19: T-01-T10 builds the consent registry and the gate")
-
-
-async def consent_state(
-    tenant: TenantContext, entity_ids: list[UUID], purpose: str, tax_year: int
-) -> list[ConsentState]:
-    _unbuilt()
-
-
-async def tri_consent_verdict(
-    tenant: TenantContext, subjects: list[UUID], at: datetime
-) -> TriVerdict:
-    """Fail closed: an unknown subject is missing both purposes."""
-    _unbuilt()

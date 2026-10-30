@@ -394,6 +394,7 @@ async def test_ac6_a_run_with_free_slots_asks_once_and_never_sleeps(
         "retrieval.normalise_raw",
         "retrieval.validate_run",
         "retrieval.snapshot",
+        "retrieval.finish_at_snapshot",  # A-02-T30: false here, so the run goes on to render
         "retrieval.render",
         "retrieval.release_slot",
     ]

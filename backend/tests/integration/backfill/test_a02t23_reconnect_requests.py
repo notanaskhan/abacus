@@ -48,6 +48,17 @@ class Recorder:
         self.sent.append(kwargs)
 
 
+@pytest.fixture(autouse=True)
+async def client_mail_open(world: World) -> None:
+    """R-01-T27 (DEC-953): a real firm's client mail opens only at its M10 flip, two operators
+    named; this firm has flipped, so a reconnect email is held back only by its template."""
+    await world.net.seed.run(
+        "INSERT INTO firm_mail_policies (tenant_id, client_mail_enabled, enabled_by, second_by) "
+        "VALUES ($1, true, 'probe-one', 'probe-two')",
+        world.tenant,
+    )
+
+
 @pytest.fixture
 def recorder() -> Iterator[Recorder]:
     found = Recorder()
