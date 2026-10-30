@@ -447,8 +447,9 @@ codes:
   draft_exists:
     status: 409
     raised_by:
+    - abacus.modules.methodology.drafts.DraftExists
     - abacus.modules.methodology.standards.DraftExists
-    summary: 'The standard already has a draft: edit it, publish it or discard it first.'
+    summary: The template already has a draft or a version in review.
   draft_incomplete:
     status: 422
     raised_by:
@@ -1017,6 +1018,11 @@ codes:
     raised_by:
     - abacus.modules.communications.intake_contract.LowConfidence
     summary: 'The top destination is below the bulk threshold or ambiguous: choose it in File….'
+  mandatory_locked:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.drafts.MandatoryLocked
+    summary: Only the QM owner can remove or unlock mandatory steps.
   mapping_invalid:
     status: 422
     raised_by:
@@ -1807,6 +1813,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.evidence.statement_review.ReviewInvalid
+  step_has_requests:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.drafts.StepHasRequests
+    summary: A step a PBC request links to stays in the program.
   suggestion_changed:
     status: 409
     raised_by:
@@ -2061,6 +2072,11 @@ codes:
     raised_by:
     - abacus.modules.methodology.service.VersionNotLatest
     summary: Drafted guidance is published onto the template's latest version only (TASK-074 D2).
+  version_not_published:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.drafts.NotPublished
+    summary: A draft starts from a published version.
   wall_exists:
     status: 409
     raised_by:

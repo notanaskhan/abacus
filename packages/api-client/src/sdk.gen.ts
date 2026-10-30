@@ -8220,7 +8220,8 @@ export const approveVersion = <ThrowOnError extends boolean = false>(options: Op
 /**
  * Discard Draft Route
  *
- * KNW-03: discard a draft (published versions are never discarded).
+ * KNW-03: discard a draft or a version in review (published versions are never discarded;
+ * the number stays consumed). 409 `stale_version`, `version_frozen`.
  */
 export const discardDraft = <ThrowOnError extends boolean = false>(options: Options<DiscardDraftData, ThrowOnError>): RequestResult<DiscardDraftResponses, DiscardDraftErrors, ThrowOnError> => (options.client ?? client).post<DiscardDraftResponses, DiscardDraftErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -8250,7 +8251,8 @@ export const draftTemplateGuidance = <ThrowOnError extends boolean = false>(opti
 /**
  * Create Draft Route
  *
- * KNW-03 c: a new draft vN+1 from a published version.
+ * KNW-03 c: a new draft vN+1 from a published version (K-01-T14). 409
+ * `version_not_published`, `draft_exists`.
  */
 export const createDraft = <ThrowOnError extends boolean = false>(options: Options<CreateDraftData, ThrowOnError>): RequestResult<CreateDraftResponses, CreateDraftErrors, ThrowOnError> => (options.client ?? client).post<CreateDraftResponses, CreateDraftErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -8324,7 +8326,7 @@ export const versionPrograms = <ThrowOnError extends boolean = false>(options: O
 /**
  * Add Step Route
  *
- * KNW-03 c: + Step in a draft.
+ * KNW-03 c: + Step in a draft (K-01-T14). 409 `version_frozen`.
  */
 export const addStep = <ThrowOnError extends boolean = false>(options: Options<AddStepData, ThrowOnError>): RequestResult<AddStepResponses, AddStepErrors, ThrowOnError> => (options.client ?? client).post<AddStepResponses, AddStepErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -8361,7 +8363,8 @@ export const versionState = <ThrowOnError extends boolean = false>(options: Opti
 /**
  * Remove Step Route
  *
- * KNW-03 c: remove a non-mandatory draft step (409 `mandatory_locked`).
+ * KNW-03 c: remove a non-mandatory draft step (K-01-T14). 409 `mandatory_locked`,
+ * `step_has_requests`, `version_frozen`, `stale_version`.
  */
 export const removeStep = <ThrowOnError extends boolean = false>(options: Options<RemoveStepData, ThrowOnError>): RequestResult<RemoveStepResponses, RemoveStepErrors, ThrowOnError> => (options.client ?? client).delete<RemoveStepResponses, RemoveStepErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -8372,7 +8375,8 @@ export const removeStep = <ThrowOnError extends boolean = false>(options: Option
 /**
  * Edit Step Route
  *
- * KNW-03 c: edit a draft step (409 `version_frozen` on a published version).
+ * KNW-03 c: edit an optional draft step; its key and source stay (K-01-T14). 409
+ * `version_frozen`, `mandatory_locked`, `stale_version`.
  */
 export const editStep = <ThrowOnError extends boolean = false>(options: Options<EditStepData, ThrowOnError>): RequestResult<EditStepResponses, EditStepErrors, ThrowOnError> => (options.client ?? client).patch<EditStepResponses, EditStepErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -8387,7 +8391,8 @@ export const editStep = <ThrowOnError extends boolean = false>(options: Options<
 /**
  * Mandatory Step Route
  *
- * KNW-03 d: a quality partner locks or unlocks a step (human-only, fresh MFA).
+ * KNW-03 d: the QM owner locks or unlocks a draft step (human-only, fresh MFA; K-01-T14).
+ * A refusal is audited before the flag is read. 409 `version_frozen`, `stale_version`.
  */
 export const mandatoryStep = <ThrowOnError extends boolean = false>(options: Options<MandatoryStepData, ThrowOnError>): RequestResult<MandatoryStepResponses, MandatoryStepErrors, ThrowOnError> => (options.client ?? client).post<MandatoryStepResponses, MandatoryStepErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

@@ -156626,7 +156626,7 @@
     },
     "/v1/methodology/versions/{version_id}/discard": {
       "post": {
-        "description": "KNW-03: discard a draft (published versions are never discarded).",
+        "description": "KNW-03: discard a draft or a version in review (published versions are never discarded;\nthe number stays consumed). 409 `stale_version`, `version_frozen`.",
         "operationId": "discard_draft",
         "parameters": [
           {
@@ -156742,16 +156742,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Discard Draft Route",
@@ -156890,7 +156880,7 @@
     },
     "/v1/methodology/versions/{version_id}/drafts": {
       "post": {
-        "description": "KNW-03 c: a new draft vN+1 from a published version.",
+        "description": "KNW-03 c: a new draft vN+1 from a published version (K-01-T14). 409\n`version_not_published`, `draft_exists`.",
         "operationId": "create_draft",
         "parameters": [
           {
@@ -156996,16 +156986,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Create Draft Route",
@@ -157601,7 +157581,7 @@
     },
     "/v1/methodology/versions/{version_id}/programs/{program_id}/steps": {
       "post": {
-        "description": "KNW-03 c: + Step in a draft.",
+        "description": "KNW-03 c: + Step in a draft (K-01-T14). 409 `version_frozen`.",
         "operationId": "add_step",
         "parameters": [
           {
@@ -157727,16 +157707,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Add Step Route",
@@ -157972,7 +157942,7 @@
     },
     "/v1/methodology/versions/{version_id}/steps/{step_id}": {
       "delete": {
-        "description": "KNW-03 c: remove a non-mandatory draft step (409 `mandatory_locked`).",
+        "description": "KNW-03 c: remove a non-mandatory draft step (K-01-T14). 409 `mandatory_locked`,\n`step_has_requests`, `version_frozen`, `stale_version`.",
         "operationId": "remove_step",
         "parameters": [
           {
@@ -158098,16 +158068,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Remove Step Route",
@@ -158117,7 +158077,7 @@
         "x-abacus-action": "methodology.manage"
       },
       "patch": {
-        "description": "KNW-03 c: edit a draft step (409 `version_frozen` on a published version).",
+        "description": "KNW-03 c: edit an optional draft step; its key and source stay (K-01-T14). 409\n`version_frozen`, `mandatory_locked`, `stale_version`.",
         "operationId": "edit_step",
         "parameters": [
           {
@@ -158253,16 +158213,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Edit Step Route",
@@ -158274,7 +158224,7 @@
     },
     "/v1/methodology/versions/{version_id}/steps/{step_id}/mandatory": {
       "post": {
-        "description": "KNW-03 d: a quality partner locks or unlocks a step (human-only, fresh MFA).",
+        "description": "KNW-03 d: the QM owner locks or unlocks a draft step (human-only, fresh MFA; K-01-T14).\nA refusal is audited before the flag is read. 409 `version_frozen`, `stale_version`.",
         "operationId": "mandatory_step",
         "parameters": [
           {
@@ -158410,16 +158360,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Mandatory Step Route",
