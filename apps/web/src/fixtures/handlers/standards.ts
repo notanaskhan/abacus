@@ -39,13 +39,19 @@ type Draft = NonNullable<StandardsOptions["draft"]> & { rowVersion: number; open
 export function standardsHandlers(options: StandardsOptions = {}): Record<string, FixtureHandler> {
   const draft: Draft | null =
     options.draft === undefined ? null : { ...options.draft, rowVersion: 1, open: true };
-  const withDraft = (out: StandardOut, persona: string): StandardOut => {
+  const withDraft = (out: StandardOut): StandardOut => {
     if (draft === null || !draft.open || out.key !== draft.key) return out;
     if (!out.allowed_actions.includes("firm_standard.draft")) return out;
     const def = STANDARDS.find((s) => s.key === draft.key);
     return def === undefined
       ? out
-      : { ...out, draft_version: summary(def, draft.version, "draft", null, false) };
+      : {
+          ...out,
+          draft_version: {
+            ...summary(def, draft.version, "draft", null, false),
+            effective_from: draft.effective ?? null,
+          },
+        };
   };
   const draftOut = (def: (typeof STANDARDS)[number]): StandardVersionOut => ({
     id: versionId(def.key, draft?.version ?? 0),
@@ -91,7 +97,7 @@ export function standardsHandlers(options: StandardsOptions = {}): Record<string
       const def = byId(request.params.standard_id ?? "");
       if (def === undefined || draft === null) return json(NOT_FOUND, 404);
       draft.open = false;
-      return json(summary(def, draft.version, "discarded" as never, null, false));
+      return json(summary(def, draft.version, "discarded", null, false));
     },
     "POST /v1/standards/{standard_id}/versions": (request) => {
       const def = byId(request.params.standard_id ?? "");
@@ -102,7 +108,7 @@ export function standardsHandlers(options: StandardsOptions = {}): Record<string
     "GET /v1/standards": (request) => {
       const kind = request.query.get("kind");
       const items: StandardOut[] = STANDARDS.filter((s) => kind === null || s.kind === kind).map(
-        (s) => withDraft(standardOut(s, personaOf(request)), personaOf(request)),
+        (s) => withDraft(standardOut(s, personaOf(request))),
       );
       return json({
         items,
@@ -120,7 +126,7 @@ export function standardsHandlers(options: StandardsOptions = {}): Record<string
         : json(
             (() => {
               const detail = standardDetail(def, personaOf(request));
-              const standard = withDraft(detail.standard, personaOf(request));
+              const standard = withDraft(detail.standard);
               return standard.draft_version === null || detail.standard.draft_version !== null
                 ? { ...detail, standard }
                 : { ...detail, standard, timeline: [standard.draft_version, ...detail.timeline] };

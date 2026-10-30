@@ -49,7 +49,7 @@ describe("KNW-04 i (Priya Raman, draft v3 of AJE thresholds)", () => {
     expect(
       await screen.findByText("Draft v3 · 2 changes from v2 · visible to partners only"),
     ).toBeTruthy();
-    expect((screen.getByLabelText("Effective") as HTMLInputElement).value).toBe("2026-10-01");
+    expect(screen.getByLabelText<HTMLInputElement>("Effective").value).toBe("2026-10-01");
     expect(screen.getByRole("button", { name: "Discard draft" })).toBeTruthy();
     const publish = screen.getByRole("button", { name: "Publish v3…" });
     expect(publish.hasAttribute("disabled")).toBe(true); // a change summary first
@@ -62,7 +62,7 @@ describe("KNW-04 i (Priya Raman, draft v3 of AJE thresholds)", () => {
     show("i");
     const cell = await screen.findByRole("button", { name: /Prepaid expenses/ });
     fireEvent.click(cell);
-    const input = screen.getByLabelText(/Prepaid expenses/) as HTMLInputElement;
+    const input = screen.getByLabelText<HTMLInputElement>(/Prepaid expenses/);
     fireEvent.change(input, { target: { value: "11000" } });
     act(() => {
       input.blur();
@@ -77,7 +77,7 @@ describe("KNW-04 i (Priya Raman, draft v3 of AJE thresholds)", () => {
     show("i_stale");
     const cell = await screen.findByRole("button", { name: /Depreciation/ });
     fireEvent.click(cell);
-    const input = screen.getByLabelText(/Depreciation/) as HTMLInputElement;
+    const input = screen.getByLabelText<HTMLInputElement>(/Depreciation/);
     fireEvent.change(input, { target: { value: "9000" } });
     act(() => {
       input.blur();
@@ -92,7 +92,7 @@ describe("KNW-04 i (Priya Raman, draft v3 of AJE thresholds)", () => {
 describe("KNW-04 a with no draft (staff never see Publish)", () => {
   it("never shows the draft or Publish to Cole Hart", async () => {
     show("draft_hidden");
-    await screen.findByText("Review checklists");
+    await screen.findAllByText("Review checklists");
     expect(screen.queryByText(/Publish v/)).toBeNull();
     expect(screen.queryByText(/Draft v3/)).toBeNull();
   });

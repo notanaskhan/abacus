@@ -139,7 +139,7 @@ def test_ac48_onboarding_reads_one_sheet_per_standard() -> None:
     ws.append(["incomplete", None, None, None])
     rows = book.create_sheet("bh-variance")
     rows.append(["context", "pct", "amount_usd"])
-    rows.append(["close_flux", "10", "5000"])
+    rows.append(["close_flux", 10, 5000])
     raw = io.BytesIO()
     book.save(raw)
     found, problems = standards_import.read_onboarding(raw.getvalue())

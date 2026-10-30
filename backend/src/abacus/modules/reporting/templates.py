@@ -101,6 +101,8 @@ def content_sha256(body: TemplateImportIn) -> str:
         canonical(
             {k: dumped[k] for k in ("layout_key", "body", "clauses", "variables")}
             | {"sample_data": dumped["sample_data"]}
+            # T-01-T17 (AC-28): a consent template's terms are content; others hash as before.
+            | ({"consent": dumped["consent"]} if dumped.get("consent") is not None else {})
         )
     ).hexdigest()
 

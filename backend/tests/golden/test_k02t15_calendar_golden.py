@@ -17,8 +17,10 @@ import yaml
 
 from abacus.modules.practice.compute import calendar
 
+GoldenCase = dict[str, Any]  # Any: the golden YAML is untyped data
+
 GOLDEN = Path(__file__).resolve().parent / "calendar" / "i_clocks.yaml"
-DATA = cast(dict[str, Any], yaml.safe_load(GOLDEN.read_text(encoding="utf-8")))
+DATA = cast(GoldenCase, yaml.safe_load(GOLDEN.read_text(encoding="utf-8")))
 HOLIDAYS = frozenset(cast(list[date], DATA["holidays"]))
 
 
@@ -34,12 +36,14 @@ def _rule(form: str) -> calendar.Rule:
     )
 
 
-def _id(case: dict[str, Any]) -> str:
+def _id(case: GoldenCase) -> str:
     return f"{case.get('form', case.get('kind'))}-{case.get('period_end', case.get('start'))}"
 
 
 @pytest.mark.parametrize("case", DATA["due_dates"], ids=_id)
-def test_ac56_due_dates_match_the_golden_with_their_source(case: dict[str, Any]) -> None:
+def test_ac56_due_dates_match_the_golden_with_their_source(
+    case: GoldenCase,
+) -> None:
     assert str(case.get("source", "")).strip(), "every golden case names its source"
     found = calendar.due_dates(_rule(case["form"]), case["period_end"], HOLIDAYS)
     assert found.original_due_on == case["original"]
@@ -49,7 +53,9 @@ def test_ac56_due_dates_match_the_golden_with_their_source(case: dict[str, Any])
 
 
 @pytest.mark.parametrize("case", DATA["clocks"], ids=_id)
-def test_ac57_clocks_count_calendar_days_and_never_roll(case: dict[str, Any]) -> None:
+def test_ac57_clocks_count_calendar_days_and_never_roll(
+    case: GoldenCase,
+) -> None:
     assert str(case.get("source", "")).strip()
     assert calendar.clock_due(case["kind"], case["start"]) == case["due"]
 

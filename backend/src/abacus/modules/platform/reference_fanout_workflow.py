@@ -3,8 +3,9 @@
 Orchestration only, activities by name, identifiers only in the history (the version id and
 tenant ids; never a rule's value). One run per published or withdrawn version
 (`reference_fanout:<action>:<version>`, background class): the owner-role CLI passes the active
-tenants and the handles in, and the run fans `platform.reference_set_announce` out per tenant, each idempotent on (tenant, version), so a
-re-run or a retried activity writes nothing twice. Changes land behind `workflow.patched(...)`;
+tenants and the handles in, and the run fans `platform.reference_set_announce` out per tenant,
+each idempotent on (tenant, version), so a re-run or a retried activity writes nothing
+twice. Changes land behind `workflow.patched(...)`;
 `tests/workflows/histories/reference-fanout-v1-*.json` must keep replaying.
 """
 

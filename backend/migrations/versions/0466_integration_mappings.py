@@ -9,7 +9,7 @@ Two Accrued statuses may not mirror onto one engine status: a partial unique ind
 and office targets are the engine's staff and office codes (confidential).
 
 Revision ID: 0466
-Revises: 0430 (main's head when built; re-chain after the S18 lane's 0465 at the batch merge)
+Revises: 0465
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, tenant_table
 
 revision = "0466"
-down_revision = "0430"
+down_revision = "0465"
 branch_labels = None
 depends_on = None
 

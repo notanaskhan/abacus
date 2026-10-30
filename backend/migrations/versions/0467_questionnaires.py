@@ -16,7 +16,7 @@ Six tables, owned by `requests`, tenant-scoped with forced RLS:
 No template text is inserted here (AGENTS 16): templates arrive through the import.
 
 Revision ID: 0467
-Revises: 0430 (main's head when built; re-chain after the S18 lane's 0466 at the batch merge)
+Revises: 0466
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, insert_only, tenant_table
 
 revision = "0467"
-down_revision = "0430"
+down_revision = "0466"
 branch_labels = None
 depends_on = None
 
@@ -287,6 +287,11 @@ def upgrade() -> None:
     op.execute(
         "CREATE TRIGGER answer_versions_immutable BEFORE UPDATE OR DELETE ON answer_versions "
         "FOR EACH ROW EXECUTE FUNCTION answer_versions_immutable()"
+    )
+    op.execute("REVOKE TRUNCATE ON answer_versions FROM abacus_app")
+    op.execute(
+        "CREATE TRIGGER answer_versions_no_truncate BEFORE TRUNCATE ON answer_versions "
+        "FOR EACH STATEMENT EXECUTE FUNCTION answer_versions_immutable()"
     )
 
 

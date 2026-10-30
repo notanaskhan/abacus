@@ -44,10 +44,10 @@ register_engagement_owners(AUDIT_KINDS, audit_owners)
 # T-02-T09: ADM-03a's per-office "TY returns" count (G-01) and the C15 search projection.
 register_office_facts("tax_returns", returns_by_office)
 register_search_projection(SEARCH_TYPE, return_search_document)
-# T-01-T43: CLI-05's authorizations, elections, transcripts and comparisons (DEC-1651).
-register_tax_profile()
 # T-01-T18: the return's reviewable facts and the `tax_final_approval` gate kind (C13).
 register_approval()
+# T-01-T43: CLI-05's authorizations, elections, transcripts and comparisons (DEC-1651).
+register_tax_profile()
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (

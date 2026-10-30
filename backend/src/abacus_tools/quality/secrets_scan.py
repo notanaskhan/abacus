@@ -60,6 +60,27 @@ ALLOW: tuple[tuple[str, str, str], ...] = (
         "C3 `field_key` values are tax-form line codes (f1040.l2a, sch_a.l5b), not credentials",
     ),
     (
+        "backend/tests/unit/integrations/test_task2152_esign_install_tool.py",
+        "SECRET-003",
+        "N-02-T18: a synthetic key literal (synthetic0key0not0a0secret0…) for the install tool's"
+        " shape check, not a credential",
+    ),
+    (
+        "backend/tests/unit/methodology/test_k02t11_standards_workbooks.py",
+        "SECRET-003",
+        "K-02-T11: firm-standard item keys (k1.basis, m1.tie), not credentials",
+    ),
+    (
+        "backend/tests/unit/reporting/test_t01t17_consent_templates.py",
+        "SECRET-003",
+        "T-01-T17: report `layout_key` names (consent_7216), not credentials",
+    ),
+    (
+        "backend/tests/unit/tax/test_t01t10_consent_capture.py",
+        "SECRET-003",
+        "T-01-T10: report `layout_key` names (consent_7216), not credentials",
+    ),
+    (
         "backend/tests/integration/backfill/test_k01t12_programs_read.py",
         "SECRET-003",
         "K-01-T12: methodology step keys (bh-ebp-110-4) bound as `:key`, not credentials",

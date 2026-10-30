@@ -504,7 +504,7 @@ async def import_record(ctx: AuthContext, request: ImportRequest) -> Imported:
 
 
 @dataclass(frozen=True)
-class StagedFile:
+class UnconsumedFile:
     """An import file the caller staged and nothing has consumed (T-01-T10's consent record
     mode reads its bytes through `evidence.api.read_staged`)."""
 
@@ -516,7 +516,7 @@ class StagedFile:
     media_type: str
 
 
-async def staged_files(ctx: AuthContext, ids: Sequence[UUID]) -> list[StagedFile]:
+async def staged_files(ctx: AuthContext, ids: Sequence[UUID]) -> list[UnconsumedFile]:
     """The caller's own unconsumed import files, in `ids` order (`import_file_unavailable`)."""
     async with tenant_session(ctx.tenant) as session:
         rows = (await session.execute(_FILES, {"ids": list(ids), "user": ctx.user_id})).all()
@@ -524,6 +524,8 @@ async def staged_files(ctx: AuthContext, ids: Sequence[UUID]) -> list[StagedFile
     if len(set(ids)) != len(ids) or set(by_id) != set(ids):
         raise ImportFileUnavailable
     return [
-        StagedFile(r.id, r.sha256, r.storage_key, r.storage_version_id, r.size_bytes, r.media_type)
+        UnconsumedFile(
+            r.id, r.sha256, r.storage_key, r.storage_version_id, r.size_bytes, r.media_type
+        )
         for r in (by_id[i] for i in ids)
     ]

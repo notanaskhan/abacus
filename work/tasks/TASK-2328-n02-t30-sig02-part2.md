@@ -2,7 +2,7 @@
 id: TASK-2328
 title: N-02-T30 SIG-02 part 2 (field placement)
 spec: SPEC-381
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: green
 status: in-review
 epic: N-02

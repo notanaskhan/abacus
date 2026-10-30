@@ -77,7 +77,7 @@ describe("KNW-04 a (Priya Raman, AJE thresholds)", () => {
     );
   });
 
-  it("keeps the policy toggle off and display-only, and New version… waits for T14", async () => {
+  it("keeps the policy toggle off and display-only; New version… is the owner's (K-02-T14)", async () => {
     show("a");
     await table("BH AJE thresholds v2");
     const toggle = screen.getByRole("switch", {
@@ -86,7 +86,7 @@ describe("KNW-04 a (Priya Raman, AJE thresholds)", () => {
     expect(toggle.getAttribute("aria-checked")).toBe("false");
     expect((toggle as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByRole<HTMLButtonElement>("button", { name: "New version…" }).disabled).toBe(
-      true,
+      false,
     );
   });
 

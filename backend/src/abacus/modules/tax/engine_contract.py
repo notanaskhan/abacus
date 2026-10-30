@@ -411,10 +411,12 @@ async def _stub(ctx: AuthContext, action: str, flag: Flag) -> NoReturn:
 
 
 async def _live(ctx: AuthContext, action: str, flag: Flag) -> None:
-    """A built route: INV-4, the role row, then the flag; the service checks the return."""
+    """A built route: INV-4, then the flag. The service authorises `action` on the return's
+    engagement: a firm-level check here would refuse every engagement role (a manager on the
+    engagement holds no firm role), which is who these routes serve."""
+    del action  # named at the route (`x-abacus-action`); the service checks it on the return
     if ctx.client:
         raise NotFound("tax_return")
-    await authorise(ctx, action, Resource.firm(ctx.tenant_id))
     if not await flag_enabled(ctx.tenant, flag):
         raise NotFound(flag.name)
 

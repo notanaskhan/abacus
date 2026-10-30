@@ -79,6 +79,8 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "firm_export.requested",  # Q-02-T43 (C16 `firm_export_approval_requested`, the approver)
         "firm_export.ready",  # Q-02-T43 (C16 `firm_export_ready`, requester and approver)
         "connection.needs_reauth",  # A-02-T25 (C16 `connection_needs_reauth`, admins and leads)
+        "consent.expiring",  # T-01-T16 (C16 `consent_expiring`, to the consent's requester)
+        "reference_set.published",  # K-02-T12 (C16 `rules_table_updated`, firm admins)
         "connection.reauth_due",  # A-02-T25 (`connection_reauth_due`, 7 days ahead)
         "ai_policy.publish_requested",  # G-02-T24 (`ai_policy_approval_requested`, the approver)
     }

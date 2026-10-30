@@ -182,6 +182,15 @@ async def import_template(
         if dry_run:
             return ImportResult(None, None, True, tuple(bad.problems), None)
         raise ImportRefused(facts={"problems": len(bad.problems)}) from None
+    if dry_run:  # a read: what the import would change, with nothing written
+        async with tenant_session(ctx.tenant) as session:
+            found = (
+                await session.execute(
+                    text("SELECT id FROM questionnaire_templates WHERE name = :n"), {"n": name}
+                )
+            ).scalar_one_or_none()
+            before = await _current(session, found) if found else None
+        return ImportResult(found, None, True, (), changes_between(before, template))
     async with uow(ctx.tenant) as tx:
         template_id = (
             await tx.session.execute(
@@ -190,8 +199,6 @@ async def import_template(
         ).scalar_one_or_none()
         before = await _current(tx.session, template_id) if template_id else None
         changes = changes_between(before, template)
-        if dry_run:
-            return ImportResult(template_id, None, True, (), changes)
         if template_id is None:
             template_id = (
                 await tx.session.execute(
@@ -438,7 +445,7 @@ async def attach_organizer(
         tx.record(
             "questionnaire.created",
             target=Target(SUBJECT, questionnaire_id),
-            after=Ref(kind="organizer", questions=position, prior_year=len(prior)),
+            after=Ref(questions=position, prior_year=len(prior)),  # identifiers and counts only
         )
     return await questionnaire(ctx, questionnaire_id)
 
@@ -494,7 +501,7 @@ async def create_questionnaire(
         tx.record(
             "questionnaire.created",
             target=Target(SUBJECT, questionnaire_id),
-            after=Ref(kind=kind),
+            after=Ref(),  # identifiers only: the kind is on the questionnaire row
         )
     return await questionnaire(ctx, questionnaire_id)
 

@@ -3,8 +3,9 @@ AC-28 to AC-31).
 
 A consent's recipient block is never wording a firm types: it is the line the provider-terms
 register gives on the day the document renders ("Amazon Web Services (Bedrock) · model inference
-· US"), and the register's material-terms hash is stored on the consent (`provider_terms_version`). The
-template places the `consent.recipients` variable exactly once where the block prints, and no
+· US"), and the register's material-terms hash is stored on the consent
+(`provider_terms_version`). The template places the `consent.recipients` variable exactly once
+where the block prints, and no
 fixed text in it may name a model provider or sub-processor as a recipient: "Anthropic" in a
 template is refused at import (only the register's eligible route ever carries client data,
 ADR-113).

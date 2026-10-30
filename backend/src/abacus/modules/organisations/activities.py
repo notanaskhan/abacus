@@ -7,6 +7,7 @@ from typing import Final
 from uuid import UUID
 
 from temporalio import activity
+from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 
 from abacus.kernel.dispatch import PlatformSchedule, dispatch
 from abacus.kernel.logging import get_logger
@@ -48,6 +49,8 @@ async def start_consent_export(request: ConsentExportInput) -> None:
         ConsentExportWorkflow,
         request,
         id=export_workflow_id(request.tenant_id, request.export_id),
+        id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE,
+        id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
     )
 
 

@@ -99,13 +99,12 @@ def _text(value: object) -> str | None:
 
 
 def _scalar(value: str) -> object:
-    """A cell's text as the payload expects it: booleans and numbers by their spelling; every
-    other value stays text for the payload model to parse (decimals stay exact)."""
+    """A cell's text as the payload expects it: booleans by their spelling (a `Literal[False]`
+    takes no text); numbers and decimals stay text for the payload model to parse by each field's
+    type, so a text field keeps "1065" as text and an export imports back unchanged."""
     lowered = value.lower()
     if lowered in ("true", "false"):
         return lowered == "true"
-    if value.lstrip("-").isdigit():
-        return int(value)
     return value
 
 
@@ -141,16 +140,32 @@ def _table(
         entry: dict[str, object] = {}
         for c, field in enumerate(header):
             value = cells[c] if c < len(cells) else None
-            if value is None or not field:
+            if value is None or not field:  # an empty cell leaves the field to its default
                 continue
+            source = line[c]
             parsed: object = (
                 [v.strip() for v in value.split(",") if v.strip()]
                 if field in LIST_CELLS
+                # A number cell is a number; a text cell stays text ("1065" is a form).
+                else int(value)
+                if isinstance(source, int | float)
+                and not isinstance(source, bool)
+                and value.lstrip("-").isdigit()
                 else _scalar(value)
             )
             _set(entry, field, parsed)
         out.append(entry)
     return out
+
+
+def _trimmed(rows: Sequence[Sequence[object]]) -> list[list[object]]:
+    """A read-only sheet pads every row with empty cells up to `max_col`: cut the sheet to its
+    last column that holds a value anywhere (an empty header over a filled column stays)."""
+    width = max(
+        (max((i + 1 for i, v in enumerate(r) if v is not None), default=0) for r in rows),
+        default=0,
+    )
+    return [list(r)[:width] for r in rows]
 
 
 def _sheets(data: bytes, *, csv_file: bool) -> dict[str, list[list[object]]]:
@@ -164,12 +179,9 @@ def _sheets(data: bytes, *, csv_file: bool) -> dict[str, list[list[object]]]:
         raise ImportInvalid([Problem("", None, None, "not_a_workbook")]) from None
     try:
         return {
-            ws.title: [
-                list(r)
-                for r in ws.iter_rows(
-                    max_row=MAX_ROWS + 2, max_col=MAX_COLUMNS + 1, values_only=True
-                )
-            ]
+            ws.title: _trimmed(
+                list(ws.iter_rows(max_row=MAX_ROWS + 2, max_col=MAX_COLUMNS + 1, values_only=True))
+            )
             for ws in book.worksheets
         }
     finally:
@@ -246,7 +258,8 @@ def export_workbook(kind: str, title: str, payload: Mapping[str, object]) -> byt
     """The payload in the import format, byte-stable for the same payload (ADR-042)."""
     book = Workbook()
     rows_ws = book.active
-    assert rows_ws is not None
+    if rows_ws is None:  # a new Workbook always has its first sheet
+        rows_ws = book.create_sheet()
     rows_ws.title = ROWS
     list_field = LIST_FIELD.get(kind)
     entries = cast(list[dict[str, object]], payload.get(list_field, []) if list_field else [])
@@ -290,6 +303,25 @@ class OnboardingRow:
     kind: str
     owner_email: str
     payload: dict[str, object]
+
+
+def read_payload_isolated(
+    kind: str, data: bytes, csv_file: bool
+) -> tuple[dict[str, object] | None, list[Problem]]:
+    """`read_payload` for the isolated child: problems come back as data, never as an exception
+    the parent must unpickle (the workbook is a hostile file; ADR-052)."""
+    try:
+        return read_payload(kind, data, csv_file=csv_file), []
+    except ImportInvalid as invalid:
+        return None, invalid.problems
+
+
+def read_onboarding_isolated(data: bytes) -> tuple[list[OnboardingRow], list[Problem]]:
+    """`read_onboarding` for the isolated child (see `read_payload_isolated`)."""
+    try:
+        return read_onboarding(data)
+    except ImportInvalid as invalid:
+        return [], invalid.problems
 
 
 def read_onboarding(data: bytes) -> tuple[list[OnboardingRow], list[Problem]]:

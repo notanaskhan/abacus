@@ -11,7 +11,7 @@ import {
   feldEnvelope,
   feldFinalApproval,
 } from "../seed/tax/feld-delivery";
-import { CONSENT_SUMMARY, FELD_PAYMENTS, FELD_RETURN_ID } from "../seed/tax-compliance";
+import { CONSENT_SUMMARY, FELD_RETURN_ID } from "../seed/tax-compliance";
 import { SYNTHETIC_TINS, TAX_PROFILES, WHITLEY_ENTITY } from "../seed/tax-profile";
 import { WHITLEY_COMPARISON_2024, WHITLEY_TRANSCRIPTS } from "../seed/transcripts";
 

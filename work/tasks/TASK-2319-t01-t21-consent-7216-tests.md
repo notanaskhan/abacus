@@ -2,7 +2,7 @@
 id: TASK-2319
 title: T-01-T21 independent §7216 AC tests
 spec: SPEC-501
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: red
 status: in-review
 epic: T-01

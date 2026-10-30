@@ -205,7 +205,8 @@ class ReviewTier(BaseModel):
     name: Annotated[str, Field(min_length=1, max_length=40), classified("internal")]
     required_levels: Annotated[list[ReviewLevel], Field(min_length=1), classified("internal")]
     second_partner_review: Annotated[bool, classified("internal")]
-    criteria: Annotated[str, Field(max_length=500), classified("internal")]
+    # Empty by default: an exported empty cell imports back as "" (K-02-T11 round trip).
+    criteria: Annotated[str, Field(max_length=500), classified("internal")] = ""
 
 
 class ReviewLevelsPayload(BaseModel):

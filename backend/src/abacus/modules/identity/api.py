@@ -181,7 +181,6 @@ from abacus.modules.identity.mfa_floor import (
     owner_grant,
     register_mfa_requirement,
 )
-from abacus.modules.identity.repository import emails_of  # K-02-T11: onboarding owners
 from abacus.modules.identity.offshore import (
     OffshoreConsentRequired,
     assert_assignable,
@@ -244,6 +243,7 @@ from abacus.modules.identity.repository import (
     MemberFacts,
     active_grants,
     contact_user_ids,
+    emails_of,  # K-02-T11: onboarding owners
     engagement_team_query,
     firm_tenant_ids,
     grant_contact_ids,
@@ -660,6 +660,7 @@ __all__ = [
     "delegation_holders_by_grant",
     "drafted_guidance_to_clients",
     "earliest_partner",
+    "emails_of",
     "end_assignments_for_wall",
     "engagement_eqrs",
     "engagement_leads",
@@ -718,7 +719,6 @@ __all__ = [
     "offshore_consented",
     "operator_posture",
     "partner_members",
-    "emails_of",
     "person_reads_unmasked",
     "policy_agent_may_hold",
     "portal_scopes",

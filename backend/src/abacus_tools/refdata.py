@@ -3,7 +3,8 @@ AC-40).
 
     python -m abacus_tools.refdata draft --key us-federal-due-dates-ty2026 --kind due_date_rules \
         --title "..." --jurisdiction US --owner "..." --effective-from 2026-01-01 \
-        --file rules.xlsx --drafted-by <handle> --reason "..." [--tax-year 2026] [--citations c.json]
+        --file rules.xlsx --drafted-by <handle> --reason "..." [--tax-year 2026] \
+        [--citations c.json]
     python -m abacus_tools.refdata diff --key <key> --file rules.xlsx
     python -m abacus_tools.refdata publish --version <uuid> --approver <handle> --reason "..."
     python -m abacus_tools.refdata withdraw --version <uuid> --operator <h> --approver <h> \
@@ -46,6 +47,7 @@ from typing import Final, cast
 
 from openpyxl import load_workbook
 
+from abacus.kernel.clock import today
 from abacus.kernel.config import settings
 from abacus_tools.db_connect import connect
 from abacus_tools.local import db_guard
@@ -152,16 +154,27 @@ def read_table(path: Path) -> tuple[str, list[list[object]]]:
         )
         try:
             sheet = workbook.worksheets[0]
-            table = [
-                list(r)
-                for r in sheet.iter_rows(
-                    max_row=MAX_ROWS + 2, max_col=MAX_COLUMNS + 1, values_only=True
+            table = _trimmed(
+                list(
+                    sheet.iter_rows(
+                        max_row=MAX_ROWS + 2, max_col=MAX_COLUMNS + 1, values_only=True
+                    )
                 )
-            ]
+            )
             return sheet.title, table
         finally:
             workbook.close()
     raise Refused(f"{path.name}: a draft is JSON, CSV or XLSX")
+
+
+def _trimmed(rows: Sequence[Sequence[object]]) -> list[list[object]]:
+    """A read-only sheet pads every row with empty cells up to `max_col`: cut the sheet to its
+    last column that holds a value anywhere (an empty header over a filled column stays)."""
+    width = max(
+        (max((i + 1 for i, v in enumerate(r) if v is not None), default=0) for r in rows),
+        default=0,
+    )
+    return [list(r)[:width] for r in rows]
 
 
 def payload_from(kind: str, path: Path) -> tuple[dict[str, object], list[Problem]]:
@@ -262,7 +275,9 @@ async def draft(args: argparse.Namespace) -> str:
         raise Refused("\n".join(str(p) for p in problems))
     checked = await check_draft(args.kind, payload)
     stored = cast(dict[str, object], checked.model_dump(mode="json"))
-    citations = json.loads(Path(args.citations).read_text()) if args.citations else []
+    citations = cast(
+        list[object], json.loads(Path(args.citations).read_text()) if args.citations else []
+    )
     conn = await connect(_owner_dsn())
     try:
         version_id = await conn.fetchval(
@@ -291,7 +306,7 @@ async def show_diff(args: argparse.Namespace) -> str:
     payload, problems = payload_from(args.kind, Path(args.file))
     if problems:
         raise Refused("\n".join(str(p) for p in problems))
-    as_of = date.fromisoformat(args.as_of) if args.as_of else date.today()
+    as_of = date.fromisoformat(args.as_of) if args.as_of else await today()
     current = await _current_rows(args.key, as_of)
     found = diff(args.kind, current, cast(list[dict[str, object]], payload.get("rows", [])))
     return "no change" if found.empty else "\n".join(found.lines())

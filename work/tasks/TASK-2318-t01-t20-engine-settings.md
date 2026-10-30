@@ -2,7 +2,7 @@
 id: TASK-2318
 title: T-01-T20 ADM-08 integration settings backend
 spec: SPEC-501
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: red
 status: in-review
 epic: T-01

@@ -17,13 +17,13 @@ from __future__ import annotations
 from typing import Annotated, ClassVar, Final
 from uuid import UUID
 
-from sqlalchemy import text
 from temporalio import activity
+from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 
 from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.dispatch import dispatch
-from abacus.kernel.uow import DomainEvent, Ref, Target, uow
+from abacus.kernel.uow import DomainEvent, Ref, Target, audit_of_targets, uow
 from abacus.modules.platform.reference_fanout_workflow import (
     FanOutInput,
     ReferenceSetFanOutWorkflow,
@@ -31,10 +31,6 @@ from abacus.modules.platform.reference_fanout_workflow import (
 )
 
 ACTOR: Final = "system:reference_fanout"
-_SEEN = text(
-    "SELECT 1 FROM audit_events WHERE action = :action AND target_type = 'reference_set_version' "
-    "AND target_id = :id LIMIT 1"
-)
 
 
 class ReferenceSetPublished(DomainEvent):
@@ -60,18 +56,17 @@ async def reference_set_announce(tenant_id: str, request: FanOutInput) -> bool:
     version = UUID(request.version_id)
     audit_action = f"reference_set.{request.action}"
     async with tenant_session(tenant) as session:
-        seen = await session.execute(_SEEN, {"action": audit_action, "id": request.version_id})
-        if seen.first() is not None:
+        seen = await audit_of_targets(
+            session, [("reference_set_version", version)], None, 1, action=audit_action
+        )
+        if seen:
             return False
     async with uow(tenant) as tx:
         tx.record(
             audit_action,
             target=Target("reference_set_version", version),
-            after=Ref(
-                set_key=request.set_key,
-                operator=request.operator[:80],
-                approver=request.approver[:80],
-            ),
+            # Identifiers only: the set key and the two handles are on the version's own record.
+            after=Ref(),
         )
         tx.emit(
             ReferenceSetPublished(version_id=version, set_key=request.set_key)
@@ -87,6 +82,8 @@ async def start_fanout(request: FanOutInput) -> None:
         ReferenceSetFanOutWorkflow,
         request,
         id=fanout_workflow_id(request.version_id, request.action),
+        id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE,
+        id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
     )
 
 

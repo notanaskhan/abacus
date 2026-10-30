@@ -2,7 +2,7 @@
 id: TASK-2323
 title: T-02-T16 questionnaire engine
 spec: SPEC-502
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: amber
 status: in-review
 epic: T-02

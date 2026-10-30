@@ -46,6 +46,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
 from abacus.kernel import provider_terms
+from abacus.kernel.access import run_reads
 from abacus.kernel.clock import now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
@@ -137,7 +138,7 @@ def _filters(
     if purpose is not None:
         parts.append(_consents.c.purpose == purpose)
     if tax_year is not None:
-        parts.append(_consents.c.tax_years.any(tax_year))  # pyright: ignore[reportAttributeAccessIssue] -- ARRAY column
+        parts.append(_consents.c.tax_years.any(tax_year))  # ARRAY column
     if client_id is not None:
         parts.append(_consents.c.client_id == client_id)
     if offshore is not None:
@@ -250,11 +251,6 @@ async def entity_ids(ctx: AuthContext, entity_id: UUID) -> list[UUID]:
         )
 
 
-_AGENT_READS = text(
-    "SELECT a.run_id, a.occurred_at, a.on_behalf_of_user_id FROM access_events a "
-    "WHERE a.kind = 'tri.tool_read' AND a.subject_type = 'consent' AND a.subject_id = :id "
-    "AND a.run_id IS NOT NULL AND a.occurred_at >= :since ORDER BY a.occurred_at DESC LIMIT 200"
-)
 _DOC = text("SELECT purpose, text_sha256, signed_at FROM consents WHERE id = :id")
 
 
@@ -274,8 +270,8 @@ async def detail(ctx: AuthContext, consent_id: UUID) -> Detail:
         if row.signed_at is not None:
             reads = [
                 (r.run_id, r.occurred_at, r.on_behalf_of_user_id)
-                for r in await session.execute(
-                    _AGENT_READS, {"id": consent_id, "since": row.signed_at}
+                for r in await run_reads(
+                    session, "tri.tool_read", "consent", consent_id, row.signed_at
                 )
             ]
     return Detail((row.purpose, bytes(row.text_sha256).hex()), reads)
@@ -308,7 +304,7 @@ _HEADER: Final = (
 def _cell(value: object) -> str:
     """Client content is hostile (ADR-052): a cell never starts a formula."""
     text_value = "" if value is None else str(value)
-    return f"'{text_value}" if text_value[:1] in ("=", "+", "-", "@") else text_value
+    return f"'{text_value}" if text_value[:1] in ("=", "+", "-", "@", "\t", "\r") else text_value
 
 
 def consent_csv(rows: Sequence[Sequence[object]]) -> bytes:

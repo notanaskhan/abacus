@@ -23,7 +23,7 @@ from abacus.api.export_openapi import document
 from abacus.kernel._flags import KNOWLEDGE_FIRM_STANDARDS, RULES_REFERENCE_SETS
 from abacus.kernel.classification import unclassified_fields
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.methodology import api as methodology_api
@@ -75,12 +75,8 @@ ROUTES: list[tuple[str, str, str]] = [
 
 
 # Built: K-02-T05 serves the reference sets, K-02-T07 the due dates, K-02-T08 the standards'
-# reads and lifecycle; import and export wait for K-02-T11.
-UNBUILT = {
-    "/v1/standards/{standard_id}/versions/{version_id}/export.xlsx",
-    "/v1/standards/{standard_id}/imports",
-    "/v1/standards/imports",
-}
+# reads and lifecycle, K-02-T11 the import and export. Nothing in C21 is a stub now.
+UNBUILT: set[str] = set()
 LIVE = {path for _, path, _ in ROUTES if path not in UNBUILT}
 
 
@@ -153,7 +149,7 @@ def _ctx(*, client: bool = False) -> AuthContext:
 def test_inv4_a_client_principal_gets_404_before_anything() -> None:
     for stub in (
         standards_routes._gate(_ctx(client=True)),  # pyright: ignore[reportPrivateUsage] -- the gate's order of checks, read directly
-        standards_routes._stub(_ctx(client=True), "firm_standard.import"),  # pyright: ignore[reportPrivateUsage] -- the stub's order of checks, read directly
+        standards_routes._import_gate(_ctx(client=True)),  # pyright: ignore[reportPrivateUsage] -- the import gate's order of checks, read directly
         reference_sets_routes._gate(_ctx(client=True)),  # pyright: ignore[reportPrivateUsage] -- the gate's order of checks, read directly
         due_dates_routes._gate(_ctx(client=True)),  # pyright: ignore[reportPrivateUsage] -- the gate's order of checks, read directly
     ):
@@ -189,22 +185,28 @@ def test_ac5_part_as_gates_are_404_with_the_flag_off_and_open_with_it_on(
                 asyncio.run(gate)
 
 
-def test_ac5_the_standards_flag_gates_the_unbuilt_import_and_export(
+def test_ac5_the_standards_flag_gates_the_import(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """K-02-T11 built the import: the flag off is 404, the flag on lets the request through."""
+
     async def allowed(*_: object, **__: object) -> None:
         return None
 
     monkeypatch.setattr(standards_routes, "authorise", allowed)
-    for on, error in ((False, NotFound), (True, NotImplementedYet)):
+    for on in (False, True):
 
         async def enabled(_tenant: object, f: Flag, _on: bool = on) -> bool:
             assert f is KNOWLEDGE_FIRM_STANDARDS
             return _on
 
         monkeypatch.setattr(standards_routes, "flag_enabled", enabled)
-        with pytest.raises(error):
-            asyncio.run(standards_routes._stub(_ctx(), "firm_standard.import"))  # pyright: ignore[reportPrivateUsage] -- the stub's order of checks, read directly
+        gate = standards_routes._import_gate(_ctx())  # pyright: ignore[reportPrivateUsage] -- the import gate's order of checks, read directly
+        if on:
+            assert asyncio.run(gate) is None
+        else:
+            with pytest.raises(NotFound):
+                asyncio.run(gate)
 
 
 PART_A = (
@@ -238,17 +240,11 @@ def test_ac6_the_module_apis_are_exported() -> None:
         assert name in methodology_api.__all__, name
 
 
-def test_ac6_part_bs_module_apis_raise_until_built() -> None:
-    # Part A is built (K-02-T05 readers, K-02-T07 calendar; their integration suites).
-    policy = methodology_api.PolicyRef("probe", uuid.uuid4(), 1, "Probe")
-    with pytest.raises(NotImplementedError):
-        methodology_api.classify_entry(
-            cast(standards_contract.AjeThresholdsPayload, None),
-            policy,
-            account_class="probe",
-            amount_usd=1,
-            attest_client=False,
-        )
+def test_ac6_part_bs_module_apis_are_built() -> None:
+    # Part A is built (K-02-T05 readers, K-02-T07 calendar); K-02-T10 built Part B's deterministic
+    # functions (their unit suite), so none is a stub any more.
+    for fn in (methodology_api.classify_entry,):
+        assert "NotImplementedError" not in inspect.getsource(fn), fn.__name__
 
 
 def test_ac6_every_result_names_its_version() -> None:

@@ -48,6 +48,8 @@ INSERT_COLUMNS["engine_import_diffs"] = frozenset(
 )
 INSERT_COLUMNS["engine_diagnostics"] = frozenset(
     {"tenant_id", "return_id", "sync_event_id", "code", "severity", "field_key", "message_text"}
+)
+# T-01-T43 (0550, DEC-1651): CLI-05's tax profile.
 INSERT_COLUMNS["tax_profile_files"] = frozenset(
     {"id", "tenant_id", "client_entity_id", "uploaded_by", "file_name", "media_type"}
     | {"size_bytes", "sha256", "storage_key", "storage_version_id"}

@@ -143,6 +143,12 @@ async def _facts(ctx: AuthContext, return_id: UUID) -> tuple[UUID, UUID]:
     """The return's engagement and client, as the viewer may see it (404 otherwise, INV-3)."""
     for item in await work_item_facts(ctx, "tax_return"):
         if item.work_item_id == return_id:
+            # The read itself, on the return's engagement (the route checks no firm-level role).
+            resource = await engagement_resource(ctx.tenant, item.engagement_id)
+            try:
+                await authorise(ctx, "tax_return.read", replace(resource, work_item_id=return_id))
+            except Forbidden:
+                raise NotFound(TARGET) from None
             return item.engagement_id, item.client_id
     raise NotFound(TARGET)
 
