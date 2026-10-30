@@ -145,3 +145,111 @@ describe("T16 geometry and states", () => {
     expect(onRetry).toHaveBeenCalledOnce();
   });
 });
+
+// N-02-T26 (POR-06): the container's step control, review progress, the viewer's own completion
+// while another signer still signs, and the provider's view at the sign step.
+describe("POR-06 additions", () => {
+  const SESSION = {
+    url: "https://signing.example.invalid/s",
+    presentation: "iframe" as const,
+    expiresAt: "2026-09-14T15:00:00Z",
+  };
+
+  it("an action replaces the kit's sign call to action under the steps", () => {
+    ceremony(t16Envelope("b"), { action: <button type="button">Continue to sign</button> });
+    const steps = document.querySelector('[data-signing="steps"]') as HTMLElement;
+    expect(within(steps).getByRole("button", { name: "Continue to sign" })).toBeTruthy();
+    expect(within(steps).queryByRole("button", { name: /Adopt signature/ })).toBeNull();
+  });
+
+  it("at 390 the action is the sticky footer", () => {
+    ceremony(t16Envelope("b"), {
+      layout: "phone",
+      action: <button type="button">Continue to sign</button>,
+    });
+    const footer = document.querySelector('[data-signing="mobile-action"]') as HTMLElement;
+    expect(within(footer).getByRole("button", { name: "Continue to sign" })).toBeTruthy();
+    expect(document.querySelector('[data-signing="mobile-sign-bar"]')).toBeNull();
+  });
+
+  it("each page reports itself once as it comes into view", () => {
+    const seen = vi.fn();
+    class Observer {
+      constructor(private readonly cb: IntersectionObserverCallback) {}
+      observe(target: Element): void {
+        const entry = { isIntersecting: true, target } as unknown as IntersectionObserverEntry;
+        this.cb([entry, entry], this as unknown as IntersectionObserver);
+      }
+      disconnect(): void {}
+    }
+    vi.stubGlobal("IntersectionObserver", Observer);
+    try {
+      const envelope = t16Envelope("b");
+      ceremony(envelope, { onPageSeen: seen });
+      const doc = envelope.documents[0];
+      expect(seen).toHaveBeenCalledWith(doc?.id, 1);
+      expect(seen.mock.calls.filter(([, n]) => n === 1)).toHaveLength(1);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("the viewer's own completion while another signer still signs", () => {
+    const envelope = t16Envelope("b");
+    ceremony({
+      ...envelope,
+      status: "partially_signed",
+      signers: envelope.signers.map((s) => (s.isViewer ? { ...s, status: "signed" } : s)),
+      evidence: [{ label: "Document fingerprint", value: "SHA-256 a41f…9c07" }],
+    });
+    expect(document.querySelector('[data-signing="completion"]')).not.toBeNull();
+    expect(document.querySelector("[data-envelope-pill]")?.textContent).not.toBe("Completed");
+  });
+
+  it("the provider's view opens at the sign step (identity was the portal's email code)", () => {
+    ceremony(
+      { ...t16Envelope("b"), signingSession: SESSION },
+      {
+        copy: {
+          verifyFailedTitle: "",
+          verifyFailedBody: "",
+          pendingTitle: "Checking your signature",
+          pendingBody: "",
+          providerTitle: "Sign: the letter",
+          providerContinue: "Continue to sign",
+          providerUnavailable: "Unavailable",
+          decline: {
+            title: "Decline to sign?",
+            reasons: ["Other"],
+            reasonsLabel: "Why?",
+            noteLabel: "Note",
+            confirm: "Decline",
+            trigger: "Decline…",
+          },
+          stepNames: { verify: "Verify", review: "Review", sign: "Sign", done: "Done" },
+        },
+      },
+    );
+    expect(document.querySelector('[data-signing="provider-frame"]')?.getAttribute("title")).toBe(
+      "Sign: the letter",
+    );
+  });
+});
+
+describe("POR-06 phone footer", () => {
+  it("a container's null action leaves no sign bar while the provider's view shows", () => {
+    ceremony(
+      {
+        ...t16Envelope("b"),
+        signingSession: {
+          url: "https://signing.example.invalid/s",
+          presentation: "iframe",
+          expiresAt: "2026-09-14T15:00:00Z",
+        },
+      },
+      { layout: "phone", action: null },
+    );
+    expect(document.querySelector('[data-signing="mobile-sign-bar"]')).toBeNull();
+    expect(document.querySelector('[data-signing="mobile-action"]')).toBeNull();
+  });
+});
