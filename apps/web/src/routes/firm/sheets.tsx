@@ -20,3 +20,5 @@ registerOverlay("approve", { layer: "modal", render });
 registerOverlay("envelope", { layer: "modal", render });
 // P-04-T43: SHL-16 `?ov=checkpoints:<target_type>:<target_id>`, the O2 drawer.
 registerOverlay("checkpoints", { layer: "drawer", render });
+// P-04-T48: SHL-12 `?ov=signoff:<target_type>:<target_id>[:<level>]`, the O3 sheet.
+registerOverlay("signoff", { layer: "modal", render });
