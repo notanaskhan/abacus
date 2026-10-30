@@ -259,6 +259,11 @@ def _row(r: _Return, facts: WorkItemFacts, names: Mapping[UUID, str]) -> TaxRetu
     )
 
 
+# T-02-T13: the record's row is the board's row.
+ReturnRow = _Return
+row_out = _row
+
+
 async def summary(ctx: AuthContext, tax_year: int | None) -> TaxReturnSummaryOut:
     board = await _board(ctx, tax_year)
     counts: dict[str, int] = dict.fromkeys(STATUSES, 0)

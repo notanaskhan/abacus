@@ -1,0 +1,7 @@
+# The Whitleys' TY2024 return as filed (the approved engine import's information returns), as
+# T-01-T43 hands them to the comparison. Synthetic: only the two 1099-INTs' absence is designed
+# (CLI-05 a); the agreeing amounts are test values that never reach a screen.
+- {form: W-2, payer_name: "Cobalt Ridge Engineering, LLC", amount: "96400.00"}
+- {form: W-2, payer_name: "Larkspur Pediatrics P.C.", amount: "71850.00"}
+- {form: "1098", payer_name: "Summit Home Lending", amount: "14322.18"}
+- {form: 1099-INT, payer_name: "Aspen Grove Savings", amount: "412.56"}

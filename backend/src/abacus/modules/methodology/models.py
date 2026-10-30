@@ -231,3 +231,64 @@ class ThresholdPolicy(_StandardParent, Base):
 
 class ThresholdPolicyVersion(_StandardVersion, Base):
     __tablename__ = "threshold_policy_versions"
+
+
+# --- P-11-T06 (0460): report templates, firm content for C11 -----------------------------------
+
+
+class ReportTemplate(Base):
+    __tablename__ = "report_templates"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    tenant_id: Mapped[UUID]
+    family: Mapped[str]
+    name: Mapped[str]
+    description: Mapped[str]
+    created_by_user_id: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class ReportTemplateVersion(Base):
+    __tablename__ = "report_template_versions"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    tenant_id: Mapped[UUID]
+    template_id: Mapped[UUID]
+    version_no: Mapped[int]
+    layout_key: Mapped[str]
+    body: Mapped[list[object]] = mapped_column(JSONB)
+    clauses: Mapped[list[object]] = mapped_column(JSONB)
+    variables: Mapped[list[object]] = mapped_column(JSONB)
+    sample_data: Mapped[dict[str, object]] = mapped_column(JSONB)
+    source: Mapped[str]
+    content_sha256: Mapped[str]
+    imported_by_user_id: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class ReportTemplatePublication(Base):
+    __tablename__ = "report_template_publications"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    tenant_id: Mapped[UUID]
+    version_id: Mapped[UUID]
+    action: Mapped[str]
+    by_user_id: Mapped[UUID]
+    mfa_at: Mapped[datetime | None]
+    at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class ReportTemplateConsentTerms(Base):
+    """T-01-T17 (0461): a `consent_7216` version's terms; recipients come from the register."""
+
+    __tablename__ = "report_template_consent_terms"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    tenant_id: Mapped[UUID]
+    template_version_id: Mapped[UUID]
+    purpose: Mapped[str]
+    statement_version: Mapped[str]
+    counsel_attested_by_user_id: Mapped[UUID]
+    counsel_attested_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    recipients_source: Mapped[str] = mapped_column(server_default=FetchedValue())
+    expiry_months: Mapped[int | None]
