@@ -69,9 +69,9 @@ PUBLIC_ROUTES = ("/healthz", "/readyz", "/v1/portal/branding")
 
 ## Proposed amendment (N-02-T01, 2026-10-27; DEC-707; decide by Fri Jun 11, 2027)
 Not yet accepted: the clauses below bind nothing until this ADR's status says so.
-- **A provider webhook receiver**, `POST /v1/webhooks/docusign-connect`, joins the ROUTE-001 exception list, outside `AbacusRouter`, unauthenticated.
-- **HMAC-verified** with the provider's Connect key (constant-time compare; a bad or missing signature answers 401 and writes nothing but a metric).
-- **Hint only:** the body is never trusted for state. A valid hint starts `EnvelopeStatusPoll` for the named envelope, which reads the provider's status through the W7 read-back and decides; the receiver itself changes no row.
+- **A provider webhook receiver**, `POST /v1/webhooks/docuseal` (retargeted 2026-10-30 from DocuSign Connect by ADR-342, DEC-1277), joins the ROUTE-001 exception list, outside `AbacusRouter`, unauthenticated.
+- **HMAC-verified** with the firm's DocuSeal webhook key: `X-Docuseal-Signature` is `<unix seconds>.<hex HMAC-SHA256 over "<unix seconds>.<raw body>">`, compared in constant time against every configured key (rotation); a timestamp more than five minutes from now is refused as a replay; a bad, stale or missing signature answers 401 and writes nothing but a metric (`status_poll.verify_webhook`).
+- **Hint only:** the body is never trusted for state. A valid hint (`status_poll.webhook_event`: the submission id and a stable event id only, recorded once per event by `record_provider_hint`) starts `EnvelopeStatusPoll` for the named envelope, which reads the provider's status through the W7 read-back and decides; the receiver itself changes no row.
 - **Rate-limited** per source and per envelope; **echoes nothing** (an empty 202); bodies are not logged.
 - **If refused:** N-02 runs poll-only (`EnvelopeStatusPoll` every 5 minutes for open provider envelopes, and on a portal return).
 
