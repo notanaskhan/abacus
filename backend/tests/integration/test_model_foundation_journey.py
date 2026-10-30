@@ -7,8 +7,11 @@ AC-11, AC-13 and AC-15; chapter 10 section 10.6 (INV-1, INV-3, INV-4, INV-5).
 The walk:
 - Priya Raman (practice leader) creates Copperleaf's "2026 Close" for a new client and holds its
   engagement partner role as the creator.
-- She records the G1 decision with fresh MFA, then her independence. The agent is refused.
-- She records the signed letter (G3) and creates the 12 monthly closes.
+- She records the G1 decision through CLI-07 with fresh MFA; the agent is refused. Her
+  independence (G2) is seeded as her CLI-08 conclusion (P-07-T59, DEC-906: SPEC-025's acceptance
+  and independence routes are retired).
+- She records the signed letter (G3), which contracts the engagement, and creates the 12 monthly
+  closes.
 - She asks for the July bank statements. Tess Moreno (Copperleaf, `owner` grant) uploads them,
   and Priya accepts them.
 - Lena Park (firm admin) is walled from Copperleaf. Ashford, a second client, has its own
@@ -26,7 +29,7 @@ from __future__ import annotations
 import uuid
 from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any, Final, cast
 
 import httpx
@@ -67,6 +70,8 @@ MASTER: Final = b"journey-test-master-key-0123456789abcdef"
 BUCKET: Final = f"journey-{uuid.uuid4().hex[:12]}"
 PDF: Final = b"%PDF-1.4\n% Copperleaf July bank statement (synthetic)\n%%EOF\n"
 PERIODS: Final = tuple(f"2026-{month:02d}" for month in range(1, 13))
+# The seeded CLI-08 conclusion, a day before the walk.
+CONCLUDED_AT: Final = datetime.now(UTC).replace(microsecond=0) - timedelta(days=1)
 
 # INV-1 (chapter 10 section 10.6): the tables whose rows are final verbs. A table that is not
 # built yet, or has no `actor_kind`, is passed over and joins the check when it lands.
@@ -221,8 +226,10 @@ class Journey:
     async def get(self, who: Who, path: str) -> httpx.Response:
         return await self.http.get(path, headers=self.headers(who))
 
-    async def post(self, who: Who, path: str, body: Json | None = None) -> httpx.Response:
-        return await self.http.post(path, json=body or {}, headers=self.headers(who))
+    async def post(
+        self, who: Who, path: str, body: Json | None = None, *, mfa: bool = False
+    ) -> httpx.Response:
+        return await self.http.post(path, json=body or {}, headers=self.headers(who, mfa=mfa))
 
     async def put(self, who: Who, path: str, body: Json, *, mfa: bool = False) -> httpx.Response:
         return await self.http.put(path, json=body, headers=self.headers(who, mfa=mfa))
@@ -256,23 +263,105 @@ class Journey:
         return cast(Json, response.json())
 
     async def accept(self, who: Who, engagement: uuid.UUID) -> httpx.Response:
-        return await self.put(
+        """G1 through CLI-07's "Decide" (fresh MFA): the questionnaire record is seeded as
+        Awaiting partner, and `who` is a partner-level member (DEC-375). G2 is seeded as `who`'s
+        own CLI-08 conclusion (P-07-T59, DEC-906: SPEC-025's acceptance and independence routes
+        are retired; CLI-08's suites walk its route)."""
+        await self.seed.run(
+            "UPDATE memberships SET level = 'partner' WHERE tenant_id = $1 AND user_id = $2",
+            self.tenant,
+            who.user_id,
+        )
+        async with self.seed.held() as conn, conn.transaction():
+            await conn.execute("SET LOCAL session_replication_role = replica")
+            template = await conn.fetchval(
+                "INSERT INTO acceptance_questionnaire_templates (tenant_id, name, family, "
+                "created_by) VALUES ($1, $2, 'audit_assurance', $3) "
+                "ON CONFLICT (tenant_id, name) DO UPDATE SET name = EXCLUDED.name RETURNING id",
+                self.tenant,
+                "Journey acceptance",
+                who.user_id,
+            )
+            version = await conn.fetchval(
+                "INSERT INTO acceptance_questionnaire_template_versions (tenant_id, template_id, "
+                "version_no, sections, created_by) VALUES ($1, $2, 1, $3::jsonb, $4) "
+                "ON CONFLICT (tenant_id, template_id, version_no) "
+                "DO UPDATE SET version_no = 1 RETURNING id",
+                self.tenant,
+                template,
+                '[{"code": "scope", "title": "Scope"}]',
+                who.user_id,
+            )
+            await conn.execute(
+                "INSERT INTO acceptance_records (tenant_id, engagement_id, client_id, kind, "
+                "template_version_id, prepared_by, status) SELECT $1, id, client_id, "
+                "'new_client', $3, $4, 'awaiting_partner' FROM engagements "
+                "WHERE tenant_id = $1 AND id = $2",
+                self.tenant,
+                engagement,
+                version,
+                who.user_id,
+            )
+            await conn.execute(
+                "INSERT INTO independence_conclusions (tenant_id, engagement_id, option, "
+                "concluded_by, concluded_at, mfa_verified_at, actor_kind) "
+                "VALUES ($1, $2, 'independent', $3, $4, $4, 'human')",
+                self.tenant,
+                engagement,
+                who.user_id,
+                CONCLUDED_AT,
+            )
+            await conn.execute("SET LOCAL session_replication_role = origin")
+        seen = await self.seed.value(
+            "SELECT version FROM acceptance_records WHERE tenant_id = $1 AND engagement_id = $2",
+            self.tenant,
+            engagement,
+        )
+        return await self.post(
             who,
-            f"/v1/engagements/{engagement}/acceptance",
+            f"/v1/engagements/{engagement}/acceptance/decision",
             {
-                "decision": "accepted",
-                "documented_at": "Acceptance memo, client file",
-                "independence_concluded": True,
-                "independence_documented_at": "Independence memo, client file",
+                "option": "accept",
+                "rationale": "Acceptance memo, client file",
+                "seen_version": seen,
             },
             mfa=True,
         )
 
     async def letter(self, who: Who, engagement: uuid.UUID) -> httpx.Response:
+        """G3 through "Record signed letter…": both parties sign today, on or after the G1
+        decision (AC-17), and the signed copy is an evidence version stored first (P-07 Story
+        6.2)."""
+        item = await self.seed.value(
+            "INSERT INTO evidence_items (tenant_id, engagement_id, title, created_by_kind, "
+            "created_by_id) VALUES ($1, $2, 'Signed engagement letter', 'system', 'seed') "
+            "RETURNING id",
+            self.tenant,
+            engagement,
+        )
+        fingerprint = uuid.uuid4().hex * 2
+        copy = await self.seed.value(
+            "INSERT INTO evidence_versions (tenant_id, engagement_id, evidence_item_id, "
+            "version_no, fingerprint, storage_key, storage_version_id, size_bytes, media_type, "
+            "source, method) VALUES ($1, $2, $3, 1, $4, $5, 'v1', 10, 'application/pdf', "
+            "'upload', 'uploaded') RETURNING id",
+            self.tenant,
+            engagement,
+            item,
+            fingerprint,
+            f"tenants/{self.tenant}/sha256/{fingerprint}",
+        )
+        signed_on = datetime.now(UTC).date().isoformat()
         return await self.put(
             who,
-            f"/v1/engagements/{engagement}/letter",
-            {"status": "signed", "letter_date": "2026-01-05"},
+            f"/v1/engagements/{engagement}/letter/record",
+            {
+                "mode": "signed",
+                "client_signed_on": signed_on,
+                "firm_signed_on": signed_on,
+                "firm_signer_user_id": str(who.user_id),
+                "signed_copy_version_id": str(copy),
+            },
         )
 
     async def request(self, who: Who, engagement: uuid.UUID, description: str) -> uuid.UUID:
@@ -395,22 +484,19 @@ async def test_j02_copperleaf_walks_from_client_to_a_received_request(
         await authorise(
             agent, "acceptance.record", await engagement_resource(agent.tenant, engagement)
         )
-    assert (await j.accept(priya, engagement)).status_code == 200
+    # G1 through CLI-07's decision; G2, Priya's own conclusion, seeded (DEC-906).
+    decided = await j.accept(priya, engagement)
+    assert decided.status_code == 201, decided.text
     assert await j.status(engagement) == "accepted"
-    assert (await j.accept(priya, ashford)).status_code == 200
-    # Priya confirms her own independence (SPEC-025 AC-5): the staff gate before client data.
-    for made in (engagement, ashford):
-        confirmed = await j.post(priya, f"/v1/engagements/{made}/independence", {"confirm": True})
-        assert confirmed.status_code == 200, confirmed.text
+    assert (await j.accept(priya, ashford)).status_code == 201
 
     # --- G3: the letter -----------------------------------------------------------------------
-    # The engagement should now read `contracted` ("Letter signed"); it stays `accepted` (strict
-    # xfail below). The gate itself opens: the letter is signed and nothing blocks client data.
+    # The signed letter meets G3 and contracts the engagement ("Letter signed").
     signed = await j.letter(priya, engagement)
     assert signed.status_code == 200, signed.text
-    setup = cast(Json, signed.json())
-    assert cast(Json, setup["letter"])["status"] == "signed"
-    assert setup["blocked"] is None
+    out = cast(Json, signed.json())
+    assert out["status"] == "signed"
+    assert out["engagement_status"] == "contracted"
     assert (await j.letter(priya, ashford)).status_code == 200
 
     # --- 12 monthly closes (C1; SPEC-047 AC-11) -----------------------------------------------
@@ -521,12 +607,12 @@ async def test_j02_copperleaf_walks_from_client_to_a_received_request(
     refused = await j.upload(tess, ashford, other)
     assert refused.status_code in (403, 404), refused.text
     assert await j.item_status(other) == "requested"  # untouched
-    assert (
-        await seed.value(
-            "SELECT count(*) FROM evidence_versions WHERE engagement_id = $1", ashford
-        )
-        == 0
-    )
+    # Ashford holds only its signed letter's copy (G3), nothing Tess sent.
+    assert await seed.value(
+        "SELECT array_agg(i.title) FROM evidence_versions v JOIN evidence_items i "
+        "ON i.id = v.evidence_item_id WHERE v.engagement_id = $1",
+        ashford,
+    ) == ["Signed engagement letter"]
 
     # The database side: every read event of Tess's falls within her grant.
     assert (
@@ -546,7 +632,14 @@ async def test_j02_copperleaf_walks_from_client_to_a_received_request(
     for event in events:
         by_action.setdefault(str(event["action"]), []).append(event)
     assert {e["actor_kind"] for e in events} <= {"human", "system"}
-    for action in ("engagement.created", "engagement.accepted", "engagement.letter_recorded"):
+    # CLI-07's decision and the v2 letter route (P-07-T59) write `acceptance.decided` and
+    # `letter.recorded`; the lifecycle move to `accepted` still audits `engagement.accepted`.
+    for action in (
+        "engagement.created",
+        "acceptance.decided",
+        "engagement.accepted",
+        "letter.recorded",
+    ):
         rows = [e for e in by_action.get(action, []) if e["target_id"] == str(engagement)]
         assert len(rows) == 1, (action, rows)
         assert rows[0]["actor_kind"] == "human"
@@ -581,14 +674,18 @@ async def test_j02_copperleaf_walks_from_client_to_a_received_request(
     moves = await seed.rows(
         "SELECT payload->>'from_status' AS f, payload->>'to_status' AS t FROM outbox "
         "WHERE tenant_id = $1 AND event_type = 'engagement.status_changed' "
-        "AND payload->>'engagement_id' = $2 ORDER BY id",
+        "AND payload->>'engagement_id' = $2 ORDER BY seq",
         j.tenant,
         str(engagement),
     )
-    assert (moves[0]["f"], moves[0]["t"]) == ("prospect", "accepted")
-    assert len(moves) == len(
-        [e for e in by_action.get("engagement.accepted", []) if e["target_id"] == str(engagement)]
-    )
+    # The decision's move and the letter's (the v2 route contracts the engagement), each beside
+    # its audit row.
+    assert [(m["f"], m["t"]) for m in moves] == [
+        ("prospect", "accepted"),
+        ("accepted", "contracted"),
+    ]
+    assert who_did("engagement.accepted", engagement) == [("human", str(priya.user_id))]
+    assert who_did("letter.recorded", engagement) == [("human", str(priya.user_id))]
 
 
 # ================================================================================================
@@ -617,12 +714,8 @@ async def test_a_new_engagement_starts_in_prospect(
     assert await j.status(uuid.UUID(str(made["id"]))) == "prospect"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG: recording the signed letter leaves an accepted engagement `accepted`. "
-    "transitions.LIFECYCLE has the system move accepted -> contracted, but record_letter never "
-    "makes it (F-03 section 4: `contracted` follows `letter.record`). See #338.",
-)
+# Was a strict xfail (#338): SPEC-025's letter route left the engagement `accepted`. Its
+# replacement, `PUT …/letter/record` (P-07-T14; P-07-T59 retired the old one), moves it.
 async def test_recording_the_signed_letter_moves_accepted_to_contracted(
     seed: Seeder, http: httpx.AsyncClient, idp: FakeIdentityProvider
 ) -> None:
@@ -631,7 +724,7 @@ async def test_recording_the_signed_letter_moves_accepted_to_contracted(
         str((await j.create(priya, "Copperleaf Coffee Roasters, Inc.", "2026 Close"))["id"])
     )
     await j.prospect(engagement)
-    assert (await j.accept(priya, engagement)).status_code == 200
+    assert (await j.accept(priya, engagement)).status_code == 201
     assert await j.status(engagement) == "accepted"
     assert (await j.letter(priya, engagement)).status_code == 200
     assert await j.status(engagement) == "contracted"

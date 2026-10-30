@@ -1,0 +1,423 @@
+"""K-1 packages and their portal view, the stub (T-02-T02; T-02 §4.3; C5 additive v1.x). Contract:
+`docs/contracts/k1-packages.md`.
+
+A K-1 package is one recipient's K-1 (with K-3 and state K-1s) from an issuing 1065, 1120-S or
+1041. Drafts never reach the portal; a person releases final packages after the release check,
+with an approval grant and an Undo window (`tax/k1_release.py`, K1RELEASE-001). A recipient sees
+only their own released packages (POR-13), downloads them (audited) and updates their W-9/W-8 or
+address for a person to accept (DV-10).
+
+Firm routes answer 404 for a client principal, 403 for a principal the matrix refuses, 404 with
+`tax.k1_release` off and 501 with it on. Portal routes answer 404 to a firm principal and 404 with
+the flag off, then 501; their own-records and MFA-floor checks come with the build (T-02-T22).
+
+Classification: box amounts are TRI; recipient names and addresses confidential; a TIN shows its
+last four only.
+"""
+
+from __future__ import annotations
+
+from datetime import date, datetime
+from decimal import Decimal
+from typing import Annotated, Literal, NoReturn
+from uuid import UUID
+
+from fastapi import Depends, Header, Path
+from pydantic import BaseModel, ConfigDict, Field
+
+from abacus.kernel._flags import TAX_K1_RELEASE
+from abacus.kernel._statuses import K1PackageStatus, RecipientDetailsChangeStatus
+from abacus.kernel.classification import classified
+from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.flags import flag_enabled
+from abacus.kernel.listing import ListPage
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    AuthContext,
+    Resource,
+    authorise,
+    current_context,
+    current_member,
+)
+
+Ctx = Annotated[AuthContext, Depends(current_context)]
+Member = Annotated[AuthContext, Depends(current_member)]
+IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=8, max_length=200)]
+PackageId = Annotated[UUID, Path()]
+DocumentKind = Literal["k1", "k3", "state_k1", "letter"]
+
+
+def _frozen() -> ConfigDict:
+    return ConfigDict(frozen=True, extra="forbid")
+
+
+class K1BoxLineOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    document_kind: Annotated[DocumentKind, classified("internal")]
+    box_code: Annotated[str, classified("internal")]
+    description: Annotated[str, classified("internal")]
+    amount: Annotated[Decimal, classified("restricted", tri=True)]
+    is_total: Annotated[bool, classified("internal")]
+
+
+class K1DocumentOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    kind: Annotated[DocumentKind, classified("internal")]
+    jurisdiction: Annotated[str | None, classified("internal")]
+    evidence_version_id: Annotated[UUID, classified("internal")]
+    is_draft: Annotated[bool, classified("internal")]
+
+
+class K1PackageOut(BaseModel):
+    """A TXP-12 row (and a POR-13 row, released and later only)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    recipient_id: Annotated[UUID, classified("internal")]
+    recipient_name: Annotated[str, classified("confidential")]
+    recipient_kind: Annotated[
+        Literal["gp", "lp", "shareholder", "beneficiary"], classified("internal")
+    ]
+    # No TIN on a list row (MaskedTinOut is never in a list, ADR-031); the recipient detail
+    # carries it masked.
+    form: Annotated[Literal["1065", "1120s", "1041"], classified("internal")]
+    tax_year: Annotated[int, classified("internal")]
+    status: Annotated[K1PackageStatus, classified("internal")]
+    k3_status: Annotated[
+        Literal["included", "not_required", "not_included"], classified("internal")
+    ]
+    state_codes: Annotated[list[str], classified("internal")]
+    released_at: Annotated[datetime | None, classified("confidential")]
+    version_no: Annotated[int, classified("internal")]
+    allowed_actions: Annotated[list[str], classified("internal")]
+
+
+class K1PackageDetailOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    package: Annotated[K1PackageOut, classified("confidential")]
+    lines: Annotated[list[K1BoxLineOut], classified("restricted", tri=True)]
+    documents: Annotated[list[K1DocumentOut], classified("internal")]
+
+
+class K1ViewerManifestOut(BaseModel):
+    """What SHL-08 opens for one document (C4)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    document_id: Annotated[UUID, classified("internal")]
+    evidence_version_id: Annotated[UUID, classified("internal")]
+    page_count: Annotated[int | None, classified("internal")]
+
+
+class K1ReleaseCheckOut(BaseModel):
+    """Release eligibility: failing checks as codes, never prose."""
+
+    model_config = ConfigDict(frozen=True)
+
+    eligible: Annotated[bool, classified("internal")]
+    failing: Annotated[list[str], classified("internal")]
+    package_ids: Annotated[list[UUID], classified("internal")]
+
+
+class K1ShareIn(BaseModel):
+    model_config = _frozen()
+
+    package_ids: Annotated[list[UUID], Field(min_length=1, max_length=500), classified("internal")]
+    target_return_ids: Annotated[
+        list[UUID], Field(min_length=1, max_length=50), classified("internal")
+    ]
+
+
+class K1ShareOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    shared: Annotated[int, classified("internal")]
+
+
+class K1ReleaseIn(BaseModel):
+    model_config = _frozen()
+
+    package_ids: Annotated[list[UUID], Field(min_length=1, max_length=500), classified("internal")]
+    channel: Annotated[Literal["portal"], classified("internal")]
+    email_template_version_id: Annotated[UUID, classified("internal")]
+    seen_version: Annotated[int, Field(ge=1), classified("internal")]
+
+
+class K1ReleaseOut(BaseModel):
+    """A release waits out its Undo window (`not_before`), then runs."""
+
+    model_config = ConfigDict(frozen=True)
+
+    release_id: Annotated[UUID, classified("internal")]
+    status: Annotated[
+        Literal["pending", "undone", "running", "completed", "failed"], classified("internal")
+    ]
+    not_before: Annotated[datetime, classified("internal")]
+
+
+class K1ResendIn(BaseModel):
+    model_config = _frozen()
+
+    contact_id: Annotated[UUID, classified("internal")]
+
+
+class RecipientDetailsChangeOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    recipient_id: Annotated[UUID, classified("internal")]
+    kind: Annotated[Literal["w9", "w8", "address"], classified("internal")]
+    status: Annotated[RecipientDetailsChangeStatus, classified("internal")]
+    submitted_at: Annotated[datetime, classified("confidential")]
+    evidence_version_id: Annotated[UUID | None, classified("internal")]
+
+
+class ReviewReasonIn(BaseModel):
+    model_config = _frozen()
+
+    reason: Annotated[str | None, Field(max_length=500), classified("confidential")] = None
+
+
+class PortalDetailsChangeIn(BaseModel):
+    model_config = _frozen()
+
+    kind: Annotated[Literal["w9", "w8", "address"], classified("internal")]
+    upload_id: Annotated[UUID | None, classified("internal")] = None
+    address: Annotated[dict[str, str] | None, classified("confidential")] = None
+
+
+class EFurnishingConsentIn(BaseModel):
+    model_config = _frozen()
+
+    decision: Annotated[Literal["given", "declined"], classified("internal")]
+    disclosure_version_id: Annotated[UUID, classified("internal")]
+
+
+class EFurnishingConsentOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    package_id: Annotated[UUID, classified("internal")]
+    e_furnishing_consent: Annotated[
+        Literal["unknown", "given", "declined"], classified("internal")
+    ]
+    decided_on: Annotated[date, classified("confidential")]
+
+
+k1_router = AbacusRouter(prefix="/v1", tags=["k1-packages"])
+portal_k1_router = AbacusRouter(prefix="/v1/portal", tags=["portal"])
+
+
+async def _stub(ctx: AuthContext, action: str) -> NoReturn:
+    if ctx.client:
+        raise NotFound("k1_package")
+    await authorise(ctx, action, Resource.firm(ctx.tenant_id))
+    if not await flag_enabled(ctx.tenant, TAX_K1_RELEASE):
+        raise NotFound(TAX_K1_RELEASE.name)
+    raise NotImplementedYet
+
+
+async def _portal_stub(ctx: AuthContext) -> NoReturn:
+    """A firm principal never reaches the portal routes; the recipient's own-records check and
+    the MFA floor come with T-02-T22."""
+    if not ctx.client:
+        raise NotFound("k1_package")
+    if not await flag_enabled(ctx.tenant, TAX_K1_RELEASE):
+        raise NotFound(TAX_K1_RELEASE.name)
+    raise NotImplementedYet
+
+
+@k1_router.get(
+    "/tax-returns/{return_id}/k1-packages",
+    action="k1_package.read",
+    response_model=ListPage[K1PackageOut],
+    errors=(501,),
+)
+async def list_k1_packages_route(
+    return_id: Annotated[UUID, Path()], ctx: Ctx
+) -> ListPage[K1PackageOut]:
+    await _stub(ctx, "k1_package.read")
+
+
+@k1_router.get(
+    "/k1-packages/{package_id}",
+    action="k1_package.read",
+    response_model=K1PackageDetailOut,
+    errors=(501,),
+)
+async def k1_package_route(package_id: PackageId, ctx: Ctx) -> K1PackageDetailOut:
+    await _stub(ctx, "k1_package.read")
+
+
+@k1_router.get(
+    "/k1-packages/{package_id}/documents/{document_id}",
+    action="k1_package.read",
+    response_model=K1ViewerManifestOut,
+    errors=(501,),
+)
+async def k1_document_route(
+    package_id: PackageId, document_id: Annotated[UUID, Path()], ctx: Ctx
+) -> K1ViewerManifestOut:
+    await _stub(ctx, "k1_package.read")
+
+
+@k1_router.post(
+    "/tax-returns/{return_id}/k1-packages:share-internal",
+    action="k1_package.share_internal",
+    response_model=K1ShareOut,
+    errors=(409, 501),
+)
+async def share_k1_route(
+    return_id: Annotated[UUID, Path()], body: K1ShareIn, ctx: Ctx
+) -> K1ShareOut:
+    await _stub(ctx, "k1_package.share_internal")
+
+
+@k1_router.get(
+    "/tax-returns/{return_id}/k1-packages/release-check",
+    action="k1_package.read",
+    response_model=K1ReleaseCheckOut,
+    errors=(501,),
+)
+async def k1_release_check_route(
+    return_id: Annotated[UUID, Path()], ctx: Ctx
+) -> K1ReleaseCheckOut:
+    await _stub(ctx, "k1_package.read")
+
+
+@k1_router.post(
+    "/tax-returns/{return_id}/k1-packages:release",
+    action="k1_package.release",
+    response_model=K1ReleaseOut,
+    status_code=202,
+    errors=(409, 501),
+)
+async def release_k1_route(
+    return_id: Annotated[UUID, Path()],
+    body: K1ReleaseIn,
+    ctx: Ctx,
+    idempotency_key: IdempotencyKey,
+) -> K1ReleaseOut:
+    await _stub(ctx, "k1_package.release")
+
+
+@k1_router.post(
+    "/k1-releases/{release_id}:undo",
+    action="k1_package.release",
+    response_model=K1ReleaseOut,
+    errors=(409, 501),
+)
+async def undo_k1_release_route(release_id: Annotated[UUID, Path()], ctx: Ctx) -> K1ReleaseOut:
+    await _stub(ctx, "k1_package.release")
+
+
+@k1_router.post(
+    "/k1-packages/{package_id}:resend",
+    action="k1_package.resend",
+    response_model=K1PackageOut,
+    errors=(409, 501),
+)
+async def resend_k1_route(
+    package_id: PackageId, body: K1ResendIn, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> K1PackageOut:
+    await _stub(ctx, "k1_package.resend")
+
+
+@k1_router.get(
+    "/k1-recipients/{recipient_id}/details-changes",
+    action="k1_recipient.review_details",
+    response_model=list[RecipientDetailsChangeOut],
+    errors=(501,),
+)
+async def details_changes_route(
+    recipient_id: Annotated[UUID, Path()], ctx: Ctx
+) -> list[RecipientDetailsChangeOut]:
+    await _stub(ctx, "k1_recipient.review_details")
+
+
+@k1_router.post(
+    "/recipient-details-changes/{change_id}:accept",
+    action="k1_recipient.review_details",
+    response_model=RecipientDetailsChangeOut,
+    errors=(409, 501),
+)
+async def accept_details_change_route(
+    change_id: Annotated[UUID, Path()], body: ReviewReasonIn, ctx: Ctx
+) -> RecipientDetailsChangeOut:
+    await _stub(ctx, "k1_recipient.review_details")
+
+
+@k1_router.post(
+    "/recipient-details-changes/{change_id}:reject",
+    action="k1_recipient.review_details",
+    response_model=RecipientDetailsChangeOut,
+    errors=(409, 501),
+)
+async def reject_details_change_route(
+    change_id: Annotated[UUID, Path()], body: ReviewReasonIn, ctx: Ctx
+) -> RecipientDetailsChangeOut:
+    await _stub(ctx, "k1_recipient.review_details")
+
+
+@portal_k1_router.get(
+    "/k1s", action="portal_k1.read", response_model=list[K1PackageOut], errors=(501,)
+)
+async def portal_k1s_route(ctx: Member) -> list[K1PackageOut]:
+    """POR-13: the recipient's own packages, released and later only."""
+    await _portal_stub(ctx)
+
+
+@portal_k1_router.get(
+    "/k1s/{package_id}", action="portal_k1.read", response_model=K1PackageDetailOut, errors=(501,)
+)
+async def portal_k1_route(package_id: PackageId, ctx: Member) -> K1PackageDetailOut:
+    await _portal_stub(ctx)
+
+
+@portal_k1_router.get(
+    "/k1s/{package_id}/download", action="portal_k1.download", response_model=bytes, errors=(501,)
+)
+async def portal_k1_download_route(package_id: PackageId, ctx: Member) -> bytes:
+    """A deterministic zip; an access event per download."""
+    await _portal_stub(ctx)
+
+
+@portal_k1_router.get(
+    "/k1s/{package_id}/attachments/{document_id}",
+    action="portal_k1.download",
+    response_model=bytes,
+    errors=(501,),
+)
+async def portal_k1_attachment_route(
+    package_id: PackageId, document_id: Annotated[UUID, Path()], ctx: Member
+) -> bytes:
+    await _portal_stub(ctx)
+
+
+@portal_k1_router.post(
+    "/k1-recipients/{recipient_id}/details-changes",
+    action="portal_k1.update_details",
+    response_model=RecipientDetailsChangeOut,
+    status_code=201,
+    errors=(501,),
+)
+async def portal_details_change_route(
+    recipient_id: Annotated[UUID, Path()], body: PortalDetailsChangeIn, ctx: Member
+) -> RecipientDetailsChangeOut:
+    await _portal_stub(ctx)
+
+
+@portal_k1_router.post(
+    "/k1s/{package_id}/e-furnishing-consent",
+    action="portal_k1.update_details",
+    response_model=EFurnishingConsentOut,
+    errors=(501,),
+)
+async def portal_e_furnishing_route(
+    package_id: PackageId, body: EFurnishingConsentIn, ctx: Member
+) -> EFurnishingConsentOut:
+    await _portal_stub(ctx)

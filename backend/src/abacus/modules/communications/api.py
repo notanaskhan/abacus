@@ -63,6 +63,11 @@ from abacus.modules.communications.intake import (
     record_inbound_message,
 )
 from abacus.modules.communications.intake_contract import destinations_router, intake_router
+from abacus.modules.communications.intake_purge_workflow import (
+    IntakePurgeInput,
+    IntakeWithdrawalPurgeWorkflow,
+    intake_purge_id,
+)
 from abacus.modules.communications.invitations import deliver_invitation, deliver_staff_invitation
 from abacus.modules.communications.notification_email import (
     NotificationMail,
@@ -163,6 +168,11 @@ from abacus.modules.communications.transport import LocalMailbox, Transport, con
 from abacus.modules.communications.triage import ACTIVITIES as TRIAGE_ACTIVITIES
 from abacus.modules.communications.triage import WORKFLOWS as TRIAGE_WORKFLOWS
 from abacus.modules.communications.triage import on_attachment_received
+from abacus.modules.communications.triage_apply import (
+    IntakeDestination,
+    Placement,
+    register_intake_destination,
+)
 from abacus.modules.communications.triage_workflow import (
     AttachmentTriageWorkflow,
     TriageInput,
@@ -275,6 +285,9 @@ __all__ = [
     "IdentityStatus",
     "InMemorySesIdentities",
     "Inbound",
+    "IntakeDestination",
+    "IntakePurgeInput",
+    "IntakeWithdrawalPurgeWorkflow",
     "IssuedLink",
     "LocalMailbox",
     "MessageBounced",
@@ -285,6 +298,7 @@ __all__ = [
     "NextSendOut",
     "NotificationMail",
     "OutOfScope",
+    "Placement",
     "PreviewSelection",
     "RecipientRef",
     "Recorded",
@@ -331,6 +345,7 @@ __all__ = [
     "first_tick_on_or_after",
     "follow_up_policy",
     "import_email_templates",
+    "intake_purge_id",
     "is_suppressed",
     "issue_secure_link",
     "limit_reached_today",
@@ -343,6 +358,7 @@ __all__ = [
     "publish_email_template",
     "record_inbound_message",
     "register_email_template",
+    "register_intake_destination",
     "register_reminder_history",
     "registered_templates",
     "resolve_secure_link",

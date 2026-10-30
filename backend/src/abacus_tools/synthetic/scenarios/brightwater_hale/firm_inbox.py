@@ -15,7 +15,7 @@ replays through the communications module's intake service. Synthetic, Brightwat
 - **Footing** (N-01 §5.3, DEC-47: derived, never typed): 2+1+3+3+2+2+2+2+1+1+4 = 23 waiting; rows
   9, 13, 16, 17 = 4 unmatched; 21 after INB-02 applies Feld's two; the FIL-01 figures below.
 
-`export()` writes the fixture-side summary `apps/web/src/fixtures/seed/e0.inbox.json` (`python -m
+`export()` writes the fixture-side summary `apps/web/src/fixtures/seed/inbox-e0.json` (`python -m
 abacus_tools.synthetic.scenarios.brightwater_hale.firm_inbox --export`), which the web suite holds
 INB-01's and FIL-01's fixture seeds and HOME-01's "Inbox waiting" to. Opt-in
 (`--slice firm_inbox`).
@@ -41,7 +41,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.timeline import Event
 SLICE: Final = "firm_inbox"
 NEEDS: Final[tuple[str, ...]] = ()
 DATA: Final = Path(__file__).parent / "files" / "firm_inbox_e0.json"
-EXPORT: Final = Path(__file__).resolve().parents[6] / "apps/web/src/fixtures/seed/e0.inbox.json"
+EXPORT: Final = Path(__file__).resolve().parents[6] / "apps/web/src/fixtures/seed/inbox-e0.json"
 E0: Final = datetime(2026, 9, 14, 9, 24, tzinfo=CT)
 REPLAY_FROM: Final = datetime(2026, 9, 2, 8, 0, tzinfo=CT)  # DEC-363: acts before setup
 INTAKE_TEAM: Final = "Intake"

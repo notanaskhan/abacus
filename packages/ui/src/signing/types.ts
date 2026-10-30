@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 // The T16 signing kit's prop API (F-06-T04; F-06.md §5.2, SPEC-400 AC-1…AC-8): the contract the
 // F-06-T07 acceptance tests and N-02's POR-06 container build against. L2 rule: generic shapes
 // only, no @abacus/api-client types, no role names. N-02 maps C7's PortalEnvelopeView onto
@@ -159,8 +160,17 @@ export interface SigningCeremonyProps {
   user: string;
   /** The portal nav the app gives the viewer; default: an individual client's. */
   nav?: readonly PortalNavItem[];
-  /** "All documents to sign". */
-  backLabel: string;
+  /** "All documents to sign". Without it the header draws no back control (the T16 frames). */
+  backLabel?: string;
+  /** The signers card under the documents; default true (TPL-16). T16's frames draw none. */
+  showSigners?: boolean;
+  /** The documents column's centred title; default "Documents (n)". T16 draws "Documents". */
+  documentsTitle?: string;
+  /** A centred title over the steps column ("Steps", T16); default none (TPL-16). */
+  stepsTitle?: string;
+  /** Replaces the sign call to action in the steps column: the native adopt panel the T16 frames
+   * draw (a specimen; production signs in the provider's view, DF-12). */
+  signPanel?: ReactNode;
   completion?: SigningCompletionVM;
   /** Envelope state outside the data: the query is loading or failed. */
   view?: "ready" | "loading" | "error";
@@ -200,4 +210,6 @@ export interface SigningCeremonyProps {
   onPageSeen?: (documentId: string, page: number) => void;
   /** N-02-T26: a portal nav item (the app's area routing). */
   onNavigate?: (label: string) => void;
+  /** With `declineForceState`: the held dialog sits over the frame on the scrim (TPL-16f). */
+  declineHeldScrim?: boolean;
 }

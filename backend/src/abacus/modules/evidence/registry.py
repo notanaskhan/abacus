@@ -51,6 +51,7 @@ TABLES: frozenset[str] = frozenset(
         "firm_exports",
         "firm_export_links",
         "firm_export_downloads",
+        "document_classifications",  # N-01-T17 (0404): rule and agent classifications
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -77,6 +78,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "engagement_export_contents",  # A-01-T18 (0191)
         "firm_export_links",  # Q-02-T43 (0216)
         "firm_export_downloads",  # Q-02-T43 (0216)
+        "document_classifications",  # N-01-T17 (0404): a reclassification is a new row
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
@@ -169,6 +171,13 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "firm_export_downloads": frozenset(
         {"tenant_id", "export_id", "link_id", "user_id", "bytes_sent", "range_start"}
         | {"range_end", "mfa_at"}
+    ),
+    # N-01-T17 (0404): a classification as proposed; id and created_at are the server's.
+    "document_classifications": frozenset(
+        {"tenant_id", "subject_kind", "subject_id", "form_family", "form_code", "tax_year"}
+        | {"issuer_name", "kind", "page_count", "taxpayer_tin_last4", "corrected"}
+        | {"confidences", "citation_ids", "proposed_by_kind", "agent_run_id", "rules_version"}
+        | {"confirmed_by", "confirmed_at"}
     ),
 }
 # Columns the app may update; tables not listed keep what their migration grants.

@@ -104,6 +104,9 @@ describe("L2 rejects each deny case", () => {
   it('"task" outside allow-listed close keys, and "Todo" unhyphenated', () => {
     expect(rules("X-01", { add: "+ Task" })).toEqual(["task:add"]);
     expect(rules("CLS-99", { step: "Close task" }, { task: ["step"] })).toEqual([]);
+    // DEC-1274: the close-task allowance is per key; ADM-04's other keys still say "to-do".
+    expect(rules("ADM-04", { COPY: { rows: { 2: "close task" } } })).toEqual([]);
+    expect(rules("ADM-04", { COPY: { rows: { 3: "close task" } } })).toEqual(["task:COPY.rows.3"]);
     expect(rules("X-01", { add: "+ Todo" })).toEqual(["todo:add"]);
     expect(rules("X-01", { add: "+ To-do" })).toEqual([]);
   });

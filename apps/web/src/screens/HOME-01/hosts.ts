@@ -10,26 +10,14 @@
 //
 // Opaque ids only, never names (ADR-031). Nothing here decides a gate (INV-1): a row is a link.
 import type { HumanGateOut } from "@abacus/api-client";
-import { to } from "../../routes/to";
+import { hrefOf, to } from "../../routes/to";
 
 type Target = { readonly to: string; readonly params?: Readonly<Record<string, string>> };
-
-function pathOf(target: Target): string {
-  const params = target.params ?? {};
-  return target.to.replace(/\$(\w+)/gu, (_m, name: string) =>
-    encodeURIComponent(params[name] ?? ""),
-  );
-}
-
-function withSearch(path: string, search: Readonly<Record<string, string>>): string {
-  const query = new URLSearchParams(search).toString();
-  return query === "" ? path : `${path}?${query}`;
-}
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 
 /** The screens a `subject_route` may name, the path ids each needs and the search it may carry. */
-const ROUTES: Readonly<
+export type HostRoutes = Readonly<
   Record<
     string,
     {
@@ -38,7 +26,9 @@ const ROUTES: Readonly<
       build: (p: Record<string, string>) => Target;
     }
   >
-> = {
+>;
+
+const ROUTES: HostRoutes = {
   "AUD-03": {
     ids: ["auditId"],
     search: ["item"],
@@ -53,8 +43,13 @@ const ROUTES: Readonly<
 
 /** A `subject_route` read as a link, or undefined when it names a screen or id it may not. */
 export function routeOf(code: string): string | undefined {
+  return resolveRoute(code, ROUTES);
+}
+
+/** `code` resolved against a host's own table (HOME-02 adds the hosts its detail opens). */
+export function resolveRoute(code: string, routes: HostRoutes): string | undefined {
   const [screen = "", query = ""] = code.split("?", 2);
-  const route = ROUTES[screen];
+  const route = routes[screen];
   if (route === undefined) return undefined;
   const given = new URLSearchParams(query);
   const ids: Record<string, string> = {};
@@ -68,7 +63,7 @@ export function routeOf(code: string): string | undefined {
     const value = given.get(name);
     if (value !== null && UUID.test(value)) search[name] = value;
   }
-  return withSearch(pathOf(route.build(ids)), search);
+  return hrefOf(route.build(ids), search);
 }
 
 const CLI08_SUBKINDS: ReadonlySet<string> = new Set([
@@ -82,7 +77,7 @@ export function hostHref(gate: HumanGateOut): string | undefined {
   if (gate.subject_route != null) return routeOf(gate.subject_route);
   if (gate.client_id === null || gate.engagement_id === null) return undefined;
   const ids = { clientId: gate.client_id, engagementId: gate.engagement_id };
-  if (gate.subkind === "acceptance_decision_due") return pathOf(to.CLI07(ids));
-  if (CLI08_SUBKINDS.has(gate.subkind)) return pathOf(to.CLI08(ids));
+  if (gate.subkind === "acceptance_decision_due") return hrefOf(to.CLI07(ids));
+  if (CLI08_SUBKINDS.has(gate.subkind)) return hrefOf(to.CLI08(ids));
   return undefined;
 }

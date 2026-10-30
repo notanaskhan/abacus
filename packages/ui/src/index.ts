@@ -385,6 +385,8 @@ export * from "./signing";
 
 // Attribution and human verbs (F-05-T30).
 export * from "./attribution";
+// P-04-T40: the E7 human-gate kit.
+export * from "./gates";
 
 // C-16 Request kit, portal variant (F-05-T36).
 export * from "./requests";

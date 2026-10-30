@@ -69,6 +69,9 @@ export interface QueueDetailLayoutProps {
   store?: MatchStore<CitationPayload>;
   frame?: boolean;
   embedded?: boolean;
+  /** Routed inside the app's shell, which already draws the toolbar: the record, tabs and panes
+   * alone (HOME-02 at `/home/approvals`; I-01-T16). `toolbar` is then ignored. */
+  bare?: boolean;
   height?: number;
   className?: string;
 }
@@ -105,6 +108,7 @@ export function QueueDetailLayout({
   store,
   frame = false,
   embedded = false,
+  bare = false,
   height,
   className,
 }: QueueDetailLayoutProps): JSX.Element {
@@ -174,6 +178,31 @@ export function QueueDetailLayout({
             </div>
           )),
         ];
+  const body = (
+    <MatchScope {...(store === undefined ? {} : { store })}>
+      <div data-queue={preset} className="flex min-h-0 min-w-0 flex-1">
+        <SplitLayout
+          preset={preset}
+          height={height === undefined ? "viewport" : height - CHROME[preset]}
+          narrow={false}
+          className="w-full bg-transparent p-0"
+        >
+          {panes}
+        </SplitLayout>
+      </div>
+    </MatchScope>
+  );
+  if (bare) {
+    return (
+      <div data-queue-shell="bare" className={cn("flex min-h-0 flex-1 flex-col", className)}>
+        {record}
+        {tabs}
+        <div className="flex min-h-0 flex-1 px-(--edge-app) pt-(--gutter-pane) pb-(--edge-app)">
+          {body}
+        </div>
+      </div>
+    );
+  }
   return (
     <AppShell
       toolbar={toolbar}
@@ -184,18 +213,7 @@ export function QueueDetailLayout({
       record={record}
       {...(tabs === undefined ? {} : { tabs })}
     >
-      <MatchScope {...(store === undefined ? {} : { store })}>
-        <div data-queue={preset} className="flex min-h-0 min-w-0 flex-1">
-          <SplitLayout
-            preset={preset}
-            height={height === undefined ? "viewport" : height - CHROME[preset]}
-            narrow={false}
-            className="w-full bg-transparent p-0"
-          >
-            {panes}
-          </SplitLayout>
-        </div>
-      </MatchScope>
+      {body}
     </AppShell>
   );
 }

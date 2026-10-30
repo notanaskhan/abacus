@@ -20,6 +20,11 @@ TABLES: frozenset[str] = frozenset(
         "programs",
         "program_steps",
         "program_step_pbc_links",
+        # K-02-T04 (0401): firm standards and threshold policies, and their versions.
+        "firm_standards",
+        "firm_standard_versions",
+        "threshold_policies",
+        "threshold_policy_versions",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -78,6 +83,21 @@ INSERT_COLUMNS["program_steps"] = frozenset(
 INSERT_COLUMNS["program_step_pbc_links"] = frozenset(
     {"tenant_id", "version_id", "step_id", "request_position"}
 )
+# K-02-T04 (0401): a standard and its drafts; the guard trigger numbers versions and refuses
+# any change once a version is published or discarded.
+_STANDARD_INSERT = frozenset(
+    {"id", "tenant_id", "kind", "key", "name", "owner_id", "applies_to", "created_by"}
+)
+_VERSION_INSERT = frozenset(
+    {"id", "tenant_id", "parent_id", "version", "payload", "payload_schema_version"}
+    | {"payload_hash", "change_summary", "drafted_from_version_id", "drafted_by"}
+)
+for _parent, _versions in (
+    ("firm_standards", "firm_standard_versions"),
+    ("threshold_policies", "threshold_policy_versions"),
+):
+    INSERT_COLUMNS[_parent] = _STANDARD_INSERT
+    INSERT_COLUMNS[_versions] = _VERSION_INSERT
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     # K-01-T05 (0224): a draft step's content (K-01-T14 edits it); the frozen trigger refuses
     # any change to a published or superseded version's steps.
@@ -90,5 +110,16 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         {"status", "effective_from", "effective_to", "approved_by", "approved_at"}
         | {"approved_actor_kind", "approval_basis", "standards_set_id", "quality_management_ref"}
         | {"engagement_types", "default_for_new_engagements", "row_version"}
+    ),
+    # K-02-T04 (0401): an owner change and a draft's edit, publish or discard.
+    "firm_standards": frozenset({"name", "owner_id", "applies_to", "row_version"}),
+    "threshold_policies": frozenset({"name", "owner_id", "applies_to", "row_version"}),
+    "firm_standard_versions": frozenset(
+        {"status", "effective_from", "payload", "payload_hash", "change_summary"}
+        | {"published_by", "published_actor_kind", "published_at", "row_version"}
+    ),
+    "threshold_policy_versions": frozenset(
+        {"status", "effective_from", "payload", "payload_hash", "change_summary"}
+        | {"published_by", "published_actor_kind", "published_at", "row_version"}
     ),
 }

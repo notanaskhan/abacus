@@ -13,6 +13,9 @@ locals {
     temporal_keyring = "abacus/staging/temporal/payload-keyring"
     peppers          = "abacus/staging/peppers"
     workos           = "abacus/staging/workos"
+    # A-02-T33: the QuickBooks Online sandbox app (`client_id`, `client_secret`), pasted by the
+    # builder from Intuit's developer portal; mapped into the tasks only with `qbo_enabled`.
+    qbo              = "abacus/staging/qbo"
   }
 }
 

@@ -54,7 +54,12 @@ from abacus.modules.identity.authz.conditions import (
     register_gates,
     register_work_item_functions,
 )
-from abacus.modules.identity.authz.matrix import ALLOW_LETTER_EXCEPTIONS, RULES, Rule
+from abacus.modules.identity.authz.matrix import (
+    ALLOW_LETTER_EXCEPTIONS,
+    CONDITION_KEYS,
+    RULES,
+    Rule,
+)
 from abacus.modules.identity.client_access import (
     DELEGATE_ROLES,
     FULL_ROLES,
@@ -233,8 +238,10 @@ from abacus.modules.identity.portal_session import (
 from abacus.modules.identity.repository import (
     ContactGrantRow,
     EngagementRole,
+    GrantRow,
     MemberDetail,
     MemberFacts,
+    active_grants,
     contact_user_ids,
     engagement_team_query,
     firm_tenant_ids,
@@ -330,10 +337,12 @@ from abacus.modules.identity.settings_registry import (
     stored_value,
 )
 from abacus.modules.identity.slots import (
+    OFFSHORE_DISCLOSURE,
     InvitationParties,
     LinkOutcome,
     ScopeFacts,
     consent_given,
+    consent_registered,
     contact_delegations_provider,
     engagement_resource,
     in_intake_scope,
@@ -474,12 +483,14 @@ __all__ = [
     "ALLOW_LETTER_EXCEPTIONS",
     "AUTH_SESSION_PURGE_ID",
     "CODE_DIGITS",
+    "CONDITION_KEYS",  # the matrix's condition kinds, for the generator-coverage sweep (Q-03-T095)
     "DELEGATE_ROLES",
     "EQR_ROLE",
     "EQR_ROLES",
     "FULL_ROLES",
     "IDENTITY",
     "MFA_RECENT",
+    "OFFSHORE_DISCLOSURE",
     "OWN",
     "PARTNER_ROLES",
     "PORTAL_PUBLIC",
@@ -530,6 +541,7 @@ __all__ = [
     "GrantExists",
     "GrantNotYetDue",
     "GrantRole",
+    "GrantRow",
     "GrantScope",
     "GrantScopeInvalid",
     "GrantScopeOutsideClient",
@@ -593,6 +605,7 @@ __all__ = [
     "WallCreated",
     "WallExists",
     "acknowledge",
+    "active_grants",
     "active_staff_among",
     "active_wall_count",
     "add_creator_as_partner",
@@ -628,6 +641,7 @@ __all__ = [
     "configure_staff_verifier",
     "configure_verifier",
     "consent_given",
+    "consent_registered",
     "consume_grant",
     "contact_delegations_provider",
     "contact_emails",

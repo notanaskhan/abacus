@@ -4,3 +4,8 @@
 actions:
   # --- Write capabilities (A-02-T15; ADR-150, P-17, DEC-46; SPEC-333 AC-50) ---
   write_capability.execute: {agent: deny, system: deny}   # no role holds it: every write to a client's system is refused and audited (registry v1 enables none); declared so the generated tests prove every principal, the agent included, is refused (I-AGENT-NEVER)
+  # --- ADM-08 tax-engine settings (T-01-T02 stub; DEC-1156): reading the settings is its own
+  # action so changing them can carry a fresh second factor.
+  integration.read:           {security_admin: allow, firm_admin: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny}   # GET /v1/firm/integrations/{key}/settings
+  integration.configure:      {security_admin: allow, firm_admin: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny, mfa_recent: required}   # PUT settings and mappings
+  integration.test:           {security_admin: allow, firm_admin: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny}   # format check of the latest engine file

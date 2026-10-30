@@ -34,7 +34,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { currentRoute, signIn } from "../../app-core/auth";
 import { useNow } from "../../app-core/clock";
+import { useOpenHref } from "../../app-core/open";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
+import { hrefOf, to } from "../../routes/to";
 import { COPY, GLANCE, GROUPS } from "./copy";
 
 // ADM-01 · Settings home & firm profile (G-01-T07; G-01 §3.1–3.2) on the T12 frame. The screen is
@@ -147,6 +149,12 @@ function useSection(key: SectionKey, enabled: boolean) {
 
 export function ADM01({ onNavigate, onBack }: ADM01Props): JSX.Element {
   const now = useNow();
+  const open = useOpenHref();
+  // A section whose screen is built opens through the manifest's builder; the rest by route id.
+  const go = (section: string): void => {
+    if (section === "consents") open(hrefOf(to.ADM05()));
+    else onNavigate?.(section);
+  };
   const queryClient = useQueryClient();
   const overview = useQuery({ ...settingsOverviewOptions(), retry: false });
   const visible = (key: SectionKey): boolean =>
@@ -325,7 +333,9 @@ export function ADM01({ onNavigate, onBack }: ADM01Props): JSX.Element {
                 type="button"
                 className="flex min-h-[44px] w-full items-center gap-[10px] px-[12px] py-[6px] text-left hover:bg-nav-fill"
                 onClick={() => {
-                  guarded(() => onNavigate?.(words.section));
+                  guarded(() => {
+                    go(words.section);
+                  });
                 }}
               >
                 {row.unavailable === true ? (
@@ -362,12 +372,16 @@ export function ADM01({ onNavigate, onBack }: ADM01Props): JSX.Element {
       groups={GROUPS.map((g) => ({
         ...g,
         sections: g.sections.filter(
-          (s) => s.id === "general" || s.id === "people" || s.id === "offices" || PLANNED_VISIBLE,
+          (s) => ["general", "people", "offices", "consents"].includes(s.id) || PLANNED_VISIBLE,
         ),
       })).filter((g) => g.sections.length > 0)}
       active="general"
       onSelect={(id) => {
-        if (id !== "general") guarded(() => onNavigate?.(id));
+        if (id !== "general") {
+          guarded(() => {
+            go(id);
+          });
+        }
       }}
       dirty={dirty}
       invalid={invalid}

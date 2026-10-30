@@ -38,6 +38,11 @@ from abacus.modules.integrations.catalog import (
     listing_of,
 )
 from abacus.modules.integrations.catalog_load import CatalogDocument, LoadPlan, plan_load
+
+# The routers the API mounts, in order (P-39; F-03-T07).
+from abacus.modules.integrations.engine_settings_contract import (
+    engine_settings_router,
+)
 from abacus.modules.integrations.ports import (
     IntegrationAdapter,
     IntegrationCategory,
@@ -50,7 +55,13 @@ from abacus.modules.integrations.qbo_adapter import register_if_configured
 # A-02-T16: the live POR-16 routes are declared on C20's `portal_router` in `routes`, so it is
 # imported from there (loading the module registers them before the API mounts the router).
 from abacus.modules.integrations.routes import firm_router, portal_router
-from abacus.modules.integrations.secrets import erase_secret, open_secret, store_secret
+from abacus.modules.integrations.secrets import (
+    connected_integration,
+    docusign_install_secret,
+    erase_secret,
+    open_secret,
+    store_secret,
+)
 from abacus.modules.integrations.writers import WritePreview, Writer, WriteReceipt, WriteRequest
 from abacus.modules.integrations.writes import (
     WriteCapabilityRefused,
@@ -58,8 +69,8 @@ from abacus.modules.integrations.writes import (
     execute_write,
 )
 
-# The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
+    engine_settings_router,  # ADM-08 tax-engine settings (T-01-T02 stub)
     portal_router,  # C20 v1: POR-16, live since A-02-T16
     firm_router,  # C20 v1: reconnect requests (live since A-02-T23); pulls a stub until T30
 )
@@ -86,6 +97,8 @@ __all__ = [
     "authorise_write",
     "catalog_rows",
     "client_catalog",
+    "connected_integration",
+    "docusign_install_secret",
     "egress_allowlist",
     "egress_hosts_by_connector",
     "egress_read_posts",

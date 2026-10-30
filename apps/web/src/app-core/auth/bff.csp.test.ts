@@ -10,8 +10,10 @@ describe("P-08-T11 the portal's CSP stays connect-src 'self'", () => {
   it("applies the abacus-csp plugin to every build, the portal's included", async () => {
     const vite = await read(`${WEB}/vite.config.ts`);
     expect(vite).toContain("\"connect-src 'self'\"");
-    expect(vite).toContain(
-      "plugins: [react(), tailwindcss(), contentSecurityPolicy(), fontPreload()],",
+    // The list's head, ungated by mode, whatever its line breaks: a portal-only plugin may follow
+    // (`portalIcons`, DEC-1006), never precede or wrap the policy.
+    expect(vite.replace(/\s+/gu, " ")).toContain(
+      "plugins: [ react(), tailwindcss(), contentSecurityPolicy(), fontPreload(),",
     );
   });
 

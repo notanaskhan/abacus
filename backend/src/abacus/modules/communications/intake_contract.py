@@ -21,7 +21,7 @@ Rules the shapes carry:
 from __future__ import annotations
 
 from datetime import UTC, date, datetime, time
-from typing import Annotated, Literal, NoReturn, cast
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query, Request, Response
@@ -37,17 +37,15 @@ from abacus.kernel.errors import (
     DomainUnavailable,
     DomainUnsupported,
     NotFound,
-    NotImplementedYet,
 )
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.kernel.uow.idempotency import idempotent
-from abacus.modules.communications import inbox_read, intake
+from abacus.modules.communications import inbox_read, intake, triage_apply
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
     Resource,
-    authorise,
     authorise_with_scope,
     current_context,
     in_intake_scope,
@@ -158,18 +156,6 @@ class ScannerUnavailable(DomainUnavailable):
     """The malware scanner is unreachable; every intake path fails closed (P-64): 503."""
 
     code = "scanner_unavailable"
-
-
-async def _stub(ctx: AuthContext, action: str) -> NoReturn:
-    """A client principal never reaches the firm inbox: 404. Then the route's action at the firm
-    (the agent and the system refused on every write: 403, before the flag is read), then the
-    flag, then 501."""
-    if ctx.client:
-        raise NotFound("inbox")
-    await authorise(ctx, action, Resource.firm(ctx.tenant_id))
-    if not await flag_enabled(ctx.tenant, INBOX_FIRM_INTAKE):
-        raise NotFound(INBOX_FIRM_INTAKE.name)
-    raise NotImplementedYet
 
 
 # --- Shapes --------------------------------------------------------------------------------------
@@ -534,6 +520,31 @@ def _row_out(r: inbox_read.ThreadRow) -> InboxThreadRow:
     )
 
 
+def _attachment_out(a: inbox_read.AttachmentView) -> InboxAttachmentOut:
+    return InboxAttachmentOut(
+        id=a.id,
+        file_name=a.file_name,
+        media_type=a.media_type,
+        size_bytes=a.size_bytes,
+        fingerprint=f"sha256:{a.fingerprint}",
+        status=cast(InboxItemStatus, a.status),
+        flags=[
+            AttachmentFlagOut(
+                kind=cast(FlagKind, f.kind),
+                severity=cast(FlagSeverity, f.severity),
+                ref_evidence_version_id=f.ref_evidence_version_id,
+                facts=f.facts,
+            )
+            for f in a.flags
+        ],
+        filed=None,  # the destination's path and route: its provider's, when it registers one
+        ignored_reason=None,
+        held_at=None,
+        thumbnail_ref=None,
+        allowed_actions=a.allowed_actions,
+    )
+
+
 def _detail_out(d: inbox_read.ThreadDetail) -> InboxThreadDetail:
     return InboxThreadDetail(
         thread=_row_out(d.thread),
@@ -549,31 +560,7 @@ def _detail_out(d: inbox_read.ThreadDetail) -> InboxThreadDetail:
                 subject_display=m.subject_display,
                 received_at=m.received_at,
                 body=m.body,
-                attachments=[
-                    InboxAttachmentOut(
-                        id=a.id,
-                        file_name=a.file_name,
-                        media_type=a.media_type,
-                        size_bytes=a.size_bytes,
-                        fingerprint=f"sha256:{a.fingerprint}",
-                        status=cast(InboxItemStatus, a.status),
-                        flags=[
-                            AttachmentFlagOut(
-                                kind=cast(FlagKind, f.kind),
-                                severity=cast(FlagSeverity, f.severity),
-                                ref_evidence_version_id=f.ref_evidence_version_id,
-                                facts=f.facts,
-                            )
-                            for f in a.flags
-                        ],
-                        filed=None,  # the destination's path and route arrive with N-01-T18
-                        ignored_reason=None,
-                        held_at=None,
-                        thumbnail_ref=None,
-                        allowed_actions=a.allowed_actions,
-                    )
-                    for a in m.attachments
-                ],
+                attachments=[_attachment_out(a) for a in m.attachments],
             )
             for m in d.messages
         ],
@@ -840,46 +827,116 @@ async def message_zip_route(message_id: UUID, ctx: Ctx) -> Response:
     "/messages/{message_id}/triage",
     action="inbox.triage",
     response_model=MessageTriageOut,
-    errors=(501,),
 )
 async def message_triage_route(message_id: UUID, ctx: Ctx) -> MessageTriageOut:
     """INB-02's cards (N-01-T18). A card's classification carries a masked TIN, masked again for
     an offshore reader (review 6)."""
-    return await mask_tins_for(ctx, await _stub(ctx, "inbox.triage"))
+    made = await triage_apply.bundle(ctx, message_id)
+    detail = await inbox_read.thread_detail(ctx, await triage_apply.thread_of(ctx, message_id))
+    files = {a.id: a for m in detail.messages for a in m.attachments}
+    cards = [
+        AttachmentTriageOut(
+            attachment=_attachment_out(files[c.attachment_id]),
+            classification=None,
+            candidates=[],
+            supersede_candidate_version_id=None,
+            defaults=TriageDefaults(
+                decision=cast(Decision, c.decision),
+                decision_forced=c.decision_forced,
+                reason_codes=[],
+                rename_to=None,
+                version_mode="new_document",
+                tell_client=False,
+                template_key=None,
+            ),
+        )
+        for c in made.cards
+        if c.attachment_id in files
+    ]
+    out = MessageTriageOut(
+        message_id=message_id,
+        attachments=cards,
+        seen_proposals=[],
+        classified_at=None,
+        notify_names=[],
+    )
+    return await mask_tins_for(ctx, out)
 
 
 @intake_router.post(
     "/messages/{message_id}/triage/apply",
     action="inbox.file",
     response_model=TriageApplyOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def triage_apply_route(
     message_id: UUID, body: TriageApplyIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> TriageApplyOut:
     """INB-02 "Apply n": one insert-only decision per attachment by a live human; Ignore needs
     `inbox.triage` and Hold `inbox.ask_client` too (N-01-T18)."""
-    await _stub(ctx, "inbox.file")
+
+    async def run() -> tuple[int, dict[str, object]]:
+        made = await triage_apply.apply(
+            ctx,
+            message_id,
+            [
+                triage_apply.Decision(
+                    attachment_id=d.attachment_id,
+                    decision=d.decision,
+                    destination_kind=d.destination.kind if d.destination else None,
+                    destination_id=d.destination.id if d.destination else None,
+                    version_mode=d.version_mode,
+                    supersede_version_id=d.supersede_version_id,
+                    keep_both=d.keep_both,
+                    rename_to=d.rename_to,
+                    reason_codes=tuple(d.reason_codes),
+                    tell_client=d.tell_client,
+                )
+                for d in body.decisions
+            ],
+        )
+        out = TriageApplyOut(
+            filed=made.filed,
+            ignored=made.ignored,
+            held=made.held,
+            notified_user_ids=made.notified_user_ids,
+            undo_grant_id=None,
+        )
+        return 200, out.model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="inbox.triage_apply",
+        key=idempotency_key,
+        body={"message_id": str(message_id), **body.model_dump(mode="json")},
+        run=run,
+    )
+    return TriageApplyOut.model_validate(stored.body)
 
 
 @intake_router.post(
     "/attachments/bulk-file",
     action="inbox.file",
     response_model=BulkFileOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def bulk_file_route(
     body: BulkFileIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> BulkFileOut:
     """INB-01 e "File n as suggested": unflagged, confident, unchanged only (N-01-T18)."""
-    await _stub(ctx, "inbox.file")
+    results = await triage_apply.bulk_file(ctx, body.attachment_ids)
+    return BulkFileOut(
+        results=[
+            BulkFileResult(attachment_id=a, outcome=cast(BulkOutcome, o)) for a, o in results
+        ],
+        notified_user_ids=[],
+    )
 
 
 @destinations_router.get(
     "/destinations",
     action="inbox.triage",
     response_model=list[DestinationNode],
-    errors=(501,),
 )
 async def destinations_route(
     ctx: Ctx,
@@ -889,4 +946,18 @@ async def destinations_route(
     q: Annotated[str | None, Query(max_length=200)] = None,
 ) -> list[DestinationNode]:
     """INB-02 path-chip pickers; nodes re-authorised, closed nodes carry a reason (N-01-T18)."""
-    await _stub(ctx, "inbox.triage")
+    nodes = await triage_apply.destinations(ctx, client_id, kind, parent)
+    needle = (q or "").strip().lower()
+    return [
+        DestinationNode(
+            kind=cast(DestinationKind, n.kind),
+            id=n.id,
+            label=n.label,
+            folder_kind=cast(FolderKind | None, n.folder_kind),
+            has_children=n.has_children,
+            selectable=n.selectable,
+            reason_code=n.reason_code,
+        )
+        for n in nodes
+        if not needle or needle in n.label.lower()
+    ]

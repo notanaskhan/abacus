@@ -46,7 +46,7 @@ describe("T16b: signing", () => {
     const fields = screen.getAllByRole("button", { name: /^Sign here:/ });
     expect(fields).toHaveLength(1);
     expect(fields[0]?.getAttribute("aria-label")).toBe(
-      "Sign here: spouse signature, Form 8879, page 1",
+      "Sign here: spouse signature, Form 8879 · federal, page 1",
     );
     const jonah = document.querySelector('[data-field="t16-jonah-sig"]');
     expect(jonah?.tagName).toBe("SPAN");
@@ -65,7 +65,7 @@ describe("T16b: signing", () => {
     const onSignField = vi.fn();
     ceremony(t16Envelope("b"), { onSignField });
     fireEvent.click(screen.getByRole("button", { name: /^Sign here:/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Adopt signature & sign…" }));
+    fireEvent.click(screen.getByRole("button", { name: "Adopt signature & sign" }));
     expect(onSignField.mock.calls).toEqual([["t16-claire-sig"], ["t16-claire-sig"]]);
   });
 
@@ -82,7 +82,8 @@ describe("T16b: signing", () => {
     const steps = screen.getByRole("list", { name: "Signing steps" });
     const items = within(steps).getAllByRole("listitem");
     expect(items.map((li) => li.textContent.split(/\d/)[0])).toEqual([
-      "Verify identityEmail code · ",
+      // T16b draws each step on one line (the handoff); the step words come from the registry.
+      "Verify identity",
       "Review",
       "Sign",
       "Done",
@@ -92,7 +93,7 @@ describe("T16b: signing", () => {
 
   it("AC-8: the sign control is a HumanAction and nothing names an agent", () => {
     ceremony(t16Envelope("b"));
-    const cta = screen.getByRole("button", { name: "Adopt signature & sign…" });
+    const cta = screen.getByRole("button", { name: "Adopt signature & sign" });
     expect(cta.getAttribute("data-human-verb")).toBe("Adopt");
     expect(document.body.textContent).not.toMatch(/Agent|Accrued/);
   });

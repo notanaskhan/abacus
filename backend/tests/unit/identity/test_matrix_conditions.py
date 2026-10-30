@@ -62,6 +62,19 @@ CASES: list[tuple[str, dict[str, str], ConditionFacts, ConditionFacts]] = [
         ConditionFacts(offshore=None),
     ),
     (
+        # T-01-T11 (C19): every listed purpose consented; a missing one or unknown facts deny.
+        "consent",
+        {**ALLOW, "consent": "use,ai_disclosure"},
+        ConditionFacts(consents=frozenset({"use", "ai_disclosure"})),
+        ConditionFacts(consents=frozenset({"use"})),
+    ),
+    (
+        "consent",
+        {**ALLOW, "consent": "use,ai_disclosure"},
+        ConditionFacts(consents=frozenset({"use", "ai_disclosure"})),
+        ConditionFacts(consents=None),
+    ),
+    (
         "attest_client",
         {**ALLOW, "attest_client": "deny"},
         ConditionFacts(attest_client=False),
@@ -127,6 +140,19 @@ CASES: list[tuple[str, dict[str, str], ConditionFacts, ConditionFacts]] = [
         {**ALLOW, "reserved_role": "required"},
         ConditionFacts(reserved_holder=True),
         ConditionFacts(reserved_holder=None),
+    ),
+    # K-02-T01 (DEC-1150): the firm standard's named owner, a partner member now.
+    (
+        "owner_of_target",
+        {**ALLOW, "owner_of_target": "required"},
+        ConditionFacts(owner=True),
+        ConditionFacts(owner=False),
+    ),
+    (
+        "owner_of_target",
+        {**ALLOW, "owner_of_target": "required"},
+        ConditionFacts(owner=True),
+        ConditionFacts(owner=None),
     ),
 ]
 IDS = [f"{c[0]}-{i}" for i, c in enumerate(CASES)]

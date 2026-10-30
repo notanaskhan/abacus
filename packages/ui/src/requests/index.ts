@@ -8,6 +8,16 @@ export {
   useRequestBinder,
 } from "./binder";
 export {
+  type CaptureSource,
+  type CapturedPage,
+  DeferredFrame,
+  type RequestChoice,
+  ReviewAssignSheet,
+  type ReviewAssignSheetProps,
+  UploadActionSheet,
+  type UploadActionSheetProps,
+} from "./capture";
+export {
   BandRow,
   BandSection,
   CategoryRail,

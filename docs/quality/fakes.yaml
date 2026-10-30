@@ -1,0 +1,34 @@
+# The fakes register (Q-03-T094): the provider fakes that no connector conformance suite covers yet,
+# what each imitates, and when it was last checked against the real thing. Connector fakes with a
+# suite in `backend/tests/connectors/<provider>/` are verified nightly by `connectors-nightly.yml`
+# and counted by `abacus_tools.quality.connector_conformance` (A-02-T32, ADR-044), so they are not
+# listed here. A fake below not verified within 92 days, or never, is "unverified"
+# (`python -m abacus_tools.quality.fakes`); it leaves this list when its conformance suite lands.
+# Synthetic responses written by us do not count as verification.
+max_age_days: 92
+fakes:
+  - fake: backend/src/abacus_tools/fakes/ledgers.py
+    provider: NetSuite (CSV export) and the bank, card and sales feeds
+    contract: C20
+    suite: backend/tests/integration/backfill/test_a02t29_independent_connections.py
+    verified_on: null
+  - fake: backend/src/abacus_tools/fakes/workos.py
+    provider: WorkOS
+    contract: identity (ADR-165)
+    suite: backend/tests/integration/test_staff_session.py
+    verified_on: null
+  - fake: backend/src/abacus_tools/fakes/identity.py
+    provider: an OpenID Connect provider
+    contract: identity (TASK-007)
+    suite: backend/tests/integration/test_staff_session.py
+    verified_on: null
+  - fake: backend/src/abacus/modules/communications/fake_ses.py
+    provider: Amazon SES
+    contract: C16 (email half)
+    suite: backend/tests/acceptance/test_q01_ses_transport.py
+    verified_on: null
+  - fake: backend/src/abacus/modules/signatures/contract.py
+    provider: DocuSign (the `fake` envelope provider)
+    contract: C7
+    suite: backend/tests/contracts/c7_n02/test_c7_stubs.py
+    verified_on: null

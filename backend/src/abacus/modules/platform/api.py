@@ -109,6 +109,30 @@ from abacus.modules.platform.provisioning import (
 from abacus.modules.platform.provisioning import (
     WORKFLOWS as PROVISIONING_WORKFLOWS,
 )
+from abacus.modules.platform.reference_sets import (
+    ReferenceKindUnknown,
+    ReferencePayloadInvalid,
+    StandardsSetRefused,
+    check_draft,
+    form_8879_for,
+    information_return_threshold,
+    pub1345_tolerances,
+    reference_value,
+    references_in_effect,
+    retention_minimum,
+)
+from abacus.modules.platform.reference_sets_contract import (
+    DisasterPostponementsPayload,
+    DueDateRulesPayload,
+    Form8879For,
+    LegalHolidaysPayload,
+    ReferenceSetKind,
+    ResolvedReference,
+    RetentionFloor,
+    ThresholdFor,
+    TolerancesFor,
+)
+from abacus.modules.platform.reference_sets_routes import router as reference_sets_router
 from abacus.modules.platform.routes import router
 from abacus.modules.platform.safeguards import SUBSCRIPTIONS as WISP_SUBSCRIPTIONS
 from abacus.modules.platform.safeguards import open_controls as open_pub4557_controls
@@ -162,6 +186,7 @@ from abacus.modules.platform.workflows import (
     CanaryWorkflow,
     IncidentClockRemindersWorkflow,
     IncidentPropagationWorkflow,
+    PilotMetricsWorkflow,
     SpendAnomalyWorkflow,
     TenantKeyWorkflow,
     TenantProvisioningWorkflow,
@@ -187,6 +212,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     safeguards_router,  # security-center v1 (G-02-T11 stub; G-02-T20 implements it)
     incident_platform_router,  # Q-02-T33 (RB-27): staff propagation
     controls_platform_router,  # G-02-T20: staff import and publish the Pub 4557 definitions
+    reference_sets_router,  # C21 part A (K-02-T05)
 )
 
 # Q-01-T45: the worker loads this module for tenant provisioning (ADR-156); Q-02-T33 adds the
@@ -254,8 +280,11 @@ __all__ = [
     "CanaryWorkflow",
     "ControlName",
     "DeciderMustDiffer",
+    "DisasterPostponementsPayload",
+    "DueDateRulesPayload",
     "Entitlement",
     "EntitlementRequired",
+    "Form8879For",
     "Heartbeat",
     "HomeCount",
     "HomeCountProvider",
@@ -273,7 +302,9 @@ __all__ = [
     "IncidentPropagationWorkflow",
     "IncidentStepResult",
     "IncidentView",
+    "LegalHolidaysPayload",
     "Module",
+    "PilotMetricsWorkflow",
     "PilotMode",
     "PilotModeRefused",
     "PilotWeek",
@@ -281,12 +312,20 @@ __all__ = [
     "ProvisionTenantInput",
     "ProvisionTenantResult",
     "RecordingHeartbeat",
+    "ReferenceKindUnknown",
+    "ReferencePayloadInvalid",
+    "ReferenceSetKind",
+    "ResolvedReference",
+    "RetentionFloor",
     "SearchDocument",
     "SpendAnomalyWorkflow",
+    "StandardsSetRefused",
     "TenantKeyInput",
     "TenantKeyWorkflow",
     "TenantProvisioned",
     "TenantProvisioningWorkflow",
+    "ThresholdFor",
+    "TolerancesFor",
     "WispPackFacts",
     "WispPackFailure",
     "WispPackInput",
@@ -297,6 +336,7 @@ __all__ = [
     "canary_boundary",
     "canary_probe",
     "canary_workflow_id",
+    "check_draft",
     "check_entitlement",
     "clock_day",
     "compute_pilot_week",
@@ -309,10 +349,12 @@ __all__ = [
     "expected_route",
     "facts_sha256",
     "finish_propagation",
+    "form_8879_for",
     "home_count",
     "home_count_keys",
     "incident_clock",
     "incident_propagation_workflow_id",
+    "information_return_threshold",
     "inv2_violations",
     "mask_value",
     "operator_context",
@@ -320,7 +362,10 @@ __all__ = [
     "propagate_into",
     "propagation_log",
     "provisioning_workflow_id",
+    "pub1345_tolerances",
     "record_incident",
+    "reference_value",
+    "references_in_effect",
     "register_audit_labeler",
     "register_audit_source",
     "register_audit_value_resolver",
@@ -330,6 +375,7 @@ __all__ = [
     "register_wisp_document_reader",
     "registered_audit_types",
     "require_entitlement",
+    "retention_minimum",
     "router",
     "schedules",
     "search_document",
