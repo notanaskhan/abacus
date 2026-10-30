@@ -160,6 +160,8 @@ describe("TAX-09 e · import diff", () => {
     expect(within(sheet).getByText(/equals 31\.5% × 307,900/)).toBeTruthy();
     expect(within(sheet).getAllByRole("checkbox")).toHaveLength(5);
     fireEvent.click(within(sheet).getByRole("button", { name: "Approve import" }));
-    expect(await screen.findByText("Import approved")).toBeTruthy();
+    await waitFor(() => {
+      expect(toastStore.list().map((t) => t.text)).toContain("Import approved");
+    });
   });
 });
