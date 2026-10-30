@@ -19,7 +19,7 @@ from abacus.kernel.audit_owners import register_client_owners
 from abacus.kernel.db import tenant_session
 from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
 from abacus.kernel.uow import Handler, OutboxEvent
-from abacus.modules.identity.api import AbacusRouter, AuthContext
+from abacus.modules.identity.api import AbacusRouter, AuthContext, register_mfa_requirement
 from abacus.modules.signatures.activities import ACTIVITIES as ENVELOPE_ACTIVITIES
 from abacus.modules.signatures.audit_targets import CLIENT_KINDS, audit_clients
 from abacus.modules.signatures.builder import create_draft
@@ -40,6 +40,7 @@ from abacus.modules.signatures.provider import (
     register_firm_provider,
 )
 from abacus.modules.signatures.reminders import ReminderSender, register_reminder_sender
+from abacus.modules.signatures.signer_facts import SignTodo, envelope_signer_mfa, sign_todo
 from abacus.modules.signatures.sources import (
     LETTER,
     LETTER_GATE,
@@ -144,6 +145,8 @@ SCHEDULES = STATUS_POLL_SCHEDULES
 # N-02-T18: the provider for a firm with no process-wide one is its own DocuSeal account, built
 # only when the kill switch, W7 and a connected install allow (ProviderUnavailable otherwise).
 register_firm_provider(firm_provider)
+# N-02-T24 (DEC-1286): a signer on an envelope out for signature signs in with the second step.
+register_mfa_requirement("envelope_signer", envelope_signer_mfa)
 
 
 async def start_envelope(tenant_id: UUID, envelope_id: UUID) -> None:
@@ -190,6 +193,7 @@ __all__ = [
     "ReminderDue",
     "ReminderSender",
     "SendPlan",
+    "SignTodo",
     "SignerEvidence",
     "SignerState",
     "SourceDocument",
@@ -210,6 +214,7 @@ __all__ = [
     "register_reminder_sender",
     "registered_sources",
     "seal_ip",
+    "sign_todo",
     "staged_files",
     "start_envelope",
 ]

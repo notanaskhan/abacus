@@ -45,7 +45,7 @@ from abacus.modules.evidence.api import (
     screen_and_stage,
 )
 from abacus.modules.identity.api import firm_time_zone
-from abacus.modules.signatures.events import EnvelopeCompleted
+from abacus.modules.signatures.events import EnvelopeCompleted, EnvelopeDeclined, EnvelopeExpired
 from abacus.modules.signatures.hub import seal_ip
 from abacus.modules.signatures.imports import RECORD_TYPE, RetentionFloorMissing
 from abacus.modules.signatures.provider import (
@@ -85,7 +85,7 @@ def mask_ip(ip: str) -> str:
 _ENVELOPE = text(
     "SELECT id, status, provider, provider_envelope_id, policy_family, purpose, "
     "reminder_cadence, expires_at, sent_at, client_id, engagement_id, work_item_id, title, "
-    "source_kind, source_id, completed_at FROM envelopes WHERE id = :id"
+    "source_kind, source_id, completed_at, sent_by FROM envelopes WHERE id = :id"
 )
 _POLICY = text(
     "SELECT max_reminders, default_expiry_days FROM envelope_policies "
@@ -319,6 +319,15 @@ async def envelope_poll(given: EnvelopeInput) -> str:
                     "at": now,
                 },
             )
+            if status == "declined":  # N-02-T24: the sender is told
+                tx.emit(
+                    EnvelopeDeclined(
+                        envelope_id=envelope_id,
+                        client_id=env.client_id,
+                        engagement_id=env.engagement_id,
+                        sent_by=env.sent_by,
+                    )
+                )
         tx.record(
             "envelope.polled",
             target=Target("envelope", envelope_id),
@@ -416,6 +425,14 @@ async def envelope_expire(given: EnvelopeInput) -> str:
             },
         )
         tx.record("envelope.expired", target=Target("envelope", envelope_id))
+        tx.emit(
+            EnvelopeExpired(
+                envelope_id=envelope_id,
+                client_id=env.client_id,
+                engagement_id=env.engagement_id,
+                sent_by=env.sent_by,
+            )
+        )
     return "expired"
 
 
@@ -576,6 +593,7 @@ async def envelope_complete(given: EnvelopeInput) -> str:
                 source_kind=env.source_kind or "envelope",
                 source_id=env.source_id or envelope_id,
                 imported_by=None,
+                sent_by=env.sent_by,
             )
         )
     return "recorded"
