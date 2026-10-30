@@ -124,3 +124,5 @@ export { CatalogLayout, type CatalogLayoutProps } from "./catalog-layout";
 export { SigningCeremony } from "./signing-ceremony/SigningCeremony";
 // T10 DocumentOnWell (F-06-T14): the 470 structure pane beside the 896 paper pane.
 export * from "./document-on-well";
+// T6 WorkbookLayout (F-06-T18): control bar, tally strip and statement panes on the F-05 grammars.
+export * from "./workbook";

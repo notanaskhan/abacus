@@ -34,6 +34,8 @@ import { useFlag } from "../../app-core/flags";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { useSession } from "../../app-core/session";
 import { COPY, SECTIONS, type Section } from "./copy";
+import { DEADLINE_COPY } from "./deadline-copy";
+import { DeadlineRulesSection } from "./deadline-rules";
 
 export type { Section } from "./copy";
 
@@ -50,6 +52,11 @@ export type { Section } from "./copy";
 // computed but the AJE example totals, which foot the provider's rows. No control lets the Accrued
 // Agent approve, publish or decide.
 
+/** The standards sections plus j, Deadline rules (K-02-T17; DF-10), which reads the platform
+ * reference sets rather than a firm standard and carries no edit control. */
+export type KnwSection = Section | "deadline_rules";
+const DEADLINE = "deadline_rules" as const;
+
 export interface Knw04Initial {
   /** A section id (`?section=`); an unknown one opens AJE thresholds. */
   section?: string;
@@ -60,7 +67,7 @@ export interface Knw04Initial {
 export interface Knw04Props {
   initial?: Knw04Initial;
   onBack?: () => void;
-  onSection?: (section: Section) => void;
+  onSection?: (section: KnwSection) => void;
   /** K-02-T14: New version… opens the draft. */
   onNewVersion?: (standardId: string) => void;
 }
@@ -847,11 +854,19 @@ export function KNW04({ initial = {}, onBack, onSection, onNewVersion }: Knw04Pr
   const on = useFlag("knowledge.firm_standards") === true;
   const now = useNow().getTime();
   const firm = useSession().tenant?.firm_name ?? "";
-  const [section, setSection] = useState<Section>(
-    SECTIONS.find((s) => s.id === initial.section)?.id ?? DEFAULT_SECTION,
+  const [current, setSection] = useState<KnwSection>(
+    initial.section === DEADLINE
+      ? DEADLINE
+      : (SECTIONS.find((s) => s.id === initial.section)?.id ?? DEFAULT_SECTION),
   );
+  const rules = current === DEADLINE;
+  // On j the standards reads stay idle; `section` keeps the standards sections' type for them.
+  const section: Section = current === DEADLINE ? DEFAULT_SECTION : current;
   const kind = SECTIONS.find((s) => s.id === section)?.kind ?? "aje_thresholds";
-  const list = useQuery({ ...listStandardsOptions({ query: { kind } }), enabled: on });
+  const list = useQuery({
+    ...listStandardsOptions({ query: { kind } }),
+    enabled: on && !rules,
+  });
   const standards = list.data?.items ?? [];
   const chosen =
     section === "review_checklists"
@@ -859,18 +874,24 @@ export function KNW04({ initial = {}, onBack, onSection, onNewVersion }: Knw04Pr
       : standards[0];
   const detail = useQuery({
     ...standardOptions({ path: { standard_id: chosen?.id ?? "" } }),
-    enabled: on && chosen !== undefined && section !== "review_checklists",
+    enabled: on && !rules && chosen !== undefined && section !== "review_checklists",
   });
   const examples = useQuery({
     ...standardExamplesOptions({
       path: { standard_id: chosen?.id ?? "" },
       query: { period: PERIOD },
     }),
-    enabled: on && chosen !== undefined,
+    enabled: on && !rules && chosen !== undefined,
   });
 
   const groups = [
-    { label: COPY.group, sections: SECTIONS.map(({ id, label, icon }) => ({ id, label, icon })) },
+    {
+      label: COPY.group,
+      sections: [
+        ...SECTIONS.map(({ id, label, icon }) => ({ id, label, icon })),
+        { id: DEADLINE, label: DEADLINE_COPY.label, icon: "calendar-clock" as const },
+      ],
+    },
   ];
   const canDraft =
     chosen?.allowed_actions.includes("firm_standard.draft") === true && onNewVersion !== undefined;
@@ -898,6 +919,8 @@ export function KNW04({ initial = {}, onBack, onSection, onNewVersion }: Knw04Pr
   let body: ReactNode;
   if (!on) {
     body = <FlagOffState flag="knowledge.firm_standards" label={COPY.flagLabel} icon="scale" />;
+  } else if (rules) {
+    body = <DeadlineRulesSection />;
   } else if (list.isError || detail.isError) {
     body = (
       <ErrorState
@@ -939,22 +962,22 @@ export function KNW04({ initial = {}, onBack, onSection, onNewVersion }: Knw04Pr
       {...(onBack === undefined ? {} : { onBack })}
       navTitle={COPY.navTitle}
       groups={groups}
-      active={section}
+      active={current}
       onSelect={(id) => {
-        const next = id as Section;
+        const next = id as KnwSection;
         setSection(next);
         onSection?.(next);
       }}
       dirty={false}
       readOnly={false}
       headerCenter={
-        on ? (
+        on && !rules ? (
           <HeaderChips section={section} standards={standards} detail={detail.data} now={now} />
         ) : undefined
       }
-      headerActions={on ? actions : <span />}
+      headerActions={on && !rules ? actions : <span />}
     >
-      <div data-screen="KNW-04" data-section={section} className="flex flex-col">
+      <div data-screen="KNW-04" data-section={current} className="flex flex-col">
         {body}
       </div>
     </SettingsLayout>

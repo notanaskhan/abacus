@@ -30,10 +30,12 @@ One purpose per signed document (Treas. Reg. §301.7216-3): `use`, `ai_disclosur
 | Templates (counsel-attested; fresh MFA) | `POST /v1/consent-templates/imports`, `/{id}/publish` | `consent_template.manage`, `.publish` | `consents.registry` |
 | Tax profile | `GET /v1/client-entities/{id}/tax-profile` | `tax_profile.read` | `clients.tax_profile` |
 | Elections | `PUT /v1/client-entities/{id}/elections/{kind}` | `tax_election.manage` | `clients.tax_profile` |
-| Authorizations | `GET`/`POST /v1/client-entities/{id}/authorizations`, `POST …/authorizations/requests` | `tax_authorization.manage` | `clients.tax_profile` |
-| Transcripts | `POST /v1/client-entities/{id}/transcripts`, `POST /v1/transcripts/{id}/comparisons` | `transcript.upload`, `.compare` | `clients.tax_profile` |
+| Authorizations | `GET`/`POST /v1/client-entities/{id}/authorizations`, `POST …/authorizations/files` (staging, raw body), `POST …/authorizations/requests` (stub until P-11 form templates) | `tax_authorization.manage` | `clients.tax_profile` |
+| Transcripts | `GET`/`POST /v1/client-entities/{id}/transcripts`, `POST …/transcripts/files` (staging, raw body), `POST /v1/transcripts/{id}/comparisons`, `GET /v1/transcripts/{id}/comparison` | `tax_profile.read`, `transcript.upload`, `.compare` | `clients.tax_profile` |
 
-Every action denies the agent, the system and client principals. Files are upload intents (`upload_ids`).
+Every action denies the agent, the system and client principals. Files are upload intents (`upload_ids`); the tax-profile family stages its own (T-01-T43: scanned before storage, the uploader's own, consumed once).
+
+**Live since T-01-T43 (DEC-1651):** tax profile, elections, authorizations (list, add), transcripts (stage, upload, list) and comparisons. A live route checks, in order: client principal 404, the entity's client or 404, the matrix on that client, the flag. A comparison reads the return as filed from the return's latest approved engine import (`ir.<form>.<n>.payer|amount`); 409 `return_mismatch`, `return_not_filed`, `transcript_not_comparable`, `authorization_not_on_file`, `tax_profile_file_unavailable`, `stale_version`; 422 `designee_not_member`, `caf_count_mismatch`. CAF numbers are write-only (`designee_cafs`) and sealed; only `caf_last4` is served.
 
 ## 3. Status words
 `consent`: requested ("Requested · n of m signed") · signed (with expiry) · expiring (derived) · expired · declined · revoked · superseded. `tax_authorization`: requested · on_file · expired · revoked. Registry rows land with T-01-T06.

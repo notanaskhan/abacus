@@ -1068,6 +1068,20 @@ export type AgentsStateOut = {
 };
 
 /**
+ * AgreeingFormOut
+ */
+export type AgreeingFormOut = {
+    /**
+     * Count
+     */
+    count: number;
+    /**
+     * Form
+     */
+    form: string;
+};
+
+/**
  * AiClientDataIn
  */
 export type AiClientDataIn = {
@@ -11470,7 +11484,7 @@ export type EnvelopeListRow = {
     /**
      * Provider
      */
-    provider: 'docusign' | 'record' | 'fake';
+    provider: 'docuseal' | 'docusign' | 'record' | 'fake';
     /**
      * Purpose
      */
@@ -19871,7 +19885,7 @@ export type MappedAccountOut = {
     /**
      * Method
      */
-    method: 'manual' | 'number_range' | null;
+    method: 'manual' | 'prior_year' | 'number_range' | null;
 };
 
 /**
@@ -19943,9 +19957,21 @@ export type MappingOut = {
      */
     mapping_set_id: string | null;
     /**
+     * Number Range
+     */
+    number_range?: number;
+    /**
+     * Prior Year
+     */
+    prior_year?: number;
+    /**
      * Published Versions
      */
     published_versions: Array<GroupingVersionOut>;
+    /**
+     * Tb Balanced
+     */
+    tb_balanced?: boolean;
     /**
      * Unmapped
      */
@@ -22303,7 +22329,7 @@ export type PortalEnvelopeRow = {
  * PortalEnvelopeView
  *
  * `EnvelopeVM`: steps, documents, fields, signers, my state; `signing_session` and `outcome`
- * reserved (null in record mode and until `signatures.docusign`).
+ * reserved (null in record mode and until `signatures.esign_provider`).
  */
 export type PortalEnvelopeView = {
     /**
@@ -29787,7 +29813,7 @@ export type SignerOut = {
 /**
  * SigningSessionOut
  *
- * A one-time, short-lived provider view (reserved until `signatures.docusign`).
+ * A one-time, short-lived provider view (reserved until `signatures.esign_provider`).
  */
 export type SigningSessionOut = {
     /**
@@ -31663,6 +31689,10 @@ export type TaxAuthorizationDesigneeOut = {
  */
 export type TaxAuthorizationIn = {
     /**
+     * Designee Cafs
+     */
+    designee_cafs?: Array<string> | null;
+    /**
      * Designee User Ids
      */
     designee_user_ids: Array<string>;
@@ -31791,6 +31821,10 @@ export type TaxElectionOut = {
      */
     kind: string;
     /**
+     * Row Version
+     */
+    row_version?: number | null;
+    /**
      * Status Code
      */
     status_code: string;
@@ -31816,6 +31850,31 @@ export type TaxPlanRowOut = {
      * State
      */
     state: 'done' | 'in_progress' | 'not_started';
+};
+
+/**
+ * TaxProfileFileOut
+ *
+ * A file staged for a transcript or an authorization: scanned before storage, named by id
+ * in the upload that files it (an upload intent).
+ */
+export type TaxProfileFileOut = {
+    /**
+     * File Name
+     */
+    file_name: string;
+    /**
+     * Media Type
+     */
+    media_type: string;
+    /**
+     * Size Bytes
+     */
+    size_bytes: number;
+    /**
+     * Upload Id
+     */
+    upload_id: string;
 };
 
 /**
@@ -33702,6 +33761,26 @@ export type TranscriptComparisonIn = {
  */
 export type TranscriptComparisonOut = {
     /**
+     * Agreeing
+     */
+    agreeing?: Array<AgreeingFormOut>;
+    /**
+     * Checkpoint Id
+     */
+    checkpoint_id?: string | null;
+    /**
+     * Computed At
+     */
+    computed_at?: string | null;
+    /**
+     * Difference Total
+     */
+    difference_total?: string | null;
+    /**
+     * Engine Version
+     */
+    engine_version?: string | null;
+    /**
      * Id
      */
     id: string;
@@ -33709,6 +33788,10 @@ export type TranscriptComparisonOut = {
      * Lines
      */
     lines: Array<TranscriptLineDiffOut>;
+    /**
+     * Result
+     */
+    result?: 'agrees' | 'differences' | null;
     /**
      * Return Id
      */
@@ -33726,9 +33809,17 @@ export type TranscriptComparisonOut = {
  */
 export type TranscriptLineDiffOut = {
     /**
+     * Difference
+     */
+    difference?: string | null;
+    /**
      * Form
      */
     form: string;
+    /**
+     * Line No
+     */
+    line_no?: number | null;
     /**
      * Matched
      */
@@ -33742,6 +33833,10 @@ export type TranscriptLineDiffOut = {
      */
     return_amount: string | null;
     /**
+     * Status
+     */
+    status?: 'agrees' | 'differs' | 'not_on_return' | null;
+    /**
      * Transcript Amount
      */
     transcript_amount: string;
@@ -33752,9 +33847,22 @@ export type TranscriptLineDiffOut = {
  */
 export type TranscriptOut = {
     /**
+     * Account Balance
+     */
+    account_balance?: string | null;
+    /**
+     * Authorization Form
+     */
+    authorization_form?: '8821' | '2848' | 'state' | null;
+    /**
+     * Difference Count
+     */
+    difference_count?: number | null;
+    /**
      * Id
      */
     id: string;
+    key_transaction?: TranscriptTransactionOut | null;
     /**
      * Kind
      */
@@ -33768,9 +33876,34 @@ export type TranscriptOut = {
      */
     pulled_at: string;
     /**
+     * Pulled By Name
+     */
+    pulled_by_name?: string | null;
+    /**
+     * Result
+     */
+    result?: 'agrees' | 'differences' | null;
+    /**
      * Tax Year
      */
     tax_year: number;
+};
+
+/**
+ * TranscriptTransactionOut
+ *
+ * An Account transcript's key transaction (TC 150 return filed, TC 922 unreported-income
+ * review: a review, not an assessment).
+ */
+export type TranscriptTransactionOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Posted On
+     */
+    posted_on: string;
 };
 
 /**
@@ -38917,6 +39050,10 @@ export type AddAuthorizationErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
@@ -38936,6 +39073,71 @@ export type AddAuthorizationResponses = {
 };
 
 export type AddAuthorizationResponse = AddAuthorizationResponses[keyof AddAuthorizationResponses];
+
+export type StageAuthorizationFileData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Entity Id
+         */
+        client_entity_id: string;
+    };
+    query: {
+        /**
+         * Filename
+         */
+        filename: string;
+    };
+    url: '/v1/client-entities/{client_entity_id}/authorizations/files';
+};
+
+export type StageAuthorizationFileErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * The file is too large
+     */
+    413: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
+};
+
+export type StageAuthorizationFileError = StageAuthorizationFileErrors[keyof StageAuthorizationFileErrors];
+
+export type StageAuthorizationFileResponses = {
+    /**
+     * Successful Response
+     */
+    201: TaxProfileFileOut;
+};
+
+export type StageAuthorizationFileResponse = StageAuthorizationFileResponses[keyof StageAuthorizationFileResponses];
 
 export type RequestAuthorizationData = {
     body: TaxAuthorizationRequestIn;
@@ -39171,6 +39373,64 @@ export type TaxProfileResponses = {
 
 export type TaxProfileResponse = TaxProfileResponses[keyof TaxProfileResponses];
 
+export type ListTranscriptsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Entity Id
+         */
+        client_entity_id: string;
+    };
+    query?: never;
+    url: '/v1/client-entities/{client_entity_id}/transcripts';
+};
+
+export type ListTranscriptsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListTranscriptsError = ListTranscriptsErrors[keyof ListTranscriptsErrors];
+
+export type ListTranscriptsResponses = {
+    /**
+     * Response List Transcripts
+     *
+     * Successful Response
+     */
+    200: Array<TranscriptOut>;
+};
+
+export type ListTranscriptsResponse = ListTranscriptsResponses[keyof ListTranscriptsResponses];
+
 export type UploadTranscriptData = {
     body: TranscriptUploadIn;
     headers?: {
@@ -39207,6 +39467,10 @@ export type UploadTranscriptErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
@@ -39226,6 +39490,71 @@ export type UploadTranscriptResponses = {
 };
 
 export type UploadTranscriptResponse = UploadTranscriptResponses[keyof UploadTranscriptResponses];
+
+export type StageTranscriptFileData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Entity Id
+         */
+        client_entity_id: string;
+    };
+    query: {
+        /**
+         * Filename
+         */
+        filename: string;
+    };
+    url: '/v1/client-entities/{client_entity_id}/transcripts/files';
+};
+
+export type StageTranscriptFileErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * The file is too large
+     */
+    413: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
+};
+
+export type StageTranscriptFileError = StageTranscriptFileErrors[keyof StageTranscriptFileErrors];
+
+export type StageTranscriptFileResponses = {
+    /**
+     * Successful Response
+     */
+    201: TaxProfileFileOut;
+};
+
+export type StageTranscriptFileResponse = StageTranscriptFileResponses[keyof StageTranscriptFileResponses];
 
 export type RevealTinData = {
     body: TinRevealIn;
@@ -82787,6 +83116,62 @@ export type BrowserErrorResponses = {
 
 export type BrowserErrorResponse = BrowserErrorResponses[keyof BrowserErrorResponses];
 
+export type LatestComparisonData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Transcript Id
+         */
+        transcript_id: string;
+    };
+    query?: never;
+    url: '/v1/transcripts/{transcript_id}/comparison';
+};
+
+export type LatestComparisonErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type LatestComparisonError = LatestComparisonErrors[keyof LatestComparisonErrors];
+
+export type LatestComparisonResponses = {
+    /**
+     * Successful Response
+     */
+    200: TranscriptComparisonOut;
+};
+
+export type LatestComparisonResponse = LatestComparisonResponses[keyof LatestComparisonResponses];
+
 export type CompareTranscriptData = {
     body: TranscriptComparisonIn;
     headers?: {
@@ -82822,6 +83207,10 @@ export type CompareTranscriptErrors = {
      * Not found
      */
     404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
     /**
      * Invalid request
      */

@@ -15,7 +15,7 @@ Client data stays in Accrued's AWS account, in the US. DPA status only, no terms
 | WorkOS | WorkOS (AuthKit, SSO) | authentication | staff and client identities (name, email) and SSO metadata | yes | US (to verify) | to-confirm | R0 |
 | Functional Software | Sentry (US) | error tracking | scrubbed events only (route, tenant UUID, error type) | no | US | to-confirm | R0 |
 | Better Stack | Better Stack (uptime, status page, on-call) | uptime checks, status page, paging | none (synthetic checks and alert metadata) | no | to verify | to-confirm | R1 |
-| DocuSign | DocuSign eSignature and ID Verification | e-signature and signer identity verification | signed documents and signer evidence | yes | US account | to-confirm | R3 |
+| DocuSeal | DocuSeal (cloud API, signing form, KBA) | e-signature and signer identity verification | documents sent for signature, signer identity answers (KBA) and signer evidence (IP, user agent) | yes | US (to verify) | to-confirm | R3 |
 
 ## Customer-authorised integrations (not sub-processors)
 

@@ -173,7 +173,7 @@ async def _scanned_clean(firm: Firm) -> None:
 async def test_ac_a_signer_without_email_blocks_send_with_409(firm: Firm) -> None:
     draft = await _new_draft(firm)
     envelope = draft["row"]["id"]
-    assert draft["row"]["status"] == "draft" and draft["row"]["provider"] == "docusign"
+    assert draft["row"]["status"] == "draft" and draft["row"]["provider"] == "docuseal"
     assert [s["role"] for s in draft["signers"]] == ["signer", "ero"]
     assert draft["signers"][0]["email"] is None
     await _scanned_clean(firm)
