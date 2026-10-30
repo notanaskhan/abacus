@@ -1,8 +1,11 @@
 """Public interface of the engagements module; other modules import only this (ADR-008)."""
 
 from collections.abc import Awaitable, Callable
+from datetime import datetime
+from uuid import UUID
 
-from abacus.ai_gateway import register_client_data_facts
+from abacus.ai_gateway import DataSubject, register_client_data_facts, register_tri_consent_check
+from abacus.kernel.db import TenantContext
 from abacus.kernel.uow import OutboxEvent
 from abacus.kernel.uow.placement import register_engagement_placer
 from abacus.modules.engagements.acceptance import (
@@ -183,6 +186,11 @@ from abacus.modules.engagements.team import (
     assign_eqr,
     team_approval,
 )
+from abacus.modules.engagements.work_item_facts import (
+    WorkItemFacts,
+    work_item_facts,
+    work_item_offices,
+)
 from abacus.modules.engagements.work_items import (
     WORK_ITEM_FUNCTIONS,
     AdvisoryProjectKind,
@@ -194,11 +202,13 @@ from abacus.modules.engagements.work_items import (
     assign_work_item,
     assurance_item,
     assurance_item_id,
+    client_tax_years,
     create_work_item,
     end_wall_assignments,
     holds_tax_return,
     lock_assurance_item,
     lock_engagement,
+    mfa_tri_scope,
     portal_work_items,
     set_assurance_profile,
     wall_assignment_count,
@@ -243,7 +253,9 @@ from abacus.modules.methodology.api import (
 from abacus.modules.organisations.api import (
     MaskedTinOut,  # N-01: the masked TIN shape, re-exported for evidence's file drawer
     OverviewSection,
+    TriSubject,
     activate_contact,
+    covering_consents,
     readable_client,  # P-07-T57: re-exported for audit_trail's Activity lines (DEC-718)
     register_client_engagements,
     register_conflict_subject,
@@ -261,6 +273,19 @@ register_engagement_placer(place_engagements)
 # SPEC-036 (TASK-076): the AI gateway asks whether AI is off for an engagement.
 # P-06-T20 security review (DEC-324): tax-return work reaches no model without consent.
 register_client_data_facts(excluded=ai_excluded, tax_return=holds_tax_return)
+
+
+# T-01-T11 (C19 condition 6): organisations answers whether a context's TRI subjects hold both
+# §7216 consents; it never imports the gateway (P-07-T04), so the registration is made here.
+async def _tri_consents(
+    tenant: TenantContext, subjects: tuple[DataSubject, ...], at: datetime
+) -> tuple[UUID, ...] | None:
+    return await covering_consents(
+        tenant, [TriSubject(s.entity_id, s.tax_year) for s in subjects], at
+    )
+
+
+register_tri_consent_check(_tri_consents)
 # SPEC-014: which engagements count for firm-level reads by engagement role (not archived).
 register_active_engagements(active_engagements)
 # P-07-T08: `register_open_requests` is re-exported for requests, keeping the plan's graph
@@ -313,6 +338,9 @@ register_invitation_parties(invitation_parties)
 register_contact_activation(activate_contact)
 # P-08-T17 (DEC-34, DEC-63): approvers, signing officers and SKE designees need the second step.
 register_mfa_requirement("engagement_designation", mfa_designated)
+# T-01-T12 (C19): a grant reaching tax return information (a K-1 package, a tax return work
+# item or an engagement holding one) needs the second step too.
+register_mfa_requirement("tri_scope", mfa_tri_scope)
 # F-03-T27 (ADR-145): the `client` scope kind reads through engagement visibility.
 register_clients_of_engagements(clients_of_engagements)
 register_engagements_of_scope(engagements_of_scope)
@@ -394,6 +422,7 @@ __all__ = [
     "UnknownWorkItemKind",
     "VersionNotLatest",
     "WorkItemExists",
+    "WorkItemFacts",
     "WorkItemProvider",
     "acceptance_decisions_due",
     "acceptance_record",
@@ -418,6 +447,7 @@ __all__ = [
     "client_contact_names",
     "client_contact_organisations",
     "client_contact_organisations_of_users",
+    "client_tax_years",
     "commit_client_intake",
     "complete_manual_check",
     "conclude_independence",
@@ -487,6 +517,8 @@ __all__ = [
     "version_detail",
     "visible_among",
     "work_item_engagement",
+    "work_item_facts",
     "work_item_index",
+    "work_item_offices",
     "work_item_provider",
 ]

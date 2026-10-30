@@ -30,3 +30,11 @@ Engine figures TRI (shown only from approved imports, ADR-231); client and peopl
 
 ## 4. Events
 Outbox: `tax_return.status_changed`, `tax_return.assigned`. Audit: `tax_return.assigned`, `tax_return.status_changed` (with the actor grammar of INV-5).
+
+## Live since T-02-T09 (DEC-1259)
+- `GET /v1/tax-returns`, `/summary` and `POST :bulk-assign` are live (`tax/board.py`, routes in `tax/returns_routes.py`); the record, overview, intake, single assignment and transitions stay 501 until T-02-T13.
+- Composition: `tax_returns` with `engagements.api.work_item_facts(ctx, "tax_return")` (wall-safe; client name, office, people by function). Done = `filed`, `accepted`.
+- One page: a season's board is returned whole (`cursor` reserved, `next_cursor` null).
+- `due_rule_code` stays null until T-02-T10 pins the rule text with the dates.
+
+- T-02-T14 (additive): `TaxReturnRecordOut.card_detail` and `engine_url`; `TaxReturnOverviewOut` gains `record_links`, `filing`, `pipeline`, `engine_synced_on`, `engine_footnote`, `pro_forma_label`, `pro_forma`, `plan`, `k1_classifications`, `carryforwards`, `issues` and `two_year`; `EngineSummaryLineOut` gains the statement grammar (`line_ref`, `indent`, `total`, `note`, `issue`) and a nullable `amount`; `LadderStepOut` gains `step`, `state`, `note`, `blocked_by`; `K1DependencyOut` gains `source_label`, `short_name`, `source_due_on`. Every new list defaults to empty, and an empty list draws no band or card. T-02-T13's read model fills them.

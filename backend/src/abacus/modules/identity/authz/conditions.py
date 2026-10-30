@@ -23,6 +23,11 @@ are not registered, or not known for this resource, denies (fail closed).
 - `owner_of_target` (K-02-T01, DEC-1150): the actor is the target's named owner (a firm
   standard's `owner_id`, carried on the resource as `TargetFacts.owner_user_id`) and holds a
   partner membership now.
+- `consent` (T-01-T11, C19, ADR P-12): every data subject of the target (the client entities
+  carried as `TargetFacts.consent_subjects`) holds a consent for each listed §7216 purpose,
+  signed and in force now, by the registered consent checks (`register_consent_check`). A
+  resource condition: it binds agents and system runs too. No subjects, or an unregistered
+  purpose, fails closed.
 
 The three target conditions are a person's: an agent or a system run never meets them, whatever its
 initiator could do, and a support session never does either (its facts are not resolved).
@@ -59,6 +64,8 @@ class ConditionFacts:
     reserved_holder: bool | None = None
     # K-02-T01: whether the actor is the target's owner and a partner member now.
     owner: bool | None = None
+    # T-01-T11: the §7216 purposes every data subject of the target holds now (None: unknown).
+    consents: frozenset[str] | None = None
 
 
 def conditions_hold(rule: Rule, facts: ConditionFacts, *, person: bool) -> bool:
@@ -86,6 +93,9 @@ def conditions_hold(rule: Rule, facts: ConditionFacts, *, person: bool) -> bool:
             return False
         if rule.scope_only and facts.client_actor and facts.scope_covered is not True:
             return False
+    # T-01-T11 (C19): a resource condition, for every actor: the data subjects' consents.
+    if rule.consent and (facts.consents is None or not rule.consent <= facts.consents):
+        return False
     if rule.attest_client is not None:
         if facts.attest_client is None:
             return False

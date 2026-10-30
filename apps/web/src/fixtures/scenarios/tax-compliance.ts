@@ -11,7 +11,7 @@ const at = (state: string, persona: string, clock: string): Scenario => ({
   state,
   persona,
   clock,
-  handlers: { ...E0.handlers, ...taxComplianceHandlers() },
+  handlers: { ...E0.handlers, ...taxComplianceHandlers(state) },
 });
 
 const MON_924 = "2026-09-14T09:24:00-05:00";
@@ -55,6 +55,8 @@ export const tax09 = defineScenarios({
   d: at("d", "samuel-ito", "2026-09-16T11:43:00-05:00"),
   d2: at("d2", "samuel-ito", "2026-09-16T11:20:00-05:00"),
   e: at("e", "samuel-ito", "2026-09-10T09:30:00-05:00"),
+  // Non-artboard (T-01-T15): no export yet.
+  not_yet_exported: at("not_yet_exported", "samuel-ito", "2026-09-16T11:20:00-05:00"),
 });
 
 export const tax12 = defineScenarios({
