@@ -29,6 +29,7 @@ import base64
 import json
 import re
 from collections.abc import Mapping, Sequence
+from dataclasses import replace
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Final, Literal, cast
@@ -39,6 +40,7 @@ from abacus.kernel.crypto import seal
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Scope, Target, uow
+from abacus.modules.engagements.api import engagement_resource_of
 from abacus.modules.evidence.api import (
     file_retrieved_copy,
     file_signed_copy,
@@ -46,7 +48,7 @@ from abacus.modules.evidence.api import (
     read_staged,
     screen_and_stage,
 )
-from abacus.modules.identity.api import AuthContext, is_active_member, names_of
+from abacus.modules.identity.api import AuthContext, authorise, is_active_member, names_of
 from abacus.modules.organisations.api import (
     AgreeingFormOut,
     AuthorizationForm,
@@ -644,6 +646,12 @@ async def compare(
         != client_id
     ):
         raise ReturnMismatch(facts={"return_id": str(body.return_id)})
+    # The return's own engagement: a wall on it answers 404, even for a caller who may read the
+    # client's tax profile (INV-3; the return's figures are TRI).
+    engagement = await engagement_resource_of(
+        ctx.tenant, cast(UUID, filed_return["engagement_id"])
+    )
+    await authorise(ctx, "tax_return.read", replace(engagement, work_item_id=body.return_id))
     as_filed = await approved_values(ctx.tenant, RETURN_TARGET, body.return_id, ENGINE_IMPORT)
     if as_filed is None:
         raise ReturnNotFiled(facts={"return_id": str(body.return_id)})
@@ -743,11 +751,26 @@ def _comparison_out(row: RowLike) -> TranscriptComparisonOut:
 
 
 async def comparison(ctx: AuthContext, transcript_id: UUID) -> TranscriptComparisonOut:
+    """The latest comparison; its return amounts are the return's, so the return's engagement
+    is checked as `compare` checks it (a wall answers 404)."""
     async with tenant_session(ctx.tenant) as session:
         found = await repo.latest_comparisons(session, [transcript_id])
-    if not found:
+        filed_return = (
+            await repo.tax_return(session, cast(UUID, found[0]["return_id"])) if found else None
+        )
+    if not found or filed_return is None:
         raise NotFound("transcript_comparison")
+    await _read_return(ctx, filed_return)
     return _comparison_out(found[0])
+
+
+async def _read_return(ctx: AuthContext, filed_return: RowLike) -> None:
+    """`tax_return.read` on the return's own engagement (INV-3; the return's figures are TRI)."""
+    engagement = await engagement_resource_of(
+        ctx.tenant, cast(UUID, filed_return["engagement_id"])
+    )
+    work_item_id = cast(UUID, filed_return["work_item_id"])
+    await authorise(ctx, "tax_return.read", replace(engagement, work_item_id=work_item_id))
 
 
 def register() -> None:

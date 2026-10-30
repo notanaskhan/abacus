@@ -19,7 +19,7 @@ row-level security.
   pull or a new comparison is a new row. Lines, amounts and comparisons are TRI.
 
 Revision ID: 0550
-Revises: 0406
+Revises: 0407
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, insert_only, tenant_table
 
 revision = "0550"
-down_revision = "0406"
+down_revision = "0407"
 branch_labels = None
 depends_on = None
 
@@ -187,7 +187,8 @@ def upgrade() -> None:
             row_version integer NOT NULL DEFAULT 1 CHECK (row_version >= 1),
             PRIMARY KEY (tenant_id, id),
             FOREIGN KEY (tenant_id, client_entity_id) REFERENCES client_entities (tenant_id, id),
-            FOREIGN KEY (tenant_id, evidence_version_id) REFERENCES evidence_versions (tenant_id, id),
+            FOREIGN KEY (tenant_id, evidence_version_id)
+                REFERENCES evidence_versions (tenant_id, id),
             -- a state form names its code; a federal form never does
             CHECK ((form = 'state') = (state_form_code IS NOT NULL)),
             -- on file means received, with the scanned form
@@ -243,8 +244,10 @@ def upgrade() -> None:
             created_at timestamptz NOT NULL DEFAULT abacus_now(),
             PRIMARY KEY (tenant_id, id),
             FOREIGN KEY (tenant_id, client_entity_id) REFERENCES client_entities (tenant_id, id),
-            FOREIGN KEY (tenant_id, authorization_id) REFERENCES tax_authorizations (tenant_id, id),
-            FOREIGN KEY (tenant_id, evidence_version_id) REFERENCES evidence_versions (tenant_id, id),
+            FOREIGN KEY (tenant_id, authorization_id)
+                REFERENCES tax_authorizations (tenant_id, id),
+            FOREIGN KEY (tenant_id, evidence_version_id)
+                REFERENCES evidence_versions (tenant_id, id),
             FOREIGN KEY (tenant_id, file_id) REFERENCES tax_profile_files (tenant_id, id),
             FOREIGN KEY (tenant_id, pulled_by) REFERENCES memberships (tenant_id, user_id),
             UNIQUE (tenant_id, file_id)

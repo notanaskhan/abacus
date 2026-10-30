@@ -50,6 +50,15 @@ repository. 4. [x] Organisations routes and composite. 5. [x] Contract, generate
   integration suite ran once: 5 passed (after re-chaining 0550 onto 0406 and identifier-only audit refs). Moved the live routes out of
   `consents_contract.py` into `organisations/tax_profile.py` to avoid an import cycle.
 
+- `2026-10-30` — S21 end review (combined branch `s21-review`): security review of the red diff
+  found that `compare` and the latest-comparison read used the client-level check only, so a
+  caller walled from the return's engagement could read its figures; both now authorise
+  `tax_return.read` on the return's engagement (404 for a wall), with `test_ac35`. Also: 0550
+  re-chained onto 0407 (#858), migration line lengths, ANY-001, the 201 route list
+  (`test_app_gates`, plus four P-11 routes missing there since #745) and an ALLOW entry for #858's
+  synthetic install-tool key (SECRET-003). Gates (check-fast, check-generated) green; targeted pass
+  414 passed (tenant isolation, this suite ×6, gates, tax unit and golden).
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|

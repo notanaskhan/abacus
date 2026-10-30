@@ -31,6 +31,12 @@ EXCLUDE: tuple[str, ...] = ()
 # (path glob, rule id, reason): findings that are known local fixtures, never real secrets.
 ALLOW: tuple[tuple[str, str, str], ...] = (
     (
+        "backend/tests/unit/integrations/test_task2152_esign_install_tool.py",
+        "SECRET-003",
+        "a synthetic DocuSeal-shaped key that spells 'not a secret', for the install tool's"
+        " shape check (TASK-2152); never a real key",
+    ),
+    (
         "backend/migrations/bootstrap-local.sql",
         "*",
         "local-only database role passwords for the docker compose stack;"
