@@ -112,15 +112,16 @@ def validate_payload(kind: str, payload: Mapping[str, object]) -> Payload:
         ) from None
 
 
-# PCAOB auditing standards are numbered "AS 2201"; AICPA's are "AU-C", "AR-C", "QM". "Issuer"
-# stands alone in an issuer set's name, never inside "nonissuer" or "non-issuer".
-_PCAOB: Final = re.compile(r"pcaob|\bAS\s?\d{4}\b", re.IGNORECASE)
-_ISSUER: Final = re.compile(r"(?<![a-z])(?<!non)(?<!non-)(?<!non )issuers?\b", re.IGNORECASE)
+# PCAOB auditing standards are numbered "AS 2201" (also written "AS-2201" in codes); AICPA's are
+# "AU-C", "AR-C", "QM". "Issuer" stands alone in an issuer set's name, never inside "nonissuer"
+# or "non-issuer".
+_PCAOB: Final = re.compile(r"pcaob|\bAS[\s_-]?\d{4}\b", re.IGNORECASE)
+_ISSUER_WORD: Final = re.compile(r"(?<![a-z])(?<!non)(?<!non-)(?<!non )issuers?\b", re.IGNORECASE)
 
 
 def _names_pcaob_or_issuer(row: StandardsSetRow) -> bool:
     texts = (row.code, row.label, *row.standard_refs)
-    return any(_PCAOB.search(t) or _ISSUER.search(t.replace("_", " ")) for t in texts)
+    return any(_PCAOB.search(t) or _ISSUER_WORD.search(t.replace("_", " ")) for t in texts)
 
 
 def validate_standards_sets(
