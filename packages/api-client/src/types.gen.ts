@@ -79103,10 +79103,6 @@ export type ListReportTemplatesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListReportTemplatesError = ListReportTemplatesErrors[keyof ListReportTemplatesErrors];
@@ -79163,10 +79159,6 @@ export type ImportReportTemplateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ImportReportTemplateError = ImportReportTemplateErrors[keyof ImportReportTemplateErrors];
@@ -79223,10 +79215,6 @@ export type GetReportTemplateVersionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetReportTemplateVersionError = GetReportTemplateVersionErrors[keyof GetReportTemplateVersionErrors];
@@ -79351,10 +79339,6 @@ export type PublishReportTemplateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PublishReportTemplateError = PublishReportTemplateErrors[keyof PublishReportTemplateErrors];

@@ -34,6 +34,30 @@ from abacus.modules.methodology.lifecycle import (
     version_state,
 )
 from abacus.modules.methodology.programs import CitedStep, step_at
+from abacus.modules.methodology.report_templates import (
+    ImportedVersion as ImportedReportTemplateVersion,
+)
+from abacus.modules.methodology.report_templates import (
+    Publication as ReportTemplatePublicationView,
+)
+from abacus.modules.methodology.report_templates import TemplateBundle as ReportTemplateBundle
+from abacus.modules.methodology.report_templates import TemplateSummary as ReportTemplateSummary
+from abacus.modules.methodology.report_templates import (
+    TemplateVersionView as ReportTemplateVersionView,
+)
+from abacus.modules.methodology.report_templates import (
+    current_version_id as current_report_template_version,
+)
+from abacus.modules.methodology.report_templates import (
+    import_template as import_report_template,
+)
+from abacus.modules.methodology.report_templates import (
+    publish_version as publish_report_template,
+)
+from abacus.modules.methodology.report_templates import templates as report_templates_in_firm
+from abacus.modules.methodology.report_templates import (
+    version_view as report_template_version,
+)
 from abacus.modules.methodology.routes import methodology_router
 from abacus.modules.methodology.service import (
     ApprovedGuidance,
@@ -124,12 +148,17 @@ __all__ = [
     "EntryClassification",
     "ExampleRow",
     "ExamplesProvider",
+    "ImportedReportTemplateVersion",
     "MaterialityCheck",
     "MaterialityRangeFor",
     "Methodology",
     "MethodologyVersionView",
     "PolicyRef",
     "Problem",
+    "ReportTemplateBundle",
+    "ReportTemplatePublicationView",
+    "ReportTemplateSummary",
+    "ReportTemplateVersionView",
     "RequiredLevels",
     "ReturnApproval",
     "ReviewItem",
@@ -148,8 +177,10 @@ __all__ = [
     "area_for",
     "classify_entry",
     "confidence_hold",
+    "current_report_template_version",
     "current_version",
     "current_version_of_kind",
+    "import_report_template",
     "import_template",
     "latest_versions",
     "materiality_range_for",
@@ -158,9 +189,12 @@ __all__ = [
     "methodology_version",
     "parse_workbook",
     "publish_drafted_version",
+    "publish_report_template",
     "register_catalog_provider",
     "register_standard_examples",
     "register_usage_counter",
+    "report_template_version",
+    "report_templates_in_firm",
     "required_review_levels",
     "return_approval_policy",
     "ssars_framework_for",

@@ -25,6 +25,10 @@ TABLES: frozenset[str] = frozenset(
         "firm_standard_versions",
         "threshold_policies",
         "threshold_policy_versions",
+        # P-11-T06 (0460): report templates as firm content (C11 §2).
+        "report_templates",
+        "report_template_versions",
+        "report_template_publications",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -38,6 +42,9 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "methodology_version_events",
         "programs",  # K-01-T05 (0224)
         "program_step_pbc_links",  # K-01-T05 (0224)
+        "report_templates",  # P-11-T06 (0460): identity never moves
+        "report_template_versions",  # P-11-T06 (0460)
+        "report_template_publications",  # P-11-T06 (0460)
     }
 )
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -98,6 +105,17 @@ for _parent, _versions in (
 ):
     INSERT_COLUMNS[_parent] = _STANDARD_INSERT
     INSERT_COLUMNS[_versions] = _VERSION_INSERT
+# P-11-T06 (0460): templates, their versions and publications, every column set at insert.
+INSERT_COLUMNS["report_templates"] = frozenset(
+    {"id", "tenant_id", "family", "name", "description", "created_by_user_id"}
+)
+INSERT_COLUMNS["report_template_versions"] = frozenset(
+    {"id", "tenant_id", "template_id", "version_no", "layout_key", "body", "clauses"}
+    | {"variables", "sample_data", "source", "content_sha256", "imported_by_user_id"}
+)
+INSERT_COLUMNS["report_template_publications"] = frozenset(
+    {"id", "tenant_id", "version_id", "action", "by_user_id", "mfa_at"}
+)
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     # K-01-T05 (0224): a draft step's content (K-01-T14 edits it); the frozen trigger refuses
     # any change to a published or superseded version's steps.

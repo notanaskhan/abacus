@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C11 |
 | Version | v1 |
-| Status | stub (P-11-T03, 2026-10-29): every route 404 for a client principal, then its matrix action, then 404 with `reporting.generated_documents` off and 501 with it on until P-11-T06 (templates) and T11 (generated documents). Fixture mode serves the shapes from the Brightwater Hale seed (`apps/web/src/fixtures/handlers/reporting.ts`) |
+| Status | stub (P-11-T03, 2026-10-29): every route 404 for a client principal, then its matrix action, then 404 with `reporting.generated_documents` off and 501 with it on until P-11-T06 (templates) and T11 (generated documents). **Templates live (P-11-T06, 2026-10-30):** list, version, import and publish answer from `reporting/templates.py` and methodology's tables (0460); the SAMPLE preview waits for P-11-T07. Fixture mode serves the shapes from the Brightwater Hale seed (`apps/web/src/fixtures/handlers/reporting.ts`) |
 | Provider epic | P-11 |
 | Consumers | N-02 (ENG-04 letters, §7216 consent documents), A-07 (AUD-20…23), T-01/T-02 (TAX-12 delivery cover letter), N-04 (NOT-03), C-01/C-02 (CLS-08), A-10 (FSP-06), P-10 (trace.pdf, P-10-T44), F-06 (T10 `DocumentVM`), F-07 (field manifest), T-06 (form-face previews) |
 | Freeze sprint | S18 Contract Monday (Mon Jun 28, 2027) |

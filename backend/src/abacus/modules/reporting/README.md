@@ -8,6 +8,8 @@ documents and versions, line items, linked values, tracked changes; the renderer
 - `contract.py`: C11 v1 (`docs/contracts/c11-renderer.md`): DocBlocks, generated documents,
   field regions, compare, changes, report templates; routes 404 off / 501 on behind
   `reporting.generated_documents` until P-11-T06 and T11 (P-11-T03).
+- `templates.py` (P-11-T06): bundle validation by path (markup, unknown variables, unknown
+  layout, clause conflicts, size) and the live template routes over `methodology.api`'s storage.
 - `api.py`: the in-process renderer API: `register_document_kind`, `check_render_request`,
   `render`, `render_final`, `lock` (P-11-T08 implements).
 - `render/`: the deterministic renderer (ADR-320): vendored fonts checked against
