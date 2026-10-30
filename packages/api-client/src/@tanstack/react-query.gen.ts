@@ -8677,7 +8677,8 @@ export const getEnvelopeOptions = (options: Options<GetEnvelopeData>) => queryOp
 /**
  * Update Envelope Draft Route
  *
- * SIG-02 edits (N-02-T20).
+ * SIG-02 edits (N-02-T20): 409 `stale_version` when `If-Match` is not the current
+ * version; 409 `envelope_not_draft` after Send.
  */
 export const updateEnvelopeDraftMutation = (options?: Partial<Options<UpdateEnvelopeDraftData>>): UseMutationOptions<UpdateEnvelopeDraftResponse, UpdateEnvelopeDraftError, Options<UpdateEnvelopeDraftData>> => {
     const mutationOptions: UseMutationOptions<UpdateEnvelopeDraftResponse, UpdateEnvelopeDraftError, Options<UpdateEnvelopeDraftData>> = {
@@ -8717,7 +8718,9 @@ export const envelopePageQueryKey = (options: Options<EnvelopePageData>) => crea
 /**
  * Envelope Page Route
  *
- * Rendered preview page (N-02-T21).
+ * SIG-02's preview page: the document's masked page image as the evidence viewer renders it
+ * (`no-store`, `nosniff`); 409 `preview_unavailable` for a generated document until P-11, 409
+ * `preview_outdated` before masking; 403 for a reader who may not read the evidence.
  */
 export const envelopePageOptions = (options: Options<EnvelopePageData>) => queryOptions<EnvelopePageResponse, EnvelopePageError, EnvelopePageResponse, ReturnType<typeof envelopePageQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -8774,7 +8777,8 @@ export const resendEnvelopeMutation = (options?: Partial<Options<ResendEnvelopeD
 /**
  * Send Envelope Route
  *
- * Human send through a single-use grant, +10 s (N-02-T22).
+ * Human send through a single-use grant, +10 s (N-02-T20): 409 `validation_failed` with
+ * each check in `facts`; the provider is called after the window (N-02-T22).
  */
 export const sendEnvelopeMutation = (options?: Partial<Options<SendEnvelopeData>>): UseMutationOptions<SendEnvelopeResponse, SendEnvelopeError, Options<SendEnvelopeData>> => {
     const mutationOptions: UseMutationOptions<SendEnvelopeResponse, SendEnvelopeError, Options<SendEnvelopeData>> = {
@@ -8793,7 +8797,7 @@ export const sendEnvelopeMutation = (options?: Partial<Options<SendEnvelopeData>
 /**
  * Undo Envelope Send Route
  *
- * Undo inside the window (N-02-T22).
+ * Undo inside the window (N-02-T20): no provider call is made.
  */
 export const undoEnvelopeSendMutation = (options?: Partial<Options<UndoEnvelopeSendData>>): UseMutationOptions<UndoEnvelopeSendResponse, UndoEnvelopeSendError, Options<UndoEnvelopeSendData>> => {
     const mutationOptions: UseMutationOptions<UndoEnvelopeSendResponse, UndoEnvelopeSendError, Options<UndoEnvelopeSendData>> = {
@@ -14428,6 +14432,7 @@ export const getPortalBinderQueryKey = (options: Options<GetPortalBinderData>) =
  * Get Portal Binder Route
  *
  * POR-03. A binder outside the caller's grant, a draft or a forged id answers 404.
+ * `upload_something_else` (R-01-T33): the firm's published toggle and the intake flag.
  */
 export const getPortalBinderOptions = (options: Options<GetPortalBinderData>) => queryOptions<GetPortalBinderResponse, GetPortalBinderError, GetPortalBinderResponse, ReturnType<typeof getPortalBinderQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -14988,7 +14993,8 @@ export const listIntakeUploadsInfiniteOptions = (options: Options<ListIntakeUplo
 /**
  * Create Intake Upload Route
  *
- * POR-03 "Upload something else": the batch (N-01-T14).
+ * POR-03 "Upload something else": the batch (N-01-T14). R-01-T33: 404 while the firm has
+ * not published the toggle on (as if the route were absent).
  */
 export const createIntakeUploadMutation = (options?: Partial<Options<CreateIntakeUploadData>>): UseMutationOptions<CreateIntakeUploadResponse, CreateIntakeUploadError, Options<CreateIntakeUploadData>> => {
     const mutationOptions: UseMutationOptions<CreateIntakeUploadResponse, CreateIntakeUploadError, Options<CreateIntakeUploadData>> = {

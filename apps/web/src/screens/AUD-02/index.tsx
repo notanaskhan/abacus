@@ -278,8 +278,17 @@ function Cockpit({
   }
 
   const pausable = (cockpit.allowed_actions ?? []).includes("agent.pause");
+  // AUD-06 draws the audit split (rail 330 · workpaper 536 · viewer 490), the dock widened to the
+  // `--ev-w` token as AUD-03 does; the other sections keep the standard cockpit (DEC-832).
   return (
-    <div data-screen="AUD-02" className="flex min-h-0 flex-1 flex-col">
+    <div
+      data-screen="AUD-02"
+      className={
+        tbOn
+          ? "flex min-h-0 min-w-0 flex-1 flex-col [--dock-w:var(--ev-w)]"
+          : "flex min-h-0 flex-1 flex-col"
+      }
+    >
       <AuditCockpit
         cockpit={cockpit}
         canvas={canvas}
