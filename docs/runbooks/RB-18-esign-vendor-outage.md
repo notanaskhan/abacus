@@ -16,7 +16,7 @@ Accrued sends, because Accrued sends none.
 |---|---|
 | Owner | AY (partner-facing); N for provider health and flags |
 | Applies | from M11 for DocuSign embedded signing; from M13 (Tue Aug 31) for KBA on Form 8879 |
-| Kill switches | `signatures.docusign` (off: sending stops, record mode stays), `signatures.kba_8879` (off: 8879 KBA stops; DF-11's handwritten path stays) |
+| Kill switches | `signatures.esign_provider` (off: sending stops, record mode stays), `signatures.kba_8879` (off: 8879 KBA stops; DF-11's handwritten path stays) |
 | Alarms | provider health (to wire with N-02-T18: the provider's status feed and our send error rate) |
 
 ## 1. What keeps working in an outage
@@ -31,7 +31,7 @@ Accrued sends, because Accrued sends none.
 ## 2. During an outage (from M11; draft)
 1. Confirm on the provider's status page and in our send errors; declare SEV2 if sending is down
    in a live window (`docs/ops/on-call.md`).
-2. `signatures.docusign` off for the affected firms (`make flag`, the other founder approving):
+2. `signatures.esign_provider` off for the affected firms (`make flag`, the other founder approving):
    new sends stop cleanly instead of failing one by one.
 3. Tell the firms: letters due now go out from their own tool or on paper, and come back into
    Accrued by record-mode import (`docs/ops/pilot/import-signed-letters.md`).

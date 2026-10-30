@@ -143,7 +143,7 @@ _SWEEP_TIMEOUT = timedelta(minutes=4)
 
 @workflow.defn(name="EnvelopeStatusPoll")
 class EnvelopeStatusPollWorkflow:
-    """N-02-T19 (ADR-152's fallback, poll-only): every 5 minutes, a hint to each open DocuSign
+    """N-02-T19 (ADR-152's fallback, poll-only): every 5 minutes, a hint to each open DocuSeal
     envelope's workflow, which reads the provider (the truth). Orchestration only."""
 
     @workflow.run

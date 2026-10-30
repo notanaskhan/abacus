@@ -5,12 +5,14 @@ accepted, so it binds nothing and no unauthenticated route exists: N-02 runs pol
 amendment's "if refused" clause says.
 
 - **EnvelopeStatusPoll** (Schedule `envelope_status_poll:platform`, every 5 minutes, overlap
-  SKIP): for each firm with `signatures.docusign` on, every open envelope that DocuSign holds gets
-  a `provider_hint` signal; its EnvelopeWorkflow runs `signatures.envelope_poll`, which reads the
-  provider and records what changed (`source = provider_poll`). A hint carries nothing.
+  SKIP): for each firm with `signatures.esign_provider` on, every open envelope that DocuSeal
+  holds (ADR-342) gets a `provider_hint` signal; its EnvelopeWorkflow runs
+  `signatures.envelope_poll`, which reads the provider and records what changed
+  (`source = provider_poll`). A hint carries nothing.
 - **A portal return** (POR-06, N-02-T24) calls `hint_envelope` for the envelope just signed.
-- **Connect, when ADR-152 is accepted:** `verify_connect` checks DocuSign's HMAC (constant time;
-  any configured key may match, so keys rotate) and `connect_event` reads only the envelope id
+- **Connect (DocuSign's, kept until the N-02-T19 rework retargets or removes it; ADR-342), when
+  ADR-152 is accepted:** `verify_connect` checks DocuSign's HMAC (constant time; any configured
+  key may match, so keys rotate) and `connect_event` reads only the envelope id
   and the event id from the body; `record_connect_hint` records the event once per provider event
   id (`envelope_events.provider_event_id` is unique per firm) and signals the workflow. The body
   is never trusted for state and never logged.
@@ -31,7 +33,7 @@ from uuid import UUID
 from sqlalchemy import text
 from temporalio import activity
 
-from abacus.kernel._flags import SIGNATURES_DOCUSIGN
+from abacus.kernel._flags import SIGNATURES_ESIGN_PROVIDER
 from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.dispatch import PlatformSchedule, signal_with_start
@@ -49,7 +51,7 @@ from abacus.modules.signatures.workflows import (
 
 POLL_EVERY: Final = timedelta(minutes=5)
 _OPEN_AT_PROVIDER: Final = text(
-    "SELECT id FROM envelopes WHERE provider = 'docusign' AND provider_envelope_id IS NOT NULL "
+    "SELECT id FROM envelopes WHERE provider = 'docuseal' AND provider_envelope_id IS NOT NULL "
     "AND status IN ('sent', 'viewed', 'partially_signed')"
 )
 _log = get_logger(__name__)
@@ -73,12 +75,12 @@ async def hint_envelope(tenant_id: UUID, envelope_id: UUID) -> None:
 
 @activity.defn(name="signatures.status_poll_sweep")
 async def status_poll_sweep() -> int:
-    """One tick: a hint per open DocuSign envelope of each firm with DocuSign on."""
+    """One tick: a hint per open DocuSeal envelope of each firm with the provider on."""
     hinted = 0
     for tenant_id in await firm_tenant_ids():
         tenant = _system(tenant_id)
         try:
-            if not await flag_enabled(tenant, SIGNATURES_DOCUSIGN):
+            if not await flag_enabled(tenant, SIGNATURES_ESIGN_PROVIDER):
                 continue
             async with tenant_session(tenant) as session:
                 ids = list((await session.execute(_OPEN_AT_PROVIDER)).scalars())
@@ -165,7 +167,7 @@ SCHEDULES: tuple[PlatformSchedule, ...] = (
         id=STATUS_POLL_ID,
         workflow=EnvelopeStatusPollWorkflow,
         every=POLL_EVERY,
-        note="N-02-T19: hint each open DocuSign envelope's workflow to read the provider",
+        note="N-02-T19: hint each open DocuSeal envelope's workflow to read the provider",
     ),
 )
 ACTIVITIES: tuple[object, ...] = (status_poll_sweep,)

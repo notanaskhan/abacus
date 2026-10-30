@@ -24705,6 +24705,7 @@
           "provider": {
             "cls": "internal",
             "enum": [
+              "docuseal",
               "docusign",
               "record",
               "fake"
@@ -46732,7 +46733,7 @@
         "type": "object"
       },
       "PortalEnvelopeView": {
-        "description": "`EnvelopeVM`: steps, documents, fields, signers, my state; `signing_session` and `outcome`\nreserved (null in record mode and until `signatures.docusign`).",
+        "description": "`EnvelopeVM`: steps, documents, fields, signers, my state; `signing_session` and `outcome`\nreserved (null in record mode and until `signatures.esign_provider`).",
         "properties": {
           "date_as_of": {
             "anyOf": [
@@ -62398,7 +62399,7 @@
         "type": "object"
       },
       "SigningSessionOut": {
-        "description": "A one-time, short-lived provider view (reserved until `signatures.docusign`).",
+        "description": "A one-time, short-lived provider view (reserved until `signatures.esign_provider`).",
         "properties": {
           "expires_at": {
             "cls": "internal",

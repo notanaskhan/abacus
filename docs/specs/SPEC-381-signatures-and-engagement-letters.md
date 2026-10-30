@@ -93,7 +93,7 @@ Tables per `docs/plan/epics/N-02.md` §4.2 (`signatures_v1`, N-02-T07; `engageme
 As `docs/plan/epics/N-02.md` §4.6, identifiers only.
 
 ## 11. Differences from the epic, and decisions
-- ADR-149 (P-26) accepted 2026-10-27 by the builder (AMENDMENT-solo, DEC-706). Its counsel fallback stands: the DocuSign path stays behind `signatures.docusign` until counsel answers and F-09-T41's go/no-go; record mode does not wait.
+- ADR-149 (P-26) accepted 2026-10-27 by the builder (AMENDMENT-solo, DEC-706). Its counsel fallback stands: the provider path (DocuSeal since ADR-342) stays behind `signatures.esign_provider` until counsel answers and F-09-T41's go/no-go; record mode does not wait.
 - The P-45 amendment (the provider webhook receiver) is drafted into ADR-152, still proposed (DEC-707); decide-by Fri Jun 11, 2027. If refused: poll only.
 - Solo edition: no CODEOWNERS lines; `protected-paths.md` lists `modules/signatures/` (N-02-T02).
 
