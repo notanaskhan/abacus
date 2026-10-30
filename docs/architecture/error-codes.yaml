@@ -107,6 +107,11 @@ codes:
     - abacus.modules.identity.people.AlreadyMember
     - abacus.modules.identity.service.AlreadyMember
     summary: The caller is already on the engagement's team.
+  already_published:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.report_templates.AlreadyPublished
+    summary: The version is already the template's current version.
   already_redacted:
     status: 409
     raised_by:
