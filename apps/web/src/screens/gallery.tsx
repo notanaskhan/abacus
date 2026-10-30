@@ -127,6 +127,13 @@ import {
   STATES as HOME02_STATES,
   scenarios as home02Scenarios,
 } from "./HOME-02/scenarios";
+import { ProgramEditorPage } from "./KNW-03";
+import {
+  type Knw03State,
+  OPENS as KNW03_OPENS,
+  STATES as KNW03_STATES,
+  scenarios as knw03Scenarios,
+} from "./KNW-03/scenarios";
 import { ClientsIndex } from "./CLI-01";
 import {
   STATES as CLI01_STATES,
@@ -1124,6 +1131,49 @@ function Cli01Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("CLI-01", { title: "Clients index", Component: Cli01Artboard });
+
+function Knw03Frame({ state }: { state: Knw03State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/knowledge" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  const open = KNW03_OPENS[state];
+  return (
+    <div data-artboard={state}>
+      <ProgramEditorPage
+        programId={open.programId}
+        initialSegment={open.segment}
+        {...(open.step === undefined ? {} : { step: open.step })}
+        {...(open.from === undefined ? {} : { from: open.from })}
+        popoverOpen={open.popover === true}
+        toolbar={bar.toolbar}
+        frame
+      />
+    </div>
+  );
+}
+
+function Knw03Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Knw03State = KNW03_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      knw03Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Knw03Frame key={state} state={state} /> : null;
+}
+
+registerScreen("KNW-03", { title: "Program editor", Component: Knw03Artboard });
 
 function Tax01Frame({ state }: { state: Tax01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
