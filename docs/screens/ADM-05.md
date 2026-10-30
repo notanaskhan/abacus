@@ -9,7 +9,7 @@
 | Epic and tasks | T-01 · contract T-01-T05; fixtures T09; build T13, T14 |
 | Spec and ADRs | SPEC-501 AC-11; ADR-231; R-04 |
 | Flags | `consents.registry` |
-| Manifest status | planned; built on fixtures with T-01-T09's scenarios, `live` with its build tasks (pilot posture: agents off) |
+| Manifest status | `fixture` since T-01-T13 (a, b, f, g built; c, d, e, h with T-01-T22); `live` with the C19 routes (pilot posture: agents off) |
 
 ## States
 | Artboard | Viewer | Clock (CT) | Data condition | Parity tier | Status |
@@ -83,3 +83,5 @@ Gradients, emoji, blue, heavy shadows, invented colours or data, boxed inputs, t
 
 ## Open gaps
 - Status objects live in the registry since T-01-T06; the contracts move from `Literal` types to the registry's enums when the routes go live.
+- T-01-T13 (DEC-1262): ConsentOut gains `declined_at`, `revoked_at` and `signers` (with `title`), additively, for the Signed column and the signer line; Request consent… and Renew 3… stay disabled with their planned tooltips until SIG-02 (part 2).
+

@@ -5214,7 +5214,8 @@ export const getEnvelope = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * Update Envelope Draft Route
  *
- * SIG-02 edits (N-02-T20).
+ * SIG-02 edits (N-02-T20): 409 `stale_version` when `If-Match` is not the current
+ * version; 409 `envelope_not_draft` after Send.
  */
 export const updateEnvelopeDraft = <ThrowOnError extends boolean = false>(options: Options<UpdateEnvelopeDraftData, ThrowOnError>): RequestResult<UpdateEnvelopeDraftResponses, UpdateEnvelopeDraftErrors, ThrowOnError> => (options.client ?? client).put<UpdateEnvelopeDraftResponses, UpdateEnvelopeDraftErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5240,7 +5241,9 @@ export const countersignSession = <ThrowOnError extends boolean = false>(options
 /**
  * Envelope Page Route
  *
- * Rendered preview page (N-02-T21).
+ * SIG-02's preview page: the document's masked page image as the evidence viewer renders it
+ * (`no-store`, `nosniff`); 409 `preview_unavailable` for a generated document until P-11, 409
+ * `preview_outdated` before masking; 403 for a reader who may not read the evidence.
  */
 export const envelopePage = <ThrowOnError extends boolean = false>(options: Options<EnvelopePageData, ThrowOnError>): RequestResult<EnvelopePageResponses, EnvelopePageErrors, ThrowOnError> => (options.client ?? client).get<EnvelopePageResponses, EnvelopePageErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5273,7 +5276,8 @@ export const resendEnvelope = <ThrowOnError extends boolean = false>(options: Op
 /**
  * Send Envelope Route
  *
- * Human send through a single-use grant, +10 s (N-02-T22).
+ * Human send through a single-use grant, +10 s (N-02-T20): 409 `validation_failed` with
+ * each check in `facts`; the provider is called after the window (N-02-T22).
  */
 export const sendEnvelope = <ThrowOnError extends boolean = false>(options: Options<SendEnvelopeData, ThrowOnError>): RequestResult<SendEnvelopeResponses, SendEnvelopeErrors, ThrowOnError> => (options.client ?? client).post<SendEnvelopeResponses, SendEnvelopeErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5284,7 +5288,7 @@ export const sendEnvelope = <ThrowOnError extends boolean = false>(options: Opti
 /**
  * Undo Envelope Send Route
  *
- * Undo inside the window (N-02-T22).
+ * Undo inside the window (N-02-T20): no provider call is made.
  */
 export const undoEnvelopeSend = <ThrowOnError extends boolean = false>(options: Options<UndoEnvelopeSendData, ThrowOnError>): RequestResult<UndoEnvelopeSendResponses, UndoEnvelopeSendErrors, ThrowOnError> => (options.client ?? client).post<UndoEnvelopeSendResponses, UndoEnvelopeSendErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -8671,6 +8675,7 @@ export const listPortalBinders = <ThrowOnError extends boolean = false>(options?
  * Get Portal Binder Route
  *
  * POR-03. A binder outside the caller's grant, a draft or a forged id answers 404.
+ * `upload_something_else` (R-01-T33): the firm's published toggle and the intake flag.
  */
 export const getPortalBinder = <ThrowOnError extends boolean = false>(options: Options<GetPortalBinderData, ThrowOnError>): RequestResult<GetPortalBinderResponses, GetPortalBinderErrors, ThrowOnError> => (options.client ?? client).get<GetPortalBinderResponses, GetPortalBinderErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -8976,7 +8981,8 @@ export const listIntakeUploads = <ThrowOnError extends boolean = false>(options:
 /**
  * Create Intake Upload Route
  *
- * POR-03 "Upload something else": the batch (N-01-T14).
+ * POR-03 "Upload something else": the batch (N-01-T14). R-01-T33: 404 while the firm has
+ * not published the toggle on (as if the route were absent).
  */
 export const createIntakeUpload = <ThrowOnError extends boolean = false>(options: Options<CreateIntakeUploadData, ThrowOnError>): RequestResult<CreateIntakeUploadResponses, CreateIntakeUploadErrors, ThrowOnError> => (options.client ?? client).post<CreateIntakeUploadResponses, CreateIntakeUploadErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9449,7 +9455,7 @@ export const rejectDetailsChange = <ThrowOnError extends boolean = false>(option
 /**
  * List Reference Sets Route
  *
- * KNW-04 j: the published sets, by kind.
+ * KNW-04 j: the published sets, by kind then key, each with the version in effect today.
  */
 export const listReferenceSets = <ThrowOnError extends boolean = false>(options?: Options<ListReferenceSetsData, ThrowOnError>): RequestResult<ListReferenceSetsResponses, ListReferenceSetsErrors, ThrowOnError> => (options?.client ?? client).get<ListReferenceSetsResponses, ListReferenceSetsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9720,7 +9726,7 @@ export const listStandards = <ThrowOnError extends boolean = false>(options?: Op
  * Create Standard Route
  *
  * Create a standard (QM owner or practice leader, fresh MFA); the owner must be a partner
- * member (422 `owner_not_partner`).
+ * member (422 `owner_not_partner`); 409 `standard_key_taken`.
  */
 export const createStandard = <ThrowOnError extends boolean = false>(options: Options<CreateStandardData, ThrowOnError>): RequestResult<CreateStandardResponses, CreateStandardErrors, ThrowOnError> => (options.client ?? client).post<CreateStandardResponses, CreateStandardErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9736,7 +9742,7 @@ export const createStandard = <ThrowOnError extends boolean = false>(options: Op
  * Import Standards Route
  *
  * Onboarding: one sheet per kind, one draft per standard; an owner who is not a partner
- * member is a row problem (`owner_not_partner`).
+ * member is a row problem (`owner_not_partner`; K-02-T11).
  */
 export const importStandards = <ThrowOnError extends boolean = false>(options: Options<ImportStandardsData, ThrowOnError>): RequestResult<ImportStandardsResponses, ImportStandardsErrors, ThrowOnError> => (options.client ?? client).post<ImportStandardsResponses, ImportStandardsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9774,7 +9780,7 @@ export const standardExamples = <ThrowOnError extends boolean = false>(options: 
  * Import Standard Route
  *
  * A workbook to a draft of this standard (its owner's; 422 `import_invalid` with
- * problems). Never publishes.
+ * problems). Never publishes (K-02-T11).
  */
 export const importStandard = <ThrowOnError extends boolean = false>(options: Options<ImportStandardData, ThrowOnError>): RequestResult<ImportStandardResponses, ImportStandardErrors, ThrowOnError> => (options.client ?? client).post<ImportStandardResponses, ImportStandardErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9804,8 +9810,8 @@ export const assignOwner = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * Draft Version Route
  *
- * New version…: a draft from the current version (409 `draft_exists`; 403
- * `not_standard_owner` for anyone but the owner).
+ * New version…: a draft from the current version (409 `draft_exists`,
+ * `no_current_version`; 403 `not_standard_owner` for a partner who is not the owner).
  */
 export const draftVersion = <ThrowOnError extends boolean = false>(options: Options<DraftVersionData, ThrowOnError>): RequestResult<DraftVersionResponses, DraftVersionErrors, ThrowOnError> => (options.client ?? client).post<DraftVersionResponses, DraftVersionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9864,7 +9870,7 @@ export const versionDiff = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * Standard Export Version Route
  *
- * The version as a workbook; re-importing it gives an empty diff (US-5.1).
+ * The version as a workbook; re-importing it gives an empty diff (US-5.1; K-02-T11).
  */
 export const standardExportVersion = <ThrowOnError extends boolean = false>(options: Options<StandardExportVersionData, ThrowOnError>): RequestResult<StandardExportVersionResponses, StandardExportVersionErrors, ThrowOnError> => (options.client ?? client).get<StandardExportVersionResponses, StandardExportVersionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9876,7 +9882,7 @@ export const standardExportVersion = <ThrowOnError extends boolean = false>(opti
  * Publish Version Route
  *
  * Publish vN…: the owner, a person, with fresh MFA (422 `effective_from_backdated`,
- * `effective_from_not_after_current`).
+ * `effective_from_not_after_current`). A retried key answers what the first publish did.
  */
 export const publishVersion = <ThrowOnError extends boolean = false>(options: Options<PublishVersionData, ThrowOnError>): RequestResult<PublishVersionResponses, PublishVersionErrors, ThrowOnError> => (options.client ?? client).post<PublishVersionResponses, PublishVersionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9995,6 +10001,8 @@ export const endSupportSession = <ThrowOnError extends boolean = false>(options:
 
 /**
  * List Returns Route
+ *
+ * TAX-01's rows, wall-safe; one page (a season's board fits; `cursor` is reserved).
  */
 export const listReturns = <ThrowOnError extends boolean = false>(options?: Options<ListReturnsData, ThrowOnError>): RequestResult<ListReturnsResponses, ListReturnsErrors, ThrowOnError> => (options?.client ?? client).get<ListReturnsResponses, ListReturnsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -10004,6 +10012,8 @@ export const listReturns = <ThrowOnError extends boolean = false>(options?: Opti
 
 /**
  * Returns Summary Route
+ *
+ * TAX-01's tiles: per status, open and done, extended, office totals (wall-safe).
  */
 export const returnsSummary = <ThrowOnError extends boolean = false>(options?: Options<ReturnsSummaryData, ThrowOnError>): RequestResult<ReturnsSummaryResponses, ReturnsSummaryErrors, ThrowOnError> => (options?.client ?? client).get<ReturnsSummaryResponses, ReturnsSummaryErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -10250,6 +10260,8 @@ export const recordTransmission = <ThrowOnError extends boolean = false>(options
 
 /**
  * Bulk Assign Route
+ *
+ * The selection bar's Assign preparer: assigned and refused counts, never a reason.
  */
 export const bulkAssign = <ThrowOnError extends boolean = false>(options: Options<BulkAssignData, ThrowOnError>): RequestResult<BulkAssignResponses, BulkAssignErrors, ThrowOnError> => (options.client ?? client).post<BulkAssignResponses, BulkAssignErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

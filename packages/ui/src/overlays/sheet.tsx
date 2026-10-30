@@ -43,19 +43,27 @@ export interface SheetModalProps {
   children: ReactNode;
   /** Hold the sheet open in place for a specimen: no layer, no scrim, no trap. */
   forceState?: "open";
+  /** A held sheet's role: "group" for a kit specimen, "dialog" for a screen artboard that draws
+   * the open modal over its page (POR-04 in the gallery's window). */
+  heldRole?: "group" | "dialog";
   /** The phone layout: the sheet takes the whole width from 44 below the top (POR-04 at 390). */
   fullScreen?: boolean;
+  /** The description for assistive technology only: the body already shows it (POR-04's title). */
+  descriptionHidden?: boolean;
 }
 
 function SheetFrame({
   title,
   description,
+  descriptionHidden = false,
   action,
   meta,
   footer,
   children,
   onClose,
-}: Loose<Pick<SheetModalProps, "description" | "action" | "meta" | "footer">> & {
+}: Loose<
+  Pick<SheetModalProps, "description" | "descriptionHidden" | "action" | "meta" | "footer">
+> & {
   title: string;
   children: ReactNode;
   onClose?: () => void;
@@ -83,7 +91,9 @@ function SheetFrame({
         {description === undefined ? (
           <HiddenDescription text={title} />
         ) : (
-          <FrameDescription className="text-para text-ink-2">{description}</FrameDescription>
+          <FrameDescription className={descriptionHidden ? "sr-only" : "text-para text-ink-2"}>
+            {description}
+          </FrameDescription>
         )}
         {children}
       </div>
@@ -109,14 +119,17 @@ export function SheetModal({
   children,
   forceState,
   fullScreen = false,
+  descriptionHidden = false,
+  heldRole = "group",
 }: SheetModalProps): JSX.Element {
-  const frame = { title, description, action, meta, footer };
+  const frame = { title, description, descriptionHidden, action, meta, footer };
   const box = fullScreen ? SHEET_FULL_BOX : SHEET_BOX;
   if (forceState === "open") {
     return (
       <div
-        role="group"
+        role={heldRole}
         aria-label={title}
+        {...(heldRole === "dialog" ? { "aria-modal": true } : {})}
         className={cn(box, "relative inset-x-auto top-auto bottom-auto h-full")}
       >
         <FrameMode live={false}>

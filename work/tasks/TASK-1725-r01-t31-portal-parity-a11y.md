@@ -54,3 +54,8 @@ email or portal page contains Accrued, and axe reports zero serious or critical 
 - **Current state:** PR open, held for the batch (stacked on P-07-T62).
 - **Next:** POR-04's sheet rhythm (then lock its P0 states); 390 target sizes on the portal's mobile
   controls; ADM-10's frontend (R-01-T28) and its parity rows.
+- 2026-10-30: POR-04 locked (DEC-839). The artboard drew the sheet as a live layer pinned to the
+  viewport, 40 px above the window's y52, and its focus move scrolled POR-03 behind it. In frame
+  mode the sheet is now held in the window over the scrim; with the Upload band, the 33 "Why we
+  need it" band, the comment indent, the Upload glyph and the hidden description, a–d and g
+  measure 1.92–2.55 % with no masks. Tier D 390: y44 holds; targets ≥ 44 × 44 stay open.

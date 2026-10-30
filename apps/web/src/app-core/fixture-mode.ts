@@ -60,8 +60,11 @@ interface CompiledRoute {
   handler: FixtureHandler;
 }
 
+/** The scenario's routes, the most specific first: a route with fewer `{param}` segments wins over
+ * one that would also match (`/v1/tax-returns/summary` before `/v1/tax-returns/{return_id}`),
+ * whatever order the handlers were spread in; ties keep their order. */
 function compile(handlers: Record<string, FixtureHandler>): CompiledRoute[] {
-  return Object.entries(handlers).map(([key, handler]) => {
+  const routes = Object.entries(handlers).map(([key, handler]) => {
     const [method = "GET", template = "/"] = key.split(" ");
     const names: string[] = [];
     const source = template
@@ -72,6 +75,10 @@ function compile(handlers: Record<string, FixtureHandler>): CompiledRoute[] {
       });
     return { method, pattern: new RegExp(`^${source}$`), names, handler };
   });
+  return routes
+    .map((route, index) => ({ route, index }))
+    .sort((a, b) => a.route.names.length - b.route.names.length || a.index - b.index)
+    .map(({ route }) => route);
 }
 
 function bodyOf(text: string): unknown {

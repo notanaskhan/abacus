@@ -10,18 +10,30 @@ import { Tpl01Specimen, boardEnvelope, daysToDue, daysTone } from ".";
 afterEach(cleanup);
 
 describe("TPL-01a: default", () => {
-  it("reads Showing 15 of 79 open, sorted by extended due date then client", () => {
+  it("reads Showing 15 of 79 open, the handoff's rows 1 to 15 in its order", () => {
     render(<Tpl01Specimen state="a" />);
     expect(screen.getByText("Showing 15 of 79 open")).toBeTruthy();
     const page = boardEnvelope({ tile: null, query: "", year: 2025 }).items;
-    expect(page).toHaveLength(15);
-    for (let i = 1; i < page.length; i += 1) {
-      const [a, b] = [page[i - 1], page[i]];
-      if (a === undefined || b === undefined) continue;
-      expect(a.due < b.due || (a.due === b.due && a.client.localeCompare(b.client) <= 0)).toBe(
-        true,
-      );
-    }
+    expect(page.map((r) => r.client)).toEqual([
+      "Ridgeline Property Partners, LP",
+      "Harborview Dental Properties, LP",
+      "Northgate Medical Partners, LLP",
+      "Marlowe Street Holdings, LP",
+      "Kestrel Ventures Fund I, LP",
+      "Bramble & Finch Design, LLC",
+      "Hollis Creek Veterinary, PC",
+      "Pinecrest Pediatrics, PC",
+      "Calloway Family Trust",
+      "Pryor Irrevocable Trust",
+      "Jonah & Claire Feld",
+      "Meera Shah",
+      "Ashford Manufacturing Co.",
+      "Elena Varga",
+      "Estate of Walter Thornbury",
+    ]);
+    expect(screen.getAllByText("2025 Form 1065").length).toBeGreaterThan(0);
+    expect(screen.getByText("In review · Partner")).toBeTruthy();
+    expect(screen.queryByRole("columnheader", { name: "Signature" })).toBeNull();
   });
 
   it("the summary and the tiles foot to the seed (79 open, 145 done, 224)", () => {

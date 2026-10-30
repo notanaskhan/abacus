@@ -1,5 +1,5 @@
 // N-01-T11 (DEC-47, DF-33; DEC-836): fixture mode's inbox and Files seeds against the figures the
-// Python scenario's `firm_inbox` slice exports (`e0.inbox.json`, written by `python -m
+// Python scenario's `firm_inbox` slice exports (`inbox-e0.json`, written by `python -m
 // abacus_tools.synthetic.scenarios.brightwater_hale.firm_inbox --export`; the backend's suite holds
 // the file to the slice). INB-01 rows 1-17, HOME-01's "Inbox waiting" and FIL-01's Ridgeline
 // figures must agree with it: 23 waiting, 4 unmatched, 21 after Feld's two are applied; Ridgeline's
@@ -7,7 +7,7 @@
 // statements footing to 512,400 on account 5500.
 
 import { describe, expect, it } from "vitest";
-import exported from "./e0.inbox.json";
+import exported from "./inbox-e0.json";
 import { mortgageDrawer, RIDGELINE_SOURCE_ROWS, RIDGELINE_TREE } from "./files";
 import { homeView } from "./home";
 import { inboxThreads, threadDetail, threadRow } from "./inbox";
