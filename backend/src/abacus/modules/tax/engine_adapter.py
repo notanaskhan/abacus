@@ -148,6 +148,97 @@ def parse_diagnostics(content: bytes) -> DiagnosticsFile:
     )
 
 
+# --- T-01-T26: the engine's PDFs and its e-file status report -------------------------------
+
+PDF_KINDS: Final = (
+    "client_copy",
+    "form_8879",
+    "tr_579_it",
+    "voucher_1040es_q4",
+    "voucher_it2105_q4",
+    "k1",
+)
+ACKS_HEADER: Final = (
+    "return_id",
+    "jurisdiction",
+    "submission_last4",
+    "status",
+    "status_at",
+    "reject_code",
+    "reject_text",
+)
+_PDF_NAME: Final = re.compile(
+    r"([0-9]{4}[A-Z])_([A-Za-z0-9]{1,20})_V([0-9]{1,4})_([a-z0-9_]{1,40})\.pdf"
+)
+_LAST4: Final = re.compile(r"[A-Za-z0-9]{4}")
+_JURISDICTION: Final = re.compile(r"[A-Z]{2,3}")
+_WHEN: Final = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9:.+-]{5,20}Z?)?")
+
+
+@dataclass(frozen=True)
+class EnginePdf:
+    engine_return_id: str
+    version: int
+    kind: str
+
+
+def parse_pdf(name: str, content: bytes) -> EnginePdf:
+    """A PDF the engine produced, by its name (`2025I_FeldJ_V3_k1.pdf`) and its envelope (`%PDF-`
+    and a trailer). The kind is one of `PDF_KINDS`; the content is not parsed further."""
+    found = _PDF_NAME.fullmatch(name)
+    if found is None:
+        raise EngineFileInvalid("bad_pdf_name")
+    if found.group(4) not in PDF_KINDS:
+        raise EngineFileInvalid("unknown_pdf_kind")
+    if not content.startswith(b"%PDF-") or b"%%EOF" not in content[-64:]:
+        raise EngineFileInvalid("not_a_pdf")
+    return EnginePdf(f"{found.group(1)}:{found.group(2)}", int(found.group(3)), found.group(4))
+
+
+@dataclass(frozen=True)
+class Ack:
+    jurisdiction: str
+    submission_last4: str
+    status: str
+    status_at: str
+    reject_code: str | None
+    reject_text: str | None
+
+
+@dataclass(frozen=True)
+class AcksFile:
+    engine_return_id: str
+    acks: tuple[Ack, ...]
+
+
+def parse_acks(content: bytes) -> AcksFile:
+    """The e-file status report: one row per jurisdiction, accepted or rejected, a rejection
+    with its code. Only the submission id's last four is ever read (R-04)."""
+    rows = _rows(content, ACKS_HEADER)
+    if not rows:
+        raise EngineFileInvalid("empty")
+    ids = {r[0] for r in rows}
+    if len(ids) != 1:
+        raise EngineFileInvalid("mixed_returns")
+    (return_id,) = ids
+    if not _RETURN_ID.fullmatch(return_id):
+        raise EngineFileInvalid("bad_return_id")
+    acks: list[Ack] = []
+    for n, r in enumerate(rows, start=2):
+        if (
+            len(r) != len(ACKS_HEADER)
+            or not _JURISDICTION.fullmatch(r[1])
+            or not _LAST4.fullmatch(r[2])
+            or r[3] not in ("accepted", "rejected")
+            or not _WHEN.fullmatch(r[4])
+            or (r[3] == "rejected" and not 1 <= len(r[5]) <= 40)
+            or len(r[6]) > MAX_TEXT
+        ):
+            raise EngineFileInvalid("bad_row", n)
+        acks.append(Ack(r[1], r[2], r[3], r[4], r[5] or None, r[6] or None))
+    return AcksFile(return_id, tuple(acks))
+
+
 def typed(value: str) -> dict[str, object]:
     """An engine cell as Accrued's typed value: a plain decimal is `decimal`, anything else
     (a method, a last four) is `text`."""

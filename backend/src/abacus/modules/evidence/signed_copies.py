@@ -122,9 +122,78 @@ async def file_signed_copy(
     return version_id
 
 
+async def file_engine_copy(
+    tx: UnitOfWork,
+    *,
+    tenant_id: UUID,
+    client_id: UUID,
+    engagement_id: UUID | None,
+    work_item_id: UUID | None,
+    folder_kind: str,
+    title: str,
+    stored_key: str,
+    stored_version_id: str,
+    sha256: str,
+    size_bytes: int,
+    actor_id: str,
+) -> UUID:
+    """T-01-T26: a PDF the tax engine produced, filed as an imported evidence version (channel
+    `import`, source `engine_import`) in `folder_kind`; returns the version id. The file was
+    scanned and staged by `screen_and_stage` before the caller's unit of work."""
+    stored = storage.StoredObject(stored_key, stored_version_id, sha256, size_bytes)
+    if stored.key != storage.object_key(tenant_id, stored.fingerprint):
+        raise storage.IntegrityError("staged content belongs to another tenant")
+    item_id, version_id = uuid4(), uuid4()
+    await tx.session.execute(
+        insert(EvidenceItem).values(
+            id=item_id,
+            tenant_id=tenant_id,
+            engagement_id=engagement_id,
+            client_id=client_id,
+            work_item_id=work_item_id,
+            scope="engagement" if engagement_id is not None else "client",
+            folder_kind=folder_kind,
+            title=title,
+            created_by_kind="human",
+            created_by_id=actor_id,
+        )
+    )
+    tx.record(
+        "evidence_item.created",
+        target=Target("evidence_item", item_id),
+        after=Ref(client_id=client_id),
+    )
+    await tx.session.execute(
+        insert(EvidenceVersion).values(
+            id=version_id,
+            tenant_id=tenant_id,
+            engagement_id=engagement_id,
+            evidence_item_id=item_id,
+            version_no=1,
+            fingerprint=stored.fingerprint,
+            storage_key=stored.key,
+            storage_version_id=stored.version_id,
+            size_bytes=stored.size,
+            media_type="application/pdf",
+            source="engine_import",
+            method="imported",
+            pulled_at=system_now(),
+            channel="import",
+            display_name=title,
+        )
+    )
+    tx.record(
+        "evidence_version.created",
+        target=Target("evidence_version", version_id),
+        after=Ref(evidence_item_id=item_id, fingerprint=stored.fingerprint),
+    )
+    return version_id
+
+
 __all__ = [
     "SIGNED_AUTHORIZATIONS",
     "ScreenedFile",
+    "file_engine_copy",
     "file_signed_copy",
     "read_staged",
     "screen_and_stage",
