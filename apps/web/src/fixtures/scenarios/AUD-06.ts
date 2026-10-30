@@ -21,6 +21,7 @@
 
 import type {
   CapabilitiesOut,
+  FieldProvenanceOut,
   TbLayerViewOut,
   TbLeadsheetAreaOut,
   TieOutCheckOut,
@@ -94,12 +95,35 @@ interface TbFixture {
   walled?: readonly string[];
 }
 
+const F = "/v1/fields/{target_type}/{target_id}/{field_key}";
+
+/** A line field's provenance as P-04 answers it for a preparer who may agree, edit and tick. */
+function provenanceOf(fieldKey: string, tbId: string): FieldProvenanceOut {
+  return {
+    allowed_actions: ["field.add_reference", "field.edit", "field.sign_off"],
+    content_hash: "0".repeat(64),
+    current_seq: 1,
+    field_key: fieldKey,
+    flags: [],
+    label: fieldKey.startsWith("wp_ref:") ? "WP ref" : "Area",
+    target_id: tbId,
+    target_type: "trial_balance",
+    ticks: [],
+    versions: [],
+  };
+}
+
 /** The C9 v1 reads AUD-06 makes, over one engagement's fixture. */
 export function tbHandlers(f: TbFixture): Record<string, FixtureHandler> {
   const mine = (r: FixtureRequest): boolean =>
     r.params.engagement_id === f.engagementId && !(f.walled ?? []).includes(r.persona ?? "");
   const tb = (r: FixtureRequest): boolean =>
     mine(r) && f.view !== undefined && r.params.tb_id === f.view.trial_balance_id;
+  const fieldOf = (r: FixtureRequest): boolean =>
+    r.params.target_type === "trial_balance" &&
+    f.view !== undefined &&
+    r.params.target_id === f.view.trial_balance_id &&
+    /^(wp_ref|area_override):/u.test(r.params.field_key ?? "");
   return {
     [`GET ${P}`]: (r) => (mine(r) ? json(f.list) : json(NOT_FOUND, 404)),
     [`GET ${P}/{tb_id}/layers/{layer}`]: (r) => {
@@ -121,6 +145,15 @@ export function tbHandlers(f: TbFixture): Record<string, FixtureHandler> {
     // Open in Excel answers a file named as the server names it.
     [`POST ${P}`]: (r) => (mine(r) ? json({}, 201) : json(NOT_FOUND, 404)),
     [`POST ${P}/{tb_id}/versions`]: (r) => (tb(r) ? json({}, 201) : json(NOT_FOUND, 404)),
+    // A-02-T35: a line's P-04 fields (`wp_ref:<account>`, `area_override:<account>`). The
+    // writes answer as P-04 does; the screen reads the view again.
+    [`GET ${F}/provenance`]: (r) =>
+      fieldOf(r)
+        ? json(provenanceOf(r.params.field_key ?? "", r.params.target_id ?? ""))
+        : json(NOT_FOUND, 404),
+    [`POST ${F}/references`]: (r) => (fieldOf(r) ? json({}, 201) : json(NOT_FOUND, 404)),
+    [`POST ${F}/ticks`]: (r) => (fieldOf(r) ? json({}, 201) : json(NOT_FOUND, 404)),
+    [`PUT ${F}/value`]: (r) => (fieldOf(r) ? json({}) : json(NOT_FOUND, 404)),
     [`GET ${P}/{tb_id}/export.xlsx`]: (r) =>
       tb(r)
         ? new Response(new Blob(["PK"]), {
