@@ -75940,7 +75940,7 @@ export type PopulationResponses = {
 
 export type PopulationResponse = PopulationResponses[keyof PopulationResponses];
 
-export type TieCreateData = {
+export type PopulationTieCreateData = {
     body: TieIn;
     headers?: {
         /**
@@ -75962,7 +75962,7 @@ export type TieCreateData = {
     url: '/v1/populations/{population_id}/ties';
 };
 
-export type TieCreateErrors = {
+export type PopulationTieCreateErrors = {
     /**
      * Not authenticated
      */
@@ -75985,16 +75985,16 @@ export type TieCreateErrors = {
     501: ErrorOut;
 };
 
-export type TieCreateError = TieCreateErrors[keyof TieCreateErrors];
+export type PopulationTieCreateError = PopulationTieCreateErrors[keyof PopulationTieCreateErrors];
 
-export type TieCreateResponses = {
+export type PopulationTieCreateResponses = {
     /**
      * Successful Response
      */
     201: CompletenessTieOut;
 };
 
-export type TieCreateResponse = TieCreateResponses[keyof TieCreateResponses];
+export type PopulationTieCreateResponse = PopulationTieCreateResponses[keyof PopulationTieCreateResponses];
 
 export type PortalMfaData = {
     body: PortalMfaIn;
@@ -81234,7 +81234,7 @@ export type SampleSetResponses = {
 
 export type SampleSetResponse = SampleSetResponses[keyof SampleSetResponses];
 
-export type VersionCreateData = {
+export type SampleVersionCreateData = {
     body: VersionIn;
     headers: {
         /**
@@ -81260,7 +81260,7 @@ export type VersionCreateData = {
     url: '/v1/sample-sets/{sample_set_id}/versions';
 };
 
-export type VersionCreateErrors = {
+export type SampleVersionCreateErrors = {
     /**
      * Not authenticated
      */
@@ -81287,18 +81287,18 @@ export type VersionCreateErrors = {
     501: ErrorOut;
 };
 
-export type VersionCreateError = VersionCreateErrors[keyof VersionCreateErrors];
+export type SampleVersionCreateError = SampleVersionCreateErrors[keyof SampleVersionCreateErrors];
 
-export type VersionCreateResponses = {
+export type SampleVersionCreateResponses = {
     /**
      * Successful Response
      */
     202: VersionStartedOut;
 };
 
-export type VersionCreateResponse = VersionCreateResponses[keyof VersionCreateResponses];
+export type SampleVersionCreateResponse = SampleVersionCreateResponses[keyof SampleVersionCreateResponses];
 
-export type Approve2Data = {
+export type SampleSetApproveData = {
     body: AbacusModulesSamplingContractApproveIn;
     headers?: {
         /**
@@ -81324,7 +81324,7 @@ export type Approve2Data = {
     url: '/v1/sample-sets/{sample_set_id}/versions/{version_no}/approve';
 };
 
-export type Approve2Errors = {
+export type SampleSetApproveErrors = {
     /**
      * Not authenticated
      */
@@ -81351,18 +81351,18 @@ export type Approve2Errors = {
     501: ErrorOut;
 };
 
-export type Approve2Error = Approve2Errors[keyof Approve2Errors];
+export type SampleSetApproveError = SampleSetApproveErrors[keyof SampleSetApproveErrors];
 
-export type Approve2Responses = {
+export type SampleSetApproveResponses = {
     /**
      * Successful Response
      */
     200: SampleSetOut;
 };
 
-export type Approve2Response = Approve2Responses[keyof Approve2Responses];
+export type SampleSetApproveResponse = SampleSetApproveResponses[keyof SampleSetApproveResponses];
 
-export type DrawProgressData = {
+export type SampleDrawProgressData = {
     body?: never;
     headers?: {
         /**
@@ -81388,7 +81388,7 @@ export type DrawProgressData = {
     url: '/v1/sample-sets/{sample_set_id}/versions/{version_no}/draw';
 };
 
-export type DrawProgressErrors = {
+export type SampleDrawProgressErrors = {
     /**
      * Not authenticated
      */
@@ -81411,18 +81411,18 @@ export type DrawProgressErrors = {
     501: ErrorOut;
 };
 
-export type DrawProgressError = DrawProgressErrors[keyof DrawProgressErrors];
+export type SampleDrawProgressError = SampleDrawProgressErrors[keyof SampleDrawProgressErrors];
 
-export type DrawProgressResponses = {
+export type SampleDrawProgressResponses = {
     /**
      * Successful Response
      */
     200: DrawProgressOut;
 };
 
-export type DrawProgressResponse = DrawProgressResponses[keyof DrawProgressResponses];
+export type SampleDrawProgressResponse = SampleDrawProgressResponses[keyof SampleDrawProgressResponses];
 
-export type ExportData = {
+export type SampleSetExportData = {
     body?: never;
     headers?: {
         /**
@@ -81448,7 +81448,7 @@ export type ExportData = {
     url: '/v1/sample-sets/{sample_set_id}/versions/{version_no}/export.xlsx';
 };
 
-export type ExportErrors = {
+export type SampleSetExportErrors = {
     /**
      * Not authenticated
      */
@@ -81471,20 +81471,20 @@ export type ExportErrors = {
     501: ErrorOut;
 };
 
-export type ExportError = ExportErrors[keyof ExportErrors];
+export type SampleSetExportError = SampleSetExportErrors[keyof SampleSetExportErrors];
 
-export type ExportResponses = {
+export type SampleSetExportResponses = {
     /**
-     * Response Export
+     * Response Sample Set Export
      *
      * Successful Response
      */
     200: Blob | File;
 };
 
-export type ExportResponse = ExportResponses[keyof ExportResponses];
+export type SampleSetExportResponse = SampleSetExportResponses[keyof SampleSetExportResponses];
 
-export type ItemRequestsData = {
+export type SampleItemRequestsData = {
     body: ItemRequestsIn;
     headers: {
         /**
@@ -81514,7 +81514,7 @@ export type ItemRequestsData = {
     url: '/v1/sample-sets/{sample_set_id}/versions/{version_no}/item-requests';
 };
 
-export type ItemRequestsErrors = {
+export type SampleItemRequestsErrors = {
     /**
      * Not authenticated
      */
@@ -81541,18 +81541,18 @@ export type ItemRequestsErrors = {
     501: ErrorOut;
 };
 
-export type ItemRequestsError = ItemRequestsErrors[keyof ItemRequestsErrors];
+export type SampleItemRequestsError = SampleItemRequestsErrors[keyof SampleItemRequestsErrors];
 
-export type ItemRequestsResponses = {
+export type SampleItemRequestsResponses = {
     /**
      * Successful Response
      */
     201: ItemRequestsCreatedOut;
 };
 
-export type ItemRequestsResponse = ItemRequestsResponses[keyof ItemRequestsResponses];
+export type SampleItemRequestsResponse = SampleItemRequestsResponses[keyof SampleItemRequestsResponses];
 
-export type ItemRequestsPreviewData = {
+export type SampleItemRequestsPreviewData = {
     body: ItemRequestsIn;
     headers?: {
         /**
@@ -81578,7 +81578,7 @@ export type ItemRequestsPreviewData = {
     url: '/v1/sample-sets/{sample_set_id}/versions/{version_no}/item-requests/preview';
 };
 
-export type ItemRequestsPreviewErrors = {
+export type SampleItemRequestsPreviewErrors = {
     /**
      * Not authenticated
      */
@@ -81605,18 +81605,18 @@ export type ItemRequestsPreviewErrors = {
     501: ErrorOut;
 };
 
-export type ItemRequestsPreviewError = ItemRequestsPreviewErrors[keyof ItemRequestsPreviewErrors];
+export type SampleItemRequestsPreviewError = SampleItemRequestsPreviewErrors[keyof SampleItemRequestsPreviewErrors];
 
-export type ItemRequestsPreviewResponses = {
+export type SampleItemRequestsPreviewResponses = {
     /**
      * Successful Response
      */
     200: ItemRequestPreviewOut;
 };
 
-export type ItemRequestsPreviewResponse = ItemRequestsPreviewResponses[keyof ItemRequestsPreviewResponses];
+export type SampleItemRequestsPreviewResponse = SampleItemRequestsPreviewResponses[keyof SampleItemRequestsPreviewResponses];
 
-export type Items2Data = {
+export type SampleItemsData = {
     body?: never;
     headers?: {
         /**
@@ -81651,7 +81651,7 @@ export type Items2Data = {
     url: '/v1/sample-sets/{sample_set_id}/versions/{version_no}/items';
 };
 
-export type Items2Errors = {
+export type SampleItemsErrors = {
     /**
      * Not authenticated
      */
@@ -81674,16 +81674,16 @@ export type Items2Errors = {
     501: ErrorOut;
 };
 
-export type Items2Error = Items2Errors[keyof Items2Errors];
+export type SampleItemsError = SampleItemsErrors[keyof SampleItemsErrors];
 
-export type Items2Responses = {
+export type SampleItemsResponses = {
     /**
      * Successful Response
      */
     200: ListPageSampleItemOut;
 };
 
-export type Items2Response = Items2Responses[keyof Items2Responses];
+export type SampleItemsResponse = SampleItemsResponses[keyof SampleItemsResponses];
 
 export type RecordScreeningData = {
     body: ScreeningRecordIn;

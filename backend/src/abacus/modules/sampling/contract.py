@@ -565,7 +565,9 @@ async def population_route(population_id: UUID, ctx: Ctx) -> PopulationOut:
     status_code=201,
     errors=(501,),
 )
-async def tie_create_route(population_id: UUID, body: TieIn, ctx: Ctx) -> CompletenessTieOut:
+async def population_tie_create_route(
+    population_id: UUID, body: TieIn, ctx: Ctx
+) -> CompletenessTieOut:
     """Record a tie; code computes the result; 422 `citation_unverified` (INV-2; T07)."""
     await target_gate(ctx, "population.create")
     _not_yet()
@@ -578,7 +580,7 @@ async def tie_create_route(population_id: UUID, body: TieIn, ctx: Ctx) -> Comple
     status_code=202,
     errors=(409, 501),
 )
-async def version_create_route(
+async def sample_version_create_route(
     sample_set_id: UUID, body: VersionIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> VersionStartedOut:
     """Draw a version (T10): the server seeds it and starts `SampleDrawWorkflow`; 409
@@ -608,7 +610,9 @@ async def sample_set_route(
     response_model=DrawProgressOut,
     errors=(501,),
 )
-async def draw_progress_route(sample_set_id: UUID, version_no: int, ctx: Ctx) -> DrawProgressOut:
+async def sample_draw_progress_route(
+    sample_set_id: UUID, version_no: int, ctx: Ctx
+) -> DrawProgressOut:
     await target_gate(ctx, "sample_set.read")
     found = fx.draw_progress(sample_set_id, version_no)
     if found is None:
@@ -622,7 +626,7 @@ async def draw_progress_route(sample_set_id: UUID, version_no: int, ctx: Ctx) ->
     response_model=ListPage[SampleItemOut],
     errors=(501,),
 )
-async def items_route(
+async def sample_items_route(
     sample_set_id: UUID,
     version_no: int,
     ctx: Ctx,
@@ -645,7 +649,7 @@ async def items_route(
     response_model=SampleSetOut,
     errors=(409, 501),
 )
-async def approve_route(
+async def sample_set_approve_route(
     sample_set_id: UUID, version_no: int, body: ApproveIn, ctx: Ctx
 ) -> SampleSetOut:
     """L2 approval through review.api (T10): 409 `population_not_tied`,
@@ -660,7 +664,7 @@ async def approve_route(
     response_model=bytes,
     errors=(501,),
 )
-async def export_route(sample_set_id: UUID, version_no: int, ctx: Ctx) -> bytes:
+async def sample_set_export_route(sample_set_id: UUID, version_no: int, ctx: Ctx) -> bytes:
     """Deterministic XLSX with a cover sheet (seed, algorithm, parameters, population hash)."""
     await target_gate(ctx, "sample_set.export")
     _not_yet()
@@ -672,7 +676,7 @@ async def export_route(sample_set_id: UUID, version_no: int, ctx: Ctx) -> bytes:
     response_model=ItemRequestPreviewOut,
     errors=(409, 501),
 )
-async def item_requests_preview_route(
+async def sample_item_requests_preview_route(
     sample_set_id: UUID, version_no: int, body: ItemRequestsIn, ctx: Ctx
 ) -> ItemRequestPreviewOut:
     """ "125 requests · 100 to POR-03 · 25 to POR-14" (T13)."""
@@ -687,7 +691,7 @@ async def item_requests_preview_route(
     status_code=201,
     errors=(409, 501),
 )
-async def item_requests_route(
+async def sample_item_requests_route(
     sample_set_id: UUID,
     version_no: int,
     body: ItemRequestsIn,

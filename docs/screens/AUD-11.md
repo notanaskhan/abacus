@@ -54,3 +54,9 @@
 | Parameter values | SHL-07 citation popover "BH-EBP-210 step 3 · Table 2" | planned |
 | Generate… | sheet → AUD-03 "Sample-driven" group, POR-03, POR-14 | planned (A-03-T13, T15) |
 | Participant row | EBP-03 filtered | planned (A-05) |
+| "All Audits" chip | AUD-01 | planned |
+| Rail rows and cards | AUD-08 · AUD-04 · AUD-06 · AUD-07 · AUD-09 · AUD-10 · AUD-29 | planned (cockpit rail, A-01) |
+| Dock run card | WB-09 run trace | planned (A-11) |
+| Client and plan rows | CLI-02 · EBP-01 | planned |
+| Program step citation | KNW-03 | planned |
+| Testing rows | EBP-02 · EBP-04 · EBP-05 · EBP-06 · EBP-07 | planned (A-05) |

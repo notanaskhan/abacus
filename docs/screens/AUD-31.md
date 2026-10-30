@@ -37,3 +37,9 @@
 | DV-B1 | f | The run line names the code run and carries no atom | INV-5 |
 | DV-B2 | a′–e′ | Single-entity compositions; no "Accept", no "Request changes…", no reasoning line | No suggestions without the TB mapper (A-09) |
 | DV-B3 | all | Route stays `/group/mapping` for single-entity engagements; `to.AUD-31()` hides the path | Chapter 04 route tree; QA-8 |
+
+## Links
+| From | To (manifest builder) | Planned or live |
+|---|---|---|
+| Agent run line | SHL-13 dock | planned (A-09; no run in A-03, DV-B1) |
+| Consolidated view | AUD-33 | planned (A-09) |

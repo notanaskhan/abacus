@@ -163464,7 +163464,7 @@
     "/v1/populations/{population_id}/ties": {
       "post": {
         "description": "Record a tie; code computes the result; 422 `citation_unverified` (INV-2; T07).",
-        "operationId": "tie_create",
+        "operationId": "population_tie_create",
         "parameters": [
           {
             "in": "path",
@@ -163581,7 +163581,7 @@
             "description": "Contract stub: not implemented yet"
           }
         },
-        "summary": "Tie Create Route",
+        "summary": "Population Tie Create Route",
         "tags": [
           "sampling"
         ],
@@ -175169,7 +175169,7 @@
     "/v1/sample-sets/{sample_set_id}/versions": {
       "post": {
         "description": "Draw a version (T10): the server seeds it and starts `SampleDrawWorkflow`; 409\n`completeness_tie_required`; 403 `seed_not_allowed` has no input to arrive through.",
-        "operationId": "version_create",
+        "operationId": "sample_version_create",
         "parameters": [
           {
             "in": "path",
@@ -175307,7 +175307,7 @@
             "description": "Contract stub: not implemented yet"
           }
         },
-        "summary": "Version Create Route",
+        "summary": "Sample Version Create Route",
         "tags": [
           "sampling"
         ],
@@ -175317,7 +175317,7 @@
     "/v1/sample-sets/{sample_set_id}/versions/{version_no}/approve": {
       "post": {
         "description": "L2 approval through review.api (T10): 409 `population_not_tied`,\n`override_not_acknowledged`, `content_changed`; never the preparer (403).",
-        "operationId": "approve",
+        "operationId": "sample_set_approve",
         "parameters": [
           {
             "in": "path",
@@ -175453,7 +175453,7 @@
             "description": "Contract stub: not implemented yet"
           }
         },
-        "summary": "Approve Route",
+        "summary": "Sample Set Approve Route",
         "tags": [
           "sampling"
         ],
@@ -175462,7 +175462,7 @@
     },
     "/v1/sample-sets/{sample_set_id}/versions/{version_no}/draw": {
       "get": {
-        "operationId": "draw_progress",
+        "operationId": "sample_draw_progress",
         "parameters": [
           {
             "in": "path",
@@ -175578,7 +175578,7 @@
             "description": "Contract stub: not implemented yet"
           }
         },
-        "summary": "Draw Progress Route",
+        "summary": "Sample Draw Progress Route",
         "tags": [
           "sampling"
         ],
@@ -175588,7 +175588,7 @@
     "/v1/sample-sets/{sample_set_id}/versions/{version_no}/export.xlsx": {
       "get": {
         "description": "Deterministic XLSX with a cover sheet (seed, algorithm, parameters, population hash).",
-        "operationId": "export",
+        "operationId": "sample_set_export",
         "parameters": [
           {
             "in": "path",
@@ -175648,7 +175648,7 @@
               "application/json": {
                 "schema": {
                   "contentMediaType": "application/octet-stream",
-                  "title": "Response Export",
+                  "title": "Response Sample Set Export",
                   "type": "string"
                 }
               }
@@ -175706,7 +175706,7 @@
             "description": "Contract stub: not implemented yet"
           }
         },
-        "summary": "Export Route",
+        "summary": "Sample Set Export Route",
         "tags": [
           "sampling"
         ],
@@ -175716,7 +175716,7 @@
     "/v1/sample-sets/{sample_set_id}/versions/{version_no}/item-requests": {
       "post": {
         "description": "Create the fan-out through requests.api.create_items_bulk (T13); 409\n`sample_not_approved`; a replay with the same key returns the stored response.",
-        "operationId": "item_requests",
+        "operationId": "sample_item_requests",
         "parameters": [
           {
             "in": "path",
@@ -175863,7 +175863,7 @@
             "description": "Contract stub: not implemented yet"
           }
         },
-        "summary": "Item Requests Route",
+        "summary": "Sample Item Requests Route",
         "tags": [
           "sampling"
         ],
@@ -175873,7 +175873,7 @@
     "/v1/sample-sets/{sample_set_id}/versions/{version_no}/item-requests/preview": {
       "post": {
         "description": "\"125 requests \u00b7 100 to POR-03 \u00b7 25 to POR-14\" (T13).",
-        "operationId": "item_requests_preview",
+        "operationId": "sample_item_requests_preview",
         "parameters": [
           {
             "in": "path",
@@ -176009,7 +176009,7 @@
             "description": "Contract stub: not implemented yet"
           }
         },
-        "summary": "Item Requests Preview Route",
+        "summary": "Sample Item Requests Preview Route",
         "tags": [
           "sampling"
         ],
@@ -176019,7 +176019,7 @@
     "/v1/sample-sets/{sample_set_id}/versions/{version_no}/items": {
       "get": {
         "description": "The selected items with search (\"Okoro\" leaves Benjamin Okoro, NW-1158).",
-        "operationId": "items",
+        "operationId": "sample_items",
         "parameters": [
           {
             "in": "path",
@@ -176169,7 +176169,7 @@
             "description": "Contract stub: not implemented yet"
           }
         },
-        "summary": "Items Route",
+        "summary": "Sample Items Route",
         "tags": [
           "sampling"
         ],

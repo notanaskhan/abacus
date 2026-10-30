@@ -52,7 +52,7 @@ ROUTES: dict[tuple[str, str], str] = {
 def _ctx(*, client: bool = False, kind: str = "human") -> AuthContext:
     user = uuid.uuid4()
     return AuthContext(
-        TenantContext(uuid.uuid4(), kind, str(user)),  # type: ignore[arg-type]
+        TenantContext(uuid.uuid4(), kind, str(user)),  # type: ignore[arg-type] -- an agent or human probe
         user,
         uuid.uuid4(),
         None,
@@ -153,7 +153,9 @@ async def test_ac11_a_target_write_refuses_a_non_person_and_authorises_its_read(
     await contract.target_gate(_ctx(), "sample_set.approve")
     assert seen == ["sample_set.read"]
     with pytest.raises(NotImplementedYet):
-        await contract.approve_route(fx.PARTICIPANTS, 2, contract.ApproveIn(seen_hash="x"), _ctx())
+        await contract.sample_set_approve_route(
+            fx.PARTICIPANTS, 2, contract.ApproveIn(seen_hash="x"), _ctx()
+        )
 
 
 async def test_ac11_the_fixture_reads_answer_and_others_501(
@@ -174,7 +176,7 @@ async def test_ac11_the_fixture_reads_answer_and_others_501(
     assert approved.parameters.statistical_crosscheck_size == 22
     assert approved.population.record_count == 412
     assert [v.status for v in approved.versions] == ["approved", "superseded"]
-    first = await contract.items_route(fx.PARTICIPANTS, 2, ctx)
+    first = await contract.sample_items_route(fx.PARTICIPANTS, 2, ctx)
     assert [i.name for i in first.items[:5]] == [
         "Alicia Brennan",
         "Tomás Ibarra",
@@ -183,7 +185,7 @@ async def test_ac11_the_fixture_reads_answer_and_others_501(
         "Mei Tanaka",
     ]
     assert first.total == 25
-    okoro = await contract.items_route(fx.PARTICIPANTS, 2, ctx, q="Okoro")
+    okoro = await contract.sample_items_route(fx.PARTICIPANTS, 2, ctx, q="Okoro")
     assert [(i.position, i.record_key) for i in okoro.items] == [(22, "NW-1158")]
     gl = await contract.sample_set_route(fx.GL_SAMPLE, ctx)
     assert [s.population_count for s in gl.strata] == [24, 1102, 786]
@@ -193,7 +195,7 @@ async def test_ac11_the_fixture_reads_answer_and_others_501(
     with pytest.raises(NotImplementedYet):
         await contract.sample_set_route(uuid.uuid4(), ctx)
     with pytest.raises(NotImplementedYet):
-        await contract.items_route(fx.GL_SAMPLE, 1, ctx)
+        await contract.sample_items_route(fx.GL_SAMPLE, 1, ctx)
 
 
 def test_ac12_the_status_families_are_generated() -> None:

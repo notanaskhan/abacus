@@ -80,6 +80,6 @@ fixture for the fixture ids in `sampling/contract_fixtures.py` (Northwind Partic
 and its census; Granite Peak's disbursements) → 501 `not_implemented` otherwise.
 
 ## 8. Module API
-`sampling.api`: `attribute_size`, `udl`, `udl_percent`, `project`, `SAMPLER_VERSIONS`,
+`sampling.api`: `attribute_size`, `udl`, `udl_percent`, `projected_misstatement`, `SAMPLER_VERSIONS`,
 `SAMPLER_CURRENT` today; `population_view`, `sample_version_view`, `approved_items`, `draw` with
 T07/T10.
