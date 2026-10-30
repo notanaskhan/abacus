@@ -39,4 +39,6 @@ A frozen sampler version can never be "fixed" by a session: new behaviour ships 
 `SAMPLER_VERSIONS` entry. These are red files, named here and in `sampling/README.md`:
 `backend/src/abacus/modules/sampling/compute/**` and `backend/tests/golden/sampling/corpus/**`.
 The compute packages (`sampling/compute`, `ledger/compute`) import only `abacus.kernel.numeric`
-and `abacus.kernel.calendar`; the import-linter contract that says so is switched on by A-03-T21.
+and `abacus.kernel.calendar`; the import-linter contract that says so is switched on by A-03-T21,
+which adds `backend/src/abacus/kernel/numeric.py` and `backend/src/abacus/kernel/calendar.py` to
+the red files.
