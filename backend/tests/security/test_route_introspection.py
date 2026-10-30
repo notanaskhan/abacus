@@ -1110,6 +1110,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/follow-ups/{follow_up_id}/undo", "follow_up.send"),
     ("POST", "/v1/generated-documents/{document_id}/regenerate", "generated_document.regenerate"),
     ("POST", "/v1/grouping-sets/imports", "grouping_set.import"),
+    ("POST", "/v1/grouping-sets/imports/file", "grouping_set.import"),
     ("POST", "/v1/grouping-sets/versions/{version_id}/publish", "grouping_set.publish"),
     ("POST", "/v1/human-gates/{gate_id}/reassign", "human_gate.reassign"),
     ("POST", "/v1/human-gates/{gate_id}/snooze", "human_gate.snooze"),

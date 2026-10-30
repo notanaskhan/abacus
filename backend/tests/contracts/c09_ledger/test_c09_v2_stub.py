@@ -44,10 +44,17 @@ V2: dict[tuple[str, str], str] = {
     ("post", f"{MS}/confirm"): "mapping_set.confirm",
     ("get", f"{MS}/trial-balance"): "mapping_set.read",
 }
+# A-03-T06 (TASK-2506): the catalogue and the picker are live.
+LIVE = {
+    ("get", "/v1/grouping-sets/catalogue"),
+    ("get", "/v1/grouping-sets/{grouping_set_id}/versions/{version_no}/lines"),
+}
 V0: dict[tuple[str, str], str] = {
     ("get", "/v1/grouping-sets"): "grouping_set.import",
     ("post", "/v1/grouping-sets/imports"): "grouping_set.import",
     ("post", "/v1/grouping-sets/versions/{version_id}/publish"): "grouping_set.publish",
+    # A-03-T06: the raw-body workbook or CSV import beside v0's JSON CSV import.
+    ("post", "/v1/grouping-sets/imports/file"): "grouping_set.import",
 }
 
 
@@ -69,7 +76,8 @@ def test_ac16_each_v2_route_declares_its_one_action_and_documents_404_and_501(
 ) -> None:
     operation = PATHS[path][method]
     assert operation["x-abacus-action"] == V2[(method, path)]
-    assert {"404", "501"} <= set(cast(Json, operation["responses"]))
+    expected = {"404"} if (method, path) in LIVE else {"404", "501"}
+    assert expected <= set(cast(Json, operation["responses"]))
 
 
 @pytest.mark.parametrize(("method", "path"), sorted(V0))

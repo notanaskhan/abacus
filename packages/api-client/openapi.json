@@ -32523,6 +32523,12 @@
             "cls": "internal",
             "title": "Row",
             "type": "integer"
+          },
+          "sheet": {
+            "cls": "internal",
+            "default": "",
+            "title": "Sheet",
+            "type": "string"
           }
         },
         "required": [
@@ -32672,6 +32678,19 @@
             "title": "Created At",
             "type": "string"
           },
+          "effective_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Effective From"
+          },
           "id": {
             "cls": "internal",
             "format": "uuid",
@@ -32713,7 +32732,8 @@
             "cls": "internal",
             "enum": [
               "draft",
-              "published"
+              "published",
+              "discarded"
             ],
             "title": "Status",
             "type": "string"
@@ -52962,6 +52982,26 @@
           "at"
         ],
         "title": "PublicationOut",
+        "type": "object"
+      },
+      "PublishBody": {
+        "additionalProperties": false,
+        "properties": {
+          "effective_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Effective From"
+          }
+        },
+        "title": "PublishBody",
         "type": "object"
       },
       "PublishedVersionOut": {
@@ -152627,7 +152667,7 @@
     },
     "/v1/grouping-sets/catalogue": {
       "get": {
-        "description": "The firm's grouping sets and their versions, for every firm role (A-03-T06).",
+        "description": "The firm's grouping sets and their versions, for every firm role (live, A-03-T06).",
         "operationId": "grouping_catalogue",
         "parameters": [
           {
@@ -152717,16 +152757,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Grouping Catalogue Route",
@@ -152847,9 +152877,141 @@
         "x-abacus-action": "grouping_set.import"
       }
     },
+    "/v1/grouping-sets/imports/file": {
+      "post": {
+        "description": "C9 v2 (A-03-T06): the firm's taxonomy as a raw XLSX workbook (Groupings, FS lines, Number\nranges) or CSV body; problems by sheet, row and code; the set's earlier draft is discarded.",
+        "operationId": "import_grouping_file",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,39}$",
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "maxLength": 120,
+              "minLength": 1,
+              "title": "Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/GroupingVersionOut"
+                  },
+                  "title": "Response Import Grouping File",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "The file is too large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Import Grouping File Route",
+        "tags": [
+          "mapping"
+        ],
+        "x-abacus-action": "grouping_set.import"
+      }
+    },
     "/v1/grouping-sets/versions/{version_id}/publish": {
       "post": {
-        "description": "SPEC-316 AC-2: publish a draft with no problems.",
+        "description": "SPEC-316 AC-2: publish a draft with no problems; A-03-T06 adds the effective date (the\nfirm's business date when none is sent) and refuses a discarded draft (409).",
         "operationId": "publish_grouping_set",
         "parameters": [
           {
@@ -152895,6 +153057,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/PublishBody"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "content": {
@@ -152960,7 +153139,7 @@
     },
     "/v1/grouping-sets/{grouping_set_id}/versions/{version_no}/lines": {
       "get": {
-        "description": "The picker: \"Search groupings and FS lines\", grouped by class, with Recently used.",
+        "description": "The picker: \"Search groupings and FS lines\", grouped by class, with Recently used\n(live, A-03-T06). `q` matches a grouping's or FS line's label or key, case-insensitively.",
         "operationId": "grouping_lines",
         "parameters": [
           {
@@ -153082,16 +153261,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Grouping Lines Route",
