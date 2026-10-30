@@ -38,11 +38,15 @@ function writes(calls: { method: string }[]): number {
   return calls.filter((c) => c.method !== "GET").length;
 }
 
-function open(state: Shl12State, bulk = false): { method: string; path: string; body: unknown }[] {
+function open(
+  state: Shl12State,
+  bulk = false,
+  extra: Record<string, FixtureHandler> = {},
+): { method: string; path: string; body: unknown }[] {
   const calls: { method: string; path: string; body: unknown }[] = [];
   const scenario = scenarios[state];
   const handlers = Object.fromEntries(
-    Object.entries(scenario.handlers).map(([key, handler]) => [
+    Object.entries({ ...scenario.handlers, ...extra }).map(([key, handler]) => [
       key,
       ((request) => {
         calls.push({ method: request.method, path: request.path, body: request.body });
@@ -136,8 +140,13 @@ describe("P-04-T51: a stale sign-off offers only Re-sign", () => {
 
 describe("P-04-T51: no sign-off without the explicit click", () => {
   it("a: opening, choosing and reading send nothing; one click sends one sign-off", async () => {
-    const calls = open("a");
-    const cta = await screen.findByRole("button", { name: /^Sign off as Reviewer \(L2\)/u });
+    // a's sheet, with a′'s answers for the write a's click sends.
+    const calls = open("a", false, { ...scenarios.ap.handlers });
+    const cta = await screen.findByRole(
+      "button",
+      { name: /^Sign off as Reviewer \(L2\)/u },
+      { timeout: 10_000 },
+    );
     expect(writes(calls)).toBe(0);
     fireEvent.click(cta);
     await waitFor(() => {
