@@ -3560,6 +3560,71 @@ export const STATUS_REGISTRY = {
       "terminal": false,
       "derived": false
     }
+  },
+  "mapping_set": {
+    "in_progress": {
+      "label": "In progress",
+      "variant": null,
+      "terminal": false,
+      "derived": true,
+      "disc": "half"
+    },
+    "prepared": {
+      "label": "Prepared",
+      "variant": null,
+      "terminal": false,
+      "derived": true,
+      "contextLabels": {
+        "rail": "Prepared · {initials}"
+      }
+    },
+    "reviewed": {
+      "label": "Reviewed",
+      "variant": null,
+      "terminal": false,
+      "derived": true,
+      "contextLabels": {
+        "rail": "Reviewed · {initials}"
+      }
+    },
+    "changed_after_sign_off": {
+      "label": "Changed after sign-off",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    }
+  },
+  "account_mapping_state": {
+    "unmapped": {
+      "label": "Needs review",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "rule": {
+      "label": "Rule",
+      "variant": null,
+      "terminal": false,
+      "derived": true
+    },
+    "edited": {
+      "label": "Edited",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "suggested": {
+      "label": "Suggested",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "adopted": {
+      "label": "Adopted",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    }
   }
 } as const;
 
