@@ -24,6 +24,7 @@ from abacus.modules.reporting.consent import Recipients as Recipients
 from abacus.modules.reporting.consent import RecipientsUnavailable as RecipientsUnavailable
 from abacus.modules.reporting.consent import recipients as _consent_recipients
 from abacus.modules.reporting.contract import CONSENT_RECIPIENTS_KEY as CONSENT_RECIPIENTS_KEY
+from abacus.modules.reporting.contract import DocBlock as DocBlock
 from abacus.modules.reporting.contract import (
     GeneratedDocumentKind,
     LayoutKey,

@@ -538,6 +538,10 @@ class TemplateParts:
     body: list[object]
     clauses: list[object]
     variable_keys: tuple[str, ...]
+    # N-02-T34: what ENG-04's structure pane names ("BH Tax Advisory Letter v4") and the labels.
+    template_name: str = ""
+    version_no: int = 0
+    variables: tuple[object, ...] = ()
 
 
 async def version_parts(session: AsyncSession, version_id: UUID) -> TemplateParts | None:
@@ -547,7 +551,19 @@ async def version_parts(session: AsyncSession, version_id: UUID) -> TemplatePart
     if row is None:
         return None
     keys = await version_variable_keys(session, version_id) or ()
-    return TemplateParts(row.id, row.layout_key, list(row.body), list(row.clauses), keys)
+    name = await session.scalar(
+        select(ReportTemplate.name).where(ReportTemplate.id == row.template_id)
+    )
+    return TemplateParts(
+        row.id,
+        row.layout_key,
+        list(row.body),
+        list(row.clauses),
+        keys,
+        template_name=name or "",
+        version_no=row.version_no,
+        variables=tuple(row.variables),
+    )
 
 
 # --- T-01-T10: what consent capture reads -------------------------------------------------------

@@ -12,7 +12,7 @@ separate documents, never clauses (AC-15). No model drafts letter text (DEC-79 o
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated, Literal, NoReturn
 from uuid import UUID
 
@@ -31,6 +31,7 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
 )
+from abacus.modules.reporting.api import DocBlock
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IfMatch = Annotated[str, Header(alias="If-Match", min_length=1, max_length=64)]
@@ -70,6 +71,42 @@ class LetterVariable(BaseModel):
     source: Annotated[Literal["facts", "override", "computed"], classified("internal")]
     # Why a variable reads "—" (`cas_only`, `attest_only`, `ebp_only`, `not_designated`).
     reason: Annotated[str | None, classified("internal")] = None
+    # N-02-T34: the template's label for a key it declares; facts keys are labelled by ENG-04.
+    label: Annotated[str | None, classified("internal")] = None
+
+
+class LetterSignerOut(BaseModel):
+    """N-02-T34: who signs, in order: the client signer, then the firm's countersignature."""
+
+    model_config = ConfigDict(frozen=True)
+
+    order: Annotated[int, classified("internal")]
+    name: Annotated[str, classified("confidential")]
+    role: Annotated[Literal["client", "firm"], classified("internal")]
+    identity: Annotated[Literal["email_code"], classified("internal")] = "email_code"
+    signed: Annotated[bool, classified("internal")] = False
+
+
+class LetterheadOut(BaseModel):
+    """N-02-T34: the firm's name and address lines over the paper (no colour, T10)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    firm: Annotated[str, classified("internal")]
+    address: Annotated[list[str], classified("internal")] = []
+
+
+class LetterConsentOut(BaseModel):
+    """N-02-T34: a §7216 consent beside the letter: always its own document, never a clause
+    (Rev. Proc. 2013-14 §5.05; AC-15). Filled from T-01's consent sets with N-02-T33."""
+
+    model_config = ConfigDict(frozen=True)
+
+    purpose: Annotated[str, classified("internal")]
+    label: Annotated[str, classified("confidential")]
+    status: Annotated[Literal["on_file", "needed"], classified("internal")]
+    signed_on: Annotated[date | None, classified("internal")] = None
+    expires_on: Annotated[date | None, classified("internal")] = None
 
 
 Cents = Annotated[int, Field(ge=0, le=100_000_000_00)]
@@ -164,6 +201,17 @@ class ComposerLetterOut(BaseModel):
     fees: Annotated[LetterFeesOut | None, classified("confidential")] = None
     redline_count: Annotated[int, classified("internal")] = 0
     generated_document_id: Annotated[UUID | None, classified("internal")] = None
+    # N-02-T34: the template named in the structure pane and the paper's blocks (the template
+    # version's body; variable runs resolve against `variables`), the signers and the consents.
+    template_name: Annotated[str | None, classified("internal")] = None
+    template_version_no: Annotated[int | None, classified("internal")] = None
+    # The clause library the template's clauses come from ("BH clauses 2026.1"); None until P-11
+    # names libraries apart from template versions.
+    clause_library: Annotated[str | None, classified("internal")] = None
+    letterhead: Annotated[LetterheadOut | None, classified("internal")] = None
+    paper: Annotated[list[DocBlock], classified("confidential")] = []
+    signers: Annotated[list[LetterSignerOut], classified("confidential")] = []
+    consents: Annotated[list[LetterConsentOut], classified("confidential")] = []
     approved_by_name: Annotated[str | None, classified("internal")]
     approved_at: Annotated[datetime | None, classified("internal")]
     approval_content_hash: Annotated[str | None, classified("internal")]

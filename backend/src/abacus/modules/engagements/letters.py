@@ -30,9 +30,10 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Final, cast
+from typing import Final, Literal, cast
 from uuid import UUID, uuid4
 
+from pydantic import TypeAdapter
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -50,15 +51,24 @@ from abacus.modules.engagements.letter_contract import (
     LetterDraftIn,
     LetterFeesIn,
     LetterFeesOut,
+    LetterheadOut,
+    LetterSignerOut,
     LetterVariable,
     ThirdPartyFeeOut,
 )
 from abacus.modules.engagements.models import Engagement
 from abacus.modules.engagements.service import get_ref, lock_ref
-from abacus.modules.identity.api import AuthContext, allowed_actions, authorise, engagement_team
+from abacus.modules.identity.api import (
+    AuthContext,
+    allowed_actions,
+    authorise,
+    engagement_team,
+    firm_name,
+)
 from abacus.modules.methodology.api import ReportTemplateParts, report_template_parts
 from abacus.modules.organisations.api import client_names, signer_contacts
 from abacus.modules.reporting import api as c11
+from abacus.modules.reporting.api import DocBlock
 
 KIND: Final = "engagement_letter"
 OWNER: Final = "engagement_letter"
@@ -164,10 +174,15 @@ def fee_variables(fees: LetterFeesOut) -> dict[str, str]:
         out["billing.schedule"] = " · ".join(
             f"{money(i.amount_cents)} {i.label}" for i in fees.installments
         )
+        # N-02-T34: each amount on its own, for the template's own prose around it.
+        for n, i in enumerate(fees.installments, start=1):
+            out[f"billing.installment_{n}"] = money(i.amount_cents)
     if fees.third_party:
         out["third_party_fee.summary"] = " · ".join(
             f"Est. {money(t.estimated_cents)} · billed by {t.payee}" for t in fees.third_party
         )
+        for n, t in enumerate(fees.third_party, start=1):
+            out[f"third_party_fee.estimate_{n}"] = money(t.estimated_cents)
     return out
 
 
@@ -355,10 +370,43 @@ def clause_views(defs: list[ClauseDef], states: Mapping[str, str]) -> list[Lette
                 key=d.clause_id,
                 title=d.title,
                 state="off" if not on else ("required" if state == "required" else "on"),
-                non_standard=d.non_standard or on != d.default_enabled,
+                non_standard=d.non_standard,
             )
         )
     return views
+
+
+def redline_count(
+    defs: list[ClauseDef], clauses: list[LetterClause], sections: Mapping[str, object]
+) -> int:
+    """ENG-04's redline: the template's non-standard clauses, each clause switched from its
+    default, and each section a person overrode (a clause both non-standard and off counts
+    twice: "a clause toggle off adds it to the redline count")."""
+    default = {d.clause_id: d.default_enabled for d in defs}
+    flagged = sum(1 for c in clauses if c.non_standard)
+    changed = sum(1 for c in clauses if (c.state != "off") != default.get(c.key, True))
+    return flagged + changed + len(sections)
+
+
+async def _letterhead(tenant_id: UUID) -> LetterheadOut:
+    """The firm's name over the paper; the address waits for ADM's firm profile."""
+    return LetterheadOut(firm=await firm_name(tenant_id))
+
+
+def signers_of(variables: list[LetterVariable]) -> list[LetterSignerOut]:
+    """The client signer, then the firm's countersignature (N-02 §3.11); a missing one is left
+    out. Who has signed comes from the envelope (N-02-T33)."""
+    values = {v.key: v.value for v in variables}
+    out: list[LetterSignerOut] = []
+    client, firm = values.get("client.signer"), values.get("firm.signer")
+    if client:
+        out.append(LetterSignerOut(order=1, name=client.split(" · ")[0], role="client"))
+    if firm:
+        out.append(LetterSignerOut(order=len(out) + 1, name=firm.split(",")[0], role="firm"))
+    return out
+
+
+_PAPER: Final = TypeAdapter(list[DocBlock])
 
 
 # --- reads ----------------------------------------------------------------------------------
@@ -400,28 +448,53 @@ async def _current(session: AsyncSession, engagement_id: UUID, *, lock: bool = F
     return _Current("composed", cast(Mapping[str, object], version))
 
 
+Source = Literal["facts", "override", "computed"]
+
+
+def _labels(parts: ReportTemplateParts | None) -> dict[str, str]:
+    out: dict[str, str] = {}
+    for raw in parts.variables if parts is not None else ():
+        if isinstance(raw, dict):
+            item = cast(Mapping[str, object], raw)
+            key, label = item.get("key"), item.get("label")
+            if isinstance(key, str) and isinstance(label, str):
+                out[key] = label
+    return out
+
+
 def _variables_view(
-    facts: list[Fact], stored: Mapping[str, object] | None, overrides: Mapping[str, object]
+    facts: list[Fact],
+    stored: Mapping[str, object] | None,
+    overrides: Mapping[str, object],
+    *,
+    computed: Mapping[str, str] | None = None,
+    labels: Mapping[str, str] | None = None,
 ) -> list[LetterVariable]:
+    """Facts first (an override wins), then the computed fee wording, then the template's other
+    declared values, each with the template's label where it has one."""
+    named = labels or {}
     out: list[LetterVariable] = []
     seen: set[str] = set()
-    for f in facts:
-        seen.add(f.key)
-        if f.key in overrides:
-            out.append(LetterVariable(key=f.key, value=str(overrides[f.key]), source="override"))
-        else:
-            out.append(LetterVariable(key=f.key, value=f.value, source="facts", reason=f.reason))
-    for key, value in (stored or {}).items():
-        if key in seen:
-            continue
-        computed = key.startswith(COMPUTED)
+
+    def add(key: str, value: str | None, source: Source, reason: str | None = None) -> None:
+        seen.add(key)
         out.append(
             LetterVariable(
-                key=key,
-                value=str(value),
-                source="computed" if computed else "override" if key in overrides else "facts",
+                key=key, value=value, source=source, reason=reason, label=named.get(key)
             )
         )
+
+    for f in facts:
+        if f.key in overrides:
+            add(f.key, str(overrides[f.key]), "override")
+        else:
+            add(f.key, f.value, "facts", f.reason)
+    for key, value in (computed or {}).items():
+        if key not in seen:
+            add(key, value, "computed")
+    for key, value in (stored or {}).items():
+        if key not in seen:
+            add(key, str(value), "override" if key in overrides else "facts")
     return out
 
 
@@ -438,6 +511,7 @@ async def _view(
     facts = await letter_facts(ctx, session, engagement)
     version = current.version
     approved_name: str | None = None
+    template: tuple[str, int, list[object]] | None = None
     if version is None:
         clauses: list[LetterClause] = []
         variables = _variables_view(facts, None, {})
@@ -449,11 +523,19 @@ async def _view(
         clauses = clause_views(defs, cast(Mapping[str, str], version["clause_states"]))
         stored = cast(Mapping[str, object], version["variables"])
         overrides = cast(Mapping[str, object], version["fee_terms"]).get("overrides", {})
-        variables = _variables_view(facts, stored, cast(Mapping[str, object], overrides))
         terms = cast(Mapping[str, object], version["fee_terms"]).get("terms")
         fees = compute_fees(LetterFeesIn.model_validate(terms)) if terms else None
+        variables = _variables_view(
+            facts,
+            stored,
+            cast(Mapping[str, object], overrides),
+            computed=fee_variables(fees) if fees is not None else None,
+            labels=_labels(parts),
+        )
         sections = cast(Mapping[str, object], version["section_overrides"])
-        redline = sum(1 for c in clauses if c.non_standard) + len(sections)
+        redline = redline_count(defs, clauses, sections)
+        if parts is not None:
+            template = (parts.template_name, parts.version_no, parts.body)
         if version["approved_by"] is not None:
             team = await engagement_team(ctx, engagement.id)
             approved_name = next(
@@ -483,6 +565,11 @@ async def _view(
         envelope_id=None if version is None else cast(UUID | None, version["envelope_id"]),
         allowed_actions=[],
         version=0 if version is None else cast(int, version["version_no"]),
+        template_name=None if template is None else template[0],
+        template_version_no=None if template is None else template[1],
+        paper=_PAPER.validate_python(template[2]) if template is not None else [],
+        signers=signers_of(variables),
+        letterhead=await _letterhead(ctx.tenant_id),
     )
 
 

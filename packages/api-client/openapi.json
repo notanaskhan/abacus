@@ -14038,12 +14038,33 @@
             "cls": "internal",
             "title": "Approved By Name"
           },
+          "clause_library": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Clause Library"
+          },
           "clauses": {
             "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/LetterClause"
             },
             "title": "Clauses",
+            "type": "array"
+          },
+          "consents": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/LetterConsentOut"
+            },
+            "title": "Consents",
             "type": "array"
           },
           "engagement_id": {
@@ -14089,6 +14110,17 @@
             "cls": "internal",
             "title": "Generated Document Id"
           },
+          "letterhead": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LetterheadOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
           "mode": {
             "cls": "internal",
             "enum": [
@@ -14098,15 +14130,99 @@
             "title": "Mode",
             "type": "string"
           },
+          "paper": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "clause": "#/components/schemas/ClauseBlock-Output",
+                  "enclosures": "#/components/schemas/EnclosuresBlock",
+                  "heading": "#/components/schemas/HeadingBlock",
+                  "image": "#/components/schemas/ImageBlock",
+                  "kv": "#/components/schemas/KvBlock",
+                  "legend": "#/components/schemas/LegendBlock",
+                  "list": "#/components/schemas/ListBlock",
+                  "page_break": "#/components/schemas/PageBreakBlock",
+                  "paragraph": "#/components/schemas/ParagraphBlock",
+                  "section": "#/components/schemas/SectionBlock-Output",
+                  "signature_block": "#/components/schemas/SignatureBlock",
+                  "table": "#/components/schemas/TableBlock"
+                },
+                "propertyName": "type"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/SectionBlock-Output"
+                },
+                {
+                  "$ref": "#/components/schemas/HeadingBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/ParagraphBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/ClauseBlock-Output"
+                },
+                {
+                  "$ref": "#/components/schemas/ListBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/TableBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/KvBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/SignatureBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/LegendBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/ImageBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/EnclosuresBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/PageBreakBlock"
+                }
+              ]
+            },
+            "title": "Paper",
+            "type": "array"
+          },
           "redline_count": {
             "cls": "internal",
             "default": 0,
             "title": "Redline Count",
             "type": "integer"
           },
+          "signers": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/LetterSignerOut"
+            },
+            "title": "Signers",
+            "type": "array"
+          },
           "status": {
             "$ref": "#/components/schemas/LetterStatus",
             "cls": "internal"
+          },
+          "template_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Template Name"
           },
           "template_version_id": {
             "anyOf": [
@@ -14120,6 +14236,18 @@
             ],
             "cls": "internal",
             "title": "Template Version Id"
+          },
+          "template_version_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Template Version No"
           },
           "variables": {
             "cls": "internal",
@@ -39409,6 +39537,63 @@
         "title": "LetterCompareOut",
         "type": "object"
       },
+      "LetterConsentOut": {
+        "description": "N-02-T34: a \u00a77216 consent beside the letter: always its own document, never a clause\n(Rev. Proc. 2013-14 \u00a75.05; AC-15). Filled from T-01's consent sets with N-02-T33.",
+        "properties": {
+          "expires_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Expires On"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "purpose": {
+            "cls": "internal",
+            "title": "Purpose",
+            "type": "string"
+          },
+          "signed_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Signed On"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "on_file",
+              "needed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "purpose",
+          "label",
+          "status"
+        ],
+        "title": "LetterConsentOut",
+        "type": "object"
+      },
       "LetterDraftIn": {
         "additionalProperties": false,
         "description": "`PUT \u2026/letter/composer` (If-Match): draft edits.",
@@ -39722,6 +39907,50 @@
         "title": "LetterSendOut",
         "type": "object"
       },
+      "LetterSignerOut": {
+        "description": "N-02-T34: who signs, in order: the client signer, then the firm's countersignature.",
+        "properties": {
+          "identity": {
+            "cls": "internal",
+            "const": "email_code",
+            "default": "email_code",
+            "title": "Identity",
+            "type": "string"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "order": {
+            "cls": "internal",
+            "title": "Order",
+            "type": "integer"
+          },
+          "role": {
+            "cls": "internal",
+            "enum": [
+              "client",
+              "firm"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "signed": {
+            "cls": "internal",
+            "default": false,
+            "title": "Signed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "order",
+          "name",
+          "role"
+        ],
+        "title": "LetterSignerOut",
+        "type": "object"
+      },
       "LetterStatus": {
         "enum": [
           "not_started",
@@ -39742,6 +39971,18 @@
             "cls": "internal",
             "title": "Key",
             "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Label"
           },
           "reason": {
             "anyOf": [
@@ -39784,6 +40025,30 @@
           "source"
         ],
         "title": "LetterVariable",
+        "type": "object"
+      },
+      "LetterheadOut": {
+        "description": "N-02-T34: the firm's name and address lines over the paper (no colour, T10).",
+        "properties": {
+          "address": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Address",
+            "type": "array"
+          },
+          "firm": {
+            "cls": "internal",
+            "title": "Firm",
+            "type": "string"
+          }
+        },
+        "required": [
+          "firm"
+        ],
+        "title": "LetterheadOut",
         "type": "object"
       },
       "LineBody": {
