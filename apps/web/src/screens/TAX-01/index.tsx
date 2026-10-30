@@ -102,7 +102,9 @@ function due(r: TaxReturnRowOut): string | null {
 
 function daysTo(iso: string, now: Date): number {
   const today = now.toISOString().slice(0, 10);
-  return Math.round((Date.parse(`${iso}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000);
+  return Math.round(
+    (Date.parse(`${iso}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000,
+  );
 }
 
 /** ≤ 7 days red-ink, ≤ 30 amber-ink, later ink-2 (TPL-01 acceptance). */
@@ -129,7 +131,12 @@ export interface TAX01Props {
   initialSelection?: readonly string[];
 }
 
-export function TAX01({ search, onSearch, onOpen, initialSelection = [] }: TAX01Props): JSX.Element {
+export function TAX01({
+  search,
+  onSearch,
+  onOpen,
+  initialSelection = [],
+}: TAX01Props): JSX.Element {
   const now = useNow();
   const year = Number(search.tax_year ?? TAX_YEAR);
   const grouped = search.office === "grouped";
@@ -270,7 +277,12 @@ export function TAX01({ search, onSearch, onOpen, initialSelection = [] }: TAX01
         </span>
       ),
     },
-    { key: "office", header: COPY.columns.office, width: 96, cell: (r) => officeName(r.office_id) },
+    {
+      key: "office",
+      header: COPY.columns.office,
+      width: 96,
+      cell: (r) => officeName(r.office_id),
+    },
     {
       key: "prep",
       header: COPY.columns.prepRev,
@@ -287,7 +299,9 @@ export function TAX01({ search, onSearch, onOpen, initialSelection = [] }: TAX01
           code={r.status}
           {...(r.review_level === null
             ? {}
-            : { vars: { level: r.review_level.charAt(0).toUpperCase() + r.review_level.slice(1) } })}
+            : {
+                vars: { level: r.review_level.charAt(0).toUpperCase() + r.review_level.slice(1) },
+              })}
         />
       ),
     },
@@ -300,7 +314,9 @@ export function TAX01({ search, onSearch, onOpen, initialSelection = [] }: TAX01
         r.issues === null || r.issues === undefined || r.issues === 0 ? (
           <span className="text-ink-4">—</span>
         ) : (
-          <span className="rounded-pill bg-red-tint px-[6px] text-red-ink">{String(r.issues)}</span>
+          <span className="rounded-pill bg-red-tint px-[6px] text-red-ink">
+            {String(r.issues)}
+          </span>
         ),
     },
     {
@@ -330,7 +346,10 @@ export function TAX01({ search, onSearch, onOpen, initialSelection = [] }: TAX01
               width={300}
               align="start"
               trigger={
-                <button type="button" className="text-cell text-ink underline-offset-2 hover:underline">
+                <button
+                  type="button"
+                  className="text-cell text-ink underline-offset-2 hover:underline"
+                >
                   {formatDate(on, { now })}
                 </button>
               }
@@ -338,7 +357,9 @@ export function TAX01({ search, onSearch, onOpen, initialSelection = [] }: TAX01
               <p className="p-[12px] text-body text-ink-2">{r.due_rule_code ?? ""}</p>
             </Popover>
             {r.extended && (
-              <span className="rounded-tile bg-nested px-[5px] text-meta text-ink-2">{COPY.extended}</span>
+              <span className="rounded-tile bg-nested px-[5px] text-meta text-ink-2">
+                {COPY.extended}
+              </span>
             )}
           </span>
         );
@@ -451,7 +472,13 @@ export function TAX01({ search, onSearch, onOpen, initialSelection = [] }: TAX01
             }
           : {})}
         chips={[
-          { key: "form", label: COPY.filters.form, options: [], value: null, placeholder: COPY.filterAll },
+          {
+            key: "form",
+            label: COPY.filters.form,
+            options: [],
+            value: null,
+            placeholder: COPY.filterAll,
+          },
           {
             key: "office",
             label: COPY.filters.office,
@@ -459,7 +486,13 @@ export function TAX01({ search, onSearch, onOpen, initialSelection = [] }: TAX01
             value: grouped ? "grouped" : null,
             placeholder: COPY.allOffices,
           },
-          { key: "partner", label: COPY.filters.partner, options: [], value: null, placeholder: COPY.filterAll },
+          {
+            key: "partner",
+            label: COPY.filters.partner,
+            options: [],
+            value: null,
+            placeholder: COPY.filterAll,
+          },
           {
             key: "preparer",
             label: COPY.filters.preparer,
@@ -467,7 +500,13 @@ export function TAX01({ search, onSearch, onOpen, initialSelection = [] }: TAX01
             value: null,
             placeholder: COPY.filterAll,
           },
-          { key: "due", label: COPY.filters.due, options: [], value: null, placeholder: COPY.next60 },
+          {
+            key: "due",
+            label: COPY.filters.due,
+            options: [],
+            value: null,
+            placeholder: COPY.next60,
+          },
           {
             key: "tax_year",
             label: COPY.filters.taxYear,
