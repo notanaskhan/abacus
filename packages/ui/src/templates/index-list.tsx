@@ -46,6 +46,8 @@ export interface IndexTile {
   code: string;
   label: string;
   variant?: StatusTileVariant;
+  /** A 6px amber dot or a check before the word (TPL-01's Awaiting signature tile). */
+  mark?: "dot" | "check";
 }
 
 export interface IndexColumn<Row> {
@@ -284,10 +286,11 @@ export function IndexList<Row>({
               pending={pendingTiles}
               onSelect={() => onTile?.(tile === t.code ? null : t.code)}
               {...(t.variant === undefined ? {} : { variant: t.variant })}
+              {...(t.mark === undefined ? {} : { mark: t.mark })}
             />
           ))}
           {summary !== undefined && !pendingTiles && (
-            <span className="ml-auto pb-[4px] text-dense text-ink-3">{summary}</span>
+            <span className="ml-auto self-center text-dense text-ink-3">{summary}</span>
           )}
         </div>
       )}

@@ -20,12 +20,19 @@ from abacus.modules.organisations.conflicts_contract import (
     conflict_checks_router,
     screening_records_router,
 )
+from abacus.modules.organisations.consent_gate import (
+    TriConsentRequired,
+    TriSubject,
+    consent_state,
+    covering_consents,
+    register_consent_gate,
+    require_tri_consent,
+    tri_consent_verdict,
+)
 from abacus.modules.organisations.consents_contract import (
     ConsentState,
     TriVerdict,
-    consent_state,
     consents_router,
-    tri_consent_verdict,
 )
 from abacus.modules.organisations.contacts import RoleAsked, contact_portal_facts, create_contact
 from abacus.modules.organisations.contacts_contract import (
@@ -84,6 +91,7 @@ from abacus.modules.organisations.service import (
     FirmName,
     NewClient,
     NewContact,
+    SignerContact,
     activate_contact,
     add_contact,
     attest_client_ids,
@@ -99,6 +107,7 @@ from abacus.modules.organisations.service import (
     contacts_of_user,
     create_client,
     entity_display_name,
+    entity_tin_last4s,
     find_clients,
     firm_names,
     firm_offices,
@@ -106,6 +115,7 @@ from abacus.modules.organisations.service import (
     portal_activation,
     set_client_record,
     set_entity_attributes,
+    signer_contacts,
 )
 from abacus.modules.organisations.settings_contract import offices_glance, org_settings_router
 from abacus.modules.organisations.slots import (
@@ -165,6 +175,9 @@ for _section in (
     OverviewSection("contacts", "table", "client.read", 40, contacts_section),
 ):
     register_overview_section(_section)
+# T-01-T11 (C19 condition 6): the `use` and `ai_disclosure` consent checks the matrix's
+# `consent(<purpose>)` reads, and the AI gateway's TRI check.
+register_consent_gate()
 
 __all__ = [
     "CONTACT_ROLES",
@@ -195,10 +208,13 @@ __all__ = [
     "OverviewSection",
     "RoleAsked",
     "SectionRows",
+    "SignerContact",
     "SubjectNames",
     "TinConflict",
     "TinInvalid",
     "TinKindNotAllowed",
+    "TriConsentRequired",
+    "TriSubject",
     "TriVerdict",
     "activate_contact",
     "add_contact",
@@ -221,12 +237,14 @@ __all__ = [
     "contact_facts",
     "contact_portal_facts",
     "contacts_of_user",
+    "covering_consents",
     "create_client",
     "create_contact",
     "dedupe_candidates",
     "ein_matches",
     "entity_display_name",
     "entity_name_column",
+    "entity_tin_last4s",
     "find_clients",
     "fingerprint_tin",
     "firm_names",
@@ -242,11 +260,13 @@ __all__ = [
     "register_open_requests",
     "register_overview_section",
     "register_screening_evidence",
+    "require_tri_consent",
     "run_conflict_check",
     "same_name_client",
     "seal_tin",
     "set_client_record",
     "set_entity_attributes",
+    "signer_contacts",
     "standing_conflict_results",
     "tri_consent_verdict",
 ]
