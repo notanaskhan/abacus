@@ -2,14 +2,14 @@
 // P-04-T34), Samuel Ito at E0 on the Feld 2025 Form 1040. Each frame names the record, the
 // checkpoint it opens and the dialog it holds.
 import type { Scenario } from "../../app-core/fixture-mode";
-import { reviewScenarios } from "../handlers/review";
-import { SHL16, importCp } from "../seed/review";
+import { reviewScenarios, scenariosOf } from "../handlers/review";
+import { IMPORT_ARTBOARDS, SHL16, importCp } from "../seed/review";
 
 // P-04-T47 adds ia, ib and ie: the CCH import variant of a, b and e.
 export const STATES = ["a", "b", "c", "d", "e", "f", "ia", "ib", "ie"] as const;
 export type Shl16State = (typeof STATES)[number];
 
-const all = reviewScenarios("SHL-16");
+const all = { ...reviewScenarios("SHL-16"), ...scenariosOf(IMPORT_ARTBOARDS) };
 
 export const scenarios = Object.fromEntries(STATES.map((s) => [s, all[s] as Scenario])) as Record<
   Shl16State,

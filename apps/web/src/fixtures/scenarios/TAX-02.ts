@@ -1,7 +1,8 @@
 // TAX-02 · Return › Overview a–f (T-02-T14): T-02-T08's scenarios (tax-returns.ts), here for the
 // screen's own entry; src/screens/TAX-02/scenarios.ts re-exports them.
 import { type FixtureHandler, type Scenario, json } from "../../app-core/fixture-mode";
-import { reviewScenarios } from "../handlers/review";
+import { scenariosOf } from "../handlers/review";
+import { IMPORT_ARTBOARDS } from "../seed/review";
 import { TAX_RETURNS } from "../seed/tax";
 import { tax02 } from "./tax-returns";
 
@@ -34,7 +35,7 @@ export const ENTITY_RETURN = returnOf("Ridgeline Property Partners, LP");
  */
 export function j06Scenario(): Scenario {
   const base = tax02.a;
-  const review = reviewScenarios("SHL-16");
+  const review = scenariosOf(IMPORT_ARTBOARDS);
   const pending = review.ia?.handlers ?? {};
   const done = review.ib?.handlers ?? {};
   let approved = false;

@@ -107,14 +107,14 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
   "KNW-01": { scenarios: knw01, opens: {} }, // K-01-T04
   "KNW-04": { scenarios: knw04, opens: {} }, // K-02-T13
   "SHL-03": { scenarios: shl03, opens: {} },
+  "SHL-04": { scenarios: shl04, opens: {} },
+  "SHL-14": { scenarios: shl14, opens: {}, ids: SHL14_OPENS },
   // P-04-T47: j06 coordination, the CCH import approved as a checkpoint on SHL-16 over TAX-02.
   "TAX-02": {
     scenarios: { j06: j06Scenario() },
     opens: {},
     ids: { j06: { returnId: TAX02_OPENS.a } },
   },
-  "SHL-04": { scenarios: shl04, opens: {} },
-  "SHL-14": { scenarios: shl14, opens: {}, ids: SHL14_OPENS },
 };
 
 /** The fixture params the screen choice itself uses; anything else is the screen's own search. */

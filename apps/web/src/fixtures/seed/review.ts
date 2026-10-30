@@ -2045,7 +2045,11 @@ export const REVIEW_ARTBOARDS: readonly ReviewArtboard[] = [
     [HISTORY(SHL16.f)],
     [send("POST /v1/checkpoints", "CheckpointCreateIn", SAVE_F)],
   ),
-  // P-04-T47: the import-author variant of a, b and e (no artboard; frame a geometry).
+];
+
+/** P-04-T47: SHL-16's import-author variant of a, b and e. Not handoff artboards (the 44 above
+ * stay the handoff's): frame a's geometry over the CCH import, served the same way. */
+export const IMPORT_ARTBOARDS: readonly ReviewArtboard[] = [
   board(
     "SHL-16",
     "ia",
