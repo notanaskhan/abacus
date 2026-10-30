@@ -4,9 +4,19 @@ import type {
   TaxElectionOut,
   TaxProfileIdentityOut,
   TaxProfileOut,
+  TranscriptComparisonOut,
+  TranscriptOut,
 } from "@abacus/api-client";
-import { taxProfileOptions } from "@abacus/api-client/query";
 import {
+  compareTranscriptMutation,
+  latestComparisonQueryKey,
+  latestComparisonOptions,
+  listTranscriptsOptions,
+  listTranscriptsQueryKey,
+  taxProfileOptions,
+} from "@abacus/api-client/query";
+import {
+  AgentText,
   Button,
   EmptyState,
   Icon,
@@ -16,13 +26,16 @@ import {
   Segmented,
   Skeleton,
   StatusDisc,
+  TallyPill,
   Tooltip,
   amount,
   date,
+  time,
 } from "@abacus/ui";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, type ReactNode, useState } from "react";
 import { useNow } from "../../app-core/clock";
+import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { MaskedTin, useClientRecord } from "../../domain/clients";
 import { COPY } from "./copy";
 
@@ -145,15 +158,37 @@ function RailRow({
   );
 }
 
+/** The Transcripts rail row: the first pull with differences ("TY2024 · 2 differences", amber),
+ * else the newest that agrees, else "None yet". */
+function transcriptsRow(rows: readonly TranscriptOut[]): {
+  sub: string;
+  disc: "done" | "warn" | "todo";
+} {
+  const off = rows.find((t) => t.result === "differences");
+  if (off !== undefined) {
+    return {
+      sub: COPY.transcripts.railDifferences(off.tax_year, off.difference_count ?? 0),
+      disc: "warn",
+    };
+  }
+  const agrees = [...rows].reverse().find((t) => t.result === "agrees");
+  if (agrees !== undefined)
+    return { sub: COPY.transcripts.railAgrees(agrees.tax_year), disc: "done" };
+  return { sub: COPY.rail.noTranscripts, disc: "todo" };
+}
+
 function Rail({
   profile,
+  transcripts,
   section,
   onSection,
 }: {
   profile: TaxProfileOut;
+  transcripts: readonly TranscriptOut[];
   section: Cli05Section;
   onSection: (section: Cli05Section) => void;
 }): JSX.Element {
+  const transcriptRow = transcriptsRow(transcripts);
   const now = useNow();
   const set = setOf(profile.consents);
   const first = set[0];
@@ -223,8 +258,8 @@ function Rail({
         />
         <RailRow
           title={COPY.rail.transcripts}
-          sub={COPY.rail.noTranscripts}
-          disc="todo"
+          sub={transcriptRow.sub}
+          disc={transcriptRow.disc}
           selected={section === "transcripts"}
           built={BUILT.has("transcripts")}
           onOpen={() => {
@@ -562,19 +597,305 @@ function Authorizations({ profile }: { profile: TaxProfileOut }): JSX.Element {
   );
 }
 
-function Transcripts(): JSX.Element {
+export interface AgentNote {
+  text: string;
+  sources: readonly string[];
+}
+
+/** "Forms W-2 × 2, Form 1098, Form 1099-INT × 1": a form named twice on the transcript (once
+ * agreeing, once not) keeps its count even when it is one. */
+function agreeingParts(c: TranscriptComparisonOut): string[] {
+  const differing = new Set(c.lines.filter((l) => l.status !== "agrees").map((l) => l.form));
+  return (c.agreeing ?? []).map((a) =>
+    COPY.transcripts.agreeingPart(a.form, a.count, a.count > 1 || differing.has(a.form)),
+  );
+}
+
+function ResultCell({
+  t,
+  comparing,
+  now,
+}: {
+  t: TranscriptOut;
+  comparing: boolean;
+  now: Date;
+}): JSX.Element {
   const T = COPY.transcripts;
+  if (comparing) {
+    return (
+      <Pill variant="neutral" spin>
+        {T.comparing}
+      </Pill>
+    );
+  }
+  if (t.parse_status === "failed") return <Pill variant="red-tint">{T.failed}</Pill>;
+  if (t.result === "differences") {
+    return <Pill variant="red-tint">{T.differences(t.difference_count ?? 0)}</Pill>;
+  }
+  if (t.result === "agrees") return <Pill variant="green-tint">{T.agrees}</Pill>;
+  const key = t.key_transaction;
+  if (key == null) return <span className="text-ink-4">—</span>;
+  const on = date(key.posted_on, { now, withYear: true });
+  // TC 922 is the IRS review of unreported income, not an assessment: a neutral fact.
+  return key.code === "150" && t.account_balance != null ? (
+    <Pill variant="green-tint">
+      {T.tcBalance(key.code, on, amount(t.account_balance, "cents", { zero: "explicit" }).text)}
+    </Pill>
+  ) : (
+    <Pill variant="neutral">{T.tc(key.code, on)}</Pill>
+  );
+}
+
+function Comparison({
+  t,
+  comparison,
+  note,
+}: {
+  t: TranscriptOut;
+  comparison: TranscriptComparisonOut;
+  note: AgentNote | undefined;
+}): JSX.Element {
+  const T = COPY.transcripts;
+  const differing = comparison.lines.filter((l) => l.status !== "agrees");
+  const total = comparison.difference_total ?? "0";
+  const onReturn = differing.reduce(
+    (sum, l) => sum + Math.round(Number(l.return_amount ?? "0") * 100),
+    0,
+  );
+  const onTranscript = differing.reduce(
+    (sum, l) => sum + Math.round(Number(l.transcript_amount) * 100),
+    0,
+  );
+  const agreeing = (comparison.agreeing ?? []).reduce((n, a) => n + a.count, 0);
+  const cents = (n: number): string =>
+    amount(
+      `${String(Math.trunc(n / 100))}.${String(Math.abs(n % 100)).padStart(2, "0")}`,
+      "cents",
+      {
+        zero: "explicit",
+      },
+    ).text;
   return (
-    <div className="p-[12px]">
-      <EmptyState
-        title={T.none}
-        icon="file-text"
-        action={<Planned tip={T.uploadTip}>{T.upload}</Planned>}
-      >
-        {T.noneBody}
-      </EmptyState>
+    <section
+      aria-label={T.detail(T.kind[t.kind], t.tax_year)}
+      data-comparison={comparison.id}
+      className="m-[12px] overflow-hidden rounded-pane bg-card shadow-e1"
+    >
+      <h3 className="flex h-[34px] items-center gap-[8px] bg-band-hd px-[12px] text-meta font-medium text-ink-2">
+        <span className="flex-1">{T.detail(T.kind[t.kind], t.tax_year)}</span>
+        {comparison.result === "differences" ? (
+          <TallyPill code="off" vars={{ amount: amount(total, "whole").text }} />
+        ) : (
+          <TallyPill code="tie" />
+        )}
+      </h3>
+      {differing.length > 0 && (
+        <table className="w-full table-fixed text-cell tabular-nums">
+          <thead>
+            <tr className="h-[30px] bg-band-hd text-meta font-medium text-ink-2">
+              {T.detailHeads.map((h, i) => (
+                <th
+                  key={h}
+                  className={
+                    i >= 2 && i <= 4
+                      ? "w-[120px] px-[12px] text-right"
+                      : i === 0
+                        ? "w-[260px] px-[12px] text-left"
+                        : i === 1
+                          ? "w-[220px] px-[12px] text-left"
+                          : "w-[150px] px-[12px] text-left"
+                  }
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {differing.map((l) => (
+              <tr
+                key={`${l.form}:${String(l.line_no ?? 0)}`}
+                data-line={l.line_no ?? undefined}
+                className="h-[36px] border-t-[0.5px] border-hair"
+              >
+                <td className="px-[12px]">{T.form(l.form)}</td>
+                <td className="truncate px-[12px]">{l.payer_name ?? "—"}</td>
+                <td className="px-[12px] text-right">
+                  {amount(l.transcript_amount, "cents").text}
+                </td>
+                <td className="px-[12px] text-right text-ink-4">
+                  {l.return_amount == null ? "—" : amount(l.return_amount, "cents").text}
+                </td>
+                <td className="px-[12px] text-right">
+                  {PLANNED_VISIBLE ? (
+                    <Tooltip content={T.differenceTip}>
+                      <span data-difference="" className="font-medium text-red-ink">
+                        {amount(l.difference ?? "0", "cents").text}
+                      </span>
+                    </Tooltip>
+                  ) : (
+                    <span data-difference="" className="font-medium text-red-ink">
+                      {amount(l.difference ?? "0", "cents").text}
+                    </span>
+                  )}
+                </td>
+                <td className="px-[12px]">
+                  <Pill variant="red-tint">
+                    {l.status === "not_on_return" ? T.notOnReturn : T.differs}
+                  </Pill>
+                </td>
+              </tr>
+            ))}
+            <tr data-row="total" className="h-[36px] border-t-[0.5px] border-ink-3 font-medium">
+              <td className="px-[12px]">{T.total}</td>
+              <td />
+              <td className="px-[12px] text-right">{cents(onTranscript)}</td>
+              <td className="px-[12px] text-right">{cents(onReturn)}</td>
+              <td className="px-[12px] text-right">{amount(total, "cents").text}</td>
+              <td />
+            </tr>
+          </tbody>
+        </table>
+      )}
+      <p data-agreeing="" className="px-[12px] py-[10px] text-dense text-ink-3">
+        {differing.length === 0 ? T.allAgree : T.agreeingLine(agreeing, agreeingParts(comparison))}
+      </p>
+      {note !== undefined && (
+        <>
+          <h4 className="flex h-[31px] items-center gap-[8px] border-t-[0.5px] border-hair bg-band-hd px-[12px] text-meta font-medium text-ink-2">
+            <StatusDisc state="done" size={15} />
+            {T.why}
+          </h4>
+          <div data-agent-note="" className="px-[12px] py-[10px] text-dense text-ink-2">
+            <AgentText text={note.text} />
+          </div>
+          <ul className="flex flex-col px-[12px] pb-[8px]">
+            {note.sources.map((src) => (
+              <li key={src} className="flex h-[28px] items-center gap-[8px] text-dense text-ink-2">
+                <Icon name="file-text" size={15} className="text-ink-3" />
+                {src}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      <div className="flex h-[48px] items-center gap-[8px] border-t-[0.5px] border-hair px-[12px]">
+        {PLANNED_VISIBLE && (
+          <>
+            <Planned tip={T.openNoticeTip} variant="primary">
+              {T.openNotice}
+            </Planned>
+            <Planned tip={T.flagTip}>{T.flag}</Planned>
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function Transcripts({
+  rows,
+  selected,
+  onSelect,
+  comparing,
+  note,
+}: {
+  rows: readonly TranscriptOut[];
+  selected: TranscriptOut | undefined;
+  onSelect: (id: string) => void;
+  comparing: boolean;
+  note: AgentNote | undefined;
+}): JSX.Element {
+  const T = COPY.transcripts;
+  const now = useNow();
+  const comparison = useQuery({
+    ...latestComparisonOptions({ path: { transcript_id: selected?.id ?? "" } }),
+    enabled: selected?.result != null,
+  });
+  if (rows.length === 0) {
+    return (
+      <div className="p-[12px]">
+        <EmptyState
+          title={T.none}
+          icon="file-text"
+          action={<Planned tip={T.uploadTip}>{T.upload}</Planned>}
+        >
+          {T.noneBody}
+        </EmptyState>
+      </div>
+    );
+  }
+  return (
+    <div>
+      <table aria-label={T.register} className="w-full table-fixed text-body">
+        <thead>
+          <tr className="h-[30px] bg-band-hd text-meta font-medium text-ink-2">
+            <th className="w-[300px] px-[12px] text-left">{T.heads[0]}</th>
+            <th className="w-[90px] px-[12px] text-left">{T.heads[1]}</th>
+            <th className="w-[220px] px-[12px] text-left">{T.heads[2]}</th>
+            <th className="w-[120px] px-[12px] text-left">{T.heads[3]}</th>
+            <th className="w-[200px] px-[12px] text-left">{T.heads[4]}</th>
+            <th />
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((t) => {
+            const isSelected = t.id === selected?.id;
+            return (
+              <tr
+                key={t.id}
+                data-transcript={t.id}
+                aria-selected={isSelected}
+                onClick={() => {
+                  onSelect(t.id);
+                }}
+                className={`h-[40px] cursor-pointer border-t-[0.5px] border-hair ${isSelected ? "bg-sel-bg" : "hover:bg-nav-fill"}`}
+              >
+                <td className="px-[12px]">
+                  <button
+                    type="button"
+                    className="text-left font-medium"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelect(t.id);
+                    }}
+                  >
+                    {T.kind[t.kind]}
+                  </button>
+                </td>
+                <td className="px-[12px] tabular-nums">{t.tax_year}</td>
+                <td className="truncate px-[12px] tabular-nums">
+                  {T.pulled(
+                    `${date(t.pulled_at, { now })}, ${time(t.pulled_at)}`,
+                    t.pulled_by_name ?? "",
+                  )}
+                </td>
+                <td className="px-[12px]">
+                  {t.authorization_form == null ? "—" : T.under(t.authorization_form)}
+                </td>
+                <td className="px-[12px]">
+                  <ResultCell t={t} comparing={comparing && isSelected} now={now} />
+                </td>
+                <td />
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      {selected !== undefined && comparison.data !== undefined && (
+        <Comparison t={selected} comparison={comparison.data} note={note} />
+      )}
+      {selected !== undefined && selected.kind === "wage_income" && selected.result == null && (
+        <p className="m-[12px] text-dense text-ink-3">{T.notCompared}</p>
+      )}
     </div>
   );
+}
+
+/** The register row the canvas opens on: the first Wage & Income pull with differences, else the
+ * first row. */
+function firstSelected(rows: readonly TranscriptOut[]): string | undefined {
+  return (rows.find((t) => t.result === "differences") ?? rows[0])?.id;
 }
 
 const SECTIONS: readonly Cli05Section[] = [
@@ -587,6 +908,8 @@ const SECTIONS: readonly Cli05Section[] = [
 export interface CLI05Props {
   clientEntityId: string;
   section?: Cli05Section;
+  /** CLI-05 a's agent note: fixture-only (gallery and scenario tests); never in production. */
+  agentNote?: AgentNote;
   onSection?: (section: Cli05Section) => void;
   onBack?: () => void;
   frame?: boolean;
@@ -595,11 +918,35 @@ export interface CLI05Props {
 export function CLI05({
   clientEntityId,
   section = "consents",
+  agentNote,
   onSection,
   onBack,
   frame = false,
 }: CLI05Props): JSX.Element {
   const profile = useQuery(taxProfileOptions({ path: { client_entity_id: clientEntityId } }));
+  const path = { client_entity_id: clientEntityId };
+  const transcripts = useQuery(listTranscriptsOptions({ path }));
+  const rows = transcripts.data ?? [];
+  const [picked, setPicked] = useState<string | undefined>(undefined);
+  const selected = rows.find((t) => t.id === (picked ?? firstSelected(rows)));
+  const queryClient = useQueryClient();
+  const compare = useMutation({
+    ...compareTranscriptMutation(),
+    onSuccess: (_, vars) => {
+      void queryClient.invalidateQueries({ queryKey: listTranscriptsQueryKey({ path }) });
+      void queryClient.invalidateQueries({
+        queryKey: latestComparisonQueryKey({ path: vars.path }),
+      });
+    },
+  });
+  const lastReturn = useQuery({
+    ...latestComparisonOptions({ path: { transcript_id: selected?.id ?? "" } }),
+    enabled: selected?.result != null,
+  }).data?.return_id;
+  // Compare re-runs the selected Wage & Income pull against the return it was last compared with
+  // (DEC-1652); a first comparison starts from the return (TAX-09 sync), not from here.
+  const canCompare =
+    selected?.kind === "wage_income" && lastReturn !== undefined && !compare.isPending;
   const [current, setCurrent] = useState<Cli05Section>(section);
   const shown: Cli05Section = BUILT.has(current) ? current : "consents";
   const go = (next: Cli05Section): void => {
@@ -629,10 +976,43 @@ export function CLI05({
       {...(frame ? { height: 860 } : {})}
       header={header}
       rail={
-        data === undefined ? <Skeleton /> : <Rail profile={data} section={shown} onSection={go} />
+        data === undefined ? (
+          <Skeleton />
+        ) : (
+          <Rail profile={data} transcripts={rows} section={shown} onSection={go} />
+        )
       }
       canvas={{
         title: COPY.sections[shown],
+        ...(shown === "transcripts"
+          ? {
+              actions: (
+                <span className="flex items-center gap-[8px]">
+                  {PLANNED_VISIBLE && (
+                    <Planned tip={COPY.transcripts.uploadTip}>{COPY.transcripts.upload}</Planned>
+                  )}
+                  <Tooltip content={COPY.transcripts.compareTip}>
+                    <span>
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        disabled={!canCompare}
+                        onClick={() => {
+                          if (selected === undefined || lastReturn === undefined) return;
+                          compare.mutate({
+                            path: { transcript_id: selected.id },
+                            body: { return_id: lastReturn },
+                          });
+                        }}
+                      >
+                        {COPY.transcripts.compare}
+                      </Button>
+                    </span>
+                  </Tooltip>
+                </span>
+              ),
+            }
+          : {}),
         controls: (
           <span className="flex w-full items-center gap-[12px]">
             <Segmented
@@ -666,7 +1046,13 @@ export function CLI05({
           ) : shown === "authorizations" ? (
             <Authorizations profile={data} />
           ) : shown === "transcripts" ? (
-            <Transcripts />
+            <Transcripts
+              rows={rows}
+              selected={selected}
+              onSelect={setPicked}
+              comparing={compare.isPending}
+              note={agentNote}
+            />
           ) : (
             <Consents profile={data} />
           ),

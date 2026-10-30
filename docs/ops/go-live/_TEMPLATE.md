@@ -88,6 +88,7 @@ By hand:
 | operations-2 | Per-firm dashboard live; Sentry release markers; status-page subscribers for the firm's admins | — | — |
 | operations-3 | Restore drill and game day within the quarter | — | — |
 | operations-4 | P-29 on: windows published; production releases follow the windowed rules | — | — |
+| operations-5 | R4 (LEVEL=season): RB-16's R4 checklist worked through, each step's evidence here (docs/runbooks/RB-16-busy-season-readiness.md) | — | — |
 
 ## Communications (AY)
 
