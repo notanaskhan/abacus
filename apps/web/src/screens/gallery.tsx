@@ -53,6 +53,7 @@ import { CLI05 } from "./CLI-05";
 import {
   type Cli05State,
   ENTITY as CLI05_ENTITY,
+  SECTION as CLI05_SECTION,
   STATES as CLI05_STATES,
   scenarios as cli05Scenarios,
 } from "./CLI-05/scenarios";
@@ -915,7 +916,8 @@ function Adm05Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("ADM-05", { title: "Consent registry (§7216)", Component: Adm05Artboard });
 
-// CLI-05 d and f (T-01-T14): the client's Tax profile cockpit on the consents section.
+// CLI-05 (T-01-T14 d and f; T-01-T34 b, c, e and g): the client's Tax profile cockpit, opened at
+// each artboard's section.
 function Cli05Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Cli05State = CLI05_STATES.find((s) => s === params.st) ?? "d";
   const [ready, setReady] = useState<string | null>(null);
@@ -932,7 +934,12 @@ function Cli05Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
   }, [state, params.as]);
   return ready === state ? (
     <div data-artboard={state}>
-      <CLI05 key={state} frame clientEntityId={CLI05_ENTITY[state]} section="consents" />
+      <CLI05
+        key={state}
+        frame
+        clientEntityId={CLI05_ENTITY[state]}
+        section={CLI05_SECTION[state]}
+      />
     </div>
   ) : null;
 }

@@ -1,18 +1,27 @@
-import type { ConsentOut, TaxProfileIdentityOut, TaxProfileOut } from "@abacus/api-client";
+import type {
+  ConsentOut,
+  TaxAuthorizationOut,
+  TaxElectionOut,
+  TaxProfileIdentityOut,
+  TaxProfileOut,
+} from "@abacus/api-client";
 import { taxProfileOptions } from "@abacus/api-client/query";
 import {
   Button,
+  EmptyState,
   Icon,
   Pill,
   RecordCockpit,
+  RegistryStatus,
   Segmented,
   Skeleton,
   StatusDisc,
   Tooltip,
+  amount,
   date,
 } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
-import type { JSX, ReactNode } from "react";
+import { type JSX, type ReactNode, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { MaskedTin, useClientRecord } from "../../domain/clients";
 import { COPY } from "./copy";
@@ -27,11 +36,28 @@ import { COPY } from "./copy";
 //      document; Disclosure to offshore preparers "Not requested"
 //   f  Ferris: the amber banner (Kai Ferris has not signed) with Resend…
 //
-// Elections, Authorizations and Transcripts (a, b, c, e, g) are part 2 (T-01-T43 to T46).
+// Part 2 (T-01-T34, fixture mode) adds:
+//
+//   b  Transcripts, none yet: "No transcripts yet." with Upload transcript… (the register and the
+//      comparison, a, arrive with T-01-T43/T45's transcript routes)
+//   c  Authorizations: the Federal fieldset (Form 8821, designees with CAF ••••last4 only, tax
+//      matters, years, received, On file), the 8821-versus-2848 note with Draft Form 2848…, and
+//      the State fieldset with + Add
+//   e  Elections on Ridgeline: §754 pending, PTET IL, CO and NY, BBA representative, BBA opt-out
+//      not eligible, §163(j) exempt, accrual (the server sends codes and amounts; words are here)
+//   g  None on file (Santos): "No 8821 or 2848 on file" with Request Form 8821…
+//
+// No full CAF number or SSN reaches the DOM: the profile carries last fours only. Every control
+// that opens a later screen (SIG-02, the upload) is drawn disabled with its "Opens …" hint.
 // Each consent is its own signed document; nothing here combines two purposes in one.
 
 export type Cli05Section = "elections" | "authorizations" | "consents" | "transcripts";
-const BUILT: ReadonlySet<Cli05Section> = new Set(["consents"]);
+const BUILT: ReadonlySet<Cli05Section> = new Set([
+  "elections",
+  "authorizations",
+  "consents",
+  "transcripts",
+]);
 
 function setOf(consents: readonly ConsentOut[]): ConsentOut[] {
   return consents.filter((c) => c.purpose === "use" || c.purpose === "ai_disclosure");
@@ -163,7 +189,7 @@ function Rail({
       <nav aria-label={COPY.sections.label} className="flex flex-col">
         <RailRow
           title={COPY.rail.elections}
-          sub={profile.elections.length === 0 ? COPY.rail.noElections : null}
+          sub={profile.elections.length === 0 ? COPY.rail.noElections : COPY.rail.electionsOnFile}
           disc="done"
           selected={section === "elections"}
           built={BUILT.has("elections")}
@@ -197,7 +223,7 @@ function Rail({
         />
         <RailRow
           title={COPY.rail.transcripts}
-          sub={null}
+          sub={COPY.rail.noTranscripts}
           disc="todo"
           selected={section === "transcripts"}
           built={BUILT.has("transcripts")}
@@ -340,6 +366,224 @@ function Consents({ profile }: { profile: TaxProfileOut }): JSX.Element {
   );
 }
 
+/** A planned control: drawn disabled with its "Opens …" hint (chapter 04 §2.1 rule 4). */
+function Planned({
+  tip,
+  children,
+  variant = "secondary",
+}: {
+  tip: string;
+  children: string;
+  variant?: "primary" | "secondary";
+}): JSX.Element {
+  return (
+    <Tooltip content={tip}>
+      <span>
+        <Button size="sm" variant={variant} disabled>
+          {children}
+        </Button>
+      </span>
+    </Tooltip>
+  );
+}
+
+function Fieldset({ title, children }: { title: string; children: ReactNode }): JSX.Element {
+  return (
+    <section aria-label={title} className="overflow-hidden rounded-pane bg-card shadow-e1">
+      <h3 className="flex h-[31px] items-center bg-band-hd px-[12px] text-meta font-medium text-ink-2">
+        {title}
+      </h3>
+      {children}
+    </section>
+  );
+}
+
+function Row({ label, children }: { label: string; children: ReactNode }): JSX.Element {
+  return (
+    <div className="flex min-h-[36px] items-center gap-[12px] border-t-[0.5px] border-hair px-[12px] py-[8px] text-dense first-of-type:border-t-0">
+      <span className="w-[220px] flex-none text-ink-3">{label}</span>
+      <span className="min-w-0 flex-1">{children}</span>
+    </div>
+  );
+}
+
+function yearsOf(years: readonly number[]): string {
+  if (years.length === 0) return "—";
+  return `${String(Math.min(...years))}–${String(Math.max(...years))}`;
+}
+
+function electionWords(e: TaxElectionOut): ReactNode {
+  const w = COPY.elections;
+  switch (`${e.kind}:${e.status_code}`) {
+    case "section_754:pending":
+      return <span className="text-amber-ink">{w.pending754(e.tax_year)}</span>;
+    case "bba_representative:designated":
+      return w.designated;
+    case "bba_opt_out:not_eligible":
+      return w.optOutNotEligible;
+    case "section_163j:exempt":
+      return w.exempt163j;
+    case "accounting_method:accrual":
+      return w.accrual;
+    case "accounting_method:cash":
+      return w.cash;
+    default:
+      return e.status_code;
+  }
+}
+
+function Elections({ profile }: { profile: TaxProfileOut }): JSX.Element {
+  const rows = COPY.elections.rows;
+  const ptet = profile.elections.filter((e) => e.kind === "ptet");
+  const others = profile.elections.filter((e) => e.kind !== "ptet");
+  const labelOf = (e: TaxElectionOut): string =>
+    e.kind in rows && e.kind !== "ptet"
+      ? rows[e.kind as Exclude<keyof typeof rows, "ptet">]
+      : e.kind;
+  if (profile.elections.length === 0) {
+    return (
+      <div className="p-[12px]">
+        <EmptyState title={COPY.rail.noElections} icon="file-text" />
+      </div>
+    );
+  }
+  const first = others[0];
+  return (
+    <div className="flex flex-col gap-[10px] p-[12px]">
+      <Fieldset title={COPY.elections.title}>
+        {first !== undefined && first.kind === "section_754" && (
+          <Row label={labelOf(first)}>{electionWords(first)}</Row>
+        )}
+        {ptet.length > 0 && (
+          <Row label={rows.ptet(ptet[0]?.tax_year ?? 0)}>
+            <span data-election="ptet" className="flex flex-wrap gap-x-[12px] gap-y-[4px]">
+              {ptet.map((e) => (
+                <span key={e.jurisdiction ?? ""} className="tabular-nums">
+                  {e.jurisdiction} {COPY.elections.elected} ·{" "}
+                  {e.amount === null ? "—" : amount(e.amount, "whole").text}
+                </span>
+              ))}
+            </span>
+          </Row>
+        )}
+        {others
+          .filter((e) => e !== first || e.kind !== "section_754")
+          .map((e) => (
+            <Row key={`${e.kind}:${String(e.tax_year)}`} label={labelOf(e)}>
+              <span data-election={e.kind}>{electionWords(e)}</span>
+            </Row>
+          ))}
+      </Fieldset>
+    </div>
+  );
+}
+
+function signersOf(profile: TaxProfileOut): string {
+  // The taxpayer and spouse rows: the people who sign for the household.
+  const names = (profile.identity ?? []).map((i) => i.name.split(" ")[0] ?? i.name);
+  return names.join(" and ");
+}
+
+function Federal({ a, profile }: { a: TaxAuthorizationOut; profile: TaxProfileOut }): JSX.Element {
+  const now = useNow();
+  const A = COPY.authorizations;
+  return (
+    <>
+      <Fieldset title={A.federal}>
+        <Row label={A.form(a.form)}>{A.formName[a.form]}</Row>
+        <Row label={A.designees}>
+          <span data-designees="">
+            {a.designees.map((d) => A.designee(d.name, d.caf_last4)).join(" · ")}
+          </span>
+        </Row>
+        <Row label={A.taxMatters}>{a.tax_matters.join(" · ")}</Row>
+        <Row label={A.years}>{yearsOf(a.tax_years)}</Row>
+        <Row label={A.received}>
+          {a.received_on === null ? "—" : date(a.received_on, { now, withYear: true })}
+        </Row>
+        <Row label={A.status}>
+          <RegistryStatus object="tax_authorization" code={a.status} />
+        </Row>
+      </Fieldset>
+      {a.form === "8821" && (
+        <div
+          role="note"
+          className="flex items-center gap-[12px] rounded-pane bg-amber-tint px-[14px] py-[10px] text-dense text-amber-ink"
+        >
+          <span className="flex-1">{A.note8821(signersOf(profile))}</span>
+          <Planned tip={A.draft2848Tip}>{A.draft2848}</Planned>
+        </div>
+      )}
+    </>
+  );
+}
+
+function Authorizations({ profile }: { profile: TaxProfileOut }): JSX.Element {
+  const A = COPY.authorizations;
+  const federal = profile.authorizations.filter((a) => a.form !== "state");
+  const state = profile.authorizations.filter((a) => a.form === "state");
+  if (federal.length === 0 && state.length === 0) {
+    return (
+      <div className="p-[12px]">
+        <EmptyState
+          title={A.none}
+          icon="file-text"
+          action={
+            <Planned tip={A.request8821Tip} variant="primary">
+              {A.request8821}
+            </Planned>
+          }
+        />
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-[10px] p-[12px]">
+      {federal.map((a) => (
+        <Federal key={a.id} a={a} profile={profile} />
+      ))}
+      {(state.length > 0 || profile.resident_state != null) && (
+        <Fieldset title={A.state}>
+          {state.length > 0 ? (
+            state.map((a) => (
+              <Row key={a.id} label={A.state}>
+                {A.stateOnFile(a.state_form_code ?? "")}
+              </Row>
+            ))
+          ) : (
+            <div className="flex min-h-[36px] items-center gap-[12px] px-[12px] text-dense">
+              <span className="flex-1">{A.stateNotOnFile(profile.resident_state ?? "")}</span>
+              <Planned tip={A.addTip}>{A.add}</Planned>
+            </div>
+          )}
+        </Fieldset>
+      )}
+    </div>
+  );
+}
+
+function Transcripts(): JSX.Element {
+  const T = COPY.transcripts;
+  return (
+    <div className="p-[12px]">
+      <EmptyState
+        title={T.none}
+        icon="file-text"
+        action={<Planned tip={T.uploadTip}>{T.upload}</Planned>}
+      >
+        {T.noneBody}
+      </EmptyState>
+    </div>
+  );
+}
+
+const SECTIONS: readonly Cli05Section[] = [
+  "elections",
+  "authorizations",
+  "consents",
+  "transcripts",
+];
+
 export interface CLI05Props {
   clientEntityId: string;
   section?: Cli05Section;
@@ -356,7 +600,12 @@ export function CLI05({
   frame = false,
 }: CLI05Props): JSX.Element {
   const profile = useQuery(taxProfileOptions({ path: { client_entity_id: clientEntityId } }));
-  const shown: Cli05Section = BUILT.has(section) ? section : "consents";
+  const [current, setCurrent] = useState<Cli05Section>(section);
+  const shown: Cli05Section = BUILT.has(current) ? current : "consents";
+  const go = (next: Cli05Section): void => {
+    setCurrent(next);
+    onSection?.(next);
+  };
   const data: TaxProfileOut | undefined = profile.data;
   const header = (
     <div className="flex h-[42px] items-center gap-[12px] px-[12px]">
@@ -380,32 +629,26 @@ export function CLI05({
       {...(frame ? { height: 860 } : {})}
       header={header}
       rail={
-        data === undefined ? (
-          <Skeleton />
-        ) : (
-          <Rail
-            profile={data}
-            section={shown}
-            onSection={(next) => {
-              onSection?.(next);
-            }}
-          />
-        )
+        data === undefined ? <Skeleton /> : <Rail profile={data} section={shown} onSection={go} />
       }
       canvas={{
-        title: COPY.consents.title,
+        title: COPY.sections[shown],
         controls: (
-          <Segmented
-            size="small"
-            label={COPY.sections.label}
-            options={[
-              { label: COPY.sections.elections, disabled: true },
-              { label: COPY.sections.authorizations, disabled: true },
-              { label: COPY.sections.consents },
-              { label: COPY.sections.transcripts, disabled: true },
-            ]}
-            active={COPY.sections.consents}
-          />
+          <span className="flex w-full items-center gap-[12px]">
+            <Segmented
+              size="small"
+              label={COPY.sections.label}
+              options={SECTIONS.map((s) => COPY.sections[s])}
+              active={COPY.sections[shown]}
+              onChange={(label) => {
+                const next = SECTIONS.find((s) => COPY.sections[s] === label);
+                if (next !== undefined) go(next);
+              }}
+            />
+            {shown === "transcripts" && (
+              <span className="ml-auto text-dense text-ink-3">{COPY.transcripts.pulledHint}</span>
+            )}
+          </span>
         ),
         state: profile.isPending
           ? { kind: "loading" }
@@ -417,18 +660,20 @@ export function CLI05({
                 },
               }
             : { kind: "ready" },
-        children: data === undefined ? null : <Consents profile={data} />,
+        children:
+          data === undefined ? null : shown === "elections" ? (
+            <Elections profile={data} />
+          ) : shown === "authorizations" ? (
+            <Authorizations profile={data} />
+          ) : shown === "transcripts" ? (
+            <Transcripts />
+          ) : (
+            <Consents profile={data} />
+          ),
       }}
     />
   );
 }
-
-const SECTIONS: readonly Cli05Section[] = [
-  "elections",
-  "authorizations",
-  "consents",
-  "transcripts",
-];
 
 /** The routed page: `clientEntityId` when the URL names it, else the record's first entity. */
 export function TaxProfilePage({
