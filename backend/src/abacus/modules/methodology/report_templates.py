@@ -529,6 +529,27 @@ async def version_variable_keys(session: AsyncSession, version_id: UUID) -> tupl
     return tuple(keys)
 
 
+@dataclass(frozen=True)
+class TemplateParts:
+    """A template version's parts, for a consumer composing from it (N-02-T32's letter)."""
+
+    version_id: UUID
+    layout_key: str
+    body: list[object]
+    clauses: list[object]
+    variable_keys: tuple[str, ...]
+
+
+async def version_parts(session: AsyncSession, version_id: UUID) -> TemplateParts | None:
+    """In the caller's unit of work: the version's layout, body, clause library and declared
+    keys; None when the version is not this firm's (RLS)."""
+    row = await session.get(ReportTemplateVersion, version_id)
+    if row is None:
+        return None
+    keys = await version_variable_keys(session, version_id) or ()
+    return TemplateParts(row.id, row.layout_key, list(row.body), list(row.clauses), keys)
+
+
 # --- T-01-T10: what consent capture reads -------------------------------------------------------
 
 

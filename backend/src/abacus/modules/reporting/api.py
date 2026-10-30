@@ -127,6 +127,8 @@ class RenderTicket:
     generated_document_id: UUID
     version_no: int
     status: Literal["drafting"] = "drafting"
+    # The draft's content hash (additive, N-02-T32): what a consumer's approval names.
+    content_hash: str = ""
 
 
 # A kind's providers: variables resolved from the database for a scope; an approval resolved to
@@ -261,7 +263,9 @@ async def render(tx: UnitOfWork, request: RenderRequest) -> RenderTicket:
         engagement_id=request.scope.engagement_id,
         client_id=request.scope.client_id,
     )
-    return RenderTicket(generated_document_id=document_id, version_no=version_no)
+    return RenderTicket(
+        generated_document_id=document_id, version_no=version_no, content_hash=content_hash
+    )
 
 
 async def render_final(
@@ -316,7 +320,11 @@ async def render_final(
         engagement_id=cast(UUID | None, doc["engagement_id"]),
         client_id=cast(UUID, doc["client_id"]),
     )
-    return RenderTicket(generated_document_id=document_id, version_no=version_no)
+    return RenderTicket(
+        generated_document_id=document_id,
+        version_no=version_no,
+        content_hash=approval_ref.content_hash,
+    )
 
 
 async def lock(tx: UnitOfWork, document_id: UUID, cause_ref: str) -> None:

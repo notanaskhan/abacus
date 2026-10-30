@@ -18,6 +18,7 @@ TABLES: frozenset[str] = frozenset(
         "engagement_entities",
         "gate_policy_overrides",  # F-03-T12 (0069)
         "engagement_letters",
+        "engagement_letter_versions",  # N-02-T32 (0560): composed versions, content fixed
         "engagement_contacts",  # F-03-T25 (0082): designations (DEC-63)
         "advisory_projects",  # F-03-T22 (0089)
         "engagement_drafts",  # P-07-T16 (0124): ENG-03's autosaved wizard, own scope
@@ -74,6 +75,12 @@ INSERT_ONLY: frozenset[str] = frozenset(
 )
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
+    # N-02-T32 (0560): a composed letter's version; only the lifecycle columns change after
+    "engagement_letter_versions": frozenset(
+        {"id", "tenant_id", "engagement_id", "version_no", "kind", "amends_version_id"}
+        | {"template_version_id", "clause_states", "variables", "section_overrides", "fee_terms"}
+        | {"generated_document_id", "content_hash", "status", "created_by", "created_by_kind"}
+    ),
     # P-07-T35 (0163): acceptance and continuance (CLI-07)
     "acceptance_questionnaire_templates": frozenset({"tenant_id", "name", "family", "created_by"}),
     "acceptance_questionnaire_template_versions": frozenset(
@@ -218,6 +225,12 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         # P-07-T15 (0124): the interim recorded letter (G3 until C7)
         | {"client_signed_on", "firm_signed_on", "client_signer_contact_id"}
         | {"firm_signer_user_id", "signed_copy_version_id", "recorded_by_user_id"}
+        # N-02-T32 (0560): the composed letter
+        | {"current_version_id", "mode", "envelope_id"}
+    ),
+    # N-02-T32 (0560): the lifecycle, forward only (the guard trigger); content never changes
+    "engagement_letter_versions": frozenset(
+        {"status", "approved_by", "approved_at", "approval_content_hash", "envelope_id"}
     ),
     "engagement_drafts": frozenset(  # P-07-T16 (0124): autosave, discard, create
         {"client_id", "client_entity_id", "type_code", "step", "payload"}

@@ -6469,10 +6469,19 @@ export type ComposerLetterOut = {
      * Envelope Id
      */
     envelope_id: string | null;
+    fees?: LetterFeesOut | null;
+    /**
+     * Generated Document Id
+     */
+    generated_document_id?: string | null;
     /**
      * Mode
      */
     mode: 'composed' | 'recorded';
+    /**
+     * Redline Count
+     */
+    redline_count?: number;
     status: LetterStatus;
     /**
      * Template Version Id
@@ -12313,6 +12322,22 @@ export type FactSeg = {
 };
 
 /**
+ * FeeLineIn
+ *
+ * One part of the fee (`$6,500 for the section 754 work`).
+ */
+export type FeeLineIn = {
+    /**
+     * Amount Cents
+     */
+    amount_cents: number;
+    /**
+     * Label
+     */
+    label: string;
+};
+
+/**
  * FieldEditIn
  *
  * `PUT …/value`: a person's edit. The citation note is required (the `fvv_human_edits_cite`
@@ -16545,6 +16570,40 @@ export type InformationReturnThresholdsPayload = {
 };
 
 /**
+ * InstallmentIn
+ *
+ * One billing installment as a share of the fee, in basis points (5000 is 50%).
+ */
+export type InstallmentIn = {
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Share Bp
+     */
+    share_bp: number;
+};
+
+/**
+ * InstallmentOut
+ */
+export type InstallmentOut = {
+    /**
+     * Amount Cents
+     */
+    amount_cents: number;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Share Bp
+     */
+    share_bp: number;
+};
+
+/**
  * IntakeCategoryOut
  */
 export type IntakeCategoryOut = {
@@ -18520,6 +18579,10 @@ export type LetterClause = {
      */
     key: string;
     /**
+     * Non Standard
+     */
+    non_standard?: boolean;
+    /**
      * State
      */
     state: 'on' | 'off' | 'required';
@@ -18561,6 +18624,7 @@ export type LetterDraftIn = {
     clause_states: {
         [key: string]: 'on' | 'off' | 'required';
     };
+    fees: LetterFeesIn;
     /**
      * Section Overrides
      */
@@ -18577,6 +18641,59 @@ export type LetterDraftIn = {
     variables: {
         [key: string]: string;
     };
+};
+
+/**
+ * LetterFeesIn
+ *
+ * The fee terms a person sets in Draft; every total is computed by code (ADR-050).
+ */
+export type LetterFeesIn = {
+    /**
+     * Basis
+     */
+    basis?: 'fixed' | 'estimate';
+    /**
+     * Installments
+     */
+    installments?: Array<InstallmentIn>;
+    /**
+     * Lines
+     */
+    lines: Array<FeeLineIn>;
+    /**
+     * Third Party
+     */
+    third_party?: Array<ThirdPartyFeeIn>;
+};
+
+/**
+ * LetterFeesOut
+ *
+ * The computed fee: the lines, their total, each installment's amount (the last carries the
+ * rounding remainder) and the third-party fees shown beside it, not added.
+ */
+export type LetterFeesOut = {
+    /**
+     * Basis
+     */
+    basis: 'fixed' | 'estimate';
+    /**
+     * Installments
+     */
+    installments: Array<InstallmentOut>;
+    /**
+     * Lines
+     */
+    lines: Array<FeeLineIn>;
+    /**
+     * Third Party
+     */
+    third_party: Array<ThirdPartyFeeOut>;
+    /**
+     * Total Cents
+     */
+    total_cents: number;
 };
 
 /**
@@ -18664,7 +18781,8 @@ export type LetterStatus = 'not_started' | 'draft' | 'partner_approved' | 'sent'
 /**
  * LetterVariable
  *
- * A typed variable from facts; a person may override it with plain text.
+ * A typed variable from facts; a person may override it with plain text. Fee and billing
+ * values are computed by code and never overridden (`source` "computed").
  */
 export type LetterVariable = {
     /**
@@ -18672,9 +18790,13 @@ export type LetterVariable = {
      */
     key: string;
     /**
+     * Reason
+     */
+    reason?: string | null;
+    /**
      * Source
      */
-    source: 'facts' | 'override';
+    source: 'facts' | 'override' | 'computed';
     /**
      * Value
      */
@@ -33410,6 +33532,40 @@ export type TextSeg = {
      * Text
      */
     text: string;
+};
+
+/**
+ * ThirdPartyFeeIn
+ *
+ * A fee another party bills directly (the engineer's): shown, never added to the total.
+ */
+export type ThirdPartyFeeIn = {
+    /**
+     * Estimated Cents
+     */
+    estimated_cents: number;
+    /**
+     * Payee
+     */
+    payee: string;
+};
+
+/**
+ * ThirdPartyFeeOut
+ */
+export type ThirdPartyFeeOut = {
+    /**
+     * Estimated Cents
+     */
+    estimated_cents: number;
+    /**
+     * Included In Total
+     */
+    included_in_total?: false;
+    /**
+     * Payee
+     */
+    payee: string;
 };
 
 /**
