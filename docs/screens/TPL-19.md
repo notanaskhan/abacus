@@ -7,7 +7,7 @@
 | Surface | portal (white-labelled) |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/TPL-19 Portal mobile specimen - Feld- camera capture/` (README.md, spec.md; **no screenshots**, no revision.md) · HANDOFF_VERSION 2026-10-21 sha256:9308819d |
 | Epic and tasks | F-06 · F-06-T01; F-06-T02 seed (Feld binder); F-06-T06 frame 9; F-06-T10 frames 1, 2, 7; F-06-T11 frames 5, 6 and lock; F-06-T12 AC suite |
-| Manifest status | planned |
+| Manifest status | planned (gallery specimen; frames 5 and 6 built in F-06-T11, DEC-1267; lock is Tier D) |
 
 Code: specimen `apps/web/src/gallery/specimens/TPL-19/` over the Feld 2025 binder (`apps/web/src/fixtures/seed/binder-detail.ts`, extended by F-06-T02). Copy keys: `TPL-19/copy.ts`.
 
