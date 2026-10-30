@@ -140,6 +140,7 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "inbox_attachment.received",
         "portal_intake.withdrawn",
         "envelope.send_approved",
+        "inbox_match.intake_recorded",  # N-01-T22 follow-up: an ambiguous card is flagged
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert (
