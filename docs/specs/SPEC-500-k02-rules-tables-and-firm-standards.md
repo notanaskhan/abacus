@@ -78,6 +78,10 @@ Two kinds of versioned, effective-dated rules (K-02 short version): **platform r
 - **AC-32** Discard keeps the row as `discarded`; the diff lists changed cells by JSON pointer with before and after strings, against the version a draft came from by default.
 - **AC-33** The examples slot (`register_standard_examples`) answers `provider_registered: false` with no rows until a provider registers; a provider's rows are already `visible()`-filtered, and no hidden count is shown (DEC-43, US-3.6).
 - **AC-34** `current_version(tenant_id, key, as_of)` names the version in effect (`LookupError` before the first effective date or for an unknown key); a standard's owner must be a partner member (422 `owner_not_partner`), and a key is one standard per firm (409 `standard_key_taken`). KNW-01's `firm_standards` category lists one card per published standard and a change-log entry per published version; the C15 projection `firm_standard` carries the name and kind only.
+- **AC-35** (K-02-T06) The operator CLI's publish is refused to the version's drafter (and a withdrawal to one person) before the definer refuses it again.
+- **AC-36** (K-02-T06) A draft file is JSON, or a CSV or XLSX whose first sheet's header names the kind's row fields; XLSX cells are read as cached values only (a formula is never evaluated), files are bounded, and problems name sheet, row, column and code, never contents; the rows parse as the kind's payload before any write.
+- **AC-37** (K-02-T06) `refdata diff` lists every added, removed and changed row against the version in effect, by each kind's identity fields.
+- **AC-38** (K-02-T06) The CLI refuses while `ABACUS_DEPLOY_LOCK_ENV`'s deploy lock is held and, outside the ops task, when a database setting points at a hosted host.
 
 ## 4. Out of scope here
 The CLI, import and export, fan-out and KNW-04i/j (K-02-T06 to T12, T14 to T20) build against the same contract in later sprints.
