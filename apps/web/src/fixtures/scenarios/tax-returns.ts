@@ -28,7 +28,7 @@ export const tax01 = defineScenarios({
   d: at("d", "samuel-ito"),
   e: at("e", "samuel-ito"),
   f: at("f", "samuel-ito"),
-  // g: loading; the rows never answer (the tiles and header are real).
+  // g: loading; the rows never answer (the tiles hold their place, T1e).
   g: {
     ...at("g", "samuel-ito"),
     handlers: {

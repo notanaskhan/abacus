@@ -80,6 +80,12 @@ function clients(): string[] {
   return rows().map((r) => r.querySelectorAll("td")[2]?.querySelector("span span")?.textContent ?? "");
 }
 
+/** Radix menus open from the keyboard or a pointer, not a bare click (the CLI-01 pattern). */
+function openMenu(trigger: HTMLElement): void {
+  trigger.focus();
+  fireEvent.keyDown(trigger, { key: "ArrowDown" });
+}
+
 async function ready(): Promise<void> {
   await waitFor(() => {
     expect(rows().length).toBeGreaterThan(0);
@@ -106,7 +112,13 @@ describe("TAX-01 artboards", () => {
   });
 
   it("a: the Feld row carries the Draft K-1 popover, which names TXP-12", async () => {
-    show("a");
+    // Feld is due Oct 15, past a's first page of fifteen Sep 15 returns: find it by search.
+    install(scenarios.a);
+    render(
+      <QueryClientProvider client={newQueryClient()}>
+        <TaxReturnsPage initial={{ q: "Feld" }} />
+      </QueryClientProvider>,
+    );
     await ready();
     const feld = rows().find((r) => r.textContent.includes("Jonah & Claire Feld"));
     expect(feld).toBeDefined();
@@ -134,7 +146,7 @@ describe("TAX-01 artboards", () => {
     await ready();
     const bar = screen.getByRole("region", { name: "3 selected" });
     expect(SELECTED_CLIENTS).toHaveLength(3);
-    fireEvent.click(within(bar).getByRole("button", { name: COPY.bulk.assign }));
+    openMenu(within(bar).getByRole("button", { name: COPY.bulk.assign }));
     const member = await screen.findAllByRole("menuitem");
     fireEvent.click(member[0] as HTMLElement);
     await waitFor(() => {
@@ -145,7 +157,9 @@ describe("TAX-01 artboards", () => {
     const post = seen.calls.find((c) => c.path === "/v1/tax-returns:bulk-assign");
     expect((post?.body as { return_ids: string[] }).return_ids).toHaveLength(3);
     expect((post?.body as { role: string }).role).toBe("preparer");
-    expect(await screen.findByText("3 returns assigned")).toBeTruthy();
+    await waitFor(() => {
+      expect(toastStore.list().map((t) => t.text)).toContain("3 returns assigned");
+    });
   });
 
   it("d: Extend… and Run firm standards… are drawn disabled outside production", async () => {
@@ -172,9 +186,10 @@ describe("TAX-01 artboards", () => {
     expect(screen.getByText(COPY.seasonEmptyBody(2025))).toBeTruthy();
   });
 
-  it("g: the rows never answer; the summary is real", async () => {
+  it("g: the rows never answer; the tiles hold their place (T1e)", async () => {
     show("g");
-    expect(await screen.findByText(/224 TY2025 returns/)).toBeTruthy();
+    expect(await screen.findByText("Filed · Accepted")).toBeTruthy();
+    expect(document.body.textContent).not.toContain("145Filed · Accepted");
     expect(rows()).toHaveLength(0);
   });
 });
@@ -183,7 +198,8 @@ describe("TAX-01 behaviour", () => {
   it("a tile click asks the server for that status; a second click clears it", async () => {
     const seen = show("a");
     await ready();
-    fireEvent.click(screen.getAllByRole("button", { name: /Action required/ })[0] as HTMLElement);
+    // Action required's tile word is "Issues" (status registry, home_and_tax_tiles).
+    fireEvent.click(screen.getAllByRole("button", { name: /Issues/u })[0] as HTMLElement);
     await waitFor(() => {
       expect(seen.calls.at(-1)?.query).toContain("status=action_required");
     });

@@ -58,8 +58,8 @@ function show(
 }
 
 async function ready(): Promise<void> {
-  await screen.findByRole("heading", { name: COPY.canvas, level: 2 }).catch(() => undefined);
-  await screen.findByText(/^2025 Form /);
+  // The form title is in the subbar and the overview card: both, once the record answers.
+  await screen.findAllByText(/^2025 Form /);
 }
 
 describe("TAX-02 artboards", () => {
@@ -152,7 +152,7 @@ describe("TAX-02 artboards", () => {
     await waitFor(() => {
       expect(document.querySelector("[data-screen='TAX-02']")).not.toBeNull();
     });
-    expect(screen.queryByText(/^2025 Form /)).toBeNull();
+    expect(screen.queryAllByText(/^2025 Form /)).toEqual([]);
   });
 });
 
@@ -160,7 +160,9 @@ describe("TAX-02 behaviour", () => {
   it("Assign… posts the chosen role and member to …/assignments", async () => {
     const seen = show("a");
     await ready();
-    fireEvent.click(await screen.findByRole("button", { name: COPY.actions.assign }));
+    const assign = await screen.findByRole("button", { name: COPY.actions.assign });
+    assign.focus();
+    fireEvent.keyDown(assign, { key: "ArrowDown" });
     fireEvent.click(await screen.findByRole("menuitem", { name: COPY.assignRoles.reviewer }));
     const members = await screen.findAllByRole("menuitem");
     fireEvent.click(members[0] as HTMLElement);
@@ -201,7 +203,7 @@ describe("TAX-02 behaviour", () => {
 
   it("an entity return (Ridgeline 1065) opens here with its own row and no invented bands", async () => {
     show("a", {}, ENTITY_RETURN);
-    expect(await screen.findByText("2025 Form 1065")).toBeTruthy();
+    expect((await screen.findAllByText("2025 Form 1065")).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Ridgeline Property Partners, LP/).length).toBeGreaterThan(0);
     expect(screen.queryByText(COPY.bands.team)).toBeNull();
   });

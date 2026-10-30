@@ -38,7 +38,9 @@ describe("TAX-01 production build", () => {
     expect(within(bar).getByRole("button", { name: COPY.bulk.assign })).toBeTruthy();
     expect(screen.queryByText(COPY.bulk.extend)).toBeNull();
     expect(screen.queryByText(COPY.bulk.standards)).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: COPY.bulkActions }));
+    const bulk = screen.getByRole("button", { name: COPY.bulkActions });
+    bulk.focus();
+    fireEvent.keyDown(bulk, { key: "ArrowDown" });
     expect(screen.queryByRole("menuitem", { name: COPY.bulk.extend })).toBeNull();
     expect(screen.queryByRole("menuitem", { name: COPY.bulk.standards })).toBeNull();
     expect(screen.queryByRole("button", { name: /Board/ })).toBeNull();
