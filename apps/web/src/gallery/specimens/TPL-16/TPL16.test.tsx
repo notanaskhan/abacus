@@ -138,7 +138,9 @@ describe("TPL-16a: the provider's view (DF-12)", () => {
     expect(document.querySelector('[data-signing="page"]')).toBeNull();
     expect(screen.queryByText(/Question \d of \d/)).toBeNull();
     expect(screen.queryAllByRole("button", { name: /^Sign here:/ })).toHaveLength(0);
-    expect(screen.getByText("verifying identity")).toBeTruthy();
+    // The signer line reads "Name — detail" (the kit's inline signers, DEC-1183).
+    const rows = [...document.querySelectorAll("[data-signer-row]")].map((r) => r.textContent);
+    expect(rows.some((t) => t.endsWith("— verifying identity"))).toBe(true);
   });
 
   it("AC-37: the verify step is current and nothing is signed for Mira", () => {

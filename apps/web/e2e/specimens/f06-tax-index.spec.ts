@@ -17,7 +17,9 @@ test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: "reduce" });
 async function board(page: Page, st: string): Promise<void> {
   await page.clock.setFixedTime(E0);
   await page.goto(`/components/screens/TPL-01?st=${st}&frame=1&static=1&as=hannah-leclerc`);
-  await expect(page.locator(`[data-artboard='tpl-01${st}'] [data-specimen='tpl-01']`)).toBeVisible();
+  await expect(
+    page.locator(`[data-artboard='tpl-01${st}'] [data-specimen='tpl-01']`),
+  ).toBeVisible();
 }
 
 async function step(page: Page, name: string): Promise<void> {
