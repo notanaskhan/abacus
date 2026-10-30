@@ -17,7 +17,9 @@ from abacus.ai_gateway import Tier, prompt
 from abacus.kernel.classification import classified
 from abacus.kernel.dispatch import WorkClass
 from abacus.modules.agents.specs._specs import SPECS
-from abacus.modules.identity.api import agent_may_hold, policy_agent_may_hold
+from abacus.modules.identity.api import agent_may_hold, consent_registered, policy_agent_may_hold
+
+TRI_CONSENT_PURPOSES = ("use", "ai_disclosure")
 
 
 class Limits(BaseModel):
@@ -101,6 +103,10 @@ class AgentSpec(BaseModel):
     # conditions still apply). The codegen refuses it without a committed Bedrock evaluation
     # report and Bedrock route parity (AC-4).
     client_data: Annotated[Literal["none", "cleared"], classified("internal")] = "none"
+    # T-01-T11 (C19): `tri` declares the agent reads tax return information. Its context carries
+    # data subjects and gateway condition 6 gates every call; the spec loads only while the
+    # `use` and `ai_disclosure` consent checks are registered.
+    data_classes: Annotated[frozenset[Literal["tri"]], classified("internal")] = frozenset()
 
 
 def _load() -> dict[str, AgentSpec]:
@@ -119,7 +125,16 @@ def _load() -> dict[str, AgentSpec]:
         refused = sorted(a for a in spec.task_scope if not agent_may_hold(a))
         if refused:
             raise ValueError(f"agent {spec.id}: task scope may not include {refused}")
+        validate_data_classes(spec)
     return loaded
+
+
+def validate_data_classes(spec: AgentSpec) -> None:
+    """T-01-T11: an agent that declares `tri` loads only when C19's consent checks exist."""
+    if "tri" in spec.data_classes and not all(consent_registered(p) for p in TRI_CONSENT_PURPOSES):
+        raise ValueError(
+            f"agent {spec.id}: data_classes tri needs the use and ai_disclosure consent checks"
+        )
 
 
 AGENTS: dict[str, AgentSpec] = _load()

@@ -117,6 +117,8 @@ class MaskedTinOut(BaseModel):
 
     kind: Annotated[TinKind, classified("internal")]
     presence: Annotated[TinPresence, classified("internal")]
+    # p07_clients v1 is frozen (DEC-1054): a TIN is masked and gated by its `pii_kind`; the `tri`
+    # flag waits for the contract's v2 (DEC-1272).
     last4: Annotated[
         str | None, Field(pattern=r"^[0-9]{4}$"), classified("restricted", pii_kind="tin")
     ] = None

@@ -48,7 +48,28 @@ import {
   OPENS as ADM06_OPENS,
   scenarios as adm06Scenarios,
 } from "./ADM-06/scenarios";
+import { ADM05 } from "./ADM-05";
+import { CLI05 } from "./CLI-05";
+import {
+  type Cli05State,
+  ENTITY as CLI05_ENTITY,
+  STATES as CLI05_STATES,
+  scenarios as cli05Scenarios,
+} from "./CLI-05/scenarios";
+import {
+  type Adm05State,
+  STATES as ADM05_STATES,
+  OPENS as ADM05_OPENS,
+  scenarios as adm05Scenarios,
+} from "./ADM-05/scenarios";
 import { ADM07 } from "./ADM-07";
+import { FELD_RETURN_ID } from "../fixtures/seed/tax-compliance";
+import { TAX09 } from "./TAX-09";
+import {
+  type Tax09State,
+  STATES as TAX09_STATES,
+  scenarios as tax09Scenarios,
+} from "./TAX-09/scenarios";
 import { ADM10 } from "./ADM-10";
 import {
   type Adm10State,
@@ -100,6 +121,19 @@ import {
   type Bnd02State,
   scenarios as bnd02Scenarios,
 } from "./BND-02/scenarios";
+import { HOME02 } from "./HOME-02";
+import {
+  type Home02State,
+  STATES as HOME02_STATES,
+  scenarios as home02Scenarios,
+} from "./HOME-02/scenarios";
+import { ProgramEditorPage } from "./KNW-03";
+import {
+  type Knw03State,
+  OPENS as KNW03_OPENS,
+  STATES as KNW03_STATES,
+  scenarios as knw03Scenarios,
+} from "./KNW-03/scenarios";
 import { CheckpointDrawer } from "./SHL-16";
 import {
   OPENS as SHL16_OPENS,
@@ -360,6 +394,21 @@ import {
   type Shl03State,
   scenarios as shl03Scenarios,
 } from "./SHL-03/scenarios";
+import { TaxReturnsPage } from "./TAX-01";
+import { ReturnOverviewPage } from "./TAX-02";
+import {
+  OPENS as TAX02_OPENS,
+  STATES as TAX02_STATES,
+  type Tax02State,
+  scenarios as tax02Scenarios,
+} from "./TAX-02/scenarios";
+import {
+  SEARCH as TAX01_SEARCH,
+  SELECTED_IDS as TAX01_SELECTED,
+  STATES as TAX01_STATES,
+  type Tax01State,
+  scenarios as tax01Scenarios,
+} from "./TAX-01/scenarios";
 
 // The built screens as /components/screens/<ID> draws them (gallery builds only; chapter 04 §9.2).
 // `?st=` picks the artboard; its scenario answers the generated client under the screen, over the
@@ -801,6 +850,82 @@ function Adm07Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("ADM-07", { title: "Audit log explorer", Component: Adm07Artboard });
 
+// ADM-05 a, b, f and g (T-01-T13): the consent registry on the T12 frame; each state opens with
+// its search (g's three rows are checked by the walk).
+function Adm05Frame({ state }: { state: Adm05State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/settings/consents" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  const [search, setSearch] = useState(() => searchOf(ADM05_OPENS[state]));
+  return (
+    <div data-artboard={state}>
+      <AppShell
+        frame
+        height={860}
+        toolbar={{ ...bar.toolbar, active: "", firmPressed: true }}
+        overlay={bar.overlay}
+      >
+        <ADM05
+          search={search}
+          onSearch={(next) => {
+            setSearch({ ...next });
+          }}
+        />
+      </AppShell>
+    </div>
+  );
+}
+
+function Adm05Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Adm05State = ADM05_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      adm05Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Adm05Frame key={state} state={state} /> : null;
+}
+
+registerScreen("ADM-05", { title: "Consent registry (§7216)", Component: Adm05Artboard });
+
+// CLI-05 d and f (T-01-T14): the client's Tax profile cockpit on the consents section.
+function Cli05Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Cli05State = CLI05_STATES.find((s) => s === params.st) ?? "d";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      cli05Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? (
+    <div data-artboard={state}>
+      <CLI05 key={state} frame clientEntityId={CLI05_ENTITY[state]} section="consents" />
+    </div>
+  ) : null;
+}
+
+registerScreen("CLI-05", {
+  title: "Tax profile, authorizations & consents",
+  Component: Cli05Artboard,
+});
+
 // N-02-T11: SIG-01 · Signatures hub (a–g); f's reminder and r's Import sheet with N-02-T15.
 function Sig01Frame({ state }: { state: Sig01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
@@ -1014,6 +1139,122 @@ function Cli01Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("CLI-01", { title: "Clients index", Component: Cli01Artboard });
 
+function Knw03Frame({ state }: { state: Knw03State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/knowledge" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  const open = KNW03_OPENS[state];
+  return (
+    <div data-artboard={state}>
+      <ProgramEditorPage
+        programId={open.programId}
+        initialSegment={open.segment}
+        {...(open.step === undefined ? {} : { step: open.step })}
+        {...(open.from === undefined ? {} : { from: open.from })}
+        popoverOpen={open.popover === true}
+        toolbar={bar.toolbar}
+        frame
+      />
+    </div>
+  );
+}
+
+function Knw03Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Knw03State = KNW03_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      knw03Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Knw03Frame key={state} state={state} /> : null;
+}
+
+registerScreen("KNW-03", { title: "Program editor", Component: Knw03Artboard });
+
+function Tax01Frame({ state }: { state: Tax01State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/tax-returns" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+        <TaxReturnsPage
+          initial={TAX01_SEARCH[state]}
+          initialSelection={state === "d" ? TAX01_SELECTED : []}
+        />
+      </AppShell>
+    </div>
+  );
+}
+
+function Tax01Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Tax01State = TAX01_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      tax01Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Tax01Frame key={state} state={state} /> : null;
+}
+
+registerScreen("TAX-01", { title: "Tax Returns · practice board", Component: Tax01Artboard });
+
+function Tax02Frame({ state }: { state: Tax02State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/tax-returns" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <ReturnOverviewPage returnId={TAX02_OPENS[state]} toolbar={bar.toolbar} frame />
+    </div>
+  );
+}
+
+function Tax02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Tax02State = TAX02_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      tax02Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Tax02Frame key={state} state={state} /> : null;
+}
+
+registerScreen("TAX-02", { title: "Return › Overview", Component: Tax02Artboard });
+
 function Eng01Frame({ state }: { state: Eng01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
   const bar = useFirmToolbar({
@@ -1121,6 +1362,40 @@ function Home01Artboard({ params }: { params: FixtureParams }): JSX.Element | nu
 }
 
 registerScreen("HOME-01", { title: "Home dashboard", Component: Home01Artboard });
+
+function Home02Frame({ state }: { state: Home02State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/home/approvals" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <HOME02 toolbar={bar.toolbar} height={860} initialDone={state === "show_done"} />
+    </div>
+  );
+}
+
+function Home02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Home02State = HOME02_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      home02Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Home02Frame key={state} state={state} /> : null;
+}
+
+registerScreen("HOME-02", { title: "My approvals & review queue", Component: Home02Artboard });
 
 function Knw01Frame({ state }: { state: Knw01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
@@ -2188,3 +2463,28 @@ function Fil01Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("FIL-01", { title: "Files browser & document drawer", Component: Fil01Artboard });
+
+// TAX-09 a–e, a2, d2 (T-01-T15): the return's subbar with the sync chip's popover open; e opens
+// on the import diff.
+function Tax09Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Tax09State = TAX09_STATES.find((s) => s === params.st) ?? "a2";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      tax09Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? (
+    <div data-artboard={state} className="h-[860px]">
+      <TAX09 key={state} returnId={FELD_RETURN_ID} defaultOpen defaultImportOpen={state === "e"} />
+    </div>
+  ) : null;
+}
+
+registerScreen("TAX-09", { title: "Tax-engine sync", Component: Tax09Artboard });

@@ -8677,7 +8677,8 @@ export const getEnvelopeOptions = (options: Options<GetEnvelopeData>) => queryOp
 /**
  * Update Envelope Draft Route
  *
- * SIG-02 edits (N-02-T20).
+ * SIG-02 edits (N-02-T20): 409 `stale_version` when `If-Match` is not the current
+ * version; 409 `envelope_not_draft` after Send.
  */
 export const updateEnvelopeDraftMutation = (options?: Partial<Options<UpdateEnvelopeDraftData>>): UseMutationOptions<UpdateEnvelopeDraftResponse, UpdateEnvelopeDraftError, Options<UpdateEnvelopeDraftData>> => {
     const mutationOptions: UseMutationOptions<UpdateEnvelopeDraftResponse, UpdateEnvelopeDraftError, Options<UpdateEnvelopeDraftData>> = {
@@ -8717,7 +8718,9 @@ export const envelopePageQueryKey = (options: Options<EnvelopePageData>) => crea
 /**
  * Envelope Page Route
  *
- * Rendered preview page (N-02-T21).
+ * SIG-02's preview page: the document's masked page image as the evidence viewer renders it
+ * (`no-store`, `nosniff`); 409 `preview_unavailable` for a generated document until P-11, 409
+ * `preview_outdated` before masking; 403 for a reader who may not read the evidence.
  */
 export const envelopePageOptions = (options: Options<EnvelopePageData>) => queryOptions<EnvelopePageResponse, EnvelopePageError, EnvelopePageResponse, ReturnType<typeof envelopePageQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -8774,7 +8777,8 @@ export const resendEnvelopeMutation = (options?: Partial<Options<ResendEnvelopeD
 /**
  * Send Envelope Route
  *
- * Human send through a single-use grant, +10 s (N-02-T22).
+ * Human send through a single-use grant, +10 s (N-02-T20): 409 `validation_failed` with
+ * each check in `facts`; the provider is called after the window (N-02-T22).
  */
 export const sendEnvelopeMutation = (options?: Partial<Options<SendEnvelopeData>>): UseMutationOptions<SendEnvelopeResponse, SendEnvelopeError, Options<SendEnvelopeData>> => {
     const mutationOptions: UseMutationOptions<SendEnvelopeResponse, SendEnvelopeError, Options<SendEnvelopeData>> = {
@@ -8793,7 +8797,7 @@ export const sendEnvelopeMutation = (options?: Partial<Options<SendEnvelopeData>
 /**
  * Undo Envelope Send Route
  *
- * Undo inside the window (N-02-T22).
+ * Undo inside the window (N-02-T20): no provider call is made.
  */
 export const undoEnvelopeSendMutation = (options?: Partial<Options<UndoEnvelopeSendData>>): UseMutationOptions<UndoEnvelopeSendResponse, UndoEnvelopeSendError, Options<UndoEnvelopeSendData>> => {
     const mutationOptions: UseMutationOptions<UndoEnvelopeSendResponse, UndoEnvelopeSendError, Options<UndoEnvelopeSendData>> = {
@@ -14428,6 +14432,7 @@ export const getPortalBinderQueryKey = (options: Options<GetPortalBinderData>) =
  * Get Portal Binder Route
  *
  * POR-03. A binder outside the caller's grant, a draft or a forged id answers 404.
+ * `upload_something_else` (R-01-T33): the firm's published toggle and the intake flag.
  */
 export const getPortalBinderOptions = (options: Options<GetPortalBinderData>) => queryOptions<GetPortalBinderResponse, GetPortalBinderError, GetPortalBinderResponse, ReturnType<typeof getPortalBinderQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -14988,7 +14993,8 @@ export const listIntakeUploadsInfiniteOptions = (options: Options<ListIntakeUplo
 /**
  * Create Intake Upload Route
  *
- * POR-03 "Upload something else": the batch (N-01-T14).
+ * POR-03 "Upload something else": the batch (N-01-T14). R-01-T33: 404 while the firm has
+ * not published the toggle on (as if the route were absent).
  */
 export const createIntakeUploadMutation = (options?: Partial<Options<CreateIntakeUploadData>>): UseMutationOptions<CreateIntakeUploadResponse, CreateIntakeUploadError, Options<CreateIntakeUploadData>> => {
     const mutationOptions: UseMutationOptions<CreateIntakeUploadResponse, CreateIntakeUploadError, Options<CreateIntakeUploadData>> = {
@@ -15698,7 +15704,7 @@ export const listReferenceSetsQueryKey = (options?: Options<ListReferenceSetsDat
 /**
  * List Reference Sets Route
  *
- * KNW-04 j: the published sets, by kind.
+ * KNW-04 j: the published sets, by kind then key, each with the version in effect today.
  */
 export const listReferenceSetsOptions = (options?: Options<ListReferenceSetsData>) => queryOptions<ListReferenceSetsResponse, ListReferenceSetsError, ListReferenceSetsResponse, ReturnType<typeof listReferenceSetsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -16134,7 +16140,7 @@ export const listStandardsOptions = (options?: Options<ListStandardsData>) => qu
  * Create Standard Route
  *
  * Create a standard (QM owner or practice leader, fresh MFA); the owner must be a partner
- * member (422 `owner_not_partner`).
+ * member (422 `owner_not_partner`); 409 `standard_key_taken`.
  */
 export const createStandardMutation = (options?: Partial<Options<CreateStandardData>>): UseMutationOptions<CreateStandardResponse, CreateStandardError, Options<CreateStandardData>> => {
     const mutationOptions: UseMutationOptions<CreateStandardResponse, CreateStandardError, Options<CreateStandardData>> = {
@@ -16154,7 +16160,7 @@ export const createStandardMutation = (options?: Partial<Options<CreateStandardD
  * Import Standards Route
  *
  * Onboarding: one sheet per kind, one draft per standard; an owner who is not a partner
- * member is a row problem (`owner_not_partner`).
+ * member is a row problem (`owner_not_partner`; K-02-T11).
  */
 export const importStandardsMutation = (options?: Partial<Options<ImportStandardsData>>): UseMutationOptions<ImportStandardsResponse, ImportStandardsError, Options<ImportStandardsData>> => {
     const mutationOptions: UseMutationOptions<ImportStandardsResponse, ImportStandardsError, Options<ImportStandardsData>> = {
@@ -16214,7 +16220,7 @@ export const standardExamplesOptions = (options: Options<StandardExamplesData>) 
  * Import Standard Route
  *
  * A workbook to a draft of this standard (its owner's; 422 `import_invalid` with
- * problems). Never publishes.
+ * problems). Never publishes (K-02-T11).
  */
 export const importStandardMutation = (options?: Partial<Options<ImportStandardData>>): UseMutationOptions<ImportStandardResponse, ImportStandardError, Options<ImportStandardData>> => {
     const mutationOptions: UseMutationOptions<ImportStandardResponse, ImportStandardError, Options<ImportStandardData>> = {
@@ -16252,8 +16258,8 @@ export const assignOwnerMutation = (options?: Partial<Options<AssignOwnerData>>)
 /**
  * Draft Version Route
  *
- * New version…: a draft from the current version (409 `draft_exists`; 403
- * `not_standard_owner` for anyone but the owner).
+ * New version…: a draft from the current version (409 `draft_exists`,
+ * `no_current_version`; 403 `not_standard_owner` for a partner who is not the owner).
  */
 export const draftVersionMutation = (options?: Partial<Options<DraftVersionData>>): UseMutationOptions<DraftVersionResponse, DraftVersionError, Options<DraftVersionData>> => {
     const mutationOptions: UseMutationOptions<DraftVersionResponse, DraftVersionError, Options<DraftVersionData>> = {
@@ -16352,7 +16358,7 @@ export const standardExportVersionQueryKey = (options: Options<StandardExportVer
 /**
  * Standard Export Version Route
  *
- * The version as a workbook; re-importing it gives an empty diff (US-5.1).
+ * The version as a workbook; re-importing it gives an empty diff (US-5.1; K-02-T11).
  */
 export const standardExportVersionOptions = (options: Options<StandardExportVersionData>) => queryOptions<StandardExportVersionResponse, StandardExportVersionError, StandardExportVersionResponse, ReturnType<typeof standardExportVersionQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -16371,7 +16377,7 @@ export const standardExportVersionOptions = (options: Options<StandardExportVers
  * Publish Version Route
  *
  * Publish vN…: the owner, a person, with fresh MFA (422 `effective_from_backdated`,
- * `effective_from_not_after_current`).
+ * `effective_from_not_after_current`). A retried key answers what the first publish did.
  */
 export const publishVersionMutation = (options?: Partial<Options<PublishVersionData>>): UseMutationOptions<PublishVersionResponse, PublishVersionError, Options<PublishVersionData>> => {
     const mutationOptions: UseMutationOptions<PublishVersionResponse, PublishVersionError, Options<PublishVersionData>> = {
@@ -16549,6 +16555,8 @@ export const listReturnsQueryKey = (options?: Options<ListReturnsData>) => creat
 
 /**
  * List Returns Route
+ *
+ * TAX-01's rows, wall-safe; one page (a season's board fits; `cursor` is reserved).
  */
 export const listReturnsOptions = (options?: Options<ListReturnsData>) => queryOptions<ListReturnsResponse, ListReturnsError, ListReturnsResponse, ReturnType<typeof listReturnsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -16567,6 +16575,8 @@ export const listReturnsInfiniteQueryKey = (options?: Options<ListReturnsData>):
 
 /**
  * List Returns Route
+ *
+ * TAX-01's rows, wall-safe; one page (a season's board fits; `cursor` is reserved).
  */
 export const listReturnsInfiniteOptions = (options?: Options<ListReturnsData>) => {
     const opts = infiniteQueryOptions<ListReturnsResponse, ListReturnsError, InfiniteData<ListReturnsResponse>, QueryKey<Options<ListReturnsData>>, string | null | Pick<QueryKey<Options<ListReturnsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -16597,6 +16607,8 @@ export const returnsSummaryQueryKey = (options?: Options<ReturnsSummaryData>) =>
 
 /**
  * Returns Summary Route
+ *
+ * TAX-01's tiles: per status, open and done, extended, office totals (wall-safe).
  */
 export const returnsSummaryOptions = (options?: Options<ReturnsSummaryData>) => queryOptions<ReturnsSummaryResponse, ReturnsSummaryError, ReturnsSummaryResponse, ReturnType<typeof returnsSummaryQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -16990,6 +17002,8 @@ export const recordTransmissionMutation = (options?: Partial<Options<RecordTrans
 
 /**
  * Bulk Assign Route
+ *
+ * The selection bar's Assign preparer: assigned and refused counts, never a reason.
  */
 export const bulkAssignMutation = (options?: Partial<Options<BulkAssignData>>): UseMutationOptions<BulkAssignResponse, BulkAssignError, Options<BulkAssignData>> => {
     const mutationOptions: UseMutationOptions<BulkAssignResponse, BulkAssignError, Options<BulkAssignData>> = {
