@@ -25,15 +25,9 @@ async function size(target: Locator): Promise<{ width: number; height: number }>
   return { width: Math.round(box.width), height: Math.round(box.height) };
 }
 
-// Open gap (DEC-832, measured Thu Oct 29, 2026): AUD-06 draws the standard cockpit, rail 330, canvas
-// 742 and dock 330, not the contract's audit split (workpaper 536, viewer 490). Kept as an expected
-// failure so it flips when the split lands.
+// DEC-832's open gap, closed: the Trial Balance row widens the dock to `--ev-w` as AUD-03 does.
 for (const st of ["a", "c", "e"] as const) {
   test(`AUD-06 ${st}: audit bar 59, rail 330, workpaper 536, viewer 490`, async ({ page }) => {
-    test.fail(
-      true,
-      "AUD-06 draws the standard cockpit (canvas 742, dock 330), not the 536 / 490 split",
-    );
     const app = await open(page, "AUD-06", st);
     expect((await size(app.locator("[data-shell='record-header']"))).height).toBe(59);
     expect((await size(app.locator("[data-cockpit='rail']"))).width).toBe(330);
