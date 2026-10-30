@@ -57158,6 +57158,19 @@
             "cls": "internal",
             "title": "Period Start"
           },
+          "proposal_ref": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Proposal Ref"
+          },
           "provenance": {
             "$ref": "#/components/schemas/ScreeningProvenanceOut",
             "cls": "internal"
