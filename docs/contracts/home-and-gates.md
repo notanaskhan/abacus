@@ -58,6 +58,8 @@ not route or a value that is not a UUID. Codes in use:
   assurance PBC list (assurance's `evidence_review` presenter);
 - `BND-02?binderId=<request list>&request=<request item>`: an upload waiting on review on any other
   list (a tax binder, an intake list).
+- `TAX-02?returnId=<tax return>`: a return's gate (DEC-1273); HOME-02 resolves it, no presenter
+  emits it yet.
 Gates without a presenter open by their own ids while `home.approvals` is off: acceptance on CLI-07;
 independence conclusion, independence confirmation and EQR eligibility on CLI-08; agent outputs and
 sends stay plain text until their host is built. SHL-04's Approvals tab counts with

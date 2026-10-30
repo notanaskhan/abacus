@@ -66,13 +66,6 @@ export const homeApprovalsRoute = createRoute({
             onGate={(gate) => {
               void navigate({ to: ".", search: gate === null ? {} : { gate }, replace: true });
             }}
-            onOpen={(gate) => {
-              // Same-origin paths only: "/x", never "//host" or a scheme (an open redirect).
-              const to = gate.subject_route;
-              if (to != null && to.startsWith("/") && !to.startsWith("//") && !to.includes("\\")) {
-                void navigate({ to });
-              }
-            }}
           />
         </FeatureGate>
       </div>

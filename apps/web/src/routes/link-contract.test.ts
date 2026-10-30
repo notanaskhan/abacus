@@ -2,7 +2,8 @@
 // The route registry is src/routes/manifest/<module>.ts, seeded from the handoff's screen index
 // by scripts/seed-manifest.mjs, which also writes handoff-links.json. Four rules hold against the
 // handoff that docs/design/HANDOFF_VERSION pins:
-//   1. a link whose two ends are fixture or live is wired with to.<ID>() in the source screen's folder;
+//   1. a link whose two ends are fixture or live is wired with to.<ID>() in the source screen's folder
+//      (ov.<ID>() when the target has no path and opens as an overlay, DEC-1273);
 //   2. every manifest path resolves in the area route tree (and a live entry has a component);
 //   3. a screen no designed link targets declares `entry`;
 //   4. the record keys AJE-06, BH-26 and SURL-03 map to record routes, not screens.
@@ -107,7 +108,9 @@ function unwiredLinks(
     const target = entries[link.to];
     if (from === undefined || target === undefined) continue;
     if (!BUILT.has(from.status) || !BUILT.has(target.status)) continue;
-    const call = new RegExp(`\\bto\\.${link.to.replace("-", "")}\\(`);
+    // A target with no path opens as an overlay over its host, through `ov.<ID>(…)` (DEC-1273).
+    const builder = target.path === null ? "ov" : "to";
+    const call = new RegExp(`\\b${builder}\\.${link.to.replace("-", "")}\\(`);
     if (!call.test(read(from.folder ?? `screens/${link.from}`))) {
       failures.push(`${link.from} → ${link.to} (${link.via ?? link.type}) is not wired`);
     }
@@ -173,6 +176,20 @@ describe("rule 1: links between built screens are wired with to.<ID>()", () => {
       "CLS-01 → CLS-09 (Opens CLS-09 · plan editor) is not wired",
     ]);
     expect(unwiredLinks(links, entries, () => "<Link {...to.CLS09({ closeId })} />")).toEqual([]);
+  });
+
+  it("a link to a screen with no path is wired only through its ov.<ID>() overlay builder", () => {
+    const entries: Record<string, ScreenEntry> = {
+      "CLS-01": { name: "a", status: "fixture", path: "/closes" },
+      "CLS-02": { name: "c", status: "fixture", path: null },
+    };
+    const links: Link[] = [
+      { from: "CLS-01", to: "CLS-02", type: "tooltip-only", via: "Opens CLS-02 · drawer" },
+    ];
+    const unwired = ["CLS-01 → CLS-02 (Opens CLS-02 · drawer) is not wired"];
+    expect(unwiredLinks(links, entries, () => "to.CLS02()")).toEqual(unwired);
+    expect(unwiredLinks(links, entries, () => 'import { X } from "../CLS-02";')).toEqual(unwired);
+    expect(unwiredLinks(links, entries, () => "open(ov.CLS02(type, id))")).toEqual([]);
   });
 });
 

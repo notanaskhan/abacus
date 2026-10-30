@@ -312,6 +312,9 @@ describe("HOME-01 role states and interactions", () => {
     fireEvent.click(tile);
     const pop = await screen.findByRole("dialog");
     expect(within(pop).getAllByRole("listitem").length).toBe(3);
+    // HOME-01 R3 (DEC-1273): the popover's All offices line opens TAX-01 filtered by the status.
+    const all = within(pop).getByRole("link");
+    expect(all.getAttribute("href")).toMatch(/^\/tax-returns\?tile=[a-z_]+$/u);
     fireEvent.keyDown(pop, { key: "Escape" });
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).toBeNull();

@@ -49,9 +49,6 @@ export const taxReturnsRoute = createRoute({
         onSearch={(next) => {
           void navigate({ to: ".", search: next, replace: true });
         }}
-        onOpen={(row) => {
-          void navigate({ to: "/tax-returns/$returnId", params: { returnId: row.id } });
-        }}
       />,
     );
   },

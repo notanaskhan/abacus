@@ -15,6 +15,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, type KeyboardEvent, useRef, useState } from "react";
 import { useNow } from "../../app-core/clock";
+import { useOpenHref } from "../../app-core/open";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { useSession } from "../../app-core/session";
 import {
@@ -28,6 +29,7 @@ import {
   visibleBands,
 } from "../../domain/home";
 import { COPY } from "./copy";
+import { MY_WORK, openHref } from "./hosts";
 
 // HOME-02 · My approvals & review queue, the queue (I-01-T16; docs/screens/HOME-02.md) on T9
 // QueueDetailLayout preset close-review: the subbar ("Approvals" + the viewer, the Home segmented
@@ -36,8 +38,10 @@ import { COPY } from "./copy";
 // the class glyph and "<due> · <words>" sub-lines (risk in words, never colour alone), the selected
 // row in sel-bg, J/K and Enter, `?gate=` and the empty state (f). The detail (I-01-T17), evidence
 // (T18) and bulk Select (T19) fill the other panes later; here the detail names the selected gate
-// and its "Open" goes to the gate's own host. A row is a link to where the gate is decided, never a
-// decision control (INV-1). Behind `home.approvals` (created here).
+// and its "Open" goes to the gate's own host (`hosts.ts`: its `subject_route` through the manifest's
+// builders, a return's final approval on TAX-02), and the segmented's "My work" to HOME-01. A row
+// is a link to where the gate is decided, never a decision control (INV-1). Behind `home.approvals`
+// (created here).
 
 const POLL = {
   refetchInterval: HOME_POLL_MS,
@@ -90,8 +94,8 @@ export interface HOME02Props {
   /** `?gate=`: the selected gate (an opaque id); the first row when absent. */
   gate?: string | null;
   onGate?: (gate: string | null) => void;
-  /** Enter on a row, and "Open": the gate's host (`subject_route`). */
-  onOpen?: (gate: HumanGateOut) => void;
+  /** Enter on a row, and "Open": the gate's host as an href (default: its `subject_route`). */
+  hrefOf?: (gate: HumanGateOut) => string | undefined;
   /** The gallery's frame: the firm toolbar drawn inside the window. */
   toolbar?: ToolbarProps;
   height?: number;
@@ -101,7 +105,7 @@ export interface HOME02Props {
 export function HOME02({
   gate: gateParam = null,
   onGate,
-  onOpen,
+  hrefOf = openHref,
   toolbar,
   height,
   initialDone = false,
@@ -137,6 +141,8 @@ export function HOME02({
   const order = groups.flatMap((g) => g.items);
   const selectedId = order.some((i) => i.id === chosen) ? chosen : (order[0]?.id ?? null);
   const selected = gates.find((g) => g.id === selectedId);
+  const href = selected === undefined ? undefined : hrefOf(selected);
+  const open = useOpenHref();
 
   const select = (id: string | null, focus = false): void => {
     setChosen(id);
@@ -156,9 +162,9 @@ export function HOME02({
       if (next === undefined) return;
       event.preventDefault();
       select(next.id, true);
-    } else if (event.key === "Enter" && selected !== undefined) {
+    } else if (event.key === "Enter" && href !== undefined) {
       event.preventDefault();
-      onOpen?.(selected);
+      open(href);
     }
   };
 
@@ -173,7 +179,14 @@ export function HOME02({
         <span className="text-record text-ink-2">{session.user?.displayName ?? ""}</span>
       </span>
       <span className="absolute left-1/2 -translate-x-1/2">
-        <HomeSegmented total={total} segments={undefined} active={HOME_SEGMENTS.approvals} />
+        <HomeSegmented
+          total={total}
+          segments={undefined}
+          active={HOME_SEGMENTS.approvals}
+          onChange={(label) => {
+            if (label === HOME_SEGMENTS.myWork) open(MY_WORK);
+          }}
+        />
       </span>
       <span className="ml-auto flex items-center gap-[8px]">
         <span className="inline-flex h-[29px] items-center gap-[6px] rounded-pill bg-card px-[11px] text-body shadow-e1">
@@ -283,18 +296,12 @@ export function HOME02({
         detail={{
           title: COPY.detail,
           body: detailBody,
-          ...(selected === undefined || onOpen === undefined
+          ...(href === undefined
             ? {}
             : {
                 footer: (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => {
-                      onOpen(selected);
-                    }}
-                  >
-                    {COPY.open}
+                  <Button variant="secondary" size="sm" asChild>
+                    <a href={href}>{COPY.open}</a>
                   </Button>
                 ),
               }),
