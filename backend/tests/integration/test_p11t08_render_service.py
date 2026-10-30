@@ -233,7 +233,7 @@ async def test_only_declared_keys_reach_the_snapshot_and_the_hash_is_stable(
     snapshot = docs.snapshot_of(
         layout="letter",
         template_version_id=None,
-        variables=docs.whitelist(DECLARED, {**values.values, "undeclared.key": "x"})[0],
+        variables=docs.declared_values(DECLARED, {**values.values, "undeclared.key": "x"})[0],
         clause_states={},
         overrides={},
     )

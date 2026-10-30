@@ -213,7 +213,7 @@ async def render(tx: UnitOfWork, request: RenderRequest) -> RenderTicket:
     kind = document_kind(request.kind)
     resolved = await kind.variables_provider(request.owner_ref, request.scope)
     declared = await docs.declared_keys(tx, request.template_version_id)
-    variables, missing = docs.whitelist(declared, resolved)
+    variables, missing = docs.declared_values(declared, resolved)
     if missing:
         raise RenderRefused("missing_variable", ",".join(missing))
     snapshot = docs.snapshot_of(
