@@ -76112,10 +76112,6 @@ export type PortalListErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalListError = PortalListErrors[keyof PortalListErrors];
@@ -76168,10 +76164,6 @@ export type PortalViewErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalViewError = PortalViewErrors[keyof PortalViewErrors];
@@ -76228,10 +76220,6 @@ export type PortalDeclineErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalDeclineError = PortalDeclineErrors[keyof PortalDeclineErrors];
@@ -76288,10 +76276,6 @@ export type PortalDeclineWithdrawErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalDeclineWithdrawError = PortalDeclineWithdrawErrors[keyof PortalDeclineWithdrawErrors];
@@ -76349,13 +76333,13 @@ export type PortalPageErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalPageError = PortalPageErrors[keyof PortalPageErrors];
@@ -76407,13 +76391,13 @@ export type PortalDownloadErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalDownloadError = PortalDownloadErrors[keyof PortalDownloadErrors];
@@ -76472,10 +76456,6 @@ export type PortalConsentErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalConsentError = PortalConsentErrors[keyof PortalConsentErrors];
@@ -76528,10 +76508,6 @@ export type PortalProgressErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalProgressError = PortalProgressErrors[keyof PortalProgressErrors];
@@ -76593,9 +76569,9 @@ export type PortalSigningSessionErrors = {
      */
     422: ValidationErrorOut;
     /**
-     * Contract stub: not implemented yet
+     * Service unavailable
      */
-    501: ErrorOut;
+    503: ErrorOut;
 };
 
 export type PortalSigningSessionError = PortalSigningSessionErrors[keyof PortalSigningSessionErrors];
@@ -76649,17 +76625,9 @@ export type PortalSigningReturnErrors = {
      */
     404: ErrorOut;
     /**
-     * Conflict with the resource's state
-     */
-    409: ErrorOut;
-    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalSigningReturnError = PortalSigningReturnErrors[keyof PortalSigningReturnErrors];
@@ -76712,10 +76680,6 @@ export type PortalViewedErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalViewedError = PortalViewedErrors[keyof PortalViewedErrors];

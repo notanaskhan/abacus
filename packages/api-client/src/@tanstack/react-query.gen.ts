@@ -14903,7 +14903,7 @@ export const portalListQueryKey = (options?: Options<PortalListData>) => createQ
 /**
  * Portal List Route
  *
- * POR-06 list (N-02-T23).
+ * POR-06 list (N-02-T23): the person's own signer rows, through `scope_only`.
  */
 export const portalListOptions = (options?: Options<PortalListData>) => queryOptions<PortalListResponse, PortalListError, PortalListResponse, ReturnType<typeof portalListQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -14923,7 +14923,7 @@ export const portalListInfiniteQueryKey = (options?: Options<PortalListData>): Q
 /**
  * Portal List Route
  *
- * POR-06 list (N-02-T23).
+ * POR-06 list (N-02-T23): the person's own signer rows, through `scope_only`.
  */
 export const portalListInfiniteOptions = (options?: Options<PortalListData>) => {
     const opts = infiniteQueryOptions<PortalListResponse, PortalListError, InfiniteData<PortalListResponse>, QueryKey<Options<PortalListData>>, string | null | Pick<QueryKey<Options<PortalListData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -14955,7 +14955,7 @@ export const portalViewQueryKey = (options: Options<PortalViewData>) => createQu
 /**
  * Portal View Route
  *
- * POR-06 review (N-02-T23).
+ * POR-06 review (N-02-T23): the documents, the person's fields and state.
  */
 export const portalViewOptions = (options: Options<PortalViewData>) => queryOptions<PortalViewResponse, PortalViewError, PortalViewResponse, ReturnType<typeof portalViewQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -14973,7 +14973,7 @@ export const portalViewOptions = (options: Options<PortalViewData>) => queryOpti
 /**
  * Portal Decline Route
  *
- * Decline with a reason (N-02-T28).
+ * Decline with a reason (N-02-T23); signing sessions are refused while declined.
  */
 export const portalDeclineMutation = (options?: Partial<Options<PortalDeclineData>>): UseMutationOptions<PortalDeclineResponse, PortalDeclineError, Options<PortalDeclineData>> => {
     const mutationOptions: UseMutationOptions<PortalDeclineResponse, PortalDeclineError, Options<PortalDeclineData>> = {
@@ -14992,7 +14992,8 @@ export const portalDeclineMutation = (options?: Partial<Options<PortalDeclineDat
 /**
  * Portal Decline Withdraw Route
  *
- * Withdraw a decline while open (N-02-T28).
+ * Withdraw the person's own portal decline while the envelope is Declined (N-02-T23);
+ * 409 `decline_not_withdrawable` otherwise.
  */
 export const portalDeclineWithdrawMutation = (options?: Partial<Options<PortalDeclineWithdrawData>>): UseMutationOptions<PortalDeclineWithdrawResponse, PortalDeclineWithdrawError, Options<PortalDeclineWithdrawData>> => {
     const mutationOptions: UseMutationOptions<PortalDeclineWithdrawResponse, PortalDeclineWithdrawError, Options<PortalDeclineWithdrawData>> = {
@@ -15013,7 +15014,7 @@ export const portalPageQueryKey = (options: Options<PortalPageData>) => createQu
 /**
  * Portal Page Route
  *
- * A page the signer reviews (N-02-T23).
+ * A masked page the signer reviews (N-02-T23); the read is logged.
  */
 export const portalPageOptions = (options: Options<PortalPageData>) => queryOptions<PortalPageResponse, PortalPageError, PortalPageResponse, ReturnType<typeof portalPageQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -15033,7 +15034,8 @@ export const portalDownloadQueryKey = (options: Options<PortalDownloadData>) => 
 /**
  * Portal Download Route
  *
- * Signed copy plus evidence page, audited (N-02-T29).
+ * The signed copy with its evidence pages, audited (N-02-T23); 409
+ * `signed_copy_not_ready` until evidence is recorded.
  */
 export const portalDownloadOptions = (options: Options<PortalDownloadData>) => queryOptions<PortalDownloadResponse, PortalDownloadError, PortalDownloadResponse, ReturnType<typeof portalDownloadQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -15051,7 +15053,8 @@ export const portalDownloadOptions = (options: Options<PortalDownloadData>) => q
 /**
  * Portal Consent Route
  *
- * ERSD acceptance, stored (N-02-T24).
+ * ERSD acceptance of the firm's newest disclosure, stored per signer (N-02-T23); 409
+ * `disclosure_outdated` for any other version.
  */
 export const portalConsentMutation = (options?: Partial<Options<PortalConsentData>>): UseMutationOptions<PortalConsentResponse, PortalConsentError, Options<PortalConsentData>> => {
     const mutationOptions: UseMutationOptions<PortalConsentResponse, PortalConsentError, Options<PortalConsentData>> = {
@@ -15070,7 +15073,7 @@ export const portalConsentMutation = (options?: Partial<Options<PortalConsentDat
 /**
  * Portal Progress Route
  *
- * Last page seen (N-02-T23).
+ * The furthest page seen (N-02-T23).
  */
 export const portalProgressMutation = (options?: Partial<Options<PortalProgressData>>): UseMutationOptions<PortalProgressResponse, PortalProgressError, Options<PortalProgressData>> => {
     const mutationOptions: UseMutationOptions<PortalProgressResponse, PortalProgressError, Options<PortalProgressData>> = {
@@ -15089,7 +15092,10 @@ export const portalProgressMutation = (options?: Partial<Options<PortalProgressD
 /**
  * Portal Signing Session Route
  *
- * One-time provider view; refusals in the contract (N-02-T26).
+ * A one-time provider view for the named signer (N-02-T23): 409 `envelope_not_open`,
+ * `declined`, `verification_failed`, `mfa_required`, `not_your_turn`, `before_date_as_of` or
+ * `esign_consent_required`; 503 `provider_unavailable`. A replay answers the same session while
+ * it is open; the link is never stored.
  */
 export const portalSigningSessionMutation = (options?: Partial<Options<PortalSigningSessionData>>): UseMutationOptions<PortalSigningSessionResponse, PortalSigningSessionError, Options<PortalSigningSessionData>> => {
     const mutationOptions: UseMutationOptions<PortalSigningSessionResponse, PortalSigningSessionError, Options<PortalSigningSessionData>> = {
@@ -15110,7 +15116,8 @@ export const portalSigningReturnQueryKey = (options: Options<PortalSigningReturn
 /**
  * Portal Signing Return Route
  *
- * Server-checked return (N-02-T26).
+ * The server-checked return (N-02-T23): the provider is polled before anything is shown;
+ * query parameters are ignored, and `outcome` is `signed` only once the poll says so.
  */
 export const portalSigningReturnOptions = (options: Options<PortalSigningReturnData>) => queryOptions<PortalSigningReturnResponse, PortalSigningReturnError, PortalSigningReturnResponse, ReturnType<typeof portalSigningReturnQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -15128,7 +15135,7 @@ export const portalSigningReturnOptions = (options: Options<PortalSigningReturnD
 /**
  * Portal Viewed Route
  *
- * Viewed (N-02-T23).
+ * The first view, once (N-02-T23).
  */
 export const portalViewedMutation = (options?: Partial<Options<PortalViewedData>>): UseMutationOptions<PortalViewedResponse, PortalViewedError, Options<PortalViewedData>> => {
     const mutationOptions: UseMutationOptions<PortalViewedResponse, PortalViewedError, Options<PortalViewedData>> = {

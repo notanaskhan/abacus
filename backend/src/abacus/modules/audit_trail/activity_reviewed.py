@@ -491,6 +491,15 @@ REVIEWED_FALLBACK: Final = frozenset(
         "envelope.polled",  # N-02-T13/T14 (S15)
         "envelope.reminder_skipped",  # N-02-T13/T14 (S15)
         "envelope.voided",  # N-02-T13/T14 (S15)
+        "envelope.viewed",  # N-02-T23: POR-06 (S17)
+        "envelope.declined",  # N-02-T23
+        "envelope.decline_withdrawn",  # N-02-T23
+        "signer.progress",  # N-02-T23
+        "signer.esign_consent_accepted",  # N-02-T23
+        "signer.signing_session_issued",  # N-02-T23
+        "signer.signing_session_returned",  # N-02-T23
+        "signer.signing_session_confirmed",  # N-02-T23
+        "signed_copy.downloaded",  # N-02-T23
         "evidence.downloaded",  # N-02-T13: the evidence zip (S15)
         "inbound_message.downloaded",  # N-01-T12 to T18 (S15)
         "inbox_attachment.downloaded",  # N-01-T12 to T18 (S15)

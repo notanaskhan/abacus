@@ -163808,7 +163808,7 @@
     },
     "/v1/portal/envelopes": {
       "get": {
-        "description": "POR-06 list (N-02-T23).",
+        "description": "POR-06 list (N-02-T23): the person's own signer rows, through `scope_only`.",
         "operationId": "portal_list",
         "parameters": [
           {
@@ -163936,16 +163936,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal List Route",
@@ -163957,7 +163947,7 @@
     },
     "/v1/portal/envelopes/{envelope_id}": {
       "get": {
-        "description": "POR-06 review (N-02-T23).",
+        "description": "POR-06 review (N-02-T23): the documents, the person's fields and state.",
         "operationId": "portal_view",
         "parameters": [
           {
@@ -164053,16 +164043,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal View Route",
@@ -164074,7 +164054,7 @@
     },
     "/v1/portal/envelopes/{envelope_id}/decline": {
       "post": {
-        "description": "Decline with a reason (N-02-T28).",
+        "description": "Decline with a reason (N-02-T23); signing sessions are refused while declined.",
         "operationId": "portal_decline",
         "parameters": [
           {
@@ -164190,16 +164170,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal Decline Route",
@@ -164211,7 +164181,7 @@
     },
     "/v1/portal/envelopes/{envelope_id}/decline/withdraw": {
       "post": {
-        "description": "Withdraw a decline while open (N-02-T28).",
+        "description": "Withdraw the person's own portal decline while the envelope is Declined (N-02-T23);\n409 `decline_not_withdrawable` otherwise.",
         "operationId": "portal_decline_withdraw",
         "parameters": [
           {
@@ -164317,16 +164287,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal Decline Withdraw Route",
@@ -164338,7 +164298,7 @@
     },
     "/v1/portal/envelopes/{envelope_id}/documents/{document_id}/pages/{page_no}": {
       "get": {
-        "description": "A page the signer reviews (N-02-T23).",
+        "description": "A masked page the signer reviews (N-02-T23); the read is logged.",
         "operationId": "portal_page",
         "parameters": [
           {
@@ -164366,6 +164326,8 @@
             "name": "page_no",
             "required": true,
             "schema": {
+              "maximum": 2000,
+              "minimum": 1,
               "title": "Page No",
               "type": "integer"
             }
@@ -164446,6 +164408,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -164455,16 +164427,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal Page Route",
@@ -164476,7 +164438,7 @@
     },
     "/v1/portal/envelopes/{envelope_id}/download": {
       "get": {
-        "description": "Signed copy plus evidence page, audited (N-02-T29).",
+        "description": "The signed copy with its evidence pages, audited (N-02-T23); 409\n`signed_copy_not_ready` until evidence is recorded.",
         "operationId": "portal_download",
         "parameters": [
           {
@@ -164565,6 +164527,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -164574,16 +164546,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal Download Route",
@@ -164595,7 +164557,7 @@
     },
     "/v1/portal/envelopes/{envelope_id}/esign-consent": {
       "post": {
-        "description": "ERSD acceptance, stored (N-02-T24).",
+        "description": "ERSD acceptance of the firm's newest disclosure, stored per signer (N-02-T23); 409\n`disclosure_outdated` for any other version.",
         "operationId": "portal_consent",
         "parameters": [
           {
@@ -164711,16 +164673,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal Consent Route",
@@ -164732,7 +164684,7 @@
     },
     "/v1/portal/envelopes/{envelope_id}/progress": {
       "post": {
-        "description": "Last page seen (N-02-T23).",
+        "description": "The furthest page seen (N-02-T23).",
         "operationId": "portal_progress",
         "parameters": [
           {
@@ -164838,16 +164790,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal Progress Route",
@@ -164859,7 +164801,7 @@
     },
     "/v1/portal/envelopes/{envelope_id}/signing-session": {
       "post": {
-        "description": "One-time provider view; refusals in the contract (N-02-T26).",
+        "description": "A one-time provider view for the named signer (N-02-T23): 409 `envelope_not_open`,\n`declined`, `verification_failed`, `mfa_required`, `not_your_turn`, `before_date_as_of` or\n`esign_consent_required`; 503 `provider_unavailable`. A replay answers the same session while\nit is open; the link is never stored.",
         "operationId": "portal_signing_session",
         "parameters": [
           {
@@ -164977,7 +164919,7 @@
             },
             "description": "Invalid request"
           },
-          "501": {
+          "503": {
             "content": {
               "application/json": {
                 "schema": {
@@ -164985,7 +164927,7 @@
                 }
               }
             },
-            "description": "Contract stub: not implemented yet"
+            "description": "Service unavailable"
           }
         },
         "summary": "Portal Signing Session Route",
@@ -164997,7 +164939,7 @@
     },
     "/v1/portal/envelopes/{envelope_id}/signing-session/{session_id}/return": {
       "get": {
-        "description": "Server-checked return (N-02-T26).",
+        "description": "The server-checked return (N-02-T23): the provider is polled before anything is shown;\nquery parameters are ignored, and `outcome` is `signed` only once the poll says so.",
         "operationId": "portal_signing_return",
         "parameters": [
           {
@@ -165094,16 +165036,6 @@
             },
             "description": "Not found"
           },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Conflict with the resource's state"
-          },
           "422": {
             "content": {
               "application/json": {
@@ -165113,16 +165045,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal Signing Return Route",
@@ -165134,7 +165056,7 @@
     },
     "/v1/portal/envelopes/{envelope_id}/viewed": {
       "post": {
-        "description": "Viewed (N-02-T23).",
+        "description": "The first view, once (N-02-T23).",
         "operationId": "portal_viewed",
         "parameters": [
           {
@@ -165230,16 +165152,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal Viewed Route",

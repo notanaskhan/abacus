@@ -29,6 +29,7 @@ from abacus.modules.engagements import letter_contract as letters
 from abacus.modules.identity.api import AbacusRouter, AuthContext
 from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.signatures import contract as c7
+from abacus.modules.signatures import portal
 
 Json = dict[str, object]
 DOC = cast(Json, json.loads(document()))
@@ -133,7 +134,7 @@ def _call(endpoint: Endpoint, ctx: AuthContext) -> Awaitable[object]:
     return endpoint(**{n: (ctx if n == "ctx" else None) for n in params})
 
 
-@pytest.mark.parametrize("route", [r for r, _m in STUBBED] + PORTAL, ids=lambda r: r.name)
+@pytest.mark.parametrize("route", [r for r, _m in STUBBED], ids=lambda r: r.name)
 def test_n02t03_each_route_declares_one_matrix_action_and_is_a_stub(route: APIRoute) -> None:
     method = next(iter(route.methods or {"GET"})).lower()
     op = PATHS[route.path][method]
@@ -173,26 +174,34 @@ async def test_n02t03_firm_routes_client_404_then_action_then_flag_then_501(
 
 
 @pytest.mark.parametrize("route", PORTAL, ids=lambda r: r.name)
-async def test_n02t03_portal_routes_firm_404_then_flag_then_501(
+def test_n02t23_each_portal_route_declares_one_matrix_action_and_no_501(route: APIRoute) -> None:
+    method = next(iter(route.methods or {"GET"})).lower()
+    op = PATHS[route.path][method]
+    assert op["x-abacus-action"] in RULES
+    assert "404" in set(cast(Json, op["responses"]))
+    assert "501" not in set(cast(Json, op["responses"]))
+
+
+@pytest.mark.parametrize("route", PORTAL, ids=lambda r: r.name)
+async def test_n02t23_portal_routes_firm_404_then_flag_404(
     route: APIRoute, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """Live since N-02-T23 (DEC-1283): a firm principal is refused before the flag is read, and
+    with `signatures.envelopes` off a client person is too; the rest needs the database."""
     seen: list[Flag] = []
-    state = {"on": False}
 
     async def flag_enabled(_tenant: object, f: Flag) -> bool:
         seen.append(f)
-        return state["on"]
+        return False
 
-    monkeypatch.setattr(c7, "flag_enabled", flag_enabled)
+    monkeypatch.setattr(portal, "flag_enabled", flag_enabled)
     endpoint = cast(Endpoint, route.endpoint)
     with pytest.raises(NotFound):
         await _call(endpoint, _ctx())
     assert seen == []
     with pytest.raises(NotFound):
         await _call(endpoint, _ctx(client=True))
-    state["on"] = True
-    with pytest.raises(NotImplementedYet):
-        await _call(endpoint, _ctx(client=True))
+    assert seen == [SIGNATURES_ENVELOPES]
 
 
 @pytest.mark.parametrize("model", MODELS, ids=[m.__name__ for m in MODELS])
