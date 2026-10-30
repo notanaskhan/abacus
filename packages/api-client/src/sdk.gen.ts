@@ -9726,7 +9726,7 @@ export const listStandards = <ThrowOnError extends boolean = false>(options?: Op
  * Create Standard Route
  *
  * Create a standard (QM owner or practice leader, fresh MFA); the owner must be a partner
- * member (422 `owner_not_partner`).
+ * member (422 `owner_not_partner`); 409 `standard_key_taken`.
  */
 export const createStandard = <ThrowOnError extends boolean = false>(options: Options<CreateStandardData, ThrowOnError>): RequestResult<CreateStandardResponses, CreateStandardErrors, ThrowOnError> => (options.client ?? client).post<CreateStandardResponses, CreateStandardErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9742,7 +9742,7 @@ export const createStandard = <ThrowOnError extends boolean = false>(options: Op
  * Import Standards Route
  *
  * Onboarding: one sheet per kind, one draft per standard; an owner who is not a partner
- * member is a row problem (`owner_not_partner`).
+ * member is a row problem (`owner_not_partner`; K-02-T11).
  */
 export const importStandards = <ThrowOnError extends boolean = false>(options: Options<ImportStandardsData, ThrowOnError>): RequestResult<ImportStandardsResponses, ImportStandardsErrors, ThrowOnError> => (options.client ?? client).post<ImportStandardsResponses, ImportStandardsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9780,7 +9780,7 @@ export const standardExamples = <ThrowOnError extends boolean = false>(options: 
  * Import Standard Route
  *
  * A workbook to a draft of this standard (its owner's; 422 `import_invalid` with
- * problems). Never publishes.
+ * problems). Never publishes (K-02-T11).
  */
 export const importStandard = <ThrowOnError extends boolean = false>(options: Options<ImportStandardData, ThrowOnError>): RequestResult<ImportStandardResponses, ImportStandardErrors, ThrowOnError> => (options.client ?? client).post<ImportStandardResponses, ImportStandardErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9810,8 +9810,8 @@ export const assignOwner = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * Draft Version Route
  *
- * New version…: a draft from the current version (409 `draft_exists`; 403
- * `not_standard_owner` for anyone but the owner).
+ * New version…: a draft from the current version (409 `draft_exists`,
+ * `no_current_version`; 403 `not_standard_owner` for a partner who is not the owner).
  */
 export const draftVersion = <ThrowOnError extends boolean = false>(options: Options<DraftVersionData, ThrowOnError>): RequestResult<DraftVersionResponses, DraftVersionErrors, ThrowOnError> => (options.client ?? client).post<DraftVersionResponses, DraftVersionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9870,7 +9870,7 @@ export const versionDiff = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * Standard Export Version Route
  *
- * The version as a workbook; re-importing it gives an empty diff (US-5.1).
+ * The version as a workbook; re-importing it gives an empty diff (US-5.1; K-02-T11).
  */
 export const standardExportVersion = <ThrowOnError extends boolean = false>(options: Options<StandardExportVersionData, ThrowOnError>): RequestResult<StandardExportVersionResponses, StandardExportVersionErrors, ThrowOnError> => (options.client ?? client).get<StandardExportVersionResponses, StandardExportVersionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9882,7 +9882,7 @@ export const standardExportVersion = <ThrowOnError extends boolean = false>(opti
  * Publish Version Route
  *
  * Publish vN…: the owner, a person, with fresh MFA (422 `effective_from_backdated`,
- * `effective_from_not_after_current`).
+ * `effective_from_not_after_current`). A retried key answers what the first publish did.
  */
 export const publishVersion = <ThrowOnError extends boolean = false>(options: Options<PublishVersionData, ThrowOnError>): RequestResult<PublishVersionResponses, PublishVersionErrors, ThrowOnError> => (options.client ?? client).post<PublishVersionResponses, PublishVersionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

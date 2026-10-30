@@ -444,6 +444,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.draft_start.DraftAlreadyDecided
+  draft_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.standards.DraftExists
+    summary: 'The standard already has a draft: edit it, publish it or discard it first.'
   draft_incomplete:
     status: 422
     raised_by:
@@ -481,6 +486,16 @@ codes:
     - abacus.modules.requests.binders.EffectStarted
     - abacus.modules.signatures.builder.EffectStarted
     summary: 'The publish''s delivery has started (its grant was consumed): it can no longer be undone.'
+  effective_from_backdated:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.standards.EffectiveFromBackdated
+    summary: A version takes effect today or later (business time).
+  effective_from_not_after_current:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.standards.EffectiveFromNotAfterCurrent
+    summary: A version takes effect after every published version's date.
   effective_from_too_early:
     status: 422
     raised_by:
@@ -1051,6 +1066,11 @@ codes:
     - abacus.modules.connections.connect.NoLiveConnection
     - abacus.modules.connections.service.NoConnection
     summary: The engagement's client entity has no active connection.
+  no_current_version:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.standards.NoCurrentVersion
+    summary: 'Nothing is published to draft from: import the first version (K-02-T11).'
   no_draft:
     status: 409
     raised_by:
@@ -1101,6 +1121,11 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.completion.NotConcluded
     summary: A deficiency is communicated only once the partner has concluded its severity.
+  not_draft:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.standards.NotDraft
+    summary: 'Only a draft changes: this version is published or discarded.'
   not_ignored:
     status: 409
     raised_by:
@@ -1260,10 +1285,20 @@ codes:
     raised_by:
     - abacus.modules.identity.walls.OwnWall
     summary: 'A partner can''t lift a wall on themself: another partner must (ADR-026; DEC-73).'
+  owner_not_partner:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.standards.OwnerNotPartner
+    summary: The owner of a standard must be a partner member of the firm.
   parameters_invalid:
     status: 422
     raised_by:
     - abacus.modules.fieldwork.service.ParametersInvalid
+  payload_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.standards.PayloadInvalid
+    summary: The payload is not valid for the standard's kind (`facts.kind`, `facts.problems`).
   payload_too_large:
     status: 422
     raised_by:
@@ -1735,6 +1770,7 @@ codes:
     - abacus.modules.identity.service_lines.StalePolicy
     - abacus.modules.identity.settings_registry.StaleSection
     - abacus.modules.methodology.lifecycle.VersionStale
+    - abacus.modules.methodology.standards.StaleVersion
     - abacus.modules.organisations.live.StaleVersion
     - abacus.modules.organisations.org_structure.StaleOrgStructure
     - abacus.modules.platform.safeguards.SafeguardsStale
@@ -1743,6 +1779,11 @@ codes:
     - abacus.modules.signatures.builder.StaleEnvelope
     - abacus.modules.tax.status.StaleReturn
     summary: 'The record changed since it was read: read it again (409).'
+  standard_key_taken:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.standards.StandardKeyTaken
+    summary: The firm already has a standard with this key.
   standards_set_refused:
     status: 422
     raised_by:

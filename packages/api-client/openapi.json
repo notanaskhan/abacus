@@ -62219,8 +62219,17 @@
             "type": "string"
           },
           "status": {
-            "$ref": "#/components/schemas/FirmStandardVersionStatus",
-            "cls": "internal"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FirmStandardVersionStatus"
+              },
+              {
+                "const": "superseded",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Status"
           },
           "version": {
             "cls": "internal",
@@ -62299,8 +62308,17 @@
             "cls": "internal"
           },
           "status": {
-            "$ref": "#/components/schemas/FirmStandardVersionStatus",
-            "cls": "internal"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FirmStandardVersionStatus"
+              },
+              {
+                "const": "superseded",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Status"
           },
           "tax_year": {
             "anyOf": [
@@ -168032,16 +168050,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Standards Route",
@@ -168051,7 +168059,7 @@
         "x-abacus-action": "firm_standard.read"
       },
       "post": {
-        "description": "Create a standard (QM owner or practice leader, fresh MFA); the owner must be a partner\nmember (422 `owner_not_partner`).",
+        "description": "Create a standard (QM owner or practice leader, fresh MFA); the owner must be a partner\nmember (422 `owner_not_partner`); 409 `standard_key_taken`.",
         "operationId": "create_standard",
         "parameters": [
           {
@@ -168157,16 +168165,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Create Standard Route",
@@ -168178,7 +168176,7 @@
     },
     "/v1/standards/imports": {
       "post": {
-        "description": "Onboarding: one sheet per kind, one draft per standard; an owner who is not a partner\nmember is a row problem (`owner_not_partner`).",
+        "description": "Onboarding: one sheet per kind, one draft per standard; an owner who is not a partner\nmember is a row problem (`owner_not_partner`; K-02-T11).",
         "operationId": "import_standards",
         "parameters": [
           {
@@ -168408,16 +168406,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Standard Route",
@@ -168542,16 +168530,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Standard Examples Route",
@@ -168563,7 +168541,7 @@
     },
     "/v1/standards/{standard_id}/imports": {
       "post": {
-        "description": "A workbook to a draft of this standard (its owner's; 422 `import_invalid` with\nproblems). Never publishes.",
+        "description": "A workbook to a draft of this standard (its owner's; 422 `import_invalid` with\nproblems). Never publishes (K-02-T11).",
         "operationId": "import_standard",
         "parameters": [
           {
@@ -168796,16 +168774,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Assign Owner Route",
@@ -168817,7 +168785,7 @@
     },
     "/v1/standards/{standard_id}/versions": {
       "post": {
-        "description": "New version\u2026: a draft from the current version (409 `draft_exists`; 403\n`not_standard_owner` for anyone but the owner).",
+        "description": "New version\u2026: a draft from the current version (409 `draft_exists`,\n`no_current_version`; 403 `not_standard_owner` for a partner who is not the owner).",
         "operationId": "draft_version",
         "parameters": [
           {
@@ -168923,16 +168891,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Draft Version Route",
@@ -169070,16 +169028,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Standard Discard Draft Route",
@@ -169195,16 +169143,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Standard Version Route",
@@ -169350,16 +169288,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Edit Draft Route",
@@ -169494,16 +169422,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Version Diff Route",
@@ -169515,7 +169433,7 @@
     },
     "/v1/standards/{standard_id}/versions/{version_id}/export.xlsx": {
       "get": {
-        "description": "The version as a workbook; re-importing it gives an empty diff (US-5.1).",
+        "description": "The version as a workbook; re-importing it gives an empty diff (US-5.1; K-02-T11).",
         "operationId": "standard_export_version",
         "parameters": [
           {
@@ -169644,7 +169562,7 @@
     },
     "/v1/standards/{standard_id}/versions/{version_id}/publish": {
       "post": {
-        "description": "Publish vN\u2026: the owner, a person, with fresh MFA (422 `effective_from_backdated`,\n`effective_from_not_after_current`).",
+        "description": "Publish vN\u2026: the owner, a person, with fresh MFA (422 `effective_from_backdated`,\n`effective_from_not_after_current`). A retried key answers what the first publish did.",
         "operationId": "publish_version",
         "parameters": [
           {
@@ -169791,16 +169709,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Publish Version Route",

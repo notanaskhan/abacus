@@ -58,6 +58,8 @@ Payloads are discriminated by `kind`, `payload_schema_version` 1 (`platform/refe
 
 **Live since K-02-T07 (DEC-1255):** `GET /v1/due-dates` and `practice.api`'s calendar (`practice/due_dates.py`, routes in `practice/due_dates_routes.py`, the pure engine in `practice/compute/calendar.py`). Due-date rules resolve on the period end (a set whose version names the tax year first); holidays and postponements on the later of today and a fortnight past the latest unrolled date. Additive fields: `DueDateExtension.day` (5558's Oct 15, a 1041's Sep 30), `DueDates.postponed_to`, `ResolvedReference.tax_year`.
 
+**Live since K-02-T08 (DEC-1256):** `/v1/standards` reads and lifecycle, `current_version` and the examples slot (`methodology/standards.py`, routes in `methodology/standards_routes.py`, KNW-01 and C15 registrations in `methodology/standards_catalog.py`). Import and export stay 501 until K-02-T11. New codes: `no_current_version` (409, nothing published to draft from), `standard_key_taken` (409), `not_standard_owner` (403).
+
 Every result carries the version id it used (INV-2). **`as_of` per consumer:** AJE classification, the entry's creation date; materiality validation, the decision date; checklists, `applies_to.tax_year`; BH-TAX-02, pinned on the return at creation; due dates, the period end. Consumers store the version id.
 
 ## 6. Human-only actions
