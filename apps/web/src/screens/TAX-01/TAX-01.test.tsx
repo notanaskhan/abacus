@@ -77,7 +77,9 @@ function rows(): HTMLElement[] {
 }
 
 function clients(): string[] {
-  return rows().map((r) => r.querySelectorAll("td")[2]?.querySelector("span span")?.textContent ?? "");
+  return rows().map(
+    (r) => r.querySelectorAll("td")[2]?.querySelector("span span")?.textContent ?? "",
+  );
 }
 
 /** Radix menus open from the keyboard or a pointer, not a bare click (the CLI-01 pattern). */
@@ -101,7 +103,9 @@ describe("TAX-01 artboards", () => {
     show("a");
     await ready();
     expect(rows()).toHaveLength(15);
-    expect(screen.getByText(/79 open · 145 done · 224 TY2025 returns · 161 extended/)).toBeTruthy();
+    expect(
+      screen.getByText(/79 open · 145 done · 224 TY2025 returns · 161 extended/),
+    ).toBeTruthy();
     expect(screen.getByText("Showing 15 of 79 open")).toBeTruthy();
     for (const label of ["Prepared", "In review", "Action required", "Awaiting signature"]) {
       expect(screen.getAllByText(new RegExp(label)).length).toBeGreaterThan(0);
@@ -150,9 +154,9 @@ describe("TAX-01 artboards", () => {
     const member = await screen.findAllByRole("menuitem");
     fireEvent.click(member[0] as HTMLElement);
     await waitFor(() => {
-      expect(seen.calls.some((c) => c.method === "POST" && c.path === "/v1/tax-returns:bulk-assign")).toBe(
-        true,
-      );
+      expect(
+        seen.calls.some((c) => c.method === "POST" && c.path === "/v1/tax-returns:bulk-assign"),
+      ).toBe(true);
     });
     const post = seen.calls.find((c) => c.path === "/v1/tax-returns:bulk-assign");
     expect((post?.body as { return_ids: string[] }).return_ids).toHaveLength(3);
@@ -166,9 +170,9 @@ describe("TAX-01 artboards", () => {
     show("d");
     await ready();
     const bar = screen.getByRole("region", { name: "3 selected" });
-    expect(within(bar).getByRole("button", { name: COPY.bulk.extend }).hasAttribute("disabled")).toBe(
-      true,
-    );
+    expect(
+      within(bar).getByRole("button", { name: COPY.bulk.extend }).hasAttribute("disabled"),
+    ).toBe(true);
     expect(
       within(bar).getByRole("button", { name: COPY.bulk.standards }).hasAttribute("disabled"),
     ).toBe(true);
