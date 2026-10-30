@@ -40,6 +40,11 @@ from abacus.modules.integrations.catalog import (
 from abacus.modules.integrations.catalog_load import CatalogDocument, LoadPlan, plan_load
 
 # The routers the API mounts, in order (P-39; F-03-T07).
+from abacus.modules.integrations.engine_settings import (
+    FormatCheck,
+    engine_return_id,
+    register_engine_file_check,
+)
 from abacus.modules.integrations.engine_settings_contract import (
     engine_settings_router,
 )
@@ -81,6 +86,7 @@ __all__ = [
     "CatalogDocument",
     "CatalogEntry",
     "CatalogRow",
+    "FormatCheck",
     "IntegrationAdapter",
     "IntegrationCategory",
     "LoadPlan",
@@ -101,6 +107,7 @@ __all__ = [
     "egress_allowlist",
     "egress_hosts_by_connector",
     "egress_read_posts",
+    "engine_return_id",
     "erase_secret",
     "esign_install_secret",
     "execute_write",
@@ -111,6 +118,7 @@ __all__ = [
     "plan_load",
     "policy_refusal",
     "register_adapter",
+    "register_engine_file_check",
     "registered_adapter",
     "registered_keys",
     "registry",

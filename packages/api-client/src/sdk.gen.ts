@@ -6220,6 +6220,8 @@ export const publishIndependenceStatement = <ThrowOnError extends boolean = fals
 
 /**
  * Put Office Mapping Route
+ *
+ * ADM-08 b: the office mapping, replaced with the rows sent.
  */
 export const putOfficeMapping = <ThrowOnError extends boolean = false>(options: Options<PutOfficeMappingData, ThrowOnError>): RequestResult<PutOfficeMappingResponses, PutOfficeMappingErrors, ThrowOnError> => (options.client ?? client).put<PutOfficeMappingResponses, PutOfficeMappingErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -6233,6 +6235,8 @@ export const putOfficeMapping = <ThrowOnError extends boolean = false>(options: 
 
 /**
  * Engine Settings Route
+ *
+ * ADM-08 a: the cells with their locks and the mappings.
  */
 export const engineSettings = <ThrowOnError extends boolean = false>(options: Options<EngineSettingsData, ThrowOnError>): RequestResult<EngineSettingsResponses, EngineSettingsErrors, ThrowOnError> => (options.client ?? client).get<EngineSettingsResponses, EngineSettingsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -6242,6 +6246,9 @@ export const engineSettings = <ThrowOnError extends boolean = false>(options: Op
 
 /**
  * Put Engine Settings Route
+ *
+ * ADM-08 a: save cells (fresh MFA). 409 `setting_locked`, `stale_version`; 422
+ * `setting_invalid`.
  */
 export const putEngineSettings = <ThrowOnError extends boolean = false>(options: Options<PutEngineSettingsData, ThrowOnError>): RequestResult<PutEngineSettingsResponses, PutEngineSettingsErrors, ThrowOnError> => (options.client ?? client).put<PutEngineSettingsResponses, PutEngineSettingsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -6270,6 +6277,8 @@ export const putStatusMirror = <ThrowOnError extends boolean = false>(options: O
 
 /**
  * Test Engine Route
+ *
+ * ADM-08 d: a format check of the latest engine file (codes only).
  */
 export const testEngine = <ThrowOnError extends boolean = false>(options: Options<TestEngineData, ThrowOnError>): RequestResult<TestEngineResponses, TestEngineErrors, ThrowOnError> => (options.client ?? client).post<TestEngineResponses, TestEngineErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -6279,6 +6288,8 @@ export const testEngine = <ThrowOnError extends boolean = false>(options: Option
 
 /**
  * Put User Mapping Route
+ *
+ * ADM-08 b: the user mapping, replaced with the rows sent.
  */
 export const putUserMapping = <ThrowOnError extends boolean = false>(options: Options<PutUserMappingData, ThrowOnError>): RequestResult<PutUserMappingResponses, PutUserMappingErrors, ThrowOnError> => (options.client ?? client).put<PutUserMappingResponses, PutUserMappingErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

@@ -13990,6 +13990,10 @@ export type FormatCheckOut = {
      * Problems
      */
     problems: Array<string>;
+    /**
+     * Returns Read
+     */
+    returns_read?: number | null;
 };
 
 /**
@@ -64257,10 +64261,6 @@ export type PutOfficeMappingErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PutOfficeMappingError = PutOfficeMappingErrors[keyof PutOfficeMappingErrors];
@@ -64313,10 +64313,6 @@ export type EngineSettingsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EngineSettingsError = EngineSettingsErrors[keyof EngineSettingsErrors];
@@ -64373,10 +64369,6 @@ export type PutEngineSettingsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PutEngineSettingsError = PutEngineSettingsErrors[keyof PutEngineSettingsErrors];
@@ -64433,10 +64425,6 @@ export type PutStatusMirrorErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PutStatusMirrorError = PutStatusMirrorErrors[keyof PutStatusMirrorErrors];
@@ -64489,10 +64477,6 @@ export type TestEngineErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TestEngineError = TestEngineErrors[keyof TestEngineErrors];
@@ -64549,10 +64533,6 @@ export type PutUserMappingErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PutUserMappingError = PutUserMappingErrors[keyof PutUserMappingErrors];

@@ -33,3 +33,6 @@ not_yet_exported · ready_for_export · exporting · synced · out_of_sync · im
 
 ## 5. Events
 Outbox: `tax_return.approved`, `engine_sync.exported`, `engine_sync.failed`, `engine_sync.imported`, `engine_import.pending_approval` (identifiers and counts only). Audit: `return.final_approved`, `engine_export.generated`, `.downloaded`, `.marked_exported`, `engine_import.uploaded`, `.approved`, `.rejected`, `engine.diagnostic_received`, `integration.settings_updated`, `.mapping_updated`, `.tested`.
+
+## 8. ADM-08 settings, live since T-01-T20
+Cells (stored as `integration_mappings`): `return_id_template` (default `{Tax year}{Type}:{Client code}:V{n}`; must keep `{Tax year}`, `{Client code}` and end `:V{n}`), `client_code_rule`, `type_letter.<form>`, `who_may_export` (`reviewer_manager_signer`, `manager_signer` or `signer`: narrower only), and the locked `export_after_final_approval`, `import_requires_approval` (`stricter_only`) and `status_push` (`file_mode_has_no_push`). Mappings replace the kind's rows; `workflow_status` keys are return status codes. Every save carries the install's `version`. 409 `setting_locked`, `mapping_conflict`, `stale_version`; 422 `setting_invalid`. `POST …/test` returns codes only (`no_engine_file`, `check_failed`, or the holder's) and `returns_read` (additive).
