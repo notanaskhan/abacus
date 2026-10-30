@@ -74,6 +74,9 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 |---|---|---|---|
 | Sample set | A selection of items chosen for testing. Re-performable: carries `seed` and `algorithm_version` (P-57). | `sample_set` (`sample_sets`, `seed`, `algorithm_version`) | `selection`, `sample_list` |
 | Sample item | One selected item, usually a transaction. | `sample_item` | `selection_row` |
+| Population | The records a sample is drawn from: an uploaded census or a general-ledger query, canonical rows with a SHA-256 and a total, immutable once built (A-03, ADR-340). | `population` (`populations`, `population_records`) | — |
+| Completeness tie | Code's comparison of a population's total to an independent figure, each side cited; reads tie, off n or Check. At least one is required before a draw and none may be off at approval. | `completeness_tie` (`completeness_ties`) | — |
+| Sample stratum | One amount band of a stratified sample: test all, draw at random, or none. | `sample_stratum` (`sample_strata`) | — |
 | Support match | The result of searching for a sample item's support: `found`, `not_found`, `doubtful`. | `support_match` | `match`, `lookup` |
 
 ## Agents and platform
@@ -339,6 +342,7 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Grouping | A heading of the statements (Cash and equivalents) with its class: assets, liabilities, equity, revenue or expenses. | `grouping` | — |
 | FS line | A line of the statements under a grouping, with its normal balance; account-number ranges map accounts to it. | `fs_line`, `fs_line_range_rules` | `caption` |
 | Mapping set | One trial balance of record's mapping to a published grouping set: rules from the ranges, people's edits on top (`mapping_set_edits`). "Mapping" names only this; request ↔ evidence links are fulfilments. | `mapping_set`, `mapping_set_edits` | `account_map` |
+| Account mapping | One trial-balance account's FS line in a mapping set: computed by rule (prior year, then number ranges) on read, or a person's edit recorded insert-only, the newest winning (ADR-341 §5). | `account_mapping` | — |
 | Trial balance of record | The one trial balance an audit work item uses for a client entity, label and period end: a named person adopts an immutable ledger snapshot as version 1, and a newer snapshot becomes the next version with a reason; nothing earlier changes (ADR-004). Only a human adopts (INV-1). UI "Trial balance" (AUD-06). | `trial_balances`, `trial_balance_versions`, actions `trial_balance.*` | — |
 | TB label | Which trial balance a snapshot or a trial balance of record is: Standard, Interim, Prior, Budget or Preliminary (registry `trial_balance_label`). Configurable labels wait for ADM-13 (G-03). UI chip "TB: Interim · 8/31/2026". | `label` (`trial_balances.label`, `ledger_snapshots.label`) | — |
 | Layer | A column set of the trial balance: Unadjusted, AJE, RJE or Final (registry `trial_balance_layer`). Code computes every layer; AJE, RJE and Final exist only once an adjustment source is registered, and answer `layer_unavailable` before. | `layer`, `register_adjustment_source` | — |
