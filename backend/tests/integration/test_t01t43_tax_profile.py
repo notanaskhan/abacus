@@ -13,7 +13,7 @@ import hashlib
 import json
 import re
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Mapping
 from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
@@ -23,8 +23,8 @@ import pytest
 
 from abacus.kernel.config import settings
 from abacus.kernel.db import configure_engine, dispose_engine
-from abacus.kernel.errors import DomainConflict
-from abacus.modules.identity.api import AuthContext
+from abacus.kernel.errors import DomainConflict, NotFound
+from abacus.modules.identity.api import AuthContext, Forbidden
 from abacus.modules.organisations import tax_profile as org_profile
 from abacus.modules.organisations.api import TaxElectionIn, TranscriptComparisonIn
 from abacus.modules.tax import api as tax_api  # registers the tax-profile backend
@@ -79,7 +79,7 @@ def _sha(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()
 
 
-async def _transcript(seed: Seeder, w: dict[str, object], name: str, kind: str) -> uuid.UUID:
+async def _transcript(seed: Seeder, w: Mapping[str, object], name: str, kind: str) -> uuid.UUID:
     """A transcript as the upload stores it: its staged file, evidence version and parsed lines."""
     text = (GOLDEN / name).read_text(encoding="utf-8")
     parsed = parse_transcript(text, cast(TranscriptKind, kind))
@@ -341,3 +341,37 @@ async def test_ac34_transcript_rows_are_insert_only(seed: Seeder, whitley: Whitl
     ):
         with pytest.raises(Exception, match="insert-only"):
             await seed.run(sql, whitley.transcript)
+
+
+async def test_ac35_a_return_on_an_engagement_the_caller_is_not_on_is_refused(
+    seed: Seeder, whitley: Whitley
+) -> None:
+    """The client's tax profile is readable, but the return sits on another engagement of the
+    client that the caller is not on: its figures stay unread (INV-3)."""
+    other = await seed.engagement(whitley.tenant, whitley.entity, whitley.kevin.user_id)
+    item = cast(
+        uuid.UUID,
+        await seed.value(
+            "INSERT INTO work_items (tenant_id, engagement_id, client_id, client_entity_id, kind, "
+            "name, created_by) VALUES ($1, $2, $3, $4, 'tax_return', '2024 Form 1040 B', $5) "
+            "RETURNING id",
+            whitley.tenant,
+            other,
+            whitley.client,
+            whitley.entity,
+            whitley.kevin.user_id,
+        ),
+    )
+    await seed.run(
+        "INSERT INTO tax_returns (tenant_id, work_item_id, engagement_id, client_entity_id, form, "
+        "tax_year) VALUES ($1, $2, $3, $4, '1040', 2024)",
+        whitley.tenant,
+        item,
+        other,
+        whitley.entity,
+    )
+    await _approved_import(seed, whitley.tenant, other, item, whitley.kevin)
+    with pytest.raises((Forbidden, NotFound)):
+        await tax_profile.compare(
+            whitley.ctx, whitley.transcript, TranscriptComparisonIn(return_id=item)
+        )

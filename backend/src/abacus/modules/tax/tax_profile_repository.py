@@ -99,7 +99,7 @@ _INSERT_COMPARISON = text(
     ":user) RETURNING computed_at"
 )
 _RETURN = text(
-    "SELECT work_item_id, client_entity_id, tax_year, form FROM tax_returns "
+    "SELECT work_item_id, engagement_id, client_entity_id, tax_year, form FROM tax_returns "
     "WHERE work_item_id = :id"
 )
 
@@ -150,7 +150,10 @@ async def insert_transcript(session: AsyncSession, values: Values) -> None:
     await session.execute(_INSERT_TRANSCRIPT, dict(values))
 
 
-async def insert_lines(session: AsyncSession, rows: Sequence[Mapping[str, Any]]) -> None:
+LineRow = Mapping[str, Any]  # Any: a line's bind values (uuid, int, text, Decimal, date)
+
+
+async def insert_lines(session: AsyncSession, rows: Sequence[LineRow]) -> None:
     if rows:
         await session.execute(_INSERT_LINE, [dict(r) for r in rows])
 
