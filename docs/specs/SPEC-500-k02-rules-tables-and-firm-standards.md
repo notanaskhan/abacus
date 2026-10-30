@@ -78,6 +78,12 @@ Two kinds of versioned, effective-dated rules (K-02 short version): **platform r
 - **AC-32** Discard keeps the row as `discarded`; the diff lists changed cells by JSON pointer with before and after strings, against the version a draft came from by default.
 - **AC-33** The examples slot (`register_standard_examples`) answers `provider_registered: false` with no rows until a provider registers; a provider's rows are already `visible()`-filtered, and no hidden count is shown (DEC-43, US-3.6).
 - **AC-34** `current_version(tenant_id, key, as_of)` names the version in effect (`LookupError` before the first effective date or for an unknown key); a standard's owner must be a partner member (422 `owner_not_partner`), and a key is one standard per firm (409 `standard_key_taken`). KNW-01's `firm_standards` category lists one card per published standard and a change-log entry per published version; the C15 projection `firm_standard` carries the name and kind only.
+- **AC-39** (K-02-T10) `classify_entry`: an attest client's entry is always held (`attest_client`, the always-held row's approver) whatever the amount; a listed class is within threshold up to its limit inclusive and review required above it (`over_limit`); an unlisted class is review required (`unlisted_class`); every result names its policy version.
+- **AC-40** (K-02-T10) `variance_exceeded` is true only when the change is strictly over both the percent and the amount for its context (a zero prior: the amount alone).
+- **AC-41** (K-02-T10) `materiality_range_for` and `validate_materiality` answer the firm's range per engagement kind and whether a partner's chosen percentages sit inside it (inclusive), with performance materiality and the clearly-trivial percentage.
+- **AC-42** (K-02-T10) `confidence_hold` holds below the floor and never auto-accepts while the payload cannot enable it.
+- **AC-43** (K-02-T10) `required_review_levels` and `return_approval_policy` answer a tier's levels and the client's signing partner (None when unassigned, never a default); a missing row is 422 `standard_row_missing`.
+- **AC-44** (K-02-T10) `ssars_framework_for` answers CAS by-product for periods ending on or after Dec 15, 2026 (or any period once SSARS 27 is adopted early), AR-C 70 preparation before.
 
 ## 4. Out of scope here
 The CLI, import and export, fan-out and KNW-04i/j (K-02-T06 to T12, T14 to T20) build against the same contract in later sprints.
