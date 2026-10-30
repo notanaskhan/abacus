@@ -129,7 +129,9 @@ describe("TPL-19 frames 3 to 6, 8 and permission off", () => {
     const card = frame(container, "tpl-19-6-ring").querySelector<HTMLElement>(
       '[data-request="aca"]',
     );
-    expect(within(card as HTMLElement).getByRole("progressbar", { name: /^Uploading/u })).toBeTruthy();
+    expect(
+      within(card as HTMLElement).getByRole("progressbar", { name: /^Uploading/u }),
+    ).toBeTruthy();
     expect(within(card as HTMLElement).queryByRole("button", { name: /Upload…/u })).toBeNull();
   });
 
@@ -148,12 +150,17 @@ describe("TPL-19 capture flow on frame 2", () => {
   it("Upload… opens the action sheet; a photo opens Review & assign; Upload lands the receipt", () => {
     const { container } = render(<Tpl19Specimen />);
     const docs = frame(container, "tpl-19-2");
-    fireEvent.click(within(docs).getByRole("button", { name: "Upload… Form 1095-C From Mercer Hill Health" }));
+    fireEvent.click(
+      within(docs).getByRole("button", { name: "Upload… Form 1095-C From Mercer Hill Health" }),
+    );
     const sheet = within(docs).getByRole("dialog", { name: /Upload…/u });
     const camera = sheet.querySelector<HTMLInputElement>('[data-capture-input="camera"]');
     expect(camera?.getAttribute("capture")).toBe("environment");
     expect(camera?.getAttribute("accept")).toBe("image/*");
-    const pages = [new File(["p1"], "p1.jpg", { type: "image/jpeg" }), new File(["p2"], "p2.jpg", { type: "image/jpeg" })];
+    const pages = [
+      new File(["p1"], "p1.jpg", { type: "image/jpeg" }),
+      new File(["p2"], "p2.jpg", { type: "image/jpeg" }),
+    ];
     URL.createObjectURL = () => "blob:page";
     fireEvent.change(camera as HTMLInputElement, { target: { files: pages } });
     const review = within(docs).getByRole("dialog", { name: "Review & assign" });

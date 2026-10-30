@@ -41,7 +41,10 @@ export function UploadActionSheet({
       if (files.length > 0) onFiles(files, source);
     };
   return (
-    <div data-capture="action-sheet" className="absolute inset-0 z-(--z-menu) flex flex-col justify-end">
+    <div
+      data-capture="action-sheet"
+      className="absolute inset-0 z-(--z-menu) flex flex-col justify-end"
+    >
       <div aria-hidden="true" className="flex-1 bg-espresso/30" onClick={onClose} />
       <div
         role="dialog"
@@ -202,7 +205,9 @@ export function ReviewAssignSheet({
           aria-label="Add to request"
           value={selected ?? SOMETHING_ELSE}
           onChange={(event) => {
-            onSelect(event.currentTarget.value === SOMETHING_ELSE ? null : event.currentTarget.value);
+            onSelect(
+              event.currentTarget.value === SOMETHING_ELSE ? null : event.currentTarget.value,
+            );
           }}
           className="absolute inset-0 cursor-pointer opacity-0"
         >

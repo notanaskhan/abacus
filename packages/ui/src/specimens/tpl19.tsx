@@ -102,7 +102,9 @@ function Phone({
     sections: TPL07_SECTIONS,
     onOpen: () => undefined,
   });
-  const open = binder.items.filter((r) => r.st === "req").map((r) => ({ id: r.id, title: r.title }));
+  const open = binder.items
+    .filter((r) => r.st === "req")
+    .map((r) => ({ id: r.id, title: r.title }));
   const upload = (): void => {
     if (target !== null) {
       binder.update(target, (r) => applyUpload(r, TPL19_COPY.stitched.fileName, TPL19_COPY.today));
@@ -230,13 +232,28 @@ export function Tpl19Specimen(): JSX.Element {
       >
         <Phone tab="Documents" />
       </Artboard>
-      <Artboard id="tpl-19-3" badge="TPL-19 · 3" name="Camera, page 1" note={alt("Camera, page 1")}>
+      <Artboard
+        id="tpl-19-3"
+        badge="TPL-19 · 3"
+        name="Camera, page 1"
+        note={alt("Camera, page 1")}
+      >
         <DeferredFrame />
       </Artboard>
-      <Artboard id="tpl-19-4" badge="TPL-19 · 4" name="Camera, page 2" note={alt("Camera, page 2")}>
+      <Artboard
+        id="tpl-19-4"
+        badge="TPL-19 · 4"
+        name="Camera, page 2"
+        note={alt("Camera, page 2")}
+      >
         <DeferredFrame />
       </Artboard>
-      <Artboard id="tpl-19-5" badge="TPL-19 · 5" name="Review & assign" note={alt("Review & assign")}>
+      <Artboard
+        id="tpl-19-5"
+        badge="TPL-19 · 5"
+        name="Review & assign"
+        note={alt("Review & assign")}
+      >
         <ReviewFrame />
       </Artboard>
       <Artboard
@@ -261,12 +278,7 @@ export function Tpl19Specimen(): JSX.Element {
       <Artboard id="tpl-19-8" badge="TPL-19 · 8" name="Low-quality warning" note="R-03 (DEC-97)">
         <DeferredFrame />
       </Artboard>
-      <Artboard
-        id="tpl-19-perm"
-        badge="TPL-19"
-        name="Camera permission off"
-        note="R-03 (DEC-97)"
-      >
+      <Artboard id="tpl-19-perm" badge="TPL-19" name="Camera permission off" note="R-03 (DEC-97)">
         <DeferredFrame />
       </Artboard>
     </div>
