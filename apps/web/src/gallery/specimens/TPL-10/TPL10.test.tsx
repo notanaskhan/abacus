@@ -41,7 +41,7 @@ describe("TPL-10", () => {
   it("a · the draft shows its five citations and lights the cited row", async () => {
     show("a");
     const markers = Array.from(document.querySelectorAll("[data-doc='paragraph'] button"));
-    expect(markers.map((b) => b.textContent?.trim())).toEqual(["1", "2", "3", "4", "5"]);
+    expect(markers.map((b) => b.textContent.trim())).toEqual(["1", "2", "3", "4", "5"]);
     expect(screen.getByText("1,231,600")).toBeTruthy();
     const first = markers[0];
     if (first === undefined) throw new Error("no marker");
