@@ -263,7 +263,7 @@ async def add_authorization(
         tx.record(
             "tax_authorization.added",
             target=Target("tax_authorization", authorization_id),
-            after=Ref(form=body.form, designees=len(designees), evidence_version_id=version_id),
+            after=Ref(designees=len(designees), evidence_version_id=version_id),
             scope=Scope(client_id=client_id),
         )
     async with tenant_session(ctx.tenant) as session:
@@ -341,7 +341,7 @@ async def put_election(
         tx.record(
             "tax_election.updated",
             target=Target("client_entity", entity_id),
-            after=Ref(kind=kind, tax_year=body.tax_year, row_version=version),
+            after=Ref(tax_year=body.tax_year, row_version=version),
             scope=Scope(client_id=client_id),
         )
     return TaxElectionOut(
@@ -497,9 +497,8 @@ async def upload_transcript(
             "transcript.uploaded",
             target=Target("transcript", transcript_id),
             after=Ref(
-                kind=body.kind,
                 tax_year=body.tax_year,
-                parse_status="parsed" if parsed.parsed else "failed",
+                parsed=int(parsed.parsed),
                 lines=len(parsed.information_returns) + len(parsed.transactions),
                 evidence_version_id=version_id,
             ),
@@ -688,7 +687,6 @@ async def compare(
                 comparison_id=comparison_id,
                 return_id=body.return_id,
                 checkpoint_id=as_filed.checkpoint_id,
-                result=result.result,
                 differing=len(result.differing),
             ),
             scope=Scope(client_id=client_id),

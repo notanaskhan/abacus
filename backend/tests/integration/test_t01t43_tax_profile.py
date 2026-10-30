@@ -111,13 +111,14 @@ async def _transcript(seed: Seeder, w: dict[str, object], name: str, kind: str) 
     version = await seed.value(
         "INSERT INTO evidence_versions (tenant_id, evidence_item_id, version_no, fingerprint, "
         "storage_key, storage_version_id, size_bytes, media_type, source, method, pulled_at, "
-        "channel, display_name) VALUES ($1, $2, 1, $3, 'probe', 'v1', $4, 'text/plain', "
+        "channel, display_name) VALUES ($1, $2, 1, $3, $6, 'v1', $4, 'text/plain', "
         "'irs_transcript', 'retrieved', now(), 'retrieval', $5) RETURNING id",
         tenant,
         item,
         _sha(text),
         len(text),
         name,
+        f"tenants/{tenant}/sha256/{_sha(text)}",
     )
     transcript = uuid.uuid4()
     await seed.run(
@@ -190,7 +191,8 @@ async def whitley(seed: Seeder) -> Whitley:
     )
     await seed.run(
         "UPDATE client_entities SET entity_type = 'individual', tin_kind = 'ssn', "
-        "tin_last4 = '4410', tin_status = 'on_file' WHERE id = $1",
+        "tin_last4 = '4410', tin_status = 'on_file', tin_sealed = '\\x00'::bytea, "
+        "tin_fingerprint = sha256('probe'::bytea) WHERE id = $1",
         entity,
     )
     engagement = await seed.engagement(tenant, entity, kevin.user_id)

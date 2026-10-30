@@ -19,7 +19,7 @@ row-level security.
   pull or a new comparison is a new row. Lines, amounts and comparisons are TRI.
 
 Revision ID: 0550
-Revises: 0430
+Revises: 0406
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, insert_only, tenant_table
 
 revision = "0550"
-down_revision = "0430"
+down_revision = "0406"
 branch_labels = None
 depends_on = None
 

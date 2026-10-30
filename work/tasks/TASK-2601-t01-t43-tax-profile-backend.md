@@ -34,7 +34,7 @@ table list; SPEC-501 AC-30–34; DEC-1651; C19 contract doc; protected paths.
 (T-01-T50); the ADR-078 suite (T-01-T49).
 
 ## Plan
-Ownership and seams per DEC-1651. Migration 0550 revises 0430 (main's head at branch time; re-chain
+Ownership and seams per DEC-1651. Migration 0550 revises 0406 (main's head at branch time; re-chain
 after S18/S20 migrations merge: 0460–0465, 0520–0521). Registry: tax `TABLES`, `INSERT_ONLY`,
 `INSERT_COLUMNS`, `UPDATE_COLUMNS`. Flags: `clients.tax_profile` (exists, default off).
 Tests: `tests/integration/test_t01t43_tax_profile.py` (AC-30 to AC-34). Security review at the
@@ -47,7 +47,7 @@ repository. 4. [x] Organisations routes and composite. 5. [x] Contract, generate
 ## Progress log
 - `2026-10-30` — Built on `s21-t01-t43` (stacked on `s21-t01-t45`). pyright and ruff clean on the
   touched modules; app imports; `make regenerate` and the error-code catalogue rebuilt. The
-  integration suite is written, not run (S21 end review). Moved the live routes out of
+  integration suite ran once: 5 passed (after re-chaining 0550 onto 0406 and identifier-only audit refs). Moved the live routes out of
   `consents_contract.py` into `organisations/tax_profile.py` to avoid an import cycle.
 
 ## Decisions made during this task
