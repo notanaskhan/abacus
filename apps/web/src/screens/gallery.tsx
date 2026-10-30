@@ -121,6 +121,12 @@ import {
   type Bnd02State,
   scenarios as bnd02Scenarios,
 } from "./BND-02/scenarios";
+import { HOME02 } from "./HOME-02";
+import {
+  type Home02State,
+  STATES as HOME02_STATES,
+  scenarios as home02Scenarios,
+} from "./HOME-02/scenarios";
 import { ClientsIndex } from "./CLI-01";
 import {
   STATES as CLI01_STATES,
@@ -1299,6 +1305,40 @@ function Home01Artboard({ params }: { params: FixtureParams }): JSX.Element | nu
 }
 
 registerScreen("HOME-01", { title: "Home dashboard", Component: Home01Artboard });
+
+function Home02Frame({ state }: { state: Home02State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/home/approvals" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <HOME02 toolbar={bar.toolbar} height={860} initialDone={state === "show_done"} />
+    </div>
+  );
+}
+
+function Home02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Home02State = HOME02_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      home02Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Home02Frame key={state} state={state} /> : null;
+}
+
+registerScreen("HOME-02", { title: "My approvals & review queue", Component: Home02Artboard });
 
 function Knw01Frame({ state }: { state: Knw01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";

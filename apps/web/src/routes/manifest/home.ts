@@ -10,7 +10,15 @@ export const homeScreens = {
     path: "/home",
     navArea: "Home",
   },
-  "HOME-02": { name: "My approvals & review queue", status: "planned", path: null },
+  // I-01-T16: the queue on fixtures behind `home.approvals`; detail T17, evidence T18, bulk T19.
+  "HOME-02": {
+    name: "My approvals & review queue",
+    // Fixture-built (I-01-T16); planned until its designed links are wired (link-contract rule 1)
+    // and walked on staging (DEC-195; DEC-1272).
+    status: "planned",
+    path: "/home/approvals",
+    navArea: "Home",
+  },
   "HOME-03": { name: "Deadlines calendar", status: "planned", path: null },
   "HOME-04": { name: "Capacity & resource planner", status: "planned", path: null },
   "HOME-05": { name: "Home with Today brief", status: "planned", path: null, navArea: "Home" },
