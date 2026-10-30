@@ -287,6 +287,10 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "consent.expiring": Kind(
         "consent_expiring", _consent_requester, "consent", "consent_id", None
     ),
+    # K-02-T12: a platform rules table (due dates, holidays, thresholds…) took effect.
+    "reference_set.published": Kind(
+        "rules_table_updated", _admins, "reference_set_version", "version_id", None
+    ),
     "support_session.requested": Kind(
         "support_session.requested", _admins, "support_session", "session_id", None
     ),
@@ -472,6 +476,7 @@ def register_kind_source(
 
 TEMPLATES: Final[dict[str, str]] = {
     "consent.expiring": "A §7216 consent expires within 30 days. Renew it from the consent registry.",
+    "reference_set.published": "A rules table Accrued maintains was updated. Due dates follow it.",
     "support_session.requested": "Platform support asked for access to your firm.",
     "support_session.emergency_approved": (
         "Platform support opened emergency access to your firm. Please review it."

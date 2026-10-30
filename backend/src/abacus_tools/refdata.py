@@ -313,7 +313,7 @@ async def publish(args: argparse.Namespace) -> str:
         )
     finally:
         await conn.close()
-    return f"published {args.version}"
+    return f"published {args.version}" + await _fanout(args.version, "published")
 
 
 async def withdraw(args: argparse.Namespace) -> str:
@@ -330,7 +330,47 @@ async def withdraw(args: argparse.Namespace) -> str:
         )
     finally:
         await conn.close()
-    return f"withdrew {args.version}"
+    return f"withdrew {args.version}" + await _fanout(args.version, "withdrawn")
+
+
+_FACTS = (
+    "SELECT v.set_key, p.operator, p.approver FROM reference_set_publications p "
+    "JOIN reference_set_versions v ON v.id = p.version_id "
+    "WHERE p.version_id = $1 AND p.action = $2 ORDER BY p.at DESC LIMIT 1"
+)
+
+
+async def _fanout(version: str, action: str) -> str:
+    """K-02-T12: tell every firm (one run per version and action; idempotent per tenant). The
+    owner role reads the handles and the active tenants; the run gets them as its input."""
+    from abacus.modules.platform.api import FanOutInput, start_reference_fanout
+
+    try:
+        conn = await connect(_owner_dsn())
+        try:
+            facts = await conn.fetchrow(_FACTS, version, action)
+            tenants = [str(r[0]) for r in await conn.fetch("SELECT * FROM active_tenant_ids()")]
+        finally:
+            await conn.close()
+        if facts is None:
+            return f"; nothing was {action} under {version}"
+        await start_reference_fanout(
+            FanOutInput(
+                version,
+                action,
+                str(facts["set_key"]),
+                str(facts["operator"]),
+                str(facts["approver"]),
+                tenants,
+            )
+        )
+    except Exception as exc:  # the version is published; the fan-out can be started again
+        return f"; fan-out not started ({type(exc).__name__}): run `refdata fanout` again"
+    return "; fan-out started"
+
+
+async def fanout(args: argparse.Namespace) -> str:
+    return "fan-out" + await _fanout(args.version, args.action)
 
 
 def parser() -> argparse.ArgumentParser:
@@ -359,12 +399,21 @@ def parser() -> argparse.ArgumentParser:
     w.add_argument("--operator", required=True)
     w.add_argument("--approver", required=True)
     w.add_argument("--reason", required=True)
+    o = sub.add_parser("fanout")
+    o.add_argument("--version", required=True)
+    o.add_argument("--action", choices=("published", "withdrawn"), default="published")
     return root
 
 
 def main(argv: Sequence[str]) -> int:
     args = parser().parse_args(list(argv))
-    commands = {"draft": draft, "diff": show_diff, "publish": publish, "withdraw": withdraw}
+    commands = {
+        "draft": draft,
+        "diff": show_diff,
+        "publish": publish,
+        "withdraw": withdraw,
+        "fanout": fanout,
+    }
     try:
         guard()
         print(asyncio.run(commands[args.command](args)))
