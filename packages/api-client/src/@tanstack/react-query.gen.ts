@@ -16867,6 +16867,8 @@ export const returnRecordQueryKey = (options: Options<ReturnRecordData>) => crea
 
 /**
  * Return Record Route
+ *
+ * TAX-02's record: the row, the engine id, the policy pin, the tabs (T-02-T13).
  */
 export const returnRecordOptions = (options: Options<ReturnRecordData>) => queryOptions<ReturnRecordResponse, ReturnRecordError, ReturnRecordResponse, ReturnType<typeof returnRecordQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -17197,6 +17199,9 @@ export const returnOverviewQueryKey = (options: Options<ReturnOverviewData>) => 
 
 /**
  * Return Overview Route
+ *
+ * TAX-02's overview (T-02-T13): metadata for every reader of the return; the engine figures
+ * only with `tax_return.read` (absent, not masked, otherwise).
  */
 export const returnOverviewOptions = (options: Options<ReturnOverviewData>) => queryOptions<ReturnOverviewResponse, ReturnOverviewError, ReturnOverviewResponse, ReturnType<typeof returnOverviewQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -17213,6 +17218,9 @@ export const returnOverviewOptions = (options: Options<ReturnOverviewData>) => q
 
 /**
  * Transition Route
+ *
+ * `start_preparation` or `start_review` at the version seen (T-02-T13). 409
+ * `transition_refused`, `stale_version`.
  */
 export const transitionMutation = (options?: Partial<Options<TransitionData>>): UseMutationOptions<TransitionResponse, TransitionError, Options<TransitionData>> => {
     const mutationOptions: UseMutationOptions<TransitionResponse, TransitionError, Options<TransitionData>> = {

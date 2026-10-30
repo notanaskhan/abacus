@@ -27,6 +27,7 @@ from abacus.modules.tax.due_dates import (
 from abacus.modules.tax.engine_contract import engine_router
 from abacus.modules.tax.k1_contract import k1_router, portal_k1_router
 from abacus.modules.tax.kind import TaxReturnKind
+from abacus.modules.tax.overview import on_binder_published, on_sign_off_recorded
 from abacus.modules.tax.returns_routes import returns_router
 from abacus.modules.tax.status import TRANSITIONS, StaleReturn, TransitionRefused, next_status
 from abacus.modules.tax.tax_profile import register as register_tax_profile
@@ -62,6 +63,9 @@ SUBSCRIPTIONS = {
     "reference_set.published": on_reference_set_published,
     # T-01-T10: a completed `consent_set` envelope signs its consents (C7 → C19).
     "envelope.completed": consent_capture.on_envelope_completed,
+    # T-02-T13: the record projection (a published binder opens intake; the L1 marks prepared).
+    "binder.published": on_binder_published,
+    "sign_off.recorded": on_sign_off_recorded,
 }
 # The worker collects every module's parts once it has subscriptions; tax has no workflows or
 # activities of its own yet (an absent attribute stopped the worker at start).

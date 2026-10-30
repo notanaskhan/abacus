@@ -81830,10 +81830,6 @@ export type ReturnRecordErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ReturnRecordError = ReturnRecordErrors[keyof ReturnRecordErrors];
@@ -82903,10 +82899,6 @@ export type ReturnOverviewErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ReturnOverviewError = ReturnOverviewErrors[keyof ReturnOverviewErrors];
@@ -82963,10 +82955,6 @@ export type TransitionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TransitionError = TransitionErrors[keyof TransitionErrors];

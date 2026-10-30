@@ -23,15 +23,23 @@ ROUTES = [
     ("get", "/v1/tax-returns/summary", "tax_return.read_metadata"),
     ("post", "/v1/tax-returns:bulk-assign", "tax_return.assign"),
     ("get", "/v1/tax-returns/{return_id}", "tax_return.read_metadata"),
-    ("get", "/v1/tax-returns/{return_id}/overview", "tax_return.read"),
+    ("get", "/v1/tax-returns/{return_id}/overview", "tax_return.read_metadata"),
     ("get", "/v1/tax-returns/{return_id}/intake", "tax_return.read"),
     ("post", "/v1/tax-returns/{return_id}/assignments", "tax_return.assign"),
     ("post", "/v1/tax-returns/{return_id}/transitions", "tax_return.status_change"),
 ]
 
 
-# Built: T-02-T09 serves the board (rows, tiles, bulk assignment); the rest wait for T-02-T13.
-LIVE = {"/v1/tax-returns", "/v1/tax-returns/summary", "/v1/tax-returns:bulk-assign"}
+# Built: T-02-T09 serves the board (rows, tiles, bulk assignment); T-02-T13 the record, the
+# overview and the two requestable transitions; intake and single assignment wait for theirs.
+LIVE = {
+    "/v1/tax-returns",
+    "/v1/tax-returns/summary",
+    "/v1/tax-returns:bulk-assign",
+    "/v1/tax-returns/{return_id}",
+    "/v1/tax-returns/{return_id}/overview",
+    "/v1/tax-returns/{return_id}/transitions",
+}
 
 
 @pytest.mark.parametrize(("method", "path", "action"), ROUTES)
