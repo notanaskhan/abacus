@@ -3,8 +3,8 @@
 // Ferris household (f: envelope E17, Morgan ✓ Sep 9, Kai ○). The consents are ADM-05's rows
 // (`seed/consents.ts`), so the registry and the profile agree. The identity band carries the last
 // four only (DEC-52); a reveal answers the seed's synthetic value, never a real TIN.
-// T-01-T34 adds the 8821's designees with CAF last four only (c), Ridgeline Property Partners,
-// LP's elections (e) and Aurelio Santos with no authorization on file (g).
+// T-01-T34 adds the 8821's designees with CAF last four only (c), Ridgeline's elections (e)
+// and Aurelio Santos with no authorization on file (g).
 import type { ConsentOut, TaxProfileOut } from "@abacus/api-client";
 import { REGISTRY_CONSENTS } from "./consents";
 import { stableId } from "./prng";
