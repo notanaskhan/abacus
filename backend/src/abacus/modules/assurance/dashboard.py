@@ -14,9 +14,10 @@ from typing import Final, Literal
 from uuid import UUID
 
 from abacus.kernel.clock import today
+from abacus.modules.assurance.mapping import mapping_with_prior
 from abacus.modules.engagements.api import gate_fact, get_ref, progress_of
 from abacus.modules.identity.api import AuthContext, TargetFacts, authorise, could
-from abacus.modules.ledger.api import engagement_trial_balances, mapping_view
+from abacus.modules.ledger.api import engagement_trial_balances
 from abacus.modules.requests.api import overdue_for, request_items_for
 from abacus.modules.review.api import (
     LevelState,
@@ -161,7 +162,7 @@ async def dashboard_for(ctx: AuthContext, engagement_id: UUID) -> Dashboard:
                 any(c.result.status == "off" for c in checks),
             )
         )
-        mapped = await mapping_view(ctx.tenant, engagement_id, tb.id)
+        mapped = await mapping_with_prior(ctx.tenant, engagement_id, tb.id)
         if mapped is not None:
             tiles.append(
                 Tile(
