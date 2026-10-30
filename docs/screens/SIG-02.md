@@ -8,7 +8,7 @@
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/SIG-02 Envelope builder - Form 8879-PE - Harborview/` · HANDOFF_VERSION 2026-10-21; DF-12 applied (fields placed with provider tagging) |
 | Epic and tasks | N-02 · contract T05; stub T03; builder T20, T21, T30; dated letters T31; parity T40 |
 | Spec and ADRs | SPEC-381 AC-7, AC-8, AC-16; ADR-149, ADR-161 |
-| Flags | `signatures.envelopes`; sends behind `signatures.docusign` and, for the 8879 family, `signatures.kba_8879` |
+| Flags | `signatures.envelopes`; sends behind `signatures.esign_provider` and, for the 8879 family, `signatures.kba_8879` |
 | Manifest status | planned; `fixture` with T20; `live` with T22 |
 
 ## States
@@ -16,7 +16,7 @@ Clock Mon Sep 14, 2026, 9:40 AM CT.
 
 | Artboard | Viewer | Data condition | Parity tier | Status |
 |---|---|---|---|---|
-| a | grace-holloway | (built · fixture, T21) Harborview 8879-PE draft, ready; line 4 traces to the exported Schedule K; identity KBA (policy `efile_authorization`) | C report; C lock before M10 | live with T22 (send needs `signatures.docusign`) |
+| a | grace-holloway | (built · fixture, T21) Harborview 8879-PE draft, ready; line 4 traces to the exported Schedule K; identity KBA (policy `efile_authorization`) | C report; C lock before M10 | live with T22 (send needs `signatures.esign_provider`) |
 | b | grace-holloway | Joint 8879 (Feld) from TAX-12: parallel signers, each with KBA | C report | live with T25 |
 | c | grace-holloway | Rep letter (Northwind) from AUD-21, `date_as_of_mode = report_date` | C report | live with T31 |
 | d | grace-holloway | Notice response (Whitley) from NOT-03 | C report | **fixture-only** until N-04 registers the `notice_response` source |

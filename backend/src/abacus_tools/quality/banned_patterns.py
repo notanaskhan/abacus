@@ -2520,8 +2520,6 @@ RULES: list[Rule | TreeRule] = [
         exclude=(
             "src/abacus/modules/identity/tokens.py",
             "src/abacus_tools/fakes/identity.py",
-            # N-02-T18 (DEC-1179): signs DocuSign's outbound OAuth assertion; reads no token.
-            "src/abacus/modules/signatures/docusign.py",
         ),
     ),
     Rule(
@@ -2538,8 +2536,6 @@ RULES: list[Rule | TreeRule] = [
             # A-02-T26 (DEC-709): a live connector sets the provider's Authorization on its own
             # outbound reads through `kernel.egress`; it never reads an inbound request.
             "src/abacus/modules/connections/connectors/quickbooks_online.py",
-            # N-02-T18 (DEC-1179): the DocuSign adapter's outbound calls, the same way.
-            "src/abacus/modules/signatures/docusign.py",
         ),
     ),
     Rule(
