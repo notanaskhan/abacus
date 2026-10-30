@@ -173,12 +173,15 @@ def workbook(
     values: dict[str, dict[str, object]],
     at: datetime,
 ) -> bytes:
-    """Sheet `Return` and sheet `Fields` (contract §6), the same bytes for the same input."""
+    """Sheet `Return` (a key, value header, then `return_id` without its version, `tax_year`,
+    `form`) and sheet `Fields` (contract §6), the same bytes for the same input; the fake engine's
+    `read_export` reads it as the engine would."""
     book = Workbook()
     head = book.active
     if head is None:  # openpyxl always makes one sheet
         head = book.create_sheet()
     head.title = "Return"
+    head.append(["key", "value"])
     for row in (("return_id", engine_id), ("tax_year", str(tax_year)), ("form", form)):
         head.append(list(row))
     fields = book.create_sheet("Fields")
@@ -325,7 +328,7 @@ async def export_return(ctx: AuthContext, return_id: UUID, checkpoint_id: UUID) 
     at = datetime(int(facts.tax_year) + 1, 1, 1, tzinfo=UTC)
     values = await current_values(ctx.tenant, TARGET, return_id)
     content_bytes = workbook(
-        engine_id=f"{engine_id}:V{version}",
+        engine_id=engine_id,
         tax_year=int(facts.tax_year),
         form=form,
         values=values,
