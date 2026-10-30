@@ -52,7 +52,7 @@ _exports: list[_Exports | None] = [None]
 
 # Each kind writes under the bucket's one task-role prefix, `exports/` (infra s3-exports), beside
 # the engagement exports' `exports/<tenant>/...` (a kind is never a UUID, so they never meet).
-BundleKind = Literal["audit-log", "wisp-pack"]
+BundleKind = Literal["audit-log", "wisp-pack", "consent-register"]  # T-01-T16: the C19 CSV
 
 
 def configure_export_bundles(client: S3Client, bucket: str, owner: str | None = None) -> None:

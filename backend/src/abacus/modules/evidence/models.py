@@ -505,3 +505,18 @@ class DocumentClassification(Base):
     confirmed_by: Mapped[UUID | None]
     confirmed_at: Mapped[datetime | None]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class DuplicateResolution(Base):
+    """A person's decision on a flagged duplicate upload (T-02-T17, 0468; insert-only)."""
+
+    __tablename__ = "duplicate_resolutions"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    version_id: Mapped[UUID]
+    kept_version_id: Mapped[UUID]
+    decision: Mapped[str]
+    decided_by: Mapped[UUID]
+    at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

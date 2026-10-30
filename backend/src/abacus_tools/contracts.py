@@ -14,7 +14,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import cast
+from typing import Final, cast
 
 from abacus.api.export_openapi import document
 
@@ -398,13 +398,72 @@ MODELS: dict[str, tuple[str, ...]] = {
         "IssueSeverityStatus",
         "CheckpointStatus",
     ),
+    # C11 v1 renderer and templates (P-11-T07; frozen at the S18 Contract Monday, SPEC-520 AC-28):
+    # every C11 model, the DocBlock union included (c11-renderer.md §6).
+    "c11_renderer": (
+        "BlockDiffOut",
+        "ChangedVariableOut",
+        "ChangesOut",
+        "CiteRun",
+        "ClauseBlock-Input",
+        "ClauseBlock-Output",
+        "ClauseDefOut-Input",
+        "ClauseDefOut-Output",
+        "CompareOut",
+        "DiffOpOut",
+        "EnclosuresBlock",
+        "FieldRegionOut",
+        "FieldRegionsOut",
+        "GeneratedDocumentOut",
+        "GeneratedFileOut",
+        "GeneratedVersionOut",
+        "HeadingBlock",
+        "ImageBlock",
+        "ImportErrorOut",
+        "ImportReportOut",
+        "KvBlock",
+        "KvRowOut",
+        "LegendBlock",
+        "ListBlock",
+        "ListPage_ReportTemplateOut_",
+        "OwnerRefOut",
+        "PageBreakBlock",
+        "ParagraphBlock",
+        "PreviewPageOut",
+        "PublicationOut",
+        "RenderTicketOut",
+        "ReportTemplateOut",
+        "ReportTemplateVersionOut",
+        "RequesterOut",
+        "SectionBlock-Input",
+        "SectionBlock-Output",
+        "SignatureBlock",
+        "SignerLineOut",
+        "TableBlock",
+        "TemplatePreviewOut",
+        "TemplateRefOut",
+        "TextRun",
+        "VarRun",
+        "VariableDeclOut",
+        "abacus__modules__reporting__contract__ApprovalOut",
+        "abacus__modules__reporting__contract__TemplateImportIn",
+    ),
 }
 Schema = dict[str, object]
 
 
+# A frozen name whose OpenAPI key changed with no change of shape: FastAPI qualifies a model's key
+# with its module only while another model shares its class name. T-02-T16 retired requests'
+# `TemplateImportIn` (its import takes the file as the body), so C11's model is plain
+# `TemplateImportIn` again (DEC-1378). The snapshot keeps its name; the shape is still checked.
+SCHEMA_KEYS: Final[dict[str, str]] = {
+    "abacus__modules__reporting__contract__TemplateImportIn": "TemplateImportIn",
+}
+
+
 def current(contract: str) -> dict[str, Schema]:
     schemas = cast(dict[str, Schema], json.loads(document())["components"]["schemas"])
-    return {name: schemas[name] for name in MODELS[contract]}
+    return {name: schemas[SCHEMA_KEYS.get(name, name)] for name in MODELS[contract]}
 
 
 def _shape(schema: Schema) -> str:

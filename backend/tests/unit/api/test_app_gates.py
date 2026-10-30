@@ -88,6 +88,14 @@ def test_ac20_each_new_route_declares_exactly_one_action_and_a_response_model() 
 # TASK-019: taking, releasing and assigning a review return the assignment, so 200.
 REVIEW_QUEUE = "/v1/engagements/{engagement_id}/review-queue/{version_id}"
 NOT_CREATING = {
+    # P-11-T03/T06 (C11 stub): an import answers its results, a preview renders and stores
+    # nothing, a publish and a regenerate act on existing rows, so 200 (missing since #745).
+    "/v1/report-templates/import",
+    "/v1/report-templates/{template_id}/versions/{version_no}/preview",
+    "/v1/report-templates/{template_id}/versions/{version_no}/publish",
+    # T-01-T17 (C11 v1.1): deprecating a version creates nothing, so 200.
+    "/v1/report-templates/{template_id}/versions/{version_no}/deprecate",
+    "/v1/generated-documents/{document_id}/regenerate",
     "/v1/platform/email-templates/import",  # TASK-401: idempotent, may write nothing, so 200
     # I-01-T07: a snooze, an unsnooze and a reassign change who a gate waits on, so 200.
     "/v1/human-gates/{gate_id}/snooze",
@@ -230,6 +238,8 @@ NOT_CREATING = {
     "/v1/engagements/{engagement_id}/request-items/{item_id}/return-to-client",
     "/v1/engagements/{engagement_id}/request-items/{item_id}/incorporate",
     "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/withdraw",
+    "/v1/engagements/{engagement_id}/request-items/{item_id}/evidence-versions/{version_id}"
+    "/duplicate-resolution",
     "/v1/portal/binders/{binder_id}/mark-done",
     "/v1/portal/request-items/{item_id}/ignore",
     # P-06-T14 (follow-ups v2): sending, its Undo and dismissing return the follow-up.
@@ -416,6 +426,9 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/client-entities/{client_entity_id}/authorizations/requests",
         "/v1/client-entities/{client_entity_id}/transcripts",
         "/v1/transcripts/{transcript_id}/comparisons",
+        # T-01-T43: a staged transcript or authorization file.
+        "/v1/client-entities/{client_entity_id}/transcripts/files",
+        "/v1/client-entities/{client_entity_id}/authorizations/files",
         # K-02-T02 (C21 stub): a firm standard, a draft version, and drafts from an import.
         "/v1/standards",
         "/v1/standards/{standard_id}/versions",

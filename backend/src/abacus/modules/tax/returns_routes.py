@@ -25,7 +25,7 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
 )
-from abacus.modules.tax import board
+from abacus.modules.tax import board, overview
 from abacus.modules.tax.returns_contract import (
     AssignmentIn,
     BulkAssignIn,
@@ -136,20 +136,23 @@ async def bulk_assign_route(
     "/{return_id}",
     action="tax_return.read_metadata",
     response_model=TaxReturnRecordOut,
-    errors=(501,),
 )
 async def return_record_route(return_id: ReturnId, ctx: Ctx) -> TaxReturnRecordOut:
-    await _stub(ctx, "tax_return.read_metadata")
+    """TAX-02's record: the row, the engine id, the policy pin, the tabs (T-02-T13)."""
+    await _gate(ctx, "tax_return.read_metadata")
+    return await overview.record(ctx, return_id)
 
 
 @returns_router.get(
     "/{return_id}/overview",
-    action="tax_return.read",
+    action="tax_return.read_metadata",
     response_model=TaxReturnOverviewOut,
-    errors=(501,),
 )
 async def return_overview_route(return_id: ReturnId, ctx: Ctx) -> TaxReturnOverviewOut:
-    await _stub(ctx, "tax_return.read")
+    """TAX-02's overview (T-02-T13): metadata for every reader of the return; the engine figures
+    only with `tax_return.read` (absent, not masked, otherwise)."""
+    await _gate(ctx, "tax_return.read_metadata")
+    return await overview.overview(ctx, return_id)
 
 
 @returns_router.get(
@@ -178,9 +181,12 @@ async def return_assign_route(
     "/{return_id}/transitions",
     action="tax_return.status_change",
     response_model=TaxReturnRecordOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def transition_route(
     return_id: ReturnId, body: TransitionIn, ctx: Ctx
 ) -> TaxReturnRecordOut:
-    await _stub(ctx, "tax_return.status_change")
+    """`start_preparation` or `start_review` at the version seen (T-02-T13). 409
+    `transition_refused`, `stale_version`."""
+    await _gate(ctx, "tax_return.status_change")
+    return await overview.transition(ctx, return_id, body.event, body.seen_version)

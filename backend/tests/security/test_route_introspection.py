@@ -65,6 +65,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/client-entities/{client_entity_id}/authorizations", "tax_authorization.manage"),
     ("GET", "/v1/client-entities/{client_entity_id}/consents", "consent.read"),
     ("GET", "/v1/client-entities/{client_entity_id}/tax-profile", "tax_profile.read"),
+    ("GET", "/v1/client-entities/{client_entity_id}/transcripts", "tax_profile.read"),
     ("GET", "/v1/client-imports/{import_id}", "client_import.run"),
     ("GET", "/v1/client-imports/{import_id}/rows", "client_import.run"),
     ("GET", "/v1/client-intake-drafts/{draft_id}", "client.intake"),
@@ -478,7 +479,8 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/tax-returns/{return_id}/intake", "tax_return.read"),
     ("GET", "/v1/tax-returns/{return_id}/k1-packages", "k1_package.read"),
     ("GET", "/v1/tax-returns/{return_id}/k1-packages/release-check", "k1_package.read"),
-    ("GET", "/v1/tax-returns/{return_id}/overview", "tax_return.read"),
+    ("GET", "/v1/tax-returns/{return_id}/overview", "tax_return.read_metadata"),
+    ("GET", "/v1/transcripts/{transcript_id}/comparison", "tax_profile.read"),
     ("GET", "/v1/walls", "wall.list"),
     ("GET", "/v1/walls/preview", "wall.create"),
     ("GET", "/v1/walls/{wall_id}/events", "wall.list"),
@@ -527,10 +529,16 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/client-entities/{client_entity_id}/authorizations", "tax_authorization.manage"),
     (
         "POST",
+        "/v1/client-entities/{client_entity_id}/authorizations/files",
+        "tax_authorization.manage",
+    ),
+    (
+        "POST",
         "/v1/client-entities/{client_entity_id}/authorizations/requests",
         "tax_authorization.manage",
     ),
     ("POST", "/v1/client-entities/{client_entity_id}/transcripts", "transcript.upload"),
+    ("POST", "/v1/client-entities/{client_entity_id}/transcripts/files", "transcript.upload"),
     ("POST", "/v1/client-entities/{entity_id}/tin/reveal", "tin.reveal"),
     ("POST", "/v1/client-imports", "client_import.run"),
     ("POST", "/v1/client-imports/{import_id}/run", "client_import.run"),
@@ -837,6 +845,11 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "POST",
         "/v1/engagements/{engagement_id}/request-items/{item_id}/delegate",
         "request_item.delegate",
+    ),
+    (
+        "POST",
+        "/v1/engagements/{engagement_id}/request-items/{item_id}/evidence-versions/{version_id}/duplicate-resolution",
+        "evidence.resolve_duplicate",
     ),
     (
         "POST",
@@ -1211,6 +1224,11 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/recipient-details-changes/{change_id}:accept", "k1_recipient.review_details"),
     ("POST", "/v1/recipient-details-changes/{change_id}:reject", "k1_recipient.review_details"),
     ("POST", "/v1/report-templates/import", "report_template.import"),
+    (
+        "POST",
+        "/v1/report-templates/{template_id}/versions/{version_no}/deprecate",
+        "report_template.publish",
+    ),
     (
         "POST",
         "/v1/report-templates/{template_id}/versions/{version_no}/preview",

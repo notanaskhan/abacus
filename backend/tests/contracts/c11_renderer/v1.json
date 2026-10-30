@@ -1,0 +1,2223 @@
+{
+  "BlockDiffOut": {
+    "properties": {
+      "block_id": {
+        "cls": "internal",
+        "title": "Block Id",
+        "type": "string"
+      },
+      "clause_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Clause Id"
+      },
+      "ops": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/DiffOpOut"
+        },
+        "title": "Ops",
+        "type": "array"
+      }
+    },
+    "required": [
+      "block_id",
+      "clause_id",
+      "ops"
+    ],
+    "title": "BlockDiffOut",
+    "type": "object"
+  },
+  "ChangedVariableOut": {
+    "description": "A variable whose current value differs from the snapshot (AC-17); a Restricted value is\nnever shown: `masked` with both values null.",
+    "properties": {
+      "key": {
+        "cls": "internal",
+        "title": "Key",
+        "type": "string"
+      },
+      "label": {
+        "cls": "internal",
+        "title": "Label",
+        "type": "string"
+      },
+      "masked": {
+        "cls": "internal",
+        "title": "Masked",
+        "type": "boolean"
+      },
+      "now": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Now"
+      },
+      "was": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Was"
+      }
+    },
+    "required": [
+      "key",
+      "label",
+      "was",
+      "now",
+      "masked"
+    ],
+    "title": "ChangedVariableOut",
+    "type": "object"
+  },
+  "ChangesOut": {
+    "properties": {
+      "items": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/ChangedVariableOut"
+        },
+        "title": "Items",
+        "type": "array"
+      }
+    },
+    "required": [
+      "items"
+    ],
+    "title": "ChangesOut",
+    "type": "object"
+  },
+  "CiteRun": {
+    "description": "A citation marker: a verified citation id (INV-2), never text.",
+    "properties": {
+      "citation_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Citation Id",
+        "type": "string"
+      },
+      "type": {
+        "cls": "internal",
+        "const": "cite",
+        "default": "cite",
+        "title": "Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "citation_id"
+    ],
+    "title": "CiteRun",
+    "type": "object"
+  },
+  "ClauseBlock-Input": {
+    "description": "A clause from the template's library; `non_standard` when it differs from the standard.",
+    "properties": {
+      "blocks": {
+        "cls": "confidential",
+        "items": {
+          "discriminator": {
+            "mapping": {
+              "clause": "#/components/schemas/ClauseBlock-Input",
+              "enclosures": "#/components/schemas/EnclosuresBlock",
+              "heading": "#/components/schemas/HeadingBlock",
+              "image": "#/components/schemas/ImageBlock",
+              "kv": "#/components/schemas/KvBlock",
+              "legend": "#/components/schemas/LegendBlock",
+              "list": "#/components/schemas/ListBlock",
+              "page_break": "#/components/schemas/PageBreakBlock",
+              "paragraph": "#/components/schemas/ParagraphBlock",
+              "section": "#/components/schemas/SectionBlock-Input",
+              "signature_block": "#/components/schemas/SignatureBlock",
+              "table": "#/components/schemas/TableBlock"
+            },
+            "propertyName": "type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/SectionBlock-Input"
+            },
+            {
+              "$ref": "#/components/schemas/HeadingBlock"
+            },
+            {
+              "$ref": "#/components/schemas/ParagraphBlock"
+            },
+            {
+              "$ref": "#/components/schemas/ClauseBlock-Input"
+            },
+            {
+              "$ref": "#/components/schemas/ListBlock"
+            },
+            {
+              "$ref": "#/components/schemas/TableBlock"
+            },
+            {
+              "$ref": "#/components/schemas/KvBlock"
+            },
+            {
+              "$ref": "#/components/schemas/SignatureBlock"
+            },
+            {
+              "$ref": "#/components/schemas/LegendBlock"
+            },
+            {
+              "$ref": "#/components/schemas/ImageBlock"
+            },
+            {
+              "$ref": "#/components/schemas/EnclosuresBlock"
+            },
+            {
+              "$ref": "#/components/schemas/PageBreakBlock"
+            }
+          ]
+        },
+        "maxItems": 200,
+        "title": "Blocks",
+        "type": "array"
+      },
+      "clause_id": {
+        "cls": "internal",
+        "pattern": "^[a-z0-9_-]{1,64}$",
+        "title": "Clause Id",
+        "type": "string"
+      },
+      "enabled": {
+        "cls": "internal",
+        "title": "Enabled",
+        "type": "boolean"
+      },
+      "non_standard": {
+        "cls": "internal",
+        "title": "Non Standard",
+        "type": "boolean"
+      },
+      "type": {
+        "cls": "internal",
+        "const": "clause",
+        "default": "clause",
+        "title": "Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "clause_id",
+      "enabled",
+      "non_standard",
+      "blocks"
+    ],
+    "title": "ClauseBlock",
+    "type": "object"
+  },
+  "ClauseBlock-Output": {
+    "description": "A clause from the template's library; `non_standard` when it differs from the standard.",
+    "properties": {
+      "blocks": {
+        "cls": "confidential",
+        "items": {
+          "discriminator": {
+            "mapping": {
+              "clause": "#/components/schemas/ClauseBlock-Output",
+              "enclosures": "#/components/schemas/EnclosuresBlock",
+              "heading": "#/components/schemas/HeadingBlock",
+              "image": "#/components/schemas/ImageBlock",
+              "kv": "#/components/schemas/KvBlock",
+              "legend": "#/components/schemas/LegendBlock",
+              "list": "#/components/schemas/ListBlock",
+              "page_break": "#/components/schemas/PageBreakBlock",
+              "paragraph": "#/components/schemas/ParagraphBlock",
+              "section": "#/components/schemas/SectionBlock-Output",
+              "signature_block": "#/components/schemas/SignatureBlock",
+              "table": "#/components/schemas/TableBlock"
+            },
+            "propertyName": "type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/SectionBlock-Output"
+            },
+            {
+              "$ref": "#/components/schemas/HeadingBlock"
+            },
+            {
+              "$ref": "#/components/schemas/ParagraphBlock"
+            },
+            {
+              "$ref": "#/components/schemas/ClauseBlock-Output"
+            },
+            {
+              "$ref": "#/components/schemas/ListBlock"
+            },
+            {
+              "$ref": "#/components/schemas/TableBlock"
+            },
+            {
+              "$ref": "#/components/schemas/KvBlock"
+            },
+            {
+              "$ref": "#/components/schemas/SignatureBlock"
+            },
+            {
+              "$ref": "#/components/schemas/LegendBlock"
+            },
+            {
+              "$ref": "#/components/schemas/ImageBlock"
+            },
+            {
+              "$ref": "#/components/schemas/EnclosuresBlock"
+            },
+            {
+              "$ref": "#/components/schemas/PageBreakBlock"
+            }
+          ]
+        },
+        "maxItems": 200,
+        "title": "Blocks",
+        "type": "array"
+      },
+      "clause_id": {
+        "cls": "internal",
+        "pattern": "^[a-z0-9_-]{1,64}$",
+        "title": "Clause Id",
+        "type": "string"
+      },
+      "enabled": {
+        "cls": "internal",
+        "title": "Enabled",
+        "type": "boolean"
+      },
+      "non_standard": {
+        "cls": "internal",
+        "title": "Non Standard",
+        "type": "boolean"
+      },
+      "type": {
+        "cls": "internal",
+        "const": "clause",
+        "default": "clause",
+        "title": "Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "clause_id",
+      "enabled",
+      "non_standard",
+      "blocks"
+    ],
+    "title": "ClauseBlock",
+    "type": "object"
+  },
+  "ClauseDefOut-Input": {
+    "properties": {
+      "clause_id": {
+        "cls": "internal",
+        "pattern": "^[a-z0-9_-]{1,64}$",
+        "title": "Clause Id",
+        "type": "string"
+      },
+      "default_enabled": {
+        "cls": "internal",
+        "title": "Default Enabled",
+        "type": "boolean"
+      },
+      "standard": {
+        "cls": "internal",
+        "items": {
+          "discriminator": {
+            "mapping": {
+              "clause": "#/components/schemas/ClauseBlock-Input",
+              "enclosures": "#/components/schemas/EnclosuresBlock",
+              "heading": "#/components/schemas/HeadingBlock",
+              "image": "#/components/schemas/ImageBlock",
+              "kv": "#/components/schemas/KvBlock",
+              "legend": "#/components/schemas/LegendBlock",
+              "list": "#/components/schemas/ListBlock",
+              "page_break": "#/components/schemas/PageBreakBlock",
+              "paragraph": "#/components/schemas/ParagraphBlock",
+              "section": "#/components/schemas/SectionBlock-Input",
+              "signature_block": "#/components/schemas/SignatureBlock",
+              "table": "#/components/schemas/TableBlock"
+            },
+            "propertyName": "type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/SectionBlock-Input"
+            },
+            {
+              "$ref": "#/components/schemas/HeadingBlock"
+            },
+            {
+              "$ref": "#/components/schemas/ParagraphBlock"
+            },
+            {
+              "$ref": "#/components/schemas/ClauseBlock-Input"
+            },
+            {
+              "$ref": "#/components/schemas/ListBlock"
+            },
+            {
+              "$ref": "#/components/schemas/TableBlock"
+            },
+            {
+              "$ref": "#/components/schemas/KvBlock"
+            },
+            {
+              "$ref": "#/components/schemas/SignatureBlock"
+            },
+            {
+              "$ref": "#/components/schemas/LegendBlock"
+            },
+            {
+              "$ref": "#/components/schemas/ImageBlock"
+            },
+            {
+              "$ref": "#/components/schemas/EnclosuresBlock"
+            },
+            {
+              "$ref": "#/components/schemas/PageBreakBlock"
+            }
+          ]
+        },
+        "title": "Standard",
+        "type": "array"
+      },
+      "title": {
+        "cls": "internal",
+        "maxLength": 200,
+        "title": "Title",
+        "type": "string"
+      }
+    },
+    "required": [
+      "clause_id",
+      "title",
+      "standard",
+      "default_enabled"
+    ],
+    "title": "ClauseDefOut",
+    "type": "object"
+  },
+  "ClauseDefOut-Output": {
+    "properties": {
+      "clause_id": {
+        "cls": "internal",
+        "pattern": "^[a-z0-9_-]{1,64}$",
+        "title": "Clause Id",
+        "type": "string"
+      },
+      "default_enabled": {
+        "cls": "internal",
+        "title": "Default Enabled",
+        "type": "boolean"
+      },
+      "standard": {
+        "cls": "internal",
+        "items": {
+          "discriminator": {
+            "mapping": {
+              "clause": "#/components/schemas/ClauseBlock-Output",
+              "enclosures": "#/components/schemas/EnclosuresBlock",
+              "heading": "#/components/schemas/HeadingBlock",
+              "image": "#/components/schemas/ImageBlock",
+              "kv": "#/components/schemas/KvBlock",
+              "legend": "#/components/schemas/LegendBlock",
+              "list": "#/components/schemas/ListBlock",
+              "page_break": "#/components/schemas/PageBreakBlock",
+              "paragraph": "#/components/schemas/ParagraphBlock",
+              "section": "#/components/schemas/SectionBlock-Output",
+              "signature_block": "#/components/schemas/SignatureBlock",
+              "table": "#/components/schemas/TableBlock"
+            },
+            "propertyName": "type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/SectionBlock-Output"
+            },
+            {
+              "$ref": "#/components/schemas/HeadingBlock"
+            },
+            {
+              "$ref": "#/components/schemas/ParagraphBlock"
+            },
+            {
+              "$ref": "#/components/schemas/ClauseBlock-Output"
+            },
+            {
+              "$ref": "#/components/schemas/ListBlock"
+            },
+            {
+              "$ref": "#/components/schemas/TableBlock"
+            },
+            {
+              "$ref": "#/components/schemas/KvBlock"
+            },
+            {
+              "$ref": "#/components/schemas/SignatureBlock"
+            },
+            {
+              "$ref": "#/components/schemas/LegendBlock"
+            },
+            {
+              "$ref": "#/components/schemas/ImageBlock"
+            },
+            {
+              "$ref": "#/components/schemas/EnclosuresBlock"
+            },
+            {
+              "$ref": "#/components/schemas/PageBreakBlock"
+            }
+          ]
+        },
+        "title": "Standard",
+        "type": "array"
+      },
+      "title": {
+        "cls": "internal",
+        "maxLength": 200,
+        "title": "Title",
+        "type": "string"
+      }
+    },
+    "required": [
+      "clause_id",
+      "title",
+      "standard",
+      "default_enabled"
+    ],
+    "title": "ClauseDefOut",
+    "type": "object"
+  },
+  "CompareOut": {
+    "description": "A deterministic word-level diff by block and clause id (AC-23).",
+    "properties": {
+      "blocks": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/BlockDiffOut"
+        },
+        "title": "Blocks",
+        "type": "array"
+      },
+      "to": {
+        "cls": "internal",
+        "title": "To",
+        "type": "string"
+      }
+    },
+    "required": [
+      "to",
+      "blocks"
+    ],
+    "title": "CompareOut",
+    "type": "object"
+  },
+  "DiffOpOut": {
+    "properties": {
+      "op": {
+        "cls": "internal",
+        "enum": [
+          "equal",
+          "insert",
+          "delete"
+        ],
+        "title": "Op",
+        "type": "string"
+      },
+      "text": {
+        "cls": "confidential",
+        "title": "Text",
+        "type": "string"
+      }
+    },
+    "required": [
+      "op",
+      "text"
+    ],
+    "title": "DiffOpOut",
+    "type": "object"
+  },
+  "EnclosuresBlock": {
+    "properties": {
+      "items": {
+        "cls": "confidential",
+        "items": {
+          "type": "string"
+        },
+        "maxItems": 50,
+        "title": "Items",
+        "type": "array"
+      },
+      "type": {
+        "cls": "internal",
+        "const": "enclosures",
+        "default": "enclosures",
+        "title": "Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "items"
+    ],
+    "title": "EnclosuresBlock",
+    "type": "object"
+  },
+  "FieldRegionOut": {
+    "description": "Where a variable or field sits on the rendered page (AC-22): PDF points, top-left origin.",
+    "properties": {
+      "field_key": {
+        "cls": "internal",
+        "title": "Field Key",
+        "type": "string"
+      },
+      "label": {
+        "cls": "internal",
+        "title": "Label",
+        "type": "string"
+      },
+      "match_id": {
+        "cls": "internal",
+        "pattern": "^gd:",
+        "title": "Match Id",
+        "type": "string"
+      },
+      "page": {
+        "cls": "internal",
+        "minimum": 1.0,
+        "title": "Page",
+        "type": "integer"
+      },
+      "rect_pt": {
+        "cls": "internal",
+        "items": {
+          "type": "number"
+        },
+        "maxItems": 4,
+        "minItems": 4,
+        "title": "Rect Pt",
+        "type": "array"
+      },
+      "value_text": {
+        "cls": "confidential",
+        "title": "Value Text",
+        "type": "string"
+      }
+    },
+    "required": [
+      "field_key",
+      "label",
+      "page",
+      "rect_pt",
+      "value_text",
+      "match_id"
+    ],
+    "title": "FieldRegionOut",
+    "type": "object"
+  },
+  "FieldRegionsOut": {
+    "properties": {
+      "items": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/FieldRegionOut"
+        },
+        "title": "Items",
+        "type": "array"
+      }
+    },
+    "required": [
+      "items"
+    ],
+    "title": "FieldRegionsOut",
+    "type": "object"
+  },
+  "GeneratedDocumentOut": {
+    "description": "One generated document: its computed status (DF-31) and its insert-only versions.",
+    "properties": {
+      "allowed_actions": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "title": "Allowed Actions",
+        "type": "array"
+      },
+      "current_version": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Current Version"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "engagement_letter",
+          "consent_7216",
+          "representation_letter",
+          "governance_letter",
+          "audit_report",
+          "review_report",
+          "compilation_report",
+          "notice_response",
+          "delivery_cover_letter",
+          "k1_cover_letter",
+          "fs_package",
+          "run_trace_export"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "out_of_date": {
+        "cls": "internal",
+        "title": "Out Of Date",
+        "type": "boolean"
+      },
+      "out_of_date_reasons": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "title": "Out Of Date Reasons",
+        "type": "array"
+      },
+      "owner_ref": {
+        "$ref": "#/components/schemas/OwnerRefOut",
+        "cls": "internal"
+      },
+      "status": {
+        "$ref": "#/components/schemas/GeneratedDocumentStatus",
+        "cls": "internal"
+      },
+      "versions": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/GeneratedVersionOut"
+        },
+        "title": "Versions",
+        "type": "array"
+      }
+    },
+    "required": [
+      "id",
+      "kind",
+      "owner_ref",
+      "status",
+      "out_of_date",
+      "out_of_date_reasons",
+      "current_version",
+      "versions",
+      "allowed_actions"
+    ],
+    "title": "GeneratedDocumentOut",
+    "type": "object"
+  },
+  "GeneratedFileOut": {
+    "properties": {
+      "evidence_version_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Evidence Version Id"
+      },
+      "format": {
+        "cls": "internal",
+        "enum": [
+          "pdf",
+          "docx"
+        ],
+        "title": "Format",
+        "type": "string"
+      },
+      "page_count": {
+        "cls": "internal",
+        "minimum": 1.0,
+        "title": "Page Count",
+        "type": "integer"
+      },
+      "render_hash": {
+        "cls": "internal",
+        "pattern": "^[0-9a-f]{64}$",
+        "title": "Render Hash",
+        "type": "string"
+      }
+    },
+    "required": [
+      "format",
+      "evidence_version_id",
+      "render_hash",
+      "page_count"
+    ],
+    "title": "GeneratedFileOut",
+    "type": "object"
+  },
+  "GeneratedVersionOut": {
+    "properties": {
+      "approval": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/abacus__modules__reporting__contract__ApprovalOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential"
+      },
+      "content_hash": {
+        "cls": "internal",
+        "pattern": "^[0-9a-f]{64}$",
+        "title": "Content Hash",
+        "type": "string"
+      },
+      "created_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Created At",
+        "type": "string"
+      },
+      "engine_version": {
+        "cls": "internal",
+        "title": "Engine Version",
+        "type": "string"
+      },
+      "files": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/GeneratedFileOut"
+        },
+        "title": "Files",
+        "type": "array"
+      },
+      "mode": {
+        "cls": "internal",
+        "enum": [
+          "draft",
+          "final",
+          "sample"
+        ],
+        "title": "Mode",
+        "type": "string"
+      },
+      "n": {
+        "cls": "internal",
+        "minimum": 1.0,
+        "title": "N",
+        "type": "integer"
+      },
+      "requested_by": {
+        "$ref": "#/components/schemas/RequesterOut",
+        "cls": "confidential"
+      },
+      "snapshot_sha256": {
+        "cls": "internal",
+        "pattern": "^[0-9a-f]{64}$",
+        "title": "Snapshot Sha256",
+        "type": "string"
+      },
+      "template": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/TemplateRefOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal"
+      }
+    },
+    "required": [
+      "n",
+      "mode",
+      "files",
+      "content_hash",
+      "template",
+      "snapshot_sha256",
+      "engine_version",
+      "requested_by",
+      "approval",
+      "created_at"
+    ],
+    "title": "GeneratedVersionOut",
+    "type": "object"
+  },
+  "HeadingBlock": {
+    "properties": {
+      "level": {
+        "cls": "internal",
+        "maximum": 4.0,
+        "minimum": 1.0,
+        "title": "Level",
+        "type": "integer"
+      },
+      "text": {
+        "cls": "confidential",
+        "maxLength": 500,
+        "title": "Text",
+        "type": "string"
+      },
+      "type": {
+        "cls": "internal",
+        "const": "heading",
+        "default": "heading",
+        "title": "Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "level",
+      "text"
+    ],
+    "title": "HeadingBlock",
+    "type": "object"
+  },
+  "ImageBlock": {
+    "description": "A firm asset stored as evidence (letterhead, signature image): never a URL (AC-9).",
+    "properties": {
+      "asset_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Asset Id",
+        "type": "string"
+      },
+      "type": {
+        "cls": "internal",
+        "const": "image",
+        "default": "image",
+        "title": "Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "asset_id"
+    ],
+    "title": "ImageBlock",
+    "type": "object"
+  },
+  "ImportErrorOut": {
+    "properties": {
+      "code": {
+        "cls": "internal",
+        "enum": [
+          "unknown_variable",
+          "unknown_layout",
+          "unknown_block",
+          "markup_not_allowed",
+          "clause_conflict",
+          "too_large"
+        ],
+        "title": "Code",
+        "type": "string"
+      },
+      "path": {
+        "cls": "internal",
+        "maxLength": 500,
+        "title": "Path",
+        "type": "string"
+      }
+    },
+    "required": [
+      "path",
+      "code"
+    ],
+    "title": "ImportErrorOut",
+    "type": "object"
+  },
+  "ImportReportOut": {
+    "properties": {
+      "draft_version_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Draft Version Id"
+      },
+      "errors": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/ImportErrorOut"
+        },
+        "title": "Errors",
+        "type": "array"
+      },
+      "ok": {
+        "cls": "internal",
+        "title": "Ok",
+        "type": "boolean"
+      },
+      "warnings": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "title": "Warnings",
+        "type": "array"
+      }
+    },
+    "required": [
+      "ok",
+      "errors",
+      "warnings",
+      "draft_version_id"
+    ],
+    "title": "ImportReportOut",
+    "type": "object"
+  },
+  "KvBlock": {
+    "properties": {
+      "rows": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/KvRowOut"
+        },
+        "maxItems": 200,
+        "title": "Rows",
+        "type": "array"
+      },
+      "type": {
+        "cls": "internal",
+        "const": "kv",
+        "default": "kv",
+        "title": "Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "rows"
+    ],
+    "title": "KvBlock",
+    "type": "object"
+  },
+  "KvRowOut": {
+    "properties": {
+      "key": {
+        "cls": "confidential",
+        "maxLength": 200,
+        "title": "Key",
+        "type": "string"
+      },
+      "value": {
+        "cls": "confidential",
+        "items": {
+          "discriminator": {
+            "mapping": {
+              "cite": "#/components/schemas/CiteRun",
+              "text": "#/components/schemas/TextRun",
+              "var": "#/components/schemas/VarRun"
+            },
+            "propertyName": "type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/TextRun"
+            },
+            {
+              "$ref": "#/components/schemas/VarRun"
+            },
+            {
+              "$ref": "#/components/schemas/CiteRun"
+            }
+          ]
+        },
+        "maxItems": 50,
+        "title": "Value",
+        "type": "array"
+      }
+    },
+    "required": [
+      "key",
+      "value"
+    ],
+    "title": "KvRowOut",
+    "type": "object"
+  },
+  "LegendBlock": {
+    "description": "Repeats on every page (an AR-C 70 package's legend, AC-11).",
+    "properties": {
+      "text": {
+        "cls": "internal",
+        "maxLength": 1000,
+        "title": "Text",
+        "type": "string"
+      },
+      "type": {
+        "cls": "internal",
+        "const": "legend",
+        "default": "legend",
+        "title": "Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "text"
+    ],
+    "title": "LegendBlock",
+    "type": "object"
+  },
+  "ListBlock": {
+    "properties": {
+      "items": {
+        "cls": "confidential",
+        "items": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "cite": "#/components/schemas/CiteRun",
+                "text": "#/components/schemas/TextRun",
+                "var": "#/components/schemas/VarRun"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/TextRun"
+              },
+              {
+                "$ref": "#/components/schemas/VarRun"
+              },
+              {
+                "$ref": "#/components/schemas/CiteRun"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "maxItems": 200,
+        "title": "Items",
+        "type": "array"
+      },
+      "ordered": {
+        "cls": "internal",
+        "title": "Ordered",
+        "type": "boolean"
+      },
+      "type": {
+        "cls": "internal",
+        "const": "list",
+        "default": "list",
+        "title": "Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "ordered",
+      "items"
+    ],
+    "title": "ListBlock",
+    "type": "object"
+  },
+  "ListPage_ReportTemplateOut_": {
+    "properties": {
+      "counts": {
+        "additionalProperties": {
+          "type": "integer"
+        },
+        "cls": "internal",
+        "title": "Counts",
+        "type": "object"
+      },
+      "facets": {
+        "additionalProperties": {
+          "items": {
+            "$ref": "#/components/schemas/Facet"
+          },
+          "type": "array"
+        },
+        "cls": "internal",
+        "title": "Facets",
+        "type": "object"
+      },
+      "items": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/ReportTemplateOut"
+        },
+        "title": "Items",
+        "type": "array"
+      },
+      "next_cursor": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Next Cursor"
+      },
+      "total": {
+        "cls": "internal",
+        "title": "Total",
+        "type": "integer"
+      },
+      "total_capped": {
+        "cls": "internal",
+        "default": false,
+        "title": "Total Capped",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "items",
+      "total"
+    ],
+    "title": "ListPage[ReportTemplateOut]",
+    "type": "object"
+  },
+  "OwnerRefOut": {
+    "description": "The consumer record the document belongs to (an engagement letter, a notice response).",
+    "properties": {
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "type": {
+        "cls": "internal",
+        "pattern": "^[a-z_]{1,64}$",
+        "title": "Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "type",
+      "id"
+    ],
+    "title": "OwnerRefOut",
+    "type": "object"
+  },
+  "PageBreakBlock": {
+    "properties": {
+      "type": {
+        "cls": "internal",
+        "const": "page_break",
+        "default": "page_break",
+        "title": "Type",
+        "type": "string"
+      }
+    },
+    "title": "PageBreakBlock",
+    "type": "object"
+  },
+  "ParagraphBlock": {
+    "properties": {
+      "runs": {
+        "cls": "confidential",
+        "items": {
+          "discriminator": {
+            "mapping": {
+              "cite": "#/components/schemas/CiteRun",
+              "text": "#/components/schemas/TextRun",
+              "var": "#/components/schemas/VarRun"
+            },
+            "propertyName": "type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/TextRun"
+            },
+            {
+              "$ref": "#/components/schemas/VarRun"
+            },
+            {
+              "$ref": "#/components/schemas/CiteRun"
+            }
+          ]
+        },
+        "maxItems": 400,
+        "title": "Runs",
+        "type": "array"
+      },
+      "type": {
+        "cls": "internal",
+        "const": "paragraph",
+        "default": "paragraph",
+        "title": "Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "runs"
+    ],
+    "title": "ParagraphBlock",
+    "type": "object"
+  },
+  "PreviewPageOut": {
+    "properties": {
+      "height_pt": {
+        "cls": "internal",
+        "title": "Height Pt",
+        "type": "number"
+      },
+      "n": {
+        "cls": "internal",
+        "minimum": 1.0,
+        "title": "N",
+        "type": "integer"
+      },
+      "width_pt": {
+        "cls": "internal",
+        "title": "Width Pt",
+        "type": "number"
+      }
+    },
+    "required": [
+      "n",
+      "width_pt",
+      "height_pt"
+    ],
+    "title": "PreviewPageOut",
+    "type": "object"
+  },
+  "PublicationOut": {
+    "properties": {
+      "action": {
+        "cls": "internal",
+        "enum": [
+          "published",
+          "deprecated"
+        ],
+        "title": "Action",
+        "type": "string"
+      },
+      "at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "At",
+        "type": "string"
+      },
+      "by": {
+        "cls": "confidential",
+        "title": "By",
+        "type": "string"
+      }
+    },
+    "required": [
+      "action",
+      "by",
+      "at"
+    ],
+    "title": "PublicationOut",
+    "type": "object"
+  },
+  "RenderTicketOut": {
+    "description": "A render accepted: the new version is Drafting until its job finishes.",
+    "properties": {
+      "generated_document_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Generated Document Id",
+        "type": "string"
+      },
+      "status": {
+        "cls": "internal",
+        "const": "drafting",
+        "default": "drafting",
+        "title": "Status",
+        "type": "string"
+      },
+      "version_no": {
+        "cls": "internal",
+        "minimum": 1.0,
+        "title": "Version No",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "generated_document_id",
+      "version_no"
+    ],
+    "title": "RenderTicketOut",
+    "type": "object"
+  },
+  "ReportTemplateOut": {
+    "properties": {
+      "current_version": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Current Version"
+      },
+      "description": {
+        "cls": "internal",
+        "title": "Description",
+        "type": "string"
+      },
+      "family": {
+        "cls": "internal",
+        "enum": [
+          "engagement_letter",
+          "consent_7216",
+          "representation_letter",
+          "governance_letter",
+          "audit_report",
+          "review_report",
+          "compilation_report",
+          "notice_response",
+          "delivery_cover_letter",
+          "k1_cover_letter",
+          "fs_package",
+          "run_trace_export"
+        ],
+        "title": "Family",
+        "type": "string"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "name": {
+        "cls": "internal",
+        "title": "Name",
+        "type": "string"
+      },
+      "published_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Published At"
+      }
+    },
+    "required": [
+      "id",
+      "family",
+      "name",
+      "description",
+      "current_version",
+      "published_at"
+    ],
+    "title": "ReportTemplateOut",
+    "type": "object"
+  },
+  "ReportTemplateVersionOut": {
+    "properties": {
+      "body": {
+        "cls": "internal",
+        "items": {
+          "discriminator": {
+            "mapping": {
+              "clause": "#/components/schemas/ClauseBlock-Output",
+              "enclosures": "#/components/schemas/EnclosuresBlock",
+              "heading": "#/components/schemas/HeadingBlock",
+              "image": "#/components/schemas/ImageBlock",
+              "kv": "#/components/schemas/KvBlock",
+              "legend": "#/components/schemas/LegendBlock",
+              "list": "#/components/schemas/ListBlock",
+              "page_break": "#/components/schemas/PageBreakBlock",
+              "paragraph": "#/components/schemas/ParagraphBlock",
+              "section": "#/components/schemas/SectionBlock-Output",
+              "signature_block": "#/components/schemas/SignatureBlock",
+              "table": "#/components/schemas/TableBlock"
+            },
+            "propertyName": "type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/SectionBlock-Output"
+            },
+            {
+              "$ref": "#/components/schemas/HeadingBlock"
+            },
+            {
+              "$ref": "#/components/schemas/ParagraphBlock"
+            },
+            {
+              "$ref": "#/components/schemas/ClauseBlock-Output"
+            },
+            {
+              "$ref": "#/components/schemas/ListBlock"
+            },
+            {
+              "$ref": "#/components/schemas/TableBlock"
+            },
+            {
+              "$ref": "#/components/schemas/KvBlock"
+            },
+            {
+              "$ref": "#/components/schemas/SignatureBlock"
+            },
+            {
+              "$ref": "#/components/schemas/LegendBlock"
+            },
+            {
+              "$ref": "#/components/schemas/ImageBlock"
+            },
+            {
+              "$ref": "#/components/schemas/EnclosuresBlock"
+            },
+            {
+              "$ref": "#/components/schemas/PageBreakBlock"
+            }
+          ]
+        },
+        "title": "Body",
+        "type": "array"
+      },
+      "clauses": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/ClauseDefOut-Output"
+        },
+        "title": "Clauses",
+        "type": "array"
+      },
+      "content_sha256": {
+        "cls": "internal",
+        "pattern": "^[0-9a-f]{64}$",
+        "title": "Content Sha256",
+        "type": "string"
+      },
+      "layout_key": {
+        "cls": "internal",
+        "enum": [
+          "letter",
+          "consent_7216",
+          "report",
+          "notice_response",
+          "package",
+          "run_export"
+        ],
+        "title": "Layout Key",
+        "type": "string"
+      },
+      "publications": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/PublicationOut"
+        },
+        "title": "Publications",
+        "type": "array"
+      },
+      "template_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Template Id",
+        "type": "string"
+      },
+      "variables": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/VariableDeclOut"
+        },
+        "title": "Variables",
+        "type": "array"
+      },
+      "version_no": {
+        "cls": "internal",
+        "minimum": 1.0,
+        "title": "Version No",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "template_id",
+      "version_no",
+      "layout_key",
+      "body",
+      "clauses",
+      "variables",
+      "publications",
+      "content_sha256"
+    ],
+    "title": "ReportTemplateVersionOut",
+    "type": "object"
+  },
+  "RequesterOut": {
+    "description": "Who asked for the version: \"<person> via Agent\" for an agent's draft (INV-5).",
+    "properties": {
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "human",
+          "agent",
+          "system"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "label": {
+        "cls": "confidential",
+        "title": "Label",
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "label"
+    ],
+    "title": "RequesterOut",
+    "type": "object"
+  },
+  "SectionBlock-Input": {
+    "description": "A section; `override` marks paragraphs a person wrote in the consumer's editor.",
+    "properties": {
+      "blocks": {
+        "cls": "confidential",
+        "items": {
+          "discriminator": {
+            "mapping": {
+              "clause": "#/components/schemas/ClauseBlock-Input",
+              "enclosures": "#/components/schemas/EnclosuresBlock",
+              "heading": "#/components/schemas/HeadingBlock",
+              "image": "#/components/schemas/ImageBlock",
+              "kv": "#/components/schemas/KvBlock",
+              "legend": "#/components/schemas/LegendBlock",
+              "list": "#/components/schemas/ListBlock",
+              "page_break": "#/components/schemas/PageBreakBlock",
+              "paragraph": "#/components/schemas/ParagraphBlock",
+              "section": "#/components/schemas/SectionBlock-Input",
+              "signature_block": "#/components/schemas/SignatureBlock",
+              "table": "#/components/schemas/TableBlock"
+            },
+            "propertyName": "type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/SectionBlock-Input"
+            },
+            {
+              "$ref": "#/components/schemas/HeadingBlock"
+            },
+            {
+              "$ref": "#/components/schemas/ParagraphBlock"
+            },
+            {
+              "$ref": "#/components/schemas/ClauseBlock-Input"
+            },
+            {
+              "$ref": "#/components/schemas/ListBlock"
+            },
+            {
+              "$ref": "#/components/schemas/TableBlock"
+            },
+            {
+              "$ref": "#/components/schemas/KvBlock"
+            },
+            {
+              "$ref": "#/components/schemas/SignatureBlock"
+            },
+            {
+              "$ref": "#/components/schemas/LegendBlock"
+            },
+            {
+              "$ref": "#/components/schemas/ImageBlock"
+            },
+            {
+              "$ref": "#/components/schemas/EnclosuresBlock"
+            },
+            {
+              "$ref": "#/components/schemas/PageBreakBlock"
+            }
+          ]
+        },
+        "maxItems": 500,
+        "title": "Blocks",
+        "type": "array"
+      },
+      "id": {
+        "cls": "internal",
+        "pattern": "^[a-z0-9_-]{1,64}$",
+        "title": "Id",
+        "type": "string"
+      },
+      "override": {
+        "cls": "internal",
+        "default": false,
+        "title": "Override",
+        "type": "boolean"
+      },
+      "title": {
+        "cls": "confidential",
+        "maxLength": 500,
+        "title": "Title",
+        "type": "string"
+      },
+      "type": {
+        "cls": "internal",
+        "const": "section",
+        "default": "section",
+        "title": "Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "title",
+      "blocks"
+    ],
+    "title": "SectionBlock",
+    "type": "object"
+  },
+  "SectionBlock-Output": {
+    "description": "A section; `override` marks paragraphs a person wrote in the consumer's editor.",
+    "properties": {
+      "blocks": {
+        "cls": "confidential",
+        "items": {
+          "discriminator": {
+            "mapping": {
+              "clause": "#/components/schemas/ClauseBlock-Output",
+              "enclosures": "#/components/schemas/EnclosuresBlock",
+              "heading": "#/components/schemas/HeadingBlock",
+              "image": "#/components/schemas/ImageBlock",
+              "kv": "#/components/schemas/KvBlock",
+              "legend": "#/components/schemas/LegendBlock",
+              "list": "#/components/schemas/ListBlock",
+              "page_break": "#/components/schemas/PageBreakBlock",
+              "paragraph": "#/components/schemas/ParagraphBlock",
+              "section": "#/components/schemas/SectionBlock-Output",
+              "signature_block": "#/components/schemas/SignatureBlock",
+              "table": "#/components/schemas/TableBlock"
+            },
+            "propertyName": "type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/SectionBlock-Output"
+            },
+            {
+              "$ref": "#/components/schemas/HeadingBlock"
+            },
+            {
+              "$ref": "#/components/schemas/ParagraphBlock"
+            },
+            {
+              "$ref": "#/components/schemas/ClauseBlock-Output"
+            },
+            {
+              "$ref": "#/components/schemas/ListBlock"
+            },
+            {
+              "$ref": "#/components/schemas/TableBlock"
+            },
+            {
+              "$ref": "#/components/schemas/KvBlock"
+            },
+            {
+              "$ref": "#/components/schemas/SignatureBlock"
+            },
+            {
+              "$ref": "#/components/schemas/LegendBlock"
+            },
+            {
+              "$ref": "#/components/schemas/ImageBlock"
+            },
+            {
+              "$ref": "#/components/schemas/EnclosuresBlock"
+            },
+            {
+              "$ref": "#/components/schemas/PageBreakBlock"
+            }
+          ]
+        },
+        "maxItems": 500,
+        "title": "Blocks",
+        "type": "array"
+      },
+      "id": {
+        "cls": "internal",
+        "pattern": "^[a-z0-9_-]{1,64}$",
+        "title": "Id",
+        "type": "string"
+      },
+      "override": {
+        "cls": "internal",
+        "default": false,
+        "title": "Override",
+        "type": "boolean"
+      },
+      "title": {
+        "cls": "confidential",
+        "maxLength": 500,
+        "title": "Title",
+        "type": "string"
+      },
+      "type": {
+        "cls": "internal",
+        "const": "section",
+        "default": "section",
+        "title": "Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "title",
+      "blocks"
+    ],
+    "title": "SectionBlock",
+    "type": "object"
+  },
+  "SignatureBlock": {
+    "properties": {
+      "signers": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/SignerLineOut"
+        },
+        "maxItems": 10,
+        "title": "Signers",
+        "type": "array"
+      },
+      "type": {
+        "cls": "internal",
+        "const": "signature_block",
+        "default": "signature_block",
+        "title": "Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "signers"
+    ],
+    "title": "SignatureBlock",
+    "type": "object"
+  },
+  "SignerLineOut": {
+    "properties": {
+      "label": {
+        "cls": "confidential",
+        "maxLength": 200,
+        "title": "Label",
+        "type": "string"
+      },
+      "name": {
+        "cls": "confidential",
+        "items": {
+          "discriminator": {
+            "mapping": {
+              "cite": "#/components/schemas/CiteRun",
+              "text": "#/components/schemas/TextRun",
+              "var": "#/components/schemas/VarRun"
+            },
+            "propertyName": "type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/TextRun"
+            },
+            {
+              "$ref": "#/components/schemas/VarRun"
+            },
+            {
+              "$ref": "#/components/schemas/CiteRun"
+            }
+          ]
+        },
+        "maxItems": 20,
+        "title": "Name",
+        "type": "array"
+      }
+    },
+    "required": [
+      "label",
+      "name"
+    ],
+    "title": "SignerLineOut",
+    "type": "object"
+  },
+  "TableBlock": {
+    "description": "Cells are decimal strings from the snapshot; the renderer never sums (ADR-050).",
+    "properties": {
+      "columns": {
+        "cls": "confidential",
+        "items": {
+          "type": "string"
+        },
+        "maxItems": 20,
+        "title": "Columns",
+        "type": "array"
+      },
+      "rows": {
+        "cls": "confidential",
+        "items": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "maxItems": 500,
+        "title": "Rows",
+        "type": "array"
+      },
+      "type": {
+        "cls": "internal",
+        "const": "table",
+        "default": "table",
+        "title": "Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "columns",
+      "rows"
+    ],
+    "title": "TableBlock",
+    "type": "object"
+  },
+  "TemplatePreviewOut": {
+    "description": "A SAMPLE-watermarked render from the version's synthetic sample data; never evidence.",
+    "properties": {
+      "expires_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Expires At",
+        "type": "string"
+      },
+      "pages": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/PreviewPageOut"
+        },
+        "title": "Pages",
+        "type": "array"
+      }
+    },
+    "required": [
+      "pages",
+      "expires_at"
+    ],
+    "title": "TemplatePreviewOut",
+    "type": "object"
+  },
+  "TemplateRefOut": {
+    "properties": {
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "name": {
+        "cls": "internal",
+        "title": "Name",
+        "type": "string"
+      },
+      "version_no": {
+        "cls": "internal",
+        "minimum": 1.0,
+        "title": "Version No",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "id",
+      "version_no",
+      "name"
+    ],
+    "title": "TemplateRefOut",
+    "type": "object"
+  },
+  "TextRun": {
+    "description": "Literal text: rendered escaped, never interpreted (AC-8).",
+    "properties": {
+      "text": {
+        "cls": "confidential",
+        "maxLength": 20000,
+        "title": "Text",
+        "type": "string"
+      },
+      "type": {
+        "cls": "internal",
+        "const": "text",
+        "default": "text",
+        "title": "Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "text"
+    ],
+    "title": "TextRun",
+    "type": "object"
+  },
+  "VarRun": {
+    "description": "A declared variable, resolved server-side by the kind's provider (AC-10).",
+    "properties": {
+      "key": {
+        "cls": "internal",
+        "pattern": "^[a-z][a-z0-9_.]{0,79}$",
+        "title": "Key",
+        "type": "string"
+      },
+      "type": {
+        "cls": "internal",
+        "const": "var",
+        "default": "var",
+        "title": "Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "key"
+    ],
+    "title": "VarRun",
+    "type": "object"
+  },
+  "VariableDeclOut": {
+    "properties": {
+      "key": {
+        "cls": "internal",
+        "pattern": "^[a-z][a-z0-9_.]{0,79}$",
+        "title": "Key",
+        "type": "string"
+      },
+      "label": {
+        "cls": "internal",
+        "maxLength": 200,
+        "title": "Label",
+        "type": "string"
+      },
+      "value_type": {
+        "cls": "internal",
+        "enum": [
+          "money",
+          "date",
+          "text",
+          "percent",
+          "count",
+          "name",
+          "address"
+        ],
+        "title": "Value Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "key",
+      "label",
+      "value_type"
+    ],
+    "title": "VariableDeclOut",
+    "type": "object"
+  },
+  "abacus__modules__reporting__contract__ApprovalOut": {
+    "properties": {
+      "at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "At",
+        "type": "string"
+      },
+      "by": {
+        "cls": "confidential",
+        "title": "By",
+        "type": "string"
+      }
+    },
+    "required": [
+      "by",
+      "at"
+    ],
+    "title": "ApprovalOut",
+    "type": "object"
+  },
+  "abacus__modules__reporting__contract__TemplateImportIn": {
+    "additionalProperties": false,
+    "description": "A template bundle (AC-1): structured blocks, declared variables and synthetic sample data\nonly (AC-2: no markup, no URL).",
+    "properties": {
+      "body": {
+        "cls": "internal",
+        "items": {
+          "discriminator": {
+            "mapping": {
+              "clause": "#/components/schemas/ClauseBlock-Input",
+              "enclosures": "#/components/schemas/EnclosuresBlock",
+              "heading": "#/components/schemas/HeadingBlock",
+              "image": "#/components/schemas/ImageBlock",
+              "kv": "#/components/schemas/KvBlock",
+              "legend": "#/components/schemas/LegendBlock",
+              "list": "#/components/schemas/ListBlock",
+              "page_break": "#/components/schemas/PageBreakBlock",
+              "paragraph": "#/components/schemas/ParagraphBlock",
+              "section": "#/components/schemas/SectionBlock-Input",
+              "signature_block": "#/components/schemas/SignatureBlock",
+              "table": "#/components/schemas/TableBlock"
+            },
+            "propertyName": "type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/SectionBlock-Input"
+            },
+            {
+              "$ref": "#/components/schemas/HeadingBlock"
+            },
+            {
+              "$ref": "#/components/schemas/ParagraphBlock"
+            },
+            {
+              "$ref": "#/components/schemas/ClauseBlock-Input"
+            },
+            {
+              "$ref": "#/components/schemas/ListBlock"
+            },
+            {
+              "$ref": "#/components/schemas/TableBlock"
+            },
+            {
+              "$ref": "#/components/schemas/KvBlock"
+            },
+            {
+              "$ref": "#/components/schemas/SignatureBlock"
+            },
+            {
+              "$ref": "#/components/schemas/LegendBlock"
+            },
+            {
+              "$ref": "#/components/schemas/ImageBlock"
+            },
+            {
+              "$ref": "#/components/schemas/EnclosuresBlock"
+            },
+            {
+              "$ref": "#/components/schemas/PageBreakBlock"
+            }
+          ]
+        },
+        "maxItems": 500,
+        "title": "Body",
+        "type": "array"
+      },
+      "clauses": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/ClauseDefOut-Input"
+        },
+        "maxItems": 200,
+        "title": "Clauses",
+        "type": "array"
+      },
+      "description": {
+        "cls": "internal",
+        "default": "",
+        "maxLength": 2000,
+        "title": "Description",
+        "type": "string"
+      },
+      "family": {
+        "cls": "internal",
+        "enum": [
+          "engagement_letter",
+          "consent_7216",
+          "representation_letter",
+          "governance_letter",
+          "audit_report",
+          "review_report",
+          "compilation_report",
+          "notice_response",
+          "delivery_cover_letter",
+          "k1_cover_letter",
+          "fs_package",
+          "run_trace_export"
+        ],
+        "title": "Family",
+        "type": "string"
+      },
+      "layout_key": {
+        "cls": "internal",
+        "maxLength": 40,
+        "title": "Layout Key",
+        "type": "string"
+      },
+      "name": {
+        "cls": "internal",
+        "maxLength": 200,
+        "minLength": 1,
+        "title": "Name",
+        "type": "string"
+      },
+      "sample_data": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "cls": "internal",
+        "default": {},
+        "title": "Sample Data",
+        "type": "object"
+      },
+      "variables": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/VariableDeclOut"
+        },
+        "maxItems": 200,
+        "title": "Variables",
+        "type": "array"
+      }
+    },
+    "required": [
+      "family",
+      "name",
+      "layout_key",
+      "body"
+    ],
+    "title": "TemplateImportIn",
+    "type": "object"
+  }
+}

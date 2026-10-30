@@ -14,6 +14,11 @@ export const COPY = {
   moved: (title: string, at: number) => `${title} moved to position ${String(at)}`,
   preview: "Preview",
   placed: "Placed fields",
+  // N-02-T30: placing fields for a signer (click on the page, or the next line from the toolbar).
+  placeTitle: "Place fields",
+  placeFor: "For",
+  placeNext: "Place on next line",
+  removeField: "Remove",
   field: {
     signature: "Sign here",
     date: "Date",

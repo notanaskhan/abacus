@@ -15,11 +15,12 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from typing import Final
 from uuid import UUID
 
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.db import TenantContext, platform_transaction, tenant_connection
 
@@ -119,6 +120,45 @@ async def record_reads(
         await conn.execute(_INSERT, rows)
         await conn.commit()
     return len(rows)
+
+
+_RUN_READS = text(
+    "SELECT run_id, occurred_at, on_behalf_of_user_id FROM access_events "
+    "WHERE kind = :kind AND subject_type = :subject_type AND subject_id = :subject_id "
+    "AND run_id IS NOT NULL AND occurred_at >= :since ORDER BY occurred_at DESC LIMIT :limit"
+)
+
+
+@dataclass(frozen=True)
+class RunRead:
+    """One agent run's read of a subject: the run, when, and on whose behalf."""
+
+    run_id: UUID
+    occurred_at: datetime
+    on_behalf_of_user_id: UUID | None
+
+
+async def run_reads(
+    session: AsyncSession,
+    kind: str,
+    subject_type: str,
+    subject_id: UUID,
+    since: datetime,
+    limit: int = 200,
+) -> list[RunRead]:
+    """The active tenant's agent-run reads of one subject since `since`, newest first (T-01-T16:
+    ADM-05's consent drawer). The caller has authorised the read of the subject."""
+    rows = await session.execute(
+        _RUN_READS,
+        {
+            "kind": kind,
+            "subject_type": subject_type,
+            "subject_id": subject_id,
+            "since": since,
+            "limit": limit,
+        },
+    )
+    return [RunRead(r.run_id, r.occurred_at, r.on_behalf_of_user_id) for r in rows.all()]
 
 
 async def ensure_partitions(today: date, months_ahead: int = 2) -> list[str]:

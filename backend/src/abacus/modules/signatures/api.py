@@ -22,10 +22,12 @@ from abacus.kernel.uow import Handler, OutboxEvent
 from abacus.modules.identity.api import AbacusRouter, AuthContext
 from abacus.modules.signatures.activities import ACTIVITIES as ENVELOPE_ACTIVITIES
 from abacus.modules.signatures.audit_targets import CLIENT_KINDS, audit_clients
+from abacus.modules.signatures.builder import create_draft
 from abacus.modules.signatures.contract import policies_router, portal_router, router
 from abacus.modules.signatures.docuseal_firm import firm_provider, register_esign_install
 from abacus.modules.signatures.events import EnvelopeSendApproved
 from abacus.modules.signatures.hub import seal_ip
+from abacus.modules.signatures.imports import UnconsumedFile, staged_files
 from abacus.modules.signatures.provider import (
     Completed,
     Created,
@@ -42,6 +44,9 @@ from abacus.modules.signatures.sources import (
     LETTER,
     LETTER_GATE,
     EnvelopeSource,
+    SourceDocument,
+    SourceDraft,
+    SourceSigner,
     UnknownEnvelopeSource,
     envelope_source,
     letter_envelope,
@@ -185,8 +190,13 @@ __all__ = [
     "SendPlan",
     "SignerEvidence",
     "SignerState",
+    "SourceDocument",
+    "SourceDraft",
+    "SourceSigner",
+    "UnconsumedFile",
     "UnknownEnvelopeSource",
     "configure_provider",
+    "create_draft",
     "envelope_gate_facts",
     "envelope_source",
     "envelope_summary_for",
@@ -197,5 +207,6 @@ __all__ = [
     "register_reminder_sender",
     "registered_sources",
     "seal_ip",
+    "staged_files",
     "start_envelope",
 ]

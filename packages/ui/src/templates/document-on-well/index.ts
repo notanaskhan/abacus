@@ -20,3 +20,13 @@ export type {
   StructureVM,
   VariableVM,
 } from "./types";
+// F-06-T15: the paper's body over P-24 segments, and the email variant's frame.
+export {
+  type DocBlock,
+  DocBlocks,
+  type DocBlocksProps,
+  type DocSegment,
+  EmailFrame,
+  type Provenance,
+  agentAllowed,
+} from "./DocBlocks";

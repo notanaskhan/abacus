@@ -8,14 +8,19 @@ K-02-T11.
 
 from __future__ import annotations
 
-from typing import Annotated, NoReturn
+import asyncio
+from collections.abc import Callable, Sequence
+from typing import Annotated, Literal, NoReturn
 from uuid import UUID
 
-from fastapi import Depends, Header, Path, Query
+from fastapi import Depends, Header, Path, Query, Request, Response
+from fastapi.exceptions import RequestValidationError
+from pydantic import ValidationError
 
 from abacus.kernel._flags import KNOWLEDGE_FIRM_STANDARDS
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.flags import flag_enabled
+from abacus.kernel.isolation import IsolationFailed, run_isolated
 from abacus.kernel.listing import ListPage
 from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.identity.api import (
@@ -24,14 +29,16 @@ from abacus.modules.identity.api import (
     Resource,
     authorise,
     current_context,
+    emails_of,
+    partner_members,
 )
-from abacus.modules.methodology import standards
+from abacus.modules.methodology import standards, standards_import
 from abacus.modules.methodology.standards_contract import (
     StandardCreateIn,
     StandardDetailOut,
     StandardDraftPatchIn,
     StandardExamplesOut,
-    StandardImportIn,
+    StandardImportProblemOut,
     StandardImportResultOut,
     StandardKind,
     StandardOut,
@@ -60,14 +67,61 @@ async def _gate(ctx: AuthContext) -> None:
         raise NotFound(KNOWLEDGE_FIRM_STANDARDS.name)
 
 
-async def _stub(ctx: AuthContext, action: str) -> NoReturn:
-    """Import and export until K-02-T11: 404 for a client, the matrix, the flag, then 501."""
+XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+# K-02-T11 (DEC-1357): the workbook is the raw request body, as methodology's template import
+# (no multipart dependency; the generated client posts the file as the body).
+
+
+async def _import_gate(ctx: AuthContext) -> None:
+    """404 for a client, the matrix's import action, then the flag."""
     if ctx.client:
         raise NotFound("firm_standard")
-    await authorise(ctx, action, Resource.firm(ctx.tenant_id))
+    await authorise(ctx, standards.IMPORT, Resource.firm(ctx.tenant_id))
     if not await flag_enabled(ctx.tenant, KNOWLEDGE_FIRM_STANDARDS):
         raise NotFound(KNOWLEDGE_FIRM_STANDARDS.name)
-    raise NotImplementedYet
+
+
+async def _parsed[**P, T](
+    parser: Callable[P, tuple[T, list[standards_import.Problem]]],
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> tuple[T, list[standards_import.Problem]]:
+    """A workbook parsed in the isolated child (hostile content; ADR-052): a child that crashes or
+    runs out of time or memory is one `not_a_workbook` problem."""
+    try:
+        return await asyncio.to_thread(run_isolated, parser, *args, **kwargs)
+    except IsolationFailed:
+        _invalid([standards_import.Problem("", None, None, "not_a_workbook")])
+
+
+async def _body(request: Request) -> bytes:
+    """The workbook, refused past the limit before it is all read."""
+    data = bytearray()
+    async for chunk in request.stream():
+        data += chunk
+        if len(data) > standards_import.MAX_BYTES:
+            _invalid([standards_import.Problem("", None, None, "too_large")])
+    return bytes(data)
+
+
+def _problem(
+    sheet: str, row: int | None, column: str | None, code: str
+) -> StandardImportProblemOut:
+    return StandardImportProblemOut(sheet=sheet, row=row, column=column, code=code)
+
+
+def _invalid(problems: Sequence[standards_import.Problem]) -> NoReturn:
+    """422 `import_invalid`: where and what, never a cell (ADR-052), in the validation shape."""
+    raise RequestValidationError(
+        [
+            {
+                "loc": ("body", *(p for p in (p.sheet, p.row, p.column) if p is not None)),
+                "msg": p.code,
+                "type": "import_invalid",
+            }
+            for p in problems
+        ]
+    )
 
 
 @standards_router.get("", action="firm_standard.read", response_model=ListPage[StandardOut])
@@ -231,13 +285,19 @@ async def version_diff_route(
     "/{standard_id}/versions/{version_id}/export.xlsx",
     action="firm_standard.read",
     response_model=bytes,
-    errors=(501,),
 )
 async def standard_export_version_route(
     standard_id: StandardId, version_id: VersionId, ctx: Ctx
-) -> bytes:
+) -> Response:
     """The version as a workbook; re-importing it gives an empty diff (US-5.1; K-02-T11)."""
-    await _stub(ctx, "firm_standard.read")
+    await _gate(ctx)
+    kind, key, number, payload = await standards.version_payload(ctx, standard_id, version_id)
+    body = standards_import.export_workbook(kind, f"{key} v{number}", payload)
+    return Response(
+        content=body,
+        media_type=XLSX,
+        headers={"Content-Disposition": f'attachment; filename="{key}-v{number}.xlsx"'},
+    )
 
 
 @standards_router.get(
@@ -260,14 +320,26 @@ async def standard_examples_route(
     action="firm_standard.import",
     response_model=StandardImportResultOut,
     status_code=201,
-    errors=(501,),
+    errors=(409,),
 )
 async def import_standard_route(
-    standard_id: StandardId, body: StandardImportIn, ctx: Ctx
+    standard_id: StandardId,
+    request: Request,
+    ctx: Ctx,
+    format: Annotated[Literal["xlsx", "csv"], Query()] = "xlsx",
 ) -> StandardImportResultOut:
     """A workbook to a draft of this standard (its owner's; 422 `import_invalid` with
-    problems). Never publishes (K-02-T11)."""
-    await _stub(ctx, "firm_standard.import")
+    problems). Never publishes (K-02-T11). The workbook is the raw body (DEC-1357)."""
+    await _import_gate(ctx)
+    data = await _body(request)
+    kind = (await standards.standard_detail(ctx, standard_id, None)).standard.kind
+    payload, problems = await _parsed(
+        standards_import.read_payload_isolated, kind, data, format == "csv"
+    )
+    if payload is None:
+        _invalid(problems)
+    draft = await standards.import_draft(ctx, standard_id, payload)
+    return StandardImportResultOut(drafts=[draft], problems=[])
 
 
 @standards_router.post(
@@ -275,9 +347,32 @@ async def import_standard_route(
     action="firm_standard.import",
     response_model=StandardImportResultOut,
     status_code=201,
-    errors=(501,),
 )
-async def import_standards_route(body: StandardImportIn, ctx: Ctx) -> StandardImportResultOut:
+async def import_standards_route(request: Request, ctx: Ctx) -> StandardImportResultOut:
     """Onboarding: one sheet per kind, one draft per standard; an owner who is not a partner
-    member is a row problem (`owner_not_partner`; K-02-T11)."""
-    await _stub(ctx, "firm_standard.import")
+    member is a row problem (`owner_not_partner`; K-02-T11). The other rows still import."""
+    await _import_gate(ctx)
+    rows, problems = await _parsed(standards_import.read_onboarding_isolated, await _body(request))
+    if problems:
+        _invalid(problems)
+    owners = await partner_members(ctx.tenant_id)
+    by_email = {e.lower(): u for u, e in (await emails_of(sorted(owners))).items()}
+    drafts: list[StandardVersionSummaryOut] = []
+    found: list[StandardImportProblemOut] = []
+    for row in rows:
+        owner = by_email.get(row.owner_email.lower())
+        if owner is None:
+            found.append(_problem(standards_import.STANDARDS, row.row, "D", "owner_not_partner"))
+            continue
+        try:
+            created = await standards.create_standard(
+                ctx,
+                StandardCreateIn.model_validate(
+                    {"key": row.key, "name": row.name, "kind": row.kind, "owner_id": owner}
+                ),
+            )
+            drafts.append(await standards.import_draft(ctx, created.id, row.payload))
+        except (DomainInvalid, DomainConflict, ValidationError) as refused:
+            code = getattr(refused, "code", None) or "row_invalid"
+            found.append(_problem(standards_import.STANDARDS, row.row, None, str(code)))
+    return StandardImportResultOut(drafts=drafts, problems=found)

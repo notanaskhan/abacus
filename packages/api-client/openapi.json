@@ -2321,6 +2321,26 @@
         "title": "AgentsStateOut",
         "type": "object"
       },
+      "AgreeingFormOut": {
+        "properties": {
+          "count": {
+            "cls": "internal",
+            "title": "Count",
+            "type": "integer"
+          },
+          "form": {
+            "cls": "internal",
+            "title": "Form",
+            "type": "string"
+          }
+        },
+        "required": [
+          "form",
+          "count"
+        ],
+        "title": "AgreeingFormOut",
+        "type": "object"
+      },
       "AiClientDataIn": {
         "additionalProperties": false,
         "properties": {
@@ -15864,6 +15884,119 @@
         "title": "ConsentTemplateOut",
         "type": "object"
       },
+      "ConsentTermsIn": {
+        "additionalProperties": false,
+        "description": "A `consent_7216` template's terms (T-01-T17; C11 v1.1 additive): one purpose, the\nmandatory-statement version, the counsel attestation and the stated expiry. Recipients are\nnever fixed text: they come from the provider-terms register at render time.",
+        "properties": {
+          "counsel_attestation": {
+            "cls": "internal",
+            "const": true,
+            "title": "Counsel Attestation",
+            "type": "boolean"
+          },
+          "expiry_months": {
+            "anyOf": [
+              {
+                "maximum": 36.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Expiry Months"
+          },
+          "purpose": {
+            "cls": "internal",
+            "enum": [
+              "use",
+              "ai_disclosure",
+              "offshore_disclosure",
+              "third_party_disclosure",
+              "other_services_use",
+              "firm_defined"
+            ],
+            "title": "Purpose",
+            "type": "string"
+          },
+          "statement_version": {
+            "cls": "internal",
+            "pattern": "^[A-Za-z0-9 ._-]{1,40}$",
+            "title": "Statement Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "purpose",
+          "statement_version",
+          "counsel_attestation"
+        ],
+        "title": "ConsentTermsIn",
+        "type": "object"
+      },
+      "ConsentTermsOut": {
+        "properties": {
+          "counsel_attested_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Counsel Attested At",
+            "type": "string"
+          },
+          "counsel_attested_by": {
+            "cls": "confidential",
+            "title": "Counsel Attested By",
+            "type": "string"
+          },
+          "expiry_months": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Expiry Months"
+          },
+          "purpose": {
+            "cls": "internal",
+            "enum": [
+              "use",
+              "ai_disclosure",
+              "offshore_disclosure",
+              "third_party_disclosure",
+              "other_services_use",
+              "firm_defined"
+            ],
+            "title": "Purpose",
+            "type": "string"
+          },
+          "recipients_source": {
+            "cls": "internal",
+            "const": "provider_terms_register",
+            "title": "Recipients Source",
+            "type": "string"
+          },
+          "statement_version": {
+            "cls": "internal",
+            "title": "Statement Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "purpose",
+          "statement_version",
+          "counsel_attested_by",
+          "counsel_attested_at",
+          "recipients_source",
+          "expiry_months"
+        ],
+        "title": "ConsentTermsOut",
+        "type": "object"
+      },
       "ContactAccessIn": {
         "additionalProperties": false,
         "description": "CLI-04 e \"Change scope\": the contact's whole grant set after the change.",
@@ -19285,6 +19418,22 @@
             "cls": "internal",
             "title": "Expires On"
           },
+          "fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FieldPlacementIn"
+                },
+                "maxItems": 200,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Fields"
+          },
           "message": {
             "anyOf": [
               {
@@ -19986,6 +20135,57 @@
           "due_on"
         ],
         "title": "DueDatesIn",
+        "type": "object"
+      },
+      "DuplicateResolutionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "decision": {
+            "cls": "internal",
+            "enum": [
+              "keep_newer",
+              "discard_duplicate"
+            ],
+            "title": "Decision",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision"
+        ],
+        "title": "DuplicateResolutionIn",
+        "type": "object"
+      },
+      "DuplicateResolutionOut": {
+        "properties": {
+          "decision": {
+            "cls": "internal",
+            "enum": [
+              "keep_newer",
+              "discard_duplicate"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "kept_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Kept Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidence_version_id",
+          "kept_version_id",
+          "decision"
+        ],
+        "title": "DuplicateResolutionOut",
         "type": "object"
       },
       "EFurnishingConsentIn": {
@@ -23890,34 +24090,6 @@
         "title": "EngineExportOut",
         "type": "object"
       },
-      "EngineImportIn": {
-        "additionalProperties": false,
-        "properties": {
-          "kind": {
-            "cls": "internal",
-            "enum": [
-              "values",
-              "diagnostics",
-              "pdfs",
-              "acks"
-            ],
-            "title": "Kind",
-            "type": "string"
-          },
-          "upload_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Upload Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "kind",
-          "upload_id"
-        ],
-        "title": "EngineImportIn",
-        "type": "object"
-      },
       "EngineImportOut": {
         "properties": {
           "allowed_actions": {
@@ -26462,6 +26634,83 @@
           "anchor"
         ],
         "title": "FieldOut",
+        "type": "object"
+      },
+      "FieldPlacementIn": {
+        "additionalProperties": false,
+        "description": "N-02-T30 (additive): a field placed on a document's page for one signer, in PDF points\n(origin top-left). `signer_index` is the signer's position in this request's `signers`.",
+        "properties": {
+          "document_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Document Id",
+            "type": "string"
+          },
+          "h": {
+            "cls": "internal",
+            "exclusiveMinimum": 0.0,
+            "maximum": 1000.0,
+            "title": "H",
+            "type": "number"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "signature",
+              "date",
+              "pin",
+              "initial"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "page": {
+            "cls": "internal",
+            "maximum": 500.0,
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          },
+          "signer_index": {
+            "cls": "internal",
+            "exclusiveMaximum": 20.0,
+            "minimum": 0.0,
+            "title": "Signer Index",
+            "type": "integer"
+          },
+          "w": {
+            "cls": "internal",
+            "exclusiveMinimum": 0.0,
+            "maximum": 1000.0,
+            "title": "W",
+            "type": "number"
+          },
+          "x": {
+            "cls": "internal",
+            "maximum": 2000.0,
+            "minimum": 0.0,
+            "title": "X",
+            "type": "number"
+          },
+          "y": {
+            "cls": "internal",
+            "maximum": 2000.0,
+            "minimum": 0.0,
+            "title": "Y",
+            "type": "number"
+          }
+        },
+        "required": [
+          "document_id",
+          "signer_index",
+          "kind",
+          "page",
+          "x",
+          "y",
+          "w",
+          "h"
+        ],
+        "title": "FieldPlacementIn",
         "type": "object"
       },
       "FieldProvenanceOut": {
@@ -29834,6 +30083,18 @@
             },
             "title": "Problems",
             "type": "array"
+          },
+          "returns_read": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Returns Read"
           }
         },
         "required": [
@@ -32802,7 +33063,10 @@
               "unknown_block",
               "markup_not_allowed",
               "clause_conflict",
-              "too_large"
+              "too_large",
+              "consent_terms_required",
+              "recipients_block_required",
+              "recipient_in_text"
             ],
             "title": "Code",
             "type": "string"
@@ -52777,6 +53041,17 @@
             "title": "Clauses",
             "type": "array"
           },
+          "consent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConsentTermsOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
           "content_sha256": {
             "cls": "internal",
             "pattern": "^[0-9a-f]{64}$",
@@ -55786,6 +56061,7 @@
         "properties": {
           "criteria": {
             "cls": "internal",
+            "default": "",
             "maxLength": 500,
             "title": "Criteria",
             "type": "string"
@@ -55830,8 +56106,7 @@
           "tier",
           "name",
           "required_levels",
-          "second_partner_review",
-          "criteria"
+          "second_partner_review"
         ],
         "title": "ReviewTier",
         "type": "object"
@@ -64193,23 +64468,6 @@
         "title": "StandardExamplesOut",
         "type": "object"
       },
-      "StandardImportIn": {
-        "additionalProperties": false,
-        "description": "A workbook already uploaded and scanned through the upload flow (an upload intent).",
-        "properties": {
-          "upload_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Upload Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "upload_id"
-        ],
-        "title": "StandardImportIn",
-        "type": "object"
-      },
       "StandardImportProblemOut": {
         "description": "A workbook problem: where, and a fixed code, never the cell's content (ADR-052).",
         "properties": {
@@ -66374,6 +66632,23 @@
         "additionalProperties": false,
         "description": "An authorization already on file (with its scanned form as an upload intent).",
         "properties": {
+          "designee_cafs": {
+            "anyOf": [
+              {
+                "items": {
+                  "pattern": "^[0-9]{4}-?[0-9]{5}[A-Z]?$",
+                  "type": "string"
+                },
+                "maxItems": 10,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Designee Cafs"
+          },
           "designee_user_ids": {
             "cls": "internal",
             "items": {
@@ -66693,6 +66968,18 @@
             "title": "Kind",
             "type": "string"
           },
+          "row_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Row Version"
+          },
           "status_code": {
             "cls": "internal",
             "title": "Status Code",
@@ -66750,6 +67037,40 @@
           "state"
         ],
         "title": "TaxPlanRowOut",
+        "type": "object"
+      },
+      "TaxProfileFileOut": {
+        "description": "A file staged for a transcript or an authorization: scanned before storage, named by id\nin the upload that files it (an upload intent).",
+        "properties": {
+          "file_name": {
+            "cls": "confidential",
+            "title": "File Name",
+            "type": "string"
+          },
+          "media_type": {
+            "cls": "internal",
+            "title": "Media Type",
+            "type": "string"
+          },
+          "size_bytes": {
+            "cls": "internal",
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "upload_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Upload Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "upload_id",
+          "file_name",
+          "media_type",
+          "size_bytes"
+        ],
+        "title": "TaxProfileFileOut",
         "type": "object"
       },
       "TaxProfileIdentityOut": {
@@ -69272,8 +69593,180 @@
         "title": "TemplateDraftStartedOut",
         "type": "object"
       },
+      "TemplateImportIn": {
+        "additionalProperties": false,
+        "description": "A template bundle (AC-1): structured blocks, declared variables and synthetic sample data\nonly (AC-2: no markup, no URL).",
+        "properties": {
+          "body": {
+            "cls": "internal",
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "clause": "#/components/schemas/ClauseBlock-Input",
+                  "enclosures": "#/components/schemas/EnclosuresBlock",
+                  "heading": "#/components/schemas/HeadingBlock",
+                  "image": "#/components/schemas/ImageBlock",
+                  "kv": "#/components/schemas/KvBlock",
+                  "legend": "#/components/schemas/LegendBlock",
+                  "list": "#/components/schemas/ListBlock",
+                  "page_break": "#/components/schemas/PageBreakBlock",
+                  "paragraph": "#/components/schemas/ParagraphBlock",
+                  "section": "#/components/schemas/SectionBlock-Input",
+                  "signature_block": "#/components/schemas/SignatureBlock",
+                  "table": "#/components/schemas/TableBlock"
+                },
+                "propertyName": "type"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/SectionBlock-Input"
+                },
+                {
+                  "$ref": "#/components/schemas/HeadingBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/ParagraphBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/ClauseBlock-Input"
+                },
+                {
+                  "$ref": "#/components/schemas/ListBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/TableBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/KvBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/SignatureBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/LegendBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/ImageBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/EnclosuresBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/PageBreakBlock"
+                }
+              ]
+            },
+            "maxItems": 500,
+            "title": "Body",
+            "type": "array"
+          },
+          "clauses": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ClauseDefOut-Input"
+            },
+            "maxItems": 200,
+            "title": "Clauses",
+            "type": "array"
+          },
+          "consent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConsentTermsIn"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "description": {
+            "cls": "internal",
+            "default": "",
+            "maxLength": 2000,
+            "title": "Description",
+            "type": "string"
+          },
+          "family": {
+            "cls": "internal",
+            "enum": [
+              "engagement_letter",
+              "consent_7216",
+              "representation_letter",
+              "governance_letter",
+              "audit_report",
+              "review_report",
+              "compilation_report",
+              "notice_response",
+              "delivery_cover_letter",
+              "k1_cover_letter",
+              "fs_package",
+              "run_trace_export"
+            ],
+            "title": "Family",
+            "type": "string"
+          },
+          "layout_key": {
+            "cls": "internal",
+            "maxLength": 40,
+            "title": "Layout Key",
+            "type": "string"
+          },
+          "name": {
+            "cls": "internal",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "sample_data": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "cls": "internal",
+            "default": {},
+            "title": "Sample Data",
+            "type": "object"
+          },
+          "variables": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/VariableDeclOut"
+            },
+            "maxItems": 200,
+            "title": "Variables",
+            "type": "array"
+          }
+        },
+        "required": [
+          "family",
+          "name",
+          "layout_key",
+          "body"
+        ],
+        "title": "TemplateImportIn",
+        "type": "object"
+      },
       "TemplateImportOut": {
         "properties": {
+          "added": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Added",
+            "type": "array"
+          },
+          "changed": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Changed",
+            "type": "array"
+          },
           "dry_run": {
             "cls": "internal",
             "title": "Dry Run",
@@ -69285,6 +69778,14 @@
               "type": "string"
             },
             "title": "Problems",
+            "type": "array"
+          },
+          "removed": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Removed",
             "type": "array"
           },
           "template_id": {
@@ -70714,6 +71215,66 @@
       },
       "TranscriptComparisonOut": {
         "properties": {
+          "agreeing": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/AgreeingFormOut"
+            },
+            "title": "Agreeing",
+            "type": "array"
+          },
+          "checkpoint_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Checkpoint Id"
+          },
+          "computed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Computed At"
+          },
+          "difference_total": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Difference Total",
+            "x-tri": true
+          },
+          "engine_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Engine Version"
+          },
           "id": {
             "cls": "internal",
             "format": "uuid",
@@ -70728,6 +71289,22 @@
             "title": "Lines",
             "type": "array",
             "x-tri": true
+          },
+          "result": {
+            "anyOf": [
+              {
+                "enum": [
+                  "agrees",
+                  "differences"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Result"
           },
           "return_id": {
             "cls": "internal",
@@ -70754,10 +71331,36 @@
       "TranscriptLineDiffOut": {
         "description": "A transcript line against the return as filed (code computes; ADR-050).",
         "properties": {
+          "difference": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Difference",
+            "x-tri": true
+          },
           "form": {
             "cls": "internal",
             "title": "Form",
             "type": "string"
+          },
+          "line_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Line No"
           },
           "matched": {
             "cls": "internal",
@@ -70791,6 +71394,23 @@
             "title": "Return Amount",
             "x-tri": true
           },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "agrees",
+                  "differs",
+                  "not_on_return"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Status"
+          },
           "transcript_amount": {
             "cls": "restricted",
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
@@ -70811,11 +71431,66 @@
       },
       "TranscriptOut": {
         "properties": {
+          "account_balance": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Account Balance",
+            "x-tri": true
+          },
+          "authorization_form": {
+            "anyOf": [
+              {
+                "enum": [
+                  "8821",
+                  "2848",
+                  "state"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Authorization Form"
+          },
+          "difference_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Difference Count"
+          },
           "id": {
             "cls": "internal",
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "key_transaction": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TranscriptTransactionOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "x-tri": true
           },
           "kind": {
             "cls": "internal",
@@ -70843,6 +71518,34 @@
             "title": "Pulled At",
             "type": "string"
           },
+          "pulled_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Pulled By Name"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "enum": [
+                  "agrees",
+                  "differences"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Result"
+          },
           "tax_year": {
             "cls": "internal",
             "title": "Tax Year",
@@ -70857,6 +71560,30 @@
           "parse_status"
         ],
         "title": "TranscriptOut",
+        "type": "object"
+      },
+      "TranscriptTransactionOut": {
+        "description": "An Account transcript's key transaction (TC 150 return filed, TC 922 unreported-income\nreview: a review, not an assessment).",
+        "properties": {
+          "code": {
+            "cls": "restricted",
+            "title": "Code",
+            "type": "string",
+            "x-tri": true
+          },
+          "posted_on": {
+            "cls": "restricted",
+            "format": "date",
+            "title": "Posted On",
+            "type": "string",
+            "x-tri": true
+          }
+        },
+        "required": [
+          "code",
+          "posted_on"
+        ],
+        "title": "TranscriptTransactionOut",
         "type": "object"
       },
       "TranscriptUploadIn": {
@@ -75134,167 +75861,6 @@
           "at"
         ],
         "title": "ApprovalOut",
-        "type": "object"
-      },
-      "abacus__modules__reporting__contract__TemplateImportIn": {
-        "additionalProperties": false,
-        "description": "A template bundle (AC-1): structured blocks, declared variables and synthetic sample data\nonly (AC-2: no markup, no URL).",
-        "properties": {
-          "body": {
-            "cls": "internal",
-            "items": {
-              "discriminator": {
-                "mapping": {
-                  "clause": "#/components/schemas/ClauseBlock-Input",
-                  "enclosures": "#/components/schemas/EnclosuresBlock",
-                  "heading": "#/components/schemas/HeadingBlock",
-                  "image": "#/components/schemas/ImageBlock",
-                  "kv": "#/components/schemas/KvBlock",
-                  "legend": "#/components/schemas/LegendBlock",
-                  "list": "#/components/schemas/ListBlock",
-                  "page_break": "#/components/schemas/PageBreakBlock",
-                  "paragraph": "#/components/schemas/ParagraphBlock",
-                  "section": "#/components/schemas/SectionBlock-Input",
-                  "signature_block": "#/components/schemas/SignatureBlock",
-                  "table": "#/components/schemas/TableBlock"
-                },
-                "propertyName": "type"
-              },
-              "oneOf": [
-                {
-                  "$ref": "#/components/schemas/SectionBlock-Input"
-                },
-                {
-                  "$ref": "#/components/schemas/HeadingBlock"
-                },
-                {
-                  "$ref": "#/components/schemas/ParagraphBlock"
-                },
-                {
-                  "$ref": "#/components/schemas/ClauseBlock-Input"
-                },
-                {
-                  "$ref": "#/components/schemas/ListBlock"
-                },
-                {
-                  "$ref": "#/components/schemas/TableBlock"
-                },
-                {
-                  "$ref": "#/components/schemas/KvBlock"
-                },
-                {
-                  "$ref": "#/components/schemas/SignatureBlock"
-                },
-                {
-                  "$ref": "#/components/schemas/LegendBlock"
-                },
-                {
-                  "$ref": "#/components/schemas/ImageBlock"
-                },
-                {
-                  "$ref": "#/components/schemas/EnclosuresBlock"
-                },
-                {
-                  "$ref": "#/components/schemas/PageBreakBlock"
-                }
-              ]
-            },
-            "maxItems": 500,
-            "title": "Body",
-            "type": "array"
-          },
-          "clauses": {
-            "cls": "internal",
-            "default": [],
-            "items": {
-              "$ref": "#/components/schemas/ClauseDefOut-Input"
-            },
-            "maxItems": 200,
-            "title": "Clauses",
-            "type": "array"
-          },
-          "description": {
-            "cls": "internal",
-            "default": "",
-            "maxLength": 2000,
-            "title": "Description",
-            "type": "string"
-          },
-          "family": {
-            "cls": "internal",
-            "enum": [
-              "engagement_letter",
-              "consent_7216",
-              "representation_letter",
-              "governance_letter",
-              "audit_report",
-              "review_report",
-              "compilation_report",
-              "notice_response",
-              "delivery_cover_letter",
-              "k1_cover_letter",
-              "fs_package",
-              "run_trace_export"
-            ],
-            "title": "Family",
-            "type": "string"
-          },
-          "layout_key": {
-            "cls": "internal",
-            "maxLength": 40,
-            "title": "Layout Key",
-            "type": "string"
-          },
-          "name": {
-            "cls": "internal",
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Name",
-            "type": "string"
-          },
-          "sample_data": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "cls": "internal",
-            "default": {},
-            "title": "Sample Data",
-            "type": "object"
-          },
-          "variables": {
-            "cls": "internal",
-            "default": [],
-            "items": {
-              "$ref": "#/components/schemas/VariableDeclOut"
-            },
-            "maxItems": 200,
-            "title": "Variables",
-            "type": "array"
-          }
-        },
-        "required": [
-          "family",
-          "name",
-          "layout_key",
-          "body"
-        ],
-        "title": "TemplateImportIn",
-        "type": "object"
-      },
-      "abacus__modules__requests__questionnaires_contract__TemplateImportIn": {
-        "additionalProperties": false,
-        "properties": {
-          "upload_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Upload Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "upload_id"
-        ],
-        "title": "TemplateImportIn",
         "type": "object"
       }
     },
@@ -82157,6 +82723,7 @@
         "x-abacus-action": "tax_authorization.manage"
       },
       "post": {
+        "description": "An authorization already on file; CAF numbers sealed, only their last four served.",
         "operationId": "add_authorization",
         "parameters": [
           {
@@ -82253,6 +82820,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -82281,9 +82858,147 @@
         "x-abacus-action": "tax_authorization.manage"
       }
     },
+    "/v1/client-entities/{client_entity_id}/authorizations/files": {
+      "post": {
+        "description": "The scanned 8821, 2848 or state form, the raw bytes as the body: scanned before storage,\nrefused closed (SPEC-029 AC-1); named by `upload_id` when the form is added.",
+        "operationId": "stage_authorization_file",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_entity_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Entity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filename",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Filename",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxProfileFileOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "The file is too large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service unavailable"
+          }
+        },
+        "summary": "Stage Authorization File Route",
+        "tags": [
+          "consents"
+        ],
+        "x-abacus-action": "tax_authorization.manage"
+      }
+    },
     "/v1/client-entities/{client_entity_id}/authorizations/requests": {
       "post": {
-        "description": "Draft an 8821 or 2848 through C7.",
+        "description": "Draft an 8821 or 2848 through C7: waits for the firm's form templates on P-11's renderer\n(DEC-1651); the stub's order of checks, then 501.",
         "operationId": "request_authorization",
         "parameters": [
           {
@@ -82410,6 +83125,7 @@
     },
     "/v1/client-entities/{client_entity_id}/consents": {
       "get": {
+        "description": "T-01-T16: CLI-05's consents for one taxpayer, under the registry's scope.",
         "operationId": "entity_consents",
         "parameters": [
           {
@@ -82530,6 +83246,7 @@
     },
     "/v1/client-entities/{client_entity_id}/elections/{kind}": {
       "put": {
+        "description": "Upsert one election; 409 `stale_version` when `seen_version` moved.",
         "operationId": "put_election",
         "parameters": [
           {
@@ -82791,7 +83508,127 @@
       }
     },
     "/v1/client-entities/{client_entity_id}/transcripts": {
+      "get": {
+        "description": "CLI-05 a's register, newest pull first, each with its latest result.",
+        "operationId": "list_transcripts",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_entity_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Entity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TranscriptOut"
+                  },
+                  "title": "Response List Transcripts",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "List Transcripts Route",
+        "tags": [
+          "consents"
+        ],
+        "x-abacus-action": "tax_profile.read"
+      },
       "post": {
+        "description": "File the staged transcript as retrieved evidence and parse it by code.",
         "operationId": "upload_transcript",
         "parameters": [
           {
@@ -82888,6 +83725,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -82910,6 +83757,144 @@
           }
         },
         "summary": "Upload Transcript Route",
+        "tags": [
+          "consents"
+        ],
+        "x-abacus-action": "transcript.upload"
+      }
+    },
+    "/v1/client-entities/{client_entity_id}/transcripts/files": {
+      "post": {
+        "description": "A transcript a practitioner pulled from IRS e-Services, the raw bytes as the body: scanned\nbefore storage, refused closed (SPEC-029 AC-1).",
+        "operationId": "stage_transcript_file",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_entity_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Entity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filename",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Filename",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxProfileFileOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "The file is too large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service unavailable"
+          }
+        },
+        "summary": "Stage Transcript File Route",
         "tags": [
           "consents"
         ],
@@ -86846,6 +87831,39 @@
             }
           },
           {
+            "in": "query",
+            "name": "expiring",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expiring"
+            }
+          },
+          {
+            "in": "query",
+            "name": "client_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Client Id"
+            }
+          },
+          {
             "in": "header",
             "name": "authorization",
             "required": false,
@@ -86949,6 +87967,7 @@
     },
     "/v1/consents/exports": {
       "post": {
+        "description": "T-01-T16: ConsentExportWorkflow builds the CSV; audited now; fresh MFA by the matrix.",
         "operationId": "export_consents",
         "parameters": [
           {
@@ -87066,6 +88085,7 @@
     },
     "/v1/consents/records": {
       "post": {
+        "description": "T-01-T10 Story 1.3: record mode, the signed PDF into COMPLIANCE storage.",
         "operationId": "record_consent",
         "parameters": [
           {
@@ -87203,6 +88223,7 @@
     },
     "/v1/consents/renewals": {
       "post": {
+        "description": "T-01-T10: renewals keep purpose, scope and years; 409 `consent_declined`.",
         "operationId": "renew_consents",
         "parameters": [
           {
@@ -87340,6 +88361,7 @@
     },
     "/v1/consents/requests": {
       "post": {
+        "description": "T-01-T10: one document per purpose, one drafted envelope; sending stays SIG-02's.",
         "operationId": "request_consents",
         "parameters": [
           {
@@ -87477,6 +88499,7 @@
     },
     "/v1/consents/summary": {
       "get": {
+        "description": "T-01-T16: ADM-04 D, CLI-02 b and the BND-01 tag; counts only.",
         "operationId": "consent_summary",
         "parameters": [
           {
@@ -87583,6 +88606,7 @@
     },
     "/v1/consents/{consent_id}": {
       "get": {
+        "description": "T-01-T16: the consent, its signers, its document and agent reads since signature.",
         "operationId": "consent",
         "parameters": [
           {
@@ -87699,6 +88723,7 @@
     },
     "/v1/consents/{consent_id}/declines": {
       "post": {
+        "description": "T-01-T10 Story 1.4: a decline blocks re-solicitation for the same years.",
         "operationId": "decline_consent",
         "parameters": [
           {
@@ -87975,6 +89000,7 @@
     },
     "/v1/consents/{consent_id}/revocations": {
       "post": {
+        "description": "T-01-T10 Story 1.4: a revocation; the gate's next call is refused.",
         "operationId": "revoke_consent",
         "parameters": [
           {
@@ -113929,6 +114955,153 @@
         "x-abacus-action": "request_item.update"
       }
     },
+    "/v1/engagements/{engagement_id}/request-items/{item_id}/evidence-versions/{version_id}/duplicate-resolution": {
+      "post": {
+        "description": "TAX-03 e: Keep newer or Discard duplicate; a discard voids and hides, never deletes.",
+        "operationId": "resolve_duplicate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DuplicateResolutionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DuplicateResolutionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Resolve Duplicate Route",
+        "tags": [
+          "evidence"
+        ],
+        "x-abacus-action": "evidence.resolve_duplicate"
+      }
+    },
     "/v1/engagements/{engagement_id}/request-items/{item_id}/follow-ups": {
       "post": {
         "description": "SHL-20 b: a template-composed draft from the firm's Return template, with the files it\nreturns. Its edit and send are `PATCH /v1/follow-ups/{id}` and `POST \u2026/send` (P-06-T14);\nfor this kind, send also returns the files, and delivery posts the shared comment\n(TASK-1252, DEC-368).",
@@ -126393,6 +127566,7 @@
     },
     "/v1/engine-imports/{import_id}": {
       "get": {
+        "description": "TAX-09 O4: the import's diff rows (T-01-T19).",
         "operationId": "engine_import",
         "parameters": [
           {
@@ -126488,16 +127662,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Engine Import Route",
@@ -126509,6 +127673,7 @@
     },
     "/v1/engine-imports/{import_id}/approve": {
       "post": {
+        "description": "TAX-09 c: approve the accepted rows only (a person). 409 `import_decided`,\n`stale_version`; 422 `nothing_accepted`.",
         "operationId": "approve_import",
         "parameters": [
           {
@@ -126624,16 +127789,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Approve Import Route",
@@ -126645,6 +127800,7 @@
     },
     "/v1/engine-imports/{import_id}/reject": {
       "post": {
+        "description": "TAX-09 e: reject the import with a reason (a person). 409 `import_decided`,\n`stale_version`.",
         "operationId": "reject_import",
         "parameters": [
           {
@@ -126760,16 +127916,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Reject Import Route",
@@ -137714,6 +138860,7 @@
     },
     "/v1/firm/integrations/{key}/office-mapping": {
       "put": {
+        "description": "ADM-08 b: the office mapping, replaced with the rows sent.",
         "operationId": "put_office_mapping",
         "parameters": [
           {
@@ -137829,16 +138976,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Put Office Mapping Route",
@@ -137850,6 +138987,7 @@
     },
     "/v1/firm/integrations/{key}/settings": {
       "get": {
+        "description": "ADM-08 a: the cells with their locks and the mappings.",
         "operationId": "engine_settings",
         "parameters": [
           {
@@ -137945,16 +139083,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Engine Settings Route",
@@ -137964,6 +139092,7 @@
         "x-abacus-action": "integration.read"
       },
       "put": {
+        "description": "ADM-08 a: save cells (fresh MFA). 409 `setting_locked`, `stale_version`; 422\n`setting_invalid`.",
         "operationId": "put_engine_settings",
         "parameters": [
           {
@@ -138079,16 +139208,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Put Engine Settings Route",
@@ -138216,16 +139335,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Put Status Mirror Route",
@@ -138237,6 +139346,7 @@
     },
     "/v1/firm/integrations/{key}/test": {
       "post": {
+        "description": "ADM-08 d: a format check of the latest engine file (codes only).",
         "operationId": "test_engine",
         "parameters": [
           {
@@ -138332,16 +139442,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Test Engine Route",
@@ -138353,6 +139453,7 @@
     },
     "/v1/firm/integrations/{key}/user-mapping": {
       "put": {
+        "description": "ADM-08 b: the user mapping, replaced with the rows sent.",
         "operationId": "put_user_mapping",
         "parameters": [
           {
@@ -138468,16 +139569,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Put User Mapping Route",
@@ -156626,7 +157717,7 @@
     },
     "/v1/methodology/versions/{version_id}/discard": {
       "post": {
-        "description": "KNW-03: discard a draft (published versions are never discarded).",
+        "description": "KNW-03: discard a draft or a version in review (published versions are never discarded;\nthe number stays consumed). 409 `stale_version`, `version_frozen`.",
         "operationId": "discard_draft",
         "parameters": [
           {
@@ -156742,16 +157833,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Discard Draft Route",
@@ -156890,7 +157971,7 @@
     },
     "/v1/methodology/versions/{version_id}/drafts": {
       "post": {
-        "description": "KNW-03 c: a new draft vN+1 from a published version.",
+        "description": "KNW-03 c: a new draft vN+1 from a published version (K-01-T14). 409\n`version_not_published`, `draft_exists`.",
         "operationId": "create_draft",
         "parameters": [
           {
@@ -156996,16 +158077,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Create Draft Route",
@@ -157601,7 +158672,7 @@
     },
     "/v1/methodology/versions/{version_id}/programs/{program_id}/steps": {
       "post": {
-        "description": "KNW-03 c: + Step in a draft.",
+        "description": "KNW-03 c: + Step in a draft (K-01-T14). 409 `version_frozen`.",
         "operationId": "add_step",
         "parameters": [
           {
@@ -157727,16 +158798,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Add Step Route",
@@ -157972,7 +159033,7 @@
     },
     "/v1/methodology/versions/{version_id}/steps/{step_id}": {
       "delete": {
-        "description": "KNW-03 c: remove a non-mandatory draft step (409 `mandatory_locked`).",
+        "description": "KNW-03 c: remove a non-mandatory draft step (K-01-T14). 409 `mandatory_locked`,\n`step_has_requests`, `version_frozen`, `stale_version`.",
         "operationId": "remove_step",
         "parameters": [
           {
@@ -158098,16 +159159,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Remove Step Route",
@@ -158117,7 +159168,7 @@
         "x-abacus-action": "methodology.manage"
       },
       "patch": {
-        "description": "KNW-03 c: edit a draft step (409 `version_frozen` on a published version).",
+        "description": "KNW-03 c: edit an optional draft step; its key and source stay (K-01-T14). 409\n`version_frozen`, `mandatory_locked`, `stale_version`.",
         "operationId": "edit_step",
         "parameters": [
           {
@@ -158253,16 +159304,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Edit Step Route",
@@ -158274,7 +159315,7 @@
     },
     "/v1/methodology/versions/{version_id}/steps/{step_id}/mandatory": {
       "post": {
-        "description": "KNW-03 d: a quality partner locks or unlocks a step (human-only, fresh MFA).",
+        "description": "KNW-03 d: the QM owner locks or unlocks a draft step (human-only, fresh MFA; K-01-T14).\nA refusal is audited before the flag is read. 409 `version_frozen`, `stale_version`.",
         "operationId": "mandatory_step",
         "parameters": [
           {
@@ -158410,16 +159451,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Mandatory Step Route",
@@ -165833,6 +166864,7 @@
     },
     "/v1/portal/questionnaires": {
       "get": {
+        "description": "POR-05's list: the caller's questionnaires, sent questions only (T-02-T22).",
         "operationId": "portal_questionnaires",
         "parameters": [
           {
@@ -165922,16 +166954,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal Questionnaires Route",
@@ -165943,6 +166965,7 @@
     },
     "/v1/portal/questionnaires/{questionnaire_id}": {
       "get": {
+        "description": "POR-05: one questionnaire, filtered (unanswered) or by section; another client user's\ninquiry is 404 (INV-4).",
         "operationId": "portal_questionnaire",
         "parameters": [
           {
@@ -166075,16 +167098,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal Questionnaire Route",
@@ -166096,7 +167109,7 @@
     },
     "/v1/portal/questionnaires/{questionnaire_id}/answers/{question_id}": {
       "put": {
-        "description": "Autosave (409 `stale_version` when the answer moved).",
+        "description": "Autosave: `If-Match` is the version this save makes (409 `stale_version` when the answer\nmoved; `questionnaire_closed` once submitted); 422 `answer_invalid` for the wrong type.",
         "operationId": "portal_answer",
         "parameters": [
           {
@@ -166232,16 +167245,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal Answer Route",
@@ -166389,6 +167392,7 @@
     },
     "/v1/portal/questionnaires/{questionnaire_id}:mark-done": {
       "post": {
+        "description": "Mark as Done once every question is answered (409 `questionnaire_incomplete`).",
         "operationId": "portal_mark_done",
         "parameters": [
           {
@@ -166494,16 +167498,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal Mark Done Route",
@@ -166515,7 +167509,7 @@
     },
     "/v1/portal/questionnaires/{questionnaire_id}:submit": {
       "post": {
-        "description": "An inquiry's addressee submits and locks it.",
+        "description": "An inquiry's addressee submits and locks it (anyone else: 404).",
         "operationId": "portal_submit",
         "parameters": [
           {
@@ -166621,16 +167615,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal Submit Route",
@@ -168246,16 +169230,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Questionnaire List Templates Route",
@@ -168267,6 +169241,7 @@
     },
     "/v1/questionnaire-templates/{template_id}/versions/{version}:publish": {
       "post": {
+        "description": "A person publishes the version (fresh MFA). 409 `version_published`.",
         "operationId": "publish_template",
         "parameters": [
           {
@@ -168382,16 +169357,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Publish Template Route",
@@ -168403,8 +169368,35 @@
     },
     "/v1/questionnaire-templates:import": {
       "post": {
+        "description": "A template file as the raw body (no multipart; DEC-1369), parsed in the isolated child.\nThe dry run answers problems and the diff and stores nothing (T-02-T16).",
         "operationId": "questionnaire_import_template",
         "parameters": [
+          {
+            "in": "query",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "default": "csv",
+              "enum": [
+                "csv",
+                "xlsx",
+                "json"
+              ],
+              "title": "Format",
+              "type": "string"
+            }
+          },
           {
             "in": "query",
             "name": "dry_run",
@@ -168448,16 +169440,6 @@
             }
           }
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/abacus__modules__requests__questionnaires_contract__TemplateImportIn"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "201": {
             "content": {
@@ -168508,16 +169490,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Questionnaire Import Template Route",
@@ -168529,6 +169501,7 @@
     },
     "/v1/questionnaires": {
       "post": {
+        "description": "A-04 and A-08's team questions and inquiries (an inquiry names its addressee).",
         "operationId": "create_questionnaire",
         "parameters": [
           {
@@ -168634,16 +169607,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Create Questionnaire Route",
@@ -168750,16 +169713,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Questionnaire Route",
@@ -168771,6 +169724,7 @@
     },
     "/v1/questionnaires/{questionnaire_id}/questions": {
       "post": {
+        "description": "A team question drafted in an open questionnaire. 409 `questionnaire_closed`.",
         "operationId": "draft_question",
         "parameters": [
           {
@@ -168886,16 +169840,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Draft Question Route",
@@ -168907,7 +169851,7 @@
     },
     "/v1/questions/{question_id}:send": {
       "post": {
-        "description": "A person sends it (human-only; G3 met except on intake binders).",
+        "description": "A person sends it (human-only). 409 `question_sent`.",
         "operationId": "send_question",
         "parameters": [
           {
@@ -169013,16 +169957,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Send Question Route",
@@ -169775,16 +170709,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Report Templates Route",
@@ -169846,7 +170770,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/abacus__modules__reporting__contract__TemplateImportIn"
+                "$ref": "#/components/schemas/TemplateImportIn"
               }
             }
           },
@@ -169912,16 +170836,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Import Report Template Route",
@@ -170038,16 +170952,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Report Template Version Route",
@@ -170055,6 +170959,132 @@
           "reporting"
         ],
         "x-abacus-action": "report_template.read"
+      }
+    },
+    "/v1/report-templates/{template_id}/versions/{version_no}/deprecate": {
+      "post": {
+        "description": "T-01-T17 (C11 v1.1 additive): withdraw the current version; nothing is current until a\nversion is published again. Human-only, fresh second factor; 409 `not_current`.",
+        "operationId": "deprecate_report_template",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "template_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Template Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_no",
+            "required": true,
+            "schema": {
+              "title": "Version No",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportTemplateVersionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Deprecate Report Template Route",
+        "tags": [
+          "reporting"
+        ],
+        "x-abacus-action": "report_template.publish"
       }
     },
     "/v1/report-templates/{template_id}/versions/{version_no}/preview": {
@@ -170310,16 +171340,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Publish Report Template Route",
@@ -170430,16 +171450,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Questionnaires Route",
@@ -170449,6 +171459,7 @@
         "x-abacus-action": "questionnaire.read"
       },
       "post": {
+        "description": "An organizer from a published version, prior-year values by code. 409\n`version_not_published`.",
         "operationId": "attach_organizer",
         "parameters": [
           {
@@ -170564,16 +171575,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Attach Organizer Route",
@@ -172732,7 +173733,7 @@
     },
     "/v1/standards/imports": {
       "post": {
-        "description": "Onboarding: one sheet per kind, one draft per standard; an owner who is not a partner\nmember is a row problem (`owner_not_partner`; K-02-T11).",
+        "description": "Onboarding: one sheet per kind, one draft per standard; an owner who is not a partner\nmember is a row problem (`owner_not_partner`; K-02-T11). The other rows still import.",
         "operationId": "import_standards",
         "parameters": [
           {
@@ -172768,16 +173769,6 @@
             }
           }
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/StandardImportIn"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "201": {
             "content": {
@@ -172828,16 +173819,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Import Standards Route",
@@ -173097,7 +174078,7 @@
     },
     "/v1/standards/{standard_id}/imports": {
       "post": {
-        "description": "A workbook to a draft of this standard (its owner's; 422 `import_invalid` with\nproblems). Never publishes (K-02-T11).",
+        "description": "A workbook to a draft of this standard (its owner's; 422 `import_invalid` with\nproblems). Never publishes (K-02-T11). The workbook is the raw body (DEC-1357).",
         "operationId": "import_standard",
         "parameters": [
           {
@@ -173107,6 +174088,20 @@
             "schema": {
               "format": "uuid",
               "title": "Standard Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "default": "xlsx",
+              "enum": [
+                "xlsx",
+                "csv"
+              ],
+              "title": "Format",
               "type": "string"
             }
           },
@@ -173143,16 +174138,6 @@
             }
           }
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/StandardImportIn"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "201": {
             "content": {
@@ -173194,6 +174179,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -173203,16 +174198,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Import Standard Route",
@@ -174097,16 +175082,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Standard Export Version Route",
@@ -175771,6 +176746,7 @@
     },
     "/v1/tax-returns/{return_id}": {
       "get": {
+        "description": "TAX-02's record: the row, the engine id, the policy pin, the tabs (T-02-T13).",
         "operationId": "return_record",
         "parameters": [
           {
@@ -175866,16 +176842,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Return Record Route",
@@ -176847,6 +177813,7 @@
     },
     "/v1/tax-returns/{return_id}/engine-imports": {
       "post": {
+        "description": "An engine file as the raw body (no multipart; DEC-1363): scanned and stored, parsed in the\nisolated child; values wait as \"Import pending approval\" (T-01-T19). 409\n`engine_return_mismatch`, `engine_version_behind`, `import_pending`; 422\n`engine_file_invalid`, `import_kind_unavailable`.",
         "operationId": "upload_import",
         "parameters": [
           {
@@ -176860,13 +177827,28 @@
             }
           },
           {
-            "in": "header",
-            "name": "Idempotency-Key",
+            "in": "query",
+            "name": "kind",
             "required": true,
             "schema": {
-              "maxLength": 200,
-              "minLength": 8,
-              "title": "Idempotency-Key",
+              "enum": [
+                "values",
+                "diagnostics",
+                "pdfs",
+                "acks"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-File-Name",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "X-File-Name",
               "type": "string"
             }
           },
@@ -176903,16 +177885,6 @@
             }
           }
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EngineImportIn"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "201": {
             "content": {
@@ -176954,6 +177926,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -176963,16 +177945,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Upload Import Route",
@@ -176984,6 +177956,7 @@
     },
     "/v1/tax-returns/{return_id}/engine-sync": {
       "get": {
+        "description": "TAX-09's chip, history and diagnostics, derived (T-01-T19).",
         "operationId": "engine_sync",
         "parameters": [
           {
@@ -177079,16 +178052,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Engine Sync Route",
@@ -177226,7 +178189,7 @@
     },
     "/v1/tax-returns/{return_id}/final-approval": {
       "get": {
-        "description": "Eligibility facts and blockers (TAX-02 calls `tax.api.final_approval_blockers`).",
+        "description": "Eligibility facts and blockers (T-01-T18; TAX-02, TAX-09 a/a2).",
         "operationId": "final_approval",
         "parameters": [
           {
@@ -177322,16 +178285,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Final Approval Route",
@@ -177341,7 +178294,7 @@
         "x-abacus-action": "tax_return.read"
       },
       "post": {
-        "description": "SHL-12 h: the L4 `final_approval` sign-off, recorded only by `tax/approval.py`.",
+        "description": "SHL-12 h: the L4 sign-off, recorded only by `tax/approval.py` (T-01-T18).",
         "operationId": "approve_return",
         "parameters": [
           {
@@ -177468,16 +178421,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Approve Return Route",
@@ -178120,6 +179063,7 @@
     },
     "/v1/tax-returns/{return_id}/overview": {
       "get": {
+        "description": "TAX-02's overview (T-02-T13): metadata for every reader of the return; the engine figures\nonly with `tax_return.read` (absent, not masked, otherwise).",
         "operationId": "return_overview",
         "parameters": [
           {
@@ -178215,27 +179159,18 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Return Overview Route",
         "tags": [
           "tax-returns"
         ],
-        "x-abacus-action": "tax_return.read"
+        "x-abacus-action": "tax_return.read_metadata"
       }
     },
     "/v1/tax-returns/{return_id}/transitions": {
       "post": {
+        "description": "`start_preparation` or `start_review` at the version seen (T-02-T13). 409\n`transition_refused`, `stale_version`.",
         "operationId": "transition",
         "parameters": [
           {
@@ -178351,16 +179286,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Transition Route",
@@ -178733,8 +179658,126 @@
         "x-abacus-action": "own"
       }
     },
+    "/v1/transcripts/{transcript_id}/comparison": {
+      "get": {
+        "description": "The transcript's latest comparison (404 when it was never compared).",
+        "operationId": "latest_comparison",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "transcript_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Transcript Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranscriptComparisonOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Latest Comparison Route",
+        "tags": [
+          "consents"
+        ],
+        "x-abacus-action": "tax_profile.read"
+      }
+    },
     "/v1/transcripts/{transcript_id}/comparisons": {
       "post": {
+        "description": "Compare with the return as filed (its latest approved engine import), by code.",
         "operationId": "compare_transcript",
         "parameters": [
           {
@@ -178830,6 +179873,16 @@
               }
             },
             "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
           },
           "422": {
             "content": {

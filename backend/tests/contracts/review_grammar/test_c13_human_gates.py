@@ -177,6 +177,8 @@ STALE_EVENTS: Final = {
     "trial_balance.version_created",
     "tie_out_check.changed",
     "workpaper.content_changed",
+    # A-03-T14 (TASK-5010): a new trial balance version makes a signed mapping's sign-off stale.
+    "mapping_set.went_stale",
 }
 
 

@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, time
 from typing import Final, Literal
@@ -500,3 +501,31 @@ async def import_record(ctx: AuthContext, request: ImportRequest) -> Imported:
         keep,
         now,
     )
+
+
+@dataclass(frozen=True)
+class UnconsumedFile:
+    """An import file the caller staged and nothing has consumed (T-01-T10's consent record
+    mode reads its bytes through `evidence.api.read_staged`)."""
+
+    id: UUID
+    sha256: str
+    storage_key: str
+    storage_version_id: str
+    size_bytes: int
+    media_type: str
+
+
+async def staged_files(ctx: AuthContext, ids: Sequence[UUID]) -> list[UnconsumedFile]:
+    """The caller's own unconsumed import files, in `ids` order (`import_file_unavailable`)."""
+    async with tenant_session(ctx.tenant) as session:
+        rows = (await session.execute(_FILES, {"ids": list(ids), "user": ctx.user_id})).all()
+    by_id = {row.id: row for row in rows}
+    if len(set(ids)) != len(ids) or set(by_id) != set(ids):
+        raise ImportFileUnavailable
+    return [
+        UnconsumedFile(
+            r.id, r.sha256, r.storage_key, r.storage_version_id, r.size_bytes, r.media_type
+        )
+        for r in (by_id[i] for i in ids)
+    ]

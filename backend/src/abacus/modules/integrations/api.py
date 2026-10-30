@@ -40,8 +40,20 @@ from abacus.modules.integrations.catalog import (
 from abacus.modules.integrations.catalog_load import CatalogDocument, LoadPlan, plan_load
 
 # The routers the API mounts, in order (P-39; F-03-T07).
+from abacus.modules.integrations.engine_settings import (
+    FormatCheck,
+    engine_return_id,
+    register_engine_file_check,
+)
 from abacus.modules.integrations.engine_settings_contract import (
     engine_settings_router,
+)
+from abacus.modules.integrations.esign_install import (
+    EsignInstallExists,
+    connect_esign_install,
+    disconnect_esign_install,
+    esign_install_state,
+    rotate_esign_secret,
 )
 from abacus.modules.integrations.ports import (
     IntegrationAdapter,
@@ -56,6 +68,7 @@ from abacus.modules.integrations.qbo_adapter import register_if_configured
 # imported from there (loading the module registers them before the API mounts the router).
 from abacus.modules.integrations.routes import firm_router, portal_router
 from abacus.modules.integrations.secrets import (
+    ESIGN_CATALOG,
     connected_integration,
     erase_secret,
     esign_install_secret,
@@ -76,11 +89,14 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 )
 
 __all__ = [
+    "ESIGN_CATALOG",
     "ROUTERS",
     "AdapterRefused",
     "CatalogDocument",
     "CatalogEntry",
     "CatalogRow",
+    "EsignInstallExists",
+    "FormatCheck",
     "IntegrationAdapter",
     "IntegrationCategory",
     "LoadPlan",
@@ -97,12 +113,16 @@ __all__ = [
     "authorise_write",
     "catalog_rows",
     "client_catalog",
+    "connect_esign_install",
     "connected_integration",
+    "disconnect_esign_install",
     "egress_allowlist",
     "egress_hosts_by_connector",
     "egress_read_posts",
+    "engine_return_id",
     "erase_secret",
     "esign_install_secret",
+    "esign_install_state",
     "execute_write",
     "is_available",
     "listed",
@@ -111,9 +131,11 @@ __all__ = [
     "plan_load",
     "policy_refusal",
     "register_adapter",
+    "register_engine_file_check",
     "registered_adapter",
     "registered_keys",
     "registry",
+    "rotate_esign_secret",
     "store_secret",
     "undeclared_egress",
     "unregister_adapter",

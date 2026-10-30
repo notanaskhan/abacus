@@ -31,6 +31,12 @@ EXCLUDE: tuple[str, ...] = ()
 # (path glob, rule id, reason): findings that are known local fixtures, never real secrets.
 ALLOW: tuple[tuple[str, str, str], ...] = (
     (
+        "backend/tests/unit/integrations/test_task2152_esign_install_tool.py",
+        "SECRET-003",
+        "a synthetic DocuSeal-shaped key that spells 'not a secret', for the install tool's"
+        " shape check (TASK-2152); never a real key",
+    ),
+    (
         "backend/migrations/bootstrap-local.sql",
         "*",
         "local-only database role passwords for the docker compose stack;"
@@ -52,6 +58,27 @@ ALLOW: tuple[tuple[str, str, str], ...] = (
         "backend/tests/contracts/review_grammar/test_c3_shl10_proposals.py",
         "SECRET-003",
         "C3 `field_key` values are tax-form line codes (f1040.l2a, sch_a.l5b), not credentials",
+    ),
+    (
+        "backend/tests/unit/integrations/test_task2152_esign_install_tool.py",
+        "SECRET-003",
+        "N-02-T18: a synthetic key literal (synthetic0key0not0a0secret0…) for the install tool's"
+        " shape check, not a credential",
+    ),
+    (
+        "backend/tests/unit/methodology/test_k02t11_standards_workbooks.py",
+        "SECRET-003",
+        "K-02-T11: firm-standard item keys (k1.basis, m1.tie), not credentials",
+    ),
+    (
+        "backend/tests/unit/reporting/test_t01t17_consent_templates.py",
+        "SECRET-003",
+        "T-01-T17: report `layout_key` names (consent_7216), not credentials",
+    ),
+    (
+        "backend/tests/unit/tax/test_t01t10_consent_capture.py",
+        "SECRET-003",
+        "T-01-T10: report `layout_key` names (consent_7216), not credentials",
     ),
     (
         "backend/tests/integration/backfill/test_k01t12_programs_read.py",
@@ -95,6 +122,12 @@ ALLOW: tuple[tuple[str, str, str], ...] = (
         "SECRET-003",
         "T-01-T15: TAX-09 diagnostics carry a `field_key` tax-form line code (f8995a.ubia),"
         " not credentials",
+    ),
+    (
+        "apps/web/src/fixtures/seed/reference-sets.ts",
+        "SECRET-003",
+        "K-02-T17: C21 reference sets carry a `key` / `set_key` set code"
+        " (us.due_date_rules.ty2025), never a credential",
     ),
 )
 DATA_SUFFIXES = frozenset({".csv", ".json", ".yaml", ".yml", ".txt", ".tsv"})

@@ -1,5 +1,6 @@
 """Public interface of the organisations module; other modules import only this (ADR-008)."""
 
+from abacus.kernel.dispatch import WorkClass, register_work_classes
 from abacus.kernel.uow.placement import register_client_placer
 from abacus.modules.identity.api import (
     AbacusRouter,
@@ -9,6 +10,8 @@ from abacus.modules.identity.api import (
     register_office_list,
     register_settings_area,
 )
+from abacus.modules.organisations.activities import ACTIVITIES as CONSENT_ACTIVITIES
+from abacus.modules.organisations.activities import SCHEDULES as CONSENT_SCHEDULES
 from abacus.modules.organisations.audit_placement import client_offices
 from abacus.modules.organisations.conflicts import (
     check_clear_for,
@@ -29,9 +32,41 @@ from abacus.modules.organisations.consent_gate import (
     require_tri_consent,
     tri_consent_verdict,
 )
+from abacus.modules.organisations.consents import (
+    ConsentDraft,
+    FilingUnit,
+    check_scope,
+    consent_template_versions_on,
+    envelope_completed,
+    filing_unit,
+    record_request,
+    record_signed,
+    refuse_declined,
+    renewal_basis,
+)
 from abacus.modules.organisations.consents_contract import (
+    AgreeingFormOut,
+    AuthorizationForm,
+    AuthorizationStatus,
+    ConsentDraftsOut,
+    ConsentRecordIn,
+    ConsentRenewalIn,
+    ConsentRequestIn,
     ConsentState,
+    TaxAuthorizationDesigneeOut,
+    TaxAuthorizationIn,
+    TaxAuthorizationOut,
+    TaxElectionIn,
+    TaxElectionOut,
+    TaxProfileFileOut,
+    TranscriptComparisonIn,
+    TranscriptComparisonOut,
+    TranscriptLineDiffOut,
+    TranscriptOut,
+    TranscriptTransactionOut,
+    TranscriptUploadIn,
     TriVerdict,
+    consent_outs,
     consents_router,
 )
 from abacus.modules.organisations.contacts import RoleAsked, contact_portal_facts, create_contact
@@ -126,10 +161,17 @@ from abacus.modules.organisations.slots import (
     register_client_engagements,
     register_conflict_subject,
     register_conflict_subject_names,
+    register_consent_capture,
     register_office_facts,
     register_open_requests,
     register_overview_section,
     register_screening_evidence,
+)
+
+# T-01-T43: the tax-profile family's live routes register on `consents_router` at import.
+from abacus.modules.organisations.tax_profile import (
+    TaxProfileBackend,
+    register_tax_profile_backend,
 )
 from abacus.modules.organisations.tin import (
     MaskedTin,
@@ -141,8 +183,21 @@ from abacus.modules.organisations.tin import (
     mask_tin,
     seal_tin,
 )
+from abacus.modules.organisations.workflows import (
+    ConsentExportWorkflow,
+    ConsentLifecycleSweepWorkflow,
+)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
+# T-01-T16: the consent export and the daily lifecycle sweep (background work).
+WORKFLOWS: dict[type, WorkClass] = {
+    ConsentExportWorkflow: "background",
+    ConsentLifecycleSweepWorkflow: "background",
+}
+register_work_classes(WORKFLOWS)
+ACTIVITIES: tuple[object, ...] = CONSENT_ACTIVITIES
+SCHEDULES = CONSENT_SCHEDULES
+
 ROUTERS: tuple[AbacusRouter, ...] = (
     clients_router,  # the clients family contract, v1 stub (P-07-T04)
     client_entities_router,
@@ -180,15 +235,26 @@ for _section in (
 register_consent_gate()
 
 __all__ = [
+    "ACTIVITIES",
     "CONTACT_ROLES",
     "ENTITY_TYPES",
     "RELATIONSHIP_KINDS",
     "ROUTERS",
+    "SCHEDULES",
+    "WORKFLOWS",
+    "AgreeingFormOut",
+    "AuthorizationForm",
+    "AuthorizationStatus",
     "ClientChoice",
     "ClientNames",
     "ClientRecord",
     "ClientRecordChange",
     "ClientRecordInvalid",
+    "ConsentDraft",
+    "ConsentDraftsOut",
+    "ConsentRecordIn",
+    "ConsentRenewalIn",
+    "ConsentRequestIn",
     "ConsentState",
     "ContactExists",
     "ContactFacts",
@@ -198,6 +264,7 @@ __all__ = [
     "DedupeMatch",
     "EntityAttributes",
     "EntityChoice",
+    "FilingUnit",
     "FirmName",
     "MaskedTin",
     "MaskedTinOut",
@@ -210,9 +277,22 @@ __all__ = [
     "SectionRows",
     "SignerContact",
     "SubjectNames",
+    "TaxAuthorizationDesigneeOut",
+    "TaxAuthorizationIn",
+    "TaxAuthorizationOut",
+    "TaxElectionIn",
+    "TaxElectionOut",
+    "TaxProfileBackend",
+    "TaxProfileFileOut",
     "TinConflict",
     "TinInvalid",
     "TinKindNotAllowed",
+    "TranscriptComparisonIn",
+    "TranscriptComparisonOut",
+    "TranscriptLineDiffOut",
+    "TranscriptOut",
+    "TranscriptTransactionOut",
+    "TranscriptUploadIn",
     "TriConsentRequired",
     "TriSubject",
     "TriVerdict",
@@ -224,6 +304,7 @@ __all__ = [
     "attest_client_ids",
     "attest_client_of",
     "check_clear_for",
+    "check_scope",
     "clear_conflict_result",
     "clear_tin",
     "client_exists",
@@ -232,7 +313,9 @@ __all__ = [
     "client_of_entity",
     "client_record",
     "client_with_entity",
+    "consent_outs",
     "consent_state",
+    "consent_template_versions_on",
     "contact_client",
     "contact_facts",
     "contact_portal_facts",
@@ -245,6 +328,8 @@ __all__ = [
     "entity_display_name",
     "entity_name_column",
     "entity_tin_last4s",
+    "envelope_completed",
+    "filing_unit",
     "find_clients",
     "fingerprint_tin",
     "firm_names",
@@ -253,13 +338,19 @@ __all__ = [
     "office_name_column",
     "portal_activation",
     "readable_client",
+    "record_request",
+    "record_signed",
+    "refuse_declined",
     "register_client_engagements",
     "register_conflict_subject",
     "register_conflict_subject_names",
+    "register_consent_capture",
     "register_office_facts",
     "register_open_requests",
     "register_overview_section",
     "register_screening_evidence",
+    "register_tax_profile_backend",
+    "renewal_basis",
     "require_tri_consent",
     "run_conflict_check",
     "same_name_client",

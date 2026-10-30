@@ -1,11 +1,12 @@
 """Knowledge catalog v1 and methodology programs v1, the stubs (K-01-T01; K-01 §4.3, §8.2).
 Contracts: `docs/contracts/knowledge-catalog.md` and `docs/contracts/methodology-programs.md`.
 
-Each route answers 404 with its flag off and 501 `not_implemented` with it on until its task
-lands: the catalog (`knowledge.catalog`) in K-01-T03; submit and approve
-(`methodology.lifecycle`) in K-01-T06; program and step reads, the resolve endpoint and the
-export (`methodology.programs`) in K-01-T12; drafts, discard, step edits and mandatory locks in
-K-01-T14. The SPEC-008 routes (`routes.py`) stay live and are extended additively.
+Each route answered 404 with its flag off and 501 `not_implemented` with it on until its task
+landed; every route is live since K-01-T14: the catalog (`knowledge.catalog`) in K-01-T03;
+submit and approve (`methodology.lifecycle`) in K-01-T06; program and step reads, the resolve
+endpoint and the export (`methodology.programs`) in K-01-T12; drafts, discard, step edits and
+mandatory locks in K-01-T14. The SPEC-008 routes (`routes.py`) stay live and are extended
+additively.
 
 Rules the shapes carry:
 - **Anchors are stable**: a step is `step_key@v<n>`; numbering may change, the key does not.
@@ -20,7 +21,7 @@ Rules the shapes carry:
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn, cast
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Path, Query, Response
@@ -36,7 +37,7 @@ from abacus.kernel._statuses import (
     ParseFlagStatus,
 )
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.modules.identity.api import (
@@ -47,7 +48,7 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
 )
-from abacus.modules.methodology import lifecycle, programs
+from abacus.modules.methodology import drafts, lifecycle, programs
 from abacus.modules.methodology.catalog import catalog_items, change_log, review_queue
 from abacus.modules.methodology.workbook_template import MEDIA_TYPE
 
@@ -85,18 +86,6 @@ VersionEventKind = Literal[
 ]
 ContentHash = Annotated[str, Field(pattern=r"^sha256:[0-9a-f]{64}$")]
 StepKey = Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9_.-]{0,79}$")]
-
-
-async def _stub(ctx: AuthContext, flag: Flag, action: str) -> NoReturn:
-    """A client principal never reaches knowledge (INV-4): 404. Then the route's action at the
-    firm (the agent, the system and anyone else refused: 403, before the flag is read), then the
-    flag, then 501."""
-    if ctx.client:
-        raise NotFound("knowledge")
-    await authorise(ctx, action, Resource.firm(ctx.tenant_id))
-    if not await flag_enabled(ctx.tenant, flag):
-        raise NotFound(flag.name)
-    raise NotImplementedYet
 
 
 # --- Knowledge catalog (KNW-01) ------------------------------------------------------------------
@@ -446,24 +435,28 @@ async def approve_version_route(
     action="methodology.manage",
     response_model=VersionStateOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def create_draft_route(version_id: VersionId, ctx: Ctx) -> VersionStateOut:
-    """KNW-03 c: a new draft vN+1 from a published version."""
-    await _stub(ctx, METHODOLOGY_PROGRAMS, "methodology.manage")
+    """KNW-03 c: a new draft vN+1 from a published version (K-01-T14). 409
+    `version_not_published`, `draft_exists`."""
+    await _gate(ctx, METHODOLOGY_PROGRAMS, "methodology.manage")
+    return await _state_out(ctx, await drafts.create_draft(ctx, version_id))
 
 
 @methodology_lifecycle_router.post(
     "/versions/{version_id}/discard",
     action="methodology.manage",
     response_model=VersionStateOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def discard_draft_route(
     version_id: VersionId, body: SubmitVersionIn, ctx: Ctx
 ) -> VersionStateOut:
-    """KNW-03: discard a draft (published versions are never discarded)."""
-    await _stub(ctx, METHODOLOGY_PROGRAMS, "methodology.manage")
+    """KNW-03: discard a draft or a version in review (published versions are never discarded;
+    the number stays consumed). 409 `stale_version`, `version_frozen`."""
+    await _gate(ctx, METHODOLOGY_PROGRAMS, "methodology.manage")
+    return await _state_out(ctx, await drafts.discard_draft(ctx, version_id, body.row_version))
 
 
 # --- Programs and steps (KNW-03) -----------------------------------------------------------------
@@ -681,7 +674,7 @@ async def resolve_step_route(
     "/versions/{version_id}/steps/{step_id}",
     action="methodology.manage",
     response_model=StepOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def edit_step_route(
     version_id: VersionId,
@@ -690,8 +683,11 @@ async def edit_step_route(
     ctx: Ctx,
     if_match: IfMatch,
 ) -> StepOut:
-    """KNW-03 c: edit a draft step (409 `version_frozen` on a published version)."""
-    await _stub(ctx, METHODOLOGY_PROGRAMS, "methodology.manage")
+    """KNW-03 c: edit an optional draft step; its key and source stay (K-01-T14). 409
+    `version_frozen`, `mandatory_locked`, `stale_version`."""
+    await _gate(ctx, METHODOLOGY_PROGRAMS, "methodology.manage")
+    changes = body.model_dump(exclude_unset=True, exclude_none=True)
+    return _step_out(await drafts.edit_step(ctx, version_id, step_id, changes, if_match))
 
 
 @programs_router.post(
@@ -699,7 +695,7 @@ async def edit_step_route(
     action="methodology.manage",
     response_model=StepOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def add_step_route(
     version_id: VersionId,
@@ -707,28 +703,41 @@ async def add_step_route(
     body: StepCreateIn,
     ctx: Ctx,
 ) -> StepOut:
-    """KNW-03 c: + Step in a draft."""
-    await _stub(ctx, METHODOLOGY_PROGRAMS, "methodology.manage")
+    """KNW-03 c: + Step in a draft (K-01-T14). 409 `version_frozen`."""
+    await _gate(ctx, METHODOLOGY_PROGRAMS, "methodology.manage")
+    added = await drafts.add_step(
+        ctx,
+        version_id,
+        program_id,
+        text_=body.text,
+        assertions=body.assertions,
+        standard_refs=body.standard_refs,
+        level=body.level,
+        after_step_id=body.after_step_id,
+    )
+    return _step_out(added)
 
 
 @programs_router.delete(
     "/versions/{version_id}/steps/{step_id}",
     action="methodology.manage",
     response_model=StepRemovedOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def remove_step_route(
     version_id: VersionId, step_id: Annotated[UUID, Path()], ctx: Ctx, if_match: IfMatch
 ) -> StepRemovedOut:
-    """KNW-03 c: remove a non-mandatory draft step (409 `mandatory_locked`)."""
-    await _stub(ctx, METHODOLOGY_PROGRAMS, "methodology.manage")
+    """KNW-03 c: remove a non-mandatory draft step (K-01-T14). 409 `mandatory_locked`,
+    `step_has_requests`, `version_frozen`, `stale_version`."""
+    await _gate(ctx, METHODOLOGY_PROGRAMS, "methodology.manage")
+    return StepRemovedOut(step_id=await drafts.remove_step(ctx, version_id, step_id, if_match))
 
 
 @programs_router.post(
     "/versions/{version_id}/steps/{step_id}/mandatory",
     action="methodology.approve",
     response_model=StepOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def mandatory_step_route(
     version_id: VersionId,
@@ -737,8 +746,20 @@ async def mandatory_step_route(
     ctx: Ctx,
     if_match: IfMatch,
 ) -> StepOut:
-    """KNW-03 d: a quality partner locks or unlocks a step (human-only, fresh MFA)."""
-    await _stub(ctx, METHODOLOGY_PROGRAMS, "methodology.approve")
+    """KNW-03 d: the QM owner locks or unlocks a draft step (human-only, fresh MFA; K-01-T14).
+    A refusal is audited before the flag is read. 409 `version_frozen`, `stale_version`."""
+    await drafts.mandatory_guard(ctx, version_id)
+    if not await flag_enabled(ctx.tenant, METHODOLOGY_PROGRAMS):
+        raise NotFound(METHODOLOGY_PROGRAMS.name)
+    locked = await drafts.set_mandatory(
+        ctx,
+        version_id,
+        step_id,
+        mandatory=body.mandatory,
+        lock_note=body.lock_note,
+        row_version=if_match,
+    )
+    return _step_out(locked)
 
 
 @programs_router.get(

@@ -16,11 +16,18 @@ sealed secret holds the API key. Otherwise `ProviderUnavailable`: nothing leaves
   `send_sms` off): every client message is Accrued's (DEC-59). Signers are ordered (sequential:
   each signer's order; parallel: its routing group); identity per DF-11 and ADR-342 (a `kba`
   field before the signature for the e-file family; letters rely on portal MFA and ERSD consent;
-  SMS is never used). Fields are placed fields in PDF points, sent as page fractions; anchors are
-  refused (DocuSeal has no anchor search).
+  SMS is never used). Fields are placed fields in PDF points, sent as page fractions from the
+  page's top-left corner; anchors are refused (DocuSeal has no anchor search). Signers see field
+  titles, never our field names; a date field is the signing date, filled by DocuSeal and read
+  only; the signer's name is not sent, so DocuSeal pre-fills nothing into a typed signature.
+  DocuSeal asks its KBA step last, after the signature and before the form completes: a signer
+  who fails it never completes (N-02-T06, 2026-10-30).
 - **Read.** Status from the submission's submitters (the truth; a webhook is only a hint,
   N-02-T19), the merged signed document, the audit log (the certificate) and each signer's
-  signature image and completion event.
+  signature image. The API's events carry no IP or user agent (their `data` is empty on the
+  sandbox), so each signer's IP and device come from the audit log DocuSeal generated, read in
+  an isolated child (`audit_text`); a completed signer with no IP there is refused, never
+  recorded without one.
 - **Void** is archive (DocuSeal has no void); the envelope's own state records the void.
 - **Hosts.** Only DocuSeal's API host (`ALLOWED_HOSTS`) and its file hosts (`DOCUMENT_HOSTS`); a
   host elsewhere is refused before any request. Q-01's egress firewall lists both when W7 opens.
@@ -35,6 +42,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import re
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
@@ -44,6 +52,7 @@ from urllib.parse import urlsplit
 import httpx
 
 from abacus.kernel.errors import ServiceUnavailable
+from abacus.kernel.request_context import client_ip, device_of
 from abacus.modules.signatures.provider import (
     Completed,
     Created,
@@ -57,8 +66,9 @@ IDEMPOTENCY_KEY: Final = "accrued_idempotency"
 # DocuSeal's global API host. The EU host (api.docuseal.eu) stays refused until the data-location
 # question in ADR-342 is answered.
 ALLOWED_HOSTS: Final = frozenset({"api.docuseal.com"})
-# Where DocuSeal serves signed documents, audit logs and signature images [verify on the sandbox].
-DOCUMENT_HOSTS: Final = frozenset({"api.docuseal.com", "docuseal.com", "cdn.docuseal.com"})
+# Where DocuSeal serves signed documents, audit logs and signature images: all three from
+# docuseal.com/file/…, 200 with no redirect and no key (sandbox, 2026-10-30).
+DOCUMENT_HOSTS: Final = frozenset({"docuseal.com"})
 _KEY_HEADER: Final = "X-Auth-Token"  # our outbound call to DocuSeal, never an inbound request
 _STATUS: Final[dict[str, str]] = {
     "awaiting": "pending",
@@ -74,6 +84,15 @@ _FIELD: Final[dict[str, str]] = {
     "pin": "text",
     "title_prefill": "text",
 }
+# What the signer reads on DocuSeal's form; our field names stay internal.
+_TITLE: Final[dict[str, str]] = {
+    "signature": "Signature",
+    "date": "Date signed",
+    "initial": "Initials",
+    "pin": "PIN",
+    "title_prefill": "Title",
+}
+_SIGNING_DATE: Final = "{{date}}"  # DocuSeal fills the day the signer completes
 # DF-11 at DocuSeal: KBA for the e-file family; email codes and the firm's sign-in are proved in
 # our portal (MFA and ERSD consent) before the signing URL is fetched, so DocuSeal adds nothing.
 # In-person ID is the handwritten path and never reaches DocuSeal; SMS is never sent.
@@ -138,6 +157,7 @@ class PlacedField:
 
 DocumentLoader = Callable[[str], Awaitable[Sequence[SourceFile]]]
 FieldLoader = Callable[[str], Awaitable[Sequence[PlacedField]]]
+AuditText = Callable[[bytes], Awaitable[str]]  # the audit log PDF's text, read in isolation
 
 
 def _host_of(url: str) -> str:
@@ -162,6 +182,51 @@ def _role(index: int) -> str:
     return f"Signer {index + 1}"
 
 
+def _email(signer_id: str) -> str:
+    """The submitter's address at DocuSeal: never mailed, and the key to its audit log block."""
+    return f"{signer_id}@signers.invalid"
+
+
+@dataclass(frozen=True)
+class AuditEntry:
+    ip: str | None
+    user_agent: str | None
+
+
+_AUDIT_KEY: Final = re.compile(r"^(IP|Session ID|User agent|Time zone): ?(.*)$")
+
+
+def audit_entries(text: str) -> dict[str, AuditEntry]:
+    """Each signer's IP and user agent from DocuSeal's audit log text, by their address there.
+    A signer's block starts at their address; a wrapped user agent runs on until the next key,
+    address, field label (upper case) or the event log."""
+    found: dict[str, dict[str, str]] = {}
+    current: dict[str, str] | None = None
+    key: str | None = None
+    for raw in text.splitlines():
+        line = raw.strip()
+        if line.endswith("@signers.invalid") and " " not in line:
+            current = found.setdefault(line.lower(), {})
+            key = None
+            continue
+        if current is None:
+            continue
+        if line == "Event Log":
+            break
+        matched = _AUDIT_KEY.match(line)
+        if matched is not None:
+            key = str(matched.group(1))
+            current[key] = matched.group(2)
+        elif key == "User agent" and line and not line.isupper():
+            current[key] = f"{current[key]} {line}"
+        else:
+            key = None
+    return {
+        address: AuditEntry(client_ip(body.get("IP")), body.get("User agent") or None)
+        for address, body in found.items()
+    }
+
+
 class DocuSealProvider:
     """One firm's DocuSeal account, for one activity call."""
 
@@ -175,6 +240,7 @@ class DocuSealProvider:
         documents: DocumentLoader,
         fields: FieldLoader,
         signer_order: Callable[[str], Awaitable[str]],
+        audit_text: AuditText,
     ) -> None:
         if account.api_host not in ALLOWED_HOSTS:
             raise HostNotAllowed(account.api_host)
@@ -183,6 +249,7 @@ class DocuSealProvider:
         self._documents = documents
         self._fields = fields
         self._signer_order = signer_order
+        self._audit_text = audit_text
 
     # --- transport ---------------------------------------------------------------------------
 
@@ -259,6 +326,7 @@ class DocuSealProvider:
         kba: frozenset[str],
         placed: Sequence[PlacedField],
         verified: set[str],
+        dates: dict[str, list[str]],
     ) -> Json:
         fields: list[Json] = []
         for n, f in enumerate((p for p in placed if p.document == number), start=1):
@@ -277,15 +345,25 @@ class DocuSealProvider:
             }
             role = roles[f.signer_id]
             if f.kind == "signature" and f.signer_id in kba and f.signer_id not in verified:
-                # The identity check comes once, before the signer's first signature [verify
-                # placement on the sandbox].
+                # Once per signer, on their first signature; DocuSeal asks it as the form's last
+                # step, so the form cannot complete without it.
                 fields.append(
-                    {"name": f"kba {role}", "type": "kba", "role": role, "areas": [area]}
+                    {
+                        "name": f"kba {role}",
+                        "title": "Identity check",
+                        "type": "kba",
+                        "role": role,
+                        "areas": [area],
+                    }
                 )
                 verified.add(f.signer_id)
+            name = f"{f.kind} {number}.{n}"
+            if f.kind == "date":
+                dates.setdefault(f.signer_id, []).append(name)
             fields.append(
                 {
-                    "name": f"{f.kind} {number}.{n}",
+                    "name": name,
+                    "title": _TITLE[f.kind],
                     "type": _FIELD[f.kind],
                     "role": role,
                     "required": True,
@@ -318,25 +396,31 @@ class DocuSealProvider:
         roles = {s.signer_id: _role(i) for i, s in enumerate(spec.signers)}
         kba = frozenset(s.signer_id for s in spec.signers if s.identity_method == "kba")
         verified: set[str] = set()
+        dates: dict[str, list[str]] = {}
+        documents = [
+            self._document(n, f, roles, kba, placed, verified, dates)
+            for n, f in enumerate(files, start=1)
+        ]
         body = {
             "name": "Documents to sign",
             "send_email": False,
             "send_sms": False,
             "order": "preserved",
-            "documents": [
-                self._document(n, f, roles, kba, placed, verified)
-                for n, f in enumerate(files, start=1)
-            ],
+            "documents": documents,
             "submitters": [
                 {
                     "role": roles[s.signer_id],
-                    "name": f"Signer {s.order}",  # the person's name is DocuSeal's from the form
-                    "email": f"{s.signer_id}@signers.invalid",  # DocuSeal never emails them
+                    # No name: DocuSeal would pre-fill it into a typed signature.
+                    "email": _email(s.signer_id),  # DocuSeal never emails them
                     "external_id": s.signer_id,
                     "metadata": {IDEMPOTENCY_KEY: spec.idempotency_key},
                     "order": orders[s.signer_id],
                     "send_email": False,
                     "send_sms": False,
+                    "fields": [
+                        {"name": d, "readonly": True, "default_value": _SIGNING_DATE}
+                        for d in dates.get(s.signer_id, [])
+                    ],
                 }
                 for s in spec.signers
             ],
@@ -360,7 +444,8 @@ class DocuSealProvider:
                     status=status,
                     viewed_at=_when(s.get("opened_at")),
                     signed_at=_when(s.get("completed_at")),
-                    kba_failures=0,  # DocuSeal's KBA failure report waits on N-02-T06 [verify]
+                    # A failed KBA keeps the form open; its report waits on F-09-T63 [verify].
+                    kba_failures=0,
                     decline_reason="other" if status == "declined" else None,
                 )
             )
@@ -376,20 +461,17 @@ class DocuSealProvider:
             raise DocuSealError("documents")
         combined = await self._file(documents[0].get("url"), "documents")
         certificate = await self._file(submission.get("audit_log_url"), "audit_log")
+        audit = audit_entries(await self._audit_text(certificate))
         events = cast(list[Json], submission.get("submission_events") or [])
         evidence: list[SignerEvidence] = []
         for s in cast(list[Json], submission.get("submitters") or []):
             if str(s.get("status", "")).lower() != "completed" or not s.get("external_id"):
                 continue
             mine = [e for e in events if e.get("submitter_id") == s.get("id")]
-            done = next(
-                (
-                    cast(Json, e.get("data") or {})
-                    for e in mine
-                    if e.get("event_type") == "complete_form"
-                ),
-                cast(Json, {}),
-            )
+            seen = audit.get(_email(str(s["external_id"])).lower())
+            if seen is None or seen.ip is None:
+                raise DocuSealError("audit_log")  # never a signature record without its IP
+            family, device = device_of(seen.user_agent)
             verified = any(e.get("event_type") == "complete_verification" for e in mine)
             image_url = next(
                 (
@@ -404,12 +486,12 @@ class DocuSealProvider:
                     signer_id=str(s["external_id"]),
                     signed_image=await self._file(image_url, "signature_image"),
                     signed_at=_when(s.get("completed_at")) or datetime.fromtimestamp(0),
-                    ip=str(done.get("ip") or ""),  # [verify the event's data on the sandbox]
+                    ip=seen.ip,
                     login_ref=str(s.get("uuid") or s["id"]),
                     identity_result="kba_verified" if verified else "portal_verified",
                     signature_method="provider_adopted",
-                    user_agent_family=None,
-                    device_label=None,
+                    user_agent_family=family,
+                    device_label=device,
                 )
             )
         return Completed(combined, certificate, tuple(evidence))
