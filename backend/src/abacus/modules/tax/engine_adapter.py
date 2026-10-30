@@ -171,7 +171,7 @@ _PDF_NAME: Final = re.compile(
     r"([0-9]{4}[A-Z])_([A-Za-z0-9]{1,20})_V([0-9]{1,4})_([a-z0-9_]{1,40})\.pdf"
 )
 _LAST4: Final = re.compile(r"[A-Za-z0-9]{4}")
-_JURISDICTION: Final = re.compile(r"[A-Z]{2,3}")
+_JURISDICTION: Final = re.compile(r"federal|[A-Z]{2}")
 _WHEN: Final = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9:.+-]{5,20}Z?)?")
 
 

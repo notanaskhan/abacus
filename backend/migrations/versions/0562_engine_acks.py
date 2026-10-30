@@ -42,7 +42,7 @@ def upgrade() -> None:
             tenant_id uuid NOT NULL,
             return_id uuid NOT NULL,
             sync_event_id uuid NOT NULL,
-            jurisdiction text NOT NULL CHECK (jurisdiction ~ '^[A-Z]{2,3}$'),
+            jurisdiction text NOT NULL CHECK (jurisdiction ~ '^(federal|[A-Z]{2})$'),
             submission_last4 text NOT NULL CHECK (submission_last4 ~ '^[A-Za-z0-9]{4}$'),
             status text NOT NULL CHECK (status IN ('accepted', 'rejected')),
             status_at text NOT NULL CHECK (length(status_at) BETWEEN 10 AND 32),

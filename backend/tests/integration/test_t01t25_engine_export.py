@@ -112,7 +112,7 @@ class Feld:
     call: Call
 
 
-async def _feld(migrated_db: MigratedDatabase) -> Feld:
+async def feld_return(migrated_db: MigratedDatabase) -> Feld:
     seed = Seeder(migrated_db.superuser_dsn)
     tenant = await seed.firm()
     await seed.run(
@@ -256,7 +256,7 @@ def switched_on(monkeypatch: pytest.MonkeyPatch) -> None:
 async def test_ac_samuel_exports_v3_only_after_final_approval(
     migrated_db: MigratedDatabase, switched_on: None
 ) -> None:
-    feld = await _feld(migrated_db)
+    feld = await feld_return(migrated_db)
     body = {"checkpoint_id": str(feld.checkpoint)}
     key = {"Idempotency-Key": str(uuid.uuid4())}
     before = await feld.call(
@@ -308,7 +308,7 @@ async def test_ac_samuel_exports_v3_only_after_final_approval(
 async def test_ac_the_same_checkpoint_yields_byte_identical_files(
     migrated_db: MigratedDatabase, switched_on: None
 ) -> None:
-    feld = await _feld(migrated_db)
+    feld = await feld_return(migrated_db)
     await _final_approval(feld)
     body = {"checkpoint_id": str(feld.checkpoint)}
     first = await feld.call(
@@ -358,7 +358,7 @@ async def test_ac_the_same_checkpoint_yields_byte_identical_files(
 async def test_ac_a_second_consume_of_the_grant_is_refused(
     migrated_db: MigratedDatabase, switched_on: None
 ) -> None:
-    feld = await _feld(migrated_db)
+    feld = await feld_return(migrated_db)
     grant = await _final_approval(feld)
     made = await feld.call(
         "POST",
@@ -390,7 +390,7 @@ async def test_ac_a_second_consume_of_the_grant_is_refused(
 
 
 async def test_switches_and_people_only(migrated_db: MigratedDatabase) -> None:
-    feld = await _feld(migrated_db)
+    feld = await feld_return(migrated_db)
     await _final_approval(feld)
     body = {"checkpoint_id": str(feld.checkpoint)}
     off = await feld.call(
