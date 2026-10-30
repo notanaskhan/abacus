@@ -102,6 +102,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "envelope.draft_saved",  # N-02-T20: SIG-02's edit of a draft (version, signer count)
         "envelope.drafted",  # N-02-T20: a draft from a registered source (number, counts)
         "envelope.imported",  # N-02-T08: record-mode import (SIG-01 r)
+        "envelope.provider_unavailable",  # N-02-T18: kill switch, W7 or install off; not sent
         "envelope.send_requested",  # N-02-T20: a person's Send, waiting its grant (+10 s)
         "envelope.send_undone",  # N-02-T20: Undo inside the window; no provider call
         "envelope_import_file.staged",  # N-02-T08: a scanned file for an import

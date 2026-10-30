@@ -261,6 +261,7 @@ from abacus.modules.evidence.service import (
     stage_content,
     undo_returned_files,
     undo_review_decision,
+    version_content,
     version_view,
 )
 from abacus.modules.evidence.signed_copies import (
@@ -626,6 +627,7 @@ __all__ = [
     "upload_preview",
     "upload_workflow_id",
     "verified_citation_ids",
+    "version_content",
     "version_titles",
     "version_view",
     "version_with_fingerprint",
