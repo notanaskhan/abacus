@@ -2344,6 +2344,46 @@
       "tier": "C",
       "deviation": "P-07-T63: ENG-03's gallery artboard draws the wizard on the bare 1440 x 900 stage with no app window (no [data-shell='app']), so the handoff's 1400 x 860 window crop cannot be compared (size mismatch, no diff); measure once the artboard draws the shell behind the wizard, as DEC-832 did for AUD-06"
     },
+    "t10a.window": {
+      "page": "screens/T10?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T10 Document on well/screenshots/T10a.png",
+      "sha256": "3c86eef5368e4544a29557b8c4a0fe9fbf9c839957012f61760e5b0d4f0bfd42",
+      "crop": "window",
+      "tier": "B",
+      "mask": [
+        "[data-spinner]"
+      ],
+      "deviation": "F-06-T14 (DEC-1252): drafting draws Edit, Regenerate… and Approve… disabled, each naming the drafting as its reason (F-06 Story 4.1), where the board's header shows the spinner line alone"
+    },
+    "t10a.paper-header": {
+      "page": "screens/T10?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T10 Document on well/screenshots/T10a.png",
+      "sha256": "3c86eef5368e4544a29557b8c4a0fe9fbf9c839957012f61760e5b0d4f0bfd42",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-template='t10'] [data-shell='pane-header']",
+      "deviation": "F-06-T13 review measured 2.26% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T15/T22 fixes the kit"
+    },
+    "t10b.window": {
+      "page": "screens/T10?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T10 Document on well/screenshots/T10b.png",
+      "sha256": "9e4414fcd34d7f3dcee8e3c4f970ad4a29497dabcba9c9d461a7cf6100e0da4b",
+      "crop": "window",
+      "tier": "B"
+    },
+    "t10b.paper-header": {
+      "page": "screens/T10?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T10 Document on well/screenshots/T10b.png",
+      "sha256": "9e4414fcd34d7f3dcee8e3c4f970ad4a29497dabcba9c9d461a7cf6100e0da4b",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-template='t10'] [data-shell='pane-header']",
+      "deviation": "F-06-T13 review measured 1.62% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T15/T22 fixes the kit"
+    },
     "t16-signing-ceremony.t16b": {
       "selector": "[data-artboard=\"t16b\"] [data-shell=\"app\"]",
       "source": "handoff/screens/T16 Signing ceremony/screenshots/T16b.png",

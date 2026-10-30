@@ -122,3 +122,5 @@ export { InboxLayout, type InboxLayoutProps } from "./inbox-layout";
 export { CatalogLayout, type CatalogLayoutProps } from "./catalog-layout";
 // T16 SigningCeremony (F-06-T04): provider mode only; the L2 parts are ../signing.
 export { SigningCeremony } from "./signing-ceremony/SigningCeremony";
+// T10 DocumentOnWell (F-06-T14): the 470 structure pane beside the 896 paper pane.
+export * from "./document-on-well";

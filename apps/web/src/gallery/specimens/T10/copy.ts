@@ -8,6 +8,8 @@ export const COPY = {
   approved: "Approved",
   approvedBy: (actor: string, when: string): string => `Approved by ${actor} · ${when}`,
   drafting: "Accrued Agent is drafting the memo",
+  // F-06-T14 (DEC-1252): a letter or email without model text renders its template only.
+  rendering: "Preparing the document",
   watermark: "DRAFT",
   variables: "Variables",
   preview390: "390 preview",
