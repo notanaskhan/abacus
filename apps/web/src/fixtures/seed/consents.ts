@@ -4,7 +4,13 @@
 // sub-processors, one purpose each (Rev. Proc. 2013-14 §5.05); a third-party disclosure is one.
 // Recipients come from the provider register (DF-16, deviation D1), never free text. Dates are
 // the spec's, at E0 (Mon Sep 14, 2026, 9:24 AM CT).
-import type { ConsentOut, ConsentRecipientOut, ConsentSignerOut } from "@abacus/api-client";
+import type {
+  ConsentDetailOut,
+  ConsentDraftsOut,
+  ConsentOut,
+  ConsentRecipientOut,
+  ConsentSignerOut,
+} from "@abacus/api-client";
 import { stableId } from "./prng";
 
 /** The provider register's party for model inference (DF-16; ADR-114). */
@@ -305,3 +311,53 @@ export const REGISTRY_CONSENTS: readonly ConsentOut[] = ROWS.flatMap(consentsOf)
 export const REGISTRY_ROWS = ROWS.length;
 /** The firm's consents in all (the tiles' 212 + 2 + 1 + 1 + 1 + 1). */
 export const REGISTRY_TOTAL = 218;
+
+// T-01-T32: the evidence drawer's detail (c), each consent its own signed document; the agent's
+// reads since signature (Feld: 142 tool calls on TY2025 Form 1040, per the handoff); a renewal's
+// drafted envelope (d, h), one per client, keeping each consent's purpose and recipient.
+const FELD_AGENT_RUN = stableId("agent-run:feld-ty2025-1040");
+
+export function consentDetail(consentId: string): ConsentDetailOut | null {
+  const found = REGISTRY_CONSENTS.find((c) => c.id === consentId);
+  if (found === undefined) return null;
+  const set =
+    found.consent_set_id == null
+      ? [found]
+      : REGISTRY_CONSENTS.filter((c) => c.consent_set_id === found.consent_set_id);
+  const feld = found.client_name === "Jonah & Claire Feld";
+  return {
+    consent: found,
+    signers: found.signers ?? [],
+    documents: set.map((c) => ({
+      id: stableId(`consent-document:${c.id}`),
+      purpose: c.purpose,
+      text_sha256: "b".repeat(64),
+      evidence_version_id: c.status === "signed" ? stableId(`consent-evidence:${c.id}`) : null,
+    })),
+    agent_reads: feld
+      ? Array.from({ length: 142 }, (_, i) => ({
+          agent_run_id: FELD_AGENT_RUN,
+          read_at: `2026-03-${String(10 + (i % 18)).padStart(2, "0")}T10:00:00-05:00`,
+          on_behalf_of_name: "Samuel Ito",
+        }))
+      : [],
+  };
+}
+
+export function renewalDraft(consentIds: readonly string[]): ConsentDraftsOut | null {
+  const basis = REGISTRY_CONSENTS.filter((c) => consentIds.includes(c.id));
+  const first = basis[0];
+  if (first === undefined) return null;
+  return {
+    envelope_id: stableId(`envelope:renewal:${first.client_entity_id}`),
+    consents: basis.map((c) => ({
+      ...c,
+      id: stableId(`consent:renewal:${c.id}`),
+      status: "requested",
+      renewal_of_id: c.id,
+      signed_at: null,
+      expires_at: null,
+      signed_count: 0,
+    })),
+  };
+}

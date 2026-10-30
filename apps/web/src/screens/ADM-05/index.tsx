@@ -1,7 +1,9 @@
 import type { ConsentOut } from "@abacus/api-client";
 import {
   consentSummaryOptions,
+  exportConsentsMutation,
   listConsentsOptions,
+  renewConsentsMutation,
   settingsOverviewOptions,
 } from "@abacus/api-client/query";
 import {
@@ -21,7 +23,7 @@ import {
   date,
   toast,
 } from "@abacus/ui";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { type JSX, useMemo, useState } from "react";
 import { todayIso, useNow } from "../../app-core/clock";
 import { useOpenHref } from "../../app-core/open";
@@ -29,6 +31,7 @@ import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { hrefOf, to } from "../../routes/to";
 import { GROUPS } from "../ADM-01/copy";
 import { COPY, PURPOSES, PURPOSE_OPTIONS, SET_PURPOSE, STATUS_TILES, type TileCode } from "./copy";
+import { EvidenceDrawer } from "./drawer";
 
 // ADM-05 · Consent registry (§7216) (T-01-T13, part 1; docs/screens/ADM-05.md): the T1 index in
 // the T12 frame, section "Consents". Every artboard is a data condition of one screen:
@@ -39,7 +42,10 @@ import { COPY, PURPOSES, PURPOSE_OPTIONS, SET_PURPOSE, STATUS_TILES, type TileCo
 //   f  ?purpose=offshore_disclosure: "No consents match." / "Clear filters to see all 218."
 //   g  rows 3 to 5 checked: the selection bar "3 selected · Renew 3…"
 //
-// c (the evidence drawer), d and h (renewals) and e (the declined hover) are part 2 (T-01-T22).
+// Part 2 (T-01-T32): c, a row's Evidence opens the drawer (each signed document on its own paper);
+// d and h, Renew n drafts one envelope per client through C19's renewal (each consent keeps its
+// purpose and recipient) and says so in a toast, then opens SIG-02 on the first; e, a declined
+// row's status explains why it is never asked again; Export CSV queues the audited export.
 // A standard set's two consents share one row. A declined consent is never re-requested: no
 // control on its row asks again (§7216, Rev. Proc. 2013-14).
 
@@ -161,7 +167,11 @@ function Status({ c, now }: { c: ConsentOut; now: Date }): JSX.Element {
   if (c.status === "declined") {
     return (
       <span className="flex flex-col items-start gap-[2px]">
-        <Pill variant="neutral">Declined</Pill>
+        <Tooltip content={COPY.declinedTip}>
+          <span data-declined-tip>
+            <Pill variant="neutral">Declined</Pill>
+          </span>
+        </Tooltip>
         <span className="text-meta text-ink-3">{COPY.declinedNote}</span>
       </span>
     );
@@ -191,9 +201,17 @@ export interface ADM05Props {
   onNavigate?: (section: string) => void;
   /** "Settings": ADM-01, the settings home, unless a caller takes it. */
   onBack?: () => void;
+  /** T-01-T32: SIG-02's builder for a drafted envelope (renewals). */
+  onOpenEnvelope?: (envelopeId: string) => void;
 }
 
-export function ADM05({ search, onSearch, onNavigate, onBack }: ADM05Props): JSX.Element {
+export function ADM05({
+  search,
+  onSearch,
+  onNavigate,
+  onBack,
+  onOpenEnvelope,
+}: ADM05Props): JSX.Element {
   const now = useNow();
   const open = useOpenHref();
   const home = (): void => {
@@ -214,10 +232,28 @@ export function ADM05({ search, onSearch, onNavigate, onBack }: ADM05Props): JSX
   );
   const list = useQuery(listConsentsOptions({ query }));
   const [chosen, setChosen] = useState<ReadonlySet<string>>(new Set());
+  const [drawer, setDrawer] = useState<{ id: string; client: string } | null>(null);
+  const exporting = useMutation(exportConsentsMutation());
+  const renewing = useMutation(renewConsentsMutation());
   const q = search.q?.toLowerCase();
   const rows = lines(list.data?.items ?? []).filter(
     (l) => q === undefined || l.first.client_name.toLowerCase().includes(q),
   );
+  // d, h: one renewal envelope per client, each consent keeping its purpose and recipient.
+  const renew = async (): Promise<void> => {
+    const drafted: string[] = [];
+    for (const l of rows.filter((r) => chosen.has(r.key))) {
+      const out = await renewing.mutateAsync({
+        body: { consent_ids: l.consents.map((c) => c.id) },
+        headers: { "Idempotency-Key": globalThis.crypto.randomUUID() },
+      });
+      drafted.push(out.envelope_id);
+    }
+    toast.show(COPY.renewalsDrafted(drafted.length));
+    setChosen(new Set());
+    const first = drafted[0];
+    if (first !== undefined) onOpenEnvelope?.(first);
+  };
   const total = summary.data?.total ?? list.data?.total ?? 0;
   const filtered = status !== undefined || search.purpose !== undefined || q !== undefined;
   const set = (patch: Partial<Record<keyof Adm05Search, string | undefined>>): void => {
@@ -311,8 +347,13 @@ export function ADM05({ search, onSearch, onNavigate, onBack }: ADM05Props): JSX
             )}
             <Button
               variant="secondary"
+              disabled={exporting.isPending}
               onClick={() => {
-                toast.show(COPY.exportQueued);
+                void exporting
+                  .mutateAsync({ headers: { "Idempotency-Key": globalThis.crypto.randomUUID() } })
+                  .then(() => {
+                    toast.show(COPY.exportQueued);
+                  });
               }}
             >
               {COPY.exportCsv}
@@ -445,7 +486,16 @@ export function ADM05({ search, onSearch, onNavigate, onBack }: ADM05Props): JSX
                         <Status c={c} now={now} />
                       </td>
                       <td className="text-center text-ink-2">
-                        <Icon name="file-check" size={14} label={COPY.evidence(c.client_name)} />
+                        <button
+                          type="button"
+                          aria-label={COPY.evidence(c.client_name)}
+                          className="inline-flex rounded-[4px] p-[4px] hover:bg-nested"
+                          onClick={() => {
+                            setDrawer({ id: c.id, client: c.client_name });
+                          }}
+                        >
+                          <Icon name="file-check" size={14} />
+                        </button>
                       </td>
                     </tr>
                   );
@@ -466,6 +516,16 @@ export function ADM05({ search, onSearch, onNavigate, onBack }: ADM05Props): JSX
           )}
         </section>
       </div>
+      {drawer !== null && (
+        <EvidenceDrawer
+          consentId={drawer.id}
+          client={drawer.client}
+          now={now}
+          onClose={() => {
+            setDrawer(null);
+          }}
+        />
+      )}
       {chosen.size > 0 && (
         <div
           role="region"
@@ -476,7 +536,15 @@ export function ADM05({ search, onSearch, onNavigate, onBack }: ADM05Props): JSX
           <span aria-hidden="true">·</span>
           <Tooltip content={COPY.renewTip}>
             <span>
-              <Button size="sm" variant="secondary" disabled>
+              <Button
+                size="sm"
+                variant="secondary"
+                opensDialog
+                disabled={renewing.isPending}
+                onClick={() => {
+                  void renew();
+                }}
+              >
                 {COPY.renew(chosen.size)}
               </Button>
             </span>

@@ -3,7 +3,7 @@
 // with each screen's build task.
 import type { ConsentOut } from "@abacus/api-client";
 import { type FixtureHandler, json } from "../../app-core/fixture-mode";
-import { REGISTRY_CONSENTS, REGISTRY_TOTAL } from "../seed/consents";
+import { REGISTRY_CONSENTS, REGISTRY_TOTAL, consentDetail, renewalDraft } from "../seed/consents";
 import { ENGINE_SYNC, FELD_IMPORT, FELD_IMPORT_ID } from "../seed/engine-sync";
 import {
   FELD_ENVELOPE_ID,
@@ -78,6 +78,22 @@ export function taxComplianceHandlers(state = "a"): Record<string, FixtureHandle
       json({ ...FELD_IMPORT, status: "rejected", allowed_actions: [] }),
     "GET /v1/consents/summary": () => json(CONSENT_SUMMARY),
     "GET /v1/consents": ({ query }) => registry(query),
+    // T-01-T32: the evidence drawer (c), renewals (d, h) and the CSV export (queued, logged).
+    "GET /v1/consents/{consent_id}": ({ params }) => {
+      const found = consentDetail(params.consent_id ?? "");
+      return found === null ? json(NOT_FOUND, 404) : json(found);
+    },
+    "GET /v1/consents/{consent_id}/documents/{document_id}/evidence": () =>
+      new Response("%PDF-1.7\n% fixture signed consent\n%%EOF", {
+        status: 200,
+        headers: { "Content-Type": "application/pdf" },
+      }),
+    "POST /v1/consents/renewals": ({ body }) => {
+      const found = renewalDraft((body as { consent_ids?: string[] }).consent_ids ?? []);
+      return found === null ? json(NOT_FOUND, 404) : json(found, 201);
+    },
+    "POST /v1/consents/exports": () =>
+      json({ export_id: "00000000-0000-4000-8000-0000000000c5", status: "queued" }, 202),
     // T-01-T14: CLI-05's profiles, and a logged reveal of their synthetic TINs (P-07's shape).
     "GET /v1/client-entities/{client_entity_id}/tax-profile": ({ params }) => {
       const found = TAX_PROFILES[params.client_entity_id ?? ""];
