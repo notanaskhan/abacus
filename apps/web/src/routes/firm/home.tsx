@@ -67,8 +67,10 @@ export const homeApprovalsRoute = createRoute({
               void navigate({ to: ".", search: gate === null ? {} : { gate }, replace: true });
             }}
             onOpen={(gate) => {
-              if (gate.subject_route != null && gate.subject_route.startsWith("/")) {
-                void navigate({ to: gate.subject_route });
+              // Same-origin paths only: "/x", never "//host" or a scheme (an open redirect).
+              const to = gate.subject_route;
+              if (to != null && to.startsWith("/") && !to.startsWith("//") && !to.includes("\\")) {
+                void navigate({ to });
               }
             }}
           />

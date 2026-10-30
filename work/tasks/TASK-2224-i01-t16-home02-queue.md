@@ -2,7 +2,7 @@
 id: TASK-2224
 title: I-01-T16 HOME-02 queue on T9 close-review; creates home.approvals
 spec: SPEC-000  # I-01-T16 row and docs/screens/HOME-02.md
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: green
 status: in-review
 epic: I-01

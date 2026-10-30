@@ -88,8 +88,13 @@ describe("HOME-02 queue", () => {
   it("a: the queue is links only: no decide, approve, sign-off or send control", async () => {
     show("a");
     await queue();
+    // A row is a link to the gate's host; its title may start with a verb ("Send Form 8879-PE…"),
+    // so only controls other than the rows are checked.
+    const controls = screen
+      .queryAllByRole("button")
+      .filter((b) => !b.hasAttribute("data-issue-row"));
     for (const name of [/^Decide/u, /^Approve/u, /^Sign off/u, /^Send/u, /^Release/u]) {
-      expect(screen.queryByRole("button", { name })).toBeNull();
+      expect(controls.filter((b) => name.test(b.textContent))).toEqual([]);
     }
   });
 
