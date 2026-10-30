@@ -49,6 +49,7 @@ ProblemCode = Literal[
     "transcript_not_parsed",
     "tax_year_mismatch",
     "not_wage_income",
+    "unreadable_file",  # T-01-T43: the stored file had no text this reader trusts
 ]
 
 # The comparison library's version, stored with every `transcript_comparisons` row so a later

@@ -42,7 +42,6 @@ from abacus.modules.identity.api import (
     Resource,
     authorise,
     current_context,
-    mask_tins_for,
 )
 from abacus.modules.organisations.contract import MaskedTinOut
 
@@ -296,6 +295,7 @@ class TaxElectionOut(BaseModel):
     tax_year: Annotated[int, classified("internal")]
     amount: Annotated[Decimal | None, classified("restricted", tri=True)]
     status_code: Annotated[str, classified("internal")]
+    row_version: Annotated[int | None, classified("internal")] = None  # T-01-T43: for PUT
 
 
 class TaxProfileIdentityOut(BaseModel):
@@ -362,6 +362,13 @@ class TaxAuthorizationIn(BaseModel):
     received_on: Annotated[date, classified("confidential")]
     expires_on: Annotated[date | None, classified("confidential")] = None
     upload_id: Annotated[UUID, classified("internal")]
+    # T-01-T43 (additive): each designee's CAF number, in `designee_user_ids` order, sealed on
+    # write; only the last four are ever served (write-only, Restricted).
+    designee_cafs: Annotated[
+        list[Annotated[str, Field(pattern=r"^[0-9]{4}-?[0-9]{5}[A-Z]?$")]] | None,
+        Field(max_length=10),
+        classified("restricted"),
+    ] = None
 
 
 class TaxAuthorizationRequestIn(BaseModel):
@@ -379,6 +386,16 @@ class TranscriptUploadIn(BaseModel):
     upload_id: Annotated[UUID, classified("internal")]
 
 
+class TranscriptTransactionOut(BaseModel):
+    """An Account transcript's key transaction (TC 150 return filed, TC 922 unreported-income
+    review: a review, not an assessment)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    code: Annotated[str, classified("restricted", tri=True)]
+    posted_on: Annotated[date, classified("restricted", tri=True)]
+
+
 class TranscriptOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -387,6 +404,27 @@ class TranscriptOut(BaseModel):
     tax_year: Annotated[int, classified("internal")]
     pulled_at: Annotated[datetime, classified("confidential")]
     parse_status: Annotated[Literal["queued", "parsed", "failed"], classified("internal")]
+    # T-01-T43 (additive): the register row (CLI-05 a).
+    pulled_by_name: Annotated[str | None, classified("confidential")] = None
+    authorization_form: Annotated[AuthorizationForm | None, classified("internal")] = None
+    result: Annotated[Literal["agrees", "differences"] | None, classified("internal")] = None
+    difference_count: Annotated[int | None, classified("internal")] = None
+    key_transaction: Annotated[
+        TranscriptTransactionOut | None, classified("restricted", tri=True)
+    ] = None
+    account_balance: Annotated[Decimal | None, classified("restricted", tri=True)] = None
+
+
+class TaxProfileFileOut(BaseModel):
+    """A file staged for a transcript or an authorization: scanned before storage, named by id
+    in the upload that files it (an upload intent)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    upload_id: Annotated[UUID, classified("internal")]
+    file_name: Annotated[str, classified("confidential")]
+    media_type: Annotated[str, classified("internal")]
+    size_bytes: Annotated[int, classified("internal")]
 
 
 class TranscriptComparisonIn(BaseModel):
@@ -405,6 +443,20 @@ class TranscriptLineDiffOut(BaseModel):
     transcript_amount: Annotated[Decimal, classified("restricted", tri=True)]
     return_amount: Annotated[Decimal | None, classified("restricted", tri=True)]
     matched: Annotated[bool, classified("internal")]
+    # T-01-T43 (additive): the line SHL-08 opens, the signed difference (transcript - return)
+    # and the row's status ("Not on return" when nothing on the return matched).
+    line_no: Annotated[int | None, classified("internal")] = None
+    difference: Annotated[Decimal | None, classified("restricted", tri=True)] = None
+    status: Annotated[
+        Literal["agrees", "differs", "not_on_return"] | None, classified("internal")
+    ] = None
+
+
+class AgreeingFormOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    form: Annotated[str, classified("internal")]
+    count: Annotated[int, classified("internal")]
 
 
 class TranscriptComparisonOut(BaseModel):
@@ -414,6 +466,15 @@ class TranscriptComparisonOut(BaseModel):
     transcript_id: Annotated[UUID, classified("internal")]
     return_id: Annotated[UUID, classified("internal")]
     lines: Annotated[list[TranscriptLineDiffOut], classified("restricted", tri=True)]
+    # T-01-T43 (additive): the card's band and footer, computed by code (ADR-050).
+    result: Annotated[Literal["agrees", "differences"] | None, classified("internal")] = None
+    difference_total: Annotated[Decimal | None, classified("restricted", tri=True)] = None
+    agreeing: Annotated[list[AgreeingFormOut], classified("internal")] = Field(
+        default_factory=list[AgreeingFormOut]
+    )
+    checkpoint_id: Annotated[UUID | None, classified("internal")] = None
+    engine_version: Annotated[str | None, classified("internal")] = None
+    computed_at: Annotated[datetime | None, classified("confidential")] = None
 
 
 # --- routes --------------------------------------------------------------------------------------
@@ -584,61 +645,7 @@ async def publish_consent_template_route(
     await _stub(ctx, "consent_template.publish", CONSENTS_REGISTRY)
 
 
-@consents_router.get(
-    "/client-entities/{client_entity_id}/tax-profile",
-    action="tax_profile.read",
-    response_model=TaxProfileOut,
-    errors=(501,),
-)
-async def tax_profile_route(client_entity_id: EntityId, ctx: Ctx) -> TaxProfileOut:
-    # The answer carries the masked TIN, so it goes out through the offshore mask (AC9.4).
-    return await mask_tins_for(ctx, await _tax_profile(ctx, client_entity_id))
-
-
-async def _tax_profile(ctx: AuthContext, client_entity_id: UUID) -> TaxProfileOut:
-    """T-01-T42 reads the profile; until then the stub's order of checks, then 501."""
-    del client_entity_id
-    await _stub(ctx, "tax_profile.read", CLIENTS_TAX_PROFILE)
-
-
-@consents_router.put(
-    "/client-entities/{client_entity_id}/elections/{kind}",
-    action="tax_election.manage",
-    response_model=TaxElectionOut,
-    errors=(409, 501),
-)
-async def put_election_route(
-    client_entity_id: EntityId,
-    kind: Annotated[str, Path(pattern=r"^[a-z][a-z0-9_]{1,59}$")],
-    body: TaxElectionIn,
-    ctx: Ctx,
-) -> TaxElectionOut:
-    await _stub(ctx, "tax_election.manage", CLIENTS_TAX_PROFILE)
-
-
-@consents_router.get(
-    "/client-entities/{client_entity_id}/authorizations",
-    action="tax_authorization.manage",
-    response_model=list[TaxAuthorizationOut],
-    errors=(501,),
-)
-async def list_authorizations_route(
-    client_entity_id: EntityId, ctx: Ctx
-) -> list[TaxAuthorizationOut]:
-    await _stub(ctx, "tax_authorization.manage", CLIENTS_TAX_PROFILE)
-
-
-@consents_router.post(
-    "/client-entities/{client_entity_id}/authorizations",
-    action="tax_authorization.manage",
-    response_model=TaxAuthorizationOut,
-    status_code=201,
-    errors=(501,),
-)
-async def add_authorization_route(
-    client_entity_id: EntityId, body: TaxAuthorizationIn, ctx: Ctx
-) -> TaxAuthorizationOut:
-    await _stub(ctx, "tax_authorization.manage", CLIENTS_TAX_PROFILE)
+# The tax-profile family's live routes (T-01-T43) are in `tax_profile.py`, on this router.
 
 
 @consents_router.post(
@@ -651,34 +658,9 @@ async def add_authorization_route(
 async def request_authorization_route(
     client_entity_id: EntityId, body: TaxAuthorizationRequestIn, ctx: Ctx
 ) -> TaxAuthorizationOut:
-    """Draft an 8821 or 2848 through C7."""
+    """Draft an 8821 or 2848 through C7: waits for the firm's form templates on P-11's renderer
+    (DEC-1651); the stub's order of checks, then 501."""
     await _stub(ctx, "tax_authorization.manage", CLIENTS_TAX_PROFILE)
-
-
-@consents_router.post(
-    "/client-entities/{client_entity_id}/transcripts",
-    action="transcript.upload",
-    response_model=TranscriptOut,
-    status_code=201,
-    errors=(501,),
-)
-async def upload_transcript_route(
-    client_entity_id: EntityId, body: TranscriptUploadIn, ctx: Ctx
-) -> TranscriptOut:
-    await _stub(ctx, "transcript.upload", CLIENTS_TAX_PROFILE)
-
-
-@consents_router.post(
-    "/transcripts/{transcript_id}/comparisons",
-    action="transcript.compare",
-    response_model=TranscriptComparisonOut,
-    status_code=201,
-    errors=(501,),
-)
-async def compare_transcript_route(
-    transcript_id: Annotated[UUID, Path()], body: TranscriptComparisonIn, ctx: Ctx
-) -> TranscriptComparisonOut:
-    await _stub(ctx, "transcript.compare", CLIENTS_TAX_PROFILE)
 
 
 # --- C19 module API (frozen with v1; `consent_gate.py` reads, T-01-T11; T-01-T10 captures) -----
