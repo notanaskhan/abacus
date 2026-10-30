@@ -1,7 +1,7 @@
 ---
 id: ADR-341
 title: "Multi-entity engagements and consolidation: engagement entities, ledger-owned mapping and consolidation, the taxonomy as firm content"
-status: proposed
+status: accepted
 date: 2026-10-29
 deciders: ayushkbhatia, audit CPA
 risk_zone: red
@@ -15,8 +15,9 @@ proposal: P-63
 
 **Status note.** Drafted by A-03-T24 (TASK-2301) in S18 as pre-window work for A-03 (S20–S23).
 The plan names this ADR "ADR-154"; that is a P-ID alias, and ADR-154 is P-67 (observability
-vendors) on `main`, so this ADR takes ADR-341 from the S18 block. Acceptance is due **Fri Jul 23,
-2027 (S19)**, before A-03 T03, T06 and T08 build on it; each of those cites ADR-341. Extends
+vendors) on `main`, so this ADR takes ADR-341 from the S18 block. **Accepted on 2026-10-29**:
+ayushkbhatia approved the acceptance for both deciders (the builder and the audit CPA), ahead of
+the Fri Jul 23, 2027 (S19) deadline. A-03 T03, T06 and T08 build on it and each cites ADR-341. Extends
 ADR-136 (P-04) and amends ADR-006's single-entity interface.
 
 ## Context

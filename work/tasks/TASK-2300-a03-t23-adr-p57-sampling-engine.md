@@ -4,7 +4,7 @@ title: A-03-T23 ADR P-57 sampling engine
 spec: SPEC-540
 acceptance_criteria: [AC-1]
 risk_zone: red
-status: in-review
+status: done
 epic: A-03
 plan_key: A-03-T23
 branch: s18-a03-t23
@@ -37,10 +37,11 @@ Draft ADR P-57 (DEC-81): a seeded, versioned, frozen in-product sampler that re-
 
 ## Progress log
 - `2026-10-29` — ADR-340, SPEC-540, README, backlog and decision-log rows. Held for the S18 batch; `validate_docs` at the end review.
+- `2026-10-29` — ADR-340 accepted (approved by ayushkbhatia in chat); status, README index, backlog and decision-log rows updated.
 
 ## Questions for the human
-- [ ] Accept ADR-340 (for both deciders: the builder and the audit CPA). Due Fri Jul 23, 2027.
+- [x] Accept ADR-340: acceptance approved by ayushkbhatia on 2026-10-29, for both deciders.
 
 ## Handoff
-- **Current state:** drafted (proposed), PR open, held for the S18 batch.
+- **Current state:** accepted.
 - **Exact next step:** on acceptance flip status, README index and backlog row to accepted; A-03's S20 SPEC cites ADR-340.

@@ -25,7 +25,7 @@ Clock E0, Mon Sep 14, 2026, 9:24 AM CT (f: 11:12 AM); viewer Priya Raman (Partne
 | g | priya-raman | Document confidence v1: hold below 90%, auto-accept above 98% off (policy principal dormant); BrokerWindow 62% example | C report | fixture (T13) |
 | h | priya-raman | SSARS & CAS: early adoption off; Copperleaf August → AR-C 70 preparation | C report | fixture (T13) |
 | i | priya-raman | Draft v3 of AJE thresholds: two changed limits (amber, struck prior), effective Oct 1, 2026, sticky Save bar, Publish v3…, Discard draft | C (lock) | T14 |
-| **j (composed, DF-10)** | grace-holloway | Deadline rules: TY2025–TY2027 reference sets (due-date rules, holidays, postponements, 8879 form set and tolerances, information-return thresholds, retention minimums), each with version, effective date and source; no edit control for any firm role | report-only | T17 |
+| **j (composed, DF-10)** | grace-holloway | Deadline rules: TY2025–TY2027 reference sets (due-date rules, holidays, postponements, 8879 form set and tolerances, information-return thresholds, retention minimums), each with version, effective date and source; no edit control for any firm role | report-only | fixture (T17, DEC-1453) |
 
 Non-artboard: **draft hidden** (Cole Hart, staff, on b: the 1040 v7 draft row absent, its version 404); **not allowed** (a portal principal: 404); **flag off** (T12 frame with the C-20 "not turned on" state); **examples empty** (no provider registered, live until C-01/A-04: the designed empty state, never invented rows); **walled example** (row absent, no "n hidden", totals recomputed); loading and error (F-05 ViewStates).
 
@@ -113,3 +113,13 @@ Gradients, emoji, saturated blue toggles, heavy shadows, invented colours, lorem
 
 ## Open gaps
 - The handoff's toggles are display-only in the product (policy principal dormant, DEC-53); their "on" colour is never shown.
+
+## K-02-T14: state i (draft and publish)
+- **i · Draft v3** (scenario `i`, Priya Raman): header chip `v3` and neutral pill "Draft v3"; the
+  draft's fieldset "BH AJE thresholds v3" with "2 changes from v2"; changed cells amber-tinted with
+  the prior value struck; the sticky Save bar "Draft v3 · 2 changes from v2 · visible to partners
+  only", Effective date, Discard draft, Publish v3… (owner only; ConfirmDialog; a 403 opens the
+  "Confirm it’s you" step-up). `i_stale`: a 409 `stale_version` shows "Changed by … Reload".
+- **Deviation D7:** while a draft is open the examples and the policy-acceptance fieldsets stay on
+  the published read view (the draft pane shows the editable table only). Checklists, review
+  levels and the return approval policy are edited as workbooks (Export, then Import…).

@@ -10,9 +10,11 @@ from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.review.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.review.card_reassign import register_card_reassign
 from abacus.modules.review.checkpoints import (
+    ApprovedValues,
     CheckpointChanged,
     CheckpointInvalid,
     ProposedChange,
+    approved_values,
     checkpoint_deltas,
     decide_import,
     follow_proposal_decision,
@@ -175,6 +177,7 @@ __all__ = [
     "SUBSCRIPTIONS",
     "WORKFLOWS",
     "AlreadySigned",
+    "ApprovedValues",
     "Candidate",
     "CardContext",
     "CardFactor",
@@ -224,6 +227,7 @@ __all__ = [
     "UncitedChange",
     "UnregisteredKind",
     "blocking_issues",
+    "approved_values",
     "canonical_json",
     "changed_since",
     "checkpoint_deltas",

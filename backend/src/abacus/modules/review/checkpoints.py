@@ -547,6 +547,29 @@ async def checkpoint_deltas(tenant: TenantContext, checkpoint_id: UUID) -> dict[
         return _deltas(list(await checkpoint_diffs_of(session, [checkpoint_id])))
 
 
+@dataclass(frozen=True)
+class ApprovedValues:
+    """A target's field values as of its latest approved checkpoint of a cause (T-01-T43: the
+    return as filed is the latest approved engine import). Values are typed `{t, v}`."""
+
+    checkpoint_id: UUID
+    seq: int
+    values: Mapping[str, Value]
+
+
+async def approved_values(
+    tenant: TenantContext, target_type: str, target_id: UUID, cause: Cause
+) -> ApprovedValues | None:
+    """Every field's value at the newest approved checkpoint with `cause`, or None when there is
+    none; the caller has authorised its own read of the target (DEC-1651). Restricted when the
+    target is a tax return (figures are TRI)."""
+    rows, diffs, _ = await _load(tenant, target_type, target_id)
+    chosen = next((r for r in reversed(rows) if r.status == "approved" and r.cause == cause), None)
+    if chosen is None:
+        return None
+    return ApprovedValues(chosen.id, chosen.seq, _state_at(rows, diffs, chosen.seq))
+
+
 # --- writes ------------------------------------------------------------------------------------
 
 
@@ -959,6 +982,7 @@ __all__ = [
     "REJECT",
     "RENAME",
     "RESTORE",
+    "ApprovedValues",
     "CheckpointChanged",
     "CheckpointInvalid",
     "CheckpointList",
@@ -968,6 +992,7 @@ __all__ = [
     "ProposedChange",
     "TotalRow",
     "approve",
+    "approved_values",
     "checkpoint_deltas",
     "detail",
     "follow_proposal_decision",

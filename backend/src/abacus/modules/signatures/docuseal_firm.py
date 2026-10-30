@@ -13,14 +13,15 @@ The person's approval is the send's grant, consumed by the outbox relay before E
 starts (N-02-T20): an undone send never reaches this module.
 
 DocuSeal places fields as page fractions, so each document's page sizes are read here, in an
-isolated child (ADR-110): envelope documents are client files and pypdfium2 is native code.
+isolated child (ADR-110): envelope documents are client files and pypdfium2 is native code. The
+audit log's text (each signer's IP and device) is read the same way: its bytes come from outside.
 """
 
 from __future__ import annotations
 
 import asyncio
 from collections.abc import Awaitable, Callable, Sequence
-from typing import Final
+from typing import Final, Protocol, cast
 from uuid import UUID
 
 import httpx
@@ -66,6 +67,44 @@ def page_sizes(content: bytes) -> tuple[tuple[float, float], ...]:
         )
     finally:
         document.close()
+
+
+_AUDIT_PAGES: Final = 20  # an audit log is a page or two; more is not DocuSeal's
+
+
+class _TextPage(Protocol):  # what pypdfium2's untyped text page offers
+    def get_text_range(self) -> str: ...
+    def close(self) -> None: ...
+
+
+class _Page(Protocol):
+    def get_textpage(self) -> _TextPage: ...
+    def close(self) -> None: ...
+
+
+def audit_log_text(content: bytes) -> str:
+    """The audit log PDF's text; runs in the isolated child only."""
+    import pypdfium2 as pdfium
+
+    document = pdfium.PdfDocument(content)
+    try:
+        texts: list[str] = []
+        for number in range(min(len(document), _AUDIT_PAGES)):
+            page = cast(_Page, document[number])
+            textpage = page.get_textpage()
+            texts.append(textpage.get_text_range().replace("\r\n", "\n"))
+            textpage.close()
+            page.close()
+        return "\n".join(texts)
+    finally:
+        document.close()
+
+
+async def _audit_text(content: bytes) -> str:
+    try:
+        return await asyncio.to_thread(run_isolated, audit_log_text, content)
+    except Exception as exc:  # IsolationFailed, or pdfium refusing a damaged file
+        raise ProviderUnavailable from exc
 
 
 # The firm's opened DocuSeal install secret when W7 is enabled and the install is connected, else
@@ -155,4 +194,5 @@ async def firm_provider(tenant_id: UUID) -> EsignProvider:
         documents=documents,
         fields=fields,
         signer_order=signer_order,
+        audit_text=_audit_text,
     )
