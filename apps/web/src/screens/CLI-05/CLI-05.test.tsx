@@ -10,7 +10,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { installFixtureMode } from "../../app-core/fixture-mode";
 import { newQueryClient } from "../../testing/support";
 import { CLI05 } from ".";
-import { type Cli05State, ENTITY, scenarios } from "./scenarios";
+import { type Cli05State, ENTITY, SECTION, scenarios } from "./scenarios";
 
 beforeAll(() => {
   client.setConfig({ baseUrl: window.location.origin, throwOnError: true });
@@ -101,5 +101,96 @@ describe("CLI-05 f · partially signed · Ferris", () => {
     if (row === null) return;
     expect(within(row as HTMLElement).getByRole("button", { name: "Resend…" })).toBeTruthy();
     expect(screen.getByText("Requested · 1 of 2 signed")).toBeTruthy();
+  });
+});
+
+// T-01-T34 (part 2, fixture mode): "Scenario tests for b, c, e and g pass, and no full CAF number
+// or SSN appears in the DOM."
+function showAt(state: Cli05State): void {
+  restore = installFixtureMode(scenarios[state]);
+  render(
+    <QueryClientProvider client={newQueryClient()}>
+      <CLI05 clientEntityId={ENTITY[state]} section={SECTION[state]} />
+    </QueryClientProvider>,
+  );
+}
+
+/** Nine or more digits in a row, or an SSN or CAF shape, anywhere in the page's text. */
+function fullNumbers(): string[] {
+  const text = document.body.textContent ?? "";
+  return [...text.matchAll(/\b\d{3}-\d{2}-\d{4}\b|\b\d{4}-\d{5}[A-Z]?\b|\b\d{9,}\b/gu)].map(
+    (m) => m[0],
+  );
+}
+
+describe("CLI-05 part 2 (T-01-T34)", () => {
+  it("b · transcripts, none yet: the empty state with Upload transcript…", async () => {
+    showAt("b");
+    expect(await screen.findByText("No transcripts yet.")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Pull them from IRS e-Services (TDS) under the 8821 on file, then upload here.",
+      ),
+    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Upload transcript…" })).toHaveProperty(
+      "disabled",
+      true,
+    );
+    expect(fullNumbers()).toEqual([]);
+  });
+
+  it("c · authorizations: the 8821 with CAF last four only, the 8821-versus-2848 note and State", async () => {
+    showAt("c");
+    expect(await screen.findByText("Tax information authorization")).toBeTruthy();
+    const designees = document.querySelector("[data-designees]");
+    expect(designees?.textContent).toBe("Daniel Reyes (CAF ••••0912) · Kevin Osei (CAF ••••4471)");
+    expect(screen.getByText("Income · Form 1040")).toBeTruthy();
+    expect(screen.getByText("2022–2026")).toBeTruthy();
+    expect(screen.getByText("Feb 3, 2026")).toBeTruthy();
+    expect(screen.getByText("On file")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "An 8821 lets us receive transcripts and notices, not represent. The CP2000 response will be signed by Marcus and Dana, or file Form 2848 to represent them.",
+      ),
+    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Draft Form 2848…" })).toBeTruthy();
+    expect(screen.getByText("Colorado · not on file")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "+ Add" })).toBeTruthy();
+    expect(fullNumbers()).toEqual([]);
+  });
+
+  it("e · elections on Ridgeline: §754 pending, PTET IL, CO and NY, BBA, §163(j), accrual", async () => {
+    showAt("e");
+    expect(
+      await screen.findByText("Not made — decision pending (due with the TY2025 return)"),
+    ).toBeTruthy();
+    const ptet = document.querySelector("[data-election='ptet']");
+    expect(ptet?.textContent).toContain("IL Elected · 28,044");
+    expect(ptet?.textContent).toContain("CO Elected · 17,070");
+    expect(ptet?.textContent).toContain("NY Elected · 18,982");
+    expect(screen.getByText("Partnership representative (BBA)")).toBeTruthy();
+    expect(screen.getByText(/^Not eligible — /u)).toBeTruthy();
+    expect(
+      screen.getByText("Exempt — small business (average gross receipts under $31M)"),
+    ).toBeTruthy();
+    expect(document.querySelector("[data-election='accounting_method']")?.textContent).toBe(
+      "Accrual",
+    );
+    expect(fullNumbers()).toEqual([]);
+  });
+
+  it("g · none on file (Santos): No 8821 or 2848 on file with Request Form 8821…", async () => {
+    showAt("g");
+    const empties = await screen.findAllByText("No 8821 or 2848 on file");
+    expect(empties.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole("button", { name: "Request Form 8821…" })).toBeTruthy();
+    expect(fullNumbers()).toEqual([]);
+  });
+
+  it("the section control switches the canvas", async () => {
+    showAt("c");
+    await screen.findByText("Tax information authorization");
+    fireEvent.click(screen.getByRole("tab", { name: "Transcripts" }));
+    expect(await screen.findByText("No transcripts yet.")).toBeTruthy();
   });
 });
