@@ -1,10 +1,10 @@
-# C11 Renderer and templates (v1 draft)
+# C11 Renderer and templates (v1, frozen)
 
 | Field | Value |
 |---|---|
 | Register row | C11 |
 | Version | v1 |
-| Status | stub (P-11-T03, 2026-10-29): every route 404 for a client principal, then its matrix action, then 404 with `reporting.generated_documents` off and 501 with it on until P-11-T06 (templates) and T11 (generated documents). **Templates live (P-11-T06, 2026-10-30):** list, version, import and publish answer from `reporting/templates.py` and methodology's tables (0460); the SAMPLE preview waits for P-11-T07. Fixture mode serves the shapes from the Brightwater Hale seed (`apps/web/src/fixtures/handlers/reporting.ts`) |
+| Status | **v1 frozen 2026-10-30 (P-11-T07; `backend/tests/contracts/c11_renderer/v1.json`; additions only from here).** Stub (P-11-T03, 2026-10-29): every route 404 for a client principal, then its matrix action, then 404 with `reporting.generated_documents` off and 501 with it on until P-11-T06 (templates) and T11 (generated documents). **Templates live (P-11-T06, 2026-10-30):** list, version, import and publish answer from `reporting/templates.py` and methodology's tables (0460); the SAMPLE preview goes live with P-11-T11. Fixture mode serves the shapes from the Brightwater Hale seed (`apps/web/src/fixtures/handlers/reporting.ts`) |
 | Provider epic | P-11 |
 | Consumers | N-02 (ENG-04 letters, §7216 consent documents), A-07 (AUD-20…23), T-01/T-02 (TAX-12 delivery cover letter), N-04 (NOT-03), C-01/C-02 (CLS-08), A-10 (FSP-06), P-10 (trace.pdf, P-10-T44), F-06 (T10 `DocumentVM`), F-07 (field manifest), T-06 (form-face previews) |
 | Freeze sprint | S18 Contract Monday (Mon Jun 28, 2027) |
@@ -24,6 +24,7 @@ only with a human approval.
 | Template list | `GET /v1/report-templates?family=` | `report_template.read` | deny |
 | Template version | `GET /v1/report-templates/{id}/versions/{n}` | `report_template.read` | deny |
 | Template import (dry run or draft) | `POST /v1/report-templates/import?dry_run=` | `report_template.import` | deny |
+| Template deprecate (v1.1, T-01-T17) | `POST /v1/report-templates/{id}/versions/{n}/deprecate` | `report_template.publish` (a consent template: `consent_template.publish`) | deny |
 | Template publish (fresh MFA) | `POST /v1/report-templates/{id}/versions/{n}/publish` | `report_template.publish` | deny |
 | Template SAMPLE preview | `POST /v1/report-templates/{id}/versions/{n}/preview` | `report_template.read` | deny |
 | Generated document | `GET /v1/generated-documents/{id}` | `generated_document.read` | agent: `task_scope` |
