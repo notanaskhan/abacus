@@ -185,6 +185,7 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "return_engine_summaries": "tax_return_events_immutable",  # 0403 (T-02-T07)
     "engine_sync_events": "engine_sync_events_immutable",  # 0465 (T-01-T19)
     "document_classifications": "trust_kit_immutable",  # 0404 (N-01-T17)
+    "answer_versions": "answer_versions_immutable",  # 0467 (T-02-T16)
 }
 # Update columns for tables outside the modules (TASK-008); modules declare theirs.
 _PLATFORM_UPDATE_COLUMNS: dict[str, frozenset[str]] = {

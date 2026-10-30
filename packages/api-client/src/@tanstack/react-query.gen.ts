@@ -15685,6 +15685,8 @@ export const questionnaireListTemplatesOptions = (options?: Options<Questionnair
 
 /**
  * Publish Template Route
+ *
+ * A person publishes the version (fresh MFA). 409 `version_published`.
  */
 export const publishTemplateMutation = (options?: Partial<Options<PublishTemplateData>>): UseMutationOptions<PublishTemplateResponse, PublishTemplateError, Options<PublishTemplateData>> => {
     const mutationOptions: UseMutationOptions<PublishTemplateResponse, PublishTemplateError, Options<PublishTemplateData>> = {
@@ -15702,6 +15704,9 @@ export const publishTemplateMutation = (options?: Partial<Options<PublishTemplat
 
 /**
  * Questionnaire Import Template Route
+ *
+ * A template file as the raw body (no multipart; DEC-1369), parsed in the isolated child.
+ * The dry run answers problems and the diff and stores nothing (T-02-T16).
  */
 export const questionnaireImportTemplateMutation = (options?: Partial<Options<QuestionnaireImportTemplateData>>): UseMutationOptions<QuestionnaireImportTemplateResponse, QuestionnaireImportTemplateError, Options<QuestionnaireImportTemplateData>> => {
     const mutationOptions: UseMutationOptions<QuestionnaireImportTemplateResponse, QuestionnaireImportTemplateError, Options<QuestionnaireImportTemplateData>> = {
@@ -15719,6 +15724,8 @@ export const questionnaireImportTemplateMutation = (options?: Partial<Options<Qu
 
 /**
  * Create Questionnaire Route
+ *
+ * A-04 and A-08's team questions and inquiries (an inquiry names its addressee).
  */
 export const createQuestionnaireMutation = (options?: Partial<Options<CreateQuestionnaireData>>): UseMutationOptions<CreateQuestionnaireResponse, CreateQuestionnaireError, Options<CreateQuestionnaireData>> => {
     const mutationOptions: UseMutationOptions<CreateQuestionnaireResponse, CreateQuestionnaireError, Options<CreateQuestionnaireData>> = {
@@ -15754,6 +15761,8 @@ export const questionnaireOptions = (options: Options<QuestionnaireData>) => que
 
 /**
  * Draft Question Route
+ *
+ * A team question drafted in an open questionnaire. 409 `questionnaire_closed`.
  */
 export const draftQuestionMutation = (options?: Partial<Options<DraftQuestionData>>): UseMutationOptions<DraftQuestionResponse, DraftQuestionError, Options<DraftQuestionData>> => {
     const mutationOptions: UseMutationOptions<DraftQuestionResponse, DraftQuestionError, Options<DraftQuestionData>> = {
@@ -15772,7 +15781,7 @@ export const draftQuestionMutation = (options?: Partial<Options<DraftQuestionDat
 /**
  * Send Question Route
  *
- * A person sends it (human-only; G3 met except on intake binders).
+ * A person sends it (human-only). 409 `question_sent`.
  */
 export const sendQuestionMutation = (options?: Partial<Options<SendQuestionData>>): UseMutationOptions<SendQuestionResponse, SendQuestionError, Options<SendQuestionData>> => {
     const mutationOptions: UseMutationOptions<SendQuestionResponse, SendQuestionError, Options<SendQuestionData>> = {
@@ -16019,6 +16028,9 @@ export const listQuestionnairesOptions = (options: Options<ListQuestionnairesDat
 
 /**
  * Attach Organizer Route
+ *
+ * An organizer from a published version, prior-year values by code. 409
+ * `version_not_published`.
  */
 export const attachOrganizerMutation = (options?: Partial<Options<AttachOrganizerData>>): UseMutationOptions<AttachOrganizerResponse, AttachOrganizerError, Options<AttachOrganizerData>> => {
     const mutationOptions: UseMutationOptions<AttachOrganizerResponse, AttachOrganizerError, Options<AttachOrganizerData>> = {

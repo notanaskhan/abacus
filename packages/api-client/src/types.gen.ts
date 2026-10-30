@@ -7357,62 +7357,6 @@ export type ConsentTemplateOut = {
 };
 
 /**
- * ConsentTermsIn
- *
- * A `consent_7216` template's terms (T-01-T17; C11 v1.1 additive): one purpose, the
- * mandatory-statement version, the counsel attestation and the stated expiry. Recipients are
- * never fixed text: they come from the provider-terms register at render time.
- */
-export type ConsentTermsIn = {
-    /**
-     * Counsel Attestation
-     */
-    counsel_attestation: true;
-    /**
-     * Expiry Months
-     */
-    expiry_months?: number | null;
-    /**
-     * Purpose
-     */
-    purpose: 'use' | 'ai_disclosure' | 'offshore_disclosure' | 'third_party_disclosure' | 'other_services_use' | 'firm_defined';
-    /**
-     * Statement Version
-     */
-    statement_version: string;
-};
-
-/**
- * ConsentTermsOut
- */
-export type ConsentTermsOut = {
-    /**
-     * Counsel Attested At
-     */
-    counsel_attested_at: string;
-    /**
-     * Counsel Attested By
-     */
-    counsel_attested_by: string;
-    /**
-     * Expiry Months
-     */
-    expiry_months: number | null;
-    /**
-     * Purpose
-     */
-    purpose: 'use' | 'ai_disclosure' | 'offshore_disclosure' | 'third_party_disclosure' | 'other_services_use' | 'firm_defined';
-    /**
-     * Recipients Source
-     */
-    recipients_source: 'provider_terms_register';
-    /**
-     * Statement Version
-     */
-    statement_version: string;
-};
-
-/**
  * ContactAccessIn
  *
  * CLI-04 e "Change scope": the contact's whole grant set after the change.
@@ -11144,6 +11088,20 @@ export type EngineExportOut = {
 };
 
 /**
+ * EngineImportIn
+ */
+export type EngineImportIn = {
+    /**
+     * Kind
+     */
+    kind: 'values' | 'diagnostics' | 'pdfs' | 'acks';
+    /**
+     * Upload Id
+     */
+    upload_id: string;
+};
+
+/**
  * EngineImportOut
  */
 export type EngineImportOut = {
@@ -14046,10 +14004,6 @@ export type FormatCheckOut = {
      * Problems
      */
     problems: Array<string>;
-    /**
-     * Returns Read
-     */
-    returns_read?: number | null;
 };
 
 /**
@@ -15550,7 +15504,7 @@ export type ImportErrorOut = {
     /**
      * Code
      */
-    code: 'unknown_variable' | 'unknown_layout' | 'unknown_block' | 'markup_not_allowed' | 'clause_conflict' | 'too_large' | 'consent_terms_required' | 'recipients_block_required' | 'recipient_in_text';
+    code: 'unknown_variable' | 'unknown_layout' | 'unknown_block' | 'markup_not_allowed' | 'clause_conflict' | 'too_large';
     /**
      * Path
      */
@@ -25366,7 +25320,6 @@ export type ReportTemplateVersionOut = {
      * Clauses
      */
     clauses: Array<ClauseDefOutOutput>;
-    consent?: ConsentTermsOut | null;
     /**
      * Content Sha256
      */
@@ -30722,6 +30675,18 @@ export type StandardExamplesOut = {
 };
 
 /**
+ * StandardImportIn
+ *
+ * A workbook already uploaded and scanned through the upload flow (an upload intent).
+ */
+export type StandardImportIn = {
+    /**
+     * Upload Id
+     */
+    upload_id: string;
+};
+
+/**
  * StandardImportProblemOut
  *
  * A workbook problem: where, and a fixed code, never the cell's content (ADR-052).
@@ -33062,9 +33027,60 @@ export type TemplateDraftStartedOut = {
 };
 
 /**
+ * TemplateImportIn
+ *
+ * A template bundle (AC-1): structured blocks, declared variables and synthetic sample data
+ * only (AC-2: no markup, no URL).
+ */
+export type TemplateImportIn = {
+    /**
+     * Body
+     */
+    body: Array<SectionBlockInput | HeadingBlock | ParagraphBlock | ClauseBlockInput | ListBlock | TableBlock | KvBlock | SignatureBlock | LegendBlock | ImageBlock | EnclosuresBlock | PageBreakBlock>;
+    /**
+     * Clauses
+     */
+    clauses?: Array<ClauseDefOutInput>;
+    /**
+     * Description
+     */
+    description?: string;
+    /**
+     * Family
+     */
+    family: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export';
+    /**
+     * Layout Key
+     */
+    layout_key: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Sample Data
+     */
+    sample_data?: {
+        [key: string]: string;
+    };
+    /**
+     * Variables
+     */
+    variables?: Array<VariableDeclOut>;
+};
+
+/**
  * TemplateImportOut
  */
 export type TemplateImportOut = {
+    /**
+     * Added
+     */
+    added?: Array<string>;
+    /**
+     * Changed
+     */
+    changed?: Array<string>;
     /**
      * Dry Run
      */
@@ -33073,6 +33089,10 @@ export type TemplateImportOut = {
      * Problems
      */
     problems: Array<string>;
+    /**
+     * Removed
+     */
+    removed?: Array<string>;
     /**
      * Template Id
      */
@@ -36018,60 +36038,6 @@ export type AbacusModulesReportingContractApprovalOut = {
      * By
      */
     by: string;
-};
-
-/**
- * TemplateImportIn
- *
- * A template bundle (AC-1): structured blocks, declared variables and synthetic sample data
- * only (AC-2: no markup, no URL).
- */
-export type AbacusModulesReportingContractTemplateImportIn = {
-    /**
-     * Body
-     */
-    body: Array<SectionBlockInput | HeadingBlock | ParagraphBlock | ClauseBlockInput | ListBlock | TableBlock | KvBlock | SignatureBlock | LegendBlock | ImageBlock | EnclosuresBlock | PageBreakBlock>;
-    /**
-     * Clauses
-     */
-    clauses?: Array<ClauseDefOutInput>;
-    consent?: ConsentTermsIn | null;
-    /**
-     * Description
-     */
-    description?: string;
-    /**
-     * Family
-     */
-    family: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export';
-    /**
-     * Layout Key
-     */
-    layout_key: string;
-    /**
-     * Name
-     */
-    name: string;
-    /**
-     * Sample Data
-     */
-    sample_data?: {
-        [key: string]: string;
-    };
-    /**
-     * Variables
-     */
-    variables?: Array<VariableDeclOut>;
-};
-
-/**
- * TemplateImportIn
- */
-export type AbacusModulesRequestsQuestionnairesContractTemplateImportIn = {
-    /**
-     * Upload Id
-     */
-    upload_id: string;
 };
 
 /**
@@ -59490,6 +59456,10 @@ export type EngineImportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type EngineImportError = EngineImportErrors[keyof EngineImportErrors];
@@ -59546,6 +59516,10 @@ export type ApproveImportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type ApproveImportError = ApproveImportErrors[keyof ApproveImportErrors];
@@ -59602,6 +59576,10 @@ export type RejectImportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type RejectImportError = RejectImportErrors[keyof RejectImportErrors];
@@ -64598,6 +64576,10 @@ export type PutOfficeMappingErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type PutOfficeMappingError = PutOfficeMappingErrors[keyof PutOfficeMappingErrors];
@@ -64650,6 +64632,10 @@ export type EngineSettingsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type EngineSettingsError = EngineSettingsErrors[keyof EngineSettingsErrors];
@@ -64706,6 +64692,10 @@ export type PutEngineSettingsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type PutEngineSettingsError = PutEngineSettingsErrors[keyof PutEngineSettingsErrors];
@@ -64762,6 +64752,10 @@ export type PutStatusMirrorErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type PutStatusMirrorError = PutStatusMirrorErrors[keyof PutStatusMirrorErrors];
@@ -64814,6 +64808,10 @@ export type TestEngineErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type TestEngineError = TestEngineErrors[keyof TestEngineErrors];
@@ -64870,6 +64868,10 @@ export type PutUserMappingErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type PutUserMappingError = PutUserMappingErrors[keyof PutUserMappingErrors];
@@ -73155,6 +73157,10 @@ export type DiscardDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type DiscardDraftError = DiscardDraftErrors[keyof DiscardDraftErrors];
@@ -73267,6 +73273,10 @@ export type CreateDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type CreateDraftError = CreateDraftErrors[keyof CreateDraftErrors];
@@ -73601,6 +73611,10 @@ export type AddStepErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type AddStepError = AddStepErrors[keyof AddStepErrors];
@@ -73773,6 +73787,10 @@ export type RemoveStepErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type RemoveStepError = RemoveStepErrors[keyof RemoveStepErrors];
@@ -73837,6 +73855,10 @@ export type EditStepErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type EditStepError = EditStepErrors[keyof EditStepErrors];
@@ -73901,6 +73923,10 @@ export type MandatoryStepErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type MandatoryStepError = MandatoryStepErrors[keyof MandatoryStepErrors];
@@ -78389,10 +78415,6 @@ export type QuestionnaireListTemplatesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type QuestionnaireListTemplatesError = QuestionnaireListTemplatesErrors[keyof QuestionnaireListTemplatesErrors];
@@ -78455,10 +78477,6 @@ export type PublishTemplateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PublishTemplateError = PublishTemplateErrors[keyof PublishTemplateErrors];
@@ -78473,7 +78491,7 @@ export type PublishTemplateResponses = {
 export type PublishTemplateResponse = PublishTemplateResponses[keyof PublishTemplateResponses];
 
 export type QuestionnaireImportTemplateData = {
-    body: AbacusModulesRequestsQuestionnairesContractTemplateImportIn;
+    body?: never;
     headers?: {
         /**
          * Authorization
@@ -78485,7 +78503,15 @@ export type QuestionnaireImportTemplateData = {
         'X-Abacus-Tenant'?: string | null;
     };
     path?: never;
-    query?: {
+    query: {
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * Format
+         */
+        format?: 'csv' | 'xlsx' | 'json';
         /**
          * Dry Run
          */
@@ -78511,10 +78537,6 @@ export type QuestionnaireImportTemplateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type QuestionnaireImportTemplateError = QuestionnaireImportTemplateErrors[keyof QuestionnaireImportTemplateErrors];
@@ -78566,10 +78588,6 @@ export type CreateQuestionnaireErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CreateQuestionnaireError = CreateQuestionnaireErrors[keyof CreateQuestionnaireErrors];
@@ -78622,10 +78640,6 @@ export type QuestionnaireErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type QuestionnaireError = QuestionnaireErrors[keyof QuestionnaireErrors];
@@ -78682,10 +78696,6 @@ export type DraftQuestionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DraftQuestionError = DraftQuestionErrors[keyof DraftQuestionErrors];
@@ -78742,10 +78752,6 @@ export type SendQuestionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SendQuestionError = SendQuestionErrors[keyof SendQuestionErrors];
@@ -79079,6 +79085,10 @@ export type ListReportTemplatesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type ListReportTemplatesError = ListReportTemplatesErrors[keyof ListReportTemplatesErrors];
@@ -79093,7 +79103,7 @@ export type ListReportTemplatesResponses = {
 export type ListReportTemplatesResponse = ListReportTemplatesResponses[keyof ListReportTemplatesResponses];
 
 export type ImportReportTemplateData = {
-    body: AbacusModulesReportingContractTemplateImportIn;
+    body: TemplateImportIn;
     headers?: {
         /**
          * Authorization
@@ -79135,6 +79145,10 @@ export type ImportReportTemplateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type ImportReportTemplateError = ImportReportTemplateErrors[keyof ImportReportTemplateErrors];
@@ -79191,6 +79205,10 @@ export type GetReportTemplateVersionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type GetReportTemplateVersionError = GetReportTemplateVersionErrors[keyof GetReportTemplateVersionErrors];
@@ -79203,66 +79221,6 @@ export type GetReportTemplateVersionResponses = {
 };
 
 export type GetReportTemplateVersionResponse = GetReportTemplateVersionResponses[keyof GetReportTemplateVersionResponses];
-
-export type DeprecateReportTemplateData = {
-    body?: never;
-    headers?: {
-        /**
-         * Authorization
-         */
-        authorization?: string | null;
-        /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-    };
-    path: {
-        /**
-         * Template Id
-         */
-        template_id: string;
-        /**
-         * Version No
-         */
-        version_no: number;
-    };
-    query?: never;
-    url: '/v1/report-templates/{template_id}/versions/{version_no}/deprecate';
-};
-
-export type DeprecateReportTemplateErrors = {
-    /**
-     * Not authenticated
-     */
-    401: ErrorOut;
-    /**
-     * Forbidden
-     */
-    403: ErrorOut;
-    /**
-     * Not found
-     */
-    404: ErrorOut;
-    /**
-     * Conflict with the resource's state
-     */
-    409: ErrorOut;
-    /**
-     * Invalid request
-     */
-    422: ValidationErrorOut;
-};
-
-export type DeprecateReportTemplateError = DeprecateReportTemplateErrors[keyof DeprecateReportTemplateErrors];
-
-export type DeprecateReportTemplateResponses = {
-    /**
-     * Successful Response
-     */
-    200: ReportTemplateVersionOut;
-};
-
-export type DeprecateReportTemplateResponse = DeprecateReportTemplateResponses[keyof DeprecateReportTemplateResponses];
 
 export type PreviewReportTemplateData = {
     body?: never;
@@ -79375,6 +79333,10 @@ export type PublishReportTemplateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type PublishReportTemplateError = PublishReportTemplateErrors[keyof PublishReportTemplateErrors];
@@ -79427,10 +79389,6 @@ export type ListQuestionnairesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListQuestionnairesError = ListQuestionnairesErrors[keyof ListQuestionnairesErrors];
@@ -79489,10 +79447,6 @@ export type AttachOrganizerErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AttachOrganizerError = AttachOrganizerErrors[keyof AttachOrganizerErrors];
@@ -80451,7 +80405,7 @@ export type CreateStandardResponses = {
 export type CreateStandardResponse = CreateStandardResponses[keyof CreateStandardResponses];
 
 export type ImportStandardsData = {
-    body?: never;
+    body: StandardImportIn;
     headers?: {
         /**
          * Authorization
@@ -80484,6 +80438,10 @@ export type ImportStandardsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type ImportStandardsError = ImportStandardsErrors[keyof ImportStandardsErrors];
@@ -80612,7 +80570,7 @@ export type StandardExamplesResponses = {
 export type StandardExamplesResponse = StandardExamplesResponses[keyof StandardExamplesResponses];
 
 export type ImportStandardData = {
-    body?: never;
+    body: StandardImportIn;
     headers?: {
         /**
          * Authorization
@@ -80629,12 +80587,7 @@ export type ImportStandardData = {
          */
         standard_id: string;
     };
-    query?: {
-        /**
-         * Format
-         */
-        format?: 'xlsx' | 'csv';
-    };
+    query?: never;
     url: '/v1/standards/{standard_id}/imports';
 };
 
@@ -80652,13 +80605,13 @@ export type ImportStandardErrors = {
      */
     404: ErrorOut;
     /**
-     * Conflict with the resource's state
-     */
-    409: ErrorOut;
-    /**
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type ImportStandardError = ImportStandardErrors[keyof ImportStandardErrors];
@@ -81068,6 +81021,10 @@ export type StandardExportVersionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type StandardExportVersionError = StandardExportVersionErrors[keyof StandardExportVersionErrors];
@@ -81830,6 +81787,10 @@ export type ReturnRecordErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type ReturnRecordError = ReturnRecordErrors[keyof ReturnRecordErrors];
@@ -82280,12 +82241,12 @@ export type ExportReturnResponses = {
 export type ExportReturnResponse = ExportReturnResponses[keyof ExportReturnResponses];
 
 export type UploadImportData = {
-    body?: never;
+    body: EngineImportIn;
     headers: {
         /**
-         * X-File-Name
+         * Idempotency-Key
          */
-        'X-File-Name': string;
+        'Idempotency-Key': string;
         /**
          * Authorization
          */
@@ -82301,12 +82262,7 @@ export type UploadImportData = {
          */
         return_id: string;
     };
-    query: {
-        /**
-         * Kind
-         */
-        kind: 'values' | 'diagnostics' | 'pdfs' | 'acks';
-    };
+    query?: never;
     url: '/v1/tax-returns/{return_id}/engine-imports';
 };
 
@@ -82324,13 +82280,13 @@ export type UploadImportErrors = {
      */
     404: ErrorOut;
     /**
-     * Conflict with the resource's state
-     */
-    409: ErrorOut;
-    /**
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type UploadImportError = UploadImportErrors[keyof UploadImportErrors];
@@ -82383,6 +82339,10 @@ export type EngineSyncErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type EngineSyncError = EngineSyncErrors[keyof EngineSyncErrors];
@@ -82495,6 +82455,10 @@ export type FinalApprovalErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type FinalApprovalError = FinalApprovalErrors[keyof FinalApprovalErrors];
@@ -82555,6 +82519,10 @@ export type ApproveReturnErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type ApproveReturnError = ApproveReturnErrors[keyof ApproveReturnErrors];
@@ -82899,6 +82867,10 @@ export type ReturnOverviewErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type ReturnOverviewError = ReturnOverviewErrors[keyof ReturnOverviewErrors];
@@ -82955,6 +82927,10 @@ export type TransitionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type TransitionError = TransitionErrors[keyof TransitionErrors];

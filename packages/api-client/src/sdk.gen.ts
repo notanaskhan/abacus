@@ -9439,6 +9439,8 @@ export const questionnaireListTemplates = <ThrowOnError extends boolean = false>
 
 /**
  * Publish Template Route
+ *
+ * A person publishes the version (fresh MFA). 409 `version_published`.
  */
 export const publishTemplate = <ThrowOnError extends boolean = false>(options: Options<PublishTemplateData, ThrowOnError>): RequestResult<PublishTemplateResponses, PublishTemplateErrors, ThrowOnError> => (options.client ?? client).post<PublishTemplateResponses, PublishTemplateErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9448,19 +9450,20 @@ export const publishTemplate = <ThrowOnError extends boolean = false>(options: O
 
 /**
  * Questionnaire Import Template Route
+ *
+ * A template file as the raw body (no multipart; DEC-1369), parsed in the isolated child.
+ * The dry run answers problems and the diff and stores nothing (T-02-T16).
  */
 export const questionnaireImportTemplate = <ThrowOnError extends boolean = false>(options: Options<QuestionnaireImportTemplateData, ThrowOnError>): RequestResult<QuestionnaireImportTemplateResponses, QuestionnaireImportTemplateErrors, ThrowOnError> => (options.client ?? client).post<QuestionnaireImportTemplateResponses, QuestionnaireImportTemplateErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/questionnaire-templates:import',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
+    ...options
 });
 
 /**
  * Create Questionnaire Route
+ *
+ * A-04 and A-08's team questions and inquiries (an inquiry names its addressee).
  */
 export const createQuestionnaire = <ThrowOnError extends boolean = false>(options: Options<CreateQuestionnaireData, ThrowOnError>): RequestResult<CreateQuestionnaireResponses, CreateQuestionnaireErrors, ThrowOnError> => (options.client ?? client).post<CreateQuestionnaireResponses, CreateQuestionnaireErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9483,6 +9486,8 @@ export const questionnaire = <ThrowOnError extends boolean = false>(options: Opt
 
 /**
  * Draft Question Route
+ *
+ * A team question drafted in an open questionnaire. 409 `questionnaire_closed`.
  */
 export const draftQuestion = <ThrowOnError extends boolean = false>(options: Options<DraftQuestionData, ThrowOnError>): RequestResult<DraftQuestionResponses, DraftQuestionErrors, ThrowOnError> => (options.client ?? client).post<DraftQuestionResponses, DraftQuestionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9497,7 +9502,7 @@ export const draftQuestion = <ThrowOnError extends boolean = false>(options: Opt
 /**
  * Send Question Route
  *
- * A person sends it (human-only; G3 met except on intake binders).
+ * A person sends it (human-only). 409 `question_sent`.
  */
 export const sendQuestion = <ThrowOnError extends boolean = false>(options: Options<SendQuestionData, ThrowOnError>): RequestResult<SendQuestionResponses, SendQuestionErrors, ThrowOnError> => (options.client ?? client).post<SendQuestionResponses, SendQuestionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9646,6 +9651,9 @@ export const listQuestionnaires = <ThrowOnError extends boolean = false>(options
 
 /**
  * Attach Organizer Route
+ *
+ * An organizer from a published version, prior-year values by code. 409
+ * `version_not_published`.
  */
 export const attachOrganizer = <ThrowOnError extends boolean = false>(options: Options<AttachOrganizerData, ThrowOnError>): RequestResult<AttachOrganizerResponses, AttachOrganizerErrors, ThrowOnError> => (options.client ?? client).post<AttachOrganizerResponses, AttachOrganizerErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
