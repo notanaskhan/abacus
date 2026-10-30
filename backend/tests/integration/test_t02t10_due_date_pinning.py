@@ -149,6 +149,8 @@ async def test_ac19_ridgelines_extended_1065_is_sep_15_2026_with_its_versions(
     ctx = TenantContext(tenant, "system", "test:t02t10")
     async with uow(ctx) as tx:
         pinned = await due_dates.pin(tx.session, ctx, item)
+        if pinned is not None:
+            due_dates.record_pinned(tx, item, pinned)  # every unit of work audits
         assert pinned is not None
         due_dates.record_pinned(tx, item, pinned)
     row = await _dates(seed, item)
@@ -166,7 +168,9 @@ async def test_ac20_a_filed_return_keeps_its_dates_after_a_correction(seed: Seed
     open_ = await _return(seed, tenant, "preparing", extended=True, tax_year=2031)
     for item in (filed, open_):
         async with uow(ctx) as tx:
-            await due_dates.pin(tx.session, ctx, item)
+            pinned = await due_dates.pin(tx.session, ctx, item)
+            assert pinned is not None
+            due_dates.record_pinned(tx, item, pinned)  # every unit of work audits
     await seed.run("UPDATE tax_returns SET status = 'filed' WHERE work_item_id = $1", filed)
     before = await _dates(seed, filed)
     # A correction: the 17th, effective later in the year (the latest set effective on or
@@ -185,4 +189,6 @@ async def test_ac18_no_rule_leaves_the_dates_empty(seed: Seeder) -> None:
     await seed.run("UPDATE tax_returns SET form = '709' WHERE work_item_id = $1", item)
     async with uow(ctx) as tx:
         pinned = await due_dates.pin(tx.session, ctx, item)
+        if pinned is not None:
+            due_dates.record_pinned(tx, item, pinned)  # every unit of work audits
     assert pinned is not None and pinned.original_due_on is None
