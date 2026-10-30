@@ -28,6 +28,7 @@ from abacus.modules.evidence import api as evidence
 from abacus.modules.evidence import storage
 from abacus.modules.reporting import api as c11
 from abacus.modules.reporting import documents as docs
+from abacus.modules.reporting import files as rendered
 
 from .agent_tests.support import Seeder
 from .conftest import MigratedDatabase
@@ -124,7 +125,7 @@ async def test_ac1_the_evidence_fingerprint_equals_the_render_hash(seed: Seeder)
     render_hash = hashlib.sha256(PDF).hexdigest()
     stored = await evidence.store_generated(tenant, PDF)
     async with uow(TenantContext(tenant, "system", "reporting.render")) as tx:
-        version_id = await docs.record_file(
+        version_id = await rendered.record_file(
             tx,
             document_id=document_id,
             version_no=1,
@@ -165,7 +166,7 @@ async def test_ac1_bytes_that_are_not_the_renders_are_refused(seed: Seeder) -> N
     stored = await evidence.store_generated(tenant, PDF + b"tampered")
     with pytest.raises(evidence.RenderHashMismatch):
         async with uow(TenantContext(tenant, "system", "reporting.render")) as tx:
-            await docs.record_file(
+            await rendered.record_file(
                 tx,
                 document_id=document_id,
                 version_no=1,
@@ -184,7 +185,7 @@ async def test_ac3_no_path_rewrites_a_generated_version(seed: Seeder) -> None:
     stored = await evidence.store_generated(tenant, PDF)
     ctx = TenantContext(tenant, "system", "reporting.render")
     async with uow(ctx) as tx:
-        version_id = await docs.record_file(
+        version_id = await rendered.record_file(
             tx,
             document_id=document_id,
             version_no=1,
