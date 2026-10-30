@@ -130,7 +130,22 @@ async def _work_item(seed: Seeder, firm: Firm, kind: str) -> uuid.UUID:
 async def _client_person(
     seed: Seeder, firm: Firm, scope_kind: str, scope_id: uuid.UUID
 ) -> uuid.UUID:
-    person = (await seed.person(firm.tenant)).user_id
+    person = cast(
+        uuid.UUID,
+        await seed.value(
+            "INSERT INTO users (idp_issuer, idp_subject, email, display_name) "
+            "VALUES ('https://identity.abacus.local', $1, $2, 'Probe client') RETURNING id",
+            f"sub-{uuid.uuid4().hex}",
+            f"{uuid.uuid4().hex}@example.test",
+        ),
+    )
+    # A client access grant needs a client membership (0084, 0146).
+    await seed.run(
+        "INSERT INTO memberships (tenant_id, user_id, firm_role, status, kind) "
+        "VALUES ($1, $2, NULL, 'active', 'client')",
+        firm.tenant,
+        person,
+    )
     await seed.run(
         "INSERT INTO client_access_grants (tenant_id, user_id, role, scope_kind, scope_id, "
         "granted_by, status) VALUES ($1, $2, 'contributor', $3, $4, $5, 'active')",
@@ -199,7 +214,18 @@ async def test_ac24_an_engagement_holding_a_return_or_a_k1_package_counts_too(
 
 async def test_ac24_other_scopes_are_not_tri_bearing(seed: Seeder) -> None:
     firm = await _firm(seed)
-    audit = await _work_item(seed, firm, "assurance")
+    # One assurance work item per engagement (0068): the engagement's own, if it already has one.
+    existing = await seed.value(
+        "SELECT id FROM work_items WHERE tenant_id = $1 AND engagement_id = $2 "
+        "AND kind = 'assurance'",
+        firm.tenant,
+        firm.engagement,
+    )
+    audit = (
+        cast(uuid.UUID, existing)
+        if existing is not None
+        else await _work_item(seed, firm, "assurance")
+    )
     person = await _client_person(seed, firm, "work_item", audit)
     assert not await mfa_tri_scope(firm.ctx, person)
 
@@ -270,6 +296,8 @@ def test_ac27_tin_fields_are_tri_and_masked_for_offshore_readers() -> None:
     assert masked.value == "•••-••-6789"
     brief = mask_tins(MaskedTinOut(kind="ssn", presence="on_file", last4="6789"))
     assert brief.last4 is None  # nullable: null rather than a mask
+    # p07_clients v1 is frozen: the TIN fields are gated by `pii_kind=tin` (what the offshore mask
+    # and the reveal's TRI rails key off); `x-tri` lands with the contract's v2 (DEC-1272).
     for model, name in ((TinRevealOut, "value"), (MaskedTinOut, "last4")):
         extra = cast(dict[str, object], model.model_fields[name].json_schema_extra or {})
-        assert extra.get("x-tri") is True, (model.__name__, name)
+        assert extra.get("x-pii-kind") == "tin", (model.__name__, name)
