@@ -29,7 +29,12 @@ export const COPY = {
     cancel: "Cancel",
     restore: "Restore",
   },
-  rejectDialog: { title: "Reject checkpoint", reason: "Reason", cancel: "Cancel", reject: "Reject" },
+  rejectDialog: {
+    title: "Reject checkpoint",
+    reason: "Reason",
+    cancel: "Cancel",
+    reject: "Reject",
+  },
   emptyTitle: "No checkpoints yet.",
   emptyBody:
     "Checkpoints are saved when the agent drafts the return, when you approve changes, or when you save one by name.",
