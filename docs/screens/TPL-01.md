@@ -71,7 +71,7 @@ Gradients, emoji, saturated blue, heavy shadows, invented colours, lorem ipsum, 
 ## Parity
 | Artboard | Tier (A/B/D) | Diff % | Notes |
 |---|---|---|---|
-| a–e | B frame · A strips · D geometry | not run | not locked: the specimen board is 1440 wide against the 1400 window crop (F-06-T13 end review); report-only until the specimen draws the 1400 window |
+| a–e | B frame · A strips · D geometry | a 2.08 %, b 2.21 % | c, d, e locked at Tier B (DEC-1182); a and b report-only: the remaining difference is kit-level (nav spacing, filter-chip value ink, the New return… ellipsis rule) |
 
 ## Open gaps
 - No `revision.md`. The spec text puts "Ready" before Gathering in the first group; TAX-01's order is recorded above.

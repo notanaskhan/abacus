@@ -93,7 +93,8 @@ export const STATUS_REGISTRY = {
       "terminal": false,
       "derived": false,
       "contextLabels": {
-        "subbar_rail_rows": "In review · {level}"
+        "subbar_rail_rows": "In review · {level}",
+        "tax_board_rows": "In review · {level}"
       }
     },
     "action_required": {
@@ -111,7 +112,8 @@ export const STATUS_REGISTRY = {
       "terminal": false,
       "derived": false,
       "contextLabels": {
-        "home_and_tax_tiles": "Ready"
+        "home_and_tax_tiles": "Ready",
+        "tax_board_rows": "Ready"
       }
     },
     "awaiting_signature": {
