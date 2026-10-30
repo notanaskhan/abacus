@@ -1260,6 +1260,22 @@ export const SEVEN: CheckpointItemOut = checkpoint(7, {
 export const RESTORE_C: CheckpointRestoreIn = { seen_hash: three?.content_hash ?? "" };
 /** SHL-16 c: an older checkpoint compared with Current. */
 export const COMPARE_C: CheckpointDetailOut = { ...cp6Detail, compare: "current" };
+/** SHL-16 c (P-04-T43): Checkpoint 3 selected, its steps (spec state 3) and its diff vs Current. */
+export const DETAIL_C3: CheckpointDetailOut | undefined =
+  three === undefined
+    ? undefined
+    : {
+        checkpoint: three,
+        compare: "current",
+        compared_to_id: cards.find((c) => c.current)?.id ?? null,
+        steps: [
+          { kind: "created_worksheet", title: "Created worksheet", detail: "Federal › Income › Wages (W-2)", at: "2026-09-03T16:03:00Z" },
+          { kind: "created_worksheet", title: "Created worksheet", detail: "Sch E, p 2 › Ridgeline", at: "2026-09-03T16:04:00Z" },
+          { kind: "self_check", title: "Self-check: 0 errors, 2 warnings", detail: null, at: "2026-09-03T16:05:00Z" },
+        ],
+        diff: cp6Detail.diff,
+        totals: cp6Detail.totals,
+      };
 /** SHL-16 d: rename and star change only name and starred. */
 export const RENAME_D: CheckpointRenameIn = { name: "Before K-1 treatment", starred: true };
 /** SHL-16 e: rejected with a reason. */
@@ -1649,6 +1665,7 @@ export const REVIEW_ARTBOARDS: readonly ReviewArtboard[] = [
     [
       HISTORY(SHL16.a),
       DETAIL(COMPARE_C),
+      ...(DETAIL_C3 === undefined ? [] : [DETAIL(DETAIL_C3)]),
       post("/v1/checkpoints/{checkpoint_id}/restore", "CheckpointItemOut", SEVEN, 201),
     ],
     [send("POST /v1/checkpoints/{checkpoint_id}/restore", "CheckpointRestoreIn", RESTORE_C)],

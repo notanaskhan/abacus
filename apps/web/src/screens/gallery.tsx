@@ -100,6 +100,13 @@ import {
   type Bnd02State,
   scenarios as bnd02Scenarios,
 } from "./BND-02/scenarios";
+import { CheckpointDrawer } from "./SHL-16";
+import {
+  OPENS as SHL16_OPENS,
+  STATES as SHL16_STATES,
+  type Shl16State,
+  scenarios as shl16Scenarios,
+} from "./SHL-16/scenarios";
 import { ClientsIndex } from "./CLI-01";
 import {
   STATES as CLI01_STATES,
@@ -1582,6 +1589,38 @@ function Shl10Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("SHL-10", { title: "Approve agent output", Component: Shl10Artboard });
+
+// SHL-16 (P-04-T43): the checkpoint drawer a–f over an empty frame.
+function Shl16Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Shl16State = SHL16_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      shl16Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  const open = SHL16_OPENS[state];
+  return (
+    <div key={state} data-artboard={state} className="h-[900px]">
+      <CheckpointDrawer
+        target={{ type: open.type, id: open.id }}
+        {...(open.seq === undefined ? {} : { initialSeq: open.seq })}
+        {...(open.dialog === undefined ? {} : { initialDialog: open.dialog })}
+        open
+        onOpenChange={() => undefined}
+      />
+    </div>
+  );
+}
+
+registerScreen("SHL-16", { title: "Checkpoint diff drawer", Component: Shl16Artboard });
 
 // SIG-02 (N-02-T21): the envelope builder, a, e and f, over an empty frame.
 function Sig02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {

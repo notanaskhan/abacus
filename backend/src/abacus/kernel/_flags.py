@@ -274,6 +274,11 @@ RETRIEVAL_AUTO = Flag(
     kind="boolean",
     default="false",
 )
+REVIEW_CHECKPOINTS = Flag(
+    name="review.checkpoints",
+    kind="boolean",
+    default="false",
+)
 REVIEW_GRAMMAR_API = Flag(
     name="review.grammar_api",
     kind="boolean",
@@ -384,6 +389,7 @@ FLAGS: dict[str, Flag] = {
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
     "questionnaires.v1": QUESTIONNAIRES_V1,
     "retrieval.auto": RETRIEVAL_AUTO,
+    "review.checkpoints": REVIEW_CHECKPOINTS,
     "review.grammar_api": REVIEW_GRAMMAR_API,
     "rules.reference_sets": RULES_REFERENCE_SETS,
     "screening.card": SCREENING_CARD,
