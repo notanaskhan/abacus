@@ -61,7 +61,7 @@ async def test_ac_the_feld_organizer_has_24_questions_in_9_sections(board: Board
     )
     feld = board.returns["Feld Household 1040"]
     binder = await _binder(board, feld)
-    samuel = await board.person("Samuel Ito", "firm_manager")
+    samuel = await board.person("Samuel Ito", None)  # partner level: imports and publishes
     engagement = await board.seed.value(
         "SELECT engagement_id FROM tax_returns WHERE work_item_id = $1", feld
     )
