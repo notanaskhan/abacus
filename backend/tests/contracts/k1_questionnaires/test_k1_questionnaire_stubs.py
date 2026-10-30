@@ -73,7 +73,7 @@ ROUTES = [
 ]
 
 
-# T-02-T16 built the firm questionnaire routes; the portal's and the K-1 routes stay stubs.
+# T-02-T16 built the firm questionnaire routes and T-02-T22 the portal's; K-1 routes stay stubs.
 LIVE = frozenset(
     {
         "/v1/questionnaire-templates:import",
@@ -84,6 +84,12 @@ LIVE = frozenset(
         "/v1/questionnaires/{questionnaire_id}/questions",
         "/v1/questions/{question_id}:send",
         "/v1/questionnaires/{questionnaire_id}",
+        # T-02-T22: the portal's (attachments stay a stub).
+        "/v1/portal/questionnaires",
+        "/v1/portal/questionnaires/{questionnaire_id}",
+        "/v1/portal/questionnaires/{questionnaire_id}/answers/{question_id}",
+        "/v1/portal/questionnaires/{questionnaire_id}:mark-done",
+        "/v1/portal/questionnaires/{questionnaire_id}:submit",
     }
 )
 

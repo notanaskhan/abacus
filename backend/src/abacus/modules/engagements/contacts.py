@@ -230,6 +230,15 @@ async def client_entity_scope(tenant: TenantContext, entity_id: UUID) -> ScopeFa
     return ScopeFacts(client_id) if client_id is not None else None
 
 
+async def contact_ids_of_user(tenant: TenantContext, user_id: UUID) -> frozenset[UUID]:
+    """T-02-T22: the person's contacts in the firm (linked by `contacts.user_id` or named by one
+    of their grants), for an addressee check (an inquiry is its addressee's only)."""
+    async with tenant_session(tenant) as session:
+        return frozenset(await contacts_of_user(session, user_id)) | frozenset(
+            await grant_contact_ids(session, user_id)
+        )
+
+
 async def mfa_designated(tenant: TenantContext, user_id: UUID) -> bool:
     """The MFA floor's `engagement_designation` predicate (P-08-T17): whether any of the person's
     contacts in the firm (linked by `contacts.user_id` or named by one of their grants) is

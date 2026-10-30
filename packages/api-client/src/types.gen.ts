@@ -77367,10 +77367,6 @@ export type PortalQuestionnairesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalQuestionnairesError = PortalQuestionnairesErrors[keyof PortalQuestionnairesErrors];
@@ -77434,10 +77430,6 @@ export type PortalQuestionnaireErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalQuestionnaireError = PortalQuestionnaireErrors[keyof PortalQuestionnaireErrors];
@@ -77502,10 +77494,6 @@ export type PortalAnswerErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalAnswerError = PortalAnswerErrors[keyof PortalAnswerErrors];
@@ -77622,10 +77610,6 @@ export type PortalMarkDoneErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalMarkDoneError = PortalMarkDoneErrors[keyof PortalMarkDoneErrors];
@@ -77682,10 +77666,6 @@ export type PortalSubmitErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalSubmitError = PortalSubmitErrors[keyof PortalSubmitErrors];

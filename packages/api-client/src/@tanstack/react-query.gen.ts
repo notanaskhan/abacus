@@ -15323,6 +15323,8 @@ export const portalQuestionnairesQueryKey = (options?: Options<PortalQuestionnai
 
 /**
  * Portal Questionnaires Route
+ *
+ * POR-05's list: the caller's questionnaires, sent questions only (T-02-T22).
  */
 export const portalQuestionnairesOptions = (options?: Options<PortalQuestionnairesData>) => queryOptions<PortalQuestionnairesResponse, PortalQuestionnairesError, PortalQuestionnairesResponse, ReturnType<typeof portalQuestionnairesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -15341,6 +15343,9 @@ export const portalQuestionnaireQueryKey = (options: Options<PortalQuestionnaire
 
 /**
  * Portal Questionnaire Route
+ *
+ * POR-05: one questionnaire, filtered (unanswered) or by section; another client user's
+ * inquiry is 404 (INV-4).
  */
 export const portalQuestionnaireOptions = (options: Options<PortalQuestionnaireData>) => queryOptions<PortalQuestionnaireResponse, PortalQuestionnaireError, PortalQuestionnaireResponse, ReturnType<typeof portalQuestionnaireQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -15358,7 +15363,8 @@ export const portalQuestionnaireOptions = (options: Options<PortalQuestionnaireD
 /**
  * Portal Answer Route
  *
- * Autosave (409 `stale_version` when the answer moved).
+ * Autosave: `If-Match` is the version this save makes (409 `stale_version` when the answer
+ * moved; `questionnaire_closed` once submitted); 422 `answer_invalid` for the wrong type.
  */
 export const portalAnswerMutation = (options?: Partial<Options<PortalAnswerData>>): UseMutationOptions<PortalAnswerResponse, PortalAnswerError, Options<PortalAnswerData>> => {
     const mutationOptions: UseMutationOptions<PortalAnswerResponse, PortalAnswerError, Options<PortalAnswerData>> = {
@@ -15393,6 +15399,8 @@ export const portalAttachmentMutation = (options?: Partial<Options<PortalAttachm
 
 /**
  * Portal Mark Done Route
+ *
+ * Mark as Done once every question is answered (409 `questionnaire_incomplete`).
  */
 export const portalMarkDoneMutation = (options?: Partial<Options<PortalMarkDoneData>>): UseMutationOptions<PortalMarkDoneResponse, PortalMarkDoneError, Options<PortalMarkDoneData>> => {
     const mutationOptions: UseMutationOptions<PortalMarkDoneResponse, PortalMarkDoneError, Options<PortalMarkDoneData>> = {
@@ -15411,7 +15419,7 @@ export const portalMarkDoneMutation = (options?: Partial<Options<PortalMarkDoneD
 /**
  * Portal Submit Route
  *
- * An inquiry's addressee submits and locks it.
+ * An inquiry's addressee submits and locks it (anyone else: 404).
  */
 export const portalSubmitMutation = (options?: Partial<Options<PortalSubmitData>>): UseMutationOptions<PortalSubmitResponse, PortalSubmitError, Options<PortalSubmitData>> => {
     const mutationOptions: UseMutationOptions<PortalSubmitResponse, PortalSubmitError, Options<PortalSubmitData>> = {
