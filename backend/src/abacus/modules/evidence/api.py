@@ -49,6 +49,7 @@ from abacus.modules.evidence.classifier import rules as classifier_rules
 from abacus.modules.evidence.contract import withdrawal_router
 from abacus.modules.evidence.drops import drop_batch
 from abacus.modules.evidence.drops_contract import drops_router, void_router
+from abacus.modules.evidence.duplicates_contract import duplicates_router
 from abacus.modules.evidence.events import (
     EvidenceVersionCreated,
     EvidenceVersionWithdrawn,
@@ -224,6 +225,11 @@ from abacus.modules.evidence.retention import (
 )
 from abacus.modules.evidence.retention_routes import platform_router as retention_platform_router
 from abacus.modules.evidence.retention_routes import router as retention_router
+from abacus.modules.evidence.retrieved_copies import (
+    SOURCE_DOCUMENTS,
+    file_retrieved_copy,
+    pdf_text,
+)
 from abacus.modules.evidence.routes import firm_router, router
 
 # The routers the API mounts, in order (P-39; F-03-T07).
@@ -335,6 +341,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     firm_router,
     files_router,  # Files browser v1 stub (N-01-T02; ADR-158)
     withdrawal_router,  # C5 v1 stub (P-06-T01; ADR-162)
+    duplicates_router,  # T-02-T17: a person resolves a flagged duplicate upload
     drops_router,  # C5 portal-pbc stub (R-01-T01): a portal drop
     void_router,  # C5 portal-pbc (TASK-1248): a person voids a wrong rule link
     trust_router,  # C4 v1 stub (P-03-T02; ADR-144)
@@ -446,6 +453,7 @@ __all__ = [
     "ROUTERS",
     "SCHEDULES",
     "SIGNED_AUTHORIZATIONS",
+    "SOURCE_DOCUMENTS",
     "SUBSCRIPTIONS",
     "SUGGESTION_MIN_SCORE",
     "TOTAL_LABEL",
@@ -562,6 +570,7 @@ __all__ = [
     "export_section_csv",
     "extend_retention_for",
     "file_intake_object",
+    "file_retrieved_copy",
     "file_signed_copy",
     "filed_classification_match",
     "final_export_for_archive",
@@ -583,6 +592,7 @@ __all__ = [
     "match_material",
     "normalised_text",
     "page_quote_reason",
+    "pdf_text",
     "pii_scan_upload",
     "place_hold",
     "portal_files",

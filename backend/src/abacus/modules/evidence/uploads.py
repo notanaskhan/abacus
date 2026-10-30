@@ -31,7 +31,7 @@ from abacus.kernel.scanning import scan
 from abacus.kernel.tin_patterns import scrub_tins
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import gate_client_data, get_ref, lock_ref, service_line_of
-from abacus.modules.evidence import storage
+from abacus.modules.evidence import duplicates, storage
 from abacus.modules.evidence.access import record_content_read
 from abacus.modules.evidence.active_content import REASON_CODES, UNSCANNABLE, reason_of
 from abacus.modules.evidence.citations.matching import words_in
@@ -461,10 +461,12 @@ async def attach(
     note: str | None,
     active_content: str | None = None,
     detached: tuple[UUID, DetachedKey] | None = None,
+    accept_duplicate: bool = False,
 ) -> UUID:
     """Inside the caller's unit of work: re-check the item (its facts may have changed), refuse
     a closed item or a duplicate, add the version, link it and announce it. Shared by uploads
-    and inbox assignment (SPEC-023)."""
+    and inbox assignment (SPEC-023). T-02-T17: `accept_duplicate` (a client-channel upload under
+    `evidence.duplicate_review`) lands a same-bytes version and flags it for a person."""
     locked_engagement = await lock_ref(tx, engagement_id)
     locked = await item_ref(tx, item_id, lock=True)
     if locked.engagement_id != engagement_id:
@@ -473,7 +475,10 @@ async def attach(
     await refuse_closed_item_in(tx.session, ctx, item_id)  # ED-118 (DEC-461)
     if locked.status not in ("draft", "requested", "uploaded", "returned"):
         raise ItemClosed
-    if await fingerprint_among(tx.session, await item_versions(tx, item_id), stored.fingerprint):
+    duplicate = await fingerprint_among(
+        tx.session, await item_versions(tx, item_id), stored.fingerprint
+    )
+    if duplicate and not accept_duplicate:
         raise DuplicateUpload
     version = await add_version(
         tx,
@@ -495,6 +500,8 @@ async def attach(
         target=Target("evidence_version", version.id),
         after=Ref(request_item_id=item_id, fingerprint=stored.fingerprint, size=stored.size),
     )
+    if duplicate:  # T-02-T17: accepted under the review flag, flagged for a person
+        await duplicates.flag(tx, ctx, engagement_id, version.id)
     if active_content is not None:  # DEC-296: kept, flagged for the team, never derived from
         tx.record(
             "evidence_version.flagged",
@@ -530,8 +537,11 @@ async def upload(
         raise NotStaff
     found = await screened(ctx, engagement_id, content, file_name)
     media_type, digest = found.media_type, found.fingerprint
+    accept_duplicate = await duplicates.accepts_duplicates(ctx, on_behalf)
     async with tenant_session(ctx.tenant) as session:
-        if await fingerprint_among(session, await read_item_versions(ctx.tenant, item_id), digest):
+        if not accept_duplicate and await fingerprint_among(
+            session, await read_item_versions(ctx.tenant, item_id), digest
+        ):
             raise DuplicateUpload
     # Q-02-T24: locked at least until the client document's policy expiry, anchored at upload
     # for now (provisional; an anchor event extends it later).
@@ -565,6 +575,7 @@ async def upload(
             note=kept_note,
             active_content=found.active_content,
             detached=detached,
+            accept_duplicate=accept_duplicate,
         )
     names = await names_of([ctx.user_id])
     return UploadView(

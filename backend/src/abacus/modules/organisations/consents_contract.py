@@ -25,7 +25,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Path, Query
@@ -43,8 +43,14 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
     mask_tins_for,
+    names_of,
 )
+from abacus.modules.organisations import consent_registry
+from abacus.modules.organisations.consents import consent_rows
+from abacus.modules.organisations.consents import decline as decline_consent
+from abacus.modules.organisations.consents import revoke as revoke_consent
 from abacus.modules.organisations.contract import MaskedTinOut
+from abacus.modules.organisations.slots import ConsentCapture, consent_capture
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=8, max_length=200)]
@@ -296,6 +302,7 @@ class TaxElectionOut(BaseModel):
     tax_year: Annotated[int, classified("internal")]
     amount: Annotated[Decimal | None, classified("restricted", tri=True)]
     status_code: Annotated[str, classified("internal")]
+    row_version: Annotated[int | None, classified("internal")] = None  # T-01-T43: for PUT
 
 
 class TaxProfileIdentityOut(BaseModel):
@@ -362,6 +369,13 @@ class TaxAuthorizationIn(BaseModel):
     received_on: Annotated[date, classified("confidential")]
     expires_on: Annotated[date | None, classified("confidential")] = None
     upload_id: Annotated[UUID, classified("internal")]
+    # T-01-T43 (additive): each designee's CAF number, in `designee_user_ids` order, sealed on
+    # write; only the last four are ever served (write-only, Restricted).
+    designee_cafs: Annotated[
+        list[Annotated[str, Field(pattern=r"^[0-9]{4}-?[0-9]{5}[A-Z]?$")]] | None,
+        Field(max_length=10),
+        classified("restricted"),
+    ] = None
 
 
 class TaxAuthorizationRequestIn(BaseModel):
@@ -379,6 +393,16 @@ class TranscriptUploadIn(BaseModel):
     upload_id: Annotated[UUID, classified("internal")]
 
 
+class TranscriptTransactionOut(BaseModel):
+    """An Account transcript's key transaction (TC 150 return filed, TC 922 unreported-income
+    review: a review, not an assessment)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    code: Annotated[str, classified("restricted", tri=True)]
+    posted_on: Annotated[date, classified("restricted", tri=True)]
+
+
 class TranscriptOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -387,6 +411,27 @@ class TranscriptOut(BaseModel):
     tax_year: Annotated[int, classified("internal")]
     pulled_at: Annotated[datetime, classified("confidential")]
     parse_status: Annotated[Literal["queued", "parsed", "failed"], classified("internal")]
+    # T-01-T43 (additive): the register row (CLI-05 a).
+    pulled_by_name: Annotated[str | None, classified("confidential")] = None
+    authorization_form: Annotated[AuthorizationForm | None, classified("internal")] = None
+    result: Annotated[Literal["agrees", "differences"] | None, classified("internal")] = None
+    difference_count: Annotated[int | None, classified("internal")] = None
+    key_transaction: Annotated[
+        TranscriptTransactionOut | None, classified("restricted", tri=True)
+    ] = None
+    account_balance: Annotated[Decimal | None, classified("restricted", tri=True)] = None
+
+
+class TaxProfileFileOut(BaseModel):
+    """A file staged for a transcript or an authorization: scanned before storage, named by id
+    in the upload that files it (an upload intent)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    upload_id: Annotated[UUID, classified("internal")]
+    file_name: Annotated[str, classified("confidential")]
+    media_type: Annotated[str, classified("internal")]
+    size_bytes: Annotated[int, classified("internal")]
 
 
 class TranscriptComparisonIn(BaseModel):
@@ -405,6 +450,20 @@ class TranscriptLineDiffOut(BaseModel):
     transcript_amount: Annotated[Decimal, classified("restricted", tri=True)]
     return_amount: Annotated[Decimal | None, classified("restricted", tri=True)]
     matched: Annotated[bool, classified("internal")]
+    # T-01-T43 (additive): the line SHL-08 opens, the signed difference (transcript - return)
+    # and the row's status ("Not on return" when nothing on the return matched).
+    line_no: Annotated[int | None, classified("internal")] = None
+    difference: Annotated[Decimal | None, classified("restricted", tri=True)] = None
+    status: Annotated[
+        Literal["agrees", "differs", "not_on_return"] | None, classified("internal")
+    ] = None
+
+
+class AgreeingFormOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    form: Annotated[str, classified("internal")]
+    count: Annotated[int, classified("internal")]
 
 
 class TranscriptComparisonOut(BaseModel):
@@ -414,6 +473,15 @@ class TranscriptComparisonOut(BaseModel):
     transcript_id: Annotated[UUID, classified("internal")]
     return_id: Annotated[UUID, classified("internal")]
     lines: Annotated[list[TranscriptLineDiffOut], classified("restricted", tri=True)]
+    # T-01-T43 (additive): the card's band and footer, computed by code (ADR-050).
+    result: Annotated[Literal["agrees", "differences"] | None, classified("internal")] = None
+    difference_total: Annotated[Decimal | None, classified("restricted", tri=True)] = None
+    agreeing: Annotated[list[AgreeingFormOut], classified("internal")] = Field(
+        default_factory=list[AgreeingFormOut]
+    )
+    checkpoint_id: Annotated[UUID | None, classified("internal")] = None
+    engine_version: Annotated[str | None, classified("internal")] = None
+    computed_at: Annotated[datetime | None, classified("confidential")] = None
 
 
 # --- routes --------------------------------------------------------------------------------------
@@ -433,6 +501,76 @@ async def _stub(ctx: AuthContext, action: str, flag: Flag) -> NoReturn:
     raise NotImplementedYet
 
 
+async def _live(ctx: AuthContext, action: str) -> None:
+    """T-01-T10: the stub's order of checks for a live route (client 404, matrix, flag)."""
+    if ctx.client:
+        raise NotFound("consent")
+    await authorise(ctx, action, Resource.firm(ctx.tenant_id))
+    if not await flag_enabled(ctx.tenant, CONSENTS_REGISTRY):
+        raise NotFound(CONSENTS_REGISTRY.name)
+
+
+def _capture() -> ConsentCapture:
+    found = consent_capture()
+    if found is None:
+        raise NotImplementedYet  # the tax module registers capture at import
+    return found
+
+
+async def _ordered(ctx: AuthContext, ids: list[UUID]) -> list[ConsentOut]:
+    """`consent_outs` in the order the registry chose."""
+    by = {c.id: c for c in await consent_outs(ctx, ids)}
+    return [by[i] for i in ids if i in by]
+
+
+async def consent_outs(ctx: AuthContext, ids: list[UUID]) -> list[ConsentOut]:
+    """C19's `ConsentOut` for consents just written (T-01-T10; the registry reads are T16's)."""
+    rows = await consent_rows(ctx.tenant, ids)
+    out: list[ConsentOut] = []
+    for row in rows:
+        v = row.values
+        out.append(
+            ConsentOut(
+                id=v["id"],  # type: ignore[arg-type]  # columns typed by the SQL
+                client_id=v["client_id"],  # type: ignore[arg-type]
+                client_entity_id=v["client_entity_id"],  # type: ignore[arg-type]
+                client_name=str(v["client_name"]),
+                consent_set_id=v["consent_set_id"],  # type: ignore[arg-type]
+                purpose=v["purpose"],  # type: ignore[arg-type]
+                tax_years=list(v["tax_years"]),  # type: ignore[call-overload]
+                scope=dict(v["scope"]),  # type: ignore[call-overload]
+                recipients=[ConsentRecipientOut.model_validate(r) for r in v["recipients"]],  # type: ignore[attr-defined]
+                provider_terms_version=str(v["provider_terms_version"]),
+                template_version_id=v["template_version_id"],  # type: ignore[arg-type]
+                source=v["source"],  # type: ignore[arg-type]
+                envelope_id=v["envelope_id"],  # type: ignore[arg-type]
+                status=v["status"],  # type: ignore[arg-type]
+                signed_count=int(v["signed_count"]),  # type: ignore[call-overload]
+                signer_count=int(v["signer_count"]),  # type: ignore[call-overload]
+                requested_at=v["requested_at"],  # type: ignore[arg-type]
+                signed_at=v["signed_at"],  # type: ignore[arg-type]
+                expires_at=v["expires_at"],  # type: ignore[arg-type]
+                renewal_of_id=v["renewal_of_id"],  # type: ignore[arg-type]
+                offshore=v["purpose"] == "offshore_disclosure",
+                allowed_actions=[],
+                declined_at=v["declined_at"],  # type: ignore[arg-type]
+                revoked_at=v["revoked_at"],  # type: ignore[arg-type]
+                signers=[
+                    ConsentSignerOut(
+                        contact_id=s["contact_id"],  # type: ignore[arg-type]
+                        name=str(s["display_name"]),
+                        role=s["signer_role"],  # type: ignore[arg-type]
+                        required=bool(s["required"]),
+                        signed_at=s["signed_at"],  # type: ignore[arg-type]
+                        method=s["method"],  # type: ignore[arg-type]
+                    )
+                    for s in row.signers
+                ],
+            )
+        )
+    return out
+
+
 @consents_router.get(
     "/consents", action="consent.read", response_model=ListPage[ConsentOut], errors=(501,)
 )
@@ -443,23 +581,66 @@ async def list_consents_route(
     tax_year: Annotated[int | None, Query(ge=2000, le=2100)] = None,
     offshore: Annotated[bool | None, Query()] = None,
     cursor: Annotated[str | None, Query(max_length=200)] = None,
+    # T-01-T16 (additive): the Expiring tile (derived) and one client's rows.
+    expiring: Annotated[bool | None, Query()] = None,
+    client_id: Annotated[UUID | None, Query()] = None,
 ) -> ListPage[ConsentOut]:
     """ADM-05: the registry, needs-attention first, walls applied (no hidden counts)."""
-    await _stub(ctx, "consent.read", CONSENTS_REGISTRY)
+    await _live(ctx, "consent.read")
+    page = await consent_registry.registry(
+        ctx,
+        status="expiring" if expiring else status,
+        purpose=purpose,
+        tax_year=tax_year,
+        client_id=client_id,
+        offshore=offshore,
+        cursor=cursor,
+    )
+    return ListPage[ConsentOut](
+        items=await _ordered(ctx, page.ids),
+        next_cursor=page.next_cursor,
+        total=page.total,
+        counts=page.counts,
+    )
 
 
 @consents_router.get(
     "/consents/summary", action="consent.read", response_model=ConsentSummaryOut, errors=(501,)
 )
 async def consent_summary_route(ctx: Ctx) -> ConsentSummaryOut:
-    await _stub(ctx, "consent.read", CONSENTS_REGISTRY)
+    """T-01-T16: ADM-04 D, CLI-02 b and the BND-01 tag; counts only."""
+    await _live(ctx, "consent.read")
+    return ConsentSummaryOut.model_validate(await consent_registry.summary(ctx))
 
 
 @consents_router.get(
     "/consents/{consent_id}", action="consent.read", response_model=ConsentDetailOut, errors=(501,)
 )
 async def consent_route(consent_id: ConsentId, ctx: Ctx) -> ConsentDetailOut:
-    await _stub(ctx, "consent.read", CONSENTS_REGISTRY)
+    """T-01-T16: the consent, its signers, its document and agent reads since signature."""
+    await _live(ctx, "consent.read")
+    found = await consent_registry.detail(ctx, consent_id)
+    [consent] = await consent_outs(ctx, [consent_id])
+    names = await names_of(sorted({u for _, _, u in found.agent_reads if u is not None}))
+    purpose, sha = found.document
+    return ConsentDetailOut(
+        consent=consent,
+        signers=consent.signers,
+        documents=[
+            ConsentDocumentOut(
+                id=consent_id,
+                purpose=purpose,  # type: ignore[arg-type]  # the row's CHECK
+                text_sha256=sha,
+                evidence_version_id=None,
+            )
+        ],
+        agent_reads=[
+            AgentReadOut(
+                agent_run_id=run, read_at=at, on_behalf_of_name=names.get(who, "") if who else ""
+            )
+            for run, at, who in found.agent_reads
+        ],
+    )
 
 
 @consents_router.get(
@@ -485,7 +666,9 @@ async def consent_evidence_route(
 async def request_consents_route(
     body: ConsentRequestIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ConsentDraftsOut:
-    await _stub(ctx, "consent.request", CONSENTS_REGISTRY)
+    """T-01-T10: one document per purpose, one drafted envelope; sending stays SIG-02's."""
+    await _live(ctx, "consent.request")
+    return cast(ConsentDraftsOut, await _capture().request(ctx, body))
 
 
 @consents_router.post(
@@ -498,7 +681,9 @@ async def request_consents_route(
 async def renew_consents_route(
     body: ConsentRenewalIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ConsentDraftsOut:
-    await _stub(ctx, "consent.request", CONSENTS_REGISTRY)
+    """T-01-T10: renewals keep purpose, scope and years; 409 `consent_declined`."""
+    await _live(ctx, "consent.request")
+    return cast(ConsentDraftsOut, await _capture().renew(ctx, body))
 
 
 @consents_router.post(
@@ -511,7 +696,9 @@ async def renew_consents_route(
 async def record_consent_route(
     body: ConsentRecordIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ConsentOut:
-    await _stub(ctx, "consent.record", CONSENTS_REGISTRY)
+    """T-01-T10 Story 1.3: record mode, the signed PDF into COMPLIANCE storage."""
+    await _live(ctx, "consent.record")
+    return cast(ConsentOut, await _capture().record(ctx, body))
 
 
 @consents_router.post(
@@ -523,7 +710,10 @@ async def record_consent_route(
 async def decline_consent_route(
     consent_id: ConsentId, body: ConsentReasonIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ConsentOut:
-    await _stub(ctx, "consent.record", CONSENTS_REGISTRY)
+    """T-01-T10 Story 1.4: a decline blocks re-solicitation for the same years."""
+    await _live(ctx, "consent.record")
+    await decline_consent(ctx, consent_id, body.seen_version)
+    return (await consent_outs(ctx, [consent_id]))[0]
 
 
 @consents_router.post(
@@ -535,7 +725,10 @@ async def decline_consent_route(
 async def revoke_consent_route(
     consent_id: ConsentId, body: ConsentReasonIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ConsentOut:
-    await _stub(ctx, "consent.record", CONSENTS_REGISTRY)
+    """T-01-T10 Story 1.4: a revocation; the gate's next call is refused."""
+    await _live(ctx, "consent.record")
+    await revoke_consent(ctx, consent_id, body.seen_version)
+    return (await consent_outs(ctx, [consent_id]))[0]
 
 
 @consents_router.post(
@@ -546,7 +739,9 @@ async def revoke_consent_route(
     errors=(501,),
 )
 async def export_consents_route(ctx: Ctx, idempotency_key: IdempotencyKey) -> ConsentExportOut:
-    await _stub(ctx, "consent.export", CONSENTS_REGISTRY)
+    """T-01-T16: ConsentExportWorkflow builds the CSV; audited now; fresh MFA by the matrix."""
+    await _live(ctx, "consent.export")
+    return ConsentExportOut(export_id=await consent_registry.start_export(ctx), status="queued")
 
 
 @consents_router.get(
@@ -556,7 +751,9 @@ async def export_consents_route(ctx: Ctx, idempotency_key: IdempotencyKey) -> Co
     errors=(501,),
 )
 async def entity_consents_route(client_entity_id: EntityId, ctx: Ctx) -> list[ConsentOut]:
-    await _stub(ctx, "consent.read", CONSENTS_REGISTRY)
+    """T-01-T16: CLI-05's consents for one taxpayer, under the registry's scope."""
+    await _live(ctx, "consent.read")
+    return await _ordered(ctx, await consent_registry.entity_ids(ctx, client_entity_id))
 
 
 @consents_router.post(
@@ -584,61 +781,7 @@ async def publish_consent_template_route(
     await _stub(ctx, "consent_template.publish", CONSENTS_REGISTRY)
 
 
-@consents_router.get(
-    "/client-entities/{client_entity_id}/tax-profile",
-    action="tax_profile.read",
-    response_model=TaxProfileOut,
-    errors=(501,),
-)
-async def tax_profile_route(client_entity_id: EntityId, ctx: Ctx) -> TaxProfileOut:
-    # The answer carries the masked TIN, so it goes out through the offshore mask (AC9.4).
-    return await mask_tins_for(ctx, await _tax_profile(ctx, client_entity_id))
-
-
-async def _tax_profile(ctx: AuthContext, client_entity_id: UUID) -> TaxProfileOut:
-    """T-01-T42 reads the profile; until then the stub's order of checks, then 501."""
-    del client_entity_id
-    await _stub(ctx, "tax_profile.read", CLIENTS_TAX_PROFILE)
-
-
-@consents_router.put(
-    "/client-entities/{client_entity_id}/elections/{kind}",
-    action="tax_election.manage",
-    response_model=TaxElectionOut,
-    errors=(409, 501),
-)
-async def put_election_route(
-    client_entity_id: EntityId,
-    kind: Annotated[str, Path(pattern=r"^[a-z][a-z0-9_]{1,59}$")],
-    body: TaxElectionIn,
-    ctx: Ctx,
-) -> TaxElectionOut:
-    await _stub(ctx, "tax_election.manage", CLIENTS_TAX_PROFILE)
-
-
-@consents_router.get(
-    "/client-entities/{client_entity_id}/authorizations",
-    action="tax_authorization.manage",
-    response_model=list[TaxAuthorizationOut],
-    errors=(501,),
-)
-async def list_authorizations_route(
-    client_entity_id: EntityId, ctx: Ctx
-) -> list[TaxAuthorizationOut]:
-    await _stub(ctx, "tax_authorization.manage", CLIENTS_TAX_PROFILE)
-
-
-@consents_router.post(
-    "/client-entities/{client_entity_id}/authorizations",
-    action="tax_authorization.manage",
-    response_model=TaxAuthorizationOut,
-    status_code=201,
-    errors=(501,),
-)
-async def add_authorization_route(
-    client_entity_id: EntityId, body: TaxAuthorizationIn, ctx: Ctx
-) -> TaxAuthorizationOut:
-    await _stub(ctx, "tax_authorization.manage", CLIENTS_TAX_PROFILE)
+# The tax-profile family's live routes (T-01-T43) are in `tax_profile.py`, on this router.
 
 
 @consents_router.post(
@@ -651,34 +794,9 @@ async def add_authorization_route(
 async def request_authorization_route(
     client_entity_id: EntityId, body: TaxAuthorizationRequestIn, ctx: Ctx
 ) -> TaxAuthorizationOut:
-    """Draft an 8821 or 2848 through C7."""
+    """Draft an 8821 or 2848 through C7: waits for the firm's form templates on P-11's renderer
+    (DEC-1651); the stub's order of checks, then 501."""
     await _stub(ctx, "tax_authorization.manage", CLIENTS_TAX_PROFILE)
-
-
-@consents_router.post(
-    "/client-entities/{client_entity_id}/transcripts",
-    action="transcript.upload",
-    response_model=TranscriptOut,
-    status_code=201,
-    errors=(501,),
-)
-async def upload_transcript_route(
-    client_entity_id: EntityId, body: TranscriptUploadIn, ctx: Ctx
-) -> TranscriptOut:
-    await _stub(ctx, "transcript.upload", CLIENTS_TAX_PROFILE)
-
-
-@consents_router.post(
-    "/transcripts/{transcript_id}/comparisons",
-    action="transcript.compare",
-    response_model=TranscriptComparisonOut,
-    status_code=201,
-    errors=(501,),
-)
-async def compare_transcript_route(
-    transcript_id: Annotated[UUID, Path()], body: TranscriptComparisonIn, ctx: Ctx
-) -> TranscriptComparisonOut:
-    await _stub(ctx, "transcript.compare", CLIENTS_TAX_PROFILE)
 
 
 # --- C19 module API (frozen with v1; `consent_gate.py` reads, T-01-T11; T-01-T10 captures) -----

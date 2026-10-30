@@ -40,6 +40,7 @@ TABLES: frozenset[str] = frozenset(
         # P-06-T18 (0144; ADR-162): detached keys and client withdrawals.
         "evidence_object_keys",
         "evidence_withdrawals",
+        "duplicate_resolutions",  # T-02-T17 (0468)
         "evidence_intake_object_keys",  # N-01-T14 (0371): a portal intake file's own key
         "evidence_version_voids",  # R-01 Story 2.2 (0159): retired with its voided rule link
         # A-01-T18 (0191): engagement exports, their downloads and their contents.
@@ -59,6 +60,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
     {
         "evidence_versions",
         "upload_extractions",  # SPEC-029 (TASK-054): a derived record, rebuilt, never edited
+        "duplicate_resolutions",  # T-02-T17 (0468): a person's decision, once per version
         "upload_checks",  # SPEC-029 (TASK-055): what code found, as found
         "upload_previews",  # SPEC-029 (TASK-056): server-made, kept
         "upload_preview_pages",  # SPEC-029 (TASK-056): server-made, kept
@@ -220,3 +222,8 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         | {"ready_at", "available_until", "downloaded_at", "failure_code"}
     ),
 }
+
+# T-02-T17 (0468): a person's duplicate decision.
+INSERT_COLUMNS["duplicate_resolutions"] = frozenset(
+    {"tenant_id", "engagement_id", "version_id", "kept_version_id", "decision", "decided_by"}
+)
