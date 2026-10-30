@@ -59,7 +59,11 @@ describe("SHL-11", () => {
   });
 
   it("a: the question, reserved line, options with the agent's tag, factors; Decide waits", async () => {
-    const calls = show("a");
+    // c's answer to the decide write (a's board names the request, c draws the decided card).
+    const decided = Object.fromEntries(
+      Object.entries(scenarios.c.handlers).filter(([route]) => route.startsWith("POST ")),
+    );
+    const calls = show("a", decided);
     expect(await screen.findByText(question)).toBeTruthy();
     expect(
       screen.getByText(
@@ -68,8 +72,13 @@ describe("SHL-11", () => {
     ).toBeTruthy();
     expect(screen.getByText("Recommended by Accrued Agent")).toBeTruthy();
     expect(screen.getByText("0.5% – 2.0% of net assets (BH EBP v3 §4.2)")).toBeTruthy();
-    expect(screen.getByText("Qualitative factors")).toBeTruthy();
-    const decide = screen.getByRole<HTMLButtonElement>("button", { name: /^Decide/u });
+    expect(screen.getByRole("group", { name: "Qualitative factors" })).toBeTruthy();
+    // The session (the signed-in person) loads before the HumanAction draws.
+    const decide = await screen.findByRole<HTMLButtonElement>(
+      "button",
+      { name: /^Decide/u },
+      { timeout: 10_000 },
+    );
     expect(decide.disabled).toBe(true);
     fireEvent.click(screen.getByRole("radio", { name: "1.5% — $252,200" }));
     expect(decide.disabled).toBe(true); // a rationale is required
