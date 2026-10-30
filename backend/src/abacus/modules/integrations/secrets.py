@@ -99,7 +99,8 @@ ESIGN_CATALOG: Final = "docuseal"  # ADR-342
 
 async def esign_install_secret(tenant: TenantContext) -> bytes | None:
     """N-02-T18: the firm's opened DocuSeal install secret, only when the W7 capability is enabled
-    (v1: never) and the install is connected; for the worker to give signatures (ADR-008)."""
+    (registry version 2, DEC-1280) and the install is connected; for the worker to give
+    signatures (ADR-008)."""
     entry = write_capability(ESIGN_W7)
     if entry is None or not entry.enabled:
         return None

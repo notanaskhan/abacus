@@ -494,7 +494,7 @@ def test_ac13_2_the_well_formed_reservation_the_seeds_start_from_compiles() -> N
     assert entry.enabled is False and entry.decision == "ADR-150"
 
 
-def test_ac13_2_the_schema_cannot_express_an_enabled_write() -> None:
+def test_ac13_2_the_schema_cannot_express_an_enabled_write_into_a_client_system() -> None:
     with pytest.raises(ValidationError):
         WriteCapabilityEntry.model_validate(
             {
@@ -507,14 +507,15 @@ def test_ac13_2_the_schema_cannot_express_an_enabled_write() -> None:
             }
         )
     with pytest.raises(ValidationError):
-        WriteCapabilityRegistry.model_validate({"version": 2, "read_connectors": [], "writes": []})
+        WriteCapabilityRegistry.model_validate({"version": 3, "read_connectors": [], "writes": []})
 
 
-def test_ac13_2_main_enables_nothing_and_every_decision_it_names_exists() -> None:
+def test_ac13_2_main_enables_only_w7_and_every_decision_it_names_exists() -> None:
+    # Version 2 (ADR-150 accepted, DEC-1280): the e-signature send under ADR-342, nothing else.
     raw = yaml.safe_load(PROTECTED)
-    assert raw["version"] == 1
-    assert all(w.get("enabled") is False for w in raw["writes"])
-    assert all(w.enabled is False for w in registry().writes)
+    assert raw["version"] == 2
+    assert [w["key"] for w in raw["writes"] if w.get("enabled")] == ["esignature_envelope_send"]
+    assert {w.shape for w in registry().writes if w.enabled} == {"W7"}
     decisions = (REPO / "docs" / "plan" / "09-decisions-adrs.md").read_text()
     for write in registry().writes:
         assert write.decision is not None, write.key

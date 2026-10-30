@@ -66,6 +66,9 @@ def _shape(key: str) -> str:
 
 W1 = next(w.key for w in registry().writes if w.shape == "W1")
 OTHERS = [w.key for w in registry().writes if w.shape != "W1"]
+# DEC-1280: the open W7 is refused by the gate as `own_path` (it runs only through its own
+# approved send); every other declared write is still not enabled.
+WHY = {w.key: "own_path" if w.enabled else "not_enabled" for w in registry().writes}
 
 
 @pytest.fixture
@@ -102,7 +105,7 @@ async def test_ac50_every_execute_write_is_refused_and_audited(
     assert found[0]["target"] == ("client", str(site.client_id))
     after = cast(dict[str, object], found[0]["after"])
     assert after["capability"] == hashlib.sha256(capability.encode()).hexdigest()
-    expected = "unknown_capability" if capability.startswith("ledger_delete") else "not_enabled"
+    expected = "unknown_capability" if capability.startswith("ledger_delete") else WHY[capability]
     assert REASONS[cast(int, after["reason"])] == expected
     assert capability not in str(after)  # the key itself is never written
 
@@ -116,15 +119,15 @@ async def test_ac50_w1_is_refused_for_an_attest_client_and_says_why(
     with pytest.raises(WriteCapabilityRefused) as refused:
         await authorise_write(_ctx(partner, None), W1, site.client_id)
     assert refused.value.reason == "attest_client"
-    for key in OTHERS:  # other shapes are refused because nothing is enabled
+    for key in OTHERS:  # other shapes are refused: not enabled, or (W7) never through the gate
         with pytest.raises(WriteCapabilityRefused) as other:
             await authorise_write(_ctx(partner, None), key, site.client_id)
-        assert other.value.reason == "not_enabled"
+        assert other.value.reason == WHY[key]
     reasons = [
         REASONS[cast(int, cast(dict[str, object], r["after"])["reason"])]
         for r in await _refusals(seed, site)
     ]
-    assert reasons == ["attest_client", *["not_enabled"] * len(OTHERS)]
+    assert reasons == ["attest_client", *[WHY[k] for k in OTHERS]]
     assert _shape(W1) == "W1"
 
 

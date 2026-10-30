@@ -4,7 +4,7 @@ The catalogue's hidden `docuseal` row loads through the operator's load (once; a
 keeps it); `connect` writes the install and its sealed secret in one unit of work, audited by
 id; a second live install is refused; `rotate` replaces the only sealed copy; `disconnect` erases
 it and closes the install, after which a new install may be made; a requester outside the firm
-is refused by the database; and with W7 closed the adapter still gets no secret.
+is refused by the database; and with W7 open the adapter gets the secret, until disconnect.
 """
 
 from __future__ import annotations
@@ -101,8 +101,8 @@ async def test_connect_seals_the_key_for_the_install_and_audits_by_id(
         ("firm_integration.connected", str(install)),
     ]
     assert {a["actor_id"] for a in audits} == {f"operator:{OPERATOR}"}
-    # W7 is declared, never enabled: the adapter gets no secret for a connected install.
-    assert await esign_install_secret(tenant) is None
+    # W7 is open (registry version 2, DEC-1280): the adapter gets the connected install's secret.
+    assert await esign_install_secret(tenant) == FIRST
 
 
 async def test_a_second_live_install_is_refused(seed: Seeder, admin: Person) -> None:
@@ -130,6 +130,7 @@ async def test_disconnect_erases_the_key_and_a_new_install_may_follow(
     assert await _secrets(seed, first) == 0
     assert await esign_install_state(tenant) == "none"
     assert await open_secret(tenant, first) is None
+    assert await esign_install_secret(tenant) is None
     again = await connect_esign_install(tenant, admin.user_id, SECOND)
     assert again != first
     assert await _installs(seed, admin.tenant_id) == [

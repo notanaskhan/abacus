@@ -10,17 +10,19 @@
 # - `read_connectors`: every adapter that reaches outside the platform, with the only hosts it may
 #   reach (Q-01's DNS Firewall allowlist is exported from here: `--egress`). Connectors only read
 #   (ADR-040): there is no write scope.
-# - `writes`: reserved writes. v1 enables none: `enabled` is `false` by type, and every
-#   `execute_write` call is refused `write_capability_refused` and audited. Enabling one needs
-#   the decision it names (a plan P-nn or a repo ADR) accepted as an ADR, and a later schema
-#   version; an entry without a decision does not compile. W1 (posting) is refused for an
-#   attest client at registry level whatever this file says (I-POLICY-NOT-ATTEST).
+# - `writes`: declared writes. Version 2 (ADR-150 accepted 2026-10-30, DEC-1280): an entry may be
+#   enabled only if its shape is openable (W7, the e-signature send, whose human approval grant is
+#   consumed before it runs, N-02-T20) and the ADR it names is accepted; the compiler checks both.
+#   A write into a client's system (W1, W2) cannot be enabled here, and every `execute_write`
+#   call is still refused `write_capability_refused` and audited (no role holds the action). An
+#   entry without a decision does not compile. W1 (posting) is refused for an attest client at
+#   registry level whatever this file says (I-POLICY-NOT-ATTEST).
 #
 # Connectors that exist only as fakes (synthetic environments) reach no host and are not listed.
 # - `read_posts` (A-02-T26, DEC-709): the provider POSTs that are reads of the platform's own
 #   grant (the OAuth token exchange and refresh, the revoke), on a declared host. `kernel.egress`
 #   refuses every other POST.
-version: 1
+version: 2
 read_connectors:
   # A-02-T26 (DEC-70, DEC-709): the first live ledger read. The sign-in host is the browser's
   # (`check_sign_in_url`), the token and revoke hosts are OAuth, the two API hosts read reports.
@@ -60,4 +62,5 @@ writes:
     shape: W7
     owner_epic: N-02
     decision: ADR-342
-    enabled: false
+    # DEC-1280: open. A firm sends only with its kill switch on and a connected install (ADR-342).
+    enabled: true

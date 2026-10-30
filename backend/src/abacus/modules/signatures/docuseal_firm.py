@@ -4,7 +4,7 @@
 `firm_provider(tenant_id)` builds a `DocuSealProvider` for one activity call when:
 1. the firm's `signatures.esign_provider` flag is on (the kill switch; off by default);
 2. the W7 capability `esignature_envelope_send` is enabled in `write-capabilities.yaml` (v1:
-   declared, never enabled; ADR-150's next schema version opens it, a human decision);
+   enabled by registry version 2 under ADR-150 and ADR-342, DEC-1280);
 3. the firm has a connected DocuSeal install (`firm_integrations`, catalogue key `docuseal`)
    whose sealed secret opens: integrations answers 2 and 3 through the slot the worker fills
    (`register_esign_install`), since signatures may not import integrations (ADR-008).

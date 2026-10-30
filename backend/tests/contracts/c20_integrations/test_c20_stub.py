@@ -159,7 +159,7 @@ def test_both_flags_are_off_by_default() -> None:
 
 
 def test_an_empty_registry_validates() -> None:
-    registry = WriteCapabilityRegistry.model_validate({"version": 1})
+    registry = WriteCapabilityRegistry.model_validate({"version": 2})
     assert (registry.read_connectors, registry.writes) == ([], [])
     assert registry.egress_hosts() == frozenset()
 
@@ -171,11 +171,11 @@ def test_a_reserved_write_validates_but_can_never_be_enabled() -> None:
         "shape": "W1",
         "owner_epic": "C-02",
     }
-    registry = WriteCapabilityRegistry.model_validate({"version": 1, "writes": [reserved]})
+    registry = WriteCapabilityRegistry.model_validate({"version": 2, "writes": [reserved]})
     assert registry.writes[0].enabled is False
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError):  # a W1 write into a client's ledger: never openable
         WriteCapabilityRegistry.model_validate(
-            {"version": 1, "writes": [{**reserved, "enabled": True}]}
+            {"version": 2, "writes": [{**reserved, "enabled": True, "decision": "ADR-161"}]}
         )
 
 
@@ -186,17 +186,17 @@ def test_read_connectors_declare_hosts_and_scopes_once() -> None:
         "egress_hosts": ["quickbooks.api.intuit.com", "oauth.platform.intuit.com"],
         "read_scopes": ["ledger.read"],
     }
-    registry = WriteCapabilityRegistry.model_validate({"version": 1, "read_connectors": [entry]})
+    registry = WriteCapabilityRegistry.model_validate({"version": 2, "read_connectors": [entry]})
     assert "oauth.platform.intuit.com" in registry.egress_hosts()
     with pytest.raises(ValidationError):
-        WriteCapabilityRegistry.model_validate({"version": 1, "read_connectors": [entry, entry]})
+        WriteCapabilityRegistry.model_validate({"version": 2, "read_connectors": [entry, entry]})
     for bad_host in ("https://quickbooks.api.intuit.com", "localhost", "*.intuit.com"):
         with pytest.raises(ValidationError):
             WriteCapabilityRegistry.model_validate(
-                {"version": 1, "read_connectors": [{**entry, "egress_hosts": [bad_host]}]}
+                {"version": 2, "read_connectors": [{**entry, "egress_hosts": [bad_host]}]}
             )
     with pytest.raises(ValidationError):
-        WriteCapabilityRegistry.model_validate({"version": 2})
+        WriteCapabilityRegistry.model_validate({"version": 3})
 
 
 def test_the_adapter_port_has_no_write_method() -> None:

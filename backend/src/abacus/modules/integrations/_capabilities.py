@@ -5,7 +5,7 @@ Regenerate: python -m abacus_tools.codegen.write_capabilities
 
 from typing import Final
 
-VERSION: Final = 1
+VERSION: Final = 2
 # The read connectors and the only hosts each may reach (ADR-040).
 READ_CONNECTORS: Final[tuple[dict[str, object], ...]] = (
     {
@@ -28,12 +28,12 @@ READ_CONNECTORS: Final[tuple[dict[str, object], ...]] = (
         ),
     },
 )
-# Reserved writes: none is enabled (ADR-150); every execute_write is refused.
+# Declared writes: an openable shape under an accepted ADR may be enabled (DEC-1280).
 WRITES: Final[tuple[dict[str, object], ...]] = (
     {
         "adapter_key": "docuseal",
         "decision": "ADR-342",
-        "enabled": False,
+        "enabled": True,
         "key": "esignature_envelope_send",
         "owner_epic": "N-02",
         "shape": "W7",

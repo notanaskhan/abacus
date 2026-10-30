@@ -17,7 +17,9 @@ can always regenerate it.
   client) with the declared hosts.
 - `policy_refusal(entry, attest_client=…)`: the registry-level policy. A W1-shaped capability
   (posting into a client's ledger) is refused for an attest client whatever the file says
-  (I-POLICY-NOT-ATTEST, ch. 10 §10.10); anything not enabled is refused, and v1 enables nothing.
+  (I-POLICY-NOT-ATTEST, ch. 10 §10.10); anything not enabled is refused; an enabled openable
+  shape (W7, registry version 2, DEC-1280) is refused here too (`own_path`): it runs only through
+  its own approved path, never through `execute_write`. So this gate still refuses every write.
 """
 
 from __future__ import annotations
@@ -28,7 +30,11 @@ from typing import Final, Literal
 from abacus.modules.connections.api import CONNECTORS, is_networkless
 from abacus.modules.integrations import _capabilities as compiled
 from abacus.modules.integrations.adapters import registered_adapter, registered_keys
-from abacus.modules.integrations.ports import WriteCapabilityEntry, WriteCapabilityRegistry
+from abacus.modules.integrations.ports import (
+    OPENABLE_SHAPES,
+    WriteCapabilityEntry,
+    WriteCapabilityRegistry,
+)
 
 RefusalReason = Literal[
     "unknown_capability",
@@ -37,6 +43,7 @@ RefusalReason = Literal[
     "not_permitted",
     "unknown_client",
     "error",
+    "own_path",
 ]
 # Audited as an index (references carry no text): keep the order, append only.
 REASONS: Final[tuple[RefusalReason, ...]] = (
@@ -46,6 +53,7 @@ REASONS: Final[tuple[RefusalReason, ...]] = (
     "not_permitted",
     "unknown_client",
     "error",  # review L4: working out the reason failed; refused all the same
+    "own_path",  # DEC-1280: an enabled W7 runs only through its own approved path
 )
 ATTEST_REFUSED_SHAPES: Final = frozenset({"W1"})
 
@@ -124,9 +132,12 @@ def write_capability(key: str) -> WriteCapabilityEntry | None:
 
 
 def policy_refusal(entry: WriteCapabilityEntry, *, attest_client: bool) -> RefusalReason | None:
-    """Why the registry refuses this capability for this client, or None (never in v1)."""
+    """Why the registry refuses this capability for this client through the gate, or None (no
+    version yet: an enabled write is an openable shape, which never runs through the gate)."""
     if attest_client and entry.shape in ATTEST_REFUSED_SHAPES:
         return "attest_client"
     if not entry.enabled:
         return "not_enabled"
+    if entry.shape in OPENABLE_SHAPES:
+        return "own_path"
     return None
