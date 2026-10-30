@@ -181,6 +181,7 @@ from abacus.modules.identity.mfa_floor import (
     owner_grant,
     register_mfa_requirement,
 )
+from abacus.modules.identity.repository import emails_of  # K-02-T11: onboarding owners
 from abacus.modules.identity.offshore import (
     OffshoreConsentRequired,
     assert_assignable,
@@ -717,6 +718,7 @@ __all__ = [
     "offshore_consented",
     "operator_posture",
     "partner_members",
+    "emails_of",
     "person_reads_unmasked",
     "policy_agent_may_hold",
     "portal_scopes",

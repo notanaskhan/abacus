@@ -10,7 +10,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { installFixtureMode } from "../../app-core/fixture-mode";
 import { newQueryClient } from "../../testing/support";
 import { CLI05 } from ".";
-import { type Cli05State, ENTITY, SECTION, scenarios } from "./scenarios";
+import { AGENT_NOTE, type Cli05State, ENTITY, SECTION, scenarios } from "./scenarios";
 
 beforeAll(() => {
   client.setConfig({ baseUrl: window.location.origin, throwOnError: true });
@@ -132,7 +132,11 @@ describe("CLI-05 part 2 (T-01-T34)", () => {
         "Pull them from IRS e-Services (TDS) under the 8821 on file, then upload here.",
       ),
     ).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Upload transcript…" })).toHaveProperty(
+    // The header's and the empty state's (CLI-05b draws both), until the upload dialog lands.
+    const uploads = screen.getAllByRole("button", { name: "Upload transcript…" });
+    expect(uploads).toHaveLength(2);
+    for (const u of uploads) expect(u).toHaveProperty("disabled", true);
+    expect(screen.getByRole("button", { name: "Compare to return" })).toHaveProperty(
       "disabled",
       true,
     );
@@ -191,6 +195,95 @@ describe("CLI-05 part 2 (T-01-T34)", () => {
     showAt("c");
     await screen.findByText("Tax information authorization");
     fireEvent.click(screen.getByRole("tab", { name: "Transcripts" }));
-    expect(await screen.findByText("No transcripts yet.")).toBeTruthy();
+    expect(await screen.findByRole("table", { name: "Transcripts register" })).toBeTruthy();
+  });
+});
+
+describe("CLI-05 a · transcripts · 2 differences (T-01-T50)", () => {
+  function showA(note: boolean, latencyMs = 0): void {
+    restore = installFixtureMode(scenarios.a, latencyMs > 0 ? { latencyMs } : {});
+    render(
+      <QueryClientProvider client={newQueryClient()}>
+        <CLI05
+          clientEntityId={ENTITY.a}
+          section={SECTION.a}
+          {...(note ? { agentNote: AGENT_NOTE } : {})}
+        />
+      </QueryClientProvider>,
+    );
+  }
+
+  it("lists the four pulls with their results and opens the TY2024 comparison", async () => {
+    showA(true);
+    const register = await screen.findByRole("table", { name: "Transcripts register" });
+    const rows = within(register).getAllByRole("row").slice(1);
+    expect(rows.map((r) => r.textContent)).toEqual([
+      expect.stringContaining(
+        "Wage & Income2024Sep 14, 9:05 AM · Kevin OseiForm 88212 differences",
+      ),
+      expect.stringContaining(
+        "Account2024Sep 14, 9:05 AM · Kevin OseiForm 8821TC 922 · Aug 24, 2026",
+      ),
+      expect.stringContaining(
+        "Wage & Income2025Sep 14, 9:06 AM · Kevin OseiForm 8821Agrees to return",
+      ),
+      expect.stringContaining("TC 150 · Apr 10, 2026 · balance 0.00"),
+    ]);
+    expect(rows[0]?.getAttribute("aria-selected")).toBe("true");
+    const card = await screen.findByRole("region", {
+      name: "Wage & Income · TY2024 vs return as filed",
+    });
+    expect(within(card).getByText("off 3,120")).toBeTruthy();
+    const lines = card.querySelectorAll("tbody tr");
+    expect(lines[0]?.textContent).toBe(
+      "Form 1099-INTFront Range Bank1,870.00—1,870.00Not on return",
+    );
+    expect(lines[1]?.textContent).toBe(
+      "Form 1099-INTLakeview Credit Union1,250.00—1,250.00Not on return",
+    );
+    expect(lines[2]?.textContent).toBe("Total difference3,120.000.003,120.00");
+    expect(card.querySelector("[data-agreeing]")?.textContent).toBe(
+      "4 other information returns agree to the return (Forms W-2 × 2, Form 1098, Form 1099-INT × 1).",
+    );
+    expect(within(card).getByRole("heading", { name: /Why This Was Surfaced/ })).toBeTruthy();
+    expect(card.textContent).toContain("3,120.00 × 22% = 686.40");
+    expect(card.textContent).toContain("IRS CP2000 · Aug 24, 2026 · 2 citations");
+    expect(screen.getByText("TY2024 · 2 differences")).toBeTruthy();
+  });
+
+  it("shows no agent note without the fixture's (production) and no full identifier", async () => {
+    showA(false);
+    await screen.findByRole("region", { name: "Wage & Income · TY2024 vs return as filed" });
+    expect(document.querySelector("[data-agent-note]")).toBeNull();
+    expect(screen.queryByText(/Why This Was Surfaced/)).toBeNull();
+    expect(document.body.textContent).not.toMatch(/\b\d{9,}\b|\b\d{3}-\d{2}-\d{4}\b/);
+  });
+
+  it("re-runs Compare to return with Comparing… in the selected row's Result", async () => {
+    showA(false, 60);
+    await screen.findByRole("region", { name: "Wage & Income · TY2024 vs return as filed" });
+    const compare = screen.getByRole("button", { name: "Compare to return" });
+    await waitFor(() => {
+      expect((compare as HTMLButtonElement).disabled).toBe(false);
+    });
+    fireEvent.click(compare);
+    expect(await screen.findByText("Comparing…")).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.queryByText("Comparing…")).toBeNull();
+    });
+    expect(screen.getByText("2 differences")).toBeTruthy();
+  });
+
+  it("selecting the TY2025 pull shows its result and no TY2024 card", async () => {
+    showA(false);
+    const register = await screen.findByRole("table", { name: "Transcripts register" });
+    fireEvent.click(
+      within(register).getAllByRole("button", { name: "Wage & Income" })[1] as HTMLElement,
+    );
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("region", { name: "Wage & Income · TY2024 vs return as filed" }),
+      ).toBeNull();
+    });
   });
 });

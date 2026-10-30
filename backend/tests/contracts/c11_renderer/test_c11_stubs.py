@@ -33,6 +33,16 @@ PATHS = cast(dict[str, dict[str, Json]], DOC["paths"])
 Endpoint = Callable[..., Awaitable[object]]
 
 ROUTES = [r for router in c11_api.ROUTERS for r in router.routes if isinstance(r, APIRoute)]
+# P-11-T06 made the template routes live (`reporting/templates.py`; SPEC-520 AC-1 to AC-5); the
+# rest stay stubs until P-11-T07 (preview) and T11 (generated documents).
+LIVE = {
+    "list_report_templates_route",
+    "get_report_template_version_route",
+    "import_report_template_route",
+    "publish_report_template_route",
+    "deprecate_report_template_route",  # T-01-T17 (C11 v1.1 additive)
+}
+STUBS = [r for r in ROUTES if r.name not in LIVE]
 MODELS = [
     v
     for v in vars(c11).values()
@@ -44,6 +54,7 @@ CONTRACT_ROUTES = {
     ("get", "/v1/report-templates/{template_id}/versions/{version_no}"),
     ("post", "/v1/report-templates/import"),
     ("post", "/v1/report-templates/{template_id}/versions/{version_no}/publish"),
+    ("post", "/v1/report-templates/{template_id}/versions/{version_no}/deprecate"),  # T-01-T17
     ("post", "/v1/report-templates/{template_id}/versions/{version_no}/preview"),
     ("get", "/v1/generated-documents/{document_id}"),
     ("get", "/v1/generated-documents/{document_id}/versions/{version_no}/fields"),
@@ -81,15 +92,19 @@ def test_ac31_the_generated_api_carries_every_c11_route() -> None:
 
 
 @pytest.mark.parametrize("route", ROUTES, ids=lambda r: r.name)
-def test_ac31_each_route_declares_one_matrix_action_and_is_a_stub(route: APIRoute) -> None:
+def test_ac31_each_route_declares_one_matrix_action_and_stubs_answer_501(
+    route: APIRoute,
+) -> None:
     method = next(iter(route.methods or {"GET"})).lower()
     op = PATHS[route.path][method]
     assert op["x-abacus-action"] in c11.FIRM_ACTIONS
     assert op["x-abacus-action"] in RULES
-    assert {"404", "501"} <= set(cast(Json, op["responses"]))
+    responses = set(cast(Json, op["responses"]))
+    assert "404" in responses
+    assert ("501" in responses) == (route.name not in LIVE)
 
 
-@pytest.mark.parametrize("route", ROUTES, ids=lambda r: r.name)
+@pytest.mark.parametrize("route", STUBS, ids=lambda r: r.name)
 async def test_ac31_client_404_then_action_then_flag_then_501(
     route: APIRoute, monkeypatch: pytest.MonkeyPatch
 ) -> None:

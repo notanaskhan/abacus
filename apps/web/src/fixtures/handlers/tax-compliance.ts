@@ -11,8 +11,9 @@ import {
   feldEnvelope,
   feldFinalApproval,
 } from "../seed/tax/feld-delivery";
-import { CONSENT_SUMMARY, FELD_RETURN_ID } from "../seed/tax-compliance";
-import { SYNTHETIC_TINS, TAX_PROFILES } from "../seed/tax-profile";
+import { CONSENT_SUMMARY, FELD_PAYMENTS, FELD_RETURN_ID } from "../seed/tax-compliance";
+import { SYNTHETIC_TINS, TAX_PROFILES, WHITLEY_ENTITY } from "../seed/tax-profile";
+import { WHITLEY_COMPARISON_2024, WHITLEY_TRANSCRIPTS } from "../seed/transcripts";
 
 /** E0 (Mon Sep 14, 2026, 9:24 AM CT): "expiring" is signed and ending within 30 days. */
 const E0 = Date.parse("2026-09-14T09:24:00-05:00");
@@ -82,6 +83,17 @@ export function taxComplianceHandlers(state = "a"): Record<string, FixtureHandle
       const found = TAX_PROFILES[params.client_entity_id ?? ""];
       return found === undefined ? json(NOT_FOUND, 404) : json(found);
     },
+    // T-01-T50: CLI-05 a's register and comparison (b, at 9:04 AM, is before Kevin's upload).
+    "GET /v1/client-entities/{client_entity_id}/transcripts": ({ params }) =>
+      json(params.client_entity_id === WHITLEY_ENTITY && state !== "b" ? WHITLEY_TRANSCRIPTS : []),
+    "GET /v1/transcripts/{transcript_id}/comparison": ({ params }) =>
+      params.transcript_id === WHITLEY_COMPARISON_2024.transcript_id
+        ? json(WHITLEY_COMPARISON_2024)
+        : json(NOT_FOUND, 404),
+    "POST /v1/transcripts/{transcript_id}/comparisons": ({ params }) =>
+      params.transcript_id === WHITLEY_COMPARISON_2024.transcript_id
+        ? json(WHITLEY_COMPARISON_2024, 201)
+        : json(NOT_FOUND, 404),
     "POST /v1/client-entities/{entity_id}/tin/reveal": ({ params, body }) => {
       const entityId = params.entity_id ?? "";
       const value = SYNTHETIC_TINS[entityId];
