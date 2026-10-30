@@ -1,8 +1,8 @@
 ---
 id: TASK-2225
 title: K-01-T13 KNW-03 program editor a, b, e on T2 RecordCockpit
-spec: SPEC-000  # K-01 §3.4 AC4.1–AC4.3; KNW-03 handoff and R2
-acceptance_criteria: [AC4.1, AC4.2, AC4.3]
+spec: SPEC-000  # K-01 §3.4 AC4.1–AC4.3 and the KNW-03 handoff; no SPEC defines the screen
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: green
 status: in-review
 epic: K-01

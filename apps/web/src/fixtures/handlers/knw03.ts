@@ -17,6 +17,7 @@ import {
   KNW03_PROGRAMS,
   KNW03_STEPS_V2,
   KNW03_STEPS_V3,
+  KNW03_STEP4_QUOTE,
 } from "../seed/knw03";
 import { STEP_CITATION } from "../seed/trust";
 import { MARGARET, TEMPLATE, TEMPLATE_ID, V2, V3, programId } from "./methodology-versions";
@@ -83,8 +84,14 @@ const stepsOf = (program: string) =>
 const programById = (id: string): ProgramOut | undefined =>
   [...programs(V3), ...programs(V2)].find((p) => p.id === id);
 
-/** Step 4's citation on AUD-04 (SHL-07a), pointed at this version's step. */
-const CITED: CitationV2Out = { ...STEP_CITATION, match_id: `ms:ebp-110-4@v3` };
+/** Step 4's citation on AUD-04 (SHL-07a), pointed at this version's step, quoting the step as
+ * KNW-03 b draws it (the SHL-07 and KNW-03 handoffs word step 4 differently; each screen keeps its
+ * own artboard's words). */
+const CITED: CitationV2Out = {
+  ...STEP_CITATION,
+  quote: KNW03_STEP4_QUOTE,
+  match_id: `ms:ebp-110-4@v3`,
+};
 
 export function knw03Handlers(): Record<string, FixtureHandler> {
   return {
