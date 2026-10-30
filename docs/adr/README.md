@@ -169,3 +169,4 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-300](ADR-300-platform-reference-data-split.md) | Platform reference data split: frequently changing calendars are versioned, effective-dated database reference sets published by two people; engine parameters stay CPA-reviewed repo files | amber | accepted |
 | [ADR-340](ADR-340-sampling-engine.md) | Sampling engine: a seeded, versioned, frozen in-product sampler; import kept as a path (P-57) | red | proposed |
 | [ADR-341](ADR-341-multi-entity-engagements-and-consolidation.md) | Multi-entity engagements and consolidation: engagement entities, ledger-owned mapping and consolidation, the taxonomy as firm content (P-63) | red | proposed |
+| [ADR-342](ADR-342-e-signature-provider-docuseal.md) | E-signature provider: DocuSeal (cloud) replaces DocuSign behind the EsignProvider port; record mode first; 8879 KBA only once confirmed in writing and accepted by counsel (P-26) | red | proposed |
