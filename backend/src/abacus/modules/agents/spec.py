@@ -42,7 +42,7 @@ class ConfidenceRouting(BaseModel):
 
 
 class AgentMode(BaseModel):
-    """N-01-T22 (DEC-1276): another mode of the same agent, with its own prompt, schemas and
+    """N-01-T22 (DEC-1278): another mode of the same agent, with its own prompt, schemas and
     budget (the matcher's `engagement` mode keeps v2 while the spec describes `intake`). Its
     prompt is eligible on its own evaluation (`_eval_suites.EVAL_SUITE_MODES`)."""
 
@@ -122,7 +122,7 @@ class AgentSpec(BaseModel):
     # data subjects and gateway condition 6 gates every call; the spec loads only while the
     # `use` and `ai_disclosure` consent checks are registered.
     data_classes: Annotated[frozenset[Literal["tri"]], classified("internal")] = frozenset()
-    # N-01-T22 (DEC-1276): other modes by name; the spec's own fields are the default mode.
+    # N-01-T22 (DEC-1278): other modes by name; the spec's own fields are the default mode.
     modes: Annotated[dict[str, AgentMode], classified("internal")] = Field(
         default_factory=dict[str, AgentMode]
     )

@@ -1,6 +1,6 @@
 # The matcher (ADR-047; SPEC-033). Source of truth: compiled into _specs.py by
 # `python -m abacus_tools.codegen.agent_specs`; a test fails if they drift.
-# v3 (N-01-T22; N-01 §6; DEC-1276): the spec describes mode `intake` (prompt v3, IntakeMatchInput,
+# v3 (N-01-T22; N-01 §6; DEC-1278): the spec describes mode `intake` (prompt v3, IntakeMatchInput,
 # IntakeMatchOutput, $0.015 a file). Mode `engagement` keeps v2's prompt, output and $0.01 budget,
 # pinned in `inbox_match.py`, so its measured behaviour and replay history are unchanged.
 id: evidence.matcher
@@ -31,7 +31,7 @@ work_class: background
 essential: false
 cheaper_tiers: []
 routes: [bedrock, direct]
-# N-01-T22 (DEC-1276): mode engagement is v2 as measured (the audit section of evals/matching).
+# N-01-T22 (DEC-1278): mode engagement is v2 as measured (the audit section of evals/matching).
 modes:
   engagement:
     prompt: evidence.inbox_match@v2

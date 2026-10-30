@@ -31,7 +31,7 @@ Regenerate: python -m abacus_tools.codegen.eval_suites
 
 def render() -> str:
     suites: dict[str, tuple[str, int]] = {}
-    # N-01-T22 (DEC-1276): an agent's other modes, each prompt on the same suite and version.
+    # N-01-T22 (DEC-1278): an agent's other modes, each prompt on the same suite and version.
     modes: dict[str, dict[str, int]] = {}
     for agent_id, spec in sorted(AGENTS.items()):
         path = REPO / spec.evaluation_suite / "suite.yaml"

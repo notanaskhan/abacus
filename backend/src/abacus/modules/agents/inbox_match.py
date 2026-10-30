@@ -9,7 +9,7 @@ discarded), verifies every quote against the extraction (ADR-066), and records t
 Nothing is assigned: the matcher proposes, a person decides (ADR-005).
 
 This is the matcher's `engagement` mode: v2's prompt, output and budget (the spec's `modes`),
-unchanged by v3 (N-01-T22, DEC-1276), whose own fields describe mode `intake` (`intake_match.py`).
+unchanged by v3 (N-01-T22, DEC-1278), whose own fields describe mode `intake` (`intake_match.py`).
 """
 
 from __future__ import annotations

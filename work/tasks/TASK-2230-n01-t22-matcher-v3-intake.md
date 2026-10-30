@@ -35,7 +35,7 @@ path lets the agent file, ignore, hold or supersede."
 - **Spec** `evidence.matcher` v3: prompt `evidence.inbox_match@v3` (protected), input
   `IntakeMatchInput`, output `IntakeMatchOutput`, `max_cost_usd` 0.015, routing below 0.5 hidden
   (kept). `spec.py` gains the two schema names; `_specs.py` regenerated. Mode `engagement` pins
-  `evidence.inbox_match@v2` and `MatchOutput` (DEC-1276), so v2's measured behaviour and its
+  `evidence.inbox_match@v2` and `MatchOutput` (DEC-1278), so v2's measured behaviour and its
   replay history stay as they are.
 - **Output** (`handoff.py`): `IntakeMatchOutput` with `none_fit`, `classification` (form family,
   tax year, issuer, kind; each optional) and up to three proposals over references D1..Dn, each
@@ -73,7 +73,7 @@ path lets the agent file, ignore, hold or supersede."
 ## Progress log
 - 2026-10-30: plan written. The direct-route run needs a model key and runs in the eval
   environment (`make evals`); not runnable from this machine.
-- 2026-10-30: built (DEC-1276). Deviations from the plan: `InboxMatch` is not patched; intake
+- 2026-10-30: built (DEC-1278). Deviations from the plan: `InboxMatch` is not patched; intake
   runs on its own workflow type (v2 histories untouched). The spec gained `modes` and the gateway
   keys eligibility on (agent, prompt), since one prompt per agent would have refused engagement
   mode. `agent_runs` gained `inbox_attachment_id` and a third engagement-less run kind (0431).

@@ -12,7 +12,7 @@ them); a request proposal keeps `request_item_id`. Both stay insert-only: the ma
 person files (ADR-005, I-AGENT-NEVER).
 
 Revision ID: 0431
-Revises: 0430
+Revises: 0406
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ _DRAFTER = "requests.guidance_drafter"
 _MATCHER = "evidence.matcher"
 
 revision = "0431"
-down_revision = "0430"
+down_revision = "0406"
 branch_labels = None
 depends_on = None
 

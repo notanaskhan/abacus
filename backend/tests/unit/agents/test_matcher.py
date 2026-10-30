@@ -53,7 +53,7 @@ def _material() -> MatchMaterial:
 def test_ac3_the_matcher_is_declared_to_propose_only() -> None:
     matcher = spec(MATCHER)
     assert matcher.autonomy == "propose"
-    # N-01-T22 (DEC-1276): v3's own prompt is intake mode's; engagement mode keeps v2 (TASK-067:
+    # N-01-T22 (DEC-1278): v3's own prompt is intake mode's; engagement mode keeps v2 (TASK-067:
     # cell references).
     assert matcher.prompt == "evidence.inbox_match@v3"
     assert matcher.modes["engagement"].prompt == "evidence.inbox_match@v2"
