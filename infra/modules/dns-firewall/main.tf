@@ -10,8 +10,10 @@
 locals {
   staging_domains = [
     "*.amazonaws.com",
+    "api.docuseal.com",
     "api.workos.com",
     "database.clamav.net",
+    "docuseal.com",
   ]
   production_domains = [
     "*.amazonaws.com",

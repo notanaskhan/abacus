@@ -23,7 +23,6 @@ a submission id shows its last four only.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Literal, NoReturn
@@ -34,6 +33,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import TAX_DELIVERY_EFILE, TAX_ENGINE_BRIDGE
 from abacus.kernel.classification import classified
+from abacus.kernel.clock import now
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.modules.identity.api import (
@@ -43,6 +43,7 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
 )
+from abacus.modules.tax import approval
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=8, max_length=200)]
@@ -416,6 +417,27 @@ async def _stub(ctx: AuthContext, action: str, flag: Flag) -> NoReturn:
     raise NotImplementedYet
 
 
+async def _live(ctx: AuthContext, action: str, flag: Flag) -> None:
+    """A built route: INV-4, the role row, then the flag; the service checks the return."""
+    if ctx.client:
+        raise NotFound("tax_return")
+    await authorise(ctx, action, Resource.firm(ctx.tenant_id))
+    if not await flag_enabled(ctx.tenant, flag):
+        raise NotFound(flag.name)
+
+
+def _approval_out(found: approval.Eligibility, approved_at: datetime | None) -> FinalApprovalOut:
+    return FinalApprovalOut(
+        return_id=found.return_id,
+        eligible=found.eligible,
+        blockers=[ApprovalBlockerOut(kind=b.kind, ref_id=b.ref_id) for b in found.blockers],
+        approver_user_id=found.signer,
+        checkpoint_id=found.checkpoint_id,
+        content_hash=found.content_hash,
+        approved_at=approved_at,
+    )
+
+
 B, D = TAX_ENGINE_BRIDGE, TAX_DELIVERY_EFILE
 
 
@@ -423,24 +445,26 @@ B, D = TAX_ENGINE_BRIDGE, TAX_DELIVERY_EFILE
     "/tax-returns/{return_id}/final-approval",
     action="tax_return.read",
     response_model=FinalApprovalOut,
-    errors=(501,),
 )
 async def final_approval_route(return_id: ReturnId, ctx: Ctx) -> FinalApprovalOut:
-    """Eligibility facts and blockers (TAX-02 calls `tax.api.final_approval_blockers`)."""
-    await _stub(ctx, "tax_return.read", B)
+    """Eligibility facts and blockers (T-01-T18; TAX-02, TAX-09 a/a2)."""
+    await _live(ctx, "tax_return.read", B)
+    return _approval_out(await approval.eligibility(ctx, return_id), None)
 
 
 @engine_router.post(
     "/tax-returns/{return_id}/final-approval",
     action="tax_return.approve",
     response_model=FinalApprovalOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def approve_return_route(
     return_id: ReturnId, body: FinalApprovalIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> FinalApprovalOut:
-    """SHL-12 h: the L4 `final_approval` sign-off, recorded only by `tax/approval.py`."""
-    await _stub(ctx, "tax_return.approve", B)
+    """SHL-12 h: the L4 sign-off, recorded only by `tax/approval.py` (T-01-T18)."""
+    await _live(ctx, "tax_return.approve", B)
+    found = await approval.approve(ctx, return_id, body.seen_checkpoint_id, body.content_hash)
+    return _approval_out(found, await now(ctx.tenant))
 
 
 @engine_router.get(
@@ -676,17 +700,4 @@ async def set_ero_route(
 
 # --- tax.api (T-01-T27 and T-02 implement) -------------------------------------------------------
 
-
-@dataclass(frozen=True)
-class ApprovalBlocker:
-    kind: str
-    ref_id: UUID | None
-
-
-def final_approval_blockers(return_id: UUID) -> list[ApprovalBlocker]:
-    raise NotImplementedError("tax/approval.py: T-01-T27 builds final approval")
-
-
-def register_final_approval_blocker(kind: str, provider: object) -> None:
-    """A blocker provider (T-02 registers the draft K-1 one)."""
-    raise NotImplementedError("tax/approval.py: T-01-T27 builds final approval")
+# T-01-T18 built them in `tax/approval.py`: `eligibility`, `register_final_approval_blocker`.

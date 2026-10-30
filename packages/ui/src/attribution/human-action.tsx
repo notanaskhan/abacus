@@ -15,6 +15,9 @@ export interface HumanActionProps extends Omit<ButtonProps, "children"> {
   actor: Actor;
   /** The control opens a dialog first: the label ends in "…". */
   opensDialog?: boolean;
+  /** The whole label when the verb's sentence reads otherwise ("Re-sign as Reviewer (L2)",
+   * "Resolve 11 issues to approve" on a blocked gate); the verb still marks the control. */
+  label?: string;
 }
 
 export function HumanAction({
@@ -22,10 +25,12 @@ export function HumanAction({
   object,
   actor,
   opensDialog = false,
+  label: whole,
   ...button
 }: HumanActionProps): JSX.Element | null {
   if (!isPerson(actor)) return null;
-  const label = `${verb}${object === undefined ? "" : ` ${object}`}${opensDialog ? "…" : ""}`;
+  const label =
+    whole ?? `${verb}${object === undefined ? "" : ` ${object}`}${opensDialog ? "…" : ""}`;
   return (
     <Button {...button} opensDialog={opensDialog} data-human-verb={verb}>
       {label}

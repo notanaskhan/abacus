@@ -197,7 +197,14 @@ function Card({
 }): JSX.Element {
   const [name, setName] = useState(cp.name ?? "");
   const canRename = cp.allowed_actions.includes("checkpoint.rename");
-  const author = cp.author_kind === "agent" ? formatActor({ kind: "agent" }) : cp.author_name;
+  // An import's author line names the engine version it came from (P-04-T47: "Imported from CCH
+  // Axcess 2025I:FeldJ:V3"); an agent's is the Agent; a person's is their name.
+  const author =
+    cp.author_kind === "agent"
+      ? formatActor({ kind: "agent" })
+      : cp.author_kind === "import"
+        ? (cp.summary ?? cp.author_name)
+        : cp.author_name;
   const decided = cp.decision;
   const when = formatDate(cp.created_at, { now });
   const meta = [
@@ -211,7 +218,7 @@ function Card({
     .join(" · ");
   const title = cp.name ?? COPY.checkpoint(cp.seq);
   return (
-    <li
+    <div
       data-checkpoint={cp.seq}
       {...(open ? { "data-open": "" } : {})}
       className={`flex flex-col rounded-nested px-[12px] py-[10px] ${open ? "bg-sel-bg shadow-[inset_0_0_0_1px_var(--color-stroke)]" : "bg-card shadow-e1"}`}
@@ -287,7 +294,7 @@ function Card({
           {COPY.rejectedLine(decided.decided_by_name, decided.reason ?? "")}
         </span>
       )}
-    </li>
+    </div>
   );
 }
 
@@ -483,7 +490,8 @@ export function CheckpointDrawer({
       ) : (
         <ul aria-label={COPY.title} className="flex flex-col gap-[8px] p-[10px]">
           {items.map((cp) => (
-            <div key={cp.id}>
+            // The list item holds the card and, when open, its detail (axe: only li under ul).
+            <li key={cp.id} className="flex flex-col">
               <Card
                 cp={cp}
                 open={cp.seq === selectedSeq}
@@ -513,7 +521,7 @@ export function CheckpointDrawer({
               {cp.seq === selectedSeq && detail.data !== undefined && (
                 <Detail detail={detail.data} />
               )}
-            </div>
+            </li>
           ))}
         </ul>
       )}

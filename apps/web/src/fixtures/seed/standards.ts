@@ -46,7 +46,7 @@ const HASH = `sha256:${"0".repeat(64)}`;
 const client = (name: string): string =>
   stableId(`client:${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`);
 
-interface Def {
+export interface Def {
   key: string;
   kind: Kind;
   name: string;
@@ -279,10 +279,10 @@ export const STANDARDS: readonly Def[] = [
 ] as const;
 
 export const standardId = (key: string): string => stableId(`standard:${key}`);
-const versionId = (key: string, version: number): string =>
+export const versionId = (key: string, version: number): string =>
   stableId(`standard-version:${key}:${String(version)}`);
 
-function summary(
+export function summary(
   def: Def,
   version: number,
   status: StandardVersionSummaryOut["status"],
