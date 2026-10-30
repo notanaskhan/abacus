@@ -224,6 +224,11 @@ from abacus.modules.evidence.retention import (
 )
 from abacus.modules.evidence.retention_routes import platform_router as retention_platform_router
 from abacus.modules.evidence.retention_routes import router as retention_router
+from abacus.modules.evidence.retrieved_copies import (
+    SOURCE_DOCUMENTS,
+    file_retrieved_copy,
+    pdf_text,
+)
 from abacus.modules.evidence.routes import firm_router, router
 
 # The routers the API mounts, in order (P-39; F-03-T07).
@@ -446,6 +451,7 @@ __all__ = [
     "ROUTERS",
     "SCHEDULES",
     "SIGNED_AUTHORIZATIONS",
+    "SOURCE_DOCUMENTS",
     "SUBSCRIPTIONS",
     "SUGGESTION_MIN_SCORE",
     "TOTAL_LABEL",
@@ -562,6 +568,7 @@ __all__ = [
     "export_section_csv",
     "extend_retention_for",
     "file_intake_object",
+    "file_retrieved_copy",
     "file_signed_copy",
     "filed_classification_match",
     "final_export_for_archive",
@@ -583,6 +590,7 @@ __all__ = [
     "match_material",
     "normalised_text",
     "page_quote_reason",
+    "pdf_text",
     "pii_scan_upload",
     "place_hold",
     "portal_files",

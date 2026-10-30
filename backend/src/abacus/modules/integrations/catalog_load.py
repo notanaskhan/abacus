@@ -17,7 +17,7 @@ from typing import Annotated, Any, Literal, Self, cast
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from abacus.kernel.classification import classified
-from abacus.modules.integrations.ports import IntegrationCategory, Key, ScopeCode
+from abacus.modules.integrations.ports import CatalogCategory, Key, ScopeCode
 
 Text = Annotated[str, Field(min_length=1, max_length=400)]
 
@@ -53,7 +53,7 @@ class CatalogRowIn(BaseModel):
 
     key: Annotated[Key, classified("public")]
     name: Annotated[Annotated[str, Field(min_length=1, max_length=80)], classified("public")]
-    category: Annotated[IntegrationCategory, classified("public")]
+    category: Annotated[CatalogCategory, classified("public")]
     ownership_mode: Annotated[
         Literal["firm", "personal", "client_authorised"], classified("public")
     ]

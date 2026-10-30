@@ -56,3 +56,14 @@ async def insert_status_event(session: AsyncSession, values: Mapping[str, object
 
 async def set_sync_state(session: AsyncSession, values: Mapping[str, object]) -> None:
     await session.execute(_SYNC, dict(values))
+
+
+# T-01-T18: the `tax_final_approval` gate reads the engagement's returns' statuses.
+_ON_ENGAGEMENT = text(
+    "SELECT status FROM tax_returns WHERE tenant_id = :tenant_id "
+    "AND engagement_id = :engagement_id"
+)
+
+
+async def statuses_on(session: AsyncSession, values: Mapping[str, object]) -> list[str]:
+    return [str(s) for s in (await session.execute(_ON_ENGAGEMENT, dict(values))).scalars()]

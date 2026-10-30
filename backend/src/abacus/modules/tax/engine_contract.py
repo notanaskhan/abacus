@@ -23,18 +23,18 @@ a submission id shows its last four only.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Final, Literal, NoReturn, cast
 from uuid import UUID
 
-from fastapi import Depends, Header, Path
+from fastapi import Depends, Header, Path, Query, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import TAX_DELIVERY_EFILE, TAX_ENGINE_BRIDGE
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.clock import now
+from abacus.kernel.errors import DomainTooLarge, NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.modules.identity.api import (
     AbacusRouter,
@@ -43,6 +43,7 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
 )
+from abacus.modules.tax import approval, engine_import
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=8, max_length=200)]
@@ -104,24 +105,24 @@ class FinalApprovalIn(BaseModel):
 # --- engine sync, exports and imports (TAX-09 c, d, e) ------------------------------------------
 
 
+EngineSyncKind = Literal[
+    "export_generated",
+    "marked_exported",
+    "import_uploaded",
+    "import_approved",
+    "import_rejected",
+    "diagnostics",
+    "pdfs",
+    "acks",
+    "changed_after_import",  # T-01-T15 (additive): Accrued changed after the last import
+]
+
+
 class EngineSyncEventOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     id: Annotated[UUID, classified("internal")]
-    kind: Annotated[
-        Literal[
-            "export_generated",
-            "marked_exported",
-            "import_uploaded",
-            "import_approved",
-            "import_rejected",
-            "diagnostics",
-            "pdfs",
-            "acks",
-            "changed_after_import",  # T-01-T15 (additive): Accrued changed after the last import
-        ],
-        classified("internal"),
-    ]
+    kind: Annotated[EngineSyncKind, classified("internal")]
     actor_name: Annotated[str | None, classified("confidential")]
     at: Annotated[datetime, classified("confidential")]
     # T-01-T15 (additive): the engine's return version ("2025I:FeldJ:V3"), and the fields a
@@ -188,13 +189,6 @@ class MarkExportedIn(BaseModel):
     model_config = _frozen()
 
     seen_version: Annotated[int, Field(ge=1), classified("internal")]
-
-
-class EngineImportIn(BaseModel):
-    model_config = _frozen()
-
-    kind: Annotated[ImportKind, classified("internal")]
-    upload_id: Annotated[UUID, classified("internal")]
 
 
 class ImportDiffRowOut(BaseModel):
@@ -416,6 +410,79 @@ async def _stub(ctx: AuthContext, action: str, flag: Flag) -> NoReturn:
     raise NotImplementedYet
 
 
+async def _live(ctx: AuthContext, action: str, flag: Flag) -> None:
+    """A built route: INV-4, the role row, then the flag; the service checks the return."""
+    if ctx.client:
+        raise NotFound("tax_return")
+    await authorise(ctx, action, Resource.firm(ctx.tenant_id))
+    if not await flag_enabled(ctx.tenant, flag):
+        raise NotFound(flag.name)
+
+
+def _approval_out(found: approval.Eligibility, approved_at: datetime | None) -> FinalApprovalOut:
+    return FinalApprovalOut(
+        return_id=found.return_id,
+        eligible=found.eligible,
+        blockers=[ApprovalBlockerOut(kind=b.kind, ref_id=b.ref_id) for b in found.blockers],
+        approver_user_id=found.signer,
+        checkpoint_id=found.checkpoint_id,
+        content_hash=found.content_hash,
+        approved_at=approved_at,
+    )
+
+
+def _typed(value: object) -> tuple[object, object]:
+    """A stored `{t, v}` as its type and value (anything else as no value)."""
+    if isinstance(value, dict):
+        typed = cast(dict[str, object], value)
+        return typed.get("t"), typed.get("v")
+    return None, None
+
+
+def _amount(value: object) -> Decimal | None:
+    kind, raw = _typed(value)
+    return Decimal(str(raw)) if kind == "decimal" and raw is not None else None
+
+
+def _display(value: object) -> str | None:
+    kind, raw = _typed(value)
+    return str(raw) if kind != "decimal" and raw is not None else None
+
+
+def _import_out(v: engine_import.ImportView) -> EngineImportOut:
+    return EngineImportOut(
+        id=v.id,
+        return_id=v.return_id,
+        kind=v.kind,
+        status=v.status,
+        rows=[
+            ImportDiffRowOut(
+                field_key=str(r["field_key"]),
+                accrued=_amount(r["accrued"]),
+                engine=_amount(r["engine"]),
+                cause_code=cast(str | None, r["cause_code"]),
+                engine_display=_display(r["engine"]),
+            )
+            for r in v.rows
+        ],
+        uploaded_at=v.uploaded_at,
+        allowed_actions=list(v.allowed_actions),
+    )
+
+
+MAX_ENGINE_FILE: Final = 10 * 1024 * 1024
+
+
+async def _file(request: Request) -> bytes:
+    """The engine file, refused past the limit before it is all read (413)."""
+    data = bytearray()
+    async for chunk in request.stream():
+        data += chunk
+        if len(data) > MAX_ENGINE_FILE:
+            raise DomainTooLarge(facts={"limit": MAX_ENGINE_FILE})
+    return bytes(data)
+
+
 B, D = TAX_ENGINE_BRIDGE, TAX_DELIVERY_EFILE
 
 
@@ -423,34 +490,68 @@ B, D = TAX_ENGINE_BRIDGE, TAX_DELIVERY_EFILE
     "/tax-returns/{return_id}/final-approval",
     action="tax_return.read",
     response_model=FinalApprovalOut,
-    errors=(501,),
 )
 async def final_approval_route(return_id: ReturnId, ctx: Ctx) -> FinalApprovalOut:
-    """Eligibility facts and blockers (TAX-02 calls `tax.api.final_approval_blockers`)."""
-    await _stub(ctx, "tax_return.read", B)
+    """Eligibility facts and blockers (T-01-T18; TAX-02, TAX-09 a/a2)."""
+    await _live(ctx, "tax_return.read", B)
+    return _approval_out(await approval.eligibility(ctx, return_id), None)
 
 
 @engine_router.post(
     "/tax-returns/{return_id}/final-approval",
     action="tax_return.approve",
     response_model=FinalApprovalOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def approve_return_route(
     return_id: ReturnId, body: FinalApprovalIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> FinalApprovalOut:
-    """SHL-12 h: the L4 `final_approval` sign-off, recorded only by `tax/approval.py`."""
-    await _stub(ctx, "tax_return.approve", B)
+    """SHL-12 h: the L4 sign-off, recorded only by `tax/approval.py` (T-01-T18)."""
+    await _live(ctx, "tax_return.approve", B)
+    found = await approval.approve(ctx, return_id, body.seen_checkpoint_id, body.content_hash)
+    return _approval_out(found, await now(ctx.tenant))
 
 
 @engine_router.get(
     "/tax-returns/{return_id}/engine-sync",
     action="tax_return.read",
     response_model=EngineSyncOut,
-    errors=(501,),
 )
 async def engine_sync_route(return_id: ReturnId, ctx: Ctx) -> EngineSyncOut:
-    await _stub(ctx, "tax_return.read", B)
+    """TAX-09's chip, history and diagnostics, derived (T-01-T19)."""
+    await _live(ctx, "tax_return.read", B)
+    v = await engine_import.sync_view(ctx, return_id)
+    return EngineSyncOut(
+        return_id=v.return_id,
+        state=v.state,
+        engine_return_id=v.engine_return_id,
+        mode="file_bridge",
+        history=[
+            EngineSyncEventOut(
+                id=e.id,
+                kind=cast(EngineSyncKind, e.kind),
+                actor_name=e.actor_name,
+                at=e.at,
+                engine_version=e.engine_version,
+                field_keys=list(e.field_keys),
+                errors=e.errors,
+                informational=e.informational,
+            )
+            for e in v.history
+        ],
+        diagnostics=[
+            EngineDiagnosticOut(
+                code=str(d["code"]),
+                severity="error" if d["severity"] == "error" else "informational",
+                field_key=cast(str | None, d["field_key"]),
+                message_text=str(d["message_text"]),
+                issue_id=cast(UUID | None, d["issue_id"]),
+            )
+            for d in v.diagnostics
+        ],
+        allowed_actions=list(v.allowed_actions),
+        synced_at=v.synced_at,
+    )
 
 
 @engine_router.post(
@@ -495,46 +596,73 @@ async def mark_exported_route(
     action="engine_import.create",
     response_model=EngineImportOut,
     status_code=201,
-    errors=(501,),
+    errors=(409,),
 )
 async def upload_import_route(
-    return_id: ReturnId, body: EngineImportIn, ctx: Ctx, idempotency_key: IdempotencyKey
+    return_id: ReturnId,
+    request: Request,
+    ctx: Ctx,
+    kind: Annotated[ImportKind, Query()],
+    file_name: Annotated[str, Header(alias="X-File-Name", min_length=1, max_length=255)],
 ) -> EngineImportOut:
-    await _stub(ctx, "engine_import.create", B)
+    """An engine file as the raw body (no multipart; DEC-1363): scanned and stored, parsed in the
+    isolated child; values wait as "Import pending approval" (T-01-T19). 409
+    `engine_return_mismatch`, `engine_version_behind`, `import_pending`; 422
+    `engine_file_invalid`, `import_kind_unavailable`."""
+    await _live(ctx, "engine_import.create", B)
+    content = await _file(request)
+    return _import_out(await engine_import.import_file(ctx, return_id, kind, file_name, content))
 
 
 @engine_router.get(
     "/engine-imports/{import_id}",
     action="tax_return.read",
     response_model=EngineImportOut,
-    errors=(501,),
 )
 async def engine_import_route(import_id: Annotated[UUID, Path()], ctx: Ctx) -> EngineImportOut:
-    await _stub(ctx, "tax_return.read", B)
+    """TAX-09 O4: the import's diff rows (T-01-T19)."""
+    await _live(ctx, "tax_return.read", B)
+    return _import_out(await engine_import.import_view(ctx, import_id))
 
 
 @engine_router.post(
     "/engine-imports/{import_id}/approve",
     action="engine_import.approve",
     response_model=EngineImportOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def approve_import_route(
     import_id: Annotated[UUID, Path()], body: ImportApproveIn, ctx: Ctx
 ) -> EngineImportOut:
-    await _stub(ctx, "engine_import.approve", B)
+    """TAX-09 c: approve the accepted rows only (a person). 409 `import_decided`,
+    `stale_version`; 422 `nothing_accepted`."""
+    await _live(ctx, "engine_import.approve", B)
+    found = await engine_import.resolve_import(
+        ctx,
+        import_id,
+        accepted=body.accepted_field_keys,
+        seen_version=body.seen_version,
+        reason=None,
+    )
+    return _import_out(found)
 
 
 @engine_router.post(
     "/engine-imports/{import_id}/reject",
     action="engine_import.approve",
     response_model=EngineImportOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def reject_import_route(
     import_id: Annotated[UUID, Path()], body: ImportRejectIn, ctx: Ctx
 ) -> EngineImportOut:
-    await _stub(ctx, "engine_import.approve", B)
+    """TAX-09 e: reject the import with a reason (a person). 409 `import_decided`,
+    `stale_version`."""
+    await _live(ctx, "engine_import.approve", B)
+    found = await engine_import.resolve_import(
+        ctx, import_id, accepted=(), seen_version=body.seen_version, reason=body.reason
+    )
+    return _import_out(found)
 
 
 @engine_router.get(
@@ -676,17 +804,4 @@ async def set_ero_route(
 
 # --- tax.api (T-01-T27 and T-02 implement) -------------------------------------------------------
 
-
-@dataclass(frozen=True)
-class ApprovalBlocker:
-    kind: str
-    ref_id: UUID | None
-
-
-def final_approval_blockers(return_id: UUID) -> list[ApprovalBlocker]:
-    raise NotImplementedError("tax/approval.py: T-01-T27 builds final approval")
-
-
-def register_final_approval_blocker(kind: str, provider: object) -> None:
-    """A blocker provider (T-02 registers the draft K-1 one)."""
-    raise NotImplementedError("tax/approval.py: T-01-T27 builds final approval")
+# T-01-T18 built them in `tax/approval.py`: `eligibility`, `register_final_approval_blocker`.

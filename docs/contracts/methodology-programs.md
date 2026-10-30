@@ -58,7 +58,7 @@ Matrix (`permission-matrix/methodology.yaml`, moved from `engagements.yaml`): `m
 `methodology.approve` (approve a version, change a mandatory lock): the matrix denies agent and system and needs a fresh second factor; the lifecycle row's `approved_actor_kind` CHECK allows only `human`. The agent proposes draft rows for its own import (`methodology.parse`) and never approves.
 
 ## 6. Errors
-404 (client principal, flag off), 501 until each route lands; the import's 422 workbook problems as above. Live since K-01-T06: 409 `stale_version`, `version_frozen`, `checklist_changed`, `checklist_unmet` (new); 422 `effective_from_too_early` (new). Planned: 409 `flags_open`, `unverified_sources`, `mandatory_locked`.
+404 (client principal, flag off), 501 until each route lands; the import's 422 workbook problems as above. Live since K-01-T06: 409 `stale_version`, `version_frozen`, `checklist_changed`, `checklist_unmet` (new); 422 `effective_from_too_early` (new). Live since K-01-T14 (drafts, discard, step edits, mandatory lock): 409 `version_not_published`, `draft_exists`, `mandatory_locked`, `step_has_requests` (new); a stale `If-Match` is 409 `stale_version` (the platform's code, not 412; DEC-1361). Planned: 409 `flags_open`, `unverified_sources`.
 
 ## 7. Audit and outbox events
 Audit (K-01 §4.5): `methodology_version.imported`, `.draft_created`, `.submitted`, `.approved`, `.superseded`, `.discarded`, `.exported`; `methodology_step.added`, `.edited`, `.removed`, `.mandatory_changed`. Outbox: `methodology_version.submitted`, `.approved`, `.superseded {version_id, superseded_by}`. Today's SPEC-008 import keeps `methodology.imported` and writes an `imported` version event.

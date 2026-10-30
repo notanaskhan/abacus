@@ -547,6 +547,29 @@ async def checkpoint_deltas(tenant: TenantContext, checkpoint_id: UUID) -> dict[
         return _deltas(list(await checkpoint_diffs_of(session, [checkpoint_id])))
 
 
+@dataclass(frozen=True)
+class ApprovedValues:
+    """A target's field values as of its latest approved checkpoint of a cause (T-01-T43: the
+    return as filed is the latest approved engine import). Values are typed `{t, v}`."""
+
+    checkpoint_id: UUID
+    seq: int
+    values: Mapping[str, Value]
+
+
+async def approved_values(
+    tenant: TenantContext, target_type: str, target_id: UUID, cause: Cause
+) -> ApprovedValues | None:
+    """Every field's value at the newest approved checkpoint with `cause`, or None when there is
+    none; the caller has authorised its own read of the target (DEC-1651). Restricted when the
+    target is a tax return (figures are TRI)."""
+    rows, diffs, _ = await _load(tenant, target_type, target_id)
+    chosen = next((r for r in reversed(rows) if r.status == "approved" and r.cause == cause), None)
+    if chosen is None:
+        return None
+    return ApprovedValues(chosen.id, chosen.seq, _state_at(rows, diffs, chosen.seq))
+
+
 # --- writes ------------------------------------------------------------------------------------
 
 
@@ -959,6 +982,7 @@ __all__ = [
     "REJECT",
     "RENAME",
     "RESTORE",
+    "ApprovedValues",
     "CheckpointChanged",
     "CheckpointInvalid",
     "CheckpointList",
@@ -968,6 +992,7 @@ __all__ = [
     "ProposedChange",
     "TotalRow",
     "approve",
+    "approved_values",
     "checkpoint_deltas",
     "detail",
     "follow_proposal_decision",
@@ -978,3 +1003,112 @@ __all__ = [
     "restore",
     "save",
 ]
+
+
+# --- T-01-T19: an engine import's checkpoint, in the owner's unit of work --------------------
+
+
+async def record_import_proposal(
+    tx: UnitOfWork,
+    ctx: AuthContext,
+    target_type: str,
+    target_id: UUID,
+    changes: Sequence[ProposedChange],
+    *,
+    content_hash: str,
+    engine_sync_event_id: UUID,
+) -> UUID:
+    """ "Import pending approval": the engine file's differing fields as a proposed checkpoint
+    (author `import`, cause `engine_import`), recorded in the owner's unit of work for the person
+    who uploaded it; the owner has authorised its own upload action (`engine_import.create`).
+    Never a decision: a person decides it (`decide_import`)."""
+    if not changes:
+        raise CheckpointInvalid(facts={"reason": "no_changes"})
+    facts = await reviewable_facts(ctx.tenant, target_type, target_id)
+    checkpoint_id, seq = await _insert(
+        tx,
+        ctx,
+        facts,
+        author_kind="import",
+        author_ref="import",
+        cause="engine_import",
+        status="proposed",
+        content_hash=content_hash.removeprefix("sha256:"),
+        engine_sync_event_id=engine_sync_event_id,
+        changes=changes,
+    )
+    tx.record(
+        "checkpoint.proposed",
+        target=Target(SUBJECT, checkpoint_id),
+        after=Ref(seq=seq, target=facts.target_id, changes=len(changes)),
+        scope=_scope(facts),
+    )
+    return checkpoint_id
+
+
+async def decide_import(
+    tx: UnitOfWork,
+    ctx: Actor,
+    checkpoint_id: UUID,
+    accepted: frozenset[str],
+    *,
+    content_hash: str,
+    name: str,
+    reason: str | None = None,
+) -> UUID | None:
+    """A person's decision on an import checkpoint, in the owner's unit of work (TAX-09 c, e):
+    every row accepted approves it; none rejects it with the reason; some rejects it as partly
+    accepted and records a new import checkpoint holding only the accepted rows, approved by the
+    same person (one Current move). Returns the approved checkpoint, or None. The owner has
+    authorised its own decision action (`engine_import.approve`)."""
+    person = _human(ctx, APPROVE)
+    row = await lock_checkpoint(tx.session, checkpoint_id)
+    if row is None:
+        raise NotFound(SUBJECT)
+    if row.status != "proposed" or row.author_kind != "import":
+        raise CheckpointChanged(facts={"status": row.status})
+    diffs = list(await checkpoint_diffs_of(tx.session, [row.id]))
+    keys = frozenset(d.field_key for d in diffs)
+    unknown = sorted(accepted - keys)
+    if unknown:
+        raise CheckpointInvalid(facts={"reason": "unknown_field"})
+    scope = Scope(engagement_id=row.engagement_id)
+    if accepted == keys:
+        await set_checkpoint(tx.session, row.id, name=name)
+        await _decide(tx, person, row, scope, "approved", reason=None, proposal_decision_id=None)
+        return row.id
+    note = reason if not accepted else (reason or "Partly accepted")
+    await _decide(tx, person, row, scope, "rejected", reason=note, proposal_decision_id=None)
+    if not accepted:
+        return None
+    facts = await reviewable_facts(person.tenant, row.target_type, row.target_id)
+    kept = [
+        ProposedChange(
+            d.field_key,
+            cast(Value, d.old),
+            cast(Value, d.new),
+            d.cause,
+            tuple(d.citation_ids or ()),
+            cast(Mapping[str, str] | None, d.delta_facts),
+        )
+        for d in diffs
+        if d.field_key in accepted
+    ]
+    new_id, _seq = await _insert(
+        tx,
+        person,
+        facts,
+        author_kind="import",
+        author_ref="import",
+        cause="engine_import",
+        status="proposed",
+        content_hash=content_hash.removeprefix("sha256:"),
+        name=name,
+        engine_sync_event_id=row.engine_sync_event_id,
+        changes=kept,
+    )
+    locked = await lock_checkpoint(tx.session, new_id)
+    if locked is None:
+        raise NotFound(SUBJECT)
+    await _decide(tx, person, locked, scope, "approved", reason=None, proposal_decision_id=None)
+    return new_id
