@@ -9349,6 +9349,34 @@ export type DueDatesIn = {
 };
 
 /**
+ * DuplicateResolutionIn
+ */
+export type DuplicateResolutionIn = {
+    /**
+     * Decision
+     */
+    decision: 'keep_newer' | 'discard_duplicate';
+};
+
+/**
+ * DuplicateResolutionOut
+ */
+export type DuplicateResolutionOut = {
+    /**
+     * Decision
+     */
+    decision: 'keep_newer' | 'discard_duplicate';
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Kept Version Id
+     */
+    kept_version_id: string;
+};
+
+/**
  * EFurnishingConsentIn
  */
 export type EFurnishingConsentIn = {
@@ -53354,6 +53382,70 @@ export type SetDocumentKindResponses = {
 };
 
 export type SetDocumentKindResponse = SetDocumentKindResponses[keyof SetDocumentKindResponses];
+
+export type ResolveDuplicateData = {
+    body: DuplicateResolutionIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/evidence-versions/{version_id}/duplicate-resolution';
+};
+
+export type ResolveDuplicateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ResolveDuplicateError = ResolveDuplicateErrors[keyof ResolveDuplicateErrors];
+
+export type ResolveDuplicateResponses = {
+    /**
+     * Successful Response
+     */
+    200: DuplicateResolutionOut;
+};
+
+export type ResolveDuplicateResponse = ResolveDuplicateResponses[keyof ResolveDuplicateResponses];
 
 export type DraftScreeningReturnData = {
     body: ScreeningReturnDraftIn;

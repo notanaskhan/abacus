@@ -230,6 +230,8 @@ NOT_CREATING = {
     "/v1/engagements/{engagement_id}/request-items/{item_id}/return-to-client",
     "/v1/engagements/{engagement_id}/request-items/{item_id}/incorporate",
     "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/withdraw",
+    "/v1/engagements/{engagement_id}/request-items/{item_id}/evidence-versions/{version_id}"
+    "/duplicate-resolution",
     "/v1/portal/binders/{binder_id}/mark-done",
     "/v1/portal/request-items/{item_id}/ignore",
     # P-06-T14 (follow-ups v2): sending, its Undo and dismissing return the follow-up.
