@@ -2382,53 +2382,50 @@
     },
     "tpl-01.a": {
       "page": "screens/TPL-01?st=a",
-      "selector": "[data-specimen=\"tpl-01\"]",
+      "selector": "[data-artboard=\"tpl-01a\"] [data-shell=\"app\"]",
       "source": "handoff/screens/TPL-01 Index list specimen - Tax Returns/screenshots/TPL-01a.png",
       "sha256": "bcdb20292cb6a12b628707bc2ce018e512ffd057f686ab4b49cade13f4c342d9",
       "crop": "window",
       "tier": "B",
       "locked": false,
-      "deviation": "F-06-T13 end review: the specimen board is 1440 wide (2880 px at 2x) against the 1400 window crop: a size mismatch, reported only until the specimen draws the 1400 window"
+      "deviation": "F-06 parity follow-up (DEC-1182): 2.08 % at Tier B after matching the handoff's rows, wording, columns and toolbar; the rest is kit-level (nav spacing, filter-chip value ink, the New return… ellipsis rule): reported only"
     },
     "tpl-01.b": {
       "page": "screens/TPL-01?st=b",
-      "selector": "[data-specimen=\"tpl-01\"]",
+      "selector": "[data-artboard=\"tpl-01b\"] [data-shell=\"app\"]",
       "source": "handoff/screens/TPL-01 Index list specimen - Tax Returns/screenshots/TPL-01b.png",
       "sha256": "680b92bf829771f2f0dc8a20bcd45be7c8c2d419913e60aed613b162aa142b73",
       "crop": "window",
       "tier": "B",
       "locked": false,
-      "deviation": "F-06-T13 end review: the specimen board is 1440 wide (2880 px at 2x) against the 1400 window crop: a size mismatch, reported only until the specimen draws the 1400 window"
+      "deviation": "F-06 parity follow-up (DEC-1182): 2.21 % at Tier B after matching the handoff's rows, wording, columns and toolbar; the rest is kit-level (nav spacing, filter-chip value ink, the New return… ellipsis rule): reported only"
     },
     "tpl-01.c": {
       "page": "screens/TPL-01?st=c",
-      "selector": "[data-specimen=\"tpl-01\"]",
+      "selector": "[data-artboard=\"tpl-01c\"] [data-shell=\"app\"]",
       "source": "handoff/screens/TPL-01 Index list specimen - Tax Returns/screenshots/TPL-01c.png",
       "sha256": "4046e6106396c98ef6e4a7235c01e615c950bf033ee5671da5bdbd8cfc81da3a",
       "crop": "window",
       "tier": "B",
-      "locked": false,
-      "deviation": "F-06-T13 end review: the specimen board is 1440 wide (2880 px at 2x) against the 1400 window crop: a size mismatch, reported only until the specimen draws the 1400 window"
+      "locked": true
     },
     "tpl-01.d": {
       "page": "screens/TPL-01?st=d",
-      "selector": "[data-specimen=\"tpl-01\"]",
+      "selector": "[data-artboard=\"tpl-01d\"] [data-shell=\"app\"]",
       "source": "handoff/screens/TPL-01 Index list specimen - Tax Returns/screenshots/TPL-01d.png",
       "sha256": "b476d3f6425454b32864249a082e90d875cd62add0ed966e501a349688c51f85",
       "crop": "window",
       "tier": "B",
-      "locked": false,
-      "deviation": "F-06-T13 end review: the specimen board is 1440 wide (2880 px at 2x) against the 1400 window crop: a size mismatch, reported only until the specimen draws the 1400 window"
+      "locked": true
     },
     "tpl-01.e": {
       "page": "screens/TPL-01?st=e",
-      "selector": "[data-specimen=\"tpl-01\"]",
+      "selector": "[data-artboard=\"tpl-01e\"] [data-shell=\"app\"]",
       "source": "handoff/screens/TPL-01 Index list specimen - Tax Returns/screenshots/TPL-01e.png",
       "sha256": "5aea28ae1f6b6075e6ebff0fed4c6d8c50d66f0656b8063f7bd933ab52bbe6f6",
       "crop": "window",
       "tier": "B",
-      "locked": false,
-      "deviation": "F-06-T13 end review: the specimen board is 1440 wide (2880 px at 2x) against the 1400 window crop: a size mismatch, reported only until the specimen draws the 1400 window"
+      "locked": true
     }
   }
 }
