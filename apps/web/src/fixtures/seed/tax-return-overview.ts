@@ -29,7 +29,10 @@ export interface RowPatch {
 
 export interface OverviewSeed {
   row: RowPatch;
-  record: Pick<TaxReturnRecordOut, "tabs" | "card_detail" | "engine_return_id" | "allowed_actions">;
+  record: Pick<
+    TaxReturnRecordOut,
+    "tabs" | "card_detail" | "engine_return_id" | "allowed_actions"
+  >;
   overview: Omit<TaxReturnOverviewOut, "return_id">;
 }
 

@@ -167,7 +167,9 @@ describe("TAX-02 behaviour", () => {
     const members = await screen.findAllByRole("menuitem");
     fireEvent.click(members[0] as HTMLElement);
     await waitFor(() => {
-      expect(seen.calls.some((c) => c.method === "POST" && c.path.endsWith("/assignments"))).toBe(true);
+      expect(seen.calls.some((c) => c.method === "POST" && c.path.endsWith("/assignments"))).toBe(
+        true,
+      );
     });
     const post = seen.calls.find((c) => c.path.endsWith("/assignments"));
     expect((post?.body as { role: string }).role).toBe("reviewer");

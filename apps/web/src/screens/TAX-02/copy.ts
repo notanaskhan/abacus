@@ -72,8 +72,7 @@ export const COPY = {
   noDraftBody: "Run the Return Drafter when the binder's core requests are in.",
   runDraft: "Run draft",
   binderNotPublished: "Binder not published",
-  rerunConfirm:
-    "Re-running creates a new checkpoint. Approved documents keep their approvals.",
+  rerunConfirm: "Re-running creates a new checkpoint. Approved documents keep their approvals.",
   hints: {
     checkpoints: "Opens SHL-16 · checkpoint drawer",
     sync: "Opens TAX-09 · engine sync",

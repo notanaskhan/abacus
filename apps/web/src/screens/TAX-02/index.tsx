@@ -88,9 +88,14 @@ const CARD = "rounded-pane bg-card shadow-e1";
 export type Tax02Tab = "overview" | "intake" | "review" | "issues" | "activity";
 
 /** The return's state as the subbar words it (`subbar_*` contexts of the `return` object). */
-function stateOf(row: TaxReturnRecordOut["row"]): { label: string; tone: ReturnType<typeof status>["variant"] } {
+function stateOf(row: TaxReturnRecordOut["row"]): {
+  label: string;
+  tone: ReturnType<typeof status>["variant"];
+} {
   const level =
-    row.review_level === null ? undefined : row.review_level.charAt(0).toUpperCase() + row.review_level.slice(1);
+    row.review_level === null
+      ? undefined
+      : row.review_level.charAt(0).toUpperCase() + row.review_level.slice(1);
   const labelled = status("return", row.status, {
     context:
       row.status === "in_review"
@@ -100,7 +105,10 @@ function stateOf(row: TaxReturnRecordOut["row"]): { label: string; tone: ReturnT
           : "subbar_1040_1041",
     ...(level === undefined ? {} : { vars: { level } }),
   });
-  return { label: labelled.label, tone: status("return", row.status, { context: "subbar" }).variant };
+  return {
+    label: labelled.label,
+    tone: status("return", row.status, { context: "subbar" }).variant,
+  };
 }
 
 function amount(v: EngineSummaryLineOut["amount"]): string {
@@ -117,13 +125,7 @@ function Planned({ hint, children }: { hint: string; children: ReactNode }): JSX
   );
 }
 
-function Band({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}): JSX.Element {
+function Band({ title, children }: { title: string; children: ReactNode }): JSX.Element {
   const [open, setOpen] = useState(true);
   return (
     <>
@@ -204,7 +206,9 @@ function Rail({
           icon="file-text"
           title={COPY.formTitle(row.tax_year, FORM_LABEL[row.form])}
           sub={
-            record.card_detail == null ? row.client_name : `${row.client_name} · ${record.card_detail}`
+            record.card_detail == null
+              ? row.client_name
+              : `${row.client_name} · ${record.card_detail}`
           }
           state={state.label}
         />
@@ -260,7 +264,13 @@ function Rail({
   );
 }
 
-function Banner({ overview, now }: { overview: TaxReturnOverviewOut; now: Date }): JSX.Element | null {
+function Banner({
+  overview,
+  now,
+}: {
+  overview: TaxReturnOverviewOut;
+  now: Date;
+}): JSX.Element | null {
   const dep = overview.k1_dependencies.find((k) => k.blocking === true);
   if (dep === undefined) return null;
   const label = dep.source_label ?? dep.issuer_name;
@@ -291,7 +301,10 @@ function Pipeline({ overview }: { overview: TaxReturnOverviewOut }): JSX.Element
   const steps = overview.pipeline ?? [];
   if (steps.length === 0) return null;
   return (
-    <section aria-label="Pipeline" className={`col-span-2 flex items-start gap-[12px] p-[14px] ${CARD}`}>
+    <section
+      aria-label="Pipeline"
+      className={`col-span-2 flex items-start gap-[12px] p-[14px] ${CARD}`}
+    >
       {steps.map((s, i) => (
         <div key={s.step} className="flex flex-1 items-start gap-[10px]">
           <StatusDisc state={DISC[s.state]} size={17} />
@@ -299,7 +312,9 @@ function Pipeline({ overview }: { overview: TaxReturnOverviewOut }): JSX.Element
             <span className="text-section font-medium">{COPY.pipeline[s.step]}</span>
             <span className="text-meta text-ink-3">{s.sub}</span>
           </span>
-          {i < steps.length - 1 && <span aria-hidden="true" className="mt-[10px] h-px w-[40px] flex-none bg-rule" />}
+          {i < steps.length - 1 && (
+            <span aria-hidden="true" className="mt-[10px] h-px w-[40px] flex-none bg-rule" />
+          )}
         </div>
       ))}
     </section>
@@ -347,8 +362,12 @@ function Estimate({ overview, now }: { overview: TaxReturnOverviewOut; now: Date
                       : undefined
                 }
               >
-                <td className="w-[120px] px-[14px] py-[5px] align-top text-meta text-ink-3">{l.line_ref}</td>
-                <td className={`py-[5px] align-top ${l.indent === true ? "pl-[20px] text-ink-2" : ""}`}>
+                <td className="w-[120px] px-[14px] py-[5px] align-top text-meta text-ink-3">
+                  {l.line_ref}
+                </td>
+                <td
+                  className={`py-[5px] align-top ${l.indent === true ? "pl-[20px] text-ink-2" : ""}`}
+                >
                   {l.label}
                   {l.note != null && (
                     <span className="mt-[2px] flex items-center gap-[4px] text-meta text-amber-ink">
@@ -368,7 +387,9 @@ function Estimate({ overview, now }: { overview: TaxReturnOverviewOut; now: Date
         </table>
       )}
       {overview.engine_footnote != null && lines.length > 0 && (
-        <p className="px-[14px] py-[10px] text-meta text-ink-3 hairline-t">{overview.engine_footnote}</p>
+        <p className="px-[14px] py-[10px] text-meta text-ink-3 hairline-t">
+          {overview.engine_footnote}
+        </p>
       )}
     </section>
   );
@@ -382,7 +403,10 @@ function Plan({ overview }: { overview: TaxReturnOverviewOut }): JSX.Element | n
     <section aria-label={COPY.plan} className={CARD}>
       <CardHead>{COPY.plan}</CardHead>
       {rows.map((r) => (
-        <div key={r.label} className="flex min-h-[34px] items-start gap-[10px] px-[14px] py-[7px] hairline-b">
+        <div
+          key={r.label}
+          className="flex min-h-[34px] items-start gap-[10px] px-[14px] py-[7px] hairline-b"
+        >
           <span className="mt-[1px]">
             <StatusDisc state={DISC[r.state]} />
           </span>
@@ -394,9 +418,14 @@ function Plan({ overview }: { overview: TaxReturnOverviewOut }): JSX.Element | n
       ))}
       {k1s.length > 0 && (
         <>
-          <p className="bg-band-hd px-[14px] py-[7px] text-dense text-ink-2 hairline-b">{COPY.k1Classifications}</p>
+          <p className="bg-band-hd px-[14px] py-[7px] text-dense text-ink-2 hairline-b">
+            {COPY.k1Classifications}
+          </p>
           {k1s.map((k) => (
-            <div key={k.issuer_name} className="flex flex-col gap-[6px] px-[14px] py-[10px] hairline-b">
+            <div
+              key={k.issuer_name}
+              className="flex flex-col gap-[6px] px-[14px] py-[10px] hairline-b"
+            >
               <span className="text-dense">{k.issuer_name}</span>
               <span className="flex flex-wrap gap-[6px]">
                 {k.tags.map((t) => (
@@ -414,7 +443,9 @@ function Plan({ overview }: { overview: TaxReturnOverviewOut }): JSX.Element | n
       )}
       {overview.carryforwards != null && (
         <>
-          <p className="bg-band-hd px-[14px] py-[7px] text-dense text-ink-2 hairline-b">{COPY.carryforwards}</p>
+          <p className="bg-band-hd px-[14px] py-[7px] text-dense text-ink-2 hairline-b">
+            {COPY.carryforwards}
+          </p>
           <p className="px-[14px] py-[10px] text-dense text-ink-2">{overview.carryforwards}</p>
         </>
       )}
@@ -431,13 +462,18 @@ function Issues({ overview }: { overview: TaxReturnOverviewOut }): JSX.Element {
         <p className="px-[14px] py-[12px] text-dense text-ink-2 hairline-b">{COPY.noIssues}</p>
       ) : (
         rows.map((r) => (
-          <div key={r.id} className="flex min-h-[40px] items-start gap-[8px] px-[14px] py-[7px] hairline-b">
+          <div
+            key={r.id}
+            className="flex min-h-[40px] items-start gap-[8px] px-[14px] py-[7px] hairline-b"
+          >
             <span className={`mt-[2px] ${FLAG[r.severity]}`}>
               <Icon name="flag" size={12} />
             </span>
             <span className="flex flex-col">
               <span className="text-dense">{r.title}</span>
-              <span className={`text-meta ${r.kind === "action_required" ? "text-amber-ink" : "text-ink-3"}`}>
+              <span
+                className={`text-meta ${r.kind === "action_required" ? "text-amber-ink" : "text-ink-3"}`}
+              >
                 {COPY.issueKind[r.kind]}
               </span>
             </span>
@@ -462,7 +498,10 @@ function TwoYear({ overview }: { overview: TaxReturnOverviewOut }): JSX.Element 
     <section aria-label={COPY.twoYear} className={CARD}>
       <CardHead>{COPY.twoYear}</CardHead>
       {rows.map((r) => (
-        <div key={r.key} className="flex items-baseline justify-between gap-[8px] px-[14px] py-[8px] hairline-b">
+        <div
+          key={r.key}
+          className="flex items-baseline justify-between gap-[8px] px-[14px] py-[8px] hairline-b"
+        >
           <span className="text-dense text-ink-2">{COPY.twoYearRows[r.key]}</span>
           <span className="flex items-baseline gap-[6px]">
             <span className="text-body font-medium tabular-nums">
@@ -470,7 +509,8 @@ function TwoYear({ overview }: { overview: TaxReturnOverviewOut }): JSX.Element 
             </span>
             {r.change_pct != null && (
               <span className="text-meta text-ink-3 tabular-nums">
-                ({r.change_pct.startsWith("-") ? `−${r.change_pct.slice(1)}` : `+${r.change_pct}`}%)
+                ({r.change_pct.startsWith("-") ? `−${r.change_pct.slice(1)}` : `+${r.change_pct}`}
+                %)
               </span>
             )}
           </span>
@@ -506,7 +546,13 @@ function Body({
           {...(PLANNED_VISIBLE
             ? {
                 action: (
-                  <Button variant="primary" size="sm" icon="sparkles" disabled title={COPY.binderNotPublished}>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    icon="sparkles"
+                    disabled
+                    title={COPY.binderNotPublished}
+                  >
                     {COPY.runDraft}
                   </Button>
                 ),
@@ -609,11 +655,14 @@ function Actions({ record }: { record: TaxReturnRecordOut }): JSX.Element {
         </Button>
       )}
       {record.allowed_actions.includes("tax_return.assign") && <AssignMenu record={record} />}
-      {PLANNED_VISIBLE && row.status !== "not_started" && row.status !== "gathering" && row.status !== "accepted" && (
-        <Button variant="secondary" size="sm" icon="sparkles" disabled title={COPY.rerunConfirm}>
-          {COPY.actions.rerun}
-        </Button>
-      )}
+      {PLANNED_VISIBLE &&
+        row.status !== "not_started" &&
+        row.status !== "gathering" &&
+        row.status !== "accepted" && (
+          <Button variant="secondary" size="sm" icon="sparkles" disabled title={COPY.rerunConfirm}>
+            {COPY.actions.rerun}
+          </Button>
+        )}
       {safe ? (
         <a
           href={url}
@@ -642,7 +691,13 @@ export interface TAX02Props {
   frame?: boolean;
 }
 
-export function TAX02({ returnId, tab = "overview", onTab, toolbar, frame = false }: TAX02Props): JSX.Element {
+export function TAX02({
+  returnId,
+  tab = "overview",
+  onTab,
+  toolbar,
+  frame = false,
+}: TAX02Props): JSX.Element {
   const now = useNow();
   const record = useQuery(returnRecordOptions({ path: { return_id: returnId } }));
   const overview = useQuery(returnOverviewOptions({ path: { return_id: returnId } }));
