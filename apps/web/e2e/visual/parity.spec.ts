@@ -17,6 +17,7 @@ import {
   shootWhole,
   specimen,
   specimenOf,
+  stripped,
 } from "./support";
 
 const manifest = readManifest();
@@ -65,14 +66,20 @@ for (const [key, entry] of Object.entries(manifest)) {
     await target.scrollIntoViewIfNeeded();
     // A whole frame (a window or phone) is shot at its exact box; a part keeps the element shot its
     // crop was cut for (the C-06 and FND-01 crops include the outward pixel).
-    const shot = await masked(
+    const shot = await stripped(
       page,
       target,
-      entry.mask,
-      entry.selector?.includes('[data-shell="app"]')
-        ? await shootWhole(page, target)
-        : await target.screenshot({ animations: "disabled", caret: "hide" }),
-      name,
+      entry.strip,
+      await masked(
+        page,
+        target,
+        entry.mask,
+        entry.selector?.includes('[data-shell="app"]')
+          ? await shootWhole(page, target)
+          : await target.screenshot({ animations: "disabled", caret: "hide" }),
+        name,
+        (n) => testInfo.snapshotPath(n),
+      ),
       (n) => testInfo.snapshotPath(n),
     );
     const actual = shot.actual;

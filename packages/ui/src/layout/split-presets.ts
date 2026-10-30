@@ -45,6 +45,8 @@ export const SPLIT_PRESETS = {
   },
   "close-review": { panes: [{ width: 790 }, { width: 576, flex: true }] },
   "issues-entity": { panes: [{ width: 470 }, { width: 896, flex: true }] },
+  // T10 DocumentOnWell (F-06-T14): the 470 structure pane beside the 896 paper pane.
+  document: { panes: [{ width: 470 }, { width: 896, flex: true }] },
   workbench: { panes: [{ width: 358 }, { width: 998, flex: true }] },
   agents: { panes: [{ width: 320 }, { width: 1036, flex: true }] },
   library: { resizable: false, panes: [{ width: 358 }, { width: 998, flex: true }] },
