@@ -137,7 +137,7 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-146](ADR-146-client-identity-scoped-grants-portal-mfa.md) | Client identity - scoped grants, link principals and portal MFA | red | accepted |
 | [ADR-147](ADR-147-role-catalogue-need-to-know.md) | Role catalogue and need-to-know - two axes plus work-item functions | red | accepted |
 | [ADR-148](ADR-148-entitlements-agent-minutes-budgets.md) | Entitlements, agent-minutes and two-layer budgets | amber | accepted |
-| [ADR-149](ADR-149-e-signature-record-mode-then-docusign.md) | E-signature - record mode first, then DocuSign embedded with ID Verification behind an EnvelopeProvider port | red | accepted |
+| [ADR-149](ADR-149-e-signature-record-mode-then-docusign.md) | E-signature - record mode first, then DocuSign embedded with ID Verification behind an EnvelopeProvider port | red | superseded by ADR-342 |
 | [ADR-150](ADR-150-integrations-module-write-capabilities.md) | Integrations module and the declared write-capability framework | red | proposed |
 | [ADR-151](ADR-151-busy-season-change-policy-from-go-live.md) | Busy-season change policy - the freeze starts at the first real go-live | red | proposed |
 | [ADR-152](ADR-152-unauthenticated-operational-routes.md) | Unauthenticated operational routes - /healthz and portal branding on an explicit allowlist | red | proposed |
@@ -171,3 +171,4 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-321](ADR-321-ocr-and-document-understanding.md) | OCR and document understanding: Amazon Textract inside the boundary as a document service, gated in code, words as a derived record (P-32, DEC-42) | amber | accepted |
 | [ADR-340](ADR-340-sampling-engine.md) | Sampling engine: a seeded, versioned, frozen in-product sampler; import kept as a path (P-57) | red | proposed |
 | [ADR-341](ADR-341-multi-entity-engagements-and-consolidation.md) | Multi-entity engagements and consolidation: engagement entities, ledger-owned mapping and consolidation, the taxonomy as firm content (P-63) | red | proposed |
+| [ADR-342](ADR-342-e-signature-provider-docuseal.md) | E-signature provider: DocuSeal (cloud) replaces DocuSign behind the EsignProvider port; record mode first; 8879 KBA only once confirmed in writing and accepted by counsel (P-26) | red | accepted |
