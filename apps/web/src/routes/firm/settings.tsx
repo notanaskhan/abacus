@@ -86,6 +86,9 @@ const OFFICES_SEARCH = ["expand", "ov"] as const;
 // URL. The route never passes ADM-06's R2 rows (fixture only until G-03-T29).
 const FirmSettingsAuditLog = lazyScreen(async () => (await import("../../screens/ADM-07")).ADM07);
 const AUDIT_SEARCH = ["actor", "object", "action", "date", "office", "ip", "q", "event"] as const;
+// T-01-T13: ADM-05 at /settings/consents behind `consents.registry`; tiles, chips and search.
+const FirmSettingsConsents = lazyScreen(async () => (await import("../../screens/ADM-05")).ADM05);
+const CONSENT_SEARCH = ["status", "purpose", "client", "q"] as const;
 const FirmSettingsSecurity = lazyScreen(async () => (await import("../../screens/ADM-06")).ADM06);
 const SECURITY_SEARCH = ["incident", "sessions", "export"] as const;
 
@@ -210,6 +213,34 @@ const settingsOfficesRoute = createRoute({
             router.history.back();
           }}
         />
+      </div>
+    );
+  },
+});
+const settingsConsentsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/settings/consents",
+  validateSearch: (search: Record<string, unknown>) => pick(CONSENT_SEARCH, search),
+  component: function SettingsConsentsPage(): JSX.Element {
+    const navigate = useNavigate();
+    const router = useRouter();
+    const search: Record<string, unknown> = useSearch({ strict: false });
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <FeatureGate flag="consents.registry" fallback={<NotBuilt />}>
+          <FirmSettingsConsents
+            search={pick(CONSENT_SEARCH, search)}
+            onSearch={(next) => {
+              void navigate({ to: ".", search: { ...next }, replace: true });
+            }}
+            onNavigate={(section) => {
+              void navigate({ to: "/settings/$section", params: { section } });
+            }}
+            onBack={() => {
+              router.history.back();
+            }}
+          />
+        </FeatureGate>
       </div>
     );
   },
@@ -425,6 +456,7 @@ export const settingsRoutes = [
   settingsPeopleRoute,
   settingsOfficesRoute,
   settingsAuditLogRoute,
+  settingsConsentsRoute,
   settingsSecurityRoute,
   settingsPortalRoute,
   settingsPortalPreviewRoute,

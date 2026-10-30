@@ -290,6 +290,9 @@ export function feldBinder(
     mark_done: markDone,
     other_parties: [],
     allowed_actions: options.marked ? ["undo_mark_done"] : ["upload", "mark_done"],
+    // R-01-T33: Brightwater Hale published "Upload something else"; sent under the engagement.
+    upload_something_else: true,
+    engagement_id: FELD_ENGAGEMENT,
   };
 }
 
