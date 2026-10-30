@@ -491,6 +491,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "envelope.polled",  # N-02-T13/T14 (S15)
         "envelope.reminder_skipped",  # N-02-T13/T14 (S15)
         "envelope.voided",  # N-02-T13/T14 (S15)
+        "envelope.send_refused",  # N-02-T22: no consumed grant, nothing sent (S17)
         "evidence.downloaded",  # N-02-T13: the evidence zip (S15)
         "inbound_message.downloaded",  # N-01-T12 to T18 (S15)
         "inbox_attachment.downloaded",  # N-01-T12 to T18 (S15)
