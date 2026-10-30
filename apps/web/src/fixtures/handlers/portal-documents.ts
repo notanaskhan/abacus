@@ -17,6 +17,8 @@ import type {
   IgnoreIn,
   IgnoreUndoneOut,
   IgnoredOut,
+  IntakeUploadFileOut,
+  IntakeUploadOut,
   MarkDoneUndoneOut,
   PortalBinderListOut,
   PortalBinderOut,
@@ -39,6 +41,9 @@ import { stableId } from "../seed/prng";
 
 const NOT_FOUND = { detail: "not found" };
 const DAY = 24 * 60 * 60 * 1000;
+
+const INTAKE_BATCH = "8b4f6c1e-2d0a-4f43-9a51-7c3e0b2d4a10";
+const INTAKE_FILE = "8b4f6c1e-2d0a-4f43-9a51-7c3e0b2d4a11";
 
 export interface PortalDocumentsOptions {
   /** The scenario's instant. */
@@ -177,6 +182,34 @@ export function portalDocumentsHandlers(
       };
       return json(out);
     },
+    // R-01-T33: "Upload something else" (N-01's portal intake): a batch, then its files.
+    "POST /v1/portal/intake-uploads": ({ body }) => {
+      const scope = (body as { scope_ref?: { kind?: string; id?: string } } | null)?.scope_ref;
+      return json(
+        {
+          id: INTAKE_BATCH,
+          scope_kind: scope?.kind === "engagement" ? "engagement" : "client",
+          scope_id: scope?.id ?? "",
+          status: "sent",
+          sent_at: clock,
+          files: [],
+          can_withdraw: true,
+        } satisfies IntakeUploadOut,
+        201,
+      );
+    },
+    "POST /v1/portal/intake-uploads/{upload_id}/files": ({ params, query }) =>
+      params.upload_id === INTAKE_BATCH
+        ? json(
+            {
+              id: INTAKE_FILE,
+              file_name: query.get("filename") ?? "",
+              size_bytes: 0,
+              status: "sent",
+            } satisfies IntakeUploadFileOut,
+            201,
+          )
+        : json({ detail: { code: "not_found" } }, 404),
     "POST /v1/portal/binders/{binder_id}/mark-done": ({ params }) => {
       const binder = binders.get(params.binder_id ?? "");
       if (binder === undefined) return json(NOT_FOUND, 404);

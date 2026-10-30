@@ -44074,6 +44074,19 @@
             "title": "Done Count",
             "type": "integer"
           },
+          "engagement_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Engagement Id"
+          },
           "filter": {
             "cls": "internal",
             "enum": [
@@ -44130,6 +44143,12 @@
             "cls": "internal",
             "title": "Total",
             "type": "integer"
+          },
+          "upload_something_else": {
+            "cls": "internal",
+            "default": false,
+            "title": "Upload Something Else",
+            "type": "boolean"
           }
         },
         "required": [
@@ -157382,7 +157401,7 @@
     },
     "/v1/portal/binders/{binder_id}": {
       "get": {
-        "description": "POR-03. A binder outside the caller's grant, a draft or a forged id answers 404.",
+        "description": "POR-03. A binder outside the caller's grant, a draft or a forged id answers 404.\n`upload_something_else` (R-01-T33): the firm's published toggle and the intake flag.",
         "operationId": "get_portal_binder",
         "parameters": [
           {
@@ -160548,7 +160567,7 @@
         "x-abacus-action": "portal_intake.read_own"
       },
       "post": {
-        "description": "POR-03 \"Upload something else\": the batch (N-01-T14).",
+        "description": "POR-03 \"Upload something else\": the batch (N-01-T14). R-01-T33: 404 while the firm has\nnot published the toggle on (as if the route were absent).",
         "operationId": "create_intake_upload",
         "parameters": [
           {
