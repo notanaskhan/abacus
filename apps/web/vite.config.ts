@@ -126,6 +126,13 @@ export default defineConfig(({ mode, command }) => {
                     name: "framework",
                     test: /node_modules[\\/](react|react-dom|scheduler|@tanstack|@radix-ui|@floating-ui|tailwind-merge)[\\/]/,
                   },
+                  // N-01-T23: the generated client in one chunk. The shell loads it anyway, and
+                  // sdk.gen and react-query.gen repeat each endpoint's id and URL, so gzip of the
+                  // two together is ~3.5 KB smaller than of each apart.
+                  {
+                    name: "api-client",
+                    test: /packages[\\/]api-client[\\/]src[\\/]/,
+                  },
                 ],
               },
             },

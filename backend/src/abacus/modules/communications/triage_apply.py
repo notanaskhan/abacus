@@ -35,7 +35,7 @@ from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.communications.intake_scope import readable_thread
 from abacus.modules.engagements.api import client_of, work_item_index
 from abacus.modules.evidence.api import IntakeObject, file_intake_object
-from abacus.modules.identity.api import AuthContext, Resource, authorise
+from abacus.modules.identity.api import AuthContext, Forbidden, Resource, authorise
 from abacus.modules.requests.api import fulfil_by_upload, item_ref
 
 FILE: Final = "inbox.file"
@@ -456,8 +456,29 @@ async def apply(ctx: AuthContext, message_id: UUID, decisions: Sequence[Decision
 
 async def bulk_file(ctx: AuthContext, attachment_ids: Sequence[UUID]) -> list[tuple[UUID, str]]:
     """INB-01 e: file as suggested only an unflagged file with one confident, unchanged
-    candidate. Until the matcher proposes (N-01-T17), none has one."""
+    candidate. Until the matcher proposes (N-01-T17), none has one. The person must hold
+    `inbox.file` on every attachment's client; an unknown or walled one answers 404 for the whole
+    request, naming nothing (INV-3; N-01-T20 found the route unauthorised)."""
     await _flagged(ctx)
+    async with tenant_session(ctx.tenant) as session:
+        owners = dict(
+            (
+                await session.execute(
+                    text("SELECT id, client_id FROM inbox_attachments WHERE id = ANY(:ids)"),
+                    {"ids": list(attachment_ids)},
+                )
+            ).all()
+        )
+    if set(owners) != set(attachment_ids):
+        raise NotFound("inbox_attachment")
+    clients = {c for c in owners.values() if c is not None}
+    try:
+        for client in clients:
+            await authorise(ctx, FILE, Resource.client(ctx.tenant_id, client))
+        if not clients:
+            await authorise(ctx, FILE, Resource.firm(ctx.tenant_id))
+    except Forbidden:
+        raise NotFound("inbox_attachment") from None
     out: list[tuple[UUID, str]] = []
     async with tenant_session(ctx.tenant) as session:
         flagged = set(

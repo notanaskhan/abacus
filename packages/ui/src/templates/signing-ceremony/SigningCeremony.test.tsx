@@ -46,7 +46,7 @@ describe("T16b: signing", () => {
     const fields = screen.getAllByRole("button", { name: /^Sign here:/ });
     expect(fields).toHaveLength(1);
     expect(fields[0]?.getAttribute("aria-label")).toBe(
-      "Sign here: spouse signature, Form 8879, page 1",
+      "Sign here: spouse signature, Form 8879 · federal, page 1",
     );
     const jonah = document.querySelector('[data-field="t16-jonah-sig"]');
     expect(jonah?.tagName).toBe("SPAN");
@@ -65,7 +65,7 @@ describe("T16b: signing", () => {
     const onSignField = vi.fn();
     ceremony(t16Envelope("b"), { onSignField });
     fireEvent.click(screen.getByRole("button", { name: /^Sign here:/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Adopt signature & sign…" }));
+    fireEvent.click(screen.getByRole("button", { name: "Adopt signature & sign" }));
     expect(onSignField.mock.calls).toEqual([["t16-claire-sig"], ["t16-claire-sig"]]);
   });
 
@@ -82,7 +82,8 @@ describe("T16b: signing", () => {
     const steps = screen.getByRole("list", { name: "Signing steps" });
     const items = within(steps).getAllByRole("listitem");
     expect(items.map((li) => li.textContent.split(/\d/)[0])).toEqual([
-      "Verify identityEmail code · ",
+      // T16b draws each step on one line (the handoff); the step words come from the registry.
+      "Verify identity",
       "Review",
       "Sign",
       "Done",
@@ -92,7 +93,7 @@ describe("T16b: signing", () => {
 
   it("AC-8: the sign control is a HumanAction and nothing names an agent", () => {
     ceremony(t16Envelope("b"));
-    const cta = screen.getByRole("button", { name: "Adopt signature & sign…" });
+    const cta = screen.getByRole("button", { name: "Adopt signature & sign" });
     expect(cta.getAttribute("data-human-verb")).toBe("Adopt");
     expect(document.body.textContent).not.toMatch(/Agent|Accrued/);
   });
@@ -142,5 +143,113 @@ describe("T16 geometry and states", () => {
     expect(document.querySelector('[data-signing="page"]')).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: /Try again|Retry/ }));
     expect(onRetry).toHaveBeenCalledOnce();
+  });
+});
+
+// N-02-T26 (POR-06): the container's step control, review progress, the viewer's own completion
+// while another signer still signs, and the provider's view at the sign step.
+describe("POR-06 additions", () => {
+  const SESSION = {
+    url: "https://signing.example.invalid/s",
+    presentation: "iframe" as const,
+    expiresAt: "2026-09-14T15:00:00Z",
+  };
+
+  it("an action replaces the kit's sign call to action under the steps", () => {
+    ceremony(t16Envelope("b"), { action: <button type="button">Continue to sign</button> });
+    const steps = document.querySelector('[data-signing="steps"]') as HTMLElement;
+    expect(within(steps).getByRole("button", { name: "Continue to sign" })).toBeTruthy();
+    expect(within(steps).queryByRole("button", { name: /Adopt signature/ })).toBeNull();
+  });
+
+  it("at 390 the action is the sticky footer", () => {
+    ceremony(t16Envelope("b"), {
+      layout: "phone",
+      action: <button type="button">Continue to sign</button>,
+    });
+    const footer = document.querySelector('[data-signing="mobile-action"]') as HTMLElement;
+    expect(within(footer).getByRole("button", { name: "Continue to sign" })).toBeTruthy();
+    expect(document.querySelector('[data-signing="mobile-sign-bar"]')).toBeNull();
+  });
+
+  it("each page reports itself once as it comes into view", () => {
+    const seen = vi.fn();
+    class Observer {
+      constructor(private readonly cb: IntersectionObserverCallback) {}
+      observe(target: Element): void {
+        const entry = { isIntersecting: true, target } as unknown as IntersectionObserverEntry;
+        this.cb([entry, entry], this as unknown as IntersectionObserver);
+      }
+      disconnect(): void {}
+    }
+    vi.stubGlobal("IntersectionObserver", Observer);
+    try {
+      const envelope = t16Envelope("b");
+      ceremony(envelope, { onPageSeen: seen });
+      const doc = envelope.documents[0];
+      expect(seen).toHaveBeenCalledWith(doc?.id, 1);
+      expect(seen.mock.calls.filter(([, n]) => n === 1)).toHaveLength(1);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("the viewer's own completion while another signer still signs", () => {
+    const envelope = t16Envelope("b");
+    ceremony({
+      ...envelope,
+      status: "partially_signed",
+      signers: envelope.signers.map((s) => (s.isViewer ? { ...s, status: "signed" } : s)),
+      evidence: [{ label: "Document fingerprint", value: "SHA-256 a41f…9c07" }],
+    });
+    expect(document.querySelector('[data-signing="completion"]')).not.toBeNull();
+    expect(document.querySelector("[data-envelope-pill]")?.textContent).not.toBe("Completed");
+  });
+
+  it("the provider's view opens at the sign step (identity was the portal's email code)", () => {
+    ceremony(
+      { ...t16Envelope("b"), signingSession: SESSION },
+      {
+        copy: {
+          verifyFailedTitle: "",
+          verifyFailedBody: "",
+          pendingTitle: "Checking your signature",
+          pendingBody: "",
+          providerTitle: "Sign: the letter",
+          providerContinue: "Continue to sign",
+          providerUnavailable: "Unavailable",
+          decline: {
+            title: "Decline to sign?",
+            reasons: ["Other"],
+            reasonsLabel: "Why?",
+            noteLabel: "Note",
+            confirm: "Decline",
+            trigger: "Decline…",
+          },
+          stepNames: { verify: "Verify", review: "Review", sign: "Sign", done: "Done" },
+        },
+      },
+    );
+    expect(document.querySelector('[data-signing="provider-frame"]')?.getAttribute("title")).toBe(
+      "Sign: the letter",
+    );
+  });
+});
+
+describe("POR-06 phone footer", () => {
+  it("a container's null action leaves no sign bar while the provider's view shows", () => {
+    ceremony(
+      {
+        ...t16Envelope("b"),
+        signingSession: {
+          url: "https://signing.example.invalid/s",
+          presentation: "iframe",
+          expiresAt: "2026-09-14T15:00:00Z",
+        },
+      },
+      { layout: "phone", action: null },
+    );
+    expect(document.querySelector('[data-signing="mobile-sign-bar"]')).toBeNull();
+    expect(document.querySelector('[data-signing="mobile-action"]')).toBeNull();
   });
 });

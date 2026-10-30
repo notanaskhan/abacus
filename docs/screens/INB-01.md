@@ -9,7 +9,7 @@
 | Epic and tasks | N-01 · contract N-01-T05 (this file); stub T02; consumer tests T03; tables T07; intake scope T08; intake writes T09; list and fixtures T10, T11; read APIs T13; triage T18; journeys and parity T23–T28 |
 | Spec and ADRs | SPEC-380 (Stories 1–3, 6); ADR-210; DEC-20, DEC-23, DEC-43, DEC-75 |
 | Flags | `inbox.firm_intake` (all inbox routes); `matching.firm_intake` (agent proposals in the note) |
-| Manifest status | planned; `fixture` with N-01-T11; `live` with N-01-T13 behind `inbox.firm_intake` |
+| Manifest status | `live` (N-01-T23): `/inbox` behind `inbox.firm_intake`, inside the firm shell (InboxLayout without its own toolbar); `/components/screens/INB-01?st=a…g` for the artboards |
 
 Code to come (N-01 §5.1): `apps/web/src/routes/firm/inbox.tsx`, `src/screens/INB-01/{index.tsx, scenarios.ts, copy.ts, INB-01.test.tsx}`, `src/domain/inbox/{queries.ts, InboxRail.tsx, MessageView.tsx, AgentNote.tsx, BulkBar.tsx, LogIntakeSheet.tsx}`, `src/fixtures/handlers/inbox.ts`, `src/fixtures/seed/inbox.ts`. The Atelier `InboxPanel.tsx` and `InboxAIMatch.tsx` are retired in N-01-T30, not extended.
 

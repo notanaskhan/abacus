@@ -50,7 +50,7 @@ it happened. Time every step during rehearsals in the table at the end.
 
 | Step | Who | Where | Evidence |
 |---|---|---|---|
-| 0.1 Pilot code assigned, name in the vault, dossier file created from the template | AY | `docs/ops/go-live/<pilot-code>.md` (PR, no firm name) | The dossier PR link |
+| 0.1 Pilot code assigned, name in the vault, dossier file created from the template | AY | `python -m abacus_tools.go_live_dossier new <pilot-code>` → `docs/ops/go-live/<pilot-code>.md` (PR, no firm name) | The dossier PR link |
 | 0.2 Kickoff call booked: firm admin, security admin, quality partner, AY | AY | Shared inbox thread labelled `question`, pilot code | The ticket id |
 | 0.3 The firm's plan and modules agreed (attest, tax, CAS, EBP) and its people list ready in its own format (RB-37 §0) | AY with the firm admin | Kickoff call | Plan code in the dossier |
 | 0.4 The environment's notification templates imported before any switch that sends (`notification.mention`, `portal.sign_in_code`, the follow-up keys) | N | `POST /v1/platform/email-templates/import` (staff issuer, MFA; `docs/contracts/notifications.md`) | Import response ids in the dossier |
@@ -180,6 +180,10 @@ Follow `RB-37-onboard-firm-people-and-walls.md` end to end; it is the procedure 
   runbook.
 
 ## Timings (fill in at each rehearsal)
+
+The rehearsals' input files (a 200-client CCH-headed list and a Workbook v2 PBC template) come
+from `python -m abacus_tools.synthetic.onboarding_files --out <scratch dir>`; part AY's step-by-step
+record is `docs/ops/rehearsals/onboarding-content-part-ay.md`.
 
 | Section | T016 rehearsal (N part) | T018 rehearsal | First pilot firm |
 |---|---|---|---|

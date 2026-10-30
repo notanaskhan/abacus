@@ -5,11 +5,13 @@ import {
   EmptyState,
   PortalBrandProvider,
   SheetModal,
+  cn,
   date,
   toast,
   usePortalBrand,
 } from "@abacus/ui";
-import { type JSX, useState } from "react";
+import { type JSX, type ReactNode, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNow } from "../../app-core/clock";
 import {
   RequestSheet,
@@ -135,12 +137,15 @@ export function PortalRequestSheet({
   onClose,
   mobile = false,
   hold = {},
+  held = false,
 }: {
   requestId: string;
   open: boolean;
   onClose: () => void;
   mobile?: boolean;
   hold?: POR04Hold;
+  /** Held open in place (the gallery's window): no layer, no focus move. */
+  held?: boolean;
 }): JSX.Element | null {
   const now = useNow();
   const brand = usePortalBrand();
@@ -222,7 +227,49 @@ export function PortalRequestSheet({
       day={day}
       mobile={mobile}
       accept={UPLOAD_ACCEPT}
+      forceOpen={held}
     />
+  );
+}
+
+/** The gallery's window (`[data-shell=app]` in this artboard, once POR-03 draws it) holds the
+ * sheet as the handoff does: over the .28 scrim, from y52 (y44 on the phone) of the window, not
+ * of the page. A live layer pins to the viewport and moves focus, which scrolls the window. */
+function InWindow({ mobile, children }: { mobile: boolean; children: ReactNode }): JSX.Element {
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const [host, setHost] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    const board = anchor?.closest<HTMLElement>("[data-artboard]");
+    if (board == null) return;
+    const find = (): void => {
+      setHost(board.querySelector<HTMLElement>("[data-shell='app']"));
+    };
+    find();
+    const watch = new MutationObserver(find);
+    watch.observe(board, { childList: true, subtree: true });
+    return () => {
+      watch.disconnect();
+    };
+  }, [anchor]);
+  return (
+    <>
+      <span ref={setAnchor} hidden />
+      {host !== null &&
+        createPortal(
+          <div data-overlay="sheet" className="absolute inset-0 z-(--z-modal)">
+            <div className="absolute inset-0 bg-(--scrim-agent)" />
+            <div
+              className={cn(
+                "absolute inset-x-0 bottom-0 flex justify-center",
+                mobile ? "top-[44px]" : "top-[52px]",
+              )}
+            >
+              {children}
+            </div>
+          </div>,
+          host,
+        )}
+    </>
   );
 }
 
@@ -245,16 +292,29 @@ export function POR04({
         frame={frame}
         {...(onNavigate === undefined ? {} : { onNavigate })}
       />
-      <PortalRequestSheet
-        requestId={requestId}
-        open={open}
-        mobile={mobile}
-        hold={hold}
-        onClose={() => {
-          setOpen(false);
-          onClose?.();
-        }}
-      />
+      {frame ? (
+        <InWindow mobile={mobile}>
+          <PortalRequestSheet
+            requestId={requestId}
+            open
+            mobile={mobile}
+            hold={hold}
+            held
+            onClose={() => undefined}
+          />
+        </InWindow>
+      ) : (
+        <PortalRequestSheet
+          requestId={requestId}
+          open={open}
+          mobile={mobile}
+          hold={hold}
+          onClose={() => {
+            setOpen(false);
+            onClose?.();
+          }}
+        />
+      )}
     </div>
   );
 }
