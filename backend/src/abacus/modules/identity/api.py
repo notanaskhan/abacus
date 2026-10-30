@@ -161,7 +161,13 @@ from abacus.modules.identity.governance_errors import (
     SupersededByAiPolicy,
     SupportRequestsDisabled,
 )
-from abacus.modules.identity.grants import GrantNotYetDue, consume_grant, issue_grant, void_grant
+from abacus.modules.identity.grants import (
+    GrantNotYetDue,
+    consume_grant,
+    issue_grant,
+    latest_grant,
+    void_grant,
+)
 from abacus.modules.identity.invitations import (
     ContactView,
     InvitationLimit,
@@ -701,6 +707,7 @@ __all__ = [
     "issue_invitation_token",
     "issue_sign_in_code",
     "issue_staff_invitation_token",
+    "latest_grant",
     "letter_policy",
     "locked_addresses",
     "mask_tins",

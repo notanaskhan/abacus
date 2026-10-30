@@ -11173,6 +11173,10 @@ export type EngineExportOut = {
      * Sha256
      */
     sha256: string;
+    /**
+     * Version
+     */
+    version?: number;
 };
 
 /**
