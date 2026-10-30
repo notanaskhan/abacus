@@ -7,15 +7,17 @@
   fail-closed adapter registry over this port.
 - `WriteCapabilityRegistry`: the schema of the protected
   `docs/architecture/write-capabilities.yaml` (A-02-T15 writes the file, its compiler and drift
-  test). v1 lists the read connectors with their
-  egress hosts and reserves the write section: an entry can be declared but never enabled
-  (`enabled` is `false` by type), so an empty registry and a registry of reservations both
-  validate and nothing can be switched on by editing the file.
+  test). It lists the read connectors with their egress hosts and the writes. Version 2 (ADR-150
+  accepted 2026-10-30, DEC-1280) lets an entry be enabled only when its shape is one whose own
+  approved path is built (`OPENABLE_SHAPES`: W7, the e-signature send, behind N-02-T20's
+  consumed approval grant); a write into a client's system (W1 posting, W2 the tax-engine file)
+  cannot be enabled by editing the file. The compiler also requires the enabling decision to be
+  an accepted ADR.
 """
 
 from __future__ import annotations
 
-from typing import Annotated, Literal, Protocol, Self, runtime_checkable
+from typing import Annotated, Final, Literal, Protocol, Self, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -87,9 +89,17 @@ class ReadConnectorEntry(BaseModel):
         return self
 
 
+# The shapes a version 2 registry may enable: writes to the platform's own provider account
+# whose approved path is built (W7: the human's send consumes its grant before EnvelopeWorkflow
+# starts, N-02-T20). Never a write into a client's system (W1, W2): that needs the gate's dry
+# run and evidence path, which no version has yet.
+OPENABLE_SHAPES: Final = frozenset({"W7"})
+
+
 class WriteCapabilityEntry(BaseModel):
-    """A reserved write (W1 posting under ADR-161, W2 the CCH file bridge, W7 DocuSeal …).
-    Reserved only: `enabled` is false by type until a later version of this schema."""
+    """A declared write (W1 posting under ADR-161, W2 the CCH file bridge, W7 DocuSeal …).
+    Enabled only for a shape in `OPENABLE_SHAPES` whose decision is an ADR (the compiler checks
+    that ADR is accepted)."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -102,15 +112,23 @@ class WriteCapabilityEntry(BaseModel):
     decision: Annotated[
         str | None, Field(pattern=r"^(P-[0-9]{2}|ADR-[0-9]{3})$"), classified("internal")
     ] = None
-    enabled: Annotated[Literal[False], classified("internal")] = False
+    enabled: Annotated[bool, classified("internal")] = False
+
+    @model_validator(mode="after")
+    def _openable(self) -> Self:
+        if self.enabled and self.shape not in OPENABLE_SHAPES:
+            raise ValueError(f"a {self.shape} write cannot be enabled")
+        if self.enabled and not (self.decision or "").startswith("ADR-"):
+            raise ValueError("an enabled write names the accepted ADR that enables it")
+        return self
 
 
 class WriteCapabilityRegistry(BaseModel):
-    """`docs/architecture/write-capabilities.yaml`, version 1."""
+    """`docs/architecture/write-capabilities.yaml`, version 2."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    version: Annotated[Literal[1], classified("public")]
+    version: Annotated[Literal[2], classified("public")]
     read_connectors: Annotated[list[ReadConnectorEntry], classified("internal")] = []
     writes: Annotated[list[WriteCapabilityEntry], classified("internal")] = []
 

@@ -18,9 +18,11 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from abacus.modules.integrations.api import (
     UndeclaredEgress,
+    WriteCapabilityEntry,
     WriteCapabilityRefused,
     assert_egress_declared,
     egress_allowlist,
@@ -96,7 +98,7 @@ def test_ac50_a_missing_generated_module_fails_the_drift_check(
     [
         ("    enabled: false\n", "    enabled: true\n", "does not validate"),
         ("    decision: P-16\n", "", "names the decision"),
-        ("version: 1", "version: 2", "does not validate"),
+        ("version: 2", "version: 3", "does not validate"),
         ("    shape: W1\n", "    shape: W1\n    shape: W2\n", "appears twice"),
         (
             "    owner_epic: C-02\n",
@@ -127,10 +129,13 @@ def test_a_read_connector_never_also_writes() -> None:
         compiler.load(SOURCE.replace("read_connectors:\n", reader, 1))
 
 
-def test_the_registry_enables_nothing_and_names_each_writes_decision() -> None:
-    assert registry().version == 1
-    assert registry().writes, "the reserved writes are declared"
-    assert all(w.enabled is False for w in registry().writes)
+def test_the_registry_enables_only_w7_and_names_each_writes_decision() -> None:
+    # Version 2 (ADR-150 accepted, DEC-1280): only the e-signature send is open; no write into a
+    # client's system is.
+    assert registry().version == 2
+    assert registry().writes, "the declared writes are listed"
+    assert {w.key for w in registry().writes if w.enabled} == {"esignature_envelope_send"}
+    assert all(w.enabled is False for w in registry().writes if w.shape in ("W1", "W2"))
     assert all(w.decision for w in registry().writes)
     shapes = {w.shape for w in registry().writes}
     assert "W1" in shapes  # posting is reserved, so the attest rule has an entry to refuse
@@ -173,8 +178,11 @@ def test_ac50_w1_is_refused_for_an_attest_client_at_registry_level() -> None:
     enabled = w1.model_copy(update={"enabled": True})  # no validation: a future schema
     assert policy_refusal(enabled, attest_client=True) == "attest_client"
     assert policy_refusal(enabled, attest_client=False) is None
-    other = next(w for w in registry().writes if w.shape != "W1")
+    other = next(w for w in registry().writes if w.shape != "W1" and not w.enabled)
     assert policy_refusal(other, attest_client=True) == "not_enabled"
+    # DEC-1280: the open W7 still never runs through the gate.
+    w7 = next(w for w in registry().writes if w.shape == "W7")
+    assert policy_refusal(w7, attest_client=False) == "own_path"
 
 
 def test_unknown_capabilities_are_not_found_and_the_refusal_has_its_code() -> None:
@@ -247,3 +255,49 @@ def test_ac50_no_principal_holds_write_capability_execute() -> None:
     rule = RULES["write_capability.execute"]
     assert [r for r, d in rule.decisions.items() if d != "deny"] == []
     assert rule.decisions.get("agent") == "deny" and rule.decisions.get("system") == "deny"
+
+
+# --- registry version 2 (ADR-150 accepted, DEC-1280) --------------------------------------------
+
+
+def _adrs(tmp_path: Path, **statuses: str) -> Path:
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    for adr, status in statuses.items():
+        (tmp_path / f"{adr.replace('_', '-')}-probe.md").write_text(
+            f"---\nid: {adr}\nstatus: {status}\n---\n\nbody status: accepted\n"
+        )
+    return tmp_path
+
+
+def test_v2_compiles_only_while_adr_150_and_the_enabling_adr_are_accepted(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(compiler, "ADRS", _adrs(tmp_path, ADR_150="accepted", ADR_342="accepted"))
+    assert compiler.load(SOURCE).version == 2
+    monkeypatch.setattr(
+        compiler, "ADRS", _adrs(tmp_path / "a", ADR_150="accepted", ADR_342="proposed")
+    )
+    with pytest.raises(compiler.RegistryInvalid, match="ADR-342 is not accepted"):
+        compiler.load(SOURCE)
+    monkeypatch.setattr(
+        compiler, "ADRS", _adrs(tmp_path / "b", ADR_150="proposed", ADR_342="accepted")
+    )
+    with pytest.raises(compiler.RegistryInvalid, match="needs ADR-150 accepted"):
+        compiler.load(SOURCE)
+
+
+def test_only_an_openable_shape_under_an_adr_can_be_enabled() -> None:
+    w7 = {
+        "key": "probe_send",
+        "adapter_key": "probe_provider",
+        "shape": "W7",
+        "owner_epic": "N-02",
+    }
+    assert WriteCapabilityEntry.model_validate({**w7, "decision": "ADR-342", "enabled": True})
+    for refused in (
+        {**w7, "decision": "P-26", "enabled": True},  # a plan decision is not an accepted ADR
+        {**w7, "enabled": True},  # no decision at all
+        {**w7, "shape": "W2", "decision": "ADR-342", "enabled": True},  # into a client's system
+    ):
+        with pytest.raises(ValidationError):
+            WriteCapabilityEntry.model_validate(refused)

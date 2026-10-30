@@ -1,7 +1,7 @@
 ---
 id: ADR-150
 title: Integrations module and the declared write-capability framework
-status: proposed
+status: accepted
 date: 2026-10-20
 deciders: ayushkbhatia
 risk_zone: red
@@ -21,6 +21,7 @@ risk_zone: red
 - **A write runs only** from a human-approved action, through a declared adapter, with an idempotency key, a dry run, write-once request/response evidence and a client-visible log.
 - **`connections` stays read-only**; CONN-001 is intact.
 - **Adapter ADRs only** for W1 GL posting (P-16), W2 tax engine (P-18), W6 mailbox (P-60) and W8 webhooks (inside P-21).
+- **Registry version 2** (accepted with this ADR, 2026-10-30, DEC-1280): an entry may be enabled only when its shape's own approved path is built (W7, the e-signature send: a human's approval grant is consumed before it runs, N-02-T20, with idempotency, write-once request and response evidence and the envelope's client-visible activity) and the ADR it names is accepted (ADR-342 for W7). A write into a client's system (W1, W2) cannot be enabled by any version yet, and `execute_write` refuses every call.
 
 ## Options considered
 ### Option A: a framework plus a few adapter ADRs — chosen

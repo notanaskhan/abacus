@@ -3,8 +3,8 @@ DF-11, DF-12; DEC-1276). PROTECTED.
 
 One instance per firm and call, built by `firm_provider` only when every switch is on: the
 firm's `signatures.esign_provider` flag (the kill switch), the W7 capability
-`esignature_envelope_send` enabled in `write-capabilities.yaml` (v1: declared, never enabled, so
-this adapter is unreachable until a person opens W7), and a connected DocuSeal install whose
+`esignature_envelope_send` enabled in `write-capabilities.yaml` (opened by registry version 2,
+ADR-150 accepted 2026-10-30, DEC-1280), and a connected DocuSeal install whose
 sealed secret holds the API key. Otherwise `ProviderUnavailable`: nothing leaves.
 
 - **Auth.** DocuSeal's API key in `X-Auth-Token`, sent only to the API host; file downloads

@@ -4,10 +4,12 @@
 Run: python -m abacus_tools.codegen.write_capabilities [--check | --egress]
 
 `docs/architecture/write-capabilities.yaml` is a protected policy file: the read connectors with
-the only hosts each may reach, and the reserved writes. It validates against
-`integrations.ports.WriteCapabilityRegistry` (an entry can never be enabled: `enabled` is false
-by type), and on top of the schema this compiler refuses:
+the only hosts each may reach, and the writes. It validates against
+`integrations.ports.WriteCapabilityRegistry` (version 2: only a shape in `OPENABLE_SHAPES` may be
+enabled, and only by an ADR), and on top of the schema this compiler refuses:
 
+- version 2 unless ADR-150 itself is accepted, and an enabled write whose ADR is not accepted
+  (`status: accepted` in `docs/adr/`; DEC-1280);
 - a write that names no decision (the plan P-nn or repo ADR that would enable it);
 - a write whose `adapter_key` is a declared read connector's (a reader never also writes);
 - duplicate YAML keys and any field the schema does not know.
@@ -32,6 +34,8 @@ from abacus.modules.integrations.api import WriteCapabilityRegistry
 
 BACKEND = Path(__file__).resolve().parents[3]
 SOURCE = BACKEND.parent / "docs" / "architecture" / "write-capabilities.yaml"
+ADRS = BACKEND.parent / "docs" / "adr"
+FRAMEWORK_ADR = "ADR-150"
 TARGET = BACKEND / "src" / "abacus" / "modules" / "integrations" / "_capabilities.py"
 _HEADER = '''"""GENERATED from docs/architecture/write-capabilities.yaml. Do not edit.
 
@@ -59,6 +63,15 @@ def _no_duplicate_keys(node: yaml.Node | None) -> None:
             _no_duplicate_keys(item)
 
 
+def adr_accepted(adr: str, adrs: Path | None = None) -> bool:
+    """Whether the repo ADR's front matter says `status: accepted`."""
+    found = sorted((adrs or ADRS).glob(f"{adr}-*.md"))
+    if len(found) != 1:
+        return False
+    head = found[0].read_text(encoding="utf-8").split("\n---", 1)[0]
+    return any(line.strip() == "status: accepted" for line in head.splitlines())
+
+
 def load(source: str) -> WriteCapabilityRegistry:
     """The registry the file declares; `RegistryInvalid` names the first rule it breaks."""
     loader = yaml.SafeLoader(source)
@@ -71,8 +84,12 @@ def load(source: str) -> WriteCapabilityRegistry:
     except ValidationError as exc:
         first = exc.errors()[0]["msg"]
         raise RegistryInvalid(f"the registry does not validate: {first}") from None
+    if not adr_accepted(FRAMEWORK_ADR):
+        raise RegistryInvalid(f"version 2 needs {FRAMEWORK_ADR} accepted")
     readers = {r.adapter_key for r in registry.read_connectors}
     for write in registry.writes:
+        if write.enabled and not adr_accepted(str(write.decision)):
+            raise RegistryInvalid(f"{write.key}: enabled, but {write.decision} is not accepted")
         if write.decision is None:
             raise RegistryInvalid(f"{write.key}: a write names the decision that would enable it")
         if write.adapter_key in readers:
@@ -126,7 +143,7 @@ def render(registry: WriteCapabilityRegistry) -> str:
         + f"VERSION: Final = {registry.version}\n"
         + "# The read connectors and the only hosts each may reach (ADR-040).\n"
         + f"READ_CONNECTORS: Final[tuple[dict[str, object], ...]] = {_rows(readers)}\n"
-        + "# Reserved writes: none is enabled (ADR-150); every execute_write is refused.\n"
+        + "# Declared writes: an openable shape under an accepted ADR may be enabled (DEC-1280).\n"
         + f"WRITES: Final[tuple[dict[str, object], ...]] = {_rows(writes)}\n"
         + "# Q-01's DNS Firewall allowlist: every declared egress host.\n"
         + f"EGRESS_HOSTS: Final[frozenset[str]] = {egress}\n"
