@@ -411,7 +411,7 @@ export function WorkbookLayout({
       <div
         data-template="t6"
         data-workbook="columns"
-        data-state={building === undefined ? "built" : "building"}
+        {...(building === undefined ? {} : { "data-run": "" })}
         style={panesHeight === undefined ? undefined : { height: panesHeight }}
         className="flex min-h-0 min-w-0 flex-1 gap-[10px]"
       >

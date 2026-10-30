@@ -172,7 +172,8 @@ describe("WorkbookLayout (T6, F-06-T18)", () => {
       }),
       { onOpenIssue },
     );
-    fireEvent.click(screen.getByRole("button", { name: /Issue 2/ }));
+    const pane = document.querySelector("[data-workbook='pane']") as HTMLElement;
+    fireEvent.click(within(pane).getByRole("button", { name: /Issue 2/ }));
     expect(onOpenIssue).toHaveBeenCalledWith("2");
   });
 
@@ -204,8 +205,8 @@ describe("WorkbookLayout (T6, F-06-T18)", () => {
     expect(within(strip).queryByText("1,743,482")).toBeNull();
     expect(within(strip).queryByText("off 6,200")).toBeNull();
     expect(within(strip).getAllByText("Pending")).toHaveLength(3);
-    expect(screen.getByText("Workbook agent is running")).toBeTruthy();
     const pane = document.querySelector("[data-workbook='pane']") as HTMLElement;
+    expect(within(pane).getByText("Workbook agent is running")).toBeTruthy();
     expect(pane.getAttribute("aria-busy")).toBe("true");
     expect(within(pane).getByText("Partner")).toBeTruthy();
     expect(within(pane).queryByText("Ridgeline GP, LLC")).toBeNull();
