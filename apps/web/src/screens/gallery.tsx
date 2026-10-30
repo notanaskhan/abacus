@@ -51,6 +51,7 @@ import {
 import { ADM05 } from "./ADM-05";
 import { CLI05 } from "./CLI-05";
 import {
+  AGENT_NOTE as CLI05_AGENT_NOTE,
   type Cli05State,
   ENTITY as CLI05_ENTITY,
   SECTION as CLI05_SECTION,
@@ -939,6 +940,7 @@ function Cli05Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
         frame
         clientEntityId={CLI05_ENTITY[state]}
         section={CLI05_SECTION[state]}
+        {...(state === "a" ? { agentNote: CLI05_AGENT_NOTE } : {})}
       />
     </div>
   ) : null;

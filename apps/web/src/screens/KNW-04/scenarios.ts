@@ -19,7 +19,10 @@ export const OPENS: Readonly<Record<Knw04State, Knw04Initial>> = {
   f: { section: "materiality_ranges" },
   g: { section: "document_confidence" },
   h: { section: "ssars_cas" },
+  j: { section: "deadline_rules" },
   draft_hidden: { section: "review_checklists", checklist: CHECKLIST },
   no_examples: { section: "aje_thresholds" },
   flag_off: { section: "aje_thresholds" },
+  i: { section: "aje_thresholds" },
+  i_stale: { section: "aje_thresholds" },
 };

@@ -60,3 +60,22 @@ class TeamMemberRemoved(DomainEvent):
 
     team_id: Annotated[UUID, classified("internal")]
     user_id: Annotated[UUID, classified("internal")]
+
+
+class ConsentExpiring(DomainEvent):
+    """T-01-T16: a signed §7216 consent is 30 days or fewer from expiry (the sweep, once)."""
+
+    event_type: ClassVar[str] = "consent.expiring"
+
+    consent_id: Annotated[UUID, classified("internal")]
+    client_id: Annotated[UUID, classified("internal")]
+    requested_by: Annotated[UUID, classified("internal")]
+
+
+class ConsentExpired(DomainEvent):
+    """T-01-T16: a signed consent passed its expiry; the gate refuses from now."""
+
+    event_type: ClassVar[str] = "consent.expired"
+
+    consent_id: Annotated[UUID, classified("internal")]
+    client_id: Annotated[UUID, classified("internal")]

@@ -9,13 +9,13 @@
 | Epic and tasks | T-01 · contract T-01-T05 (this file); fixtures T09; build T43–T46 |
 | Spec and ADRs | SPEC-501 AC-11; ADR-231; R-04 |
 | Flags | `clients.tax_profile`; consents from `consents.registry` |
-| Manifest status | `fixture` since T-01-T14 (d, f: the consents section); b, c, e and g in fixture mode with T-01-T34 (DEC-1452); a with T-01-T43/T45's transcript routes; `live` with C19's routes (pilot posture: agents off) |
+| Manifest status | `fixture` since T-01-T14 (d, f: the consents section); b, c, e and g in fixture mode with T-01-T34 (DEC-1452); a with T-01-T50 on T-01-T43's transcript routes (DEC-1652); `live` with C19's routes (pilot posture: agents off) |
 
 ## States
 | Artboard | Viewer | Clock (CT) | Data condition | Parity tier | Status |
 |---|---|---|---|---|---|
-| a | kevin-osei | Mon Sep 14, 2026 9:24 AM | Transcripts · 2 differences: Whitley TY2024 and TY2025 W&I and Account against the returns as filed; 1,870.00 + 1,250.00 = 3,120.00, 686.40 + 66.61 = 753.01 | C | fixture (T-01-T09) |
-| b | kevin-osei | Mon Sep 14, 2026 9:04 AM | Transcripts · none yet: Whitley before upload | C | fixture (T-01-T09) |
+| a | kevin-osei | Mon Sep 14, 2026 9:24 AM | Transcripts · 2 differences: Whitley TY2024 and TY2025 W&I and Account against the returns as filed; 1,870.00 + 1,250.00 = 3,120.00, 686.40 + 66.61 = 753.01 (agent note fixture-only) | C | built (T-01-T50) |
+| b | kevin-osei | Mon Sep 14, 2026 9:04 AM | Transcripts · none yet: Whitley before upload | C | built (T-01-T34, T-01-T50) |
 | c | kevin-osei | 9:24 AM | Authorizations: 8821 for 2022–2026 on file | C | fixture (T-01-T09) |
 | d | kevin-osei | 9:24 AM | Consents: Whitley use and AI disclosure signed Jan 20, 2026, with agent reads | C | fixture (T-01-T09) |
 | e | kevin-osei | 9:24 AM | Elections · Ridgeline (PTET 28,044, 17,070, 18,982) | C | fixture (T-01-T09) |
@@ -73,3 +73,4 @@ Gradients, emoji, blue, heavy shadows, invented colours or data, boxed inputs, t
 - T-01-T14 (DEC-1263): TaxProfileOut gains the subbar facts (`client_name`, `client_kind`, `partner_name`, `office_name`), the Identity band (`identity`, `portal_user_name`, `resident_state`) and ConsentOut `template_name`, additively. The route takes `?entity=`; without it the record's first entity opens. The partially signed banner keeps the handoff's words (DF-04's agents-off words arrive with the copy registry). Resend…, Request consent… and the Open notices row are planned links (tooltip-only).
 
 - T-01-T34 (DEC-1452): b, c, e and g in fixture mode. TaxElectionOut carries codes and amounts only, so e's words come from the copy module by `kind:status_code`; the BBA representative's name, the PTET payment date and the §754 due date wait on an additive election detail (T-01-T43). There is no transcript list route yet, so Transcripts shows b's empty state until T-01-T43/T45; the State fieldset reads "<resident state> · not on file" (the state form code, DR 0145, is reference data from K-02). The 8821 note names the profile's taxpayers. Draft Form 2848…, Request Form 8821…, + Add and Upload transcript… are planned controls (tooltip-only).
+- T-01-T50 (DEC-1652): Transcripts a on `GET …/transcripts` and `GET /transcripts/{id}/comparison`. The register opens on the first pull with differences; the card's rows are the comparison's non-agreeing lines with a Total difference row, and the agreeing line counts forms ("× n" when a form also differs). The agent note ("Why This Was Surfaced", the 22% arithmetic, the two citations) is fixture-only: the gallery and scenario tests pass it; the routed page never does, so staging shows "off 3,120" from code with no note. Compare to return re-runs the selected Wage & Income pull against the return it was last compared with (Comparing… in its Result cell); a first comparison has no return to name here and stays disabled. Difference cells carry SHL-08's tooltip until SHL-08 is built; Open notice analysis (NOT-02) and Flag for review… are planned controls; Upload transcript… stays planned until its dialog (authorization, kind, year) is built.

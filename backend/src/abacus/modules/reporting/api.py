@@ -16,6 +16,9 @@ from dataclasses import dataclass, field
 from typing import Literal, NoReturn, get_args
 from uuid import UUID
 
+from abacus.modules.reporting.consent import Recipients, RecipientsUnavailable
+from abacus.modules.reporting.consent import recipients as consent_recipients
+from abacus.modules.reporting.contract import CONSENT_RECIPIENTS_KEY
 from abacus.modules.reporting.contract import (
     GeneratedDocumentKind,
     LayoutKey,
@@ -26,6 +29,13 @@ from abacus.modules.reporting.contract import (
 )
 
 # The routers the API mounts, in order (P-39; F-03-T07).
+from abacus.modules.reporting.render.core import (  # noqa: E402 -- T-01-T10's consumer API
+    RenderInput,
+    RenderOutput,
+    render_isolated,
+)
+from abacus.modules.reporting.render.head import RenderRefused as RenderingRefused  # noqa: E402
+
 ROUTERS = (templates_router, documents_router)
 
 KINDS: frozenset[str] = frozenset(get_args(GeneratedDocumentKind))

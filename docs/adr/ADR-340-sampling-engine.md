@@ -1,7 +1,7 @@
 ---
 id: ADR-340
 title: "Sampling engine: a seeded, versioned, frozen in-product sampler; import kept as a path"
-status: proposed
+status: accepted
 date: 2026-10-29
 deciders: ayushkbhatia, audit CPA
 risk_zone: red
@@ -15,8 +15,9 @@ proposal: P-57
 
 **Status note.** Drafted by A-03-T23 (TASK-2300) in S18 as pre-window work for A-03 (S20–S23).
 The plan names this ADR "ADR-207"; that is a P-ID alias, not a reservation (`docs/adr/backlog.md`),
-so it takes ADR-340 from the S18 block. Acceptance is due **Fri Jul 23, 2027 (S19)**, before A-03
-T02, T04, T05, T07 and T10 build on it; each of those cites ADR-340.
+so it takes ADR-340 from the S18 block. **Accepted on 2026-10-29**: ayushkbhatia approved the
+acceptance for both deciders (the builder and the audit CPA), ahead of the Fri Jul 23, 2027 (S19)
+deadline. A-03 T02, T04, T05, T07 and T10 build on it and each cites ADR-340.
 
 ## Context
 AU-C 530 asks that a sample be re-performable: the population and proof of its completeness, the
