@@ -38,6 +38,12 @@ def _a(category: Category, mark: Mark = "pl", *facts: str) -> CatalogueEntry:
 
 # G-02 §4.7 and the governance events ADM-07 renders first; the rest arrive through the fallback.
 CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
+    # S15 (N-01, N-02): where the fallback reads the verb wrong. A sealed address revealed and a
+    # message body read are access; a provider send and a reminder are communication.
+    "signer.ip_revealed": _a("access"),
+    "inbound_message.body_read": _a("access"),
+    "envelope.provider_sent": _a("communication"),
+    "envelope.reminded": _a("communication"),
     # Security center (G-02-T14, T18 to T20)
     "security_policy.sign_in_updated": _a("change"),
     "security_policy.sso_enforced": _a("change"),
