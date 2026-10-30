@@ -137,9 +137,14 @@ def register_synthetic_tenants(check: SyntheticCheck) -> None:
 def register_tri_consent_check(check: TriConsentCheck) -> None:
     """C19 condition 6: organisations answers whether TRI subjects hold both consents."""
     global _tri_consent
-    if _tri_consent is not None and _tri_consent is not check:
+    if _tri_consent is not None and _name(_tri_consent) != _name(check):
         raise RuntimeError("the TRI consent check is already registered")
+    # The same function again (its module re-imported, as a test may do) replaces itself.
     _tri_consent = check
+
+
+def _name(fn: object) -> str:
+    return f"{getattr(fn, '__module__', '')}.{getattr(fn, '__qualname__', repr(fn))}"
 
 
 def tri_consent_registered() -> bool:
