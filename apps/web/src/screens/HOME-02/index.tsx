@@ -39,7 +39,11 @@ import { COPY } from "./copy";
 // and its "Open" goes to the gate's own host. A row is a link to where the gate is decided, never a
 // decision control (INV-1). Behind `home.approvals` (created here).
 
-const POLL = { refetchInterval: HOME_POLL_MS, staleTime: HOME_STALE_MS, refetchOnWindowFocus: true };
+const POLL = {
+  refetchInterval: HOME_POLL_MS,
+  staleTime: HOME_STALE_MS,
+  refetchOnWindowFocus: true,
+};
 
 const GLYPH_OF: Readonly<Record<HumanGateOut["kind"], NonNullable<IssueItem["glyph"]>>> = {
   decision: { icon: "circle-help", label: COPY.glyph.decision },
@@ -147,7 +151,8 @@ export function HOME02({
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     const at = order.findIndex((i) => i.id === selectedId);
     if (event.key === "j" || event.key === "k") {
-      const next = order[event.key === "j" ? Math.min(at + 1, order.length - 1) : Math.max(at - 1, 0)];
+      const next =
+        order[event.key === "j" ? Math.min(at + 1, order.length - 1) : Math.max(at - 1, 0)];
       if (next === undefined) return;
       event.preventDefault();
       select(next.id, true);
