@@ -50,6 +50,8 @@ import { COPY } from "./copy";
 const AdoptAction = lazy(async () => ({ default: (await import("./TbLive")).AdoptAction }));
 const NewerBanner = lazy(async () => ({ default: (await import("./TbLive")).NewerBanner }));
 const SourceActions = lazy(async () => ({ default: (await import("./TbLive")).SourceActions }));
+// A-02-T35: a line's Agree to source…, Mark reviewed and Edit… on P-04 fields.
+const LineActions = lazy(async () => ({ default: (await import("./LineActions")).LineActions }));
 
 export type TbTab = "trial_balance" | "leadsheets";
 export type TbLayer = TbLayerViewOut["layer"];
@@ -77,6 +79,8 @@ export interface TrialBalanceOptions {
   onLink?: () => void;
   /** "Sign off…": the host opens `?ov=signoff:trial_balance:<tb>:L2` (SHL-12, P-04-T48). */
   onSignOff?: (tbId: string) => void;
+  /** A-02-T35: the evidence version open in the dock's viewer, for Agree to source…. */
+  sourceVersionId?: string | null;
 }
 
 export interface TrialBalancePane {
@@ -286,12 +290,14 @@ function LineRow({
   checks,
   selected,
   onSelect,
+  sourceVersionId,
 }: {
   line: TbLayerLineOut;
   view: TbLayerViewOut;
   checks: readonly TieOutCheckOut[];
   selected: boolean;
   onSelect: () => void;
+  sourceVersionId: string | null;
 }): JSX.Element {
   const style = styleOf(view);
   const final = view.layer === "final";
@@ -355,7 +361,18 @@ function LineRow({
           ))}
         </td>
       )}
-      <td className="pr-[12px] pl-[8px] text-meta text-ink-3">{line.wp_ref ?? ""}</td>
+      <td className="pr-[12px] pl-[8px] text-meta text-ink-3">
+        {line.wp_ref ?? ""}
+        {(view.allowed_actions ?? []).includes("trial_balance.annotate") && (
+          <Suspense fallback={null}>
+            <LineActions
+              tbId={view.trial_balance_id}
+              line={line}
+              sourceVersionId={sourceVersionId}
+            />
+          </Suspense>
+        )}
+      </td>
     </tr>
   );
 }
@@ -365,11 +382,13 @@ function TrialBalanceTable({
   checks,
   selected,
   onSelect,
+  sourceVersionId,
 }: {
   view: TbLayerViewOut;
   checks: readonly TieOutCheckOut[];
   selected: string | null;
   onSelect: (line: TbLayerLineOut) => void;
+  sourceVersionId: string | null;
 }): JSX.Element {
   const style = styleOf(view);
   const final = view.layer === "final";
@@ -407,6 +426,7 @@ function TrialBalanceTable({
                 onSelect={() => {
                   onSelect(l);
                 }}
+                sourceVersionId={sourceVersionId}
               />
             ))}
           />
@@ -596,7 +616,14 @@ function citationOf(line: TbLayerLineOut): string | null {
 
 export function useTrialBalancePane(
   engagementId: string,
-  { enabled = true, initial = {}, onLink, onSignOff, planned = {} }: TrialBalanceOptions = {},
+  {
+    enabled = true,
+    initial = {},
+    onLink,
+    onSignOff,
+    planned = {},
+    sourceVersionId = null,
+  }: TrialBalanceOptions = {},
 ): TrialBalancePane {
   const [tab, setTab] = useState<TbTab>(initial.tab ?? "trial_balance");
   const [layer, setLayer] = useState<TbLayer>(initial.layer ?? "unadjusted");
@@ -799,6 +826,7 @@ export function useTrialBalancePane(
                   setSelected(l.account_code);
                   if (citationOf(l) !== null) onLink?.();
                 }}
+                sourceVersionId={sourceVersionId ?? linked?.versionId ?? null}
               />
               <Caption view={v} />
             </>

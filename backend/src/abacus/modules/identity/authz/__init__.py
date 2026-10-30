@@ -98,6 +98,7 @@ from abacus.modules.identity.repository import (
     service_line_policies,
     walled_clients,
 )
+from abacus.modules.identity.slots import consent_given
 
 MFA_RECENT = timedelta(minutes=15)
 # Ethical walls (ADR-026; SPEC-002) are enforced below, before roles: the API may start in
@@ -240,6 +241,10 @@ class TargetFacts:
     preparer_user_ids: frozenset[UUID] | None = None
     reserved_role: str | None = None
     reserved_user_id: UUID | None = None
+    # K-02-T01 (DEC-1150): the named owner of a firm standard, for `owner_of_target`.
+    owner_user_id: UUID | None = None
+    # T-01-T11 (C19): the client entities whose §7216 consents a `consent` condition reads.
+    consent_subjects: frozenset[UUID] | None = None
 
 
 @dataclass(frozen=True)
@@ -749,6 +754,8 @@ def has_conditions(rule: Rule) -> bool:
         or rule.scope_only
         or rule.not_preparer_of_target
         or rule.reserved_role
+        or rule.owner_of_target
+        or bool(rule.consent)
     )
 
 
@@ -778,6 +785,7 @@ async def _condition_facts(
     scope_covered: bool | None = None
     preparer: bool | None = None
     reserved_holder: bool | None = None
+    owner: bool | None = None
     client_actor = bool(roles & CLIENT_ACTOR_ROLES)
     if isinstance(ctx, AuthContext):
         if rule.level_in or rule.not_offshore:
@@ -796,12 +804,19 @@ async def _condition_facts(
                 preparer = ctx.user_id in target.preparer_user_ids
             if rule.reserved_role and target.reserved_role is not None:
                 reserved_holder = await _holds_reserved(ctx, resource, target, roles)
+            if rule.owner_of_target and target.owner_user_id is not None:
+                # K-02-T01: the named owner, and a partner member now (a former partner who
+                # still owns the standard cannot publish it until it is reassigned).
+                owner = target.owner_user_id == ctx.user_id and await _partner_level(ctx)
     attest: bool | None = None
     if rule.attest_client is not None and resource.engagement_id and LOOKUPS.attest:
         attest = await LOOKUPS.attest(ctx.tenant, resource.engagement_id)
     gates: dict[str, bool] | None = None
     if rule.gates_met and resource.engagement_id and LOOKUPS.gates:
         gates = await LOOKUPS.gates(ctx.tenant, resource.engagement_id, rule.gates_met)
+    consents: frozenset[str] | None = None
+    if rule.consent:
+        consents = await _consents_held(ctx, resource, rule.consent)
     return ConditionFacts(
         level=level,
         offshore=offshore,
@@ -812,7 +827,29 @@ async def _condition_facts(
         client_actor=client_actor,
         preparer=preparer,
         reserved_holder=reserved_holder,
+        owner=owner,
+        consents=consents,
     )
+
+
+async def _consents_held(
+    ctx: Actor, resource: Resource, purposes: frozenset[str]
+) -> frozenset[str] | None:
+    """T-01-T11: the purposes every data subject of the target holds now; None without
+    subjects (fail closed). Read fresh every time: a revocation binds the next check."""
+    target = resource.target
+    if target is None or not target.consent_subjects:
+        return None
+    at = system_now()
+    held: set[str] = set()
+    for purpose in sorted(purposes):
+        given = [
+            await consent_given(ctx.tenant, entity, purpose, at)
+            for entity in sorted(target.consent_subjects)
+        ]
+        if all(given):
+            held.add(purpose)
+    return frozenset(held)
 
 
 # The function a `signer`-reserved card needs on its work item; the other reserved roles are

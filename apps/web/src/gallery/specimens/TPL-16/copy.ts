@@ -13,6 +13,8 @@ export const COPY = {
   formTr579: "Form TR-579-IT — New York e-file Signature Authorization",
   signersBand: "Signers",
   signerYou: (name: string): string => `${name} (you)`,
+  // TPL-16a's signer band while the viewer verifies (F-06-T13).
+  verifyingIdentity: "verifying identity",
   steps: { verify: "Verify identity", review: "Review", sign: "Sign", done: "Done" },
   stepSubs: {
     verify: "4 of 4 questions · 9:21 AM",
@@ -23,7 +25,7 @@ export const COPY = {
   pinPlaceholder: "Enter any five digits except all zeros",
   authorizingTitle: "What you're authorizing",
   // Q7: the action opens a step, so it carries the ellipsis (DECISIONS.md, F-06-T01).
-  adoptAndSign: "Adopt signature & sign…",
+  adoptAndSign: "Adopt signature & sign",
   recordsNote: "Signing records the date, time, your IP address and the verification result.",
   nextDocument: "Next document →",
   completedTitle: (first: string): string => `Signed. Thank you, ${first}.`,

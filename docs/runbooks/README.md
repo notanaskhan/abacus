@@ -43,9 +43,9 @@ Owner is the builder for every row. `Last rehearsed` stays `never` until a rehea
 | RB-13 | Firm offboarding and crypto-shred | ADR-098, ADR-034 | R2 (on the canary) | never | none | stub (Q-02 writes it) |
 | RB-14 | Legal hold: apply, release, failures | ADR-098, ADR-033 | R2 | never | hold workflow failure | drafted (Q-02-T51) |
 | RB-15 | Disaster-recovery drill procedure | ADR-098, ADR-096 | R1 | never | none (drill) | drafted |
-| RB-16 | Busy-season readiness | ADR-098, ADR-075 | Aug 2027 | never | readiness test | stub (Q-04 writes it) |
+| RB-16 | Busy-season readiness (R4 checklist, window rules, partner notice) | ADR-098, ADR-075, P-29 | Aug 2027 | never | readiness test; R4 dossier operations-5 | drafted (Q-04-T055, T056) |
 | RB-17 | Section 7216 consent expiry or revocation wave (agents pause per taxpayer) | R-01 | R2 if tax is in scope | never | consent alarms | to write |
-| RB-18 | E-signature or knowledge-based-authentication vendor outage (record mode; wet-signature path) | R-05, ADR-149 | R3 | never | provider health | to write |
+| RB-18 | E-signature or knowledge-based-authentication vendor outage (record mode; wet-signature path) | R-05, ADR-149 | R3 | never | provider health | first notes (N-02-T17) |
 | RB-19 | Tax-engine bridge failure near a filing deadline (file fallback) | P-18 | Aug 2027 | never | bridge failure | to write |
 | RB-20 | Email deliverability incident (bounce or complaint spike; a firm's sender authentication breaks) | P-11 | R1 | never | SLO-07 | drafted |
 | RB-21 | Portal custom domain or certificate failure | P-11 | R3 | never | certificate expiry | to write |
@@ -68,6 +68,7 @@ Owner is the builder for every row. `Last rehearsed` stays `never` until a rehea
 | RB-38 | PII reveal review and unlock abuse | P-03-T26 | before the first real firm reveals | never | pii.reveal-volume, evidence.unlock-failures (DEC-656) | drafted |
 | RB-39 | Agent stage promotion and demotion (SPEC-036, DEC-811) | Q-02-T51 | before the first real firm goes live | never | none | drafted |
 | RB-40 | Provider-terms `review_by` renewal and Bedrock parity refresh | Q-02-T51 | before the first real-firm model call | never | none | drafted |
+| RB-42 | Pre-shadow scrubbing audit: seeded cases through the logger, Sentry and the meter, read back from each sink | Q-03-T083 | before M9 (Tue Jun 1, 2027) | never | none | drafted |
 
 Q-02-T51's agent-stage and provider-terms runbooks are RB-39 and RB-40. Give the next runbook the next free number (RB-41 onward; RB-31 is P-01-T17's, RB-32 P-06-T27's, RB-33 A-01-T30's).
 

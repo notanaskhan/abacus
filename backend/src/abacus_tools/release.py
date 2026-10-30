@@ -93,6 +93,14 @@ OPS_COMMANDS: Final = frozenset(
         "abacus_tools.trust_layer_backfill",
         # Q-02-T48 (DEC-958): the nightly real-data rehearsal; it refuses outside staging.
         "abacus_tools.rehearsal run",
+        # Q-03-T083 (AC-49, RB-42): the pre-shadow scrubbing audit's seed and read-back.
+        "abacus_tools.scrub_audit seed",
+        "abacus_tools.scrub_audit sample",
+        # TASK-2152 (ADR-342): a firm's DocuSeal install; the key comes from the task's secrets.
+        "abacus_tools.esign_install connect",
+        "abacus_tools.esign_install rotate",
+        "abacus_tools.esign_install disconnect",
+        "abacus_tools.esign_install status",
         # Not `abacus_tools.drill verify`: it swaps the production database host, so it runs only
         # from drill.yml with the host of the restore it made (security review, S8 wave B).
     }

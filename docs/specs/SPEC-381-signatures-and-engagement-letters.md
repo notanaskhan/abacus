@@ -65,6 +65,7 @@ Engagement letters, §7216 consents, Forms 8879 and 2848, rep letters and govern
 - **AC-16** Every final verb (send, remind, void, import, wet signature, countersign, approve, sign) denies `agent` and `system` (I-AGENT-NEVER).
 - **AC-17** Envelope events and signature evidence are insert-only; signed packages are written with Object Lock retention (ADR-004).
 - **AC-18** With `signatures.envelopes` off every route answers 404; flag-off states are designed (SIG-01 record-mode rows only; POR-06 "{firm} will send this for signature soon"; ENG-04 the record panel).
+- **AC-19 Record-mode readiness (N-02-T17).** Given `signatures.envelopes` on for synthetic firms (the scenario load, staging and local) and for the canary, then record mode is walkable on the production canary by Fri May 28, 2027; a firm's existing signed letters are imported per `docs/ops/pilot/import-signed-letters.md`; `docs/ops/gates/M10-client-facing.md` carries the "letters at least in record mode" row; RB-18 has its first notes.
 
 ## 6. State transitions (envelope)
 | From | Event | To | Who |
@@ -83,7 +84,7 @@ Engagement letters, §7216 consents, Forms 8879 and 2848, rep letters and govern
 Tables per `docs/plan/epics/N-02.md` §4.2 (`signatures_v1`, N-02-T07; `engagement_letter_versions`, T32). Classification: `ip_sealed`, `decline_note`, `email_at_send` restricted or confidential as listed there; no SSN or TIN in any signer packet.
 
 ## 8. API
-`docs/contracts/c7-envelopes.md` (C7 v1; stub with N-02-T03). Webhook receiver `POST /v1/webhooks/docusign-connect` only after the ADR-152 amendment is accepted (N-02-T19).
+`docs/contracts/c7-envelopes.md` (C7 v1; stub with N-02-T03). Webhook receiver `POST /v1/webhooks/docuseal` (ADR-342, DEC-1277; was DocuSign Connect) only after the ADR-152 amendment is accepted (N-02-T19).
 
 ## 9. Permissions
 `docs/architecture/permission-matrix/signatures.yaml` (N-02-T02) and the letter rows in `engagements.yaml`. Human-only: `envelope.send`, `envelope.remind`, `envelope.void`, `envelope.import_record`, `envelope.record_wet_signature`, `envelope.countersign`, `letter.approve`, `letter.send`, `letter.amend`, and every portal signing verb.
@@ -92,7 +93,7 @@ Tables per `docs/plan/epics/N-02.md` §4.2 (`signatures_v1`, N-02-T07; `engageme
 As `docs/plan/epics/N-02.md` §4.6, identifiers only.
 
 ## 11. Differences from the epic, and decisions
-- ADR-149 (P-26) accepted 2026-10-27 by the builder (AMENDMENT-solo, DEC-706). Its counsel fallback stands: the DocuSign path stays behind `signatures.docusign` until counsel answers and F-09-T41's go/no-go; record mode does not wait.
+- ADR-149 (P-26) accepted 2026-10-27 by the builder (AMENDMENT-solo, DEC-706). Its counsel fallback stands: the provider path (DocuSeal since ADR-342) stays behind `signatures.esign_provider` until counsel answers and F-09-T41's go/no-go; record mode does not wait.
 - The P-45 amendment (the provider webhook receiver) is drafted into ADR-152, still proposed (DEC-707); decide-by Fri Jun 11, 2027. If refused: poll only.
 - Solo edition: no CODEOWNERS lines; `protected-paths.md` lists `modules/signatures/` (N-02-T02).
 

@@ -4,16 +4,16 @@
 |---|---|
 | Register row | C7 |
 | Version | v1 |
-| Status | stub (N-02-T03, 2026-10-27): every route 404 with `signatures.envelopes` off, 501 with it on until its task lands. **Record mode frozen as v1** (N-02-T09, DEC-820): `POST /v1/envelopes/import`, `POST /v1/envelopes/import/files`, `register_envelope_source`, `envelope_summary_for`, `envelope_gate_facts` (G3) change only additively |
+| Status | stub (N-02-T03, 2026-10-27): every route 404 with `signatures.envelopes` off, 501 with it on until its task lands. **Record mode frozen as v1** (N-02-T09, DEC-820): `POST /v1/envelopes/import`, `POST /v1/envelopes/import/files`, `register_envelope_source`, `envelope_summary_for`, `envelope_gate_facts` (G3) change only additively. **Live since N-02-T13** (DEC-1055): `GET /v1/envelopes`, `/summary`, `/{id}`, `POST /{id}/void`, `POST /{id}/signers/{sid}/reveal-ip`, `GET /{id}/evidence.zip` |
 | Provider epic | N-02 |
 | Consumers | F-06 (signatures shell), T-01 (8879 family, consents "1 of 2 signed"), T-02, P-07 (G3 letter gate), A-07 (governance letters), N-04 (notice responses), I-01 (activity, `signatures_out` home count), R-02 |
 | Freeze sprint | S15 Contract Monday (Mon May 17, 2027) |
-| Flags | `signatures.envelopes` (hub, import, portal reads); later `signatures.docusign`, `signatures.kba_8879`, `engagements.letter_composer` |
+| Flags | `signatures.envelopes` (hub, import, portal reads); later `signatures.esign_provider`, `signatures.kba_8879`, `engagements.letter_composer` |
 | Spec | SPEC-381; `docs/plan/epics/N-02.md` §3, §4 |
 | ADRs | ADR-149 (P-26), ADR-150 (W7), ADR-161 (grants and Undo), ADR-158, ADR-152 amendment (proposed) |
 
 ## 1. Purpose
-One envelope model for every signed document, whichever provider: `record` (imported, already signed), `docusign` (embedded signing) or `fake` (synthetic tenants). Sources (engagement letters, consents, e-file authorizations, rep letters, notices) register with `signatures.api.register_envelope_source` and get their gate facts back.
+One envelope model for every signed document, whichever provider: `record` (imported, already signed), `docuseal` (provider signing, ADR-342; `docusign` stays readable on drafts made before it) or `fake` (synthetic tenants). Sources (engagement letters, consents, e-file authorizations, rep letters, notices) register with `signatures.api.register_envelope_source` and get their gate facts back.
 
 ## 2. Callers and actions
 | Operation | Method and path | Matrix action | Agent / system |
@@ -49,10 +49,13 @@ The plan's `portal.envelopes.*` are spelt `portal_envelopes.*` (one dot, DEC-139
 `envelope.created`, `envelope.updated`, `envelope.validated`, `envelope.sent`, `envelope.send_undone`, `envelope.viewed`, `envelope.reminded`, `envelope.voided`, `envelope.expired`, `envelope.declined`, `envelope.decline_withdrawn`, `envelope.completed`, `envelope.imported`, `envelope.superseded`, `envelope.retention_extended`, `signer.esign_consent_accepted`, `signer.kba_failed`, `signer.verification_failed`, `signer.signed`, `signer.countersigned`, `signer.wet_signature_recorded`, `signer.ip_revealed`, `evidence.downloaded`, `signed_copy.downloaded`, `envelope_policy.updated`, `write_capability.executed`, `letter.*` (N-02 §4.6). Identifiers only.
 
 ## 6. Reserved provider fields
-`provider_envelope_id`, `provider_recipient_id`, `signing_session` (`{session_id, presentation, url, expires_at}`) and `outcome` on the portal view are present in v1 and null until `signatures.docusign` (N-02-T18 onward). A record-mode envelope never has them.
+`provider_envelope_id`, `provider_recipient_id`, `signing_session` (`{session_id, presentation, url, expires_at}`) and `outcome` on the portal view are present in v1 and null until `signatures.esign_provider` (N-02-T18 onward). A record-mode envelope never has them.
 
 ## 7. Module API
 `signatures.api.register_envelope_source(kind, resolver)`, `envelope_summary_for(ctx, source_kind, source_id)`, `envelope_gate_facts(ctx, gate_kind, target_ref)` (G3, e-file authorization), `file_signed_copy` through `evidence.api.file_to_folder` (Signed authorizations).
 
 ## 8. Stub
 Models and routes: `backend/src/abacus/modules/signatures/contract.py` (`/v1/envelopes*`, `/v1/envelope-policies*`, `/v1/portal/envelopes*`) and `backend/src/abacus/modules/engagements/letter_contract.py` (`/v1/engagements/{id}/letter/composer`, `compare`, `pdf`, `request-approval`, `approve`, `send`, `amend`). `envelope_signer` and `letter` status words are in the vocabulary.
+
+## N-02-T21 additions (DEC-1174)
+Additive, each optional with a default: `SignerOut.title` and `SignerOut.email` (confidential; SIG-02's sub-line and "Email required"), `DraftUpdateIn.document_order` (the builder's reorder), `ValidationOut.checks` (`{code, ok}`, identifiers only; SIG-02 words them). A `problems` entry naming a signer is `signer_email_missing:<signer_id>`.

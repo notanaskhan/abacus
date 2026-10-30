@@ -50,9 +50,9 @@ objects:
       gathering:       {label: "Gathering",   variant: state,   terminal: false, derived: false}
       preparing:       {label: "Preparing",   variant: state,   terminal: false, derived: false, context_labels: {subbar_1040_1041: "Draft", subbar_entity_returns: "Working"}}   # Working = 1065/1120-S/1120/990 while the Agent tab builds the workbook
       prepared:        {label: "Prepared",    variant: neutral, terminal: false, derived: false, context_variants: {subbar: state}}
-      in_review:       {label: "In review",   variant: state,   terminal: false, derived: false, context_labels: {subbar_rail_rows: "In review · {level}"}}   # level: Detail, Manager, Partner
+      in_review:       {label: "In review",   variant: state,   terminal: false, derived: false, context_labels: {subbar_rail_rows: "In review · {level}", tax_board_rows: "In review · {level}"}}   # level: Detail, Manager, Partner; tax_board_rows: TPL-01/TAX-01 rows (DEC-1182)
       action_required: {label: "Action required", variant: red-tint, terminal: false, derived: false, context_labels: {home_and_tax_tiles: "Issues"}}
-      approved:        {label: "Approved",    variant: green-tint, terminal: false, derived: false}
+      approved:        {label: "Approved",    variant: green-tint, terminal: false, derived: false, context_labels: {home_and_tax_tiles: "Ready", tax_board_rows: "Ready"}}   # T-02-T04: the TAX-01 tile word; the board's rows say it too (DEC-1182)
       awaiting_signature: {label: "Awaiting signature", variant: amber, terminal: false, derived: false}
       filed:           {label: "Filed",       variant: green-tint, terminal: false, derived: false}   # transmitted, acknowledgement pending
       accepted:        {label: "Accepted",    variant: green,  terminal: true,  derived: false}
@@ -78,6 +78,29 @@ objects:
       import_pending_approval: {label: "Import pending approval", variant: outline, disc: dot_amber, terminal: false, derived: false}
       failed:                {label: "Export failed", variant: outline, disc: x_brick, terminal: false, derived: false}
 
+  engine_import:   # T-01 §engine bridge; TAX-09 (EngineImportOut.status). Labels not verbatim: no screen word yet
+    source: "T-01 epic (engine imports; `engine_import.pending_approval`)"
+    codes:
+      scanning:         {label: "Scanning", variant: muted, terminal: false, derived: false}
+      pending_approval: {label: "Import pending approval", variant: state, terminal: false, derived: false}   # T-01 §3: the checkpoint "sits in Import pending approval"
+      approved:         {label: "Approved", variant: green-tint, terminal: true, derived: false}
+      rejected:         {label: "Rejected", variant: red-tint, terminal: true, derived: false}
+      routed:           {label: "Sent to the inbox", variant: neutral, terminal: true, derived: false}   # not an engine export: filed through INB-02; label not verbatim
+
+  k3:   # T-02 §k1_packages.k3_status (TXP-12). Labels not verbatim
+    source: "T-02 epic (k1_packages.k3_status)"
+    codes:
+      included:     {label: "K-3 included", variant: green-tint, terminal: false, derived: false}
+      not_required: {label: "Not required", variant: neutral, terminal: false, derived: false}
+      not_included: {label: "No K-3", variant: neutral, terminal: false, derived: false}   # the epic's `none`, renamed: `none` is a portal home code
+
+  transcript_parse:   # T-01 §transcripts.parse_status (CLI-05). Labels not verbatim
+    source: "T-01 epic (transcripts.parse_status)"
+    codes:
+      queued: {label: "Queued", variant: muted, terminal: false, derived: false}
+      parsed: {label: "Read", variant: green-tint, terminal: true, derived: false}
+      failed: {label: "Couldn't read", variant: red-tint, terminal: true, derived: false}
+
   k1_package:
     source: "blueprint 3.3.1; TXP-12"
     codes:
@@ -88,6 +111,26 @@ objects:
       downloaded:   {label: "Downloaded", variant: green-tint, terminal: false, derived: false}
       bounced:      {label: "Bounced",    variant: red-tint,   terminal: false, derived: false}
       superseded:   {label: "Superseded (amended K-1)", variant: soon, terminal: true, derived: false}
+
+  questionnaire:   # questionnaires.status (T-02-T16); POR-05, TAX-03 drawer (T-02-T04)
+    source: "T-02 section 4.2 (migration questionnaires); POR-05"
+    codes:
+      open:      {label: "Open", variant: state, terminal: false, derived: false}
+      complete:  {label: "Complete", variant: green-tint, terminal: false, derived: false}
+      submitted: {label: "Submitted", variant: green, terminal: true, derived: false}   # an inquiry, locked
+
+  recipient_details_change:   # a K-1 recipient's W-9/W-8 or address change (T-02-T22; DV-10)
+    source: "T-02 section 3; TXP-12 DV-10"
+    codes:
+      pending:  {label: "Pending review", variant: amber, terminal: false, derived: false}
+      accepted: {label: "Accepted", variant: green-tint, terminal: true, derived: false}
+      rejected: {label: "Rejected", variant: red-tint, terminal: true, derived: false}
+
+  k1_handoff:   # a K-1 shared to another return's intake (T-02-T23); TAX-03 rows
+    source: "T-02 section 3; TAX-03"
+    codes:
+      awaiting: {label: "Awaiting K-1", variant: muted, terminal: false, derived: false}
+      received: {label: "Received", variant: green-tint, terminal: true, derived: false}
 
   # ---- Audit ----
   audit_engagement:   # record card (AUD-01)
@@ -465,6 +508,37 @@ objects:
       published:  {label: "Published", variant: green-tint, terminal: false, derived: false}
       superseded: {label: "Superseded", variant: soon, terminal: true, derived: false}
 
+  tax_authorization:   # tax_authorizations.status (T-01-T43); CLI-05 rail
+    source: "T-01 section 3.6; CLI-05 handoff"
+    codes:
+      not_on_file: {label: "Not on file", variant: neutral, terminal: false, derived: true}
+      requested:   {label: "Requested", variant: state, terminal: false, derived: false}
+      on_file:     {label: "On file", variant: green-tint, terminal: false, derived: false}
+      expired:     {label: "Expired", variant: red-tint, terminal: true, derived: false}
+      revoked:     {label: "Revoked", variant: muted, terminal: true, derived: false}
+
+  efile_ack:   # efile_acks.status (T-01-T37); TAX-12 c2, d, e
+    source: "T-01 section 3.13; TAX-12 handoff"
+    codes:
+      accepted: {label: "Accepted", variant: green, terminal: true, derived: false}
+      rejected: {label: "Rejected", variant: red-tint, terminal: true, derived: false}
+
+  firm_standard_version:   # firm_standard_versions.status and threshold_policy_versions.status (K-02-T04); KNW-04 header pill and Timeline
+    source: "K-02 section 4.2 (migration M-B); KNW-04 a-i handoff pills"
+    codes:
+      draft:      {label: "Draft", variant: neutral, terminal: false, derived: false}
+      published:  {label: "Published", variant: green-tint, terminal: false, derived: false}
+      superseded: {label: "Superseded", variant: soon, terminal: true, derived: true}   # computed: a later published version is effective on or before as_of
+      discarded:  {label: "Discarded", variant: muted, terminal: true, derived: false}   # hidden: a discarded draft leaves the lists
+
+  reference_set_version:   # reference_set_versions.status (K-02-T03); KNW-04 j
+    source: "K-02 section 4.2 (migration M-A); ADR-300"
+    codes:
+      draft:      {label: "Draft", variant: neutral, terminal: false, derived: false}
+      published:  {label: "Published", variant: green-tint, terminal: false, derived: false}
+      superseded: {label: "Superseded", variant: soon, terminal: true, derived: true}   # computed, never stored
+      withdrawn:  {label: "Withdrawn", variant: muted, terminal: true, derived: false}
+
   parse_flag:   # program_steps.parse_flag (K-01-T05); the ⚑ amber flag on KNW-02 rows
     source: "K-01 section 4.2 (migration B); KNW-02 c"
     codes:
@@ -543,6 +617,9 @@ objects:
       expired:   {label: "Expired",   variant: red-tint, terminal: true, derived: false}
       declined:  {label: "Declined",  variant: neutral, terminal: true, derived: false}
       revoked:   {label: "Revoked",   variant: soon, terminal: true, derived: false}
+      # T-01-T06 (DEC-1157): a renewal replaces a signed consent; before any request, nothing is stored.
+      superseded:    {label: "Superseded", variant: muted, terminal: true, derived: false}
+      not_requested: {label: "Not requested", variant: neutral, terminal: false, derived: true}
 
   consent_purpose:   # each purpose is its own signed document; a category, never a state
     source: "blueprint 3.3.1"

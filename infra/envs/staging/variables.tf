@@ -162,3 +162,15 @@ variable "workos_token_url" {
   type        = string
   default     = null
 }
+
+variable "qbo_enabled" {
+  description = "A-02-T33: map the QuickBooks Online sandbox app's secret into the tasks (fill abacus/staging/qbo first)"
+  type        = bool
+  default     = false
+}
+
+variable "docuseal_enabled" {
+  description = "TASK-2152: map the DocuSeal key into the ops one-off task (fill abacus/staging/docuseal first)"
+  type        = bool
+  default     = false
+}

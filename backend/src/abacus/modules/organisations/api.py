@@ -20,6 +20,35 @@ from abacus.modules.organisations.conflicts_contract import (
     conflict_checks_router,
     screening_records_router,
 )
+from abacus.modules.organisations.consent_gate import (
+    TriConsentRequired,
+    TriSubject,
+    consent_state,
+    covering_consents,
+    register_consent_gate,
+    require_tri_consent,
+    tri_consent_verdict,
+)
+from abacus.modules.organisations.consents_contract import (
+    AgreeingFormOut,
+    AuthorizationForm,
+    AuthorizationStatus,
+    ConsentState,
+    TaxAuthorizationDesigneeOut,
+    TaxAuthorizationIn,
+    TaxAuthorizationOut,
+    TaxElectionIn,
+    TaxElectionOut,
+    TaxProfileFileOut,
+    TranscriptComparisonIn,
+    TranscriptComparisonOut,
+    TranscriptLineDiffOut,
+    TranscriptOut,
+    TranscriptTransactionOut,
+    TranscriptUploadIn,
+    TriVerdict,
+    consents_router,
+)
 from abacus.modules.organisations.contacts import RoleAsked, contact_portal_facts, create_contact
 from abacus.modules.organisations.contacts_contract import (
     client_contacts_router,
@@ -77,6 +106,7 @@ from abacus.modules.organisations.service import (
     FirmName,
     NewClient,
     NewContact,
+    SignerContact,
     activate_contact,
     add_contact,
     attest_client_ids,
@@ -92,6 +122,7 @@ from abacus.modules.organisations.service import (
     contacts_of_user,
     create_client,
     entity_display_name,
+    entity_tin_last4s,
     find_clients,
     firm_names,
     firm_offices,
@@ -99,6 +130,7 @@ from abacus.modules.organisations.service import (
     portal_activation,
     set_client_record,
     set_entity_attributes,
+    signer_contacts,
 )
 from abacus.modules.organisations.settings_contract import offices_glance, org_settings_router
 from abacus.modules.organisations.slots import (
@@ -113,6 +145,12 @@ from abacus.modules.organisations.slots import (
     register_open_requests,
     register_overview_section,
     register_screening_evidence,
+)
+
+# T-01-T43: the tax-profile family's live routes register on `consents_router` at import.
+from abacus.modules.organisations.tax_profile import (
+    TaxProfileBackend,
+    register_tax_profile_backend,
 )
 from abacus.modules.organisations.tin import (
     MaskedTin,
@@ -135,6 +173,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     conflict_checks_router,  # conflict checks and screening, v1 stub (P-07-T29)
     screening_records_router,
     org_settings_router,  # firm-settings family v1: offices and teams (G-01-T02 stub)
+    consents_router,  # C19 v1: consents, the TRI gate and the tax profile (T-01-T01 stub)
 )
 
 # P-01-T04: identity's `/v1/me` lists the firm's offices through this.
@@ -157,17 +196,24 @@ for _section in (
     OverviewSection("contacts", "table", "client.read", 40, contacts_section),
 ):
     register_overview_section(_section)
+# T-01-T11 (C19 condition 6): the `use` and `ai_disclosure` consent checks the matrix's
+# `consent(<purpose>)` reads, and the AI gateway's TRI check.
+register_consent_gate()
 
 __all__ = [
     "CONTACT_ROLES",
     "ENTITY_TYPES",
     "RELATIONSHIP_KINDS",
     "ROUTERS",
+    "AgreeingFormOut",
+    "AuthorizationForm",
+    "AuthorizationStatus",
     "ClientChoice",
     "ClientNames",
     "ClientRecord",
     "ClientRecordChange",
     "ClientRecordInvalid",
+    "ConsentState",
     "ContactExists",
     "ContactFacts",
     "ContactKind",
@@ -186,10 +232,27 @@ __all__ = [
     "OverviewSection",
     "RoleAsked",
     "SectionRows",
+    "SignerContact",
     "SubjectNames",
+    "TaxAuthorizationDesigneeOut",
+    "TaxAuthorizationIn",
+    "TaxAuthorizationOut",
+    "TaxElectionIn",
+    "TaxElectionOut",
+    "TaxProfileBackend",
+    "TaxProfileFileOut",
     "TinConflict",
     "TinInvalid",
     "TinKindNotAllowed",
+    "TranscriptComparisonIn",
+    "TranscriptComparisonOut",
+    "TranscriptLineDiffOut",
+    "TranscriptOut",
+    "TranscriptTransactionOut",
+    "TranscriptUploadIn",
+    "TriConsentRequired",
+    "TriSubject",
+    "TriVerdict",
     "activate_contact",
     "add_contact",
     "add_intake_contact",
@@ -206,16 +269,19 @@ __all__ = [
     "client_of_entity",
     "client_record",
     "client_with_entity",
+    "consent_state",
     "contact_client",
     "contact_facts",
     "contact_portal_facts",
     "contacts_of_user",
+    "covering_consents",
     "create_client",
     "create_contact",
     "dedupe_candidates",
     "ein_matches",
     "entity_display_name",
     "entity_name_column",
+    "entity_tin_last4s",
     "find_clients",
     "fingerprint_tin",
     "firm_names",
@@ -231,10 +297,14 @@ __all__ = [
     "register_open_requests",
     "register_overview_section",
     "register_screening_evidence",
+    "register_tax_profile_backend",
+    "require_tri_consent",
     "run_conflict_check",
     "same_name_client",
     "seal_tin",
     "set_client_record",
     "set_entity_attributes",
+    "signer_contacts",
     "standing_conflict_results",
+    "tri_consent_verdict",
 ]

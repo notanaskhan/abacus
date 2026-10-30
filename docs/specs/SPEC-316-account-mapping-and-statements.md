@@ -47,6 +47,18 @@ Migration 0079 adds:
   - The trial balance's "Mapping" view: choose the groupings, a per-account FS line picker, the "Unmapped only" filter, tallies, and sign as preparer or reviewer.
   - The "Statements" view: balance sheet and income statement for current and prior year, the balance pill, and an unmapped warning. It follows the Unadjusted/Final toggle.
 
+- **AC-8 Prior-year match and tallies (A-03-T08; TASK-5009).**
+  - An account is mapped by a person's edit first. Next comes the line it sat on in the engagement this one rolled forward from (`prior_engagement_id`). That match uses the normalised account code and the FS-line key, so it survives a new grouping-set version. Last come the number ranges.
+  - The mapping shows tallies: from prior year, by range, edited, unmapped. It also shows whether the trial balance balances.
+  - The preparer's sign-off, refused while any account is unmapped, records `mapping_set.confirmed`.
+  - Only line keys cross from the prior year, never its figures.
+
+- **AC-9 Staleness on a new trial balance version (A-03-T14; TASK-5010).**
+  - When `trial_balance.version_created` brings version 2 or later and the mapping's newest sign-offs were on other content, assurance emits `mapping_set.went_stale` once per version. The audit records the version and the unmapped count.
+  - Review's stale detector then tells each signer (`sign_off.went_stale`, notification `sign_off_stale`).
+  - Human edits persist by account code, and new accounts read unmapped.
+  - Version 1, a trial balance with no mapping, and an unsigned mapping announce nothing.
+
 ## 3. Out of scope
 - XLSX import.
 - Prior-year mapping match.

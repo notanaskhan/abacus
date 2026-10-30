@@ -39,6 +39,13 @@ from abacus.modules.evidence.citations.registry import (
 from abacus.modules.evidence.citations.registry import Display as CitationLabel
 from abacus.modules.evidence.citations.registry import Verdict as CitationVerdict
 from abacus.modules.evidence.citations.service import RecordedCitation, record_citations
+from abacus.modules.evidence.classification import (
+    ClassifiedIntake,
+    classify_intake,
+    filed_classification_match,
+    version_with_fingerprint,
+)
+from abacus.modules.evidence.classifier import rules as classifier_rules
 from abacus.modules.evidence.contract import withdrawal_router
 from abacus.modules.evidence.drops import drop_batch
 from abacus.modules.evidence.drops_contract import drops_router, void_router
@@ -128,9 +135,23 @@ from abacus.modules.evidence.holds import activate as legal_hold_activate
 from abacus.modules.evidence.holds import apply_batch as legal_hold_apply_batch
 from abacus.modules.evidence.inbox import add_to_inbox, register_match_picks
 from abacus.modules.evidence.inbox import assign as assign_inbox_file
+from abacus.modules.evidence.intake_filing import (
+    Filed,
+    IntakeObject,
+    SupersedeMismatch,
+    file_intake_object,
+)
+from abacus.modules.evidence.intake_keys import (
+    destroy_intake_key,
+    held_intake_objects,
+    live_intake_keys,
+    record_intake_key,
+    screen_and_stage_detached,
+)
+from abacus.modules.evidence.intake_sources import IntakeSource, register_intake_source
 from abacus.modules.evidence.item_detail import Download as DocumentDownload
 from abacus.modules.evidence.item_detail import latest_document
-from abacus.modules.evidence.masked_previews import masked_preview_upload
+from abacus.modules.evidence.masked_previews import intake_masked_pages, masked_preview_upload
 from abacus.modules.evidence.match_material import (
     Candidate,
     MatchMaterial,
@@ -140,6 +161,7 @@ from abacus.modules.evidence.match_material import (
 from abacus.modules.evidence.matching import MIN_SCORE as SUGGESTION_MIN_SCORE
 from abacus.modules.evidence.matching import suggest as suggest_by_name
 from abacus.modules.evidence.pii import pii_scan_upload
+from abacus.modules.evidence.pii_facts import tin_exposure
 from abacus.modules.evidence.portal_files import (
     PortalFile,
     SentBack,
@@ -159,7 +181,14 @@ from abacus.modules.evidence.processing import (
     stale_pdfs,
 )
 from abacus.modules.evidence.processing import check_upload as check_upload_content
-from abacus.modules.evidence.records import RecordClass, StoredRecord, anchor_chain, put_record
+from abacus.modules.evidence.processing import workflow_id as upload_workflow_id
+from abacus.modules.evidence.records import (
+    RecordClass,
+    StoredRecord,
+    anchor_chain,
+    get_record,
+    put_record,
+)
 from abacus.modules.evidence.render import (
     CODE_COLUMN,
     CREDIT_COLUMN,
@@ -195,6 +224,11 @@ from abacus.modules.evidence.retention import (
 )
 from abacus.modules.evidence.retention_routes import platform_router as retention_platform_router
 from abacus.modules.evidence.retention_routes import router as retention_router
+from abacus.modules.evidence.retrieved_copies import (
+    SOURCE_DOCUMENTS,
+    file_retrieved_copy,
+    pdf_text,
+)
 from abacus.modules.evidence.routes import firm_router, router
 
 # The routers the API mounts, in order (P-39; F-03-T07).
@@ -232,6 +266,7 @@ from abacus.modules.evidence.service import (
     stage_content,
     undo_returned_files,
     undo_review_decision,
+    version_content,
     version_view,
 )
 from abacus.modules.evidence.signed_copies import (
@@ -240,6 +275,7 @@ from abacus.modules.evidence.signed_copies import (
     file_signed_copy,
     read_staged,
     screen_and_stage,
+    version_titles,
 )
 from abacus.modules.evidence.storage import (
     MAX_CONTENT_BYTES,
@@ -256,15 +292,15 @@ from abacus.modules.evidence.uploads import (
     upload,
     upload_preview,
 )
-from abacus.modules.evidence.viewer import readable_version
+from abacus.modules.evidence.viewer import readable_version, viewer_page
 from abacus.modules.evidence.withdrawals import ACTIVITIES as WITHDRAWAL_ACTIVITIES
 from abacus.modules.evidence.withdrawals import SUBSCRIPTIONS as WITHDRAWAL_SUBSCRIPTIONS
 from abacus.modules.evidence.withdrawals import WORKFLOWS as WITHDRAWAL_WORKFLOWS
 from abacus.modules.evidence.withdrawals import is_version_withdrawn, withdrawn_among
 from abacus.modules.evidence.words import WORDS_VERSION, start_trust_layer_backfill, words_upload
 from abacus.modules.evidence.workflow_types import INBOX as UPLOAD_INBOX
-from abacus.modules.evidence.workflow_types import VERSION as UPLOAD_VERSION
 from abacus.modules.evidence.workflow_types import (
+    INTAKE,
     BackfillInput,
     EngagementExportInput,
     ExportPackageFacts,
@@ -274,6 +310,7 @@ from abacus.modules.evidence.workflow_types import (
     UploadInput,
     WithdrawalPurgeInput,
 )
+from abacus.modules.evidence.workflow_types import VERSION as UPLOAD_VERSION
 from abacus.modules.evidence.workflow_types import ExportFailure as ExportBuildFailure
 from abacus.modules.evidence.workflows import (
     ANCHOR_ID,
@@ -407,12 +444,14 @@ __all__ = [
     "EXPORT_FORMAT_VERSION",
     "EXPORT_SCHEMA_FILE",
     "FIRST_LINE_ROW",
+    "INTAKE",
     "MAX_CONTENT_BYTES",
     "NAME_COLUMN",
     "RECORD_TYPES",
     "ROUTERS",
     "SCHEDULES",
     "SIGNED_AUTHORIZATIONS",
+    "SOURCE_DOCUMENTS",
     "SUBSCRIPTIONS",
     "SUGGESTION_MIN_SCORE",
     "TOTAL_LABEL",
@@ -431,6 +470,7 @@ __all__ = [
     "CitationKind",
     "CitationLabel",
     "CitationVerdict",
+    "ClassifiedIntake",
     "ContentTooLarge",
     "DocumentDownload",  # G-02-T20: the WISP pack's documents
     "EffectivePolicy",
@@ -448,6 +488,7 @@ __all__ = [
     "ExportExpirySweepWorkflow",
     "ExportPackageFacts",
     "ExportStale",
+    "Filed",
     "FinalExport",
     "FinalExportRequired",
     "FirmExportFacts",
@@ -461,6 +502,8 @@ __all__ = [
     "HoldView",
     "InboxFileAdded",
     "InboxFileExtracted",
+    "IntakeObject",
+    "IntakeSource",
     "IntegrityError",
     "LayerExport",
     "LayerLine",
@@ -486,6 +529,7 @@ __all__ = [
     "SentBack",
     "StoredObject",
     "StoredRecord",
+    "SupersedeMismatch",
     "TrialBalance",
     "TrialBalanceLine",
     "TrustLayerBackfill",
@@ -505,12 +549,15 @@ __all__ = [
     "citation_cell_text",
     "citation_display",
     "citation_sources",
+    "classifier_rules",
+    "classify_intake",
     "client_pre_checks",
     "column_letters",
     "configure_storage",
     "decide",
     "decided_among",
     "decisions_on_screenings",
+    "destroy_intake_key",
     "drop_batch",
     "effective_decisions",
     "effective_policies",
@@ -520,22 +567,30 @@ __all__ = [
     "export_requester",
     "export_section_csv",
     "extend_retention_for",
+    "file_intake_object",
+    "file_retrieved_copy",
     "file_signed_copy",
+    "filed_classification_match",
     "final_export_for_archive",
     "firm_export_schedule_id",
     "firm_router",
+    "get_record",
+    "held_intake_objects",
     "holds_covering",
     "included_export_versions",
+    "intake_masked_pages",
     "is_version_withdrawn",
     "latest_document",
     "legal_hold_activate",
     "legal_hold_apply_batch",
     "list_holds",
+    "live_intake_keys",
     "mark_sources_superseded",
     "masked_preview_upload",
     "match_material",
     "normalised_text",
     "page_quote_reason",
+    "pdf_text",
     "pii_scan_upload",
     "place_hold",
     "portal_files",
@@ -546,10 +601,12 @@ __all__ = [
     "read_staged",
     "read_version",
     "record_citations",
+    "record_intake_key",
     "register_citable",
     "register_export_audit_trail",
     "register_export_section",
     "register_firm_export_starter",
+    "register_intake_source",
     "register_match_picks",
     "register_proposal_source",
     "render_general_ledger",
@@ -563,6 +620,7 @@ __all__ = [
     "review_material",
     "router",
     "screen_and_stage",
+    "screen_and_stage_detached",
     "screening_facts",
     "set_policy",
     "stage_content",
@@ -570,12 +628,18 @@ __all__ = [
     "start_trust_layer_backfill",
     "suggest_by_name",
     "supported_citations",
+    "tin_exposure",
     "undo_returned_files",
     "undo_review_decision",
     "upload",
     "upload_preview",
+    "upload_workflow_id",
     "verified_citation_ids",
+    "version_content",
+    "version_titles",
     "version_view",
+    "version_with_fingerprint",
+    "viewer_page",
     "waiting_among",
     "withdrawn_among",
     "words_upload",

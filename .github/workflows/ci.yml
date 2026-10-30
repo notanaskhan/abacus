@@ -120,6 +120,23 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+  render-golden:
+    # P-11-T02 (ADR-320): the golden letter renders byte-identically in two fresh containers of
+    # the backend image (no network) and equals the recorded goldens.
+    name: stage 2 render goldens
+    needs: [changes]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - if: needs.changes.outputs.backend != 'true'
+        run: echo "no backend paths changed (abacus_tools.ci.paths), so nothing to run"
+      - if: needs.changes.outputs.backend == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - if: needs.changes.outputs.backend == 'true'
+        run: make golden-render
+
   integration:
     name: stage 2 integration tests (${{ matrix.shard }}/10)
     needs: [changes]
@@ -484,7 +501,7 @@ jobs:
   stage-2:
     name: stages 1 and 2 (make check)
     if: always() && (github.event_name == 'merge_group' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && !github.event.pull_request.draft))
-    needs: [stage-1, changes, unit, integration, contracts, frontend, gallery, gallery-axe, journeys, coverage, evals-fast]
+    needs: [stage-1, changes, unit, render-golden, integration, contracts, frontend, gallery, gallery-axe, journeys, coverage, evals-fast]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:

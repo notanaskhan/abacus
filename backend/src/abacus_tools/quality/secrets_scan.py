@@ -31,6 +31,12 @@ EXCLUDE: tuple[str, ...] = ()
 # (path glob, rule id, reason): findings that are known local fixtures, never real secrets.
 ALLOW: tuple[tuple[str, str, str], ...] = (
     (
+        "backend/tests/unit/integrations/test_task2152_esign_install_tool.py",
+        "SECRET-003",
+        "a synthetic DocuSeal-shaped key that spells 'not a secret', for the install tool's"
+        " shape check (TASK-2152); never a real key",
+    ),
+    (
         "backend/migrations/bootstrap-local.sql",
         "*",
         "local-only database role passwords for the docker compose stack;"
@@ -52,6 +58,16 @@ ALLOW: tuple[tuple[str, str, str], ...] = (
         "backend/tests/contracts/review_grammar/test_c3_shl10_proposals.py",
         "SECRET-003",
         "C3 `field_key` values are tax-form line codes (f1040.l2a, sch_a.l5b), not credentials",
+    ),
+    (
+        "backend/tests/integration/backfill/test_k01t12_programs_read.py",
+        "SECRET-003",
+        "K-01-T12: methodology step keys (bh-ebp-110-4) bound as `:key`, not credentials",
+    ),
+    (
+        "apps/web/src/fixtures/seed/standards.ts",
+        "SECRET-003",
+        "K-02-T13: firm standard keys (bh-tax-02), the standards' identifiers, not credentials",
     ),
     (
         "docs/design/parity-manifest.json",
@@ -79,6 +95,18 @@ ALLOW: tuple[tuple[str, str, str], ...] = (
         "apps/web/src/fixtures/seed/client-records.ts",
         "SECRET-003",
         "CLI-02 overview items carry a `key` row code (form_7004.filed), never a credential",
+    ),
+    (
+        "apps/web/src/fixtures/seed/engine-sync.ts",
+        "SECRET-003",
+        "T-01-T15: TAX-09 diagnostics carry a `field_key` tax-form line code (f8995a.ubia),"
+        " not credentials",
+    ),
+    (
+        "apps/web/src/fixtures/seed/reference-sets.ts",
+        "SECRET-003",
+        "K-02-T17: C21 reference sets carry a `key` / `set_key` set code"
+        " (us.due_date_rules.ty2025), never a credential",
     ),
 )
 DATA_SUFFIXES = frozenset({".csv", ".json", ".yaml", ".yml", ".txt", ".tsv"})

@@ -1157,7 +1157,8 @@
       "source": "handoff/screens/POR-04 Request detail - ignore reason sheet/screenshots/POR-04a.png",
       "sha256": "46178dd9601e9eb32333f1e06087e17d51c7e5db96fa2133f9ec9a3a8d4a75d7",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "locked": true
     },
     "por-04b.window": {
       "page": "screens/POR-04?st=b",
@@ -1165,7 +1166,8 @@
       "source": "handoff/screens/POR-04 Request detail - ignore reason sheet/screenshots/POR-04b.png",
       "sha256": "93e3aca17bf0e61f59415e416e43bffda87cfa447d8673f0f5b50cac64a961bc",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "locked": true
     },
     "por-04c.window": {
       "page": "screens/POR-04?st=c",
@@ -1173,7 +1175,8 @@
       "source": "handoff/screens/POR-04 Request detail - ignore reason sheet/screenshots/POR-04c.png",
       "sha256": "b5f22b92ba999d92ce352fa7c5faef7a4c982ad45a404aac0cd420cee1dd99b1",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "locked": true
     },
     "por-04d.window": {
       "page": "screens/POR-04?st=d",
@@ -1181,7 +1184,8 @@
       "source": "handoff/screens/POR-04 Request detail - ignore reason sheet/screenshots/POR-04d.png",
       "sha256": "d82eb5f8ae2794488a3c959f0cbb918e8896a7201ad4f57098b4d430a01551b6",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "locked": true
     },
     "por-04e.window": {
       "page": "screens/POR-04?st=e",
@@ -1205,7 +1209,8 @@
       "source": "handoff/screens/POR-04 Request detail - ignore reason sheet/screenshots/POR-04g.png",
       "sha256": "4b3d4797d1663a70f3149df9ef914146b0efb4cd776c82227a52a526b82cee21",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "locked": true
     },
     "por-14a.window": {
       "page": "screens/POR-14?st=a",
@@ -1628,7 +1633,13 @@
       "source": "handoff/screens/AUD-06 Trial balance and leadsheets/screenshots/AUD-06a.png",
       "sha256": "dd5f8e2899c9d7c12f795b4277af1d12e1095b20851bcac69e0255e0ed75a520",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']",
+        "[data-cockpit='rail']",
+        "[data-shell='record-header']"
+      ],
+      "locked": true
     },
     "aud-06b.window": {
       "page": "screens/AUD-06?st=b",
@@ -1636,7 +1647,11 @@
       "source": "handoff/screens/AUD-06 Trial balance and leadsheets/screenshots/AUD-06b.png",
       "sha256": "c2608811fdc171a845874eba29824900b13e6ff2dd61beb864907541606fe178",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ],
+      "locked": true
     },
     "aud-06c.window": {
       "page": "screens/AUD-06?st=c",
@@ -1644,7 +1659,13 @@
       "source": "handoff/screens/AUD-06 Trial balance and leadsheets/screenshots/AUD-06c.png",
       "sha256": "37e328badfdc42425fad5544bed62aed57e24d1d61c02cfdda32340db6e95033",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']",
+        "[data-cockpit='rail']",
+        "[data-shell='record-header']"
+      ],
+      "locked": true
     },
     "aud-06d.window": {
       "page": "screens/AUD-06?st=d",
@@ -1652,7 +1673,10 @@
       "source": "handoff/screens/AUD-06 Trial balance and leadsheets/screenshots/AUD-06d.png",
       "sha256": "00145d869e215fd1cf134fd3e7d21d63953f5416b14a38910b2227fd5cade117",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ]
     },
     "aud-06e.window": {
       "page": "screens/AUD-06?st=e",
@@ -1660,7 +1684,11 @@
       "source": "handoff/screens/AUD-06 Trial balance and leadsheets/screenshots/AUD-06e.png",
       "sha256": "86802d9c4bd0809e5ebe2ee62bbbae56ca58de1d63d8cbbc18db03b8280ead68",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ],
+      "locked": true
     },
     "aud-06f.window": {
       "page": "screens/AUD-06?st=f",
@@ -1668,7 +1696,10 @@
       "source": "handoff/screens/AUD-06 Trial balance and leadsheets/screenshots/AUD-06f.png",
       "sha256": "281ed5f2c837dd80b30a200391451cc43005c304ebf631fdb36ecbf2c816b16d",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ]
     },
     "aud-06g.window": {
       "page": "screens/AUD-06?st=g",
@@ -1970,6 +2001,692 @@
       "sha256": "48fa52e822af1d9457fdff15a4736a3c25ffbbdf29861f48d2907b7e833bf511",
       "crop": "window",
       "tier": "C"
+    },
+    "cli-01a.window": {
+      "page": "screens/CLI-01?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-01 Clients index/screenshots/CLI-01a.png",
+      "sha256": "1f620acbfca6d60b9da5ba85ee80e21a26f647c114deba5f6ae94e1b586965fe",
+      "crop": "window",
+      "tier": "C"
+    },
+    "cli-01b.window": {
+      "page": "screens/CLI-01?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-01 Clients index/screenshots/CLI-01b.png",
+      "sha256": "045ed44c3382e6c964ac35840e9a889ae050c7dbd78419a8ce092b0607b15ef4",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "cli-01c.window": {
+      "page": "screens/CLI-01?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-01 Clients index/screenshots/CLI-01c.png",
+      "sha256": "93557f55083758057c3c68c4f4e5c1e0719a29cc61f086bb830bbf500747f398",
+      "crop": "window",
+      "tier": "C"
+    },
+    "cli-01d.window": {
+      "page": "screens/CLI-01?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-01 Clients index/screenshots/CLI-01d.png",
+      "sha256": "816d8e12b4d4e7ba854e9a689bdaf673b922e0263e906e32ab9248283aa8a3c2",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "cli-01e.window": {
+      "page": "screens/CLI-01?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-01 Clients index/screenshots/CLI-01e.png",
+      "sha256": "4652a4f170b8c319151615e3d853aa6406bdbe959d3e9bc1aa1d8c06ca6e8242",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "cli-01f.window": {
+      "page": "screens/CLI-01?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-01 Clients index/screenshots/CLI-01f.png",
+      "sha256": "34b4708d7dbfc3b3e9d86e8f7bf0543d11c422ef60e19932b329a0eb1b1bcd5c",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "cli-02a.window": {
+      "page": "screens/CLI-02?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-02 Client record - Overview/screenshots/CLI-02a.png",
+      "sha256": "d5205413a604b8423d881575302a1d34b8033a1011eead4e41fde15710fee969",
+      "crop": "window",
+      "tier": "C"
+    },
+    "cli-02a2.window": {
+      "page": "screens/CLI-02?st=a2",
+      "selector": "[data-artboard=\"a2\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-02 Client record - Overview/screenshots/CLI-02a2.png",
+      "sha256": "311fe91fc0e2a5bbae3c2d6ab1283fd866c615557322d75292b90299957fe998",
+      "crop": "window",
+      "tier": "C"
+    },
+    "cli-02b.window": {
+      "page": "screens/CLI-02?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-02 Client record - Overview/screenshots/CLI-02b.png",
+      "sha256": "3531aa418b860dbdebbee1eac7b71326b31673a9fd91879691f20f76bbbe86ee",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "cli-02c.window": {
+      "page": "screens/CLI-02?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-02 Client record - Overview/screenshots/CLI-02c.png",
+      "sha256": "2d2c92a13e570461bba1a31aa3611f29b9c62f37294060f1c8597ee31d9ace03",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "cli-02e.window": {
+      "page": "screens/CLI-02?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-02 Client record - Overview/screenshots/CLI-02e.png",
+      "sha256": "4574a47b9f68e094000cf3fe591197d384847f4e4483227de40f6eac542cbd91",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "cli-02f.window": {
+      "page": "screens/CLI-02?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-02 Client record - Overview/screenshots/CLI-02f.png",
+      "sha256": "09cb58d5ea6f7268c0066e4f0d85d98b6e90589c6c351e435735e4be3cfd1fc6",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "cli-04a.window": {
+      "page": "screens/CLI-04?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-04 Contacts and portal access/screenshots/CLI-04a.png",
+      "sha256": "6d1a0e3dc83ffed236c1b3fcdbcb5e3522af52d0d3170f727ca41fdcab1468c5",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "cli-04b.window": {
+      "page": "screens/CLI-04?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-04 Contacts and portal access/screenshots/CLI-04b.png",
+      "sha256": "43a79f7a8f6af1e1a26dd58859ac30872224d95fb4564d5d3655ed4d0cdcbbf7",
+      "crop": "window",
+      "tier": "C"
+    },
+    "cli-04c.window": {
+      "page": "screens/CLI-04?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-04 Contacts and portal access/screenshots/CLI-04c.png",
+      "sha256": "847254585dc4b38d977ba2677c10843979c28cbe367f56f20414c27d16e128c5",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "cli-04d.window": {
+      "page": "screens/CLI-04?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-04 Contacts and portal access/screenshots/CLI-04d.png",
+      "sha256": "cbd8fc25cd3579877643099f102a6b38847ecfe574cbebe235044890b2d670c9",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "cli-04e.window": {
+      "page": "screens/CLI-04?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-04 Contacts and portal access/screenshots/CLI-04e.png",
+      "sha256": "ef335851b29624b500261b0d2ce499b3e96e0eb032b86b4e4766dc3549f6f9e5",
+      "crop": "window",
+      "tier": "C"
+    },
+    "cli-04f.window": {
+      "page": "screens/CLI-04?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-04 Contacts and portal access/screenshots/CLI-04f.png",
+      "sha256": "2b74823966e1de1547520860c67735c3e7bfd7c2bb651c88e9a7aa9dfe82da4c",
+      "crop": "window",
+      "tier": "C"
+    },
+    "cli-04g.window": {
+      "page": "screens/CLI-04?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-04 Contacts and portal access/screenshots/CLI-04g.png",
+      "sha256": "4e3f5b3d4b10516dd62673df3b6b22dfc68f2fdc161477f50849247e63b98078",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "eng-01a.window": {
+      "page": "screens/ENG-01?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ENG-01 Engagements index/screenshots/ENG-01a.png",
+      "sha256": "4df632ab37953d34a521f0f93084f1388180636af451179c44a3d6128ffb0711",
+      "crop": "window",
+      "tier": "C"
+    },
+    "eng-01b.window": {
+      "page": "screens/ENG-01?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ENG-01 Engagements index/screenshots/ENG-01b.png",
+      "sha256": "c47c9a8e25c90ab3890f5065087519939d55c232011bf32226e79994e5060c9b",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "eng-01c.window": {
+      "page": "screens/ENG-01?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ENG-01 Engagements index/screenshots/ENG-01c.png",
+      "sha256": "b3bc5c14c94cc3cb23898631c2eed045b0d2a3a7d960afaa6ebaef509ba715b9",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "eng-01d.window": {
+      "page": "screens/ENG-01?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ENG-01 Engagements index/screenshots/ENG-01d.png",
+      "sha256": "ad3da4f77cc5c1f6d30e2efc8c908bdca62b72d5775ee811b2f3f827c15251ad",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "eng-01e.window": {
+      "page": "screens/ENG-01?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ENG-01 Engagements index/screenshots/ENG-01e.png",
+      "sha256": "49ce6408a6a2b03f6640a27fbf2c35da90fb00eef86370034134a86cf67bc58b",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "eng-02a.window": {
+      "page": "screens/ENG-02?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ENG-02 Engagement record/screenshots/ENG-02a.png",
+      "sha256": "b672767ec392e84a0777a9af96d3272b46147fe7ae7ef59547654030c360227d",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "eng-02b.window": {
+      "page": "screens/ENG-02?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ENG-02 Engagement record/screenshots/ENG-02b.png",
+      "sha256": "930b8f578e772c01b08e841509523f9d27c152c630ee8e124594d07d60d19b22",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "eng-02c.window": {
+      "page": "screens/ENG-02?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ENG-02 Engagement record/screenshots/ENG-02c.png",
+      "sha256": "5a51202e1346611c9fbdf591fdd5357ba1ab8a8ec2decd51fd4ed64b04e328ab",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "eng-02d.window": {
+      "page": "screens/ENG-02?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ENG-02 Engagement record/screenshots/ENG-02d.png",
+      "sha256": "2208e4ef57561bae70e3624988324ed9fad7b807d51928c467e800785e6a1676",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "eng-02e.window": {
+      "page": "screens/ENG-02?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ENG-02 Engagement record/screenshots/ENG-02e.png",
+      "sha256": "983be195ad51e4b36a3f050bd63fae59bb9920249e5970fcf696367fc9760569",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "eng-02f.window": {
+      "page": "screens/ENG-02?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ENG-02 Engagement record/screenshots/ENG-02f.png",
+      "sha256": "87c45a42404f21236ab17ec233cefa8f2012ae14f37cf1e31bb87bc314482485",
+      "crop": "window",
+      "tier": "C"
+    },
+    "eng-02g.window": {
+      "page": "screens/ENG-02?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ENG-02 Engagement record/screenshots/ENG-02g.png",
+      "sha256": "67ed2c2a158e80d2f7dd5590c07e457520697410216ee7dfdcf2836aabd76cf8",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "eng-03a.window": {
+      "page": "screens/ENG-03?st=a",
+      "selector": "[data-artboard=\"a\"]",
+      "source": "handoff/screens/ENG-03 New engagement wizard - Fairhaven Foods 401-k- Plan/screenshots/ENG-03a.png",
+      "sha256": "101218f7f6bba3c902354a7845f919755223e08a404dcda545b99ffcbf08a8f6",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "P-07-T63: ENG-03's gallery artboard draws the wizard on the bare 1440 x 900 stage with no app window (no [data-shell='app']), so the handoff's 1400 x 860 window crop cannot be compared (size mismatch, no diff); measure once the artboard draws the shell behind the wizard, as DEC-832 did for AUD-06"
+    },
+    "eng-03b.window": {
+      "page": "screens/ENG-03?st=b",
+      "selector": "[data-artboard=\"b\"]",
+      "source": "handoff/screens/ENG-03 New engagement wizard - Fairhaven Foods 401-k- Plan/screenshots/ENG-03b.png",
+      "sha256": "ab0f54e24839c2fb9c434f28fc69e7b2f09918709559942cef7dffc60bb8cf25",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "P-07-T63: ENG-03's gallery artboard draws the wizard on the bare 1440 x 900 stage with no app window (no [data-shell='app']), so the handoff's 1400 x 860 window crop cannot be compared (size mismatch, no diff); measure once the artboard draws the shell behind the wizard, as DEC-832 did for AUD-06"
+    },
+    "eng-03c.window": {
+      "page": "screens/ENG-03?st=c",
+      "selector": "[data-artboard=\"c\"]",
+      "source": "handoff/screens/ENG-03 New engagement wizard - Fairhaven Foods 401-k- Plan/screenshots/ENG-03c.png",
+      "sha256": "cdac750f5d0ff6b4bc492de9c953c4c114c2db3941cdb434a1c3c52fb77874ff",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "P-07-T63: ENG-03's gallery artboard draws the wizard on the bare 1440 x 900 stage with no app window (no [data-shell='app']), so the handoff's 1400 x 860 window crop cannot be compared (size mismatch, no diff); measure once the artboard draws the shell behind the wizard, as DEC-832 did for AUD-06"
+    },
+    "eng-03d.window": {
+      "page": "screens/ENG-03?st=d",
+      "selector": "[data-artboard=\"d\"]",
+      "source": "handoff/screens/ENG-03 New engagement wizard - Fairhaven Foods 401-k- Plan/screenshots/ENG-03d.png",
+      "sha256": "a79e0addcbc9b4d413b8e6839d66189c5fb1facf46d03df6f8344c2c076c2d5e",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "P-07-T63: ENG-03's gallery artboard draws the wizard on the bare 1440 x 900 stage with no app window (no [data-shell='app']), so the handoff's 1400 x 860 window crop cannot be compared (size mismatch, no diff); measure once the artboard draws the shell behind the wizard, as DEC-832 did for AUD-06"
+    },
+    "eng-03e.window": {
+      "page": "screens/ENG-03?st=e",
+      "selector": "[data-artboard=\"e\"]",
+      "source": "handoff/screens/ENG-03 New engagement wizard - Fairhaven Foods 401-k- Plan/screenshots/ENG-03e.png",
+      "sha256": "81713ab357ec16d3a05aaa9652228d3a4a56d1821ea1016d91babb2c7d6e7c80",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "P-07-T63: ENG-03's gallery artboard draws the wizard on the bare 1440 x 900 stage with no app window (no [data-shell='app']), so the handoff's 1400 x 860 window crop cannot be compared (size mismatch, no diff); measure once the artboard draws the shell behind the wizard, as DEC-832 did for AUD-06"
+    },
+    "eng-03f.window": {
+      "page": "screens/ENG-03?st=f",
+      "selector": "[data-artboard=\"f\"]",
+      "source": "handoff/screens/ENG-03 New engagement wizard - Fairhaven Foods 401-k- Plan/screenshots/ENG-03f.png",
+      "sha256": "4dfd1f70cb17c35aa20870d726a4deda04ac023e3493d11cc1558eac8b10a6bd",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "P-07-T63: ENG-03's gallery artboard draws the wizard on the bare 1440 x 900 stage with no app window (no [data-shell='app']), so the handoff's 1400 x 860 window crop cannot be compared (size mismatch, no diff); measure once the artboard draws the shell behind the wizard, as DEC-832 did for AUD-06"
+    },
+    "eng-03g.window": {
+      "page": "screens/ENG-03?st=g",
+      "selector": "[data-artboard=\"g\"]",
+      "source": "handoff/screens/ENG-03 New engagement wizard - Fairhaven Foods 401-k- Plan/screenshots/ENG-03g.png",
+      "sha256": "054cea0fe0f8207bef971dd98d5829a9e8055ecb926504fb4e48da960e259315",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "P-07-T63: ENG-03's gallery artboard draws the wizard on the bare 1440 x 900 stage with no app window (no [data-shell='app']), so the handoff's 1400 x 860 window crop cannot be compared (size mismatch, no diff); measure once the artboard draws the shell behind the wizard, as DEC-832 did for AUD-06"
+    },
+    "eng-03h.window": {
+      "page": "screens/ENG-03?st=h",
+      "selector": "[data-artboard=\"h\"]",
+      "source": "handoff/screens/ENG-03 New engagement wizard - Fairhaven Foods 401-k- Plan/screenshots/ENG-03h.png",
+      "sha256": "2ccc1d30d4f094aabc9c2a7361b8a9c0960089ce3119c81ec121736fd37817c2",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "P-07-T63: ENG-03's gallery artboard draws the wizard on the bare 1440 x 900 stage with no app window (no [data-shell='app']), so the handoff's 1400 x 860 window crop cannot be compared (size mismatch, no diff); measure once the artboard draws the shell behind the wizard, as DEC-832 did for AUD-06"
+    },
+    "t10a.window": {
+      "page": "screens/T10?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T10 Document on well/screenshots/T10a.png",
+      "sha256": "3c86eef5368e4544a29557b8c4a0fe9fbf9c839957012f61760e5b0d4f0bfd42",
+      "crop": "window",
+      "tier": "B",
+      "mask": [
+        "[data-spinner]"
+      ],
+      "deviation": "F-06-T14 (DEC-1252): drafting draws Edit, Regenerate… and Approve… disabled, each naming the drafting as its reason (F-06 Story 4.1), where the board's header shows the spinner line alone"
+    },
+    "t10a.paper-header": {
+      "page": "screens/T10?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T10 Document on well/screenshots/T10a.png",
+      "sha256": "3c86eef5368e4544a29557b8c4a0fe9fbf9c839957012f61760e5b0d4f0bfd42",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-template='t10'] [data-shell='pane-header']",
+      "deviation": "F-06-T13 review measured 2.26% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T15/T22 fixes the kit"
+    },
+    "t10b.window": {
+      "page": "screens/T10?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T10 Document on well/screenshots/T10b.png",
+      "sha256": "9e4414fcd34d7f3dcee8e3c4f970ad4a29497dabcba9c9d461a7cf6100e0da4b",
+      "crop": "window",
+      "tier": "B"
+    },
+    "t10b.paper-header": {
+      "page": "screens/T10?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T10 Document on well/screenshots/T10b.png",
+      "sha256": "9e4414fcd34d7f3dcee8e3c4f970ad4a29497dabcba9c9d461a7cf6100e0da4b",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-template='t10'] [data-shell='pane-header']",
+      "deviation": "F-06-T13 review measured 1.62% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T15/T22 fixes the kit"
+    },
+    "t6a.control-bar": {
+      "page": "screens/T6?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T6 Workbook schedule grid/screenshots/T6a.png",
+      "sha256": "e148e2af59429167ed30238a1ce2f27fede170da3082c56e64a07733311ec1d0",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-workbook='control-bar']"
+    },
+    "t6a.tally-strip": {
+      "page": "screens/T6?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T6 Workbook schedule grid/screenshots/T6a.png",
+      "sha256": "e148e2af59429167ed30238a1ce2f27fede170da3082c56e64a07733311ec1d0",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-workbook='tally']",
+      "deviation": "F-06-T18 (DEC-1450): reported, not blocking: the handoff capture predates the cards' reveal, so the reference strip is empty"
+    },
+    "t6a.window": {
+      "page": "screens/T6?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T6 Workbook schedule grid/screenshots/T6a.png",
+      "sha256": "e148e2af59429167ed30238a1ce2f27fede170da3082c56e64a07733311ec1d0",
+      "crop": "window",
+      "tier": "B",
+      "mask": [
+        "[data-tally-strip]"
+      ],
+      "deviation": "F-06-T18 (DEC-1450): the handoff's screenshots were captured before the tally cards' 45 ms reveal, so the strip is empty on the board; masked until F-06-T22 recaptures"
+    },
+    "t6b.control-bar": {
+      "page": "screens/T6?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T6 Workbook schedule grid/screenshots/T6b.png",
+      "sha256": "62eee6ad6908c3e004245d2ab9c48485b6494534255b6dc92b6d975d8574309c",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-workbook='control-bar']"
+    },
+    "t6b.window": {
+      "page": "screens/T6?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T6 Workbook schedule grid/screenshots/T6b.png",
+      "sha256": "62eee6ad6908c3e004245d2ab9c48485b6494534255b6dc92b6d975d8574309c",
+      "crop": "window",
+      "tier": "B",
+      "mask": [
+        "[data-tally-strip]"
+      ],
+      "deviation": "F-06-T18 (DEC-1450): the handoff's screenshots were captured before the tally cards' 45 ms reveal, so the strip is empty on the board; masked until F-06-T22 recaptures"
+    },
+    "t6c.control-bar": {
+      "page": "screens/T6?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T6 Workbook schedule grid/screenshots/T6c.png",
+      "sha256": "f63c58a21eddf45aee9500664319ae04b53bab514bb285a652a87105f54c437e",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-workbook='control-bar']"
+    },
+    "t6c.window": {
+      "page": "screens/T6?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T6 Workbook schedule grid/screenshots/T6c.png",
+      "sha256": "f63c58a21eddf45aee9500664319ae04b53bab514bb285a652a87105f54c437e",
+      "crop": "window",
+      "tier": "B",
+      "mask": [
+        "[data-tally-strip]",
+        "[data-spinner]",
+        "[data-workbook='skeleton-row']"
+      ],
+      "deviation": "F-06-T18 (DEC-1450): the handoff's screenshots were captured before the tally cards' 45 ms reveal, so the strip is empty on the board; masked until F-06-T22 recaptures; the running row reads \"Workbook agent is running\" (T6 contract deviation c, DEC-19), not the canvas's sentence"
+    },
+    "t16-signing-ceremony.t16b": {
+      "selector": "[data-artboard=\"t16b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T16 Signing ceremony/screenshots/T16b.png",
+      "sha256": "5a60ecde7bd3e1da4f49a34c1f10d4d2f65065d87c0d0d5aa8bc20b6d3487ec6",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-signing='page']"
+      ]
+    },
+    "t16-signing-ceremony.t16c": {
+      "selector": "[data-artboard=\"t16c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T16 Signing ceremony/screenshots/T16c.png",
+      "sha256": "21a55b78734de749f48f5cf00c1378d374f7e3bae36a154d6ba1c0cf8d774eaa",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-signing='page']"
+      ]
+    },
+    "t16-signing-ceremony.t16b-header": {
+      "selector": "[data-artboard=\"t16b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T16 Signing ceremony/screenshots/T16b.png",
+      "sha256": "5a60ecde7bd3e1da4f49a34c1f10d4d2f65065d87c0d0d5aa8bc20b6d3487ec6",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-signing='envelope-header']",
+      "deviation": "F-06-T13 review measured 1.35% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T22 fixes the kit"
+    },
+    "t16-signing-ceremony.t16b-documents": {
+      "selector": "[data-artboard=\"t16b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T16 Signing ceremony/screenshots/T16b.png",
+      "sha256": "5a60ecde7bd3e1da4f49a34c1f10d4d2f65065d87c0d0d5aa8bc20b6d3487ec6",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-signing='documents'] li >> nth=0",
+      "deviation": "F-06-T13 review measured 7.01% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T22 fixes the kit"
+    },
+    "t16-signing-ceremony.t16b-steps": {
+      "selector": "[data-artboard=\"t16b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T16 Signing ceremony/screenshots/T16b.png",
+      "sha256": "5a60ecde7bd3e1da4f49a34c1f10d4d2f65065d87c0d0d5aa8bc20b6d3487ec6",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-signing='steps']",
+      "deviation": "F-06-T13 review measured 9.49% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T22 fixes the kit"
+    },
+    "tpl-16.b": {
+      "page": "screens/TPL-16?st=b",
+      "selector": "[data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16b.png",
+      "sha256": "1f7d0ac2d721266d794b11cab4d6a7bb1b59a02eff92dd0f91590bbb003bb244",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-signing='page']"
+      ]
+    },
+    "tpl-16.d": {
+      "page": "screens/TPL-16?st=d",
+      "selector": "[data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16d.png",
+      "sha256": "6c6ccac1c63865a1621da10c40338b7eeb22c0f5add49588a8c8efaab158cb75",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-signing='page']"
+      ]
+    },
+    "tpl-16.e": {
+      "page": "screens/TPL-16?st=e",
+      "selector": "[data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16e.png",
+      "sha256": "6ecc2dc9636bf85796dc8b34203b23fb9f40a4f666070d2007bc3c9c96663171",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-signing='page']"
+      ]
+    },
+    "tpl-16.f": {
+      "page": "screens/TPL-16?st=f",
+      "selector": "[data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16f.png",
+      "sha256": "f94393a42fcef941034f7dff5b63f11307fadba7efad627a9b41e8ffe0aa84cc",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-signing='page']"
+      ]
+    },
+    "tpl-16.g": {
+      "page": "screens/TPL-16?st=g",
+      "selector": "[data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16g.png",
+      "sha256": "973afb608bd0e0dd8c90fd50798063a3cac96001381c7199778e9c082cd7d25b",
+      "crop": [
+        50,
+        56,
+        830,
+        1744
+      ],
+      "tier": "B",
+      "locked": false,
+      "mask": [
+        "[data-signing='page']"
+      ],
+      "deviation": "F-06 parity follow-up (DEC-1183): 3.59 % at Tier B; the handoff's phone header (title with firm and count, pill step chips, the pinch hint) is a different mobile layout from the kit's portal toolbar: reported only"
+    },
+    "tpl-16a.window": {
+      "page": "screens/TPL-16?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16a.png",
+      "sha256": "8101b1965bf0270c92d263a570ed7b6300d85585253c492c77beb1aee293f4e2",
+      "crop": "window",
+      "tier": "B",
+      "mask": [
+        "[data-signing='well']",
+        "[data-step='verify']"
+      ],
+      "locked": true
+    },
+    "tpl-16b.header": {
+      "page": "screens/TPL-16?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16b.png",
+      "sha256": "1f7d0ac2d721266d794b11cab4d6a7bb1b59a02eff92dd0f91590bbb003bb244",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-signing='envelope-header']",
+      "deviation": "F-06-T13 review measured 2.05% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T22 fixes the kit"
+    },
+    "tpl-16b.documents": {
+      "page": "screens/TPL-16?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16b.png",
+      "sha256": "1f7d0ac2d721266d794b11cab4d6a7bb1b59a02eff92dd0f91590bbb003bb244",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-signing='documents'] li >> nth=0",
+      "deviation": "F-06-T13 review measured 5.36% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T22 fixes the kit"
+    },
+    "tpl-16b.steps": {
+      "page": "screens/TPL-16?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16b.png",
+      "sha256": "1f7d0ac2d721266d794b11cab4d6a7bb1b59a02eff92dd0f91590bbb003bb244",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-signing='steps']",
+      "deviation": "F-06-T13 review measured 4.58% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T22 fixes the kit"
+    },
+    "tpl-16c.window": {
+      "page": "screens/TPL-16?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16c.png",
+      "sha256": "700b7742977fadb7ef7d2bae14cd423ea0364361d54630a853098b7dd0ab3a16",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "DF-12: the native 560 Adopt dialog and its scrim are not built (no AdoptSignatureDialog); identity and signature run in the provider's view. Reported as a screenshot specimen against the b frame, never locked"
+    },
+    "tpl-16g.sign-bar": {
+      "page": "screens/TPL-16?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16g.png",
+      "sha256": "973afb608bd0e0dd8c90fd50798063a3cac96001381c7199778e9c082cd7d25b",
+      "crop": [
+        50,
+        56,
+        830,
+        1744
+      ],
+      "tier": "A",
+      "strip": "[data-signing='mobile-sign-bar']",
+      "deviation": "F-06-T13 review measured 29.58% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T22 fixes the kit"
+    },
+    "tpl-01.a": {
+      "page": "screens/TPL-01?st=a",
+      "selector": "[data-artboard=\"tpl-01a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-01 Index list specimen - Tax Returns/screenshots/TPL-01a.png",
+      "sha256": "bcdb20292cb6a12b628707bc2ce018e512ffd057f686ab4b49cade13f4c342d9",
+      "crop": "window",
+      "tier": "B",
+      "locked": false,
+      "deviation": "F-06 parity follow-up (DEC-1182): 2.08 % at Tier B after matching the handoff's rows, wording, columns and toolbar; the rest is kit-level (nav spacing, filter-chip value ink, the New return… ellipsis rule): reported only"
+    },
+    "tpl-01.b": {
+      "page": "screens/TPL-01?st=b",
+      "selector": "[data-artboard=\"tpl-01b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-01 Index list specimen - Tax Returns/screenshots/TPL-01b.png",
+      "sha256": "680b92bf829771f2f0dc8a20bcd45be7c8c2d419913e60aed613b162aa142b73",
+      "crop": "window",
+      "tier": "B",
+      "locked": false,
+      "deviation": "F-06 parity follow-up (DEC-1182): 2.21 % at Tier B after matching the handoff's rows, wording, columns and toolbar; the rest is kit-level (nav spacing, filter-chip value ink, the New return… ellipsis rule): reported only"
+    },
+    "tpl-01.c": {
+      "page": "screens/TPL-01?st=c",
+      "selector": "[data-artboard=\"tpl-01c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-01 Index list specimen - Tax Returns/screenshots/TPL-01c.png",
+      "sha256": "4046e6106396c98ef6e4a7235c01e615c950bf033ee5671da5bdbd8cfc81da3a",
+      "crop": "window",
+      "tier": "B",
+      "locked": true
+    },
+    "tpl-01.d": {
+      "page": "screens/TPL-01?st=d",
+      "selector": "[data-artboard=\"tpl-01d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-01 Index list specimen - Tax Returns/screenshots/TPL-01d.png",
+      "sha256": "b476d3f6425454b32864249a082e90d875cd62add0ed966e501a349688c51f85",
+      "crop": "window",
+      "tier": "B",
+      "locked": true
+    },
+    "tpl-01.e": {
+      "page": "screens/TPL-01?st=e",
+      "selector": "[data-artboard=\"tpl-01e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-01 Index list specimen - Tax Returns/screenshots/TPL-01e.png",
+      "sha256": "5aea28ae1f6b6075e6ebff0fed4c6d8c50d66f0656b8063f7bd933ab52bbe6f6",
+      "crop": "window",
+      "tier": "B",
+      "locked": true
     }
   }
 }

@@ -46,6 +46,9 @@ writes:
     owner_epic: C-02
     decision: P-16
     enabled: false
+  # T-01-T07 (DEC-1158): the plan's W2 `cch_axcess_tax.export_file`. File mode: the firm carries
+  # the workbook to the engine, so the entry names no egress host; per-firm enablement is
+  # security_admin's (ADM-08) once P-18 is accepted as an ADR. Accrued never transmits (R-04).
   - key: tax_engine_file_bridge
     adapter_key: cch_file_bridge
     shape: W2
@@ -53,8 +56,8 @@ writes:
     decision: P-18
     enabled: false
   - key: esignature_envelope_send
-    adapter_key: docusign
+    adapter_key: docuseal
     shape: W7
     owner_epic: N-02
-    decision: ADR-149
+    decision: ADR-342
     enabled: false

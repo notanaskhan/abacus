@@ -50,6 +50,9 @@ export interface IssueItem {
   /** The agent can fix it: the trailing Settings glyph (tree). */
   agentFixable?: boolean;
   state?: IssueState;
+  /** A class glyph in place of the flag (severity): HOME-02's "?" decision chip, the sign-off
+   * ring, the amber triangle of a blocked row (I-01-T16). `label` is its accessible name. */
+  glyph?: { icon: IconName; label: string; tone?: "ink" | "amber" };
 }
 
 export interface IssueGroup {
@@ -243,6 +246,16 @@ function IssueRow({
           <span className="mt-[2px] flex-none">
             {done ? <StatusDisc state="done" size={13} /> : <StatusDisc state="todo" size={13} />}
           </span>
+        ) : item.glyph !== undefined ? (
+          <Icon
+            name={item.glyph.icon}
+            size={13}
+            aria-label={item.glyph.label}
+            className={cn(
+              "mt-[2px] flex-none",
+              item.glyph.tone === "amber" ? "text-amber" : "text-ink-3",
+            )}
+          />
         ) : (
           <Icon
             name="flag"

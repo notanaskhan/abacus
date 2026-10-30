@@ -63,6 +63,17 @@ locals {
     ABACUS_RUN_RECORD_FINGERPRINT_PEPPER = "${local.secret.peppers}:run_record_fingerprint::"
     ABACUS_WORKOS_API_KEY                = "${local.secret.workos}:api_key::"
   }
+  # A-02-T33: the sandbox QuickBooks app, only once its secret holds both keys (an empty secret
+  # would stop every task from starting). Staging never reads Intuit's live host (settings refuse it).
+  qbo_secrets = var.qbo_enabled ? {
+    ABACUS_QBO_CLIENT_ID     = "${local.secret.qbo}:client_id::"
+    ABACUS_QBO_CLIENT_SECRET = "${local.secret.qbo}:client_secret::"
+  } : {}
+  # TASK-2152: the DocuSeal key, for the ops one-off alone (it seals the key into a firm's
+  # install; the worker opens the sealed copy, never this secret). Only once the secret is filled.
+  esign_secrets = var.docuseal_enabled ? {
+    ABACUS_ESIGN_INSTALL_API_KEY = "${local.secret.docuseal}:api_key::"
+  } : {}
 }
 
 module "cluster" {
@@ -182,10 +193,24 @@ resource "aws_iam_role_policy" "keyops" {
 }
 
 # The ops task (the scenario loader, DEC-1005) reads the deploy lock before it loads anything.
+# Q-03-T083 (RB-42): the scrubbing audit reads back the staging log groups and metric dimensions.
 data "aws_iam_policy_document" "ops" {
   statement {
     actions   = ["ssm:GetParameter"]
     resources = ["arn:aws:ssm:${local.region}:${local.account}:parameter/abacus/staging/deploy-lock"]
+  }
+  statement {
+    actions   = ["logs:DescribeLogGroups"]
+    resources = ["arn:aws:logs:${local.region}:${local.account}:log-group:*"]
+  }
+  statement {
+    actions   = ["logs:FilterLogEvents"]
+    resources = ["arn:aws:logs:${local.region}:${local.account}:log-group:/abacus/staging/*"]
+  }
+  statement {
+    # ListMetrics has no resource-level permissions.
+    actions   = ["cloudwatch:ListMetrics"]
+    resources = ["*"]
   }
 }
 
@@ -308,7 +333,7 @@ module "backend" {
   cpu                    = each.value.cpu
   memory                 = each.value.memory
   environment_vars       = local.common_env
-  secrets                = local.common_secrets
+  secrets                = merge(local.common_secrets, local.qbo_secrets)
   port                   = each.value.port
   subnet_ids             = module.network.app_subnet_ids
   security_group_ids     = [aws_security_group.tasks.id]
@@ -330,7 +355,7 @@ module "oneoff" {
   cpu                = 512
   memory             = 1024
   environment_vars   = merge(local.common_env, each.key == "bootstrap" ? { ABACUS_DB_HOST = module.db.address } : {})
-  secrets = merge(local.common_secrets, each.key == "bootstrap" ? {
+  secrets = merge(local.common_secrets, each.key == "ops" ? local.esign_secrets : {}, each.key == "bootstrap" ? {
     ABACUS_DB_MASTER_USER              = "${module.db.master_secret_arn}:username::"
     ABACUS_DB_MASTER_PASSWORD          = "${module.db.master_secret_arn}:password::"
     ABACUS_BOOTSTRAP_OWNER_PASSWORD    = "${local.secret.db_owner}:password::"

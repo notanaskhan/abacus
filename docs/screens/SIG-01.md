@@ -8,7 +8,7 @@
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/SIG-01 Signatures hub - evidence drawer/` (README.md, spec.md) · HANDOFF_VERSION 2026-10-21; DF-11 and DF-12 applied |
 | Epic and tasks | N-02 · contract N-02-T05 (this file); stub T03; import T08; hub and drawer T11, T13; evidence T14; reminders T14, T28; wet signature T27; parity T40 |
 | Spec and ADRs | SPEC-381 AC-1..AC-6, AC-11, AC-16; ADR-149 |
-| Flags | `signatures.envelopes` (hub, import); `signatures.docusign` (provider rows and sends) |
+| Flags | `signatures.envelopes` (hub, import); `signatures.esign_provider` (provider rows and sends) |
 | Manifest status | planned; `fixture` with N-02-T11; `live` with T13 (record mode first) |
 
 ## States
@@ -16,16 +16,16 @@ Clock E0, Mon Sep 14, 2026, 9:24 AM CT; viewer Grace Holloway (Firm Admin, `clie
 
 | Artboard | Viewer | Data condition | Parity tier | Status |
 |---|---|---|---|---|
-| a | grace-holloway | Out for signature; E2 drawer: Irene Kowal `verification_failed` after three KBA attempts → "Needs a handwritten signature" with "Upload signed 8879…" (DF-11); "1 of 2 signed"; e-file waits on both spouses | C report; C lock before M10 | live (T13 drawer; T27 wet signature); provider rows from `signatures.docusign` (T18+) |
+| a | grace-holloway | Out for signature; E2 drawer: Irene Kowal `verification_failed` after three KBA attempts → "Needs a handwritten signature" with "Upload signed 8879…" (DF-11); "1 of 2 signed"; e-file waits on both spouses | C report; C lock before M10 | live (T13 drawer; T27 wet signature); provider rows from `signatures.esign_provider` (T18+) |
 | b | grace-holloway | To send: two drafts, Harborview's 8879-PE and an agent-drafted Form 2848 (drafted "via Agent"; Send is Grace's) | C report | live (T13) |
 | c | grace-holloway | Completed, last 30 days, with what each unblocked (G3, e-file) | C report | live (T13; record-mode rows from T08) |
 | d | grace-holloway | Expired: an optional consent left to expire | C report | live (T28) |
 | e | grace-holloway | Declined, with the signer's reason | C report | live (T28) |
-| f | grace-holloway | E5, E8, E9 checked; the reminder is a template preview a person sends | C report | live (T14) |
+| f | grace-holloway | E5, E8, E9 checked; the reminder is a template preview a person sends | C report | fixture (T15, DEC-1057); live (T28) |
 | g | grace-holloway | Empty To send | C report | live (T13) |
 | **r (added, DF-12)** | grace-holloway | Import signed package sheet: files, signer facts (name, signed date, identity method), provider name, attestation checkbox; Import writes a `record` envelope, Completed | report-only (no artboard; DF-12 design) | live (T08) |
 
-Non-artboard: walled (no row, no count, 404 on id); metadata-only firm admin outside the envelope's engagement (rows without document previews); flag off (C-20; record-mode rows only once `signatures.envelopes` is on and `signatures.docusign` off); error and loading (F-05 ViewStates).
+Non-artboard: walled (no row, no count, 404 on id); metadata-only firm admin outside the envelope's engagement (rows without document previews); flag off (C-20; record-mode rows only once `signatures.envelopes` is on and `signatures.esign_provider` off); error and loading (F-05 ViewStates).
 
 ## Status
 `envelope` codes (draft, sent, viewed, "{signed} of {total} signed", completed, declined, expired, voided); `envelope_signer` (Waiting, Viewed, Signed, Declined, "Needs a handwritten signature"). **Superseded marker:** a completed 8879 superseded by an amount change (DEC-85) shows a muted "Superseded" micro-pill with the `letter`/`envelope` superseded word.

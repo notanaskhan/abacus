@@ -25,12 +25,18 @@ TABLES: frozenset[str] = frozenset(
         "conflict_results",
         "conflict_result_events",
         "screening_records",
+        # T-01-T08 (0402): §7216 consents, their signers and events.
+        "consent_sets",
+        "consents",
+        "consent_signers",
+        "consent_events",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
 INSERT_ONLY: frozenset[str] = frozenset(
     {"tin_reveals", "team_rosters"}  # rosters: 0150
     | {"conflict_checks", "conflict_results", "conflict_result_events", "screening_records"}
+    | {"consent_sets", "consent_events"}  # T-01-T08 (0402)
 )
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -84,7 +90,29 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     ),
 }
 # Columns the app may update; tables not listed keep what their migration grants.
+# T-01-T08 (0402): consents and their signers, set at insert; events append only.
+INSERT_COLUMNS["consent_sets"] = frozenset(
+    {"id", "tenant_id", "client_id", "filing_unit_entity_id", "kind", "tax_years", "created_by"}
+)
+INSERT_COLUMNS["consents"] = frozenset(
+    {"id", "tenant_id", "client_id", "client_entity_id", "consent_set_id", "purpose"}
+    | {"tax_years", "scope", "recipients", "provider_terms_version", "template_version_id"}
+    | {"text_sha256", "source", "envelope_id", "status", "requested_at", "renewal_of_id"}
+    | {"created_by", "signed_at", "declined_at", "expires_at"}  # record mode carries its dates
+)
+INSERT_COLUMNS["consent_signers"] = frozenset(
+    {"id", "tenant_id", "consent_id", "contact_id", "user_id", "signer_role", "required"}
+)
+INSERT_COLUMNS["consent_events"] = frozenset(
+    {"tenant_id", "consent_id", "kind", "actor_kind", "actor_id", "facts"}
+)
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
+    # T-01-T08 (0402): a consent's lifecycle and a signer's signature; never deleted.
+    "consents": frozenset(
+        {"status", "signed_at", "expires_at", "declined_at", "revoked_at", "copy_delivered_at"}
+        | {"copy_delivered_channel", "row_version"}
+    ),
+    "consent_signers": frozenset({"signed_at", "method", "evidence_version_id"}),
     # G-01-T08 (0150): offices and teams are edited in place, versioned; never deleted.
     "offices": frozenset(
         {"name", "time_zone", "code", "is_hq", "address_line1", "address_line2", "city"}

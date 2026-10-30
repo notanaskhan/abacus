@@ -41,6 +41,11 @@ BINDERS_ENGINE = Flag(
     kind="boolean",
     default="false",
 )
+CLIENTS_TAX_PROFILE = Flag(
+    name="clients.tax_profile",
+    kind="boolean",
+    default="false",
+)
 COMMUNICATIONS_FIRM_SENDER_DOMAIN = Flag(
     name="communications.firm_sender_domain",
     kind="boolean",
@@ -71,6 +76,11 @@ CONNECTIONS_PORTAL_V2 = Flag(
     kind="boolean",
     default="false",
 )
+CONSENTS_REGISTRY = Flag(
+    name="consents.registry",
+    kind="boolean",
+    default="false",
+)
 CONTACTS_V2 = Flag(
     name="contacts.v2",
     kind="boolean",
@@ -88,6 +98,11 @@ ENGAGEMENTS_ROLL_FORWARD_V2 = Flag(
 )
 EVIDENCE_CITATIONS_V2 = Flag(
     name="evidence.citations_v2",
+    kind="boolean",
+    default="false",
+)
+EVIDENCE_DUPLICATE_REVIEW = Flag(
+    name="evidence.duplicate_review",
     kind="boolean",
     default="false",
 )
@@ -136,6 +151,11 @@ GUIDANCE_DRAFTING = Flag(
     kind="boolean",
     default="false",
 )
+HOME_APPROVALS = Flag(
+    name="home.approvals",
+    kind="boolean",
+    default="false",
+)
 HOME_DASHBOARD = Flag(
     name="home.dashboard",
     kind="boolean",
@@ -148,6 +168,11 @@ INBOX_FIRM_INTAKE = Flag(
 )
 KNOWLEDGE_CATALOG = Flag(
     name="knowledge.catalog",
+    kind="boolean",
+    default="false",
+)
+KNOWLEDGE_FIRM_STANDARDS = Flag(
+    name="knowledge.firm_standards",
     kind="boolean",
     default="false",
 )
@@ -244,13 +269,33 @@ PROMPT_EVIDENCE_SCREENER = Flag(
         "evidence.screen@v0",
     ),
 )
+QUESTIONNAIRES_V1 = Flag(
+    name="questionnaires.v1",
+    kind="boolean",
+    default="false",
+)
+REPORTING_GENERATED_DOCUMENTS = Flag(
+    name="reporting.generated_documents",
+    kind="boolean",
+    default="false",
+)
 RETRIEVAL_AUTO = Flag(
     name="retrieval.auto",
     kind="boolean",
     default="false",
 )
+REVIEW_CHECKPOINTS = Flag(
+    name="review.checkpoints",
+    kind="boolean",
+    default="false",
+)
 REVIEW_GRAMMAR_API = Flag(
     name="review.grammar_api",
+    kind="boolean",
+    default="false",
+)
+RULES_REFERENCE_SETS = Flag(
+    name="rules.reference_sets",
     kind="boolean",
     default="false",
 )
@@ -266,6 +311,31 @@ SECURITY_CENTER_V1 = Flag(
 )
 SIGNATURES_ENVELOPES = Flag(
     name="signatures.envelopes",
+    kind="boolean",
+    default="false",
+)
+SIGNATURES_ESIGN_PROVIDER = Flag(
+    name="signatures.esign_provider",
+    kind="boolean",
+    default="false",
+)
+TAX_DELIVERY_EFILE = Flag(
+    name="tax.delivery_efile",
+    kind="boolean",
+    default="false",
+)
+TAX_ENGINE_BRIDGE = Flag(
+    name="tax.engine_bridge",
+    kind="boolean",
+    default="false",
+)
+TAX_K1_RELEASE = Flag(
+    name="tax.k1_release",
+    kind="boolean",
+    default="false",
+)
+TAX_RETURNS_V1 = Flag(
+    name="tax.returns_v1",
     kind="boolean",
     default="false",
 )
@@ -288,16 +358,19 @@ FLAGS: dict[str, Flag] = {
     "audits.binder_export": AUDITS_BINDER_EXPORT,
     "audits.cockpit": AUDITS_COCKPIT,
     "binders.engine": BINDERS_ENGINE,
+    "clients.tax_profile": CLIENTS_TAX_PROFILE,
     "communications.firm_sender_domain": COMMUNICATIONS_FIRM_SENDER_DOMAIN,
     "compliance.firm_export": COMPLIANCE_FIRM_EXPORT,
     "compliance.incidents": COMPLIANCE_INCIDENTS,
     "compliance.legal_holds": COMPLIANCE_LEGAL_HOLDS,
     "connections.live_ledger": CONNECTIONS_LIVE_LEDGER,
     "connections.portal_v2": CONNECTIONS_PORTAL_V2,
+    "consents.registry": CONSENTS_REGISTRY,
     "contacts.v2": CONTACTS_V2,
     "engagement_agent.enabled": ENGAGEMENT_AGENT_ENABLED,
     "engagements.roll_forward_v2": ENGAGEMENTS_ROLL_FORWARD_V2,
     "evidence.citations_v2": EVIDENCE_CITATIONS_V2,
+    "evidence.duplicate_review": EVIDENCE_DUPLICATE_REVIEW,
     "evidence.pii_reveal": EVIDENCE_PII_REVEAL,
     "evidence.viewer_unlock": EVIDENCE_VIEWER_UNLOCK,
     "evidence.viewer_v1": EVIDENCE_VIEWER_V1,
@@ -307,9 +380,11 @@ FLAGS: dict[str, Flag] = {
     "files.browser": FILES_BROWSER,
     "follow_ups.scheduled_send": FOLLOW_UPS_SCHEDULED_SEND,
     "guidance.drafting": GUIDANCE_DRAFTING,
+    "home.approvals": HOME_APPROVALS,
     "home.dashboard": HOME_DASHBOARD,
     "inbox.firm_intake": INBOX_FIRM_INTAKE,
     "knowledge.catalog": KNOWLEDGE_CATALOG,
+    "knowledge.firm_standards": KNOWLEDGE_FIRM_STANDARDS,
     "ledger.gl_import": LEDGER_GL_IMPORT,
     "ledger.import": LEDGER_IMPORT,
     "ledger.tb_workpaper": LEDGER_TB_WORKPAPER,
@@ -328,11 +403,20 @@ FLAGS: dict[str, Flag] = {
     "portal.sign_in_v2": PORTAL_SIGN_IN_V2,
     "portal.third_party_room": PORTAL_THIRD_PARTY_ROOM,
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
+    "questionnaires.v1": QUESTIONNAIRES_V1,
+    "reporting.generated_documents": REPORTING_GENERATED_DOCUMENTS,
     "retrieval.auto": RETRIEVAL_AUTO,
+    "review.checkpoints": REVIEW_CHECKPOINTS,
     "review.grammar_api": REVIEW_GRAMMAR_API,
+    "rules.reference_sets": RULES_REFERENCE_SETS,
     "screening.card": SCREENING_CARD,
     "security_center.v1": SECURITY_CENTER_V1,
     "signatures.envelopes": SIGNATURES_ENVELOPES,
+    "signatures.esign_provider": SIGNATURES_ESIGN_PROVIDER,
+    "tax.delivery_efile": TAX_DELIVERY_EFILE,
+    "tax.engine_bridge": TAX_ENGINE_BRIDGE,
+    "tax.k1_release": TAX_K1_RELEASE,
+    "tax.returns_v1": TAX_RETURNS_V1,
     "upload_review.enabled": UPLOAD_REVIEW_ENABLED,
     "uploads.processing": UPLOADS_PROCESSING,
 }

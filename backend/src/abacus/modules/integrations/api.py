@@ -38,6 +38,18 @@ from abacus.modules.integrations.catalog import (
     listing_of,
 )
 from abacus.modules.integrations.catalog_load import CatalogDocument, LoadPlan, plan_load
+
+# The routers the API mounts, in order (P-39; F-03-T07).
+from abacus.modules.integrations.engine_settings_contract import (
+    engine_settings_router,
+)
+from abacus.modules.integrations.esign_install import (
+    EsignInstallExists,
+    connect_esign_install,
+    disconnect_esign_install,
+    esign_install_state,
+    rotate_esign_secret,
+)
 from abacus.modules.integrations.ports import (
     IntegrationAdapter,
     IntegrationCategory,
@@ -50,7 +62,14 @@ from abacus.modules.integrations.qbo_adapter import register_if_configured
 # A-02-T16: the live POR-16 routes are declared on C20's `portal_router` in `routes`, so it is
 # imported from there (loading the module registers them before the API mounts the router).
 from abacus.modules.integrations.routes import firm_router, portal_router
-from abacus.modules.integrations.secrets import erase_secret, open_secret, store_secret
+from abacus.modules.integrations.secrets import (
+    ESIGN_CATALOG,
+    connected_integration,
+    erase_secret,
+    esign_install_secret,
+    open_secret,
+    store_secret,
+)
 from abacus.modules.integrations.writers import WritePreview, Writer, WriteReceipt, WriteRequest
 from abacus.modules.integrations.writes import (
     WriteCapabilityRefused,
@@ -58,18 +77,20 @@ from abacus.modules.integrations.writes import (
     execute_write,
 )
 
-# The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
+    engine_settings_router,  # ADM-08 tax-engine settings (T-01-T02 stub)
     portal_router,  # C20 v1: POR-16, live since A-02-T16
     firm_router,  # C20 v1: reconnect requests (live since A-02-T23); pulls a stub until T30
 )
 
 __all__ = [
+    "ESIGN_CATALOG",
     "ROUTERS",
     "AdapterRefused",
     "CatalogDocument",
     "CatalogEntry",
     "CatalogRow",
+    "EsignInstallExists",
     "IntegrationAdapter",
     "IntegrationCategory",
     "LoadPlan",
@@ -86,10 +107,15 @@ __all__ = [
     "authorise_write",
     "catalog_rows",
     "client_catalog",
+    "connect_esign_install",
+    "connected_integration",
+    "disconnect_esign_install",
     "egress_allowlist",
     "egress_hosts_by_connector",
     "egress_read_posts",
     "erase_secret",
+    "esign_install_secret",
+    "esign_install_state",
     "execute_write",
     "is_available",
     "listed",
@@ -101,6 +127,7 @@ __all__ = [
     "registered_adapter",
     "registered_keys",
     "registry",
+    "rotate_esign_secret",
     "store_secret",
     "undeclared_egress",
     "unregister_adapter",

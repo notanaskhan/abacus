@@ -9,7 +9,7 @@
 | Epic and tasks | N-01 · contract N-01-T05 (this file); stub T02; classifier and flags T17; triage apply T18; frontend T15; journeys and parity T23–T28 |
 | Spec and ADRs | SPEC-380 (Stories 4–6); ADR-005, ADR-050, ADR-210; DEC-24, DEC-37, DEC-79 |
 | Flags | `inbox.firm_intake`; `matching.firm_intake` (matcher candidates) |
-| Manifest status | planned; `fixture` with N-01-T15; `live` with N-01-T18 |
+| Manifest status | live as INB-01's sheet (N-01-T23): `/inbox?thread=…&ov=file&message=…` from the reading header's File… item; fixture artboards with N-01-T15 (DEC-1062) |
 
 Code to come: `src/screens/INB-02/{index.tsx, scenarios.ts, copy.ts, INB-02.test.tsx}`, `src/domain/inbox/{TriageSheet.tsx, AttachmentCard.tsx, DestinationPicker.tsx, FlagRows.tsx, LogIntakeSheet.tsx}`.
 

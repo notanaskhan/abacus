@@ -9,6 +9,7 @@ from uuid import UUID
 
 from sqlalchemy import FetchedValue, Float, Integer, Numeric
 from sqlalchemy.dialects.postgresql import ARRAY, INT4RANGE, JSONB, Range
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from abacus.kernel.db import Base
@@ -201,9 +202,10 @@ class UploadExtraction(Base):
 
     id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
     tenant_id: Mapped[UUID]
-    engagement_id: Mapped[UUID]
+    engagement_id: Mapped[UUID | None]  # none for an intake attachment (0370)
     evidence_version_id: Mapped[UUID | None]
     inbox_file_id: Mapped[UUID | None]
+    inbox_attachment_id: Mapped[UUID | None]  # N-01-T12 (0370): an intake attachment
     extractor_version: Mapped[str]
     status: Mapped[str]
     reason: Mapped[str | None]
@@ -257,9 +259,10 @@ class UploadPreview(Base):
 
     id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
     tenant_id: Mapped[UUID]
-    engagement_id: Mapped[UUID]
+    engagement_id: Mapped[UUID | None]  # none for an intake attachment (0370)
     evidence_version_id: Mapped[UUID | None]
     inbox_file_id: Mapped[UUID | None]
+    inbox_attachment_id: Mapped[UUID | None]  # N-01-T12 (0370): an intake attachment
     renderer_version: Mapped[str]
     kind: Mapped[str]
     reason: Mapped[str | None]
@@ -344,6 +347,7 @@ class EvidencePage(Base):
     tenant_id: Mapped[UUID]
     evidence_version_id: Mapped[UUID | None]
     inbox_file_id: Mapped[UUID | None]
+    inbox_attachment_id: Mapped[UUID | None]  # N-01-T12 (0370): an intake attachment
     derivation_id: Mapped[UUID | None]
     page_no: Mapped[int]
     width_pt: Mapped[Decimal] = mapped_column(Numeric(8, 2))
@@ -444,6 +448,7 @@ class PiiScanRun(Base):
     tenant_id: Mapped[UUID]
     evidence_version_id: Mapped[UUID | None]
     inbox_file_id: Mapped[UUID | None]
+    inbox_attachment_id: Mapped[UUID | None]  # N-01-T12 (0370): an intake attachment
     derivation_id: Mapped[UUID | None]
     detector_version: Mapped[str]
     pages_scanned: Mapped[list[int]] = mapped_column(ARRAY(Integer))
@@ -463,6 +468,7 @@ class PiiRegion(Base):
     tenant_id: Mapped[UUID]
     evidence_version_id: Mapped[UUID | None]
     inbox_file_id: Mapped[UUID | None]
+    inbox_attachment_id: Mapped[UUID | None]  # N-01-T12 (0370): an intake attachment
     derivation_id: Mapped[UUID | None]
     page_no: Mapped[int]
     bbox: Mapped[list[Decimal]] = mapped_column(ARRAY(Numeric(10, 2)))
@@ -470,4 +476,32 @@ class PiiRegion(Base):
     last4: Mapped[str | None]
     label_anchored: Mapped[bool]
     detector_version: Mapped[str]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class DocumentClassification(Base):
+    """What a document is, by rule or proposed by the matcher (N-01-T17; 0404). Insert-only:
+    a reclassification or a confirmation is a new row; the latest row for a subject is current."""
+
+    __tablename__ = "document_classifications"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    subject_kind: Mapped[str]
+    subject_id: Mapped[UUID]
+    form_family: Mapped[str]
+    form_code: Mapped[str | None]
+    tax_year: Mapped[int | None]
+    issuer_name: Mapped[str | None]  # Confidential
+    kind: Mapped[str]
+    page_count: Mapped[int]
+    taxpayer_tin_last4: Mapped[str | None]  # Confidential (the masked form)
+    corrected: Mapped[bool | None]
+    confidences: Mapped[dict[str, Any]] = mapped_column(JSONB)  # Any: field -> 0..1 confidence
+    citation_ids: Mapped[list[UUID] | None] = mapped_column(ARRAY(PGUUID(as_uuid=True)))
+    proposed_by_kind: Mapped[str]
+    agent_run_id: Mapped[UUID | None]
+    rules_version: Mapped[str]
+    confirmed_by: Mapped[UUID | None]
+    confirmed_at: Mapped[datetime | None]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

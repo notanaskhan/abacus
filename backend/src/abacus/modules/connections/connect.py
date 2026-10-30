@@ -127,7 +127,9 @@ class LogEntry:
 
 
 def _redirect_uri() -> str:
-    return f"{settings().app_base_url}{CALLBACK_PATH}"
+    """The OAuth callback: the one registered redirect host (A-02-T33), else the app's own."""
+    config = settings()
+    return f"{config.connections_redirect_base_url or config.app_base_url}{CALLBACK_PATH}"
 
 
 def _hash(state: str) -> str:

@@ -16,32 +16,25 @@ Client words (portal never renders "Accrued"): Sent · Received by {firm} · Wit
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query, Request
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import PORTAL_INTAKE_UPLOAD
+from abacus.kernel import listing
 from abacus.kernel._statuses import PortalIntakeUploadStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
-from abacus.kernel.flags import flag_enabled
+from abacus.kernel.errors import NotFound
 from abacus.kernel.listing import ListPage
+from abacus.kernel.uow.idempotency import idempotent
+from abacus.modules.communications.api import portal_intake
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_member
+from abacus.modules.portal.settings import upload_something_else
 
 Member = Annotated[AuthContext, Depends(current_member)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
 ScopeKind = Literal["client", "client_entity", "engagement"]
-
-
-async def _stub(ctx: AuthContext) -> NoReturn:
-    """A firm principal never reaches portal intake: 404. Then the flag, then 501."""
-    if not ctx.client:
-        raise NotFound("portal intake")
-    if not await flag_enabled(ctx.tenant, PORTAL_INTAKE_UPLOAD):
-        raise NotFound(PORTAL_INTAKE_UPLOAD.name)
-    raise NotImplementedYet
 
 
 class ScopeRef(BaseModel):
@@ -90,18 +83,55 @@ class IntakeUploadOut(BaseModel):
 intake_router = AbacusRouter(prefix="/v1/portal/intake-uploads", tags=["portal"])
 
 
+def _upload_out(u: portal_intake.IntakeBatch) -> IntakeUploadOut:
+    return IntakeUploadOut(
+        id=u.id,
+        scope_kind=cast(ScopeKind, u.scope_kind),
+        scope_id=u.scope_id,
+        status=cast(PortalIntakeUploadStatus, u.status),
+        sent_at=u.sent_at,
+        files=[
+            IntakeUploadFileOut(
+                id=f.id,
+                file_name=f.file_name,
+                size_bytes=f.size_bytes,
+                status=cast(PortalIntakeUploadStatus, f.status),
+            )
+            for f in u.files
+        ],
+        can_withdraw=u.can_withdraw,
+    )
+
+
 @intake_router.post(
     "",
     action="portal_intake.upload",
     response_model=IntakeUploadOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def create_intake_upload_route(
     body: IntakeUploadIn, ctx: Member, idempotency_key: IdempotencyKey
 ) -> IntakeUploadOut:
-    """POR-03 "Upload something else": the batch (N-01-T14)."""
-    await _stub(ctx)
+    """POR-03 "Upload something else": the batch (N-01-T14). R-01-T33: 404 while the firm has
+    not published the toggle on (as if the route were absent)."""
+    if not await upload_something_else(ctx.tenant):
+        raise NotFound("portal intake")
+
+    async def run() -> tuple[int, dict[str, object]]:
+        made = await portal_intake.create_upload(
+            ctx, body.scope_ref.kind, body.scope_ref.id, body.note
+        )
+        return 201, _upload_out(made).model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="portal_intake.upload",
+        key=idempotency_key,
+        body=body.model_dump(mode="json"),
+        run=run,
+    )
+    return IntakeUploadOut.model_validate(stored.body)
 
 
 @intake_router.post(
@@ -109,7 +139,7 @@ async def create_intake_upload_route(
     action="portal_intake.upload",
     response_model=IntakeUploadFileOut,
     status_code=201,
-    errors=(409, 413, 415, 501, 503),
+    errors=(409, 413, 415, 503),
 )
 async def add_intake_upload_file_route(
     upload_id: UUID,
@@ -119,14 +149,32 @@ async def add_intake_upload_file_route(
     filename: Annotated[str, Query(min_length=1, max_length=255)],
 ) -> IntakeUploadFileOut:
     """One file, scanned before storage under a detached key, fail closed (N-01-T14)."""
-    await _stub(ctx)
+    content = await request.body()
+
+    async def run() -> tuple[int, dict[str, object]]:
+        made = await portal_intake.add_file(ctx, upload_id, filename, content)
+        out = IntakeUploadFileOut(
+            id=made.id,
+            file_name=made.file_name,
+            size_bytes=made.size_bytes,
+            status=cast(PortalIntakeUploadStatus, made.status),
+        )
+        return 201, out.model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="portal_intake.upload_file",
+        key=idempotency_key,
+        body={"upload_id": str(upload_id), "filename": filename, "size": len(content)},
+        run=run,
+    )
+    return IntakeUploadFileOut.model_validate(stored.body)
 
 
 @intake_router.get(
     "",
     action="portal_intake.read_own",
     response_model=ListPage[IntakeUploadOut],
-    errors=(501,),
 )
 async def list_intake_uploads_route(
     ctx: Member,
@@ -136,18 +184,26 @@ async def list_intake_uploads_route(
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
 ) -> ListPage[IntakeUploadOut]:
     """The principal's own uploads for one scope, newest first (N-01-T14)."""
-    await _stub(ctx)
+    page = await portal_intake.list_uploads(ctx, scope_kind, scope_id, cursor, limit)
+    return listing.envelope(
+        [_upload_out(u) for u in page.uploads],
+        next_position=page.next_position,
+        tenant_id=ctx.tenant_id,
+        resource=portal_intake.LIST_RESOURCE,
+        query=page.query,
+        total=(page.total, False),
+    )
 
 
 @intake_router.post(
     "/{upload_id}/withdraw",
     action="portal_intake.withdraw",
     response_model=IntakeUploadOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def withdraw_intake_upload_route(
     upload_id: UUID, ctx: Member, idempotency_key: IdempotencyKey
 ) -> IntakeUploadOut:
     """Only while every file is New or Waiting; a filed one answers 409 `attachment_filed`
     (ADR-162; N-01-T14)."""
-    await _stub(ctx)
+    return _upload_out(await portal_intake.withdraw(ctx, upload_id))

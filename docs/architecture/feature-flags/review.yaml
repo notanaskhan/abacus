@@ -10,3 +10,11 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: review.checkpoints
+    description: 'SHL-16 checkpoint diff drawer (P-04-T43) and SHL-09 on returns: `?ov=checkpoints:<target_type>:<target_id>`. Off: the overlay renders nothing and the Checkpoints chip is not offered. Tax-pilot firms: shadow Tue Jul 27, live Tue Aug 17, 2027 (P-04 §2); renewed before expiry or retired with the pilot.'
+    owner: ayushkbhatia
+    created: 2026-10-30
+    expires: 2027-04-28
+    override: DEC-137
+    kind: boolean
+    default: false

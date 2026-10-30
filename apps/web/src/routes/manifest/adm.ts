@@ -25,7 +25,10 @@ export const admScreens = {
     path: "/settings/offices",
   },
   "ADM-04": { name: "AI policy & approval gates", status: "planned", path: "/settings/ai-policy" },
-  "ADM-05": { name: "Consent registry (§7216)", status: "planned", path: null },
+  // T-01-T13: built on fixtures; planned until its designed links are wired (link-contract rule
+  // 1) and walked on staging (DEC-195; DEC-1272).
+  // T-01-T13 on fixtures behind `consents.registry`; links wired (DEC-1273).
+  "ADM-05": { name: "Consent registry (§7216)", status: "fixture", path: "/settings/consents" },
   // G-02-T16 / T13: built behind `security_center.v1` and `audit_log.explorer`; planned until
   // walked on staging (DEC-195), as ADM-02 and ADM-03 are.
   "ADM-06": {

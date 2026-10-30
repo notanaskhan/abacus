@@ -13,7 +13,13 @@ import {
   fileTreeOptions,
   folderItemsOptions,
 } from "@abacus/api-client/query";
-import type { DrawerOut, FileRow, ListPageAccessLogRow, TreeNode } from "@abacus/api-client";
+import type {
+  DrawerOut,
+  FileRow,
+  LinkOut,
+  ListPageAccessLogRow,
+  TreeNode,
+} from "@abacus/api-client";
 import {
   Drawer,
   DrawerCard,
@@ -31,8 +37,18 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { type JSX, type ReactNode, useEffect, useState } from "react";
-import { to } from "../../routes/to";
+import { hrefOf, to } from "../../routes/to";
 import { COPY } from "./copy";
+
+const RETURN_ROUTE =
+  /^\/tax-returns\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/u;
+
+/** A "Linked to" item as a link where its screen is built: a return line opens TAX-02 for its
+ * return (the server's `/tax-returns/<id>`); anything else stays text until its host is routed. */
+export function linkedHref(link: LinkOut): string | undefined {
+  const returnId = link.kind === "return_line" ? RETURN_ROUTE.exec(link.route)?.[1] : undefined;
+  return returnId === undefined ? undefined : hrefOf(to.TAX02({ returnId }));
+}
 
 const NOW = Date.parse("2026-09-14T14:24:00Z");
 
@@ -421,11 +437,20 @@ function DocumentDrawer({
       )}
       {drawer.linked_to.length > 0 && (
         <Card title={COPY.drawer.linkedTo}>
-          {drawer.linked_to.map((l) => (
-            <Row key={l.route + l.label} label={l.kind.replace("_", " ")}>
-              {l.label}
-            </Row>
-          ))}
+          {drawer.linked_to.map((l) => {
+            const href = linkedHref(l);
+            return (
+              <Row key={l.route + l.label} label={l.kind.replace("_", " ")}>
+                {href === undefined ? (
+                  l.label
+                ) : (
+                  <a href={href} className="hover:underline">
+                    {l.label}
+                  </a>
+                )}
+              </Row>
+            );
+          })}
         </Card>
       )}
       <Card title={COPY.drawer.versions}>

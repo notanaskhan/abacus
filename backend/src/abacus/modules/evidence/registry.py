@@ -40,6 +40,7 @@ TABLES: frozenset[str] = frozenset(
         # P-06-T18 (0144; ADR-162): detached keys and client withdrawals.
         "evidence_object_keys",
         "evidence_withdrawals",
+        "evidence_intake_object_keys",  # N-01-T14 (0371): a portal intake file's own key
         "evidence_version_voids",  # R-01 Story 2.2 (0159): retired with its voided rule link
         # A-01-T18 (0191): engagement exports, their downloads and their contents.
         "engagement_exports",
@@ -50,6 +51,7 @@ TABLES: frozenset[str] = frozenset(
         "firm_exports",
         "firm_export_links",
         "firm_export_downloads",
+        "document_classifications",  # N-01-T17 (0404): rule and agent classifications
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -76,6 +78,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "engagement_export_contents",  # A-01-T18 (0191)
         "firm_export_links",  # Q-02-T43 (0216)
         "firm_export_downloads",  # Q-02-T43 (0216)
+        "document_classifications",  # N-01-T17 (0404): a reclassification is a new row
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
@@ -103,6 +106,10 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     # P-06-T18 (0144): a detached-key version's wrapped data key, with its version.
     "evidence_object_keys": frozenset(
         {"tenant_id", "evidence_version_id", "key_id", "wrapped_key"}
+    ),
+    # N-01-T14 (0371): a portal intake attachment's wrapped data key, with its attachment.
+    "evidence_intake_object_keys": frozenset(
+        {"tenant_id", "inbox_attachment_id", "key_id", "wrapped_key"}
     ),
     # P-06-T19 (0144): the client's withdrawal; the trigger binds the person.
     "evidence_withdrawals": frozenset(
@@ -165,6 +172,13 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"tenant_id", "export_id", "link_id", "user_id", "bytes_sent", "range_start"}
         | {"range_end", "mfa_at"}
     ),
+    # N-01-T17 (0404): a classification as proposed; id and created_at are the server's.
+    "document_classifications": frozenset(
+        {"tenant_id", "subject_kind", "subject_id", "form_family", "form_code", "tax_year"}
+        | {"issuer_name", "kind", "page_count", "taxpayer_tin_last4", "corrected"}
+        | {"confidences", "citation_ids", "proposed_by_kind", "agent_run_id", "rules_version"}
+        | {"confirmed_by", "confirmed_at"}
+    ),
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
@@ -188,6 +202,8 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "hold_objects": frozenset({"applied_at", "released_at"}),  # each stamped once
     # P-06-T18 (0144): acceptance retains the key, one-way (the guard); erase is the definer's.
     "evidence_object_keys": frozenset({"retained_at"}),
+    # N-01-T14 (0371): the intake purge's erase (key and stamp together, the CHECK) and a hold.
+    "evidence_intake_object_keys": frozenset({"wrapped_key", "destroyed_at", "retained_at"}),
     # P-06-T19 (0144): the purge's stamps only (the guard binds the purge's system actor).
     "evidence_withdrawals": frozenset({"erased_at", "erase_blocked_at", "block_reason"}),
     # A-01-T18 (0191): status forward only and the stamps (the guard trigger).

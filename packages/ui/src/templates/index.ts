@@ -17,6 +17,16 @@ export {
   type PortalVariant,
   portalNav,
 } from "./portal-layout";
+// T7-M home cards (F-06-T10; TPL-19 frame 1).
+export {
+  MobileGreeting,
+  type MobileTodo,
+  MobileTodoCard,
+  MobileTeamCard,
+  ReturnProgressCard,
+  type ReturnProgressCardProps,
+  type TeamMember,
+} from "./portal-mobile-home";
 // T15 AuthCard (F-05-T37): the 400 card, the 720 single page and the six code boxes.
 export {
   AUTH_FIELD,
@@ -112,3 +122,7 @@ export { InboxLayout, type InboxLayoutProps } from "./inbox-layout";
 export { CatalogLayout, type CatalogLayoutProps } from "./catalog-layout";
 // T16 SigningCeremony (F-06-T04): provider mode only; the L2 parts are ../signing.
 export { SigningCeremony } from "./signing-ceremony/SigningCeremony";
+// T10 DocumentOnWell (F-06-T14): the 470 structure pane beside the 896 paper pane.
+export * from "./document-on-well";
+// T6 WorkbookLayout (F-06-T18): control bar, tally strip and statement panes on the F-05 grammars.
+export * from "./workbook";

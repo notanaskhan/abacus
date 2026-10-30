@@ -384,7 +384,11 @@ export function mortgageDrawer(over: Partial<DrawerOut> = {}): DrawerOut {
         route: "/binders",
       },
       { kind: "workpaper_cell", label: "03 Liabilities!C12:C14", route: "/workpapers" },
-      { kind: "return_line", label: "TY2025 Form 1065 · Form 8825 line 9", route: "/tax-returns" },
+      {
+        kind: "return_line",
+        label: "TY2025 Form 1065 · Form 8825 line 9",
+        route: `/tax-returns/${RIDGELINE_1065}`,
+      },
     ],
     versions: [
       {

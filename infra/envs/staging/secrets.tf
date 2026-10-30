@@ -13,6 +13,13 @@ locals {
     temporal_keyring = "abacus/staging/temporal/payload-keyring"
     peppers          = "abacus/staging/peppers"
     workos           = "abacus/staging/workos"
+    # A-02-T33: the QuickBooks Online sandbox app (`client_id`, `client_secret`), pasted by the
+    # builder from Intuit's developer portal; mapped into the tasks only with `qbo_enabled`.
+    qbo = "abacus/staging/qbo"
+    # TASK-2152 (ADR-342): the DocuSeal account's API key (`api_key`), pasted by the builder from
+    # DocuSeal's console; mapped into the ops one-off task only with `docuseal_enabled`, where
+    # `abacus_tools.esign_install` seals it into a firm's install. No service task reads it.
+    docuseal = "abacus/staging/docuseal"
   }
 }
 

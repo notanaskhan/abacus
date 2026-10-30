@@ -349,6 +349,11 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Term | Meaning | Code name | Don't use |
 |---|---|---|---|
 | Statement document / line item / linked value | Linked values are TB-linked · Formula · Override · Stale override. | `statement_documents`, `statement_versions`, `line_items`, `linked_values`, `tracked_changes` | — |
+| Generated document | A document the platform renders for a consumer record (an engagement letter, a §7216 consent, a representation letter, a report, a notice response, a package): insert-only versions of DocBlocks rendered to PDF and DOCX through a code-owned layout, each file stored as an evidence version. Its status is computed: Drafting · Draft · Approved · Locked, with Out of date (DF-31). A final version needs a human approval (ADR-320, P-11). UI word: "Document" or the consumer's noun ("Letter"). | `generated_documents`, `generated_document_versions`, `generated_document_files`, `generated_document_fields`, `generated_document_events`, `render_jobs` | — |
+| Report template | A firm's wording for a document family as database content: insert-only versions of DocBlocks with a clause library, declared variables and synthetic sample data, imported (dry run, then draft) and published by a person with fresh MFA. Never a constant, a migration or model output (ADR-320). | `report_templates`, `report_template_versions`, `report_template_publications` | — |
+| DocBlock | One block of the closed C11 vocabulary a template and a generated version are made of: section, heading, paragraph (runs of text, variable and citation), clause, list, table, kv, signature block, legend, image, enclosures, page break. No markup. | `DocBlock` | — |
+| Render hash | The SHA-256 of a rendered file's bytes; equal to its evidence fingerprint. Byte stability means the same inputs give the same render hash. Distinct from the content hash (the canonical JSON of the template version, snapshot hash, clause states and overrides). | `render_hash`, `content_hash` | — |
+| Text source | Where a page's words came from: the PDF's own text layer, OCR (ADR-321) or none (`not_scannable`). Shown in SHL-08 as "Text read automatically" for OCR pages. | `evidence_pages.text_source` (`text_layer`, `ocr`, `none`) | — |
 
 ## New terms: tax
 
@@ -358,7 +363,20 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Return worksheet / field | Field-level provenance. | `return_worksheets`, `return_fields` | — |
 | Document approval (tax) | Distinct from `review_decision` (Q-09). Allowed `document` compound. | `document_approvals` | — |
 | K-1 package / activity | Drafts never reach the portal. | `k1_packages`, `k1_activities`, `k1_treatments` | — |
+| K-1 recipient | A partner, shareholder or beneficiary a K-1 package is issued to; sees only their own packages in the portal (T-02-T04). | `k1_recipients` | — |
+| K-1 hand-off | A released K-1 shared to the intake of another return the firm prepares. | `k1_handoff` | — |
+| Recipient details change | A recipient's W-9/W-8 or address update, accepted or rejected by a person (DV-10). | `recipient_details_changes` | — |
+| Engine summary | The engine's figures for a return, shown only from an approved import (ADR-231). | `return_engine_summaries` | — |
 | Transmission record | A human record; Accrued never transmits. | `transmissions`, `efile_acks` | — |
+| Consent set | The `use` and `ai_disclosure` consents requested together for a filing unit and its tax years (T-01-T06, DF-31). | `consent_sets` | — |
+| Consent template | Counsel-approved consent text, one purpose per template, versioned and published by a partner; database content. | `consent_templates` | — |
+| Offshore disclosure | The consent purpose that lets TRI reach a preparer outside the US (`offshore_disclosure`). | `offshore_disclosure` | — |
+| E-file acknowledgement | The IRS or state answer to a transmission the ERO made in the engine, recorded from an engine file or by hand. | `efile_acks` | — |
+| Engine import | An engine file (values, diagnostics, PDFs, acks) uploaded to Accrued; values change only through a diff a person approves. | `engine_sync_events`, `engine_import_diffs` | — |
+| Export file | The workbook Accrued generates for the engine after final approval; the firm carries it (W2, file mode). | `engine_export` | — |
+| Amount binding | The 8879's figures at signing; drift beyond the Pub 1345 tolerances supersedes it and relocks the envelope. | `efile_amount_bindings` | — |
+| Delivery packet | The client copy, payment instructions and cover letter a person approves before delivery. | `delivery_packets` | — |
+| ERO | The firm's Electronic Return Originator: the designated person who transmits in the engine. Accrued is never the ERO or a transmitter. | `ero_designated` | — (copy ban: `apps/web/src/copy-bans.test.ts`) |
 
 ## New terms: closes
 

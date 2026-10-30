@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: backfill-rerun shadow-report pilot-metrics go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr
+.PHONY: backfill-rerun shadow-report pilot-metrics go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast evals-match-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr golden-render
 
 setup:
 	cd backend && uv sync --locked
@@ -75,6 +75,22 @@ check-fast:
 	cd backend && uv run python -m abacus_tools.quality.scope_guards
 	cd backend && uv run python -m abacus_tools.quality.seed_contamination
 	cd backend && uv run python -m abacus_tools.quality.fresh_mfa
+	# Q-03-T095 (ADR-080): every table and matrix kind the code uses has its generated tests.
+	cd backend && uv run python -m abacus_tools.quality.generator_coverage
+	# Q-03-T097: at most 5 flaky tests in quarantine, none past 10 working days.
+	cd backend && uv run python -m abacus_tools.quality.quarantine
+	# F-09-T128: every partner feature request has a written answer naming its epic, deferral or exclusion.
+	cd backend && uv run python -m abacus_tools.quality.feature_requests
+	# Q-04-T021: go-live dossiers are pilot-coded, contact-free and carry every §8.3 section.
+	cd backend && uv run python -m abacus_tools.go_live_dossier check
+	# Q-04-T020: every live-window day has a primary and a named backup; no contacts in git.
+	cd backend && uv run python -m abacus_tools.quality.on_call
+	# Q-03-T087: every decision, escaped-defect and runbook ID appears once (merge damage).
+	cd backend && uv run python -m abacus_tools.quality.register_ids
+	# Q-03-T084: the Pilot 0 top-10 log is well formed (pilot codes, real screens and epics).
+	cd backend && uv run python -m abacus_tools.quality.pilot_log
+	# Q-03-T094: the fakes register names real files (unverified fakes are reported, not failed).
+	cd backend && uv run python -m abacus_tools.quality.fakes
 	cd backend && uv run python -m abacus_tools.quality.mutation_floors
 	cd backend && uv run python -m abacus_tools.quality.coverage_floors
 	cd backend && uv run python -m abacus_tools.release_windows check
@@ -126,6 +142,7 @@ check: check-fast
 	cd backend && uv run pytest $(SERIAL) $(UNIT_TESTS) $(INTEGRATION_TESTS) --cov --cov-append --cov-fail-under=0
 	cd backend && uv run python -m abacus_tools.ci.coverage_floor
 	$(MAKE) evals-review-fast
+	$(MAKE) evals-match-fast
 	$(MAKE) ci-contracts ci-frontend
 
 # CI stage 2 runs `check` as parallel jobs (TASK-017). Each suite is split into SHARDS by recorded
@@ -195,6 +212,12 @@ ci-visual:
 # Every suite under backend/tests, in two runs: those without containers on PYTEST_WORKERS, then
 # those with them (the contracts' undo suite has its own database) on PYTEST_INTEGRATION_WORKERS.
 # PYTEST_WORKERS=0 PYTEST_INTEGRATION_WORKERS=0 make test runs each in one process.
+# The renderer's byte stability (P-11-T02; ADR-320): the golden letter in two fresh containers of
+# the backend image (no network), compared with each other and the recorded goldens, then the
+# image-bound suite. RECORD_GOLDEN=1 records new goldens (a re-baseline needs a recorded reason).
+golden-render:
+	backend/tests/golden_render/two_containers.sh
+
 test:
 	cd backend && uv run pytest $(XDIST) $(UNIT_TESTS) tests/golden
 	cd backend && uv run pytest $(XDIST_INTEGRATION) tests/contracts $(INTEGRATION_TESTS)
@@ -214,6 +237,11 @@ evals:
 # throwaway containers, no model call, no cost). Part of `check`; CI's stage 3 runs it too.
 evals-review-fast:
 	cd backend && uv run python -m abacus_tools.evals --agent evidence.upload_reviewer --route fake --subset fast
+
+# N-01-T21: the matcher's intake section on its recorded answers (extraction, the content rules and
+# the file-name baseline run for real; the matcher's answer is recorded, no model call, no cost).
+evals-match-fast:
+	cd backend && uv run python -m abacus_tools.evals --agent evidence.matcher --route fake --section intake
 
 # SPEC-012: the quarterly break-glass access review (owner credentials). QUARTER=2026Q4
 access-review:

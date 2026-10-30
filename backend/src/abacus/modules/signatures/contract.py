@@ -3,28 +3,31 @@ Contract: `docs/contracts/c7-envelopes.md`.
 
 Every route answers 404 with `signatures.envelopes` off and 501 `not_implemented` with it on
 until its task lands: record-mode import N-02-T08; the hub, drawer, evidence and reminders
-T11-T15; drafts, validate, sends, void T18-T22, T30; portal signing T23-T29; policies T13.
+T11-T15; drafts, edits, validate, send, Undo and page previews T20; resend T28; portal
+signing T23-T29; policies T13.
 
 Rules the shapes carry:
-- **Record mode first** (ADR-149): `provider` is `record`, `docusign` or `fake`; a record-mode
+- **Record mode first** (ADR-149, ADR-342): `provider` is `record`, `docuseal` or `fake`
+  (`docusign` stays readable for drafts made before ADR-342); a record-mode
   envelope never has provider fields or a signing session.
 - **People send** (AC-16): drafting is the only verb the agent and the system hold.
 - **No SMS for the 8879 family** (AC-8): `IdentityMethod` has no `sms_code`.
 - **Masked by default**: a signer's IP is `ip_masked` only; the reveal is its own audited route.
   No SSN or TIN field exists on any shape.
 - **Reserved**: `provider_envelope_id`, `provider_recipient_id`, `signing_session` and
-  `outcome` are null until `signatures.docusign` (N-02-T18 onward).
+  `outcome` are null until `signatures.esign_provider` (N-02-T18 onward).
 """
 
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
-from fastapi import Depends, Header, Query, Request, Response
+from fastapi import Depends, Header, Path, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
+from abacus.kernel import listing
 from abacus.kernel._flags import SIGNATURES_ENVELOPES
 from abacus.kernel._statuses import EnvelopeSignerStatus, EnvelopeStatus
 from abacus.kernel.classification import classified
@@ -40,7 +43,7 @@ from abacus.modules.identity.api import (
     current_context,
     current_member,
 )
-from abacus.modules.signatures import imports
+from abacus.modules.signatures import builder, hub, imports
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 Member = Annotated[AuthContext, Depends(current_member)]
@@ -62,7 +65,7 @@ Purpose = Literal[
     "system_description_approval",
     "other",
 ]
-Provider = Literal["docusign", "record", "fake"]
+Provider = Literal["docuseal", "docusign", "record", "fake"]
 PolicyFamily = Literal["efile_authorization", "engagement_letter", "consent", "general"]
 IdentityMethod = Literal["kba", "email_code", "in_person_id", "firm_sso"]
 SignerRole = Literal["signer", "countersigner", "ero"]
@@ -117,6 +120,10 @@ class SignerOut(BaseModel):
     signature_method: Annotated[SignatureMethod | None, classified("internal")]
     decline_reason: Annotated[DeclineReason | None, classified("internal")]
     provider_recipient_id: Annotated[str | None, classified("internal")]
+    # N-02-T21 (DEC-1174): SIG-02's signer sub-line and the "Email required" check. None until the
+    # builder service fills them (N-02-T20); a signer with no email on file blocks Send.
+    title: Annotated[str | None, Field(max_length=200), classified("confidential")] = None
+    email: Annotated[str | None, Field(max_length=320), classified("confidential")] = None
 
 
 class FieldOut(BaseModel):
@@ -289,15 +296,33 @@ class DraftUpdateIn(BaseModel):
     expires_on: Annotated[date | None, classified("internal")] = None
     date_as_of_mode: Annotated[DateAsOfMode, classified("internal")] = "none"
     date_as_of: Annotated[date | None, classified("internal")] = None
+    # N-02-T21 (DEC-1174): SIG-02's document order after a drag or keyboard move; None keeps it.
+    document_order: Annotated[list[UUID] | None, Field(max_length=20), classified("internal")] = (
+        None
+    )
+
+
+class ValidationCheck(BaseModel):
+    """One code-computed check SIG-02's Checks band lists (N-02-T21, DEC-1174): an identifier
+    the screen words (`amounts_match`, `ero_efin`, `no_ssn_visible`), never prose."""
+
+    model_config = ConfigDict(frozen=True)
+
+    code: Annotated[
+        str, Field(pattern=r"^[a-z][a-z0-9_]*$", max_length=60), classified("internal")
+    ]
+    ok: Annotated[bool, classified("internal")]
 
 
 class ValidationOut(BaseModel):
-    """Code-computed checks before send."""
+    """Code-computed checks before send. `problems` are identifiers
+    (`signer_email_missing:<signer_id>`)."""
 
     model_config = ConfigDict(frozen=True)
 
     ok: Annotated[bool, classified("internal")]
     problems: Annotated[list[str], classified("internal")]
+    checks: Annotated[list[ValidationCheck], classified("internal")] = []
 
 
 class SendOut(BaseModel):
@@ -327,7 +352,11 @@ class RemindIn(BaseModel):
     envelope_ids: Annotated[
         list[UUID], Field(min_length=1, max_length=100), classified("internal")
     ]
-    template_version_id: Annotated[UUID, classified("internal")]
+    # N-02-T15 (DEC-1057, additive): POR-20 numbers a template's published versions and exposes
+    # no version id, so a person's preview names the `signature_reminder` version it showed;
+    # N-02-T28 refuses a stale one. The id stays for callers that hold it.
+    template_version_id: Annotated[UUID | None, classified("internal")] = None
+    template_version: Annotated[int | None, Field(ge=1), classified("internal")] = None
 
 
 class RemindOut(BaseModel):
@@ -410,7 +439,7 @@ class WetSignatureIn(BaseModel):
 
 
 class SigningSessionOut(BaseModel):
-    """A one-time, short-lived provider view (reserved until `signatures.docusign`)."""
+    """A one-time, short-lived provider view (reserved until `signatures.esign_provider`)."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -460,7 +489,114 @@ policies_router = AbacusRouter(prefix="/v1/envelope-policies", tags=["signatures
 EnvelopeId = UUID
 
 
-@router.get("", action="envelope.read", response_model=ListPage[EnvelopeListRow], errors=(501,))
+def _row_out(row: hub.EnvelopeRow) -> EnvelopeListRow:
+    return EnvelopeListRow(
+        id=row.id,
+        number=f"E{row.number}",
+        purpose=cast(Purpose, row.purpose),
+        form_code=row.form_code,
+        title=row.title,
+        client_id=row.client_id,
+        client_name=row.client_name,
+        work_item_id=row.work_item_id,
+        provider=cast(Provider, row.provider),
+        status=cast(EnvelopeStatus, row.status),
+        signed=row.signed,
+        total=row.total,
+        sent_by_name=row.sent_by_name,
+        sent_at=row.sent_at,
+        due_on=row.due_on,
+        needs_handwritten=row.needs_handwritten,
+        allowed_actions=list(row.allowed_actions),
+        signer_chips=[SignerChip(name=c.name, signed=c.signed) for c in row.signer_chips],
+        viewed_at=row.viewed_at,
+        work_item_label=row.work_item_label,
+        drafted_by_name=row.drafted_by_name,
+        outcome=row.outcome,
+    )
+
+
+def _drawer_out(d: hub.Drawer) -> EnvelopeOut:
+    return EnvelopeOut(
+        row=_row_out(d.row),
+        policy_family=cast(PolicyFamily, d.policy_family),
+        source_kind=d.source_kind,
+        source_id=d.source_id,
+        engagement_id=d.row.engagement_id,
+        signer_order=cast(SignerOrder, d.signer_order),
+        date_as_of_mode=cast(DateAsOfMode, d.date_as_of_mode),
+        date_as_of=d.date_as_of,
+        expires_at=d.expires_at,
+        message=d.message,
+        reminder_cadence=d.reminder_cadence,
+        documents=[
+            EnvelopeDocumentOut(
+                id=x.id,
+                order=x.order,
+                title=x.title,
+                page_count=x.page_count,
+                sha256=x.sha256,
+                read_only=x.read_only,
+                tri=x.tri,
+            )
+            for x in d.documents
+        ],
+        signers=[
+            SignerOut(
+                id=x.id,
+                order=x.order,
+                routing_group=x.routing_group,
+                name=x.name,
+                role=cast(SignerRole, x.role),
+                identity_method=cast(IdentityMethod, x.identity_method),
+                status=cast(EnvelopeSignerStatus, x.status),
+                kba_failures=x.kba_failures,
+                viewed_at=x.viewed_at,
+                signed_at=x.signed_at,
+                signature_method=cast(SignatureMethod | None, x.signature_method),
+                decline_reason=cast(DeclineReason | None, x.decline_reason),
+                provider_recipient_id=x.provider_recipient_id,
+                title=x.title,
+                email=x.email,
+            )
+            for x in d.signers
+        ],
+        fields=[
+            FieldOut(
+                id=x.id,
+                document_id=x.document_id,
+                signer_id=x.signer_id,
+                kind=cast(FieldKind, x.kind),
+                page=x.page,
+                x=x.x,
+                y=x.y,
+                w=x.w,
+                h=x.h,
+                anchor=x.anchor,
+            )
+            for x in d.fields
+        ],
+        evidence=[
+            EvidenceItem(
+                signer_id=x.signer_id,
+                signed_at=x.signed_at,
+                ip_masked=x.ip_masked,
+                identity_result=x.identity_result,
+                signature_method=cast(SignatureMethod, x.signature_method),
+                user_agent_family=x.user_agent_family,
+                device_label=x.device_label,
+                package_sha256=x.package_sha256,
+            )
+            for x in d.evidence
+        ],
+        provider_envelope_id=d.provider_envelope_id,
+        superseded_at=d.superseded_at,
+        voided_reason=cast(VoidReason | None, d.voided_reason),
+        version=d.version,
+    )
+
+
+@router.get("", action="envelope.read", response_model=ListPage[EnvelopeListRow])
 async def list_envelopes_route(
     ctx: Ctx,
     tab: HubTab | None = None,
@@ -471,14 +607,40 @@ async def list_envelopes_route(
     cursor: str | None = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
 ) -> ListPage[EnvelopeListRow]:
-    """SIG-01 list (N-02-T13)."""
-    await _stub(ctx, "envelope.read")
+    """SIG-01 list (N-02-T13): wall-safe rows and counts; the Out tab's counts are its tiles."""
+    page = await hub.list_envelopes(
+        ctx,
+        tab=tab,
+        purpose=purpose,
+        status=status,
+        client_id=client_id,
+        q=q,
+        cursor=cursor,
+        limit=limit,
+    )
+    return listing.envelope(
+        [_row_out(r) for r in page.rows],
+        next_position=page.next_position,
+        tenant_id=ctx.tenant_id,
+        resource=hub.LIST_RESOURCE,
+        query=page.query,
+        total=page.total,
+        counts=page.counts,
+    )
 
 
-@router.get("/summary", action="envelope.read", response_model=EnvelopeSummary, errors=(501,))
+@router.get("/summary", action="envelope.read", response_model=EnvelopeSummary)
 async def envelope_summary_route(ctx: Ctx) -> EnvelopeSummary:
-    """SIG-01 tiles (N-02-T13)."""
-    await _stub(ctx, "envelope.read")
+    """SIG-01 tabs and the By type tile (N-02-T13), over visible rows only."""
+    made = await hub.summary(ctx)
+    return EnvelopeSummary(
+        to_send=made.to_send,
+        out=made.out,
+        completed=made.completed,
+        expired=made.expired,
+        needs_handwritten=made.needs_handwritten,
+        by_type=[TileCount(key=k, n=n) for k, n in made.by_type],
+    )
 
 
 @router.post(
@@ -641,70 +803,124 @@ async def remind_envelopes_send_route(
     await _stub(ctx, "envelope.remind")
 
 
-@router.get("/{envelope_id}", action="envelope.read", response_model=EnvelopeOut, errors=(501,))
+@router.get("/{envelope_id}", action="envelope.read", response_model=EnvelopeOut)
 async def get_envelope_route(envelope_id: EnvelopeId, ctx: Ctx) -> EnvelopeOut:
-    """SIG-01 drawer, SIG-02 builder (N-02-T11)."""
-    await _stub(ctx, "envelope.read")
+    """SIG-01 drawer, SIG-02 builder (N-02-T13)."""
+    return _drawer_out(await hub.drawer(ctx, envelope_id))
 
 
 @router.post(
-    "", action="envelope.draft", response_model=EnvelopeOut, status_code=201, errors=(409, 501)
+    "",
+    action="envelope.draft",
+    response_model=EnvelopeOut,
+    status_code=201,
+    errors=(409,),
 )
 async def create_envelope_draft_route(body: DraftIn, ctx: Ctx) -> EnvelopeOut:
     """A draft from a registered source; the agent may call this (N-02-T20)."""
-    await _stub(ctx, "envelope.draft")
+    envelope_id = await builder.create_draft(ctx, body.source_kind, body.source_id)
+    return _drawer_out(await hub.drawer(ctx, envelope_id))
 
 
-@router.put(
-    "/{envelope_id}", action="envelope.draft", response_model=EnvelopeOut, errors=(409, 501)
-)
+@router.put("/{envelope_id}", action="envelope.draft", response_model=EnvelopeOut, errors=(409,))
 async def update_envelope_draft_route(
     envelope_id: EnvelopeId, body: DraftUpdateIn, ctx: Ctx, if_match: IfMatch
 ) -> EnvelopeOut:
-    """SIG-02 edits (N-02-T20)."""
-    await _stub(ctx, "envelope.draft")
+    """SIG-02 edits (N-02-T20): 409 `stale_version` when `If-Match` is not the current
+    version; 409 `envelope_not_draft` after Send."""
+    edit = builder.DraftEdit(
+        signers=tuple(
+            builder.SignerEdit(
+                s.order, s.routing_group, s.contact_id, s.user_id, s.role, s.identity_method
+            )
+            for s in body.signers
+        ),
+        signer_order=body.signer_order,
+        message=body.message,
+        reminder_cadence=body.reminder_cadence,
+        expires_on=body.expires_on,
+        date_as_of_mode=body.date_as_of_mode,
+        date_as_of=body.date_as_of,
+        document_order=tuple(body.document_order) if body.document_order is not None else None,
+    )
+    await builder.update_draft(ctx, envelope_id, edit, if_match)
+    return _drawer_out(await hub.drawer(ctx, envelope_id))
 
 
-@router.post(
-    "/{envelope_id}/validate", action="envelope.draft", response_model=ValidationOut, errors=(501,)
-)
+@router.post("/{envelope_id}/validate", action="envelope.draft", response_model=ValidationOut)
 async def validate_envelope_route(envelope_id: EnvelopeId, ctx: Ctx) -> ValidationOut:
     """Code-computed checks (N-02-T20)."""
-    await _stub(ctx, "envelope.draft")
+    found = await builder.validate(ctx, envelope_id)
+    return ValidationOut(
+        ok=found.ok,
+        problems=list(found.problems),
+        checks=[ValidationCheck(code=c.code, ok=c.ok) for c in found.checks],
+    )
 
 
 @router.get(
     "/{envelope_id}/documents/{document_id}/pages/{page_no}",
     action="envelope.read",
     response_model=bytes,
-    errors=(501,),
+    errors=(409,),
 )
 async def envelope_page_route(
-    envelope_id: EnvelopeId, document_id: UUID, page_no: int, ctx: Ctx
+    envelope_id: EnvelopeId,
+    document_id: UUID,
+    page_no: Annotated[int, Path(ge=1, le=2000)],
+    ctx: Ctx,
 ) -> Response:
-    """Rendered preview page (N-02-T21)."""
-    await _stub(ctx, "envelope.read")
+    """SIG-02's preview page: the document's masked page image as the evidence viewer renders it
+    (`no-store`, `nosniff`); 409 `preview_unavailable` for a generated document until P-11, 409
+    `preview_outdated` before masking; 403 for a reader who may not read the evidence."""
+    page = await builder.document_page(ctx, envelope_id, document_id, page_no)
+    return Response(
+        content=page,
+        media_type="image/png",
+        headers={
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "private, no-store",
+            "Content-Security-Policy": "default-src 'none'",
+        },
+    )
 
 
-@router.post(
-    "/{envelope_id}/send", action="envelope.send", response_model=SendOut, errors=(409, 501)
-)
+@router.post("/{envelope_id}/send", action="envelope.send", response_model=SendOut, errors=(409,))
 async def send_envelope_route(
     envelope_id: EnvelopeId, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> SendOut:
-    """Human send through a single-use grant, +10 s (N-02-T22)."""
-    await _stub(ctx, "envelope.send")
+    """Human send through a single-use grant, +10 s (N-02-T20): 409 `validation_failed` with
+    each check in `facts`; the provider is called after the window (N-02-T22)."""
+
+    await builder.check_send(ctx, envelope_id)
+
+    async def run() -> tuple[int, dict[str, object]]:
+        sent = await builder.send(ctx, envelope_id)
+        out = SendOut(
+            envelope_id=sent.envelope_id, grant_id=sent.grant_id, not_before=sent.not_before
+        )
+        return 200, out.model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="envelope.send",
+        key=idempotency_key,
+        body={"envelope_id": str(envelope_id)},
+        run=run,
+    )
+    return SendOut.model_validate(stored.body)
 
 
 @router.post(
     "/{envelope_id}/send/undo",
     action="envelope.send",
     response_model=EnvelopeOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def undo_envelope_send_route(envelope_id: EnvelopeId, ctx: Ctx) -> EnvelopeOut:
-    """Undo inside the window (N-02-T22)."""
-    await _stub(ctx, "envelope.send")
+    """Undo inside the window (N-02-T20): no provider call is made."""
+    await builder.undo_send(ctx, envelope_id)
+    return _drawer_out(await hub.drawer(ctx, envelope_id))
 
 
 @router.post(
@@ -720,35 +936,46 @@ async def resend_envelope_route(envelope_id: EnvelopeId, ctx: Ctx) -> EnvelopeOu
 
 
 @router.post(
-    "/{envelope_id}/void", action="envelope.void", response_model=EnvelopeOut, errors=(409, 501)
+    "/{envelope_id}/void", action="envelope.void", response_model=EnvelopeOut, errors=(409,)
 )
 async def void_envelope_route(envelope_id: EnvelopeId, body: VoidIn, ctx: Ctx) -> EnvelopeOut:
-    """Void with a reason; evidence kept (N-02-T28)."""
-    await _stub(ctx, "envelope.void")
+    """Void with a reason; evidence kept (N-02-T13)."""
+    await hub.void(ctx, envelope_id, body.reason)
+    return _drawer_out(await hub.drawer(ctx, envelope_id))
 
 
 @router.post(
     "/{envelope_id}/signers/{signer_id}/reveal-ip",
     action="signer.reveal_ip",
     response_model=RevealOut,
-    errors=(501,),
+    errors=(409,),
 )
 async def reveal_signer_ip_route(
-    envelope_id: EnvelopeId, signer_id: UUID, body: RevealIn, ctx: Ctx
+    envelope_id: EnvelopeId, signer_id: UUID, body: RevealIn, ctx: Ctx, response: Response
 ) -> RevealOut:
-    """10-second reveal, audited (N-02-T13)."""
-    await _stub(ctx, "signer.reveal_ip")
+    """10-second reveal, audited (N-02-T13); never cached."""
+    revealed = await hub.reveal_ip(ctx, envelope_id, signer_id, body.reason)
+    response.headers["Cache-Control"] = "no-store"
+    return RevealOut(ip=revealed.ip, expires_at=revealed.expires_at)
 
 
 @router.get(
     "/{envelope_id}/evidence.zip",
     action="envelope.evidence_download",
     response_model=bytes,
-    errors=(501,),
 )
 async def envelope_evidence_route(envelope_id: EnvelopeId, ctx: Ctx) -> Response:
-    """Packages, certificate, manifest (N-02-T14)."""
-    await _stub(ctx, "envelope.evidence_download")
+    """Packages, certificate, manifest (N-02-T13); audited, byte-identical on repeat."""
+    made = await hub.evidence_package(ctx, envelope_id)
+    return Response(
+        made.body,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{made.file_name}"',
+            "Cache-Control": "no-store",
+            "X-Content-SHA256": made.sha256,
+        },
+    )
 
 
 @router.post(
@@ -817,7 +1044,7 @@ class PortalEnvelopeRow(BaseModel):
 
 class PortalEnvelopeView(BaseModel):
     """`EnvelopeVM`: steps, documents, fields, signers, my state; `signing_session` and `outcome`
-    reserved (null in record mode and until `signatures.docusign`)."""
+    reserved (null in record mode and until `signatures.esign_provider`)."""
 
     model_config = ConfigDict(frozen=True)
 

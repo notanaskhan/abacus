@@ -51,6 +51,26 @@ class ReturnSyncChipStatus(StrEnum):
     FAILED = "failed"
 
 
+class EngineImportStatus(StrEnum):
+    SCANNING = "scanning"
+    PENDING_APPROVAL = "pending_approval"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    ROUTED = "routed"
+
+
+class K3Status(StrEnum):
+    INCLUDED = "included"
+    NOT_REQUIRED = "not_required"
+    NOT_INCLUDED = "not_included"
+
+
+class TranscriptParseStatus(StrEnum):
+    QUEUED = "queued"
+    PARSED = "parsed"
+    FAILED = "failed"
+
+
 class K1PackageStatus(StrEnum):
     NOT_PREPARED = "not_prepared"
     DRAFT = "draft"
@@ -59,6 +79,23 @@ class K1PackageStatus(StrEnum):
     DOWNLOADED = "downloaded"
     BOUNCED = "bounced"
     SUPERSEDED = "superseded"
+
+
+class QuestionnaireStatus(StrEnum):
+    OPEN = "open"
+    COMPLETE = "complete"
+    SUBMITTED = "submitted"
+
+
+class RecipientDetailsChangeStatus(StrEnum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+
+
+class K1HandoffStatus(StrEnum):
+    AWAITING = "awaiting"
+    RECEIVED = "received"
 
 
 class AuditEngagementStatus(StrEnum):
@@ -385,6 +422,33 @@ class KnowledgeItemStatus(StrEnum):
     SUPERSEDED = "superseded"
 
 
+class TaxAuthorizationStatus(StrEnum):
+    REQUESTED = "requested"
+    ON_FILE = "on_file"
+    EXPIRED = "expired"
+    REVOKED = "revoked"
+    # derived, never stored: not_on_file
+
+
+class EfileAckStatus(StrEnum):
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+
+
+class FirmStandardVersionStatus(StrEnum):
+    DRAFT = "draft"
+    PUBLISHED = "published"
+    DISCARDED = "discarded"
+    # derived, never stored: superseded
+
+
+class ReferenceSetVersionStatus(StrEnum):
+    DRAFT = "draft"
+    PUBLISHED = "published"
+    WITHDRAWN = "withdrawn"
+    # derived, never stored: superseded
+
+
 class ParseFlagStatus(StrEnum):
     LOW_CONFIDENCE = "low_confidence"
     SPLIT_ACROSS_PAGES = "split_across_pages"
@@ -451,6 +515,8 @@ class ConsentStatus(StrEnum):
     EXPIRED = "expired"
     DECLINED = "declined"
     REVOKED = "revoked"
+    SUPERSEDED = "superseded"
+    # derived, never stored: not_requested
 
 
 class ConsentPurposeStatus(StrEnum):
@@ -810,6 +876,23 @@ STORED: dict[str, tuple[str, ...]] = {
         "import_pending_approval",
         "failed",
     ),
+    "engine_import": (
+        "scanning",
+        "pending_approval",
+        "approved",
+        "rejected",
+        "routed",
+    ),
+    "k3": (
+        "included",
+        "not_required",
+        "not_included",
+    ),
+    "transcript_parse": (
+        "queued",
+        "parsed",
+        "failed",
+    ),
     "k1_package": (
         "not_prepared",
         "draft",
@@ -818,6 +901,20 @@ STORED: dict[str, tuple[str, ...]] = {
         "downloaded",
         "bounced",
         "superseded",
+    ),
+    "questionnaire": (
+        "open",
+        "complete",
+        "submitted",
+    ),
+    "recipient_details_change": (
+        "pending",
+        "accepted",
+        "rejected",
+    ),
+    "k1_handoff": (
+        "awaiting",
+        "received",
     ),
     "audit_engagement": (
         "planning",
@@ -1089,6 +1186,26 @@ STORED: dict[str, tuple[str, ...]] = {
         "published",
         "superseded",
     ),
+    "tax_authorization": (
+        "requested",
+        "on_file",
+        "expired",
+        "revoked",
+    ),
+    "efile_ack": (
+        "accepted",
+        "rejected",
+    ),
+    "firm_standard_version": (
+        "draft",
+        "published",
+        "discarded",
+    ),
+    "reference_set_version": (
+        "draft",
+        "published",
+        "withdrawn",
+    ),
     "parse_flag": (
         "low_confidence",
         "split_across_pages",
@@ -1146,6 +1263,7 @@ STORED: dict[str, tuple[str, ...]] = {
         "expired",
         "declined",
         "revoked",
+        "superseded",
     ),
     "consent_purpose": (
         "use",

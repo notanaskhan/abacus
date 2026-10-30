@@ -164,7 +164,13 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.communications.intake_contract.AttachmentFiled
-    summary: 'The attachment was already filed: it cannot be decided or withdrawn again.'
+    - abacus.modules.communications.portal_intake.AttachmentFiled
+    summary: 'The firm already filed a file of this upload: it can no longer be withdrawn.'
+  attachment_not_open:
+    status: 409
+    raised_by:
+    - abacus.modules.communications.triage_apply.AttachmentNotOpen
+    summary: The file was filed, ignored or withdrawn since the triage was read.
   attachment_withdrawn:
     status: 409
     raised_by:
@@ -175,6 +181,11 @@ codes:
     raised_by:
     - abacus.modules.identity.service_lines.AuditLocked
     summary: Audit content is visible to the engagement team only; it can never be widened.
+  authorization_not_on_file:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.tax_profile.AuthorizationNotOnFile
+    summary: A transcript is pulled under an 8821 or 2848 on file for the client, covering its year.
   authorization_required:
     status: 422
     raised_by:
@@ -221,6 +232,11 @@ codes:
     raised_by:
     - abacus.modules.platform.service.BudgetInvalid
     summary: Soft must be positive and at most hard; hard at most the plan's limit (Q3).
+  caf_count_mismatch:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.tax_profile.CafCountMismatch
+    summary: '`designee_cafs`, when given, names one CAF number per designee, in the same order.'
   candidate_not_eligible:
     status: 422
     raised_by:
@@ -305,10 +321,10 @@ codes:
   consent_required:
     status: 409
     raised_by:
+    - abacus.modules.organisations.consent_gate.TriConsentRequired
     - abacus.modules.requests.lifecycle.ConsentRequired
-    summary: '§7216 (ADR P-12, R-01-T13): a request of an engagement that holds a tax return goes to
-      a third party only under the client''s `third_party_disclosure` consent (C19). Until T-01 registers
-      that consent nobody holds it, so such a delegation is refused (fail closed).'
+    summary: A read of tax return information without the taxpayer's `use` and `ai_disclosure` consents
+      in force (`facts.client_entity_id`, `facts.purpose`).
   consent_version_stale:
     status: 409
     raised_by:
@@ -377,6 +393,11 @@ codes:
     raised_by:
     - abacus.modules.review.decisions.DecisionCardState
     summary: The card is not in a state that takes this (decided, superseded).
+  decision_incomplete:
+    status: 422
+    raised_by:
+    - abacus.modules.communications.triage_apply.DestinationRequired
+    summary: File needs a destination; Ignore needs a reason.
   decision_invalid:
     status: 422
     raised_by:
@@ -404,11 +425,20 @@ codes:
     raised_by:
     - abacus.modules.identity.firm_settings.DemoClockRefused
     summary: A demo clock is only for a synthetic firm, and never in production (F-04.2, F-04.3).
+  designee_not_member:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.tax_profile.DesigneeNotMember
   destination_archived:
     status: 409
     raised_by:
     - abacus.modules.communications.intake_contract.DestinationArchived
     summary: 'The destination engagement or folder is archived: read-only.'
+  destination_outside_client:
+    status: 409
+    raised_by:
+    - abacus.modules.communications.triage_apply.DestinationOutsideClient
+    summary: The destination belongs to another client than the file's.
   discovered_in_future:
     status: 422
     raised_by:
@@ -419,10 +449,20 @@ codes:
     raised_by:
     - abacus.modules.identity.settings_registry.DisplayNameRequired
     summary: The name clients see in the portal can't be empty (AC1.3).
+  document_order_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.signatures.builder.DocumentOrderInvalid
+    summary: A new document order must name every document of the envelope exactly once.
   draft_already_decided:
     status: 409
     raised_by:
     - abacus.modules.agents.draft_start.DraftAlreadyDecided
+  draft_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.standards.DraftExists
+    summary: 'The standard already has a draft: edit it, publish it or discard it first.'
   draft_incomplete:
     status: 422
     raised_by:
@@ -458,7 +498,18 @@ codes:
     - abacus.modules.agents.proposal_undo.EffectStarted
     - abacus.modules.evidence.exports.ExportEffectStarted
     - abacus.modules.requests.binders.EffectStarted
+    - abacus.modules.signatures.builder.EffectStarted
     summary: 'The publish''s delivery has started (its grant was consumed): it can no longer be undone.'
+  effective_from_backdated:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.standards.EffectiveFromBackdated
+    summary: A version takes effect today or later (business time).
+  effective_from_not_after_current:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.standards.EffectiveFromNotAfterCurrent
+    summary: A version takes effect after every published version's date.
   effective_from_too_early:
     status: 422
     raised_by:
@@ -492,6 +543,17 @@ codes:
     raised_by:
     - abacus.modules.engagements.drafts.EntityOutsideClient
     summary: The client entity is not one of the draft's client's entities.
+  envelope_not_draft:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.builder.EnvelopeNotDraft
+    summary: Only a draft no one has pressed Send on is edited, checked for sending or sent.
+  envelope_not_open:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.hub.EnvelopeNotOpen
+    summary: Only a draft or an envelope out for signature can be voided; a completed, declined, expired
+      or voided one stays as it is.
   eqr_approval_required:
     status: 409
     raised_by:
@@ -520,6 +582,11 @@ codes:
     - abacus.modules.engagements.team_errors.EqrOnTeam
     summary: 'The engagement quality reviewer is never on the team: pick someone who isn''t, or keep
       the EQR off the team roles.'
+  esign_install_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.integrations.esign_install.EsignInstallExists
+    summary: 'The firm already has a live DocuSeal install: rotate or disconnect it instead.'
   evidence_accepted:
     status: 409
     raised_by:
@@ -615,6 +682,11 @@ codes:
     raised_by:
     - abacus.modules.review.issue_resolutions.FixRunnerUnavailable
     summary: 'No fix runner is registered: nothing is recorded (fail closed).'
+  flag_requires_hold:
+    status: 409
+    raised_by:
+    - abacus.modules.communications.triage_apply.FlagRequiresHold
+    summary: A code flag on this file only allows Hold (`force_hold`).
   follow_up_already_sent:
     status: 409
     raised_by:
@@ -708,6 +780,11 @@ codes:
     raised_by:
     - abacus.kernel.uow.idempotency.IdempotencyKeyReused
     summary: This key already answered a different request.
+  identity_method_not_allowed:
+    status: 422
+    raised_by:
+    - abacus.modules.signatures.builder.IdentityMethodNotAllowed
+    summary: The policy does not allow this identity method for this signer (DF-11).
   ignore_notes_exhausted:
     status: 409
     raised_by:
@@ -829,6 +906,11 @@ codes:
     raised_by:
     - abacus.modules.organisations.contacts_contract.InvitationUsed
     summary: 'The invitation link was already used: it works once.'
+  ip_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.hub.IpUnavailable
+    summary: No sealed address was recorded for this signer (a record-mode import keeps none).
   issue_changed:
     status: 409
     raised_by:
@@ -1003,6 +1085,11 @@ codes:
     - abacus.modules.connections.connect.NoLiveConnection
     - abacus.modules.connections.service.NoConnection
     summary: The engagement's client entity has no active connection.
+  no_current_version:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.standards.NoCurrentVersion
+    summary: 'Nothing is published to draft from: import the first version (K-02-T11).'
   no_draft:
     status: 409
     raised_by:
@@ -1023,6 +1110,11 @@ codes:
     raised_by:
     - abacus.modules.agents.ai_policy_service.NoPendingVersion
     summary: There is no version awaiting approval with that number.
+  no_sender_address:
+    status: 422
+    raised_by:
+    - abacus.modules.communications.inbox_read.NoSenderAddress
+    summary: The thread has no email sender to remember (portal or staff-logged).
   no_subsequent_ledger:
     status: 409
     raised_by:
@@ -1048,6 +1140,11 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.completion.NotConcluded
     summary: A deficiency is communicated only once the partner has concluded its severity.
+  not_draft:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.standards.NotDraft
+    summary: 'Only a draft changes: this version is published or discarded.'
   not_ignored:
     status: 409
     raised_by:
@@ -1207,10 +1304,20 @@ codes:
     raised_by:
     - abacus.modules.identity.walls.OwnWall
     summary: 'A partner can''t lift a wall on themself: another partner must (ADR-026; DEC-73).'
+  owner_not_partner:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.standards.OwnerNotPartner
+    summary: The owner of a standard must be a partner member of the firm.
   parameters_invalid:
     status: 422
     raised_by:
     - abacus.modules.fieldwork.service.ParametersInvalid
+  payload_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.standards.PayloadInvalid
+    summary: The payload is not valid for the standard's kind (`facts.kind`, `facts.problems`).
   payload_too_large:
     status: 422
     raised_by:
@@ -1298,6 +1405,11 @@ codes:
     - abacus.modules.evidence.masked_previews.PreviewOutdated
     summary: 'The page was rendered before masking existed: it is never served (SPEC-322 AC-24) until
       the backfill re-renders it.'
+  preview_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.builder.PreviewUnavailable
+    summary: The document has no rendered preview to show yet (a generated document until P-11).
   prior_mismatch:
     status: 409
     raised_by:
@@ -1350,6 +1462,16 @@ codes:
     - abacus.modules.assurance.release.RecordOutOfPhase
     summary: 'The audit''s phase does not take this record: a release from In review to Ready to release,
       an archive once Released (`facts.phase`).'
+  reference_kind_unknown:
+    status: 422
+    raised_by:
+    - abacus.modules.platform.reference_sets.ReferenceKindUnknown
+    summary: The kind is not one of the seven reference kinds (`state_*` kinds are Q-05's).
+  reference_payload_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.platform.reference_sets.ReferencePayloadInvalid
+    summary: The payload does not parse as its kind's model (`facts.kind`, `facts.problems`).
   relationship_partner:
     status: 409
     raised_by:
@@ -1427,6 +1549,16 @@ codes:
     raised_by:
     - abacus.modules.connections.entity.RetryUnavailable
     summary: Only a run a request item asked for can be retried until on-demand runs land (A-02-T30).
+  return_mismatch:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.tax_profile.ReturnMismatch
+    summary: The return is not this client's for the transcript's tax year.
+  return_not_filed:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.tax_profile.ReturnNotFiled
+    summary: 'The return has no approved engine import yet: there is no return as filed to compare.'
   review_note_invalid:
     status: 422
     raised_by:
@@ -1574,6 +1706,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.review.service.SignOffInvalid
+  signer_outside_client:
+    status: 422
+    raised_by:
+    - abacus.modules.signatures.builder.SignerOutsideClient
+    summary: A contact signer must be the envelope's client's, and a party is named exactly once.
   signoff_invalid:
     status: 422
     raised_by:
@@ -1611,6 +1748,11 @@ codes:
     raised_by:
     - abacus.modules.review.gate_actions.SnoozePastDue
     summary: A snooze ends no later than the gate's due date (and within 30 days).
+  source_cannot_draft:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.builder.SourceCannotDraft
+    summary: The source is registered but drafts nothing yet (the letter until N-02-T32).
   sso_exempt_needs_hardware_key:
     status: 409
     raised_by:
@@ -1657,12 +1799,27 @@ codes:
     - abacus.modules.identity.service_lines.StalePolicy
     - abacus.modules.identity.settings_registry.StaleSection
     - abacus.modules.methodology.lifecycle.VersionStale
+    - abacus.modules.methodology.standards.StaleVersion
     - abacus.modules.organisations.live.StaleVersion
     - abacus.modules.organisations.org_structure.StaleOrgStructure
     - abacus.modules.platform.safeguards.SafeguardsStale
     - abacus.modules.portal.settings.SettingsStale
     - abacus.modules.review.gate_actions.GateStaleVersion
+    - abacus.modules.signatures.builder.StaleEnvelope
+    - abacus.modules.tax.status.StaleReturn
+    - abacus.modules.tax.tax_profile.TaxProfileStale
     summary: 'The record changed since it was read: read it again (409).'
+  standard_key_taken:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.standards.StandardKeyTaken
+    summary: The firm already has a standard with this key.
+  standards_set_refused:
+    status: 422
+    raised_by:
+    - abacus.modules.platform.reference_sets.StandardsSetRefused
+    summary: A `standards_sets` draft holds a PCAOB or issuer set, drops a published code or moves one
+      to another family (`facts.reason`, `facts.code`; X-07).
   statement_already_approved:
     status: 409
     raised_by:
@@ -1685,6 +1842,11 @@ codes:
     raised_by:
     - abacus.modules.agents.proposals.SuggestionChanged
     summary: The suggestion moved past the version the person saw, or is no longer pending.
+  supersede_mismatch:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.intake_filing.SupersedeMismatch
+    summary: 'The version to supersede is not on the chosen destination''s client: choose again.'
   superseded:
     status: 409
     raised_by:
@@ -1719,6 +1881,11 @@ codes:
     raised_by:
     - abacus.modules.identity.support.SupportSessionInvalid
     summary: A reason of 20 to 1,000 characters, a scope, and 1 to 240 minutes (60 in an emergency).
+  tax_profile_file_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.tax_profile.TaxProfileFileUnavailable
+    summary: The staged file is not the caller's own for this entity, or was already filed.
   tb_same_snapshot:
     status: 409
     raised_by:
@@ -1757,6 +1924,16 @@ codes:
     raised_by:
     - abacus.modules.engagements.service.TemplateTypeMismatch
     summary: The template doesn't serve this engagement's type (SPEC-024 AC-6).
+  thread_changed:
+    status: 409
+    raised_by:
+    - abacus.modules.communications.inbox_read.ThreadVersionChanged
+    summary: 'Someone matched or ignored this thread since it was read: reload.'
+  thread_matched:
+    status: 409
+    raised_by:
+    - abacus.modules.communications.inbox_read.ThreadAlreadyMatched
+    summary: Only an unmatched thread can be ignored as a sender.
   tie_out_check_invalid:
     status: 422
     raised_by:
@@ -1792,6 +1969,16 @@ codes:
     - abacus.modules.organisations.tin.TinKindNotAllowed
     summary: An SSN or ITIN can't be stored for a firm that isn't synthetic until the §7216 consent gate
       (C19) lands; an EIN can (P-07 OQ-4, DEC-52).
+  transcript_not_comparable:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.tax_profile.TranscriptNotComparable
+    summary: Only a parsed Wage & Income transcript is compared with a return.
+  transition_refused:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.status.TransitionRefused
+    summary: '409: the table holds no move from this status on this event.'
   trial_balance_exists:
     status: 409
     raised_by:
@@ -1813,6 +2000,7 @@ codes:
     - abacus.modules.evidence.exports.ExportUndoClosed
     - abacus.modules.evidence.service.UndoWindowClosed
     - abacus.modules.requests.binders.UndoWindowClosed
+    - abacus.modules.signatures.builder.UndoWindowClosed
     summary: Undo is possible for 10 seconds after a publish, and only once.
   unknown_agent:
     status: 422
@@ -1897,6 +2085,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.evidence.uploads.UploadTypeNotAllowed
+  validation_failed:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.builder.ValidationFailed
+    summary: A code-computed check failed; `facts` holds each check's result by its code.
   version_frozen:
     status: 409
     raised_by:
