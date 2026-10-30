@@ -157,6 +157,7 @@ def test_ac17_the_context_carries_its_subjects() -> None:
 
 
 def test_ac23_model_text_never_carries_a_full_tin() -> None:
-    masked = sanitise_text("Taxpayer 123-45-6789 filed.")
-    assert "123-45-6789" not in masked and "•••-••-6789" in masked
+    # A synthetic ITIN: the reserved 9xx area (ADR-085) with an ITIN group, so it is still a TIN.
+    masked = sanitise_text("Taxpayer 900-70-6789 filed.")
+    assert "900-70-6789" not in masked and "•••-••-6789" in masked
     assert sanitise_text("No identifiers here.") == "No identifiers here."

@@ -161,6 +161,8 @@ export interface DeclineDialogProps {
   trigger?: ReactNode;
   /** Hold the dialog open in place for a specimen. */
   forceState?: "open";
+  /** With `forceState`: over the frame on the scrim, as TPL-16f draws it. */
+  heldScrim?: boolean;
 }
 
 /** "Decline to sign?": four reasons and a note; Decline (destructive) waits for a reason. Focus
@@ -172,6 +174,7 @@ export function DeclineDialog({
   onDecline,
   trigger,
   forceState,
+  heldScrim,
 }: DeclineDialogProps): JSX.Element {
   const [reason, setReason] = useState<string | undefined>(undefined);
   const [note, setNote] = useState("");
@@ -192,6 +195,7 @@ export function DeclineDialog({
       dirty={reason !== undefined || note !== ""}
       {...(trigger === undefined ? {} : { trigger })}
       {...(forceState === undefined ? {} : { forceState })}
+      {...(heldScrim === undefined ? {} : { heldScrim })}
       action={
         <Button
           variant="destructive"
@@ -278,7 +282,7 @@ export interface MobileSignBarProps {
   height?: MobileSignBarHeight;
 }
 
-/** The phone's sticky bottom bar: one 48 primary, full width, "Adopt signature & sign…". */
+/** The phone's sticky bottom bar: one 48 primary, full width, "Adopt signature & sign". */
 export function MobileSignBar({
   viewer,
   onClick,
@@ -295,7 +299,7 @@ export function MobileSignBar({
       <HumanAction
         verb="Adopt"
         object="signature & sign"
-        opensDialog
+
         actor={{ kind: "human", name: viewer }}
         variant="primary"
         size="xl"

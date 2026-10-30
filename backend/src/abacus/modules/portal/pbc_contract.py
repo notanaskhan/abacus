@@ -210,6 +210,10 @@ class PortalBinderOut(BaseModel):
     mark_done: Annotated[PortalMarkDoneOut, classified("internal")]
     other_parties: Annotated[list[str], classified("confidential")] = []
     allowed_actions: Annotated[list[PortalAction], classified("internal")] = []
+    # R-01-T33: the firm published "Upload something else" and the intake route is on; the
+    # binder's engagement is the scope an unsolicited file is sent under.
+    upload_something_else: Annotated[bool, classified("internal")] = False
+    engagement_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class PortalCategoryRefOut(BaseModel):

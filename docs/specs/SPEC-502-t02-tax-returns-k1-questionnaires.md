@@ -42,3 +42,8 @@ T-02 is the tax practice board and the return workspace (TAX-01 to TAX-03), K-1 
 
 **Fixtures (T-02-T08).**
 - **AC-9** Fixture seed rows and per-artboard scenarios for the six screens with personas `nora-calloway` and `pell-street-member`, and footing tests.
+
+**Due dates and BH-TAX-02 on the return (T-02-T10).** (AC-10 to AC-17 are T-02-T09's and T-02-T11's.)
+- **AC-18** Every tax form code maps to C21's rule form (`1120s` is `1120-S`, `1040x` is `1040`); the Due popover's rule text reads as TPL-01 writes it ("15th day, 3rd month + 6 months"; a 1041's 7004 "+ 5½ months"); a return no published rule answers keeps empty dates and is still created.
+- **AC-19** On create, and when the extension changes, a return's original and extended due dates come from `practice.api.due_dates_for` on its period end (the fiscal year end, else Dec 31) with the reference-set version ids pinned; BH-TAX-02 (the firm's `return_approval_policy` in effect) is pinned once, at creation; each pin is audited `tax_return.due_dates_pinned`. Ridgeline's extended TY2025 1065 is Tue Sep 15, 2026.
+- **AC-20** A published correction recomputes every unfiled return (`reference_set.published`); a filed or accepted return keeps the dates it was filed on.

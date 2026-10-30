@@ -11,6 +11,7 @@ run in the caller's unit of work (after its `authorise`) and are audited by targ
 
 from __future__ import annotations
 
+from typing import Final
 from uuid import UUID
 
 from sqlalchemy import delete, insert, select
@@ -19,6 +20,7 @@ from abacus.kernel.crypto import key_service, open_sealed, seal
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Target, UnitOfWork
+from abacus.modules.integrations.capabilities import write_capability
 from abacus.modules.integrations.models import FirmIntegration, IntegrationSecret
 
 TARGET = "firm_integration"
@@ -78,3 +80,30 @@ async def erase_secret(tx: UnitOfWork, firm_integration_id: UUID) -> bool:
     if gone is not None:
         tx.record("integration_secret.erased", target=Target(TARGET, firm_integration_id))
     return gone is not None
+
+
+async def connected_integration(tenant: TenantContext, catalog_key: str) -> UUID | None:
+    """N-02-T18: the firm's connected install of `catalog_key` (DocuSign's per-firm enablement),
+    or None when it has none or it needs attention or was disconnected."""
+    async with tenant_session(tenant) as session:
+        return await session.scalar(
+            select(FirmIntegration.id).where(
+                FirmIntegration.catalog_key == catalog_key, FirmIntegration.status == "connected"
+            )
+        )
+
+
+DOCUSIGN_W7: Final = "esignature_envelope_send"
+DOCUSIGN_CATALOG: Final = "docusign"
+
+
+async def docusign_install_secret(tenant: TenantContext) -> bytes | None:
+    """N-02-T18: the firm's opened DocuSign install secret, only when the W7 capability is enabled
+    (v1: never) and the install is connected; for the worker to give signatures (ADR-008)."""
+    entry = write_capability(DOCUSIGN_W7)
+    if entry is None or not entry.enabled:
+        return None
+    install = await connected_integration(tenant, DOCUSIGN_CATALOG)
+    if install is None:
+        return None
+    return await open_secret(tenant, install)
