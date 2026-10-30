@@ -582,6 +582,11 @@ codes:
     - abacus.modules.engagements.team_errors.EqrOnTeam
     summary: 'The engagement quality reviewer is never on the team: pick someone who isn''t, or keep
       the EQR off the team roles.'
+  esign_install_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.integrations.esign_install.EsignInstallExists
+    summary: 'The firm already has a live DocuSeal install: rotate or disconnect it instead.'
   evidence_accepted:
     status: 409
     raised_by:
