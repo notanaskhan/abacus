@@ -55,7 +55,8 @@ async def owner(migrated_db: MigratedDatabase) -> AsyncIterator[asyncpg.Connecti
 
 
 def _probe(prefix: str) -> str:
-    return f"probe.{prefix}.{uuid.uuid4().hex[:12]}"
+    # Short enough for every payload field it lands in (a return type is at most 20 characters).
+    return f"probe.{prefix}.{uuid.uuid4().hex[:8]}"
 
 
 def _hash(payload: Json) -> str:

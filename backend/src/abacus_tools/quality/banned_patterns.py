@@ -2240,6 +2240,9 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/backfill/test_k02t03_reference_sets.py",
             "tests/integration/backfill/test_k02t04_firm_standards.py",
             "tests/integration/backfill/test_t01t08_consents.py",
+            # K-02-T05: the platform reference sets (global, definer-guarded) are seeded as the
+            # owner role; the service under test then reads them as the app role.
+            "tests/integration/test_k02t05_reference_set_service.py",
             "tests/integration/test_unit_of_work.py",
             "tests/integration/test_outbox_relay.py",
             "tests/integration/test_identity.py",
