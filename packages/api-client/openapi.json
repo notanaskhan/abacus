@@ -124086,16 +124086,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Create Envelope Draft Route",
@@ -124847,7 +124837,7 @@
         "x-abacus-action": "envelope.read"
       },
       "put": {
-        "description": "SIG-02 edits (N-02-T20).",
+        "description": "SIG-02 edits (N-02-T20): 409 `stale_version` when `If-Match` is not the current\nversion; 409 `envelope_not_draft` after Send.",
         "operationId": "update_envelope_draft",
         "parameters": [
           {
@@ -124974,16 +124964,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Update Envelope Draft Route",
@@ -125496,7 +125476,7 @@
     },
     "/v1/envelopes/{envelope_id}/send": {
       "post": {
-        "description": "Human send through a single-use grant, +10 s (N-02-T22).",
+        "description": "Human send through a single-use grant, +10 s (N-02-T20): 409 `validation_failed` with\neach check in `facts`; the provider is called after the window (N-02-T22).",
         "operationId": "send_envelope",
         "parameters": [
           {
@@ -125613,16 +125593,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Send Envelope Route",
@@ -125634,7 +125604,7 @@
     },
     "/v1/envelopes/{envelope_id}/send/undo": {
       "post": {
-        "description": "Undo inside the window (N-02-T22).",
+        "description": "Undo inside the window (N-02-T20): no provider call is made.",
         "operationId": "undo_envelope_send",
         "parameters": [
           {
@@ -125740,16 +125710,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Undo Envelope Send Route",
@@ -126152,16 +126112,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Validate Envelope Route",

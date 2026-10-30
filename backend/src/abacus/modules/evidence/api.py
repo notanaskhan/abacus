@@ -161,6 +161,7 @@ from abacus.modules.evidence.match_material import (
 from abacus.modules.evidence.matching import MIN_SCORE as SUGGESTION_MIN_SCORE
 from abacus.modules.evidence.matching import suggest as suggest_by_name
 from abacus.modules.evidence.pii import pii_scan_upload
+from abacus.modules.evidence.pii_facts import tin_exposure
 from abacus.modules.evidence.portal_files import (
     PortalFile,
     SentBack,
@@ -618,6 +619,7 @@ __all__ = [
     "start_trust_layer_backfill",
     "suggest_by_name",
     "supported_citations",
+    "tin_exposure",
     "undo_returned_files",
     "undo_review_decision",
     "upload",

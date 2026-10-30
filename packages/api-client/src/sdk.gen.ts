@@ -5214,7 +5214,8 @@ export const getEnvelope = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * Update Envelope Draft Route
  *
- * SIG-02 edits (N-02-T20).
+ * SIG-02 edits (N-02-T20): 409 `stale_version` when `If-Match` is not the current
+ * version; 409 `envelope_not_draft` after Send.
  */
 export const updateEnvelopeDraft = <ThrowOnError extends boolean = false>(options: Options<UpdateEnvelopeDraftData, ThrowOnError>): RequestResult<UpdateEnvelopeDraftResponses, UpdateEnvelopeDraftErrors, ThrowOnError> => (options.client ?? client).put<UpdateEnvelopeDraftResponses, UpdateEnvelopeDraftErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5273,7 +5274,8 @@ export const resendEnvelope = <ThrowOnError extends boolean = false>(options: Op
 /**
  * Send Envelope Route
  *
- * Human send through a single-use grant, +10 s (N-02-T22).
+ * Human send through a single-use grant, +10 s (N-02-T20): 409 `validation_failed` with
+ * each check in `facts`; the provider is called after the window (N-02-T22).
  */
 export const sendEnvelope = <ThrowOnError extends boolean = false>(options: Options<SendEnvelopeData, ThrowOnError>): RequestResult<SendEnvelopeResponses, SendEnvelopeErrors, ThrowOnError> => (options.client ?? client).post<SendEnvelopeResponses, SendEnvelopeErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5284,7 +5286,7 @@ export const sendEnvelope = <ThrowOnError extends boolean = false>(options: Opti
 /**
  * Undo Envelope Send Route
  *
- * Undo inside the window (N-02-T22).
+ * Undo inside the window (N-02-T20): no provider call is made.
  */
 export const undoEnvelopeSend = <ThrowOnError extends boolean = false>(options: Options<UndoEnvelopeSendData, ThrowOnError>): RequestResult<UndoEnvelopeSendResponses, UndoEnvelopeSendErrors, ThrowOnError> => (options.client ?? client).post<UndoEnvelopeSendResponses, UndoEnvelopeSendErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

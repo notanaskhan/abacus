@@ -58103,10 +58103,6 @@ export type CreateEnvelopeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CreateEnvelopeDraftError = CreateEnvelopeDraftErrors[keyof CreateEnvelopeDraftErrors];
@@ -58499,10 +58495,6 @@ export type UpdateEnvelopeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UpdateEnvelopeDraftError = UpdateEnvelopeDraftErrors[keyof UpdateEnvelopeDraftErrors];
@@ -58803,10 +58795,6 @@ export type SendEnvelopeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SendEnvelopeError = SendEnvelopeErrors[keyof SendEnvelopeErrors];
@@ -58863,10 +58851,6 @@ export type UndoEnvelopeSendErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UndoEnvelopeSendError = UndoEnvelopeSendErrors[keyof UndoEnvelopeSendErrors];
@@ -59047,10 +59031,6 @@ export type ValidateEnvelopeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ValidateEnvelopeError = ValidateEnvelopeErrors[keyof ValidateEnvelopeErrors];
