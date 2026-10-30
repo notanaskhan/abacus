@@ -183,6 +183,22 @@ async def _send(
             "evidence_version_id, sha256) VALUES ($1, $2, 1, $3, $4)",
             (w.tenant, envelope, w.site.version_id, "d" * 64),
         ),
+        (
+            # The send's grant, consumed by the relay for its sender (N-02-T22, DEC-1284).
+            "INSERT INTO approval_grants (tenant_id, subject_type, subject_id, action, "
+            "approver_user_id, engagement_id, payload_sha256, not_before, expires_at, used_at, "
+            "consumer_ref) VALUES ($1, 'envelope', $2, 'envelope.send', $3, $4, $5, $6, $7, $6, "
+            "gen_random_uuid())",
+            (
+                w.tenant,
+                envelope,
+                w.grace.user_id,
+                w.site.engagement_id,
+                "e" * 64,
+                now - timedelta(minutes=1),
+                now + timedelta(hours=1),
+            ),
+        ),
     ]
     ids: list[uuid.UUID] = []
     for order, who in enumerate(people, start=1):
