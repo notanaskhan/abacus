@@ -31,8 +31,8 @@ READ_CONNECTORS: Final[tuple[dict[str, object], ...]] = (
 # Reserved writes: none is enabled (ADR-150); every execute_write is refused.
 WRITES: Final[tuple[dict[str, object], ...]] = (
     {
-        "adapter_key": "docusign",
-        "decision": "ADR-149",
+        "adapter_key": "docuseal",
+        "decision": "ADR-342",
         "enabled": False,
         "key": "esignature_envelope_send",
         "owner_epic": "N-02",

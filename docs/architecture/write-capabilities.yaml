@@ -56,8 +56,8 @@ writes:
     decision: P-18
     enabled: false
   - key: esignature_envelope_send
-    adapter_key: docusign
+    adapter_key: docuseal
     shape: W7
     owner_epic: N-02
-    decision: ADR-149
+    decision: ADR-342
     enabled: false

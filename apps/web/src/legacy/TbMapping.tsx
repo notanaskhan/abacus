@@ -107,7 +107,10 @@ export function TbMapping({
     <div className="flex flex-col">
       <div className="flex flex-wrap items-center gap-2 border-b-[0.5px] border-hair px-4 py-2 text-[12.5px]">
         <span className="font-medium">{`${m.version?.set_name ?? ""} v${String(m.version?.version ?? "")}`}</span>
-        <span className="text-ink-3 tabular-nums">{`${String(m.mapped)} mapped · ${String(m.manual)} edited`}</span>
+        <span className="text-ink-3 tabular-nums">{`${String(m.mapped)} mapped · ${String(m.prior_year ?? 0)} from prior year · ${String(m.number_range ?? 0)} by range · ${String(m.manual)} edited`}</span>
+        {m.tb_balanced === false && (
+          <StatusPill tone="danger">Trial balance out of balance</StatusPill>
+        )}
         {m.unmapped > 0 ? (
           <StatusPill tone="warning">{`${String(m.unmapped)} unmapped`}</StatusPill>
         ) : (
@@ -212,9 +215,11 @@ export function TbMapping({
                 <td className="px-2 py-1 text-ink-3">
                   {a.method === "manual"
                     ? "Edited"
-                    : a.method === "number_range"
-                      ? "Account range"
-                      : "—"}
+                    : a.method === "prior_year"
+                      ? "Prior year"
+                      : a.method === "number_range"
+                        ? "Account range"
+                        : "—"}
                 </td>
               </tr>
             ))}

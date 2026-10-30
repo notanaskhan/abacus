@@ -111,6 +111,8 @@ SECTIONS: Final[tuple[Section, ...]] = (
             "firm's admins",
             "Restore drill and game day within the quarter",
             "P-29 on: windows published; production releases follow the windowed rules",
+            "R4 (LEVEL=season): RB-16's R4 checklist worked through, each step's evidence here "
+            "(docs/runbooks/RB-16-busy-season-readiness.md)",
         ),
     ),
     Section(

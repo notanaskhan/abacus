@@ -7,14 +7,15 @@ T11-T15; drafts, edits, validate, send, Undo and page previews T20; resend T28; 
 signing T23-T29; policies T13.
 
 Rules the shapes carry:
-- **Record mode first** (ADR-149): `provider` is `record`, `docusign` or `fake`; a record-mode
+- **Record mode first** (ADR-149, ADR-342): `provider` is `record`, `docuseal` or `fake`
+  (`docusign` stays readable for drafts made before ADR-342); a record-mode
   envelope never has provider fields or a signing session.
 - **People send** (AC-16): drafting is the only verb the agent and the system hold.
 - **No SMS for the 8879 family** (AC-8): `IdentityMethod` has no `sms_code`.
 - **Masked by default**: a signer's IP is `ip_masked` only; the reveal is its own audited route.
   No SSN or TIN field exists on any shape.
 - **Reserved**: `provider_envelope_id`, `provider_recipient_id`, `signing_session` and
-  `outcome` are null until `signatures.docusign` (N-02-T18 onward).
+  `outcome` are null until `signatures.esign_provider` (N-02-T18 onward).
 """
 
 from __future__ import annotations
@@ -64,7 +65,7 @@ Purpose = Literal[
     "system_description_approval",
     "other",
 ]
-Provider = Literal["docusign", "record", "fake"]
+Provider = Literal["docuseal", "docusign", "record", "fake"]
 PolicyFamily = Literal["efile_authorization", "engagement_letter", "consent", "general"]
 IdentityMethod = Literal["kba", "email_code", "in_person_id", "firm_sso"]
 SignerRole = Literal["signer", "countersigner", "ero"]
@@ -438,7 +439,7 @@ class WetSignatureIn(BaseModel):
 
 
 class SigningSessionOut(BaseModel):
-    """A one-time, short-lived provider view (reserved until `signatures.docusign`)."""
+    """A one-time, short-lived provider view (reserved until `signatures.esign_provider`)."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -1043,7 +1044,7 @@ class PortalEnvelopeRow(BaseModel):
 
 class PortalEnvelopeView(BaseModel):
     """`EnvelopeVM`: steps, documents, fields, signers, my state; `signing_session` and `outcome`
-    reserved (null in record mode and until `signatures.docusign`)."""
+    reserved (null in record mode and until `signatures.esign_provider`)."""
 
     model_config = ConfigDict(frozen=True)
 

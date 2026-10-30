@@ -61,9 +61,9 @@ DRAFT: Final = "envelope.draft"
 SEND: Final = "envelope.send"
 UNDO_WINDOW: Final = timedelta(seconds=10)
 GRANT_LIFETIME: Final = timedelta(days=1)
-# The provider a live envelope is meant for (ADR-149); the adapter in use is configured per
-# environment (the fake in tests and demo) and W7 opens per firm (N-02-T18).
-DRAFT_PROVIDER: Final = "docusign"
+# The provider a live envelope is meant for (ADR-342, which replaced DocuSign); the adapter in use
+# is configured per environment (the fake in tests and demo) and W7 opens per firm (N-02-T18).
+DRAFT_PROVIDER: Final = "docuseal"
 # DF-11: who may verify how, by policy family, when the firm has no policy row for it.
 _DEFAULT_METHODS: Final[dict[str, frozenset[str]]] = {
     "efile_authorization": frozenset({"kba", "in_person_id", "firm_sso"}),

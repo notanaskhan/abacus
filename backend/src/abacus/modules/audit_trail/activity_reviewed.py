@@ -195,6 +195,8 @@ REVIEWED_FALLBACK: Final = frozenset(
         "firm.letter_policy_changed",
         "firm.signup_attempted",
         "firm.time_zone_changed",
+        "firm_integration.connected",  # TASK-2152: a firm's DocuSeal install (ADR-342)
+        "firm_integration.disconnected",
         "firm_policy_override.set",
         "firm_setting.provisioned",
         "firm_setting.set",
