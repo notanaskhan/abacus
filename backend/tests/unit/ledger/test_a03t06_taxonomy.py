@@ -15,6 +15,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from openpyxl import Workbook
+from openpyxl.cell.cell import Cell
 
 from abacus.modules.ledger.api import parse_grouping_set, parse_grouping_workbook
 from abacus_tools.quality.banned_patterns import MODULE_DEPENDENCIES
@@ -124,6 +125,7 @@ def test_a_formula_looking_cell_is_kept_as_text() -> None:
         for row in rows:
             sheet.append(list(row))
     label = book["Groupings"].cell(row=len(GROUPINGS) + 1, column=2)
+    assert isinstance(label, Cell)
     label.value = "=HYPERLINK(1)"
     label.data_type = "s"
     out = io.BytesIO()
