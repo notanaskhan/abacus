@@ -298,7 +298,7 @@ describe("SHL-01 behaviour (P-01 AC 1.1)", () => {
       "Tax Returns",
       // Files is routed by N-01-T16 (FIL-01); its flag-off page is behind `files.browser`.
       "Workbench",
-      "Inbox",
+      // Inbox is routed by N-01-T23 (INB-01); its flag-off page is behind `inbox.firm_intake`.
       // Binders is routed by P-06-T09 (BND-01); its flag-off page is BND-01.test.tsx's.
       "Notices",
       // Audits is routed by A-01-T11 (AUD-01); its flag-off page is AUD-01.test.tsx's.

@@ -394,6 +394,9 @@ export function TriageSheet({
   const bundle = useQuery({
     ...messageTriageOptions({ path: { message_id: messageId ?? "" } }),
     enabled: open,
+    // DEC-23 (N-01-T23): every 2 s while the sheet is open and the tab visible, so a
+    // classification that lands while the person decides shows up (TanStack pauses it when hidden).
+    refetchInterval: 2_000,
   });
   const [states, setStates] = useState<Record<string, CardState>>({});
   const [dirty, setDirty] = useState(startDirty);
