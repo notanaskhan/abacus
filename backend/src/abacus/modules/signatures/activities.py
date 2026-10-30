@@ -45,7 +45,11 @@ from abacus.modules.evidence.api import (
     screen_and_stage,
 )
 from abacus.modules.identity.api import firm_time_zone
-from abacus.modules.signatures.events import EnvelopeCompleted
+from abacus.modules.signatures.events import (
+    EnvelopeCompleted,
+    EnvelopeSignerSigned,
+    EnvelopeSignerVerificationFailed,
+)
 from abacus.modules.signatures.hub import seal_ip
 from abacus.modules.signatures.imports import RECORD_TYPE, RetentionFloorMissing
 from abacus.modules.signatures.provider import (
@@ -61,6 +65,11 @@ from abacus.modules.signatures.workflows import EnvelopeInput, ReminderDue, Send
 OPEN: Final = ("sent", "viewed", "partially_signed")
 DEFAULT_EXPIRY_DAYS: Final = 30
 DEFAULT_CAP: Final = 3
+# C7 v1.1 (N-02-T25): the signer-level events the poll emits, by the signer's new status.
+_SIGNER_EVENTS: Final = {
+    "signed": EnvelopeSignerSigned,
+    "verification_failed": EnvelopeSignerVerificationFailed,
+}
 # How far each envelope status is along; the poll never moves an envelope back.
 _RANK: Final = {"sent": 0, "viewed": 1, "partially_signed": 2, "declined": 3, "completed": 3}
 
@@ -299,6 +308,17 @@ async def envelope_poll(given: EnvelopeInput) -> str:
                     "at": now,
                 },
             )
+            if code in _SIGNER_EVENTS:
+                tx.emit(
+                    _SIGNER_EVENTS[code](
+                        envelope_id=envelope_id,
+                        signer_id=signer_id,
+                        client_id=env.client_id,
+                        engagement_id=env.engagement_id,
+                        source_kind=env.source_kind or "envelope",
+                        source_id=env.source_id or envelope_id,
+                    )
+                )
         if status != env.status:
             await tx.session.execute(
                 text(

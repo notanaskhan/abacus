@@ -491,6 +491,8 @@ REVIEWED_FALLBACK: Final = frozenset(
         "envelope.polled",  # N-02-T13/T14 (S15)
         "envelope.reminder_skipped",  # N-02-T13/T14 (S15)
         "envelope.voided",  # N-02-T13/T14 (S15)
+        "envelope.superseded",  # N-02-T25: C7 v1.1, the system's amount-change marker (S17)
+        "envelope.retention_extended",  # N-02-T25: forward only
         "evidence.downloaded",  # N-02-T13: the evidence zip (S15)
         "inbound_message.downloaded",  # N-01-T12 to T18 (S15)
         "inbox_attachment.downloaded",  # N-01-T12 to T18 (S15)
