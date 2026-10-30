@@ -78,6 +78,10 @@ Two kinds of versioned, effective-dated rules (K-02 short version): **platform r
 - **AC-32** Discard keeps the row as `discarded`; the diff lists changed cells by JSON pointer with before and after strings, against the version a draft came from by default.
 - **AC-33** The examples slot (`register_standard_examples`) answers `provider_registered: false` with no rows until a provider registers; a provider's rows are already `visible()`-filtered, and no hidden count is shown (DEC-43, US-3.6).
 - **AC-34** `current_version(tenant_id, key, as_of)` names the version in effect (`LookupError` before the first effective date or for an unknown key); a standard's owner must be a partner member (422 `owner_not_partner`), and a key is one standard per firm (409 `standard_key_taken`). KNW-01's `firm_standards` category lists one card per published standard and a change-log entry per published version; the C15 projection `firm_standard` carries the name and kind only.
+- **AC-52** (K-02-T14) KNW-04 i: the owner's draft shows the version chip and a neutral "Draft vN" pill, the draft's table with every changed value amber-tinted and the prior value struck, and "n changes from vM".
+- **AC-53** (K-02-T14) The sticky Save bar reads "Draft vN · n changes from vM · visible to partners only" with the Effective date, Discard draft and Publish vN… (owner only, after a change summary; ConfirmDialog; a 403 opens the step-up); New version… is disabled while a draft is open.
+- **AC-54** (K-02-T14) Typed editors per kind edit the draft in place (AJE limits, variance percent and amount, materiality ranges, document confidence, SSARS early adoption); a save sends If-Match and a 409 `stale_version` shows "Changed by … Reload to see the latest draft." instead of overwriting.
+- **AC-55** (K-02-T14) Staff never see a draft or Publish; Export downloads the draft's workbook for the owner.
 
 ## 4. Out of scope here
 The CLI, import and export, fan-out and KNW-04i/j (K-02-T06 to T12, T14 to T20) build against the same contract in later sprints.

@@ -113,3 +113,13 @@ Gradients, emoji, saturated blue toggles, heavy shadows, invented colours, lorem
 
 ## Open gaps
 - The handoff's toggles are display-only in the product (policy principal dormant, DEC-53); their "on" colour is never shown.
+
+## K-02-T14: state i (draft and publish)
+- **i · Draft v3** (scenario `i`, Priya Raman): header chip `v3` and neutral pill "Draft v3"; the
+  draft's fieldset "BH AJE thresholds v3" with "2 changes from v2"; changed cells amber-tinted with
+  the prior value struck; the sticky Save bar "Draft v3 · 2 changes from v2 · visible to partners
+  only", Effective date, Discard draft, Publish v3… (owner only; ConfirmDialog; a 403 opens the
+  "Confirm it’s you" step-up). `i_stale`: a 409 `stale_version` shows "Changed by … Reload".
+- **Deviation D7:** while a draft is open the examples and the policy-acceptance fieldsets stay on
+  the published read view (the draft pane shows the editable table only). Checklists, review
+  levels and the return approval policy are edited as workbooks (Export, then Import…).
