@@ -172,3 +172,4 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-340](ADR-340-sampling-engine.md) | Sampling engine: a seeded, versioned, frozen in-product sampler; import kept as a path (P-57) | red | proposed |
 | [ADR-341](ADR-341-multi-entity-engagements-and-consolidation.md) | Multi-entity engagements and consolidation: engagement entities, ledger-owned mapping and consolidation, the taxonomy as firm content (P-63) | red | proposed |
 | [ADR-342](ADR-342-e-signature-provider-docuseal.md) | E-signature provider: DocuSeal (cloud) replaces DocuSign behind the EsignProvider port; record mode first; 8879 KBA only once confirmed in writing and accepted by counsel (P-26) | red | accepted |
+| [ADR-400](ADR-400-document-extracted-ledger-snapshots.md) | Document-extracted ledger snapshots and GL journal-entry fields: provenance on the snapshot, verified and footing lines only, human adoption; JE fields where exports carry them (P-58) | red | proposed |
