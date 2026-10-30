@@ -226,7 +226,7 @@ function BinderPicker({
           "inline-flex items-center gap-[6px] rounded-pill font-medium tracking-[-0.012em] whitespace-nowrap hover:bg-nav-fill aria-expanded:bg-nav-fill",
           size === "pane"
             ? "h-[30px] pr-[10px] pl-[12px] text-pane"
-            : "h-[36px] pr-[6px] pl-[2px] text-title",
+            : "h-[44px] pr-[6px] pl-[2px] text-title", // 44 x 44 touch target (F-06-T12)
           PRESS,
         )}
       >
@@ -554,7 +554,7 @@ function MobileRowText({
       type="button"
       data-open-title=""
       onClick={onOpen}
-      className="-my-[8px] flex min-w-0 flex-1 flex-col justify-center gap-[3px] self-stretch py-[8px] text-left"
+      className="-my-[8px] flex min-h-[44px] min-w-0 flex-1 flex-col justify-center gap-[3px] self-stretch py-[8px] text-left"
     >
       {text}
     </button>
@@ -721,7 +721,7 @@ export function RequestMobile({
                       onClick={() => {
                         props.onOpen?.(r.id);
                       }}
-                      className="inline-flex h-[44px] flex-none items-center text-dense text-ink-2"
+                      className="inline-flex h-[44px] min-w-[44px] flex-none items-center justify-center text-dense text-ink-2"
                     >
                       Ignore
                     </button>

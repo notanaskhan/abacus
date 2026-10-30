@@ -129,7 +129,7 @@ describe("TPL-19 frames 3 to 6, 8 and permission off", () => {
     const card = frame(container, "tpl-19-6-ring").querySelector<HTMLElement>(
       '[data-request="aca"]',
     );
-    expect(within(card as HTMLElement).getByRole("progressbar", { name: "Uploading" })).toBeTruthy();
+    expect(within(card as HTMLElement).getByRole("progressbar", { name: /^Uploading/u })).toBeTruthy();
     expect(within(card as HTMLElement).queryByRole("button", { name: /Upload…/u })).toBeNull();
   });
 

@@ -2,7 +2,7 @@
 id: TASK-2222
 title: F-06-T11 TPL-19 frames 5 and 6 (v1 capture) and the TPL-19 lock
 spec: SPEC-000  # F-06-T11 row and the TPL-19 handoff; no SPEC defines the specimen
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: amber
 status: in-review
 epic: F-06
