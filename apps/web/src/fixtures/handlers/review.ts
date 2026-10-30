@@ -62,9 +62,15 @@ export function reviewArtboards(screen: ReviewScreen): ReviewArtboard[] {
 /** A screen's fixture scenarios, one per artboard: E0's handlers with the artboard's C3 answers on
  * top, seen by its viewer (the default persona where the artboard names none) at its instant. */
 export function reviewScenarios(screen: ReviewScreen): Record<string, Scenario> {
+  return scenariosOf(reviewArtboards(screen));
+}
+
+/** Scenarios for artboards outside the handoff's 44 (P-04-T47's SHL-16 import variant), built
+ * the same way: E0's handlers with each artboard's answers on top. */
+export function scenariosOf(artboards: readonly ReviewArtboard[]): Record<string, Scenario> {
   const e0 = seedScenario();
   const scenarios: Record<string, Scenario> = {};
-  for (const artboard of reviewArtboards(screen)) {
+  for (const artboard of artboards) {
     scenarios[artboard.state] = {
       ...e0,
       state: artboard.state,

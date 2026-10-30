@@ -9,6 +9,21 @@ Will own (docs/plan/03-backend-architecture.md §2.2): Tax returns, worksheets, 
 - **Kind:** `api.py` registers `tax_return` with engagements' work-item kind slot (`TaxReturnKind` in `kind.py`). Create one with `engagements.api.create_work_item(ctx, engagement_id, "tax_return", name=..., client_entity_id=..., details={"form": "1040", "tax_year": 2026})`.
 - **Routes:** the engine-bridge and e-file-record stubs (`engine_contract.py`, T-01-T02): 21 routes at 501 behind `tax.engine_bridge` and `tax.delivery_efile`.
 
+## Compute (pure; ADR-050)
+- `compute/transcripts.py` (T-01-T45, amber): parses IRS Wage & Income and Account transcript text
+  and compares a Wage & Income transcript with the return as filed (`compare`), in exact
+  decimals. No clock, database or I/O; hostile text is bounded and reported, never guessed at
+  (DEC-1650). T-01-T43 stores the results.
+
+## Tax profile (T-01-T43, red; DEC-1651)
+- **Tables (0550):** `tax_profile_files` (staged uploads, consumed once), `tax_authorizations`
+  (8821, 2848, state; CAF numbers sealed, last four kept), `tax_elections` (upsert with
+  `seen_version`), insert-only `transcripts`, `transcript_lines`, `transcript_comparisons`.
+- **Service:** `tax_profile.py` registers tax's half of CLI-05 with organisations
+  (`register_tax_profile_backend`); organisations keeps the routes and their order of checks.
+  The return as filed is `review.api.approved_values(..., 'engine_import')`, information returns
+  as `ir.<form>.<n>.payer|amount`.
+
 ## Seam with T-02 (T-01-T02)
 T-01 owns four **red** files, declared protected by T-01-T07: `approval.py` (final approval; the
 only writer of a tax return's `final_approval` sign-off, TAXAPPROVE-001), `export.py` (the engine
