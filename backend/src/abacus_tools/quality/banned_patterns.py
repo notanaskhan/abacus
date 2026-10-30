@@ -1613,10 +1613,12 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     | {"organisations", "engagements", "methodology", "requests", "evidence", "sampling"}
     | {"review", "workpapers", "reporting", "signatures", "communications", "agents"}
     | {"integrations", "assurance"},
+    # T-02-T10 (DEC-1261): returns pin the due dates practice computes from C21 (practice never
+    # imports tax, so the edge stays acyclic).
     "tax": _BASE
     | {"organisations", "engagements", "methodology", "requests", "evidence", "ledger"}
     | {"review", "workpapers", "adjustments", "reporting", "signatures", "communications"}
-    | {"agents", "integrations"},
+    | {"agents", "integrations", "practice"},
     "closes": _BASE
     | {"organisations", "engagements", "methodology", "requests", "evidence", "ledger"}
     | {"review", "workpapers", "adjustments", "reporting", "communications", "agents"}

@@ -130,6 +130,8 @@ async def due_dates_for(
         postponement_notice_id=dates.postponement_notice_id,
         reference_set_version_ids=version_ids,
         postponed_to=dates.postponed_to,
+        rule_text=calendar.rule_text(rule, extended=False),
+        extended_rule_text=calendar.rule_text(rule, extended=True),
         inputs_hash=calendar.inputs_hash(
             {
                 "form": form,
