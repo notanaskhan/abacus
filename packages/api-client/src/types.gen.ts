@@ -1068,6 +1068,20 @@ export type AgentsStateOut = {
 };
 
 /**
+ * AgreeingFormOut
+ */
+export type AgreeingFormOut = {
+    /**
+     * Count
+     */
+    count: number;
+    /**
+     * Form
+     */
+    form: string;
+};
+
+/**
  * AiClientDataIn
  */
 export type AiClientDataIn = {
@@ -9350,6 +9364,34 @@ export type DueDatesIn = {
      * Item Ids
      */
     item_ids: Array<string>;
+};
+
+/**
+ * DuplicateResolutionIn
+ */
+export type DuplicateResolutionIn = {
+    /**
+     * Decision
+     */
+    decision: 'keep_newer' | 'discard_duplicate';
+};
+
+/**
+ * DuplicateResolutionOut
+ */
+export type DuplicateResolutionOut = {
+    /**
+     * Decision
+     */
+    decision: 'keep_newer' | 'discard_duplicate';
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Kept Version Id
+     */
+    kept_version_id: string;
 };
 
 /**
@@ -31720,6 +31762,10 @@ export type TaxAuthorizationDesigneeOut = {
  */
 export type TaxAuthorizationIn = {
     /**
+     * Designee Cafs
+     */
+    designee_cafs?: Array<string> | null;
+    /**
      * Designee User Ids
      */
     designee_user_ids: Array<string>;
@@ -31848,6 +31894,10 @@ export type TaxElectionOut = {
      */
     kind: string;
     /**
+     * Row Version
+     */
+    row_version?: number | null;
+    /**
      * Status Code
      */
     status_code: string;
@@ -31873,6 +31923,31 @@ export type TaxPlanRowOut = {
      * State
      */
     state: 'done' | 'in_progress' | 'not_started';
+};
+
+/**
+ * TaxProfileFileOut
+ *
+ * A file staged for a transcript or an authorization: scanned before storage, named by id
+ * in the upload that files it (an upload intent).
+ */
+export type TaxProfileFileOut = {
+    /**
+     * File Name
+     */
+    file_name: string;
+    /**
+     * Media Type
+     */
+    media_type: string;
+    /**
+     * Size Bytes
+     */
+    size_bytes: number;
+    /**
+     * Upload Id
+     */
+    upload_id: string;
 };
 
 /**
@@ -33025,9 +33100,60 @@ export type TemplateDraftStartedOut = {
 };
 
 /**
+ * TemplateImportIn
+ *
+ * A template bundle (AC-1): structured blocks, declared variables and synthetic sample data
+ * only (AC-2: no markup, no URL).
+ */
+export type TemplateImportIn = {
+    /**
+     * Body
+     */
+    body: Array<SectionBlockInput | HeadingBlock | ParagraphBlock | ClauseBlockInput | ListBlock | TableBlock | KvBlock | SignatureBlock | LegendBlock | ImageBlock | EnclosuresBlock | PageBreakBlock>;
+    /**
+     * Clauses
+     */
+    clauses?: Array<ClauseDefOutInput>;
+    /**
+     * Description
+     */
+    description?: string;
+    /**
+     * Family
+     */
+    family: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export';
+    /**
+     * Layout Key
+     */
+    layout_key: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Sample Data
+     */
+    sample_data?: {
+        [key: string]: string;
+    };
+    /**
+     * Variables
+     */
+    variables?: Array<VariableDeclOut>;
+};
+
+/**
  * TemplateImportOut
  */
 export type TemplateImportOut = {
+    /**
+     * Added
+     */
+    added?: Array<string>;
+    /**
+     * Changed
+     */
+    changed?: Array<string>;
     /**
      * Dry Run
      */
@@ -33036,6 +33162,10 @@ export type TemplateImportOut = {
      * Problems
      */
     problems: Array<string>;
+    /**
+     * Removed
+     */
+    removed?: Array<string>;
     /**
      * Template Id
      */
@@ -33759,6 +33889,26 @@ export type TranscriptComparisonIn = {
  */
 export type TranscriptComparisonOut = {
     /**
+     * Agreeing
+     */
+    agreeing?: Array<AgreeingFormOut>;
+    /**
+     * Checkpoint Id
+     */
+    checkpoint_id?: string | null;
+    /**
+     * Computed At
+     */
+    computed_at?: string | null;
+    /**
+     * Difference Total
+     */
+    difference_total?: string | null;
+    /**
+     * Engine Version
+     */
+    engine_version?: string | null;
+    /**
      * Id
      */
     id: string;
@@ -33766,6 +33916,10 @@ export type TranscriptComparisonOut = {
      * Lines
      */
     lines: Array<TranscriptLineDiffOut>;
+    /**
+     * Result
+     */
+    result?: 'agrees' | 'differences' | null;
     /**
      * Return Id
      */
@@ -33783,9 +33937,17 @@ export type TranscriptComparisonOut = {
  */
 export type TranscriptLineDiffOut = {
     /**
+     * Difference
+     */
+    difference?: string | null;
+    /**
      * Form
      */
     form: string;
+    /**
+     * Line No
+     */
+    line_no?: number | null;
     /**
      * Matched
      */
@@ -33799,6 +33961,10 @@ export type TranscriptLineDiffOut = {
      */
     return_amount: string | null;
     /**
+     * Status
+     */
+    status?: 'agrees' | 'differs' | 'not_on_return' | null;
+    /**
      * Transcript Amount
      */
     transcript_amount: string;
@@ -33809,9 +33975,22 @@ export type TranscriptLineDiffOut = {
  */
 export type TranscriptOut = {
     /**
+     * Account Balance
+     */
+    account_balance?: string | null;
+    /**
+     * Authorization Form
+     */
+    authorization_form?: '8821' | '2848' | 'state' | null;
+    /**
+     * Difference Count
+     */
+    difference_count?: number | null;
+    /**
      * Id
      */
     id: string;
+    key_transaction?: TranscriptTransactionOut | null;
     /**
      * Kind
      */
@@ -33825,9 +34004,34 @@ export type TranscriptOut = {
      */
     pulled_at: string;
     /**
+     * Pulled By Name
+     */
+    pulled_by_name?: string | null;
+    /**
+     * Result
+     */
+    result?: 'agrees' | 'differences' | null;
+    /**
      * Tax Year
      */
     tax_year: number;
+};
+
+/**
+ * TranscriptTransactionOut
+ *
+ * An Account transcript's key transaction (TC 150 return filed, TC 922 unreported-income
+ * review: a review, not an assessment).
+ */
+export type TranscriptTransactionOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Posted On
+     */
+    posted_on: string;
 };
 
 /**
@@ -35907,59 +36111,6 @@ export type AbacusModulesReportingContractApprovalOut = {
      * By
      */
     by: string;
-};
-
-/**
- * TemplateImportIn
- *
- * A template bundle (AC-1): structured blocks, declared variables and synthetic sample data
- * only (AC-2: no markup, no URL).
- */
-export type AbacusModulesReportingContractTemplateImportIn = {
-    /**
-     * Body
-     */
-    body: Array<SectionBlockInput | HeadingBlock | ParagraphBlock | ClauseBlockInput | ListBlock | TableBlock | KvBlock | SignatureBlock | LegendBlock | ImageBlock | EnclosuresBlock | PageBreakBlock>;
-    /**
-     * Clauses
-     */
-    clauses?: Array<ClauseDefOutInput>;
-    /**
-     * Description
-     */
-    description?: string;
-    /**
-     * Family
-     */
-    family: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export';
-    /**
-     * Layout Key
-     */
-    layout_key: string;
-    /**
-     * Name
-     */
-    name: string;
-    /**
-     * Sample Data
-     */
-    sample_data?: {
-        [key: string]: string;
-    };
-    /**
-     * Variables
-     */
-    variables?: Array<VariableDeclOut>;
-};
-
-/**
- * TemplateImportIn
- */
-export type AbacusModulesRequestsQuestionnairesContractTemplateImportIn = {
-    /**
-     * Upload Id
-     */
-    upload_id: string;
 };
 
 /**
@@ -38974,6 +39125,10 @@ export type AddAuthorizationErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
@@ -38993,6 +39148,71 @@ export type AddAuthorizationResponses = {
 };
 
 export type AddAuthorizationResponse = AddAuthorizationResponses[keyof AddAuthorizationResponses];
+
+export type StageAuthorizationFileData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Entity Id
+         */
+        client_entity_id: string;
+    };
+    query: {
+        /**
+         * Filename
+         */
+        filename: string;
+    };
+    url: '/v1/client-entities/{client_entity_id}/authorizations/files';
+};
+
+export type StageAuthorizationFileErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * The file is too large
+     */
+    413: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
+};
+
+export type StageAuthorizationFileError = StageAuthorizationFileErrors[keyof StageAuthorizationFileErrors];
+
+export type StageAuthorizationFileResponses = {
+    /**
+     * Successful Response
+     */
+    201: TaxProfileFileOut;
+};
+
+export type StageAuthorizationFileResponse = StageAuthorizationFileResponses[keyof StageAuthorizationFileResponses];
 
 export type RequestAuthorizationData = {
     body: TaxAuthorizationRequestIn;
@@ -39228,6 +39448,64 @@ export type TaxProfileResponses = {
 
 export type TaxProfileResponse = TaxProfileResponses[keyof TaxProfileResponses];
 
+export type ListTranscriptsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Entity Id
+         */
+        client_entity_id: string;
+    };
+    query?: never;
+    url: '/v1/client-entities/{client_entity_id}/transcripts';
+};
+
+export type ListTranscriptsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListTranscriptsError = ListTranscriptsErrors[keyof ListTranscriptsErrors];
+
+export type ListTranscriptsResponses = {
+    /**
+     * Response List Transcripts
+     *
+     * Successful Response
+     */
+    200: Array<TranscriptOut>;
+};
+
+export type ListTranscriptsResponse = ListTranscriptsResponses[keyof ListTranscriptsResponses];
+
 export type UploadTranscriptData = {
     body: TranscriptUploadIn;
     headers?: {
@@ -39264,6 +39542,10 @@ export type UploadTranscriptErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
@@ -39283,6 +39565,71 @@ export type UploadTranscriptResponses = {
 };
 
 export type UploadTranscriptResponse = UploadTranscriptResponses[keyof UploadTranscriptResponses];
+
+export type StageTranscriptFileData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Entity Id
+         */
+        client_entity_id: string;
+    };
+    query: {
+        /**
+         * Filename
+         */
+        filename: string;
+    };
+    url: '/v1/client-entities/{client_entity_id}/transcripts/files';
+};
+
+export type StageTranscriptFileErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * The file is too large
+     */
+    413: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
+};
+
+export type StageTranscriptFileError = StageTranscriptFileErrors[keyof StageTranscriptFileErrors];
+
+export type StageTranscriptFileResponses = {
+    /**
+     * Successful Response
+     */
+    201: TaxProfileFileOut;
+};
+
+export type StageTranscriptFileResponse = StageTranscriptFileResponses[keyof StageTranscriptFileResponses];
 
 export type RevealTinData = {
     body: TinRevealIn;
@@ -53399,6 +53746,70 @@ export type SetDocumentKindResponses = {
 };
 
 export type SetDocumentKindResponse = SetDocumentKindResponses[keyof SetDocumentKindResponses];
+
+export type ResolveDuplicateData = {
+    body: DuplicateResolutionIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/request-items/{item_id}/evidence-versions/{version_id}/duplicate-resolution';
+};
+
+export type ResolveDuplicateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ResolveDuplicateError = ResolveDuplicateErrors[keyof ResolveDuplicateErrors];
+
+export type ResolveDuplicateResponses = {
+    /**
+     * Successful Response
+     */
+    200: DuplicateResolutionOut;
+};
+
+export type ResolveDuplicateResponse = ResolveDuplicateResponses[keyof ResolveDuplicateResponses];
 
 export type DraftScreeningReturnData = {
     body: ScreeningReturnDraftIn;
@@ -77093,10 +77504,6 @@ export type PortalQuestionnairesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalQuestionnairesError = PortalQuestionnairesErrors[keyof PortalQuestionnairesErrors];
@@ -77160,10 +77567,6 @@ export type PortalQuestionnaireErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalQuestionnaireError = PortalQuestionnaireErrors[keyof PortalQuestionnaireErrors];
@@ -77228,10 +77631,6 @@ export type PortalAnswerErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalAnswerError = PortalAnswerErrors[keyof PortalAnswerErrors];
@@ -77348,10 +77747,6 @@ export type PortalMarkDoneErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalMarkDoneError = PortalMarkDoneErrors[keyof PortalMarkDoneErrors];
@@ -77408,10 +77803,6 @@ export type PortalSubmitErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalSubmitError = PortalSubmitErrors[keyof PortalSubmitErrors];
@@ -78141,10 +78532,6 @@ export type QuestionnaireListTemplatesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type QuestionnaireListTemplatesError = QuestionnaireListTemplatesErrors[keyof QuestionnaireListTemplatesErrors];
@@ -78207,10 +78594,6 @@ export type PublishTemplateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PublishTemplateError = PublishTemplateErrors[keyof PublishTemplateErrors];
@@ -78225,7 +78608,7 @@ export type PublishTemplateResponses = {
 export type PublishTemplateResponse = PublishTemplateResponses[keyof PublishTemplateResponses];
 
 export type QuestionnaireImportTemplateData = {
-    body: AbacusModulesRequestsQuestionnairesContractTemplateImportIn;
+    body?: never;
     headers?: {
         /**
          * Authorization
@@ -78237,7 +78620,15 @@ export type QuestionnaireImportTemplateData = {
         'X-Abacus-Tenant'?: string | null;
     };
     path?: never;
-    query?: {
+    query: {
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * Format
+         */
+        format?: 'csv' | 'xlsx' | 'json';
         /**
          * Dry Run
          */
@@ -78263,10 +78654,6 @@ export type QuestionnaireImportTemplateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type QuestionnaireImportTemplateError = QuestionnaireImportTemplateErrors[keyof QuestionnaireImportTemplateErrors];
@@ -78318,10 +78705,6 @@ export type CreateQuestionnaireErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CreateQuestionnaireError = CreateQuestionnaireErrors[keyof CreateQuestionnaireErrors];
@@ -78374,10 +78757,6 @@ export type QuestionnaireErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type QuestionnaireError = QuestionnaireErrors[keyof QuestionnaireErrors];
@@ -78434,10 +78813,6 @@ export type DraftQuestionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DraftQuestionError = DraftQuestionErrors[keyof DraftQuestionErrors];
@@ -78494,10 +78869,6 @@ export type SendQuestionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SendQuestionError = SendQuestionErrors[keyof SendQuestionErrors];
@@ -78849,7 +79220,7 @@ export type ListReportTemplatesResponses = {
 export type ListReportTemplatesResponse = ListReportTemplatesResponses[keyof ListReportTemplatesResponses];
 
 export type ImportReportTemplateData = {
-    body: AbacusModulesReportingContractTemplateImportIn;
+    body: TemplateImportIn;
     headers?: {
         /**
          * Authorization
@@ -79135,10 +79506,6 @@ export type ListQuestionnairesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListQuestionnairesError = ListQuestionnairesErrors[keyof ListQuestionnairesErrors];
@@ -79197,10 +79564,6 @@ export type AttachOrganizerErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AttachOrganizerError = AttachOrganizerErrors[keyof AttachOrganizerErrors];
@@ -82860,6 +83223,62 @@ export type BrowserErrorResponses = {
 
 export type BrowserErrorResponse = BrowserErrorResponses[keyof BrowserErrorResponses];
 
+export type LatestComparisonData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Transcript Id
+         */
+        transcript_id: string;
+    };
+    query?: never;
+    url: '/v1/transcripts/{transcript_id}/comparison';
+};
+
+export type LatestComparisonErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type LatestComparisonError = LatestComparisonErrors[keyof LatestComparisonErrors];
+
+export type LatestComparisonResponses = {
+    /**
+     * Successful Response
+     */
+    200: TranscriptComparisonOut;
+};
+
+export type LatestComparisonResponse = LatestComparisonResponses[keyof LatestComparisonResponses];
+
 export type CompareTranscriptData = {
     body: TranscriptComparisonIn;
     headers?: {
@@ -82895,6 +83314,10 @@ export type CompareTranscriptErrors = {
      * Not found
      */
     404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
     /**
      * Invalid request
      */

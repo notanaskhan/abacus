@@ -168,3 +168,9 @@ variable "qbo_enabled" {
   type        = bool
   default     = false
 }
+
+variable "docuseal_enabled" {
+  description = "TASK-2152: map the DocuSeal key into the ops one-off task (fill abacus/staging/docuseal first)"
+  type        = bool
+  default     = false
+}

@@ -1,0 +1,34 @@
+Wage and Income Transcript
+Tax Period Requested: December, 2025
+
+Form W-2 Wage and Tax Statement
+Employer:
+Employer Identification Number (EIN):XXXXX1101
+COBALT RIDGE ENGINEERING LLC
+Wages, Tips and Other Compensation:........$99,100.00
+Federal Income Tax Withheld:...............$11,540.00
+
+Form W-2 Wage and Tax Statement
+Employer:
+Employer Identification Number (EIN):XXXXX1102
+LARKSPUR PEDIATRICS PC
+Wages, Tips and Other Compensation:........$73,900.00
+Federal Income Tax Withheld:...............$8,105.00
+
+Form 1098 Mortgage Interest Statement
+Lender:
+Lender's Federal Identification Number (FIN):XXXXX1103
+SUMMIT HOME LENDING
+Mortgage Interest Received from Payer(s)/Borrower(s):$13,987.40
+
+Form 1099-INT Interest Income
+Payer:
+Payer's Federal Identification Number (FIN):XXXXX1105
+FRONT RANGE BANK
+Interest:.................................$1,940.12
+
+Form 1099-INT Interest Income
+Payer:
+Payer's Federal Identification Number (FIN):XXXXX1106
+LAKEVIEW CREDIT UNION
+Interest:.................................$1,301.77

@@ -255,6 +255,9 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.connections import (
 from abacus_tools.synthetic.scenarios.brightwater_hale.connections import (
     SLICE as CONNECTIONS_SLICE,
 )
+from abacus_tools.synthetic.scenarios.brightwater_hale.consents_7216 import NEEDS as CONSENTS_NEEDS
+from abacus_tools.synthetic.scenarios.brightwater_hale.consents_7216 import ROW_BY_LABEL
+from abacus_tools.synthetic.scenarios.brightwater_hale.consents_7216 import SLICE as CONSENTS_SLICE
 from abacus_tools.synthetic.scenarios.brightwater_hale.email_templates import (
     SLICE as EMAIL_TEMPLATES_SLICE,
 )
@@ -1283,6 +1286,115 @@ async def _return_board_set(conn: asyncpg.Connection, _: Scenario, event: Event)
     await _bootstrap(conn, event, write)
 
 
+# T-01-T23 (DEC-1366): ADM-05's 218 consents, bootstrapped as record mode writes them (T-01-T10's
+# capture is the person's path; the scenario has no envelopes to complete). No consent text is
+# stored: a synthetic template version and its hash stand in, as a recorded consent carries them.
+_CONSENT_TERMS: Final = "synthetic-terms"
+_SIGNER_NAMES: Final = {
+    "Calloway Family Trust": ("Eleanor Calloway, trustee",),
+    "Ridgeline Property Partners, LP": ("Owen Calder, for Ridgeline GP LLC",),
+    "Copperleaf Coffee Roasters, Inc.": ("Tess Moreno, CEO",),
+}
+
+
+def _signer_names(client: str, count: int) -> tuple[str, ...]:
+    """ "Morgan & Kai Ferris" → "Morgan Ferris", "Kai Ferris"; a single person as named."""
+    if client in _SIGNER_NAMES:
+        return _SIGNER_NAMES[client][:count]
+    if " & " in client and count == 2:
+        first, rest = client.split(" & ", 1)
+        given, _space, family = rest.rpartition(" ")
+        return (f"{first} {family}", f"{given} {family}")
+    return (client,) * count
+
+
+def _ct(day: date | None) -> datetime | None:
+    return None if day is None else datetime(day.year, day.month, day.day, 10, 0, tzinfo=_CT)
+
+
+async def _consent_recorded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    row = ROW_BY_LABEL[str(event.data["row"])]
+    client = await _client_id(conn, row.client)
+    entity = await _entity_id(conn, client, row.entity)
+    creator = user_id_of(_SEATS["GH"])
+
+    async def write() -> tuple[str, str, str]:
+        set_id = None
+        if len(row.purposes) > 1:
+            set_id = UUID(row.set_id)
+            await conn.execute(
+                "INSERT INTO consent_sets (id, tenant_id, client_id, filing_unit_entity_id, "
+                "kind, tax_years, created_by) VALUES ($1, $2, $3, $4, 'use_ai_disclosure', $5, "
+                "$6) ON CONFLICT DO NOTHING",
+                set_id,
+                TENANT,
+                client,
+                entity,
+                list(row.tax_years),
+                creator,
+            )
+        names = _signer_names(row.client, len(row.signers))
+        contacts = [UUID(stable_id(f"contact:consent:{row.client}:{n}")) for n in names]
+        for contact, name in zip(contacts, names, strict=True):
+            await conn.execute(
+                "INSERT INTO contacts (id, tenant_id, client_id, display_name, contact_kind, "
+                "created_at) VALUES ($1, $2, $3, $4, 'client_person', $5) "
+                "ON CONFLICT DO NOTHING",
+                contact,
+                TENANT,
+                client,
+                name,
+                event.at,
+            )
+        for purpose in row.purposes:
+            consent = UUID(row.consent_id(purpose))
+            await conn.execute(
+                "INSERT INTO consents (id, tenant_id, client_id, client_entity_id, "
+                "consent_set_id, purpose, tax_years, recipients, provider_terms_version, "
+                "template_version_id, text_sha256, source, status, requested_at, signed_at, "
+                "expires_at, declined_at, revoked_at, created_by) VALUES ($1, $2, $3, $4, $5, "
+                "$6, $7, $8::jsonb, $9, $10, $11, 'record', $12, $13, $14, $15, $16, $17, $18) "
+                "ON CONFLICT DO NOTHING",
+                consent,
+                TENANT,
+                client,
+                entity,
+                set_id,
+                purpose,
+                list(row.tax_years),
+                json.dumps([row.recipient]),
+                _CONSENT_TERMS,
+                UUID(stable_id(f"consent-template:{purpose}:v2")),
+                hashlib.sha256(f"synthetic consent template {purpose} v2".encode()).digest(),
+                row.status,
+                _ct(row.signed_on) or _ct(row.declined_on) or event.at,
+                _ct(row.signed_on) if row.status in ("signed", "revoked") else None,
+                _ct(row.expires_on),
+                _ct(row.declined_on),
+                _ct(row.revoked_on),
+                creator,
+            )
+            for index, (signer, contact) in enumerate(zip(row.signers, contacts, strict=True)):
+                done = (
+                    signer.signed_on if row.status in ("signed", "revoked", "requested") else None
+                )
+                await conn.execute(
+                    "INSERT INTO consent_signers (id, tenant_id, consent_id, contact_id, "
+                    "signer_role, required, signed_at, method) VALUES ($1, $2, $3, $4, $5, true, "
+                    "$6, $7) ON CONFLICT DO NOTHING",
+                    UUID(stable_id(f"consent-signer:{row.label}:{purpose}:{index}")),
+                    TENANT,
+                    consent,
+                    contact,
+                    signer.role,
+                    _ct(done),
+                    "record" if done else None,
+                )
+        return "consent.recorded", "client", str(client)
+
+    await _bootstrap(conn, event, write)
+
+
 async def _close_engagement_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     """Copperleaf's 2026 Close and its August close (CLS-03: preparer RM, reviewer PR)."""
     engagement = UUID(COPPERLEAF_CLOSE_ENGAGEMENT)
@@ -1501,6 +1613,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     FIRM_INBOX_SLICE: FIRM_INBOX_NEEDS,  # N-01-T11: docs@ rows 1-17 and the Intake team
     EMAIL_TEMPLATES_SLICE: (),  # R-01-T22: Grace's firm admin role is audit_core's
     TAX_BOARD_SLICE: TAX_BOARD_NEEDS,  # T-02-T11: the board sets the binders' returns
+    CONSENTS_SLICE: CONSENTS_NEEDS,  # T-01-T23: the sets name the tax engagements' entities
 }
 
 
@@ -2612,6 +2725,7 @@ HANDLERS: Final[dict[str, Handler]] = {
     "engagements.tax_engagement_created": _tax_engagement_created,
     # T-02-T11 (`--slice tax_board`, after `binders`): each return's board state and people.
     "tax.return_board_set": _return_board_set,
+    "organisations.consent_recorded": _consent_recorded,
     "engagements.close_engagement_created": _close_engagement_created,
     "requests.binder_created": _binder_created,
     # P-06-T08 remainder: Granite Peak's agent-drafted SURL request, after its PBC list.
