@@ -29,8 +29,42 @@ from abacus.modules.organisations.consent_gate import (
     require_tri_consent,
     tri_consent_verdict,
 )
+from abacus.modules.organisations.consents import (
+    ConsentDraft,
+    FilingUnit,
+    check_scope,
+    consent_template_versions_on,
+    envelope_completed,
+    filing_unit,
+    record_request,
+    record_signed,
+    refuse_declined,
+    renewal_basis,
+)
 from abacus.modules.organisations.consents_contract import (
+    ConsentDraftsOut,
+    ConsentRecordIn,
+    ConsentRenewalIn,
+    ConsentRequestIn,
+    consent_outs,
+)
+from abacus.modules.organisations.consents_contract import (
+    AgreeingFormOut,
+    AuthorizationForm,
+    AuthorizationStatus,
     ConsentState,
+    TaxAuthorizationDesigneeOut,
+    TaxAuthorizationIn,
+    TaxAuthorizationOut,
+    TaxElectionIn,
+    TaxElectionOut,
+    TaxProfileFileOut,
+    TranscriptComparisonIn,
+    TranscriptComparisonOut,
+    TranscriptLineDiffOut,
+    TranscriptOut,
+    TranscriptTransactionOut,
+    TranscriptUploadIn,
     TriVerdict,
     consents_router,
 )
@@ -118,6 +152,14 @@ from abacus.modules.organisations.service import (
     signer_contacts,
 )
 from abacus.modules.organisations.settings_contract import offices_glance, org_settings_router
+from abacus.kernel.dispatch import WorkClass, register_work_classes
+from abacus.modules.organisations.activities import ACTIVITIES as CONSENT_ACTIVITIES
+from abacus.modules.organisations.activities import SCHEDULES as CONSENT_SCHEDULES
+from abacus.modules.organisations.slots import register_consent_capture
+from abacus.modules.organisations.workflows import (
+    ConsentExportWorkflow,
+    ConsentLifecycleSweepWorkflow,
+)
 from abacus.modules.organisations.slots import (
     OverviewItem,
     OverviewSection,
@@ -131,6 +173,12 @@ from abacus.modules.organisations.slots import (
     register_overview_section,
     register_screening_evidence,
 )
+
+# T-01-T43: the tax-profile family's live routes register on `consents_router` at import.
+from abacus.modules.organisations.tax_profile import (
+    TaxProfileBackend,
+    register_tax_profile_backend,
+)
 from abacus.modules.organisations.tin import (
     MaskedTin,
     TinConflict,
@@ -143,6 +191,15 @@ from abacus.modules.organisations.tin import (
 )
 
 # The routers the API mounts, in order (P-39; F-03-T07).
+# T-01-T16: the consent export and the daily lifecycle sweep (background work).
+WORKFLOWS: dict[type, WorkClass] = {
+    ConsentExportWorkflow: "background",
+    ConsentLifecycleSweepWorkflow: "background",
+}
+register_work_classes(WORKFLOWS)
+ACTIVITIES: tuple[object, ...] = CONSENT_ACTIVITIES
+SCHEDULES = CONSENT_SCHEDULES
+
 ROUTERS: tuple[AbacusRouter, ...] = (
     clients_router,  # the clients family contract, v1 stub (P-07-T04)
     client_entities_router,
@@ -180,10 +237,32 @@ for _section in (
 register_consent_gate()
 
 __all__ = [
+    "ConsentDraft",
+    "ConsentDraftsOut",
+    "ConsentRecordIn",
+    "ConsentRenewalIn",
+    "ConsentRequestIn",
+    "FilingUnit",
+    "check_scope",
+    "consent_outs",
+    "consent_template_versions_on",
+    "envelope_completed",
+    "filing_unit",
+    "record_request",
+    "record_signed",
+    "refuse_declined",
+    "register_consent_capture",
+    "renewal_basis",
     "CONTACT_ROLES",
     "ENTITY_TYPES",
     "RELATIONSHIP_KINDS",
+    "ACTIVITIES",
     "ROUTERS",
+    "AgreeingFormOut",
+    "AuthorizationForm",
+    "AuthorizationStatus",
+    "SCHEDULES",
+    "WORKFLOWS",
     "ClientChoice",
     "ClientNames",
     "ClientRecord",
@@ -210,9 +289,22 @@ __all__ = [
     "SectionRows",
     "SignerContact",
     "SubjectNames",
+    "TaxAuthorizationDesigneeOut",
+    "TaxAuthorizationIn",
+    "TaxAuthorizationOut",
+    "TaxElectionIn",
+    "TaxElectionOut",
+    "TaxProfileBackend",
+    "TaxProfileFileOut",
     "TinConflict",
     "TinInvalid",
     "TinKindNotAllowed",
+    "TranscriptComparisonIn",
+    "TranscriptComparisonOut",
+    "TranscriptLineDiffOut",
+    "TranscriptOut",
+    "TranscriptTransactionOut",
+    "TranscriptUploadIn",
     "TriConsentRequired",
     "TriSubject",
     "TriVerdict",
@@ -260,6 +352,7 @@ __all__ = [
     "register_open_requests",
     "register_overview_section",
     "register_screening_evidence",
+    "register_tax_profile_backend",
     "require_tri_consent",
     "run_conflict_check",
     "same_name_client",

@@ -1,0 +1,55 @@
+This Product Contains Sensitive Taxpayer Data
+Wage and Income Transcript
+Request Date: 09-14-2026
+Response Date: 09-14-2026
+Tracking Number: 100000000000
+SSN Provided: XXX-XX-0000
+Tax Period Requested: December, 2024
+
+Form W-2 Wage and Tax Statement
+Employer:
+Employer Identification Number (EIN):XXXXX1101
+COBALT RIDGE ENGINEERING LLC
+Employee:
+Employee's Social Security Number:XXX-XX-0000
+Submission Type:..........................Original document
+Wages, Tips and Other Compensation:........$96,400.00
+Federal Income Tax Withheld:...............$11,206.00
+
+Form W-2 Wage and Tax Statement
+Employer:
+Employer Identification Number (EIN):XXXXX1102
+LARKSPUR PEDIATRICS PC
+Employee:
+Employee's Social Security Number:XXX-XX-0001
+Submission Type:..........................Original document
+Wages, Tips and Other Compensation:........$71,850.00
+Federal Income Tax Withheld:...............$7,940.00
+
+Form 1098 Mortgage Interest Statement
+Lender:
+Lender's Federal Identification Number (FIN):XXXXX1103
+SUMMIT HOME LENDING
+Submission Type:..........................Original document
+Mortgage Interest Received from Payer(s)/Borrower(s):$14,322.18
+
+Form 1099-INT Interest Income
+Payer:
+Payer's Federal Identification Number (FIN):XXXXX1104
+ASPEN GROVE SAVINGS
+Submission Type:..........................Original document
+Interest:.................................$412.56
+
+Form 1099-INT Interest Income
+Payer:
+Payer's Federal Identification Number (FIN):XXXXX1105
+FRONT RANGE BANK
+Submission Type:..........................Original document
+Interest:.................................$1,870.00
+
+Form 1099-INT Interest Income
+Payer:
+Payer's Federal Identification Number (FIN):XXXXX1106
+LAKEVIEW CREDIT UNION
+Submission Type:..........................Original document
+Interest:.................................$1,250.00

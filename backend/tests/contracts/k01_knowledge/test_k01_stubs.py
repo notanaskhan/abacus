@@ -3,7 +3,9 @@ route declares its one matrix action and answers 404 for a client principal, 404
 off and 501 with it on; every field is classified; approving and locking are a person's acts
 with a fresh second factor, and the agent may only parse; the SPEC-008 rows moved to the
 methodology module's matrix file. Since K-01-T03 (TASK-1426) the three catalog routes are live:
-they keep the client 404, the 403 before the flag and the flag-off 404, and answer for real."""
+they keep the client 404, the 403 before the flag and the flag-off 404, and answer for real.
+Since K-01-T14 (TASK-2315) the six draft routes are live too: client 404, the action before the
+flag, flag-off 404, and with the flag on the drafts service answers (no 501 left)."""
 
 from __future__ import annotations
 
@@ -23,11 +25,11 @@ from abacus.api.export_openapi import document
 from abacus.kernel._flags import KNOWLEDGE_CATALOG, METHODOLOGY_LIFECYCLE, METHODOLOGY_PROGRAMS
 from abacus.kernel.classification import unclassified_fields
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag
 from abacus.modules.identity.api import AuthContext, Forbidden
 from abacus.modules.identity.authz.matrix import RULES
-from abacus.modules.methodology import catalog, contract
+from abacus.modules.methodology import catalog, contract, drafts
 
 Json = dict[str, object]
 DOC = cast(Json, json.loads(document()))
@@ -65,6 +67,7 @@ PROGRAMS_LIVE: frozenset[tuple[str, str]] = frozenset(
         ("get", "/v1/methodology/versions/{version_id}/export.xlsx"),
     }
 )
+# K-01-T14 (TASK-2315): drafts, discard, step edits and the mandatory lock are live.
 ROUTES: dict[tuple[str, str], tuple[str, Flag]] = {
     ("post", "/v1/methodology/versions/{version_id}/drafts"): (
         "methodology.manage",
@@ -117,10 +120,13 @@ MODELS: list[type[BaseModel]] = [
 
 
 @pytest.mark.parametrize(("method", "path"), sorted(ROUTES))
-def test_k01t01_each_route_declares_its_one_action_and_is_a_stub(method: str, path: str) -> None:
+def test_k01t14_each_draft_route_declares_its_one_action_and_is_live(
+    method: str, path: str
+) -> None:
     op = PATHS[path][method]
     assert op["x-abacus-action"] == ROUTES[(method, path)][0]
-    assert {"404", "501"} <= set(cast(Json, op["responses"]))
+    responses = set(cast(Json, op["responses"]))
+    assert "404" in responses and "501" not in responses
 
 
 def test_k01t01_the_endpoints_are_the_routes_above() -> None:
@@ -199,10 +205,36 @@ def _ctx(*, client: bool = False) -> AuthContext:
     )
 
 
+class _Reached(Exception):
+    """The drafts service was called."""
+
+
+async def _reached(*_args: object, **_kwargs: object) -> object:
+    raise _Reached
+
+
+_BODIES: dict[str, BaseModel] = {
+    "SubmitVersionIn": contract.SubmitVersionIn(row_version=1),
+    "StepPatchIn": contract.StepPatchIn(text="Edited"),
+    "StepCreateIn": contract.StepCreateIn(text="New step", level="planning"),
+    "MandatoryIn": contract.MandatoryIn(mandatory=True),
+}
+
+
+def _argument(param: inspect.Parameter, ctx: AuthContext) -> object:
+    if param.name == "ctx":
+        return ctx
+    if param.name == "body":
+        return _BODIES[str(param.annotation)]
+    if param.name == "if_match":
+        return 1
+    return uuid.uuid4()
+
+
 @pytest.mark.parametrize(
     ("path", "endpoint", "flag"), ENDPOINTS, ids=[e.__name__ for _p, e, _f in ENDPOINTS]
 )
-async def test_k01t01_client_404_flag_off_404_flag_on_501(
+async def test_k01t14_client_404_flag_off_404_flag_on_reaches_the_service(
     path: str,
     endpoint: Callable[..., Awaitable[object]],
     flag: Flag,
@@ -223,19 +255,29 @@ async def test_k01t01_client_404_flag_off_404_flag_on_501(
         asked.append(action)
 
     monkeypatch.setattr(contract, "authorise", authorise)
-    params = inspect.signature(endpoint).parameters
+    monkeypatch.setattr(drafts, "authorise", authorise)
+    for name in (
+        "create_draft",
+        "discard_draft",
+        "edit_step",
+        "add_step",
+        "remove_step",
+        "set_mandatory",
+    ):
+        monkeypatch.setattr(drafts, name, _reached)
+    params = inspect.signature(endpoint).parameters.values()
     monkeypatch.setattr(contract, "flag_enabled", flags(True))
     with pytest.raises(NotFound):
-        await endpoint(**{n: (_ctx(client=True) if n == "ctx" else None) for n in params})
+        await endpoint(**{p.name: _argument(p, _ctx(client=True)) for p in params})
     assert seen == []
     monkeypatch.setattr(contract, "flag_enabled", flags(False))
     with pytest.raises(NotFound):
-        await endpoint(**{n: (_ctx() if n == "ctx" else None) for n in params})
+        await endpoint(**{p.name: _argument(p, _ctx()) for p in params})
     assert seen == [flag]
     assert asked == [ROUTES[next(k for k in ROUTES if k[1] == path and ROUTES[k][1] == flag)][0]]
     monkeypatch.setattr(contract, "flag_enabled", flags(True))
-    with pytest.raises(NotImplementedYet):
-        await endpoint(**{n: (_ctx() if n == "ctx" else None) for n in params})
+    with pytest.raises(_Reached):
+        await endpoint(**{p.name: _argument(p, _ctx()) for p in params})
 
 
 async def test_k01t01_a_refused_principal_is_403_before_the_flag(

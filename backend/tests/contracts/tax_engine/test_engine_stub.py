@@ -48,17 +48,21 @@ SETTINGS_LIVE = [
     ("put", "/v1/firm/integrations/{key}/status-mirror", "integration.configure"),
     ("post", "/v1/firm/integrations/{key}/test", "integration.test"),
 ]
-ROUTES = [
+# T-01-T18 built final approval (`tax/approval.py`).
+LIVE = [
     ("get", "/v1/tax-returns/{return_id}/final-approval", "tax_return.read"),
     ("post", "/v1/tax-returns/{return_id}/final-approval", "tax_return.approve"),
+    # T-01-T19 built the engine sync read and the import, its read and its decisions.
     ("get", "/v1/tax-returns/{return_id}/engine-sync", "tax_return.read"),
-    ("post", "/v1/tax-returns/{return_id}/engine-exports", "tax_return.export"),
-    ("get", "/v1/engine-exports/{export_id}/file", "tax_return.export"),
-    ("post", "/v1/engine-exports/{export_id}/mark-exported", "tax_return.export"),
     ("post", "/v1/tax-returns/{return_id}/engine-imports", "engine_import.create"),
     ("get", "/v1/engine-imports/{import_id}", "tax_return.read"),
     ("post", "/v1/engine-imports/{import_id}/approve", "engine_import.approve"),
     ("post", "/v1/engine-imports/{import_id}/reject", "engine_import.approve"),
+]
+ROUTES = [
+    ("post", "/v1/tax-returns/{return_id}/engine-exports", "tax_return.export"),
+    ("get", "/v1/engine-exports/{export_id}/file", "tax_return.export"),
+    ("post", "/v1/engine-exports/{export_id}/mark-exported", "tax_return.export"),
     ("get", "/v1/tax-returns/{return_id}/delivery", "tax_return.read"),
     ("post", "/v1/tax-returns/{return_id}/delivery-packet:assemble", "delivery_packet.prepare"),
     ("patch", "/v1/delivery-packets/{packet_id}", "delivery_packet.prepare"),
@@ -80,6 +84,15 @@ def test_ac5_every_route_declares_its_action_and_is_a_stub(
     op = PATHS[path][method]
     assert op["x-abacus-action"] == action
     assert "501" in cast(Json, op["responses"])
+
+
+@pytest.mark.parametrize(("method", "path", "action"), LIVE)
+def test_ac5_a_built_route_keeps_its_action_and_is_no_stub(
+    method: str, path: str, action: str
+) -> None:
+    op = PATHS[path][method]
+    assert op["x-abacus-action"] == action
+    assert "501" not in cast(Json, op["responses"])
 
 
 @pytest.mark.parametrize(("method", "path", "action"), SETTINGS_LIVE)

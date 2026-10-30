@@ -69,6 +69,11 @@ locals {
     ABACUS_QBO_CLIENT_ID     = "${local.secret.qbo}:client_id::"
     ABACUS_QBO_CLIENT_SECRET = "${local.secret.qbo}:client_secret::"
   } : {}
+  # TASK-2152: the DocuSeal key, for the ops one-off alone (it seals the key into a firm's
+  # install; the worker opens the sealed copy, never this secret). Only once the secret is filled.
+  esign_secrets = var.docuseal_enabled ? {
+    ABACUS_ESIGN_INSTALL_API_KEY = "${local.secret.docuseal}:api_key::"
+  } : {}
 }
 
 module "cluster" {
@@ -350,7 +355,7 @@ module "oneoff" {
   cpu                = 512
   memory             = 1024
   environment_vars   = merge(local.common_env, each.key == "bootstrap" ? { ABACUS_DB_HOST = module.db.address } : {})
-  secrets = merge(local.common_secrets, each.key == "bootstrap" ? {
+  secrets = merge(local.common_secrets, each.key == "ops" ? local.esign_secrets : {}, each.key == "bootstrap" ? {
     ABACUS_DB_MASTER_USER              = "${module.db.master_secret_arn}:username::"
     ABACUS_DB_MASTER_PASSWORD          = "${module.db.master_secret_arn}:password::"
     ABACUS_BOOTSTRAP_OWNER_PASSWORD    = "${local.secret.db_owner}:password::"
