@@ -313,7 +313,7 @@ async def publish(args: argparse.Namespace) -> str:
         )
     finally:
         await conn.close()
-    return f"published {args.version}"
+    return f"published {args.version}" + await _fanout(args.version, "published")
 
 
 async def withdraw(args: argparse.Namespace) -> str:
@@ -330,7 +330,24 @@ async def withdraw(args: argparse.Namespace) -> str:
         )
     finally:
         await conn.close()
-    return f"withdrew {args.version}"
+    return f"withdrew {args.version}" + await _fanout(args.version, "withdrawn")
+
+
+async def _fanout(version: str, action: str) -> str:
+    """K-02-T12: tell every firm (one run per version and action; idempotent per tenant)."""
+    from uuid import UUID
+
+    from abacus.modules.platform.api import start_reference_fanout
+
+    try:
+        await start_reference_fanout(UUID(version), action)
+    except Exception as exc:  # the version is published; the fan-out can be started again
+        return f"; fan-out not started ({type(exc).__name__}): run `refdata fanout` again"
+    return "; fan-out started"
+
+
+async def fanout(args: argparse.Namespace) -> str:
+    return "fan-out" + await _fanout(args.version, args.action)
 
 
 def parser() -> argparse.ArgumentParser:
@@ -359,12 +376,21 @@ def parser() -> argparse.ArgumentParser:
     w.add_argument("--operator", required=True)
     w.add_argument("--approver", required=True)
     w.add_argument("--reason", required=True)
+    o = sub.add_parser("fanout")
+    o.add_argument("--version", required=True)
+    o.add_argument("--action", choices=("published", "withdrawn"), default="published")
     return root
 
 
 def main(argv: Sequence[str]) -> int:
     args = parser().parse_args(list(argv))
-    commands = {"draft": draft, "diff": show_diff, "publish": publish, "withdraw": withdraw}
+    commands = {
+        "draft": draft,
+        "diff": show_diff,
+        "publish": publish,
+        "withdraw": withdraw,
+        "fanout": fanout,
+    }
     try:
         guard()
         print(asyncio.run(commands[args.command](args)))
