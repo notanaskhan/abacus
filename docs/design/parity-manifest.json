@@ -1157,7 +1157,8 @@
       "source": "handoff/screens/POR-04 Request detail - ignore reason sheet/screenshots/POR-04a.png",
       "sha256": "46178dd9601e9eb32333f1e06087e17d51c7e5db96fa2133f9ec9a3a8d4a75d7",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "locked": true
     },
     "por-04b.window": {
       "page": "screens/POR-04?st=b",
@@ -1165,7 +1166,8 @@
       "source": "handoff/screens/POR-04 Request detail - ignore reason sheet/screenshots/POR-04b.png",
       "sha256": "93e3aca17bf0e61f59415e416e43bffda87cfa447d8673f0f5b50cac64a961bc",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "locked": true
     },
     "por-04c.window": {
       "page": "screens/POR-04?st=c",
@@ -1173,7 +1175,8 @@
       "source": "handoff/screens/POR-04 Request detail - ignore reason sheet/screenshots/POR-04c.png",
       "sha256": "b5f22b92ba999d92ce352fa7c5faef7a4c982ad45a404aac0cd420cee1dd99b1",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "locked": true
     },
     "por-04d.window": {
       "page": "screens/POR-04?st=d",
@@ -1181,7 +1184,8 @@
       "source": "handoff/screens/POR-04 Request detail - ignore reason sheet/screenshots/POR-04d.png",
       "sha256": "d82eb5f8ae2794488a3c959f0cbb918e8896a7201ad4f57098b4d430a01551b6",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "locked": true
     },
     "por-04e.window": {
       "page": "screens/POR-04?st=e",
@@ -1205,7 +1209,8 @@
       "source": "handoff/screens/POR-04 Request detail - ignore reason sheet/screenshots/POR-04g.png",
       "sha256": "4b3d4797d1663a70f3149df9ef914146b0efb4cd776c82227a52a526b82cee21",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "locked": true
     },
     "por-14a.window": {
       "page": "screens/POR-14?st=a",
