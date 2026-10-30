@@ -43,7 +43,9 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
     mask_tins_for,
+    names_of,
 )
+from abacus.modules.organisations import consent_registry
 from abacus.modules.organisations.consents import consent_rows
 from abacus.modules.organisations.consents import decline as decline_consent
 from abacus.modules.organisations.consents import revoke as revoke_consent
@@ -453,6 +455,12 @@ def _capture() -> ConsentCapture:
     return found
 
 
+async def _ordered(ctx: AuthContext, ids: list[UUID]) -> list[ConsentOut]:
+    """`consent_outs` in the order the registry chose."""
+    by = {c.id: c for c in await consent_outs(ctx, ids)}
+    return [by[i] for i in ids if i in by]
+
+
 async def consent_outs(ctx: AuthContext, ids: list[UUID]) -> list[ConsentOut]:
     """C19's `ConsentOut` for consents just written (T-01-T10; the registry reads are T16's)."""
     rows = await consent_rows(ctx.tenant, ids)
@@ -511,23 +519,66 @@ async def list_consents_route(
     tax_year: Annotated[int | None, Query(ge=2000, le=2100)] = None,
     offshore: Annotated[bool | None, Query()] = None,
     cursor: Annotated[str | None, Query(max_length=200)] = None,
+    # T-01-T16 (additive): the Expiring tile (derived) and one client's rows.
+    expiring: Annotated[bool | None, Query()] = None,
+    client_id: Annotated[UUID | None, Query()] = None,
 ) -> ListPage[ConsentOut]:
     """ADM-05: the registry, needs-attention first, walls applied (no hidden counts)."""
-    await _stub(ctx, "consent.read", CONSENTS_REGISTRY)
+    await _live(ctx, "consent.read")
+    page = await consent_registry.registry(
+        ctx,
+        status="expiring" if expiring else status,
+        purpose=purpose,
+        tax_year=tax_year,
+        client_id=client_id,
+        offshore=offshore,
+        cursor=cursor,
+    )
+    return ListPage[ConsentOut](
+        items=await _ordered(ctx, page.ids),
+        next_cursor=page.next_cursor,
+        total=page.total,
+        counts=page.counts,
+    )
 
 
 @consents_router.get(
     "/consents/summary", action="consent.read", response_model=ConsentSummaryOut, errors=(501,)
 )
 async def consent_summary_route(ctx: Ctx) -> ConsentSummaryOut:
-    await _stub(ctx, "consent.read", CONSENTS_REGISTRY)
+    """T-01-T16: ADM-04 D, CLI-02 b and the BND-01 tag; counts only."""
+    await _live(ctx, "consent.read")
+    return ConsentSummaryOut.model_validate(await consent_registry.summary(ctx))
 
 
 @consents_router.get(
     "/consents/{consent_id}", action="consent.read", response_model=ConsentDetailOut, errors=(501,)
 )
 async def consent_route(consent_id: ConsentId, ctx: Ctx) -> ConsentDetailOut:
-    await _stub(ctx, "consent.read", CONSENTS_REGISTRY)
+    """T-01-T16: the consent, its signers, its document and agent reads since signature."""
+    await _live(ctx, "consent.read")
+    found = await consent_registry.detail(ctx, consent_id)
+    [consent] = await consent_outs(ctx, [consent_id])
+    names = await names_of(sorted({u for _, _, u in found.agent_reads if u is not None}))
+    purpose, sha = found.document
+    return ConsentDetailOut(
+        consent=consent,
+        signers=consent.signers,
+        documents=[
+            ConsentDocumentOut(
+                id=consent_id,
+                purpose=purpose,  # type: ignore[arg-type]  # the row's CHECK
+                text_sha256=sha,
+                evidence_version_id=None,
+            )
+        ],
+        agent_reads=[
+            AgentReadOut(
+                agent_run_id=run, read_at=at, on_behalf_of_name=names.get(who, "") if who else ""
+            )
+            for run, at, who in found.agent_reads
+        ],
+    )
 
 
 @consents_router.get(
@@ -626,7 +677,9 @@ async def revoke_consent_route(
     errors=(501,),
 )
 async def export_consents_route(ctx: Ctx, idempotency_key: IdempotencyKey) -> ConsentExportOut:
-    await _stub(ctx, "consent.export", CONSENTS_REGISTRY)
+    """T-01-T16: ConsentExportWorkflow builds the CSV; audited now; fresh MFA by the matrix."""
+    await _live(ctx, "consent.export")
+    return ConsentExportOut(export_id=await consent_registry.start_export(ctx), status="queued")
 
 
 @consents_router.get(
@@ -636,7 +689,9 @@ async def export_consents_route(ctx: Ctx, idempotency_key: IdempotencyKey) -> Co
     errors=(501,),
 )
 async def entity_consents_route(client_entity_id: EntityId, ctx: Ctx) -> list[ConsentOut]:
-    await _stub(ctx, "consent.read", CONSENTS_REGISTRY)
+    """T-01-T16: CLI-05's consents for one taxpayer, under the registry's scope."""
+    await _live(ctx, "consent.read")
+    return await _ordered(ctx, await consent_registry.entity_ids(ctx, client_entity_id))
 
 
 @consents_router.post(

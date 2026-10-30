@@ -41,6 +41,15 @@ async def _admins(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     return await firm_admins(tenant_id)
 
 
+async def _consent_requester(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """T-01-T16: the person who requested the consent and the firm admins (client service)."""
+    recipients = set(await firm_admins(tenant_id))
+    requested_by = _uuid(payload, "requested_by")
+    if requested_by is not None:
+        recipients.add(requested_by)
+    return sorted(recipients)
+
+
 async def _admins_and_leads(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     """Firm admins, plus the engagement's partner and managers when it names one."""
     recipients = set(await firm_admins(tenant_id))
@@ -274,6 +283,10 @@ class Kind:
 
 
 CATALOGUE: Final[dict[str, Kind]] = {
+    # T-01-T16: a signed §7216 consent 30 days from expiry (the lifecycle sweep, once each).
+    "consent.expiring": Kind(
+        "consent_expiring", _consent_requester, "consent", "consent_id", None
+    ),
     "support_session.requested": Kind(
         "support_session.requested", _admins, "support_session", "session_id", None
     ),
@@ -458,6 +471,7 @@ def register_kind_source(
 
 
 TEMPLATES: Final[dict[str, str]] = {
+    "consent.expiring": "A §7216 consent expires within 30 days. Renew it from the consent registry.",
     "support_session.requested": "Platform support asked for access to your firm.",
     "support_session.emergency_approved": (
         "Platform support opened emergency access to your firm. Please review it."
