@@ -26,3 +26,6 @@ Templates are database content (the firm imports them); prior-year values come b
 
 ## 3. Classification
 Organizer answers and prior-year values TRI; wording internal.
+
+## Live since T-02-T16 (firm side)
+The template import takes the file as the raw body (`?name=`, `?format=csv|xlsx|json`, `?dry_run=`; no multipart, DEC-1369) and answers `problems` (codes with their row) and, on a dry run, the `added`, `changed` and `removed` question keys against the current published version. Rows: `section, icon_key, key, type, client_wording, help_text, conditional_on, conditional_value`; JSON nests the same under `sections[].questions[]`. 409 `version_published`, `version_not_published`, `question_sent`, `questionnaire_closed`; 422 `template_invalid`; 413 past 2 MB. The portal routes stay stubs until T-02-T22.

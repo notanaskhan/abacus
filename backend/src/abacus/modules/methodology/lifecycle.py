@@ -190,6 +190,11 @@ async def _view(session: AsyncSession, version_id: UUID) -> VersionState:
     )
 
 
+async def view_in(session: AsyncSession, version_id: UUID) -> VersionState:
+    """A version's state inside the caller's session (K-01-T14's drafts)."""
+    return await _view(session, version_id)
+
+
 async def version_state(ctx: AuthContext, version_id: UUID) -> VersionState:
     await authorise(ctx, "methodology.read", Resource.firm(ctx.tenant_id))
     async with tenant_session(ctx.tenant) as session:
@@ -231,7 +236,7 @@ async def submit_version(ctx: AuthContext, version_id: UUID, row_version: int) -
         return await _view(tx.session, version_id)
 
 
-async def _refused(ctx: AuthContext, version_id: UUID, action: str) -> None:
+async def record_refusal(ctx: AuthContext, version_id: UUID, action: str) -> None:
     """Keep the refusal: its own unit of work, so the raise that follows rolls nothing back. A
     non-human's attempt is recorded by the system for the person it ran for (an agent's audit
     row must name its person; the database's check)."""
@@ -256,12 +261,12 @@ async def approve_guard(ctx: AuthContext, version_id: UUID) -> None:
     if ctx.client:
         raise NotFound(SUBJECT)
     if ctx.tenant.actor_kind != "human" or ctx.is_support:
-        await _refused(ctx, version_id, "decision.refused_non_human")
+        await record_refusal(ctx, version_id, "decision.refused_non_human")
         raise Forbidden(APPROVE, "role")
     try:
         await authorise(ctx, APPROVE, Resource.firm(ctx.tenant_id))
     except Forbidden:
-        await _refused(ctx, version_id, "methodology_version.approve_refused")
+        await record_refusal(ctx, version_id, "methodology_version.approve_refused")
         raise
 
 
@@ -382,7 +387,9 @@ __all__ = [
     "approve_version",
     "checklist_of",
     "hash_of",
+    "record_refusal",
     "submit_version",
     "version_effective_on",
     "version_state",
+    "view_in",
 ]

@@ -73,13 +73,34 @@ ROUTES = [
 ]
 
 
+# T-02-T16 built the firm questionnaire routes and T-02-T22 the portal's; K-1 routes stay stubs.
+LIVE = frozenset(
+    {
+        "/v1/questionnaire-templates:import",
+        "/v1/questionnaire-templates",
+        "/v1/questionnaire-templates/{template_id}/versions/{version}:publish",
+        "/v1/request-lists/{request_list_id}/questionnaires",
+        "/v1/questionnaires",
+        "/v1/questionnaires/{questionnaire_id}/questions",
+        "/v1/questions/{question_id}:send",
+        "/v1/questionnaires/{questionnaire_id}",
+        # T-02-T22: the portal's (attachments stay a stub).
+        "/v1/portal/questionnaires",
+        "/v1/portal/questionnaires/{questionnaire_id}",
+        "/v1/portal/questionnaires/{questionnaire_id}/answers/{question_id}",
+        "/v1/portal/questionnaires/{questionnaire_id}:mark-done",
+        "/v1/portal/questionnaires/{questionnaire_id}:submit",
+    }
+)
+
+
 @pytest.mark.parametrize(("method", "path", "action"), ROUTES)
-def test_ac5_every_route_declares_its_action_and_is_a_stub(
+def test_ac5_every_route_declares_its_action_and_is_a_stub_until_built(
     method: str, path: str, action: str
 ) -> None:
     op = PATHS[path][method]
     assert op["x-abacus-action"] == action
-    assert "501" in cast(Json, op["responses"])
+    assert ("501" in cast(Json, op["responses"])) is (path not in LIVE)
 
 
 def test_ac5_box_amounts_and_answers_are_tri() -> None:

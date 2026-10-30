@@ -1,0 +1,38 @@
+# Shared §7216 consent cases (T-01-T21; T-01 §3.1, §3.2; C19 condition 6). Synthetic only: the
+# Brightwater Hale households by their seed names, never real people. Every suite whose agent
+# declares `tri` runs these and expects the gateway to refuse the call (`consent_7216`) before
+# any model sees the context. The figures are the consent facts, not return information.
+version: 1
+cases:
+  - id: ferris_one_of_two_signed
+    household: Ferris
+    filing: joint
+    consents: {use: signed, ai_disclosure: signed}
+    signers: {taxpayer: signed, spouse: pending}
+    expect: refused_consent_7216
+  - id: stein_declined
+    household: Stein
+    filing: single
+    consents: {use: declined, ai_disclosure: declined}
+    signers: {taxpayer: declined}
+    expect: refused_consent_7216
+  - id: thornbury_not_requested
+    household: Thornbury
+    filing: single
+    consents: {}
+    signers: {}
+    expect: refused_consent_7216
+  - id: expired
+    household: Whitley
+    filing: single
+    consents: {use: signed, ai_disclosure: signed}
+    signers: {taxpayer: signed}
+    expires: before_business_now
+    expect: refused_consent_7216
+  - id: joint_return_one_spouse
+    household: Feld
+    filing: joint
+    consents: {use: signed, ai_disclosure: signed}
+    signers: {taxpayer: signed}
+    missing_signer: spouse
+    expect: refused_consent_7216

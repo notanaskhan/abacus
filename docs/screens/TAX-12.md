@@ -14,9 +14,9 @@
 ## States
 | Artboard | Viewer | Clock (CT) | Data condition | Parity tier | Status |
 |---|---|---|---|---|---|
-| a | grace-holloway | Thu Sep 17, 2026 9:30 AM | Awaiting signature: envelope sent Sep 16 1:05 PM, Claire signed 7:48 PM, Jonah viewed 8:02 AM | C (lock) | fixture (T-01-T09) |
-| a2 | grace-holloway | Thu Sep 17, 2026 9:30 AM | Send reminder… | C (lock) | fixture (T-01-T09) |
-| b | grace-holloway | Mon Sep 14, 2026 9:24 AM | Blocked: In review · Manager | C (lock) | fixture (T-01-T09) |
+| a | grace-holloway | Thu Sep 17, 2026 9:30 AM | Awaiting signature: envelope sent Sep 16 1:05 PM, Claire signed 7:48 PM, Jonah viewed 8:02 AM | C (lock) | built on fixtures (T-01-T24) |
+| a2 | grace-holloway | Thu Sep 17, 2026 9:30 AM | Send reminder… | C (lock) | built on fixtures (T-01-T24) |
+| b | grace-holloway | Mon Sep 14, 2026 9:24 AM | Blocked: In review · Manager | C (lock) | built on fixtures (T-01-T24) |
 | c | grace-holloway | Thu Sep 17, 2026 6:12 PM | Ready to transmit: completed; ERO Daniel Reyes | C (lock) | fixture (T-01-T09) |
 | c2 | daniel-reyes | Fri Sep 18, 2026 11:06 AM | Mark transmitted (the ERO's record) | C (lock) | fixture (T-01-T09) |
 | d | grace-holloway | Sat Sep 19, 2026 9:12 AM | Accepted: four acks; refund 123,476 − 123,223 = 253; NY 52,805 − 51,536 = 1,269 | C (lock) | fixture (T-01-T09) |

@@ -55,8 +55,27 @@ export function useCheckpointWrites(): CheckpointWrites {
       ),
     );
   };
-  const approve = useMutation({ ...checkpointApproveMutation(), onSuccess: refresh });
-  const reject = useMutation({ ...checkpointRejectMutation(), onSuccess: refresh });
+  // P-04-T47: a decision moves the record's own state too (the sync chip goes "Out of sync" once
+  // an import or a checkpoint is approved), so every read whose key names the record refetches.
+  // The review domain imports no record module: it matches the record's id in the query key.
+  const decided = (cp: CheckpointItemOut): void => {
+    refresh();
+    void client.invalidateQueries({
+      predicate: (query) => JSON.stringify(query.queryKey).includes(cp.target_id),
+    });
+  };
+  const approve = useMutation({
+    ...checkpointApproveMutation(),
+    onSuccess: (cp) => {
+      decided(cp);
+    },
+  });
+  const reject = useMutation({
+    ...checkpointRejectMutation(),
+    onSuccess: (cp) => {
+      decided(cp);
+    },
+  });
   const rename = useMutation({ ...checkpointRenameMutation(), onSuccess: refresh });
   const restore = useMutation({ ...checkpointRestoreMutation(), onSuccess: refresh });
   const at = (cp: CheckpointItemOut) => ({ path: { checkpoint_id: cp.id } });

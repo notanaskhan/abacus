@@ -14,6 +14,8 @@ from datetime import datetime
 from typing import Final
 from uuid import UUID
 
+from sqlalchemy import text
+
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid
 from abacus.kernel.uow import Ref, Target, UnitOfWork
@@ -202,3 +204,58 @@ async def record_sign_off(
         target=Target(target_type, target_id),
         after=Ref(level=level, content_hash=content_hash),
     )
+
+
+# --- T-01-T18: what a final-approval guard reads -------------------------------------------------
+
+_OPEN_ISSUE_STATUSES: Final = ("open", "in_progress", "reopened", "under_evaluation")
+
+
+async def current_checkpoint(
+    tenant: TenantContext, target_type: str, target_id: UUID
+) -> tuple[UUID, str] | None:
+    """The checkpoint in effect (approved or saved, newest) and its content hash."""
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(
+                text(
+                    "SELECT id, content_hash FROM checkpoints WHERE target_type = :t "
+                    "AND target_id = :id AND status IN ('approved', 'saved') "
+                    "ORDER BY seq DESC LIMIT 1"
+                ),
+                {"t": target_type, "id": target_id},
+            )
+        ).first()
+    return None if row is None else (row[0], str(row[1]))
+
+
+async def pending_imports(tenant: TenantContext, target_type: str, target_id: UUID) -> list[UUID]:
+    """Import checkpoints still waiting on a person's approval (DEC-49)."""
+    async with tenant_session(tenant) as session:
+        return list(
+            (
+                await session.execute(
+                    text(
+                        "SELECT id FROM checkpoints WHERE target_type = :t AND target_id = :id "
+                        "AND status = 'proposed' AND author_kind = 'import' ORDER BY seq"
+                    ),
+                    {"t": target_type, "id": target_id},
+                )
+            ).scalars()
+        )
+
+
+async def blocking_issues(tenant: TenantContext, work_item_id: UUID, gate: str) -> list[UUID]:
+    """Open issues on a work item whose `blocks` name `gate`."""
+    async with tenant_session(tenant) as session:
+        return list(
+            (
+                await session.execute(
+                    text(
+                        "SELECT id FROM issues WHERE work_item_id = :wi AND :gate = ANY(blocks) "
+                        "AND status = ANY(:open) ORDER BY created_at"
+                    ),
+                    {"wi": work_item_id, "gate": gate, "open": list(_OPEN_ISSUE_STATUSES)},
+                )
+            ).scalars()
+        )

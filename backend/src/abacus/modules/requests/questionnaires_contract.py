@@ -7,9 +7,10 @@ by the firm. A person sends every question; the client answers in POR-05 (autosa
 uploads where a "yes" asks for a file (through the evidence pipeline, fulfilling the linked
 request), marks an organizer done, and an inquiry's addressee submits and locks it.
 
-Firm routes answer 404 for a client principal, 403 for a principal the matrix refuses, 404 with
-`questionnaires.v1` off and 501 with it on. Portal routes answer 404 to a firm principal and 404
-with the flag off, then 501; the addressee-only check comes with the build (T-02-T16).
+Firm routes answer 404 for a client principal, 403 for a principal the matrix refuses and 404
+with `questionnaires.v1` off; they are live since T-02-T16. Portal routes answer 404 to a firm
+principal and 404 with the flag off; they are live since T-02-T22 but for attachments (501 until
+evidence's upload slot).
 
 Classification: an organizer's answers are TRI; question wording is the firm's (internal).
 """
@@ -17,16 +18,16 @@ Classification: an organizer's answers are TRI; question wording is the firm's (
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
-from fastapi import Depends, Header, Path, Query
+from fastapi import Depends, Header, Path, Query, Request
 from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
 from abacus.kernel._flags import QUESTIONNAIRES_V1
 from abacus.kernel._statuses import QuestionnaireStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import DomainTooLarge, NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import (
     AbacusRouter,
@@ -36,6 +37,9 @@ from abacus.modules.identity.api import (
     current_context,
     current_member,
 )
+from abacus.modules.requests import portal_questionnaires as portal
+from abacus.modules.requests import questionnaires as svc
+from abacus.modules.requests.questionnaire_templates import MAX_BYTES
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 Member = Annotated[AuthContext, Depends(current_member)]
@@ -59,12 +63,6 @@ class QuestionnaireTemplateOut(BaseModel):
     draft_version: Annotated[int | None, classified("internal")]
 
 
-class TemplateImportIn(BaseModel):
-    model_config = _frozen()
-
-    upload_id: Annotated[UUID, classified("internal")]
-
-
 class TemplateImportOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -72,6 +70,10 @@ class TemplateImportOut(BaseModel):
     version: Annotated[int | None, classified("internal")]
     dry_run: Annotated[bool, classified("internal")]
     problems: Annotated[list[str], classified("internal")]
+    # T-02-T16 (additive): the dry run's question keys against the current published version.
+    added: Annotated[list[str], classified("internal")] = Field(default_factory=list[str])
+    changed: Annotated[list[str], classified("internal")] = Field(default_factory=list[str])
+    removed: Annotated[list[str], classified("internal")] = Field(default_factory=list[str])
 
 
 class QuestionOut(BaseModel):
@@ -154,13 +156,67 @@ questionnaires_router = AbacusRouter(prefix="/v1", tags=["questionnaires"])
 portal_questionnaires_router = AbacusRouter(prefix="/v1/portal", tags=["portal"])
 
 
-async def _stub(ctx: AuthContext, action: str) -> NoReturn:
+async def _gate(ctx: AuthContext, action: str) -> None:
+    """Client 404, the action at the firm (403), then the flag (404); the service checks the
+    engagement."""
     if ctx.client:
         raise NotFound("questionnaire")
     await authorise(ctx, action, Resource.firm(ctx.tenant_id))
     if not await flag_enabled(ctx.tenant, QUESTIONNAIRES_V1):
         raise NotFound(QUESTIONNAIRES_V1.name)
-    raise NotImplementedYet
+
+
+def _question_out(q: svc.QuestionView) -> QuestionOut:
+    return QuestionOut(
+        id=q.id,
+        section=q.section,
+        type=cast(QuestionType, q.type),
+        client_wording=q.client_wording,
+        help_text=q.help_text,
+        conditional_on_question_id=q.conditional_on_question_id,
+        prior_year_value=cast(JsonValue, q.prior_year_value),
+        answer=cast(JsonValue, q.answer),
+        answer_version=q.answer_version,
+        linked_request_item_id=q.linked_request_item_id,
+        sent_at=q.sent_at,
+    )
+
+
+def _out(v: svc.QuestionnaireView) -> QuestionnaireOut:
+    return QuestionnaireOut(
+        id=v.id,
+        kind=cast(Kind, v.kind),
+        title=v.title,
+        status=QuestionnaireStatus(v.status),
+        due_on=v.due_on,
+        answered=v.answered,
+        total=v.total,
+        addressed_to_contact_id=v.addressed_to_contact_id,
+        questions=[_question_out(q) for q in v.questions],
+    )
+
+
+def _template_out(t: svc.TemplateView) -> QuestionnaireTemplateOut:
+    return QuestionnaireTemplateOut(
+        id=t.id, name=t.name, current_version=t.current_version, draft_version=t.draft_version
+    )
+
+
+async def _body(request: Request) -> bytes:
+    data = bytearray()
+    async for chunk in request.stream():
+        data += chunk
+        if len(data) > MAX_BYTES:
+            raise DomainTooLarge(facts={"limit": MAX_BYTES})
+    return bytes(data)
+
+
+async def _portal_gate(ctx: AuthContext) -> None:
+    """A firm principal never reaches the portal's questionnaires (404), then the flag."""
+    if not ctx.client:
+        raise NotFound("questionnaire")
+    if not await flag_enabled(ctx.tenant, QUESTIONNAIRES_V1):
+        raise NotFound(QUESTIONNAIRES_V1.name)
 
 
 async def _portal_stub(ctx: AuthContext) -> NoReturn:
@@ -176,34 +232,53 @@ async def _portal_stub(ctx: AuthContext) -> NoReturn:
     action="questionnaire_template.import",
     response_model=TemplateImportOut,
     status_code=201,
-    errors=(501,),
+    errors=(),
 )
 async def questionnaire_import_template_route(
-    body: TemplateImportIn, ctx: Ctx, dry_run: Annotated[bool, Query()] = True
+    request: Request,
+    ctx: Ctx,
+    name: Annotated[str, Query(min_length=1, max_length=200)],
+    format: Annotated[Literal["csv", "xlsx", "json"], Query()] = "csv",
+    dry_run: Annotated[bool, Query()] = True,
 ) -> TemplateImportOut:
-    await _stub(ctx, "questionnaire_template.import")
+    """A template file as the raw body (no multipart; DEC-1369), parsed in the isolated child.
+    The dry run answers problems and the diff and stores nothing (T-02-T16)."""
+    await _gate(ctx, "questionnaire_template.import")
+    found = await svc.import_template(ctx, name, await _body(request), format, dry_run=dry_run)
+    return TemplateImportOut(
+        template_id=found.template_id,
+        version=found.version,
+        dry_run=found.dry_run,
+        problems=list(found.problems),
+        added=list(found.changes.added) if found.changes else [],
+        changed=list(found.changes.changed) if found.changes else [],
+        removed=list(found.changes.removed) if found.changes else [],
+    )
 
 
 @questionnaires_router.get(
     "/questionnaire-templates",
     action="questionnaire_template.read",
     response_model=list[QuestionnaireTemplateOut],
-    errors=(501,),
+    errors=(),
 )
 async def questionnaire_list_templates_route(ctx: Ctx) -> list[QuestionnaireTemplateOut]:
-    await _stub(ctx, "questionnaire_template.read")
+    await _gate(ctx, "questionnaire_template.read")
+    return [_template_out(t) for t in await svc.templates(ctx)]
 
 
 @questionnaires_router.post(
     "/questionnaire-templates/{template_id}/versions/{version}:publish",
     action="questionnaire_template.publish",
     response_model=QuestionnaireTemplateOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def publish_template_route(
     template_id: Annotated[UUID, Path()], version: Annotated[int, Path(ge=1)], ctx: Ctx
 ) -> QuestionnaireTemplateOut:
-    await _stub(ctx, "questionnaire_template.publish")
+    """A person publishes the version (fresh MFA). 409 `version_published`."""
+    await _gate(ctx, "questionnaire_template.publish")
+    return _template_out(await svc.publish_version(ctx, template_id, version))
 
 
 @questionnaires_router.post(
@@ -211,12 +286,16 @@ async def publish_template_route(
     action="questionnaire.create",
     response_model=QuestionnaireOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def attach_organizer_route(
     request_list_id: Annotated[UUID, Path()], body: AttachOrganizerIn, ctx: Ctx
 ) -> QuestionnaireOut:
-    await _stub(ctx, "questionnaire.create")
+    """An organizer from a published version, prior-year values by code. 409
+    `version_not_published`."""
+    await _gate(ctx, "questionnaire.create")
+    found = await svc.attach_organizer(ctx, request_list_id, body.template_version_id, body.due_on)
+    return _out(found)
 
 
 @questionnaires_router.post(
@@ -224,10 +303,20 @@ async def attach_organizer_route(
     action="questionnaire.create",
     response_model=QuestionnaireOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def create_questionnaire_route(body: QuestionnaireCreateIn, ctx: Ctx) -> QuestionnaireOut:
-    await _stub(ctx, "questionnaire.create")
+    """A-04 and A-08's team questions and inquiries (an inquiry names its addressee)."""
+    await _gate(ctx, "questionnaire.create")
+    found = await svc.create_questionnaire(
+        ctx,
+        kind=body.kind,
+        work_item_id=body.work_item_id,
+        title=body.title,
+        addressed_to_contact_id=body.addressed_to_contact_id,
+        due_on=body.due_on,
+    )
+    return _out(found)
 
 
 @questionnaires_router.post(
@@ -235,62 +324,76 @@ async def create_questionnaire_route(body: QuestionnaireCreateIn, ctx: Ctx) -> Q
     action="questionnaire.ask",
     response_model=QuestionOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def draft_question_route(
     questionnaire_id: QuestionnaireId, body: QuestionCreateIn, ctx: Ctx
 ) -> QuestionOut:
-    await _stub(ctx, "questionnaire.ask")
+    """A team question drafted in an open questionnaire. 409 `questionnaire_closed`."""
+    await _gate(ctx, "questionnaire.ask")
+    found = await svc.draft_question(
+        ctx,
+        questionnaire_id,
+        section=body.section,
+        type_=body.type,
+        client_wording=body.client_wording,
+        help_text=body.help_text,
+        linked_request_item_id=body.linked_request_item_id,
+    )
+    return _question_out(found)
 
 
 @questionnaires_router.post(
     "/questions/{question_id}:send",
     action="questionnaire.ask",
     response_model=QuestionOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def send_question_route(question_id: QuestionId, ctx: Ctx) -> QuestionOut:
-    """A person sends it (human-only; G3 met except on intake binders)."""
-    await _stub(ctx, "questionnaire.ask")
+    """A person sends it (human-only). 409 `question_sent`."""
+    await _gate(ctx, "questionnaire.ask")
+    return _question_out(await svc.send_question(ctx, question_id))
 
 
 @questionnaires_router.get(
     "/request-lists/{request_list_id}/questionnaires",
     action="questionnaire.read",
     response_model=list[QuestionnaireOut],
-    errors=(501,),
+    errors=(),
 )
 async def list_questionnaires_route(
     request_list_id: Annotated[UUID, Path()], ctx: Ctx
 ) -> list[QuestionnaireOut]:
-    await _stub(ctx, "questionnaire.read")
+    await _gate(ctx, "questionnaire.read")
+    return [_out(v) for v in await svc.questionnaires_of_list(ctx, request_list_id)]
 
 
 @questionnaires_router.get(
     "/questionnaires/{questionnaire_id}",
     action="questionnaire.read",
     response_model=QuestionnaireOut,
-    errors=(501,),
+    errors=(),
 )
 async def questionnaire_route(questionnaire_id: QuestionnaireId, ctx: Ctx) -> QuestionnaireOut:
-    await _stub(ctx, "questionnaire.read")
+    await _gate(ctx, "questionnaire.read")
+    return _out(await svc.questionnaire(ctx, questionnaire_id))
 
 
 @portal_questionnaires_router.get(
     "/questionnaires",
     action="portal_questionnaire.read",
     response_model=list[QuestionnaireOut],
-    errors=(501,),
 )
 async def portal_questionnaires_route(ctx: Member) -> list[QuestionnaireOut]:
-    await _portal_stub(ctx)
+    """POR-05's list: the caller's questionnaires, sent questions only (T-02-T22)."""
+    await _portal_gate(ctx)
+    return [_out(v) for v in await portal.portal_questionnaires(ctx)]
 
 
 @portal_questionnaires_router.get(
     "/questionnaires/{questionnaire_id}",
     action="portal_questionnaire.read",
     response_model=QuestionnaireOut,
-    errors=(501,),
 )
 async def portal_questionnaire_route(
     questionnaire_id: QuestionnaireId,
@@ -298,14 +401,20 @@ async def portal_questionnaire_route(
     show: Annotated[Literal["all", "unanswered"] | None, Query(alias="filter")] = None,
     section: Annotated[str | None, Query(max_length=80)] = None,
 ) -> QuestionnaireOut:
-    await _portal_stub(ctx)
+    """POR-05: one questionnaire, filtered (unanswered) or by section; another client user's
+    inquiry is 404 (INV-4)."""
+    await _portal_gate(ctx)
+    found = await portal.portal_questionnaire(
+        ctx, questionnaire_id, unanswered=show == "unanswered", section=section
+    )
+    return _out(found)
 
 
 @portal_questionnaires_router.put(
     "/questionnaires/{questionnaire_id}/answers/{question_id}",
     action="portal_questionnaire.answer",
     response_model=AnswerSavedOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def portal_answer_route(
     questionnaire_id: QuestionnaireId,
@@ -314,8 +423,13 @@ async def portal_answer_route(
     ctx: Member,
     if_match: IfMatch,
 ) -> AnswerSavedOut:
-    """Autosave (409 `stale_version` when the answer moved)."""
-    await _portal_stub(ctx)
+    """Autosave: `If-Match` is the version this save makes (409 `stale_version` when the answer
+    moved; `questionnaire_closed` once submitted); 422 `answer_invalid` for the wrong type."""
+    await _portal_gate(ctx)
+    saved_at, version = await portal.save_answer(
+        ctx, questionnaire_id, question_id, body.value, if_match
+    )
+    return AnswerSavedOut(saved_at=saved_at, version=version)
 
 
 @portal_questionnaires_router.post(
@@ -335,20 +449,23 @@ async def portal_attachment_route(
     "/questionnaires/{questionnaire_id}:mark-done",
     action="portal_questionnaire.complete",
     response_model=QuestionnaireOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def portal_mark_done_route(
     questionnaire_id: QuestionnaireId, ctx: Member
 ) -> QuestionnaireOut:
-    await _portal_stub(ctx)
+    """Mark as Done once every question is answered (409 `questionnaire_incomplete`)."""
+    await _portal_gate(ctx)
+    return _out(await portal.mark_done(ctx, questionnaire_id))
 
 
 @portal_questionnaires_router.post(
     "/questionnaires/{questionnaire_id}:submit",
     action="portal_questionnaire.submit",
     response_model=QuestionnaireOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def portal_submit_route(questionnaire_id: QuestionnaireId, ctx: Member) -> QuestionnaireOut:
-    """An inquiry's addressee submits and locks it."""
-    await _portal_stub(ctx)
+    """An inquiry's addressee submits and locks it (anyone else: 404)."""
+    await _portal_gate(ctx)
+    return _out(await portal.submit(ctx, questionnaire_id))
