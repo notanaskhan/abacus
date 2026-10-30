@@ -97,6 +97,8 @@ class ConsentSignerOut(BaseModel):
     required: Annotated[bool, classified("internal")]
     signed_at: Annotated[datetime | None, classified("confidential")]
     method: Annotated[Literal["email_code", "kba", "wet", "record"] | None, classified("internal")]
+    # T-01-T13 (additive): the line under the name ("trustee", "CEO", "for Ridgeline GP LLC").
+    title: Annotated[str | None, classified("confidential")] = None
 
 
 class ConsentOut(BaseModel):
@@ -126,6 +128,13 @@ class ConsentOut(BaseModel):
     renewal_of_id: Annotated[UUID | None, classified("internal")]
     offshore: Annotated[bool, classified("internal")]
     allowed_actions: Annotated[list[str], classified("internal")]
+    # T-01-T13 (additive): ADM-05's rows: when a decline or revocation was recorded, and who
+    # signs ("Morgan ✓ Sep 9 · Kai ○"; the signer line under the client's name).
+    declined_at: Annotated[datetime | None, classified("confidential")] = None
+    revoked_at: Annotated[datetime | None, classified("confidential")] = None
+    signers: Annotated[list[ConsentSignerOut], classified("confidential")] = Field(
+        default_factory=list[ConsentSignerOut]
+    )
 
 
 class ConsentDocumentOut(BaseModel):
