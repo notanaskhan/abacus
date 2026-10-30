@@ -600,7 +600,9 @@ export function RequestMobile({
   const groups = props.sections
     .map((s) => ({ section: s, rows: shown.filter((r) => r.sec === s.key) }))
     .filter((g) => g.rows.length > 0);
-  const received = items.filter((r) => (r.st === "up" || r.st === "acc") && !kept.has(r.id)).length;
+  const received = items.filter(
+    (r) => (r.st === "up" || r.st === "acc") && !kept.has(r.id),
+  ).length;
   const provided = items.filter((r) => r.st === "firm").length;
   const line = (r: RequestItem): { text: string; ok: boolean } => {
     if (r.st === "up") return { text: r.upText ?? `You uploaded ${r.on ?? ""}`, ok: true };
