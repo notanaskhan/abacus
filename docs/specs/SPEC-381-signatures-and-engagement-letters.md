@@ -84,7 +84,7 @@ Engagement letters, §7216 consents, Forms 8879 and 2848, rep letters and govern
 Tables per `docs/plan/epics/N-02.md` §4.2 (`signatures_v1`, N-02-T07; `engagement_letter_versions`, T32). Classification: `ip_sealed`, `decline_note`, `email_at_send` restricted or confidential as listed there; no SSN or TIN in any signer packet.
 
 ## 8. API
-`docs/contracts/c7-envelopes.md` (C7 v1; stub with N-02-T03). Webhook receiver `POST /v1/webhooks/docusign-connect` only after the ADR-152 amendment is accepted (N-02-T19).
+`docs/contracts/c7-envelopes.md` (C7 v1; stub with N-02-T03). Webhook receiver `POST /v1/webhooks/docuseal` (ADR-342, DEC-1277; was DocuSign Connect) only after the ADR-152 amendment is accepted (N-02-T19).
 
 ## 9. Permissions
 `docs/architecture/permission-matrix/signatures.yaml` (N-02-T02) and the letter rows in `engagements.yaml`. Human-only: `envelope.send`, `envelope.remind`, `envelope.void`, `envelope.import_record`, `envelope.record_wet_signature`, `envelope.countersign`, `letter.approve`, `letter.send`, `letter.amend`, and every portal signing verb.
