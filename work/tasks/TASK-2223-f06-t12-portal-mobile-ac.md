@@ -2,7 +2,7 @@
 id: TASK-2223
 title: F-06-T12 independent AC tests for portal mobile (ADR-078)
 spec: SPEC-000  # F-06-T12 row and docs/screens/TPL-19.md; no SPEC defines the specimen
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: amber
 status: in-review
 epic: F-06
