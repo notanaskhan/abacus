@@ -1416,6 +1416,14 @@ codes:
     raised_by:
     - abacus.modules.agents.proposals.ProposalInvalid
     summary: A row, edit, approver, reason or follow-up the proposal can't take.
+  question_sent:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.questionnaires.AlreadySent
+  questionnaire_closed:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.questionnaires.QuestionnaireClosed
   rationale_required:
     status: 422
     raised_by:
@@ -1873,7 +1881,9 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.communications.templates.TemplateInvalid
-    summary: The template's key, locale, text or values are malformed.
+    - abacus.modules.requests.questionnaires.ImportRefused
+    summary: '422: the file is not a template (`facts.problems` counts; the codes come back on the dry
+      run).'
   template_lint_failed:
     status: 422
     raised_by:
@@ -2061,6 +2071,14 @@ codes:
     raised_by:
     - abacus.modules.methodology.service.VersionNotLatest
     summary: Drafted guidance is published onto the template's latest version only (TASK-074 D2).
+  version_not_published:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.questionnaires.NotPublished
+  version_published:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.questionnaires.AlreadyPublished
   wall_exists:
     status: 409
     raised_by:

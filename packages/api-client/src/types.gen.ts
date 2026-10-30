@@ -32980,9 +32980,60 @@ export type TemplateDraftStartedOut = {
 };
 
 /**
+ * TemplateImportIn
+ *
+ * A template bundle (AC-1): structured blocks, declared variables and synthetic sample data
+ * only (AC-2: no markup, no URL).
+ */
+export type TemplateImportIn = {
+    /**
+     * Body
+     */
+    body: Array<SectionBlockInput | HeadingBlock | ParagraphBlock | ClauseBlockInput | ListBlock | TableBlock | KvBlock | SignatureBlock | LegendBlock | ImageBlock | EnclosuresBlock | PageBreakBlock>;
+    /**
+     * Clauses
+     */
+    clauses?: Array<ClauseDefOutInput>;
+    /**
+     * Description
+     */
+    description?: string;
+    /**
+     * Family
+     */
+    family: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export';
+    /**
+     * Layout Key
+     */
+    layout_key: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Sample Data
+     */
+    sample_data?: {
+        [key: string]: string;
+    };
+    /**
+     * Variables
+     */
+    variables?: Array<VariableDeclOut>;
+};
+
+/**
  * TemplateImportOut
  */
 export type TemplateImportOut = {
+    /**
+     * Added
+     */
+    added?: Array<string>;
+    /**
+     * Changed
+     */
+    changed?: Array<string>;
     /**
      * Dry Run
      */
@@ -32991,6 +33042,10 @@ export type TemplateImportOut = {
      * Problems
      */
     problems: Array<string>;
+    /**
+     * Removed
+     */
+    removed?: Array<string>;
     /**
      * Template Id
      */
@@ -35862,59 +35917,6 @@ export type AbacusModulesReportingContractApprovalOut = {
      * By
      */
     by: string;
-};
-
-/**
- * TemplateImportIn
- *
- * A template bundle (AC-1): structured blocks, declared variables and synthetic sample data
- * only (AC-2: no markup, no URL).
- */
-export type AbacusModulesReportingContractTemplateImportIn = {
-    /**
-     * Body
-     */
-    body: Array<SectionBlockInput | HeadingBlock | ParagraphBlock | ClauseBlockInput | ListBlock | TableBlock | KvBlock | SignatureBlock | LegendBlock | ImageBlock | EnclosuresBlock | PageBreakBlock>;
-    /**
-     * Clauses
-     */
-    clauses?: Array<ClauseDefOutInput>;
-    /**
-     * Description
-     */
-    description?: string;
-    /**
-     * Family
-     */
-    family: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export';
-    /**
-     * Layout Key
-     */
-    layout_key: string;
-    /**
-     * Name
-     */
-    name: string;
-    /**
-     * Sample Data
-     */
-    sample_data?: {
-        [key: string]: string;
-    };
-    /**
-     * Variables
-     */
-    variables?: Array<VariableDeclOut>;
-};
-
-/**
- * TemplateImportIn
- */
-export type AbacusModulesRequestsQuestionnairesContractTemplateImportIn = {
-    /**
-     * Upload Id
-     */
-    upload_id: string;
 };
 
 /**
@@ -78096,10 +78098,6 @@ export type QuestionnaireListTemplatesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type QuestionnaireListTemplatesError = QuestionnaireListTemplatesErrors[keyof QuestionnaireListTemplatesErrors];
@@ -78162,10 +78160,6 @@ export type PublishTemplateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PublishTemplateError = PublishTemplateErrors[keyof PublishTemplateErrors];
@@ -78180,7 +78174,7 @@ export type PublishTemplateResponses = {
 export type PublishTemplateResponse = PublishTemplateResponses[keyof PublishTemplateResponses];
 
 export type QuestionnaireImportTemplateData = {
-    body: AbacusModulesRequestsQuestionnairesContractTemplateImportIn;
+    body?: never;
     headers?: {
         /**
          * Authorization
@@ -78192,7 +78186,15 @@ export type QuestionnaireImportTemplateData = {
         'X-Abacus-Tenant'?: string | null;
     };
     path?: never;
-    query?: {
+    query: {
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * Format
+         */
+        format?: 'csv' | 'xlsx' | 'json';
         /**
          * Dry Run
          */
@@ -78218,10 +78220,6 @@ export type QuestionnaireImportTemplateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type QuestionnaireImportTemplateError = QuestionnaireImportTemplateErrors[keyof QuestionnaireImportTemplateErrors];
@@ -78273,10 +78271,6 @@ export type CreateQuestionnaireErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CreateQuestionnaireError = CreateQuestionnaireErrors[keyof CreateQuestionnaireErrors];
@@ -78329,10 +78323,6 @@ export type QuestionnaireErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type QuestionnaireError = QuestionnaireErrors[keyof QuestionnaireErrors];
@@ -78389,10 +78379,6 @@ export type DraftQuestionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DraftQuestionError = DraftQuestionErrors[keyof DraftQuestionErrors];
@@ -78449,10 +78435,6 @@ export type SendQuestionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SendQuestionError = SendQuestionErrors[keyof SendQuestionErrors];
@@ -78804,7 +78786,7 @@ export type ListReportTemplatesResponses = {
 export type ListReportTemplatesResponse = ListReportTemplatesResponses[keyof ListReportTemplatesResponses];
 
 export type ImportReportTemplateData = {
-    body: AbacusModulesReportingContractTemplateImportIn;
+    body: TemplateImportIn;
     headers?: {
         /**
          * Authorization
@@ -79090,10 +79072,6 @@ export type ListQuestionnairesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListQuestionnairesError = ListQuestionnairesErrors[keyof ListQuestionnairesErrors];
@@ -79152,10 +79130,6 @@ export type AttachOrganizerErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AttachOrganizerError = AttachOrganizerErrors[keyof AttachOrganizerErrors];

@@ -69272,8 +69272,169 @@
         "title": "TemplateDraftStartedOut",
         "type": "object"
       },
+      "TemplateImportIn": {
+        "additionalProperties": false,
+        "description": "A template bundle (AC-1): structured blocks, declared variables and synthetic sample data\nonly (AC-2: no markup, no URL).",
+        "properties": {
+          "body": {
+            "cls": "internal",
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "clause": "#/components/schemas/ClauseBlock-Input",
+                  "enclosures": "#/components/schemas/EnclosuresBlock",
+                  "heading": "#/components/schemas/HeadingBlock",
+                  "image": "#/components/schemas/ImageBlock",
+                  "kv": "#/components/schemas/KvBlock",
+                  "legend": "#/components/schemas/LegendBlock",
+                  "list": "#/components/schemas/ListBlock",
+                  "page_break": "#/components/schemas/PageBreakBlock",
+                  "paragraph": "#/components/schemas/ParagraphBlock",
+                  "section": "#/components/schemas/SectionBlock-Input",
+                  "signature_block": "#/components/schemas/SignatureBlock",
+                  "table": "#/components/schemas/TableBlock"
+                },
+                "propertyName": "type"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/SectionBlock-Input"
+                },
+                {
+                  "$ref": "#/components/schemas/HeadingBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/ParagraphBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/ClauseBlock-Input"
+                },
+                {
+                  "$ref": "#/components/schemas/ListBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/TableBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/KvBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/SignatureBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/LegendBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/ImageBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/EnclosuresBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/PageBreakBlock"
+                }
+              ]
+            },
+            "maxItems": 500,
+            "title": "Body",
+            "type": "array"
+          },
+          "clauses": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ClauseDefOut-Input"
+            },
+            "maxItems": 200,
+            "title": "Clauses",
+            "type": "array"
+          },
+          "description": {
+            "cls": "internal",
+            "default": "",
+            "maxLength": 2000,
+            "title": "Description",
+            "type": "string"
+          },
+          "family": {
+            "cls": "internal",
+            "enum": [
+              "engagement_letter",
+              "consent_7216",
+              "representation_letter",
+              "governance_letter",
+              "audit_report",
+              "review_report",
+              "compilation_report",
+              "notice_response",
+              "delivery_cover_letter",
+              "k1_cover_letter",
+              "fs_package",
+              "run_trace_export"
+            ],
+            "title": "Family",
+            "type": "string"
+          },
+          "layout_key": {
+            "cls": "internal",
+            "maxLength": 40,
+            "title": "Layout Key",
+            "type": "string"
+          },
+          "name": {
+            "cls": "internal",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "sample_data": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "cls": "internal",
+            "default": {},
+            "title": "Sample Data",
+            "type": "object"
+          },
+          "variables": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/VariableDeclOut"
+            },
+            "maxItems": 200,
+            "title": "Variables",
+            "type": "array"
+          }
+        },
+        "required": [
+          "family",
+          "name",
+          "layout_key",
+          "body"
+        ],
+        "title": "TemplateImportIn",
+        "type": "object"
+      },
       "TemplateImportOut": {
         "properties": {
+          "added": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Added",
+            "type": "array"
+          },
+          "changed": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Changed",
+            "type": "array"
+          },
           "dry_run": {
             "cls": "internal",
             "title": "Dry Run",
@@ -69285,6 +69446,14 @@
               "type": "string"
             },
             "title": "Problems",
+            "type": "array"
+          },
+          "removed": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Removed",
             "type": "array"
           },
           "template_id": {
@@ -75134,167 +75303,6 @@
           "at"
         ],
         "title": "ApprovalOut",
-        "type": "object"
-      },
-      "abacus__modules__reporting__contract__TemplateImportIn": {
-        "additionalProperties": false,
-        "description": "A template bundle (AC-1): structured blocks, declared variables and synthetic sample data\nonly (AC-2: no markup, no URL).",
-        "properties": {
-          "body": {
-            "cls": "internal",
-            "items": {
-              "discriminator": {
-                "mapping": {
-                  "clause": "#/components/schemas/ClauseBlock-Input",
-                  "enclosures": "#/components/schemas/EnclosuresBlock",
-                  "heading": "#/components/schemas/HeadingBlock",
-                  "image": "#/components/schemas/ImageBlock",
-                  "kv": "#/components/schemas/KvBlock",
-                  "legend": "#/components/schemas/LegendBlock",
-                  "list": "#/components/schemas/ListBlock",
-                  "page_break": "#/components/schemas/PageBreakBlock",
-                  "paragraph": "#/components/schemas/ParagraphBlock",
-                  "section": "#/components/schemas/SectionBlock-Input",
-                  "signature_block": "#/components/schemas/SignatureBlock",
-                  "table": "#/components/schemas/TableBlock"
-                },
-                "propertyName": "type"
-              },
-              "oneOf": [
-                {
-                  "$ref": "#/components/schemas/SectionBlock-Input"
-                },
-                {
-                  "$ref": "#/components/schemas/HeadingBlock"
-                },
-                {
-                  "$ref": "#/components/schemas/ParagraphBlock"
-                },
-                {
-                  "$ref": "#/components/schemas/ClauseBlock-Input"
-                },
-                {
-                  "$ref": "#/components/schemas/ListBlock"
-                },
-                {
-                  "$ref": "#/components/schemas/TableBlock"
-                },
-                {
-                  "$ref": "#/components/schemas/KvBlock"
-                },
-                {
-                  "$ref": "#/components/schemas/SignatureBlock"
-                },
-                {
-                  "$ref": "#/components/schemas/LegendBlock"
-                },
-                {
-                  "$ref": "#/components/schemas/ImageBlock"
-                },
-                {
-                  "$ref": "#/components/schemas/EnclosuresBlock"
-                },
-                {
-                  "$ref": "#/components/schemas/PageBreakBlock"
-                }
-              ]
-            },
-            "maxItems": 500,
-            "title": "Body",
-            "type": "array"
-          },
-          "clauses": {
-            "cls": "internal",
-            "default": [],
-            "items": {
-              "$ref": "#/components/schemas/ClauseDefOut-Input"
-            },
-            "maxItems": 200,
-            "title": "Clauses",
-            "type": "array"
-          },
-          "description": {
-            "cls": "internal",
-            "default": "",
-            "maxLength": 2000,
-            "title": "Description",
-            "type": "string"
-          },
-          "family": {
-            "cls": "internal",
-            "enum": [
-              "engagement_letter",
-              "consent_7216",
-              "representation_letter",
-              "governance_letter",
-              "audit_report",
-              "review_report",
-              "compilation_report",
-              "notice_response",
-              "delivery_cover_letter",
-              "k1_cover_letter",
-              "fs_package",
-              "run_trace_export"
-            ],
-            "title": "Family",
-            "type": "string"
-          },
-          "layout_key": {
-            "cls": "internal",
-            "maxLength": 40,
-            "title": "Layout Key",
-            "type": "string"
-          },
-          "name": {
-            "cls": "internal",
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Name",
-            "type": "string"
-          },
-          "sample_data": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "cls": "internal",
-            "default": {},
-            "title": "Sample Data",
-            "type": "object"
-          },
-          "variables": {
-            "cls": "internal",
-            "default": [],
-            "items": {
-              "$ref": "#/components/schemas/VariableDeclOut"
-            },
-            "maxItems": 200,
-            "title": "Variables",
-            "type": "array"
-          }
-        },
-        "required": [
-          "family",
-          "name",
-          "layout_key",
-          "body"
-        ],
-        "title": "TemplateImportIn",
-        "type": "object"
-      },
-      "abacus__modules__requests__questionnaires_contract__TemplateImportIn": {
-        "additionalProperties": false,
-        "properties": {
-          "upload_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Upload Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "upload_id"
-        ],
-        "title": "TemplateImportIn",
         "type": "object"
       }
     },
@@ -168246,16 +168254,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Questionnaire List Templates Route",
@@ -168267,6 +168265,7 @@
     },
     "/v1/questionnaire-templates/{template_id}/versions/{version}:publish": {
       "post": {
+        "description": "A person publishes the version (fresh MFA). 409 `version_published`.",
         "operationId": "publish_template",
         "parameters": [
           {
@@ -168382,16 +168381,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Publish Template Route",
@@ -168403,8 +168392,35 @@
     },
     "/v1/questionnaire-templates:import": {
       "post": {
+        "description": "A template file as the raw body (no multipart; DEC-1369), parsed in the isolated child.\nThe dry run answers problems and the diff and stores nothing (T-02-T16).",
         "operationId": "questionnaire_import_template",
         "parameters": [
+          {
+            "in": "query",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "default": "csv",
+              "enum": [
+                "csv",
+                "xlsx",
+                "json"
+              ],
+              "title": "Format",
+              "type": "string"
+            }
+          },
           {
             "in": "query",
             "name": "dry_run",
@@ -168448,16 +168464,6 @@
             }
           }
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/abacus__modules__requests__questionnaires_contract__TemplateImportIn"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "201": {
             "content": {
@@ -168508,16 +168514,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Questionnaire Import Template Route",
@@ -168529,6 +168525,7 @@
     },
     "/v1/questionnaires": {
       "post": {
+        "description": "A-04 and A-08's team questions and inquiries (an inquiry names its addressee).",
         "operationId": "create_questionnaire",
         "parameters": [
           {
@@ -168634,16 +168631,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Create Questionnaire Route",
@@ -168750,16 +168737,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Questionnaire Route",
@@ -168771,6 +168748,7 @@
     },
     "/v1/questionnaires/{questionnaire_id}/questions": {
       "post": {
+        "description": "A team question drafted in an open questionnaire. 409 `questionnaire_closed`.",
         "operationId": "draft_question",
         "parameters": [
           {
@@ -168886,16 +168864,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Draft Question Route",
@@ -168907,7 +168875,7 @@
     },
     "/v1/questions/{question_id}:send": {
       "post": {
-        "description": "A person sends it (human-only; G3 met except on intake binders).",
+        "description": "A person sends it (human-only). 409 `question_sent`.",
         "operationId": "send_question",
         "parameters": [
           {
@@ -169013,16 +168981,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Send Question Route",
@@ -169846,7 +169804,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/abacus__modules__reporting__contract__TemplateImportIn"
+                "$ref": "#/components/schemas/TemplateImportIn"
               }
             }
           },
@@ -170430,16 +170388,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Questionnaires Route",
@@ -170449,6 +170397,7 @@
         "x-abacus-action": "questionnaire.read"
       },
       "post": {
+        "description": "An organizer from a published version, prior-year values by code. 409\n`version_not_published`.",
         "operationId": "attach_organizer",
         "parameters": [
           {
@@ -170564,16 +170513,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Attach Organizer Route",
