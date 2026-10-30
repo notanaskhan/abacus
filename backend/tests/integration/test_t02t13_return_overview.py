@@ -15,6 +15,7 @@ from typing import cast
 import pytest
 
 from abacus.kernel.clock import frozen
+from abacus.modules.identity.api import AuthContext
 
 from . import test_t02t09_practice_board as t02t09
 from .test_t02t09_practice_board import DEMO, Board, Json
@@ -55,10 +56,23 @@ async def _summaries(b: Board, item: object) -> None:
         )
 
 
+async def _manager(b: Board, item: object) -> AuthContext:
+    """Samuel Ito: a partner-level member with the manager role on the Feld engagement."""
+    samuel = await b.person("Samuel Ito", None)
+    await b.seed.run(
+        "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) SELECT $1, "
+        "engagement_id, $3, 'manager' FROM tax_returns WHERE work_item_id = $2",
+        b.tenant,
+        item,
+        samuel.user_id,
+    )
+    return samuel
+
+
 async def test_ac_feld_foots_to_253_and_metadata_readers_get_no_figure(board: Board) -> None:
     feld = board.returns["Feld Household 1040"]
     await _summaries(board, feld)
-    samuel = await board.person("Samuel Ito", "firm_manager")
+    samuel = await _manager(board, feld)
     felix = await board.person("Felix Andersen", "security_admin")
     with frozen(DEMO):
         found = await _as(samuel)("GET", f"/v1/tax-returns/{feld}/overview")
@@ -90,7 +104,7 @@ async def test_ac_feld_foots_to_253_and_metadata_readers_get_no_figure(board: Bo
 @pytest.mark.parametrize("event", ["start_preparation", "start_review"])
 async def test_a_person_may_request_only_the_table_s_moves(board: Board, event: str) -> None:
     feld = board.returns["Feld Household 1040"]  # in review: neither move is in the table
-    samuel = await board.person("Samuel Ito", "firm_manager")
+    samuel = await _manager(board, feld)
     version = await board.seed.value(
         "SELECT row_version FROM tax_returns WHERE work_item_id = $1", feld
     )
