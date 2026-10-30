@@ -28,7 +28,7 @@ from uuid import UUID
 from sqlalchemy import RowMapping, text
 
 from abacus.kernel.classification import classified
-from abacus.kernel.db import TenantContext
+from abacus.kernel.db import TenantContext, transaction_context
 from abacus.kernel.uow import DomainEvent, Ref, Scope, Target, UnitOfWork, uow
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.methodology.api import report_template_variable_keys
@@ -69,6 +69,12 @@ class GeneratedDocumentView:
     content_hash: str | None
 
 
+async def _tenant(tx: UnitOfWork) -> UUID:
+    """The firm this unit of work was opened for, read back from its transaction (the kernel's
+    `transaction_context`): never passed in, so it is the tenant row-level security enforces."""
+    return (await transaction_context(tx.session)).tenant_id
+
+
 def canonical(value: object) -> bytes:
     """The snapshot's bytes: sorted keys, no whitespace, UTF-8 (the hash is over these)."""
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
@@ -96,7 +102,7 @@ def snapshot_of(
     }
 
 
-def whitelist(
+def declared_values(
     declared: tuple[str, ...], resolved: Mapping[str, str]
 ) -> tuple[dict[str, str], list[str]]:
     """Keep only the declared keys; a declared key with no value (or only whitespace) is missing.
@@ -247,10 +253,11 @@ async def _document_for(
         text(
             "INSERT INTO generated_documents (tenant_id, kind, owner_type, owner_id, client_id, "
             "engagement_id, work_item_id, template_id, created_by_kind) "
-            "VALUES (current_setting('app.tenant_id')::uuid, :k, :t, :o, :c, :e, :w, :tpl, :by) "
+            "VALUES (:tenant, :k, :t, :o, :c, :e, :w, :tpl, :by) "
             "RETURNING id"
         ),
         {
+            "tenant": await _tenant(tx),
             "k": kind,
             "t": owner_type,
             "o": owner_id,
@@ -297,10 +304,11 @@ async def insert_version(
             "version_no, mode, template_version_id, layout_key, layout_version, snapshot_key, "
             "snapshot_sha256, content_hash, engine_version, approval_ref, requested_by_kind, "
             "requested_by_user_id, requested_by_run_id, on_behalf_of_user_id) VALUES "
-            "(current_setting('app.tenant_id')::uuid, :doc, :n, :mode, :tv, :layout, :lv, :skey, "
+            "(:tenant, :doc, :n, :mode, :tv, :layout, :lv, :skey, "
             ":ssha, :ch, :ev, CAST(:approval AS jsonb), :rk, :ru, :rr, :rob)"
         ),
         {
+            "tenant": await _tenant(tx),
             "doc": document_id,
             "n": version_no,
             "mode": mode,
@@ -321,9 +329,14 @@ async def insert_version(
     await tx.session.execute(
         text(
             "INSERT INTO render_jobs (tenant_id, generated_document_id, target_version_no, "
-            "workflow_id) VALUES (current_setting('app.tenant_id')::uuid, :doc, :n, :wf)"
+            "workflow_id) VALUES (:tenant, :doc, :n, :wf)"
         ),
-        {"doc": document_id, "n": version_no, "wf": f"render-{document_id}-{version_no}"},
+        {
+            "tenant": await _tenant(tx),
+            "doc": document_id,
+            "n": version_no,
+            "wf": f"render-{document_id}-{version_no}",
+        },
     )
     tx.emit(
         GeneratedDocumentRenderRequested(generated_document_id=document_id, version_no=version_no)
@@ -344,9 +357,10 @@ async def add_event(
         text(
             "INSERT INTO generated_document_events (tenant_id, generated_document_id, kind, "
             "cause_ref, changed_keys, actor_kind, actor_user_id) VALUES "
-            "(current_setting('app.tenant_id')::uuid, :doc, :kind, :cause, :keys, :ak, :au)"
+            "(:tenant, :doc, :kind, :cause, :keys, :ak, :au)"
         ),
         {
+            "tenant": await _tenant(tx),
             "doc": document_id,
             "kind": kind,
             "cause": cause_ref[:200],
