@@ -1,11 +1,12 @@
 # The signatures module's flags (ADR-089; P-39, F-03-T07). Compiled with every other module's
 # file into kernel/_flags.py by `make regenerate`. N-02 §4.8: `signatures.envelopes` lands with the
-# protected bundle (N-02-T02); `signatures.docusign`, `signatures.kba_8879` and
+# protected bundle (N-02-T02); `signatures.esign_provider` (was `signatures.docusign`, ADR-342),
+# `signatures.kba_8879` and
 # `engagements.letter_composer` each arrive in their own small change with their tasks.
 
 flags:
   - name: signatures.envelopes
-    description: 'SIG-01, record-mode import and the portal envelope reads (N-02; C7 v1; docs/contracts/c7-envelopes.md; ADR-149): /v1/envelopes*, /v1/envelope-policies, /v1/portal/envelopes* and the ENG-04 composer routes until engagements.letter_composer exists. Off: 404; SIG-01 and POR-06 render their flag-off states. On: 501 not_implemented until N-02-T08 (import) and T11-T15 (hub). Provider sends stay behind signatures.docusign.'
+    description: 'SIG-01, record-mode import and the portal envelope reads (N-02; C7 v1; docs/contracts/c7-envelopes.md; ADR-149): /v1/envelopes*, /v1/envelope-policies, /v1/portal/envelopes* and the ENG-04 composer routes until engagements.letter_composer exists. Off: 404; SIG-01 and POR-06 render their flag-off states. On: 501 not_implemented until N-02-T08 (import) and T11-T15 (hub). Provider sends stay behind signatures.esign_provider.'
     owner: ayushkbhatia
     created: 2026-10-27
     expires: 2027-04-21
@@ -13,8 +14,8 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
-  - name: signatures.docusign
-    description: 'The DocuSign kill switch (N-02-T18; ADR-149; W7): on, an envelope whose firm has a connected DocuSign integration may be created, reminded and voided at DocuSign, once the W7 write capability is enabled in write-capabilities.yaml. Off (the default, and the kill switch): nothing is sent to DocuSign and a send is recorded as not sent; the fake provider in synthetic environments is unaffected.'
+  - name: signatures.esign_provider
+    description: 'The e-signature provider kill switch (N-02-T18; ADR-342, which replaced DocuSign with DocuSeal; W7): on, an envelope whose firm has a connected DocuSeal integration may be created and archived at DocuSeal, once the W7 write capability is enabled in write-capabilities.yaml. Off (the default, and the kill switch): nothing is sent to DocuSeal and a send is recorded as not sent; the fake provider in synthetic environments is unaffected.'
     owner: ayushkbhatia
     created: 2026-10-30
     expires: 2027-04-28

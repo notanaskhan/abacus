@@ -85,7 +85,7 @@ class ReadConnectorEntry(BaseModel):
 
 
 class WriteCapabilityEntry(BaseModel):
-    """A reserved write (W1 posting under ADR-161, W2 the CCH file bridge, W7 DocuSign …).
+    """A reserved write (W1 posting under ADR-161, W2 the CCH file bridge, W7 DocuSeal …).
     Reserved only: `enabled` is false by type until a later version of this schema."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
