@@ -3,7 +3,8 @@
 Whether a client person must pass a second step to sign in to a firm's portal. Owners register
 predicates with `register_mfa_requirement`: identity's `owner_grant` (an active `owner` grant),
 engagements' `engagement_designation` (an `approver_of_record`, `signing_officer` or
-`ske_designee` designation, DEC-63), and later T-01's TRI-bearing scopes. The floor fails closed:
+`ske_designee` designation, DEC-63), and engagements' `tri_scope` (a grant on a K-1 package, a
+`tax_return` work item or an engagement holding one; T-01-T12, C19). The floor fails closed:
 a predicate that raises or takes longer than `PREDICATE_SECONDS`, an unregistered floor predicate,
 or an unreadable firm policy all require the second step.
 
@@ -28,7 +29,7 @@ from abacus.modules.identity.repository import active_grants
 
 MfaRequirement = Callable[[TenantContext, UUID], Awaitable[bool]]
 # The floor DEC-34 fixes today; each must be registered or the floor can't be checked.
-FLOOR: Final = frozenset({"owner_grant", "engagement_designation"})
+FLOOR: Final = frozenset({"owner_grant", "engagement_designation", "tri_scope"})
 PREDICATE_SECONDS: Final = 2.0
 TRUSTED_DEVICE_DAYS: Final = 30  # the ceiling (DEC-35); a firm may set fewer, never more
 _REQUIREMENTS: dict[str, MfaRequirement] = {}

@@ -18,3 +18,5 @@ function render(props: OverlayRenderProps) {
 
 registerOverlay("approve", { layer: "modal", render });
 registerOverlay("envelope", { layer: "modal", render });
+// P-04-T43: SHL-16 `?ov=checkpoints:<target_type>:<target_id>`, the O2 drawer.
+registerOverlay("checkpoints", { layer: "drawer", render });

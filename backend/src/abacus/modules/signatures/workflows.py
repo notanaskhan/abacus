@@ -135,3 +135,22 @@ class EnvelopeWorkflow:
                 retry_policy=_RETRY,
             )
         return status
+
+
+STATUS_POLL_ID = "envelope_status_poll:platform"
+_SWEEP_TIMEOUT = timedelta(minutes=4)
+
+
+@workflow.defn(name="EnvelopeStatusPoll")
+class EnvelopeStatusPollWorkflow:
+    """N-02-T19 (ADR-152's fallback, poll-only): every 5 minutes, a hint to each open DocuSign
+    envelope's workflow, which reads the provider (the truth). Orchestration only."""
+
+    @workflow.run
+    async def run(self) -> int:
+        return await workflow.execute_activity(
+            "signatures.status_poll_sweep",
+            result_type=int,
+            start_to_close_timeout=_SWEEP_TIMEOUT,
+            retry_policy=RetryPolicy(maximum_attempts=2),
+        )

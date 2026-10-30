@@ -18,10 +18,12 @@ export const knwScreens = {
     status: "planned",
     path: "/knowledge/methodology/$versionId",
   },
+  // K-01-T13: a, b and e on fixtures behind `methodology.programs`; planned until walked on
+  // staging (DEC-195), like KNW-02. c, d, f arrive with K-01's later rows; g with K-03 / K-05.
   "KNW-03": {
     name: "Program editor · BH-EBP-110 General Planning",
     status: "planned",
-    path: null,
+    path: "/knowledge/programs/$programId",
   },
   // K-02-T13: the read states a–h on fixtures at /knowledge/standards behind
   // `knowledge.firm_standards`; planned until walked on staging (DEC-195), like KNW-02.

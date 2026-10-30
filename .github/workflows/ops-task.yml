@@ -28,6 +28,8 @@ on:
           - abacus_tools.schedules unpause
           - abacus_tools.trust_layer_backfill
           - abacus_tools.rehearsal run
+          - abacus_tools.scrub_audit seed
+          - abacus_tools.scrub_audit sample
       args:
         description: 'Arguments as a JSON array of strings, e.g. ["--tenant", "<uuid>"]'
         required: true

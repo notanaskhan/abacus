@@ -7,10 +7,8 @@ no field is a plaintext TIN; the module API raises until T-01-T10."""
 
 from __future__ import annotations
 
-import asyncio
+import inspect
 import json
-import uuid
-from datetime import UTC, datetime
 from typing import cast
 
 import pytest
@@ -19,7 +17,6 @@ from pydantic import BaseModel
 from abacus.api.export_openapi import document
 from abacus.kernel._flags import CLIENTS_TAX_PROFILE, CONSENTS_REGISTRY
 from abacus.kernel.classification import unclassified_fields
-from abacus.kernel.db import TenantContext
 from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.organisations import api as organisations_api
 from abacus.modules.organisations import consents_contract as contract
@@ -121,10 +118,10 @@ def test_ac4_the_flags_exist_and_default_off() -> None:
     assert CLIENTS_TAX_PROFILE.default == "false"
 
 
-def test_ac4_the_module_api_is_exported_and_raises_until_built() -> None:
+def test_ac4_the_module_api_is_exported_and_built() -> None:
+    # The stub raised until T-01-T11 built C19 condition 6; the verdict is now the real reader
+    # (its behaviour is test_t01t11_consent_gate's), so here: exported, async, no longer a stub.
     assert {"consent_state", "tri_consent_verdict"} <= set(organisations_api.__all__)
-    tenant = TenantContext(uuid.uuid4(), "human", str(uuid.uuid4()))
-    with pytest.raises(NotImplementedError):
-        asyncio.run(
-            organisations_api.tri_consent_verdict(tenant, [uuid.uuid4()], datetime.now(UTC))
-        )
+    verdict = organisations_api.tri_consent_verdict
+    assert inspect.iscoroutinefunction(verdict)
+    assert "NotImplementedError" not in inspect.getsource(verdict)

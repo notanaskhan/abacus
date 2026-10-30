@@ -8,7 +8,8 @@ import { describe, expect, it } from "vitest";
 const { process } = globalThis as unknown as { process: { cwd: () => string } };
 const WEB = process.cwd();
 const ROOTS = [join(WEB, "src"), join(WEB, "..", "..", "packages", "ui", "src")];
-const BANNED = /\bAccrued\s+(?:transmits|will\s+transmit|e-files|files\s+(?:your|the)\s+return)\b/iu;
+const BANNED =
+  /\bAccrued\s+(?:transmits|will\s+transmit|e-files|files\s+(?:your|the)\s+return)\b/iu;
 
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {

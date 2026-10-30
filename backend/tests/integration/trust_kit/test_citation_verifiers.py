@@ -17,6 +17,7 @@ from abacus.modules.evidence.api import (
     process_upload,
     record_citations,
 )
+from abacus.modules.evidence.citations.registry import KINDS, SOURCES, citable
 from abacus.modules.evidence.words import words_upload
 from abacus.modules.identity.api import Actor, AgentContext, agent_context_for_run
 from abacus_tools.synthetic.documents import positioned_pdf
@@ -234,11 +235,17 @@ async def test_adr166_kinds_without_a_verifier_and_bad_locators_are_locator_inva
     seed: Seeder,
 ) -> None:
     firm = await make_firm(seed)
-    step = uuid.uuid4()
+    # A kind no owner has registered a verifier for yet. K-01-T12 registered `methodology_step`,
+    # which this used to cite; the rest arrive with their epics, so take one still without.
+    unverified = sorted(k for k in KINDS if citable(k) is None and k != "record_field")
+    assert unverified, "every kind has a verifier: this check has nothing left to hold"
+    kind = unverified[0]
+    source_type, field = SOURCES[kind]
+    source = uuid.uuid4()
     found = await _record(
         firm,
         [
-            CitationClaim("methodology_step", {"template_version_id": str(step), "step_key": "a"}),
+            CitationClaim(kind, {field: str(source), "key": "a"}),
             CitationClaim("document_text", {"page": "three"}),
             CitationClaim("request_item", {"request_item_id": str(uuid.uuid4())}),
         ],
@@ -250,8 +257,8 @@ async def test_adr166_kinds_without_a_verifier_and_bad_locators_are_locator_inva
     ]
     row = await _row(seed, found[0].id)
     assert (row["source_type"], row["source_id"], row["verifier_version"]) == (
-        "methodology_template_version",
-        step,
+        source_type,
+        source,
         "none",
     )
 

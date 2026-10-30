@@ -6,10 +6,10 @@
 // - POR-03 M: header 56, tab bar 64 at the phone's foot.
 // - POR-04 390: the sheet full width with a 56 header, over the 56 mobile header.
 // - POR-14 390: header 56, no tab bar.
-// Two contract lines do not hold yet and are kept as expected failures, so the day they hold the run
-// says so (R-01-T31 findings, docs/screens POR-03/04/14 "Open gaps"): every target at least 44 × 44
-// (Close, Upload…, Send comment, Take a photo and the room's "Drop files here" are 19–36 tall),
-// and POR-04's sheet from y44 (it starts at y16).
+// One contract line does not hold yet and is kept as an expected failure, so the day it holds the
+// run says so (R-01-T31 findings, docs/screens POR-03/04/14 "Open gaps"): every target at least
+// 44 × 44 (Close, Upload…, Send comment, Take a photo and the room's "Drop files here" are 19–36
+// tall). POR-04's sheet from y44 holds since the gallery draws it in the phone (DEC-839).
 import { type Locator, type Page, expect, test } from "@playwright/test";
 
 test.use({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, reducedMotion: "reduce" });
@@ -93,7 +93,6 @@ test.describe("contract lines that do not hold yet (R-01-T31 findings)", () => {
   });
 
   test("POR-04a at 390: the sheet starts at y44", async ({ page }) => {
-    test.fail(true, "the full-screen sheet starts at y16");
     const phone = await open(page, "POR-04", "a");
     expect((await within(phone, page.getByRole("dialog").first())).y).toBe(44);
   });

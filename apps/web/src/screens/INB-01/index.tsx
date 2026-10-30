@@ -5,6 +5,7 @@ import {
   listThreadsOptions,
 } from "@abacus/api-client/query";
 import {
+  Button,
   DEFAULT_TZ,
   EmptyState,
   InboxList,
@@ -80,7 +81,14 @@ function Message({
 }
 
 export interface INB01Props {
-  toolbar: ToolbarProps;
+  /** The gallery frame's toolbar; routed inside the firm shell (N-01-T23) there is none. */
+  toolbar?: ToolbarProps;
+  /** "File…" on a thread: INB-02 over it (`?ov=file&message=<id>`), its newest message. */
+  onFile?: (messageId: string) => void;
+  /** "Log received documents…" (DV-1): the sheet at `?ov=log-intake`. */
+  onLogIntake?: () => void;
+  /** The selected thread, kept in the route's `?thread=` when routed. */
+  onSelect?: (threadId: string) => void;
   initialThread?: string | null;
   /** The Client filter (f: Ridgeline, which has no thread in the past 30 days). */
   initialClientId?: string | null;
@@ -92,6 +100,9 @@ export function INB01({
   initialThread = null,
   initialClientId = null,
   frame = false,
+  onFile,
+  onLogIntake,
+  onSelect,
 }: INB01Props): JSX.Element {
   const now = useNow();
   const tz = useSession().tz ?? DEFAULT_TZ;
@@ -126,23 +137,35 @@ export function INB01({
       selected={selected}
       onSelect={(m) => {
         setSelected(m.id);
+        onSelect?.(m.id);
       }}
       empty={<EmptyState title={COPY.empty.title}>{COPY.empty.body}</EmptyState>}
     />
   );
   const open = detail.data;
+  // INB-02 triages one message: the newest one holding a file still to decide.
+  const newest = open?.messages.find((m) =>
+    m.attachments.some((a) => a.status === "new" || a.status === "waiting" || a.status === "held"),
+  );
   return (
     <div data-screen="INB-01" className="flex min-h-0 flex-1 flex-col">
       <InboxLayout
-        toolbar={toolbar}
+        {...(toolbar === undefined ? {} : { toolbar })}
         frame={frame}
         {...(frame ? { height: 860 } : {})}
         filters={
-          <span className="text-body text-ink-2">
-            {summary.data === undefined
-              ? null
-              : COPY.summary(summary.data.waiting, summary.data.unmatched)}
-          </span>
+          <>
+            <span className="text-body text-ink-2">
+              {summary.data === undefined
+                ? null
+                : COPY.summary(summary.data.waiting, summary.data.unmatched)}
+            </span>
+            {onLogIntake !== undefined && (
+              <Button variant="secondary" size="sm" className="ml-auto" onClick={onLogIntake}>
+                {COPY.logIntake}
+              </Button>
+            )}
+          </>
         }
         rail={{
           title: COPY.mailbox,
@@ -167,6 +190,14 @@ export function INB01({
                     clients={[]}
                     subject={open.thread.subject_display}
                     state={STATE[open.thread.status]}
+                    {...(onFile === undefined || newest === undefined
+                      ? {}
+                      : {
+                          fileTo: [COPY.fileAttachments],
+                          onFile: () => {
+                            onFile(newest.id);
+                          },
+                        })}
                     {...(open.work_item_label === null ? {} : { context: open.work_item_label })}
                   />
                 ),

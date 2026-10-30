@@ -59,6 +59,11 @@ ALLOW: tuple[tuple[str, str, str], ...] = (
         "K-01-T12: methodology step keys (bh-ebp-110-4) bound as `:key`, not credentials",
     ),
     (
+        "apps/web/src/fixtures/seed/standards.ts",
+        "SECRET-003",
+        "K-02-T13: firm standard keys (bh-tax-02), the standards' identifiers, not credentials",
+    ),
+    (
         "docs/design/parity-manifest.json",
         "PII-003",
         "SHA-256 digests of handoff screenshots: a hex digest can hold a Luhn-valid run of"
@@ -84,6 +89,12 @@ ALLOW: tuple[tuple[str, str, str], ...] = (
         "apps/web/src/fixtures/seed/client-records.ts",
         "SECRET-003",
         "CLI-02 overview items carry a `key` row code (form_7004.filed), never a credential",
+    ),
+    (
+        "apps/web/src/fixtures/seed/engine-sync.ts",
+        "SECRET-003",
+        "T-01-T15: TAX-09 diagnostics carry a `field_key` tax-form line code (f8995a.ubia),"
+        " not credentials",
     ),
 )
 DATA_SUFFIXES = frozenset({".csv", ".json", ".yaml", ".yml", ".txt", ".tsv"})

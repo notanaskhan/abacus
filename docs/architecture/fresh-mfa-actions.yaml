@@ -131,3 +131,8 @@ actions:
     group: access_control
   - action: member.set_ero
     group: access_control
+  # K-1 release and organizer templates (T-02-T03, DEC-1162)
+  - action: k1_package.release
+    group: release
+  - action: questionnaire_template.publish
+    group: standards

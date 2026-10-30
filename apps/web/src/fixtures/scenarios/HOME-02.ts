@@ -7,12 +7,13 @@
 //   a  Decision 1 selected   b  decision decided   c  sign-off blocked   d  sign-off ready
 //   e  bulk select           f  empty              g  manager (Samuel Ito)
 import type { HumanGateOut } from "@abacus/api-client";
-import { type Scenario, defineScenarios } from "../../app-core/fixture-mode";
+import { type Scenario, defineScenarios, json } from "../../app-core/fixture-mode";
 import { humanGateHandlers } from "../handlers/human-gates";
 import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";
 import { APPROVALS_CLOCK } from "../seed/approvals";
 import { HOME_TODAY, homeGates } from "../seed/home";
+import { capabilitiesFor } from "../seed/shell";
 
 const E0 = seedScenario();
 const seed = getSeed();
@@ -26,7 +27,15 @@ function at(
     state,
     persona,
     clock: APPROVALS_CLOCK,
-    handlers: { ...E0.handlers, ...humanGateHandlers(seed, { rows, today: HOME_TODAY }) },
+    handlers: {
+      ...E0.handlers,
+      ...humanGateHandlers(seed, { rows, today: HOME_TODAY }),
+      // I-01-T16 creates `home.approvals`; every artboard runs with it on.
+      "GET /v1/me/capabilities": ({ persona: who }) => {
+        const base = capabilitiesFor(seed, who ?? persona);
+        return json({ ...base, flags: { ...base.flags, "home.approvals": true } });
+      },
+    },
   };
 }
 

@@ -18,10 +18,10 @@ Code: `src/domain/review/{proposals.ts, useGate.ts}`, `src/screens/SHL-10/{index
 | a | default persona (the handoff names Samuel Ito) | Thu Oct 1, 2026, 9:24 AM CT | `SHL10.a`: the Feld K-1 treatment, 4 rows, totals tie, 3 evidence rows, `pending` | built · fixture (T41) |
 | b | same | same | a's proposal opened in edit mode: After cells editable, citation note per edited row, CTA "Approve with edits" | built · fixture (T41) |
 | c | same | same | `SHL10.c`: a fifth row with no citation (`unsupported`), approve not in `allowed_actions` | built · fixture (T41) |
-| d | raj-malhotra | same | AJE-05 over threshold, routed to Priya Raman | later P-04 row |
-| e, e′ | raj-malhotra | same | the within-threshold batch and its approved line with Undo | later P-04 row |
+| d | raj-malhotra | same | `SHL10.d`: AJE-05 over threshold; no Approve, "Send to Priya Raman for approval" (`POST …/route`) | built · fixture (T42) |
+| e, e′ | raj-malhotra | same | `SHL10.e` / `SHL10.e_prime` (scenario `ep`): the batch as a JE table; the approved line naming the person and policy, Undo until `undo_until` | built · fixture (T42) |
 | f | default persona | same | `SHL10.f`: `rejected` by Samuel Ito, reason `needs_client_input`; the reject dialog opens from a's Reject… | built · fixture (T41) |
-| g | hannah-leclerc | same | `SHL10.g`: part of a set; the link row opens SHL-19 | later P-04 row |
+| g | hannah-leclerc | same | `SHL10.g`: part of a set; the link row names SHL-19 (planned, tooltip-only) and approves nothing | built · fixture (T42) |
 
 Loading: "Loading the proposal". Error: "This proposal isn't available." Not-allowed: Approve is a `HumanAction`, so it never renders for the agent, a policy or the system, and only when `allowed_actions` holds `proposal.approve` and the proposal is `pending`.
 
