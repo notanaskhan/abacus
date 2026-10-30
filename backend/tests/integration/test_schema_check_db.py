@@ -1541,9 +1541,12 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "filed_destination_kind",
                 "filed_evidence_version_id",
                 "status",
+                "withdrawn_at",  # N-01-T14 (0371): a portal intake upload withdrawn
             }
         ),
         "inbox_sender_rules": frozenset({"revoked_at"}),
+        # N-01-T14 (0371): a portal intake file's key, retained or destroyed (crypto-shred).
+        "evidence_intake_object_keys": frozenset({"destroyed_at", "retained_at", "wrapped_key"}),
         # N-02-T08 (0294): a staged import file is consumed once.
         "envelope_import_files": frozenset({"consumed_envelope_id"}),
         # K-02-T04 (0401): an owner change and a draft's edit, publish or discard.

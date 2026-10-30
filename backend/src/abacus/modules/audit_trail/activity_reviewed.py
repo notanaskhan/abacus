@@ -470,5 +470,21 @@ REVIEWED_FALLBACK: Final = frozenset(
         "firm_mail_policy.client_mail_disabled",  # R-01-T27
         "tax_return.status_changed",  # T-02-T07: a return's move (status events hold the detail)
         "tax_return.sync_recorded",  # T-02-T07: T-01's sync-chip write
+        "envelope.evidence_recorded",  # N-02-T13/T14 (S15)
+        "envelope.expired",  # N-02-T13/T14 (S15)
+        "envelope.polled",  # N-02-T13/T14 (S15)
+        "envelope.reminder_skipped",  # N-02-T13/T14 (S15)
+        "envelope.voided",  # N-02-T13/T14 (S15)
+        "evidence.downloaded",  # N-02-T13: the evidence zip (S15)
+        "inbound_message.downloaded",  # N-01-T12 to T18 (S15)
+        "inbox_attachment.downloaded",  # N-01-T12 to T18 (S15)
+        "inbox_attachment.key_destroyed",  # N-01-T12 to T18 (S15)
+        "inbox_attachment.triaged",  # N-01-T12 to T18 (S15)
+        "inbox_attachment.viewed",  # N-01-T12 to T18 (S15)
+        "inbox_attachment.waiting",  # N-01-T12 to T18 (S15)
+        "inbox_sender_rule.created",  # N-01-T12 to T18 (S15)
+        "inbox_thread.client_matched",  # N-01-T12 to T18 (S15)
+        "inbox_thread.ignored",  # N-01-T12 to T18 (S15)
+        "portal_intake.withdrawn",  # N-01-T12 to T18 (S15)
     }
 )
