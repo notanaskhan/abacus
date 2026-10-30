@@ -1,8 +1,8 @@
 ---
 id: TASK-2401
 title: P-04-T48 SHL-12 Sign-off modal, frames a, a′, b, c, d, e, g, h
-spec: SPEC-360
-acceptance_criteria: [P-04-T48]
+spec: SPEC-000  # the backlog row; SPEC-360 and the SHL-12 handoff
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: amber
 status: in-review
 epic: P-04
