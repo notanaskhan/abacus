@@ -2366,6 +2366,33 @@
         "[data-signing='page']"
       ]
     },
+    "t16-signing-ceremony.t16b-header": {
+      "selector": "[data-artboard=\"t16b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T16 Signing ceremony/screenshots/T16b.png",
+      "sha256": "5a60ecde7bd3e1da4f49a34c1f10d4d2f65065d87c0d0d5aa8bc20b6d3487ec6",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-signing='envelope-header']",
+      "deviation": "F-06-T13 review measured 1.35% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T22 fixes the kit"
+    },
+    "t16-signing-ceremony.t16b-documents": {
+      "selector": "[data-artboard=\"t16b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T16 Signing ceremony/screenshots/T16b.png",
+      "sha256": "5a60ecde7bd3e1da4f49a34c1f10d4d2f65065d87c0d0d5aa8bc20b6d3487ec6",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-signing='documents'] li >> nth=0",
+      "deviation": "F-06-T13 review measured 7.01% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T22 fixes the kit"
+    },
+    "t16-signing-ceremony.t16b-steps": {
+      "selector": "[data-artboard=\"t16b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T16 Signing ceremony/screenshots/T16b.png",
+      "sha256": "5a60ecde7bd3e1da4f49a34c1f10d4d2f65065d87c0d0d5aa8bc20b6d3487ec6",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-signing='steps']",
+      "deviation": "F-06-T13 review measured 9.49% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T22 fixes the kit"
+    },
     "tpl-16.b": {
       "page": "screens/TPL-16?st=b",
       "selector": "[data-shell=\"app\"]",
@@ -2431,6 +2458,73 @@
         "[data-signing='page']"
       ],
       "deviation": "F-06 parity follow-up (DEC-1183): 3.59 % at Tier B; the handoff's phone header (title with firm and count, pill step chips, the pinch hint) is a different mobile layout from the kit's portal toolbar: reported only"
+    },
+    "tpl-16a.window": {
+      "page": "screens/TPL-16?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16a.png",
+      "sha256": "8101b1965bf0270c92d263a570ed7b6300d85585253c492c77beb1aee293f4e2",
+      "crop": "window",
+      "tier": "B",
+      "mask": [
+        "[data-signing='well']",
+        "[data-step='verify']"
+      ],
+      "locked": true
+    },
+    "tpl-16b.header": {
+      "page": "screens/TPL-16?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16b.png",
+      "sha256": "1f7d0ac2d721266d794b11cab4d6a7bb1b59a02eff92dd0f91590bbb003bb244",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-signing='envelope-header']",
+      "deviation": "F-06-T13 review measured 2.05% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T22 fixes the kit"
+    },
+    "tpl-16b.documents": {
+      "page": "screens/TPL-16?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16b.png",
+      "sha256": "1f7d0ac2d721266d794b11cab4d6a7bb1b59a02eff92dd0f91590bbb003bb244",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-signing='documents'] li >> nth=0",
+      "deviation": "F-06-T13 review measured 5.36% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T22 fixes the kit"
+    },
+    "tpl-16b.steps": {
+      "page": "screens/TPL-16?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16b.png",
+      "sha256": "1f7d0ac2d721266d794b11cab4d6a7bb1b59a02eff92dd0f91590bbb003bb244",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-signing='steps']",
+      "deviation": "F-06-T13 review measured 4.58% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T22 fixes the kit"
+    },
+    "tpl-16c.window": {
+      "page": "screens/TPL-16?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16c.png",
+      "sha256": "700b7742977fadb7ef7d2bae14cd423ea0364361d54630a853098b7dd0ab3a16",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "DF-12: the native 560 Adopt dialog and its scrim are not built (no AdoptSignatureDialog); identity and signature run in the provider's view. Reported as a screenshot specimen against the b frame, never locked"
+    },
+    "tpl-16g.sign-bar": {
+      "page": "screens/TPL-16?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-16 Signing ceremony specimen - Form 8879- Dev and Mira Kapoor/screenshots/TPL-16g.png",
+      "sha256": "973afb608bd0e0dd8c90fd50798063a3cac96001381c7199778e9c082cd7d25b",
+      "crop": [
+        50,
+        56,
+        830,
+        1744
+      ],
+      "tier": "A",
+      "strip": "[data-signing='mobile-sign-bar']",
+      "deviation": "F-06-T13 review measured 29.58% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T22 fixes the kit"
     },
     "tpl-01.a": {
       "page": "screens/TPL-01?st=a",
