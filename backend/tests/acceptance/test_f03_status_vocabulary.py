@@ -583,7 +583,6 @@ HOME_OBJECTS = {
 # Fields named `state` or `status` that are not an object status.
 NOT_A_STATUS = {
     "FlowStepOut.state": "position of a step in a flow (done, current, todo)",
-    "SetupStepOut.state": "progress of a set-up step (done, waiting, blocked, warning)",
     "CompleteIn.state": "free-text input, not a vocabulary",
     # C5 v1.1 portal half (P-08-T01): client-side card states, never a firm object's status.
     "PortalHomeTodoOut.state": "a to-do card's state on POR-02 (open, none, overdue)",
@@ -627,7 +626,6 @@ NO_YAML_ENTRY = {
     "FollowUpOut.status": "drafted",
     "AdjustmentOut.status": "client_accepted, client_declined",
     "GlImportOut.status": "waiting_for_tb",
-    "LetterIn.status": "not_required_this_year",
     "LogEntryOut.status": "failed_validation",
     "MatrixRowOut.status": "needs_sign_off, open_notes",
     "RetrievalOut.status": "failed_validation",
@@ -657,7 +655,7 @@ OUTSIDE_ITS_OBJECT = {
 # Findings: status fields typed as a bare string, so no literal can be checked.
 UNTYPED = {
     "FileMatchOut.status", "GraphEngagementOut.status", "GraphItemOut.status",
-    "LetterOut.status", "ProcedureOut.status", "ReviewOut.status",
+    "ProcedureOut.status", "ReviewOut.status",
     # I-01-T01 (HOME contracts, #431): the home rows carry each owner's own status word as a
     # string until the HOME-01 build types them per source; recorded as findings like the rest.
     "DeadlineRowOut.status", "HomeTileOut.by_status", "WorkRowOut.status",

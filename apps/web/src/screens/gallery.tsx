@@ -360,6 +360,21 @@ import {
   type Shl03State,
   scenarios as shl03Scenarios,
 } from "./SHL-03/scenarios";
+import { TaxReturnsPage } from "./TAX-01";
+import { ReturnOverviewPage } from "./TAX-02";
+import {
+  OPENS as TAX02_OPENS,
+  STATES as TAX02_STATES,
+  type Tax02State,
+  scenarios as tax02Scenarios,
+} from "./TAX-02/scenarios";
+import {
+  SEARCH as TAX01_SEARCH,
+  SELECTED_IDS as TAX01_SELECTED,
+  STATES as TAX01_STATES,
+  type Tax01State,
+  scenarios as tax01Scenarios,
+} from "./TAX-01/scenarios";
 
 // The built screens as /components/screens/<ID> draws them (gallery builds only; chapter 04 §9.2).
 // `?st=` picks the artboard; its scenario answers the generated client under the screen, over the
@@ -1062,6 +1077,79 @@ function Cli01Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("CLI-01", { title: "Clients index", Component: Cli01Artboard });
+
+function Tax01Frame({ state }: { state: Tax01State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/tax-returns" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+        <TaxReturnsPage
+          initial={TAX01_SEARCH[state]}
+          initialSelection={state === "d" ? TAX01_SELECTED : []}
+        />
+      </AppShell>
+    </div>
+  );
+}
+
+function Tax01Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Tax01State = TAX01_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      tax01Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Tax01Frame key={state} state={state} /> : null;
+}
+
+registerScreen("TAX-01", { title: "Tax Returns · practice board", Component: Tax01Artboard });
+
+function Tax02Frame({ state }: { state: Tax02State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/tax-returns" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <ReturnOverviewPage returnId={TAX02_OPENS[state]} toolbar={bar.toolbar} frame />
+    </div>
+  );
+}
+
+function Tax02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Tax02State = TAX02_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      tax02Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Tax02Frame key={state} state={state} /> : null;
+}
+
+registerScreen("TAX-02", { title: "Return › Overview", Component: Tax02Artboard });
 
 function Eng01Frame({ state }: { state: Eng01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";

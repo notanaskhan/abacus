@@ -827,9 +827,11 @@ async def test_ac20_every_input_and_result_in_the_history_is_encrypted(
     # the workflow's and each of seven activities' input and result (five stages and two slots)
     assert len(encodings) >= 11
     assert set(encodings) == {ENCODING.decode()}
-    # Temporal's own patch marker and search attribute are plain JSON and hold only patch IDs
-    assert len(plain) == 2  # exactly the marker and the search attribute
-    assert "work-slots" in _patch_ids(plain)
+    # Temporal's own patch markers and search attributes are plain JSON and hold only patch IDs:
+    # one marker and one search-attribute upsert per patch (`work-slots`; A-02-T30's
+    # `on-demand-pulls`)
+    assert len(plain) == 4
+    assert _patch_ids(plain) == {"work-slots", "on-demand-pulls"}
     # identifiers never appear in the clear
     assert str(world.tenant_id) not in text
     assert str(run_id) not in text
@@ -876,7 +878,8 @@ async def _call[T](function: Callable[[T], Awaitable[object]], argument: T) -> o
 
 def test_ac20_there_are_eight_activities_the_six_plus_the_two_slot_ones() -> None:
     # TASK-018b: acquire_slot and release_slot join the six; SPEC-034 adds the GL import steps.
-    assert len(ACTIVITIES) == 11  # TASK-070 adds the GL render; A-02-T25 the health pass
+    # TASK-070 adds the GL render, A-02-T25 the health pass, A-02-T30 the finish at the snapshot
+    assert len(ACTIVITIES) == 12
     names = {a.__name__ for a in ACTIVITIES}
     assert {"acquire_slot_activity", "release_slot_activity"} <= names
 

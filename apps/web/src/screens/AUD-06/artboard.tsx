@@ -56,7 +56,7 @@ export function AUD06Frame({ state }: { state: Aud06State }): JSX.Element {
   const tz = session.tz ?? DEFAULT_TZ;
   const northwind = opens.engagementId === NORTHWIND_ENGAGEMENT;
   return (
-    <div data-screen="AUD-06" data-state={state} className="flex min-h-0 flex-1 flex-col">
+    <div data-screen="AUD-06" data-state={state} className="flex min-h-0 min-w-0 flex-1 flex-col">
       {/* The gallery's own record of who and when the artboard is drawn for. */}
       <p data-aud06="who" className="sr-only">
         {`${session.user?.displayName ?? ""} · ${dateTime(now, { tz })}${opens.ov === undefined ? "" : ` · ?ov=${opens.ov}`}`}
