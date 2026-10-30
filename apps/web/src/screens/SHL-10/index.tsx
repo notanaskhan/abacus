@@ -6,6 +6,9 @@ import {
   Button,
   Dialog,
   type DiffRow,
+  Icon,
+  StatusDisc,
+  Tooltip,
   HumanAction,
   RegistryStatus,
   SheetModal,
@@ -16,7 +19,9 @@ import {
   time,
   toast,
 } from "@abacus/ui";
-import { type JSX, useState } from "react";
+import { type JSX, type ReactNode, useState } from "react";
+import { useNow } from "../../app-core/clock";
+import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { useOpenSourceViewer } from "../../app-core/overlay-host";
 import { useSession } from "../../app-core/session";
 import {
@@ -41,9 +46,13 @@ import { COPY } from "./copy";
 //      citation", "Ask follow-up…" promoted
 //   f  reject with a reason from the picker; the result line names the person and the reason
 //
-// d, e, e′ and g (thresholds, batch and the set link) are later rows of P-04. Approving is a
-// HumanAction on the signed-in person, so the agent never sees it (INV-1); the write waits for the
-// server (never optimistic), and Undo calls only the compensating command.
+// P-04-T42 adds d (AJE-05 over BH AJE thresholds v2: no Approve, "Send to Priya Raman for
+// approval", the policy row's words), e (the within-threshold batch as a JE table, "Approve 4 under
+// BH AJE thresholds v2"), e′ (the card collapses to the line naming the person and the policy, with
+// Undo while it lasts) and g (part of a set: the link row to SHL-19, which opens the package and
+// approves nothing). Approving is a HumanAction on the signed-in person, so the agent never sees it
+// (INV-1); the write waits for the server (never optimistic), and Undo calls only the compensating
+// command.
 
 /** A server value as the diff shows it: numbers grouped ("307,900", "14,900.00"), text as sent. */
 export function shown(v: string | null): string {
@@ -93,7 +102,11 @@ export function ApproveSheet({
     <SheetModal
       open={open}
       onOpenChange={onOpenChange}
-      title={COPY.title}
+      title={
+        proposal?.kind === "adjusting_entry_batch"
+          ? COPY.batchTitle(proposal.change_count)
+          : COPY.title
+      }
       meta={
         proposal === undefined ? undefined : (
           <span className="text-meta text-ink-3">{proposal.context_label}</span>
@@ -156,9 +169,15 @@ function Proposal({
     failedText: COPY.toasts.failed,
   });
 
+  const now = useNow();
   const rows = diffRows(proposal.rows);
   const decided = proposal.decision;
   const pending = proposal.state === "pending";
+  const policy = proposal.policy;
+  const batch = proposal.kind === "adjusting_entry_batch";
+  const routed = policy?.result === "review_required" && allowed.has("proposal.route");
+  const [routing, setRouting] = useState(false);
+  const [undoing, setUndoing] = useState(false);
   const agent = formatActor(
     proposal.agent_run_id === null ? { kind: "system" } : { kind: "agent" },
   );
@@ -167,13 +186,55 @@ function Proposal({
     <div className="flex flex-col gap-[12px] p-[12px]">
       <div className="flex items-center gap-[8px] text-body">
         <span className="font-medium">
-          {agent} {COPY.proposed(proposal.change_count)}
+          {agent}{" "}
+          {batch && policy?.policy_name != null
+            ? COPY.proposedEntries(proposal.change_count, policy.policy_name)
+            : COPY.proposed(proposal.change_count)}
         </span>
         <span className="flex-1" />
         <RegistryStatus object="proposal" code={proposal.state} />
         <span className="text-meta text-ink-3">{time(proposal.proposed_at)}</span>
       </div>
-      {decided !== null && (
+      {decided !== null && batch && decided.decision === "approved" ? (
+        // e′: the card collapses to the line; Undo lasts until the server's `undo_until`.
+        <p
+          data-decision="approved"
+          className="flex items-center gap-[8px] text-body font-medium text-green-ink"
+        >
+          <span className="flex-1">
+            {COPY.approvedUnder(
+              decided.decided_by_name,
+              policy?.policy_name ?? "",
+              time(decided.decided_at),
+            )}
+          </span>
+          {allowed.has("proposal.undo") &&
+            decided.undo_until !== null &&
+            Date.parse(decided.undo_until) > now.getTime() && (
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={undoing}
+                onClick={() => {
+                  setUndoing(true);
+                  writes
+                    .undo(decided.id)
+                    .then(() => {
+                      toast.show({ kind: "success", text: COPY.undone });
+                    })
+                    .catch(() => {
+                      toast.show({ kind: "error", text: COPY.toasts.failed });
+                    })
+                    .finally(() => {
+                      setUndoing(false);
+                    });
+                }}
+              >
+                {COPY.undo}
+              </Button>
+            )}
+        </p>
+      ) : decided !== null ? (
         <p
           data-decision={decided.decision}
           className={
@@ -187,102 +248,172 @@ function Proposal({
               )
             : COPY.approved(decided.decided_by_name)}
         </p>
-      )}
-      <ApprovalCard
-        title={COPY.reasoning}
-        actor={pending && allowed.has("proposal.approve") ? actor : { kind: "system" }}
-        reasoning={<AgentText text={proposal.reasoning} />}
-        rows={rows}
-        afterRows={proposal.totals.map((t) => (
-          <p
-            key={t.label}
-            className="flex items-center gap-[8px] border-t-[0.5px] border-stroke px-[12px] py-[8px] text-body font-medium"
-          >
-            <span className="flex-1">{t.label}</span>
-            <span className="tabular-nums">{shown(t.value)}</span>
-            {t.ties && (
-              <StatusPill variant="green" size="micro">
-                {COPY.tie}
-              </StatusPill>
-            )}
-          </p>
-        ))}
-        evidence={proposal.evidence.map((e) => ({
-          key: e.evidence_version_id,
-          label: e.label,
-          meta: COPY.citations(e.citation_count),
-          onOpen: () => {
-            openViewer({ evidenceVersionId: e.evidence_version_id });
-          },
-        }))}
-        {...(proposal.policy?.note == null ? {} : { policyNote: proposal.policy.note })}
-        {...(editing
-          ? {
-              renderAfter: (row: DiffRow) => {
-                const source = proposal.rows.find((r) => String(r.n) === row.key);
-                if (source === undefined) return null;
-                const value = edits[source.n]?.after ?? source.after ?? "";
-                return (
-                  <input
-                    aria-label={`${row.label}: after`}
-                    value={value}
-                    onChange={(event) => {
-                      const after = event.target.value;
-                      setEdits((prev) => ({
-                        ...prev,
-                        [source.n]: { after, note: prev[source.n]?.note ?? "" },
-                      }));
-                    }}
-                    className="w-[96px] rounded-sheet bg-nested px-[6px] text-right font-medium tabular-nums"
+      ) : null}
+      {!(batch && decided?.decision === "approved") && (
+        <ApprovalCard
+          title={COPY.reasoning}
+          actor={pending && allowed.has("proposal.approve") ? actor : { kind: "system" }}
+          {...(proposal.reasoning === ""
+            ? {}
+            : { reasoning: <AgentText text={proposal.reasoning} /> })}
+          rows={rows}
+          {...(batch ? { rowsContent: <BatchTable rows={proposal.rows} /> } : {})}
+          {...(proposal.set === null
+            ? {}
+            : {
+                setRow: (
+                  <SetRow
+                    label={COPY.setRow(
+                      proposal.set.label,
+                      proposal.set.results,
+                      proposal.set.exceptions,
+                    )}
                   />
-                );
-              },
-              approveObject: COPY.approveEdits,
-            }
-          : { approveObject: COPY.approveObject })}
-        uncitedLabel={COPY.uncited}
-        approveBlocked={!pending || (editing && (changed.length === 0 || notesMissing))}
-        busy={gate.phase === "busy"}
-        stacked
-        onApprove={() => void gate.run()}
-        {...(pending && allowed.has("proposal.reject")
-          ? {
-              onReject: () => {
-                setRejecting(true);
-              },
-            }
-          : {})}
-        rejectLabel={COPY.reject}
-        actions={
-          pending ? (
-            <>
-              {allowed.has("proposal.approve") && (
-                <Button
-                  variant="tonal"
-                  onClick={() => {
-                    setEditing((e) => !e);
-                    setEdits({});
-                  }}
-                >
-                  {editing ? COPY.cancelEdit : COPY.edit}
-                </Button>
+                ),
+              })}
+          {...(routed && policy.routed_to_user_id != null
+            ? {
+                primary: (
+                  <span className="flex w-full flex-col gap-[4px]">
+                    <HumanAction
+                      verb="Send"
+                      object={`to ${policy.routed_to_name ?? ""} for approval`}
+                      actor={actor}
+                      disabled={!pending || routing}
+                      className="w-full"
+                      onClick={() => {
+                        const to = policy.routed_to_user_id;
+                        if (to === null) return;
+                        setRouting(true);
+                        writes
+                          .route(to)
+                          .then(() => {
+                            toast.show({
+                              kind: "success",
+                              text: COPY.sentTo(policy.routed_to_name ?? ""),
+                            });
+                          })
+                          .catch(() => {
+                            toast.show({ kind: "error", text: COPY.toasts.failed });
+                          })
+                          .finally(() => {
+                            setRouting(false);
+                          });
+                      }}
+                    />
+                    <span className="text-meta text-ink-3">{COPY.yourLimit}</span>
+                  </span>
+                ),
+              }
+            : {})}
+          afterRows={proposal.totals.map((t) => (
+            <p
+              key={t.label}
+              className="flex items-center gap-[8px] border-t-[0.5px] border-stroke px-[12px] py-[8px] text-body font-medium"
+            >
+              <span className="flex-1">{t.label}</span>
+              <span className="tabular-nums">{shown(t.value)}</span>
+              {t.ties && (
+                <StatusPill variant="green" size="micro">
+                  {COPY.tie}
+                </StatusPill>
               )}
-              {allowed.has("proposal.follow_up") && (
-                <Button
-                  variant={rows.some((r) => r.cites === 0) ? "primary" : "secondary"}
-                  opensDialog
-                  onClick={() => {
-                    setAsking(true);
-                  }}
-                >
-                  {COPY.followUp}
-                </Button>
-              )}
-            </>
-          ) : null
-        }
-        footnote={COPY.footnote}
-      />
+            </p>
+          ))}
+          evidence={proposal.evidence.map((e) => ({
+            key: e.evidence_version_id,
+            label: e.label,
+            meta: COPY.citations(e.citation_count),
+            onOpen: () => {
+              openViewer({ evidenceVersionId: e.evidence_version_id });
+            },
+          }))}
+          {...(proposal.policy?.note == null || routed
+            ? {}
+            : { policyNote: proposal.policy.note })}
+          {...(editing
+            ? {
+                renderAfter: (row: DiffRow) => {
+                  const source = proposal.rows.find((r) => String(r.n) === row.key);
+                  if (source === undefined) return null;
+                  const value = edits[source.n]?.after ?? source.after ?? "";
+                  return (
+                    <input
+                      aria-label={`${row.label}: after`}
+                      value={value}
+                      onChange={(event) => {
+                        const after = event.target.value;
+                        setEdits((prev) => ({
+                          ...prev,
+                          [source.n]: { after, note: prev[source.n]?.note ?? "" },
+                        }));
+                      }}
+                      className="w-[96px] rounded-sheet bg-nested px-[6px] text-right font-medium tabular-nums"
+                    />
+                  );
+                },
+                approveObject: COPY.approveEdits,
+              }
+            : {
+                approveObject: batch
+                  ? COPY.approveBatch(proposal.change_count, policy?.policy_name ?? "")
+                  : proposal.kind === "procedure_conclusion"
+                    ? COPY.approveConclusion
+                    : COPY.approveObject,
+              })}
+          uncitedLabel={COPY.uncited}
+          approveBlocked={!pending || (editing && (changed.length === 0 || notesMissing))}
+          busy={gate.phase === "busy"}
+          stacked
+          onApprove={() => void gate.run()}
+          {...(pending && allowed.has("proposal.reject")
+            ? {
+                onReject: () => {
+                  setRejecting(true);
+                },
+              }
+            : {})}
+          rejectLabel={COPY.reject}
+          actions={
+            pending ? (
+              <>
+                {allowed.has("proposal.approve") && (
+                  <Button
+                    variant="tonal"
+                    onClick={() => {
+                      setEditing((e) => !e);
+                      setEdits({});
+                    }}
+                  >
+                    {editing ? COPY.cancelEdit : COPY.edit}
+                  </Button>
+                )}
+                {allowed.has("proposal.follow_up") && (
+                  <Button
+                    variant={rows.some((r) => r.cites === 0) ? "primary" : "secondary"}
+                    opensDialog
+                    onClick={() => {
+                      setAsking(true);
+                    }}
+                  >
+                    {COPY.followUp}
+                  </Button>
+                )}
+              </>
+            ) : null
+          }
+          footnote={COPY.footnote}
+        />
+      )}
+      {routed && policy.note != null && (
+        <p
+          data-policy="review_required"
+          className="flex items-center gap-[8px] text-meta text-amber-ink"
+        >
+          <StatusDisc state="todo" size={13} />
+          {policy.note}
+        </p>
+      )}
       {editing && changed.length > 0 && (
         <section aria-label={COPY.citationNote} className="rounded-nested bg-card shadow-e1">
           {changed.map((e) => {
@@ -343,6 +474,63 @@ function Proposal({
           }
         }}
       />
+    </div>
+  );
+}
+
+/** e: the batch as a JE table (Entry · Debit · Credit · Policy), the server's lines verbatim. */
+function BatchTable({ rows }: { rows: readonly ProposalRowOut[] }): JSX.Element {
+  const th = "px-[12px] py-[6px] text-left text-th font-normal text-ink-2";
+  return (
+    <table
+      aria-label="Entries"
+      className="w-full border-t-[0.5px] border-hair text-dense tabular-nums"
+    >
+      <thead className="bg-band-hd">
+        <tr>
+          <th className={th}>{COPY.je.entry}</th>
+          <th className={th}>{COPY.je.debit}</th>
+          <th className={th}>{COPY.je.credit}</th>
+          <th className={th}>{COPY.je.policy}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr key={r.n} data-row={r.n} className="border-t-[0.5px] border-hair align-top">
+            <td className="px-[12px] py-[6px]">{r.label}</td>
+            <td className="px-[12px] py-[6px]">{r.before ?? "—"}</td>
+            <td className="px-[12px] py-[6px]">{r.after ?? "—"}</td>
+            <td className="px-[12px] py-[6px]">
+              <span className="inline-flex items-center gap-[6px]">
+                <StatusDisc state="done" size={13} />
+                {r.cause}
+              </span>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+/** g (R2): the link row to SHL-19. It opens the package; it never approves anything. SHL-19 is a
+ * planned screen, so the link is drawn (tooltip-only) where planned screens are, else absent. */
+function SetRow({ label }: { label: string }): JSX.Element {
+  const link: ReactNode = PLANNED_VISIBLE ? (
+    <Tooltip content={COPY.reviewAllHint}>
+      <span className="text-dense font-medium text-ink">
+        {COPY.reviewAll} <span className="text-ink-3">→</span>
+      </span>
+    </Tooltip>
+  ) : null;
+  return (
+    <div
+      data-set-row=""
+      className="flex h-[36px] items-center gap-[8px] border-t-[0.5px] border-hair px-[12px]"
+    >
+      <Icon name="layers" size={14} className="text-ink-3" />
+      <span className="flex-1 truncate text-dense text-ink-2">{label}</span>
+      {link}
     </div>
   );
 }

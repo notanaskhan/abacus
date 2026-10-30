@@ -56,6 +56,13 @@ export interface ApprovalCardProps {
   stacked?: boolean;
   /** Extra reasons Approve stays disabled (an edit without its citation note). */
   approveBlocked?: boolean;
+  /** Replaces the change rows: SHL-10 e's JE table (Entry · Debit · Credit · Policy). */
+  rowsContent?: ReactNode;
+  /** The R2 link row between the card's evidence and its policy note (SHL-10 g: "Part of <set>"). */
+  setRow?: ReactNode;
+  /** Replaces Approve when the person may not approve here (SHL-10 d: "Send to Priya Raman for
+   * approval"); the card then draws no Approve at all. */
+  primary?: ReactNode;
   className?: string;
 }
 
@@ -83,10 +90,13 @@ export function ApprovalCard({
   footnote,
   stacked = false,
   approveBlocked = false,
+  rowsContent,
+  setRow,
+  primary,
   className,
 }: ApprovalCardProps): JSX.Element {
   const missing = uncited(rows);
-  const approve = (
+  const approve = primary ?? (
     <HumanAction
       verb="Approve"
       {...(approveObject === undefined ? {} : { object: approveObject })}
@@ -123,41 +133,43 @@ export function ApprovalCard({
           {reasoning}
         </div>
       )}
-      <ul
-        aria-label="Changes"
-        className="divide-y-[0.5px] divide-hair border-t-[0.5px] border-hair"
-      >
-        {rows.map((r) => (
-          <li
-            key={r.key}
-            data-row={r.key}
-            className="grid grid-cols-[minmax(0,1fr)_auto] gap-[12px] px-[12px] py-[8px] text-body"
-          >
-            <span className="flex flex-col">
-              {r.label}
-              {r.cause !== undefined && r.cause !== null && (
-                <span className="text-meta text-ink-3">{r.cause}</span>
-              )}
-            </span>
-            <span className="flex items-center gap-[8px] tabular-nums">
-              {r.before !== null && r.before !== r.after && (
-                <s className="text-ink-3">
-                  <span className="sr-only">changed from </span>
-                  {r.before}
-                </s>
-              )}
-              {renderAfter === undefined ? (
-                <span className="font-medium">{r.after ?? "—"}</span>
-              ) : (
-                renderAfter(r)
-              )}
-              {r.after !== r.before && r.cites === 0 && (
-                <span className="text-meta text-red-ink">no citation</span>
-              )}
-            </span>
-          </li>
-        ))}
-      </ul>
+      {rowsContent ?? (
+        <ul
+          aria-label="Changes"
+          className="divide-y-[0.5px] divide-hair border-t-[0.5px] border-hair"
+        >
+          {rows.map((r) => (
+            <li
+              key={r.key}
+              data-row={r.key}
+              className="grid grid-cols-[minmax(0,1fr)_auto] gap-[12px] px-[12px] py-[8px] text-body"
+            >
+              <span className="flex flex-col">
+                {r.label}
+                {r.cause !== undefined && r.cause !== null && (
+                  <span className="text-meta text-ink-3">{r.cause}</span>
+                )}
+              </span>
+              <span className="flex items-center gap-[8px] tabular-nums">
+                {r.before !== null && r.before !== r.after && (
+                  <s className="text-ink-3">
+                    <span className="sr-only">changed from </span>
+                    {r.before}
+                  </s>
+                )}
+                {renderAfter === undefined ? (
+                  <span className="font-medium">{r.after ?? "—"}</span>
+                ) : (
+                  renderAfter(r)
+                )}
+                {r.after !== r.before && r.cites === 0 && (
+                  <span className="text-meta text-red-ink">no citation</span>
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
       {afterRows}
       {evidence.length > 0 && (
         <ul
@@ -177,6 +189,7 @@ export function ApprovalCard({
           ))}
         </ul>
       )}
+      {setRow}
       {policyNote !== undefined && (
         <p className="border-t-[0.5px] border-hair px-[12px] py-[8px] text-meta text-ink-3">
           {policyNote}

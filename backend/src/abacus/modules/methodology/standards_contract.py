@@ -1,5 +1,6 @@
-"""C21 v1 part B, the stub: firm standards and threshold policies (K-02-T02; K-02 §3 F3-F5, §4.2
-to §4.5; KNW-04). Contract: `docs/contracts/rules-tables.md`; screen: `docs/screens/KNW-04.md`.
+"""C21 v1 part B, the contract: firm standards and threshold policies (K-02-T02; K-02 §3 F3-F5,
+§4.2 to §4.5; KNW-04). Contract: `docs/contracts/rules-tables.md`; screen:
+`docs/screens/KNW-04.md`.
 
 Per-tenant, versioned numbers and checklists that sort agent output and govern review. Two tables
 follow the glossary: `firm_standards` (review checklists, review levels, the return-approval
@@ -12,9 +13,8 @@ Content is database rows loaded through the import endpoints (AGENTS 16): no sta
 a constant here. Nothing in K-02 calls a model (INV-1): every write is a person's, with
 `published_actor_kind = 'human'` checked by the database (K-02-T04).
 
-Each route answers 404 for a client principal (INV-4), 403 for a principal the matrix refuses,
-404 with `knowledge.firm_standards` off and 501 `not_implemented` with it on until its build
-task: reads, lifecycle and examples K-02-T08; import and export K-02-T11.
+The routes live in `standards_routes.py` and the service in `standards.py` (K-02-T08: reads,
+lifecycle and examples); import and export stay 501 until K-02-T11.
 
 The deterministic module API (`classify_entry`, `variance_exceeded`, ...) raises
 `NotImplementedError` until K-02-T10; its signatures are frozen with C21 (S17). Every result names
@@ -27,31 +27,17 @@ entries `confidential` (client names). No K-02 table holds TRI.
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Literal, NoReturn
 from uuid import UUID
 
-from fastapi import Depends, Header, Path, Query
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import KNOWLEDGE_FIRM_STANDARDS
 from abacus.kernel._statuses import FirmStandardVersionStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
-from abacus.kernel.flags import flag_enabled
-from abacus.kernel.listing import ListPage
-from abacus.modules.identity.api import (
-    AbacusRouter,
-    AuthContext,
-    Resource,
-    TargetFacts,
-    authorise,
-    current_context,
-)
-
-Ctx = Annotated[AuthContext, Depends(current_context)]
+from abacus.modules.identity.api import AuthContext
 
 # `firm_standards` kinds and `threshold_policies` kinds (K-02 §4.2, M-B).
 FirmStandardKind = Literal[
@@ -95,6 +81,10 @@ def _frozen() -> ConfigDict:
 
 
 # --- payloads, one per kind (payload_schema_version 1) -------------------------------------------
+
+# The stored codes plus C2's derived `superseded` (a later published version is in effect; the
+# registry marks it derived, so the generated enum leaves it out). K-02-T08.
+VersionShownStatus = FirmStandardVersionStatus | Literal["superseded"]
 
 
 class AjeThresholdRow(BaseModel):
@@ -285,7 +275,7 @@ class StandardVersionSummaryOut(BaseModel):
 
     id: Annotated[UUID, classified("internal")]
     version: Annotated[int, classified("internal")]
-    status: Annotated[FirmStandardVersionStatus, classified("internal")]
+    status: Annotated[VersionShownStatus, classified("internal")]
     effective_from: Annotated[date | None, classified("internal")]
     published_at: Annotated[datetime | None, classified("internal")]
     published_by: Annotated[StandardPersonOut | None, classified("internal")]
@@ -326,7 +316,7 @@ class StandardVersionOut(BaseModel):
     id: Annotated[UUID, classified("internal")]
     standard_id: Annotated[UUID, classified("internal")]
     version: Annotated[int, classified("internal")]
-    status: Annotated[FirmStandardVersionStatus, classified("internal")]
+    status: Annotated[VersionShownStatus, classified("internal")]
     effective_from: Annotated[date | None, classified("internal")]
     payload_schema_version: Annotated[int, classified("internal")]
     payload_hash: Annotated[str, classified("internal")]
@@ -469,224 +459,8 @@ class StandardImportIn(BaseModel):
     upload_id: Annotated[UUID, classified("internal")]
 
 
-standards_router = AbacusRouter(prefix="/v1/standards", tags=["standards"])
-StandardId = Annotated[UUID, Path()]
-VersionId = Annotated[UUID, Path()]
-IfMatch = Annotated[int, Header(alias="If-Match", ge=1)]
-IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=8, max_length=200)]
-
-
-_OWNER_ACTIONS = frozenset({"firm_standard.draft", "firm_standard.publish"})
-
-
-async def _stub(ctx: AuthContext, action: str) -> NoReturn:
-    """INV-4: a client principal gets 404. Then the matrix (403), the flag (404), then 501.
-    Until K-02-T08 reads the standard, the owner-conditioned actions are checked as if the actor
-    owned it: a person who is not a partner member is still refused; the owner check proper
-    (403 `not_standard_owner`) comes with the service."""
-    if ctx.client:
-        raise NotFound("firm_standard")
-    resource = Resource.firm(ctx.tenant_id)
-    if action in _OWNER_ACTIONS:
-        resource = replace(resource, target=TargetFacts(owner_user_id=ctx.user_id))
-    await authorise(ctx, action, resource)
-    if not await flag_enabled(ctx.tenant, KNOWLEDGE_FIRM_STANDARDS):
-        raise NotFound(KNOWLEDGE_FIRM_STANDARDS.name)
-    raise NotImplementedYet
-
-
-@standards_router.get(
-    "", action="firm_standard.read", response_model=ListPage[StandardOut], errors=(501,)
-)
-async def list_standards_route(
-    ctx: Ctx, kind: Annotated[StandardKind | None, Query()] = None
-) -> ListPage[StandardOut]:
-    """KNW-04's section list and rows; drafts appear for partners only."""
-    await _stub(ctx, "firm_standard.read")
-
-
-@standards_router.post(
-    "",
-    action="firm_standard.create",
-    response_model=StandardOut,
-    status_code=201,
-    errors=(409, 501),
-)
-async def create_standard_route(body: StandardCreateIn, ctx: Ctx) -> StandardOut:
-    """Create a standard (QM owner or practice leader, fresh MFA); the owner must be a partner
-    member (422 `owner_not_partner`)."""
-    await _stub(ctx, "firm_standard.create")
-
-
-@standards_router.get(
-    "/{standard_id}", action="firm_standard.read", response_model=StandardDetailOut, errors=(501,)
-)
-async def standard_route(
-    standard_id: StandardId, ctx: Ctx, version: Annotated[int | None, Query(ge=1)] = None
-) -> StandardDetailOut:
-    """The form pane: the version in effect (or `?version=`) and the Timeline."""
-    await _stub(ctx, "firm_standard.read")
-
-
-@standards_router.put(
-    "/{standard_id}/owner",
-    action="firm_standard.assign_owner",
-    response_model=StandardOut,
-    errors=(501,),
-)
-async def assign_owner_route(
-    standard_id: StandardId, body: StandardOwnerIn, ctx: Ctx
-) -> StandardOut:
-    """Assign the owner (a partner member; 422 `owner_not_partner`)."""
-    await _stub(ctx, "firm_standard.assign_owner")
-
-
-@standards_router.get(
-    "/{standard_id}/versions/{version_id}",
-    action="firm_standard.read",
-    response_model=StandardVersionOut,
-    errors=(501,),
-)
-async def standard_version_route(
-    standard_id: StandardId, version_id: VersionId, ctx: Ctx
-) -> StandardVersionOut:
-    """One version; a draft is 404 for anyone but a partner (US-3.4)."""
-    await _stub(ctx, "firm_standard.read")
-
-
-@standards_router.post(
-    "/{standard_id}/versions",
-    action="firm_standard.draft",
-    response_model=StandardVersionOut,
-    status_code=201,
-    errors=(409, 501),
-)
-async def draft_version_route(standard_id: StandardId, ctx: Ctx) -> StandardVersionOut:
-    """New version…: a draft from the current version (409 `draft_exists`; 403
-    `not_standard_owner` for anyone but the owner)."""
-    await _stub(ctx, "firm_standard.draft")
-
-
-@standards_router.patch(
-    "/{standard_id}/versions/{version_id}",
-    action="firm_standard.draft",
-    response_model=StandardVersionOut,
-    errors=(409, 501),
-)
-async def edit_draft_route(
-    standard_id: StandardId,
-    version_id: VersionId,
-    body: StandardDraftPatchIn,
-    ctx: Ctx,
-    if_match: IfMatch,
-) -> StandardVersionOut:
-    """Edit the draft (409 `stale_version` or `not_draft`, 422 `payload_invalid`)."""
-    await _stub(ctx, "firm_standard.draft")
-
-
-@standards_router.delete(
-    "/{standard_id}/versions/{version_id}",
-    action="firm_standard.draft",
-    response_model=StandardVersionSummaryOut,
-    errors=(409, 501),
-)
-async def discard_draft_route(
-    standard_id: StandardId, version_id: VersionId, ctx: Ctx, if_match: IfMatch
-) -> StandardVersionSummaryOut:
-    """Discard draft: status `discarded`; the row stays (never deleted)."""
-    await _stub(ctx, "firm_standard.draft")
-
-
-@standards_router.post(
-    "/{standard_id}/versions/{version_id}/publish",
-    action="firm_standard.publish",
-    response_model=StandardVersionOut,
-    errors=(409, 501),
-)
-async def publish_version_route(
-    standard_id: StandardId,
-    version_id: VersionId,
-    body: StandardPublishIn,
-    ctx: Ctx,
-    if_match: IfMatch,
-    idempotency_key: IdempotencyKey,
-) -> StandardVersionOut:
-    """Publish vN…: the owner, a person, with fresh MFA (422 `effective_from_backdated`,
-    `effective_from_not_after_current`)."""
-    await _stub(ctx, "firm_standard.publish")
-
-
-@standards_router.get(
-    "/{standard_id}/versions/{version_id}/diff",
-    action="firm_standard.read",
-    response_model=StandardVersionDiffOut,
-    errors=(501,),
-)
-async def version_diff_route(
-    standard_id: StandardId,
-    version_id: VersionId,
-    ctx: Ctx,
-    against: Annotated[UUID | None, Query()] = None,
-) -> StandardVersionDiffOut:
-    """Cell-level diff for KNW-04 i, against the version the draft came from by default."""
-    await _stub(ctx, "firm_standard.read")
-
-
-@standards_router.get(
-    "/{standard_id}/versions/{version_id}/export.xlsx",
-    action="firm_standard.read",
-    response_model=bytes,
-    errors=(501,),
-)
-async def export_version_route(standard_id: StandardId, version_id: VersionId, ctx: Ctx) -> bytes:
-    """The version as a workbook; re-importing it gives an empty diff (US-5.1)."""
-    await _stub(ctx, "firm_standard.read")
-
-
-@standards_router.get(
-    "/{standard_id}/examples",
-    action="firm_standard.read",
-    response_model=StandardExamplesOut,
-    errors=(501,),
-)
-async def standard_examples_route(
-    standard_id: StandardId,
-    ctx: Ctx,
-    period: Annotated[str | None, Query(pattern=r"^\d{4}-\d{2}$")] = None,
-) -> StandardExamplesOut:
-    """Registered example providers' rows, `visible()`-filtered with no hidden counts."""
-    await _stub(ctx, "firm_standard.read")
-
-
-@standards_router.post(
-    "/{standard_id}/imports",
-    action="firm_standard.import",
-    response_model=StandardImportResultOut,
-    status_code=201,
-    errors=(501,),
-)
-async def import_standard_route(
-    standard_id: StandardId, body: StandardImportIn, ctx: Ctx
-) -> StandardImportResultOut:
-    """A workbook to a draft of this standard (its owner's; 422 `import_invalid` with
-    problems). Never publishes."""
-    await _stub(ctx, "firm_standard.import")
-
-
-@standards_router.post(
-    "/imports",
-    action="firm_standard.import",
-    response_model=StandardImportResultOut,
-    status_code=201,
-    errors=(501,),
-)
-async def import_standards_route(body: StandardImportIn, ctx: Ctx) -> StandardImportResultOut:
-    """Onboarding: one sheet per kind, one draft per standard; an owner who is not a partner
-    member is a row problem (`owner_not_partner`)."""
-    await _stub(ctx, "firm_standard.import")
-
-
-# --- C21 part B module API (frozen S17; K-02-T08 and T10 implement) ------------------------------
+# --- C21 part B module API (frozen S17; `standards.py` builds current_version and the examples
+# slot, K-02-T08; K-02-T10 the deterministic functions) ----------------------------------------
 
 EntryOutcome = Literal["within_threshold", "review_required"]
 
@@ -789,12 +563,6 @@ def _unbuilt(task: str) -> NoReturn:
     raise NotImplementedError(f"C21 part B: {task} builds this")
 
 
-async def current_version(tenant_id: UUID, standard_key: str, as_of: date) -> PolicyRef:
-    """The version of a standard in effect on `as_of` (its latest published `effective_from` on
-    or before it). None published by then: `LookupError`."""
-    _unbuilt("K-02-T08")
-
-
 def classify_entry(
     payload: AjeThresholdsPayload,
     policy: PolicyRef,
@@ -859,8 +627,3 @@ def ssars_framework_for(
     payload: SsarsCasSettingsPayload, policy: PolicyRef, *, period_end: date
 ) -> SsarsFramework:
     _unbuilt("K-02-T10")
-
-
-def register_standard_examples(kind: StandardKind, provider: ExamplesProvider) -> None:
-    """A consumer's example rows for KNW-04 (K-02-T08 builds the slot)."""
-    _unbuilt("K-02-T08")

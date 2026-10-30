@@ -98,7 +98,7 @@ INSERT_COLUMNS["consents"] = frozenset(
     {"id", "tenant_id", "client_id", "client_entity_id", "consent_set_id", "purpose"}
     | {"tax_years", "scope", "recipients", "provider_terms_version", "template_version_id"}
     | {"text_sha256", "source", "envelope_id", "status", "requested_at", "renewal_of_id"}
-    | {"created_by"}
+    | {"created_by", "signed_at", "declined_at", "expires_at"}  # record mode carries its dates
 )
 INSERT_COLUMNS["consent_signers"] = frozenset(
     {"id", "tenant_id", "consent_id", "contact_id", "user_id", "signer_role", "required"}

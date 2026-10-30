@@ -248,7 +248,10 @@ async def test_ac14_a_link_is_kept_only_as_its_hash_and_resolves_while_live(seed
     )
     assert stored[0]["token_sha256"] == hashlib.sha256(issued.token.encode()).hexdigest()
     assert issued.token not in json.dumps([dict(r) for r in stored], default=str)
-    assert stored[0]["life"] == timedelta(days=14)
+    # `issued_at` is its column default and `expires_at` the insert's own clock read, so the two
+    # are microseconds apart (the default is read first); the life is 14 days to the millisecond.
+    life = cast(timedelta, stored[0]["life"])
+    assert timedelta(days=14) <= life < timedelta(days=14, milliseconds=1)
     found = await resolve_secure_link(tess.tenant, issued.token)
     assert found is not None and found.contact_id == tess.contact_id
     assert await resolve_secure_link(tess.tenant, "not-a-token") is None

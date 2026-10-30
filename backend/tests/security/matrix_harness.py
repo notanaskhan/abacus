@@ -94,6 +94,9 @@ Variant = Literal[
     "no_facts",
     "owner",  # K-02-T01: `owner_of_target`
     "not_owner",
+    "consented",  # T-01-T11: `consent(<purpose>)`
+    "not_consented",
+    "no_subjects",
 ]
 Principal = Literal["agent", "system", "support"]
 
@@ -110,6 +113,9 @@ def _target(variant: Variant, ctx: AuthContext, role: str) -> TargetFacts | None
         "other_role": TargetFacts(reserved_role=other_role, reserved_user_id=ctx.user_id),
         "owner": TargetFacts(owner_user_id=ctx.user_id),
         "not_owner": TargetFacts(owner_user_id=uuid.uuid4()),
+        "consented": TargetFacts(consent_subjects=frozenset({uuid.uuid4(), uuid.uuid4()})),
+        "not_consented": TargetFacts(consent_subjects=frozenset({uuid.uuid4(), uuid.uuid4()})),
+        "no_subjects": TargetFacts(),
         "no_facts": None,
     }[variant]
 
@@ -128,6 +134,11 @@ async def condition_outcome(
         monkeypatch.setattr(authz, "_partner_level", partner)
     else:
         ctx, resource = arrange(monkeypatch, role)
+
+    async def consented(*_: object) -> bool:
+        return variant == "consented"  # T-01-T11: every subject holds every purpose, or none
+
+    monkeypatch.setattr(authz, "consent_given", consented)
     target = replace(resource, target=_target(variant, ctx, role))
     try:
         await authorise(ctx, action, target, reason=REASON)

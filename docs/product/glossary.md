@@ -363,6 +363,10 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Return worksheet / field | Field-level provenance. | `return_worksheets`, `return_fields` | — |
 | Document approval (tax) | Distinct from `review_decision` (Q-09). Allowed `document` compound. | `document_approvals` | — |
 | K-1 package / activity | Drafts never reach the portal. | `k1_packages`, `k1_activities`, `k1_treatments` | — |
+| K-1 recipient | A partner, shareholder or beneficiary a K-1 package is issued to; sees only their own packages in the portal (T-02-T04). | `k1_recipients` | — |
+| K-1 hand-off | A released K-1 shared to the intake of another return the firm prepares. | `k1_handoff` | — |
+| Recipient details change | A recipient's W-9/W-8 or address update, accepted or rejected by a person (DV-10). | `recipient_details_changes` | — |
+| Engine summary | The engine's figures for a return, shown only from an approved import (ADR-231). | `return_engine_summaries` | — |
 | Transmission record | A human record; Accrued never transmits. | `transmissions`, `efile_acks` | — |
 | Consent set | The `use` and `ai_disclosure` consents requested together for a filing unit and its tax years (T-01-T06, DF-31). | `consent_sets` | — |
 | Consent template | Counsel-approved consent text, one purpose per template, versioned and published by a partner; database content. | `consent_templates` | — |

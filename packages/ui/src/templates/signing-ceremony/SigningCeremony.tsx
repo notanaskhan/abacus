@@ -138,6 +138,7 @@ export function SigningCeremony(props: SigningCeremonyProps): JSX.Element {
           setDeclining(false);
         }}
         {...(props.declineForceState === undefined ? {} : { forceState: props.declineForceState })}
+        {...(props.declineHeldScrim === undefined ? {} : { heldScrim: props.declineHeldScrim })}
       />
     ) : null;
 
@@ -227,6 +228,8 @@ export function SigningCeremony(props: SigningCeremonyProps): JSX.Element {
           selected={doc?.id ?? ""}
           onSelect={setSelected}
           signers={envelope.signers}
+          {...(props.documentsTitle === undefined ? {} : { title: props.documentsTitle })}
+          {...(props.showSigners === undefined ? {} : { showSigners: props.showSigners })}
         />
         {/* A scrollable region takes keyboard focus so the pages scroll without a pointer (axe
             scrollable-region-focusable; as Pane's scroll region). */}
@@ -243,6 +246,11 @@ export function SigningCeremony(props: SigningCeremonyProps): JSX.Element {
           data-signing="steps"
           className="flex w-[300px] flex-none flex-col gap-3 overflow-y-auto rounded-pane bg-card p-[12px] shadow-e2"
         >
+          {props.stepsTitle !== undefined && (
+            <h2 className="-mx-[12px] -mt-[12px] flex h-[46px] flex-none items-center justify-center border-b-[0.5px] border-hair text-section">
+              {props.stepsTitle}
+            </h2>
+          )}
           {completed ? (
             <CompletionCard
               title={props.completion?.title ?? "Signed."}
@@ -257,7 +265,8 @@ export function SigningCeremony(props: SigningCeremonyProps): JSX.Element {
               {confirming && copy !== undefined && (
                 <PendingConfirmation title={copy.pendingTitle} body={copy.pendingBody} />
               )}
-              {canSign && !confirming && current === "sign" && (
+              {canSign && !confirming && current === "sign" && props.signPanel}
+              {canSign && !confirming && current === "sign" && props.signPanel === undefined && (
                 <SignCallToAction
                   viewer={viewer}
                   note={SIGNING_NOTE}
@@ -298,7 +307,7 @@ export function SigningCeremony(props: SigningCeremonyProps): JSX.Element {
       record={
         <EnvelopeHeader
           envelope={envelope}
-          backLabel={props.backLabel}
+          {...(props.backLabel === undefined ? {} : { backLabel: props.backLabel })}
           canDecline={canSign}
           {...(props.onBack === undefined ? {} : { onBack: props.onBack })}
           {...(openDecline === undefined ? {} : { onOpenDecline: openDecline })}

@@ -75,3 +75,11 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: evidence.duplicate_review
+    description: 'Duplicate uploads from client channels kept for a person to resolve (T-02-T17). Off: the repo''s 409 for a duplicate. T-02-T03, DEC-1162.'
+    owner: ayushkbhatia
+    created: 2026-10-29
+    expires: 2027-04-27
+    override: DEC-137
+    kind: boolean
+    default: false

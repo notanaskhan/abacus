@@ -9,7 +9,7 @@
 | Epic and tasks | N-01 · contract N-01-T05 (this file); stub T02; client-scoped files T06; read model T19; frontend T16; journeys and parity T23–T28 |
 | Spec and ADRs | SPEC-380 (Stories 7, 8); ADR-004, ADR-024, ADR-158; DEC-33, DEC-43, DEC-71 |
 | Flags | `files.browser` |
-| Manifest status | `fixture` (N-01-T16: `/files`, `/files/$clientId`, `/components/screens/FIL-01?st=a…j`); `live` with N-01-T23 behind `files.browser` |
+| Manifest status | `live` (N-01-T23): `/files`, `/files/$clientId` behind `files.browser`; `/components/screens/FIL-01?st=a…j` for the artboards |
 
 Read-only in N-01: no write control is offered (DV-10). The writes slice (upload, move, void, new version, sign-off, lock, client access, accepting virtual splits) is the proposed Q-05 slice (N-01 OQ-6).
 

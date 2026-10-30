@@ -1368,6 +1368,8 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         ),
         "hold_objects": frozenset({"applied_at", "released_at"}),  # Q-02-T29: stamped once
         "evidence_object_keys": frozenset({"retained_at"}),  # P-06-T18 (0144): one-way
+        # N-01-T14 (0371): the intake purge's erase and a hold.
+        "evidence_intake_object_keys": frozenset({"wrapped_key", "destroyed_at", "retained_at"}),
         "evidence_withdrawals": frozenset(  # P-06-T19 (0144): the purge's stamps
             {"erased_at", "erase_blocked_at", "block_reason"}
         ),
@@ -1541,6 +1543,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "filed_destination_kind",
                 "filed_evidence_version_id",
                 "status",
+                "withdrawn_at",  # N-01-T14 (0371): a portal withdrawal's moment
             }
         ),
         "inbox_sender_rules": frozenset({"revoked_at"}),
@@ -1563,6 +1566,13 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"copy_delivered_channel", "row_version"}
         ),
         "consent_signers": frozenset({"signed_at", "method", "evidence_version_id"}),
+        # T-02-T07 (0403): a return's v1 columns.
+        "tax_returns": frozenset(
+            {"fiscal_year_end", "jurisdictions", "filing_status", "engine", "engine_return_id"}
+            | {"status", "review_level", "sync_status", "last_synced_at", "extended", "on_hold"}
+            | {"approval_policy_version_id", "review_levels_version_id", "original_due_on"}
+            | {"extended_due_on", "due_rule_version_ids", "prior_year_return_id", "row_version"}
+        ),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
@@ -1762,6 +1772,11 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "reference_set_publications": "reference_set_publications_immutable",
         # T-01-T08 (0402): the consent event log.
         "consent_events": "consent_events_immutable",
+        # T-02-T07 (0403): the return status events and engine summaries.
+        "tax_return_status_events": "tax_return_events_immutable",
+        "return_engine_summaries": "tax_return_events_immutable",
+        # N-01-T17 (0404): rule and agent classifications.
+        "document_classifications": "trust_kit_immutable",
     }
     assert _evidence_problems(evidence) == []
 

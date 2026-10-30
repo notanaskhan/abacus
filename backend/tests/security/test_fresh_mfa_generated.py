@@ -69,6 +69,8 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("consent_template.publish", "consent", "firm_partner"),
     ("integration.configure", "access_control", "firm_admin"),
     ("member.set_ero", "access_control", "firm_admin"),
+    ("k1_package.release", "release", "engagement_partner"),
+    ("questionnaire_template.publish", "standards", "firm_partner"),
 )
 ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/audit-events/exports/{export_id}/download", "audit_event.export"),
@@ -127,12 +129,19 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/firm/security/incidents/{incident_id}/decisions", "incident.decide"),
     ("POST", "/v1/firm/security/sessions/{session_id}/sign-out", "session.end"),
     ("POST", "/v1/firm/staff/{user_id}/unlock", "staff.unlock"),
+    ("POST", "/v1/k1-releases/{release_id}:undo", "k1_package.release"),
     ("POST", "/v1/legal-holds", "legal_hold.place"),
     ("POST", "/v1/legal-holds/{hold_id}/release", "legal_hold.lift"),
+    (
+        "POST",
+        "/v1/questionnaire-templates/{template_id}/versions/{version}:publish",
+        "questionnaire_template.publish",
+    ),
     ("POST", "/v1/sign-offs", "sign_off.create"),
     ("POST", "/v1/sign-offs:bulk", "sign_off.bulk"),
     ("POST", "/v1/standards", "firm_standard.create"),
     ("POST", "/v1/standards/{standard_id}/versions/{version_id}/publish", "firm_standard.publish"),
+    ("POST", "/v1/tax-returns/{return_id}/k1-packages:release", "k1_package.release"),
     ("POST", "/v1/walls", "wall.create"),
     ("POST", "/v1/walls/{wall_id}/approve", "wall.approve"),
     ("POST", "/v1/walls/{wall_id}/remove", "wall.remove"),
