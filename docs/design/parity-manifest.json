@@ -2384,6 +2384,81 @@
       "strip": "[data-template='t10'] [data-shell='pane-header']",
       "deviation": "F-06-T13 review measured 1.62% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T15/T22 fixes the kit"
     },
+    "t6a.control-bar": {
+      "page": "screens/T6?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T6 Workbook schedule grid/screenshots/T6a.png",
+      "sha256": "e148e2af59429167ed30238a1ce2f27fede170da3082c56e64a07733311ec1d0",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-workbook='control-bar']"
+    },
+    "t6a.tally-strip": {
+      "page": "screens/T6?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T6 Workbook schedule grid/screenshots/T6a.png",
+      "sha256": "e148e2af59429167ed30238a1ce2f27fede170da3082c56e64a07733311ec1d0",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-workbook='tally']",
+      "deviation": "F-06-T18 (DEC-1450): reported, not blocking: the handoff capture predates the cards' reveal, so the reference strip is empty"
+    },
+    "t6a.window": {
+      "page": "screens/T6?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T6 Workbook schedule grid/screenshots/T6a.png",
+      "sha256": "e148e2af59429167ed30238a1ce2f27fede170da3082c56e64a07733311ec1d0",
+      "crop": "window",
+      "tier": "B",
+      "mask": [
+        "[data-tally-strip]"
+      ],
+      "deviation": "F-06-T18 (DEC-1450): the handoff's screenshots were captured before the tally cards' 45 ms reveal, so the strip is empty on the board; masked until F-06-T22 recaptures"
+    },
+    "t6b.control-bar": {
+      "page": "screens/T6?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T6 Workbook schedule grid/screenshots/T6b.png",
+      "sha256": "62eee6ad6908c3e004245d2ab9c48485b6494534255b6dc92b6d975d8574309c",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-workbook='control-bar']"
+    },
+    "t6b.window": {
+      "page": "screens/T6?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T6 Workbook schedule grid/screenshots/T6b.png",
+      "sha256": "62eee6ad6908c3e004245d2ab9c48485b6494534255b6dc92b6d975d8574309c",
+      "crop": "window",
+      "tier": "B",
+      "mask": [
+        "[data-tally-strip]"
+      ],
+      "deviation": "F-06-T18 (DEC-1450): the handoff's screenshots were captured before the tally cards' 45 ms reveal, so the strip is empty on the board; masked until F-06-T22 recaptures"
+    },
+    "t6c.control-bar": {
+      "page": "screens/T6?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T6 Workbook schedule grid/screenshots/T6c.png",
+      "sha256": "f63c58a21eddf45aee9500664319ae04b53bab514bb285a652a87105f54c437e",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-workbook='control-bar']"
+    },
+    "t6c.window": {
+      "page": "screens/T6?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T6 Workbook schedule grid/screenshots/T6c.png",
+      "sha256": "f63c58a21eddf45aee9500664319ae04b53bab514bb285a652a87105f54c437e",
+      "crop": "window",
+      "tier": "B",
+      "mask": [
+        "[data-tally-strip]",
+        "[data-spinner]",
+        "[data-workbook='skeleton-row']"
+      ],
+      "deviation": "F-06-T18 (DEC-1450): the handoff's screenshots were captured before the tally cards' 45 ms reveal, so the strip is empty on the board; masked until F-06-T22 recaptures; the running row reads \"Workbook agent is running\" (T6 contract deviation c, DEC-19), not the canvas's sentence"
+    },
     "t16-signing-ceremony.t16b": {
       "selector": "[data-artboard=\"t16b\"] [data-shell=\"app\"]",
       "source": "handoff/screens/T16 Signing ceremony/screenshots/T16b.png",

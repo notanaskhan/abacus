@@ -4,7 +4,7 @@ title: A-03-T24 ADR P-63 multi-entity engagements and consolidation
 spec: SPEC-540
 acceptance_criteria: [AC-2]
 risk_zone: red
-status: in-review
+status: done
 epic: A-03
 plan_key: A-03-T24
 branch: s18-a03-t24
@@ -37,10 +37,11 @@ one mapping set per entity's trial balance of record, eliminations as adjustment
 
 ## Progress log
 - `2026-10-29` — ADR-341, README, backlog and decision-log rows. Held for the S18 batch.
+- `2026-10-29` — ADR-341 accepted (approved by ayushkbhatia in chat); status, README index, backlog and decision-log rows updated.
 
 ## Questions for the human
-- [ ] Accept ADR-341 (for both deciders: the builder and the audit CPA). Due Fri Jul 23, 2027.
+- [x] Accept ADR-341: acceptance approved by ayushkbhatia on 2026-10-29, for both deciders.
 
 ## Handoff
-- **Current state:** drafted (proposed), PR open, held for the S18 batch.
+- **Current state:** accepted.
 - **Exact next step:** on acceptance flip status, README index and backlog row to accepted; A-03-T06 adds the mapping state expand-only.

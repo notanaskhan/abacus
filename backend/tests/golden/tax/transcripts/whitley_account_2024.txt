@@ -1,0 +1,14 @@
+This Product Contains Sensitive Taxpayer Data
+Account Transcript
+Request Date: 09-14-2026
+Form Number: 1040
+Tax Period Ending: 12-31-2024
+Report for Tax Period Ending: 12-31-2024
+Account balance:..........................$0.00
+
+TRANSACTIONS
+CODE EXPLANATION OF TRANSACTION CYCLE DATE AMOUNT
+150 Tax return filed 20251505 04-14-2025 $22,418.00
+806 W-2 or 1099 withholding 04-15-2025 -$19,146.00
+610 Payment with return 04-15-2025 -$3,272.00
+922 Review of unreported income 20263308 08-24-2026 $0.00

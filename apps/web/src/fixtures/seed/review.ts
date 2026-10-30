@@ -59,6 +59,7 @@ import type {
   SignOffLadderOut,
   SignOffOut,
 } from "@abacus/api-client";
+import { FELD_IMPORT } from "./engine-sync";
 
 export const id = (n: number): string => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 export const HASH = "sha256:9f4c" + "0".repeat(56) + "e21a"; // SHL-12 shows sha256:9f4c…e21a
@@ -166,7 +167,7 @@ export const passing: EligibilityCheckOut[] = [
   {
     code: "independence",
     result: "pass",
-    facts: { person: "Hannah Leclerc", confirmed_on: "2026-08-03" },
+    facts: { person: "Hannah Leclerc", confirmed_on: "2026-08-03", client: "Northwind" },
     refs: [],
   },
   { code: "segregation", result: "pass", facts: { preparer: "Marcus Delaney" }, refs: [] },
@@ -193,6 +194,70 @@ export const eligibility = (over: Partial<SignOffEligibilityOut>): SignOffEligib
 });
 export const withCheck = (check: EligibilityCheckOut): EligibilityCheckOut[] =>
   passing.map((c) => (c.code === check.code ? check : c));
+
+/** SHL-12 h: Ridgeline's 2025 Form 1065 at its partner's final approval (BH-TAX-02). */
+export const RIDGELINE_RETURN = id(91);
+const OLIVIA = id(92);
+const DANIEL = id(93);
+const SAMUEL_ITO = id(18); // SAMUEL, declared with SHL-10's people below
+const RETURN_HASH = "sha256:7a1e" + "0".repeat(56) + "93fb"; // SHL-12h shows sha256:7a1e…93fb
+export const returnTarget = {
+  target_type: "tax_return",
+  target_id: RIDGELINE_RETURN,
+  label: "2025 Form 1065",
+  context_label: "Ridgeline Property Partners, LP · TY2025",
+  version_no: 2,
+  content_hash: RETURN_HASH,
+  cell_count: 0,
+  citation_count: 0,
+};
+const returnSign = (
+  n: number,
+  level: SignOffOut["level"],
+  user: string,
+  name: string,
+  initials: string,
+  at: string,
+): SignOffOut => ({
+  ...marcusL1,
+  id: id(n),
+  target_type: "tax_return",
+  target_id: RIDGELINE_RETURN,
+  kind: "final_approval",
+  level,
+  signer_user_id: user,
+  signer_name: name,
+  initials,
+  signed_at: at,
+  content_hash: RETURN_HASH,
+  version_no: 2,
+  statement_version: "bh-tax-final-v1",
+  adopted_run_id: null,
+  adopted_run_number: null,
+});
+export const returnLadder: LadderLevelOut[] = [
+  {
+    level: "L1_preparer",
+    required: true,
+    expected_signer_user_id: OLIVIA,
+    expected_signer_name: "Olivia Brandt",
+    latest: returnSign(94, "L1_preparer", OLIVIA, "Olivia Brandt", "OB", "2026-09-10T21:00:00Z"),
+  },
+  {
+    level: "L2_reviewer",
+    required: true,
+    expected_signer_user_id: SAMUEL_ITO,
+    expected_signer_name: "Samuel Ito",
+    latest: returnSign(95, "L2_reviewer", SAMUEL_ITO, "Samuel Ito", "SI", "2026-09-11T19:30:00Z"),
+  },
+  {
+    level: "L4_partner",
+    required: true,
+    expected_signer_user_id: DANIEL,
+    expected_signer_name: "Daniel Reyes",
+    latest: null,
+  },
+];
 
 export const SHL12 = {
   a: eligibility({}),
@@ -221,17 +286,49 @@ export const SHL12 = {
     checks: withCheck({
       code: "independence",
       result: "fail",
-      facts: { person: "Hannah Leclerc", confirmed_on: null },
+      facts: { person: "Hannah Leclerc", confirmed_on: null, client: "Northwind" },
       refs: [],
     }),
     eligible: false,
   }),
-  g: eligibility({ level: "L5_eqr", levels_allowed: ["L5_eqr"] }),
+  g: eligibility({
+    level: "L5_eqr",
+    levels_allowed: ["L5_eqr"],
+    statement: {
+      version: "bh-eqr-v1",
+      text: "I objectively evaluated the significant judgments and the conclusions reached.",
+    },
+  }),
   h: eligibility({
+    target: returnTarget,
     level: "L4_partner",
     levels_allowed: ["L4_partner"],
-    checks: [{ code: "open_issues", result: "fail", facts: { count: 11 }, refs: [] }],
+    ladder: returnLadder,
+    checks: [
+      {
+        code: "open_issues",
+        result: "fail",
+        facts: {
+          count: 11,
+          waiting_on_client: 5,
+          review_points: 6,
+          rule: "BH-TAX-02",
+          top: "Tax-exempt interest 6,200 omitted from the capital rollforward (M-2 off 6,200)",
+        },
+        refs: [],
+      },
+      {
+        code: "segregation",
+        result: "pass",
+        facts: { preparer: "Olivia Brandt", reviewer: "Samuel Ito" },
+        refs: [],
+      },
+    ],
     eligible: false,
+    statement: {
+      version: "bh-tax-final-v1",
+      text: "I reviewed this return and approve it for signature and filing.",
+    },
   }),
 } satisfies Record<string, SignOffEligibilityOut>;
 
@@ -1131,6 +1228,80 @@ export const SHL16 = {
   f: { ...history([]), target_id: id(240) },
 } satisfies Record<string, CheckpointHistoryOut>;
 
+// SHL-16 import-author variant (P-04-T47; P-04 §2 SHL-16 row; no artboard, frame a geometry): the
+// CCH Axcess import of 2025I:FeldJ:V3 (TAX-09 e's five fields, seed/engine-sync.ts) lands as
+// Checkpoint 7, proposed by the import, and stays pending until Samuel Ito approves it (the sync
+// chip reads "Import pending approval", then "Out of sync"); ie is the same import rejected.
+const IMPORT_HASH = digest("7777", "7777");
+/** TAX-09's field names for the import's rows (screens/TAX-09/copy.ts). */
+const IMPORT_LABELS: Readonly<Record<string, string>> = {
+  "f1040es.2026.vouchers": "Form 1040-ES (2026) vouchers",
+  "refund.direct_deposit": "Refund direct deposit",
+  "f8879.signature_method": "Form 8879 signature method",
+};
+export const importCp = checkpoint(7, {
+  author_kind: "import",
+  author_name: "CCH Axcess",
+  cause: "engine_import",
+  status: "proposed",
+  summary: "Imported from CCH Axcess 2025I:FeldJ:V3",
+  created_at: "2026-09-14T14:22:00Z",
+  content_hash: IMPORT_HASH,
+  allowed_actions: ["checkpoint.approve", "checkpoint.reject", "checkpoint.rename"],
+});
+export const importDetail: CheckpointDetailOut = {
+  checkpoint: importCp,
+  compare: "previous",
+  compared_to_id: cp6.id,
+  steps: [
+    {
+      kind: "imported",
+      title: "Imported from CCH Axcess 2025I:FeldJ:V3",
+      detail: "Five fields CCH Axcess holds that Accrued does not; none against a workpaper.",
+      at: "2026-09-14T14:22:00Z",
+    },
+  ],
+  // TAX-09 e's rows as the import wrote them (old: Accrued's value, none; new: the engine's).
+  diff: FELD_IMPORT.rows
+    .slice(0, 3)
+    .map((r) =>
+      diffRow(
+        r.field_key,
+        IMPORT_LABELS[r.field_key] ?? r.field_key,
+        r.accrued,
+        r.engine_display ?? r.engine,
+        "Imported from CCH Axcess",
+      ),
+    ),
+  totals: [{ label: "Net change to total income", value: "0", ties: true }],
+};
+const importApproved: CheckpointItemOut = {
+  ...importCp,
+  status: "approved",
+  current: true,
+  decision: approval(SAMUEL, "Samuel Ito", "2026-09-14T14:26:00Z"),
+  allowed_actions: ["checkpoint.rename"],
+};
+export const SHL16_IMPORT = {
+  ia: history([importCp, ...cards]),
+  ib: history([importApproved, ...cards.map((c) => ({ ...c, current: false }))]),
+  ie: history([
+    {
+      ...importCp,
+      status: "rejected",
+      decision: {
+        ...approval(SAMUEL, "Samuel Ito", "2026-09-14T14:26:00Z"),
+        decision: "rejected",
+        reason: "Wait for final K-1",
+      },
+      allowed_actions: ["checkpoint.rename"],
+    },
+    ...cards,
+  ]),
+} satisfies Record<string, CheckpointHistoryOut>;
+/** The import approved on the hash Samuel saw. */
+export const APPROVE_IMPORT: CheckpointApproveIn = { seen_hash: IMPORT_HASH };
+
 // SHL-15 a–e: issue composer and fix instructions -----------------------------------------------
 
 export const SUGGESTION =
@@ -1298,6 +1469,17 @@ export const NOTE_DETAIL: ReviewNoteOut = {
 export const STALE_LADDER: SignOffLadderOut = {
   target: { ...target, content_hash: "sha256:" + "b".repeat(64) },
   levels: ladder({ ...hannahL2, stale: true }),
+  allowed_actions: ["sign_off.create"],
+};
+/** SHL-12 e: Re-sign as Reviewer (L2) on the changed Trial Balance; a re-sign is a new row. */
+export const STALE_ELIGIBILITY: SignOffEligibilityOut = eligibility({
+  target: STALE_LADDER.target,
+  ladder: STALE_LADDER.levels,
+});
+/** SHL-12 h: the return's ladder (Olivia Brandt ✓ OB, Samuel Ito ✓ SI, Daniel Reyes now). */
+export const RETURN_LADDER: SignOffLadderOut = {
+  target: returnTarget,
+  levels: returnLadder,
   allowed_actions: ["sign_off.create"],
 };
 const BULK_REASONS = ["incomplete", "open_review_notes", "segregation"] as const;
@@ -1706,6 +1888,7 @@ export const REVIEW_ARTBOARDS: readonly ReviewArtboard[] = [
   ),
   board("SHL-12", "b", "Blocked · open notes", "hannah-leclerc", signOff, [
     ELIGIBILITY(SHL12.b),
+    get("/v1/sign-offs", "SignOffLadderOut", LADDER_A),
     get("/v1/review-notes", "ListPage_ReviewNoteItemOut_", notes),
     get("/v1/review-notes/{note_id}", "ReviewNoteDetailOut", NOTE_DETAIL, {
       note_id: NOTE_DETAIL.note.id,
@@ -1713,18 +1896,27 @@ export const REVIEW_ARTBOARDS: readonly ReviewArtboard[] = [
   ]),
   board("SHL-12", "c", "Blocked · same preparer", "marcus-delaney", signOff, [
     ELIGIBILITY(SHL12.c),
+    get("/v1/sign-offs", "SignOffLadderOut", LADDER_A),
   ]),
   board("SHL-12", "d", "Blocked · independence", "hannah-leclerc", signOff, [
     ELIGIBILITY(SHL12.d),
+    get("/v1/sign-offs", "SignOffLadderOut", LADDER_A),
   ]),
   board("SHL-12", "e", "Stale after change", "hannah-leclerc", sep24, [
+    ELIGIBILITY(STALE_ELIGIBILITY),
     get("/v1/sign-offs", "SignOffLadderOut", STALE_LADDER),
   ]),
   board("SHL-12", "f", "Bulk", "hannah-leclerc", sep24, [
     post("/v1/sign-offs:bulk", "BulkSignOffOut", BULK_F),
   ]),
-  board("SHL-12", "g", "EQR viewer", "thomas-whitcombe", signOff, [ELIGIBILITY(SHL12.g)]),
-  board("SHL-12", "h", "Tax · final approval", "daniel-reyes", signOff, [ELIGIBILITY(SHL12.h)]),
+  board("SHL-12", "g", "EQR viewer", "thomas-whitcombe", signOff, [
+    ELIGIBILITY(SHL12.g),
+    get("/v1/sign-offs", "SignOffLadderOut", LADDER_A),
+  ]),
+  board("SHL-12", "h", "Tax · final approval", "daniel-reyes", signOff, [
+    ELIGIBILITY(SHL12.h),
+    get("/v1/sign-offs", "SignOffLadderOut", RETURN_LADDER),
+  ]),
   // SHL-15 Issue composer and fix instructions (E0).
   board(
     "SHL-15",
@@ -1853,4 +2045,30 @@ export const REVIEW_ARTBOARDS: readonly ReviewArtboard[] = [
     [HISTORY(SHL16.f)],
     [send("POST /v1/checkpoints", "CheckpointCreateIn", SAVE_F)],
   ),
+];
+
+/** P-04-T47: SHL-16's import-author variant of a, b and e. Not handoff artboards (the 44 above
+ * stay the handoff's): frame a's geometry over the CCH import, served the same way. */
+export const IMPORT_ARTBOARDS: readonly ReviewArtboard[] = [
+  board(
+    "SHL-16",
+    "ia",
+    "Import pending approval",
+    "samuel-ito",
+    e0,
+    [
+      HISTORY(SHL16_IMPORT.ia),
+      DETAIL(importDetail),
+      post("/v1/checkpoints/{checkpoint_id}/approve", "CheckpointItemOut", importApproved),
+    ],
+    [send("POST /v1/checkpoints/{checkpoint_id}/approve", "CheckpointApproveIn", APPROVE_IMPORT)],
+  ),
+  board("SHL-16", "ib", "Import approved", "samuel-ito", e0, [
+    HISTORY(SHL16_IMPORT.ib),
+    DETAIL({ ...importDetail, checkpoint: importApproved }),
+  ]),
+  board("SHL-16", "ie", "Import rejected", "samuel-ito", e0, [
+    HISTORY(SHL16_IMPORT.ie),
+    DETAIL({ ...importDetail, checkpoint: SHL16_IMPORT.ie.items[0] ?? importCp }),
+  ]),
 ];

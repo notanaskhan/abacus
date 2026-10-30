@@ -49,6 +49,8 @@ const KNW04_SECTIONS: ReadonlySet<string> = new Set([
   "materiality_ranges",
   "document_confidence",
   "ssars_cas",
+  // K-02-T17: j, Deadline rules (DF-10).
+  "deadline_rules",
 ]);
 
 function pickKnw04(search: Record<string, unknown>): { section?: string } {

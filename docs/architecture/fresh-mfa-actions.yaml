@@ -136,3 +136,6 @@ actions:
     group: release
   - action: questionnaire_template.publish
     group: standards
+  # Report templates (P-11-T06, DEC-1350): publishing a version of the firm's wording
+  - action: report_template.publish
+    group: standards
