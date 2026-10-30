@@ -75,6 +75,12 @@ LIVE_ACTIONS = {
     "void_envelope_route": "envelope.void",
     "reveal_signer_ip_route": "signer.reveal_ip",
     "envelope_evidence_route": "envelope.evidence_download",
+    # N-02-T20 (DEC-1178): SIG-02's builder.
+    "create_envelope_draft_route": "envelope.draft",
+    "update_envelope_draft_route": "envelope.draft",
+    "validate_envelope_route": "envelope.draft",
+    "send_envelope_route": "envelope.send",
+    "undo_envelope_send_route": "envelope.send",
 }
 LIVE = frozenset(
     {
@@ -86,6 +92,12 @@ LIVE = frozenset(
         "void_envelope_route",
         "reveal_signer_ip_route",
         "envelope_evidence_route",
+        # N-02-T20 (DEC-1178): drafts, edits, checks, Send and Undo.
+        "create_envelope_draft_route",
+        "update_envelope_draft_route",
+        "validate_envelope_route",
+        "send_envelope_route",
+        "undo_envelope_send_route",
     }
 )
 STUBBED = [(r, m) for r, m in FIRM if r.name not in LIVE]

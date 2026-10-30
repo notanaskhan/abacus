@@ -8677,7 +8677,8 @@ export const getEnvelopeOptions = (options: Options<GetEnvelopeData>) => queryOp
 /**
  * Update Envelope Draft Route
  *
- * SIG-02 edits (N-02-T20).
+ * SIG-02 edits (N-02-T20): 409 `stale_version` when `If-Match` is not the current
+ * version; 409 `envelope_not_draft` after Send.
  */
 export const updateEnvelopeDraftMutation = (options?: Partial<Options<UpdateEnvelopeDraftData>>): UseMutationOptions<UpdateEnvelopeDraftResponse, UpdateEnvelopeDraftError, Options<UpdateEnvelopeDraftData>> => {
     const mutationOptions: UseMutationOptions<UpdateEnvelopeDraftResponse, UpdateEnvelopeDraftError, Options<UpdateEnvelopeDraftData>> = {
@@ -8774,7 +8775,8 @@ export const resendEnvelopeMutation = (options?: Partial<Options<ResendEnvelopeD
 /**
  * Send Envelope Route
  *
- * Human send through a single-use grant, +10 s (N-02-T22).
+ * Human send through a single-use grant, +10 s (N-02-T20): 409 `validation_failed` with
+ * each check in `facts`; the provider is called after the window (N-02-T22).
  */
 export const sendEnvelopeMutation = (options?: Partial<Options<SendEnvelopeData>>): UseMutationOptions<SendEnvelopeResponse, SendEnvelopeError, Options<SendEnvelopeData>> => {
     const mutationOptions: UseMutationOptions<SendEnvelopeResponse, SendEnvelopeError, Options<SendEnvelopeData>> = {
@@ -8793,7 +8795,7 @@ export const sendEnvelopeMutation = (options?: Partial<Options<SendEnvelopeData>
 /**
  * Undo Envelope Send Route
  *
- * Undo inside the window (N-02-T22).
+ * Undo inside the window (N-02-T20): no provider call is made.
  */
 export const undoEnvelopeSendMutation = (options?: Partial<Options<UndoEnvelopeSendData>>): UseMutationOptions<UndoEnvelopeSendResponse, UndoEnvelopeSendError, Options<UndoEnvelopeSendData>> => {
     const mutationOptions: UseMutationOptions<UndoEnvelopeSendResponse, UndoEnvelopeSendError, Options<UndoEnvelopeSendData>> = {

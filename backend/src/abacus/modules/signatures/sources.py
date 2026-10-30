@@ -32,6 +32,53 @@ from abacus.modules.identity.api import AuthContext
 LETTER: Final = "engagement_letter"
 LETTER_GATE: Final = "G3"
 
+
+@dataclass(frozen=True)
+class SourceDocument:
+    """One document a source prefills: an evidence version or a generated document's version,
+    by its bytes' SHA-256."""
+
+    sha256: str
+    evidence_version_id: UUID | None = None
+    generated_document_version_id: UUID | None = None
+    page_count: int | None = None
+    signer_visible: bool = True
+    read_only: bool = False
+    watermark: str | None = None
+    source_ref: str | None = None
+    placement: str = "anchors"
+    tri: bool = False
+
+
+@dataclass(frozen=True)
+class SourceSigner:
+    """One signer a source prefills: a client contact or a firm member."""
+
+    identity_method: str
+    contact_id: UUID | None = None
+    user_id: UUID | None = None
+    role: str = "signer"
+    routing_group: int = 1
+
+
+@dataclass(frozen=True)
+class SourceDraft:
+    """What a source prefills for a draft from one of its records (N-02-T20). The source has
+    authorised the caller on its record; the builder authorises `envelope.draft` again."""
+
+    purpose: str
+    policy_family: str
+    client_id: UUID
+    title: str
+    documents: tuple[SourceDocument, ...]
+    signers: tuple[SourceSigner, ...]
+    form_code: str | None = None
+    engagement_id: UUID | None = None
+    work_item_id: UUID | None = None
+    signer_order: str = "sequential"
+
+
+DraftProvider = Callable[[AuthContext, UUID], Awaitable[SourceDraft]]
 DocumentsProvider = Callable[[AuthContext, UUID], Awaitable[Sequence[object]]]
 SignersProvider = Callable[[AuthContext, UUID], Awaitable[Sequence[object]]]
 Check = Callable[[AuthContext, UUID], Awaitable[Sequence[str]]]
@@ -52,6 +99,8 @@ class EnvelopeSource:
     gate: str | None = None
     checks: tuple[Check, ...] = ()
     completed_label: str = "Completed"
+    # N-02-T20: the draft prefill; None until the source can draft (the letter: N-02-T32).
+    draft: DraftProvider | None = None
 
 
 _SOURCES: dict[str, EnvelopeSource] = {}

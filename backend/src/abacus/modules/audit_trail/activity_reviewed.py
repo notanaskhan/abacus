@@ -99,7 +99,11 @@ REVIEWED_FALLBACK: Final = frozenset(
         "comment_thread.read",
         "conflict.cleared",
         "decision.refused_non_human",  # K-01-T06: an agent or the platform asked to approve
+        "envelope.draft_saved",  # N-02-T20: SIG-02's edit of a draft (version, signer count)
+        "envelope.drafted",  # N-02-T20: a draft from a registered source (number, counts)
         "envelope.imported",  # N-02-T08: record-mode import (SIG-01 r)
+        "envelope.send_requested",  # N-02-T20: a person's Send, waiting its grant (+10 s)
+        "envelope.send_undone",  # N-02-T20: Undo inside the window; no provider call
         "envelope_import_file.staged",  # N-02-T08: a scanned file for an import
         "human_gate.reassigned",  # I-01-T07: a person moved a gate to someone else (user ids)
         "conflict_check.run",

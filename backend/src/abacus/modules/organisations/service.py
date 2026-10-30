@@ -9,7 +9,7 @@ from datetime import date
 from typing import Final, Literal
 from uuid import UUID, uuid4
 
-from sqlalchemy import Select, text
+from sqlalchemy import Select, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -417,6 +417,28 @@ class ContactFacts:
     display_name: str
     user_id: UUID | None = None  # the portal user, once the contact has signed in (P-06-T10)
     organisation_name: str | None = None  # a third party's organisation (P-08-T18: POR-01 d)
+
+
+@dataclass(frozen=True)
+class SignerContact:
+    """N-02-T20: what SIG-02 shows and checks of a contact who signs: its client, name, title
+    and email (Confidential), for a caller that authorised the envelope."""
+
+    client_id: UUID
+    display_name: str
+    title: str | None
+    email: str | None
+
+
+async def signer_contacts(
+    tenant: TenantContext, contact_ids: list[UUID]
+) -> dict[UUID, SignerContact]:
+    """The firm's contacts among `contact_ids` (others left out)."""
+    if not contact_ids:
+        return {}
+    async with tenant_session(tenant) as session:
+        found = await session.scalars(select(Contact).where(Contact.id.in_(contact_ids)))
+        return {c.id: SignerContact(c.client_id, c.display_name, c.title, c.email) for c in found}
 
 
 async def contact_facts(
