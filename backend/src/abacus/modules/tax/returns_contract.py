@@ -30,6 +30,16 @@ Form = Literal["1040", "1041", "1065", "1120s", "1120", "990", "706", "709", "10
 ReviewLevel = Literal["detail", "manager", "partner"]
 AssignmentRole = Literal["preparer", "reviewer", "signer"]
 TransitionEvent = Literal["start_preparation", "start_review"]
+# TAX-02 (T-02-T14): a step's disc (01 §3.3.1: olive ✓, half disc, empty ring).
+StepState = Literal["done", "in_progress", "not_started"]
+LadderStep = Literal[
+    "preparer", "detail_review", "manager_review", "partner_review", "final_approval"
+]
+PipelineStep = Literal["gather", "prepare", "review", "deliver"]
+IssueSeverity = Literal["high", "medium", "low"]
+IssueKind = Literal["missing_information", "action_required", "review_point"]
+RecordLinkKey = Literal["client", "engagement", "binder", "files", "relationships"]
+FilingKey = Literal["due", "extension", "jurisdictions", "engine", "consents", "office"]
 
 
 def _frozen() -> ConfigDict:
@@ -132,6 +142,12 @@ class TaxReturnRecordOut(BaseModel):
     approval_policy_version_id: Annotated[UUID | None, classified("internal")]
     tabs: Annotated[list[TabCountOut], classified("internal")]
     allowed_actions: Annotated[list[str], classified("internal")]
+    # T-02-T14 (additive): what the OverviewCard's sub adds after the client ("Married filing
+    # jointly", or the office: "Denver"; an entity return names its kind) and the engine's deep
+    # link ("Open in CCH Axcess"; https, built server-side from `engine_return_id`, null when the
+    # return has no engine id).
+    card_detail: Annotated[str | None, classified("confidential")] = None
+    engine_url: Annotated[str | None, classified("internal")] = None
 
 
 class EngineSummaryLineOut(BaseModel):
@@ -141,7 +157,16 @@ class EngineSummaryLineOut(BaseModel):
 
     line_key: Annotated[str, classified("internal")]
     label: Annotated[str, classified("internal")]
-    amount: Annotated[Decimal, classified("restricted", tri=True)]
+    # Null renders "—" (a line the engine left blank, as 2a on the Feld estimate).
+    amount: Annotated[Decimal | None, classified("restricted", tri=True)]
+    # T-02-T14 (additive): the statement grammar. `line_ref` is the form's line ("1a",
+    # "Sch 1 line 5"); `indent` a sub-line (3a under 3b); `total` a total or the double-ruled
+    # grand total; `note` the amber ⚑ line under it, with `issue` when it names a C3 issue.
+    line_ref: Annotated[str | None, classified("internal")] = None
+    indent: Annotated[bool, classified("internal")] = False
+    total: Annotated[Literal["total", "grand"] | None, classified("internal")] = None
+    note: Annotated[str | None, classified("restricted", tri=True)] = None
+    issue: Annotated[bool, classified("internal")] = False
 
 
 class LadderStepOut(BaseModel):
@@ -150,6 +175,14 @@ class LadderStepOut(BaseModel):
     role: Annotated[AssignmentRole, classified("internal")]
     person: Annotated[PersonChipOut | None, classified("confidential")]
     signed_off_at: Annotated[datetime | None, classified("confidential")]
+    # T-02-T14 (additive): the Team band's PhaseRow. `step` names the rung (the role alone does
+    # not: three reviewer levels); `note` is the sub-line as the read model words it ("Kevin Osei ·
+    # submitted Sep 8", "LW · not started"; null draws "Not assigned"); `blocked_by` is the amber
+    # second line ("Draft K-1 · pre-release").
+    step: Annotated[LadderStep | None, classified("internal")] = None
+    state: Annotated[StepState, classified("internal")] = "not_started"
+    note: Annotated[str | None, classified("confidential")] = None
+    blocked_by: Annotated[str | None, classified("confidential")] = None
 
 
 class K1DependencyOut(BaseModel):
@@ -158,6 +191,92 @@ class K1DependencyOut(BaseModel):
     source_return_id: Annotated[UUID | None, classified("internal")]
     issuer_name: Annotated[str, classified("confidential")]
     status: Annotated[K1HandoffStatus, classified("internal")]
+    # T-02-T14 (additive): the dependency banner's words ("Ridgeline 1065", "Ridgeline") and the
+    # source return's due date.
+    source_label: Annotated[str | None, classified("confidential")] = None
+    short_name: Annotated[str | None, classified("confidential")] = None
+    source_due_on: Annotated[date | None, classified("internal")] = None
+    # Final approval waits on this K-1 (the amber dependency banner).
+    blocking: Annotated[bool, classified("internal")] = False
+
+
+class RecordLinkOut(BaseModel):
+    """A Record band row on TAX-02's rail (Client, Engagement, Binder, Files, Relationships)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    key: Annotated[RecordLinkKey, classified("internal")]
+    sub: Annotated[str, classified("confidential")]
+    target_id: Annotated[UUID | None, classified("internal")] = None
+
+
+class FilingRowOut(BaseModel):
+    """A Filing band KV row (and the gathering state's pro forma rows)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    key: Annotated[FilingKey, classified("internal")]
+    value: Annotated[str, classified("confidential")]
+    # The consents row's green micro pill ("Signed · expires Dec 31 2026") and its ink-3 detail.
+    pill: Annotated[str | None, classified("confidential")] = None
+    detail: Annotated[str | None, classified("confidential")] = None
+
+
+class LabelValueOut(BaseModel):
+    """A KV row whose key is the import's own label (the pro forma's "2024 AGI")."""
+
+    model_config = ConfigDict(frozen=True)
+
+    label: Annotated[str, classified("confidential")]
+    value: Annotated[str, classified("restricted", tri=True)]
+
+
+class PipelineStepOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    step: Annotated[PipelineStep, classified("internal")]
+    state: Annotated[StepState, classified("internal")]
+    sub: Annotated[str, classified("confidential")]
+
+
+class TaxPlanRowOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    label: Annotated[str, classified("confidential")]
+    detail: Annotated[str | None, classified("restricted", tri=True)] = None
+    state: Annotated[StepState, classified("internal")]
+
+
+class K1ClassificationOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    issuer_name: Annotated[str, classified("confidential")]
+    tags: Annotated[list[str], classified("confidential")]
+    # The hand-off's pill ("Draft K-1 · pre-release", "Waiting on K-1" in state amber; "Released
+    # Sep 15" green), worded by the read model from the C10 hand-off.
+    pill: Annotated[str | None, classified("confidential")] = None
+    pill_tone: Annotated[Literal["state", "green"] | None, classified("internal")] = None
+
+
+class OverviewIssueOut(BaseModel):
+    """One of the top open C3 issues (severity drives the flag's colour)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    title: Annotated[str, classified("confidential")]
+    kind: Annotated[IssueKind, classified("internal")]
+    severity: Annotated[IssueSeverity, classified("internal")]
+
+
+class TwoYearStatOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    key: Annotated[Literal["agi", "total_tax", "refund"], classified("internal")]
+    prior: Annotated[Decimal, classified("restricted", tri=True)]
+    current: Annotated[Decimal, classified("restricted", tri=True)]
+    # Computed server-side, one decimal (code computes; the screen never does arithmetic).
+    change_pct: Annotated[Decimal | None, classified("restricted", tri=True)]
 
 
 class TaxReturnOverviewOut(BaseModel):
@@ -174,6 +293,37 @@ class TaxReturnOverviewOut(BaseModel):
     k1_dependencies: Annotated[list[K1DependencyOut], classified("confidential")]
     consent_ok: Annotated[bool | None, classified("internal")]
     allowed_actions: Annotated[list[str], classified("internal")]
+    # T-02-T14 (additive): the rest of TAX-02's rail and canvas, composed by T-02-T13's read
+    # model. Empty lists draw no band or card (no invented rows).
+    record_links: Annotated[list[RecordLinkOut], classified("confidential")] = Field(
+        default_factory=list[RecordLinkOut]
+    )
+    filing: Annotated[list[FilingRowOut], classified("confidential")] = Field(
+        default_factory=list[FilingRowOut]
+    )
+    pipeline: Annotated[list[PipelineStepOut], classified("confidential")] = Field(
+        default_factory=list[PipelineStepOut]
+    )
+    engine_synced_on: Annotated[date | None, classified("internal")] = None
+    engine_footnote: Annotated[str | None, classified("restricted", tri=True)] = None
+    # The gathering state: the pro forma's import label and KV rows in place of the estimate.
+    pro_forma_label: Annotated[str | None, classified("confidential")] = None
+    pro_forma: Annotated[list[LabelValueOut], classified("restricted", tri=True)] = Field(
+        default_factory=list[LabelValueOut]
+    )
+    plan: Annotated[list[TaxPlanRowOut], classified("restricted", tri=True)] = Field(
+        default_factory=list[TaxPlanRowOut]
+    )
+    k1_classifications: Annotated[list[K1ClassificationOut], classified("confidential")] = Field(
+        default_factory=list[K1ClassificationOut]
+    )
+    carryforwards: Annotated[str | None, classified("restricted", tri=True)] = None
+    issues: Annotated[list[OverviewIssueOut], classified("confidential")] = Field(
+        default_factory=list[OverviewIssueOut]
+    )
+    two_year: Annotated[list[TwoYearStatOut], classified("restricted", tri=True)] = Field(
+        default_factory=list[TwoYearStatOut]
+    )
 
 
 class IntakeCategoryOut(BaseModel):

@@ -10965,7 +10965,15 @@ export type EngineSummaryLineOut = {
     /**
      * Amount
      */
-    amount: string;
+    amount: string | null;
+    /**
+     * Indent
+     */
+    indent?: boolean;
+    /**
+     * Issue
+     */
+    issue?: boolean;
     /**
      * Label
      */
@@ -10974,6 +10982,18 @@ export type EngineSummaryLineOut = {
      * Line Key
      */
     line_key: string;
+    /**
+     * Line Ref
+     */
+    line_ref?: string | null;
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Total
+     */
+    total?: 'total' | 'grand' | null;
 };
 
 /**
@@ -12506,6 +12526,30 @@ export type FiledDestinationOut = {
      * Route
      */
     route: string;
+};
+
+/**
+ * FilingRowOut
+ *
+ * A Filing band KV row (and the gathering state's pro forma rows).
+ */
+export type FilingRowOut = {
+    /**
+     * Detail
+     */
+    detail?: string | null;
+    /**
+     * Key
+     */
+    key: 'due' | 'extension' | 'jurisdictions' | 'engine' | 'consents' | 'office';
+    /**
+     * Pill
+     */
+    pill?: string | null;
+    /**
+     * Value
+     */
+    value: string;
 };
 
 /**
@@ -17024,13 +17068,51 @@ export type K1BoxLineOut = {
 };
 
 /**
- * K1DependencyOut
+ * K1ClassificationOut
  */
-export type K1DependencyOut = {
+export type K1ClassificationOut = {
     /**
      * Issuer Name
      */
     issuer_name: string;
+    /**
+     * Pill
+     */
+    pill?: string | null;
+    /**
+     * Pill Tone
+     */
+    pill_tone?: 'state' | 'green' | null;
+    /**
+     * Tags
+     */
+    tags: Array<string>;
+};
+
+/**
+ * K1DependencyOut
+ */
+export type K1DependencyOut = {
+    /**
+     * Blocking
+     */
+    blocking?: boolean;
+    /**
+     * Issuer Name
+     */
+    issuer_name: string;
+    /**
+     * Short Name
+     */
+    short_name?: string | null;
+    /**
+     * Source Due On
+     */
+    source_due_on?: string | null;
+    /**
+     * Source Label
+     */
+    source_label?: string | null;
     /**
      * Source Return Id
      */
@@ -17471,6 +17553,22 @@ export type KvRow = {
 };
 
 /**
+ * LabelValueOut
+ *
+ * A KV row whose key is the import's own label (the pro forma's "2024 AGI").
+ */
+export type LabelValueOut = {
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Value
+     */
+    value: string;
+};
+
+/**
  * LadderLevelOut
  */
 export type LadderLevelOut = {
@@ -17497,6 +17595,14 @@ export type LadderLevelOut = {
  * LadderStepOut
  */
 export type LadderStepOut = {
+    /**
+     * Blocked By
+     */
+    blocked_by?: string | null;
+    /**
+     * Note
+     */
+    note?: string | null;
     person: PersonChipOut | null;
     /**
      * Role
@@ -17506,6 +17612,14 @@ export type LadderStepOut = {
      * Signed Off At
      */
     signed_off_at: string | null;
+    /**
+     * State
+     */
+    state?: 'done' | 'in_progress' | 'not_started';
+    /**
+     * Step
+     */
+    step?: 'preparer' | 'detail_review' | 'manager_review' | 'partner_review' | 'final_approval' | null;
 };
 
 /**
@@ -20702,6 +20816,30 @@ export type OverdueCountOut = {
 };
 
 /**
+ * OverviewIssueOut
+ *
+ * One of the top open C3 issues (severity drives the flag's colour).
+ */
+export type OverviewIssueOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'missing_information' | 'action_required' | 'review_point';
+    /**
+     * Severity
+     */
+    severity: 'high' | 'medium' | 'low';
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * PageLineOut
  */
 export type PageLineOut = {
@@ -20994,6 +21132,24 @@ export type PiiRevealOut = {
      * Value
      */
     value: string;
+};
+
+/**
+ * PipelineStepOut
+ */
+export type PipelineStepOut = {
+    /**
+     * State
+     */
+    state: 'done' | 'in_progress' | 'not_started';
+    /**
+     * Step
+     */
+    step: 'gather' | 'prepare' | 'review' | 'deliver';
+    /**
+     * Sub
+     */
+    sub: string;
 };
 
 /**
@@ -23938,6 +24094,26 @@ export type RecordInputHashesOut = {
      * Model Calls
      */
     model_calls: Array<string>;
+};
+
+/**
+ * RecordLinkOut
+ *
+ * A Record band row on TAX-02's rail (Client, Engagement, Binder, Files, Relationships).
+ */
+export type RecordLinkOut = {
+    /**
+     * Key
+     */
+    key: 'client' | 'engagement' | 'binder' | 'files' | 'relationships';
+    /**
+     * Sub
+     */
+    sub: string;
+    /**
+     * Target Id
+     */
+    target_id?: string | null;
 };
 
 /**
@@ -30761,6 +30937,24 @@ export type TaxElectionOut = {
 };
 
 /**
+ * TaxPlanRowOut
+ */
+export type TaxPlanRowOut = {
+    /**
+     * Detail
+     */
+    detail?: string | null;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * State
+     */
+    state: 'done' | 'in_progress' | 'not_started';
+};
+
+/**
  * TaxProfileOut
  *
  * CLI-05's rail: consents in force, authorizations on file, elections, a masked identity band
@@ -30838,17 +31032,41 @@ export type TaxReturnOverviewOut = {
      */
     allowed_actions: Array<string>;
     /**
+     * Carryforwards
+     */
+    carryforwards?: string | null;
+    /**
      * Consent Ok
      */
     consent_ok: boolean | null;
+    /**
+     * Engine Footnote
+     */
+    engine_footnote?: string | null;
     /**
      * Engine Summary
      */
     engine_summary: Array<EngineSummaryLineOut>;
     /**
+     * Engine Synced On
+     */
+    engine_synced_on?: string | null;
+    /**
      * Engine Version
      */
     engine_version: string | null;
+    /**
+     * Filing
+     */
+    filing?: Array<FilingRowOut>;
+    /**
+     * Issues
+     */
+    issues?: Array<OverviewIssueOut>;
+    /**
+     * K1 Classifications
+     */
+    k1_classifications?: Array<K1ClassificationOut>;
     /**
      * K1 Dependencies
      */
@@ -30862,9 +31080,33 @@ export type TaxReturnOverviewOut = {
      */
     open_issues: number;
     /**
+     * Pipeline
+     */
+    pipeline?: Array<PipelineStepOut>;
+    /**
+     * Plan
+     */
+    plan?: Array<TaxPlanRowOut>;
+    /**
+     * Pro Forma
+     */
+    pro_forma?: Array<LabelValueOut>;
+    /**
+     * Pro Forma Label
+     */
+    pro_forma_label?: string | null;
+    /**
+     * Record Links
+     */
+    record_links?: Array<RecordLinkOut>;
+    /**
      * Return Id
      */
     return_id: string;
+    /**
+     * Two Year
+     */
+    two_year?: Array<TwoYearStatOut>;
 };
 
 /**
@@ -30882,6 +31124,10 @@ export type TaxReturnRecordOut = {
      */
     approval_policy_version_id: string | null;
     /**
+     * Card Detail
+     */
+    card_detail?: string | null;
+    /**
      * Engagement Id
      */
     engagement_id: string;
@@ -30889,6 +31135,10 @@ export type TaxReturnRecordOut = {
      * Engine Return Id
      */
     engine_return_id: string | null;
+    /**
+     * Engine Url
+     */
+    engine_url?: string | null;
     row: TaxReturnRowOut;
     /**
      * Tabs
@@ -32911,6 +33161,28 @@ export type TrialBalancesOut = {
      * Trial Balances
      */
     trial_balances: Array<TrialBalanceOut>;
+};
+
+/**
+ * TwoYearStatOut
+ */
+export type TwoYearStatOut = {
+    /**
+     * Change Pct
+     */
+    change_pct: string | null;
+    /**
+     * Current
+     */
+    current: string;
+    /**
+     * Key
+     */
+    key: 'agi' | 'total_tax' | 'refund';
+    /**
+     * Prior
+     */
+    prior: string;
 };
 
 /**

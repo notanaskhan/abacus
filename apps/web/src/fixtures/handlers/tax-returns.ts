@@ -2,12 +2,18 @@
 // and rows as the live routes answer them (T-02-T09), over the TY2025 board seed (F-06-T02, the
 // Python slice's mirror, T-02-T11). Filters, the sort allowlist and office grouping run here as
 // the server runs them; the screen never filters or adds rows up.
-import type { TaxReturnRowOut, TaxReturnSummaryOut } from "@abacus/api-client";
+import type {
+  TaxReturnOverviewOut,
+  TaxReturnRecordOut,
+  TaxReturnRowOut,
+  TaxReturnSummaryOut,
+} from "@abacus/api-client";
 import { type FixtureHandler, json } from "../../app-core/fixture-mode";
 import { SEATS } from "../seed/people";
 import { stableId } from "../seed/prng";
 import { firmOffices } from "../seed/firm-people";
 import { ENVELOPES, type SeedTaxReturn, TAX_RETURNS, TAX_YEAR } from "../seed/tax";
+import { OVERVIEWS, type OverviewVariant } from "../seed/tax-return-overview";
 import { TY2025_SUMMARY } from "../seed/tax-returns";
 
 const FORM: Readonly<Record<SeedTaxReturn["form"], TaxReturnRowOut["form"]>> = {
@@ -34,7 +40,8 @@ export function officeId(name: string): string {
   return stableId(`office:${name}`);
 }
 
-function chip(initials: string): TaxReturnRowOut["preparer"] {
+/** A seat's person chip by initials (TAX-01 rows; TAX-02's Team ladder). */
+export function chip(initials: string): TaxReturnRowOut["preparer"] {
   const seat = SEATS.find((s) => s.initials === initials);
   return seat === undefined
     ? null
@@ -109,8 +116,65 @@ function rows(query: URLSearchParams): TaxReturnRowOut[] {
   });
 }
 
-export function taxReturnHandlers(): Record<string, FixtureHandler> {
+const TABS = ["overview", "intake", "review", "issues", "activity"];
+
+/** The return's `ReturnFrame` record and TAX-02 overview: the variant's when it names this
+ * return (TAX-02 a–e), otherwise the row alone with empty bands (no invented overview rows). */
+function frameOf(
+  id: string,
+  variant: OverviewVariant | undefined,
+): { record: TaxReturnRecordOut; overview: TaxReturnOverviewOut } | undefined {
+  const seed = TAX_RETURNS.find((r) => r.id === id);
+  if (seed === undefined) return undefined;
+  const base = rowOf(seed);
+  const v = variant === undefined ? undefined : OVERVIEWS[variant];
+  const mine = v !== undefined && v.row.client === seed.client && !seed.label.endsWith(":2");
+  const row: TaxReturnRowOut = mine ? { ...base, ...v.row } : base;
+  const record: TaxReturnRecordOut = {
+    row,
+    engagement_id: stableId(`engagement:${seed.label}`),
+    work_item_id: stableId(`work-item:${seed.label}`),
+    approval_policy_version_id: null,
+    engine_url: null,
+    ...(mine
+      ? v.record
+      : {
+          tabs: TABS.map((tab) => ({ tab, count: null })),
+          card_detail: seed.office,
+          engine_return_id: null,
+          allowed_actions: ["tax_return.read", "tax_return.assign"],
+        }),
+  };
+  const overview: TaxReturnOverviewOut = mine
+    ? { return_id: id, ...v.overview }
+    : {
+        return_id: id,
+        ladder: [],
+        engine_version: null,
+        engine_summary: [],
+        open_issues: seed.issues ?? 0,
+        k1_dependencies: [],
+        consent_ok: null,
+        allowed_actions: record.allowed_actions,
+      };
+  return { record, overview };
+}
+
+/** The board's reads and writes; `variant` picks TAX-02's artboard for the return it names. */
+export function taxReturnHandlers(variant?: OverviewVariant): Record<string, FixtureHandler> {
   return {
+    "GET /v1/tax-returns/{return_id}": ({ params }) => {
+      const frame = frameOf(params.return_id ?? "", variant);
+      return frame === undefined ? json({ detail: "not_found" }, 404) : json(frame.record);
+    },
+    "GET /v1/tax-returns/{return_id}/overview": ({ params }) => {
+      const frame = frameOf(params.return_id ?? "", variant);
+      return frame === undefined ? json({ detail: "not_found" }, 404) : json(frame.overview);
+    },
+    "POST /v1/tax-returns/{return_id}/assignments": ({ params }) => {
+      const frame = frameOf(params.return_id ?? "", variant);
+      return frame === undefined ? json({ detail: "not_found" }, 404) : json(frame.record);
+    },
     // TAX-01's office names (the bands, the Office column) come from the firm's offices.
     "GET /v1/firm/offices": () => json(firmOffices()),
     "GET /v1/tax-returns/summary": ({ query }) =>
