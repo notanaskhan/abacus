@@ -39,6 +39,9 @@ export const shlScreens = {
   // variant, on the same overlay over a close_intake binder until C-01's CLS-03; c is A-03's.
   "SHL-14": { name: "Request composer drawer", status: "fixture", path: null },
   "SHL-15": { name: "Issue composer & fix instructions", status: "planned", path: null },
+  // P-04-T43: a–f on fixtures as `?ov=checkpoints:<type>:<id>` behind `review.checkpoints`.
+  // Planned until its designed links are wired (link-contract rule 1) and walked on staging
+  // (DEC-195; DEC-1272).
   "SHL-16": { name: "Checkpoint diff drawer", status: "planned", path: null },
   "SHL-17": { name: "To-do drawer", status: "planned", path: null },
   "SHL-18": { name: "Comments and @mentions", status: "planned", path: null },
