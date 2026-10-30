@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: backfill-rerun shadow-report pilot-metrics go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast evals-match-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr golden-render
+.PHONY: refdata-draft refdata-diff refdata-publish refdata-withdraw backfill-rerun shadow-report pilot-metrics go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast evals-match-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr golden-render
 
 setup:
 	cd backend && uv sync --locked
@@ -353,6 +353,13 @@ generate:
 
 migrate: db-guard
 	cd backend && $(STACK_ENV) uv run alembic upgrade head
+
+# K-02-T06: the reference-set operator CLI (abacus_tools.refdata). Locally against this checkout's
+# stack; on staging and production the same command runs as the ops-task.yml one-off ECS task
+# (ABACUS_OPS_TASK=1). Two people: the drafter never publishes. ARGS carries the flags, e.g.
+# `make refdata-diff ARGS="--key us-federal-due-dates-ty2026 --kind due_date_rules --file r.xlsx"`.
+refdata-draft refdata-diff refdata-publish refdata-withdraw:
+	cd backend && $(STACK_ENV) uv run python -m abacus_tools.refdata $(subst refdata-,,$@) $(ARGS)
 
 # The load-test harness (Q-03-T035): `make loadtest PROFILE=smoke` plays
 # backend/src/abacus_tools/loadtest/scenarios/$(PROFILE).yaml against this checkout's local stack

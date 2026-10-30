@@ -68,8 +68,8 @@ const card = (seq: number): HTMLElement | null =>
   document.querySelector<HTMLElement>(`[data-checkpoint="${String(seq)}"]`);
 
 describe("SHL-16", () => {
-  it("builds a to f", () => {
-    expect(STATES).toEqual(["a", "b", "c", "d", "e", "f"]);
+  it("builds a to f, and the import variant ia, ib and ie (P-04-T47)", () => {
+    expect(STATES).toEqual(["a", "b", "c", "d", "e", "f", "ia", "ib", "ie"]);
   });
 
   it("a: Checkpoint 6 proposed and expanded with steps, the diff, the tie and Approve", async () => {
