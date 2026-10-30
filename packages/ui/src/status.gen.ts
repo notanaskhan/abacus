@@ -3566,14 +3566,14 @@ export const STATUS_REGISTRY = {
       "label": "In progress",
       "variant": null,
       "terminal": false,
-      "derived": true,
+      "derived": false,
       "disc": "half"
     },
     "prepared": {
       "label": "Prepared",
       "variant": null,
       "terminal": false,
-      "derived": true,
+      "derived": false,
       "contextLabels": {
         "rail": "Prepared · {initials}"
       }
@@ -3582,7 +3582,7 @@ export const STATUS_REGISTRY = {
       "label": "Reviewed",
       "variant": null,
       "terminal": false,
-      "derived": true,
+      "derived": false,
       "contextLabels": {
         "rail": "Reviewed · {initials}"
       }
@@ -3591,7 +3591,7 @@ export const STATUS_REGISTRY = {
       "label": "Changed after sign-off",
       "variant": "amber",
       "terminal": false,
-      "derived": true
+      "derived": false
     }
   },
   "account_mapping_state": {
@@ -3599,13 +3599,13 @@ export const STATUS_REGISTRY = {
       "label": "Needs review",
       "variant": "amber",
       "terminal": false,
-      "derived": true
+      "derived": false
     },
     "rule": {
       "label": "Rule",
       "variant": null,
       "terminal": false,
-      "derived": true
+      "derived": false
     },
     "edited": {
       "label": "Edited",

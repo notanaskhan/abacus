@@ -463,7 +463,7 @@ export type AccountMappingOut = {
 /**
  * AccountMappingStateStatus
  */
-export type AccountMappingStateStatus = 'edited' | 'suggested' | 'adopted';
+export type AccountMappingStateStatus = 'unmapped' | 'rule' | 'edited' | 'suggested' | 'adopted';
 
 /**
  * AccountOut
@@ -20831,6 +20831,11 @@ export type MappingSetOut = {
 };
 
 /**
+ * MappingSetStatus
+ */
+export type MappingSetStatus = 'in_progress' | 'prepared' | 'reviewed' | 'changed_after_sign_off';
+
+/**
  * MappingSetSummaryOut
  */
 export type MappingSetSummaryOut = {
@@ -20878,10 +20883,7 @@ export type MappingSetSummaryOut = {
      * Sign Offs
      */
     sign_offs: Array<SignOffChipOut>;
-    /**
-     * MappingSetStatus
-     */
-    status: never;
+    status: MappingSetStatus;
     tallies: MappingTalliesOut;
     /**
      * Trial Balance Id

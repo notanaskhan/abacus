@@ -994,6 +994,8 @@
       },
       "AccountMappingStateStatus": {
         "enum": [
+          "unmapped",
+          "rule",
           "edited",
           "suggested",
           "adopted"
@@ -43660,6 +43662,16 @@
         "title": "MappingSetOut",
         "type": "object"
       },
+      "MappingSetStatus": {
+        "enum": [
+          "in_progress",
+          "prepared",
+          "reviewed",
+          "changed_after_sign_off"
+        ],
+        "title": "MappingSetStatus",
+        "type": "string"
+      },
       "MappingSetSummaryOut": {
         "properties": {
           "client_entity_id": {
@@ -43737,9 +43749,8 @@
             "type": "array"
           },
           "status": {
-            "cls": "internal",
-            "enum": [],
-            "title": "MappingSetStatus"
+            "$ref": "#/components/schemas/MappingSetStatus",
+            "cls": "internal"
           },
           "tallies": {
             "$ref": "#/components/schemas/MappingTalliesOut",

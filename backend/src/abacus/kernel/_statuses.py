@@ -850,15 +850,18 @@ class CompletenessTieResultStatus(StrEnum):
 
 
 class MappingSetStatus(StrEnum):
-    pass
-    # derived, never stored: in_progress, prepared, reviewed, changed_after_sign_off
+    IN_PROGRESS = "in_progress"
+    PREPARED = "prepared"
+    REVIEWED = "reviewed"
+    CHANGED_AFTER_SIGN_OFF = "changed_after_sign_off"
 
 
 class AccountMappingStateStatus(StrEnum):
+    UNMAPPED = "unmapped"
+    RULE = "rule"
     EDITED = "edited"
     SUGGESTED = "suggested"
     ADOPTED = "adopted"
-    # derived, never stored: unmapped, rule
 
 
 # Each object's stored codes, and their SQL CHECK list.
@@ -1569,8 +1572,14 @@ STORED: dict[str, tuple[str, ...]] = {
         "check",
     ),
     "mapping_set": (
+        "in_progress",
+        "prepared",
+        "reviewed",
+        "changed_after_sign_off",
     ),
     "account_mapping_state": (
+        "unmapped",
+        "rule",
         "edited",
         "suggested",
         "adopted",
