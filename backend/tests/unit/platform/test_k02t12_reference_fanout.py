@@ -27,9 +27,9 @@ def test_ac49_one_run_per_version_and_action() -> None:
     assert fanout_workflow_id("v1", "published") == "reference_fanout:published:v1"
     assert fanout_workflow_id("v1", "withdrawn") != fanout_workflow_id("v1", "published")
     names = {a.__temporal_activity_definition.name for a in reference_fanout.ACTIVITIES}  # type: ignore[attr-defined]  # temporalio's marker
-    assert names == {"platform.reference_set_tenants", "platform.reference_set_announce"}
+    assert names == {"platform.reference_set_announce"}
     source = inspect.getsource(ReferenceSetFanOutWorkflow.run)
-    assert "platform.reference_set_tenants" in source and "for tenant_id in tenants" in source
+    assert "for tenant_id in request.tenant_ids" in source
     assert FanOutInput("v", "published").action == "published"
 
 
@@ -56,7 +56,22 @@ async def test_ac49_a_publish_whose_fanout_failed_says_how_to_restart(
 
     import abacus.modules.platform.api as platform_api
 
+    class Conn:
+        async def fetchrow(self, sql: str, *args: object) -> dict[str, str]:
+            return {"set_key": "k", "operator": "a", "approver": "b"}
+
+        async def fetch(self, sql: str) -> list[tuple[str]]:
+            return [("t1",)]
+
+        async def close(self) -> None:
+            return None
+
+    async def connect(dsn: str) -> Conn:
+        return Conn()
+
     monkeypatch.setattr(platform_api, "start_reference_fanout", down)
+    monkeypatch.setattr(refdata, "connect", connect)
+    monkeypatch.setattr(refdata, "_owner_dsn", lambda: "postgresql://local")
     said = await refdata.fanout(
         argparse.Namespace(version="5c4e0b3c-0a0d-4c5c-9f9a-0e6c0d1d7a11", action="published")
     )

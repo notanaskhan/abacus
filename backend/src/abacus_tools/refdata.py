@@ -333,14 +333,37 @@ async def withdraw(args: argparse.Namespace) -> str:
     return f"withdrew {args.version}" + await _fanout(args.version, "withdrawn")
 
 
-async def _fanout(version: str, action: str) -> str:
-    """K-02-T12: tell every firm (one run per version and action; idempotent per tenant)."""
-    from uuid import UUID
+_FACTS = (
+    "SELECT v.set_key, p.operator, p.approver FROM reference_set_publications p "
+    "JOIN reference_set_versions v ON v.id = p.version_id "
+    "WHERE p.version_id = $1 AND p.action = $2 ORDER BY p.at DESC LIMIT 1"
+)
 
-    from abacus.modules.platform.api import start_reference_fanout
+
+async def _fanout(version: str, action: str) -> str:
+    """K-02-T12: tell every firm (one run per version and action; idempotent per tenant). The
+    owner role reads the handles and the active tenants; the run gets them as its input."""
+    from abacus.modules.platform.api import FanOutInput, start_reference_fanout
 
     try:
-        await start_reference_fanout(UUID(version), action)
+        conn = await connect(_owner_dsn())
+        try:
+            facts = await conn.fetchrow(_FACTS, version, action)
+            tenants = [str(r[0]) for r in await conn.fetch("SELECT * FROM active_tenant_ids()")]
+        finally:
+            await conn.close()
+        if facts is None:
+            return f"; nothing was {action} under {version}"
+        await start_reference_fanout(
+            FanOutInput(
+                version,
+                action,
+                str(facts["set_key"]),
+                str(facts["operator"]),
+                str(facts["approver"]),
+                tenants,
+            )
+        )
     except Exception as exc:  # the version is published; the fan-out can be started again
         return f"; fan-out not started ({type(exc).__name__}): run `refdata fanout` again"
     return "; fan-out started"
