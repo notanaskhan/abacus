@@ -23,7 +23,7 @@ import {
 } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, useMemo, useState } from "react";
-import { useNow } from "../../app-core/clock";
+import { todayIso, useNow } from "../../app-core/clock";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { GROUPS } from "../ADM-01/copy";
 import { COPY, PURPOSES, PURPOSE_OPTIONS, SET_PURPOSE, STATUS_TILES, type TileCode } from "./copy";
@@ -93,9 +93,11 @@ function purposeOf(line: Line): string {
   return line.consents.length > 1 ? SET_PURPOSE : PURPOSES[line.first.purpose];
 }
 
-function scopeOf(c: ConsentOut): string {
-  const label = c.scope.label ?? "";
-  const recipient = c.recipients.find((r) => r.kind !== "firm");
+/** The scope, with the outside recipient a set's consents name (a standard set's AI-disclosure
+ * consent carries the provider; its use consent names only the firm). */
+function scopeOf(line: Line): string {
+  const label = line.first.scope.label ?? "";
+  const recipient = line.consents.flatMap((c) => c.recipients).find((r) => r.kind !== "firm");
   if (recipient === undefined) return label;
   const where = recipient.country === null ? "" : ` (${recipient.country})`;
   return `${label} · ${recipient.name}${where}`;
@@ -111,9 +113,15 @@ function signerLine(c: ConsentOut): string | null {
   return signers.map((s) => s.name).join(", ");
 }
 
+/** Calendar days to the expiry date (the firm's today to the consent's last day), not instants:
+ * Sep 14 to Sep 30 is 16 whatever the hour. */
 function daysLeft(c: ConsentOut, now: Date): number | null {
   if (c.status !== "signed" || c.expires_at === null) return null;
-  const left = Math.ceil((Date.parse(c.expires_at) - now.getTime()) / DAY);
+  const today = todayIso(now.getTime());
+  const left = Math.round(
+    (Date.parse(`${c.expires_at.slice(0, 10)}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) /
+      DAY,
+  );
   return left >= 0 && left <= 30 ? left : null;
 }
 
@@ -412,7 +420,7 @@ export function ADM05({ search, onSearch, onNavigate, onBack }: ADM05Props): JSX
                         )}
                       </td>
                       <td className="truncate">{purposeOf(l)}</td>
-                      <td className="truncate text-ink-2">{scopeOf(c)}</td>
+                      <td className="truncate text-ink-2">{scopeOf(l)}</td>
                       <td>
                         <Signed c={c} now={now} />
                       </td>
