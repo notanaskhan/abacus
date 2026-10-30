@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { MatchScope } from "../tracing/match";
 import { matchIdOf } from "../tracing/match-store";
@@ -74,35 +74,49 @@ describe("CalcTree", () => {
     expect(items[2]?.querySelectorAll("[data-rail]")).toHaveLength(2);
   });
 
-  it("hovering a step lights its Sheet!Cell in the grid, fading in 360 ms", () => {
+  it("hovering a step lights its Sheet!Cell in the grid, fading in 360 ms", async () => {
     page();
     const step = screen.getByRole("treeitem", { name: /Ending capital/ });
     act(() => {
       fireEvent.pointerEnter(step);
     });
-    expect(cellOf(at("H3")).hasAttribute("data-lit")).toBe(true);
+    // The store's 120 ms hover intent, then the 360 ms fade: lit well inside 360 ms.
+    await waitFor(
+      () => {
+        expect(cellOf(at("H3")).hasAttribute("data-lit")).toBe(true);
+      },
+      { timeout: 360, interval: 10 },
+    );
     expect(cellOf(at("H3")).className).toContain("duration-[360ms]");
     expect(cellOf(at("G3")).hasAttribute("data-lit")).toBe(false);
   });
 
-  it("focus lights too; Enter pins; Escape clears and returns focus", () => {
+  it("focus lights too; Enter pins; Escape clears and returns focus", async () => {
     page();
     const step = screen.getByRole("treeitem", { name: /Distributions/ });
     act(() => {
       step.focus();
     });
-    expect(cellOf(at("G3")).hasAttribute("data-lit")).toBe(true);
+    await waitFor(
+      () => {
+        expect(cellOf(at("G3")).hasAttribute("data-lit")).toBe(true);
+      },
+      { timeout: 360, interval: 10 },
+    );
     act(() => {
       fireEvent.keyDown(step, { key: "Enter" });
     });
     act(() => {
       fireEvent.blur(step);
     });
+    await new Promise((r) => setTimeout(r, 200)); // past the 140 ms release: a pin holds
     expect(cellOf(at("G3")).hasAttribute("data-lit")).toBe(true);
     act(() => {
       fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
     });
-    expect(cellOf(at("G3")).hasAttribute("data-lit")).toBe(false);
+    await waitFor(() => {
+      expect(cellOf(at("G3")).hasAttribute("data-lit")).toBe(false);
+    });
   });
 
   it("a step whose source is a form line lights nothing", () => {
