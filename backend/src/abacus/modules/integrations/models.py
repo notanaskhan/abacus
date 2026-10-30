@@ -37,3 +37,20 @@ class IntegrationSecret(Base):
     sealed: Mapped[bytes] = mapped_column(LargeBinary)
     key_id: Mapped[str]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class IntegrationMapping(Base):
+    """ADM-08's settings and mappings for an install (T-01-T20, migration 0466)."""
+
+    __tablename__ = "integration_mappings"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    firm_integration_id: Mapped[UUID]
+    kind: Mapped[str]
+    source_key: Mapped[str]
+    target_value: Mapped[str]
+    direction: Mapped[str | None]
+    version: Mapped[int] = mapped_column(server_default=FetchedValue())
+    updated_by: Mapped[UUID]
+    updated_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

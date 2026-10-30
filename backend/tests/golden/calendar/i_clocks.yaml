@@ -1,0 +1,60 @@
+# I-CLOCKS golden fixtures (K-02-T15; chapter 10 §10.9.3; SPEC-500 AC-56 to AC-58).
+# Each case cites the source of the date. The holidays are the federal and DC legal holidays for
+# IRC §7503 (5 U.S.C. §6103; D.C. Code §1-612.02 Emancipation Day, Apr 16), observed dates.
+# Synthetic tax years only; no rule value here is product content (the rows are the published
+# reference set's shape, transcribed for the test).
+holidays:
+  - 2026-01-01
+  - 2026-01-19
+  - 2026-02-16
+  - 2026-04-16
+  - 2026-05-25
+  - 2026-06-19
+  - 2026-07-03
+  - 2026-09-07
+  - 2026-10-12
+  - 2026-11-11
+  - 2026-11-26
+  - 2026-12-25
+  - 2027-01-01
+  - 2027-01-18
+  - 2027-02-15
+  - 2027-04-16
+  - 2027-05-31
+  - 2027-06-18
+  - 2027-07-05
+  - 2027-09-06
+  - 2027-10-11
+  - 2027-11-11
+  - 2027-11-25
+  - 2027-12-24
+rules:
+  "1040": {months: 4, day: 15, extension: "4868", ext_months: 6, ext_day: null}
+  "1065": {months: 3, day: 15, extension: "7004", ext_months: 6, ext_day: null}
+  "1120-S": {months: 3, day: 15, extension: "7004", ext_months: 6, ext_day: null}
+  "1120": {months: 4, day: 15, extension: "7004", ext_months: 6, ext_day: null}
+  "1041": {months: 4, day: 15, extension: "7004", ext_months: 5, ext_day: 30}
+  "990": {months: 5, day: 15, extension: "8868", ext_months: 6, ext_day: null}
+  "5500": {months: 7, day: 31, extension: "5558", ext_months: 3, ext_day: 15}
+  "706": {months: 9, day: 10, extension: "4768", ext_months: 6, ext_day: null}
+due_dates:
+  - {form: "1040", period_end: 2025-12-31, original: 2026-04-15, extended: 2026-10-15, source: "IRC §6072(a); Reg. §1.6081-4 (6 months)"}
+  - {form: "1065", period_end: 2025-12-31, original: 2026-03-16, rolled: true, extended: 2026-09-15, source: "IRC §6072(b) as amended by P.L. 114-41; Mar 15, 2026 is a Sunday (IRC §7503); Reg. §1.6081-2"}
+  - {form: "1120-S", period_end: 2025-12-31, original: 2026-03-16, rolled: true, extended: 2026-09-15, source: "IRC §6072(b); IRC §7503; Reg. §1.6081-3"}
+  - {form: "1120", period_end: 2025-12-31, original: 2026-04-15, extended: 2026-10-15, source: "IRC §6072(a) as amended by P.L. 114-41; Reg. §1.6081-3"}
+  - {form: "1041", period_end: 2025-12-31, original: 2026-04-15, extended: 2026-09-30, source: "IRC §6072(a); Reg. §1.6081-6 (5½ months)"}
+  - {form: "990", period_end: 2025-12-31, original: 2026-05-15, extended: 2026-11-16, extended_rolled: true, source: "IRC §6072(e); Reg. §1.6081-9 (Form 8868, 6 months); Nov 15, 2026 is a Sunday"}
+  - {form: "5500", period_end: 2025-12-31, original: 2026-07-31, extended: 2026-10-15, source: "Form 5500 instructions (last day of the 7th month); Form 5558 (2½ months)"}
+  - {form: "1040", period_end: 2026-12-31, original: 2027-04-15, extended: 2027-10-15, source: "IRC §6072(a); Reg. §1.6081-4"}
+  - {form: "1065", period_end: 2026-12-31, original: 2027-03-15, extended: 2027-09-15, source: "IRC §6072(b); Reg. §1.6081-2"}
+  - {form: "1120", period_end: 2026-12-31, original: 2027-04-15, extended: 2027-10-15, source: "IRC §6072(a); Reg. §1.6081-3"}
+  - {form: "1041", period_end: 2026-12-31, original: 2027-04-15, extended: 2027-09-30, source: "IRC §6072(a); Reg. §1.6081-6"}
+  - {form: "990", period_end: 2026-12-31, original: 2027-05-17, rolled: true, extended: 2027-11-15, source: "IRC §6072(e); May 15, 2027 is a Saturday (IRC §7503); Reg. §1.6081-9"}
+  - {form: "5500", period_end: 2026-12-31, original: 2027-08-02, rolled: true, extended: 2027-10-15, source: "Form 5500 instructions; Jul 31, 2027 is a Saturday; Form 5558 runs from the unrolled date"}
+  - {form: "706", period_end: 2026-03-10, original: 2026-12-10, extended: 2027-06-10, source: "IRC §6075(a) (9 months after death); Reg. §20.6081-1 (Form 4768, 6 months)"}
+clocks:
+  - {kind: au_c_230_assembly, start: 2026-09-21, due: 2026-11-20, source: "AU-C 230.A21-.A22: assemble within 60 days of the report release date"}
+  - {kind: au_c_265_communication, start: 2026-09-21, due: 2026-11-20, source: "AU-C 265.13: no later than 60 days after the report release date"}
+  - {kind: ftc_notice, start: 2026-09-14, due: 2026-10-14, source: "16 CFR 314.4(j): notify the FTC within 30 days of discovery"}
+  - {kind: form_8879_retention, start: 2026-04-15, due: 2029-04-15, source: "Pub 1345: keep Form 8879 three years from the return due date or the IRS received date, whichever is later"}
+  - {kind: form_8879_retention, start: 2028-02-29, due: 2031-02-28, source: "Pub 1345; Feb 29 ends on Feb 28"}

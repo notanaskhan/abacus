@@ -26,17 +26,18 @@ entries `confidential` (client names). No K-02 table holds TRI.
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Final, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._statuses import FirmStandardVersionStatus
 from abacus.kernel.classification import classified
+from abacus.kernel.errors import DomainInvalid
 from abacus.modules.identity.api import AuthContext
 
 # `firm_standards` kinds and `threshold_policies` kinds (K-02 §4.2, M-B).
@@ -559,8 +560,21 @@ class ExampleRow:
 ExamplesProvider = Callable[[AuthContext, str | None], Awaitable[list[ExampleRow]]]
 
 
-def _unbuilt(task: str) -> NoReturn:
-    raise NotImplementedError(f"C21 part B: {task} builds this")
+SSARS27_BOUNDARY: Final = date(2026, 12, 15)
+
+
+class StandardRowMissing(DomainInvalid):
+    """The policy version has no row for what was asked (an engagement kind, a tier, a
+    context): a consumer asked a question the firm's standard does not answer."""
+
+    code = "standard_row_missing"
+
+
+def _row_for[T](rows: Sequence[T], match: Callable[[T], bool], what: str) -> T:
+    for row in rows:
+        if match(row):
+            return row
+    raise StandardRowMissing(facts={"missing": what})
 
 
 def classify_entry(
@@ -571,8 +585,31 @@ def classify_entry(
     amount_usd: int,
     attest_client: bool,
 ) -> EntryClassification:
-    """An AJE's outcome under a thresholds version: an attest client's entry is always held."""
-    _unbuilt("K-02-T10")
+    """An AJE's outcome under a thresholds version (K-02 §4.3, K-02-T10): an attest client's
+    entry is always held whatever the amount; a listed class is within threshold up to its limit
+    (inclusive) and review required above it; an unlisted class is review required."""
+    amount = abs(amount_usd)
+    if attest_client:
+        row = _row_for(payload.rows, lambda r: r.rule == "always_held", "always_held")
+        return EntryClassification(
+            "review_required", "attest_client", row.approver_level, row.batch, policy
+        )
+    listed = next(
+        (r for r in payload.rows if r.rule == "limit" and r.account_class == account_class), None
+    )
+    if listed is not None and listed.limit_usd is not None:
+        if amount <= listed.limit_usd:
+            return EntryClassification(
+                "within_threshold", None, listed.approver_level, listed.batch, policy
+            )
+        other = _row_for(payload.rows, lambda r: r.rule == "review_required", "review_required")
+        return EntryClassification(
+            "review_required", "over_limit", other.approver_level, other.batch, policy
+        )
+    other = _row_for(payload.rows, lambda r: r.rule == "review_required", "review_required")
+    return EntryClassification(
+        "review_required", "unlisted_class", other.approver_level, other.batch, policy
+    )
 
 
 def variance_exceeded(
@@ -583,14 +620,38 @@ def variance_exceeded(
     current_usd: int,
     prior_usd: int,
 ) -> VarianceResult:
-    """Exceeded only when both the percent and the amount are."""
-    _unbuilt("K-02-T10")
+    """Exceeded only when both the percent and the amount are (strictly over each threshold).
+    A prior of zero has no percent change; then the amount alone decides."""
+    row = _row_for(payload.rows, lambda r: r.context == context, f"variance:{context}")
+    amount = abs(current_usd - prior_usd)
+    pct = (
+        None
+        if prior_usd == 0
+        else (Decimal(amount) * 100 / Decimal(abs(prior_usd))).quantize(Decimal("0.001"))
+    )
+    over_pct = pct is None or pct > row.pct
+    return VarianceResult(over_pct and amount > row.amount_usd, pct, amount, policy)
 
 
 def materiality_range_for(
     payload: MaterialityRangesPayload, policy: PolicyRef, *, engagement_kind: str
 ) -> MaterialityRangeFor:
-    _unbuilt("K-02-T10")
+    """The firm's range for an engagement kind (the partner decides within it, AUD-07)."""
+    row = _row_for(
+        payload.rows,
+        lambda r: r.engagement_kind == engagement_kind,
+        f"materiality:{engagement_kind}",
+    )
+    pm = payload.performance_materiality
+    return MaterialityRangeFor(
+        row.engagement_kind,
+        row.benchmark,
+        row.low_pct,
+        row.high_pct,
+        (pm.low_pct, pm.high_pct),
+        payload.clearly_trivial_pct,
+        policy,
+    )
 
 
 def validate_materiality(
@@ -602,28 +663,57 @@ def validate_materiality(
     performance_pct: Decimal,
     clearly_trivial_pct: Decimal,
 ) -> MaterialityCheck:
-    _unbuilt("K-02-T10")
+    """Whether a partner's chosen percentages sit inside the firm's ranges (inclusive)."""
+    found = materiality_range_for(payload, policy, engagement_kind=engagement_kind)
+    low, high = found.performance_materiality
+    return MaterialityCheck(
+        found.low_pct <= pct <= found.high_pct,
+        low <= performance_pct <= high,
+        clearly_trivial_pct == found.clearly_trivial_pct,
+        policy,
+    )
 
 
 def confidence_hold(
     payload: DocumentConfidencePayload, policy: PolicyRef, *, confidence_pct: Decimal
 ) -> ConfidenceDecision:
-    _unbuilt("K-02-T10")
+    """Below the floor a document is held for a person; auto-accept stays off while the policy
+    principal is dormant (the payload cannot enable it)."""
+    hold = confidence_pct < payload.hold_below_pct
+    auto = (
+        payload.auto_accept_enabled
+        and not hold
+        and confidence_pct >= payload.auto_accept_above_pct
+    )
+    return ConfidenceDecision(hold, auto, policy)
 
 
 def required_review_levels(
     payload: ReviewLevelsPayload, policy: PolicyRef, *, tier: int
 ) -> RequiredLevels:
-    _unbuilt("K-02-T10")
+    """Q-18: the review levels a tier needs, in the payload's order."""
+    row = _row_for(payload.tiers, lambda t: t.tier == tier, f"tier:{tier}")
+    return RequiredLevels(row.tier, tuple(row.required_levels), row.second_partner_review, policy)
 
 
 def return_approval_policy(
     payload: ReturnApprovalPolicyPayload, policy: PolicyRef, *, client_id: UUID
 ) -> ReturnApproval:
-    _unbuilt("K-02-T10")
+    """BH-TAX-02: the signing partner named for the client gives final approval; export waits
+    for it. A client with no assignment has no approver yet (None), never a default."""
+    assigned = next((a for a in payload.applies_to if a.client_id == client_id), None)
+    return ReturnApproval(
+        payload.code,
+        assigned.approver_user_id if assigned is not None else None,
+        payload.export_condition == "after_final_approval",
+        policy,
+    )
 
 
 def ssars_framework_for(
     payload: SsarsCasSettingsPayload, policy: PolicyRef, *, period_end: date
 ) -> SsarsFramework:
-    _unbuilt("K-02-T10")
+    """SSARS 27 applies to periods ending on or after Dec 15, 2026, or earlier when the firm
+    adopted it early: then a CAS by-product, before it AR-C 70 preparation."""
+    after = payload.early_adopt_ssars27 or period_end >= SSARS27_BOUNDARY
+    return SsarsFramework("cas_by_product" if after else "ar_c_70_preparation", policy)
