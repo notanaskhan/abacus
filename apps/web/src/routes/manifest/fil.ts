@@ -6,7 +6,7 @@ import type { Manifest } from "./types";
 export const filScreens = {
   "FIL-01": {
     name: "Files browser & document drawer",
-    status: "fixture",
+    status: "live",
     path: "/files",
     navArea: "Files",
   },

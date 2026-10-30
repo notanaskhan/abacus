@@ -55,7 +55,13 @@ from abacus.modules.integrations.qbo_adapter import register_if_configured
 # A-02-T16: the live POR-16 routes are declared on C20's `portal_router` in `routes`, so it is
 # imported from there (loading the module registers them before the API mounts the router).
 from abacus.modules.integrations.routes import firm_router, portal_router
-from abacus.modules.integrations.secrets import erase_secret, open_secret, store_secret
+from abacus.modules.integrations.secrets import (
+    connected_integration,
+    docusign_install_secret,
+    erase_secret,
+    open_secret,
+    store_secret,
+)
 from abacus.modules.integrations.writers import WritePreview, Writer, WriteReceipt, WriteRequest
 from abacus.modules.integrations.writes import (
     WriteCapabilityRefused,
@@ -91,6 +97,8 @@ __all__ = [
     "authorise_write",
     "catalog_rows",
     "client_catalog",
+    "connected_integration",
+    "docusign_install_secret",
     "egress_allowlist",
     "egress_hosts_by_connector",
     "egress_read_posts",
