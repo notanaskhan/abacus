@@ -4,7 +4,7 @@ title: P-11-T04 C11 consumer contract tests
 spec: SPEC-520
 acceptance_criteria: [AC-32, AC-28]
 risk_zone: amber
-status: todo
+status: in-review
 epic: P-11
 plan_key: P-11-T04
 branch: s17-p11-t04
@@ -28,5 +28,15 @@ schema in the OpenAPI snapshot), `test_refusals.py` (the error codes in the cont
 (a C11 GeneratedDocumentOut + fields map onto `DocumentVM` and a field manifest). Added to the
 contracts CI shard. Rollback: revert.
 
+As built: `backend/tests/contracts/c11_renderer/test_c11_consumer.py` (shapes, DF-31 words, field
+manifest, the closed DocBlock vocabulary against the contract's §6, decimal-string table cells,
+images by asset id, the three refusal codes and every §7 code, 409 on regenerate and publish,
+human-only actions against §4 and the matrix, audit names equal to §5), with `AUDIT_EVENTS` and
+`HUMAN_ONLY_ACTIONS` on the contract module; `apps/web/src/domain/documents/c11.ts` (C11 → the T10
+header and the F-07 field placements) and `apps/web/src/fixtures/contracts/c11-renderer.contract.test.ts`
+(the mapping on the seed fixture, and every fixture response validated against the OpenAPI shape).
+`tests/contracts` already runs in `make ci-contracts` (the provider's CI).
+
 ## Progress log
 - `2026-10-29` — Planned in P-11-T01.
+- `2026-10-29` — Built on `s17-p11-t04` (stacked on T03); run at the S17 end review.

@@ -88,6 +88,24 @@ ImportErrorCode = Literal[
     "too_large",
 ]
 
+# C11 §5: the audit events the service writes (P-11-T08 onward); never a Restricted value.
+AUDIT_EVENTS = (
+    "report_template.imported",
+    "report_template.published",
+    "report_template.deprecated",
+    "generated_document.rendered",
+    "generated_document.finalised",
+    "generated_document.regenerated",
+    "generated_document.locked",
+    "generated_document.marked_out_of_date",
+)
+# C11 §4: the human-only actions.
+HUMAN_ONLY_ACTIONS = (
+    "report_template.import",
+    "report_template.publish",
+    "generated_document.regenerate",
+)
+
 FIRM_ACTIONS = (
     "generated_document.read",
     "generated_document.regenerate",
