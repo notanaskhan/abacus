@@ -24,17 +24,23 @@ import type {
   ListPageCitationV2Out,
   ListPageClientRelationshipOut,
   ListPageClientRowOut,
+  ListPageConsentOut,
   ListPageDecisionCardItemOut,
   ListPageEnvelopeListRow,
   ListPageHumanGateOut,
   ListPageInboxThreadRow,
   ListPageIntakeUploadOut,
   ListPageIssueItemOut,
+  ListPageK1PackageOut,
   ListPageKnowledgeItemOut,
   ListPagePortalEnvelopeRow,
+  ListPageReferenceSetOut,
+  ListPageReferenceSetVersionOut,
   ListPageReportTemplateOut,
   ListPageReviewNoteItemOut,
   ListPageReviewQueueItemOut,
+  ListPageStandardOut,
+  ListPageTaxReturnRowOut,
   ListPageWallEventOut,
   ListPageWorkItemRowOut,
   MePortalOut,
@@ -113,17 +119,23 @@ const LIST_PAGES = {
   ListPage_CitationV2Out_: (p: ListPageCitationV2Out) => envelope(p),
   ListPage_ClientRelationshipOut_: (p: ListPageClientRelationshipOut) => envelope(p),
   ListPage_ClientRowOut_: (p: ListPageClientRowOut) => envelope(p),
+  ListPage_ConsentOut_: (p: ListPageConsentOut) => envelope(p), // T-01: ADM-05
   ListPage_DecisionCardItemOut_: (p: ListPageDecisionCardItemOut) => envelope(p),
   ListPage_EnvelopeListRow_: (p: ListPageEnvelopeListRow) => envelope(p), // N-02: SIG-01
   ListPage_HumanGateOut_: (p: ListPageHumanGateOut) => envelope(p),
   ListPage_InboxThreadRow_: (p: ListPageInboxThreadRow) => envelope(p), // N-01: INB-01
   ListPage_IntakeUploadOut_: (p: ListPageIntakeUploadOut) => envelope(p), // N-01: POR-03
   ListPage_IssueItemOut_: (p: ListPageIssueItemOut) => envelope(p),
+  ListPage_K1PackageOut_: (p: ListPageK1PackageOut) => envelope(p), // T-02: TXP-12
   ListPage_KnowledgeItemOut_: (p: ListPageKnowledgeItemOut) => envelope(p), // K-01: KNW-01
   ListPage_PortalEnvelopeRow_: (p: ListPagePortalEnvelopeRow) => envelope(p), // N-02: POR-06
+  ListPage_ReferenceSetOut_: (p: ListPageReferenceSetOut) => envelope(p), // K-02: KNW-04
+  ListPage_ReferenceSetVersionOut_: (p: ListPageReferenceSetVersionOut) => envelope(p), // K-02: KNW-04
   ListPage_ReportTemplateOut_: (p: ListPageReportTemplateOut) => envelope(p), // P-11: C11 templates
   ListPage_ReviewNoteItemOut_: (p: ListPageReviewNoteItemOut) => envelope(p),
   ListPage_ReviewQueueItemOut_: (p: ListPageReviewQueueItemOut) => envelope(p), // K-01: KNW-01
+  ListPage_StandardOut_: (p: ListPageStandardOut) => envelope(p), // K-02: KNW-04
+  ListPage_TaxReturnRowOut_: (p: ListPageTaxReturnRowOut) => envelope(p), // T-02: TAX-01
   ListPage_WallEventOut_: (p: ListPageWallEventOut) => envelope(p), // G-01-T02
   ListPage_WorkItemRowOut_: (p: ListPageWorkItemRowOut) => envelope(p),
 } as const;

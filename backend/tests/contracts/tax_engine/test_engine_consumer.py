@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import get_args
 
-from abacus.kernel._statuses import EfileAckStatus, EngineSyncStatus
+from abacus.kernel._statuses import EfileAckStatus, ReturnSyncChipStatus
 from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.tax import engine_contract as engine
 
@@ -32,7 +32,7 @@ def test_ac9_a_submission_id_is_its_last_four_only() -> None:
 
 
 def test_ac9_sync_chip_and_ack_codes_are_the_registrys() -> None:
-    assert set(get_args(engine.SyncState)) == {s.value for s in EngineSyncStatus}
+    assert set(get_args(engine.SyncState)) == {s.value for s in ReturnSyncChipStatus}
     assert {"accepted", "rejected"} == {s.value for s in EfileAckStatus}
 
 

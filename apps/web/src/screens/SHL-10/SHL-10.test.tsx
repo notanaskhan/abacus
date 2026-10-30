@@ -84,8 +84,8 @@ function show(state: Shl10State, extra: Record<string, FixtureHandler> = {}): Ca
 const approveButton = (name: RegExp) => screen.findByRole<HTMLButtonElement>("button", { name });
 
 describe("SHL-10", () => {
-  it("builds a, b, c and f", () => {
-    expect(STATES).toEqual(["a", "b", "c", "f"]);
+  it("builds a to g (e′ as ep)", () => {
+    expect(STATES).toEqual(["a", "b", "c", "d", "e", "ep", "f", "g"]);
   });
 
   it("a: reasoning, four changes struck before → after, the tie, evidence and Approve adjustments", async () => {
@@ -201,5 +201,81 @@ describe("SHL-10", () => {
         note: null,
       });
     });
+  });
+});
+
+// P-04-T42: "Frames d, e, e-prime and g render from fixtures, Review all in package approves
+// nothing, and the batch line names a person, never the agent."
+describe("SHL-10 d, e, e′, g", () => {
+  it("d: AJE-05 has no Approve; Send to Priya Raman routes it, with the policy row", async () => {
+    const calls = show("d");
+    expect(await screen.findByText("Dr Inventory — Green Coffee")).toBeTruthy();
+    expect(
+      screen.getByText("Review required · above $10,000 other accruals (BH AJE thresholds v2)"),
+    ).toBeTruthy();
+    expect(screen.getByText("Your limit: within-threshold batches only.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /^Approve/u })).toBeNull();
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Send to Priya Raman for approval/u }),
+    );
+    await waitFor(() => {
+      expect(calls.some((c) => c.method === "POST" && c.path.endsWith("/route"))).toBe(true);
+    });
+    const route = calls.find((c) => c.path.endsWith("/route"));
+    expect((route?.body as { approver_user_id: string }).approver_user_id).toBe(
+      SHL10.d.policy.routed_to_user_id,
+    );
+  });
+
+  it("e: the batch as a JE table, tie 20,020.00, Approve 4 under BH AJE thresholds v2", async () => {
+    const calls = show("e");
+    const table = await screen.findByRole("table", { name: "Entries" });
+    expect(within(table).getAllByRole("row")).toHaveLength(5);
+    expect(screen.getAllByText("Approve 4 entries").length).toBeGreaterThan(0);
+    expect(screen.getByText(/proposed 4 entries within BH AJE thresholds v2/u)).toBeTruthy();
+    expect(screen.getByText("20,020.00")).toBeTruthy();
+    const approve = await approveButton(/Approve 4 under BH AJE thresholds v2/u);
+    fireEvent.click(approve);
+    await waitFor(() => {
+      expect(calls.some((c) => c.method === "POST" && c.path.endsWith("/approve"))).toBe(true);
+    });
+  });
+
+  it("e′: the line names Raj Malhotra and the policy, never the agent; Undo calls only undo", async () => {
+    const calls = show("ep", {
+      "GET /v1/proposals/{ref}": () =>
+        json({
+          ...SHL10.e_prime,
+          decision: { ...SHL10.e_prime.decision, undo_until: "2099-01-01T00:00:00Z" },
+        }),
+    });
+    const line = await screen.findByText(/Approved by Raj Malhotra under BH AJE thresholds v2/u);
+    expect(line.textContent).not.toMatch(/Agent/u);
+    expect(screen.queryByRole("table", { name: "Entries" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    await waitFor(() => {
+      expect(calls.some((c) => c.method === "POST" && c.path.endsWith("/undo"))).toBe(true);
+    });
+    expect(calls.filter((c) => c.method === "POST").map((c) => c.path.split("/").at(-1))).toEqual([
+      "undo",
+    ]);
+  });
+
+  it("g: the set row; Review all in package approves nothing; Approve conclusion", async () => {
+    const calls = show("g");
+    expect(
+      await screen.findByText(
+        "Part of BH-FS-430 Search for unrecorded liabilities · 40 results · 1 exception",
+      ),
+    ).toBeTruthy();
+    const review = screen.getByText("Review all in package");
+    fireEvent.click(review);
+    expect(calls.filter((c) => c.method === "POST")).toEqual([]);
+    expect(await approveButton(/Approve conclusion/u)).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Adopting the conclusion changes only the sheet. Any adjustment is proposed by a person in AUD-15 / AUD-16.",
+      ),
+    ).toBeTruthy();
   });
 });

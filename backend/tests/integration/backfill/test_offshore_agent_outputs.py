@@ -410,9 +410,10 @@ async def test_recheck_a_wall_still_comes_first(firm: Firm) -> None:
         assert response.status_code == 404, (route, response.text)
 
 
-async def test_recheck_the_setup_file_download_refuses_an_offshore_member(firm: Firm) -> None:
-    """Item 5: the stored acceptance documentation is raw client content (as the signed
-    letter); an offshore member is refused its bytes, an onshore one gets them."""
+async def test_recheck_the_retired_setup_file_serves_no_one(firm: Firm) -> None:
+    """Item 5: the stored acceptance documentation was raw client content (as the signed letter)
+    and an offshore member was refused its bytes. P-07-T59 (DEC-906) retired the attachment with
+    `engagement_acceptance`: the route stores and serves nothing, onshore or offshore."""
     partner = await firm.seed.person(firm.tenant_id)
     await firm.seed.member(firm.site, partner, "engagement_partner")
     stored = await firm.net.http.post(
@@ -421,9 +422,9 @@ async def test_recheck_the_setup_file_download_refuses_an_offshore_member(firm: 
         content=w2_pdf(),
         headers={**firm.net.headers(partner), "Content-Type": PDF},
     )
-    assert stored.status_code == 201, stored.text
+    assert stored.status_code in (404, 405), stored.text
+    # `GET …/{which}/file` serves the signed letter only; `acceptance` is not a `which` (422).
     path = f"{firm.base}/acceptance/file"
-    mia = await firm.net.call("GET", path, firm.mia)
-    assert mia.status_code == 200, mia.text
-    remy = await firm.net.call("GET", path, firm.remy)
-    assert (remy.status_code, remy.json()) == (403, FORBIDDEN)
+    for who in (firm.mia, firm.remy):
+        response = await firm.net.call("GET", path, who)
+        assert response.status_code in (404, 405, 422), response.text

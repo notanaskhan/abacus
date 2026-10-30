@@ -15,3 +15,11 @@ export {
   useProposal,
   useProposalWrites,
 } from "./proposals";
+export {
+  type CheckpointFilter,
+  type CheckpointTarget,
+  type CheckpointWrites,
+  useCheckpoint,
+  useCheckpointHistory,
+  useCheckpointWrites,
+} from "./checkpoints";

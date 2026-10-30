@@ -13,3 +13,11 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: signatures.docusign
+    description: 'The DocuSign kill switch (N-02-T18; ADR-149; W7): on, an envelope whose firm has a connected DocuSign integration may be created, reminded and voided at DocuSign, once the W7 write capability is enabled in write-capabilities.yaml. Off (the default, and the kill switch): nothing is sent to DocuSign and a send is recorded as not sent; the fake provider in synthetic environments is unaffected.'
+    owner: ayushkbhatia
+    created: 2026-10-30
+    expires: 2027-04-28
+    override: DEC-137
+    kind: boolean
+    default: false

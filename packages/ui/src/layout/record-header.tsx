@@ -52,6 +52,9 @@ export interface DefaultRecordHeaderProps extends Common {
   /** The Assistant chip. Default true. */
   assistant?: boolean;
   onAssistant?: () => void;
+  /** The state pill's variant when the record has left the amber work state (a return reads
+   * Accepted green, Not started neutral; T-02-T14). Default amber. */
+  stateTone?: PillVariant;
 }
 
 export interface AuditRecordHeaderProps extends Common {
@@ -265,6 +268,7 @@ function DefaultHeader({
   onSync,
   assistant = true,
   onAssistant,
+  stateTone,
 }: DefaultRecordHeaderProps): JSX.Element {
   return (
     <div
@@ -288,7 +292,7 @@ function DefaultHeader({
           )}
         </>
       )}
-      <Centre title={title} context={context} state={state} />
+      <Centre title={title} context={context} state={state} tone={stateTone} />
       {right ??
         (assistant && (
           <Chip icon="message-circle" onClick={onAssistant} className="ml-auto pr-[11px]">

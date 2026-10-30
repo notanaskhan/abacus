@@ -33,14 +33,17 @@ async function call(handlers: Handlers, key: string, req: FixtureRequest) {
 const POLICY = "/v1/firm/ai-policy";
 
 describe("ai-policy v1 fixtures (ADM-04)", () => {
-  it("serves a, b, d, e, g, h, i and j with the band, awaiting approval and the real firm", () => {
+  // c and f arrived with the ADM-04 screen (G-02-T25): the policy-acceptance dialog and its toast.
+  it("serves a to j with the band, awaiting approval and the real firm", () => {
     expect(Object.keys(scenarios).sort()).toEqual([
       "a",
       "awaiting",
       "b",
       "band",
+      "c",
       "d",
       "e",
+      "f",
       "g",
       "h",
       "i",

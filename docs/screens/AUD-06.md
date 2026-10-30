@@ -87,10 +87,12 @@ Gradients, emoji, saturated blue, heavy shadows, invented colours, truncated num
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
 | g | C (threshold 0.20, maxDiffPixelRatio 3 %) | 2.20 | locked (A-02-T31, measured Thu Oct 29, 2026) |
-| a, c, e | C | 7.93 / 6.84 / 4.29 | report-only: over Tier C's 3 %, so not locked at A-02 exit as the row asked; the gallery draws the standard cockpit (canvas 742, dock 330), not the audit split |
-| b, d, f | C | 4.95 / 6.58 / 7.77 | report-only |
+| a, c | C | 2.71 / 2.86 | locked (DEC-838, measured Fri Oct 30, 2026) with the Viewer dock, the rail and the audit bar masked: the dock per D4, the rail and bar as AUD-02's chrome, whose unmasked locks are A-01-T33's (DEC-909); 4.25 / 4.40 with the dock alone |
+| b, e | C | 2.93 / 2.53 | locked (DEC-838, measured Fri Oct 30, 2026) with the Viewer dock masked (D4) |
+| d | C | 4.59 | report-only, the dock masked (3.11 with the rail and bar masked too) |
+| f | C | 10.34 | report-only, the dock masked: the artboard records `?ov=signoff:…` but does not draw the sign-off dialog the handoff shows |
 | h | — | — | the handoff's AUD-06h is a 2880 × 580 strip (the pane detail), not a window; no window baseline, unmeasured |
-| host | D | — | audit bar 59 and rail 330 hold; workpaper 536 and viewer 490 do not (canvas 742, dock 330): an expected failure in `tier-d-connections.spec.ts` until the split lands (DEC-832) |
+| host | D | — | audit bar 59, rail 330, workpaper 536, viewer 490 on a, c and e (`tier-d-connections.spec.ts`): the Trial Balance row widens the dock to `--ev-w` as AUD-03 does (DEC-838) |
 
 ## Open gaps
 - The rail's "Prepared · MD" sub-line for the Trial Balance row is the cockpit provider's (A-01); the fixture rail reads the run grammar.

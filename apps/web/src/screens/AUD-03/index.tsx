@@ -29,6 +29,7 @@ import { useQuery } from "@tanstack/react-query";
 import { type JSX, type KeyboardEvent, useEffect, useMemo, useState } from "react";
 import { useCan } from "../../app-core/can";
 import { useNow } from "../../app-core/clock";
+import { useOverlays } from "../../app-core/overlay-host";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { useSession } from "../../app-core/session";
 import { AgentDock } from "../../domain/agents";
@@ -460,6 +461,33 @@ function DecisionStrip({
   );
 }
 
+/** P-04-T42: the AUD-03 entry point into SHL-10. A flagged screening's pending C3 proposal (the
+ * card's `proposal_ref`) opens in the approve sheet; the button opens it and decides nothing. */
+function ReviewProposal({
+  engagementId,
+  itemId,
+}: {
+  engagementId: string;
+  itemId: string;
+}): JSX.Element | null {
+  const card = useScreeningCard({ engagementId, itemId });
+  const { open } = useOverlays();
+  const ref = card.data?.proposal_ref ?? null;
+  if (ref === null) return null;
+  return (
+    <Button
+      variant="secondary"
+      size="sm"
+      opensDialog
+      onClick={() => {
+        open("approve", ref);
+      }}
+    >
+      {COPY.reviewProposal}
+    </Button>
+  );
+}
+
 function UploadViewer({
   engagementId,
   row,
@@ -474,8 +502,9 @@ function UploadViewer({
     <div className="flex flex-col">
       {strip}
       {row.screening != null && (
-        <div className="p-[10px] pb-0">
+        <div className="flex flex-col gap-[8px] p-[10px] pb-0">
           <ScreeningCardHost subject={{ engagementId, itemId: row.request_item_id }} />
+          <ReviewProposal engagementId={engagementId} itemId={row.request_item_id} />
         </div>
       )}
     </div>

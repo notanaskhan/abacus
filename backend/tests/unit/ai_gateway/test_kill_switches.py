@@ -94,7 +94,9 @@ async def test_unreadable_switches_make_the_call_wait_not_end(
 
 
 def test_ai_paused_is_appended_to_the_audited_reasons() -> None:
-    assert boundary.REASONS[-1] == "ai_paused"
+    # Appended after tax_return_information; later reasons (T-01-T11's consent_7216) append after
+    # it, so its recorded index keeps its meaning.
+    assert boundary.REASONS.index("ai_paused") == 8
     assert boundary.REASONS.index("tax_return_information") == 7  # earlier indices keep meaning
 
 
