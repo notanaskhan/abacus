@@ -18,11 +18,13 @@ from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 from abacus.kernel.audit_owners import register_client_owners
 from abacus.kernel.db import tenant_session
 from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
-from abacus.kernel.uow import Handler
+from abacus.kernel.uow import Handler, OutboxEvent
 from abacus.modules.identity.api import AbacusRouter, AuthContext
 from abacus.modules.signatures.activities import ACTIVITIES as ENVELOPE_ACTIVITIES
 from abacus.modules.signatures.audit_targets import CLIENT_KINDS, audit_clients
 from abacus.modules.signatures.contract import policies_router, portal_router, router
+from abacus.modules.signatures.docusign_firm import firm_provider, register_docusign_install
+from abacus.modules.signatures.events import EnvelopeSendApproved
 from abacus.modules.signatures.hub import seal_ip
 from abacus.modules.signatures.provider import (
     Completed,
@@ -33,6 +35,7 @@ from abacus.modules.signatures.provider import (
     SignerEvidence,
     SignerState,
     configure_provider,
+    register_firm_provider,
 )
 from abacus.modules.signatures.reminders import ReminderSender, register_reminder_sender
 from abacus.modules.signatures.sources import (
@@ -123,7 +126,9 @@ register_client_owners(CLIENT_KINDS, audit_clients)
 WORKFLOWS: dict[type, WorkClass] = {EnvelopeWorkflow: "time_sensitive"}
 register_work_classes(WORKFLOWS)
 ACTIVITIES: tuple[object, ...] = ENVELOPE_ACTIVITIES
-SUBSCRIPTIONS: dict[str, Handler] = {}
+# N-02-T18: the provider for a firm with no process-wide one is its own DocuSign account, built
+# only when the kill switch, W7 and a connected install allow (ProviderUnavailable otherwise).
+register_firm_provider(firm_provider)
 
 
 async def start_envelope(tenant_id: UUID, envelope_id: UUID) -> None:
@@ -136,6 +141,14 @@ async def start_envelope(tenant_id: UUID, envelope_id: UUID) -> None:
         id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE,
         id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
     )
+
+
+async def on_send_approved(event: OutboxEvent) -> None:
+    """N-02-T18: a send whose Undo window passed and whose grant the relay consumed."""
+    await start_envelope(event.tenant_id, UUID(str(event.payload["envelope_id"])))
+
+
+SUBSCRIPTIONS: dict[str, Handler] = {EnvelopeSendApproved.event_type: on_send_approved}
 
 
 # The routers the API mounts, in order (P-39; F-03-T07). `/import` and `/summary` are declared
@@ -169,6 +182,7 @@ __all__ = [
     "envelope_source",
     "envelope_summary_for",
     "envelope_workflow_id",
+    "register_docusign_install",
     "register_envelope_source",
     "register_reminder_sender",
     "registered_sources",

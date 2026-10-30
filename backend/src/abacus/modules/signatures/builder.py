@@ -19,15 +19,15 @@ DEC-24, DEC-1178; P-35).
   (`signer_email_missing:<signer_id>`).
 - **Send.** A person's own live session (never an agent, the platform or support), an
   `Idempotency-Key`, the checks passing (else 409 `validation_failed` with each check in
-  `facts`), then an approval grant with `not_before = now + 10 s`. The envelope records who sent
-  it and when; the provider is called only by EnvelopeWorkflow after the window, through the
-  grant (N-02-T22). **Undo** inside the window voids the grant, clears the send and writes
-  `envelope.send_undone`: no provider call is ever made.
+  `facts`), then an approval grant with `not_before = now + 10 s` bound to the held
+  `envelope.send_approved` event. The envelope records who sent it and when; the outbox relay
+  consumes the grant after the window and its subscriber starts EnvelopeWorkflow, the only
+  caller of the provider (N-02-T18). **Undo** inside the window voids the grant, clears the send
+  and writes `envelope.send_undone`: no provider call is ever made.
 """
 
 from __future__ import annotations
 
-import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
@@ -40,7 +40,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from abacus.kernel import clock
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid
-from abacus.kernel.uow import Ref, Target, UnitOfWork, audit_of_targets, uow
+from abacus.kernel.uow import Ref, Target, UnitOfWork, audit_of_targets, event_sha256, uow
 from abacus.modules.engagements.api import get_ref
 from abacus.modules.evidence.api import tin_exposure
 from abacus.modules.identity.api import (
@@ -53,6 +53,7 @@ from abacus.modules.identity.api import (
     void_grant,
 )
 from abacus.modules.organisations.api import signer_contacts
+from abacus.modules.signatures.events import EnvelopeSendApproved
 from abacus.modules.signatures.hub import firm_and_flag, resource_of, visible_head
 from abacus.modules.signatures.sources import SourceDraft, envelope_source
 
@@ -651,10 +652,6 @@ async def validate(ctx: AuthContext, envelope_id: UUID) -> CheckReport:
 # --- Send and Undo -------------------------------------------------------------------------------
 
 
-def _send_digest(envelope_id: UUID, version: int) -> str:
-    return hashlib.sha256(f"envelope.send:{envelope_id}:{version}".encode()).hexdigest()
-
-
 async def check_send(ctx: AuthContext, envelope_id: UUID) -> None:
     """Who may send, before an idempotent replay answers (a replay runs nothing else)."""
     _human(ctx)
@@ -681,16 +678,26 @@ async def send(ctx: AuthContext, envelope_id: UUID) -> Sent:
             raise EnvelopeNotDraft(facts={"status": locked.status})
         now = await clock.now(ctx.tenant)
         not_before = now + UNDO_WINDOW
+        event = EnvelopeSendApproved(
+            envelope_id=envelope_id,
+            client_id=locked.client_id,
+            engagement_id=head.engagement_id,
+            sent_by=ctx.user_id,
+            version=locked.version,
+        )
         grant = await issue_grant(
             tx,
             ctx,
             action=SEND,
             resource=resource,
             subject=Target("envelope", envelope_id),
-            payload_sha256=_send_digest(envelope_id, locked.version),
+            payload_sha256=event_sha256(event),
             not_before=not_before,
             expires_at=not_before + GRANT_LIFETIME,
         )
+        # The relay delivers this only after the window and only by consuming the grant; its
+        # subscriber starts EnvelopeWorkflow (the provider's first call).
+        tx.emit(event, not_before=not_before, grant_id=grant)
         await tx.session.execute(
             text(
                 "UPDATE envelopes SET sent_by = :user, sent_at = :now, updated_at = :now "
