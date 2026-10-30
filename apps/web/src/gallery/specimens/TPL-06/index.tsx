@@ -57,8 +57,6 @@ const GROUP_B = [
   "Schedule M-2",
   "Schedule K",
   "Capital Accounts",
-  "Basis",
-  "States",
 ];
 const VIEWS = [COPY.views.byPartner, COPY.views.byMovement];
 

@@ -55,6 +55,7 @@ Gradients, emoji, saturated blue, heavy shadows, invented colours, lorem ipsum, 
 | ID | What differs from the handoff | Why | Decision recorded |
 |---|---|---|---|
 | tabsbar | Group A "Issues 11" is the seed's derived open-issue count at E0 | G-C02: the count follows the seed; an artboard value that differs is a masked region | DEC-801, DECISIONS.md |
+| tabsbar B | Group B shows Summary to Capital Accounts (7); "Basis" and "States" are not drawn | the C-05 track holds at most 7 options, as T6 (F-06-T18) | DEC-1557 |
 | sign-off | "Sign off…" and the "✓ SI" chip sit in the control bar, not the pane header | the T6 kit's one sign-off placement (F-06-T18); TPL-06 renders on the kit | DEC-1557 |
 | ⓘ | the value cards carry no ⓘ text | the handoff's ⓘ opens SHL-09 provenance (planned); no words are designed for it | DEC-1557 |
 | tie-out link | "Tax-exempt interest … not in the rollforward →" is a row label, not yet a link | TXP-10 is planned; the row keeps the words | DEC-1557 |
