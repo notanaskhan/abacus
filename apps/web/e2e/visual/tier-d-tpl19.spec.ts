@@ -73,9 +73,14 @@ test("frames 1, 2, 6, 7: header 56 at the top and the 64 tab bar at the foot", a
 test("frame 5: the review sheet at the foot, previews 150 × 194, Upload 48 high", async ({
   page,
 }) => {
-  const phone = await box(board(page, "tpl-19-5").locator("[data-frame='phone']"));
   const sheet = await box(board(page, "tpl-19-5").locator("[data-capture='review-sheet']"));
-  expect(sheet.y + sheet.h - phone.y).toBe(844);
+  const foot = await board(page, "tpl-19-5")
+    .locator("[data-capture='review-sheet']")
+    .boundingBox();
+  const top = await board(page, "tpl-19-5").locator("[data-frame='phone']").boundingBox();
+  if (foot === null || top === null) throw new Error("no box");
+  // The foot from unrounded boxes, as in the shell test above.
+  expect(Math.round(foot.y + foot.height - top.y)).toBe(844);
   expect(sheet.w).toBe(390);
   for (const n of [1, 2]) {
     const preview = await box(board(page, "tpl-19-5").locator(`[data-page='${String(n)}']`));
