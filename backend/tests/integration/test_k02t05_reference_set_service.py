@@ -382,7 +382,7 @@ async def test_ac19_a_pcaob_or_issuer_set_is_refused() -> None:
         assert isinstance(parsed, StandardsSetsPayload)
         with pytest.raises(platform_api.StandardsSetRefused) as refused:
             reference_sets.validate_standards_sets(parsed, {})
-        assert refused.value.facts["reason"] == "pcaob_or_issuer"
+        assert refused.value.facts["reason"] == "excluded_family"
     with pytest.raises(platform_api.ReferencePayloadInvalid):
         reference_sets.validate_payload("standards_sets", _standards(("pcaob", "PCAOB", "pcaob")))
 

@@ -68,7 +68,7 @@ def test_ac19_a_pcaob_or_issuer_row_is_refused(
         reference_sets.validate_standards_sets(
             _payload((code, label, "gaas_nonissuer"), refs=refs), {}
         )
-    assert refused.value.facts == {"reason": "pcaob_or_issuer", "code": code}
+    assert refused.value.facts == {"reason": "excluded_family", "code": code}
 
 
 def test_ac19_a_dropped_or_moved_code_is_refused() -> None:
