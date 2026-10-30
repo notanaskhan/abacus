@@ -1050,3 +1050,62 @@ __all__ = [
     "version_detail",
     "version_diff",
 ]
+
+
+# --- K-02-T11: imports make drafts ---------------------------------------------------------------
+
+
+async def import_draft(
+    ctx: AuthContext, standard_id: UUID, payload: Mapping[str, object]
+) -> StandardVersionSummaryOut:
+    """A workbook's payload as this standard's next draft (its owner's; one draft at a time,
+    409 `draft_exists`). An import never publishes and never touches a published version."""
+    await _human(ctx, IMPORT, standard_id)
+    version_id = uuid4()
+    async with uow(ctx.tenant) as tx:
+        item = await _find(tx.session, standard_id, lock=True)
+        await _owner_guard(ctx, IMPORT, item)
+        if any(v.status == "draft" for v in item.versions):
+            raise DraftExists(facts={"standard_id": str(standard_id)})
+        stored = validate_payload(item.parent.kind, payload)
+        on = await today(ctx.tenant)
+        source = _shown(item, on)
+        number = max((v.version for v in item.versions), default=0) + 1
+        tx.session.add(
+            item.family.version(
+                id=version_id,
+                tenant_id=ctx.tenant_id,
+                parent_id=standard_id,
+                version=number,
+                payload=stored,
+                payload_hash=payload_hash(stored),
+                change_summary=None,
+                drafted_from_version_id=source.id if source is not None else None,
+                drafted_by=ctx.user_id,
+            )
+        )
+        tx.record(
+            item.family.drafted,
+            target=Target(item.family.version_subject, version_id),
+            after=Ref(standard=standard_id, version=number, source="import"),
+        )
+    on = await today(ctx.tenant)
+    async with tenant_session(ctx.tenant) as session:
+        item = await _find(session, standard_id)
+    found = next(v for v in item.versions if v.id == version_id)
+    return _summary(found, in_effect(item.versions, on), await _names([item]))
+
+
+async def version_payload(
+    ctx: AuthContext, standard_id: UUID, version_id: UUID
+) -> tuple[str, str, int, dict[str, object]]:
+    """For export: the standard's kind and key, the version number and payload. Drafts are
+    partners' only, as on every read."""
+    await authorise(ctx, READ, Resource.firm(ctx.tenant_id))
+    partner = await _is_partner(ctx)
+    async with tenant_session(ctx.tenant) as session:
+        item = await _find(session, standard_id)
+    found = next((v for v in _visible_versions(item, partner) if v.id == version_id), None)
+    if found is None:
+        raise NotFound("firm_standard_version")
+    return item.parent.kind, item.parent.key, found.version, dict(found.payload)

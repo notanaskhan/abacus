@@ -78,6 +78,10 @@ Two kinds of versioned, effective-dated rules (K-02 short version): **platform r
 - **AC-32** Discard keeps the row as `discarded`; the diff lists changed cells by JSON pointer with before and after strings, against the version a draft came from by default.
 - **AC-33** The examples slot (`register_standard_examples`) answers `provider_registered: false` with no rows until a provider registers; a provider's rows are already `visible()`-filtered, and no hidden count is shown (DEC-43, US-3.6).
 - **AC-34** `current_version(tenant_id, key, as_of)` names the version in effect (`LookupError` before the first effective date or for an unknown key); a standard's owner must be a partner member (422 `owner_not_partner`), and a key is one standard per firm (409 `standard_key_taken`). KNW-01's `firm_standards` category lists one card per published standard and a change-log entry per published version; the C15 projection `firm_standard` carries the name and kind only.
+- **AC-45** (K-02-T11) `GET …/versions/{id}/export.xlsx` writes the version in the import format (a `Rows` sheet for the payload's list, a `Settings` sheet of `field`/`value` for the rest), byte-stable for the same payload; importing it again drafts a payload with the same hash (an empty diff).
+- **AC-46** (K-02-T11) Imports read the raw XLSX or CSV body: cached values only, bounded, every problem 422 `import_invalid` as sheet, row, column and code, never a cell's content.
+- **AC-47** (K-02-T11) `POST /v1/standards/{id}/imports` drafts the owner's next version (409 `draft_exists` with a draft open); an import never publishes or changes a published version.
+- **AC-48** (K-02-T11) `POST /v1/standards/imports` (onboarding) reads a `Standards` sheet and one sheet per key, creates each standard with its first draft, and reports an owner who is not a partner member as that row's `owner_not_partner` while the other rows import.
 
 ## 4. Out of scope here
 The CLI, import and export, fan-out and KNW-04i/j (K-02-T06 to T12, T14 to T20) build against the same contract in later sprints.

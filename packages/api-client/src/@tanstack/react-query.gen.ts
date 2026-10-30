@@ -16356,7 +16356,7 @@ export const createStandardMutation = (options?: Partial<Options<CreateStandardD
  * Import Standards Route
  *
  * Onboarding: one sheet per kind, one draft per standard; an owner who is not a partner
- * member is a row problem (`owner_not_partner`; K-02-T11).
+ * member is a row problem (`owner_not_partner`; K-02-T11). The other rows still import.
  */
 export const importStandardsMutation = (options?: Partial<Options<ImportStandardsData>>): UseMutationOptions<ImportStandardsResponse, ImportStandardsError, Options<ImportStandardsData>> => {
     const mutationOptions: UseMutationOptions<ImportStandardsResponse, ImportStandardsError, Options<ImportStandardsData>> = {
@@ -16416,7 +16416,7 @@ export const standardExamplesOptions = (options: Options<StandardExamplesData>) 
  * Import Standard Route
  *
  * A workbook to a draft of this standard (its owner's; 422 `import_invalid` with
- * problems). Never publishes (K-02-T11).
+ * problems). Never publishes (K-02-T11). The workbook is the raw body (DEC-1357).
  */
 export const importStandardMutation = (options?: Partial<Options<ImportStandardData>>): UseMutationOptions<ImportStandardResponse, ImportStandardError, Options<ImportStandardData>> => {
     const mutationOptions: UseMutationOptions<ImportStandardResponse, ImportStandardError, Options<ImportStandardData>> = {

@@ -30661,18 +30661,6 @@ export type StandardExamplesOut = {
 };
 
 /**
- * StandardImportIn
- *
- * A workbook already uploaded and scanned through the upload flow (an upload intent).
- */
-export type StandardImportIn = {
-    /**
-     * Upload Id
-     */
-    upload_id: string;
-};
-
-/**
  * StandardImportProblemOut
  *
  * A workbook problem: where, and a fixed code, never the cell's content (ADR-052).
@@ -80114,7 +80102,7 @@ export type CreateStandardResponses = {
 export type CreateStandardResponse = CreateStandardResponses[keyof CreateStandardResponses];
 
 export type ImportStandardsData = {
-    body: StandardImportIn;
+    body?: never;
     headers?: {
         /**
          * Authorization
@@ -80147,10 +80135,6 @@ export type ImportStandardsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ImportStandardsError = ImportStandardsErrors[keyof ImportStandardsErrors];
@@ -80279,7 +80263,7 @@ export type StandardExamplesResponses = {
 export type StandardExamplesResponse = StandardExamplesResponses[keyof StandardExamplesResponses];
 
 export type ImportStandardData = {
-    body: StandardImportIn;
+    body?: never;
     headers?: {
         /**
          * Authorization
@@ -80296,7 +80280,12 @@ export type ImportStandardData = {
          */
         standard_id: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * Format
+         */
+        format?: 'xlsx' | 'csv';
+    };
     url: '/v1/standards/{standard_id}/imports';
 };
 
@@ -80314,13 +80303,13 @@ export type ImportStandardErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ImportStandardError = ImportStandardErrors[keyof ImportStandardErrors];
@@ -80730,10 +80719,6 @@ export type StandardExportVersionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type StandardExportVersionError = StandardExportVersionErrors[keyof StandardExportVersionErrors];
