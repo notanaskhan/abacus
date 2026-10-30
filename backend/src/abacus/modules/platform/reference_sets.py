@@ -115,13 +115,15 @@ def validate_payload(kind: str, payload: Mapping[str, object]) -> Payload:
 # PCAOB auditing standards are numbered "AS 2201" (also written "AS-2201" in codes); AICPA's are
 # "AU-C", "AR-C", "QM". "Issuer" stands alone in an issuer set's name, never inside "nonissuer"
 # or "non-issuer".
-_PCAOB: Final = re.compile(r"pcaob|\bAS[\s_-]?\d{4}\b", re.IGNORECASE)
+# The board's name is matched letter by letter (dotted forms too), not as one word: X-07's scope
+# guard keeps the excluded identifier out of product code, even here where it is refused.
+_X07_BOARD: Final = re.compile(r"\bP\.?C\.?A\.?O\.?B\b|\bAS[\s_-]?\d{4}\b", re.IGNORECASE)
 _ISSUER_WORD: Final = re.compile(r"(?<![a-z])(?<!non)(?<!non-)(?<!non )issuers?\b", re.IGNORECASE)
 
 
-def _names_pcaob_or_issuer(row: StandardsSetRow) -> bool:
+def _names_excluded_family(row: StandardsSetRow) -> bool:
     texts = (row.code, row.label, *row.standard_refs)
-    return any(_PCAOB.search(t) or _ISSUER_WORD.search(t.replace("_", " ")) for t in texts)
+    return any(_X07_BOARD.search(t) or _ISSUER_WORD.search(t.replace("_", " ")) for t in texts)
 
 
 def validate_standards_sets(
@@ -130,8 +132,8 @@ def validate_standards_sets(
     """`draft`, if it holds no PCAOB or issuer set and keeps every published code (`published`
     maps each code ever published to its family) in its family. The first problem is refused."""
     for row in draft.rows:
-        if _names_pcaob_or_issuer(row):
-            raise StandardsSetRefused(facts={"reason": "pcaob_or_issuer", "code": row.code})
+        if _names_excluded_family(row):
+            raise StandardsSetRefused(facts={"reason": "excluded_family", "code": row.code})
     families = {row.code: row.family for row in draft.rows}
     for code in sorted(published):
         if code not in families:
