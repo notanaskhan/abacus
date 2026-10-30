@@ -4,7 +4,7 @@ title: P-11-T03 C11 stub (DocBlocks, RenderRequest, GeneratedDocumentOut, FieldR
 spec: SPEC-520
 acceptance_criteria: [AC-31]
 risk_zone: amber
-status: todo
+status: in-review
 epic: P-11
 plan_key: P-11-T03
 branch: s17-p11-t03
@@ -35,3 +35,15 @@ Brightwater Hale seed (the Copperleaf engagement letter); the C7-style stub test
 
 ## Progress log
 - `2026-10-29` — Planned in P-11-T01.
+- `2026-10-29` — Built on `s17-p11-t03` (stacked on T02): `reporting/contract.py` (DocBlock union,
+  generated documents, fields, compare, changes, ticket, templates, import, preview; ten routes),
+  `reporting/api.py` (ROUTERS, in-process shapes, `register_document_kind`,
+  `check_render_request`), matrix and flag files, `make regenerate` (flags, matrix, OpenAPI, api
+  client, actions), fixture handlers, `tests/contracts/c11_renderer/test_c11_stubs.py`,
+  `reporting` marked landed in the pre-registration test, C11 doc and README. Tests run at the
+  S17 end review.
+
+## Decisions made during this task
+| Decision | Reason | Needs ADR? |
+|---|---|---|
+| DEC-1253: 404/501 stub rule; seed fixtures in fixture mode; final render in-process only | the repo's stub convention; a backend stub never returns invented data | no |

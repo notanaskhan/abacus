@@ -13,4 +13,3 @@ from abacus.modules.reporting.render.assets import FONTCONFIG_FILE
 # Before WeasyPrint loads Pango (render.pdf): fontconfig sees only the renderer's configuration,
 # which lists no system font, in this process (the isolated child) and nowhere else.
 os.environ["FONTCONFIG_FILE"] = str(FONTCONFIG_FILE)
-

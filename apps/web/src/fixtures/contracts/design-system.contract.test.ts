@@ -36,6 +36,7 @@ import type {
   ListPagePortalEnvelopeRow,
   ListPageReferenceSetOut,
   ListPageReferenceSetVersionOut,
+  ListPageReportTemplateOut,
   ListPageReviewNoteItemOut,
   ListPageReviewQueueItemOut,
   ListPageStandardOut,
@@ -130,6 +131,7 @@ const LIST_PAGES = {
   ListPage_PortalEnvelopeRow_: (p: ListPagePortalEnvelopeRow) => envelope(p), // N-02: POR-06
   ListPage_ReferenceSetOut_: (p: ListPageReferenceSetOut) => envelope(p), // K-02: KNW-04
   ListPage_ReferenceSetVersionOut_: (p: ListPageReferenceSetVersionOut) => envelope(p), // K-02: KNW-04
+  ListPage_ReportTemplateOut_: (p: ListPageReportTemplateOut) => envelope(p), // P-11: C11 templates
   ListPage_ReviewNoteItemOut_: (p: ListPageReviewNoteItemOut) => envelope(p),
   ListPage_ReviewQueueItemOut_: (p: ListPageReviewQueueItemOut) => envelope(p), // K-01: KNW-01
   ListPage_StandardOut_: (p: ListPageStandardOut) => envelope(p), // K-02: KNW-04

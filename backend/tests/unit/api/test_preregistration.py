@@ -55,6 +55,7 @@ LANDED = {
     "practice",
     "methodology",
     "signatures",  # N-02-T03: the C7 envelope routes (stubs behind signatures.envelopes)
+    "reporting",  # P-11-T03: the C11 routes (stubs behind reporting.generated_documents)
 }
 TENANT = TenantContext(uuid.uuid4(), "system", "test")
 

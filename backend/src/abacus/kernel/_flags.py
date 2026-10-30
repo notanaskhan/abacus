@@ -274,6 +274,11 @@ QUESTIONNAIRES_V1 = Flag(
     kind="boolean",
     default="false",
 )
+REPORTING_GENERATED_DOCUMENTS = Flag(
+    name="reporting.generated_documents",
+    kind="boolean",
+    default="false",
+)
 RETRIEVAL_AUTO = Flag(
     name="retrieval.auto",
     kind="boolean",
@@ -399,6 +404,7 @@ FLAGS: dict[str, Flag] = {
     "portal.third_party_room": PORTAL_THIRD_PARTY_ROOM,
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
     "questionnaires.v1": QUESTIONNAIRES_V1,
+    "reporting.generated_documents": REPORTING_GENERATED_DOCUMENTS,
     "retrieval.auto": RETRIEVAL_AUTO,
     "review.checkpoints": REVIEW_CHECKPOINTS,
     "review.grammar_api": REVIEW_GRAMMAR_API,

@@ -1705,28 +1705,6 @@ export type ApprovalBlockerOut = {
 };
 
 /**
- * ApprovalOut
- */
-export type ApprovalOut = {
-    /**
-     * Approved At
-     */
-    approved_at: string;
-    /**
-     * Approved By
-     */
-    approved_by: string;
-    /**
-     * Name
-     */
-    name: string;
-    /**
-     * Note
-     */
-    note: string | null;
-};
-
-/**
  * ApproveIn
  */
 export type ApproveIn = {
@@ -3627,6 +3605,24 @@ export type BinderRowOut = {
 export type BinderStatus = 'draft' | 'published' | 'unpublished' | 'complete' | 'closed';
 
 /**
+ * BlockDiffOut
+ */
+export type BlockDiffOut = {
+    /**
+     * Block Id
+     */
+    block_id: string;
+    /**
+     * Clause Id
+     */
+    clause_id: string | null;
+    /**
+     * Ops
+     */
+    ops: Array<DiffOpOut>;
+};
+
+/**
  * BoardSummaryOut
  */
 export type BoardSummaryOut = {
@@ -4324,6 +4320,45 @@ export type ChangeLogEntryOut = {
 };
 
 /**
+ * ChangedVariableOut
+ *
+ * A variable whose current value differs from the snapshot (AC-17); a Restricted value is
+ * never shown: `masked` with both values null.
+ */
+export type ChangedVariableOut = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Masked
+     */
+    masked: boolean;
+    /**
+     * Now
+     */
+    now: string | null;
+    /**
+     * Was
+     */
+    was: string | null;
+};
+
+/**
+ * ChangesOut
+ */
+export type ChangesOut = {
+    /**
+     * Items
+     */
+    items: Array<ChangedVariableOut>;
+};
+
+/**
  * CheckOut
  */
 export type CheckOut = {
@@ -4979,6 +5014,22 @@ export type CiteListPart = {
 };
 
 /**
+ * CiteRun
+ *
+ * A citation marker: a verified citation id (INV-2), never text.
+ */
+export type CiteRun = {
+    /**
+     * Citation Id
+     */
+    citation_id: string;
+    /**
+     * Type
+     */
+    type?: 'cite';
+};
+
+/**
  * CiteSeg
  */
 export type CiteSeg = {
@@ -5051,6 +5102,106 @@ export type ClassificationOut = {
      */
     taxpayer_matches_client: boolean | null;
     taxpayer_tin: MaskedTinOut | null;
+};
+
+/**
+ * ClauseBlock
+ *
+ * A clause from the template's library; `non_standard` when it differs from the standard.
+ */
+export type ClauseBlockInput = {
+    /**
+     * Blocks
+     */
+    blocks: Array<SectionBlockInput | HeadingBlock | ParagraphBlock | ClauseBlockInput | ListBlock | TableBlock | KvBlock | SignatureBlock | LegendBlock | ImageBlock | EnclosuresBlock | PageBreakBlock>;
+    /**
+     * Clause Id
+     */
+    clause_id: string;
+    /**
+     * Enabled
+     */
+    enabled: boolean;
+    /**
+     * Non Standard
+     */
+    non_standard: boolean;
+    /**
+     * Type
+     */
+    type?: 'clause';
+};
+
+/**
+ * ClauseBlock
+ *
+ * A clause from the template's library; `non_standard` when it differs from the standard.
+ */
+export type ClauseBlockOutput = {
+    /**
+     * Blocks
+     */
+    blocks: Array<SectionBlockOutput | HeadingBlock | ParagraphBlock | ClauseBlockOutput | ListBlock | TableBlock | KvBlock | SignatureBlock | LegendBlock | ImageBlock | EnclosuresBlock | PageBreakBlock>;
+    /**
+     * Clause Id
+     */
+    clause_id: string;
+    /**
+     * Enabled
+     */
+    enabled: boolean;
+    /**
+     * Non Standard
+     */
+    non_standard: boolean;
+    /**
+     * Type
+     */
+    type?: 'clause';
+};
+
+/**
+ * ClauseDefOut
+ */
+export type ClauseDefOutInput = {
+    /**
+     * Clause Id
+     */
+    clause_id: string;
+    /**
+     * Default Enabled
+     */
+    default_enabled: boolean;
+    /**
+     * Standard
+     */
+    standard: Array<SectionBlockInput | HeadingBlock | ParagraphBlock | ClauseBlockInput | ListBlock | TableBlock | KvBlock | SignatureBlock | LegendBlock | ImageBlock | EnclosuresBlock | PageBreakBlock>;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * ClauseDefOut
+ */
+export type ClauseDefOutOutput = {
+    /**
+     * Clause Id
+     */
+    clause_id: string;
+    /**
+     * Default Enabled
+     */
+    default_enabled: boolean;
+    /**
+     * Standard
+     */
+    standard: Array<SectionBlockOutput | HeadingBlock | ParagraphBlock | ClauseBlockOutput | ListBlock | TableBlock | KvBlock | SignatureBlock | LegendBlock | ImageBlock | EnclosuresBlock | PageBreakBlock>;
+    /**
+     * Title
+     */
+    title: string;
 };
 
 /**
@@ -6150,6 +6301,22 @@ export type CommunicationIn = {
      * Recipients
      */
     recipients: string;
+};
+
+/**
+ * CompareOut
+ *
+ * A deterministic word-level diff by block and clause id (AC-23).
+ */
+export type CompareOut = {
+    /**
+     * Blocks
+     */
+    blocks: Array<BlockDiffOut>;
+    /**
+     * To
+     */
+    to: string;
 };
 
 /**
@@ -8465,6 +8632,20 @@ export type DestinationRef = {
 };
 
 /**
+ * DiffOpOut
+ */
+export type DiffOpOut = {
+    /**
+     * Op
+     */
+    op: 'equal' | 'insert' | 'delete';
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
  * DigestCardOut
  */
 export type DigestCardOut = {
@@ -9720,6 +9901,20 @@ export type EmailTestSendOut = {
      * Subject
      */
     subject: string;
+};
+
+/**
+ * EnclosuresBlock
+ */
+export type EnclosuresBlock = {
+    /**
+     * Items
+     */
+    items: Array<string>;
+    /**
+     * Type
+     */
+    type?: 'enclosures';
 };
 
 /**
@@ -12252,6 +12447,53 @@ export type FieldReferenceOut = {
 };
 
 /**
+ * FieldRegionOut
+ *
+ * Where a variable or field sits on the rendered page (AC-22): PDF points, top-left origin.
+ */
+export type FieldRegionOut = {
+    /**
+     * Field Key
+     */
+    field_key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Match Id
+     */
+    match_id: string;
+    /**
+     * Page
+     */
+    page: number;
+    /**
+     * Rect Pt
+     */
+    rect_pt: [
+        number,
+        number,
+        number,
+        number
+    ];
+    /**
+     * Value Text
+     */
+    value_text: string;
+};
+
+/**
+ * FieldRegionsOut
+ */
+export type FieldRegionsOut = {
+    /**
+     * Items
+     */
+    items: Array<FieldRegionOut>;
+};
+
+/**
  * FieldTickIn
  *
  * `POST …/ticks`: "Sign off field". An unsupported value answers 422 `uncited_change`; a
@@ -13319,7 +13561,7 @@ export type FixInstructionsIn = {
  * FlowOut
  */
 export type FlowOut = {
-    approval: ApprovalOut | null;
+    approval: AbacusModulesFieldworkRoutesApprovalOut | null;
     /**
      * Exceptions
      */
@@ -14099,6 +14341,108 @@ export type GateRowOut = {
 };
 
 /**
+ * GeneratedDocumentOut
+ *
+ * One generated document: its computed status (DF-31) and its insert-only versions.
+ */
+export type GeneratedDocumentOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Current Version
+     */
+    current_version: number | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export';
+    /**
+     * Out Of Date
+     */
+    out_of_date: boolean;
+    /**
+     * Out Of Date Reasons
+     */
+    out_of_date_reasons: Array<string>;
+    owner_ref: OwnerRefOut;
+    status: GeneratedDocumentStatus;
+    /**
+     * Versions
+     */
+    versions: Array<GeneratedVersionOut>;
+};
+
+/**
+ * GeneratedDocumentStatus
+ */
+export type GeneratedDocumentStatus = 'drafting' | 'draft' | 'approved' | 'locked';
+
+/**
+ * GeneratedFileOut
+ */
+export type GeneratedFileOut = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string | null;
+    /**
+     * Format
+     */
+    format: 'pdf' | 'docx';
+    /**
+     * Page Count
+     */
+    page_count: number;
+    /**
+     * Render Hash
+     */
+    render_hash: string;
+};
+
+/**
+ * GeneratedVersionOut
+ */
+export type GeneratedVersionOut = {
+    approval: AbacusModulesReportingContractApprovalOut | null;
+    /**
+     * Content Hash
+     */
+    content_hash: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Engine Version
+     */
+    engine_version: string;
+    /**
+     * Files
+     */
+    files: Array<GeneratedFileOut>;
+    /**
+     * Mode
+     */
+    mode: 'draft' | 'final' | 'sample';
+    /**
+     * N
+     */
+    n: number;
+    requested_by: RequesterOut;
+    /**
+     * Snapshot Sha256
+     */
+    snapshot_sha256: string;
+    template: TemplateRefOut | null;
+};
+
+/**
  * GlAccountDifferenceOut
  */
 export type GlAccountDifferenceOut = {
@@ -14736,6 +15080,24 @@ export type GuidanceIn = {
 };
 
 /**
+ * HeadingBlock
+ */
+export type HeadingBlock = {
+    /**
+     * Level
+     */
+    level: number;
+    /**
+     * Text
+     */
+    text: string;
+    /**
+     * Type
+     */
+    type?: 'heading';
+};
+
+/**
  * HistoryEntryOut
  */
 export type HistoryEntryOut = {
@@ -15022,6 +15384,22 @@ export type IgnoredOut = {
 };
 
 /**
+ * ImageBlock
+ *
+ * A firm asset stored as evidence (letterhead, signature image): never a URL (AC-9).
+ */
+export type ImageBlock = {
+    /**
+     * Asset Id
+     */
+    asset_id: string;
+    /**
+     * Type
+     */
+    type?: 'image';
+};
+
+/**
  * ImmediateControlsOut
  *
  * The band outside versioning (ADR-186 item 8).
@@ -15103,6 +15481,20 @@ export type ImportDiffRowOut = {
      * Field Key
      */
     field_key: string;
+};
+
+/**
+ * ImportErrorOut
+ */
+export type ImportErrorOut = {
+    /**
+     * Code
+     */
+    code: 'unknown_variable' | 'unknown_layout' | 'unknown_block' | 'markup_not_allowed' | 'clause_conflict' | 'too_large';
+    /**
+     * Path
+     */
+    path: string;
 };
 
 /**
@@ -15251,6 +15643,28 @@ export type ImportRejectIn = {
      * Seen Version
      */
     seen_version: number;
+};
+
+/**
+ * ImportReportOut
+ */
+export type ImportReportOut = {
+    /**
+     * Draft Version Id
+     */
+    draft_version_id: string | null;
+    /**
+     * Errors
+     */
+    errors: Array<ImportErrorOut>;
+    /**
+     * Ok
+     */
+    ok: boolean;
+    /**
+     * Warnings
+     */
+    warnings: Array<string>;
 };
 
 /**
@@ -17591,6 +18005,20 @@ export type KnowledgeSearchIn = {
 };
 
 /**
+ * KvBlock
+ */
+export type KvBlock = {
+    /**
+     * Rows
+     */
+    rows: Array<KvRowOut>;
+    /**
+     * Type
+     */
+    type?: 'kv';
+};
+
+/**
  * KvPart
  */
 export type KvPart = {
@@ -17616,6 +18044,20 @@ export type KvRow = {
      * Value
      */
     value: Array<TextSeg | CiteSeg | FactSeg>;
+};
+
+/**
+ * KvRowOut
+ */
+export type KvRowOut = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Value
+     */
+    value: Array<TextRun | VarRun | CiteRun>;
 };
 
 /**
@@ -17919,6 +18361,22 @@ export type LegalHolidaysPayload = {
 };
 
 /**
+ * LegendBlock
+ *
+ * Repeats on every page (an AR-C 70 package's legend, AC-11).
+ */
+export type LegendBlock = {
+    /**
+     * Text
+     */
+    text: string;
+    /**
+     * Type
+     */
+    type?: 'legend';
+};
+
+/**
  * LetterClause
  *
  * One clause of the template version and its state.
@@ -18216,6 +18674,24 @@ export type LintFindingOut = {
      * Variable
      */
     variable?: string | null;
+};
+
+/**
+ * ListBlock
+ */
+export type ListBlock = {
+    /**
+     * Items
+     */
+    items: Array<Array<TextRun | VarRun | CiteRun>>;
+    /**
+     * Ordered
+     */
+    ordered: boolean;
+    /**
+     * Type
+     */
+    type?: 'list';
 };
 
 /**
@@ -18936,6 +19412,40 @@ export type ListPageReferenceSetVersionOut = {
      * Items
      */
     items: Array<ReferenceSetVersionOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
+ * ListPage[ReportTemplateOut]
+ */
+export type ListPageReportTemplateOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<ReportTemplateOut>;
     /**
      * Next Cursor
      */
@@ -20906,6 +21416,32 @@ export type OverviewIssueOut = {
 };
 
 /**
+ * OwnerRefOut
+ *
+ * The consumer record the document belongs to (an engagement letter, a notice response).
+ */
+export type OwnerRefOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Type
+     */
+    type: string;
+};
+
+/**
+ * PageBreakBlock
+ */
+export type PageBreakBlock = {
+    /**
+     * Type
+     */
+    type?: 'page_break';
+};
+
+/**
  * PageLineOut
  */
 export type PageLineOut = {
@@ -20922,6 +21458,20 @@ export type PageLineOut = {
      * Text
      */
     text: string;
+};
+
+/**
+ * ParagraphBlock
+ */
+export type ParagraphBlock = {
+    /**
+     * Runs
+     */
+    runs: Array<TextRun | VarRun | CiteRun>;
+    /**
+     * Type
+     */
+    type?: 'paragraph';
 };
 
 /**
@@ -23137,6 +23687,24 @@ export type PreviewOut = {
 };
 
 /**
+ * PreviewPageOut
+ */
+export type PreviewPageOut = {
+    /**
+     * Height Pt
+     */
+    height_pt: number;
+    /**
+     * N
+     */
+    n: number;
+    /**
+     * Width Pt
+     */
+    width_pt: number;
+};
+
+/**
  * PriorAcceptanceOut
  *
  * A continuance's prior year through the `prior_engagement_id` chain, read-only (AC-5).
@@ -23674,6 +24242,24 @@ export type Pub1345Tolerances = {
      * Total Income Or Agi Usd
      */
     total_income_or_agi_usd: number;
+};
+
+/**
+ * PublicationOut
+ */
+export type PublicationOut = {
+    /**
+     * Action
+     */
+    action: 'published' | 'deprecated';
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * By
+     */
+    by: string;
 };
 
 /**
@@ -24586,6 +25172,26 @@ export type RemovedOut = {
 };
 
 /**
+ * RenderTicketOut
+ *
+ * A render accepted: the new version is Drafting until its job finishes.
+ */
+export type RenderTicketOut = {
+    /**
+     * Generated Document Id
+     */
+    generated_document_id: string;
+    /**
+     * Status
+     */
+    status?: 'drafting';
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
  * RepLetterBody
  */
 export type RepLetterBody = {
@@ -24644,6 +25250,74 @@ export type ReportOut = {
      */
     approved_by_name: string | null;
     record: CompletionRecordOut;
+};
+
+/**
+ * ReportTemplateOut
+ */
+export type ReportTemplateOut = {
+    /**
+     * Current Version
+     */
+    current_version: number | null;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Family
+     */
+    family: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export';
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Published At
+     */
+    published_at: string | null;
+};
+
+/**
+ * ReportTemplateVersionOut
+ */
+export type ReportTemplateVersionOut = {
+    /**
+     * Body
+     */
+    body: Array<SectionBlockOutput | HeadingBlock | ParagraphBlock | ClauseBlockOutput | ListBlock | TableBlock | KvBlock | SignatureBlock | LegendBlock | ImageBlock | EnclosuresBlock | PageBreakBlock>;
+    /**
+     * Clauses
+     */
+    clauses: Array<ClauseDefOutOutput>;
+    /**
+     * Content Sha256
+     */
+    content_sha256: string;
+    /**
+     * Layout Key
+     */
+    layout_key: 'letter' | 'consent_7216' | 'report' | 'notice_response' | 'package' | 'run_export';
+    /**
+     * Publications
+     */
+    publications: Array<PublicationOut>;
+    /**
+     * Template Id
+     */
+    template_id: string;
+    /**
+     * Variables
+     */
+    variables: Array<VariableDeclOut>;
+    /**
+     * Version No
+     */
+    version_no: number;
 };
 
 /**
@@ -25084,6 +25758,22 @@ export type RequestOwedByOut = {
  * RequestStatus
  */
 export type RequestStatus = 'draft' | 'requested' | 'uploaded' | 'received' | 'returned' | 'not_applicable';
+
+/**
+ * RequesterOut
+ *
+ * Who asked for the version: "<person> via Agent" for an agent's draft (INV-5).
+ */
+export type RequesterOut = {
+    /**
+     * Kind
+     */
+    kind: 'human' | 'agent' | 'system';
+    /**
+     * Label
+     */
+    label: string;
+};
 
 /**
  * ResidencyOut
@@ -27630,6 +28320,62 @@ export type SeasonalAccessEndsOut = {
 };
 
 /**
+ * SectionBlock
+ *
+ * A section; `override` marks paragraphs a person wrote in the consumer's editor.
+ */
+export type SectionBlockInput = {
+    /**
+     * Blocks
+     */
+    blocks: Array<SectionBlockInput | HeadingBlock | ParagraphBlock | ClauseBlockInput | ListBlock | TableBlock | KvBlock | SignatureBlock | LegendBlock | ImageBlock | EnclosuresBlock | PageBreakBlock>;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Override
+     */
+    override?: boolean;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Type
+     */
+    type?: 'section';
+};
+
+/**
+ * SectionBlock
+ *
+ * A section; `override` marks paragraphs a person wrote in the consumer's editor.
+ */
+export type SectionBlockOutput = {
+    /**
+     * Blocks
+     */
+    blocks: Array<SectionBlockOutput | HeadingBlock | ParagraphBlock | ClauseBlockOutput | ListBlock | TableBlock | KvBlock | SignatureBlock | LegendBlock | ImageBlock | EnclosuresBlock | PageBreakBlock>;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Override
+     */
+    override?: boolean;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Type
+     */
+    type?: 'section';
+};
+
+/**
  * SecurityIncidentDetailOut
  *
  * The O2 480 drawer (ADM-06 d): the row plus its timeline, oldest first, and the reminder
@@ -28836,6 +29582,20 @@ export type SignOffTargetOut = {
 };
 
 /**
+ * SignatureBlock
+ */
+export type SignatureBlock = {
+    /**
+     * Signers
+     */
+    signers: Array<SignerLineOut>;
+    /**
+     * Type
+     */
+    type?: 'signature_block';
+};
+
+/**
  * SignatureOut
  */
 export type SignatureOut = {
@@ -28943,6 +29703,20 @@ export type SignerIn = {
      * User Id
      */
     user_id?: string | null;
+};
+
+/**
+ * SignerLineOut
+ */
+export type SignerLineOut = {
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Name
+     */
+    name: Array<TextRun | VarRun | CiteRun>;
 };
 
 /**
@@ -30813,6 +31587,26 @@ export type TabCountOut = {
 };
 
 /**
+ * TableBlock
+ *
+ * Cells are decimal strings from the snapshot; the renderer never sums (ADR-050).
+ */
+export type TableBlock = {
+    /**
+     * Columns
+     */
+    columns: Array<string>;
+    /**
+     * Rows
+     */
+    rows: Array<Array<string>>;
+    /**
+     * Type
+     */
+    type?: 'table';
+};
+
+/**
  * TablePart
  */
 export type TablePart = {
@@ -32174,16 +32968,6 @@ export type TemplateDraftStartedOut = {
 };
 
 /**
- * TemplateImportIn
- */
-export type TemplateImportIn = {
-    /**
-     * Upload Id
-     */
-    upload_id: string;
-};
-
-/**
  * TemplateImportOut
  */
 export type TemplateImportOut = {
@@ -32272,6 +33056,40 @@ export type TemplatePersonOut = {
 };
 
 /**
+ * TemplatePreviewOut
+ *
+ * A SAMPLE-watermarked render from the version's synthetic sample data; never evidence.
+ */
+export type TemplatePreviewOut = {
+    /**
+     * Expires At
+     */
+    expires_at: string;
+    /**
+     * Pages
+     */
+    pages: Array<PreviewPageOut>;
+};
+
+/**
+ * TemplateRefOut
+ */
+export type TemplateRefOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
  * TemplateVariableOut
  *
  * A variable the key may use, with what it resolves to; never an amount, an account
@@ -32339,6 +33157,22 @@ export type TemplateVersionRefOut = {
      * Version
      */
     version: number;
+};
+
+/**
+ * TextRun
+ *
+ * Literal text: rendered escaped, never interpreted (AC-8).
+ */
+export type TextRun = {
+    /**
+     * Text
+     */
+    text: string;
+    /**
+     * Type
+     */
+    type?: 'text';
 };
 
 /**
@@ -33551,6 +34385,40 @@ export type ValueRow = {
      * Masked
      */
     masked?: boolean;
+};
+
+/**
+ * VarRun
+ *
+ * A declared variable, resolved server-side by the kind's provider (AC-10).
+ */
+export type VarRun = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Type
+     */
+    type?: 'var';
+};
+
+/**
+ * VariableDeclOut
+ */
+export type VariableDeclOut = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Value Type
+     */
+    value_type: 'money' | 'date' | 'text' | 'percent' | 'count' | 'name' | 'address';
 };
 
 /**
@@ -34836,6 +35704,28 @@ export type AbacusModulesFieldworkRoutesApprovalIn = {
 };
 
 /**
+ * ApprovalOut
+ */
+export type AbacusModulesFieldworkRoutesApprovalOut = {
+    /**
+     * Approved At
+     */
+    approved_at: string;
+    /**
+     * Approved By
+     */
+    approved_by: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Note
+     */
+    note: string | null;
+};
+
+/**
  * StartIn
  */
 export type AbacusModulesFieldworkRoutesStartIn = {
@@ -34946,6 +35836,73 @@ export type AbacusModulesMethodologyContractStepOut = {
      * Text
      */
     text: string;
+};
+
+/**
+ * ApprovalOut
+ */
+export type AbacusModulesReportingContractApprovalOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * By
+     */
+    by: string;
+};
+
+/**
+ * TemplateImportIn
+ *
+ * A template bundle (AC-1): structured blocks, declared variables and synthetic sample data
+ * only (AC-2: no markup, no URL).
+ */
+export type AbacusModulesReportingContractTemplateImportIn = {
+    /**
+     * Body
+     */
+    body: Array<SectionBlockInput | HeadingBlock | ParagraphBlock | ClauseBlockInput | ListBlock | TableBlock | KvBlock | SignatureBlock | LegendBlock | ImageBlock | EnclosuresBlock | PageBreakBlock>;
+    /**
+     * Clauses
+     */
+    clauses?: Array<ClauseDefOutInput>;
+    /**
+     * Description
+     */
+    description?: string;
+    /**
+     * Family
+     */
+    family: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export';
+    /**
+     * Layout Key
+     */
+    layout_key: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Sample Data
+     */
+    sample_data?: {
+        [key: string]: string;
+    };
+    /**
+     * Variables
+     */
+    variables?: Array<VariableDeclOut>;
+};
+
+/**
+ * TemplateImportIn
+ */
+export type AbacusModulesRequestsQuestionnairesContractTemplateImportIn = {
+    /**
+     * Upload Id
+     */
+    upload_id: string;
 };
 
 /**
@@ -67574,6 +68531,311 @@ export type UndoFollowUpResponses = {
 
 export type UndoFollowUpResponse = UndoFollowUpResponses[keyof UndoFollowUpResponses];
 
+export type GetGeneratedDocumentData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Document Id
+         */
+        document_id: string;
+    };
+    query?: never;
+    url: '/v1/generated-documents/{document_id}';
+};
+
+export type GetGeneratedDocumentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetGeneratedDocumentError = GetGeneratedDocumentErrors[keyof GetGeneratedDocumentErrors];
+
+export type GetGeneratedDocumentResponses = {
+    /**
+     * Successful Response
+     */
+    200: GeneratedDocumentOut;
+};
+
+export type GetGeneratedDocumentResponse = GetGeneratedDocumentResponses[keyof GetGeneratedDocumentResponses];
+
+export type GetGeneratedDocumentChangesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Document Id
+         */
+        document_id: string;
+    };
+    query?: never;
+    url: '/v1/generated-documents/{document_id}/changes';
+};
+
+export type GetGeneratedDocumentChangesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetGeneratedDocumentChangesError = GetGeneratedDocumentChangesErrors[keyof GetGeneratedDocumentChangesErrors];
+
+export type GetGeneratedDocumentChangesResponses = {
+    /**
+     * Successful Response
+     */
+    200: ChangesOut;
+};
+
+export type GetGeneratedDocumentChangesResponse = GetGeneratedDocumentChangesResponses[keyof GetGeneratedDocumentChangesResponses];
+
+export type RegenerateGeneratedDocumentData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Document Id
+         */
+        document_id: string;
+    };
+    query?: never;
+    url: '/v1/generated-documents/{document_id}/regenerate';
+};
+
+export type RegenerateGeneratedDocumentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
+};
+
+export type RegenerateGeneratedDocumentError = RegenerateGeneratedDocumentErrors[keyof RegenerateGeneratedDocumentErrors];
+
+export type RegenerateGeneratedDocumentResponses = {
+    /**
+     * Successful Response
+     */
+    200: RenderTicketOut;
+};
+
+export type RegenerateGeneratedDocumentResponse = RegenerateGeneratedDocumentResponses[keyof RegenerateGeneratedDocumentResponses];
+
+export type CompareGeneratedDocumentData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Document Id
+         */
+        document_id: string;
+        /**
+         * Version No
+         */
+        version_no: number;
+    };
+    query?: {
+        /**
+         * To
+         */
+        to?: string;
+    };
+    url: '/v1/generated-documents/{document_id}/versions/{version_no}/compare';
+};
+
+export type CompareGeneratedDocumentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CompareGeneratedDocumentError = CompareGeneratedDocumentErrors[keyof CompareGeneratedDocumentErrors];
+
+export type CompareGeneratedDocumentResponses = {
+    /**
+     * Successful Response
+     */
+    200: CompareOut;
+};
+
+export type CompareGeneratedDocumentResponse = CompareGeneratedDocumentResponses[keyof CompareGeneratedDocumentResponses];
+
+export type GetGeneratedDocumentFieldsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Document Id
+         */
+        document_id: string;
+        /**
+         * Version No
+         */
+        version_no: number;
+    };
+    query?: never;
+    url: '/v1/generated-documents/{document_id}/versions/{version_no}/fields';
+};
+
+export type GetGeneratedDocumentFieldsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetGeneratedDocumentFieldsError = GetGeneratedDocumentFieldsErrors[keyof GetGeneratedDocumentFieldsErrors];
+
+export type GetGeneratedDocumentFieldsResponses = {
+    /**
+     * Successful Response
+     */
+    200: FieldRegionsOut;
+};
+
+export type GetGeneratedDocumentFieldsResponse = GetGeneratedDocumentFieldsResponses[keyof GetGeneratedDocumentFieldsResponses];
+
 export type GroupingSetVersionsData = {
     body?: never;
     headers?: {
@@ -76906,7 +78168,7 @@ export type PublishTemplateResponses = {
 export type PublishTemplateResponse = PublishTemplateResponses[keyof PublishTemplateResponses];
 
 export type QuestionnaireImportTemplateData = {
-    body: TemplateImportIn;
+    body: AbacusModulesRequestsQuestionnairesContractTemplateImportIn;
     headers?: {
         /**
          * Authorization
@@ -77472,6 +78734,310 @@ export type ReferenceSetVersionsResponses = {
 };
 
 export type ReferenceSetVersionsResponse = ReferenceSetVersionsResponses[keyof ReferenceSetVersionsResponses];
+
+export type ListReportTemplatesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Family
+         */
+        family?: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | null;
+    };
+    url: '/v1/report-templates';
+};
+
+export type ListReportTemplatesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListReportTemplatesError = ListReportTemplatesErrors[keyof ListReportTemplatesErrors];
+
+export type ListReportTemplatesResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageReportTemplateOut;
+};
+
+export type ListReportTemplatesResponse = ListReportTemplatesResponses[keyof ListReportTemplatesResponses];
+
+export type ImportReportTemplateData = {
+    body: AbacusModulesReportingContractTemplateImportIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Dry Run
+         */
+        dry_run?: boolean;
+    };
+    url: '/v1/report-templates/import';
+};
+
+export type ImportReportTemplateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * The file is too large
+     */
+    413: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ImportReportTemplateError = ImportReportTemplateErrors[keyof ImportReportTemplateErrors];
+
+export type ImportReportTemplateResponses = {
+    /**
+     * Successful Response
+     */
+    200: ImportReportOut;
+};
+
+export type ImportReportTemplateResponse = ImportReportTemplateResponses[keyof ImportReportTemplateResponses];
+
+export type GetReportTemplateVersionData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Template Id
+         */
+        template_id: string;
+        /**
+         * Version No
+         */
+        version_no: number;
+    };
+    query?: never;
+    url: '/v1/report-templates/{template_id}/versions/{version_no}';
+};
+
+export type GetReportTemplateVersionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetReportTemplateVersionError = GetReportTemplateVersionErrors[keyof GetReportTemplateVersionErrors];
+
+export type GetReportTemplateVersionResponses = {
+    /**
+     * Successful Response
+     */
+    200: ReportTemplateVersionOut;
+};
+
+export type GetReportTemplateVersionResponse = GetReportTemplateVersionResponses[keyof GetReportTemplateVersionResponses];
+
+export type PreviewReportTemplateData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Template Id
+         */
+        template_id: string;
+        /**
+         * Version No
+         */
+        version_no: number;
+    };
+    query?: never;
+    url: '/v1/report-templates/{template_id}/versions/{version_no}/preview';
+};
+
+export type PreviewReportTemplateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
+};
+
+export type PreviewReportTemplateError = PreviewReportTemplateErrors[keyof PreviewReportTemplateErrors];
+
+export type PreviewReportTemplateResponses = {
+    /**
+     * Successful Response
+     */
+    200: TemplatePreviewOut;
+};
+
+export type PreviewReportTemplateResponse = PreviewReportTemplateResponses[keyof PreviewReportTemplateResponses];
+
+export type PublishReportTemplateData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Template Id
+         */
+        template_id: string;
+        /**
+         * Version No
+         */
+        version_no: number;
+    };
+    query?: never;
+    url: '/v1/report-templates/{template_id}/versions/{version_no}/publish';
+};
+
+export type PublishReportTemplateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PublishReportTemplateError = PublishReportTemplateErrors[keyof PublishReportTemplateErrors];
+
+export type PublishReportTemplateResponses = {
+    /**
+     * Successful Response
+     */
+    200: ReportTemplateVersionOut;
+};
+
+export type PublishReportTemplateResponse = PublishReportTemplateResponses[keyof PublishReportTemplateResponses];
 
 export type ListQuestionnairesData = {
     body?: never;
