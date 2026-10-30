@@ -33,6 +33,8 @@ export const COPY = {
   justNow: "Just now",
   connection: "CCH Axcess Tax · Connected · firm token",
   settings: "Settings",
+  /** The footer's link to the binders index (TAX-09 → BND-01). */
+  binder: "Binder",
   settingsTip: "Opens WB-11 · Integration detail",
   markTitle: "Mark exported",
   markBody: (file: string): string =>

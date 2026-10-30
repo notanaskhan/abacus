@@ -334,3 +334,35 @@ __all__ = [
     "require_tri_consent",
     "tri_consent_verdict",
 ]
+
+
+_COUNTS = text(
+    "SELECT y.client_id, y.tax_year, count(c.id) FILTER (WHERE c.status = 'signed' "
+    "AND (c.expires_at IS NULL OR c.expires_at > :at)) AS signed, count(c.id) AS total "
+    "FROM unnest(CAST(:clients AS uuid[]), CAST(:years AS integer[])) AS y(client_id, tax_year) "
+    "JOIN consents c ON c.client_id = y.client_id AND y.tax_year = ANY(c.tax_years) "
+    "AND c.status IN ('requested', 'signed', 'expired') GROUP BY y.client_id, y.tax_year"
+)
+
+
+async def consent_counts(
+    tenant: TenantContext, pairs: Sequence[tuple[UUID, int]]
+) -> dict[tuple[UUID, int], tuple[int, int]]:
+    """CLI-05 / BND-01 (T-01-T14 follow-up, DEC-1288): per (client, tax year), the §7216
+    consents in force and the consents asked for (requested, signed or lapsed; a declined,
+    revoked or superseded one is not counted). Identifiers and counts only."""
+    if not pairs:
+        return {}
+    at = await now(tenant)
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                _COUNTS,
+                {
+                    "clients": [p[0] for p in pairs],
+                    "years": [p[1] for p in pairs],
+                    "at": at,
+                },
+            )
+        ).all()
+    return {(r.client_id, int(r.tax_year)): (int(r.signed), int(r.total)) for r in rows}

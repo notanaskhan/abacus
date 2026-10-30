@@ -42,10 +42,9 @@ export const taxScreens = {
   // T-01-T15: the sync chip, O1 popover and O4 import diff on fixtures (a–e, a2, d2).
   "TAX-09": {
     name: "Return › Tax-engine sync · Feld 2025 Form 1040",
-    // Fixture-built (T-01-T15), mounted by nothing yet: planned until its sync chip replaces the
-    // RecordHeader's on TAX-01 and TAX-02 and TAX-07's Activity rows (BND-01, INB-01) exist
-    // (link-contract rule 1; DEC-1273).
-    status: "planned",
+    // Fixture-built (T-01-T15). TAX-01's row chip and TAX-02's header chip open it as the
+    // `engine-sync` layer (`ov.TAX09`), and its footer opens BND-01 (DEC-1288); INB-01 is planned.
+    status: "fixture",
     path: null,
   },
   "TAX-10": {

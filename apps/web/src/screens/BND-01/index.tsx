@@ -48,6 +48,7 @@ import {
   useNewBinder,
   useStaffNames,
 } from "../../domain/requests";
+import { hrefOf, to } from "../../routes/to";
 import { COPY } from "./copy";
 
 // BND-01 · Binders index (P-06-T09; docs/screens/BND-01.md). T1 over `GET /v1/binders`: the five
@@ -355,7 +356,27 @@ export function BND01({
 
   const columns: IndexColumn<BinderRowOut>[] = [
     { key: "binder", header: COPY.columns.binder, width: 170, cell: (r) => r.name },
-    { key: "client", header: COPY.columns.client, cell: (r) => r.client_name },
+    {
+      key: "client",
+      header: COPY.columns.client,
+      cell: (r) => (
+        <span className="flex min-w-0 flex-col">
+          <span className="truncate">{r.client_name}</span>
+          {r.client_id != null && r.consents_total != null && r.consents_total > 0 && (
+            // T-01's §7216 consents tag opens CLI-05's Consents for the row's client (DEC-1288).
+            <a
+              href={hrefOf(to.CLI05({ clientId: r.client_id, sub: "consents" }))}
+              className="w-fit rounded-pill bg-chip px-[6px] text-meta text-ink-2 hover:underline"
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              {COPY.consentsTag(r.consents_signed ?? 0, r.consents_total)}
+            </a>
+          )}
+        </span>
+      ),
+    },
     {
       key: "work_item",
       header: COPY.columns.workItem,

@@ -7460,6 +7460,19 @@
             "title": "Allowed Actions",
             "type": "array"
           },
+          "client_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Client Id"
+          },
           "client_name": {
             "cls": "confidential",
             "title": "Client Name",
@@ -7489,6 +7502,30 @@
             ],
             "cls": "internal",
             "title": "Closed Reason"
+          },
+          "consents_signed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Consents Signed"
+          },
+          "consents_total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Consents Total"
           },
           "done_count": {
             "cls": "internal",

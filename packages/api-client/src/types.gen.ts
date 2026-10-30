@@ -3495,6 +3495,10 @@ export type BinderRowOut = {
      */
     allowed_actions?: Array<string>;
     /**
+     * Client Id
+     */
+    client_id?: string | null;
+    /**
      * Client Name
      */
     client_name: string;
@@ -3506,6 +3510,14 @@ export type BinderRowOut = {
      * Closed Reason
      */
     closed_reason?: string | null;
+    /**
+     * Consents Signed
+     */
+    consents_signed?: number | null;
+    /**
+     * Consents Total
+     */
+    consents_total?: number | null;
     /**
      * Done Count
      */

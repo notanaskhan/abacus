@@ -22,3 +22,5 @@ registerOverlay("envelope", { layer: "modal", render });
 registerOverlay("checkpoints", { layer: "drawer", render });
 // P-04-T48: SHL-12 `?ov=signoff:<target_type>:<target_id>[:<level>]`, the O3 sheet.
 registerOverlay("signoff", { layer: "modal", render });
+// T-01-T15 follow-up (DEC-1288): TAX-09 `?ov=engine-sync:<returnId>`, the return's engine sync.
+registerOverlay("engine-sync", { layer: "modal", render });
