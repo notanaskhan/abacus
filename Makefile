@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: backfill-rerun shadow-report pilot-metrics go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast evals-match-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr
+.PHONY: backfill-rerun shadow-report pilot-metrics go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast evals-match-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr golden-render
 
 setup:
 	cd backend && uv sync --locked
@@ -212,6 +212,12 @@ ci-visual:
 # Every suite under backend/tests, in two runs: those without containers on PYTEST_WORKERS, then
 # those with them (the contracts' undo suite has its own database) on PYTEST_INTEGRATION_WORKERS.
 # PYTEST_WORKERS=0 PYTEST_INTEGRATION_WORKERS=0 make test runs each in one process.
+# The renderer's byte stability (P-11-T02; ADR-320): the golden letter in two fresh containers of
+# the backend image (no network), compared with each other and the recorded goldens, then the
+# image-bound suite. RECORD_GOLDEN=1 records new goldens (a re-baseline needs a recorded reason).
+golden-render:
+	backend/tests/golden_render/two_containers.sh
+
 test:
 	cd backend && uv run pytest $(XDIST) $(UNIT_TESTS) tests/golden
 	cd backend && uv run pytest $(XDIST_INTEGRATION) tests/contracts $(INTEGRATION_TESTS)

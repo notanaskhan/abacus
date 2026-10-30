@@ -14,6 +14,11 @@
 # The base image is pinned by digest (the multi-arch index), never by tag alone. Refresh it with
 # the weekly base rebuild (Q-01-T11): docker buildx imagetools inspect python:3.12-slim
 ARG PYTHON_IMAGE=python:3.12-slim@sha256:cb33f7f771ecec2ef1225cf39b159591a040391bd73e4c01f00fdfc4c47611d2
+# The renderer's native libraries (ADR-320, P-11-T02): WeasyPrint shapes text with Pango and
+# HarfBuzz and finds faces through fontconfig. Pinned to the versions of the digest-pinned base
+# (Debian trixie), so a render's bytes do not move under a rebuild; the weekly base refresh
+# (Q-01-T11) moves them together with a golden re-baseline (ADR-320 §8).
+ARG RENDER_LIBS="libpango-1.0-0=1.56.3-1 libpangoft2-1.0-0=1.56.3-1 libharfbuzz0b=10.2.0-1+deb13u1 libharfbuzz-subset0=10.2.0-1+deb13u1 libfontconfig1=2.15.0-2.3 fontconfig-config=2.15.0-2.3"
 
 FROM ${PYTHON_IMAGE} AS builder
 # uv builds the environment from uv.lock and is not shipped: it stays in this stage.
@@ -34,6 +39,11 @@ COPY src ./src
 RUN uv sync --locked --no-dev
 
 FROM builder AS test
+ARG RENDER_LIBS
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ${RENDER_LIBS} \
+    && rm -rf /var/lib/apt/lists/*
+ENV FONTCONFIG_FILE=/app/src/abacus/modules/reporting/fonts/fonts.conf
 RUN uv sync --locked
 COPY tests ./tests
 ENV PATH=/app/.venv/bin:$PATH
@@ -41,6 +51,10 @@ ENTRYPOINT []
 CMD ["pytest", "tests/unit", "-q"]
 
 FROM ${PYTHON_IMAGE} AS runtime
+ARG RENDER_LIBS
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ${RENDER_LIBS} \
+    && rm -rf /var/lib/apt/lists/*
 # A fixed non-root identity with no login shell and no home directory.
 RUN groupadd --system --gid 10001 abacus \
     && useradd --system --uid 10001 --gid 10001 --no-create-home \
@@ -53,7 +67,8 @@ ENV PATH=/app/.venv/bin:$PATH \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     HOME=/tmp \
-    TMPDIR=/tmp
+    TMPDIR=/tmp \
+    FONTCONFIG_FILE=/app/src/abacus/modules/reporting/fonts/fonts.conf
 USER 10001:10001
 EXPOSE 8000
 ENTRYPOINT ["/usr/local/bin/abacus-entrypoint"]
