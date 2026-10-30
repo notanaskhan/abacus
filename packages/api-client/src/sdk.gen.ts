@@ -10001,6 +10001,8 @@ export const endSupportSession = <ThrowOnError extends boolean = false>(options:
 
 /**
  * List Returns Route
+ *
+ * TAX-01's rows, wall-safe; one page (a season's board fits; `cursor` is reserved).
  */
 export const listReturns = <ThrowOnError extends boolean = false>(options?: Options<ListReturnsData, ThrowOnError>): RequestResult<ListReturnsResponses, ListReturnsErrors, ThrowOnError> => (options?.client ?? client).get<ListReturnsResponses, ListReturnsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -10010,6 +10012,8 @@ export const listReturns = <ThrowOnError extends boolean = false>(options?: Opti
 
 /**
  * Returns Summary Route
+ *
+ * TAX-01's tiles: per status, open and done, extended, office totals (wall-safe).
  */
 export const returnsSummary = <ThrowOnError extends boolean = false>(options?: Options<ReturnsSummaryData, ThrowOnError>): RequestResult<ReturnsSummaryResponses, ReturnsSummaryErrors, ThrowOnError> => (options?.client ?? client).get<ReturnsSummaryResponses, ReturnsSummaryErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -10256,6 +10260,8 @@ export const recordTransmission = <ThrowOnError extends boolean = false>(options
 
 /**
  * Bulk Assign Route
+ *
+ * The selection bar's Assign preparer: assigned and refused counts, never a reason.
  */
 export const bulkAssign = <ThrowOnError extends boolean = false>(options: Options<BulkAssignData, ThrowOnError>): RequestResult<BulkAssignResponses, BulkAssignErrors, ThrowOnError> => (options.client ?? client).post<BulkAssignResponses, BulkAssignErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

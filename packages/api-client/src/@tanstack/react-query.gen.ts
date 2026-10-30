@@ -16555,6 +16555,8 @@ export const listReturnsQueryKey = (options?: Options<ListReturnsData>) => creat
 
 /**
  * List Returns Route
+ *
+ * TAX-01's rows, wall-safe; one page (a season's board fits; `cursor` is reserved).
  */
 export const listReturnsOptions = (options?: Options<ListReturnsData>) => queryOptions<ListReturnsResponse, ListReturnsError, ListReturnsResponse, ReturnType<typeof listReturnsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -16573,6 +16575,8 @@ export const listReturnsInfiniteQueryKey = (options?: Options<ListReturnsData>):
 
 /**
  * List Returns Route
+ *
+ * TAX-01's rows, wall-safe; one page (a season's board fits; `cursor` is reserved).
  */
 export const listReturnsInfiniteOptions = (options?: Options<ListReturnsData>) => {
     const opts = infiniteQueryOptions<ListReturnsResponse, ListReturnsError, InfiniteData<ListReturnsResponse>, QueryKey<Options<ListReturnsData>>, string | null | Pick<QueryKey<Options<ListReturnsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -16603,6 +16607,8 @@ export const returnsSummaryQueryKey = (options?: Options<ReturnsSummaryData>) =>
 
 /**
  * Returns Summary Route
+ *
+ * TAX-01's tiles: per status, open and done, extended, office totals (wall-safe).
  */
 export const returnsSummaryOptions = (options?: Options<ReturnsSummaryData>) => queryOptions<ReturnsSummaryResponse, ReturnsSummaryError, ReturnsSummaryResponse, ReturnType<typeof returnsSummaryQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -16996,6 +17002,8 @@ export const recordTransmissionMutation = (options?: Partial<Options<RecordTrans
 
 /**
  * Bulk Assign Route
+ *
+ * The selection bar's Assign preparer: assigned and refused counts, never a reason.
  */
 export const bulkAssignMutation = (options?: Partial<Options<BulkAssignData>>): UseMutationOptions<BulkAssignResponse, BulkAssignError, Options<BulkAssignData>> => {
     const mutationOptions: UseMutationOptions<BulkAssignResponse, BulkAssignError, Options<BulkAssignData>> = {
