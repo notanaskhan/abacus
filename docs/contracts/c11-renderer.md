@@ -24,6 +24,7 @@ only with a human approval.
 | Template list | `GET /v1/report-templates?family=` | `report_template.read` | deny |
 | Template version | `GET /v1/report-templates/{id}/versions/{n}` | `report_template.read` | deny |
 | Template import (dry run or draft) | `POST /v1/report-templates/import?dry_run=` | `report_template.import` | deny |
+| Template deprecate (v1.1, T-01-T17) | `POST /v1/report-templates/{id}/versions/{n}/deprecate` | `report_template.publish` (a consent template: `consent_template.publish`) | deny |
 | Template publish (fresh MFA) | `POST /v1/report-templates/{id}/versions/{n}/publish` | `report_template.publish` | deny |
 | Template SAMPLE preview | `POST /v1/report-templates/{id}/versions/{n}/preview` | `report_template.read` | deny |
 | Generated document | `GET /v1/generated-documents/{id}` | `generated_document.read` | agent: `task_scope` |

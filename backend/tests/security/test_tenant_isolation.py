@@ -253,6 +253,7 @@ TABLES: tuple[str, ...] = (
     "reconnect_requests",
     "releases",
     "render_jobs",
+    "report_template_consent_terms",
     "report_template_publications",
     "report_template_versions",
     "report_templates",

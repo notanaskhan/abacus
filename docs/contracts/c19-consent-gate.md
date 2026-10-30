@@ -27,7 +27,7 @@ One purpose per signed document (Treas. Reg. §301.7216-3): `use`, `ai_disclosur
 | Record mode, decline, revoke (fresh MFA) | `POST /v1/consents/records`, `/{id}/declines`, `/{id}/revocations` | `consent.record` | `consents.registry` |
 | Export (async CSV; fresh MFA) | `POST /v1/consents/exports` (202) | `consent.export` | `consents.registry` |
 | Per taxpayer | `GET /v1/client-entities/{id}/consents` | `consent.read` | `consents.registry` |
-| Templates (counsel-attested; fresh MFA) | `POST /v1/consent-templates/imports`, `/{id}/publish` | `consent_template.manage`, `.publish` | `consents.registry` |
+| Templates (counsel-attested; fresh MFA) | **Superseded by C11 (T-01-T17, DEC-1352):** import, publish and deprecate through `/v1/report-templates/...` with family `consent_7216`; these stubs stay 501. `POST /v1/consent-templates/imports`, `/{id}/publish` | `consent_template.manage`, `.publish` | `consents.registry` |
 | Tax profile | `GET /v1/client-entities/{id}/tax-profile` | `tax_profile.read` | `clients.tax_profile` |
 | Elections | `PUT /v1/client-entities/{id}/elections/{kind}` | `tax_election.manage` | `clients.tax_profile` |
 | Authorizations | `GET`/`POST /v1/client-entities/{id}/authorizations`, `POST …/authorizations/requests` | `tax_authorization.manage` | `clients.tax_profile` |

@@ -16,6 +16,13 @@ tenant): never from a migration, a constant or the seed (AGENTS.md rule 16).
   person who imported that version (C11 §4: four eyes; 403 `publisher_is_importer`), and not the
   version already current (409 `already_published`). Republishing an earlier version is the
   rollback: no deploy, no new wording.
+- **Consent templates** (T-01-T17; DF-16): the `consent_7216` family carries its consent terms
+  (one purpose, the mandatory-statement version, the counsel attestation by the importer, the
+  stated expiry) in `report_template_consent_terms`, frozen with the version. A partner publishes
+  or deprecates one (`consent_template.publish`, fresh second factor) instead of the template
+  publishers; a consent version without terms is never published.
+- **Deprecate** withdraws the current version (409 `not_current` otherwise): nothing is current
+  until a version is published again.
 - **Current version**: the version of the latest `published` publication, unless a later
   `deprecated` row names that same version. Computed on read, never stored.
 
@@ -46,10 +53,13 @@ from abacus.modules.identity.api import (
 )
 from abacus.modules.methodology.models import (
     ReportTemplate,
+    ReportTemplateConsentTerms,
     ReportTemplatePublication,
     ReportTemplateVersion,
 )
 
+CONSENT_FAMILY: Final = "consent_7216"
+CONSENT_PUBLISH: Final = "consent_template.publish"
 READ: Final = "report_template.read"
 IMPORT: Final = "report_template.import"
 PUBLISH: Final = "report_template.publish"
@@ -64,10 +74,40 @@ class AlreadyPublished(DomainConflict):
     code = "already_published"
 
 
+class NotCurrent(DomainConflict):
+    """Only the current version can be deprecated."""
+
+    code = "not_current"
+
+
+class ConsentTermsMissing(DomainConflict):
+    """A consent template version without its terms is never published."""
+
+    code = "consent_terms_missing"
+
+
 class PublisherIsImporter(DomainForbidden):
     """C11 §4: a different person publishes the wording they did not import (four eyes)."""
 
     code = "publisher_is_importer"
+
+
+@dataclass(frozen=True)
+class ConsentTerms:
+    purpose: str
+    statement_version: str
+    expiry_months: int | None
+
+
+@dataclass(frozen=True)
+class ConsentTermsView:
+    purpose: str
+    statement_version: str
+    counsel_attested_by_user_id: UUID
+    counsel_attested_by: str
+    counsel_attested_at: datetime
+    recipients_source: str
+    expiry_months: int | None
 
 
 @dataclass(frozen=True)
@@ -83,6 +123,7 @@ class TemplateBundle:
     variables: list[object]
     sample_data: dict[str, object]
     content_sha256: str
+    consent: ConsentTerms | None = None
 
 
 @dataclass(frozen=True)
@@ -114,6 +155,8 @@ class TemplateVersionView:
     content_sha256: str
     imported_by_user_id: UUID
     publications: list[Publication]
+    family: str = ""
+    consent: ConsentTermsView | None = None
 
 
 @dataclass(frozen=True)
@@ -248,6 +291,18 @@ async def import_template(
                 imported_by_user_id=ctx.user_id,
             )
         )
+        if bundle.consent is not None:
+            await tx.session.execute(
+                insert(ReportTemplateConsentTerms).values(
+                    id=uuid4(),
+                    tenant_id=ctx.tenant_id,
+                    template_version_id=version_id,
+                    purpose=bundle.consent.purpose,
+                    statement_version=bundle.consent.statement_version,
+                    counsel_attested_by_user_id=ctx.user_id,
+                    expiry_months=bundle.consent.expiry_months,
+                )
+            )
         tx.record(
             "report_template.imported",
             target=Target(VERSION, version_id),
@@ -277,22 +332,44 @@ async def _version(
     return found
 
 
+async def _terms(session: AsyncSession, version_id: UUID) -> ReportTemplateConsentTerms | None:
+    return (
+        await session.execute(
+            select(ReportTemplateConsentTerms).where(
+                ReportTemplateConsentTerms.template_version_id == version_id
+            )
+        )
+    ).scalar_one_or_none()
+
+
+async def _publisher(ctx: AuthContext, template_id: UUID) -> ReportTemplate:
+    """The template, after the publisher's action for its family: a partner for a consent
+    template (`consent_template.publish`), the template publishers for every other (AC-3)."""
+    async with tenant_session(ctx.tenant) as session:
+        template = (
+            await session.execute(select(ReportTemplate).where(ReportTemplate.id == template_id))
+        ).scalar_one_or_none()
+    if template is None:
+        raise NotFound(TEMPLATE)
+    action = CONSENT_PUBLISH if template.family == CONSENT_FAMILY else PUBLISH
+    await authorise(ctx, action, Resource.firm(ctx.tenant_id))
+    return template
+
+
 async def publish_version(ctx: AuthContext, template_id: UUID, version_no: int) -> None:
     """Publish (or republish, to roll back) one version (AC-3, AC-4). Human only, fresh second
     factor by the matrix, never the version's importer."""
     await _human(ctx, PUBLISH, template_id)
-    await authorise(ctx, PUBLISH, Resource.firm(ctx.tenant_id))
+    template = await _publisher(ctx, template_id)
     async with uow(ctx.tenant) as tx:
-        template = (
-            await tx.session.execute(
-                select(ReportTemplate).where(ReportTemplate.id == template_id).with_for_update()
-            )
-        ).scalar_one_or_none()
-        if template is None:
-            raise NotFound(TEMPLATE)
+        await tx.session.execute(
+            select(ReportTemplate.id).where(ReportTemplate.id == template_id).with_for_update()
+        )
         version = await _version(tx.session, template_id, version_no)
         if version.imported_by_user_id == ctx.user_id:
             raise PublisherIsImporter(facts={"version_id": str(version.id)})
+        if template.family == CONSENT_FAMILY and await _terms(tx.session, version.id) is None:
+            raise ConsentTermsMissing(facts={"version_id": str(version.id)})
         current = current_of(await _publications(tx.session, template_id))
         if current is not None and current.version_id == version.id:
             raise AlreadyPublished(facts={"version_id": str(version.id)})
@@ -314,6 +391,35 @@ async def publish_version(ctx: AuthContext, template_id: UUID, version_no: int) 
         )
 
 
+async def deprecate_version(ctx: AuthContext, template_id: UUID, version_no: int) -> None:
+    """Withdraw the current version (T-01-T17): nothing is current until one is published."""
+    await _human(ctx, PUBLISH, template_id)
+    await _publisher(ctx, template_id)
+    async with uow(ctx.tenant) as tx:
+        await tx.session.execute(
+            select(ReportTemplate.id).where(ReportTemplate.id == template_id).with_for_update()
+        )
+        version = await _version(tx.session, template_id, version_no)
+        current = current_of(await _publications(tx.session, template_id))
+        if current is None or current.version_id != version.id:
+            raise NotCurrent(facts={"version_id": str(version.id)})
+        await tx.session.execute(
+            insert(ReportTemplatePublication).values(
+                id=uuid4(),
+                tenant_id=ctx.tenant_id,
+                version_id=version.id,
+                action="deprecated",
+                by_user_id=ctx.user_id,
+                mfa_at=ctx.mfa_at,
+            )
+        )
+        tx.record(
+            "report_template.deprecated",
+            target=Target(VERSION, version.id),
+            after=Ref(template=template_id, version=version_no),
+        )
+
+
 async def _names(user_ids: set[UUID]) -> Mapping[UUID, str]:
     return await names_of(sorted(user_ids)) if user_ids else {}
 
@@ -327,7 +433,16 @@ async def version_view(
     async with tenant_session(ctx.tenant) as session:
         version = await _version(session, template_id, version_no)
         pubs = [p for p in await _publications(session, template_id) if p.version_id == version.id]
-    names = await _names({p.by_user_id for p in pubs})
+        family = (
+            await session.execute(
+                select(ReportTemplate.family).where(ReportTemplate.id == template_id)
+            )
+        ).scalar_one()
+        terms = await _terms(session, version.id)
+    people = {p.by_user_id for p in pubs}
+    if terms is not None:
+        people.add(terms.counsel_attested_by_user_id)
+    names = await _names(people)
     return TemplateVersionView(
         template_id=template_id,
         version_id=version.id,
@@ -342,6 +457,18 @@ async def version_view(
         publications=[
             Publication(p.action, p.by_user_id, names.get(p.by_user_id, ""), p.at) for p in pubs
         ],
+        family=family,
+        consent=None
+        if terms is None
+        else ConsentTermsView(
+            purpose=terms.purpose,
+            statement_version=terms.statement_version,
+            counsel_attested_by_user_id=terms.counsel_attested_by_user_id,
+            counsel_attested_by=names.get(terms.counsel_attested_by_user_id, ""),
+            counsel_attested_at=terms.counsel_attested_at,
+            recipients_source=terms.recipients_source,
+            expiry_months=terms.expiry_months,
+        ),
     )
 
 

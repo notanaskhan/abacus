@@ -15,6 +15,12 @@ by path, and lists every problem at once (AC-1):
   clause placed twice in the body, or a clause library entry that nests another clause.
 - `too_large`: body, clauses and variables over 512 KB as canonical JSON.
 
+Consent templates (T-01-T17; DF-16): the `consent_7216` family needs its terms
+(`consent_terms_required`; terms on any other family are refused the same way), the
+`consent_7216` layout, the `consent.recipients` variable declared and placed exactly once
+(`recipients_block_required`), and no fixed text naming a model provider or sub-processor
+(`recipient_in_text`): the recipient block is rendered from the provider-terms register.
+
 `unknown_block` cannot reach this code: the frozen request model is a closed union, so an
 unknown block type is refused by request validation (422 with its path) before the route runs
 (DEC-1350). The content hash is SHA-256 over canonical JSON (sorted keys, no whitespace) of the
@@ -37,13 +43,17 @@ from abacus.kernel.listing import ListPage
 from abacus.modules.identity.api import AuthContext, Resource, authorise
 from abacus.modules.methodology.api import (
     ReportTemplateBundle,
+    ReportTemplateConsentTerms,
     ReportTemplateVersionView,
+    deprecate_report_template,
     import_report_template,
     publish_report_template,
     report_template_version,
     report_templates_in_firm,
 )
+from abacus.modules.reporting.consent import names_a_party
 from abacus.modules.reporting.contract import (
+    CONSENT_RECIPIENTS_KEY,
     ClauseBlock,
     DocBlock,
     EnclosuresBlock,
@@ -98,9 +108,13 @@ def content_sha256(body: TemplateImportIn) -> str:
 class _Walk:
     """One pass over the bundle collecting `(path, code)` problems."""
 
-    def __init__(self, declared: frozenset[str], clause_ids: frozenset[str]) -> None:
+    def __init__(
+        self, declared: frozenset[str], clause_ids: frozenset[str], *, consent: bool = False
+    ) -> None:
         self.declared = declared
         self.clause_ids = clause_ids
+        self.consent = consent
+        self.recipient_runs = 0
         self.placed: set[str] = set()
         self.used: set[str] = set()
         self.errors: list[ImportErrorOut] = []
@@ -111,6 +125,8 @@ class _Walk:
     def wording(self, path: str, value: str) -> None:
         if has_markup(value):
             self.add(path, "markup_not_allowed")
+        if self.consent and names_a_party(value):
+            self.add(path, "recipient_in_text")
 
     def runs(self, path: str, runs: list[Run]) -> None:
         for i, run in enumerate(runs):
@@ -119,6 +135,8 @@ class _Walk:
                 self.wording(f"{where}.text", run.text)
             elif isinstance(run, VarRun):
                 self.used.add(run.key)
+                if run.key == CONSENT_RECIPIENTS_KEY:
+                    self.recipient_runs += 1
                 if run.key not in self.declared:
                     self.add(f"{where}.key", "unknown_variable")
 
@@ -180,7 +198,12 @@ def validate(body: TemplateImportIn) -> tuple[list[ImportErrorOut], list[str]]:
     """Every problem by path (AC-1, AC-2) and the warnings (declared but unused variables)."""
     declared = frozenset(v.key for v in body.variables)
     clause_ids = frozenset(c.clause_id for c in body.clauses)
-    walk = _Walk(declared, clause_ids)
+    consent = body.family == "consent_7216"
+    walk = _Walk(declared, clause_ids, consent=consent)
+    if consent != (body.consent is not None):
+        walk.add("consent", "consent_terms_required")
+    if consent and body.layout_key != "consent_7216":
+        walk.add("layout_key", "unknown_layout")
     if body.layout_key not in LAYOUTS:
         walk.add("layout_key", "unknown_layout")
     for field, value in (("name", body.name), ("description", body.description)):
@@ -199,6 +222,10 @@ def validate(body: TemplateImportIn) -> tuple[list[ImportErrorOut], list[str]]:
         if key not in declared:
             walk.add(f"sample_data.{key}", "unknown_variable")
         walk.wording(f"sample_data.{key}", value)
+    if consent and (CONSENT_RECIPIENTS_KEY not in declared or walk.recipient_runs != 1):
+        walk.add("body", "recipients_block_required")
+    if consent and CONSENT_RECIPIENTS_KEY in body.sample_data:
+        walk.add(f"sample_data.{CONSENT_RECIPIENTS_KEY}", "recipient_in_text")
     dumped = body.model_dump(mode="json")
     size = len(canonical({k: dumped[k] for k in ("body", "clauses", "variables")}))
     if size > MAX_BYTES:
@@ -209,11 +236,14 @@ def validate(body: TemplateImportIn) -> tuple[list[ImportErrorOut], list[str]]:
     return walk.errors, warnings
 
 
-async def _gate(ctx: AuthContext, action: str) -> None:
-    """C11's order: a client principal 404, the matrix action, then the flag (404 off)."""
+async def _gate(ctx: AuthContext, action: str | None) -> None:
+    """C11's order: a client principal 404, the matrix action, then the flag (404 off). Publish
+    and deprecate pass no action here: their authority depends on the template's family, which
+    the service checks (a partner for a consent template, T-01-T17)."""
     if ctx.client:
         raise NotFound("generated documents")
-    await authorise(ctx, action, Resource.firm(ctx.tenant_id))
+    if action is not None:
+        await authorise(ctx, action, Resource.firm(ctx.tenant_id))
     if not await flag_enabled(ctx.tenant, REPORTING_GENERATED_DOCUMENTS):
         raise NotFound(REPORTING_GENERATED_DOCUMENTS.name)
 
@@ -241,6 +271,13 @@ async def import_bundle(
             variables=cast(list[object], dumped["variables"]),
             sample_data=cast(dict[str, object], dumped["sample_data"]),
             content_sha256=content_sha256(body),
+            consent=None
+            if body.consent is None
+            else ReportTemplateConsentTerms(
+                purpose=body.consent.purpose,
+                statement_version=body.consent.statement_version,
+                expiry_months=body.consent.expiry_months,
+            ),
         ),
     )
     if not stored.created:
@@ -264,6 +301,16 @@ def _version_out(view: ReportTemplateVersionView) -> ReportTemplateVersionOut:
                 {"action": p.action, "by": p.by, "at": p.at} for p in view.publications
             ],
             "content_sha256": view.content_sha256,
+            "consent": None
+            if view.consent is None
+            else {
+                "purpose": view.consent.purpose,
+                "statement_version": view.consent.statement_version,
+                "counsel_attested_by": view.consent.counsel_attested_by,
+                "counsel_attested_at": view.consent.counsel_attested_at,
+                "recipients_source": view.consent.recipients_source,
+                "expiry_months": view.consent.expiry_months,
+            },
         }
     )
 
@@ -279,8 +326,17 @@ async def publish(
     ctx: AuthContext, template_id: UUID, version_no: int
 ) -> ReportTemplateVersionOut:
     """AC-3, AC-4: human only, fresh second factor, four eyes; republishing rolls back."""
-    await _gate(ctx, "report_template.publish")
+    await _gate(ctx, None)
     await publish_report_template(ctx, template_id, version_no)
+    return _version_out(await report_template_version(ctx, template_id, version_no))
+
+
+async def deprecate(
+    ctx: AuthContext, template_id: UUID, version_no: int
+) -> ReportTemplateVersionOut:
+    """T-01-T17: withdraw the current version; 409 `not_current` for any other."""
+    await _gate(ctx, None)
+    await deprecate_report_template(ctx, template_id, version_no)
     return _version_out(await report_template_version(ctx, template_id, version_no))
 
 
