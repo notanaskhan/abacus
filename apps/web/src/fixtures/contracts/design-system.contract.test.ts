@@ -33,6 +33,7 @@ import type {
   ListPageIssueItemOut,
   ListPageK1PackageOut,
   ListPageKnowledgeItemOut,
+  ListPageMappingSetSummaryOut,
   ListPagePortalEnvelopeRow,
   ListPageReferenceSetOut,
   ListPageReferenceSetVersionOut,
@@ -130,6 +131,7 @@ const LIST_PAGES = {
   ListPage_IssueItemOut_: (p: ListPageIssueItemOut) => envelope(p),
   ListPage_K1PackageOut_: (p: ListPageK1PackageOut) => envelope(p), // T-02: TXP-12
   ListPage_KnowledgeItemOut_: (p: ListPageKnowledgeItemOut) => envelope(p), // K-01: KNW-01
+  ListPage_MappingSetSummaryOut_: (p: ListPageMappingSetSummaryOut) => envelope(p), // A-03: AUD-31
   ListPage_PortalEnvelopeRow_: (p: ListPagePortalEnvelopeRow) => envelope(p), // N-02: POR-06
   ListPage_ReferenceSetOut_: (p: ListPageReferenceSetOut) => envelope(p), // K-02: KNW-04
   ListPage_ReferenceSetVersionOut_: (p: ListPageReferenceSetVersionOut) => envelope(p), // K-02: KNW-04

@@ -54,7 +54,7 @@ V0: dict[tuple[str, str], str] = {
 def _ctx(*, client: bool = False, kind: str = "human") -> AuthContext:
     user = uuid.uuid4()
     return AuthContext(
-        TenantContext(uuid.uuid4(), kind, str(user)),  # type: ignore[arg-type]
+        TenantContext(uuid.uuid4(), kind, str(user)),  # type: ignore[arg-type] -- an agent or human probe
         user,
         uuid.uuid4(),
         None,
