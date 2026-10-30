@@ -95,6 +95,10 @@ Two kinds of versioned, effective-dated rules (K-02 short version): **platform r
 - **AC-49** (K-02-T12) Publishing or withdrawing a reference-set version (`refdata publish|withdraw`) starts ReferenceSetFanOutWorkflow once per version and action (background class, identifiers only); `refdata fanout` restarts it.
 - **AC-50** (K-02-T12) Each active tenant gets exactly one `reference_set.published` (or `.withdrawn`) audit event and outbox event naming the version, the set key and the operator and approver handles; a re-run or retry writes nothing twice.
 - **AC-51** (K-02-T12) C16's `rules_table_updated` kind notifies firm admins from the outbox event; consumers (tax due dates) recompute from it.
+- **AC-52** (K-02-T14) KNW-04 i: the owner's draft shows the version chip and a neutral "Draft vN" pill, the draft's table with every changed value amber-tinted and the prior value struck, and "n changes from vM".
+- **AC-53** (K-02-T14) The sticky Save bar reads "Draft vN · n changes from vM · visible to partners only" with the Effective date, Discard draft and Publish vN… (owner only, after a change summary; ConfirmDialog; a 403 opens the step-up); New version… is disabled while a draft is open.
+- **AC-54** (K-02-T14) Typed editors per kind edit the draft in place (AJE limits, variance percent and amount, materiality ranges, document confidence, SSARS early adoption); a save sends If-Match and a 409 `stale_version` shows "Changed by … Reload to see the latest draft." instead of overwriting.
+- **AC-55** (K-02-T14) Staff never see a draft or Publish; Export downloads the draft's workbook for the owner.
 
 ## 4. Out of scope here
 The CLI, import and export, fan-out and KNW-04i/j (K-02-T06 to T12, T14 to T20) build against the same contract in later sprints.
