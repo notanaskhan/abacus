@@ -50,8 +50,12 @@ from abacus.modules.signatures.sources import (
     register_letter_source,
     registered_sources,
 )
+from abacus.modules.signatures.status_poll import ACTIVITIES as STATUS_POLL_ACTIVITIES
+from abacus.modules.signatures.status_poll import SCHEDULES as STATUS_POLL_SCHEDULES
+from abacus.modules.signatures.status_poll import hint_envelope
 from abacus.modules.signatures.workflows import (
     EnvelopeInput,
+    EnvelopeStatusPollWorkflow,
     EnvelopeWorkflow,
     ReminderDue,
     SendPlan,
@@ -123,9 +127,13 @@ register_letter_source()
 register_client_owners(CLIENT_KINDS, audit_clients)
 
 # N-02-T14: EnvelopeWorkflow on the time-sensitive queue; its activities by name.
-WORKFLOWS: dict[type, WorkClass] = {EnvelopeWorkflow: "time_sensitive"}
+WORKFLOWS: dict[type, WorkClass] = {
+    EnvelopeWorkflow: "time_sensitive",
+    EnvelopeStatusPollWorkflow: "background",  # N-02-T19: the 5-minute poll
+}
 register_work_classes(WORKFLOWS)
-ACTIVITIES: tuple[object, ...] = ENVELOPE_ACTIVITIES
+ACTIVITIES: tuple[object, ...] = (*ENVELOPE_ACTIVITIES, *STATUS_POLL_ACTIVITIES)
+SCHEDULES = STATUS_POLL_SCHEDULES
 # N-02-T18: the provider for a firm with no process-wide one is its own DocuSign account, built
 # only when the kill switch, W7 and a connected install allow (ProviderUnavailable otherwise).
 register_firm_provider(firm_provider)
@@ -159,6 +167,7 @@ __all__ = [
     "ACTIVITIES",
     "LETTER",
     "ROUTERS",
+    "SCHEDULES",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
     "Completed",
@@ -182,6 +191,7 @@ __all__ = [
     "envelope_source",
     "envelope_summary_for",
     "envelope_workflow_id",
+    "hint_envelope",
     "register_docusign_install",
     "register_envelope_source",
     "register_reminder_sender",
