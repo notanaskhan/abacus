@@ -51,12 +51,18 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 # T-02-T10: a published reference-set correction recomputes every unfiled return's due dates
 # (K-02-T12 fans `reference_set.published` out per tenant).
 SUBSCRIPTIONS = {"reference_set.published": on_reference_set_published}
+# The worker collects every module's parts once it has subscriptions; tax has no workflows or
+# activities of its own yet (an absent attribute stopped the worker at start).
+WORKFLOWS: dict[type, str] = {}
+ACTIVITIES: tuple[object, ...] = ()
 
 __all__ = [
+    "ACTIVITIES",
     "FORM_FOR_RULES",
     "ROUTERS",
     "SUBSCRIPTIONS",
     "TRANSITIONS",
+    "WORKFLOWS",
     "ApprovalBlocker",
     "StaleReturn",
     "TransitionRefused",
