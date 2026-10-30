@@ -25,7 +25,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Path, Query
@@ -43,7 +43,11 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
 )
+from abacus.modules.organisations.consents import consent_rows
+from abacus.modules.organisations.consents import decline as decline_consent
+from abacus.modules.organisations.consents import revoke as revoke_consent
 from abacus.modules.organisations.contract import MaskedTinOut
+from abacus.modules.organisations.slots import ConsentCapture, consent_capture
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=8, max_length=200)]
@@ -494,6 +498,70 @@ async def _stub(ctx: AuthContext, action: str, flag: Flag) -> NoReturn:
     raise NotImplementedYet
 
 
+async def _live(ctx: AuthContext, action: str) -> None:
+    """T-01-T10: the stub's order of checks for a live route (client 404, matrix, flag)."""
+    if ctx.client:
+        raise NotFound("consent")
+    await authorise(ctx, action, Resource.firm(ctx.tenant_id))
+    if not await flag_enabled(ctx.tenant, CONSENTS_REGISTRY):
+        raise NotFound(CONSENTS_REGISTRY.name)
+
+
+def _capture() -> ConsentCapture:
+    found = consent_capture()
+    if found is None:
+        raise NotImplementedYet  # the tax module registers capture at import
+    return found
+
+
+async def consent_outs(ctx: AuthContext, ids: list[UUID]) -> list[ConsentOut]:
+    """C19's `ConsentOut` for consents just written (T-01-T10; the registry reads are T16's)."""
+    rows = await consent_rows(ctx.tenant, ids)
+    out: list[ConsentOut] = []
+    for row in rows:
+        v = row.values
+        out.append(
+            ConsentOut(
+                id=v["id"],  # type: ignore[arg-type]  # columns typed by the SQL
+                client_id=v["client_id"],  # type: ignore[arg-type]
+                client_entity_id=v["client_entity_id"],  # type: ignore[arg-type]
+                client_name=str(v["client_name"]),
+                consent_set_id=v["consent_set_id"],  # type: ignore[arg-type]
+                purpose=v["purpose"],  # type: ignore[arg-type]
+                tax_years=list(v["tax_years"]),  # type: ignore[call-overload]
+                scope=dict(v["scope"]),  # type: ignore[call-overload]
+                recipients=[ConsentRecipientOut.model_validate(r) for r in v["recipients"]],  # type: ignore[attr-defined]
+                provider_terms_version=str(v["provider_terms_version"]),
+                template_version_id=v["template_version_id"],  # type: ignore[arg-type]
+                source=v["source"],  # type: ignore[arg-type]
+                envelope_id=v["envelope_id"],  # type: ignore[arg-type]
+                status=v["status"],  # type: ignore[arg-type]
+                signed_count=int(v["signed_count"]),  # type: ignore[call-overload]
+                signer_count=int(v["signer_count"]),  # type: ignore[call-overload]
+                requested_at=v["requested_at"],  # type: ignore[arg-type]
+                signed_at=v["signed_at"],  # type: ignore[arg-type]
+                expires_at=v["expires_at"],  # type: ignore[arg-type]
+                renewal_of_id=v["renewal_of_id"],  # type: ignore[arg-type]
+                offshore=v["purpose"] == "offshore_disclosure",
+                allowed_actions=[],
+                declined_at=v["declined_at"],  # type: ignore[arg-type]
+                revoked_at=v["revoked_at"],  # type: ignore[arg-type]
+                signers=[
+                    ConsentSignerOut(
+                        contact_id=s["contact_id"],  # type: ignore[arg-type]
+                        name=str(s["display_name"]),
+                        role=s["signer_role"],  # type: ignore[arg-type]
+                        required=bool(s["required"]),
+                        signed_at=s["signed_at"],  # type: ignore[arg-type]
+                        method=s["method"],  # type: ignore[arg-type]
+                    )
+                    for s in row.signers
+                ],
+            )
+        )
+    return out
+
+
 @consents_router.get(
     "/consents", action="consent.read", response_model=ListPage[ConsentOut], errors=(501,)
 )
@@ -546,7 +614,9 @@ async def consent_evidence_route(
 async def request_consents_route(
     body: ConsentRequestIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ConsentDraftsOut:
-    await _stub(ctx, "consent.request", CONSENTS_REGISTRY)
+    """T-01-T10: one document per purpose, one drafted envelope; sending stays SIG-02's."""
+    await _live(ctx, "consent.request")
+    return cast(ConsentDraftsOut, await _capture().request(ctx, body))
 
 
 @consents_router.post(
@@ -559,7 +629,9 @@ async def request_consents_route(
 async def renew_consents_route(
     body: ConsentRenewalIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ConsentDraftsOut:
-    await _stub(ctx, "consent.request", CONSENTS_REGISTRY)
+    """T-01-T10: renewals keep purpose, scope and years; 409 `consent_declined`."""
+    await _live(ctx, "consent.request")
+    return cast(ConsentDraftsOut, await _capture().renew(ctx, body))
 
 
 @consents_router.post(
@@ -572,7 +644,9 @@ async def renew_consents_route(
 async def record_consent_route(
     body: ConsentRecordIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ConsentOut:
-    await _stub(ctx, "consent.record", CONSENTS_REGISTRY)
+    """T-01-T10 Story 1.3: record mode, the signed PDF into COMPLIANCE storage."""
+    await _live(ctx, "consent.record")
+    return cast(ConsentOut, await _capture().record(ctx, body))
 
 
 @consents_router.post(
@@ -584,7 +658,10 @@ async def record_consent_route(
 async def decline_consent_route(
     consent_id: ConsentId, body: ConsentReasonIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ConsentOut:
-    await _stub(ctx, "consent.record", CONSENTS_REGISTRY)
+    """T-01-T10 Story 1.4: a decline blocks re-solicitation for the same years."""
+    await _live(ctx, "consent.record")
+    await decline_consent(ctx, consent_id, body.seen_version)
+    return (await consent_outs(ctx, [consent_id]))[0]
 
 
 @consents_router.post(
@@ -596,7 +673,10 @@ async def decline_consent_route(
 async def revoke_consent_route(
     consent_id: ConsentId, body: ConsentReasonIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ConsentOut:
-    await _stub(ctx, "consent.record", CONSENTS_REGISTRY)
+    """T-01-T10 Story 1.4: a revocation; the gate's next call is refused."""
+    await _live(ctx, "consent.record")
+    await revoke_consent(ctx, consent_id, body.seen_version)
+    return (await consent_outs(ctx, [consent_id]))[0]
 
 
 @consents_router.post(

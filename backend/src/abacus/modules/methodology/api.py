@@ -38,6 +38,11 @@ from abacus.modules.methodology.report_templates import (
     ConsentTerms as ReportTemplateConsentTerms,
 )
 from abacus.modules.methodology.report_templates import (
+    PublishedConsentTemplate,
+    consent_expiry_months,
+    published_consent_template,
+)
+from abacus.modules.methodology.report_templates import (
     ImportedVersion as ImportedReportTemplateVersion,
 )
 from abacus.modules.methodology.report_templates import (
@@ -161,6 +166,7 @@ __all__ = [
     "MethodologyVersionView",
     "PolicyRef",
     "Problem",
+    "PublishedConsentTemplate",
     "ReportTemplateBundle",
     "ReportTemplateConsentTerms",
     "ReportTemplatePublicationView",
@@ -183,6 +189,7 @@ __all__ = [
     "approve_version",
     "area_for",
     "classify_entry",
+    "consent_expiry_months",
     "confidence_hold",
     "current_report_template_version",
     "current_version",
@@ -197,6 +204,7 @@ __all__ = [
     "methodology_version",
     "parse_workbook",
     "publish_drafted_version",
+    "published_consent_template",
     "publish_report_template",
     "register_catalog_provider",
     "register_standard_examples",

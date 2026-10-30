@@ -9,6 +9,7 @@ from abacus.modules.engagements.api import register_work_item_kind
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.organisations.api import register_office_facts
 from abacus.modules.platform.api import register_search_projection
+from abacus.modules.tax import consent_capture
 from abacus.modules.tax.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.tax.board import KIND as SEARCH_TYPE
 from abacus.modules.tax.board import return_search_document, returns_by_office
@@ -32,6 +33,9 @@ from abacus.modules.tax.status import TRANSITIONS, StaleReturn, TransitionRefuse
 from abacus.modules.tax.tax_profile import register as register_tax_profile
 from abacus.modules.tax.transitions import apply_transition, record_sync_state
 
+# T-01-T10: §7216 consent capture behind C19's routes, and the `consent_set` envelope source.
+consent_capture.register()
+
 # F-03-T22: the `tax_return` work-item kind.
 register_work_item_kind("tax_return", TaxReturnKind())
 
@@ -53,7 +57,11 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 
 # T-02-T10: a published reference-set correction recomputes every unfiled return's due dates
 # (K-02-T12 fans `reference_set.published` out per tenant).
-SUBSCRIPTIONS = {"reference_set.published": on_reference_set_published}
+SUBSCRIPTIONS = {
+    "reference_set.published": on_reference_set_published,
+    # T-01-T10: a completed `consent_set` envelope signs its consents (C7 → C19).
+    "envelope.completed": consent_capture.on_envelope_completed,
+}
 # The worker collects every module's parts once it has subscriptions; tax has no workflows or
 # activities of its own yet (an absent attribute stopped the worker at start).
 WORKFLOWS: dict[type, str] = {}

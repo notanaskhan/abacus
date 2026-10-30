@@ -29,6 +29,25 @@ from abacus.modules.organisations.consent_gate import (
     require_tri_consent,
     tri_consent_verdict,
 )
+from abacus.modules.organisations.consents import (
+    ConsentDraft,
+    FilingUnit,
+    check_scope,
+    consent_template_versions_on,
+    envelope_completed,
+    filing_unit,
+    record_request,
+    record_signed,
+    refuse_declined,
+    renewal_basis,
+)
+from abacus.modules.organisations.consents_contract import (
+    ConsentDraftsOut,
+    ConsentRecordIn,
+    ConsentRenewalIn,
+    ConsentRequestIn,
+    consent_outs,
+)
 from abacus.modules.organisations.consents_contract import (
     AgreeingFormOut,
     AuthorizationForm,
@@ -133,6 +152,7 @@ from abacus.modules.organisations.service import (
     signer_contacts,
 )
 from abacus.modules.organisations.settings_contract import offices_glance, org_settings_router
+from abacus.modules.organisations.slots import register_consent_capture
 from abacus.modules.organisations.slots import (
     OverviewItem,
     OverviewSection,
@@ -201,6 +221,22 @@ for _section in (
 register_consent_gate()
 
 __all__ = [
+    "ConsentDraft",
+    "ConsentDraftsOut",
+    "ConsentRecordIn",
+    "ConsentRenewalIn",
+    "ConsentRequestIn",
+    "FilingUnit",
+    "check_scope",
+    "consent_outs",
+    "consent_template_versions_on",
+    "envelope_completed",
+    "filing_unit",
+    "record_request",
+    "record_signed",
+    "refuse_declined",
+    "register_consent_capture",
+    "renewal_basis",
     "CONTACT_ROLES",
     "ENTITY_TYPES",
     "RELATIONSHIP_KINDS",
