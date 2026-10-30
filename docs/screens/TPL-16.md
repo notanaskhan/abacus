@@ -65,8 +65,8 @@ Gradients, emoji, saturated blue, yellow sign-here flags, heavy shadows, invente
 | Artboard | Tier (A/B/D) | Diff % | Notes |
 |---|---|---|---|
 | a, c | C screenshot + A chrome | not run | identity and adopt region masked |
-| b, d, e, f | B frame · A strips · D geometry | not run | provider-frame region masked where present; e locked at Tier B (F-06-T13); b 5.72 %, d 5.02 % over Tier B and f drawn in place (81.75 %) at the end review: report-only until closed |
-| g | B · D (390, 44 × 44 targets, 48 primary, bar 64) | not run | over Tier B at the end review (F-06-T13): report-only until closed |
+| b, d, e, f | B frame · A strips · D geometry | b 1.26 %, d 0.94 %, e 0.92 %, f 1.82 % | locked at Tier B (DEC-1183); the server-rendered document page is masked |
+| g | B · D (390, 44 × 44 targets, 48 primary, bar 64) | 3.59 % | report-only (DEC-1183): the handoff's phone header is a different mobile layout |
 
 ## Open gaps
 - Q5 (provider-mode CTA label): open, decide by Fri Apr 30, 2027. The specimen keeps the built label.

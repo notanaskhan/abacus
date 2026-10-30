@@ -52,6 +52,9 @@ export interface DialogProps {
   children: ReactNode;
   /** Hold the dialog open in place for a specimen: no layer, no scrim, no trap. */
   forceState?: "open";
+  /** With `forceState`: draw the held dialog centred over its nearest positioned frame on the
+   * scrim (a frame specimen, TPL-16f), not in place. */
+  heldScrim?: boolean;
 }
 
 function Frame({
@@ -106,15 +109,28 @@ export function Dialog({
   scrim = "dialog",
   children,
   forceState,
+  heldScrim = false,
 }: DialogProps): JSX.Element {
   if (forceState === "open") {
-    return (
+    const held = (
       <div role="group" aria-label={title} className={cn(BOX, WIDTH[size])}>
         <FrameMode live={false}>
           <Frame title={title} description={description} action={action} onClose={() => undefined}>
             {children}
           </Frame>
         </FrameMode>
+      </div>
+    );
+    if (!heldScrim) return held;
+    return (
+      <div
+        data-scrim={scrim}
+        className={cn(
+          "absolute inset-0 z-40 grid place-items-center p-[24px] backdrop-blur-[0.5px] backdrop-saturate-[0.9]",
+          scrim === "agent" ? "bg-(--scrim-agent)" : "bg-(--scrim)",
+        )}
+      >
+        {held}
       </div>
     );
   }
