@@ -1628,7 +1628,13 @@
       "source": "handoff/screens/AUD-06 Trial balance and leadsheets/screenshots/AUD-06a.png",
       "sha256": "dd5f8e2899c9d7c12f795b4277af1d12e1095b20851bcac69e0255e0ed75a520",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']",
+        "[data-cockpit='rail']",
+        "[data-shell='record-header']"
+      ],
+      "locked": true
     },
     "aud-06b.window": {
       "page": "screens/AUD-06?st=b",
@@ -1636,7 +1642,11 @@
       "source": "handoff/screens/AUD-06 Trial balance and leadsheets/screenshots/AUD-06b.png",
       "sha256": "c2608811fdc171a845874eba29824900b13e6ff2dd61beb864907541606fe178",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ],
+      "locked": true
     },
     "aud-06c.window": {
       "page": "screens/AUD-06?st=c",
@@ -1644,7 +1654,13 @@
       "source": "handoff/screens/AUD-06 Trial balance and leadsheets/screenshots/AUD-06c.png",
       "sha256": "37e328badfdc42425fad5544bed62aed57e24d1d61c02cfdda32340db6e95033",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']",
+        "[data-cockpit='rail']",
+        "[data-shell='record-header']"
+      ],
+      "locked": true
     },
     "aud-06d.window": {
       "page": "screens/AUD-06?st=d",
@@ -1652,7 +1668,10 @@
       "source": "handoff/screens/AUD-06 Trial balance and leadsheets/screenshots/AUD-06d.png",
       "sha256": "00145d869e215fd1cf134fd3e7d21d63953f5416b14a38910b2227fd5cade117",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ]
     },
     "aud-06e.window": {
       "page": "screens/AUD-06?st=e",
@@ -1660,7 +1679,11 @@
       "source": "handoff/screens/AUD-06 Trial balance and leadsheets/screenshots/AUD-06e.png",
       "sha256": "86802d9c4bd0809e5ebe2ee62bbbae56ca58de1d63d8cbbc18db03b8280ead68",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ],
+      "locked": true
     },
     "aud-06f.window": {
       "page": "screens/AUD-06?st=f",
@@ -1668,7 +1691,10 @@
       "source": "handoff/screens/AUD-06 Trial balance and leadsheets/screenshots/AUD-06f.png",
       "sha256": "281ed5f2c837dd80b30a200391451cc43005c304ebf631fdb36ecbf2c816b16d",
       "crop": "window",
-      "tier": "C"
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ]
     },
     "aud-06g.window": {
       "page": "screens/AUD-06?st=g",
