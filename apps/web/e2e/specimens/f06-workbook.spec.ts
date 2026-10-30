@@ -32,7 +32,7 @@ test("test_ac26_t6a_tab_groups_one_row_at_1400_and_every_pill_ties", async ({ pa
   expect(Math.abs((first?.y ?? 0) - (second?.y ?? 0))).toBeLessThan(1);
   expect((second?.x ?? 0) + (second?.width ?? 0)).toBeLessThanOrEqual(1400 + 20);
   const strip = page.getByRole("list", { name: "Checks" });
-  await expect(strip.getByText("tie")).toHaveCount(4);
+  await expect(strip.getByText("tie", { exact: true })).toHaveCount(4);
   await expect(page.getByText("GP", { exact: true })).toBeVisible();
   await axeStep(page, "f06-workbook T6a", { include: "[data-artboard]" });
   await assertInvariants(page, { step: "f06-workbook T6a", persona: SAMUEL });
@@ -56,7 +56,7 @@ test("test_ac27_t6b_off_links_issue_2_through_the_callback", async ({ page }) =>
 test("test_ac29_t6c_building_pending_pills_skeletons_no_sign_off", async ({ page }) => {
   await board(page, "c");
   const strip = page.getByRole("list", { name: "Checks" });
-  await expect(strip.getByText("Pending")).toHaveCount(4);
+  await expect(strip.getByText("Pending", { exact: true })).toHaveCount(4);
   await expect(page.getByText("Workbook agent is running")).toBeVisible();
   await expect(page.locator("[data-workbook='skeleton-row']")).toHaveCount(7);
   await expect(page.getByRole("button", { name: "Sign off…" })).toHaveCount(0);

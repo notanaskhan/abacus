@@ -11,7 +11,13 @@ import { AppShell } from "../../layout/app-shell";
 import type { ToolbarProps } from "../../layout/toolbar";
 import { useMotion } from "../../motion";
 import { cn } from "../../cn";
-import type { TablePayload, WorkbookCopy, WorkbookPaneVM, WorkbookTallyItem, WorkbookVM } from "./types";
+import type {
+  TablePayload,
+  WorkbookCopy,
+  WorkbookPaneVM,
+  WorkbookTallyItem,
+  WorkbookVM,
+} from "./types";
 
 // T6 WorkbookLayout (F-06-T18; T6 and TPL-06 handoff, Wave 0 Foundations #t6; F-06.md §3 F5,
 // §5.2): under the toolbar 46 and the record subbar 42, the tabsbar 50 holding two small
@@ -192,22 +198,29 @@ function BuildingTable({
     .join(" ");
   return (
     <div>
-      <div
-        role="row"
-        style={{ gridTemplateColumns: template }}
-        className="grid h-[30px] items-center border-b-[0.5px] border-hair bg-band-hd text-th font-medium text-ink-3"
-      >
-        {columns.map((c, i) => (
-          <span
-            key={c.key}
-            role="columnheader"
-            className={cn("px-[16px]", i === 0 ? "text-left" : "text-right")}
+      <div role="table" aria-label={label}>
+        <div role="rowgroup">
+          <div
+            role="row"
+            style={{ gridTemplateColumns: template }}
+            className="grid h-[30px] items-center border-b-[0.5px] border-hair bg-band-hd text-th font-medium text-ink-3"
           >
-            {c.header}
-          </span>
-        ))}
+            {columns.map((c, i) => (
+              <span
+                key={c.key}
+                role="columnheader"
+                className={cn("px-[16px]", i === 0 ? "text-left" : "text-right")}
+              >
+                {c.header}
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
-      <AgentRunningRow state="run" title={label} className="border-b-[0.5px] border-hair" />
+      {/* The running row is a list row (C-20): it sits in its own one-item list. */}
+      <ul aria-label={label}>
+        <AgentRunningRow state="run" title={label} className="border-b-[0.5px] border-hair" />
+      </ul>
       {Array.from({ length: SKELETON_ROWS }, (_, i) => (
         <div
           key={i}
@@ -227,8 +240,7 @@ function BuildingTable({
             >
               <span
                 style={{
-                  width:
-                    j === 0 ? LABEL_WIDTHS[i % 3] : VALUE_WIDTHS[(i + j) % 3],
+                  width: j === 0 ? LABEL_WIDTHS[i % 3] : VALUE_WIDTHS[(i + j) % 3],
                   animationDelay: `${String(i * SKELETON_STAGGER_MS)}ms`,
                 }}
                 className="motion-pulse block h-[8px] rounded-full bg-nested"
