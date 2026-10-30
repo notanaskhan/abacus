@@ -73201,10 +73201,6 @@ export type DiscardDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DiscardDraftError = DiscardDraftErrors[keyof DiscardDraftErrors];
@@ -73317,10 +73313,6 @@ export type CreateDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CreateDraftError = CreateDraftErrors[keyof CreateDraftErrors];
@@ -73655,10 +73647,6 @@ export type AddStepErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AddStepError = AddStepErrors[keyof AddStepErrors];
@@ -73831,10 +73819,6 @@ export type RemoveStepErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RemoveStepError = RemoveStepErrors[keyof RemoveStepErrors];
@@ -73899,10 +73883,6 @@ export type EditStepErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EditStepError = EditStepErrors[keyof EditStepErrors];
@@ -73967,10 +73947,6 @@ export type MandatoryStepErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MandatoryStepError = MandatoryStepErrors[keyof MandatoryStepErrors];

@@ -13716,7 +13716,8 @@ export const approveVersionMutation = (options?: Partial<Options<ApproveVersionD
 /**
  * Discard Draft Route
  *
- * KNW-03: discard a draft (published versions are never discarded).
+ * KNW-03: discard a draft or a version in review (published versions are never discarded;
+ * the number stays consumed). 409 `stale_version`, `version_frozen`.
  */
 export const discardDraftMutation = (options?: Partial<Options<DiscardDraftData>>): UseMutationOptions<DiscardDraftResponse, DiscardDraftError, Options<DiscardDraftData>> => {
     const mutationOptions: UseMutationOptions<DiscardDraftResponse, DiscardDraftError, Options<DiscardDraftData>> = {
@@ -13754,7 +13755,8 @@ export const draftTemplateGuidanceMutation = (options?: Partial<Options<DraftTem
 /**
  * Create Draft Route
  *
- * KNW-03 c: a new draft vN+1 from a published version.
+ * KNW-03 c: a new draft vN+1 from a published version (K-01-T14). 409
+ * `version_not_published`, `draft_exists`.
  */
 export const createDraftMutation = (options?: Partial<Options<CreateDraftData>>): UseMutationOptions<CreateDraftResponse, CreateDraftError, Options<CreateDraftData>> => {
     const mutationOptions: UseMutationOptions<CreateDraftResponse, CreateDraftError, Options<CreateDraftData>> = {
@@ -13871,7 +13873,7 @@ export const versionProgramsOptions = (options: Options<VersionProgramsData>) =>
 /**
  * Add Step Route
  *
- * KNW-03 c: + Step in a draft.
+ * KNW-03 c: + Step in a draft (K-01-T14). 409 `version_frozen`.
  */
 export const addStepMutation = (options?: Partial<Options<AddStepData>>): UseMutationOptions<AddStepResponse, AddStepError, Options<AddStepData>> => {
     const mutationOptions: UseMutationOptions<AddStepResponse, AddStepError, Options<AddStepData>> = {
@@ -13929,7 +13931,8 @@ export const versionStateOptions = (options: Options<VersionStateData>) => query
 /**
  * Remove Step Route
  *
- * KNW-03 c: remove a non-mandatory draft step (409 `mandatory_locked`).
+ * KNW-03 c: remove a non-mandatory draft step (K-01-T14). 409 `mandatory_locked`,
+ * `step_has_requests`, `version_frozen`, `stale_version`.
  */
 export const removeStepMutation = (options?: Partial<Options<RemoveStepData>>): UseMutationOptions<RemoveStepResponse, RemoveStepError, Options<RemoveStepData>> => {
     const mutationOptions: UseMutationOptions<RemoveStepResponse, RemoveStepError, Options<RemoveStepData>> = {
@@ -13948,7 +13951,8 @@ export const removeStepMutation = (options?: Partial<Options<RemoveStepData>>): 
 /**
  * Edit Step Route
  *
- * KNW-03 c: edit a draft step (409 `version_frozen` on a published version).
+ * KNW-03 c: edit an optional draft step; its key and source stay (K-01-T14). 409
+ * `version_frozen`, `mandatory_locked`, `stale_version`.
  */
 export const editStepMutation = (options?: Partial<Options<EditStepData>>): UseMutationOptions<EditStepResponse, EditStepError, Options<EditStepData>> => {
     const mutationOptions: UseMutationOptions<EditStepResponse, EditStepError, Options<EditStepData>> = {
@@ -13967,7 +13971,8 @@ export const editStepMutation = (options?: Partial<Options<EditStepData>>): UseM
 /**
  * Mandatory Step Route
  *
- * KNW-03 d: a quality partner locks or unlocks a step (human-only, fresh MFA).
+ * KNW-03 d: the QM owner locks or unlocks a draft step (human-only, fresh MFA; K-01-T14).
+ * A refusal is audited before the flag is read. 409 `version_frozen`, `stale_version`.
  */
 export const mandatoryStepMutation = (options?: Partial<Options<MandatoryStepData>>): UseMutationOptions<MandatoryStepResponse, MandatoryStepError, Options<MandatoryStepData>> => {
     const mutationOptions: UseMutationOptions<MandatoryStepResponse, MandatoryStepError, Options<MandatoryStepData>> = {
