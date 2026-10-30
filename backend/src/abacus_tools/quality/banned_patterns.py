@@ -2294,6 +2294,7 @@ RULES: list[Rule | TreeRule] = [
             # role's refusals with the tenant and actor set by hand.
             "tests/integration/test_n02t07_signatures_schema.py",
             "tests/integration/test_n01t07_firm_intake_schema.py",  # N-01-T07: 0293
+            "tests/integration/test_p11t05_reporting_schema.py",  # P-11-T05: 0430
             # I-01-T04, K-01-T05 (S11): the human-only snooze and reassignment rows, the card's
             # reassign guard and the frozen methodology content, proved as the app role with the
             # tenant and actor set by hand, as tenant_session sets them.
@@ -2473,6 +2474,7 @@ RULES: list[Rule | TreeRule] = [
             # role's refusals with the tenant and actor set by hand.
             "tests/integration/test_n02t07_signatures_schema.py",
             "tests/integration/test_n01t07_firm_intake_schema.py",  # N-01-T07: 0293
+            "tests/integration/test_p11t05_reporting_schema.py",  # P-11-T05: 0430
             # I-01-T04, K-01-T05 (S11): the human-only snooze and reassignment rows, the card's
             # reassign guard and the frozen methodology content, proved as the app role with the
             # tenant and actor set by hand, as tenant_session sets them.

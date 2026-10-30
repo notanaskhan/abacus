@@ -4,7 +4,7 @@ title: P-11-T05 migration reporting_v1 (expand-only)
 spec: SPEC-520
 acceptance_criteria: [AC-33, AC-27, AC-15, AC-16]
 risk_zone: amber
-status: todo
+status: in-review
 epic: P-11
 plan_key: P-11-T05
 branch: s17-p11-t05
@@ -35,3 +35,18 @@ tables (expand-only; nothing reads them yet).
 
 ## Progress log
 - `2026-10-29` — Planned in P-11-T01.
+- `2026-10-29` — Built on `s17-p11-t05` (stacked on T04): `migrations/versions/0430_reporting_v1.py`
+  (down_revision 0321, main's head; re-chain at the merge after S15's 0370s and S16's 0400s),
+  `reporting/registry.py`, `tests/integration/test_p11t05_reporting_schema.py` (round trip,
+  single head, forced RLS and schema_check, insert-only refusals for every role incl. the
+  superuser via the trigger, tenant isolation, final needs a person and an approval on this
+  content hash, agent drafts name their run, evidence xor sample, out-of-date keys, render-job
+  update columns), banned-pattern exclusions for the test. Run at the S17 end review.
+
+## Decisions made during this task
+| Decision | Reason | Needs ADR? |
+|---|---|---|
+| An approval's `content_hash` must equal the version's (CHECK) | AC-15 in the database, not only the service | no |
+| No trigger on the requester's identity (as envelopes have) | the RenderWorkflow records versions as the system on a person's behalf; the CHECKs hold the shape | no |
+| `generated_document_fields.occurrence` | a variable may appear more than once on a page | no |
+| No FK from files to `evidence_versions` | evidence is red and its own module's table; the service asserts the fingerprint (AC-25) | no |
