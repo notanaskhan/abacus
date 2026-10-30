@@ -79,7 +79,8 @@ class PortalBrandOut(PortalBrandFields):
 class ClientExperienceFields(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    # Off until N-01's route is live (R-01-T33).
+    # R-01-T33: on, POR-03 offers "Upload something else" (N-01's portal intake); off, the
+    # button is hidden and the intake route answers 404.
     allow_upload_something_else: Annotated[bool, classified("internal")] = False
     phone_capture: Annotated[bool, classified("internal")] = True
     show_team_card: Annotated[bool, classified("internal")] = True

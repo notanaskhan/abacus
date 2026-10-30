@@ -1,6 +1,7 @@
 """The `tax_return` work-item kind (F-03-T22): a tax return: its entity, form (1040, 1041, 1065,
 1120s, 1120, 990, 706, 709) and tax year. Registered with engagements' kind slot; engagements
-creates the work item and calls `create` in the same unit of work."""
+creates the work item and calls `create` in the same unit of work, which also pins the return's
+C21 due dates and BH-TAX-02 (T-02-T10)."""
 
 from __future__ import annotations
 
@@ -9,6 +10,7 @@ from uuid import UUID
 from abacus.kernel.db import TenantContext
 from abacus.kernel.uow import UnitOfWork
 from abacus.modules.engagements.api import NewWorkItem
+from abacus.modules.tax.due_dates import pin, record_pinned
 from abacus.modules.tax.repository import insert_tax_returns
 
 
@@ -28,3 +30,8 @@ class TaxReturnKind:
                 "tax_year": item.details.get("tax_year"),
             },
         )
+        # T-02-T10: the C21 due dates and BH-TAX-02, pinned in the same unit of work.
+        tenant = TenantContext(item.tenant_id, "system", "tax:due_dates")
+        pinned = await pin(tx.session, tenant, item.work_item_id)
+        if pinned is not None:
+            record_pinned(tx, item.work_item_id, pinned)

@@ -33,7 +33,6 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import CLIENTS_TAX_PROFILE, CONSENTS_REGISTRY
 from abacus.kernel.classification import classified
-from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.kernel.listing import ListPage
@@ -682,7 +681,7 @@ async def compare_transcript_route(
     await _stub(ctx, "transcript.compare", CLIENTS_TAX_PROFILE)
 
 
-# --- C19 module API (frozen with v1; T-01-T10 and T-01-T12 implement) ---------------------------
+# --- C19 module API (frozen with v1; `consent_gate.py` reads, T-01-T11; T-01-T10 captures) -----
 
 
 @dataclass(frozen=True)
@@ -704,20 +703,3 @@ class TriVerdict:
 
     valid: bool
     missing: tuple[tuple[UUID, str], ...]
-
-
-def _unbuilt() -> NoReturn:
-    raise NotImplementedError("C19: T-01-T10 builds the consent registry and the gate")
-
-
-async def consent_state(
-    tenant: TenantContext, entity_ids: list[UUID], purpose: str, tax_year: int
-) -> list[ConsentState]:
-    _unbuilt()
-
-
-async def tri_consent_verdict(
-    tenant: TenantContext, subjects: list[UUID], at: datetime
-) -> TriVerdict:
-    """Fail closed: an unknown subject is missing both purposes."""
-    _unbuilt()

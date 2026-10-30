@@ -48,7 +48,13 @@ from abacus.modules.identity.api import firm_time_zone
 from abacus.modules.signatures.events import EnvelopeCompleted
 from abacus.modules.signatures.hub import seal_ip
 from abacus.modules.signatures.imports import RECORD_TYPE, RetentionFloorMissing
-from abacus.modules.signatures.provider import EnvelopeSpec, SignerSpec, SignerState, provider
+from abacus.modules.signatures.provider import (
+    EnvelopeSpec,
+    ProviderUnavailable,
+    SignerSpec,
+    SignerState,
+    provider_for,
+)
 from abacus.modules.signatures.reminders import reminder_instants, reminder_sender
 from abacus.modules.signatures.workflows import EnvelopeInput, ReminderDue, SendPlan
 
@@ -140,7 +146,25 @@ async def envelope_send(given: EnvelopeInput) -> SendPlan:
                 for p in people
             ),
         )
-        made = await provider().create_and_send(spec)
+        try:
+            adapter = await provider_for(tenant.tenant_id)
+        except ProviderUnavailable:
+            # The kill switch, W7 or the firm's install is off: recorded, nothing leaves.
+            async with uow(tenant) as tx:
+                await tx.session.execute(
+                    _EVENT,
+                    {
+                        "tenant": tenant.tenant_id,
+                        "envelope": envelope_id,
+                        "signer": None,
+                        "kind": "envelope.provider_unavailable",
+                        "source": "system",
+                        "at": system_now(),
+                    },
+                )
+                tx.record("envelope.provider_unavailable", target=Target("envelope", envelope_id))
+            return SendPlan("not_sent", "")
+        made = await adapter.create_and_send(spec)
         request = hashlib.sha256(json.dumps(asdict(spec), sort_keys=True).encode()).hexdigest()
         now = system_now()
         async with uow(tenant) as tx:
@@ -227,7 +251,8 @@ async def envelope_poll(given: EnvelopeInput) -> str:
     if env.status not in OPEN or env.provider_envelope_id is None:
         return str(env.status)
     states: dict[UUID, SignerState] = {
-        UUID(s.signer_id): s for s in await provider().status(env.provider_envelope_id)
+        UUID(s.signer_id): s
+        for s in await (await provider_for(tenant.tenant_id)).status(env.provider_envelope_id)
     }
     now = system_now()
     after: list[tuple[str, int]] = []
@@ -362,7 +387,7 @@ async def envelope_expire(given: EnvelopeInput) -> str:
     if env.status not in OPEN:
         return str(env.status)
     if env.provider_envelope_id is not None:
-        await provider().void(env.provider_envelope_id, "expired")
+        await (await provider_for(tenant.tenant_id)).void(env.provider_envelope_id, "expired")
     now = system_now()
     async with uow(tenant) as tx:
         await tx.session.execute(
@@ -429,7 +454,7 @@ async def envelope_complete(given: EnvelopeInput) -> str:
         return str(env.status)
     if recorded:
         return "recorded"  # a retry after the unit of work committed
-    got = await provider().completed(env.provider_envelope_id)
+    got = await (await provider_for(tenant.tenant_id)).completed(env.provider_envelope_id)
     line = (
         await service_line_of(tenant, env.engagement_id) if env.engagement_id is not None else None
     ) or "any"

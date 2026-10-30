@@ -9032,6 +9032,10 @@ export type DropFileOut = {
  */
 export type DueDateExtension = {
     /**
+     * Day
+     */
+    day?: number | null;
+    /**
      * Form
      */
     form: string;
@@ -10981,7 +10985,15 @@ export type EngineSummaryLineOut = {
     /**
      * Amount
      */
-    amount: string;
+    amount: string | null;
+    /**
+     * Indent
+     */
+    indent?: boolean;
+    /**
+     * Issue
+     */
+    issue?: boolean;
     /**
      * Label
      */
@@ -10990,6 +11002,18 @@ export type EngineSummaryLineOut = {
      * Line Key
      */
     line_key: string;
+    /**
+     * Line Ref
+     */
+    line_ref?: string | null;
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Total
+     */
+    total?: 'total' | 'grand' | null;
 };
 
 /**
@@ -12522,6 +12546,30 @@ export type FiledDestinationOut = {
      * Route
      */
     route: string;
+};
+
+/**
+ * FilingRowOut
+ *
+ * A Filing band KV row (and the gathering state's pro forma rows).
+ */
+export type FilingRowOut = {
+    /**
+     * Detail
+     */
+    detail?: string | null;
+    /**
+     * Key
+     */
+    key: 'due' | 'extension' | 'jurisdictions' | 'engine' | 'consents' | 'office';
+    /**
+     * Pill
+     */
+    pill?: string | null;
+    /**
+     * Value
+     */
+    value: string;
 };
 
 /**
@@ -17040,13 +17088,51 @@ export type K1BoxLineOut = {
 };
 
 /**
- * K1DependencyOut
+ * K1ClassificationOut
  */
-export type K1DependencyOut = {
+export type K1ClassificationOut = {
     /**
      * Issuer Name
      */
     issuer_name: string;
+    /**
+     * Pill
+     */
+    pill?: string | null;
+    /**
+     * Pill Tone
+     */
+    pill_tone?: 'state' | 'green' | null;
+    /**
+     * Tags
+     */
+    tags: Array<string>;
+};
+
+/**
+ * K1DependencyOut
+ */
+export type K1DependencyOut = {
+    /**
+     * Blocking
+     */
+    blocking?: boolean;
+    /**
+     * Issuer Name
+     */
+    issuer_name: string;
+    /**
+     * Short Name
+     */
+    short_name?: string | null;
+    /**
+     * Source Due On
+     */
+    source_due_on?: string | null;
+    /**
+     * Source Label
+     */
+    source_label?: string | null;
     /**
      * Source Return Id
      */
@@ -17487,6 +17573,22 @@ export type KvRow = {
 };
 
 /**
+ * LabelValueOut
+ *
+ * A KV row whose key is the import's own label (the pro forma's "2024 AGI").
+ */
+export type LabelValueOut = {
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Value
+     */
+    value: string;
+};
+
+/**
  * LadderLevelOut
  */
 export type LadderLevelOut = {
@@ -17513,6 +17615,14 @@ export type LadderLevelOut = {
  * LadderStepOut
  */
 export type LadderStepOut = {
+    /**
+     * Blocked By
+     */
+    blocked_by?: string | null;
+    /**
+     * Note
+     */
+    note?: string | null;
     person: PersonChipOut | null;
     /**
      * Role
@@ -17522,6 +17632,14 @@ export type LadderStepOut = {
      * Signed Off At
      */
     signed_off_at: string | null;
+    /**
+     * State
+     */
+    state?: 'done' | 'in_progress' | 'not_started';
+    /**
+     * Step
+     */
+    step?: 'preparer' | 'detail_review' | 'manager_review' | 'partner_review' | 'final_approval' | null;
 };
 
 /**
@@ -20718,6 +20836,30 @@ export type OverdueCountOut = {
 };
 
 /**
+ * OverviewIssueOut
+ *
+ * One of the top open C3 issues (severity drives the flag's colour).
+ */
+export type OverviewIssueOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'missing_information' | 'action_required' | 'review_point';
+    /**
+     * Severity
+     */
+    severity: 'high' | 'medium' | 'low';
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * PageLineOut
  */
 export type PageLineOut = {
@@ -21013,6 +21155,24 @@ export type PiiRevealOut = {
 };
 
 /**
+ * PipelineStepOut
+ */
+export type PipelineStepOut = {
+    /**
+     * State
+     */
+    state: 'done' | 'in_progress' | 'not_started';
+    /**
+     * Step
+     */
+    step: 'gather' | 'prepare' | 'review' | 'deliver';
+    /**
+     * Sub
+     */
+    sub: string;
+};
+
+/**
  * PlanStepOut
  */
 export type PlanStepOut = {
@@ -21174,6 +21334,10 @@ export type PortalBinderOut = {
      */
     done_count: number;
     /**
+     * Engagement Id
+     */
+    engagement_id?: string | null;
+    /**
      * Filter
      */
     filter: 'requested' | 'all' | 'uploaded_by_me' | 'needs_follow_up';
@@ -21202,6 +21366,10 @@ export type PortalBinderOut = {
      * Total
      */
     total: number;
+    /**
+     * Upload Something Else
+     */
+    upload_something_else?: boolean;
 };
 
 /**
@@ -23946,6 +24114,26 @@ export type RecordInputHashesOut = {
      * Model Calls
      */
     model_calls: Array<string>;
+};
+
+/**
+ * RecordLinkOut
+ *
+ * A Record band row on TAX-02's rail (Client, Engagement, Binder, Files, Relationships).
+ */
+export type RecordLinkOut = {
+    /**
+     * Key
+     */
+    key: 'client' | 'engagement' | 'binder' | 'files' | 'relationships';
+    /**
+     * Sub
+     */
+    sub: string;
+    /**
+     * Target Id
+     */
+    target_id?: string | null;
 };
 
 /**
@@ -29878,7 +30066,10 @@ export type StandardVersionOut = {
      * Standard Id
      */
     standard_id: string;
-    status: FirmStandardVersionStatus;
+    /**
+     * Status
+     */
+    status: FirmStandardVersionStatus | 'superseded';
     /**
      * Version
      */
@@ -29909,7 +30100,10 @@ export type StandardVersionSummaryOut = {
      */
     published_at: string | null;
     published_by: StandardPersonOut | null;
-    status: FirmStandardVersionStatus;
+    /**
+     * Status
+     */
+    status: FirmStandardVersionStatus | 'superseded';
     /**
      * Tax Year
      */
@@ -30763,6 +30957,24 @@ export type TaxElectionOut = {
 };
 
 /**
+ * TaxPlanRowOut
+ */
+export type TaxPlanRowOut = {
+    /**
+     * Detail
+     */
+    detail?: string | null;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * State
+     */
+    state: 'done' | 'in_progress' | 'not_started';
+};
+
+/**
  * TaxProfileIdentityOut
  *
  * CLI-05's Identity band: who the profile is for, by masked TIN (last four; DEC-52).
@@ -30889,17 +31101,41 @@ export type TaxReturnOverviewOut = {
      */
     allowed_actions: Array<string>;
     /**
+     * Carryforwards
+     */
+    carryforwards?: string | null;
+    /**
      * Consent Ok
      */
     consent_ok: boolean | null;
+    /**
+     * Engine Footnote
+     */
+    engine_footnote?: string | null;
     /**
      * Engine Summary
      */
     engine_summary: Array<EngineSummaryLineOut>;
     /**
+     * Engine Synced On
+     */
+    engine_synced_on?: string | null;
+    /**
      * Engine Version
      */
     engine_version: string | null;
+    /**
+     * Filing
+     */
+    filing?: Array<FilingRowOut>;
+    /**
+     * Issues
+     */
+    issues?: Array<OverviewIssueOut>;
+    /**
+     * K1 Classifications
+     */
+    k1_classifications?: Array<K1ClassificationOut>;
     /**
      * K1 Dependencies
      */
@@ -30913,9 +31149,33 @@ export type TaxReturnOverviewOut = {
      */
     open_issues: number;
     /**
+     * Pipeline
+     */
+    pipeline?: Array<PipelineStepOut>;
+    /**
+     * Plan
+     */
+    plan?: Array<TaxPlanRowOut>;
+    /**
+     * Pro Forma
+     */
+    pro_forma?: Array<LabelValueOut>;
+    /**
+     * Pro Forma Label
+     */
+    pro_forma_label?: string | null;
+    /**
+     * Record Links
+     */
+    record_links?: Array<RecordLinkOut>;
+    /**
      * Return Id
      */
     return_id: string;
+    /**
+     * Two Year
+     */
+    two_year?: Array<TwoYearStatOut>;
 };
 
 /**
@@ -30933,6 +31193,10 @@ export type TaxReturnRecordOut = {
      */
     approval_policy_version_id: string | null;
     /**
+     * Card Detail
+     */
+    card_detail?: string | null;
+    /**
      * Engagement Id
      */
     engagement_id: string;
@@ -30940,6 +31204,10 @@ export type TaxReturnRecordOut = {
      * Engine Return Id
      */
     engine_return_id: string | null;
+    /**
+     * Engine Url
+     */
+    engine_url?: string | null;
     row: TaxReturnRowOut;
     /**
      * Tabs
@@ -30986,6 +31254,10 @@ export type TaxReturnRowOut = {
      */
     id: string;
     /**
+     * Issues
+     */
+    issues?: number | null;
+    /**
      * Office Id
      */
     office_id: string | null;
@@ -31004,6 +31276,10 @@ export type TaxReturnRowOut = {
     review_level: 'detail' | 'manager' | 'partner' | null;
     reviewer: PersonChipOut | null;
     signer: PersonChipOut | null;
+    /**
+     * Signers
+     */
+    signers?: Array<TaxReturnSignerOut>;
     status: ReturnStatus;
     sync: ReturnSyncChipStatus | null;
     /**
@@ -31014,6 +31290,22 @@ export type TaxReturnRowOut = {
      * Tax Year
      */
     tax_year: number;
+};
+
+/**
+ * TaxReturnSignerOut
+ *
+ * A C7 signer chip on a row awaiting signature (T-02-T12): who, and whether they signed.
+ */
+export type TaxReturnSignerOut = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Signed
+     */
+    signed: boolean;
 };
 
 /**
@@ -32938,6 +33230,28 @@ export type TrialBalancesOut = {
      * Trial Balances
      */
     trial_balances: Array<TrialBalanceOut>;
+};
+
+/**
+ * TwoYearStatOut
+ */
+export type TwoYearStatOut = {
+    /**
+     * Change Pct
+     */
+    change_pct: string | null;
+    /**
+     * Current
+     */
+    current: string;
+    /**
+     * Key
+     */
+    key: 'agi' | 'total_tax' | 'refund';
+    /**
+     * Prior
+     */
+    prior: string;
 };
 
 /**
@@ -41153,10 +41467,6 @@ export type PracticeDueDatesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PracticeDueDatesError = PracticeDueDatesErrors[keyof PracticeDueDatesErrors];
@@ -58172,10 +58482,6 @@ export type CreateEnvelopeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CreateEnvelopeDraftError = CreateEnvelopeDraftErrors[keyof CreateEnvelopeDraftErrors];
@@ -58568,10 +58874,6 @@ export type UpdateEnvelopeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UpdateEnvelopeDraftError = UpdateEnvelopeDraftErrors[keyof UpdateEnvelopeDraftErrors];
@@ -58689,13 +58991,13 @@ export type EnvelopePageErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EnvelopePageError = EnvelopePageErrors[keyof EnvelopePageErrors];
@@ -58872,10 +59174,6 @@ export type SendEnvelopeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SendEnvelopeError = SendEnvelopeErrors[keyof SendEnvelopeErrors];
@@ -58932,10 +59230,6 @@ export type UndoEnvelopeSendErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UndoEnvelopeSendError = UndoEnvelopeSendErrors[keyof UndoEnvelopeSendErrors];
@@ -59116,10 +59410,6 @@ export type ValidateEnvelopeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ValidateEnvelopeError = ValidateEnvelopeErrors[keyof ValidateEnvelopeErrors];
@@ -77011,10 +77301,6 @@ export type ListReferenceSetsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListReferenceSetsError = ListReferenceSetsErrors[keyof ListReferenceSetsErrors];
@@ -77072,10 +77358,6 @@ export type ResolveReferenceSetErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ResolveReferenceSetError = ResolveReferenceSetErrors[keyof ResolveReferenceSetErrors];
@@ -77128,10 +77410,6 @@ export type ReferenceSetVersionsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ReferenceSetVersionsError = ReferenceSetVersionsErrors[keyof ReferenceSetVersionsErrors];
@@ -78143,10 +78421,6 @@ export type ListStandardsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListStandardsError = ListStandardsErrors[keyof ListStandardsErrors];
@@ -78198,10 +78472,6 @@ export type CreateStandardErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CreateStandardError = CreateStandardErrors[keyof CreateStandardErrors];
@@ -78310,10 +78580,6 @@ export type StandardErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type StandardError = StandardErrors[keyof StandardErrors];
@@ -78371,10 +78637,6 @@ export type StandardExamplesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type StandardExamplesError = StandardExamplesErrors[keyof StandardExamplesErrors];
@@ -78483,10 +78745,6 @@ export type AssignOwnerErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AssignOwnerError = AssignOwnerErrors[keyof AssignOwnerErrors];
@@ -78543,10 +78801,6 @@ export type DraftVersionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DraftVersionError = DraftVersionErrors[keyof DraftVersionErrors];
@@ -78611,10 +78865,6 @@ export type StandardDiscardDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type StandardDiscardDraftError = StandardDiscardDraftErrors[keyof StandardDiscardDraftErrors];
@@ -78671,10 +78921,6 @@ export type StandardVersionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type StandardVersionError = StandardVersionErrors[keyof StandardVersionErrors];
@@ -78739,10 +78985,6 @@ export type EditDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EditDraftError = EditDraftErrors[keyof EditDraftErrors];
@@ -78804,10 +79046,6 @@ export type VersionDiffErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type VersionDiffError = VersionDiffErrors[keyof VersionDiffErrors];
@@ -78938,10 +79176,6 @@ export type PublishVersionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PublishVersionError = PublishVersionErrors[keyof PublishVersionErrors];
@@ -79530,10 +79764,6 @@ export type ListReturnsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListReturnsError = ListReturnsErrors[keyof ListReturnsErrors];
@@ -79586,10 +79816,6 @@ export type ReturnsSummaryErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ReturnsSummaryError = ReturnsSummaryErrors[keyof ReturnsSummaryErrors];
@@ -80901,10 +81127,6 @@ export type BulkAssignErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type BulkAssignError = BulkAssignErrors[keyof BulkAssignErrors];
