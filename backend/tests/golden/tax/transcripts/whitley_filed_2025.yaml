@@ -1,0 +1,6 @@
+# The Whitleys' TY2025 return as filed: every information return agrees (CLI-05 a, row 3).
+- {form: W-2, payer_name: "Cobalt Ridge Engineering, LLC", amount: "99100.00"}
+- {form: W-2, payer_name: "Larkspur Pediatrics P.C.", amount: "73900.00"}
+- {form: "1098", payer_name: "Summit Home Lending", amount: "13987.40"}
+- {form: 1099-INT, payer_name: "Front Range Bank", amount: "1940.12"}
+- {form: 1099-INT, payer_name: "Lakeview Credit Union", amount: "1301.77"}

@@ -59,6 +59,7 @@ import type {
   SignOffLadderOut,
   SignOffOut,
 } from "@abacus/api-client";
+import { FELD_IMPORT } from "./engine-sync";
 
 export const id = (n: number): string => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 export const HASH = "sha256:9f4c" + "0".repeat(56) + "e21a"; // SHL-12 shows sha256:9f4c…e21a
@@ -1227,6 +1228,80 @@ export const SHL16 = {
   f: { ...history([]), target_id: id(240) },
 } satisfies Record<string, CheckpointHistoryOut>;
 
+// SHL-16 import-author variant (P-04-T47; P-04 §2 SHL-16 row; no artboard, frame a geometry): the
+// CCH Axcess import of 2025I:FeldJ:V3 (TAX-09 e's five fields, seed/engine-sync.ts) lands as
+// Checkpoint 7, proposed by the import, and stays pending until Samuel Ito approves it (the sync
+// chip reads "Import pending approval", then "Out of sync"); ie is the same import rejected.
+const IMPORT_HASH = digest("7777", "7777");
+/** TAX-09's field names for the import's rows (screens/TAX-09/copy.ts). */
+const IMPORT_LABELS: Readonly<Record<string, string>> = {
+  "f1040es.2026.vouchers": "Form 1040-ES (2026) vouchers",
+  "refund.direct_deposit": "Refund direct deposit",
+  "f8879.signature_method": "Form 8879 signature method",
+};
+export const importCp = checkpoint(7, {
+  author_kind: "import",
+  author_name: "CCH Axcess",
+  cause: "engine_import",
+  status: "proposed",
+  summary: "Imported from CCH Axcess 2025I:FeldJ:V3",
+  created_at: "2026-09-14T14:22:00Z",
+  content_hash: IMPORT_HASH,
+  allowed_actions: ["checkpoint.approve", "checkpoint.reject", "checkpoint.rename"],
+});
+export const importDetail: CheckpointDetailOut = {
+  checkpoint: importCp,
+  compare: "previous",
+  compared_to_id: cp6.id,
+  steps: [
+    {
+      kind: "imported",
+      title: "Imported from CCH Axcess 2025I:FeldJ:V3",
+      detail: "Five fields CCH Axcess holds that Accrued does not; none against a workpaper.",
+      at: "2026-09-14T14:22:00Z",
+    },
+  ],
+  // TAX-09 e's rows as the import wrote them (old: Accrued's value, none; new: the engine's).
+  diff: FELD_IMPORT.rows
+    .slice(0, 3)
+    .map((r) =>
+      diffRow(
+        r.field_key,
+        IMPORT_LABELS[r.field_key] ?? r.field_key,
+        r.accrued,
+        r.engine_display ?? r.engine,
+        "Imported from CCH Axcess",
+      ),
+    ),
+  totals: [{ label: "Net change to total income", value: "0", ties: true }],
+};
+const importApproved: CheckpointItemOut = {
+  ...importCp,
+  status: "approved",
+  current: true,
+  decision: approval(SAMUEL, "Samuel Ito", "2026-09-14T14:26:00Z"),
+  allowed_actions: ["checkpoint.rename"],
+};
+export const SHL16_IMPORT = {
+  ia: history([importCp, ...cards]),
+  ib: history([importApproved, ...cards.map((c) => ({ ...c, current: false }))]),
+  ie: history([
+    {
+      ...importCp,
+      status: "rejected",
+      decision: {
+        ...approval(SAMUEL, "Samuel Ito", "2026-09-14T14:26:00Z"),
+        decision: "rejected",
+        reason: "Wait for final K-1",
+      },
+      allowed_actions: ["checkpoint.rename"],
+    },
+    ...cards,
+  ]),
+} satisfies Record<string, CheckpointHistoryOut>;
+/** The import approved on the hash Samuel saw. */
+export const APPROVE_IMPORT: CheckpointApproveIn = { seen_hash: IMPORT_HASH };
+
 // SHL-15 a–e: issue composer and fix instructions -----------------------------------------------
 
 export const SUGGESTION =
@@ -1970,4 +2045,30 @@ export const REVIEW_ARTBOARDS: readonly ReviewArtboard[] = [
     [HISTORY(SHL16.f)],
     [send("POST /v1/checkpoints", "CheckpointCreateIn", SAVE_F)],
   ),
+];
+
+/** P-04-T47: SHL-16's import-author variant of a, b and e. Not handoff artboards (the 44 above
+ * stay the handoff's): frame a's geometry over the CCH import, served the same way. */
+export const IMPORT_ARTBOARDS: readonly ReviewArtboard[] = [
+  board(
+    "SHL-16",
+    "ia",
+    "Import pending approval",
+    "samuel-ito",
+    e0,
+    [
+      HISTORY(SHL16_IMPORT.ia),
+      DETAIL(importDetail),
+      post("/v1/checkpoints/{checkpoint_id}/approve", "CheckpointItemOut", importApproved),
+    ],
+    [send("POST /v1/checkpoints/{checkpoint_id}/approve", "CheckpointApproveIn", APPROVE_IMPORT)],
+  ),
+  board("SHL-16", "ib", "Import approved", "samuel-ito", e0, [
+    HISTORY(SHL16_IMPORT.ib),
+    DETAIL({ ...importDetail, checkpoint: importApproved }),
+  ]),
+  board("SHL-16", "ie", "Import rejected", "samuel-ito", e0, [
+    HISTORY(SHL16_IMPORT.ie),
+    DETAIL({ ...importDetail, checkpoint: SHL16_IMPORT.ie.items[0] ?? importCp }),
+  ]),
 ];

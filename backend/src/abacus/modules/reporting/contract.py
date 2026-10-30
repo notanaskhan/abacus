@@ -4,7 +4,8 @@ Contract: `docs/contracts/c11-renderer.md`.
 Every route answers 404 for a client principal (clients never reach C11: INV-4; deliverables go
 through C10 and envelopes through C7), then checks its one matrix action, then answers 404 with
 `reporting.generated_documents` off and 501 `not_implemented` with it on until its task lands:
-templates P-11-T06, generated-document reads and regenerate P-11-T11. Fixture mode serves the
+templates P-11-T06 (live: `templates.py`; the SAMPLE preview waits for the renderer, P-11-T07),
+generated-document reads and regenerate P-11-T11. Fixture mode serves the
 same shapes from the Brightwater Hale seed (`apps/web/src/fixtures/handlers/reporting.ts`).
 
 Rules the shapes carry:
@@ -86,7 +87,22 @@ ImportErrorCode = Literal[
     "markup_not_allowed",
     "clause_conflict",
     "too_large",
+    # T-01-T17 (C11 v1.1 additive): a `consent_7216` template's own rules (DF-16).
+    "consent_terms_required",
+    "recipients_block_required",
+    "recipient_in_text",
 ]
+# T-01-T17: the one purpose a consent document asks for (C19's purposes; Rev. Proc. 2013-14).
+ConsentPurpose = Literal[
+    "use",
+    "ai_disclosure",
+    "offshore_disclosure",
+    "third_party_disclosure",
+    "other_services_use",
+    "firm_defined",
+]
+# The variable a consent template places where the recipient block prints (DF-16).
+CONSENT_RECIPIENTS_KEY = "consent.recipients"
 
 # C11 §5: the audit events the service writes (P-11-T08 onward); never a Restricted value.
 AUDIT_EVENTS = (
@@ -463,6 +479,32 @@ class ClauseDefOut(BaseModel):
     default_enabled: Annotated[bool, classified("internal")]
 
 
+class ConsentTermsIn(BaseModel):
+    """A `consent_7216` template's terms (T-01-T17; C11 v1.1 additive): one purpose, the
+    mandatory-statement version, the counsel attestation and the stated expiry. Recipients are
+    never fixed text: they come from the provider-terms register at render time."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    purpose: Annotated[ConsentPurpose, classified("internal")]
+    statement_version: Annotated[
+        str, Field(pattern=r"^[A-Za-z0-9 ._-]{1,40}$"), classified("internal")
+    ]
+    counsel_attestation: Annotated[Literal[True], classified("internal")]
+    expiry_months: Annotated[int | None, Field(ge=1, le=36), classified("internal")] = None
+
+
+class ConsentTermsOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    purpose: Annotated[ConsentPurpose, classified("internal")]
+    statement_version: Annotated[str, classified("internal")]
+    counsel_attested_by: Annotated[str, classified("confidential")]
+    counsel_attested_at: Annotated[datetime, classified("internal")]
+    recipients_source: Annotated[Literal["provider_terms_register"], classified("internal")]
+    expiry_months: Annotated[int | None, classified("internal")]
+
+
 class PublicationOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -493,6 +535,8 @@ class ReportTemplateVersionOut(BaseModel):
     variables: Annotated[list[VariableDeclOut], classified("internal")]
     publications: Annotated[list[PublicationOut], classified("confidential")]
     content_sha256: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$"), classified("internal")]
+    # T-01-T17 (additive): a `consent_7216` version's terms.
+    consent: Annotated[ConsentTermsOut | None, classified("internal")] = None
 
 
 class TemplateImportIn(BaseModel):
@@ -509,6 +553,8 @@ class TemplateImportIn(BaseModel):
     clauses: Annotated[list[ClauseDefOut], Field(max_length=200), classified("internal")] = []
     variables: Annotated[list[VariableDeclOut], Field(max_length=200), classified("internal")] = []
     sample_data: Annotated[dict[str, str], classified("internal")] = {}
+    # T-01-T17 (additive): required for the `consent_7216` family, refused for any other.
+    consent: Annotated[ConsentTermsIn | None, classified("internal")] = None
 
 
 class ImportErrorOut(BaseModel):
@@ -554,34 +600,36 @@ documents_router = AbacusRouter(prefix="/v1/generated-documents", tags=["reporti
     "",
     action="report_template.read",
     response_model=ListPage[ReportTemplateOut],
-    errors=(501,),
 )
 async def list_report_templates_route(
     ctx: Ctx,
     family: Annotated[GeneratedDocumentKind | None, Query()] = None,
 ) -> ListPage[ReportTemplateOut]:
     """The firm's templates with their current published version (P-11-T06)."""
-    await _stub(ctx, "report_template.read")
+    from abacus.modules.reporting import templates
+
+    return await templates.listing(ctx, family)
 
 
 @templates_router.get(
     "/{template_id}/versions/{version_no}",
     action="report_template.read",
     response_model=ReportTemplateVersionOut,
-    errors=(501,),
 )
 async def get_report_template_version_route(
     ctx: Ctx, template_id: UUID, version_no: int
 ) -> ReportTemplateVersionOut:
     """One version: layout, blocks, clauses, declared variables and publications."""
-    await _stub(ctx, "report_template.read")
+    from abacus.modules.reporting import templates
+
+    return await templates.version(ctx, template_id, version_no)
 
 
 @templates_router.post(
     "/import",
     action="report_template.import",
     response_model=ImportReportOut,
-    errors=(413, 501),
+    errors=(413,),
 )
 async def import_report_template_route(
     ctx: Ctx,
@@ -589,20 +637,40 @@ async def import_report_template_route(
     dry_run: Annotated[bool, Query()] = True,
 ) -> ImportReportOut:
     """Validate a bundle (dry run) or store it as a draft version; errors listed by path (AC-1)."""
-    await _stub(ctx, "report_template.import")
+    from abacus.modules.reporting import templates
+
+    return await templates.import_bundle(ctx, body, dry_run=dry_run)
 
 
 @templates_router.post(
     "/{template_id}/versions/{version_no}/publish",
     action="report_template.publish",
     response_model=ReportTemplateVersionOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def publish_report_template_route(
     ctx: Ctx, template_id: UUID, version_no: int
 ) -> ReportTemplateVersionOut:
     """Human-only with a fresh second factor; 409 `already_published` (AC-3)."""
-    await _stub(ctx, "report_template.publish")
+    from abacus.modules.reporting import templates
+
+    return await templates.publish(ctx, template_id, version_no)
+
+
+@templates_router.post(
+    "/{template_id}/versions/{version_no}/deprecate",
+    action="report_template.publish",
+    response_model=ReportTemplateVersionOut,
+    errors=(409,),
+)
+async def deprecate_report_template_route(
+    ctx: Ctx, template_id: UUID, version_no: int
+) -> ReportTemplateVersionOut:
+    """T-01-T17 (C11 v1.1 additive): withdraw the current version; nothing is current until a
+    version is published again. Human-only, fresh second factor; 409 `not_current`."""
+    from abacus.modules.reporting import templates
+
+    return await templates.deprecate(ctx, template_id, version_no)
 
 
 @templates_router.post(
