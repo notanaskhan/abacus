@@ -16,7 +16,9 @@ from abacus.modules.ledger.mapping import (
     MappedAccount,
     build_statements,
     content_hash,
+    normalised_code,
     parse_grouping_set,
+    resolve_line,
     rule_line,
 )
 
@@ -139,3 +141,32 @@ def test_ac7_people_map_and_publish() -> None:
     assert "agent" not in allowed("mapping_set.edit")
     assert allowed("grouping_set.publish") == {"practice_leader", "quality_partner"}
     assert RULES["grouping_set.publish"].mfa_recent
+
+
+# --- A-03-T08 (TASK-5009): prior-year match before the ranges ----------------------------
+
+
+def test_a03_t08_codes_normalise_for_the_prior_year_match() -> None:
+    assert normalised_code(" 1000-01 ") == normalised_code("100001") == "100001"
+    assert normalised_code("AR.Trade") == "artrade"
+
+
+def test_a03_t08_edit_then_prior_year_then_ranges() -> None:
+    cash, ar, edited = uuid4(), uuid4(), uuid4()
+    by_key = {"cash": cash, "ar": ar}
+    ranges = [("1000", "1099", cash), ("1100", "1199", ar)]
+    prior = {normalised_code("1150"): "cash"}  # last year this AR-range account sat in cash
+    assert resolve_line("1150", edited, prior, by_key, ranges) == (edited, "manual")
+    assert resolve_line("1150", None, prior, by_key, ranges) == (cash, "prior_year")
+    assert resolve_line("1160", None, prior, by_key, ranges) == (ar, "number_range")
+    assert resolve_line("9999", None, prior, by_key, ranges) == (None, None)
+
+
+def test_a03_t08_a_prior_key_missing_from_this_version_falls_back_to_the_ranges() -> None:
+    ar = uuid4()
+    assert resolve_line(
+        "1150", None, {"1150": "retired_line"}, {"ar": ar}, [("1100", "1199", ar)]
+    ) == (
+        ar,
+        "number_range",
+    )

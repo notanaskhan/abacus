@@ -4,7 +4,8 @@ Contract: `docs/contracts/c11-renderer.md`.
 Every route answers 404 for a client principal (clients never reach C11: INV-4; deliverables go
 through C10 and envelopes through C7), then checks its one matrix action, then answers 404 with
 `reporting.generated_documents` off and 501 `not_implemented` with it on until its task lands:
-templates P-11-T06, generated-document reads and regenerate P-11-T11. Fixture mode serves the
+templates P-11-T06 (live: `templates.py`; the SAMPLE preview waits for the renderer, P-11-T07),
+generated-document reads and regenerate P-11-T11. Fixture mode serves the
 same shapes from the Brightwater Hale seed (`apps/web/src/fixtures/handlers/reporting.ts`).
 
 Rules the shapes carry:
@@ -554,34 +555,36 @@ documents_router = AbacusRouter(prefix="/v1/generated-documents", tags=["reporti
     "",
     action="report_template.read",
     response_model=ListPage[ReportTemplateOut],
-    errors=(501,),
 )
 async def list_report_templates_route(
     ctx: Ctx,
     family: Annotated[GeneratedDocumentKind | None, Query()] = None,
 ) -> ListPage[ReportTemplateOut]:
     """The firm's templates with their current published version (P-11-T06)."""
-    await _stub(ctx, "report_template.read")
+    from abacus.modules.reporting import templates
+
+    return await templates.listing(ctx, family)
 
 
 @templates_router.get(
     "/{template_id}/versions/{version_no}",
     action="report_template.read",
     response_model=ReportTemplateVersionOut,
-    errors=(501,),
 )
 async def get_report_template_version_route(
     ctx: Ctx, template_id: UUID, version_no: int
 ) -> ReportTemplateVersionOut:
     """One version: layout, blocks, clauses, declared variables and publications."""
-    await _stub(ctx, "report_template.read")
+    from abacus.modules.reporting import templates
+
+    return await templates.version(ctx, template_id, version_no)
 
 
 @templates_router.post(
     "/import",
     action="report_template.import",
     response_model=ImportReportOut,
-    errors=(413, 501),
+    errors=(413,),
 )
 async def import_report_template_route(
     ctx: Ctx,
@@ -589,20 +592,24 @@ async def import_report_template_route(
     dry_run: Annotated[bool, Query()] = True,
 ) -> ImportReportOut:
     """Validate a bundle (dry run) or store it as a draft version; errors listed by path (AC-1)."""
-    await _stub(ctx, "report_template.import")
+    from abacus.modules.reporting import templates
+
+    return await templates.import_bundle(ctx, body, dry_run=dry_run)
 
 
 @templates_router.post(
     "/{template_id}/versions/{version_no}/publish",
     action="report_template.publish",
     response_model=ReportTemplateVersionOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def publish_report_template_route(
     ctx: Ctx, template_id: UUID, version_no: int
 ) -> ReportTemplateVersionOut:
     """Human-only with a fresh second factor; 409 `already_published` (AC-3)."""
-    await _stub(ctx, "report_template.publish")
+    from abacus.modules.reporting import templates
+
+    return await templates.publish(ctx, template_id, version_no)
 
 
 @templates_router.post(

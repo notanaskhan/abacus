@@ -24,6 +24,9 @@ from abacus.kernel.classification import classified
 IntegrationCategory = Literal[
     "ledger", "bank_feed", "card_feed", "sales", "payroll", "hr", "ticketing", "grc"
 ]
+# The catalogue's categories: the read connectors' and the e-signature provider's (ADR-342,
+# migration 0407). Never a read adapter's category, so never a portal card.
+CatalogCategory = IntegrationCategory | Literal["esignature"]
 # A catalogue key or adapter key: `quickbooks_online`, `front_range_bank`, `bamboohr`.
 Key = Annotated[str, Field(pattern=r"^[a-z][a-z0-9_]{1,49}$")]
 Host = Annotated[
@@ -85,7 +88,7 @@ class ReadConnectorEntry(BaseModel):
 
 
 class WriteCapabilityEntry(BaseModel):
-    """A reserved write (W1 posting under ADR-161, W2 the CCH file bridge, W7 DocuSign …).
+    """A reserved write (W1 posting under ADR-161, W2 the CCH file bridge, W7 DocuSeal …).
     Reserved only: `enabled` is false by type until a later version of this schema."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")

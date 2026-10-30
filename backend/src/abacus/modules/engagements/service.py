@@ -191,6 +191,14 @@ async def get_ref(ctx: Actor, engagement_id: UUID) -> EngagementRef:
     return _ref(engagement)
 
 
+async def prior_engagement_of(tenant: TenantContext, engagement_id: UUID) -> UUID | None:
+    """The engagement it rolled forward from (SPEC-025 `prior_engagement_id`), for callers
+    already authorised on it; None for a first year or an unknown engagement."""
+    async with tenant_session(tenant) as session:
+        engagement = await get_engagement(session, engagement_id)
+    return None if engagement is None else engagement.prior_engagement_id
+
+
 async def engagement_resource_of(tenant: TenantContext, engagement_id: UUID) -> Resource:
     """The engagement as an authorisation resource (F-03-T30), or `NotFound`."""
     async with tenant_session(tenant) as session:

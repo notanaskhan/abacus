@@ -38,6 +38,8 @@ STALE_SOURCES: Final[dict[str, tuple[str, str]]] = {
     # A-02-T17 (SPEC-333 AC-13): a trial balance's checks are part of what its sign-off approves.
     "tie_out_check.changed": ("trial_balance", "trial_balance_id"),
     "workpaper.content_changed": ("workpaper", "workpaper_id"),
+    # A-03-T14 (TASK-5010): a newer trial balance version changed a signed mapping.
+    "mapping_set.went_stale": ("mapping_set", "mapping_set_id"),
 }
 
 

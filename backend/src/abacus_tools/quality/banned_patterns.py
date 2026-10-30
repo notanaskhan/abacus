@@ -2295,6 +2295,7 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_n02t07_signatures_schema.py",
             "tests/integration/test_n01t07_firm_intake_schema.py",  # N-01-T07: 0293
             "tests/integration/test_p11t05_reporting_schema.py",  # P-11-T05: 0430
+            "tests/integration/test_p11t06_report_templates_schema.py",  # P-11-T06: 0460
             # I-01-T04, K-01-T05 (S11): the human-only snooze and reassignment rows, the card's
             # reassign guard and the frozen methodology content, proved as the app role with the
             # tenant and actor set by hand, as tenant_session sets them.
@@ -2475,6 +2476,7 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_n02t07_signatures_schema.py",
             "tests/integration/test_n01t07_firm_intake_schema.py",  # N-01-T07: 0293
             "tests/integration/test_p11t05_reporting_schema.py",  # P-11-T05: 0430
+            "tests/integration/test_p11t06_report_templates_schema.py",  # P-11-T06: 0460
             # I-01-T04, K-01-T05 (S11): the human-only snooze and reassignment rows, the card's
             # reassign guard and the frozen methodology content, proved as the app role with the
             # tenant and actor set by hand, as tenant_session sets them.
@@ -2520,8 +2522,6 @@ RULES: list[Rule | TreeRule] = [
         exclude=(
             "src/abacus/modules/identity/tokens.py",
             "src/abacus_tools/fakes/identity.py",
-            # N-02-T18 (DEC-1179): signs DocuSign's outbound OAuth assertion; reads no token.
-            "src/abacus/modules/signatures/docusign.py",
         ),
     ),
     Rule(
@@ -2538,8 +2538,6 @@ RULES: list[Rule | TreeRule] = [
             # A-02-T26 (DEC-709): a live connector sets the provider's Authorization on its own
             # outbound reads through `kernel.egress`; it never reads an inbound request.
             "src/abacus/modules/connections/connectors/quickbooks_online.py",
-            # N-02-T18 (DEC-1179): the DocuSign adapter's outbound calls, the same way.
-            "src/abacus/modules/signatures/docusign.py",
         ),
     ),
     Rule(
