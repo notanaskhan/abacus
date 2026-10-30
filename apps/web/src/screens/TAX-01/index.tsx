@@ -27,7 +27,9 @@ import {
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { useNow } from "../../app-core/clock";
+import { useOpenHref } from "../../app-core/open";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
+import { hrefOf, to } from "../../routes/to";
 import { COPY } from "./copy";
 
 // TAX-01 · Tax Returns practice board (T-02-T12; docs/screens/TAX-01.md) on TPL-01's T1 grammar,
@@ -126,6 +128,7 @@ function counts(summary: TaxReturnSummaryOut | undefined): Record<string, number
 export interface TAX01Props {
   search: Tax01Search;
   onSearch: (next: Tax01Search) => void;
+  /** A row opens its return (TAX-02); a caller may take the click instead. */
   onOpen?: (row: TaxReturnRowOut) => void;
   /** The returns selected on open (artboard d's selection; the gallery and tests). */
   initialSelection?: readonly string[];
@@ -134,10 +137,16 @@ export interface TAX01Props {
 export function TAX01({
   search,
   onSearch,
-  onOpen,
+  onOpen: onOpenRow,
   initialSelection = [],
 }: TAX01Props): JSX.Element {
   const now = useNow();
+  const openHref = useOpenHref();
+  const onOpen =
+    onOpenRow ??
+    ((row: TaxReturnRowOut): void => {
+      openHref(hrefOf(to.TAX02({ returnId: row.id })));
+    });
   const year = Number(search.tax_year ?? TAX_YEAR);
   const grouped = search.office === "grouped";
   const tile = search.tile ?? null;
@@ -459,7 +468,7 @@ export function TAX01({
         envelope={envelope}
         columns={columns}
         rowKey={(r) => r.id}
-        {...(onOpen === undefined ? {} : { onOpen })}
+        onOpen={onOpen}
         {...(grouped
           ? {
               groupOf: (r: TaxReturnRowOut) => {

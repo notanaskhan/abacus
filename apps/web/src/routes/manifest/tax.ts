@@ -6,15 +6,16 @@ import type { Manifest } from "./types";
 export const taxScreens = {
   "TAX-01": {
     name: "Tax Returns · practice board",
-    // Fixture-built (T-02-T12) behind `tax.returns_v1`; planned until its designed links are wired
-    // (link-contract rule 1) and walked on staging (DEC-195; DEC-1272).
-    status: "planned",
+    // T-02-T12 on fixtures behind `tax.returns_v1`; links wired (DEC-1273); live once walked on
+    // staging.
+    status: "fixture",
     path: "/tax-returns",
     navArea: "Tax Returns",
   },
   // T-02-T14: a–f on fixtures behind `tax.returns_v1`; planned until its designed links are wired
   // (link-contract rule 1) and walked on staging (DEC-195; DEC-1272).
-  "TAX-02": { name: "Return › Overview", status: "planned", path: "/tax-returns/$returnId" },
+  // T-02-T14 on fixtures behind `tax.returns_v1`; links wired (DEC-1273).
+  "TAX-02": { name: "Return › Overview", status: "fixture", path: "/tax-returns/$returnId" },
   "TAX-03": { name: "Return › Intake · Feld 2025 Form 1040", status: "planned", path: null },
   "TAX-04": {
     name: "Return › Review · Prepare preset · Feld 2025 Form 1040",
@@ -41,8 +42,9 @@ export const taxScreens = {
   // T-01-T15: the sync chip, O1 popover and O4 import diff on fixtures (a–e, a2, d2).
   "TAX-09": {
     name: "Return › Tax-engine sync · Feld 2025 Form 1040",
-    // Planned until its designed links are wired (link-contract rule 1) and walked on staging
-    // (DEC-195; DEC-1272).
+    // Fixture-built (T-01-T15), mounted by nothing yet: planned until its sync chip replaces the
+    // RecordHeader's on TAX-01 and TAX-02 and TAX-07's Activity rows (BND-01, INB-01) exist
+    // (link-contract rule 1; DEC-1273).
     status: "planned",
     path: null,
   },

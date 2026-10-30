@@ -24,7 +24,9 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, useMemo, useState } from "react";
 import { todayIso, useNow } from "../../app-core/clock";
+import { useOpenHref } from "../../app-core/open";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
+import { hrefOf, to } from "../../routes/to";
 import { GROUPS } from "../ADM-01/copy";
 import { COPY, PURPOSES, PURPOSE_OPTIONS, SET_PURPOSE, STATUS_TILES, type TileCode } from "./copy";
 
@@ -187,11 +189,16 @@ export interface ADM05Props {
   search: Adm05Search;
   onSearch: (next: Adm05Search) => void;
   onNavigate?: (section: string) => void;
+  /** "Settings": ADM-01, the settings home, unless a caller takes it. */
   onBack?: () => void;
 }
 
 export function ADM05({ search, onSearch, onNavigate, onBack }: ADM05Props): JSX.Element {
   const now = useNow();
+  const open = useOpenHref();
+  const home = (): void => {
+    open(hrefOf(to.ADM01()));
+  };
   const overview = useQuery(settingsOverviewOptions());
   const summary = useQuery(consentSummaryOptions());
   const status =
@@ -241,7 +248,7 @@ export function ADM05({ search, onSearch, onNavigate, onBack }: ADM05Props): JSX
       title={COPY.title}
       context={overview.data?.firm_name ?? ""}
       backLabel={COPY.back}
-      {...(onBack === undefined ? {} : { onBack })}
+      onBack={onBack ?? home}
       navTitle={COPY.navTitle}
       groups={GROUPS.map((g) => ({
         ...g,
@@ -253,7 +260,8 @@ export function ADM05({ search, onSearch, onNavigate, onBack }: ADM05Props): JSX
       })).filter((g) => g.sections.length > 0)}
       active="consents"
       onSelect={(id) => {
-        if (id !== "consents") onNavigate?.(id);
+        if (id === "general") home();
+        else if (id !== "consents") onNavigate?.(id);
       }}
       dirty={false}
     >
@@ -414,7 +422,13 @@ export function ADM05({ search, onSearch, onNavigate, onBack }: ADM05Props): JSX
                         />
                       </td>
                       <td>
-                        <span className="block truncate font-medium">{c.client_name}</span>
+                        {/* The client name opens CLI-05's Consents section for that client. */}
+                        <a
+                          href={hrefOf(to.CLI05({ clientId: c.client_id, sub: "consents" }))}
+                          className="block truncate font-medium hover:underline"
+                        >
+                          {c.client_name}
+                        </a>
                         {signer !== null && (
                           <span className="block truncate text-meta text-ink-3">{signer}</span>
                         )}

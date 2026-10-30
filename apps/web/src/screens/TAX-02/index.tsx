@@ -41,7 +41,10 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, type ReactNode, useState } from "react";
 import { useNow } from "../../app-core/clock";
+import { useFlag } from "../../app-core/flags";
+import { useOpenHref, useOpenOverlay } from "../../app-core/open";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
+import { hrefOf, ov, to } from "../../routes/to";
 import { COPY } from "./copy";
 
 // TAX-02 · Return › Overview (T-02-T14; docs/screens/TAX-02.md) on T2 RecordCockpit, without a
@@ -53,8 +56,9 @@ import { COPY } from "./copy";
 //   e  Accepted · Feld on Sep 19                                      f  loading
 //
 // The pilot runs agents off: Run draft, Re-run draft… and the Assistant chip are drawn (disabled)
-// only where PLANNED_VISIBLE and are absent in production, as are the Checkpoints chip and every
-// tab and link whose screen is planned. Assign… is live (`POST …/assignments`); "Open in CCH
+// only where PLANNED_VISIBLE and are absent in production, as is every tab and link whose screen is
+// planned; the Checkpoints chip also shows where `review.checkpoints` is on and opens SHL-16, and
+// Files opens the client's folder (FIL-01). Assign… is live (`POST …/assignments`); "Open in CCH
 // Axcess" is the engine's deep link (never automation, DEC-49). An entity return (1065, 1120-S,
 // 1041) takes the registry's entity wording; every form family opens here (DV-5).
 
@@ -196,6 +200,12 @@ function Rail({
 }): JSX.Element {
   const { row } = record;
   const state = stateOf(row);
+  const open = useOpenHref();
+  // The record links whose screens are built: Files opens the client's folder in FIL-01
+  // (`/files/$clientId`, the screen's client route).
+  const hrefs: Readonly<Record<string, string>> = {
+    files: `${hrefOf(to.FIL01())}/${encodeURIComponent(row.client_id)}`,
+  };
   return (
     <section aria-label={COPY.rail} className="pane flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="flex h-(--pane-hd-h) flex-none items-center justify-center bg-card hairline-b">
@@ -223,6 +233,7 @@ function Rail({
             {(overview.record_links ?? []).length > 0 && (
               <Band title={COPY.bands.record}>
                 {(overview.record_links ?? []).map((link) => {
+                  const href = hrefs[link.key];
                   const r = (
                     <RailRow
                       link={{
@@ -231,6 +242,13 @@ function Rail({
                         title: COPY.record[link.key],
                         sub: link.sub,
                       }}
+                      {...(href === undefined
+                        ? {}
+                        : {
+                            onOpen: () => {
+                              open(href);
+                            },
+                          })}
                     />
                   );
                   return PLANNED_VISIBLE ? (
@@ -699,6 +717,9 @@ export function TAX02({
   frame = false,
 }: TAX02Props): JSX.Element {
   const now = useNow();
+  const openOverlay = useOpenOverlay();
+  // The Checkpoints chip opens SHL-16 over the return where `review.checkpoints` is on.
+  const checkpointsOn = useFlag("review.checkpoints") === true;
   const record = useQuery(returnRecordOptions({ path: { return_id: returnId } }));
   const overview = useQuery(returnOverviewOptions({ path: { return_id: returnId } }));
   const data = record.data;
@@ -727,7 +748,10 @@ export function TAX02({
             context={data.row.client_name}
             state={s.label}
             {...(s.tone === null ? {} : { stateTone: s.tone })}
-            checkpoints={PLANNED_VISIBLE}
+            checkpoints={PLANNED_VISIBLE || checkpointsOn}
+            onCheckpoints={() => {
+              openOverlay(ov.SHL16("tax_return", returnId));
+            }}
             sync={data.row.sync}
             {...(overview.data?.engine_synced_on == null
               ? {}

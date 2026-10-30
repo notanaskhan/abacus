@@ -117,3 +117,13 @@ describe("ADM-05 g · 3 selected", () => {
     expect(screen.queryByRole("region", { name: "3 selected" })).toBeNull();
   });
 });
+
+describe("ADM-05 links (DEC-1273)", () => {
+  it("a client name opens CLI-05's Consents section for that client", async () => {
+    show("a");
+    const link = await screen.findByRole("link", { name: "Morgan & Kai Ferris" });
+    expect(link.getAttribute("href")).toMatch(
+      /^\/clients\/[0-9a-f-]{36}\/tax-profile\/consents$/u,
+    );
+  });
+});
