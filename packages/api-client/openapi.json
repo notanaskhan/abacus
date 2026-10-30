@@ -125121,7 +125121,7 @@
     },
     "/v1/envelopes/{envelope_id}/documents/{document_id}/pages/{page_no}": {
       "get": {
-        "description": "Rendered preview page (N-02-T21).",
+        "description": "SIG-02's preview page: the document's masked page image as the evidence viewer renders it\n(`no-store`, `nosniff`); 409 `preview_unavailable` for a generated document until P-11, 409\n`preview_outdated` before masking; 403 for a reader who may not read the evidence.",
         "operationId": "envelope_page",
         "parameters": [
           {
@@ -125149,6 +125149,8 @@
             "name": "page_no",
             "required": true,
             "schema": {
+              "maximum": 2000,
+              "minimum": 1,
               "title": "Page No",
               "type": "integer"
             }
@@ -125229,6 +125231,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -125238,16 +125250,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Envelope Page Route",

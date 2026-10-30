@@ -8718,7 +8718,9 @@ export const envelopePageQueryKey = (options: Options<EnvelopePageData>) => crea
 /**
  * Envelope Page Route
  *
- * Rendered preview page (N-02-T21).
+ * SIG-02's preview page: the document's masked page image as the evidence viewer renders it
+ * (`no-store`, `nosniff`); 409 `preview_unavailable` for a generated document until P-11, 409
+ * `preview_outdated` before masking; 403 for a reader who may not read the evidence.
  */
 export const envelopePageOptions = (options: Options<EnvelopePageData>) => queryOptions<EnvelopePageResponse, EnvelopePageError, EnvelopePageResponse, ReturnType<typeof envelopePageQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

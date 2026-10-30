@@ -5241,7 +5241,9 @@ export const countersignSession = <ThrowOnError extends boolean = false>(options
 /**
  * Envelope Page Route
  *
- * Rendered preview page (N-02-T21).
+ * SIG-02's preview page: the document's masked page image as the evidence viewer renders it
+ * (`no-store`, `nosniff`); 409 `preview_unavailable` for a generated document until P-11, 409
+ * `preview_outdated` before masking; 403 for a reader who may not read the evidence.
  */
 export const envelopePage = <ThrowOnError extends boolean = false>(options: Options<EnvelopePageData, ThrowOnError>): RequestResult<EnvelopePageResponses, EnvelopePageErrors, ThrowOnError> => (options.client ?? client).get<EnvelopePageResponses, EnvelopePageErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

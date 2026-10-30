@@ -3,7 +3,7 @@ Contract: `docs/contracts/c7-envelopes.md`.
 
 Every route answers 404 with `signatures.envelopes` off and 501 `not_implemented` with it on
 until its task lands: record-mode import N-02-T08; the hub, drawer, evidence and reminders
-T11-T15; drafts, edits, validate, send and Undo T20; page previews T21; resend T28; portal
+T11-T15; drafts, edits, validate, send, Undo and page previews T20; resend T28; portal
 signing T23-T29; policies T13.
 
 Rules the shapes carry:
@@ -23,7 +23,7 @@ from datetime import date, datetime
 from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
-from fastapi import Depends, Header, Query, Request, Response
+from fastapi import Depends, Header, Path, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel import listing
@@ -861,13 +861,27 @@ async def validate_envelope_route(envelope_id: EnvelopeId, ctx: Ctx) -> Validati
     "/{envelope_id}/documents/{document_id}/pages/{page_no}",
     action="envelope.read",
     response_model=bytes,
-    errors=(501,),
+    errors=(409,),
 )
 async def envelope_page_route(
-    envelope_id: EnvelopeId, document_id: UUID, page_no: int, ctx: Ctx
+    envelope_id: EnvelopeId,
+    document_id: UUID,
+    page_no: Annotated[int, Path(ge=1, le=2000)],
+    ctx: Ctx,
 ) -> Response:
-    """Rendered preview page (N-02-T21)."""
-    await _stub(ctx, "envelope.read")
+    """SIG-02's preview page: the document's masked page image as the evidence viewer renders it
+    (`no-store`, `nosniff`); 409 `preview_unavailable` for a generated document until P-11, 409
+    `preview_outdated` before masking; 403 for a reader who may not read the evidence."""
+    page = await builder.document_page(ctx, envelope_id, document_id, page_no)
+    return Response(
+        content=page,
+        media_type="image/png",
+        headers={
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "private, no-store",
+            "Content-Security-Policy": "default-src 'none'",
+        },
+    )
 
 
 @router.post("/{envelope_id}/send", action="envelope.send", response_model=SendOut, errors=(409,))

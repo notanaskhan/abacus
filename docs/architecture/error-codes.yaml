@@ -1351,6 +1351,11 @@ codes:
     - abacus.modules.evidence.masked_previews.PreviewOutdated
     summary: 'The page was rendered before masking existed: it is never served (SPEC-322 AC-24) until
       the backfill re-renders it.'
+  preview_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.builder.PreviewUnavailable
+    summary: The document has no rendered preview to show yet (a generated document until P-11).
   prior_mismatch:
     status: 409
     raised_by:
