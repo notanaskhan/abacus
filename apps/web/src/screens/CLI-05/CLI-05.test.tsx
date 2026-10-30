@@ -117,7 +117,7 @@ function showAt(state: Cli05State): void {
 
 /** Nine or more digits in a row, or an SSN or CAF shape, anywhere in the page's text. */
 function fullNumbers(): string[] {
-  const text = document.body.textContent ?? "";
+  const text = document.body.textContent;
   return [...text.matchAll(/\b\d{3}-\d{2}-\d{4}\b|\b\d{4}-\d{5}[A-Z]?\b|\b\d{9,}\b/gu)].map(
     (m) => m[0],
   );

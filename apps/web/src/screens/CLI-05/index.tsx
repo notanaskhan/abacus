@@ -438,7 +438,7 @@ function Elections({ profile }: { profile: TaxProfileOut }): JSX.Element {
   const others = profile.elections.filter((e) => e.kind !== "ptet");
   const labelOf = (e: TaxElectionOut): string =>
     e.kind in rows && e.kind !== "ptet"
-      ? (rows[e.kind as Exclude<keyof typeof rows, "ptet">] as string)
+      ? rows[e.kind as Exclude<keyof typeof rows, "ptet">]
       : e.kind;
   if (profile.elections.length === 0) {
     return (
@@ -479,9 +479,8 @@ function Elections({ profile }: { profile: TaxProfileOut }): JSX.Element {
 }
 
 function signersOf(profile: TaxProfileOut): string {
-  const names = (profile.identity ?? [])
-    .filter((i) => i.role === "taxpayer" || i.role === "spouse")
-    .map((i) => i.name.split(" ")[0] ?? i.name);
+  // The taxpayer and spouse rows: the people who sign for the household.
+  const names = (profile.identity ?? []).map((i) => i.name.split(" ")[0] ?? i.name);
   return names.join(" and ");
 }
 
