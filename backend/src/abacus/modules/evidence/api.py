@@ -39,6 +39,13 @@ from abacus.modules.evidence.citations.registry import (
 from abacus.modules.evidence.citations.registry import Display as CitationLabel
 from abacus.modules.evidence.citations.registry import Verdict as CitationVerdict
 from abacus.modules.evidence.citations.service import RecordedCitation, record_citations
+from abacus.modules.evidence.classification import (
+    ClassifiedIntake,
+    classify_intake,
+    filed_classification_match,
+    version_with_fingerprint,
+)
+from abacus.modules.evidence.classifier import rules as classifier_rules
 from abacus.modules.evidence.contract import withdrawal_router
 from abacus.modules.evidence.drops import drop_batch
 from abacus.modules.evidence.drops_contract import drops_router, void_router
@@ -154,6 +161,7 @@ from abacus.modules.evidence.match_material import (
 from abacus.modules.evidence.matching import MIN_SCORE as SUGGESTION_MIN_SCORE
 from abacus.modules.evidence.matching import suggest as suggest_by_name
 from abacus.modules.evidence.pii import pii_scan_upload
+from abacus.modules.evidence.pii_facts import tin_exposure
 from abacus.modules.evidence.portal_files import (
     PortalFile,
     SentBack,
@@ -253,6 +261,7 @@ from abacus.modules.evidence.service import (
     stage_content,
     undo_returned_files,
     undo_review_decision,
+    version_content,
     version_view,
 )
 from abacus.modules.evidence.signed_copies import (
@@ -278,7 +287,7 @@ from abacus.modules.evidence.uploads import (
     upload,
     upload_preview,
 )
-from abacus.modules.evidence.viewer import readable_version
+from abacus.modules.evidence.viewer import readable_version, viewer_page
 from abacus.modules.evidence.withdrawals import ACTIVITIES as WITHDRAWAL_ACTIVITIES
 from abacus.modules.evidence.withdrawals import SUBSCRIPTIONS as WITHDRAWAL_SUBSCRIPTIONS
 from abacus.modules.evidence.withdrawals import WORKFLOWS as WITHDRAWAL_WORKFLOWS
@@ -455,6 +464,7 @@ __all__ = [
     "CitationKind",
     "CitationLabel",
     "CitationVerdict",
+    "ClassifiedIntake",
     "ContentTooLarge",
     "DocumentDownload",  # G-02-T20: the WISP pack's documents
     "EffectivePolicy",
@@ -533,6 +543,8 @@ __all__ = [
     "citation_cell_text",
     "citation_display",
     "citation_sources",
+    "classifier_rules",
+    "classify_intake",
     "client_pre_checks",
     "column_letters",
     "configure_storage",
@@ -551,6 +563,7 @@ __all__ = [
     "extend_retention_for",
     "file_intake_object",
     "file_signed_copy",
+    "filed_classification_match",
     "final_export_for_archive",
     "firm_export_schedule_id",
     "firm_router",
@@ -607,14 +620,18 @@ __all__ = [
     "start_trust_layer_backfill",
     "suggest_by_name",
     "supported_citations",
+    "tin_exposure",
     "undo_returned_files",
     "undo_review_decision",
     "upload",
     "upload_preview",
     "upload_workflow_id",
     "verified_citation_ids",
+    "version_content",
     "version_titles",
     "version_view",
+    "version_with_fingerprint",
+    "viewer_page",
     "waiting_among",
     "withdrawn_among",
     "words_upload",

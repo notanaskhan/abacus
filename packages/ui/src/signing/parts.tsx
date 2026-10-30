@@ -25,7 +25,7 @@ import type {
 
 export interface EnvelopeHeaderProps {
   envelope: Pick<EnvelopeVM, "title" | "status" | "signedCount" | "signerCount">;
-  backLabel: string;
+  backLabel?: string;
   onBack?: () => void;
   /** Decline is offered while the viewer can still sign. */
   canDecline: boolean;
@@ -60,9 +60,11 @@ export function EnvelopeHeader({
       data-signing="envelope-header"
       className="relative flex h-[46px] flex-none items-center gap-2 px-[12px]"
     >
-      <Button variant="secondary" size="sm" icon="chevron-left" onClick={onBack}>
-        {backLabel}
-      </Button>
+      {backLabel !== undefined && (
+        <Button variant="secondary" size="sm" icon="chevron-left" onClick={onBack}>
+          {backLabel}
+        </Button>
+      )}
       <div className="pointer-events-none absolute inset-x-0 flex items-center justify-center gap-2">
         <h1 className="truncate text-pane font-medium">{envelope.title}</h1>
         {envelopePill(envelope)}
@@ -79,7 +81,9 @@ export function EnvelopeHeader({
             Decline…
           </Button>
         )}
-        <IconButton icon="download" label="Download" onClick={onDownload} />
+        {onDownload !== undefined && (
+          <IconButton icon="download" label="Download" onClick={onDownload} />
+        )}
       </div>
     </div>
   );
@@ -136,6 +140,10 @@ export interface SigningDocumentListProps {
   selected: string;
   onSelect: (documentId: string) => void;
   signers: readonly SignerVM[];
+  /** Default "Documents (n)". */
+  title?: string;
+  /** Default true. */
+  showSigners?: boolean;
 }
 
 export function SigningDocumentList({
@@ -143,6 +151,8 @@ export function SigningDocumentList({
   selected,
   onSelect,
   signers,
+  title,
+  showSigners = true,
 }: SigningDocumentListProps): JSX.Element {
   const heading = useId();
   return (
@@ -151,8 +161,11 @@ export function SigningDocumentList({
       data-signing="documents"
       className="flex w-[240px] flex-none flex-col overflow-hidden rounded-pane bg-card shadow-e2"
     >
-      <h2 id={heading} className="flex h-[46px] flex-none items-center px-[12px] text-section">
-        {`Documents (${String(documents.length)})`}
+      <h2
+        id={heading}
+        className="flex h-[46px] flex-none items-center justify-center px-[12px] text-section"
+      >
+        {title ?? `Documents (${String(documents.length)})`}
       </h2>
       <ul className="flex flex-col">
         {documents.map((doc) => (
@@ -178,19 +191,22 @@ export function SigningDocumentList({
           </li>
         ))}
       </ul>
-      <div className="mt-auto flex flex-col border-t-[0.5px] border-hair">
-        <h3 className="flex h-[31px] items-center bg-band-hd px-[12px] text-section">Signers</h3>
-        <ul className="flex flex-col">
-          {signers.map((s) => (
-            <li key={s.id} data-signer-row={s.id} className="flex flex-col px-[12px] py-[8px]">
-              <span className="text-dense font-medium">
-                {s.isViewer ? `${s.name} (you)` : s.name}
-              </span>
-              <span className="text-meta text-ink-3">{s.detail}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {/* TPL-16b: the signers sit under the documents, each "Name — detail" on one line. */}
+      {showSigners && (
+        <div className="flex flex-col border-t-[0.5px] border-hair">
+          <h3 className="flex h-[31px] items-center px-[12px] text-section">Signers</h3>
+          <ul className="flex flex-col gap-[6px] pb-[10px]">
+            {signers.map((s) => (
+              <li key={s.id} data-signer-row={s.id} className="px-[12px] text-meta text-ink-3">
+                <span className="font-medium text-ink">
+                  {s.isViewer ? `${s.name} (you)` : s.name}
+                </span>
+                {` — ${s.detail}`}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </section>
   );
 }
@@ -255,7 +271,8 @@ export interface SignCallToActionProps {
   disabled?: boolean;
 }
 
-/** The sign call to action, "Adopt signature & sign…": a HumanAction for the viewer, so it can
+/** The sign call to action, "Adopt signature & sign" (it moves to the provider's view, not a
+ * dialog, so no ellipsis; TPL-16b): a HumanAction for the viewer, so it can
  * never render for an agent. */
 export function SignCallToAction({
   viewer,
@@ -268,7 +285,6 @@ export function SignCallToAction({
       <HumanAction
         verb="Adopt"
         object="signature & sign"
-        opensDialog
         actor={{ kind: "human", name: viewer.name }}
         variant="primary"
         size="xl"

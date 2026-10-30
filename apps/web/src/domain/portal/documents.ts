@@ -10,7 +10,9 @@ import type {
   PortalRowOut,
 } from "@abacus/api-client";
 import {
+  addIntakeUploadFile,
   announceUploadIntent,
+  createIntakeUpload,
   dropFile,
   ignoreRequestItem,
   markBinderDone,
@@ -274,6 +276,30 @@ export function useBinderActions(binder: PortalBinderOut | undefined) {
      * engagement drop zone in one batch for the code-rule sort (DEC-58 a). Answers the drop's
      * batch id, which the screen polls (`useDropBatch`; null for a request's own upload), and the
      * files the upload policy refused at the door (413, 415). */
+    /** R-01-T33: "Upload something else": one batch to the firm's Inbox under the binder's
+     * engagement (N-01's portal intake), each file sent as it is. Answers once every file is in. */
+    sendOther: async (files: readonly File[]): Promise<void> => {
+      const engagement = binder?.engagement_id;
+      if (engagement == null || files.length === 0) return;
+      const made = await createIntakeUpload({
+        body: { scope_ref: { kind: "engagement", id: engagement } },
+        headers: { "Idempotency-Key": key() },
+        throwOnError: true,
+      });
+      for (const file of files) {
+        await addIntakeUploadFile({
+          path: { upload_id: made.data.id },
+          query: { filename: file.name },
+          body: file as never,
+          bodySerializer: null,
+          headers: {
+            "Content-Type": file.type || "application/octet-stream",
+            "Idempotency-Key": key(),
+          },
+          throwOnError: true,
+        });
+      }
+    },
     send: async (files: readonly File[], requestId: string | null): Promise<SendResult> => {
       if (requestId !== null) {
         const row = rowOfId(requestId);

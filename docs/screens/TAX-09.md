@@ -9,7 +9,7 @@
 | Epic and tasks | T-01 · contract T-01-T05; fixtures T09; build T22–T26 |
 | Spec and ADRs | SPEC-501 AC-11; ADR-231; R-04 |
 | Flags | `tax.engine_bridge` |
-| Manifest status | planned; built on fixtures with T-01-T09's scenarios, `live` with its build tasks (pilot posture: agents off) |
+| Manifest status | `fixture` since T-01-T15 (a, a2, b, c, d, d2, e, Not yet exported); `live` with the engine-bridge routes (T-01-T33) |
 
 ## States
 | Artboard | Viewer | Clock (CT) | Data condition | Parity tier | Status |
@@ -74,3 +74,5 @@ Gradients, emoji, blue, heavy shadows, invented colours or data, boxed inputs, t
 
 ## Open gaps
 - Status objects live in the registry since T-01-T06; the contracts move from `Literal` types to the registry's enums when the routes go live.
+- T-01-T15 (DEC-1264): EngineSyncOut gains `blockers`, `approver_name`, `policy_code`, `draft_k1_source` and `synced_at`; EngineSyncEventOut `engine_version`, `field_keys`, `errors`, `informational` and the kind `changed_after_import`; ImportDiffRowOut `engine_display` and `cause_facts`, all additive. Export is the file bridge: generate, download, Mark exported (the chip reads Exporting… for 1,240 ms, skipped under reduced motion).
+

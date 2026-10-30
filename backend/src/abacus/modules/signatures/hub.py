@@ -82,11 +82,17 @@ from abacus.modules.identity.api import (
     Resource,
     allowed_actions,
     authorise,
+    contact_emails,
     names_of,
     visible,
     visible_scope,
 )
-from abacus.modules.organisations.api import client_name_column, contact_facts
+from abacus.modules.organisations.api import (
+    SignerContact,
+    client_name_column,
+    contact_facts,
+    signer_contacts,
+)
 from abacus.modules.signatures.imports import RECORD_TYPE
 from abacus.modules.signatures.sources import UnknownEnvelopeSource, envelope_source
 
@@ -283,7 +289,7 @@ class Summary:
     by_type: tuple[tuple[str, int], ...]
 
 
-async def _firm_and_flag(ctx: AuthContext) -> None:
+async def firm_and_flag(ctx: AuthContext) -> None:
     if ctx.client:
         raise NotFound("envelopes")
     if not await flag_enabled(ctx.tenant, SIGNATURES_ENVELOPES):
@@ -373,7 +379,7 @@ async def list_envelopes(
     limit: int,
 ) -> Page:
     """`GET /v1/envelopes` (SIG-01)."""
-    await _firm_and_flag(ctx)
+    await firm_and_flag(ctx)
     now = system_now()
     day = await today(ctx.tenant)
     query = query_hash(
@@ -410,7 +416,7 @@ async def list_envelopes(
 
 async def summary(ctx: AuthContext) -> Summary:
     """`GET /v1/envelopes/summary`: every count over visible rows only (DEC-43)."""
-    await _firm_and_flag(ctx)
+    await firm_and_flag(ctx)
     now = system_now()
     seen = visible_envelopes(ctx)
     out = E.status.in_(TAB_STATUSES["out"])
@@ -634,6 +640,9 @@ class SignerView:
     signature_method: str | None
     decline_reason: str | None
     provider_recipient_id: str | None
+    # N-02-T20 (DEC-1174): SIG-02's signer sub-line and the "Email required" check.
+    title: str | None = None
+    email: str | None = None
 
 
 @dataclass(frozen=True)
@@ -684,7 +693,25 @@ class Drawer:
     version: int
 
 
-async def _visible_head(ctx: AuthContext, session: AsyncSession, envelope_id: UUID) -> _Head:
+def _contact_title(contacts: dict[UUID, SignerContact], contact_id: UUID | None) -> str | None:
+    found = contacts.get(contact_id) if contact_id is not None else None
+    return found.title if found is not None else None
+
+
+def _signer_email(
+    contacts: dict[UUID, SignerContact],
+    member_emails: dict[UUID, str],
+    contact_id: UUID | None,
+    user_id: UUID | None,
+) -> str | None:
+    """The address a signer is reached at: the contact's, or the member's sign-in email."""
+    if contact_id is not None:
+        found = contacts.get(contact_id)
+        return found.email if found is not None else None
+    return member_emails.get(user_id) if user_id is not None else None
+
+
+async def visible_head(ctx: AuthContext, session: AsyncSession, envelope_id: UUID) -> _Head:
     """The envelope if `ctx` may read it; else 404 (the wall and other scopes answer alike)."""
     found = (
         await session.execute(
@@ -698,7 +725,7 @@ async def _visible_head(ctx: AuthContext, session: AsyncSession, envelope_id: UU
     return _Head(found.id, found.status, found.client_id, found.engagement_id)
 
 
-async def _resource_of(ctx: AuthContext, head: _Head) -> Resource:
+async def resource_of(ctx: AuthContext, head: _Head) -> Resource:
     if head.engagement_id is not None:
         return (await get_ref(ctx, head.engagement_id)).resource()
     return Resource.client(ctx.tenant_id, head.client_id)
@@ -706,9 +733,9 @@ async def _resource_of(ctx: AuthContext, head: _Head) -> Resource:
 
 async def drawer(ctx: AuthContext, envelope_id: UUID) -> Drawer:
     """`GET /v1/envelopes/{id}` (SIG-01's drawer; SIG-02 reads it too)."""
-    await _firm_and_flag(ctx)
+    await firm_and_flag(ctx)
     async with tenant_session(ctx.tenant) as session:
-        await _visible_head(ctx, session, envelope_id)
+        await visible_head(ctx, session, envelope_id)
         rows = await _rows(ctx, session, [envelope_id])
         extra = (
             await session.execute(
@@ -759,6 +786,10 @@ async def drawer(ctx: AuthContext, envelope_id: UUID) -> Drawer:
             [p.contact_id for p in people if p.contact_id is not None],
             [p.user_id for p in people if p.user_id is not None],
         )
+    contacts = await signer_contacts(
+        ctx.tenant, [p.contact_id for p in people if p.contact_id is not None]
+    )
+    member_emails = await contact_emails([p.user_id for p in people if p.user_id is not None])
     row = rows[0]
     order = {p.id: p.order for p in people}
     return Drawer(
@@ -808,6 +839,8 @@ async def drawer(ctx: AuthContext, envelope_id: UUID) -> Drawer:
                 p.signature_method,
                 p.decline_reason,
                 p.provider_recipient_id,
+                _contact_title(contacts, p.contact_id),
+                _signer_email(contacts, member_emails, p.contact_id, p.user_id),
             )
             for p in people
         ],
@@ -870,9 +903,9 @@ class Revealed:
 
 async def reveal_ip(ctx: AuthContext, envelope_id: UUID, signer_id: UUID, reason: str) -> Revealed:
     """`POST .../signers/{sid}/reveal-ip`: the full address for 10 seconds, audited."""
-    await _firm_and_flag(ctx)
+    await firm_and_flag(ctx)
     async with tenant_session(ctx.tenant) as session:
-        head = await _visible_head(ctx, session, envelope_id)
+        head = await visible_head(ctx, session, envelope_id)
         sealed = (
             await session.execute(
                 select(evidence.c.ip_sealed)
@@ -881,7 +914,7 @@ async def reveal_ip(ctx: AuthContext, envelope_id: UUID, signer_id: UUID, reason
             )
         ).one_or_none()
     # Fresh MFA, onshore, a reason: the matrix's modifiers, checked by `authorise`.
-    await authorise(ctx, REVEAL, await _resource_of(ctx, head), reason=reason)
+    await authorise(ctx, REVEAL, await resource_of(ctx, head), reason=reason)
     if sealed is None:
         raise NotFound("signer")
     if sealed.ip_sealed is None:
@@ -916,9 +949,9 @@ def _entry(archive: zipfile.ZipFile, name: str, body: bytes) -> None:
 async def evidence_package(ctx: AuthContext, envelope_id: UUID) -> Package:
     """`GET /v1/envelopes/{id}/evidence.zip`: per-signer packages, each stored package and
     document, and `manifest.sha256`; the same evidence always zips to the same bytes."""
-    await _firm_and_flag(ctx)
+    await firm_and_flag(ctx)
     async with tenant_session(ctx.tenant) as session:
-        head = await _visible_head(ctx, session, envelope_id)
+        head = await visible_head(ctx, session, envelope_id)
         number = (
             await session.execute(
                 select(E.number).select_from(envelopes).where(E.id == envelope_id)
@@ -932,7 +965,7 @@ async def evidence_package(ctx: AuthContext, envelope_id: UUID) -> Package:
                 .order_by(S.order)
             )
         ).all()
-    await authorise(ctx, DOWNLOAD, await _resource_of(ctx, head))
+    await authorise(ctx, DOWNLOAD, await resource_of(ctx, head))
     if not proofs:
         raise NotFound("evidence")
     files: dict[str, bytes] = {}
@@ -983,10 +1016,10 @@ async def evidence_package(ctx: AuthContext, envelope_id: UUID) -> Package:
 
 async def void(ctx: AuthContext, envelope_id: UUID, reason: str) -> None:
     """`POST /v1/envelopes/{id}/void`: an open envelope, voided by the person; evidence kept."""
-    await _firm_and_flag(ctx)
+    await firm_and_flag(ctx)
     async with tenant_session(ctx.tenant) as session:
-        head = await _visible_head(ctx, session, envelope_id)
-    await authorise(ctx, VOID, await _resource_of(ctx, head))
+        head = await visible_head(ctx, session, envelope_id)
+    await authorise(ctx, VOID, await resource_of(ctx, head))
     if head.status not in OPEN:
         raise EnvelopeNotOpen(facts={"status": head.status})
     now = system_now()

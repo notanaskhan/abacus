@@ -1613,10 +1613,12 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     | {"organisations", "engagements", "methodology", "requests", "evidence", "sampling"}
     | {"review", "workpapers", "reporting", "signatures", "communications", "agents"}
     | {"integrations", "assurance"},
+    # T-02-T10 (DEC-1261): returns pin the due dates practice computes from C21 (practice never
+    # imports tax, so the edge stays acyclic).
     "tax": _BASE
     | {"organisations", "engagements", "methodology", "requests", "evidence", "ledger"}
     | {"review", "workpapers", "adjustments", "reporting", "signatures", "communications"}
-    | {"agents", "integrations"},
+    | {"agents", "integrations", "practice"},
     "closes": _BASE
     | {"organisations", "engagements", "methodology", "requests", "evidence", "ledger"}
     | {"review", "workpapers", "adjustments", "reporting", "communications", "agents"}
@@ -2240,6 +2242,13 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/backfill/test_k02t03_reference_sets.py",
             "tests/integration/backfill/test_k02t04_firm_standards.py",
             "tests/integration/backfill/test_t01t08_consents.py",
+            # K-02-T09: 0400's privileges read from the catalog as the owner and tried as the app.
+            "tests/integration/backfill/test_k02t09_reference_sets_independent.py",
+            # K-02-T05: the platform reference sets (global, definer-guarded) are seeded as the
+            # owner role; the service under test then reads them as the app role.
+            "tests/integration/test_k02t05_reference_set_service.py",
+            # K-02-T07: the same, for the due-date rules the calendar reads.
+            "tests/integration/test_k02t07_due_dates.py",
             "tests/integration/test_unit_of_work.py",
             "tests/integration/test_outbox_relay.py",
             "tests/integration/test_identity.py",
@@ -2509,6 +2518,8 @@ RULES: list[Rule | TreeRule] = [
         exclude=(
             "src/abacus/modules/identity/tokens.py",
             "src/abacus_tools/fakes/identity.py",
+            # N-02-T18 (DEC-1179): signs DocuSign's outbound OAuth assertion; reads no token.
+            "src/abacus/modules/signatures/docusign.py",
         ),
     ),
     Rule(
@@ -2525,6 +2536,8 @@ RULES: list[Rule | TreeRule] = [
             # A-02-T26 (DEC-709): a live connector sets the provider's Authorization on its own
             # outbound reads through `kernel.egress`; it never reads an inbound request.
             "src/abacus/modules/connections/connectors/quickbooks_online.py",
+            # N-02-T18 (DEC-1179): the DocuSign adapter's outbound calls, the same way.
+            "src/abacus/modules/signatures/docusign.py",
         ),
     ),
     Rule(

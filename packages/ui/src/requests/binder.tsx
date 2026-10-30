@@ -93,6 +93,8 @@ export interface RequestBinderProps {
   onBlocked?: (open: number) => void;
   /** "Upload something else": files for the firm's Inbox, not the list. */
   onUploadOther?: (files: readonly File[]) => void;
+  /** Whether "Upload something else" is offered (the firm's setting; R-01-T33). Default on. */
+  uploadOther?: boolean;
   /** The client's own uploads are withdrawn (DF-15): the portal's screens set it. */
   withdraw?: boolean;
   /** A closed binder: no upload, Ignore, Withdraw or Mark as Done anywhere. */
@@ -378,19 +380,21 @@ export function RequestDocuments({
       right={
         items.length === 0 || props.readOnly === true ? undefined : (
           <>
-            <button
-              type="button"
-              onClick={() => {
-                binder.chooseOther();
-              }}
-              className={cn(
-                "inline-flex h-[30px] items-center gap-[6px] rounded-pill bg-card pr-[13px] pl-[11px] text-body whitespace-nowrap shadow-e1 hover:bg-nav-fill",
-                PRESS,
-              )}
-            >
-              <Icon name="upload" size={13} />
-              {reduced ? "Upload…" : "Upload something else"}
-            </button>
+            {props.uploadOther !== false && (
+              <button
+                type="button"
+                onClick={() => {
+                  binder.chooseOther();
+                }}
+                className={cn(
+                  "inline-flex h-[30px] items-center gap-[6px] rounded-pill bg-card pr-[13px] pl-[11px] text-body whitespace-nowrap shadow-e1 hover:bg-nav-fill",
+                  PRESS,
+                )}
+              >
+                <Icon name="upload" size={13} />
+                {reduced ? "Upload…" : "Upload something else"}
+              </button>
+            )}
             <MarkAsDone view={view} onClick={onDone} />
           </>
         )
