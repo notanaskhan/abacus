@@ -9012,6 +9012,10 @@ export type DropFileOut = {
  */
 export type DueDateExtension = {
     /**
+     * Day
+     */
+    day?: number | null;
+    /**
      * Form
      */
     form: string;
@@ -41092,10 +41096,6 @@ export type PracticeDueDatesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PracticeDueDatesError = PracticeDueDatesErrors[keyof PracticeDueDatesErrors];

@@ -56,6 +56,8 @@ Payloads are discriminated by `kind`, `payload_schema_version` 1 (`platform/refe
 
 **Live since K-02-T05 (DEC-1254):** part A's routes and readers (`platform/reference_sets.py`, routes in `platform/reference_sets_routes.py`). The typed readers scan every set of the kind in effect on the date (latest effective first) and answer from the first row that matches; nothing matching is a `LookupError`, never a default. `information_return_threshold` and `retention_minimum` resolve on today's business date. `check_draft(kind, payload)` is the operator CLI's pre-draft check (422 `reference_kind_unknown`, `reference_payload_invalid`, `standards_set_refused`).
 
+**Live since K-02-T07 (DEC-1255):** `GET /v1/due-dates` and `practice.api`'s calendar (`practice/due_dates.py`, routes in `practice/due_dates_routes.py`, the pure engine in `practice/compute/calendar.py`). Due-date rules resolve on the period end (a set whose version names the tax year first); holidays and postponements on the later of today and a fortnight past the latest unrolled date. Additive fields: `DueDateExtension.day` (5558's Oct 15, a 1041's Sep 30), `DueDates.postponed_to`, `ResolvedReference.tax_year`.
+
 Every result carries the version id it used (INV-2). **`as_of` per consumer:** AJE classification, the entry's creation date; materiality validation, the decision date; checklists, `applies_to.tax_year`; BH-TAX-02, pinned on the return at creation; due dates, the period end. Consumers store the version id.
 
 ## 6. Human-only actions

@@ -122,7 +122,10 @@ from abacus.modules.platform.reference_sets import (
     retention_minimum,
 )
 from abacus.modules.platform.reference_sets_contract import (
+    DisasterPostponementsPayload,
+    DueDateRulesPayload,
     Form8879For,
+    LegalHolidaysPayload,
     ReferenceSetKind,
     ResolvedReference,
     RetentionFloor,
@@ -277,6 +280,8 @@ __all__ = [
     "CanaryWorkflow",
     "ControlName",
     "DeciderMustDiffer",
+    "DisasterPostponementsPayload",
+    "DueDateRulesPayload",
     "Entitlement",
     "EntitlementRequired",
     "Form8879For",
@@ -297,6 +302,7 @@ __all__ = [
     "IncidentPropagationWorkflow",
     "IncidentStepResult",
     "IncidentView",
+    "LegalHolidaysPayload",
     "Module",
     "PilotMetricsWorkflow",
     "PilotMode",

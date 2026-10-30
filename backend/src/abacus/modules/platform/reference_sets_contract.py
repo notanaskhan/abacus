@@ -68,6 +68,9 @@ class DueDateExtension(BaseModel):
 
     form: Annotated[str, Field(min_length=1, max_length=20), classified("public")]  # "4868"
     months: Annotated[int, Field(ge=1, le=12), classified("public")]
+    # Additive (K-02-T07): the extended date's day when it is not the original's (5558 runs
+    # 2½ months: months 3, day 15; a 1041's 7004 runs 5½: months 5, day 30).
+    day: Annotated[int | None, Field(ge=1, le=31), classified("public")] = None
 
 
 class DueDateRuleRow(BaseModel):
