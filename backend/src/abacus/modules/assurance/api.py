@@ -9,6 +9,7 @@ from abacus.modules.assurance.completion import g6, g7
 from abacus.modules.assurance.completion_routes import dashboard_router
 from abacus.modules.assurance.completion_routes import router as completion_router
 from abacus.modules.assurance.home_counts import register_home_counts
+from abacus.modules.assurance.mapping import SUBSCRIPTIONS as MAPPING_SUBSCRIPTIONS
 from abacus.modules.assurance.mapping import mapping_facts, mapping_reviewables
 from abacus.modules.assurance.mapping_routes import firm_router as grouping_router
 from abacus.modules.assurance.mapping_routes import router as mapping_router
@@ -68,7 +69,8 @@ register_firm_setting(RELEASE_MODE_SETTING)
 
 # A-01-T05 (SPEC-330 AC-13): C1's `gate.met` derives the phase a computed gate opens. The worker
 # collects these with every module's; assurance has no workflows of its own yet.
-SUBSCRIPTIONS = PHASE_SUBSCRIPTIONS
+# A-03-T14: a new trial balance version leaves a signed mapping stale (`mapping_set.went_stale`).
+SUBSCRIPTIONS = dict(PHASE_SUBSCRIPTIONS) | dict(MAPPING_SUBSCRIPTIONS)
 WORKFLOWS: dict[type, str] = {}
 ACTIVITIES: tuple[object, ...] = ()
 

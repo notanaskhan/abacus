@@ -45,6 +45,7 @@ describe("screen scenarios on the firm entry", () => {
       "SHL-03",
       "SHL-04",
       "SHL-14",
+      "TAX-02", // P-04-T47: j06 coordination
     ]);
   });
 

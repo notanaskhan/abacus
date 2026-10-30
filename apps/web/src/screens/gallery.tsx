@@ -1,5 +1,5 @@
 import { publishPortalSettings } from "@abacus/api-client";
-import { AppShell, toast } from "@abacus/ui";
+import { AppShell, time, toast } from "@abacus/ui";
 import { type JSX, useEffect, useState } from "react";
 import { installFixtureMode } from "../app-core/fixture-mode";
 import { useSession } from "../app-core/session";
@@ -51,8 +51,10 @@ import {
 import { ADM05 } from "./ADM-05";
 import { CLI05 } from "./CLI-05";
 import {
+  AGENT_NOTE as CLI05_AGENT_NOTE,
   type Cli05State,
   ENTITY as CLI05_ENTITY,
+  SECTION as CLI05_SECTION,
   STATES as CLI05_STATES,
   scenarios as cli05Scenarios,
 } from "./CLI-05/scenarios";
@@ -365,6 +367,15 @@ import {
   scenarios as shl20Scenarios,
 } from "./SHL-20/scenarios";
 import { ApproveSheet } from "./SHL-10";
+import { SignOffChips, SignOffSheet } from "./SHL-12";
+import { COPY as SHL12_COPY } from "./SHL-12/copy";
+import {
+  OPENS as SHL12_OPENS,
+  STATES as SHL12_STATES,
+  type Shl12State,
+  scenarios as shl12Scenarios,
+} from "./SHL-12/scenarios";
+import { hannahL2 } from "../fixtures/seed/review";
 import {
   OPENS as SHL10_OPENS,
   STATES as SHL10_STATES,
@@ -906,7 +917,8 @@ function Adm05Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("ADM-05", { title: "Consent registry (§7216)", Component: Adm05Artboard });
 
-// CLI-05 d and f (T-01-T14): the client's Tax profile cockpit on the consents section.
+// CLI-05 (T-01-T14 d and f; T-01-T34 b, c, e and g): the client's Tax profile cockpit, opened at
+// each artboard's section.
 function Cli05Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Cli05State = CLI05_STATES.find((s) => s === params.st) ?? "d";
   const [ready, setReady] = useState<string | null>(null);
@@ -923,7 +935,13 @@ function Cli05Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
   }, [state, params.as]);
   return ready === state ? (
     <div data-artboard={state}>
-      <CLI05 key={state} frame clientEntityId={CLI05_ENTITY[state]} section="consents" />
+      <CLI05
+        key={state}
+        frame
+        clientEntityId={CLI05_ENTITY[state]}
+        section={CLI05_SECTION[state]}
+        {...(state === "a" ? { agentNote: CLI05_AGENT_NOTE } : {})}
+      />
     </div>
   ) : null;
 }
@@ -1871,6 +1889,52 @@ function Shl10Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("SHL-10", { title: "Approve agent output", Component: Shl10Artboard });
+
+// SHL-12 (P-04-T48): the sign-off sheet a, b, c, d, e, g, h over an empty frame; a′ is the frame
+// after signing: the sheet closed, the header's "✓ MD ✓ HL" and the toast.
+function Shl12Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Shl12State = SHL12_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      shl12Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    if (state === "ap") {
+      toast.show({
+        kind: "success",
+        text: SHL12_COPY.toasts.signed("Trial Balance", "L2", time(hannahL2.signed_at)),
+      });
+    }
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  const open = SHL12_OPENS[state];
+  return (
+    <div key={state} data-artboard={state} className="h-[900px]">
+      {state === "ap" ? (
+        <div data-signoff="header" className="flex h-[42px] items-center gap-[8px] px-[12px]">
+          <span className="text-title font-medium">Trial Balance</span>
+          <SignOffChips target={{ type: open.type, id: open.id }} />
+        </div>
+      ) : (
+        <SignOffSheet
+          target={{ type: open.type, id: open.id }}
+          level={open.level}
+          meta={open.meta}
+          open
+          onOpenChange={() => undefined}
+        />
+      )}
+    </div>
+  );
+}
+
+registerScreen("SHL-12", { title: "Sign-off modal", Component: Shl12Artboard });
 
 // SHL-16 (P-04-T43): the checkpoint drawer a–f over an empty frame.
 function Shl16Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
