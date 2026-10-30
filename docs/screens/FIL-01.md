@@ -91,3 +91,17 @@ Inbound: SHL-01 nav "Files", TXP-00/TXP-01 "Files →", CLI-02 Files tab, INB-02
 | Opens ADM-12 · Monitoring & inspections · finding QM-F-01 (designed link, handoff link graph) | ADM-12 | as the target's manifest status |
 | Opens AUD-25 · FY2025 archive · A Planning (designed link, handoff link graph) | AUD-25 | as the target's manifest status |
 
+## Parity
+| Artboard | Tier | Diff % | Notes |
+|---|---|---|---|
+| a | C (locked) | — | N-01-T28; write controls masked (Approve, File, Ignore, Reveal and the bulk bar) |
+| b | C | — | report |
+| c | C (locked) | — | N-01-T28; write controls masked (Approve, File, Ignore, Reveal and the bulk bar) |
+| d | C | — | report |
+| e | C | — | report |
+| f | C (locked) | — | N-01-T28; write controls masked (Approve, File, Ignore, Reveal and the bulk bar) |
+| g | C (locked) | — | N-01-T28; write controls masked (Approve, File, Ignore, Reveal and the bulk bar) |
+| h | C | — | report-only; positions masked (DV-10); fixture-only writes slice |
+| i | C | — | report-only; positions masked (DV-10); fixture-only writes slice |
+| j | C | — | report-only; positions masked (DV-10); fixture-only writes slice |
+| host | D | — | N-01-T28: T2 record cockpit (tree 214, list, drawer), computed styles (e2e/visual/tier-d.spec.ts) |
