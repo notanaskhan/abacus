@@ -71,7 +71,10 @@ Gradients, emoji, saturated blue, heavy shadows, invented colours, lorem ipsum, 
 ## Parity
 | Artboard | Tier (A/B/D) | Diff % | Notes |
 |---|---|---|---|
-| a–e | B frame · A strips · D geometry | not run | locked in F-06-T13 |
+| a–e | B frame · A strips · D geometry | not run | not locked: the specimen board is 1440 wide against the 1400 window crop (F-06-T13 end review); report-only until the specimen draws the 1400 window |
 
 ## Open gaps
 - No `revision.md`. The spec text puts "Ready" before Gathering in the first group; TAX-01's order is recorded above.
+
+## Hand-off (F-06-T13, 2026-10-30)
+- **T-02 (TAX-01, the TY2025 practice board):** the specimen's frames are locked at Tier B against the handoff PNGs (`docs/design/parity-manifest.json`, pinned SHA-256); the consumer screen composes the same template, so the template's own geometry and chrome are fixed. Masks per F-06 §5.4 (provider frame, KBA timer, spinners).
