@@ -284,6 +284,22 @@ class SignerIn(BaseModel):
     identity_method: Annotated[IdentityMethod, classified("internal")]
 
 
+class FieldPlacementIn(BaseModel):
+    """N-02-T30 (additive): a field placed on a document's page for one signer, in PDF points
+    (origin top-left). `signer_index` is the signer's position in this request's `signers`."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    document_id: Annotated[UUID, classified("internal")]
+    signer_index: Annotated[int, Field(ge=0, lt=20), classified("internal")]
+    kind: Annotated[Literal["signature", "date", "pin", "initial"], classified("internal")]
+    page: Annotated[int, Field(ge=1, le=500), classified("internal")]
+    x: Annotated[float, Field(ge=0, le=2000), classified("internal")]
+    y: Annotated[float, Field(ge=0, le=2000), classified("internal")]
+    w: Annotated[float, Field(gt=0, le=1000), classified("internal")]
+    h: Annotated[float, Field(gt=0, le=1000), classified("internal")]
+
+
 class DraftUpdateIn(BaseModel):
     """`PUT /v1/envelopes/{id}` (If-Match)."""
 
@@ -297,6 +313,10 @@ class DraftUpdateIn(BaseModel):
     date_as_of_mode: Annotated[DateAsOfMode, classified("internal")] = "none"
     date_as_of: Annotated[date | None, classified("internal")] = None
     # N-02-T21 (DEC-1174): SIG-02's document order after a drag or keyboard move; None keeps it.
+    # N-02-T30 (additive): the placed fields; None leaves the draft's fields as they are.
+    fields: Annotated[
+        list[FieldPlacementIn] | None, Field(max_length=200), classified("internal")
+    ] = None
     document_order: Annotated[list[UUID] | None, Field(max_length=20), classified("internal")] = (
         None
     )
@@ -842,6 +862,12 @@ async def update_envelope_draft_route(
         date_as_of_mode=body.date_as_of_mode,
         date_as_of=body.date_as_of,
         document_order=tuple(body.document_order) if body.document_order is not None else None,
+        fields=None
+        if body.fields is None
+        else tuple(
+            builder.FieldEdit(f.document_id, f.signer_index, f.kind, f.page, f.x, f.y, f.w, f.h)
+            for f in body.fields
+        ),
     )
     await builder.update_draft(ctx, envelope_id, edit, if_match)
     return _drawer_out(await hub.drawer(ctx, envelope_id))

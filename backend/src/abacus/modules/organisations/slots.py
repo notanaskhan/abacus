@@ -17,7 +17,7 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import date, datetime
-from typing import Any, Literal
+from typing import Any, Literal, Protocol
 from uuid import UUID
 
 from sqlalchemy import Select
@@ -190,3 +190,29 @@ async def subject_visible(ctx: AuthContext, kind: str, subject_id: UUID) -> bool
 
 async def evidence_visible(ctx: AuthContext, version_id: UUID) -> bool:
     return bool(_EVIDENCE) and await _EVIDENCE[0](ctx, version_id)
+
+
+# --- T-01-T10: §7216 consent capture (C19 requests, renewals, records) -------------------------
+# organisations owns the consent rows but imports nothing that renders or drafts, so the module
+# that does (tax) registers the capture once, at import. Unregistered, the routes answer 501.
+
+
+class ConsentCapture(Protocol):
+    async def request(self, ctx: AuthContext, body: object) -> object: ...
+
+    async def renew(self, ctx: AuthContext, body: object) -> object: ...
+
+    async def record(self, ctx: AuthContext, body: object) -> object: ...
+
+
+_CAPTURE: list[ConsentCapture] = []
+
+
+def register_consent_capture(capture: ConsentCapture) -> None:
+    if _CAPTURE and not _same(_CAPTURE[0], capture):
+        raise RuntimeError("consent capture is already registered")
+    _CAPTURE[:] = [capture]
+
+
+def consent_capture() -> ConsentCapture | None:
+    return _CAPTURE[0] if _CAPTURE else None

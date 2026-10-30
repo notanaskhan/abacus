@@ -6,6 +6,7 @@ import {
   FullSheet,
   HumanAction,
   Icon,
+  Picker,
   SheetColumns,
   SourceViewer,
   StatusDisc,
@@ -14,7 +15,14 @@ import {
   date,
   toast,
 } from "@abacus/ui";
-import { type DragEvent, type JSX, type KeyboardEvent, useMemo, useState } from "react";
+import {
+  type DragEvent,
+  type JSX,
+  type KeyboardEvent,
+  type MouseEvent,
+  useMemo,
+  useState,
+} from "react";
 import { useNow } from "../../app-core/clock";
 import { useSession } from "../../app-core/session";
 import {
@@ -38,6 +46,30 @@ import { COPY, gateSentence, retentionLine } from "./copy";
 // (ADR-161). Escape on a changed draft asks to keep it. Frames built: a (Harborview 8879-PE), e
 // (E13 with a countersigner) and f (a signer with no email: Send disabled).
 
+/** N-02-T30: a field placed on a page, for the signer at `signer` (PDF points, top-left). */
+type Placed = {
+  document_id: string;
+  signer: number;
+  kind: PlaceKind;
+  page: number;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+};
+type PlaceKind = "signature" | "date" | "pin";
+// US Letter in PDF points, and where the keyboard path starts placing on page 1.
+const PAGE_W = 612;
+const PAGE_H = 792;
+const MARGIN = 72;
+const FIRST_LINE = 600;
+const PLACE_KINDS: readonly PlaceKind[] = ["signature", "date", "pin"];
+const SIZE: Record<PlaceKind, { w: number; h: number }> = {
+  signature: { w: 180, h: 36 },
+  date: { w: 100, h: 24 },
+  pin: { w: 80, h: 24 },
+};
+
 type Draft = {
   order: string[];
   signers: SignerOut[];
@@ -45,16 +77,39 @@ type Draft = {
   message: string;
   reminder: string;
   fixedDate: boolean;
+  fields: Placed[];
 };
 
+function placedOf(e: EnvelopeOut, signers: readonly SignerOut[]): Placed[] {
+  const index = new Map(signers.map((s, i) => [s.id, i]));
+  return e.fields.flatMap((f) => {
+    const signer = index.get(f.signer_id);
+    if (signer === undefined || f.kind === "initial" || f.kind === "title_prefill") return [];
+    return [
+      {
+        document_id: f.document_id,
+        signer,
+        kind: f.kind,
+        page: f.page,
+        x: f.x,
+        y: f.y,
+        w: f.w,
+        h: f.h,
+      },
+    ];
+  });
+}
+
 function draftOf(e: EnvelopeOut): Draft {
+  const signers = [...e.signers].sort((a, b) => a.order - b.order);
   return {
     order: [...e.documents].sort((a, b) => a.order - b.order).map((d) => d.id),
-    signers: [...e.signers].sort((a, b) => a.order - b.order),
+    signers,
     signerOrder: e.signer_order,
     message: e.message ?? "",
     reminder: e.reminder_cadence ?? "",
     fixedDate: e.date_as_of_mode !== "none",
+    fields: placedOf(e, signers),
   };
 }
 
@@ -67,6 +122,16 @@ function bodyOf(d: Draft, e: EnvelopeOut): DraftUpdateIn {
       routing_group: d.signerOrder === "parallel" ? 1 : i + 1,
     })),
     signer_order: d.signerOrder,
+    fields: d.fields.map((f) => ({
+      document_id: f.document_id,
+      signer_index: f.signer,
+      kind: f.kind,
+      page: f.page,
+      x: f.x,
+      y: f.y,
+      w: f.w,
+      h: f.h,
+    })),
     message: d.message === "" ? null : d.message,
     reminder_cadence: d.reminder === "" ? null : d.reminder,
     expires_on: e.expires_at === null ? null : e.expires_at.slice(0, 10),
@@ -337,7 +402,15 @@ function Builder({
                 </ul>
               </div>
             </section>
-            <Preview envelope={envelope} doc={doc ?? null} signers={draft.signers} />
+            <Preview
+              envelope={envelope}
+              doc={doc ?? null}
+              signers={draft.signers}
+              fields={draft.fields}
+              onFields={(fields) => {
+                setDraft({ ...draft, fields });
+              }}
+            />
             <section aria-label={COPY.signers} className="flex flex-col gap-[10px] self-start">
               <Card title={COPY.signers}>
                 <ValueRow
@@ -571,52 +644,142 @@ function Preview({
   envelope,
   doc,
   signers,
+  fields,
+  onFields,
 }: {
   envelope: EnvelopeOut;
   doc: EnvelopeOut["documents"][number] | null;
   signers: readonly SignerOut[];
+  fields: readonly Placed[];
+  onFields: (fields: Placed[]) => void;
 }): JSX.Element {
   const urls = usePageUrls(envelope.row.id, doc?.id ?? null, Math.min(doc?.page_count ?? 0, 2));
+  const [signer, setSigner] = useState(0);
+  const [kind, setKind] = useState<PlaceKind | null>(null);
   const file: ViewerFile = {
     name: doc?.title ?? "",
     pages: Array.from({ length: Math.min(doc?.page_count ?? 0, 2) }, (_, i) => ({
       n: i + 1,
-      width_pt: 612,
-      height_pt: 792,
+      width_pt: PAGE_W,
+      height_pt: PAGE_H,
       rotation: 0 as const,
       src: urls[i + 1] ?? "",
     })),
     regions: [],
   };
-  const placed = envelope.fields.filter((f) => f.document_id === doc?.id);
+  const placed = fields.filter((f) => f.document_id === doc?.id);
+  const place = (page: number, x: number, y: number): void => {
+    if (doc === null || kind === null || signers[signer] === undefined) return;
+    const size = SIZE[kind];
+    onFields([
+      ...fields,
+      {
+        document_id: doc.id,
+        signer,
+        kind,
+        page,
+        x: Math.max(0, Math.min(x, PAGE_W - size.w)),
+        y: Math.max(0, Math.min(y, PAGE_H - size.h)),
+        ...size,
+      },
+    ]);
+  };
+  // The keyboard alternative: the next free line on page 1, under the fields already there.
+  const placeNext = (): void => {
+    const lowest = placed
+      .filter((f) => f.page === 1)
+      .reduce((y, f) => Math.max(y, f.y + f.h + 12), FIRST_LINE);
+    place(1, MARGIN, lowest);
+  };
+  const onPageClick = (event: MouseEvent<HTMLElement>): void => {
+    if (kind === null) return;
+    const page = (event.target as HTMLElement).closest<HTMLElement>("[data-page]");
+    if (page === null) return;
+    const box = page.getBoundingClientRect();
+    if (box.width === 0 || box.height === 0) return;
+    const n = Number(page.dataset.page ?? "1");
+    place(
+      n,
+      ((event.clientX - box.left) / box.width) * PAGE_W,
+      ((event.clientY - box.top) / box.height) * PAGE_H,
+    );
+  };
   return (
     <section
       aria-label={COPY.preview}
-      className="min-w-0 self-stretch overflow-hidden rounded-pane bg-card shadow-e2"
+      className="flex min-w-0 flex-col self-stretch overflow-hidden rounded-pane bg-card shadow-e2"
     >
-      <SourceViewer
-        file={file}
-        status="ready"
-        loading={doc !== null && Object.keys(urls).length === 0}
-        afterPages={
-          placed.length === 0 ? undefined : (
-            <ul aria-label={COPY.placed} className="flex flex-col gap-[6px] pt-[8px]">
-              {placed.map((f) => (
-                <li
-                  key={f.id}
-                  data-field={f.kind}
-                  className="flex items-center gap-[6px] text-dense"
-                >
-                  <span className="inline-flex h-[22px] items-center rounded-pill bg-espresso px-[8px] text-pill text-on-dark">
-                    {COPY.field[f.kind]} · {signers.find((s) => s.id === f.signer_id)?.name ?? ""}
-                  </span>
-                  <span className="text-meta text-ink-3">p. {String(f.page)}</span>
-                </li>
-              ))}
-            </ul>
-          )
-        }
-      />
+      <div
+        role="toolbar"
+        aria-label={COPY.placeTitle}
+        className="flex flex-wrap items-center gap-[6px] border-b border-hair px-[12px] py-[8px]"
+      >
+        <Picker
+          variant="fill"
+          label={COPY.placeFor}
+          value={String(signer)}
+          options={signers.map((s, i) => ({ value: String(i), label: s.name }))}
+          onChange={(v) => {
+            setSigner(Number(v));
+          }}
+        />
+        {PLACE_KINDS.map((k) => (
+          <Button
+            key={k}
+            variant="secondary"
+            size="sm"
+            aria-pressed={kind === k}
+            onClick={() => {
+              setKind(kind === k ? null : k);
+            }}
+          >
+            {COPY.field[k]}
+          </Button>
+        ))}
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={kind === null || doc === null}
+          onClick={placeNext}
+        >
+          {COPY.placeNext}
+        </Button>
+      </div>
+      {/* Click-to-place on the page (a mouse aid; the toolbar's Place on next line is the keyboard path). */}
+      <div className="min-h-0 flex-1" data-placing={kind ?? undefined} onClick={onPageClick}>
+        <SourceViewer
+          file={file}
+          status="ready"
+          loading={doc !== null && Object.keys(urls).length === 0}
+          afterPages={
+            placed.length === 0 ? undefined : (
+              <ul aria-label={COPY.placed} className="flex flex-col gap-[6px] pt-[8px]">
+                {placed.map((f) => (
+                  <li
+                    key={`${f.kind}-${String(f.page)}-${String(f.x)}-${String(f.y)}`}
+                    data-field={f.kind}
+                    className="flex items-center gap-[6px] text-dense"
+                  >
+                    <span className="inline-flex h-[22px] items-center rounded-pill bg-espresso px-[8px] text-pill text-on-dark">
+                      {COPY.field[f.kind]} · {signers[f.signer]?.name ?? ""}
+                    </span>
+                    <span className="text-meta text-ink-3">p. {String(f.page)}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        onFields(fields.filter((x) => x !== f));
+                      }}
+                    >
+                      {COPY.removeField}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )
+          }
+        />
+      </div>
     </section>
   );
 }

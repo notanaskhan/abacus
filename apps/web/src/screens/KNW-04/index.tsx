@@ -36,6 +36,7 @@ import { useSession } from "../../app-core/session";
 import { COPY, SECTIONS, type Section } from "./copy";
 import { DEADLINE_COPY } from "./deadline-copy";
 import { DeadlineRulesSection } from "./deadline-rules";
+import { DRAFT_PILL, DraftPane, useNewVersion } from "./draft";
 
 export type { Section } from "./copy";
 
@@ -46,8 +47,9 @@ export type { Section } from "./copy";
 // below, then the examples the registered providers give (the designed empty state when none is
 // registered) and, on AJE thresholds, the Versions timeline.
 //
-// Read-only here: New version… waits for K-02-T14 (draft and publish), so it is drawn disabled
-// unless the screen is given `onNewVersion`; the policy toggles are display-only (DEC-53: the
+// K-02-T14 (state i): the standard's owner with an open draft sees the draft pane (`draft.tsx`)
+// with its Save bar; New version… opens one from the version in effect (one draft at a time). The
+// examples stay on the published read view (KNW-04 deviation D7). The policy toggles are display-only (DEC-53: the
 // policy principal is dormant) and link ADM-04. Every number comes from the C21 reads; nothing is
 // computed but the AJE example totals, which foot the provider's rows. No control lets the Accrued
 // Agent approve, publish or decide.
@@ -893,15 +895,19 @@ export function KNW04({ initial = {}, onBack, onSection, onNewVersion }: Knw04Pr
       ],
     },
   ];
-  const canDraft =
-    chosen?.allowed_actions.includes("firm_standard.draft") === true && onNewVersion !== undefined;
+  const owner = chosen?.allowed_actions.includes("firm_standard.draft") === true;
+  const draftOpen = owner && chosen?.draft_version != null && section !== "review_checklists";
+  const canDraft = owner && !draftOpen;
+  const newVersion = useNewVersion(chosen?.id);
   const actions = (
     <span className="flex items-center gap-[8px]">
       <Button
         variant="secondary"
         disabled={!canDraft}
         onClick={() => {
-          if (chosen !== undefined) onNewVersion?.(chosen.id);
+          if (chosen === undefined) return;
+          if (onNewVersion !== undefined) onNewVersion(chosen.id);
+          else newVersion.start();
         }}
       >
         {COPY.newVersion}
@@ -939,6 +945,19 @@ export function KNW04({ initial = {}, onBack, onSection, onNewVersion }: Knw04Pr
         <Skeleton className="h-[90px]" />
       </div>
     );
+  } else if (draftOpen && chosen !== undefined) {
+    body = (
+      <DraftPane
+        standard={chosen}
+        title={section === "aje_thresholds" ? "BH AJE thresholds v{v}" : `BH ${chosen.name} v{v}`}
+        current={detail.data?.version ?? null}
+        now={now}
+        onClosed={() => {
+          void list.refetch();
+          void detail.refetch();
+        }}
+      />
+    );
   } else {
     body = (
       <Body
@@ -972,7 +991,16 @@ export function KNW04({ initial = {}, onBack, onSection, onNewVersion }: Knw04Pr
       readOnly={false}
       headerCenter={
         on && !rules ? (
-          <HeaderChips section={section} standards={standards} detail={detail.data} now={now} />
+          draftOpen && chosen?.draft_version != null ? (
+            <span className="flex items-center gap-[8px]">
+              <span className="rounded-full bg-chip px-[7px] py-[1px] text-pill-sm text-ink-2">
+                {COPY.version(chosen.draft_version.version)}
+              </span>
+              {DRAFT_PILL(chosen.draft_version.version)}
+            </span>
+          ) : (
+            <HeaderChips section={section} standards={standards} detail={detail.data} now={now} />
+          )
         ) : undefined
       }
       headerActions={on && !rules ? actions : <span />}

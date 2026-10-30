@@ -156,6 +156,20 @@ class SignerEdit:
 
 
 @dataclass(frozen=True)
+class FieldEdit:
+    """N-02-T30: a placed field; `signer_index` names the edit's signer by position."""
+
+    document_id: UUID
+    signer_index: int
+    kind: str
+    page: int
+    x: float
+    y: float
+    w: float
+    h: float
+
+
+@dataclass(frozen=True)
 class DraftEdit:
     signers: tuple[SignerEdit, ...]
     signer_order: str
@@ -165,6 +179,7 @@ class DraftEdit:
     date_as_of_mode: str
     date_as_of: date | None
     document_order: tuple[UUID, ...] | None
+    fields: tuple[FieldEdit, ...] | None = None
 
 
 @dataclass(frozen=True)
@@ -453,6 +468,8 @@ async def update_draft(
             if not _method_ok(allowed, signer.user_id is not None, signer.identity_method):
                 raise IdentityMethodNotAllowed(facts={"method": signer.identity_method})
         await _replace_signers(tx, ctx.tenant_id, envelope_id, edit.signers)
+        if edit.fields is not None:
+            await _replace_fields(tx, ctx.tenant_id, envelope_id, edit)
         if edit.document_order is not None:
             await _reorder_documents(tx, envelope_id, edit.document_order)
         expires_at = (
@@ -484,6 +501,57 @@ async def update_draft(
             "envelope.draft_saved",
             target=Target("envelope", envelope_id),
             after=Ref(version=int(version), signers=len(edit.signers)),
+        )
+
+
+async def _replace_fields(
+    tx: UnitOfWork, tenant_id: UUID, envelope_id: UUID, edit: DraftEdit
+) -> None:
+    """N-02-T30: the draft's placed fields become exactly the ones sent. A field names one of
+    the envelope's documents and one of the edit's signers (by position), else 422."""
+    documents = set(
+        (
+            await tx.session.execute(
+                text("SELECT id FROM envelope_documents WHERE envelope_id = :id"),
+                {"id": envelope_id},
+            )
+        ).scalars()
+    )
+    signer_ids = list(
+        (
+            await tx.session.execute(
+                text('SELECT id FROM envelope_signers WHERE envelope_id = :id ORDER BY "order"'),
+                {"id": envelope_id},
+            )
+        ).scalars()
+    )
+    for f in edit.fields or ():
+        if f.document_id not in documents or not 0 <= f.signer_index < len(signer_ids):
+            raise DomainInvalid(facts={"field": "fields"})
+    await tx.session.execute(
+        text(
+            "DELETE FROM envelope_fields WHERE envelope_document_id IN "
+            "(SELECT id FROM envelope_documents WHERE envelope_id = :id)"
+        ),
+        {"id": envelope_id},
+    )
+    for f in edit.fields or ():
+        await tx.session.execute(
+            text(
+                "INSERT INTO envelope_fields (tenant_id, envelope_document_id, signer_id, kind, "
+                "page, x, y, w, h) VALUES (:t, :d, :s, :k, :p, :x, :y, :w, :h)"
+            ),
+            {
+                "t": tenant_id,
+                "d": f.document_id,
+                "s": signer_ids[f.signer_index],
+                "k": f.kind,
+                "p": f.page,
+                "x": f.x,
+                "y": f.y,
+                "w": f.w,
+                "h": f.h,
+            },
         )
 
 
