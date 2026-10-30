@@ -9036,6 +9036,10 @@ export type DraftUpdateIn = {
      */
     expires_on?: string | null;
     /**
+     * Fields
+     */
+    fields?: Array<FieldPlacementIn> | null;
+    /**
      * Message
      */
     message?: string | null;
@@ -12369,6 +12373,47 @@ export type FieldOut = {
      * Signer Id
      */
     signer_id: string;
+    /**
+     * W
+     */
+    w: number;
+    /**
+     * X
+     */
+    x: number;
+    /**
+     * Y
+     */
+    y: number;
+};
+
+/**
+ * FieldPlacementIn
+ *
+ * N-02-T30 (additive): a field placed on a document's page for one signer, in PDF points
+ * (origin top-left). `signer_index` is the signer's position in this request's `signers`.
+ */
+export type FieldPlacementIn = {
+    /**
+     * Document Id
+     */
+    document_id: string;
+    /**
+     * H
+     */
+    h: number;
+    /**
+     * Kind
+     */
+    kind: 'signature' | 'date' | 'pin' | 'initial';
+    /**
+     * Page
+     */
+    page: number;
+    /**
+     * Signer Index
+     */
+    signer_index: number;
     /**
      * W
      */

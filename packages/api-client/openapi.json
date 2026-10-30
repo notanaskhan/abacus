@@ -19305,6 +19305,22 @@
             "cls": "internal",
             "title": "Expires On"
           },
+          "fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FieldPlacementIn"
+                },
+                "maxItems": 200,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Fields"
+          },
           "message": {
             "anyOf": [
               {
@@ -26533,6 +26549,83 @@
           "anchor"
         ],
         "title": "FieldOut",
+        "type": "object"
+      },
+      "FieldPlacementIn": {
+        "additionalProperties": false,
+        "description": "N-02-T30 (additive): a field placed on a document's page for one signer, in PDF points\n(origin top-left). `signer_index` is the signer's position in this request's `signers`.",
+        "properties": {
+          "document_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Document Id",
+            "type": "string"
+          },
+          "h": {
+            "cls": "internal",
+            "exclusiveMinimum": 0.0,
+            "maximum": 1000.0,
+            "title": "H",
+            "type": "number"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "signature",
+              "date",
+              "pin",
+              "initial"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "page": {
+            "cls": "internal",
+            "maximum": 500.0,
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          },
+          "signer_index": {
+            "cls": "internal",
+            "exclusiveMaximum": 20.0,
+            "minimum": 0.0,
+            "title": "Signer Index",
+            "type": "integer"
+          },
+          "w": {
+            "cls": "internal",
+            "exclusiveMinimum": 0.0,
+            "maximum": 1000.0,
+            "title": "W",
+            "type": "number"
+          },
+          "x": {
+            "cls": "internal",
+            "maximum": 2000.0,
+            "minimum": 0.0,
+            "title": "X",
+            "type": "number"
+          },
+          "y": {
+            "cls": "internal",
+            "maximum": 2000.0,
+            "minimum": 0.0,
+            "title": "Y",
+            "type": "number"
+          }
+        },
+        "required": [
+          "document_id",
+          "signer_index",
+          "kind",
+          "page",
+          "x",
+          "y",
+          "w",
+          "h"
+        ],
+        "title": "FieldPlacementIn",
         "type": "object"
       },
       "FieldProvenanceOut": {

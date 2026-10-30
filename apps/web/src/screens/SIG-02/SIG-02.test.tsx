@@ -185,3 +185,28 @@ describe("SIG-02 builder", () => {
     expect((await send()).disabled).toBe(true);
   });
 });
+
+describe("SIG-02 field placement (N-02-T30)", () => {
+  it("places a signature field from the keyboard path and saves it with the draft", async () => {
+    const calls = show("a");
+    const toolbar = await screen.findByRole("toolbar", { name: "Place fields" });
+    const placeNext = within(toolbar).getByRole<HTMLButtonElement>("button", {
+      name: "Place on next line",
+    });
+    expect(placeNext.disabled).toBe(true);
+    fireEvent.click(within(toolbar).getByRole("button", { name: "Sign here" }));
+    expect(placeNext.disabled).toBe(false);
+    const before = document.querySelectorAll("[data-field]").length;
+    fireEvent.click(placeNext);
+    await waitFor(() => {
+      expect(document.querySelectorAll("[data-field]").length).toBe(before + 1);
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^Save draft$/u }));
+    await waitFor(() => {
+      const put = calls.find((c) => c.method === "PUT");
+      expect(put).toBeDefined();
+      const body = put?.body as { fields?: { kind: string; signer_index: number }[] } | null;
+      expect(body?.fields?.some((f) => f.kind === "signature" && f.signer_index === 0)).toBe(true);
+    });
+  });
+});
