@@ -6,8 +6,10 @@ import type { Manifest } from "./types";
 export const taxScreens = {
   "TAX-01": {
     name: "Tax Returns · practice board",
+    // Fixture-built (T-02-T12) behind `tax.returns_v1`; planned until its designed links are wired
+    // (link-contract rule 1) and walked on staging (DEC-195; DEC-1272).
     status: "planned",
-    path: null,
+    path: "/tax-returns",
     navArea: "Tax Returns",
   },
   "TAX-02": { name: "Return › Overview", status: "planned", path: null },

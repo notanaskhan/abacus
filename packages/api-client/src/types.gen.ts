@@ -30935,6 +30935,10 @@ export type TaxReturnRowOut = {
      */
     id: string;
     /**
+     * Issues
+     */
+    issues?: number | null;
+    /**
      * Office Id
      */
     office_id: string | null;
@@ -30953,6 +30957,10 @@ export type TaxReturnRowOut = {
     review_level: 'detail' | 'manager' | 'partner' | null;
     reviewer: PersonChipOut | null;
     signer: PersonChipOut | null;
+    /**
+     * Signers
+     */
+    signers?: Array<TaxReturnSignerOut>;
     status: ReturnStatus;
     sync: ReturnSyncChipStatus | null;
     /**
@@ -30963,6 +30971,22 @@ export type TaxReturnRowOut = {
      * Tax Year
      */
     tax_year: number;
+};
+
+/**
+ * TaxReturnSignerOut
+ *
+ * A C7 signer chip on a row awaiting signature (T-02-T12): who, and whether they signed.
+ */
+export type TaxReturnSignerOut = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Signed
+     */
+    signed: boolean;
 };
 
 /**
