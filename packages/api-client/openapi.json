@@ -23890,34 +23890,6 @@
         "title": "EngineExportOut",
         "type": "object"
       },
-      "EngineImportIn": {
-        "additionalProperties": false,
-        "properties": {
-          "kind": {
-            "cls": "internal",
-            "enum": [
-              "values",
-              "diagnostics",
-              "pdfs",
-              "acks"
-            ],
-            "title": "Kind",
-            "type": "string"
-          },
-          "upload_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Upload Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "kind",
-          "upload_id"
-        ],
-        "title": "EngineImportIn",
-        "type": "object"
-      },
       "EngineImportOut": {
         "properties": {
           "allowed_actions": {
@@ -126393,6 +126365,7 @@
     },
     "/v1/engine-imports/{import_id}": {
       "get": {
+        "description": "TAX-09 O4: the import's diff rows (T-01-T19).",
         "operationId": "engine_import",
         "parameters": [
           {
@@ -126488,16 +126461,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Engine Import Route",
@@ -126509,6 +126472,7 @@
     },
     "/v1/engine-imports/{import_id}/approve": {
       "post": {
+        "description": "TAX-09 c: approve the accepted rows only (a person). 409 `import_decided`,\n`stale_version`; 422 `nothing_accepted`.",
         "operationId": "approve_import",
         "parameters": [
           {
@@ -126624,16 +126588,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Approve Import Route",
@@ -126645,6 +126599,7 @@
     },
     "/v1/engine-imports/{import_id}/reject": {
       "post": {
+        "description": "TAX-09 e: reject the import with a reason (a person). 409 `import_decided`,\n`stale_version`.",
         "operationId": "reject_import",
         "parameters": [
           {
@@ -126760,16 +126715,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Reject Import Route",
@@ -176847,6 +176792,7 @@
     },
     "/v1/tax-returns/{return_id}/engine-imports": {
       "post": {
+        "description": "An engine file as the raw body (no multipart; DEC-1363): scanned and stored, parsed in the\nisolated child; values wait as \"Import pending approval\" (T-01-T19). 409\n`engine_return_mismatch`, `engine_version_behind`, `import_pending`; 422\n`engine_file_invalid`, `import_kind_unavailable`.",
         "operationId": "upload_import",
         "parameters": [
           {
@@ -176860,13 +176806,28 @@
             }
           },
           {
-            "in": "header",
-            "name": "Idempotency-Key",
+            "in": "query",
+            "name": "kind",
             "required": true,
             "schema": {
-              "maxLength": 200,
-              "minLength": 8,
-              "title": "Idempotency-Key",
+              "enum": [
+                "values",
+                "diagnostics",
+                "pdfs",
+                "acks"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-File-Name",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "X-File-Name",
               "type": "string"
             }
           },
@@ -176903,16 +176864,6 @@
             }
           }
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EngineImportIn"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "201": {
             "content": {
@@ -176954,6 +176905,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -176963,16 +176924,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Upload Import Route",
@@ -176984,6 +176935,7 @@
     },
     "/v1/tax-returns/{return_id}/engine-sync": {
       "get": {
+        "description": "TAX-09's chip, history and diagnostics, derived (T-01-T19).",
         "operationId": "engine_sync",
         "parameters": [
           {
@@ -177079,16 +177031,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Engine Sync Route",

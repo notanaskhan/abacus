@@ -26,7 +26,7 @@ from uuid import UUID
 
 from sqlalchemy import text
 
-from abacus.kernel.db import transaction_context
+from abacus.kernel.db import TenantContext, tenant_session, transaction_context
 from abacus.kernel.errors import DomainInvalid
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork
 from abacus.modules.review.events import FieldValueRecorded
@@ -239,3 +239,44 @@ async def previous_value(
         cast(dict[str, object], rows[1].value),
         cast(Literal["exact", "estimate"], rows[1].value_kind),
     )
+
+
+# --- T-01-T19: what an engine import diffs against, and what changed after a sync ------------
+
+
+async def current_values(
+    tenant: TenantContext, target_type: str, target_id: UUID
+) -> dict[str, dict[str, object]]:
+    """Each field's latest value on the target (`{t, v}`), for an owner diffing an engine file
+    against what Accrued holds. The caller has authorised a read of the target."""
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                text(
+                    "SELECT DISTINCT ON (field_key) field_key, value FROM field_value_versions "
+                    "WHERE target_type = :t AND target_id = :i ORDER BY field_key, seq DESC"
+                ),
+                {"t": target_type, "i": target_id},
+            )
+        ).all()
+    return {str(r.field_key): cast(dict[str, object], r.value) for r in rows}
+
+
+async def changed_since(
+    tenant: TenantContext, target_type: str, target_id: UUID, since: datetime
+) -> list[str]:
+    """Fields Accrued changed after `since` other than by an engine import (TAX-09c's out of sync),
+    in key order."""
+    async with tenant_session(tenant) as session:
+        return list(
+            (
+                await session.execute(
+                    text(
+                        "SELECT DISTINCT field_key FROM field_value_versions WHERE "
+                        "target_type = :t AND target_id = :i AND created_at > :since "
+                        "AND value_source <> 'engine_import' ORDER BY field_key"
+                    ),
+                    {"t": target_type, "i": target_id, "since": since},
+                )
+            ).scalars()
+        )

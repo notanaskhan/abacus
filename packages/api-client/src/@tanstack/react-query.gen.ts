@@ -8398,6 +8398,8 @@ export const engineImportQueryKey = (options: Options<EngineImportData>) => crea
 
 /**
  * Engine Import Route
+ *
+ * TAX-09 O4: the import's diff rows (T-01-T19).
  */
 export const engineImportOptions = (options: Options<EngineImportData>) => queryOptions<EngineImportResponse, EngineImportError, EngineImportResponse, ReturnType<typeof engineImportQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -8414,6 +8416,9 @@ export const engineImportOptions = (options: Options<EngineImportData>) => query
 
 /**
  * Approve Import Route
+ *
+ * TAX-09 c: approve the accepted rows only (a person). 409 `import_decided`,
+ * `stale_version`; 422 `nothing_accepted`.
  */
 export const approveImportMutation = (options?: Partial<Options<ApproveImportData>>): UseMutationOptions<ApproveImportResponse, ApproveImportError, Options<ApproveImportData>> => {
     const mutationOptions: UseMutationOptions<ApproveImportResponse, ApproveImportError, Options<ApproveImportData>> = {
@@ -8431,6 +8436,9 @@ export const approveImportMutation = (options?: Partial<Options<ApproveImportDat
 
 /**
  * Reject Import Route
+ *
+ * TAX-09 e: reject the import with a reason (a person). 409 `import_decided`,
+ * `stale_version`.
  */
 export const rejectImportMutation = (options?: Partial<Options<RejectImportData>>): UseMutationOptions<RejectImportResponse, RejectImportError, Options<RejectImportData>> => {
     const mutationOptions: UseMutationOptions<RejectImportResponse, RejectImportError, Options<RejectImportData>> = {
@@ -16965,6 +16973,11 @@ export const exportReturnMutation = (options?: Partial<Options<ExportReturnData>
 
 /**
  * Upload Import Route
+ *
+ * An engine file as the raw body (no multipart; DEC-1363): scanned and stored, parsed in the
+ * isolated child; values wait as "Import pending approval" (T-01-T19). 409
+ * `engine_return_mismatch`, `engine_version_behind`, `import_pending`; 422
+ * `engine_file_invalid`, `import_kind_unavailable`.
  */
 export const uploadImportMutation = (options?: Partial<Options<UploadImportData>>): UseMutationOptions<UploadImportResponse, UploadImportError, Options<UploadImportData>> => {
     const mutationOptions: UseMutationOptions<UploadImportResponse, UploadImportError, Options<UploadImportData>> = {
@@ -16984,6 +16997,8 @@ export const engineSyncQueryKey = (options: Options<EngineSyncData>) => createQu
 
 /**
  * Engine Sync Route
+ *
+ * TAX-09's chip, history and diagnostics, derived (T-01-T19).
  */
 export const engineSyncOptions = (options: Options<EngineSyncData>) => queryOptions<EngineSyncResponse, EngineSyncError, EngineSyncResponse, ReturnType<typeof engineSyncQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

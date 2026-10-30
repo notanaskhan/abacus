@@ -21,7 +21,7 @@ CCH Axcess Tax is the engine of record; the link is a **file bridge** (W2 `cch_a
 | Sync chip, history, diagnostics | `GET /v1/tax-returns/{id}/engine-sync` | `tax_return.read` |
 | Export (consumes the write grant) | `POST /v1/tax-returns/{id}/engine-exports` | `tax_return.export` |
 | Audited download · a person marks it exported | `GET /v1/engine-exports/{id}/file` · `POST …/mark-exported` | `tax_return.export` |
-| Upload an engine file (`values`, `diagnostics`, `pdfs`, `acks`) | `POST /v1/tax-returns/{id}/engine-imports` | `engine_import.create` |
+| Upload an engine file (`values`, `diagnostics`, `pdfs`, `acks`): the file is the raw body, `?kind=`, `X-File-Name` (no multipart; T-01-T19, DEC-1363) | `POST /v1/tax-returns/{id}/engine-imports` | `engine_import.create` |
 | Diff · approve · reject | `GET /v1/engine-imports/{id}` · `POST …/approve` · `POST …/reject` | `tax_return.read` · `engine_import.approve` |
 | Settings (locked cells), mappings (409 `mapping_conflict`), format check | `GET`/`PUT /v1/firm/integrations/{key}/settings`, `PUT …/user-mapping`, `…/office-mapping`, `…/status-mirror`, `POST …/test` | `integration.read`, `integration.configure` (fresh MFA), `integration.test` |
 
@@ -33,3 +33,6 @@ not_yet_exported · ready_for_export · exporting · synced · out_of_sync · im
 
 ## 5. Events
 Outbox: `tax_return.approved`, `engine_sync.exported`, `engine_sync.failed`, `engine_sync.imported`, `engine_import.pending_approval` (identifiers and counts only). Audit: `return.final_approved`, `engine_export.generated`, `.downloaded`, `.marked_exported`, `engine_import.uploaded`, `.approved`, `.rejected`, `engine.diagnostic_received`, `integration.settings_updated`, `.mapping_updated`, `.tested`.
+
+## 7. Live since T-01-T19
+The engine-sync read, the values and diagnostics imports, the import read and its approve and reject are live behind `tax.engine_bridge`. 409 `engine_return_mismatch`, `engine_version_behind`, `import_pending`, `import_decided`, `stale_version`; 422 `engine_file_invalid` (`facts.reason`, never the file's content), `import_kind_unavailable` (PDFs and acks land with T-01-T26 and T-01-T27), `nothing_accepted`; 413 past 10 MB.
