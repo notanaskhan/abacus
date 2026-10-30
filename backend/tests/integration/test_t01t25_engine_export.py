@@ -61,7 +61,7 @@ async def engines(migrated_db: MigratedDatabase) -> AsyncIterator[None]:
     settings.cache_clear()
 
 
-def _as(principal: AuthContext) -> Call:
+def call_as(principal: AuthContext) -> Call:
     async def call(method: str, path: str, **kwargs: object) -> httpx.Response:
         app = create_app()
         app.dependency_overrides[current_context] = lambda: principal
@@ -183,7 +183,7 @@ async def feld_return(migrated_db: MigratedDatabase) -> Feld:
         engagement,
         samuel.user_id,
     )
-    call = _as(samuel)
+    call = call_as(samuel)
     uploaded = await call(
         "POST",
         f"/v1/tax-returns/{item}/engine-imports",
@@ -210,7 +210,7 @@ async def feld_return(migrated_db: MigratedDatabase) -> Feld:
     return Feld(seed, tenant, samuel, item, engagement, checkpoint, call)
 
 
-async def _final_approval(feld: Feld, *, open_for: timedelta = timedelta(days=1)) -> uuid.UUID:
+async def final_approval_of(feld: Feld, *, open_for: timedelta = timedelta(days=1)) -> uuid.UUID:
     """What T-01-T18's approval leaves behind: the return Approved and one grant on the hash."""
     seed = feld.seed
     await seed.run("UPDATE tax_returns SET status = 'approved' WHERE work_item_id = $1", feld.item)
@@ -263,7 +263,7 @@ async def test_ac_samuel_exports_v3_only_after_final_approval(
         "POST", f"/v1/tax-returns/{feld.item}/engine-exports", json=body, headers=key
     )
     assert (before.status_code, before.json()["detail"]) == (409, "not_final_approved")
-    await _final_approval(feld)
+    await final_approval_of(feld)
     made = await feld.call(
         "POST", f"/v1/tax-returns/{feld.item}/engine-exports", json=body, headers=key
     )
@@ -309,7 +309,7 @@ async def test_ac_the_same_checkpoint_yields_byte_identical_files(
     migrated_db: MigratedDatabase, switched_on: None
 ) -> None:
     feld = await feld_return(migrated_db)
-    await _final_approval(feld)
+    await final_approval_of(feld)
     body = {"checkpoint_id": str(feld.checkpoint)}
     first = await feld.call(
         "POST",
@@ -359,7 +359,7 @@ async def test_ac_a_second_consume_of_the_grant_is_refused(
     migrated_db: MigratedDatabase, switched_on: None
 ) -> None:
     feld = await feld_return(migrated_db)
-    grant = await _final_approval(feld)
+    grant = await final_approval_of(feld)
     made = await feld.call(
         "POST",
         f"/v1/tax-returns/{feld.item}/engine-exports",
@@ -391,7 +391,7 @@ async def test_ac_a_second_consume_of_the_grant_is_refused(
 
 async def test_switches_and_people_only(migrated_db: MigratedDatabase) -> None:
     feld = await feld_return(migrated_db)
-    await _final_approval(feld)
+    await final_approval_of(feld)
     body = {"checkpoint_id": str(feld.checkpoint)}
     off = await feld.call(
         "POST",
@@ -403,7 +403,7 @@ async def test_switches_and_people_only(migrated_db: MigratedDatabase) -> None:
     agent = replace(
         feld.samuel, tenant=TenantContext(feld.tenant, "agent", f"agent:preparer:{uuid.uuid4()}")
     )
-    refused = await _as(agent)(
+    refused = await call_as(agent)(
         "POST",
         f"/v1/tax-returns/{feld.item}/engine-exports",
         json=body,
