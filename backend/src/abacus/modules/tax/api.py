@@ -12,6 +12,13 @@ from abacus.modules.platform.api import register_search_projection
 from abacus.modules.tax.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.tax.board import KIND as SEARCH_TYPE
 from abacus.modules.tax.board import return_search_document, returns_by_office
+from abacus.modules.tax.due_dates import (
+    FORM_FOR_RULES,
+    on_reference_set_published,
+    recompute_unfiled,
+    rule_texts,
+    set_extended,
+)
 from abacus.modules.tax.engine_contract import (
     ApprovalBlocker,
     engine_router,
@@ -41,8 +48,14 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     portal_k1_router,  # POR-13 (T-02-T02 stub)
 )
 
+# T-02-T10: a published reference-set correction recomputes every unfiled return's due dates
+# (K-02-T12 fans `reference_set.published` out per tenant).
+SUBSCRIPTIONS = {"reference_set.published": on_reference_set_published}
+
 __all__ = [
+    "FORM_FOR_RULES",
     "ROUTERS",
+    "SUBSCRIPTIONS",
     "TRANSITIONS",
     "ApprovalBlocker",
     "StaleReturn",
@@ -50,6 +63,9 @@ __all__ = [
     "apply_transition",
     "final_approval_blockers",
     "next_status",
+    "recompute_unfiled",
     "record_sync_state",
     "register_final_approval_blocker",
+    "rule_texts",
+    "set_extended",
 ]

@@ -19121,6 +19121,20 @@
       "DueDateExtension": {
         "additionalProperties": false,
         "properties": {
+          "day": {
+            "anyOf": [
+              {
+                "maximum": 31.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Day"
+          },
           "form": {
             "cls": "public",
             "maxLength": 20,
@@ -44074,6 +44088,19 @@
             "title": "Done Count",
             "type": "integer"
           },
+          "engagement_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Engagement Id"
+          },
           "filter": {
             "cls": "internal",
             "enum": [
@@ -44130,6 +44157,12 @@
             "cls": "internal",
             "title": "Total",
             "type": "integer"
+          },
+          "upload_something_else": {
+            "cls": "internal",
+            "default": false,
+            "title": "Upload Something Else",
+            "type": "boolean"
           }
         },
         "required": [
@@ -62186,8 +62219,17 @@
             "type": "string"
           },
           "status": {
-            "$ref": "#/components/schemas/FirmStandardVersionStatus",
-            "cls": "internal"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FirmStandardVersionStatus"
+              },
+              {
+                "const": "superseded",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Status"
           },
           "version": {
             "cls": "internal",
@@ -62266,8 +62308,17 @@
             "cls": "internal"
           },
           "status": {
-            "$ref": "#/components/schemas/FirmStandardVersionStatus",
-            "cls": "internal"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FirmStandardVersionStatus"
+              },
+              {
+                "const": "superseded",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Status"
           },
           "tax_year": {
             "anyOf": [
@@ -86979,16 +87030,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Practice Due Dates Route",
@@ -124086,16 +124127,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Create Envelope Draft Route",
@@ -124847,7 +124878,7 @@
         "x-abacus-action": "envelope.read"
       },
       "put": {
-        "description": "SIG-02 edits (N-02-T20).",
+        "description": "SIG-02 edits (N-02-T20): 409 `stale_version` when `If-Match` is not the current\nversion; 409 `envelope_not_draft` after Send.",
         "operationId": "update_envelope_draft",
         "parameters": [
           {
@@ -124974,16 +125005,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Update Envelope Draft Route",
@@ -125122,7 +125143,7 @@
     },
     "/v1/envelopes/{envelope_id}/documents/{document_id}/pages/{page_no}": {
       "get": {
-        "description": "Rendered preview page (N-02-T21).",
+        "description": "SIG-02's preview page: the document's masked page image as the evidence viewer renders it\n(`no-store`, `nosniff`); 409 `preview_unavailable` for a generated document until P-11, 409\n`preview_outdated` before masking; 403 for a reader who may not read the evidence.",
         "operationId": "envelope_page",
         "parameters": [
           {
@@ -125150,6 +125171,8 @@
             "name": "page_no",
             "required": true,
             "schema": {
+              "maximum": 2000,
+              "minimum": 1,
               "title": "Page No",
               "type": "integer"
             }
@@ -125230,6 +125253,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -125239,16 +125272,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Envelope Page Route",
@@ -125496,7 +125519,7 @@
     },
     "/v1/envelopes/{envelope_id}/send": {
       "post": {
-        "description": "Human send through a single-use grant, +10 s (N-02-T22).",
+        "description": "Human send through a single-use grant, +10 s (N-02-T20): 409 `validation_failed` with\neach check in `facts`; the provider is called after the window (N-02-T22).",
         "operationId": "send_envelope",
         "parameters": [
           {
@@ -125613,16 +125636,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Send Envelope Route",
@@ -125634,7 +125647,7 @@
     },
     "/v1/envelopes/{envelope_id}/send/undo": {
       "post": {
-        "description": "Undo inside the window (N-02-T22).",
+        "description": "Undo inside the window (N-02-T20): no provider call is made.",
         "operationId": "undo_envelope_send",
         "parameters": [
           {
@@ -125740,16 +125753,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Undo Envelope Send Route",
@@ -126152,16 +126155,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Validate Envelope Route",
@@ -157432,7 +157425,7 @@
     },
     "/v1/portal/binders/{binder_id}": {
       "get": {
-        "description": "POR-03. A binder outside the caller's grant, a draft or a forged id answers 404.",
+        "description": "POR-03. A binder outside the caller's grant, a draft or a forged id answers 404.\n`upload_something_else` (R-01-T33): the firm's published toggle and the intake flag.",
         "operationId": "get_portal_binder",
         "parameters": [
           {
@@ -160598,7 +160591,7 @@
         "x-abacus-action": "portal_intake.read_own"
       },
       "post": {
-        "description": "POR-03 \"Upload something else\": the batch (N-01-T14).",
+        "description": "POR-03 \"Upload something else\": the batch (N-01-T14). R-01-T33: 404 while the firm has\nnot published the toggle on (as if the route were absent).",
         "operationId": "create_intake_upload",
         "parameters": [
           {
@@ -165429,7 +165422,7 @@
     },
     "/v1/reference-sets": {
       "get": {
-        "description": "KNW-04 j: the published sets, by kind.",
+        "description": "KNW-04 j: the published sets, by kind then key, each with the version in effect today.",
         "operationId": "list_reference_sets",
         "parameters": [
           {
@@ -165540,16 +165533,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Reference Sets Route",
@@ -165674,16 +165657,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Resolve Reference Set Route",
@@ -165791,16 +165764,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Reference Set Versions Route",
@@ -168087,16 +168050,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Standards Route",
@@ -168106,7 +168059,7 @@
         "x-abacus-action": "firm_standard.read"
       },
       "post": {
-        "description": "Create a standard (QM owner or practice leader, fresh MFA); the owner must be a partner\nmember (422 `owner_not_partner`).",
+        "description": "Create a standard (QM owner or practice leader, fresh MFA); the owner must be a partner\nmember (422 `owner_not_partner`); 409 `standard_key_taken`.",
         "operationId": "create_standard",
         "parameters": [
           {
@@ -168212,16 +168165,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Create Standard Route",
@@ -168233,7 +168176,7 @@
     },
     "/v1/standards/imports": {
       "post": {
-        "description": "Onboarding: one sheet per kind, one draft per standard; an owner who is not a partner\nmember is a row problem (`owner_not_partner`).",
+        "description": "Onboarding: one sheet per kind, one draft per standard; an owner who is not a partner\nmember is a row problem (`owner_not_partner`; K-02-T11).",
         "operationId": "import_standards",
         "parameters": [
           {
@@ -168463,16 +168406,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Standard Route",
@@ -168597,16 +168530,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Standard Examples Route",
@@ -168618,7 +168541,7 @@
     },
     "/v1/standards/{standard_id}/imports": {
       "post": {
-        "description": "A workbook to a draft of this standard (its owner's; 422 `import_invalid` with\nproblems). Never publishes.",
+        "description": "A workbook to a draft of this standard (its owner's; 422 `import_invalid` with\nproblems). Never publishes (K-02-T11).",
         "operationId": "import_standard",
         "parameters": [
           {
@@ -168851,16 +168774,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Assign Owner Route",
@@ -168872,7 +168785,7 @@
     },
     "/v1/standards/{standard_id}/versions": {
       "post": {
-        "description": "New version\u2026: a draft from the current version (409 `draft_exists`; 403\n`not_standard_owner` for anyone but the owner).",
+        "description": "New version\u2026: a draft from the current version (409 `draft_exists`,\n`no_current_version`; 403 `not_standard_owner` for a partner who is not the owner).",
         "operationId": "draft_version",
         "parameters": [
           {
@@ -168978,16 +168891,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Draft Version Route",
@@ -169125,16 +169028,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Standard Discard Draft Route",
@@ -169250,16 +169143,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Standard Version Route",
@@ -169405,16 +169288,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Edit Draft Route",
@@ -169549,16 +169422,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Version Diff Route",
@@ -169570,7 +169433,7 @@
     },
     "/v1/standards/{standard_id}/versions/{version_id}/export.xlsx": {
       "get": {
-        "description": "The version as a workbook; re-importing it gives an empty diff (US-5.1).",
+        "description": "The version as a workbook; re-importing it gives an empty diff (US-5.1; K-02-T11).",
         "operationId": "standard_export_version",
         "parameters": [
           {
@@ -169699,7 +169562,7 @@
     },
     "/v1/standards/{standard_id}/versions/{version_id}/publish": {
       "post": {
-        "description": "Publish vN\u2026: the owner, a person, with fresh MFA (422 `effective_from_backdated`,\n`effective_from_not_after_current`).",
+        "description": "Publish vN\u2026: the owner, a person, with fresh MFA (422 `effective_from_backdated`,\n`effective_from_not_after_current`). A retried key answers what the first publish did.",
         "operationId": "publish_version",
         "parameters": [
           {
@@ -169846,16 +169709,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Publish Version Route",

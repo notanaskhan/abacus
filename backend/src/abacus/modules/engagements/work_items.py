@@ -38,6 +38,7 @@ from abacus.modules.engagements.setup import g2_blocks
 from abacus.modules.engagements.slots import NewWorkItem, work_item_provider
 from abacus.modules.identity.api import (
     AuthContext,
+    active_grants,
     assert_assignable,
     authorise,
     team_standing,
@@ -587,6 +588,29 @@ async def list_work_items(
     )
 
 
+async def mfa_tri_scope(tenant: TenantContext, user_id: UUID) -> bool:
+    """T-01-T12 (C19; P-08's slot): whether a client person's access reaches tax return
+    information, so the portal's second step is required: an active grant on a K-1 package, on
+    a `tax_return` work item, or on an engagement holding one (TRI-bearing scopes)."""
+    grants = await active_grants(tenant, user_id)
+    if any(g.scope_kind == "k1_package" for g in grants):
+        return True
+    items = [g.scope_id for g in grants if g.scope_kind == "work_item"]
+    engagements = [g.scope_id for g in grants if g.scope_kind == "engagement"]
+    if not items and not engagements:
+        return False
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            select(WorkItem.id)
+            .where(
+                WorkItem.kind == "tax_return",
+                WorkItem.id.in_(items) | WorkItem.engagement_id.in_(engagements),
+            )
+            .limit(1)
+        )
+    return found is not None
+
+
 async def holds_tax_return(tenant: TenantContext, engagement_id: UUID) -> bool:
     """For the gateway (P-06-T20 security review; DEC-324): whether the engagement holds a
     `tax_return` work item, whose content is tax-return information (§7216)."""
@@ -597,3 +621,17 @@ async def holds_tax_return(tenant: TenantContext, engagement_id: UUID) -> bool:
             .limit(1)
         )
     return found is not None
+
+
+async def client_tax_years(tenant: TenantContext, client_id: UUID) -> frozenset[int]:
+    """N-01-T17: the tax years of the client's active work items (the year each period ends
+    in), for intake's `wrong_year`; empty when none has a period."""
+    async with tenant_session(tenant) as session:
+        ends = await session.scalars(
+            select(WorkItem.period_end).where(
+                WorkItem.client_id == client_id,
+                WorkItem.status == "active",
+                WorkItem.period_end.is_not(None),
+            )
+        )
+        return frozenset(end.year for end in ends if end is not None)

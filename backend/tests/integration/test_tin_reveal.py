@@ -27,6 +27,7 @@ from abacus.modules.identity.api import (
     reset_verifier,
 )
 from abacus.modules.organisations import live
+from abacus.modules.organisations import tin as tin_module
 from abacus.modules.organisations.api import (
     TinConflict,
     TinKindNotAllowed,
@@ -328,8 +329,10 @@ async def test_ac9_a_walled_partner_gets_404_and_an_entity_without_a_tin_404(
 
 
 async def test_ac9_an_ssn_on_a_real_firm_is_422_and_an_ein_is_accepted(
-    migrated_db: MigratedDatabase,
+    migrated_db: MigratedDatabase, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    # Before C19's gate is registered (T-01-T12 lifts the refusal once it is).
+    monkeypatch.setattr(tin_module, "_c19_registered", lambda: False)
     firm, partner, _, entity, _ = await _world(migrated_db, synthetic=False)
     for kind in ("ssn", "itin"):
         with pytest.raises(TinKindNotAllowed):
@@ -337,6 +340,15 @@ async def test_ac9_an_ssn_on_a_real_firm_is_422_and_an_ein_is_accepted(
     await firm.seal(entity, FAKE_EIN, "ein")
     revealed = await reveal_tin(partner, entity, "file_or_correct_filing")
     assert revealed.kind == "ein" and revealed.value == "900000287"
+
+
+async def test_t01t12_an_ssn_on_a_real_firm_is_sealed_once_the_c19_gate_is_registered(
+    migrated_db: MigratedDatabase,
+) -> None:
+    firm, partner, _, entity, _ = await _world(migrated_db, synthetic=False)
+    await firm.seal(entity, FAKE_SSN, "ssn")  # organisations registered the gate at import
+    revealed = await reveal_tin(partner, entity, "file_or_correct_filing")
+    assert revealed.kind == "ssn"
 
 
 async def test_ac9_the_same_tin_twice_in_a_firm_is_409(migrated_db: MigratedDatabase) -> None:
