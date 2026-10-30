@@ -165400,7 +165400,7 @@
     },
     "/v1/reference-sets": {
       "get": {
-        "description": "KNW-04 j: the published sets, by kind.",
+        "description": "KNW-04 j: the published sets, by kind then key, each with the version in effect today.",
         "operationId": "list_reference_sets",
         "parameters": [
           {
@@ -165511,16 +165511,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Reference Sets Route",
@@ -165645,16 +165635,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Resolve Reference Set Route",
@@ -165762,16 +165742,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Reference Set Versions Route",

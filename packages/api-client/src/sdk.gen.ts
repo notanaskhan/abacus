@@ -9455,7 +9455,7 @@ export const rejectDetailsChange = <ThrowOnError extends boolean = false>(option
 /**
  * List Reference Sets Route
  *
- * KNW-04 j: the published sets, by kind.
+ * KNW-04 j: the published sets, by kind then key, each with the version in effect today.
  */
 export const listReferenceSets = <ThrowOnError extends boolean = false>(options?: Options<ListReferenceSetsData, ThrowOnError>): RequestResult<ListReferenceSetsResponses, ListReferenceSetsErrors, ThrowOnError> => (options?.client ?? client).get<ListReferenceSetsResponses, ListReferenceSetsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

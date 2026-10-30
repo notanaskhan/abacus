@@ -53,5 +53,13 @@ Two kinds of versioned, effective-dated rules (K-02 short version): **platform r
 - **AC-13** `/knowledge/standards` renders on the T12 SettingsLayout: the section list, the form header (version chip, Published pill, New version…, Apply to returns…), and states a–h with Fieldsets, ValueRows, display-only policy Toggles linking ADM-04, the Timeline, the example panes with the designed empty state, and planned links to CLS-06, AUD-07 and TAX-14; one fixture scenario and one test per state (US-3.1, US-3.5).
 - **AC-14** With `knowledge.firm_standards` off, the route renders the T12 frame with the C-20 "not turned on" state.
 
+**Reference-set service (K-02-T05).**
+- **AC-15** Resolution on a date is the latest `effective_from` on or before `as_of`, ties to the highest version: a re-published correction with the same effective date wins, and the prior set answers before a later set's effective date; an unknown key or nothing in effect is a `LookupError` (404 on the wire) (US-1.3).
+- **AC-16** A draft is never served: not resolved, not listed, not in a set's versions.
+- **AC-17** `reference_value`, `form_8879_for`, `pub1345_tolerances`, `information_return_threshold` and `retention_minimum` read the sets in effect and return the id of the version each answer came from; nothing in effect is a `LookupError`, never a default (DEC-71, DEC-85).
+- **AC-18** `GET /v1/reference-sets`, `/{key}` (`as_of` defaults to today in business time) and `/{key}/versions` are live: a client principal gets 404 before the matrix, then `reference_set.read`, then 404 with `rules.reference_sets` off; each version names its id, handles and source citations.
+- **AC-19** `check_draft` (the operator CLI's pre-draft check) refuses a `standards_sets` payload that holds a PCAOB or issuer set (by code, label or reference), drops a code any version has published or moves one to another family: 422 `standards_set_refused` with `facts.reason` (X-07, DEC-19).
+- **AC-20** The kind registry maps each of the seven kinds to its payload model; a payload whose kind is unknown or differs from the set's, or that fails its model, is refused (422 `reference_kind_unknown`, `reference_payload_invalid`).
+
 ## 4. Out of scope here
-The services, CLI, calendar engine, import and export, fan-out and KNW-04i/j (K-02-T05 to T12, T14 to T20) build against the same contract in later sprints.
+The CLI, calendar engine, firm-standards service, import and export, fan-out and KNW-04i/j (K-02-T06 to T12, T14 to T20) build against the same contract in later sprints.

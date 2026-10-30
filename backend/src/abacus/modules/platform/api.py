@@ -109,6 +109,18 @@ from abacus.modules.platform.provisioning import (
 from abacus.modules.platform.provisioning import (
     WORKFLOWS as PROVISIONING_WORKFLOWS,
 )
+from abacus.modules.platform.reference_sets import (
+    ReferenceKindUnknown,
+    ReferencePayloadInvalid,
+    StandardsSetRefused,
+    check_draft,
+    form_8879_for,
+    information_return_threshold,
+    pub1345_tolerances,
+    reference_value,
+    references_in_effect,
+    retention_minimum,
+)
 from abacus.modules.platform.reference_sets_contract import (
     Form8879For,
     ReferenceSetKind,
@@ -116,13 +128,8 @@ from abacus.modules.platform.reference_sets_contract import (
     RetentionFloor,
     ThresholdFor,
     TolerancesFor,
-    form_8879_for,
-    information_return_threshold,
-    pub1345_tolerances,
-    reference_value,
-    retention_minimum,
 )
-from abacus.modules.platform.reference_sets_contract import router as reference_sets_router
+from abacus.modules.platform.reference_sets_routes import router as reference_sets_router
 from abacus.modules.platform.routes import router
 from abacus.modules.platform.safeguards import SUBSCRIPTIONS as WISP_SUBSCRIPTIONS
 from abacus.modules.platform.safeguards import open_controls as open_pub4557_controls
@@ -202,7 +209,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     safeguards_router,  # security-center v1 (G-02-T11 stub; G-02-T20 implements it)
     incident_platform_router,  # Q-02-T33 (RB-27): staff propagation
     controls_platform_router,  # G-02-T20: staff import and publish the Pub 4557 definitions
-    reference_sets_router,  # C21 part A (K-02-T02 stub; K-02-T05 implements)
+    reference_sets_router,  # C21 part A (K-02-T05)
 )
 
 # Q-01-T45: the worker loads this module for tenant provisioning (ADR-156); Q-02-T33 adds the
@@ -299,11 +306,14 @@ __all__ = [
     "ProvisionTenantInput",
     "ProvisionTenantResult",
     "RecordingHeartbeat",
+    "ReferenceKindUnknown",
+    "ReferencePayloadInvalid",
     "ReferenceSetKind",
     "ResolvedReference",
     "RetentionFloor",
     "SearchDocument",
     "SpendAnomalyWorkflow",
+    "StandardsSetRefused",
     "TenantKeyInput",
     "TenantKeyWorkflow",
     "TenantProvisioned",
@@ -320,6 +330,7 @@ __all__ = [
     "canary_boundary",
     "canary_probe",
     "canary_workflow_id",
+    "check_draft",
     "check_entitlement",
     "clock_day",
     "compute_pilot_week",
@@ -348,6 +359,7 @@ __all__ = [
     "pub1345_tolerances",
     "record_incident",
     "reference_value",
+    "references_in_effect",
     "register_audit_labeler",
     "register_audit_source",
     "register_audit_value_resolver",
