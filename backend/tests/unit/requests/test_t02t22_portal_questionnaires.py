@@ -82,7 +82,7 @@ def test_the_client_sees_only_sent_questions() -> None:
 async def test_a_firm_principal_is_404() -> None:
     user = uuid.uuid4()
     firm = AuthContext(
-        TenantContext(uuid.uuid4(), "human", str(user)), user, uuid.uuid4(), "firm_manager", None
+        TenantContext(uuid.uuid4(), "human", str(user)), user, uuid.uuid4(), "firm_admin", None
     )
     with pytest.raises(NotFound):
         await portal.portal_questionnaires(firm)
