@@ -36,7 +36,7 @@ import { COPY } from "./copy";
 //   a  default: 15 of 79 open by due date     b  ?tile=awaiting_signature (signer chips)
 //   c  ?office=grouped (office bands)          d  bulk selection (Feld, Shah, Varga)
 //   e  ?q=Schwab (filtered empty)              f  ?tax_year=2026 (season start)
-//   g  loading (the rows never answer; the tiles and header are real)
+//   g  loading (the rows never answer; the tiles hold their place with skeleton counts, T1e)
 //
 // Assign preparer is live (`POST :bulk-assign`); Extend… and Run firm standards… are planned and
 // shown only in fixture builds (PLANNED_VISIBLE). There is no Board toggle in the pilot (DV-15).

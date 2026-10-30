@@ -6,6 +6,7 @@ import type { TaxReturnRowOut, TaxReturnSummaryOut } from "@abacus/api-client";
 import { type FixtureHandler, json } from "../../app-core/fixture-mode";
 import { SEATS } from "../seed/people";
 import { stableId } from "../seed/prng";
+import { firmOffices } from "../seed/firm-people";
 import { ENVELOPES, type SeedTaxReturn, TAX_RETURNS, TAX_YEAR } from "../seed/tax";
 import { TY2025_SUMMARY } from "../seed/tax-returns";
 
@@ -110,6 +111,8 @@ function rows(query: URLSearchParams): TaxReturnRowOut[] {
 
 export function taxReturnHandlers(): Record<string, FixtureHandler> {
   return {
+    // TAX-01's office names (the bands, the Office column) come from the firm's offices.
+    "GET /v1/firm/offices": () => json(firmOffices()),
     "GET /v1/tax-returns/summary": ({ query }) =>
       json(Number(query.get("tax_year") ?? TAX_YEAR) === TAX_YEAR ? TY2025_SUMMARY : ZERO),
     "GET /v1/tax-returns": ({ query }) => {
