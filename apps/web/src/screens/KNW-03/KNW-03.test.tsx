@@ -71,7 +71,15 @@ describe("KNW-03 a: arrived from a citation", () => {
     show("a");
     expect(await screen.findByText("67 steps · 21 mandatory")).toBeTruthy();
     expect(screen.getByText("EBP v3")).toBeTruthy();
-    for (const sub of ["16 steps · 8 mandatory", "8 · 3", "6 · 2", "8 · 2", "10 · 3", "7 · 1", "12 · 2"]) {
+    for (const sub of [
+      "16 steps · 8 mandatory",
+      "8 · 3",
+      "6 · 2",
+      "8 · 2",
+      "10 · 3",
+      "7 · 1",
+      "12 · 2",
+    ]) {
       expect(screen.getAllByText(sub).length).toBeGreaterThan(0);
     }
   });
@@ -150,7 +158,8 @@ describe("KNW-03 e: Change log", () => {
       expect(log.querySelectorAll("li")).toHaveLength(4);
     });
     const entries = [...log.querySelectorAll<HTMLElement>("li")].map(
-      (li) => `${li.getAttribute("data-change") ?? ""} ${li.textContent.trim().split(/\D/u)[0] ?? ""}`,
+      (li) =>
+        `${li.getAttribute("data-change") ?? ""} ${li.textContent.trim().split(/\D/u)[0] ?? ""}`,
     );
     expect(entries).toEqual(["changed 7", "changed 9", "changed 10", "added 15"]);
     expect(screen.getAllByText("4 changes from v2").length).toBeGreaterThan(0);

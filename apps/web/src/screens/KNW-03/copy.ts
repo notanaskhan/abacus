@@ -10,7 +10,8 @@ export const COPY = {
   card: (label: string): string => `EBP ${label}`,
   cardSub: (steps: number, mandatory: number): string =>
     `${String(steps)} steps · ${String(mandatory)} mandatory`,
-  programSub: (steps: number, mandatory: number): string => `${String(steps)} · ${String(mandatory)}`,
+  programSub: (steps: number, mandatory: number): string =>
+    `${String(steps)} · ${String(mandatory)}`,
   published: "Published",
   publishedFrom: (date: string): string => `Published · effective ${date}`,
   actions: { edit: "Edit", addStep: "+ Step", excel: "Open in Excel" },
@@ -33,7 +34,12 @@ export const COPY = {
     skill: "Skill",
     lock: "Lock",
   },
-  levels: { foundation: "Foundation", planning: "Planning", testing: "Testing", completion: "Completion" },
+  levels: {
+    foundation: "Foundation",
+    planning: "Planning",
+    testing: "Testing",
+    completion: "Completion",
+  },
   mandatory: "Mandatory",
   newIn: (label: string): string => `New in ${label}`,
   skillLine: "Skill",

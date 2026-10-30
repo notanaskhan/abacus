@@ -198,7 +198,12 @@ function StepsTable({
               <td className="px-[10px] py-[11px]">
                 {s.mandatory ? (
                   <span className="flex flex-col gap-[2px]">
-                    <Icon name="lock" size={13} aria-label={COPY.mandatory} className="text-ink-2" />
+                    <Icon
+                      name="lock"
+                      size={13}
+                      aria-label={COPY.mandatory}
+                      className="text-ink-2"
+                    />
                     {s.lock_note != null && (
                       <span className="text-[11px] leading-[1.2] text-ink-3">{s.lock_note}</span>
                     )}
@@ -209,7 +214,11 @@ function StepsTable({
               </td>
             </tr>,
             open ? (
-              <tr key={`${s.id}-open`} data-step-detail={s.number} className="bg-band-hd hairline-b">
+              <tr
+                key={`${s.id}-open`}
+                data-step-detail={s.number}
+                className="bg-band-hd hairline-b"
+              >
                 <td />
                 <td colSpan={8} className="px-[10px] pt-[4px] pb-[12px]">
                   <p className="text-dense leading-[1.45]">{s.text}</p>
@@ -257,7 +266,9 @@ function ChangeLog({ changes }: { changes: readonly StepChange[] }): JSX.Element
             </span>
           </span>
           <Pill
-            variant={c.kind === "added" ? "green-tint" : c.kind === "removed" ? "neutral" : "amber"}
+            variant={
+              c.kind === "added" ? "green-tint" : c.kind === "removed" ? "neutral" : "amber"
+            }
             size="sm"
           >
             {COPY.change[c.kind]}
@@ -317,7 +328,10 @@ export function KNW03({
   const program = useQuery(programOptions({ path: { program_id: programId } }));
   const versionId = program.data?.version.version_id ?? "";
   const ready = versionId !== "";
-  const version = useQuery({ ...getVersionOptions({ path: { version_id: versionId } }), enabled: ready });
+  const version = useQuery({
+    ...getVersionOptions({ path: { version_id: versionId } }),
+    enabled: ready,
+  });
   const programs = useQuery({
     ...versionProgramsOptions({ path: { version_id: versionId } }),
     enabled: ready,
@@ -326,7 +340,10 @@ export function KNW03({
   const templates = useQuery(listTemplatesOptions());
   const current = version.data?.summary;
   const priorVersion = (templates.data ?? []).find(
-    (t) => current !== undefined && t.template_id === current.template_id && t.version === current.version - 1,
+    (t) =>
+      current !== undefined &&
+      t.template_id === current.template_id &&
+      t.version === current.version - 1,
   );
   const priorPrograms = useQuery({
     ...versionProgramsOptions({ path: { version_id: priorVersion?.version_id ?? "" } }),
@@ -382,7 +399,9 @@ export function KNW03({
       context={label}
       state={
         program.data?.version.status === "published" && program.data.version.effective_from != null
-          ? COPY.publishedFrom(formatDate(program.data.version.effective_from, { now, withYear: true }))
+          ? COPY.publishedFrom(
+              formatDate(program.data.version.effective_from, { now, withYear: true }),
+            )
           : ""
       }
       stateTone="green-tint"
@@ -519,7 +538,10 @@ export function KNW03({
   const dock = (
     <div className="flex flex-col gap-[12px] p-[10px]">
       {guided !== undefined && (
-        <section aria-label={guidanceTitle ?? COPY.dock} className="rounded-pane bg-card shadow-e1">
+        <section
+          aria-label={guidanceTitle ?? COPY.dock}
+          className="rounded-pane bg-card shadow-e1"
+        >
           {guidanceTitle !== undefined && (
             <h3 className="flex h-[38px] items-center px-[14px] text-record font-medium hairline-b">
               {guidanceTitle}
@@ -617,4 +639,3 @@ export function ProgramEditorPage(
   const [segment, setSegment] = useState<Knw03Segment>(initialSegment);
   return <KNW03 {...rest} segment={segment} onSegment={setSegment} />;
 }
-

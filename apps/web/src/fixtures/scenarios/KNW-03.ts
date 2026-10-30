@@ -52,6 +52,12 @@ export const OPENS: Readonly<
   >
 > = {
   a: { programId: programId("BH-EBP-110"), segment: "steps", step: 4, from: "citation" },
-  b: { programId: programId("BH-EBP-110"), segment: "steps", step: 4, from: "citation", popover: true },
+  b: {
+    programId: programId("BH-EBP-110"),
+    segment: "steps",
+    step: 4,
+    from: "citation",
+    popover: true,
+  },
   e: { programId: programId("BH-EBP-110"), segment: "changes" },
 };
