@@ -1,3 +1,4 @@
+import type { OverlayRef } from "../app-core/overlays";
 import { MANIFEST } from "./manifest";
 
 // Typed screen links (F-04-T14; chapter 04 section 2.6). `to.CLI02({ clientId })` gives the
@@ -54,3 +55,23 @@ function build(): ScreenLinks {
 
 /** One builder per routed screen, named by its ID without the hyphen (CLI-02 -> to.CLI02). */
 export const to: ScreenLinks = build();
+
+type Link = { readonly to: string; readonly params?: Readonly<Record<string, string>> };
+
+/** A builder's target as an href: each `$name` filled from its params, then the search, if any. */
+export function hrefOf(target: Link, search: Readonly<Record<string, string>> = {}): string {
+  const params = target.params ?? {};
+  const path = target.to.replace(/\$(\w+)/gu, (_m, name: string) =>
+    encodeURIComponent(params[name] ?? ""),
+  );
+  const query = new URLSearchParams(search).toString();
+  return query === "" ? path : `${path}?${query}`;
+}
+
+/** Typed overlay links (DEC-1273): a screen with no path opens as a layer over its host
+ * (`?ov=<key>:<args>`, app-core/overlays), so link-contract.test.ts sees `ov.<ID>(…)` as it sees
+ * `to.<ID>(…)`. One builder per overlay screen a built screen opens. */
+export const ov = {
+  /** SHL-16, the checkpoint drawer over its target (`?ov=checkpoints:<type>:<id>`). */
+  SHL16: (type: string, id: string): OverlayRef => ({ key: "checkpoints", args: [type, id] }),
+} as const;

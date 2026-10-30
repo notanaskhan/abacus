@@ -74,6 +74,7 @@ export function SignFieldLayer({
   return (
     <div
       data-signing="page"
+      data-page={page.n}
       className="relative flex-none bg-card shadow-page"
       style={{ width: widthPx, height: Math.round(page.height_pt * scale) }}
     >

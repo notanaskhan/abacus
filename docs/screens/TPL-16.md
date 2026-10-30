@@ -14,7 +14,7 @@ Code: specimens `apps/web/src/gallery/specimens/TPL-16/` over `apps/web/src/fixt
 ## States
 | Artboard | Viewer (persona) | Clock | Snapshot | Data condition that produces it | Status |
 |---|---|---|---|---|---|
-| a · Identity verification | `mira-kapoor` | E0 Mon Sep 14, 2026, 9:24 AM CT | E0 | E6; Mira's signer `sent`, `method: kba`; in production `signingSession` present and the provider frame hosts KBA. **Superseded (DF-12, §11.2 Q2):** the native KBA card ("Question 2 of 4", 2:00) is a Tier C screenshot specimen only | deferred (Tier C screenshot) |
+| a · Identity verification | `mira-kapoor` | E0 Mon Sep 14, 2026, 9:24 AM CT | E0 | E6; Mira's signer `sent`, `method: kba`; in production `signingSession` present and the provider frame hosts KBA. **Superseded (DF-12, §11.2 Q2):** the native KBA card ("Question 2 of 4", 2:00) is not built. The gallery draws the production state (`?st=a`): the provider's view in the well (`signingSession` on an `.invalid` host), Mira's band "verifying identity", verify current | built in F-06-T13 (provider mode); native card never |
 | b · Signing (default) | `mira-kapoor` | E0 | E0 | E6: Dev `signed` Sep 9, 6:12 PM; Mira `verified` 9:21 AM with the spouse PIN and spouse signature open on Form 8879 and TR-579-IT ("2 fields left"); `signedCount 1`, `signerCount 2` | built in F-06-T04 |
 | c · Adopt signature | `mira-kapoor` | E0 | E0 | b with the adopt step open. **Superseded (DF-12):** provider-hosted in production; the native 560 dialog (Gelasio italic, consent checkbox) is a Tier C screenshot specimen | deferred (Tier C screenshot) |
 | d · Completed | `mira-kapoor` | E0 | E0 | both signers `signed`; envelope `completed`; `evidence` six rows (Signed, Method, Identity, IP address, Login, Documents) | built in F-06-T04 |
@@ -64,10 +64,14 @@ Gradients, emoji, saturated blue, yellow sign-here flags, heavy shadows, invente
 ## Parity
 | Artboard | Tier (A/B/D) | Diff % | Notes |
 |---|---|---|---|
-| a, c | C screenshot + A chrome | not run | identity and adopt region masked |
-| b, d, e, f | B frame · A strips · D geometry | not run | provider-frame region masked where present; locked in F-06-T13 |
-| g | B · D (390, 44 × 44 targets, 48 primary, bar 64) | not run | F-06-T13 |
+| a | B frame (chrome only) · D geometry | measured at the end review | the well (provider's view) and the verify step row masked; lock F-06-T13 (DEC-1250) |
+| c | C (deviation) | report only | native Adopt dialog and scrim not built (DF-12); never locks |
+| b, d, e, f | B frame · A strips · D geometry | b 1.26 %, d 0.94 %, e 0.92 %, f 1.82 % | locked at Tier B (DEC-1183); the server-rendered document page is masked |
+| g | B · D (390, 44 × 44 targets, 48 primary, bar 64) | 3.59 % | report-only (DEC-1183): the handoff's phone header is a different mobile layout |
 
 ## Open gaps
 - Q5 (provider-mode CTA label): open, decide by Fri Apr 30, 2027. The specimen keeps the built label.
 - DF-11 paper-form sentence: counsel confirms the Pub 1345 text (DF-11); the copy module carries the plan's sentence until then.
+
+## Hand-off (F-06-T13, 2026-10-30)
+- **N-02 (POR-06 e, h and the joint 8879):** the specimen's frames are locked at Tier B against the handoff PNGs (`docs/design/parity-manifest.json`, pinned SHA-256); the consumer screen composes the same template, so the template's own geometry and chrome are fixed. Masks per F-06 §5.4 (provider frame, KBA timer, spinners).

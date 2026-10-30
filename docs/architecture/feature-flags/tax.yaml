@@ -6,13 +6,31 @@ flags:
     description: 'The CCH Axcess Tax file bridge (T-01): final approval, engine sync, exports, imports and ADM-08 settings. Off: 404. On: 501 until T-01-T19 onward. T-01-T02, DEC-1156.'
     owner: ayushkbhatia
     created: 2026-10-29
-    expires: 2027-01-26
+    expires: 2027-04-27
+    override: DEC-137
     kind: boolean
     default: false
   - name: tax.delivery_efile
     description: 'TAX-12 delivery and the e-file record (T-01): packets, the 8879 envelope and binding, the ERO record, acks and publishing. Off: 404. On: 501 until T-01-T35 onward. T-01-T02, DEC-1156.'
     owner: ayushkbhatia
     created: 2026-10-29
-    expires: 2027-01-26
+    expires: 2027-04-27
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: tax.returns_v1
+    description: 'Tax returns v1 (T-02): /v1/tax-returns rows, summary, record, overview, intake, assignments and transitions; TAX-01 to TAX-03. Off: 404 and the nav item stays absent. On: 501 until T-02-T09 onward. T-02-T03, DEC-1162.'
+    owner: ayushkbhatia
+    created: 2026-10-29
+    expires: 2027-04-27
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: tax.k1_release
+    description: 'K-1 packages (T-02): TXP-12 and POR-13. Off: 404 (TXP-12 read-only, Release hidden). On: 501 until T-02-T20 onward. T-02-T03, DEC-1162.'
+    owner: ayushkbhatia
+    created: 2026-10-29
+    expires: 2027-04-27
+    override: DEC-137
     kind: boolean
     default: false

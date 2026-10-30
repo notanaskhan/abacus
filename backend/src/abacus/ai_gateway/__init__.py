@@ -50,12 +50,16 @@ from abacus.ai_gateway.boundary import (
     Basis,
     BoundaryFactsChanged,
     DataBoundaryRefused,
+    TriConsentCheck,
     enforce_boundary,
+    enforce_tri_consent,
     is_synthetic,
     on_boundary_facts_changed,
     refuse_pii_in_context,
     register_client_data_facts,
     register_synthetic_tenants,
+    register_tri_consent_check,
+    tri_consent_registered,
 )
 from abacus.ai_gateway.boundary import (
     clear_cache as forget_boundary_facts,
@@ -70,6 +74,7 @@ from abacus.ai_gateway.context import (
     ContextBuilder,
     ContextTooLarge,
     DatasetTooLarge,
+    DataSubject,
     estimate_tokens,
 )
 from abacus.ai_gateway.embeddings import (
@@ -663,6 +668,31 @@ async def barred_routes(tenant: TenantContext) -> frozenset[Route]:
 
 
 register_access_kind("model_context.built", ["restricted"])
+# T-01-T11 (C19): every agent read of tax return information, per subject and per consent that
+# covered it (ADM-05c "Agent reads since signature").
+register_access_kind("tri.agent_read", ["tri"])
+
+
+async def _record_tri_reads[T: BaseModel](c: GatewayCall[T], consents: tuple[UUID, ...]) -> None:
+    subjects = c.context.data_subjects
+    if not subjects:
+        return
+    engagement = c.attribution.engagement_id
+    await record_reads(
+        c.attribution.tenant,
+        "tri.agent_read",
+        [
+            *(
+                AccessSubject(
+                    "client_entity", s.entity_id, engagement_id=engagement, tax_year=s.tax_year
+                )
+                for s in subjects
+                if s.entity_id is not None
+            ),
+            *(AccessSubject("consent", consent, engagement_id=engagement) for consent in consents),
+        ],
+        run_id=c.attribution.agent_run_id,
+    )
 
 
 async def _record_context_reads[T: BaseModel](c: GatewayCall[T]) -> None:
@@ -694,6 +724,9 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
         await refuse_pii_in_context(
             c.attribution.tenant, route, found.ref, part, PII_PARTS.index(part)
         )
+    # C19 condition 6 (T-01-T11): TRI without both §7216 consents is refused before anything
+    # else too, on every route and for every firm; re-checked before each attempt below.
+    await enforce_tri_consent(c.attribution.tenant, route, found.ref, c.context.data_subjects)
     inputs_hash = hashlib.sha256(f"{found.ref}\n{user}".encode()).hexdigest()
     spent = Decimal(0)
     earlier = await _spent_by_run(c.attribution)
@@ -709,6 +742,7 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
             found.ref,
             agent_id=c.attribution.agent_id,
             engagement_id=c.attribution.engagement_id,
+            subjects=c.context.data_subjects,
         )
     basis: Basis | None = None
     read_recorded = False
@@ -746,6 +780,9 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
             )
             request = replace(request, model=model)
             try:
+                consents = await enforce_tri_consent(  # C19 condition 6, fresh each attempt
+                    c.attribution.tenant, route, found.ref, c.context.data_subjects
+                )
                 basis = await enforce_boundary(  # SPEC-026, SPEC-036
                     c.attribution.tenant,
                     route,
@@ -755,6 +792,7 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
                 )
                 if not read_recorded:  # Q-02-T20: once per call, as the content leaves
                     await _record_context_reads(c)
+                    await _record_tri_reads(c, consents)
                     read_recorded = True
                 # AC-16: the timeout bounds the provider call only. The boundary check and the
                 # access events above are this database's work; inside the timeout, a slow one
@@ -877,6 +915,7 @@ __all__ = [
     "ContextBuilder",
     "ContextTooLarge",
     "DataBoundaryRefused",
+    "DataSubject",
     "DatasetTooLarge",
     "EmbedCall",
     "EmbedResult",
@@ -898,6 +937,7 @@ __all__ = [
     "Route",
     "Settled",
     "Tier",
+    "TriConsentCheck",
     "UnknownPrompt",
     "attempts_for",
     "call",
@@ -921,7 +961,9 @@ __all__ = [
     "register_client_data_facts",
     "register_output_check",
     "register_synthetic_tenants",
+    "register_tri_consent_check",
     "registry",
     "sanitise_text",
     "settle",
+    "tri_consent_registered",
 ]

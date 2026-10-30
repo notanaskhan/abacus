@@ -149,6 +149,24 @@ async def read_content(tenant: TenantContext, stored: StoredObject) -> bytes:
     return await storage.get(tenant.tenant_id, stored)
 
 
+async def version_content(tenant: TenantContext, version_id: UUID) -> bytes:
+    """N-02-T18: a version's verified bytes for a system caller that authorised under its own
+    context (signatures' provider send, after the person's grant); never a request handler."""
+    async with tenant_session(tenant) as session:
+        version = await get_version(session, version_id)
+    if version is None:
+        raise NotFound("evidence_version")
+    return await storage.get(
+        tenant.tenant_id,
+        StoredObject(
+            version.storage_key,
+            version.storage_version_id,
+            version.fingerprint,
+            version.size_bytes,
+        ),
+    )
+
+
 async def add_version(
     tx: UnitOfWork,
     *,

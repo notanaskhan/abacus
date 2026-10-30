@@ -62,6 +62,19 @@ CASES: list[tuple[str, dict[str, str], ConditionFacts, ConditionFacts]] = [
         ConditionFacts(offshore=None),
     ),
     (
+        # T-01-T11 (C19): every listed purpose consented; a missing one or unknown facts deny.
+        "consent",
+        {**ALLOW, "consent": "use,ai_disclosure"},
+        ConditionFacts(consents=frozenset({"use", "ai_disclosure"})),
+        ConditionFacts(consents=frozenset({"use"})),
+    ),
+    (
+        "consent",
+        {**ALLOW, "consent": "use,ai_disclosure"},
+        ConditionFacts(consents=frozenset({"use", "ai_disclosure"})),
+        ConditionFacts(consents=None),
+    ),
+    (
         "attest_client",
         {**ALLOW, "attest_client": "deny"},
         ConditionFacts(attest_client=False),

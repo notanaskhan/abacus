@@ -15,6 +15,31 @@ const KNW02_SEARCH = ["program", "ov"] as const;
 // K-02-T13: KNW-04 at /knowledge/standards; `?section=` picks the standard (K-02 §5). The screen
 // draws its own flag-off state (the T12 frame with C-20 "not turned on"), so no gate here.
 const Knw04 = lazyScreen(async () => (await import("../../screens/KNW-04")).KNW04);
+// K-01-T13: KNW-03 at /knowledge/programs/$programId behind `methodology.programs` (K-01 §5 route
+// table): `?segment=`, `?step=<n>` and `?from=citation` (the SHL-07 ↗ arrival lights the step).
+const Knw03 = lazyScreen(async () => (await import("../../screens/KNW-03")).KNW03);
+
+interface Knw03Search {
+  segment?: "steps" | "guidance" | "pbc" | "rules" | "changes";
+  step?: number;
+  from?: "citation";
+}
+
+function pickKnw03(search: Record<string, unknown>): Knw03Search {
+  const segment = search.segment;
+  const step = Number(search.step);
+  return {
+    ...(segment === "steps" ||
+    segment === "guidance" ||
+    segment === "pbc" ||
+    segment === "rules" ||
+    segment === "changes"
+      ? { segment }
+      : {}),
+    ...(Number.isInteger(step) && step > 0 ? { step } : {}),
+    ...(search.from === "citation" ? { from: "citation" as const } : {}),
+  };
+}
 const KNW04_SECTIONS: ReadonlySet<string> = new Set([
   "review_checklists",
   "review_levels",
@@ -80,6 +105,35 @@ export const knowledgeRoutes = [
               }}
               onBack={() => {
                 router.history.back();
+              }}
+            />
+          </FeatureGate>
+        </div>
+      );
+    },
+  }),
+  createRoute({
+    getParentRoute: () => appRoute,
+    path: "/knowledge/programs/$programId",
+    validateSearch: (search: Record<string, unknown>) => pickKnw03(search),
+    component: function ProgramEditorPage(): JSX.Element {
+      const navigate = useNavigate();
+      const programId = useParam("programId");
+      const search = pickKnw03(useSearch({ strict: false }));
+      return (
+        <div className="flex min-h-0 flex-1 flex-col">
+          <FeatureGate flag="methodology.programs">
+            <Knw03
+              programId={programId}
+              {...search}
+              onSegment={(segment) => {
+                void navigate({ to: ".", search: { ...search, segment }, replace: true });
+              }}
+              onProgram={(id) => {
+                void navigate({ to: "/knowledge/programs/$programId", params: { programId: id } });
+              }}
+              onBack={() => {
+                void navigate({ to: "/knowledge" });
               }}
             />
           </FeatureGate>

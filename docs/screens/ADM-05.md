@@ -9,7 +9,7 @@
 | Epic and tasks | T-01 · contract T-01-T05; fixtures T09; build T13, T14 |
 | Spec and ADRs | SPEC-501 AC-11; ADR-231; R-04 |
 | Flags | `consents.registry` |
-| Manifest status | planned; built on fixtures with T-01-T09's scenarios, `live` with its build tasks (pilot posture: agents off) |
+| Manifest status | `fixture` since T-01-T13 (a, b, f, g built; c, d, e, h with T-01-T22); `live` with the C19 routes (pilot posture: agents off) |
 
 ## States
 | Artboard | Viewer | Clock (CT) | Data condition | Parity tier | Status |
@@ -45,6 +45,21 @@ Verbatim from the handoff's spec.md into `screens/ADM-05/copy.ts`. Banned (T-01 
 
 ## Links
 Outbound: CLI-05 d (per taxpayer), SIG-01 (envelopes), ADM-04 D (counts). Inbound: Settings nav, ADM-04.
+| Opens ADM-01 · Settings home | ADM-01 | planned (handoff link; tooltip-only) |
+| Opens KNW-05 · Templates filtered to consents | KNW-05 | planned (handoff link; tooltip-only) |
+| Opens CLI-05 · Consents | CLI-05 | planned (handoff link; tooltip-only) |
+| Opens ADM-02 · People | ADM-02 | planned (handoff link; tooltip-only) |
+| Opens ADM-03 · Offices & teams | ADM-03 | planned (handoff link; tooltip-only) |
+| Opens ADM-06 · Security | ADM-06 | planned (handoff link; tooltip-only) |
+| Opens ADM-04 · AI policy | ADM-04 | planned (handoff link; tooltip-only) |
+| Opens ADM-09 · Developer | ADM-09 | planned (handoff link; tooltip-only) |
+| Opens ADM-08 · Integrations | ADM-08 | planned (handoff link; tooltip-only) |
+| Opens ADM-10 · Portal | ADM-10 | planned (handoff link; tooltip-only) |
+| Opens ADM-11 · Quality | ADM-11 | planned (handoff link; tooltip-only) |
+| Opens ADM-12 · Monitoring | ADM-12 | planned (handoff link; tooltip-only) |
+| Opens ADM-07 · Audit log | ADM-07 | planned (handoff link; tooltip-only) |
+| Opens SIG-02 with a purpose picker | SIG-02 | planned (handoff link; tooltip-only) |
+| Opens SIG-01 · envelope E17 | SIG-01 | planned (handoff link; tooltip-only) |
 
 ## Acceptance
 - ADM-05 acceptance: every artboard a, b, c, d, e, f, g, h renders from its fixture scenario with the persona and clock above.
@@ -68,3 +83,5 @@ Gradients, emoji, blue, heavy shadows, invented colours or data, boxed inputs, t
 
 ## Open gaps
 - Status objects live in the registry since T-01-T06; the contracts move from `Literal` types to the registry's enums when the routes go live.
+- T-01-T13 (DEC-1262): ConsentOut gains `declined_at`, `revoked_at` and `signers` (with `title`), additively, for the Signed column and the signer line; Request consent… and Renew 3… stay disabled with their planned tooltips until SIG-02 (part 2).
+

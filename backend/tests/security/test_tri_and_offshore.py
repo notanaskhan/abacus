@@ -56,6 +56,8 @@ TIN_ROUTES = {
     # masked TIN shape, masked again for an offshore reader (review 6).
     ("GET", "/v1/evidence-items/{item_id}/drawer"): "masked",
     ("GET", "/v1/inbox/messages/{message_id}/triage"): "masked",
+    # T-01-T01 (C19 stub): the tax profile carries the masked TIN, through the offshore mask.
+    ("GET", "/v1/client-entities/{client_entity_id}/tax-profile"): "masked",
 }
 
 

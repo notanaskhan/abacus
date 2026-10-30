@@ -1,4 +1,5 @@
 import {
+  AppShell,
   Button,
   IndexList,
   type IndexColumn,
@@ -23,6 +24,8 @@ import {
   TILE_ORDER,
   boardOrder,
 } from "../../../fixtures/seed/tax";
+import { useSession } from "../../../app-core/session";
+import { AREAS } from "../../../app-core/nav-areas";
 import type { FixtureParams } from "../../fixture-mode";
 import { COPY } from "./copy";
 
@@ -49,10 +52,10 @@ const TILE_VARIANTS: Readonly<
   in_review: "state",
   action_required: "red-tint",
   approved: "green-tint",
-  gathering: "neutral",
-  preparing: "neutral",
+  gathering: "state",
+  preparing: "state",
   awaiting_signature: "amber",
-  filed_accepted: "green-tint",
+  filed_accepted: "green",
 };
 
 /** Tile words come from the registry (`home_and_tax_tiles`); "Filed · Accepted" joins two codes. */
@@ -67,6 +70,7 @@ const TILES: readonly IndexTile[] = TILE_ORDER.map((code) => ({
   code,
   label: tileLabel(code),
   variant: TILE_VARIANTS[code],
+  ...(code === "awaiting_signature" ? { mark: "dot" as const } : {}),
 }));
 
 /** Days from the demo clock to the due date (whole days; dates only, no time zone arithmetic). */
@@ -83,7 +87,7 @@ export function daysTone(days: number): "text-red-ink" | "text-amber-ink" | "tex
 }
 
 function shortDate(iso: string): string {
-  return formatDate(iso, { now: Date.parse(`${TODAY}T14:24:00Z`) });
+  return formatDate(iso, { now: Date.parse(`${TODAY}T14:24:00Z`), withYear: true });
 }
 
 function DueCell({ row }: { row: SeedTaxReturn }): JSX.Element {
@@ -101,11 +105,7 @@ function DueCell({ row }: { row: SeedTaxReturn }): JSX.Element {
       >
         <p className="p-[12px] text-body text-ink-2">{row.dueRule}</p>
       </Popover>
-      {row.extended && (
-        <span className="rounded-tile bg-nested px-[5px] text-meta text-ink-2">
-          {COPY.extended}
-        </span>
-      )}
+      {row.extended && <span className="text-meta text-ink-3">{COPY.extended}</span>}
     </span>
   );
 }
@@ -124,29 +124,35 @@ function signatureCell(row: SeedTaxReturn): JSX.Element | null {
   );
 }
 
-const COLUMNS: readonly IndexColumn<SeedTaxReturn>[] = [
+const BASE_COLUMNS: readonly IndexColumn<SeedTaxReturn>[] = [
   {
     key: "return",
     header: COPY.columns.return,
-    width: 92,
-    cell: (r) => <span className="text-cell font-medium text-ink">{r.form}</span>,
+    width: 168,
+    cell: (r) => <span className="text-cell text-ink">{COPY.returnLabel(TAX_YEAR, r.form)}</span>,
   },
   { key: "client", header: COPY.columns.client, cell: (r) => r.client },
-  { key: "office", header: COPY.columns.office, width: 96, cell: (r) => r.office },
+  {
+    key: "office",
+    header: COPY.columns.office,
+    width: 97,
+    cell: (r) => <span className="text-ink-3">{r.office}</span>,
+  },
   {
     key: "prep",
     header: COPY.columns.prepRev,
     width: 86,
-    cell: (r) => `${r.preparer} / ${r.reviewer}`,
+    cell: (r) => <span className="text-ink-3">{`${r.preparer} / ${r.reviewer}`}</span>,
   },
   {
     key: "status",
     header: COPY.columns.status,
-    width: 168,
+    width: 172,
     cell: (r) => (
       <RegistryStatus
         object="return"
         code={r.status}
+        context="tax_board_rows"
         {...(r.level === null ? {} : { vars: { level: r.level } })}
       />
     ),
@@ -154,14 +160,22 @@ const COLUMNS: readonly IndexColumn<SeedTaxReturn>[] = [
   {
     key: "issues",
     header: COPY.columns.issues,
+    width: 66,
     align: "right",
-    width: 64,
-    cell: (r) => (r.issues === null ? "—" : String(r.issues)),
+    // An open count is a red-tinted badge; none reads "—" (the handoff's issue column).
+    cell: (r) =>
+      r.issues === null ? (
+        <span className="text-ink-3">—</span>
+      ) : (
+        <span className="inline-flex h-[20px] min-w-[20px] items-center justify-center rounded-pill bg-red-tint px-[6px] text-meta text-red-ink">
+          {String(r.issues)}
+        </span>
+      ),
   },
   {
     key: "sync",
     header: COPY.columns.sync,
-    width: 150,
+    width: 164,
     cell: (r) => (
       <SyncChip
         code={r.sync.code}
@@ -169,24 +183,32 @@ const COLUMNS: readonly IndexColumn<SeedTaxReturn>[] = [
       />
     ),
   },
-  { key: "due", header: COPY.columns.due, width: 110, cell: (r) => <DueCell row={r} /> },
+  {
+    key: "due",
+    header: COPY.columns.due,
+    width: 110,
+    align: "right",
+    cell: (r) => <DueCell row={r} />,
+  },
   {
     key: "days",
     header: COPY.columns.days,
+    width: 76,
     align: "right",
-    width: 72,
     cell: (r) => {
       const n = daysToDue(r.due);
       return <span className={daysTone(n)}>{COPY.days(n)}</span>;
     },
   },
-  {
-    key: "signature",
-    header: COPY.columns.signature,
-    width: 150,
-    cell: (r) => signatureCell(r),
-  },
 ];
+
+/** TPL-01b adds the signer chips; the default board (a) draws no Signature column. */
+const SIGNATURE_COLUMN: IndexColumn<SeedTaxReturn> = {
+  key: "signature",
+  header: COPY.columns.signature,
+  width: 150,
+  cell: (r) => signatureCell(r),
+};
 
 interface Board {
   tile: string | null;
@@ -248,17 +270,20 @@ export function Tpl01Specimen({ state }: { state: Tpl01State }): JSX.Element {
             }
           : { kind: "ready" };
   return (
-    <div data-specimen="tpl-01" className="flex h-[860px] flex-col overflow-hidden">
+    <div data-specimen="tpl-01" className="flex h-full min-h-0 flex-col overflow-hidden">
       <IndexList<SeedTaxReturn>
         title={COPY.title}
         noun="returns"
         state={viewState}
         envelope={envelope}
-        columns={COLUMNS}
+        columns={
+          board.tile === "awaiting_signature" ? [...BASE_COLUMNS, SIGNATURE_COLUMN] : BASE_COLUMNS
+        }
         rowKey={(r) => r.id}
         chips={[
           {
             key: "form",
+            icon: "file-text",
             label: COPY.filters.form,
             options: [],
             value: null,
@@ -266,6 +291,7 @@ export function Tpl01Specimen({ state }: { state: Tpl01State }): JSX.Element {
           },
           {
             key: "office",
+            icon: "map-pin",
             label: COPY.filters.office,
             options: [],
             value: null,
@@ -273,6 +299,7 @@ export function Tpl01Specimen({ state }: { state: Tpl01State }): JSX.Element {
           },
           {
             key: "partner",
+            icon: "user-round",
             label: COPY.filters.partner,
             options: [],
             value: null,
@@ -280,6 +307,7 @@ export function Tpl01Specimen({ state }: { state: Tpl01State }): JSX.Element {
           },
           {
             key: "preparer",
+            icon: "user-round",
             label: COPY.filters.preparer,
             options: [],
             value: null,
@@ -287,6 +315,7 @@ export function Tpl01Specimen({ state }: { state: Tpl01State }): JSX.Element {
           },
           {
             key: "due",
+            icon: "calendar",
             label: COPY.filters.due,
             options: [],
             value: null,
@@ -296,16 +325,18 @@ export function Tpl01Specimen({ state }: { state: Tpl01State }): JSX.Element {
             key: "tax_year",
             label: COPY.filters.taxYear,
             options: [
-              { value: String(TAX_YEAR), label: `TY${String(TAX_YEAR)}` },
-              { value: String(TAX_YEAR + 1), label: `TY${String(TAX_YEAR + 1)}` },
+              { value: String(TAX_YEAR), label: String(TAX_YEAR) },
+              { value: String(TAX_YEAR + 1), label: String(TAX_YEAR + 1) },
             ],
-            value: String(board.year),
+            // The current year is the board's default, not a filter: no Clear (TPL-01a).
+            value: board.year === TAX_YEAR ? null : String(board.year),
+            placeholder: String(TAX_YEAR),
             align: "end",
           },
         ]}
         onChip={(key, value) => {
-          if (key === "tax_year" && value !== null) {
-            setBoard({ ...board, year: Number(value), tile: null });
+          if (key === "tax_year") {
+            setBoard({ ...board, year: value === null ? TAX_YEAR : Number(value), tile: null });
           }
         }}
         tiles={TILES}
@@ -353,5 +384,23 @@ export function Tpl01Specimen({ state }: { state: Tpl01State }): JSX.Element {
 
 export function Tpl01Artboard({ params }: { params: FixtureParams }): JSX.Element {
   const state: Tpl01State = TPL01_STATES.find((s) => s === params.st) ?? "a";
-  return <Tpl01Specimen key={state} state={state} />;
+  return <Tpl01Frame state={state} />;
+}
+
+/** The handoff draws the board inside the firm app: the T1 toolbar with Tax Returns current. */
+function Tpl01Frame({ state }: { state: Tpl01State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const toolbar = {
+    nav: AREAS.map((a) => ({ label: a.label })),
+    active: "Tax Returns",
+    overflow: "none" as const,
+    firm,
+  };
+  return (
+    <div data-artboard={`tpl-01${state}`}>
+      <AppShell frame height={860} toolbar={toolbar}>
+        <Tpl01Specimen key={state} state={state} />
+      </AppShell>
+    </div>
+  );
 }

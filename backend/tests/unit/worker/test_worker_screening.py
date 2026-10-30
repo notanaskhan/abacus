@@ -57,6 +57,7 @@ def test_ac14_the_worker_hosts_connections_and_agents() -> None:
         "practice",  # I-01-T12 (DEC-900): Home's client-activity projector and prune
         "requests",  # P-06-T07: binders close on C1's terminal transitions
         "review",  # P-04-T16: the human-gate projector (C13)
+        "signatures",  # N-02-T18: an approved envelope is sent after commit
     )
     assert tuple(m.SUBSCRIPTIONS for m in worker_main.MODULES) == worker_main.SUBSCRIBERS
     # SPEC-022 (TASK-038): automatic retrieval when a client connects or an item is classified.
@@ -133,6 +134,12 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         # Q-02-T43: an approved firm export starts its build; an expired one's segments go.
         "firm_export.approved",
         "firm_export.expired",
+        # R-01-T27: a sending domain's status change; N-01-T12, T14: an inbox attachment's
+        # triage starts, a withdrawn portal upload's purge; N-02-T18: an approved send.
+        "sending_domain.status_changed",
+        "inbox_attachment.received",
+        "portal_intake.withdrawn",
+        "envelope.send_approved",
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert (

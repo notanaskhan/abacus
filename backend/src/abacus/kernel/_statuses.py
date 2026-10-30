@@ -51,6 +51,26 @@ class ReturnSyncChipStatus(StrEnum):
     FAILED = "failed"
 
 
+class EngineImportStatus(StrEnum):
+    SCANNING = "scanning"
+    PENDING_APPROVAL = "pending_approval"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    ROUTED = "routed"
+
+
+class K3Status(StrEnum):
+    INCLUDED = "included"
+    NOT_REQUIRED = "not_required"
+    NOT_INCLUDED = "not_included"
+
+
+class TranscriptParseStatus(StrEnum):
+    QUEUED = "queued"
+    PARSED = "parsed"
+    FAILED = "failed"
+
+
 class K1PackageStatus(StrEnum):
     NOT_PREPARED = "not_prepared"
     DRAFT = "draft"
@@ -59,6 +79,23 @@ class K1PackageStatus(StrEnum):
     DOWNLOADED = "downloaded"
     BOUNCED = "bounced"
     SUPERSEDED = "superseded"
+
+
+class QuestionnaireStatus(StrEnum):
+    OPEN = "open"
+    COMPLETE = "complete"
+    SUBMITTED = "submitted"
+
+
+class RecipientDetailsChangeStatus(StrEnum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+
+
+class K1HandoffStatus(StrEnum):
+    AWAITING = "awaiting"
+    RECEIVED = "received"
 
 
 class AuditEngagementStatus(StrEnum):
@@ -391,11 +428,6 @@ class TaxAuthorizationStatus(StrEnum):
     EXPIRED = "expired"
     REVOKED = "revoked"
     # derived, never stored: not_on_file
-
-
-class EngineSyncStatus(StrEnum):
-    pass
-    # derived, never stored: not_linked, ready_to_export, exported, import_pending_approval, in_sync, out_of_sync, failed
 
 
 class EfileAckStatus(StrEnum):
@@ -844,6 +876,23 @@ STORED: dict[str, tuple[str, ...]] = {
         "import_pending_approval",
         "failed",
     ),
+    "engine_import": (
+        "scanning",
+        "pending_approval",
+        "approved",
+        "rejected",
+        "routed",
+    ),
+    "k3": (
+        "included",
+        "not_required",
+        "not_included",
+    ),
+    "transcript_parse": (
+        "queued",
+        "parsed",
+        "failed",
+    ),
     "k1_package": (
         "not_prepared",
         "draft",
@@ -852,6 +901,20 @@ STORED: dict[str, tuple[str, ...]] = {
         "downloaded",
         "bounced",
         "superseded",
+    ),
+    "questionnaire": (
+        "open",
+        "complete",
+        "submitted",
+    ),
+    "recipient_details_change": (
+        "pending",
+        "accepted",
+        "rejected",
+    ),
+    "k1_handoff": (
+        "awaiting",
+        "received",
     ),
     "audit_engagement": (
         "planning",
@@ -1128,8 +1191,6 @@ STORED: dict[str, tuple[str, ...]] = {
         "on_file",
         "expired",
         "revoked",
-    ),
-    "engine_sync": (
     ),
     "efile_ack": (
         "accepted",

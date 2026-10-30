@@ -20,7 +20,7 @@ and every footing test passes."
 
 ## Plan (amber)
 - `brightwater_hale/firm_inbox.py` (slice `firm_inbox`), data `files/firm_inbox_e0.json`, export
-  `apps/web/src/fixtures/seed/e0.inbox.json` (`--export`).
+  `apps/web/src/fixtures/seed/inbox-e0.json` (`--export`).
 - `loader.py`: `organisations.intake_team_created`, `communications.inbound_email_recorded`
   (record_inbound_message + add_attachment), `SLICE_NEEDS`.
 - Tests: `tests/unit/synthetic/test_n01t11_firm_inbox_slice.py` (footing, events, export drift),

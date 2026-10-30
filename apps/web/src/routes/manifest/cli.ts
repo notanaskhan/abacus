@@ -26,10 +26,14 @@ export const cliScreens = {
     path: "/clients/$clientId/contacts",
     navArea: "Clients",
   },
+  // T-01-T14 built d and f (the consents section) on fixtures; a, b, c, e, g with T-01-T43 to T46.
   "CLI-05": {
     name: "Tax profile, authorizations & consents · with Transcripts",
+    // Fixture-built (T-01-T14); planned until BND-01's rows carry the §7216 consent tag that opens
+    // it (link-contract rule 1: BND-01 → CLI-05; DEC-1273). ADM-05 → CLI-05 is wired.
     status: "planned",
-    path: null,
+    path: "/clients/$clientId/tax-profile/$sub",
+    navArea: "Clients",
   },
   // P-07-T49 built the single-client intake a–f, h and i live over the intake routes (P-07-T42)
   // at /clients/new behind `clients.v2`; g (bulk import) is P-07-T54's. Like CLI-02 it stays

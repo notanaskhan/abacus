@@ -23,6 +23,7 @@ import {
   date,
   doneButton,
   satisfied,
+  toastStore,
   useMotion,
   usePortalBrand,
   useRequestBinder,
@@ -32,6 +33,7 @@ import { useNow } from "../../app-core/clock";
 import {
   DOCUMENT_WORDS,
   type DropOutcome,
+  SHEET_WORDS,
   type RefusedFile,
   binderView,
   brandOf,
@@ -289,6 +291,13 @@ function Binder({
           },
         }),
     onFiles: send,
+    // R-01-T33: shown only when the firm published it and the intake route is on.
+    uploadOther: binder.upload_something_else === true,
+    onUploadOther: (files) => {
+      void act.sendOther(files).then(() => {
+        toastStore.show(SHEET_WORDS.sent(firm));
+      });
+    },
     ...(onOpenRequest === undefined ? {} : { onOpen: onOpenRequest }),
     onIgnore: (id, reason, note) => {
       void act.ignore(id, reason, note);
