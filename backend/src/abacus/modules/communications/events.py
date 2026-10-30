@@ -103,6 +103,16 @@ class InboxAttachmentReceived(DomainEvent):
     status: Annotated[str, classified("internal")]
 
 
+class InboxAttachmentMatchable(DomainEvent):
+    """N-01-T22: an intake attachment of a known client is classified (or its thread was just
+    matched to a client), so the matcher's intake mode may propose where it goes."""
+
+    event_type: ClassVar[str] = "inbox_attachment.matchable"
+
+    attachment_id: Annotated[UUID, classified("internal")]
+    client_id: Annotated[UUID, classified("internal")]
+
+
 class PortalIntakeWithdrawn(DomainEvent):
     """A portal principal withdrew an upload (N-01-T14): its purge starts."""
 

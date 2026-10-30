@@ -60,6 +60,7 @@ from abacus.kernel.listing import (
     status_counts,
 )
 from abacus.kernel.uow import Ref, Target, uow
+from abacus.modules.communications.events import InboxAttachmentMatchable
 from abacus.modules.communications.intake_scope import intake_member, readable_thread
 from abacus.modules.engagements.api import work_item_index
 from abacus.modules.evidence.api import intake_masked_pages, read_staged
@@ -766,14 +767,22 @@ async def match_client(
                 "id": thread_id,
             },
         )
-        await tx.session.execute(
-            text(
-                "UPDATE inbox_attachments SET client_id = :client, status = CASE WHEN status = "
-                "'new' THEN 'waiting' ELSE status END WHERE thread_id = :id "
-                "AND status IN ('new', 'waiting', 'ignored')"
-            ),
-            {"client": client_id, "id": thread_id},
-        )
+        matched = (
+            await tx.session.execute(
+                text(
+                    "UPDATE inbox_attachments SET client_id = :client, status = CASE WHEN status = "
+                    "'new' THEN 'waiting' ELSE status END WHERE thread_id = :id "
+                    "AND status IN ('new', 'waiting', 'ignored') "
+                    "RETURNING id, classification_id"
+                ),
+                {"client": client_id, "id": thread_id},
+            )
+        ).all()
+        # N-01-T22: the classified ones may now be matched to this client's destinations (one
+        # not yet classified emits when AttachmentTriage classifies it).
+        for attachment in matched:
+            if attachment.classification_id is not None:
+                tx.emit(InboxAttachmentMatchable(attachment_id=attachment.id, client_id=client_id))
         tx.record(
             "inbox_thread.client_matched",
             target=Target("inbox_thread", thread_id),

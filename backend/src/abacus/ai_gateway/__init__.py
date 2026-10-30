@@ -36,7 +36,7 @@ from opentelemetry.trace import StatusCode
 from pydantic import BaseModel, ValidationError
 from sqlalchemy import text
 
-from abacus.ai_gateway._eval_suites import EVAL_SUITES
+from abacus.ai_gateway._eval_suites import EVAL_SUITE_MODES, EVAL_SUITES
 from abacus.ai_gateway.admission import (
     CallTooLarge,
     NotAdmitted,
@@ -563,8 +563,14 @@ async def eligible(
     borrow another agent's eligibility. Fails closed: an unknown agent, another prompt, or any
     error means no."""
     known = EVAL_SUITES.get(agent_id)
-    if known is None or known[0] != prompt_version:
+    if known is None:
         return False
+    if known[0] != prompt_version:
+        # N-01-T22 (DEC-1276): another mode of the same agent, on its own prompt and evaluation.
+        suite = EVAL_SUITE_MODES.get(agent_id, {}).get(prompt_version)
+        if suite is None:
+            return False
+        known = (prompt_version, suite)
     try:
         async with tenant_session(tenant) as session:
             found = await session.scalar(

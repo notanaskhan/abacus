@@ -53,9 +53,13 @@ def _material() -> MatchMaterial:
 def test_ac3_the_matcher_is_declared_to_propose_only() -> None:
     matcher = spec(MATCHER)
     assert matcher.autonomy == "propose"
-    assert matcher.prompt == "evidence.inbox_match@v2"  # TASK-067: cell references
+    # N-01-T22 (DEC-1276): v3's own prompt is intake mode's; engagement mode keeps v2 (TASK-067:
+    # cell references).
+    assert matcher.prompt == "evidence.inbox_match@v3"
+    assert matcher.modes["engagement"].prompt == "evidence.inbox_match@v2"
     assert matcher.task_scope == frozenset({"evidence.read", "inbox_match.run"})
-    assert matcher.limits.max_cost_usd == Decimal("0.01")
+    assert matcher.limits.max_cost_usd == Decimal("0.015")  # intake mode (N-01 §6)
+    assert matcher.modes["engagement"].max_cost_usd == Decimal("0.01")
     assert list(matcher.untrusted_inputs) == ["document"]
     assert matcher.essential is False
 

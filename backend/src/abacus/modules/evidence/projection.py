@@ -56,6 +56,7 @@ async def projection_of(
     evidence_version_id: UUID | None = None,
     inbox_file_id: UUID | None = None,
     derivation_id: UUID | None = None,
+    inbox_attachment_id: UUID | None = None,
 ) -> Projection:
     """For a caller that authorised on the source: what of its words may be read (of an unlock's
     derived layer when `derivation_id` is named, P-03-T19)."""
@@ -67,6 +68,7 @@ async def projection_of(
         inbox_file_id=inbox_file_id,
         detector_version=DETECTOR_VERSION,
         derivation_id=derivation_id,
+        inbox_attachment_id=inbox_attachment_id,
     )
     regions = await pii_regions_of(
         session,
@@ -74,6 +76,7 @@ async def projection_of(
         inbox_file_id=inbox_file_id,
         detector_version=DETECTOR_VERSION,
         derivation_id=derivation_id,
+        inbox_attachment_id=inbox_attachment_id,
     )
     unscanned = await unscannable_pages(
         session,
@@ -81,6 +84,7 @@ async def projection_of(
         inbox_file_id=inbox_file_id,
         detector_version=DETECTOR_VERSION,
         derivation_id=derivation_id,
+        inbox_attachment_id=inbox_attachment_id,
     )
     return Projection(
         frozenset(scanned),

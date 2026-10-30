@@ -26,6 +26,8 @@ from abacus.modules.agents.draft_start import WORKFLOWS as DRAFT_WORKFLOWS
 from abacus.modules.agents.engagement_agent import agent_on, firm_resumed, to_agent
 from abacus.modules.agents.engagement_agent_workflow import EngagementAgent
 from abacus.modules.agents.events import KnowledgeDocumentAdded, UploadReviewRecorded
+from abacus.modules.agents.intake_start import WORKFLOWS as INTAKE_WORKFLOWS
+from abacus.modules.agents.intake_start import start_intake_match
 from abacus.modules.agents.knowledge_workflow import KnowledgeEmbeddingWorkflow
 from abacus.modules.agents.match_start import WORKFLOWS as MATCH_WORKFLOWS
 from abacus.modules.agents.match_start import start_match
@@ -36,6 +38,7 @@ from abacus.modules.agents.service import SCREENER
 from abacus.modules.agents.spec import spec
 from abacus.modules.agents.workflow_types import KnowledgeInput, ScreeningInput
 from abacus.modules.agents.workflows import ScreeningWorkflow
+from abacus.modules.communications.api import InboxAttachmentMatchable
 from abacus.modules.engagements.api import EngagementCreated, get_ref
 from abacus.modules.evidence.api import (
     EvidenceVersionCreated,
@@ -64,6 +67,7 @@ WORKFLOWS: dict[type, WorkClass] = {
 }
 WORKFLOWS.update(REVIEW_WORKFLOWS)  # SPEC-030 (TASK-059): the worker hosts it with these
 WORKFLOWS.update(MATCH_WORKFLOWS)  # SPEC-033 (TASK-066)
+WORKFLOWS.update(INTAKE_WORKFLOWS)  # N-01-T22
 WORKFLOWS.update(DRAFT_WORKFLOWS)  # SPEC-035 (TASK-073)
 WORKFLOWS.update(ASSESS_WORKFLOWS)  # SPEC-037 Q4 (TASK-085)
 register_work_classes(WORKFLOWS)
@@ -150,6 +154,8 @@ SUBSCRIPTIONS = {
     EvidenceVersionWithdrawn.event_type: on_version_withdrawn,
     # SPEC-033 (TASK-066): an inbox file was read; the matcher may follow (P-7).
     InboxFileExtracted.event_type: start_match,
+    # N-01-T22: an intake attachment of a known client was classified; its intake mode follows.
+    InboxAttachmentMatchable.event_type: start_intake_match,
 }
 
 

@@ -7,6 +7,9 @@ document excerpt, the only untrusted field (ADR-052, ADR-064). The gateway enfor
 boundary (ADR-112) and budgets. Code maps references back to requests (an unknown one is
 discarded), verifies every quote against the extraction (ADR-066), and records the proposals.
 Nothing is assigned: the matcher proposes, a person decides (ADR-005).
+
+This is the matcher's `engagement` mode: v2's prompt, output and budget (the spec's `modes`),
+unchanged by v3 (N-01-T22, DEC-1276), whose own fields describe mode `intake` (`intake_match.py`).
 """
 
 from __future__ import annotations
@@ -65,6 +68,7 @@ from abacus.modules.identity.api import (
 )
 
 MATCHER = "evidence.matcher"
+ENGAGEMENT_MODE = "engagement"
 REASON_TEXT = {
     "kind": "document kind matches",
     "date": "covers the year end",
@@ -228,13 +232,14 @@ async def _match(agent: AgentContext, inbox_file_id: UUID) -> MatchOutcome:
         facts.client_entity_name,
         list(matcher.untrusted_inputs),
     )
+    mode = matcher.modes[ENGAGEMENT_MODE]
     result = await call(
         GatewayCall(
             purpose=matcher.purpose,
-            prompt=matcher.prompt,
+            prompt=mode.prompt,
             tier=matcher.tier,
             output_schema=MatchOutput,
-            budget_usd=matcher.limits.max_cost_usd,
+            budget_usd=mode.max_cost_usd,
             attribution=Attribution(agent.tenant, agent.engagement, run.agent_id, run.id),
             context=context,
             work_class=matcher.work_class,
@@ -290,7 +295,7 @@ async def _match(agent: AgentContext, inbox_file_id: UUID) -> MatchOutcome:
                 "engagement_id": agent.engagement,
                 "inbox_file_id": inbox_file_id,
                 "agent_run_id": run.id,
-                "prompt_ref": matcher.prompt,
+                "prompt_ref": mode.prompt,
                 "none_fit": output.none_fit,
                 "truncated": material.truncated or bool(context.truncated),
             },
