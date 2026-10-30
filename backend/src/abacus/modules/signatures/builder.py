@@ -39,10 +39,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel import clock
 from abacus.kernel.db import tenant_session
-from abacus.kernel.errors import DomainConflict, DomainInvalid
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, audit_of_targets, event_sha256, uow
 from abacus.modules.engagements.api import get_ref
-from abacus.modules.evidence.api import tin_exposure
+from abacus.modules.evidence.api import tin_exposure, viewer_page
 from abacus.modules.identity.api import (
     AuthContext,
     Forbidden,
@@ -125,6 +125,12 @@ class DocumentOrderInvalid(DomainInvalid):
     """A new document order must name every document of the envelope exactly once."""
 
     code = "document_order_invalid"
+
+
+class PreviewUnavailable(DomainConflict):
+    """The document has no rendered preview to show yet (a generated document until P-11)."""
+
+    code = "preview_unavailable"
 
 
 class UndoWindowClosed(DomainConflict):
@@ -758,3 +764,34 @@ async def undo_send(ctx: AuthContext, envelope_id: UUID) -> None:
             target=Target("envelope", envelope_id),
             after=Ref(grant=grant),
         )
+
+
+# --- Page previews -------------------------------------------------------------------------------
+
+
+async def document_page(
+    ctx: AuthContext, envelope_id: UUID, document_id: UUID, page_no: int
+) -> bytes:
+    """`GET /v1/envelopes/{id}/documents/{doc}/pages/{n}`: the document's masked page image, as
+    the evidence viewer renders it (no SSN or account number shows; the read is logged as a
+    content read). The person reads the envelope and, through the viewer, the evidence: one who
+    may read envelopes but not that evidence gets 403 from the viewer. A document of another
+    envelope answers 404; a generated document (P-11) has no preview yet: 409
+    `preview_unavailable`."""
+    await firm_and_flag(ctx)
+    async with tenant_session(ctx.tenant) as session:
+        await visible_head(ctx, session, envelope_id)
+        version_id = (
+            await session.execute(
+                text(
+                    "SELECT evidence_version_id FROM envelope_documents "
+                    "WHERE id = :doc AND envelope_id = :id"
+                ),
+                {"doc": document_id, "id": envelope_id},
+            )
+        ).one_or_none()
+    if version_id is None:
+        raise NotFound("envelope_document")
+    if version_id[0] is None:
+        raise PreviewUnavailable
+    return await viewer_page(ctx, version_id[0], page_no)

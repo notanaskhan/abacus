@@ -81,6 +81,7 @@ LIVE_ACTIONS = {
     "validate_envelope_route": "envelope.draft",
     "send_envelope_route": "envelope.send",
     "undo_envelope_send_route": "envelope.send",
+    "envelope_page_route": "envelope.read",  # N-02-T20 follow-up: the masked preview page
 }
 LIVE = frozenset(
     {
@@ -98,6 +99,7 @@ LIVE = frozenset(
         "validate_envelope_route",
         "send_envelope_route",
         "undo_envelope_send_route",
+        "envelope_page_route",
     }
 )
 STUBBED = [(r, m) for r, m in FIRM if r.name not in LIVE]
