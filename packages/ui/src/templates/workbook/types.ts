@@ -5,6 +5,7 @@
 // the kit formats and lays out, and never adds.
 
 import type { Opt } from "../../components/tabs";
+import type { GridColumn, GridComment, GridRow } from "../../data/grid";
 import type { TableColumn, TableRow } from "../../data/types";
 import type { TallyItem } from "../../data/tally-strip";
 import type { SignOffChipsCopy } from "../../signoff";
@@ -37,11 +38,29 @@ export interface CalcStep {
   match?: string;
 }
 
+/** A source-workbook pane (F-06-T19): the grid grammar with typed sheet-cell match ids. */
+export interface GridPayload {
+  /** The accessible name and header ("Ridgeline capital accounts 2025.xlsx"). */
+  label: string;
+  columns: readonly GridColumn[];
+  rows: readonly GridRow[];
+  headerRow?: boolean;
+  /** The workbook's file and sheet: every cell's match id comes from this typed locator. */
+  source: string;
+  sheet: string;
+  /** A cell to light statically ("H3"). */
+  cite?: string;
+  comments?: Readonly<Record<string, GridComment>>;
+  /** The 30h status footer: the cell and its value left, the sheet's meta right. */
+  footer?: { cell: string; value: string; meta?: string };
+}
+
 export interface WorkbookPaneVM {
-  /** `statement` here (F-06-T18); `grid` and `calc` render with F-06-T19. */
+  /** `statement` (F-06-T18); `calc` and `grid` (F-06-T19) share one match scope. */
   kind: "statement" | "grid" | "calc";
   table?: TablePayload;
   tree?: readonly CalcStep[];
+  grid?: GridPayload;
   /** A fixed pane width (452 for the by-partner panes): sized panes sit in the PaneScroller. */
   width?: number;
   /** A sized pane's 46 header title ("Calder Family Trust"). */

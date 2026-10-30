@@ -1,4 +1,7 @@
 import {
+  type CalcStep,
+  type GridPayload,
+  matchIdOf,
   RecordHeader,
   SegmentedGroup,
   type TableColumn,
@@ -20,11 +23,11 @@ import { COPY } from "./copy";
 // with each kind of variance cell; c: the agent building the schedule (Pending pills, skeleton
 // rows, the running row). The board's own data (canvas `#t6`, `t6data` and `t6tally`), as T10
 // keeps its own (DECISIONS.md, F-06-T14): TPL-06 (F-06-T20) draws the seeded capital accounts.
-// d (signed off: "✓ OB", "✓ DR", P before R) is F-06-T20's and e (calculation) F-06-T19's.
-// Registered for /components/screens/T6?st=a|b|c|d. Every figure is a server value in this
-// fixture (ADR-050).
+// d (signed off: "✓ OB", "✓ DR", P before R) is F-06-T20's; e (calculation: Calder Family
+// Trust's ending capital traced to Capital!H3 in the source workbook) F-06-T19's. Registered for
+// /components/screens/T6?st=a|b|c|d|e. Every figure is a server value in this fixture (ADR-050).
 
-export const T6_STATES = ["a", "b", "c", "d"] as const;
+export const T6_STATES = ["a", "b", "c", "d", "e"] as const;
 export type T6State = (typeof T6_STATES)[number];
 
 const RIDGELINE = "Ridgeline Property Partners, LP";
@@ -41,12 +44,150 @@ const WORKPAPER_TABS = [
   "Capital Accounts",
 ];
 
-// Calculation is F-06-T19's (the calc tree beside the source workbook): disabled until then.
-const VIEWS = [
-  COPY.views.byPartner,
-  COPY.views.byMovement,
-  { label: COPY.views.calculation, disabled: true },
+// Calculation is F-06-T19's: the calc tree beside the source workbook.
+const VIEWS = [COPY.views.byPartner, COPY.views.byMovement, COPY.views.calculation];
+
+const SOURCE = "Ridgeline capital accounts 2025.xlsx";
+const SHEET = "Capital";
+const cell = (ref: string): string =>
+  matchIdOf({ kind: "sheet_cell", file: SOURCE, sheet: SHEET, cell: ref });
+
+/** T6e's steps: the server's calculation of Calder Family Trust's ending capital. A step's match
+ * id is its typed sheet-cell locator (INV-2); a form line has none. */
+export const CALC_STEPS: readonly CalcStep[] = [
+  {
+    ref: "end",
+    depth: 0,
+    op: "",
+    label: "Ending capital",
+    value: "938,561",
+    src: "Capital!H3",
+    match: cell("H3"),
+  },
+  {
+    ref: "beg",
+    depth: 1,
+    op: "",
+    label: "Beginning capital",
+    value: "882,824",
+    src: "Capital!D3",
+    match: cell("D3"),
+  },
+  {
+    ref: "con",
+    depth: 1,
+    op: "+",
+    label: "Capital contributed",
+    value: "—",
+    src: "Capital!E3",
+    match: cell("E3"),
+  },
+  {
+    ref: "inc",
+    depth: 1,
+    op: "+",
+    label: "Share of income",
+    value: "204,237",
+    src: "Capital!F3",
+    match: cell("F3"),
+  },
+  {
+    ref: "pni",
+    depth: 2,
+    op: "",
+    label: "Partnership net income",
+    value: "412,600",
+    src: "Capital!F6",
+    match: cell("F6"),
+  },
+  {
+    ref: "rre",
+    depth: 3,
+    op: "",
+    label: "Net rental real estate income",
+    value: "384,120",
+    src: "Form 8825 · line 21",
+  },
+  {
+    ref: "int",
+    depth: 3,
+    op: "+",
+    label: "Interest income",
+    value: "28,480",
+    src: "Schedule K · line 5",
+  },
+  {
+    ref: "share",
+    depth: 2,
+    op: "×",
+    label: "Profit share",
+    value: "49.5%",
+    src: "Capital!C3",
+    match: cell("C3"),
+  },
+  {
+    ref: "dist",
+    depth: 1,
+    op: "−",
+    label: "Distributions",
+    value: "(148,500)",
+    src: "Capital!G3",
+    match: cell("G3"),
+  },
 ];
+
+const GRID_HEAD = [
+  "Partner",
+  "Type",
+  "Share",
+  "Beginning",
+  "Contributed",
+  "Income",
+  "Distributions",
+  "Ending",
+];
+const GRID_KEYS = ["a", "b", "c", "d", "e", "f", "g", "h"] as const;
+const GRID_ROWS: readonly (readonly string[])[] = [
+  GRID_HEAD,
+  ["Ridgeline GP, LLC", "GP", "1.0%", "17,835", "", "4,126", "(3,000)", "18,961"],
+  ["Calder Family Trust", "LP", "49.5%", "882,824", "", "204,237", "(148,500)", "938,561"],
+  [
+    "Marrow Point Holdings, LLC",
+    "LP",
+    "29.5%",
+    "486,127",
+    "40,000",
+    "121,717",
+    "(88,500)",
+    "559,344",
+  ],
+  ["Juno Okafor", "LP", "20.0%", "356,696", "", "82,520", "(60,000)", "379,216"],
+  ["Total", "", "100.0%", "1,743,482", "40,000", "412,600", "(300,000)", "1,896,082"],
+];
+
+/** T6e's source workbook, as the evidence pipeline renders the .xlsx (values, not formulas). */
+export const SOURCE_GRID: GridPayload = {
+  label: SOURCE,
+  source: SOURCE,
+  sheet: SHEET,
+  headerRow: true,
+  cite: "H3",
+  columns: [
+    { key: "a", width: 212 },
+    { key: "b", width: 46, align: "left" },
+    { key: "c", width: 62, align: "right" },
+    { key: "d", width: 100, align: "right" },
+    { key: "e", width: 92, align: "right" },
+    { key: "f", width: 92, align: "right" },
+    { key: "g", width: 108, align: "right" },
+    { key: "h", width: 100, align: "right" },
+  ],
+  rows: GRID_ROWS.map((r, i) => ({
+    id: `r${String(i + 1)}`,
+    cells: Object.fromEntries(GRID_KEYS.map((k, c) => [k, r[c] ?? null])),
+  })),
+  footer: { cell: "H3", value: "938,561", meta: COPY.sheetMeta },
+};
 
 const PARTNER_COLUMNS: TableColumn[] = [
   { key: "name", header: "Partner", type: "label" },
@@ -195,6 +336,7 @@ const VIEW_OF: Record<T6State, string> = {
   b: COPY.views.byMovement,
   c: COPY.views.byPartner,
   d: COPY.views.byPartner,
+  e: COPY.views.calculation,
 };
 
 /** T6d: Olivia Brandt prepared (L1), Daniel Reyes reviewed (L2); P before R. */
@@ -205,6 +347,18 @@ export const T6_SIGN_OFFS = [
 
 export function t6Workbook(state: T6State, view: string = VIEW_OF[state]): WorkbookVM {
   const byMovement = view === COPY.views.byMovement && state !== "c";
+  if (view === COPY.views.calculation && state !== "c") {
+    return {
+      views: VIEWS,
+      view,
+      title: COPY.title,
+      tally: [],
+      panes: [
+        { kind: "calc", width: 452, title: COPY.calcTitle, tree: CALC_STEPS },
+        { kind: "grid", grid: SOURCE_GRID },
+      ],
+    };
+  }
   return {
     views: VIEWS,
     view,
