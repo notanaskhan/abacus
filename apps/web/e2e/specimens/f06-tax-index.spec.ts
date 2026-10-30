@@ -48,7 +48,7 @@ test("test_ac9_a_default_board_reads_the_server_counts", async ({ page }) => {
     ).toBeVisible();
   }
   // The window frames the board with Tax Returns lit in the firm toolbar.
-  await expect(page.locator("[data-artboard='a'] [data-shell='app']")).toBeVisible();
+  await expect(page.locator("[data-artboard='tpl-01a'] [data-shell='app']")).toBeVisible();
   await step(page, "TPL-01a");
 });
 
@@ -67,7 +67,8 @@ test("test_ac10_b_the_awaiting_signature_tile_filters_to_e1_e10", async ({ page 
 
 test("test_ac11_due_cell_explains_its_rule_from_the_keyboard", async ({ page }) => {
   await board(page, "a");
-  const due = page.getByRole("button", { name: "Sep 15", exact: true }).first();
+  // The cell reads the date with its year (TPL-01 drawn to the handoff, DEC-1182).
+  const due = page.getByRole("button", { name: /^Sep 15, 20\d\d$/u }).first();
   await due.focus();
   await page.keyboard.press("Enter");
   const popover = page.getByRole("dialog", { name: /^Due date rule for / });
