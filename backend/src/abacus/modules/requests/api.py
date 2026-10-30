@@ -163,6 +163,11 @@ WORKFLOWS: dict[type, str] = {}
 ACTIVITIES: tuple[object, ...] = ()
 
 # The routers the API mounts, in order (P-39; F-03-T07).
+from abacus.modules.requests.questionnaires_contract import (  # noqa: E402 -- T-02-T02 stub
+    portal_questionnaires_router,
+    questionnaires_router,
+)
+
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,
     firm_router,
@@ -171,6 +176,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     items_router,
     portal_router,
     pbc_portal_router,  # C5 portal-pbc (R-01-T08): undo an Ignore, undo Mark as Done
+    questionnaires_router,  # questionnaires v1 (T-02-T02 stub)
+    portal_questionnaires_router,  # POR-05 (T-02-T02 stub)
 )
 
 # P-07-T08: the clients index's open-request count.

@@ -8,3 +8,7 @@ actions:
   incident.manage:          {security_admin: allow, agent: deny, system: deny}
   incident.read:            {security_admin: allow, firm_admin: allow, firm_partner: allow, agent: deny, system: deny}   # G-02-T02: ADM-06 register and drawer
   incident.decide:          {security_admin: allow, firm_partner: allow, agent: deny, system: deny, mfa_recent: required}   # G-02-T02: close as not reportable or start notification; one partner and the QI, distinct (409 decider_must_differ)
+  # --- K-02-T01 (DEC-1150; K-02 §4.4; C21 part A): published reference sets, read by every firm
+  # role and the agent at task scope. There are no write actions: the operator CLI is the only
+  # writer until PLT-01 (G-04), through owner-only definer functions.
+  reference_set.read:         {firm_admin: allow, practice_leader: allow, quality_partner: allow, security_admin: allow, firm_partner: allow, firm_manager: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, specialist: allow, client_service: allow, client_admin: deny, client_contributor: deny, agent: task_scope, system: deny}   # GET /v1/reference-sets*

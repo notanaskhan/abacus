@@ -18,6 +18,7 @@ from abacus.modules.portal.pbc_contract import (
     PortalBinderOut,
     PortalRequestOut,
 )
+from abacus.modules.portal.settings import upload_something_else_offered
 
 # A portal person themself, never a break-glass support context.
 Member = Annotated[AuthContext, Depends(current_member)]
@@ -44,8 +45,11 @@ async def get_portal_binder_route(
     filter: Annotated[BinderFilter, Query()] = "requested",
     category: Annotated[str | None, Query(max_length=64)] = None,
 ) -> PortalBinderOut:
-    """POR-03. A binder outside the caller's grant, a draft or a forged id answers 404."""
-    return await documents.read_binder(ctx, binder_id, filter, category)
+    """POR-03. A binder outside the caller's grant, a draft or a forged id answers 404.
+    `upload_something_else` (R-01-T33): the firm's published toggle and the intake flag."""
+    found = await documents.read_binder(ctx, binder_id, filter, category)
+    allowed = await upload_something_else_offered(ctx.tenant)
+    return found.model_copy(update={"upload_something_else": allowed})
 
 
 @documents_router.get(

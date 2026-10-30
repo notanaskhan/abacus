@@ -27,6 +27,8 @@ import {
   VarianceSpecimen,
 } from "./data";
 import { AgentFilledSpecimen, AttributionSpecimen } from "./attribution";
+import { GatesSpecimen } from "./gates";
+import { Tpl19Specimen } from "./tpl19";
 import { MenuSpecimen, TooltipSpecimen } from "./menus";
 import { IndexListSpecimen } from "./templates";
 import { RailKitSpecimen, RecordCockpitSpecimen, RecordKitSpecimen } from "./record";
@@ -448,6 +450,10 @@ export const SPECIMENS: readonly Specimen[] = [
   { id: "tpl-12", kit: "TPL-12", title: "Settings form specimen", Component: Tpl12Specimen },
   // O6 wizard specimen (F-05-T38): TPL-18a to TPL-18e, the type catalogue and the gate cards
   { id: "tpl-18", kit: "TPL-18", title: "Stepper wizard specimen", Component: Tpl18Specimen },
+  // E7 human gates (P-04-T40): ApprovalCard, SignOffSlots, DecisionCard, ChecksList
+  { id: "e7-gates", kit: "E7", title: "Human gates", Component: GatesSpecimen },
+  // TPL-19 frames 1 to 8 on T7-M (F-06-T10, F-06-T11): Claire Feld at 390
+  { id: "tpl-19", kit: "TPL-19", title: "Portal mobile specimen", Component: Tpl19Specimen },
   {
     id: "o1-o6-stacking",
     kit: "O1-O6",

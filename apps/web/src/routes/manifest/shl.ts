@@ -29,6 +29,7 @@ export const shlScreens = {
   // P-03-T19, whose d state wires the designed SHL-08 → SHL-14 "Ask …" link (link rule 1).
   "SHL-08": { name: "Source viewer · drawer and pane", status: "planned", path: null },
   "SHL-09": { name: "Field provenance popover", status: "planned", path: null },
+  // P-04-T41: a, b, c and f on fixtures as `?ov=approve:<ref>` (d, e, e′, g are later P-04 rows).
   "SHL-10": { name: "Approve agent output", status: "planned", path: null },
   "SHL-11": { name: "Decision card", status: "planned", path: null },
   "SHL-12": { name: "Sign-off modal", status: "planned", path: null },
@@ -38,7 +39,9 @@ export const shlScreens = {
   // variant, on the same overlay over a close_intake binder until C-01's CLS-03; c is A-03's.
   "SHL-14": { name: "Request composer drawer", status: "fixture", path: null },
   "SHL-15": { name: "Issue composer & fix instructions", status: "planned", path: null },
-  "SHL-16": { name: "Checkpoint diff drawer", status: "planned", path: null },
+  // P-04-T43: a–f on fixtures as `?ov=checkpoints:<type>:<id>` behind `review.checkpoints`.
+  // TAX-02's Checkpoints chip opens it through `ov.SHL16` (DEC-1273).
+  "SHL-16": { name: "Checkpoint diff drawer", status: "fixture", path: null },
   "SHL-17": { name: "To-do drawer", status: "planned", path: null },
   "SHL-18": { name: "Comments and @mentions", status: "planned", path: null },
   "SHL-19": { name: "Agent review package", status: "planned", path: null },

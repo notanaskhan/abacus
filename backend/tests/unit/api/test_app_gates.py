@@ -117,6 +117,39 @@ NOT_CREATING = {
     "/v1/platform/retention/defaults/{set_version}/publish",
     # G-02-T20: publishing a Pub 4557 control set changes a draft's status, so 200.
     "/v1/platform/safeguards-controls/{set_version}/publish",
+    # T-02-T02 (K-1 and questionnaire stubs): sharing, undoing, resending, a details review,
+    # publishing, sending and the portal's done, submit and consent change records, so 200.
+    "/v1/tax-returns/{return_id}/k1-packages:share-internal",
+    "/v1/k1-releases/{release_id}:undo",
+    "/v1/k1-packages/{package_id}:resend",
+    "/v1/recipient-details-changes/{change_id}:accept",
+    "/v1/recipient-details-changes/{change_id}:reject",
+    "/v1/questionnaire-templates/{template_id}/versions/{version}:publish",
+    "/v1/questions/{question_id}:send",
+    "/v1/portal/questionnaires/{questionnaire_id}:mark-done",
+    "/v1/portal/questionnaires/{questionnaire_id}:submit",
+    "/v1/portal/k1s/{package_id}/e-furnishing-consent",
+    # T-02-T01 (tax-returns stub): a bulk assignment, an assignment and a transition change the
+    # returns and return them, so 200.
+    "/v1/tax-returns:bulk-assign",
+    "/v1/tax-returns/{return_id}/assignments",
+    "/v1/tax-returns/{return_id}/transitions",
+    # T-01-T02 (engine-bridge stub): approvals, marks, rejections, letters, publishing and the
+    # format check change or read a record, so 200.
+    "/v1/tax-returns/{return_id}/final-approval",
+    "/v1/engine-exports/{export_id}/mark-exported",
+    "/v1/engine-imports/{import_id}/approve",
+    "/v1/engine-imports/{import_id}/reject",
+    "/v1/delivery-packets/{packet_id}/letter:regenerate",
+    "/v1/delivery-packets/{packet_id}/approve",
+    "/v1/tax-returns/{return_id}/deliverables:publish",
+    "/v1/firm/integrations/{key}/test",
+    # T-01-T01 (C19 stub): a decline, a revocation and a template publish change a record, so 200.
+    "/v1/consents/{consent_id}/declines",
+    "/v1/consents/{consent_id}/revocations",
+    "/v1/consent-templates/{template_id}/publish",
+    # K-02-T02 (C21 stub): publishing a firm standard's draft changes its status, so 200.
+    "/v1/standards/{standard_id}/versions/{version_id}/publish",
     "/v1/walls/{wall_id}/remove",  # TASK-016: returns the removed wall, so 200
     REVIEW_QUEUE + "/take",
     REVIEW_QUEUE + "/release",
@@ -342,6 +375,10 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/firm/email-templates/{key}/test-send",
         # P-07-T37: an import run starts ClientImportWorkflow, so 202.
         "/v1/client-imports/{import_id}/run",
+        # T-02-T02: a K-1 release waits out its Undo window, so 202.
+        "/v1/tax-returns/{return_id}/k1-packages:release",
+        # T-01-T01 (C19 stub): a consent export builds later, so 202.
+        "/v1/consents/exports",
         # G-02-T11 (security-center stub): a WISP pack is built later, so 202.
         "/v1/firm/safeguards/wisp-pack",
     }
@@ -353,6 +390,37 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/request-items",
         # K-01-T01 (C21 stub): a methodology draft and a program step.
         "/v1/methodology/versions/{version_id}/drafts",
+        # T-02-T02: a template import, an organizer, a questionnaire, a question, a portal
+        # attachment and a recipient's details change.
+        "/v1/questionnaire-templates:import",
+        "/v1/request-lists/{request_list_id}/questionnaires",
+        "/v1/questionnaires",
+        "/v1/questionnaires/{questionnaire_id}/questions",
+        "/v1/portal/questionnaires/{questionnaire_id}/questions/{question_id}/attachments",
+        "/v1/portal/k1-recipients/{recipient_id}/details-changes",
+        # T-01-T02 (engine-bridge stub): an export, an import, a packet, the 8879 envelope, an ERO
+        # notice, a transmission record and an ack.
+        "/v1/tax-returns/{return_id}/engine-exports",
+        "/v1/tax-returns/{return_id}/engine-imports",
+        "/v1/tax-returns/{return_id}/delivery-packet:assemble",
+        "/v1/tax-returns/{return_id}/efile-envelope",
+        "/v1/tax-returns/{return_id}/ero-notices",
+        "/v1/tax-returns/{return_id}/transmissions",
+        "/v1/tax-returns/{return_id}/acks",
+        # T-01-T01 (C19 stub): consent drafts and records, templates, authorizations, transcripts.
+        "/v1/consents/requests",
+        "/v1/consents/renewals",
+        "/v1/consents/records",
+        "/v1/consent-templates/imports",
+        "/v1/client-entities/{client_entity_id}/authorizations",
+        "/v1/client-entities/{client_entity_id}/authorizations/requests",
+        "/v1/client-entities/{client_entity_id}/transcripts",
+        "/v1/transcripts/{transcript_id}/comparisons",
+        # K-02-T02 (C21 stub): a firm standard, a draft version, and drafts from an import.
+        "/v1/standards",
+        "/v1/standards/{standard_id}/versions",
+        "/v1/standards/{standard_id}/imports",
+        "/v1/standards/imports",
         "/v1/methodology/versions/{version_id}/programs/{program_id}/steps",
         # G-02-T11 (security-center stub): an incident timeline entry.
         "/v1/firm/security/incidents/{incident_id}/timeline",

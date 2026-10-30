@@ -45,7 +45,7 @@ from pathlib import Path
 from typing import Literal, cast
 
 from abacus.kernel.clock import system_now
-from abacus_tools.quality import connector_conformance
+from abacus_tools.quality import connector_conformance, quarantine
 
 REPO = Path(__file__).resolve().parents[4]
 AREAS = (
@@ -215,13 +215,14 @@ def ci_rows(runs: object, window: Window) -> Iterator[Row]:
         yield Row("CI", "Workflow durations", "; ".join(parts), "§10.4.2 budgets", "reported", src)
     else:
         yield Row("CI", "Workflow durations", "no data", "§10.4.2 budgets", "no data", src)
+    held, oldest = quarantine.summary(window.until)
     yield Row(
         "CI",
         "Flaky tests in quarantine; oldest age",
-        "no data",
+        f"{held}; oldest {'none' if oldest is None else f'{oldest} working days'}",
         "<= 5; <= 10 working days",
-        "no data",
-        "quarantine marker (F-01)",
+        "ok" if held <= quarantine.MAX_QUARANTINED and (oldest or 0) <= 10 else "breach",
+        "quarantine marker (Q-03-T097, abacus_tools.quality.quarantine)",
     )
 
 

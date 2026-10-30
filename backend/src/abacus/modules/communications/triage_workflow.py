@@ -4,7 +4,8 @@ Orchestration only, by name: one run per intake attachment (`attachment_triage:<
 started when the attachment is received. It runs evidence's upload steps for the attachment by
 name, kind `intake` (the scan already happened at ingest): extraction, the word layer, the PII
 scan and the masked preview; then `communications.attachment_triaged` moves a matched attachment
-from New to Waiting. A later change lands behind `workflow.patched(...)`.
+from New to Waiting. A later change lands behind `workflow.patched(...)`: N-01-T17 classifies
+and flags the attachment (`communications.attachment_classified`) before that last step.
 A step that fails never undoes the ones before it. Identifiers only in the history.
 """
 
@@ -27,6 +28,7 @@ _STEPS: tuple[tuple[str, type], ...] = (
     ("upload.pii_scan", int),
     ("upload.masked_preview", str),
 )
+_CLASSIFY_PATCH = "n01-t17-classify"
 _TRIAGED_TIMEOUT = timedelta(seconds=30)
 _TRIAGED_RETRY = RetryPolicy(maximum_attempts=0, maximum_interval=timedelta(minutes=1))
 
@@ -59,6 +61,21 @@ class AttachmentTriageWorkflow:
                 )
             except ActivityError:
                 workflow.logger.warning("attachment_triage.step_failed", extra={"step": step})
+        # N-01-T17: rule classification and code flags, once the word layer and the PII scan
+        # are in place. A failure leaves the attachment unflagged, never stuck.
+        if workflow.patched(_CLASSIFY_PATCH):
+            try:
+                await workflow.execute_activity(
+                    "communications.attachment_classified",
+                    given,
+                    result_type=int,
+                    start_to_close_timeout=_STEP_TIMEOUT,
+                    retry_policy=_STEP_RETRY,
+                )
+            except ActivityError:
+                workflow.logger.warning(
+                    "attachment_triage.step_failed", extra={"step": "classify"}
+                )
         return await workflow.execute_activity(
             "communications.attachment_triaged",
             given,

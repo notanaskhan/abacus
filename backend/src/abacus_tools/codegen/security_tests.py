@@ -12,8 +12,9 @@
   every resolution action (each sign-off, decision, proposal, suggestion, checkpoint, review
   decision and evidence decision that is not a read or an agent's own proposing, and the issue
   resolutions) denied to an agent, a system run and a support session; and the target
-  conditions `not_preparer_of_target` and `reserved_role`, allow and deny, for every role their
-  row allows.
+  conditions `not_preparer_of_target`, `reserved_role` and `owner_of_target` (K-02-T01), allow
+  and deny, for every role their row allows. K-02-T01 adds the firm-standard writes: a person's
+  acts (INV-1), never an agent's, a system run's or a support session's.
 - `tests/security/test_fresh_mfa_generated.py` (Q-02-T37; Q-02 AC-42): for each action in
   `docs/architecture/fresh-mfa-actions.yaml`, the matrix carries `mfa_recent: required`, a role
   the row allows is refused without a second factor verified in the last 15 minutes (never, or
@@ -58,6 +59,10 @@ FRESH_MFA_REGISTER = ROOT.parent / "docs" / "architecture" / "fresh-mfa-actions.
 # `proposal.create`, `suggestion.create`, `checkpoint.propose`) is the agent's, not a resolution.
 RESOLUTION_ENTITIES = frozenset(
     {"sign_off", "decision", "proposal", "suggestion", "checkpoint", "review_decision"}
+    | {"firm_standard"}  # K-02-T01 (INV-1): drafting, importing and publishing are a person's
+    # T-02-T03 (I-AGENT-NEVER extended): releasing, resending and sharing K-1s, and publishing an
+    # organizer template, are a person's.
+    | {"k1_package", "questionnaire_template"}
 )
 RESOLUTION_ACTIONS = frozenset(
     {"issue.resolve", "issue.verify", "issue.reopen", "evidence.accept", "evidence.reject"}
@@ -70,6 +75,13 @@ RESERVED_VARIANTS = (
     ("other_role", "deny"),
     ("no_facts", "deny"),
 )
+# K-02-T01: the owner of a firm standard, a current partner, or not; or no facts at all.
+OWNER_VARIANTS = (("owner", "allow"), ("not_owner", "deny"), ("no_facts", "deny"))
+# T-01-T11 (C19): every data subject consented, one not, or no subjects at all (fail closed).
+CONSENT_VARIANTS = (("consented", "allow"), ("not_consented", "deny"), ("no_subjects", "deny"))
+# The derived partner cell (DEC-132), as `identity.authz` spells it: the only role an
+# `owner_of_target` row allows, so the condition's cases are generated for it too (K-02-T01).
+FIRM_PARTNER = "firm_partner"
 FIRM_ROLES = ("firm_admin", "practice_leader", "quality_partner", "security_admin")
 ENGAGEMENT_ROLES = (
     *("engagement_partner", "manager", "senior", "staff", "reviewer"),
@@ -106,8 +118,10 @@ def expected(rule: Rule, role: str) -> str:
         return "deny"
     if rule.scope_only and role in CLIENT_ROLES:
         return "deny"
-    if rule.not_preparer_of_target or rule.reserved_role:
-        return "deny"  # P-04-T15: no target facts in the harness (fail closed)
+    if rule.not_preparer_of_target or rule.reserved_role or rule.owner_of_target:
+        return "deny"  # P-04-T15, K-02-T01: no target facts in the harness (fail closed)
+    if rule.consent:
+        return "deny"  # T-01-T11: no data subjects in the harness (fail closed)
     return "allow"
 
 
@@ -129,11 +143,25 @@ def condition_cases(rules: dict[str, Rule]) -> list[tuple[str, str, str, str]]:
     """Allow and deny for each target condition, for every role its row would otherwise allow."""
     cases: list[tuple[str, str, str, str]] = []
     for action, rule in sorted(rules.items()):
-        if not (rule.not_preparer_of_target or rule.reserved_role):
+        targeted = rule.not_preparer_of_target or rule.reserved_role or rule.owner_of_target
+        if not (targeted or rule.consent):
             continue
-        others = replace(rule, not_preparer_of_target=False, reserved_role=False)
-        variants = PREPARER_VARIANTS if rule.not_preparer_of_target else RESERVED_VARIANTS
-        for role in HUMAN_ROLES:
+        others = replace(
+            rule,
+            not_preparer_of_target=False,
+            reserved_role=False,
+            owner_of_target=False,
+            consent=frozenset(),
+        )
+        if rule.consent and not targeted:
+            variants = CONSENT_VARIANTS
+        elif rule.owner_of_target:
+            variants = OWNER_VARIANTS
+        elif rule.not_preparer_of_target:
+            variants = PREPARER_VARIANTS
+        else:
+            variants = RESERVED_VARIANTS
+        for role in (*HUMAN_ROLES, FIRM_PARTNER):
             if expected(others, role) != "allow":
                 continue
             cases += [(action, role, variant, want) for variant, want in variants]
@@ -195,8 +223,9 @@ def render_resolution() -> str:
         "run and a support session are denied each one, whatever facts a person would need are\n"
         "given. And the target conditions, allow and deny: a preparer never signs L2 or L3 on\n"
         "their own target (`not_preparer_of_target`), and only the person holding a card's\n"
-        "reserved role decides it (`reserved_role`). Reviewing this diff is reviewing the\n"
-        'rule."""\n\n'
+        "reserved role decides it (`reserved_role`). Only a firm standard's owner, a partner\n"
+        "now, drafts or publishes it (`owner_of_target`, K-02-T01). Reviewing this diff is\n"
+        'reviewing the rule."""\n\n'
     )
     harness = "Principal, Variant, condition_outcome, principal_outcome"
     signature = "action: str, role: str, variant: Variant, want: str"
@@ -267,9 +296,6 @@ def fresh_mfa_role(rule: Rule) -> str:
         if rule.decisions.get(role) == "allow" and not (rule.scope_only and role in CLIENT_ROLES):
             return role
     return FIRM_PARTNER if rule.decisions.get(FIRM_PARTNER) == "allow" else ""
-
-
-FIRM_PARTNER = "firm_partner"  # the derived cell (DEC-132), as `identity.authz` spells it
 
 
 def render_fresh_mfa() -> str:

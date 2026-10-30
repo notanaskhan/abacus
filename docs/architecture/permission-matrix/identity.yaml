@@ -54,3 +54,5 @@ actions:
   security.manage:          {security_admin: allow, agent: deny, system: deny, mfa_recent: required}   # sign-in and portal policies, SSO-exempt account, safeguards (splits from firm.manage_settings)
   session.end:              {security_admin: allow, agent: deny, system: deny, mfa_recent: required}   # sign a session out of this firm only (auth_session_tenant_revocations, G-02-T14)
   staff.unlock:             {security_admin: allow, firm_admin: allow, agent: deny, system: deny, mfa_recent: required}   # clear a staff sign-in lock where WorkOS allows (SPEC-349 Q7)
+  # --- T-01-T02 (DEC-1156): the ERO designation (a membership attribute, T-01-T37).
+  member.set_ero:             {firm_admin: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny, mfa_recent: required}   # PUT /v1/firm/members/{id}/ero

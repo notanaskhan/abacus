@@ -44,6 +44,8 @@ _CLIENTS = {
         "JOIN inbox_threads t ON t.tenant_id = a.tenant_id AND t.id = a.thread_id "
         "WHERE a.id = ANY(:ids)"
     ),
+    # N-01-T18: a sender rule names the client its address files to.
+    "inbox_sender_rule": text("SELECT id, client_id FROM inbox_sender_rules WHERE id = ANY(:ids)"),
 }
 CLIENT_KINDS = frozenset(_CLIENTS)
 

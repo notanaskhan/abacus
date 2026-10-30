@@ -23,7 +23,7 @@ from datetime import date, datetime
 from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
-from fastapi import Depends, Header, Path, Query
+from fastapi import Depends, Header, Path, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import (
@@ -47,8 +47,9 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
 )
-from abacus.modules.methodology import lifecycle
+from abacus.modules.methodology import lifecycle, programs
 from abacus.modules.methodology.catalog import catalog_items, change_log, review_queue
+from abacus.modules.methodology.workbook_template import MEDIA_TYPE
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 # KNW-01's categories; each is a registered catalog provider's (K-01-T03: methodology versions
@@ -568,6 +569,52 @@ class StepRemovedOut(BaseModel):
     step_id: Annotated[UUID, classified("internal")]
 
 
+def _program_out(p: programs.ProgramView, state: VersionStateOut) -> ProgramOut:
+    return ProgramOut(
+        id=p.id,
+        version=state,
+        code=p.code,
+        name=p.name,
+        position=p.position,
+        step_count=p.step_count,
+        mandatory_count=p.mandatory_count,
+        flags_open=p.flags_open,
+        counts_by_level=p.counts_by_level,
+    )
+
+
+def _guidance(blocks: list[dict[str, object]] | None) -> list[GuidanceBlockOut]:
+    return [GuidanceBlockOut.model_validate({"strong": [], **b}) for b in blocks or []]
+
+
+def _step_out(v: programs.StepView) -> StepOut:
+    """K-01-T12: a read; the draft's edit actions arrive with K-01-T14, and the rules count is 0
+    until K-03's rules land."""
+    s = v.step
+    return StepOut(
+        id=s.id,
+        step_key=s.step_key,
+        anchor=v.anchor,
+        number=s.number,
+        text=s.text,
+        assertions=s.assertions,
+        standard_refs=s.standard_refs,
+        level=cast(StepLevel, s.level),
+        mandatory=s.mandatory,
+        lock_note=s.lock_note,
+        guidance=_guidance(s.guidance),
+        prepopulates=s.prepopulates,
+        depends_on_step_keys=s.depends_on_step_keys,
+        pbc_positions=list(v.pbc_positions),
+        origin=cast(StepOrigin, s.origin),
+        parse_flag=cast(ParseFlagStatus | None, s.parse_flag),
+        flag_resolution=cast(FlagResolution | None, s.flag_resolution),
+        rules_count=0,
+        row_version=s.row_version,
+        allowed_actions=[],
+    )
+
+
 programs_router = AbacusRouter(prefix="/v1/methodology", tags=["methodology"])
 IfMatch = Annotated[int, Header(alias="If-Match", ge=1)]
 
@@ -576,35 +623,41 @@ IfMatch = Annotated[int, Header(alias="If-Match", ge=1)]
     "/versions/{version_id}/programs",
     action="methodology.read",
     response_model=list[ProgramOut],
-    errors=(501,),
+    errors=(),
 )
 async def version_programs_route(version_id: VersionId, ctx: Ctx) -> list[ProgramOut]:
     """KNW-02's Programs tree (K-01-T07 stub, DEC-957; built with K-01-T12): a version's
     programs in order, with counts and open flags."""
-    await _stub(ctx, METHODOLOGY_PROGRAMS, "methodology.read")
+    await _gate(ctx, METHODOLOGY_PROGRAMS, "methodology.read")
+    state = await _state_out(ctx, await lifecycle.version_state(ctx, version_id))
+    return [_program_out(p, state) for p in await programs.version_programs(ctx, version_id)]
 
 
 @programs_router.get(
-    "/programs/{program_id}", action="methodology.read", response_model=ProgramOut, errors=(501,)
+    "/programs/{program_id}", action="methodology.read", response_model=ProgramOut, errors=()
 )
 async def program_route(program_id: Annotated[UUID, Path()], ctx: Ctx) -> ProgramOut:
     """KNW-03 a: a program with its version context, counts and rail rows."""
-    await _stub(ctx, METHODOLOGY_PROGRAMS, "methodology.read")
+    await _gate(ctx, METHODOLOGY_PROGRAMS, "methodology.read")
+    found = await programs.program(ctx, program_id)
+    state = await _state_out(ctx, await lifecycle.version_state(ctx, found.version_id))
+    return _program_out(found, state)
 
 
 @programs_router.get(
     "/programs/{program_id}/steps",
     action="methodology.read",
     response_model=list[StepOut],
-    errors=(501,),
+    errors=(),
 )
 async def program_steps_route(program_id: Annotated[UUID, Path()], ctx: Ctx) -> list[StepOut]:
     """KNW-03 a, b: the program's steps in order."""
-    await _stub(ctx, METHODOLOGY_PROGRAMS, "methodology.read")
+    await _gate(ctx, METHODOLOGY_PROGRAMS, "methodology.read")
+    return [_step_out(v) for v in await programs.program_steps(ctx, program_id)]
 
 
 @programs_router.get(
-    "/steps/resolve", action="methodology.read", response_model=StepResolveOut, errors=(501,)
+    "/steps/resolve", action="methodology.read", response_model=StepResolveOut, errors=()
 )
 async def resolve_step_route(
     ctx: Ctx,
@@ -612,7 +665,16 @@ async def resolve_step_route(
     version: Annotated[UUID, Query()],
 ) -> StepResolveOut:
     """C4: a `methodology_step` citation target to its program and step number."""
-    await _stub(ctx, METHODOLOGY_PROGRAMS, "methodology.read")
+    await _gate(ctx, METHODOLOGY_PROGRAMS, "methodology.read")
+    found = await programs.resolve_step(ctx, key, version)
+    return StepResolveOut(
+        version_id=found.version_id,
+        program_id=found.program_id,
+        program_code=found.program_code,
+        step_id=found.step_id,
+        number=found.number,
+        anchor=found.anchor,
+    )
 
 
 @programs_router.patch(
@@ -683,8 +745,10 @@ async def mandatory_step_route(
     "/versions/{version_id}/export.xlsx",
     action="methodology.read",
     response_model=bytes,
-    errors=(501,),
+    errors=(),
 )
-async def export_version_route(version_id: VersionId, ctx: Ctx) -> bytes:
+async def export_version_route(version_id: VersionId, ctx: Ctx) -> Response:
     """KNW-03: the deterministic program workbook (an audit event per export)."""
-    await _stub(ctx, METHODOLOGY_PROGRAMS, "methodology.read")
+    await _gate(ctx, METHODOLOGY_PROGRAMS, "methodology.read")
+    content = await programs.export_version(ctx, version_id)
+    return Response(content, media_type=MEDIA_TYPE)

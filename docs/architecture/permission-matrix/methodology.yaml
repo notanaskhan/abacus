@@ -8,3 +8,14 @@ actions:
   methodology.manage:       {firm_admin: allow, practice_leader: allow, quality_partner: allow, agent: deny, system: deny, mfa_recent: required}   # SPEC-008 Q3; K-01: + quality_partner; the plan's `level_in(partner, …)` waits for K-01-T06, since manage still publishes (DEC-406)
   methodology.approve:      {practice_leader: allow, quality_partner: allow, agent: deny, system: deny, mfa_recent: required}   # K-01 (KNW-02 e, KNW-03 mandatory locks): a person's act, fresh MFA (INV-1); K-01-T06 (DEC-651): + practice_leader, the QM owner (Margaret Okonkwo)
   methodology.parse:        {agent: task_scope}   # K-01: the methodology importer writing draft rows for its own import only
+  # --- K-02-T01 (DEC-1150; K-02 §4.4; DEC-38): firm standards and threshold policies (KNW-04).
+  # Every firm role reads published versions (drafts are partners' only, in the service); the
+  # agent reads at task scope for later C17 tools. Every write is a person's: agent, system and
+  # client principals are denied (INV-1, INV-4). Drafting and publishing are the named owner's,
+  # a partner member now (`owner_of_target`); a non-owner partner is refused `not_standard_owner`.
+  firm_standard.read:         {firm_admin: allow, practice_leader: allow, quality_partner: allow, security_admin: allow, firm_partner: allow, firm_manager: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, specialist: allow, client_service: allow, client_admin: deny, client_contributor: deny, agent: task_scope, system: deny}   # GET /v1/standards*, versions, diff, export, examples
+  firm_standard.create:       {practice_leader: allow, quality_partner: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny, mfa_recent: required}   # POST /v1/standards (DEC-38)
+  firm_standard.assign_owner: {practice_leader: allow, quality_partner: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny}   # PUT /v1/standards/{id}/owner: the owner must be a partner member (service)
+  firm_standard.draft:        {firm_partner: allow, owner_of_target: required, client_admin: deny, client_contributor: deny, agent: deny, system: deny}   # POST/PATCH/DELETE …/versions: draft from current, edit, discard
+  firm_standard.import:       {practice_leader: allow, quality_partner: allow, firm_partner: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny}   # POST …/imports: to a draft, never a publish; one standard's import is its owner's (service)
+  firm_standard.publish:      {firm_partner: allow, owner_of_target: required, client_admin: deny, client_contributor: deny, agent: deny, system: deny, mfa_recent: required}   # POST …/versions/{v}/publish: human only (CHECK published_actor_kind = 'human')

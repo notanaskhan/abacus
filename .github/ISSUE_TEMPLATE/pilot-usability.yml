@@ -1,0 +1,60 @@
+name: Pilot 0 usability finding
+description: A problem a design partner met in a Pilot 0 session (F-09 G3; Q-03-T084). Pilot codes only.
+title: "[PW0] <screen ID><state>: <what went wrong, in a few words>"
+labels: ["pilot-0"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Never write a firm's name, a person's name or any client data here.** Use the pilot code
+        (PF-A1, PF-T1, ...); the map is in the founders' vault. Sandboxes hold only synthetic data
+        (Brightwater Hale), so screenshots must show only that.
+  - type: input
+    id: pilot
+    attributes:
+      label: Pilot code
+      placeholder: PF-A1
+    validations:
+      required: true
+  - type: input
+    id: screen
+    attributes:
+      label: Screen ID and state letter
+      description: As in the handoff, e.g. POR-03 c, AUD-03 b.
+      placeholder: POR-03 c
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Usability severity (the session logs' scale, P-08-T29)
+      options:
+        - S1 (blocks the task)
+        - S2 (slows it, or an error the person recovered from)
+        - S3 (cosmetic or wording)
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      description: A defect is fixed under Q-03-T084; a new capability goes to its epic's cut list.
+      options:
+        - defect (it does not do what the screen contract says)
+        - capability (the partner wants something the contract does not have)
+    validations:
+      required: true
+  - type: input
+    id: epic
+    attributes:
+      label: Owning epic
+      placeholder: R-01
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: What happened
+      description: Steps on the synthetic sandbox, what was expected (quote the screen contract), what happened.
+    validations:
+      required: true

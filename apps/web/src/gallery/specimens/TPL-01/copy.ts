@@ -40,6 +40,7 @@ export const COPY = {
     signature: "Signature",
   },
   extended: "Ext.",
+  returnLabel: (year: number, form: string): string => `${String(year)} Form ${form}`,
   days: (n: number): string => `${String(n)} ${n === 1 ? "day" : "days"}`,
   waitingOnK1: "Waiting on K-1",
   noResults: (q: string): string => `No results for '${q}'.`,

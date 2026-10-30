@@ -258,6 +258,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.connections import (
 from abacus_tools.synthetic.scenarios.brightwater_hale.email_templates import (
     SLICE as EMAIL_TEMPLATES_SLICE,
 )
+from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import CT as _CT
 from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import snapshot
 from abacus_tools.synthetic.scenarios.brightwater_hale.firm_inbox import (
     NEEDS as FIRM_INBOX_NEEDS,
@@ -339,6 +340,9 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.shell import (
     SANDBOX_FIRM_ID,
     SANDBOX_FIRM_NAME,
 )
+from abacus_tools.synthetic.scenarios.brightwater_hale.tax_board import BOARD_BY_LABEL
+from abacus_tools.synthetic.scenarios.brightwater_hale.tax_board import NEEDS as TAX_BOARD_NEEDS
+from abacus_tools.synthetic.scenarios.brightwater_hale.tax_board import SLICE as TAX_BOARD_SLICE
 from abacus_tools.synthetic.scenarios.brightwater_hale.timeline import Event
 
 SUPERUSER_ENV: Final = "ABACUS_LOCAL_SUPERUSER_DSN"
@@ -364,6 +368,11 @@ FLAGS_ON: Final = (
     "home.dashboard",
     "review.grammar_api",
     "engagements.roll_forward_v2",  # P-07-T55: ENG-13 v2 on synthetic firms
+    # N-02-T17: record mode (SIG-01, the import, the portal reads) on synthetic firms from S15.
+    "signatures.envelopes",
+    # N-01-T23: INB-01, INB-02 and FIL-01 live on Brightwater Hale (staging and local).
+    "inbox.firm_intake",
+    "files.browser",
 )
 OFFICE_ZONES: Final = {
     "Chicago": "America/Chicago",
@@ -1215,6 +1224,65 @@ async def _tax_engagement_created(conn: asyncpg.Connection, _: Scenario, event: 
     await _bootstrap(conn, event, write)
 
 
+async def _return_board_set(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """T-02-T11: one return's board state (status, level, extension, sync, due dates) and its
+    preparer and reviewer, on the engagement's team."""
+    row = BOARD_BY_LABEL[str(event.data["return"])]
+    ret = RETURN_BY_LABEL[row.label]
+    engagement = UUID(ENGAGEMENT_BY_LABEL[ret.engagement].id)
+    item = UUID(row.work_item_id)
+    synced_at = (
+        datetime.strptime(f"{row.sync.day} 2026 17:00", "%b %d %Y %H:%M").replace(tzinfo=_CT)
+        if row.sync.day is not None
+        else None
+    )
+
+    async def write() -> tuple[str, str, str]:
+        updated = await conn.execute(
+            "UPDATE tax_returns SET status = $3, review_level = $4, extended = $5, "
+            "sync_status = $6, last_synced_at = $7, original_due_on = $8, extended_due_on = $9 "
+            "WHERE tenant_id = $1 AND work_item_id = $2",
+            TENANT,
+            item,
+            row.status,
+            row.review_level,
+            row.extended,
+            row.sync.code,
+            synced_at,
+            row.original_due,
+            row.extended_due if row.extended else None,
+        )
+        if updated != "UPDATE 1":
+            raise RuntimeError(f"no tax return for {row.label}: load the binders slice first")
+        for initials, function, role in (
+            (row.preparer, "preparer", "staff"),
+            (row.reviewer, "detail_reviewer", "reviewer"),
+        ):
+            user = user_id_of(_SEATS[initials])
+            await conn.execute(
+                "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
+                "VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
+                TENANT,
+                engagement,
+                user,
+                role,
+            )
+            await conn.execute(
+                "INSERT INTO work_item_assignments (tenant_id, work_item_id, engagement_id, "
+                "user_id, function, assigned_by) SELECT $1, $2, $3, $4, $5, $4 WHERE NOT EXISTS "
+                "(SELECT 1 FROM work_item_assignments WHERE tenant_id = $1 AND work_item_id = $2 "
+                "AND function = $5 AND removed_at IS NULL)",
+                TENANT,
+                item,
+                engagement,
+                user,
+                function,
+            )
+        return "tax_return.board_set", "work_item", str(item)
+
+    await _bootstrap(conn, event, write)
+
+
 async def _close_engagement_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     """Copperleaf's 2026 Close and its August close (CLS-03: preparer RM, reviewer PR)."""
     engagement = UUID(COPPERLEAF_CLOSE_ENGAGEMENT)
@@ -1432,6 +1500,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     INTAKE_SLICE: INTAKE_NEEDS,  # P-07-T50: wave 3 (drafts, the open Harborline hit, Meridian)
     FIRM_INBOX_SLICE: FIRM_INBOX_NEEDS,  # N-01-T11: docs@ rows 1-17 and the Intake team
     EMAIL_TEMPLATES_SLICE: (),  # R-01-T22: Grace's firm admin role is audit_core's
+    TAX_BOARD_SLICE: TAX_BOARD_NEEDS,  # T-02-T11: the board sets the binders' returns
 }
 
 
@@ -2541,6 +2610,8 @@ HANDLERS: Final[dict[str, Handler]] = {
     # P-06-T08 (`--slice binders`): client people, tax and close engagements, then the binders.
     "identity.client_person_added": _client_person_added,
     "engagements.tax_engagement_created": _tax_engagement_created,
+    # T-02-T11 (`--slice tax_board`, after `binders`): each return's board state and people.
+    "tax.return_board_set": _return_board_set,
     "engagements.close_engagement_created": _close_engagement_created,
     "requests.binder_created": _binder_created,
     # P-06-T08 remainder: Granite Peak's agent-drafted SURL request, after its PBC list.
