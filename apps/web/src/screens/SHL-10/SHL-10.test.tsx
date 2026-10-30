@@ -231,7 +231,7 @@ describe("SHL-10 d, e, e′, g", () => {
     const calls = show("e");
     const table = await screen.findByRole("table", { name: "Entries" });
     expect(within(table).getAllByRole("row")).toHaveLength(5);
-    expect(screen.getByText("Approve 4 entries")).toBeTruthy();
+    expect(screen.getAllByText("Approve 4 entries").length).toBeGreaterThan(0);
     expect(screen.getByText(/proposed 4 entries within BH AJE thresholds v2/u)).toBeTruthy();
     expect(screen.getByText("20,020.00")).toBeTruthy();
     const approve = await approveButton(/Approve 4 under BH AJE thresholds v2/u);

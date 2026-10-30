@@ -1,8 +1,8 @@
 ---
 id: TASK-2226
 title: P-04-T42 SHL-10 frames d, e, e′, g and the AUD-03 Review entry
-spec: SPEC-360
-acceptance_criteria: []
+spec: SPEC-000  # the backlog row; SPEC-360 and the handoff
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: green
 status: in-review
 epic: P-04

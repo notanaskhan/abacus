@@ -548,10 +548,42 @@ export const AJE05 = ["12,600.00", "1,480.00", "820.00"]; // §8 SHL-10 d
 export const BATCH = "20,020.00"; // SHL-10 e: 4 entries, tie
 /** SHL-10 e's four entries (spec frame E), verbatim. */
 const BATCH_ROWS: ProposalRowOut[] = [
-  row(1, "je.payroll_accrual", "Payroll accrual — Aug 24–31", "Dr 6000 Wages & salaries 11,860.00", "Cr 2110 Accrued payroll 11,860.00", "Within threshold · ≤ $15,000 payroll accruals", 1),
-  row(2, "je.prepaid_insurance", "Prepaid insurance — Cedar Mutual BOP ($8,400 ÷ 12)", "Dr 6400 Insurance 700.00", "Cr 1300 Prepaid insurance 700.00", "Within threshold · ≤ $10,000", 1),
-  row(3, "je.depreciation", "Depreciation — August", "Dr 6500 Depreciation 2,140.00", "Cr 1590 Accumulated depreciation 2,140.00", "Within threshold · ≤ $10,000", 1),
-  row(4, "je.deferred_revenue", "Deferred revenue — August subscriptions shipped", "Dr 2300 Deferred revenue 5,320.00", "Cr 4200 Subscription revenue 5,320.00", "Within threshold · ≤ $10,000", 1),
+  row(
+    1,
+    "je.payroll_accrual",
+    "Payroll accrual — Aug 24–31",
+    "Dr 6000 Wages & salaries 11,860.00",
+    "Cr 2110 Accrued payroll 11,860.00",
+    "Within threshold · ≤ $15,000 payroll accruals",
+    1,
+  ),
+  row(
+    2,
+    "je.prepaid_insurance",
+    "Prepaid insurance — Cedar Mutual BOP ($8,400 ÷ 12)",
+    "Dr 6400 Insurance 700.00",
+    "Cr 1300 Prepaid insurance 700.00",
+    "Within threshold · ≤ $10,000",
+    1,
+  ),
+  row(
+    3,
+    "je.depreciation",
+    "Depreciation — August",
+    "Dr 6500 Depreciation 2,140.00",
+    "Cr 1590 Accumulated depreciation 2,140.00",
+    "Within threshold · ≤ $10,000",
+    1,
+  ),
+  row(
+    4,
+    "je.deferred_revenue",
+    "Deferred revenue — August subscriptions shipped",
+    "Dr 2300 Deferred revenue 5,320.00",
+    "Cr 4200 Subscription revenue 5,320.00",
+    "Within threshold · ≤ $10,000",
+    1,
+  ),
 ];
 
 export const SHL10 = {
@@ -575,10 +607,42 @@ export const SHL10 = {
     reasoning:
       "Receiving log Aug 28 (1,800 lb green coffee at $7.00/lb) · utility bills Sep 1 (August service) · Hartwell & Lowe engagement letter (4.1 h at $200, unbilled)",
     rows: [
-      row(1, "je.dr.inventory_green_coffee", "Dr Inventory — Green Coffee", null, "12600.00", "Receiving log Aug 28", 1),
-      row(2, "je.dr.utilities_facilities", "Dr Utilities & Facilities", null, "1480.00", "utility bills Sep 1", 1),
-      row(3, "je.dr.legal_professional", "Dr Legal & Professional Fees", null, "820.00", "Hartwell & Lowe engagement letter", 1),
-      row(4, "je.cr.accrued_expenses", "Cr Accrued Expenses", null, "14900.00", "auto-reverses Sep 1", 1),
+      row(
+        1,
+        "je.dr.inventory_green_coffee",
+        "Dr Inventory — Green Coffee",
+        null,
+        "12600.00",
+        "Receiving log Aug 28",
+        1,
+      ),
+      row(
+        2,
+        "je.dr.utilities_facilities",
+        "Dr Utilities & Facilities",
+        null,
+        "1480.00",
+        "utility bills Sep 1",
+        1,
+      ),
+      row(
+        3,
+        "je.dr.legal_professional",
+        "Dr Legal & Professional Fees",
+        null,
+        "820.00",
+        "Hartwell & Lowe engagement letter",
+        1,
+      ),
+      row(
+        4,
+        "je.cr.accrued_expenses",
+        "Cr Accrued Expenses",
+        null,
+        "14900.00",
+        "auto-reverses Sep 1",
+        1,
+      ),
     ],
     change_count: 1,
     totals: [{ label: "Total", value: "14900.00", ties: true }],
@@ -659,11 +723,23 @@ export const SHL10 = {
     reasoning:
       "Invoice FRF-30418 from Front Range Freight Co. is dated Jun 29, 2026 and bills June inbound freight. It was paid Jul 22 and recorded in July, so the $68,400 liability existed at June 30 and is not in June accounts payable.",
     rows: [
-      row(1, "conclusion.front_range_freight", "Conclusion · Front Range Freight Co.", null, "Improperly excluded", "invoice date and service period", 2),
+      row(
+        1,
+        "conclusion.front_range_freight",
+        "Conclusion · Front Range Freight Co.",
+        null,
+        "Improperly excluded",
+        "invoice date and service period",
+        2,
+      ),
     ],
     totals: [],
     evidence: [
-      { evidence_version_id: id(121), label: "Invoice FRF-30418 — Front Range Freight Co.", citation_count: 2 },
+      {
+        evidence_version_id: id(121),
+        label: "Invoice FRF-30418 — Front Range Freight Co.",
+        citation_count: 2,
+      },
       { evidence_version_id: id(122), label: "NetSuite payment Jul 22, 2026", citation_count: 1 },
     ],
     policy: {
@@ -1528,7 +1604,7 @@ export const REVIEW_ARTBOARDS: readonly ReviewArtboard[] = [
     "Over threshold",
     "raj-malhotra",
     oct1,
-    [PROPOSAL(SHL10.d)],
+    [PROPOSAL(SHL10.d), post("/v1/proposals/{proposal_id}/route", "AgentProposalOut", SHL10.d)],
     [send("POST /v1/proposals/{proposal_id}/route", "RouteProposalIn", ROUTE_D)],
   ),
   board("SHL-10", "e", "Within-threshold batch", "raj-malhotra", oct1, [
