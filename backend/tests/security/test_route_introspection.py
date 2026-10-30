@@ -667,6 +667,13 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/withdraw",
         "evidence.withdraw",
     ),
+    # T-02-T17: a person resolves a flagged duplicate upload.
+    (
+        "POST",
+        "/v1/engagements/{engagement_id}/request-items/{item_id}/evidence-versions/{version_id}"
+        "/duplicate-resolution",
+        "evidence.resolve_duplicate",
+    ),
     ("POST", "/v1/engagements/{engagement_id}/findings", "finding.raise"),
     (
         "POST",

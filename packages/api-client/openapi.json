@@ -20008,6 +20008,57 @@
         "title": "DueDatesIn",
         "type": "object"
       },
+      "DuplicateResolutionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "decision": {
+            "cls": "internal",
+            "enum": [
+              "keep_newer",
+              "discard_duplicate"
+            ],
+            "title": "Decision",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision"
+        ],
+        "title": "DuplicateResolutionIn",
+        "type": "object"
+      },
+      "DuplicateResolutionOut": {
+        "properties": {
+          "decision": {
+            "cls": "internal",
+            "enum": [
+              "keep_newer",
+              "discard_duplicate"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "kept_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Kept Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidence_version_id",
+          "kept_version_id",
+          "decision"
+        ],
+        "title": "DuplicateResolutionOut",
+        "type": "object"
+      },
       "EFurnishingConsentIn": {
         "additionalProperties": false,
         "properties": {
@@ -114662,6 +114713,153 @@
           "requests"
         ],
         "x-abacus-action": "request_item.update"
+      }
+    },
+    "/v1/engagements/{engagement_id}/request-items/{item_id}/evidence-versions/{version_id}/duplicate-resolution": {
+      "post": {
+        "description": "TAX-03 e: Keep newer or Discard duplicate; a discard voids and hides, never deletes.",
+        "operationId": "resolve_duplicate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DuplicateResolutionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DuplicateResolutionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Resolve Duplicate Route",
+        "tags": [
+          "evidence"
+        ],
+        "x-abacus-action": "evidence.resolve_duplicate"
       }
     },
     "/v1/engagements/{engagement_id}/request-items/{item_id}/follow-ups": {

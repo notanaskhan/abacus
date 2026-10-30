@@ -497,6 +497,11 @@ codes:
     - abacus.modules.requests.binders.DueDateRequired
     summary: Every request a publish sends needs a due date, its own or the binder's default; the facts
       name the requests without one.
+  duplicate_resolved:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.duplicates.DuplicateResolved
+    summary: The version's duplicate was already resolved.
   duplicate_upload:
     status: 409
     raised_by:
@@ -619,8 +624,9 @@ codes:
   evidence_accepted:
     status: 409
     raised_by:
+    - abacus.modules.evidence.duplicates.DuplicateAccepted
     - abacus.modules.evidence.withdrawals.EvidenceAccepted
-    summary: 'The firm accepted this version (ever): it is never withdrawn (ADR-162 §2).'
+    summary: An accepted version is never discarded or superseded.
   evidence_not_withdrawable:
     status: 409
     raised_by:
@@ -1196,6 +1202,11 @@ codes:
     raised_by:
     - abacus.modules.requests.service.NotAClientContributor
     summary: Items are assigned to the engagement's client contributors only (TASK-035 D4).
+  not_a_duplicate:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.duplicates.NotADuplicate
+    summary: The version carries no duplicate flag.
   not_concluded:
     status: 409
     raised_by:
