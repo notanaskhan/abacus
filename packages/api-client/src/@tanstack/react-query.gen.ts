@@ -17020,7 +17020,7 @@ export const finalApprovalQueryKey = (options: Options<FinalApprovalData>) => cr
 /**
  * Final Approval Route
  *
- * Eligibility facts and blockers (TAX-02 calls `tax.api.final_approval_blockers`).
+ * Eligibility facts and blockers (T-01-T18; TAX-02, TAX-09 a/a2).
  */
 export const finalApprovalOptions = (options: Options<FinalApprovalData>) => queryOptions<FinalApprovalResponse, FinalApprovalError, FinalApprovalResponse, ReturnType<typeof finalApprovalQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -17038,7 +17038,7 @@ export const finalApprovalOptions = (options: Options<FinalApprovalData>) => que
 /**
  * Approve Return Route
  *
- * SHL-12 h: the L4 `final_approval` sign-off, recorded only by `tax/approval.py`.
+ * SHL-12 h: the L4 sign-off, recorded only by `tax/approval.py` (T-01-T18).
  */
 export const approveReturnMutation = (options?: Partial<Options<ApproveReturnData>>): UseMutationOptions<ApproveReturnResponse, ApproveReturnError, Options<ApproveReturnData>> => {
     const mutationOptions: UseMutationOptions<ApproveReturnResponse, ApproveReturnError, Options<ApproveReturnData>> = {

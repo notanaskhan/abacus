@@ -10259,7 +10259,7 @@ export const eroNotice = <ThrowOnError extends boolean = false>(options: Options
 /**
  * Final Approval Route
  *
- * Eligibility facts and blockers (TAX-02 calls `tax.api.final_approval_blockers`).
+ * Eligibility facts and blockers (T-01-T18; TAX-02, TAX-09 a/a2).
  */
 export const finalApproval = <ThrowOnError extends boolean = false>(options: Options<FinalApprovalData, ThrowOnError>): RequestResult<FinalApprovalResponses, FinalApprovalErrors, ThrowOnError> => (options.client ?? client).get<FinalApprovalResponses, FinalApprovalErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -10270,7 +10270,7 @@ export const finalApproval = <ThrowOnError extends boolean = false>(options: Opt
 /**
  * Approve Return Route
  *
- * SHL-12 h: the L4 `final_approval` sign-off, recorded only by `tax/approval.py`.
+ * SHL-12 h: the L4 sign-off, recorded only by `tax/approval.py` (T-01-T18).
  */
 export const approveReturn = <ThrowOnError extends boolean = false>(options: Options<ApproveReturnData, ThrowOnError>): RequestResult<ApproveReturnResponses, ApproveReturnErrors, ThrowOnError> => (options.client ?? client).post<ApproveReturnResponses, ApproveReturnErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

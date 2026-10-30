@@ -1050,3 +1050,19 @@ __all__ = [
     "version_detail",
     "version_diff",
 ]
+
+
+async def policy_payload(
+    tenant_id: UUID, policy: PolicyRef, kind: StandardKind
+) -> dict[str, object]:
+    """T-01-T18: the payload of a version `current_version_of_kind` named, for the deterministic
+    functions (`return_approval_policy`)."""
+    tenant = TenantContext(tenant_id, "system", "standards:policy_payload")
+    family = _family(kind)
+    async with tenant_session(tenant) as session:
+        payload = (
+            await session.execute(
+                select(family.version.payload).where(family.version.id == policy.version_id)
+            )
+        ).scalar_one()
+    return dict(payload)

@@ -177226,7 +177226,7 @@
     },
     "/v1/tax-returns/{return_id}/final-approval": {
       "get": {
-        "description": "Eligibility facts and blockers (TAX-02 calls `tax.api.final_approval_blockers`).",
+        "description": "Eligibility facts and blockers (T-01-T18; TAX-02, TAX-09 a/a2).",
         "operationId": "final_approval",
         "parameters": [
           {
@@ -177322,16 +177322,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Final Approval Route",
@@ -177341,7 +177331,7 @@
         "x-abacus-action": "tax_return.read"
       },
       "post": {
-        "description": "SHL-12 h: the L4 `final_approval` sign-off, recorded only by `tax/approval.py`.",
+        "description": "SHL-12 h: the L4 sign-off, recorded only by `tax/approval.py` (T-01-T18).",
         "operationId": "approve_return",
         "parameters": [
           {
@@ -177468,16 +177458,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Approve Return Route",

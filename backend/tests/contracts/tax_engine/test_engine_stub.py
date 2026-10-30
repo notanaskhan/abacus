@@ -39,9 +39,12 @@ WRITES = (
     "integration.test",
     "member.set_ero",
 )
-ROUTES = [
+# T-01-T18 built final approval (`tax/approval.py`).
+LIVE = [
     ("get", "/v1/tax-returns/{return_id}/final-approval", "tax_return.read"),
     ("post", "/v1/tax-returns/{return_id}/final-approval", "tax_return.approve"),
+]
+ROUTES = [
     ("get", "/v1/tax-returns/{return_id}/engine-sync", "tax_return.read"),
     ("post", "/v1/tax-returns/{return_id}/engine-exports", "tax_return.export"),
     ("get", "/v1/engine-exports/{export_id}/file", "tax_return.export"),
@@ -77,6 +80,15 @@ def test_ac5_every_route_declares_its_action_and_is_a_stub(
     op = PATHS[path][method]
     assert op["x-abacus-action"] == action
     assert "501" in cast(Json, op["responses"])
+
+
+@pytest.mark.parametrize(("method", "path", "action"), LIVE)
+def test_ac5_a_built_route_keeps_its_action_and_is_no_stub(
+    method: str, path: str, action: str
+) -> None:
+    op = PATHS[path][method]
+    assert op["x-abacus-action"] == action
+    assert "501" not in cast(Json, op["responses"])
 
 
 @pytest.mark.parametrize("action", WRITES)

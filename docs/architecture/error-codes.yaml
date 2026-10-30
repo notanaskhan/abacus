@@ -340,6 +340,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.review.sign_offs.ContentChanged
+    - abacus.modules.tax.approval.ContentChanged
     summary: 'The target changed since the signer saw it: nothing is written.'
   control_set_exists:
     status: 409
@@ -638,6 +639,10 @@ codes:
     - abacus.modules.connections.ledger_import.FileRefused
     - abacus.modules.evidence.uploads.UploadRefused
     summary: The malware scanner refused the file (SPEC-029 AC-1; ADR-110). Nothing is stored.
+  final_approval_blocked:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.approval.FinalApprovalBlocked
   final_export_required:
     status: 409
     raised_by:

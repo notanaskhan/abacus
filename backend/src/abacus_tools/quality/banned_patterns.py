@@ -2663,6 +2663,7 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/modules/workpapers/service.py",
             "src/abacus/modules/assurance/mapping.py",
             "src/abacus/modules/assurance/trial_balance.py",
+            "src/abacus/modules/tax/approval.py",  # T-01-T18: the return's only L4 writer
         ),
     ),
     Rule(
