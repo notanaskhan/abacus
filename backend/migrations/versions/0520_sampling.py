@@ -20,7 +20,7 @@ Expand-only. Every table has forced RLS. Money is numeric(20,2).
   content, ADR-340 §6).
 
 Revision ID: 0520
-Revises: 0468
+Revises: 0431
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, tenant_table
 
 revision = "0520"
-down_revision = "0468"
+down_revision = "0431"
 branch_labels = None
 depends_on = None
 
