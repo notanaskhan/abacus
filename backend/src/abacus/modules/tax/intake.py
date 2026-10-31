@@ -20,7 +20,8 @@
   proposals were made (or refused) when the file arrived, by the matcher's own gate.
 - **Questions**: each questionnaire's counts and submission, never its answers (POR-05's drawer
   reads those under `questionnaire.read`).
-- **K-1 hand-offs**: T-02-T20's packages; empty until they land (no invented rows).
+- **K-1 hand-offs**: T-02-T20's hand-offs to this return (DEC-88: the source only for a reader
+  of both returns).
 
 Client service (Grace, DEC-20) sees request status and file names, never extracted values: the
 tax year and the suggestions are left out for that role (`suggestions = "hidden"`).
@@ -32,6 +33,7 @@ from collections.abc import Sequence
 from typing import Final
 from uuid import UUID
 
+from abacus.kernel._statuses import K1HandoffStatus
 from abacus.kernel.clock import now
 from abacus.kernel.errors import NotFound
 from abacus.modules.agents.api import MATCHER, stage_for
@@ -55,6 +57,7 @@ from abacus.modules.requests.api import (
     source_documents,
     work_item_questionnaires,
 )
+from abacus.modules.tax import k1_packages
 from abacus.modules.tax.overview import Loaded, load_return, return_resource
 from abacus.modules.tax.returns_contract import (
     IntakeBinderOut,
@@ -63,6 +66,7 @@ from abacus.modules.tax.returns_contract import (
     IntakeRequestOut,
     IntakeSuggestionOut,
     IntakeWaitingFileOut,
+    K1DependencyOut,
     SuggestionsState,
     TaxReturnIntakeOut,
 )
@@ -239,7 +243,15 @@ async def intake(ctx: AuthContext, return_id: UUID) -> TaxReturnIntakeOut:
         categories=categories,
         waiting_files=len(waiting),
         questionnaire_ids=[q.id for q in asked],
-        k1_handoffs=[],
+        k1_handoffs=[  # T-02-T20's hand-offs, the source link per DEC-88
+            K1DependencyOut(
+                source_return_id=d.source_return_id,
+                issuer_name=d.issuer_name,
+                status=K1HandoffStatus(d.status),
+                blocking=d.blocking,
+            )
+            for d in await k1_packages.dependencies(ctx, return_id)
+        ],
         tax_year=loaded.row.tax_year,
         binder=card,
         requests_total=total,

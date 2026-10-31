@@ -519,6 +519,10 @@ codes:
     raised_by:
     - abacus.modules.communications.triage_apply.DestinationOutsideClient
     summary: The destination belongs to another client than the file's.
+  details_change_decided:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.k1_packages.DetailsChangeDecided
   disclosure_outdated:
     status: 409
     raised_by:
@@ -1090,6 +1094,26 @@ codes:
     raised_by:
     - abacus.modules.requests.service.ItemNotFulfillable
     summary: Only open or received items take new evidence by rule.
+  k1_document_missing:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.k1_packages.K1DocumentMissing
+    summary: '422: the set names an engine PDF this return has not imported.'
+  k1_not_released:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.k1_packages.K1NotReleased
+    summary: Resend is for a released package.
+  k1_not_shareable:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.k1_packages.K1NotShareable
+    summary: Only this return's own draft or released packages are shared, to another tax return.
+  k1_set_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.k1_packages.K1SetRefused
+    summary: '422: the K-1 set is not a valid engine manifest (`facts.reason`, never its content).'
   knowledge_duplicate:
     status: 409
     raised_by:

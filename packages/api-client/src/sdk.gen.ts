@@ -8040,6 +8040,8 @@ export const k1Document = <ThrowOnError extends boolean = false>(options: Option
 
 /**
  * Resend K1 Route
+ *
+ * The corrected contact; T21's workflow sends the new invitation.
  */
 export const resendK1 = <ThrowOnError extends boolean = false>(options: Options<ResendK1Data, ThrowOnError>): RequestResult<ResendK1Responses, ResendK1Errors, ThrowOnError> => (options.client ?? client).post<ResendK1Responses, ResendK1Errors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9755,6 +9757,8 @@ export const sendQuestion = <ThrowOnError extends boolean = false>(options: Opti
 
 /**
  * Accept Details Change Route
+ *
+ * DV-10: recorded for the firm to apply in CCH (no full TIN is stored).
  */
 export const acceptDetailsChange = <ThrowOnError extends boolean = false>(options: Options<AcceptDetailsChangeData, ThrowOnError>): RequestResult<AcceptDetailsChangeResponses, AcceptDetailsChangeErrors, ThrowOnError> => (options.client ?? client).post<AcceptDetailsChangeResponses, AcceptDetailsChangeErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -10684,6 +10688,8 @@ export const returnIntake = <ThrowOnError extends boolean = false>(options: Opti
 
 /**
  * List K1 Packages Route
+ *
+ * TXP-12: rows with documents (the expanded row); `counts` are the tiles by status.
  */
 export const listK1Packages = <ThrowOnError extends boolean = false>(options: Options<ListK1PackagesData, ThrowOnError>): RequestResult<ListK1PackagesResponses, ListK1PackagesErrors, ThrowOnError> => (options.client ?? client).get<ListK1PackagesResponses, ListK1PackagesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -10715,6 +10721,8 @@ export const releaseK1 = <ThrowOnError extends boolean = false>(options: Options
 
 /**
  * Share K1 Route
+ *
+ * DEC-88: a hand-off, an `internal_handoff` copy and a final-approval dependency each.
  */
 export const shareK1 = <ThrowOnError extends boolean = false>(options: Options<ShareK1Data, ThrowOnError>): RequestResult<ShareK1Responses, ShareK1Errors, ThrowOnError> => (options.client ?? client).post<ShareK1Responses, ShareK1Errors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

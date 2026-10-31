@@ -24606,7 +24606,8 @@
               "values",
               "diagnostics",
               "pdfs",
-              "acks"
+              "acks",
+              "k1_set"
             ],
             "title": "Kind",
             "type": "string"
@@ -39311,6 +39312,15 @@
               "type": "string"
             },
             "title": "Allowed Actions",
+            "type": "array"
+          },
+          "documents": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/K1DocumentOut"
+            },
+            "title": "Documents",
             "type": "array"
           },
           "form": {
@@ -159525,6 +159535,7 @@
     },
     "/v1/k1-packages/{package_id}:resend": {
       "post": {
+        "description": "The corrected contact; T21's workflow sends the new invitation.",
         "operationId": "resend_k1",
         "parameters": [
           {
@@ -175926,6 +175937,7 @@
     },
     "/v1/recipient-details-changes/{change_id}:accept": {
       "post": {
+        "description": "DV-10: recorded for the firm to apply in CCH (no full TIN is stored).",
         "operationId": "accept_details_change",
         "parameters": [
           {
@@ -184936,7 +184948,8 @@
                 "values",
                 "diagnostics",
                 "pdfs",
-                "acks"
+                "acks",
+                "k1_set"
               ],
               "title": "Kind",
               "type": "string"
@@ -185640,6 +185653,7 @@
     },
     "/v1/tax-returns/{return_id}/k1-packages": {
       "get": {
+        "description": "TXP-12: rows with documents (the expanded row); `counts` are the tiles by status.",
         "operationId": "list_k1_packages",
         "parameters": [
           {
@@ -186019,6 +186033,7 @@
     },
     "/v1/tax-returns/{return_id}/k1-packages:share-internal": {
       "post": {
+        "description": "DEC-88: a hand-off, an `internal_handoff` copy and a final-approval dependency each.",
         "operationId": "share_k1",
         "parameters": [
           {

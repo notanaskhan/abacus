@@ -334,6 +334,33 @@ async def binder_card(ctx: AuthContext, work_item_id: UUID) -> BinderCard | None
     )
 
 
+async def k1_request_for(
+    tenant: TenantContext, work_item_id: UUID, issuer_name: str
+) -> UUID | None:
+    """T-02-T20: the receiving return's one open request for a K-1 from this issuer ("Schedule
+    K-1 from Ridgeline Property Partners, LP"), by code; None when none or several match."""
+    pattern = f"%{issuer_name.replace('%', '').replace('_', '')}%"
+    async with tenant_session(tenant) as session:
+        found = (
+            (
+                await session.execute(
+                    select(RequestItem.id)
+                    .join(RequestList, RequestList.id == RequestItem.request_list_id)
+                    .where(
+                        RequestList.work_item_id == work_item_id,
+                        RequestItem.status.in_(OPEN),
+                        RequestItem.title.ilike("%K-1%"),
+                        RequestItem.title.ilike(pattern),
+                    )
+                    .limit(2)
+                )
+            )
+            .scalars()
+            .all()
+        )
+    return found[0] if len(found) == 1 else None
+
+
 async def pbc_binders(ctx: AuthContext, work_item_id: UUID) -> list[UUID]:
     """The work item's asked PBC binders the reader may read, in binder order: the engagement
     export's scope (A-01-T18; DEC-379: a binder id outside these is refused at create). The
