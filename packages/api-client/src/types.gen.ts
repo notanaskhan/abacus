@@ -22856,6 +22856,10 @@ export type MaterialityRecordOut = {
      */
     allowed_actions: Array<'materiality.propose' | 'materiality.reassess' | 'decision.decide' | 'decision.notify' | 'risk.edit' | 'risk.link' | 'risk.route_for_approval' | 'fraud_session.edit' | 'fraud_minutes.approve' | 'control.edit' | 'deficiency.propose_severity' | 'exception.route' | 'service_org.edit' | 'soc_report.evaluate' | 'workpaper.draft'>;
     /**
+     * Benchmark Caption
+     */
+    benchmark_caption?: Array<string>;
+    /**
      * Benchmarks
      */
     benchmarks: Array<BenchmarkOut>;
@@ -22865,6 +22869,10 @@ export type MaterialityRecordOut = {
      */
     pending_card_id: string | null;
     /**
+     * Period End
+     */
+    period_end?: string | null;
+    /**
      * Policy Version Id
      */
     policy_version_id: string | null;
@@ -22872,6 +22880,10 @@ export type MaterialityRecordOut = {
      * Qualitative Factors
      */
     qualitative_factors: Array<QualitativeFactorOut>;
+    /**
+     * Specific Note
+     */
+    specific_note?: string | null;
     /**
      * Versions
      */
@@ -26792,6 +26804,10 @@ export type PriorYearOut = {
      * Overall Used
      */
     overall_used: string | null;
+    /**
+     * Rate Used Pct
+     */
+    rate_used_pct?: string | null;
     /**
      * Year
      */

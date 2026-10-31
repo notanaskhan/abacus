@@ -47794,6 +47794,15 @@
             "title": "Allowed Actions",
             "type": "array"
           },
+          "benchmark_caption": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 4,
+            "title": "Benchmark Caption",
+            "type": "array"
+          },
           "benchmarks": {
             "cls": "confidential",
             "items": {
@@ -47826,6 +47835,19 @@
             "cls": "internal",
             "title": "Pending Card Id"
           },
+          "period_end": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Period End"
+          },
           "policy_version_id": {
             "anyOf": [
               {
@@ -47846,6 +47868,18 @@
             },
             "title": "Qualitative Factors",
             "type": "array"
+          },
+          "specific_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Specific Note"
           },
           "versions": {
             "cls": "confidential",
@@ -55949,6 +55983,19 @@
             ],
             "cls": "confidential",
             "title": "Overall Used"
+          },
+          "rate_used_pct": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Rate Used Pct"
           },
           "year": {
             "cls": "internal",
