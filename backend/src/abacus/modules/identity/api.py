@@ -161,7 +161,13 @@ from abacus.modules.identity.governance_errors import (
     SupersededByAiPolicy,
     SupportRequestsDisabled,
 )
-from abacus.modules.identity.grants import GrantNotYetDue, consume_grant, issue_grant, void_grant
+from abacus.modules.identity.grants import (
+    GrantNotYetDue,
+    consume_grant,
+    consumed_grant_approver,
+    issue_grant,
+    void_grant,
+)
 from abacus.modules.identity.invitations import (
     ContactView,
     InvitationLimit,
@@ -646,6 +652,7 @@ __all__ = [
     "consent_given",
     "consent_registered",
     "consume_grant",
+    "consumed_grant_approver",
     "contact_delegations_provider",
     "contact_emails",
     "contact_user_ids",

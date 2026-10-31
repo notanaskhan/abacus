@@ -4,6 +4,7 @@ import { registerScreen } from "../fixture-mode";
 import { T6Artboard } from "./T6";
 import { T10Artboard } from "./T10";
 import { Tpl01Artboard } from "./TPL-01";
+import { Tpl06Artboard } from "./TPL-06";
 import { Tpl10Artboard } from "./TPL-10";
 import { Tpl16Artboard } from "./TPL-16";
 import { Tpl19Artboard } from "./TPL-19";
@@ -41,4 +42,10 @@ registerScreen("TPL-10", {
 registerScreen("T6", {
   title: "Workbook / schedule grid · Ridgeline capital accounts",
   Component: T6Artboard,
+});
+
+// F-06-T20: the TPL-06 Ridgeline capital accounts specimen, a to e (e signed off).
+registerScreen("TPL-06", {
+  title: "Workbook grid specimen · Ridgeline capital accounts",
+  Component: Tpl06Artboard,
 });

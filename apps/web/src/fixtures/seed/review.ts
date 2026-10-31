@@ -401,24 +401,52 @@ export const materialityCard: DecisionCardOut = {
       citation_id: null,
     },
     { key: "amount", label: "Amount", value: "$16,812,400", citation_id: id(42) },
+    // P-04-T50: the handoff's two other context rows, verbatim (SHL-11 frame 1).
+    {
+      key: "firm_range",
+      label: "Firm range",
+      value: "0.5% – 2.0% of net assets (BH EBP v3 §4.2)",
+      citation_id: null,
+    },
+    {
+      key: "prior_year",
+      label: "Prior year",
+      value: "PY2024: 1.5% of $14,228,500 = $213,400",
+      citation_id: null,
+    },
   ],
   options: [
     {
       key: "pct_1_0",
       label: "1.0% — $168,100",
-      detail: "Performance materiality 75% = $126,075 · clearly trivial 5% = $8,405.",
+      detail:
+        "Performance materiality 75% = $126,075 · clearly trivial 5% = $8,405. Lower end of the range; for elevated risk such as a new recordkeeper or prior misstatements.",
       figures: option("0.010", "168100", "126075", "8405"),
       recommended: false,
     },
     {
       key: "pct_1_5",
       label: "1.5% — $252,200",
-      detail: "PM 75% = $189,150 · CT 5% = $12,610",
+      detail:
+        "PM 75% = $189,150 · CT 5% = $12,610. Same basis and percentage as PY2024; no misstatements above clearly trivial last year; SOC 1 reports cover recordkeeping and custody.",
       figures: option("0.015", "252200", "189150", "12610"),
       recommended: true,
     },
   ],
   factors: [
+    {
+      key: "late_deposits",
+      label:
+        "Late deposits of participant contributions are reported on Schedule H line 4a at any amount (specific materiality $0)",
+      applicable: true,
+      checked: true,
+    },
+    {
+      key: "users",
+      label: "Users are participants, DOL and IRS through Form 5500; no lender or covenant use",
+      applicable: true,
+      checked: true,
+    },
     {
       key: "first_year",
       label: "First-year engagement or change in recordkeeper",
@@ -493,14 +521,36 @@ export const SHL11 = {
   f: {
     ...materialityCard,
     card: { ...materialityCard.card, kind: "deficiency_severity" },
-    question: "<deficiency severity question>", // copy arrives with the A-06 kind
-    options: ["Deficiency", "Significant deficiency", "Material weakness"].map((label, i) => ({
-      key: ["deficiency", "significant_deficiency", "material_weakness"][i] ?? "",
-      label,
-      detail: null,
-      figures: {},
-      recommended: i === 1,
-    })),
+    // P-04-T50: SHL-11 frame 6, verbatim (AUD-15 → Northwind finding 1).
+    question: "How severe is the deficiency in contribution-remittance controls?",
+    context: [
+      {
+        key: "facts",
+        label: "Facts",
+        value:
+          "December 26, 2025 payroll contributions of $48,600 were deposited January 9, 2026 and are reported on Schedule H line 4a.",
+        citation_id: null,
+      },
+    ],
+    factors: [],
+    options: [
+      { key: "deficiency", label: "Deficiency", detail: null, figures: {}, recommended: false },
+      {
+        key: "significant_deficiency",
+        label: "Significant deficiency",
+        detail:
+          "Less severe than a material weakness but merits the attention of those charged with governance: $48,600 against materiality of $252,200, and the cutoff was booked as a receivable",
+        figures: {},
+        recommended: true,
+      },
+      {
+        key: "material_weakness",
+        label: "Material weakness",
+        detail: null,
+        figures: {},
+        recommended: false,
+      },
+    ],
     recommendation: { suggestion_id: id(46), option_key: "significant_deficiency", reasons: [] },
   },
   g: {
@@ -512,16 +562,37 @@ export const SHL11 = {
       reserved_user_id: id(15),
       reserved_user_name: "Daniel Reyes",
     },
+    // P-04-T50: SHL-11 frame 7, verbatim (PRJ-01; viewer Daniel Reyes, Tax Partner).
+    question: "Should we recommend that Ridgeline make a §754 election for TY2025?",
+    context: [
+      {
+        key: "facts",
+        label: "Facts",
+        value:
+          "Pell Street II LLC paid $360,000 on 6/30/2025 for 5 points; its share of Ridgeline's inside basis was 5/35 of Pell Street Ventures' 6/30 capital of 2,319,835 (including 1,085 of first-half tax-exempt interest, per Reg. §1.704-1(b)(2)(iv)(l)) = $331,405 → §743(b) step-up $28,595 (360,000 − 331,405), carried on the return as a placeholder until this decision.",
+        citation_id: null,
+      },
+    ],
+    factors: [],
     options: [
       {
         key: "elect",
-        label: "<§754 option>", // copy arrives with the T-05 kind
-        detail: null,
+        label: "Recommend making the election",
+        detail:
+          "Pell Street II gets the $28,595 step-up; the election binds all later years and applies to later transfers and distributions unless the IRS approves a revocation",
         figures: { step_up: "28595" },
         recommended: true,
       },
+      {
+        key: "no_election",
+        label: "Recommend not electing",
+        detail: "Avoids ongoing §743(b)/§734(b) tracking; Pell Street II forgoes the step-up",
+        figures: {},
+        recommended: false,
+      },
     ],
-    note: "The election is Ridgeline's to make (Owen Calder signs the statement).",
+    recommendation: { suggestion_id: id(47), option_key: "elect", reasons: [] },
+    note: "The election is Ridgeline's to make (Owen Calder signs the statement). This records the firm's recommendation.",
   },
   h: {
     ...decided,
@@ -1482,15 +1553,116 @@ export const RETURN_LADDER: SignOffLadderOut = {
   levels: returnLadder,
   allowed_actions: ["sign_off.create"],
 };
-const BULK_REASONS = ["incomplete", "open_review_notes", "segregation"] as const;
-/** SHL-12 f (Thu Sep 24): six selected, three signed and three excluded with their reasons. */
+/** SHL-12 f (Thu Sep 24, after materiality v2): the six workpapers Hannah picked, in the sheet's
+ * order. Three can be signed at L2; Service Organizations & SOC 1 waits on inputs (no L1 yet), General
+ * Audit Planning has 1 open note, and Hannah prepared Investments & Certification (P-04-T49). */
+const BULK_ROWS = [
+  { n: 0, label: "Trial Balance", version: 1, hash: HASH, prep: ["Marcus Delaney", "MD"] },
+  {
+    n: 1,
+    label: "Service Organizations & SOC 1",
+    version: 1,
+    hash: "sha256:51ac" + "0".repeat(56) + "7e02",
+    prep: null,
+  },
+  {
+    n: 2,
+    label: "Materiality",
+    version: 2,
+    hash: "sha256:c39d" + "0".repeat(56) + "a4b8",
+    prep: ["Marcus Delaney", "MD"],
+  },
+  {
+    n: 3,
+    label: "General Audit Planning",
+    version: 1,
+    hash: "sha256:8e17" + "0".repeat(56) + "0f5c",
+    prep: ["Ana Cruz", "AC"],
+  },
+  {
+    n: 4,
+    label: "Internal Control",
+    version: 1,
+    hash: "sha256:a6f0" + "0".repeat(56) + "d213",
+    prep: ["Ana Cruz", "AC"],
+  },
+  {
+    n: 5,
+    label: "Investments & Certification",
+    version: 1,
+    hash: "sha256:4b9e" + "0".repeat(56) + "16a7",
+    prep: ["Hannah Leclerc", "HL"],
+  },
+] as const;
+export const BULK_TARGET_IDS: readonly string[] = BULK_ROWS.map((r) => id(60 + r.n));
+
+function bulkEligibility(row: (typeof BULK_ROWS)[number]): SignOffEligibilityOut {
+  const rowTarget = {
+    ...target,
+    target_id: id(60 + row.n),
+    label: row.label,
+    version_no: row.version,
+    content_hash: row.hash,
+  };
+  const preparer: SignOffOut | null =
+    row.prep === null
+      ? null
+      : {
+          ...marcusL1,
+          id: id(80 + row.n),
+          target_id: rowTarget.target_id,
+          signer_user_id: row.prep[1] === "MD" ? MARCUS : row.prep[1] === "AC" ? ANA : HANNAH,
+          signer_name: row.prep[0],
+          initials: row.prep[1],
+          content_hash: row.hash,
+          version_no: row.version,
+          adopted_run_id: null,
+          adopted_run_number: null,
+        };
+  const levels = ladder(null).map((l) =>
+    l.level === "L1_preparer"
+      ? {
+          ...l,
+          latest: preparer,
+          ...(row.prep === null
+            ? { expected_signer_user_id: MARCUS, expected_signer_name: "Marcus Delaney" }
+            : {}),
+        }
+      : l,
+  );
+  const checks =
+    row.n === 3
+      ? withCheck({ code: "open_review_notes", result: "fail", facts: { count: 1 }, refs: [] })
+      : row.n === 5
+        ? withCheck({
+            code: "segregation",
+            result: "fail",
+            facts: { preparer: "Hannah Leclerc" },
+            refs: [],
+          })
+        : passing;
+  return eligibility({
+    target: rowTarget,
+    ladder: levels,
+    checks,
+    eligible: row.n === 0 || row.n === 2 || row.n === 4,
+  });
+}
+export const BULK_ELIGIBILITY: readonly SignOffEligibilityOut[] = BULK_ROWS.map(bulkEligibility);
+
+const BULK_REASONS: Readonly<Record<number, BulkSignOffOut["results"][number]["detail"]>> = {
+  1: "incomplete",
+  3: "open_review_notes",
+  5: "segregation",
+};
+/** SHL-12 f: six selected, three signed and three excluded with their reasons (R-SO-7). */
 export const BULK_F: BulkSignOffOut = {
-  results: [0, 1, 2, 3, 4, 5].map((n) => ({
+  results: BULK_ROWS.map(({ n }) => ({
     target_type: "workpaper",
     target_id: id(60 + n),
-    ok: n < 3,
-    sign_off_id: n < 3 ? id(70 + n) : null,
-    detail: n < 3 ? null : (BULK_REASONS[n - 3] ?? null),
+    ok: BULK_REASONS[n] === undefined,
+    sign_off_id: BULK_REASONS[n] === undefined ? id(70 + n) : null,
+    detail: BULK_REASONS[n] ?? null,
   })),
   signed: 3,
   excluded: 3,
@@ -1691,6 +1863,8 @@ export interface ReviewFrame {
   status: number;
   body: unknown;
   params?: Readonly<Record<string, string>>;
+  /** Query values the request must carry (SHL-12 f: one eligibility per target). */
+  query?: Readonly<Record<string, string>>;
 }
 
 /** A request body an artboard sends, typed with the generated client. */
@@ -1741,6 +1915,14 @@ const CARD = (frame: DecisionCardOut) =>
   get("/v1/decision-cards/{card_id}", "DecisionCardOut", frame, { card_id: frame.card.id });
 const ELIGIBILITY = (frame: SignOffEligibilityOut) =>
   get("/v1/sign-offs/eligibility", "SignOffEligibilityOut", frame);
+/** One target's eligibility among several on the same route (SHL-12 f): matched on the query. */
+const ELIGIBILITY_OF = (
+  frame: SignOffEligibilityOut,
+  query: Record<string, string>,
+): ReviewFrame => ({
+  ...ELIGIBILITY(frame),
+  query,
+});
 const ISSUE = (frame: IssueDetailOut) =>
   get("/v1/issues/{issue_id}", "IssueDetailOut", frame, { issue_id: frame.issue.id });
 const HISTORY = (frame: CheckpointHistoryOut) =>
@@ -1867,7 +2049,7 @@ export const REVIEW_ARTBOARDS: readonly ReviewArtboard[] = [
     [CARD(SHL11.f)],
     [send("POST /v1/decision-cards/{card_id}/decide", "CardDecideIn", DECIDE_F)],
   ),
-  board("SHL-11", "g", "§754 recommendation", "margaret-okonkwo", decisionClock, [CARD(SHL11.g)]),
+  board("SHL-11", "g", "§754 recommendation", "daniel-reyes", decisionClock, [CARD(SHL11.g)]),
   board("SHL-11", "h", "Superseded", "margaret-okonkwo", decisionClock, [CARD(SHL11.h)]),
   // SHL-12 Sign-off modal (9:41 AM; e and f on Thu Sep 24).
   board("SHL-12", "a", "Allowed", "hannah-leclerc", signOff, [
@@ -1907,6 +2089,9 @@ export const REVIEW_ARTBOARDS: readonly ReviewArtboard[] = [
     get("/v1/sign-offs", "SignOffLadderOut", STALE_LADDER),
   ]),
   board("SHL-12", "f", "Bulk", "hannah-leclerc", sep24, [
+    ...BULK_ELIGIBILITY.map((e) =>
+      ELIGIBILITY_OF(e, { target_id: e.target.target_id, level: "L2_reviewer" }),
+    ),
     post("/v1/sign-offs:bulk", "BulkSignOffOut", BULK_F),
   ]),
   board("SHL-12", "g", "EQR viewer", "thomas-whitcombe", signOff, [

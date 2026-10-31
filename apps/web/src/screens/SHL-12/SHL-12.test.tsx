@@ -73,8 +73,8 @@ async function blockedBy(name: RegExp, words: string): Promise<void> {
 }
 
 describe("SHL-12", () => {
-  it("builds a, a′, b, c, d, e, g and h (f is P-04-T49's)", () => {
-    expect(STATES).toEqual(["a", "ap", "b", "c", "d", "e", "g", "h"]);
+  it("builds every frame: a, a′, b, c, d, e, f (bulk, P-04-T49), g and h", () => {
+    expect(STATES).toEqual(["a", "ap", "b", "c", "d", "e", "f", "g", "h"]);
   });
 
   it("a: workpaper card, levels the matrix allows, the ladder with the adoption line, checks, statement", async () => {
