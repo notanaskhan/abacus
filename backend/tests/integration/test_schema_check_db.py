@@ -1244,6 +1244,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             # G-01-T05 (0142): a person's template and attributes; firm roles stay in definers.
             | {"role_template", "level", "job_title", "office_id", "service_lines"}
             | {"access_ends_on", "offshore", "version"}
+            | {"ero_designated"}  # T-01-T37 (0568)
         ),
         # P-04-T03 (migration 0093): a note's status and assignee; the gates projection.
         "reviewable_notes": frozenset({"status", "assignee_user_id"}),
@@ -2254,6 +2255,7 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"reference_set_resolve", "reference_set_list", "reference_set_history"}
         | {"reference_set_draft", "reference_set_publish", "reference_set_withdraw"}
         | {"active_tenant_ids", "standards_sets_apply"}
+        | {"standards_set_named"}  # 0580 (K-01-T18, DEC-1759): one global standards set by id
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
 

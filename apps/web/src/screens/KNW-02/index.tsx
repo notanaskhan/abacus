@@ -6,6 +6,7 @@ import type {
 import {
   approveVersionMutation,
   getVersionOptions,
+  methodologyVersionDiffOptions,
   listTemplatesOptions,
   programStepsOptions,
   versionProgramsOptions,
@@ -37,6 +38,7 @@ import { useNow } from "../../app-core/clock";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { type WorkbookProblem, uploadMethodology, workbookProblems } from "../../domain/knowledge";
 import { COPY } from "./copy";
+import { ActivityView, CompareMenu, DiffView, StandardsView } from "./Review";
 
 // KNW-02 · Methodology versions, the workbook slice (K-01-T07; K-01 §3.2, §3.3; handoff KNW-02 e,
 // f) on the T3 EvidenceTriad in its Prepare preset (tree 214 · viewer 571 · sheet 571):
@@ -53,10 +55,23 @@ import { COPY } from "./copy";
 // "+ Upload methodology…" (fresh MFA) sends a v2 workbook as a new version; a refusal lists each
 // row problem as sheet · row · column with a fixed message, never the cell's value (ADR-052).
 // Approve is the server's to allow (`allowed_actions`); an agent never sees it (INV-1).
+//
+// K-01-T19 (KNW-02 c, d; AC6.1 to AC6.4): the tabs Import review · Diff vs v2 (its count) ·
+// Standards mapping · Activity, the last three in one wide pane beside the Programs tree
+// (`Review.tsx`); "Compare with v2 ⌄" picks the version the diff reads against (default: the
+// version drafted from, else the one before). A draft from the program editor (Hannah's v4) opens
+// in draft-review mode: the Programs band, the viewer's "edited in the program editor" empty
+// state, and Diff, Standards and Approve working.
+
+export type Knw02Tab = "review" | "diff" | "standards" | "activity";
 
 export interface Knw02Search {
   program?: string | undefined;
   ov?: string | undefined;
+  /** K-01-T19: Import review (default), Diff, Standards mapping, Activity. */
+  tab?: Knw02Tab | undefined;
+  /** The version the diff compares against ("Compare with v2"). */
+  against?: string | undefined;
 }
 
 export interface KNW02Props {
@@ -363,6 +378,29 @@ export function KNW02({
   const set = (patch: Partial<Knw02Search>): void => {
     onSearch({ ...search, ...patch });
   };
+  const draftedFrom = state.data?.drafted_from_version_id ?? undefined;
+  const others = (templates.data ?? [])
+    .filter(
+      (t) =>
+        version.data !== undefined &&
+        t.template_id === version.data.summary.template_id &&
+        t.version_id !== versionId,
+    )
+    .sort((a, b) => b.version - a.version);
+  const againstId = search.against ?? draftedFrom ?? priorId;
+  const againstLabel = `v${String(others.find((t) => t.version_id === againstId)?.version ?? "")}`;
+  const diff = useQuery({
+    ...methodologyVersionDiffOptions({
+      path: { version_id: versionId },
+      ...(search.against === undefined ? {} : { query: { against: search.against } }),
+    }),
+    retry: false,
+  });
+  const diffCount =
+    diff.data === undefined
+      ? undefined
+      : diff.data.tiles.added + diff.data.tiles.changed + diff.data.tiles.removed;
+  const tab: Knw02Tab = search.tab ?? "review";
 
   if (state.isError) {
     return (
@@ -378,6 +416,40 @@ export function KNW02({
   const name = version.data?.summary.template_name ?? "";
   if (s === undefined) return <Skeleton />;
 
+  const family = name.split(" · ").at(-1) ?? name;
+  const tabLabels: Readonly<Record<Knw02Tab, string>> = {
+    review: COPY.tabs.review,
+    diff: COPY.tabs.diff(againstLabel),
+    standards: COPY.tabs.standards,
+    activity: COPY.tabs.activity,
+  };
+  const wide =
+    tab === "diff"
+      ? {
+          title: COPY.diff.title(againstLabel),
+          children: (
+            <DiffView
+              versionId={versionId}
+              against={search.against}
+              label={s.label}
+              againstLabel={againstLabel}
+            />
+          ),
+        }
+      : tab === "standards"
+        ? {
+            title: COPY.standards.title,
+            children: (
+              <StandardsView
+                state={s}
+                family={family}
+                priorLabel={prior.data?.label ?? againstLabel}
+              />
+            ),
+          }
+        : tab === "activity"
+          ? { title: COPY.activity.title, children: <ActivityView versionId={versionId} /> }
+          : undefined;
   const flags = list.reduce((n, p) => n + p.flags_open, 0);
   const totalSteps = list.reduce((n, p) => n + p.step_count, 0);
   const canApprove = s.allowed_actions.includes("approve") && s.status === "needs_review";
@@ -441,6 +513,19 @@ export function KNW02({
           ),
           right: (
             <span className="flex items-center gap-[8px]">
+              {others.length > 0 && (
+                <CompareMenu
+                  label={againstLabel}
+                  versions={others.map((t) => ({
+                    id: t.version_id,
+                    label: `v${String(t.version)}`,
+                    current: t.version_id === againstId,
+                  }))}
+                  onPick={(id) => {
+                    set({ against: id, tab: "diff" });
+                  }}
+                />
+              )}
               {statusPill(s, now)}
               {canManage && (
                 <Button
@@ -457,7 +542,22 @@ export function KNW02({
             </span>
           ),
         }}
-        tabs={{ options: [COPY.tab], active: COPY.tab, label: COPY.tabsLabel }}
+        tabs={{
+          options: (Object.keys(tabLabels) as Knw02Tab[]).map((k) =>
+            k === "diff" && diffCount !== undefined
+              ? { label: tabLabels[k], count: diffCount }
+              : tabLabels[k],
+          ),
+          active: tabLabels[tab],
+          label: COPY.tabsLabel,
+          onChange: (label) => {
+            const next = (Object.keys(tabLabels) as Knw02Tab[]).find(
+              (k) => tabLabels[k] === label,
+            );
+            if (next !== undefined) set({ tab: next === "review" ? undefined : next });
+          },
+        }}
+        {...(wide === undefined ? {} : { wide })}
         defaultPreset="prepare"
         tree={{
           title: COPY.tree.title,
@@ -493,9 +593,13 @@ export function KNW02({
         }}
         viewer={
           <div className="flex flex-1 items-center justify-center p-[24px]">
-            <EmptyState icon="file-spreadsheet" title={COPY.viewer.workbook}>
-              {COPY.viewer.workbookHelp}
-            </EmptyState>
+            {s.drafted_from_version_id != null ? (
+              <EmptyState icon="pencil" title={COPY.viewer.draft} />
+            ) : (
+              <EmptyState icon="file-spreadsheet" title={COPY.viewer.workbook}>
+                {COPY.viewer.workbookHelp}
+              </EmptyState>
+            )}
           </div>
         }
         sheet={{

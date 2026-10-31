@@ -62,7 +62,7 @@ import { COPY } from "./copy";
 // Axcess" is the engine's deep link (never automation, DEC-49). An entity return (1065, 1120-S,
 // 1041) takes the registry's entity wording; every form family opens here (DV-5).
 
-const FORM_LABEL: Readonly<Record<TaxReturnRecordOut["row"]["form"], string>> = {
+export const FORM_LABEL: Readonly<Record<TaxReturnRecordOut["row"]["form"], string>> = {
   "1040": "1040",
   "1041": "1041",
   "1065": "1065",
@@ -92,7 +92,7 @@ const CARD = "rounded-pane bg-card shadow-e1";
 export type Tax02Tab = "overview" | "intake" | "review" | "issues" | "activity";
 
 /** The return's state as the subbar words it (`subbar_*` contexts of the `return` object). */
-function stateOf(row: TaxReturnRecordOut["row"]): {
+export function stateOf(row: TaxReturnRecordOut["row"]): {
   label: string;
   tone: ReturnType<typeof status>["variant"];
 } {
@@ -775,15 +775,17 @@ export function TAX02({
       ...(live ? {} : { disabled: true }),
     };
   };
-  // The Intake, Review, Issues and Activity tabs open TAX-03, TAX-05, TAX-06 and TAX-07, all
-  // planned: drawn disabled where planned screens are, absent in production.
+  // The Review, Issues and Activity tabs open TAX-05, TAX-06 and TAX-07, all planned: drawn
+  // disabled where planned screens are, absent in production.
   const tabs = (
     <Tabsbar
       label={COPY.tabs.label}
       options={[
         option("overview", true),
+        // TAX-03 is built (T-02-T19): the Intake tab opens it.
+        option("intake", true),
         ...(PLANNED_VISIBLE
-          ? (["intake", "review", "issues", "activity"] as const).map((k) => option(k, false))
+          ? (["review", "issues", "activity"] as const).map((k) => option(k, false))
           : []),
       ]}
       active={COPY.tabs[tab === "overview" ? "overview" : tab]}

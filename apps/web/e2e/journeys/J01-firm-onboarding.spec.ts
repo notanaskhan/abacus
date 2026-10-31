@@ -269,6 +269,27 @@ test.describe("J01-core firm onboarding", () => {
     },
   );
 
+  // K-01-T17: J01 step 6 reaches the approved programs: Hannah Leclerc opens Draft v4 of
+  // BH-EBP-110 (KNW-03 c on fixtures; DEC-1663). Mandatory steps stay the QM owner's; the draft is
+  // submitted for KNW-02's approval, so nothing here approves (INV-1).
+  test(
+    "J01-06 Hannah drafts v4 of BH-EBP-110 with mandatory steps locked (KNW-03 c)",
+    owner("K-01 · K-01-T17 fixture; full stack after the methodology slice · S21"),
+    async ({ journey }) => {
+      test.fixme(journey.project !== "fixture", "KNW-03's draft walk is fixture-first");
+      await journey.as("hannah-leclerc", "/components/screens/KNW-03?st=c", {
+        clock: "2026-09-14T14:30:00-05:00",
+      });
+      await journey.step("J01 step 6: Draft v4 of BH-EBP-110 as Hannah Leclerc", async (page) => {
+        await expect(page.getByRole("button", { name: "+ Step" })).toBeEnabled();
+        await expect(
+          page.getByRole("button", { name: "Remove step 1", exact: true }),
+        ).toBeDisabled();
+        await expect(page.getByRole("button", { name: /^(Publish|Approve)/u })).toHaveCount(0);
+      });
+    },
+  );
+
   // K-02-T19: J01 step 7, partners publish firm standards (KNW-04 i on fixtures; staging walks the
   // publish after the batch deploy). Only the owner partner holds Publish; nothing agent-owned does.
   test(

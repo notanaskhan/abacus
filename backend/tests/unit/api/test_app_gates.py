@@ -339,6 +339,21 @@ NOT_CREATING = {
     "/v1/portal/envelopes/{envelope_id}/signing-session",
     "/v1/portal/envelopes/{envelope_id}/viewed",
     "/v1/portal/intake-uploads/{upload_id}/withdraw",
+    # K-01-T18 (DEC-1755): starting and cancelling an import, and resolving a parse flag, move an
+    # existing record, so 200.
+    "/v1/methodology/imports/{import_id}/start",
+    "/v1/methodology/imports/{import_id}/cancel",
+    "/v1/methodology/versions/{version_id}/steps/{step_id}/flag-resolution",
+    # A-04-T01 (stubs, DEC-1757): a preview and a coverage check compute and store nothing; a
+    # flag conversion, a reminder draft, the minutes approval and an exception's routing act on
+    # existing records, so 200.
+    "/v1/engagements/{engagement_id}/materiality/preview",
+    "/v1/engagements/{engagement_id}/risks/coverage",
+    "/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/flags/{flag_id}/convert",
+    "/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/flags/{flag_id}/remind",
+    "/v1/engagements/{engagement_id}/fraud-brainstorm/minutes/approve",
+    "/v1/engagements/{engagement_id}/internal-control/exceptions/{sheet_row}/send-to-findings",
+    "/v1/engagements/{engagement_id}/internal-control/exceptions/{sheet_row}/convert-to-misstatement",
 }
 
 
@@ -393,6 +408,10 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/firm/safeguards/wisp-pack",
         # DEC-1281: a DocuSeal delivery is a hint only, always an empty 202.
         "/v1/webhooks/docuseal/{tenant_id}/{install_id}",
+        # A-04-T01: a draft starts a section-drafter run, so 202.
+        "/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/drafts",
+        "/v1/engagements/{engagement_id}/risks/{risk_id}/drafts",
+        "/v1/engagements/{engagement_id}/soc-reports/{soc_report_id}/drafts",
     }
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
@@ -402,6 +421,20 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/request-items",
         # K-01-T01 (C21 stub): a methodology draft and a program step.
         "/v1/methodology/versions/{version_id}/drafts",
+        # K-01-T18: a methodology import.
+        "/v1/methodology/imports",
+        # A-04-T01 (stubs): a materiality proposal and reassessment, a risk approval request and
+        # response, a fraud inquiry, an evidence request draft, a service organization, SOC
+        # request drafts and a reliance card.
+        "/v1/engagements/{engagement_id}/materiality/proposals",
+        "/v1/engagements/{engagement_id}/materiality/reassessments",
+        "/v1/engagements/{engagement_id}/risks/approval-requests",
+        "/v1/engagements/{engagement_id}/risks/{risk_id}/responses",
+        "/v1/engagements/{engagement_id}/fraud-inquiries",
+        "/v1/engagements/{engagement_id}/internal-control/exceptions/{sheet_row}/request-evidence",
+        "/v1/engagements/{engagement_id}/service-organizations",
+        "/v1/engagements/{engagement_id}/soc-reports/{soc_report_id}/requests",
+        "/v1/engagements/{engagement_id}/soc-reports/{soc_report_id}/reliance-requests",
         # T-02-T02: a template import, an organizer, a questionnaire, a question, a portal
         # attachment and a recipient's details change.
         "/v1/questionnaire-templates:import",

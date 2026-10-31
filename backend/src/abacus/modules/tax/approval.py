@@ -29,7 +29,7 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, replace
 from datetime import timedelta
-from typing import Annotated, ClassVar, Final
+from typing import Annotated, ClassVar, Final, cast
 from uuid import UUID
 
 from pydantic import ValidationError
@@ -235,8 +235,12 @@ async def approve(
     await authorise(ctx, APPROVE, resource)
     if found.signer != ctx.user_id:
         raise NotSigner
-    if found.checkpoint_id != seen_checkpoint_id or found.content_hash != content_hash:
+    # The route takes the contract's `sha256:<hex>`; checkpoints keep the bare hex (DEC-1481).
+    seen = content_hash.removeprefix("sha256:")
+    current = (found.content_hash or "").removeprefix("sha256:")
+    if found.checkpoint_id != seen_checkpoint_id or current != seen:
         raise ContentChanged(facts={"work_item_id": str(return_id)})
+    content_hash = cast(str, found.content_hash)  # signed as the checkpoint stores it
     if found.blockers:
         raise FinalApprovalBlocked(
             facts={"work_item_id": str(return_id), "blockers": len(found.blockers)}
@@ -282,7 +286,7 @@ async def approve(
         tx.record(
             "tax_return.approved",
             target=Target(TARGET, return_id),
-            after=Ref(checkpoint=seen_checkpoint_id, content_hash=content_hash),
+            after=Ref(checkpoint=seen_checkpoint_id, content_hash=seen),
         )
         tx.emit(
             TaxReturnApproved(

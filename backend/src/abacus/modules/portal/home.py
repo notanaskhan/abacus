@@ -44,12 +44,14 @@ from abacus.modules.portal.home_sources import connections as _connections
 from abacus.modules.portal.home_sources import engagements as _engagements
 from abacus.modules.portal.home_sources import requests as _requests
 from abacus.modules.portal.home_sources import signatures as _signatures
+from abacus.modules.portal.home_sources import tax_filings as _tax_filings
 
 LOADED = (
     _requests.requests_source,
     _engagements.engagements_source,
     _connections.connections_source,  # A-02-T23: the reconnect to-do
     _signatures.signatures_source,  # N-02-T24: the Sign to-do
+    _tax_filings.tax_filings_source,  # T-01-T41: filed returns in Earlier
 )
 
 

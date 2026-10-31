@@ -336,12 +336,31 @@ def export(snapshot: str, out: Path) -> list[Path]:
     return written
 
 
+def scenario_files() -> dict[str, str]:
+    """Fixtures computed from the scenario's own data, with no database: N-02-T36's SIG-01 hub
+    (`scenario.signatures-hub.json`), which the TypeScript scenarios are held to
+    (`seed/signatures.export.test.ts`)."""
+    from abacus_tools.synthetic.scenarios.brightwater_hale.signatures import hub_rows
+
+    body = {"scenario": SCENARIO_VERSION, "slice": "signatures", "snapshot": "E0", **hub_rows()}
+    return {"scenario.signatures-hub.json": json.dumps(body, indent=2, ensure_ascii=False) + "\n"}
+
+
+def write_scenario_files(out: Path) -> list[Path]:
+    out.mkdir(parents=True, exist_ok=True)
+    written: list[Path] = []
+    for name, text in scenario_files().items():
+        (out / name).write_text(text, encoding="utf-8")
+        written.append(out / name)
+    return written
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m abacus_tools.synthetic.fixture_export")
     parser.add_argument("--snapshot", choices=SNAPSHOTS, default="E0")
     parser.add_argument("--out", type=Path, default=EXPORTED)
     args = parser.parse_args(argv)
-    for path in export(args.snapshot, args.out):
+    for path in [*write_scenario_files(args.out), *export(args.snapshot, args.out)]:
         print(f"exported {path.relative_to(REPO) if path.is_relative_to(REPO) else path}")
     return 0
 

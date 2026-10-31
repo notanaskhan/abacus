@@ -416,6 +416,10 @@ class MethodologyImportStatus(StrEnum):
     CANCELLED = "cancelled"
 
 
+class MethodologySourceFileStatus(StrEnum):
+    CLEAN = "clean"
+
+
 class KnowledgeItemStatus(StrEnum):
     DRAFT = "draft"
     PUBLISHED = "published"
@@ -864,6 +868,104 @@ class AccountMappingStateStatus(StrEnum):
     ADOPTED = "adopted"
 
 
+class WorkpaperValueStateStatus(StrEnum):
+    EMPTY = "empty"
+    SUGGESTED = "suggested"
+    ADOPTED = "adopted"
+    EDITED = "edited"
+    HUMAN = "human"
+
+
+class AttentionFlagStatus(StrEnum):
+    OPEN = "open"
+    CONVERTED = "converted"
+    RESOLVED = "resolved"
+
+
+class AuditProcedureStatus(StrEnum):
+    NOT_STARTED = "not_started"
+    IN_PROGRESS = "in_progress"
+    IN_REVIEW = "in_review"
+    COMPLETE = "complete"
+
+
+class MaterialityVersionStatus(StrEnum):
+    PROPOSED = "proposed"
+    DECIDED = "decided"
+    REASSESSED = "reassessed"
+    REVISED = "revised"
+    # derived, never stored: superseded
+
+
+class RiskRegisterRowStatus(StrEnum):
+    DRAFT = "draft"
+    EP_APPROVED = "ep_approved"
+    REVISED = "revised"
+
+
+class RiskSignificanceStatus(StrEnum):
+    NONE = "none"
+    MANDATORY = "mandatory"
+    PROPOSED = "proposed"
+    APPROVED = "approved"
+    NOT_SIGNIFICANT = "not_significant"
+
+
+class RiskFraudStatus(StrEnum):
+    NONE = "none"
+    PRESUMED = "presumed"
+    REBUTTAL_PROPOSED = "rebuttal_proposed"
+    REBUTTAL_APPROVED = "rebuttal_approved"
+
+
+class RiskLinkageStatus(StrEnum):
+    LINKED = "linked"
+    SUGGESTED = "suggested"
+
+
+class FraudMinutesStatus(StrEnum):
+    DRAFT = "draft"
+    AWAITING_APPROVAL = "awaiting_approval"
+    APPROVED = "approved"
+
+
+class FraudInquiryStatus(StrEnum):
+    REQUESTED = "requested"
+    ANSWERED = "answered"
+
+
+class ServiceOrganizationStatus(StrEnum):
+    PENDING = "pending"
+    GAP_FOUND = "gap_found"
+    BRIDGE_LETTER_RECEIVED = "bridge_letter_received"
+    RELIANCE_CONCLUDED = "reliance_concluded"
+    CERTIFICATION_ACCEPTED = "certification_accepted"
+    NO_RELIANCE = "no_reliance"
+    NOT_RELEVANT = "not_relevant"
+
+
+class SocRelianceStatus(StrEnum):
+    PENDING = "pending"
+    RELIED = "relied"
+    NOT_RELIED = "not_relied"
+
+
+class CuecStatus(StrEnum):
+    EVIDENCE_MISSING = "evidence_missing"
+    EVIDENCED = "evidenced"
+
+
+class ControlDesignStatus(StrEnum):
+    EFFECTIVE = "effective"
+    DEFICIENT = "deficient"
+    NOT_ASSESSED = "not_assessed"
+
+
+class ControlExceptionDispositionStatus(StrEnum):
+    EXCEPTION_FOR_RESOLUTION = "exception_for_resolution"
+    PROPOSED = "proposed"
+
+
 # Each object's stored codes, and their SQL CHECK list.
 STORED: dict[str, tuple[str, ...]] = {
     "engagement": (
@@ -1209,6 +1311,9 @@ STORED: dict[str, tuple[str, ...]] = {
         "needs_review",
         "failed",
         "cancelled",
+    ),
+    "methodology_source_file": (
+        "clean",
     ),
     "knowledge_item": (
         "draft",
@@ -1583,6 +1688,88 @@ STORED: dict[str, tuple[str, ...]] = {
         "edited",
         "suggested",
         "adopted",
+    ),
+    "workpaper_value_state": (
+        "empty",
+        "suggested",
+        "adopted",
+        "edited",
+        "human",
+    ),
+    "attention_flag": (
+        "open",
+        "converted",
+        "resolved",
+    ),
+    "audit_procedure": (
+        "not_started",
+        "in_progress",
+        "in_review",
+        "complete",
+    ),
+    "materiality_version": (
+        "proposed",
+        "decided",
+        "reassessed",
+        "revised",
+    ),
+    "risk_register_row": (
+        "draft",
+        "ep_approved",
+        "revised",
+    ),
+    "risk_significance": (
+        "none",
+        "mandatory",
+        "proposed",
+        "approved",
+        "not_significant",
+    ),
+    "risk_fraud": (
+        "none",
+        "presumed",
+        "rebuttal_proposed",
+        "rebuttal_approved",
+    ),
+    "risk_linkage": (
+        "linked",
+        "suggested",
+    ),
+    "fraud_minutes": (
+        "draft",
+        "awaiting_approval",
+        "approved",
+    ),
+    "fraud_inquiry": (
+        "requested",
+        "answered",
+    ),
+    "service_organization": (
+        "pending",
+        "gap_found",
+        "bridge_letter_received",
+        "reliance_concluded",
+        "certification_accepted",
+        "no_reliance",
+        "not_relevant",
+    ),
+    "soc_reliance": (
+        "pending",
+        "relied",
+        "not_relied",
+    ),
+    "cuec": (
+        "evidence_missing",
+        "evidenced",
+    ),
+    "control_design": (
+        "effective",
+        "deficient",
+        "not_assessed",
+    ),
+    "control_exception_disposition": (
+        "exception_for_resolution",
+        "proposed",
     ),
 }
 CHECKS: dict[str, str] = {

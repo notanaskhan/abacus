@@ -501,6 +501,11 @@ objects:
       failed:         {label: "Failed", variant: red-tint, terminal: true, derived: false}
       cancelled:      {label: "Cancelled", variant: muted, terminal: true, derived: false}
 
+  methodology_source_file:   # methodology_source_files.scan_status (K-01-T18); a file is kept only once it scans clean. Label not verbatim: no screen word yet
+    source: "K-01 section 4.2 (migration C); SourceFileOut.scan_status"
+    codes:
+      clean:          {label: "Scanned", variant: muted, terminal: true, derived: false}
+
   knowledge_item:   # a KNW-01 catalog card's state, from its provider
     source: "KNW-01 handoff (Published green-tint · Draft neutral · Superseded soon)"
     codes:
@@ -1033,6 +1038,120 @@ objects:
       edited:    {label: "Edited", variant: null, terminal: false, derived: false}
       suggested: {label: "Suggested", variant: null, terminal: false, derived: false}   # reserved (A-09)
       adopted:   {label: "Adopted", variant: null, terminal: false, derived: false}     # reserved (A-09)
+
+  # ---- A-04 audit planning and the workpaper core (A-04 §4.2; DF-31; A-04-T01, DEC-1757) ----
+  workpaper_value_state:   # workpaper_cells.value_state; ticks: suggested ◌ outlined, adopted ✓ ink-3 (AUD-04 a, b)
+    source: "A-04 §4.2 M1 (AUD-04 a-c; SHL-09)"
+    codes:
+      empty:     {label: "Empty", variant: null, terminal: false, derived: false}
+      suggested: {label: "Suggested", variant: null, terminal: false, derived: false, context_labels: {cell: "Suggested by Accrued Agent"}}
+      adopted:   {label: "Adopted", variant: null, terminal: false, derived: false}
+      edited:    {label: "Edited", variant: null, terminal: false, derived: false}
+      human:     {label: "Entered", variant: null, terminal: false, derived: false}
+
+  attention_flag:   # attention_flags.state; the amber PBC GAP row on AUD-05 c
+    source: "A-04 §4.2 M1 (AUD-05 c)"
+    codes:
+      open:      {label: "PBC GAP", variant: amber, terminal: false, derived: false}   # never "scope limitation" (AC2.2)
+      converted: {label: "Converted", variant: null, terminal: false, derived: false}
+      resolved:  {label: "Resolved", variant: null, terminal: true, derived: false}
+
+  audit_procedure:   # procedures.status (A-04; distinct from fieldwork's SPEC-300 procedure); "Tailored" is the KNW-03 d word from `tailored`
+    source: "A-04 §4.2 M1 (AUD-04; KNW-03 d)"
+    codes:
+      not_started: {label: "Not started", variant: null, disc: ring, terminal: false, derived: false}
+      in_progress: {label: "In progress", variant: null, disc: half, terminal: false, derived: false}
+      in_review:   {label: "In review", variant: null, terminal: false, derived: false}
+      complete:    {label: "Complete", variant: null, disc: check_olive, terminal: true, derived: false}
+
+  materiality_version:   # materiality_versions.status; "Superseded" and "Current" are derived on read (AUD-07 c)
+    source: "A-04 §4.2 M2 (AUD-07 a-e)"
+    codes:
+      proposed:   {label: "Proposed", variant: state, terminal: false, derived: false, context_labels: {header: "Version {n} · Proposed"}}
+      decided:    {label: "Decided", variant: green-tint, terminal: false, derived: false, context_labels: {header: "Version {n} · Decided"}}
+      reassessed: {label: "Reassessed at final", variant: green-tint, terminal: false, derived: false}
+      revised:    {label: "Revised", variant: amber, terminal: false, derived: false}
+      superseded: {label: "Superseded", variant: soon, terminal: true, derived: true}
+
+  risk_register_row:   # risks.status (AUD-08); the significance and fraud columns carry their own words below
+    source: "A-04 §4.2 M2 (AUD-08 a, d)"
+    codes:
+      draft:       {label: "Draft", variant: state, terminal: false, derived: false}
+      ep_approved: {label: "EP approved", variant: green-tint, terminal: false, derived: false}
+      revised:     {label: "Revised", variant: amber, terminal: false, derived: false}
+
+  risk_significance:   # risks.significance; "Approved · MO" fills the initials at render time
+    source: "A-04 §4.2 M2 (AUD-08 a, b2, d)"
+    codes:
+      none:            {label: "Not significant", variant: null, terminal: false, derived: false}
+      mandatory:       {label: "Significant · mandatory", variant: red-tint, terminal: false, derived: false}
+      proposed:        {label: "Proposed", variant: amber, terminal: false, derived: false}
+      approved:        {label: "Approved · {initials}", variant: green-tint, terminal: false, derived: false}
+      not_significant: {label: "Not significant", variant: null, terminal: false, derived: false}
+
+  risk_fraud:   # risks.fraud; management override is never rebuttable (AC4.5)
+    source: "A-04 §4.2 M2 (AUD-05 a; AUD-08 d)"
+    codes:
+      none:              {label: "None", variant: null, terminal: false, derived: false}
+      presumed:          {label: "Presumed", variant: red-tint, terminal: false, derived: false}
+      rebuttal_proposed: {label: "Rebuttal proposed", variant: amber, terminal: false, derived: false}
+      rebuttal_approved: {label: "Rebuttal approved · {initials}", variant: green-tint, terminal: false, derived: false}
+
+  risk_linkage:   # risk_linkages.state; a suggested response is outlined (AUD-08 c)
+    source: "A-04 §4.2 M2 (AUD-08 c)"
+    codes:
+      linked:    {label: "Linked", variant: null, terminal: false, derived: false}
+      suggested: {label: "Suggested", variant: outline, terminal: false, derived: false}
+
+  fraud_minutes:   # fraud_brainstorm_sessions.minutes_status (AUD-05 b)
+    source: "A-04 §4.2 M2 (AUD-05 b)"
+    codes:
+      draft:             {label: "Draft", variant: state, terminal: false, derived: false}
+      awaiting_approval: {label: "Awaiting approval", variant: amber, terminal: false, derived: false}
+      approved:          {label: "Approved · {initials}", variant: green-tint, terminal: true, derived: false}
+
+  fraud_inquiry:   # computed from the C5 questionnaire and never stored; derived: false so the API enum carries the word (DEC-1555's rule)
+    source: "A-04 §4.2 M2 (AUD-05)"
+    codes:
+      requested: {label: "Requested", variant: null, terminal: false, derived: false}
+      answered:  {label: "Answered", variant: green-tint, terminal: true, derived: false}
+
+  service_organization:   # service_organizations.status (AUD-04 e; AUD-10)
+    source: "A-04 §4.2 M2 (AUD-10 a-c)"
+    codes:
+      pending:                {label: "Pending", variant: null, terminal: false, derived: false}
+      gap_found:              {label: "Gap found", variant: amber, terminal: false, derived: false}
+      bridge_letter_received: {label: "Bridge letter received", variant: null, terminal: false, derived: false}
+      reliance_concluded:     {label: "Reliance concluded", variant: green-tint, terminal: true, derived: false}
+      certification_accepted: {label: "Certification accepted", variant: green-tint, terminal: true, derived: false}
+      no_reliance:            {label: "No reliance", variant: null, terminal: true, derived: false}
+      not_relevant:           {label: "Not relevant", variant: muted, terminal: true, derived: false}
+
+  soc_reliance:   # soc_report_evaluations.reliance_state; concluded only by the EP's decision (DEC-83)
+    source: "A-04 §4.2 M4 (AUD-10 a, e)"
+    codes:
+      pending:    {label: "Pending", variant: amber, terminal: false, derived: false}
+      relied:     {label: "Relied", variant: green-tint, terminal: true, derived: false}
+      not_relied: {label: "Not relied", variant: null, terminal: true, derived: false}
+
+  cuec:   # cuecs.status (AUD-10 a)
+    source: "A-04 §4.2 M4 (AUD-10 a, c)"
+    codes:
+      evidence_missing: {label: "Evidence missing", variant: amber, terminal: false, derived: false}
+      evidenced:        {label: "Evidenced", variant: green-tint, terminal: false, derived: false}
+
+  control_design:   # control_activities.design (AUD-09 e)
+    source: "A-04 §4.2 M4 (AUD-09 e)"
+    codes:
+      effective:    {label: "Effective", variant: null, terminal: false, derived: false}
+      deficient:    {label: "Deficient", variant: red-tint, terminal: false, derived: false}
+      not_assessed: {label: "Not assessed", variant: muted, terminal: false, derived: false}
+
+  control_exception_disposition:   # control_exceptions.disposition; no concluded severity exists in A-04 (AC6.3)
+    source: "A-04 §4.2 M4 (AUD-09 a-c)"
+    codes:
+      exception_for_resolution: {label: "Exception for resolution", variant: null, terminal: false, derived: false}
+      proposed:                 {label: "Proposed", variant: amber, terminal: false, derived: false}
 
 retired:
   # --- request_item.status (9.5.6, DEC-09; migration P-44) ---

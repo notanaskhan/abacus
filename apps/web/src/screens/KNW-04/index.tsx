@@ -809,6 +809,7 @@ function Body({
     case "ssars_cas_settings":
       return <SsarsSection owner={owner} examples={examples} />;
     case "review_checklist":
+    case "attribute_sample_sizes": // A-03-T10: shown on AUD-11's citations, not a KNW-04 section
       return null;
   }
 }

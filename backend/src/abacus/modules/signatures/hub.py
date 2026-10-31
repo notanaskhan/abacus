@@ -60,6 +60,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.types import Uuid
 
 from abacus.kernel._flags import SIGNATURES_ENVELOPES
+from abacus.kernel.clock import now as business_now
 from abacus.kernel.clock import system_now, today
 from abacus.kernel.crypto import open_sealed, seal
 from abacus.kernel.db import tenant_session
@@ -382,7 +383,9 @@ async def list_envelopes(
 ) -> Page:
     """`GET /v1/envelopes` (SIG-01)."""
     await firm_and_flag(ctx)
-    now = system_now()
+    # N-02-T36: the 30-day Completed window is business time, as `day` is (a demo clock moves
+    # it); it is a list, not a security window.
+    now = await business_now(ctx.tenant)
     day = await today(ctx.tenant)
     query = query_hash(
         tab=tab, purpose=purpose, status=status, client_id=str(client_id), q=q or ""
@@ -419,7 +422,7 @@ async def list_envelopes(
 async def summary(ctx: AuthContext) -> Summary:
     """`GET /v1/envelopes/summary`: every count over visible rows only (DEC-43)."""
     await firm_and_flag(ctx)
-    now = system_now()
+    now = await business_now(ctx.tenant)  # the Completed window, as `list_envelopes` reads it
     seen = visible_envelopes(ctx)
     out = E.status.in_(TAB_STATUSES["out"])
     kind = case(
