@@ -1,6 +1,6 @@
 ---
 id: TASK-2425
-title: T-01-T33 Live swaps (code half): TAX-09 export checkpoint and sync facts
+title: "T-01-T33 Live swaps (code half): TAX-09 export checkpoint and sync facts"
 spec: SPEC-000  # the backlog row; T-01 §3.9, TAX-09, CLI-05
 acceptance_criteria: [AC-1]
 risk_zone: green
