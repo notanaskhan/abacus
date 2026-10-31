@@ -27804,6 +27804,10 @@ export type ReassessmentRaisedOut = {
  */
 export type ReassignCandidateOut = {
     /**
+     * Display Name
+     */
+    display_name?: string;
+    /**
      * Role
      */
     role: string;
