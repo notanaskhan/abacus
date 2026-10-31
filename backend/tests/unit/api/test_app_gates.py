@@ -391,6 +391,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/consents/exports",
         # G-02-T11 (security-center stub): a WISP pack is built later, so 202.
         "/v1/firm/safeguards/wisp-pack",
+        # DEC-1281: a DocuSeal delivery is a hint only, always an empty 202.
+        "/v1/webhooks/docuseal/{tenant_id}/{install_id}",
     }
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)

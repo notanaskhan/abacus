@@ -11,7 +11,7 @@ Expand-only.
 One BEFORE UPDATE trigger holds both, for every role, whatever the caller.
 
 Revision ID: 0432
-Revises: 0431
+Revises: 0521 (A-03-T06; re-chained from 0431 for the S17 leftovers batch)
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ from __future__ import annotations
 from alembic import op
 
 revision = "0432"
-down_revision = "0431"
+down_revision = "0521"
 branch_labels = None
 depends_on = None
 

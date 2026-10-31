@@ -7,18 +7,18 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/TPL-06 Workbook grid specimen - Ridgeline capital accounts/` (README.md, spec.md; no revision.md) · HANDOFF_VERSION 2026-10-21 sha256:9308819d |
 | Epic and tasks | F-06 · F-06-T01; F-06-T02 seed (`ridgeline.ts`); F-06-T18 to T20; F-06-T21; F-06-T22 |
-| Manifest status | planned |
+| Manifest status | planned (gallery: `/components/screens/TPL-06?st=a…e`, F-06-T20) |
 
 Code: specimen `apps/web/src/gallery/specimens/TPL-06/` over `apps/web/src/fixtures/seed/tax/ridgeline.ts`. Copy keys: `TPL-06/copy.ts`.
 
 ## States
 | Artboard | Viewer (persona) | Clock | Snapshot | Data condition that produces it | Status |
 |---|---|---|---|---|---|
-| a · As drafted | `samuel-ito` | E0 Mon Sep 14, 2026, 9:24 AM | E0 | rollforward as drafted, Ending 6,860,000; M-2 tally `off 6,200`; tie-out difference (6,200) | F-06-T18 |
-| b · Fixed | `samuel-ito` | E0 | E0 | after the reviewer accepts the agent's fix (P-04's flow): tax-exempt column 124 · 2,356 · 2,015 · 155 · 1,550 = 6,200; Ending 6,866,200; M-2 `tie` | F-06-T18 |
-| c · By partner | `samuel-ito` | E0 | E0 | `view: by_partner`: five 452 panes, Tax beside Book | F-06-T18 |
-| d · Building | `samuel-ito` | E0 | E0 | `building`: Pending pills, skeleton rows, "Workbook agent is running" | F-06-T18 |
-| e · Signed off | `samuel-ito` | E0 | E0 | sign-off slot "✓ SI"; pill "Reviewed · SI" | F-06-T20 |
+| a · As drafted | `samuel-ito` | E0 Mon Sep 14, 2026, 9:24 AM | E0 | rollforward as drafted, Ending 6,860,000; M-2 tally `off 6,200`; tie-out difference (6,200) | built (F-06-T20 on the F-06-T18 kit) |
+| b · Fixed | `samuel-ito` | E0 | E0 | after the reviewer accepts the agent's fix (P-04's flow): tax-exempt column 124 · 2,356 · 2,015 · 155 · 1,550 = 6,200; Ending 6,866,200; M-2 `tie` | built (F-06-T20 on the F-06-T18 kit) |
+| c · By partner | `samuel-ito` | E0 | E0 | `view: by_partner`: five 452 panes, Tax beside Book | built (F-06-T20 on the F-06-T18 kit) |
+| d · Building | `samuel-ito` | E0 | E0 | `building`: Pending pills, skeleton rows, "Workbook agent is running" | built (F-06-T20 on the F-06-T18 kit) |
+| e · Signed off | `samuel-ito` | E0 | E0 | sign-off slot "✓ SI"; pill "Reviewed · SI" | built (F-06-T20) |
 
 ## API
 None from the kit (`WorkbookVM`). Every total, tie and difference is a server value in the fixture.
@@ -55,6 +55,10 @@ Gradients, emoji, saturated blue, heavy shadows, invented colours, lorem ipsum, 
 | ID | What differs from the handoff | Why | Decision recorded |
 |---|---|---|---|
 | tabsbar | Group A "Issues 11" is the seed's derived open-issue count at E0 | G-C02: the count follows the seed; an artboard value that differs is a masked region | DEC-801, DECISIONS.md |
+| tabsbar B | Group B shows Summary to Capital Accounts (7); "Basis" and "States" are not drawn | the C-05 track holds at most 7 options, as T6 (F-06-T18) | DEC-1557 |
+| sign-off | "Sign off…" and the "✓ SI" chip sit in the control bar, not the pane header | the T6 kit's one sign-off placement (F-06-T18); TPL-06 renders on the kit | DEC-1557 |
+| ⓘ | the value cards carry no ⓘ text | the handoff's ⓘ opens SHL-09 provenance (planned); no words are designed for it | DEC-1557 |
+| tie-out link | "Tax-exempt interest … not in the rollforward →" is a row label, not yet a link | TXP-10 is planned; the row keeps the words | DEC-1557 |
 
 ## Parity
 | Artboard | Tier (A/B/D) | Diff % | Notes |
