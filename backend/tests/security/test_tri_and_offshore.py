@@ -157,7 +157,8 @@ async def test_i_offshore_only_the_not_offshore_actions_are_refused_at_the_condi
         "envelope.evidence_download",  # N-02-T02: the signed envelope's evidence package
         "inbox.read_content",  # N-01-T02 (SPEC-380): an intake item's content
         "inbox.download",  # N-01-T02: an intake attachment
-        "sample_set.export",  # A-03-T01 (DEC-1550): the sample workbook keeps census fields onshore
+        # A-03-T01 (DEC-1550): the sample workbook keeps census fields onshore.
+        "sample_set.export",
         "firm_export.download",
     } == NOT_OFFSHORE
     assert refused == NOT_OFFSHORE - {"firm_export.download", "email_template.test_send"}

@@ -143,6 +143,34 @@ async def get_record(tenant_id: UUID, record_class: RecordClass, digest: str) ->
     return body
 
 
+async def extend_record(
+    tenant_id: UUID, record_class: RecordClass, digest: str, retain_until: datetime
+) -> bool:
+    """N-02-T25 (DEC-1285): lock a stored record until at least `retain_until`. COMPLIANCE mode
+    lets a lock be lengthened and never shortened, so an earlier date is left as it is. False
+    when the record is absent."""
+    if record_class not in RECORD_CLASSES:
+        raise ValueError(f"unknown record class {record_class!r}")
+    target = _target()
+    key = record_key(tenant_id, record_class, digest)
+    try:
+        head = await asyncio.to_thread(target.client.head_object, Bucket=target.bucket, Key=key)
+    except StorageError as exc:
+        if error_code(exc) in ("NoSuchKey", "404", "NotFound"):
+            return False
+        raise
+    if "ObjectLockRetainUntilDate" in head and head["ObjectLockRetainUntilDate"] >= retain_until:
+        return True
+    await asyncio.to_thread(
+        target.client.put_object_retention,
+        Bucket=target.bucket,
+        Key=key,
+        VersionId=head["VersionId"],
+        Retention={"Mode": "COMPLIANCE", "RetainUntilDate": retain_until},
+    )
+    return True
+
+
 async def anchor_chain(tenant_id: UUID, retain_until: datetime) -> StoredRecord | None:
     """Publish the firm's newest checkpoint as an anchor (C-09); None before its first one. One
     `audit_chain.anchored` event names the checkpoint and the stored version."""

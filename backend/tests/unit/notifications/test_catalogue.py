@@ -88,6 +88,9 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "reference_set.published",  # K-02-T12 (C16 `rules_table_updated`, firm admins)
         "connection.reauth_due",  # A-02-T25 (`connection_reauth_due`, 7 days ahead)
         "ai_policy.publish_requested",  # G-02-T24 (`ai_policy_approval_requested`, the approver)
+        "envelope.completed",  # N-02-T24 (C16 `envelope_completed`, to the sender)
+        "envelope.declined",  # N-02-T24 (C16 `envelope_declined`, to the sender)
+        "envelope.expired",  # N-02-T24 (C16 `envelope_expired`, to the sender)
     }
 
 

@@ -10,7 +10,8 @@ import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { installFixtureMode } from "../../app-core/fixture-mode";
 import { FELD_RETURN_ID } from "../../fixtures/seed/tax-compliance";
 import { newQueryClient } from "../../testing/support";
-import { TAX09 } from ".";
+import { ov } from "../../routes/to";
+import { EngineSyncLayer, TAX09 } from ".";
 import { type Tax09State, scenarios } from "./scenarios";
 
 beforeAll(() => {
@@ -162,6 +163,39 @@ describe("TAX-09 e · import diff", () => {
     fireEvent.click(within(sheet).getByRole("button", { name: "Approve import" }));
     await waitFor(() => {
       expect(toastStore.list().map((t) => t.text)).toContain("Import approved");
+    });
+  });
+});
+
+describe("TAX-09 over a return (the engine-sync layer, DEC-1288)", () => {
+  it("opens from ov.TAX09 as a sheet with the chip and its panel, without the artboard's words", async () => {
+    const ref = ov.TAX09(FELD_RETURN_ID);
+    expect(ref).toEqual({ key: "engine-sync", args: [FELD_RETURN_ID] });
+    restore = installFixtureMode(scenarios.b);
+    let closed = false;
+    render(
+      <QueryClientProvider client={newQueryClient()}>
+        <EngineSyncLayer
+          ref={ref}
+          index={0}
+          close={() => {
+            closed = true;
+          }}
+        />
+      </QueryClientProvider>,
+    );
+    const sheet = await screen.findByRole("dialog", { name: "Tax-engine sync" });
+    await within(sheet).findByRole("button", { name: /Synced/ });
+    expect(within(sheet).getByRole("group", { name: "Tax-engine sync" })).toBeTruthy();
+    expect(within(sheet).queryByText("No changes needed")).toBeNull(); // the artboard's subbar
+    // TAX-09 → BND-01: the return's binders, from the panel's footer.
+    expect(within(sheet).getByRole("link", { name: "Binder" }).getAttribute("href")).toBe(
+      "/binders",
+    );
+    expect(within(sheet).getByRole("link", { name: "Inbox" }).getAttribute("href")).toBe("/inbox");
+    fireEvent.keyDown(sheet, { key: "Escape" });
+    await waitFor(() => {
+      expect(closed).toBe(true);
     });
   });
 });
