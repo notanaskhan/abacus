@@ -11391,7 +11391,7 @@ export type EngineImportOut = {
     /**
      * Kind
      */
-    kind: 'values' | 'diagnostics' | 'pdfs' | 'acks';
+    kind: 'values' | 'diagnostics' | 'pdfs' | 'acks' | 'k1_set';
     /**
      * Return Id
      */
@@ -18343,6 +18343,10 @@ export type K1PackageOut = {
      * Allowed Actions
      */
     allowed_actions: Array<string>;
+    /**
+     * Documents
+     */
+    documents?: Array<K1DocumentOut>;
     /**
      * Form
      */
@@ -85484,7 +85488,7 @@ export type UploadImportData = {
         /**
          * Kind
          */
-        kind: 'values' | 'diagnostics' | 'pdfs' | 'acks';
+        kind: 'values' | 'diagnostics' | 'pdfs' | 'acks' | 'k1_set';
     };
     url: '/v1/tax-returns/{return_id}/engine-imports';
 };

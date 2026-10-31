@@ -142,6 +142,7 @@ from abacus.modules.requests.service import (
 from abacus.modules.requests.source_documents import (
     SourceDocuments,
     UploadFacts,
+    k1_request_for,
     pbc_binders,
     pbc_counts,
     pbc_counts_of,
@@ -259,6 +260,7 @@ __all__ = [
     "item_ref",
     "item_versions",
     "items_of_version",
+    "k1_request_for",
     "latest_version_of",
     "live_files",
     "lock_rule_link",

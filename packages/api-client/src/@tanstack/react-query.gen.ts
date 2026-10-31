@@ -13321,6 +13321,8 @@ export const k1DocumentOptions = (options: Options<K1DocumentData>) => queryOpti
 
 /**
  * Resend K1 Route
+ *
+ * The corrected contact; T21's workflow sends the new invitation.
  */
 export const resendK1Mutation = (options?: Partial<Options<ResendK1Data>>): UseMutationOptions<ResendK1Response, ResendK1Error, Options<ResendK1Data>> => {
     const mutationOptions: UseMutationOptions<ResendK1Response, ResendK1Error, Options<ResendK1Data>> = {
@@ -16154,6 +16156,8 @@ export const sendQuestionMutation = (options?: Partial<Options<SendQuestionData>
 
 /**
  * Accept Details Change Route
+ *
+ * DV-10: recorded for the firm to apply in CCH (no full TIN is stored).
  */
 export const acceptDetailsChangeMutation = (options?: Partial<Options<AcceptDetailsChangeData>>): UseMutationOptions<AcceptDetailsChangeResponse, AcceptDetailsChangeError, Options<AcceptDetailsChangeData>> => {
     const mutationOptions: UseMutationOptions<AcceptDetailsChangeResponse, AcceptDetailsChangeError, Options<AcceptDetailsChangeData>> = {
@@ -17685,6 +17689,8 @@ export const listK1PackagesQueryKey = (options: Options<ListK1PackagesData>) => 
 
 /**
  * List K1 Packages Route
+ *
+ * TXP-12: rows with documents (the expanded row); `counts` are the tiles by status.
  */
 export const listK1PackagesOptions = (options: Options<ListK1PackagesData>) => queryOptions<ListK1PackagesResponse, ListK1PackagesError, ListK1PackagesResponse, ReturnType<typeof listK1PackagesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -17736,6 +17742,8 @@ export const releaseK1Mutation = (options?: Partial<Options<ReleaseK1Data>>): Us
 
 /**
  * Share K1 Route
+ *
+ * DEC-88: a hand-off, an `internal_handoff` copy and a final-approval dependency each.
  */
 export const shareK1Mutation = (options?: Partial<Options<ShareK1Data>>): UseMutationOptions<ShareK1Response, ShareK1Error, Options<ShareK1Data>> => {
     const mutationOptions: UseMutationOptions<ShareK1Response, ShareK1Error, Options<ShareK1Data>> = {

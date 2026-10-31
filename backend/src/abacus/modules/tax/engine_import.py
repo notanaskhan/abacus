@@ -74,7 +74,7 @@ CREATE: Final = "engine_import.create"
 DECIDE: Final = "engine_import.approve"
 READ: Final = "tax_return.read"
 SUBJECT: Final = "engine_import"
-Kind = Literal["values", "diagnostics", "pdfs", "acks"]
+Kind = Literal["values", "diagnostics", "pdfs", "acks", "k1_set"]
 SyncState = Literal[
     "not_yet_exported",
     "ready_for_export",
@@ -206,6 +206,11 @@ async def import_file(
     _person(ctx, CREATE)
     resource, engagement_id = await _resource(ctx, return_id)
     await authorise(ctx, CREATE, resource)
+    if kind == "k1_set":  # T-02-T20: the engine's K-1 set, applied as packages (DEC-1471)
+        from abacus.modules.tax import k1_packages
+
+        routed = await k1_packages.import_k1_set(ctx, return_id, file_name, content)
+        return ImportView(routed, return_id, kind, "routed", (), datetime.min, 1, ())
     if kind in ("pdfs", "acks"):  # T-01-T26: the engine's PDFs and e-file status report
         from abacus.modules.tax import engine_files
 
