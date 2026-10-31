@@ -38,7 +38,7 @@ from datetime import datetime
 from typing import Final, Literal, cast
 from uuid import UUID, uuid4
 
-from sqlalchemy import insert, select
+from sqlalchemy import insert, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.db import TenantContext, tenant_session
@@ -66,6 +66,16 @@ PUBLISH: Final = "report_template.publish"
 TEMPLATE: Final = "report_template"
 VERSION: Final = "report_template_version"
 Source = Literal["import", "scenario_loader"]
+
+
+# P-11-T15 (DEC-1656): the app role holds no UPDATE on these insert-only tables, and a row lock
+# (`FOR UPDATE`, even `FOR SHARE`) needs it, so imports and publications of one template are
+# serialised by a transaction-scoped advisory lock on the firm and the template's identity.
+_LOCK: Final = text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))")
+
+
+async def _lock(session: AsyncSession, tenant_id: UUID, key: str) -> None:
+    await session.execute(_LOCK, {"key": f"report_template:{tenant_id}:{key}"})
 
 
 class AlreadyPublished(DomainConflict):
@@ -240,12 +250,29 @@ async def import_template(
     """Store `bundle` as the next version of its template (AC-1). Human only."""
     await _human(ctx, IMPORT, ctx.tenant_id)
     await authorise(ctx, IMPORT, Resource.firm(ctx.tenant_id))
+    try:
+        return await _store(ctx, bundle, source)
+    except _Unchanged as unchanged:
+        return unchanged.version
+
+
+class _Unchanged(Exception):
+    """The latest version already has this content: leave the unit of work writing nothing (it
+    rolls back; a unit of work that commits must audit, P-11-T15 / DEC-1656)."""
+
+    def __init__(self, version: ImportedVersion) -> None:
+        super().__init__()
+        self.version = version
+
+
+async def _store(ctx: AuthContext, bundle: TemplateBundle, source: Source) -> ImportedVersion:
     async with uow(ctx.tenant) as tx:
+        await _lock(tx.session, ctx.tenant_id, f"{bundle.family}:{bundle.name}")
         template = (
             await tx.session.execute(
-                select(ReportTemplate)
-                .where(ReportTemplate.family == bundle.family, ReportTemplate.name == bundle.name)
-                .with_for_update()
+                select(ReportTemplate).where(
+                    ReportTemplate.family == bundle.family, ReportTemplate.name == bundle.name
+                )
             )
         ).scalar_one_or_none()
         if template is None:
@@ -272,7 +299,9 @@ async def import_template(
                 )
             ).scalar_one_or_none()
         if latest is not None and latest.content_sha256 == bundle.content_sha256:
-            return ImportedVersion(template_id, latest.id, latest.version_no, created=False)
+            raise _Unchanged(
+                ImportedVersion(template_id, latest.id, latest.version_no, created=False)
+            )
         version_no = (latest.version_no if latest is not None else 0) + 1
         version_id = uuid4()
         await tx.session.execute(
@@ -310,8 +339,7 @@ async def import_template(
                 template=template_id,
                 version=version_no,
                 content_sha256=bundle.content_sha256,
-                source=source,
-            ),
+            ),  # identifiers only (ADR-018); the version row records its source
         )
     return ImportedVersion(template_id, version_id, version_no, created=True)
 
@@ -362,9 +390,7 @@ async def publish_version(ctx: AuthContext, template_id: UUID, version_no: int) 
     await _human(ctx, PUBLISH, template_id)
     template = await _publisher(ctx, template_id)
     async with uow(ctx.tenant) as tx:
-        await tx.session.execute(
-            select(ReportTemplate.id).where(ReportTemplate.id == template_id).with_for_update()
-        )
+        await _lock(tx.session, ctx.tenant_id, str(template_id))
         version = await _version(tx.session, template_id, version_no)
         if version.imported_by_user_id == ctx.user_id:
             raise PublisherIsImporter(facts={"version_id": str(version.id)})
@@ -396,9 +422,7 @@ async def deprecate_version(ctx: AuthContext, template_id: UUID, version_no: int
     await _human(ctx, PUBLISH, template_id)
     await _publisher(ctx, template_id)
     async with uow(ctx.tenant) as tx:
-        await tx.session.execute(
-            select(ReportTemplate.id).where(ReportTemplate.id == template_id).with_for_update()
-        )
+        await _lock(tx.session, ctx.tenant_id, str(template_id))
         version = await _version(tx.session, template_id, version_no)
         current = current_of(await _publications(tx.session, template_id))
         if current is None or current.version_id != version.id:

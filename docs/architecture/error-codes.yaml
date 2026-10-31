@@ -285,6 +285,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.workpapers.tie_out.CitationRequired
+  citation_unverified:
+    status: 422
+    raised_by:
+    - abacus.modules.sampling.populations.CitationUnverified
+    summary: A comparison cites something not verified and live on the engagement (INV-2).
   client_contact:
     status: 409
     raised_by:
@@ -296,6 +301,12 @@ codes:
     - abacus.modules.organisations.service.ClientRecordInvalid
     summary: A value the client record's constraints refuse (an office or partner of another firm, a
       malformed fiscal year end).
+  column_map_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.sampling.populations.ColumnMapInvalid
+    summary: The column map names an unknown field, no record key, a column the sheet does not have,
+      one column twice, or an amount column holding something other than an amount.
   completion_blocked:
     status: 409
     raised_by:
@@ -551,6 +562,11 @@ codes:
     - abacus.modules.requests.binders.DueDateRequired
     summary: Every request a publish sends needs a due date, its own or the binder's default; the facts
       name the requests without one.
+  duplicate_record_key:
+    status: 422
+    raised_by:
+    - abacus.modules.sampling.populations.DuplicateRecordKey
+    summary: 'Two records'' keys normalise alike: a population''s key is unique (ADR-340 §2).'
   duplicate_resolved:
     status: 409
     raised_by:
@@ -1560,6 +1576,11 @@ codes:
     - abacus.modules.identity.governance_errors.SecurityPolicyLoosened
     summary: A firm may only make its sign-in, session and portal limits stricter than the platform's
       (AC-17, AC-19); `facts.field` names the field.
+  population_unreadable:
+    status: 422
+    raised_by:
+    - abacus.modules.sampling.populations.PopulationUnreadable
+    summary: The evidence version could not be read as a sheet, or yields no records.
   portal_host_invalid:
     status: 422
     raised_by:
@@ -1716,6 +1737,12 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.requests.client_responses.ResponseInvalid
+  restricted_column:
+    status: 422
+    raised_by:
+    - abacus.modules.sampling.populations.RestrictedColumn
+    summary: 'A mapped column is Restricted (SSN, ITIN, DOB, bank account or routing number): never copied
+      (ADR-031).'
   result_invalid:
     status: 422
     raised_by:

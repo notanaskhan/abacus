@@ -6,10 +6,16 @@
 #   1  general rate: 2,000 per 5 minutes per IP, block.
 #   2  provider webhook rate: 300 per 5 minutes per IP on /v1/webhooks/ (ADR-152, DEC-1281), block
 #      with 429, which the provider retries; the receiver also caps hints per envelope.
+#   3  upload rate: 300 per 5 minutes per IP on the file routes (upload_path_regex), block with
+#      429 (N-01-T24, pen-test delta #1: intake flooding).
 #  10  AmazonIpReputationList          } count or block (managed_rules_action): count for two
 #  20  CommonRuleSet                   } weeks on a new environment, then block. The body-size
 #  21  body size outside upload routes } rule of the common set always counts; rule 21 blocks
 #  30  KnownBadInputsRuleSet           } it again everywhere except the upload routes.
+#  22  upload size cap: a file route whose Content-Length is 64,000,000 bytes or more is blocked
+#      with 413 before it reaches the API (N-01-T24): above the scanner's 60 MiB stream limit and
+#      every route's own cap, so nothing legitimate is refused. WAF reads the header as text, so
+#      the rule matches its digits (upload_max_content_length_regex), always in block mode.
 #  40  AnonymousIpList: count only (offshore staff and VPN users are legitimate, ADM-03).
 # AWS WAF counts rate rules over a sliding window and acts a few seconds after the limit is
 # crossed, so a burst can pass slightly more than the limit before the block starts.
@@ -40,6 +46,12 @@ resource "aws_wafv2_web_acl" "this" {
     key          = "rate_limited"
     content_type = "APPLICATION_JSON"
     content      = jsonencode({ detail = "rate_limited" })
+  }
+
+  custom_response_body {
+    key          = "too_large"
+    content_type = "APPLICATION_JSON"
+    content      = jsonencode({ detail = "too_large" })
   }
 
   rule {
@@ -163,6 +175,49 @@ resource "aws_wafv2_web_acl" "this" {
   }
 
   rule {
+    name     = "upload-rate"
+    priority = 3
+
+    action {
+      block {
+        custom_response {
+          response_code            = 429
+          custom_response_body_key = "rate_limited"
+        }
+      }
+    }
+
+    statement {
+      rate_based_statement {
+        limit                 = var.upload_rate_limit
+        evaluation_window_sec = var.rate_window_seconds
+        aggregate_key_type    = "IP"
+
+        scope_down_statement {
+          regex_match_statement {
+            regex_string = var.upload_path_regex
+
+            field_to_match {
+              uri_path {}
+            }
+
+            text_transformation {
+              priority = 0
+              type     = "LOWERCASE"
+            }
+          }
+        }
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "${var.name}-upload-rate"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  rule {
     name     = "AWSManagedRulesCommonRuleSet"
     priority = 20
 
@@ -251,6 +306,62 @@ resource "aws_wafv2_web_acl" "this" {
     visibility_config {
       cloudwatch_metrics_enabled = true
       metric_name                = "${var.name}-body-size"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  rule {
+    name     = "upload-size-cap"
+    priority = 22
+
+    action {
+      block {
+        custom_response {
+          response_code            = 413
+          custom_response_body_key = "too_large"
+        }
+      }
+    }
+
+    statement {
+      and_statement {
+        statement {
+          regex_match_statement {
+            regex_string = var.upload_path_regex
+
+            field_to_match {
+              uri_path {}
+            }
+
+            text_transformation {
+              priority = 0
+              type     = "LOWERCASE"
+            }
+          }
+        }
+
+        statement {
+          regex_match_statement {
+            regex_string = var.upload_max_content_length_regex
+
+            field_to_match {
+              single_header {
+                name = "content-length"
+              }
+            }
+
+            text_transformation {
+              priority = 0
+              type     = "NONE"
+            }
+          }
+        }
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "${var.name}-upload-size-cap"
       sampled_requests_enabled   = true
     }
   }
