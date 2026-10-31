@@ -70,6 +70,9 @@ FIRM_LEVEL: Final = frozenset(
         "ai_policy",  # G-02-T24: the firm's AI policy, its drafts and versions (one per firm)
         # Q-04-T007: an operator's pilot enrolment; its work item ref keeps it from walled readers
         "pilot_enrolment",
+        "reference_set_version",  # K-02-T12: a platform rules table took effect (no client)
+        "questionnaire_template",  # T-02-T16: the firm's organizer template and its versions
+        "consent_export",  # T-01-T16: a person's export of the consent registry (a filter)
     }
 )
 # Kinds whose rows may belong to no engagement (a notification about the firm): then firm-level.

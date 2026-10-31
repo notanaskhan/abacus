@@ -5,11 +5,12 @@ Pre-registered (F-03-T08; ADR-140). T-01-T02: the engine-bridge and e-file-recor
 """
 
 from abacus.kernel.audit_owners import register_engagement_owners
+from abacus.kernel.uow import OutboxEvent
 from abacus.modules.engagements.api import register_work_item_kind
 from abacus.modules.identity.api import AbacusRouter, register_scope_resolver
 from abacus.modules.organisations.api import register_office_facts
 from abacus.modules.platform.api import register_search_projection
-from abacus.modules.tax import consent_capture, k1_release
+from abacus.modules.tax import consent_capture, filing, k1_release
 from abacus.modules.tax.approval import Blocker as ApprovalBlocker
 from abacus.modules.tax.approval import eligibility as final_approval_eligibility
 from abacus.modules.tax.approval import register as register_approval
@@ -43,6 +44,7 @@ from abacus.modules.tax.transitions import apply_transition, record_sync_state
 
 # T-01-T10: §7216 consent capture behind C19's routes, and the `consent_set` envelope source.
 consent_capture.register()
+filing.register()  # T-01-T36: the `tax_return` envelope source (C7 v1.1)
 
 # F-03-T22: the `tax_return` work-item kind.
 register_work_item_kind("tax_return", TaxReturnKind())
@@ -71,10 +73,20 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     portal_k1_router,  # POR-13 (T-02-T02 stub)
 )
 
+
 # T-02-T10: a published reference-set correction recomputes every unfiled return's due dates
 # (K-02-T12 fans `reference_set.published` out per tenant).
+async def _reference_set_published(event: OutboxEvent) -> None:
+    """Due dates follow a published set (T-02-T10); corrected 8879 tolerances recheck every open
+    binding (T-01-T36)."""
+    await on_reference_set_published(event)
+    await filing.on_tolerances_published(event)
+
+
 SUBSCRIPTIONS = {
-    "reference_set.published": on_reference_set_published,
+    "reference_set.published": _reference_set_published,
+    # T-01-T36: a return's approved checkpoint rechecks its 8879 binding (I-8879-DRIFT).
+    "checkpoint.approved": filing.on_checkpoint_approved,
     # T-01-T10: a completed `consent_set` envelope signs its consents (C7 → C19).
     "envelope.completed": consent_capture.on_envelope_completed,
     # T-02-T13: the record projection (a published binder opens intake; the L1 marks prepared).
