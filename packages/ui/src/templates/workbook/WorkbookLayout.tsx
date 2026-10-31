@@ -12,7 +12,13 @@ import type { ToolbarProps } from "../../layout/toolbar";
 import { useMotion } from "../../motion";
 import { cn } from "../../cn";
 import { SignOffSlotChips } from "../../signoff";
+import { CalcTree } from "../../data/CalcTree";
+import { GridTable } from "../../data/grid";
+import { Icon } from "../../icons";
+import { MatchScope } from "../../tracing/match";
 import type {
+  CalcStep,
+  GridPayload,
   TablePayload,
   WorkbookCopy,
   WorkbookPaneVM,
@@ -316,6 +322,83 @@ function StatementPane({
   );
 }
 
+/** The calc tree's pane (F-06-T19): the steps beside the source workbook. */
+function CalcPane({
+  pane,
+  tree,
+}: {
+  pane: WorkbookPaneVM;
+  tree: readonly CalcStep[];
+}): JSX.Element {
+  const title = pane.title ?? "";
+  return (
+    <section
+      data-workbook="pane"
+      data-pane="calc"
+      aria-label={title}
+      style={pane.width === undefined ? undefined : { width: pane.width }}
+      className={cn(
+        "flex min-h-0 flex-col overflow-hidden rounded-pane bg-card shadow-e2",
+        pane.width === undefined ? "min-w-0 flex-1" : "flex-none",
+      )}
+    >
+      <h3 className="flex h-(--pane-hd-h) flex-none items-center justify-center border-b-[0.5px] border-hair text-pane font-medium">
+        {title}
+      </h3>
+      <div className="min-h-0 flex-1 overflow-auto">
+        <CalcTree label={title} steps={tree} />
+      </div>
+    </section>
+  );
+}
+
+/** The source workbook's pane (F-06-T19): the grid grammar and its "Sheet!Cell" footer. */
+function GridPane({ pane, grid }: { pane: WorkbookPaneVM; grid: GridPayload }): JSX.Element {
+  return (
+    <section
+      data-workbook="pane"
+      data-pane="grid"
+      aria-label={grid.label}
+      style={pane.width === undefined ? undefined : { width: pane.width }}
+      className={cn(
+        "flex min-h-0 flex-col overflow-hidden rounded-pane bg-card shadow-e2",
+        pane.width === undefined ? "min-w-0 flex-1" : "flex-none",
+      )}
+    >
+      <h3 className="flex h-(--pane-hd-h) flex-none items-center justify-center gap-[8px] border-b-[0.5px] border-hair text-pane font-medium">
+        <Icon name="file-spreadsheet" size={14} className="text-ink-3" />
+        {grid.label}
+      </h3>
+      <div className="min-h-0 flex-1 overflow-auto">
+        <GridTable
+          label={grid.label}
+          columns={grid.columns}
+          rows={grid.rows}
+          source={grid.source}
+          sheet={grid.sheet}
+          resizable={false}
+          {...(grid.headerRow === undefined ? {} : { headerRow: grid.headerRow })}
+          {...(grid.cite === undefined ? {} : { cite: grid.cite })}
+          {...(grid.comments === undefined ? {} : { comments: grid.comments })}
+        />
+      </div>
+      {grid.footer !== undefined && (
+        <p
+          data-workbook="grid-footer"
+          className="flex h-[30px] flex-none items-center gap-[8px] border-t-[0.5px] border-hair px-[16px] text-meta"
+        >
+          <span className="font-medium text-ink">{`${grid.sheet}!${grid.footer.cell}`}</span>
+          <span className="text-ink-2 tabular-nums">{grid.footer.value}</span>
+          <span className="flex-1" />
+          {grid.footer.meta !== undefined && (
+            <span className="text-ink-3">{grid.footer.meta}</span>
+          )}
+        </p>
+      )}
+    </section>
+  );
+}
+
 export function WorkbookLayout({
   workbook,
   copy,
@@ -340,22 +423,32 @@ export function WorkbookLayout({
     building === undefined
       ? tallyWithLinks(workbook.tally, onOpenIssue)
       : pendingTally(workbook.tally);
-  // F-06-T19 draws `grid` and `calc`; until then only statement panes render.
   const statements = workbook.panes.filter(
     (p): p is WorkbookPaneVM & { table: TablePayload } =>
       p.kind === "statement" && p.table !== undefined,
   );
   const sized = statements.filter((p) => p.width !== undefined);
-  const panes = statements.map((pane, i) => (
-    <StatementPane
-      key={`${pane.table.label}:${String(i)}`}
-      pane={pane}
-      table={pane.table}
-      building={building}
-      onOpenIssue={onOpenIssue}
-      onExplain={onExplain}
-    />
-  ));
+  const panes = workbook.panes.map((pane, i) => {
+    if (pane.kind === "calc" && pane.tree !== undefined && building === undefined) {
+      return <CalcPane key={`calc:${String(i)}`} pane={pane} tree={pane.tree} />;
+    }
+    if (pane.kind === "grid" && pane.grid !== undefined && building === undefined) {
+      return <GridPane key={`grid:${String(i)}`} pane={pane} grid={pane.grid} />;
+    }
+    if (pane.kind !== "statement" || pane.table === undefined) return null;
+    return (
+      <StatementPane
+        key={`${pane.table.label}:${String(i)}`}
+        pane={pane}
+        table={pane.table}
+        building={building}
+        onOpenIssue={onOpenIssue}
+        onExplain={onExplain}
+      />
+    );
+  });
+  // F-06-T19: a calc tree and its workbook share one match store, so a step lights its cell.
+  const traced = workbook.panes.some((p) => p.kind === "calc" || p.kind === "grid");
   const step = (sized[0]?.width ?? 0) + PANE_GAP;
   const panesHeight = height === undefined ? undefined : height - CHROME;
 
@@ -442,10 +535,12 @@ export function WorkbookLayout({
         style={panesHeight === undefined ? undefined : { height: panesHeight }}
         className="flex min-h-0 min-w-0 flex-1 gap-[10px]"
       >
-        {sized.length > 0 ? (
+        {sized.length > 0 && !traced ? (
           <PaneScroller label={copy.scroller} step={step}>
             {panes}
           </PaneScroller>
+        ) : traced ? (
+          <MatchScope>{panes}</MatchScope>
         ) : (
           panes
         )}
