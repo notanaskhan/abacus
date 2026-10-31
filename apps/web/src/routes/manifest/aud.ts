@@ -99,7 +99,7 @@ export const audScreens = {
   "AUD-30": { name: "Post-issuance & subsequent discovery", status: "planned", path: null },
   "AUD-31": {
     name: "Trial balance mapping — Harlow & Pike interim 8/31/2026",
-    status: "planned",
+    status: "fixture",
     path: null,
   },
   "AUD-32": { name: "Consolidation setup — Harlow & Pike FY2026", status: "planned", path: null },

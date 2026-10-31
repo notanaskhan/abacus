@@ -339,6 +339,11 @@ NOT_CREATING = {
     "/v1/portal/envelopes/{envelope_id}/signing-session",
     "/v1/portal/envelopes/{envelope_id}/viewed",
     "/v1/portal/intake-uploads/{upload_id}/withdraw",
+    # K-01-T18 (DEC-1755): starting and cancelling an import, and resolving a parse flag, move an
+    # existing record, so 200.
+    "/v1/methodology/imports/{import_id}/start",
+    "/v1/methodology/imports/{import_id}/cancel",
+    "/v1/methodology/versions/{version_id}/steps/{step_id}/flag-resolution",
     # A-04-T01 (stubs, DEC-1757): a preview and a coverage check compute and store nothing; a
     # flag conversion, a reminder draft, the minutes approval and an exception's routing act on
     # existing records, so 200.
@@ -416,6 +421,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/request-items",
         # K-01-T01 (C21 stub): a methodology draft and a program step.
         "/v1/methodology/versions/{version_id}/drafts",
+        # K-01-T18: a methodology import.
+        "/v1/methodology/imports",
         # A-04-T01 (stubs): a materiality proposal and reassessment, a risk approval request and
         # response, a fraud inquiry, an evidence request draft, a service organization, SOC
         # request drafts and a reliance card.

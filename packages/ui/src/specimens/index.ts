@@ -22,6 +22,7 @@ import {
   AccountTreeSpecimen,
   EvidenceGridSpecimen,
   LedgerGridSpecimen,
+  MappingTableSpecimen,
   StatementGridSpecimen,
   TallyStripSpecimen,
   VarianceSpecimen,
@@ -414,6 +415,8 @@ export const SPECIMENS: readonly Specimen[] = [
   { id: "c-01-variance", kit: "C-01", title: "Variance cell", Component: VarianceSpecimen },
   { id: "c-01-tally-strip", kit: "C-01", title: "TallyStrip", Component: TallyStripSpecimen },
   { id: "c-01-account-tree", kit: "C-01", title: "AccountTree", Component: AccountTreeSpecimen },
+  // A-03-T12: the L2 MappingTable (AUD-31)
+  { id: "l2-mapping-table", kit: "C-01", title: "MappingTable", Component: MappingTableSpecimen },
   // DataTable grammars 3 (F-05-T52): grid, leadsheet, field rows, virtualisation
   { id: "c-01-grid", kit: "C-01", title: "Grid grammar", Component: GridSpecimen },
   { id: "c-01-calc-tree", kit: "C-01", title: "Calc tree", Component: CalcTreeSpecimen },

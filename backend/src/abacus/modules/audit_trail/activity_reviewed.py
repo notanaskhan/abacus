@@ -542,12 +542,21 @@ REVIEWED_FALLBACK: Final = frozenset(
         "letter.envelope_ignored",  # S19 batch 4
         "mapping_set.confirmed",  # reviewed 2026-10-31 (S17-S19)
         "mapping_set.went_stale",  # reviewed 2026-10-31 (S17-S19)
+        "methodology_import.cancelled",  # reviewed 2026-10-31 (K-01-T18)
+        "methodology_import.created",  # reviewed 2026-10-31 (K-01-T18)
+        "methodology_import.failed",  # reviewed 2026-10-31 (K-01-T18)
+        "methodology_import.needs_review",  # reviewed 2026-10-31 (K-01-T18)
+        "methodology_import.parsing",  # reviewed 2026-10-31 (K-01-T18)
+        "methodology_source_file.downloaded",  # reviewed 2026-10-31 (K-01-T18)
+        "methodology_source_file.stored",  # reviewed 2026-10-31 (K-01-T18)
         "methodology_step.added",  # reviewed 2026-10-31 (S17-S19)
         "methodology_step.edited",  # reviewed 2026-10-31 (S17-S19)
+        "methodology_step.flag_resolved",  # reviewed 2026-10-31 (K-01-T18)
         "methodology_step.mandatory_changed",  # reviewed 2026-10-31 (S17-S19)
         "methodology_step.removed",  # reviewed 2026-10-31 (S17-S19)
         "methodology_version.discarded",  # reviewed 2026-10-31 (S17-S19)
         "methodology_version.draft_created",  # reviewed 2026-10-31 (S17-S19)
+        "methodology_version.standards_mapped",  # reviewed 2026-10-31 (K-01-T18)
         "question.drafted",  # reviewed 2026-10-31 (S17-S19)
         "question.sent",  # reviewed 2026-10-31 (S17-S19)
         "questionnaire.answered",  # reviewed 2026-10-31 (S17-S19)
@@ -568,5 +577,22 @@ REVIEWED_FALLBACK: Final = frozenset(
         "tax_return.approved",  # reviewed 2026-10-31 (S17-S19)
         "transcript.compared",  # reviewed 2026-10-31 (S17-S19)
         "transcript.uploaded",  # reviewed 2026-10-31 (S17-S19)
+        # S19 batch 5 (T-02-T20/T21): the K-1 set, its packages and the release gate.
+        "schedule_k_set.imported",
+        "schedule_k_package.shared_internal",
+        "schedule_k_package.resend_requested",
+        "schedule_k_package.released",
+        "schedule_k_package.access_given",
+        "schedule_k_package.deliverable_emailed",
+        "schedule_k_package.handoff_replaced",
+        "schedule_k_release.requested",
+        "schedule_k_release.started",
+        "schedule_k_release.undone",
+        "schedule_k_release.contact_resolved",
+        # T-02-T26: POR-13's recipient writes and a bounced "Deliverable ready".
+        "recipient_details_change.submitted",
+        "schedule_k_package.bounced",
+        "schedule_k_package.e_furnishing_consent_recorded",
+        "letter.envelope_withdrawn",  # N-02-T35: a person lets an unsigned envelope go
     }
 )

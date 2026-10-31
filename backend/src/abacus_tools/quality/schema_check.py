@@ -365,6 +365,10 @@ DEFINER_FUNCTIONS = frozenset(
     | {"reference_set_resolve", "reference_set_list", "reference_set_history"}
     | {"reference_set_draft", "reference_set_publish", "reference_set_withdraw"}
     | {"active_tenant_ids", "standards_sets_apply"}
+    # 0580 (K-01-T18, DEC-1755; reviewed at the S22 end review, DEC-1759): one standards set's
+    # code, label and family by id for KNW-02 d. `standards_sets` is global reference data with no
+    # tenant rows; search path pinned, revoked from PUBLIC, executable by the app role.
+    | {"standards_set_named"}
 )
 # Definer functions for operator tooling only (TASK-027 D4): the application role must NOT be able
 # to execute them (they read across firms).

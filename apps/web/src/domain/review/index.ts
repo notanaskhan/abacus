@@ -36,3 +36,12 @@ export {
 } from "./signoffs";
 
 export { type DecisionWrites, useDecisionCard, useDecisionWrites } from "./decisions";
+export {
+  type FixScope,
+  type IssueKind,
+  type IssueWrites,
+  useIssue,
+  useIssueWrites,
+  useIssues,
+  useRecordIssues,
+} from "./issues";
