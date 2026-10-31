@@ -1816,6 +1816,14 @@ export const STATUS_REGISTRY = {
       "derived": false
     }
   },
+  "methodology_source_file": {
+    "clean": {
+      "label": "Scanned",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
   "knowledge_item": {
     "draft": {
       "label": "Draft",

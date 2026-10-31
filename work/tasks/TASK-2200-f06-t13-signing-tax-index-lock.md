@@ -4,13 +4,13 @@ title: F-06-T13 signing and tax-index parity lock and hand-off
 spec: SPEC-400
 acceptance_criteria: [AC-37]
 risk_zone: green
-status: in-review
+status: done
 epic: F-06
 plan_key: F-06-T13
 branch: s17-f06-t13
 worktree: /Users/ayushkbhatia/Accrued/abacus-s17
 created: 2026-10-29
-updated: 2026-10-29
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -58,6 +58,7 @@ Tests to write (mapped to ACs):
 ## Progress log
 - `2026-10-29` — Built steps 1–5 on `s17-f06-t13` (build-only; tests written, run at the S17 end
   review). Locks wait for the measured run.
+- 2026-11-01: merged to main in #740 (3ab79791f).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

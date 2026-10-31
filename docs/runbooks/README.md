@@ -69,8 +69,9 @@ Owner is the builder for every row. `Last rehearsed` stays `never` until a rehea
 | RB-39 | Agent stage promotion and demotion (SPEC-036, DEC-811) | Q-02-T51 | before the first real firm goes live | never | none | drafted |
 | RB-40 | Provider-terms `review_by` renewal and Bedrock parity refresh | Q-02-T51 | before the first real-firm model call | never | none | drafted |
 | RB-42 | Pre-shadow scrubbing audit: seeded cases through the logger, Sentry and the meter, read back from each sink | Q-03-T083 | before M9 (Tue Jun 1, 2027) | never | none | drafted |
+| RB-43 | Document services part 1: failed renders, engine upgrade and golden re-baseline (both approvals), template rollback by republishing a prior version | P-11-T17 | before the Sep 1, 2027 window (staging drill by Fri Aug 20, 2027) | never | none yet (`render_failed` rate to wire) | drafted |
 
-Q-02-T51's agent-stage and provider-terms runbooks are RB-39 and RB-40. Give the next runbook the next free number (RB-41 onward; RB-31 is P-01-T17's, RB-32 P-06-T27's, RB-33 A-01-T30's).
+Q-02-T51's agent-stage and provider-terms runbooks are RB-39 and RB-40. Give the next runbook the next free number (RB-44 onward; RB-43 is P-11-T17's; RB-31 is P-01-T17's, RB-32 P-06-T27's, RB-33 A-01-T30's).
 
 ## Template
 

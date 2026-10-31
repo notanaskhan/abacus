@@ -4,12 +4,12 @@ title: T-01-T12 TRI MFA predicate, offshore provider and SSN unlock
 spec: SPEC-501
 acceptance_criteria: [AC-24, AC-25, AC-26, AC-27]
 risk_zone: red
-status: in-review
+status: done
 epic: T-01
 plan_key: T-01-T12
 branch: s17-t01-t12
 created: 2026-10-30
-updated: 2026-10-30
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -47,3 +47,4 @@ tenant only after the gate is registered."
 
 ## Progress log
 - 2026-10-30: built in S17 Lane 2 on T-01-T11; tests run in the end review.
+- 2026-11-01: merged to main in #784 (b05b539af).

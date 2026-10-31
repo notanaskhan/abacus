@@ -147,8 +147,10 @@ class PriorYearOut(BaseModel):
 
     year: Annotated[str, classified("internal")]  # "PY2024"
     amount: Money
-    # The final, audited overall for that year.
+    # The final, audited overall for that year and the rate it was set at (A-04-T10, R2's
+    # "Overall materiality used: PY2024 1.5% = 213,400").
     overall_used: Annotated[Decimal | None, classified("confidential")]
+    rate_used_pct: Annotated[Decimal | None, classified("confidential")] = None
 
 
 class BenchmarkOut(BaseModel):
@@ -270,6 +272,14 @@ class MaterialityRecordOut(BaseModel):
     policy_version_id: Annotated[UUID | None, classified("internal")]
     pending_card_id: Annotated[UUID | None, classified("internal")]
     allowed_actions: Actions
+    # A-04-T10 (DEC-1851), additive: the benchmarks' period end ("unadjusted at 12/31/2025"), the
+    # caption's sentences under the table and the specific-materiality line, each written by the
+    # service from code facts (the TB lines it read, the prior years); never model text.
+    period_end: Annotated[date | None, classified("internal")] = None
+    benchmark_caption: Annotated[list[str], Field(max_length=4), classified("confidential")] = (
+        Field(default_factory=list)
+    )
+    specific_note: Annotated[str | None, classified("confidential")] = None
 
 
 class MaterialityPreviewIn(BaseModel):

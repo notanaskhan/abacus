@@ -12,6 +12,7 @@ One builder works through Claude Code, sequentially: setup, then phases, sprints
 |---|---|
 | What to build now | The current sprint in `docs/plan/07-sprint-plan.md` and its rows in `docs/plan/backlog.csv`; order and dates win from `docs/plan/01-strategy-roadmap.md`. Your task: `work/tasks/TASK-*.md` |
 | What is already built | `docs/plan/status/` (`status-verified.csv`, `reconcile-2026-10.md`) and the `status` column of `docs/plan/backlog.csv` |
+| What is deferred | `docs/plan/status/pen-test-deferral.md` (DEC-1389: no penetration tests) and `docs/plan/status/accessibility-audit-deferral.md` (DEC-1391: no accessibility audits; no live pilot firms): which rows are deferred in full, which are built without the deferred clause, and which wait on a live firm |
 | An epic in full | `docs/plan/epics/<ID>.md` and `<ID>.tasks.csv` |
 | Decisions that bind you | `docs/plan/09-decisions-adrs.md` (DEC-nn, P-nn) and `docs/product/decision-log.md` (arrives with F-02, S0) |
 | Exactly what to build | `docs/specs/SPEC-*.md`; for a screen, its screen contract `docs/screens/<ID>.md` (arrive with each screen epic's first task) |
