@@ -51,6 +51,7 @@ export const PERSONAS = {
   "claire-feld": portal("Claire Feld"),
   "dana-kowalski": portal("Dana Kowalski"),
   "tess-moreno": portal("Tess Moreno"),
+  "owen-calder": portal("Owen Calder"), // N-02-T40: Ridgeline GP signs the letter on POR-06 (j15 4)
   "luis-ferrante": portal("Luis Ferrante"),
   "meera-shah": portal("Meera Shah"),
   "mira-kapoor": portal("Mira Kapoor"), // F-06-T02: the TPL-16 signer on envelope E6

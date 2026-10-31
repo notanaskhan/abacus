@@ -15,12 +15,12 @@ Clock E0 is Mon Sep 14, 2026, 9:24 AM CT.
 
 | Artboard | Viewer | Clock | Data condition | Parity tier | Status |
 |---|---|---|---|---|---|
-| a | nora-calloway | Tue Sep 29, 2026, 6:40 PM | Released | C (lock) | fixture (T-02-T08) |
-| b | pell-street-member | E0 | Not released yet · Pell Street | C (lock) | fixture (T-02-T08) |
-| c | pell-street-member | Tue Sep 15 | Released · Pell Street | C (lock) | fixture (T-02-T08) |
-| d | nora-calloway | Tue Sep 29 | Update taxpayer ID (sheet) | C report | fixture (T-02-T08) |
-| e | nora-calloway | Mon Oct 5, 2026 | Superseded | C report | fixture (T-02-T08) |
-| f | meera-shah | E0 | Role union · Meera Shah | C report | fixture (T-02-T08) |
+| a | nora-calloway | Tue Sep 29, 2026, 6:40 PM | Released | C (lock) | built (T-02-T27) |
+| b | pell-street-member | E0 | Not released yet · Pell Street | C (lock) | built (T-02-T27) |
+| c | pell-street-member | Tue Sep 15 | Released · Pell Street | C (lock) | built (T-02-T27) |
+| d | nora-calloway | Tue Sep 29 | Update taxpayer ID (sheet) | C report | built (T-02-T27) |
+| e | nora-calloway | Mon Oct 5, 2026 | Superseded | C report | built (T-02-T27) |
+| f | meera-shah | E0 | Role union · Meera Shah | C report | built (T-02-T27) |
 
 Non-artboard: not allowed (404, no count), flag off (C-20 "not turned on"; the portal item hidden), loading and error (F-05 ViewStates), walled rows absent with no hidden count.
 
@@ -49,6 +49,7 @@ Gradients, emoji, blue, heavy shadows, invented data, boxed inputs, the agent as
 | DV-11 | Role union renders inside the full shell | T-02 §2 | DEC-1167 |
 | D1 | `pell-street-member` is "Pell Street Ventures LLC · authorized member"; no invented name | T-02 §2 | DEC-1167 |
 | D2 | White-labelled: never Accrued | T-02 §2 | DEC-1167 |
+| D3 | No e-furnishing consent sheet yet; W-9/W-8 upload planned (fixture builds) | no disclosure in the database (OQ-4); no portal upload in a K-1 scope | DEC-1576 |
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |

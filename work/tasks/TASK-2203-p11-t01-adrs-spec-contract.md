@@ -4,13 +4,13 @@ title: P-11-T01 ADR-320 (P-19) and ADR-321 (P-32), SPEC-520, C11 skeleton, gloss
 spec: SPEC-520
 acceptance_criteria: [AC-29]
 risk_zone: amber
-status: in-review
+status: done
 epic: P-11
 plan_key: P-11-T01
 branch: s17-p11-t01
 worktree: /Users/ayushkbhatia/Accrued/abacus-s17
 created: 2026-10-29
-updated: 2026-10-29
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -42,6 +42,7 @@ Tests: `make check-fast`'s `validate_docs` (frontmatter, ADR index, spec AC ids,
 
 ## Progress log
 - `2026-10-29` — Built on `s17-p11-t01` (docs only; validate_docs at the S17 end review).
+- 2026-11-01: merged to main in #743 (5923aea71).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

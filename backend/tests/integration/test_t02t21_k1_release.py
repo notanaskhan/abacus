@@ -149,7 +149,9 @@ async def test_ac1_undo_inside_ten_seconds_leaves_no_grant_email_or_portal_chang
     assert sent.keys == []
     assert (
         await board.seed.value(
-            "SELECT count(*) FROM client_access_grants WHERE scope_kind = 'k1_package'"
+            "SELECT count(*) FROM client_access_grants WHERE tenant_id = $1 "
+            "AND scope_kind = 'k1_package'",
+            board.tenant,
         )
         == 0
     )
