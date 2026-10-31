@@ -57,6 +57,7 @@ from abacus.modules.engagements.letter_contract import (
     ThirdPartyFeeOut,
 )
 from abacus.modules.engagements.letter_render import LetterRenderAsk, render_letter
+from abacus.modules.engagements.letter_send import letter_envelope_status
 from abacus.modules.engagements.models import Engagement
 from abacus.modules.engagements.service import get_ref, lock_ref
 from abacus.modules.identity.api import (
@@ -108,6 +109,20 @@ class ComputedVariable(DomainInvalid):
     """A fee or billing variable was given as text: code computes those."""
 
     code = "computed_variable"
+
+
+# N-02-T35 (AC-15): consent wording belongs in a `consent_set` envelope, never the letter.
+_CONSENT: Final = re.compile(
+    r"(?i)(§\s*7216|section\s+7216|\b7216\b|consent\s+to\s+(?:the\s+)?(?:use|disclos))"
+)
+
+
+class ConsentInLetter(DomainInvalid):
+    """§7216 consents are their own documents, never a clause of the letter (Rev. Proc. 2013-14
+    §5.05; AC-15; N-02-T35): wording that consents to the use or disclosure of tax return
+    information is refused in a section or a variable (`facts.part`, never the text)."""
+
+    code = "consent_in_letter"
 
 
 class UnknownLetterPart(DomainInvalid):
@@ -542,6 +557,16 @@ async def composed_letter(ctx: AuthContext, engagement_id: UUID) -> ComposerLett
         engagement = await _engagement(session, engagement_id)
         view = await _view(ctx, session, engagement, await _current(session, engagement_id))
     actions = await allowed_actions(ctx, ref.resource(), (READ, DRAFT, APPROVE, SEND, AMEND))
+    # N-02-T35: the envelope's C7 status, so ENG-04 offers the withdrawal of one that ended.
+    envelope_status = (
+        await letter_envelope_status(ctx.tenant, view.envelope_id)
+        if view.envelope_id is not None
+        else None
+    )
+    ended = envelope_status in ("declined", "expired", "voided") and view.status in (
+        LetterStatus.PARTNER_APPROVED,
+        LetterStatus.SENT,
+    )
     composed = view.mode == "composed" and view.version_no is not None
     by_status = {
         READ: True,
@@ -552,9 +577,13 @@ async def composed_letter(ctx: AuthContext, engagement_id: UUID) -> ComposerLett
         SEND: composed and view.status == LetterStatus.PARTNER_APPROVED,
         AMEND: composed and view.status == LetterStatus.SIGNED,
     }
-    return view.model_copy(
-        update={"allowed_actions": [a for a in actions if by_status.get(a, False)]}
-    )
+    allowed = [a for a in actions if by_status.get(a, False)]
+    if ended and SEND in actions:
+        allowed.append(WITHDRAW)
+    return view.model_copy(update={"allowed_actions": allowed, "envelope_status": envelope_status})
+
+
+WITHDRAW = "letter.withdraw_envelope"  # a `letter.send` holder's, shown when the envelope ended
 
 
 def letter_owner(engagement_id: UUID, amends_version_id: UUID | None) -> UUID:
@@ -583,6 +612,12 @@ def _check_draft(
             raise ComputedVariable(facts={"key": key})
         if key not in declared:
             raise UnknownLetterPart(facts={"part": "variable", "key": key})
+    for part, words in (
+        *(("section", w) for w in body.section_overrides.values()),
+        *(("variable", w) for w in body.variables.values()),
+    ):
+        if _CONSENT.search(words):
+            raise ConsentInLetter(facts={"part": part})
     sections = section_ids(parts)
     for section_id, words in body.section_overrides.items():
         if not _SECTION.fullmatch(section_id) or section_id not in sections:

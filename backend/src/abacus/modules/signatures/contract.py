@@ -1153,9 +1153,27 @@ class PortalEnvelopeRow(BaseModel):
     due_on: Annotated[date | None, classified("internal")]
 
 
+class PortalSignerOut(BaseModel):
+    """One signer of the envelope as the portal's signing order shows them (N-02-T29, DEC-1388):
+    the name the firm recorded, the role, the routing group and the status. No contact detail."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    name: Annotated[str, classified("confidential")]
+    role: Annotated[SignerRole, classified("internal")]
+    routing_group: Annotated[int, classified("internal")]
+    status: Annotated[EnvelopeSignerStatus, classified("internal")]
+    signed_at: Annotated[datetime | None, classified("internal")]
+    me: Annotated[bool, classified("internal")]
+
+
 class PortalEnvelopeView(BaseModel):
     """`EnvelopeVM`: steps, documents, fields, signers, my state; `signing_session` and `outcome`
-    reserved (null in record mode and until `signatures.esign_provider`)."""
+    reserved (null in record mode and until `signatures.esign_provider`). N-02-T29 (additive,
+    DEC-1388): the envelope's policy `family`, the viewer's `identity_method`, the `signers` in
+    order, and `signing_opens_on`, the `date_as_of` while the firm's today is before it (the
+    session's `before_date_as_of` check), else null."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -1172,6 +1190,10 @@ class PortalEnvelopeView(BaseModel):
     outcome: Annotated[
         Literal["signed", "declined", "abandoned"] | None, classified("internal")
     ] = None
+    family: Annotated[PolicyFamily, classified("internal")]
+    identity_method: Annotated[IdentityMethod, classified("internal")]
+    signers: Annotated[list[PortalSignerOut], classified("confidential")]
+    signing_opens_on: Annotated[date | None, classified("internal")]
 
 
 class ConsentIn(BaseModel):
@@ -1251,6 +1273,21 @@ def _portal_view(v: portal.View) -> PortalEnvelopeView:
         date_as_of=v.date_as_of,
         paper_form_follows=v.paper_form_follows,
         outcome=cast(Literal["signed", "declined", "abandoned"] | None, v.outcome),
+        family=cast(PolicyFamily, v.family),
+        identity_method=cast(IdentityMethod, v.identity_method),
+        signers=[
+            PortalSignerOut(
+                id=p.id,
+                name=p.name,
+                role=cast(SignerRole, p.role),
+                routing_group=p.routing_group,
+                status=cast(EnvelopeSignerStatus, p.status),
+                signed_at=p.signed_at,
+                me=p.id == v.signer_id,
+            )
+            for p in v.signers
+        ],
+        signing_opens_on=v.signing_opens_on,
     )
 
 

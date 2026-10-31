@@ -8,8 +8,9 @@ only their own released packages (POR-13), downloads them (audited) and updates 
 address for a person to accept (DV-10).
 
 Firm routes answer 404 for a client principal, 403 for a principal the matrix refuses, 404 with
-`tax.k1_release` off and 501 with it on. Portal routes answer 404 to a firm principal and 404 with
-the flag off, then 501; their own-records and MFA-floor checks come with the build (T-02-T22).
+`tax.k1_release` off. Portal routes (T-02-T26, `tax/k1_portal.py`) answer 404 to a firm principal
+and with the flag off; a recipient reads only their own released packages, with the second step
+for anything that carries amounts.
 
 Classification: box amounts are TRI; recipient names and addresses confidential; a TIN shows its
 last four only.
@@ -19,27 +20,26 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal, NoReturn, cast
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
-from fastapi import Depends, Header, Path
+from fastapi import Depends, Header, Path, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import TAX_K1_RELEASE
 from abacus.kernel._statuses import K1PackageStatus, RecipientDetailsChangeStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
-    Resource,
-    authorise,
     current_context,
     current_member,
 )
 from abacus.modules.tax import k1_packages as k1
+from abacus.modules.tax import k1_portal, k1_release
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 Member = Annotated[AuthContext, Depends(current_member)]
@@ -215,15 +215,6 @@ k1_router = AbacusRouter(prefix="/v1", tags=["k1-packages"])
 portal_k1_router = AbacusRouter(prefix="/v1/portal", tags=["portal"])
 
 
-async def _stub(ctx: AuthContext, action: str) -> NoReturn:
-    if ctx.client:
-        raise NotFound("k1_package")
-    await authorise(ctx, action, Resource.firm(ctx.tenant_id))
-    if not await flag_enabled(ctx.tenant, TAX_K1_RELEASE):
-        raise NotFound(TAX_K1_RELEASE.name)
-    raise NotImplementedYet
-
-
 async def _gate(ctx: AuthContext) -> None:
     """T-02-T20: a client principal 404, then the flag; each service authorises its action on
     the issuing return (a principal it refuses answers 403 or 404 there)."""
@@ -270,16 +261,6 @@ def _change_out(c: k1.DetailsChange) -> RecipientDetailsChangeOut:
         submitted_at=cast(datetime, c.submitted_at),
         evidence_version_id=c.evidence_version_id,
     )
-
-
-async def _portal_stub(ctx: AuthContext) -> NoReturn:
-    """A firm principal never reaches the portal routes; the recipient's own-records check and
-    the MFA floor come with T-02-T22."""
-    if not ctx.client:
-        raise NotFound("k1_package")
-    if not await flag_enabled(ctx.tenant, TAX_K1_RELEASE):
-        raise NotFound(TAX_K1_RELEASE.name)
-    raise NotImplementedYet
 
 
 @k1_router.get(
@@ -366,7 +347,7 @@ async def k1_release_check_route(
     return_id: Annotated[UUID, Path()], ctx: Ctx
 ) -> K1ReleaseCheckOut:
     await _gate(ctx)
-    found = await k1.release_check(ctx, return_id)
+    found = await k1_release.eligibility(ctx, return_id)
     return K1ReleaseCheckOut(
         eligible=found.eligible, failing=list(found.failing), package_ids=list(found.package_ids)
     )
@@ -377,7 +358,7 @@ async def k1_release_check_route(
     action="k1_package.release",
     response_model=K1ReleaseOut,
     status_code=202,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def release_k1_route(
     return_id: Annotated[UUID, Path()],
@@ -385,17 +366,40 @@ async def release_k1_route(
     ctx: Ctx,
     idempotency_key: IdempotencyKey,
 ) -> K1ReleaseOut:
-    await _stub(ctx, "k1_package.release")
+    """T-02-T21: a single-use grant held 10 s for Undo; then `K1ReleaseWorkflow` delivers."""
+    await _gate(ctx)
+    made = await k1_release.request_release(
+        ctx,
+        return_id,
+        body.package_ids,
+        body.email_template_version_id,
+        body.seen_version,
+        idempotency_key,
+    )
+    return K1ReleaseOut(
+        release_id=made.id, status=_status(made.status), not_before=made.not_before
+    )
 
 
 @k1_router.post(
     "/k1-releases/{release_id}:undo",
     action="k1_package.release",
     response_model=K1ReleaseOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def undo_k1_release_route(release_id: Annotated[UUID, Path()], ctx: Ctx) -> K1ReleaseOut:
-    await _stub(ctx, "k1_package.release")
+    await _gate(ctx)
+    made = await k1_release.undo(ctx, release_id)
+    return K1ReleaseOut(
+        release_id=made.id, status=_status(made.status), not_before=made.not_before
+    )
+
+
+ReleaseStatus = Literal["pending", "undone", "running", "completed", "failed"]
+
+
+def _status(status: str) -> ReleaseStatus:
+    return cast(ReleaseStatus, status)
 
 
 @k1_router.post(
@@ -453,39 +457,76 @@ async def reject_details_change_route(
     return _change_out(await k1.decide_details_change(ctx, change_id, False, body.reason))
 
 
-@portal_k1_router.get(
-    "/k1s", action="portal_k1.read", response_model=list[K1PackageOut], errors=(501,)
-)
+def _download(made: k1_portal.Download) -> Response:
+    return Response(
+        made.body,
+        media_type=made.media_type,
+        headers={
+            "Content-Disposition": f'attachment; filename="{made.file_name}"',
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+async def _portal_gate(ctx: AuthContext) -> None:
+    """A firm principal never reaches the portal routes; then the flag."""
+    if not ctx.client:
+        raise NotFound("k1_package")
+    if not await flag_enabled(ctx.tenant, TAX_K1_RELEASE):
+        raise NotFound(TAX_K1_RELEASE.name)
+
+
+@portal_k1_router.get("/k1s", action="portal_k1.read", response_model=list[K1PackageOut])
 async def portal_k1s_route(ctx: Member) -> list[K1PackageOut]:
-    """POR-13: the recipient's own packages, released and later only."""
-    await _portal_stub(ctx)
+    """POR-13: the recipient's own packages, released and later only (T-02-T26)."""
+    await _portal_gate(ctx)
+    return [_package_out(p) for p in await k1_portal.packages(ctx)]
 
 
 @portal_k1_router.get(
-    "/k1s/{package_id}", action="portal_k1.read", response_model=K1PackageDetailOut, errors=(501,)
+    "/k1s/{package_id}", action="portal_k1.read", response_model=K1PackageDetailOut, errors=(409,)
 )
 async def portal_k1_route(package_id: PackageId, ctx: Member) -> K1PackageDetailOut:
-    await _portal_stub(ctx)
+    """The statement with its box lines (TRI, the second step); the first read is Viewed."""
+    await _portal_gate(ctx)
+    p = await k1_portal.package(ctx, package_id)
+    return K1PackageDetailOut(
+        package=_package_out(p),
+        lines=[
+            K1BoxLineOut(
+                document_kind=cast(DocumentKind, line.document_kind),
+                box_code=line.box_code,
+                description=line.description,
+                amount=line.amount,
+                is_total=line.is_total,
+            )
+            for line in p.lines
+        ],
+        documents=[_doc_out(d) for d in p.documents],
+    )
 
 
 @portal_k1_router.get(
-    "/k1s/{package_id}/download", action="portal_k1.download", response_model=bytes, errors=(501,)
+    "/k1s/{package_id}/download", action="portal_k1.download", response_model=bytes, errors=(409,)
 )
-async def portal_k1_download_route(package_id: PackageId, ctx: Member) -> bytes:
-    """A deterministic zip; an access event per download."""
-    await _portal_stub(ctx)
+async def portal_k1_download_route(package_id: PackageId, ctx: Member) -> Response:
+    """A deterministic zip of the final documents; an access event per download."""
+    await _portal_gate(ctx)
+    return _download(await k1_portal.download(ctx, package_id))
 
 
 @portal_k1_router.get(
     "/k1s/{package_id}/attachments/{document_id}",
     action="portal_k1.download",
     response_model=bytes,
-    errors=(501,),
+    errors=(409,),
 )
 async def portal_k1_attachment_route(
     package_id: PackageId, document_id: Annotated[UUID, Path()], ctx: Member
-) -> bytes:
-    await _portal_stub(ctx)
+) -> Response:
+    await _portal_gate(ctx)
+    return _download(await k1_portal.one_document(ctx, package_id, document_id))
 
 
 @portal_k1_router.post(
@@ -493,21 +534,35 @@ async def portal_k1_attachment_route(
     action="portal_k1.update_details",
     response_model=RecipientDetailsChangeOut,
     status_code=201,
-    errors=(501,),
+    errors=(409,),
 )
 async def portal_details_change_route(
     recipient_id: Annotated[UUID, Path()], body: PortalDetailsChangeIn, ctx: Member
 ) -> RecipientDetailsChangeOut:
-    await _portal_stub(ctx)
+    """A signed W-9 or W-8, or a structured address, for a person at the firm to decide."""
+    await _portal_gate(ctx)
+    return _change_out(
+        await k1_portal.submit_details_change(
+            ctx, recipient_id, body.kind, body.upload_id, body.address
+        )
+    )
 
 
 @portal_k1_router.post(
     "/k1s/{package_id}/e-furnishing-consent",
     action="portal_k1.update_details",
     response_model=EFurnishingConsentOut,
-    errors=(501,),
+    errors=(409,),
 )
 async def portal_e_furnishing_route(
     package_id: PackageId, body: EFurnishingConsentIn, ctx: Member
 ) -> EFurnishingConsentOut:
-    await _portal_stub(ctx)
+    await _portal_gate(ctx)
+    decision, on = await k1_portal.e_furnishing(
+        ctx, package_id, body.decision, body.disclosure_version_id
+    )
+    return EFurnishingConsentOut(
+        package_id=package_id,
+        e_furnishing_consent=cast(Literal["given", "declined"], decision),
+        decided_on=on,
+    )

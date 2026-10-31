@@ -1,5 +1,5 @@
-// POR-06 a, b, c, g, the return before the server says signed, restricted and the list: the
-// scenarios N-02-T26 wrote (fixtures/scenarios/POR-06.ts).
+// POR-06 a to h, the return before the server says signed, restricted and the list: the
+// scenarios N-02-T26 and N-02-T29 wrote (fixtures/scenarios/POR-06.ts).
 import { ARTBOARD, type Por06State, scenarios as all } from "../../fixtures/scenarios/POR-06";
 
 export const scenarios = all;
