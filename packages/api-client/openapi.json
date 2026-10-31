@@ -19191,6 +19191,110 @@
         "title": "DiffOpOut",
         "type": "object"
       },
+      "DiffRowOut": {
+        "properties": {
+          "after_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "After Text"
+          },
+          "before_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Before Text"
+          },
+          "changed_fields": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Changed Fields",
+            "type": "array"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "added",
+              "changed",
+              "removed"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "number": {
+            "cls": "internal",
+            "title": "Number",
+            "type": "integer"
+          },
+          "program_code": {
+            "cls": "internal",
+            "title": "Program Code",
+            "type": "string"
+          },
+          "step_key": {
+            "cls": "internal",
+            "title": "Step Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "program_code",
+          "number",
+          "step_key",
+          "before_text",
+          "after_text",
+          "changed_fields"
+        ],
+        "title": "DiffRowOut",
+        "type": "object"
+      },
+      "DiffTilesOut": {
+        "properties": {
+          "added": {
+            "cls": "internal",
+            "title": "Added",
+            "type": "integer"
+          },
+          "changed": {
+            "cls": "internal",
+            "title": "Changed",
+            "type": "integer"
+          },
+          "removed": {
+            "cls": "internal",
+            "title": "Removed",
+            "type": "integer"
+          },
+          "unchanged": {
+            "cls": "internal",
+            "title": "Unchanged",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "added",
+          "changed",
+          "removed",
+          "unchanged"
+        ],
+        "title": "DiffTilesOut",
+        "type": "object"
+      },
       "DigestCardOut": {
         "properties": {
           "decided": {
@@ -29855,6 +29959,94 @@
           "text"
         ],
         "title": "FixInstructionsIn",
+        "type": "object"
+      },
+      "FlagResolutionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "cls": "internal",
+            "enum": [
+              "confirm",
+              "edit"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "row_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Row Version",
+            "type": "integer"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Text"
+          }
+        },
+        "required": [
+          "action",
+          "row_version"
+        ],
+        "title": "FlagResolutionIn",
+        "type": "object"
+      },
+      "FlagResolutionOut": {
+        "properties": {
+          "parse_flag": {
+            "cls": "internal",
+            "title": "Parse Flag",
+            "type": "string"
+          },
+          "resolution": {
+            "cls": "internal",
+            "enum": [
+              "confirmed",
+              "edited"
+            ],
+            "title": "Resolution",
+            "type": "string"
+          },
+          "row_version": {
+            "cls": "internal",
+            "title": "Row Version",
+            "type": "integer"
+          },
+          "step_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Step Id",
+            "type": "string"
+          },
+          "step_key": {
+            "cls": "internal",
+            "title": "Step Key",
+            "type": "string"
+          },
+          "text": {
+            "cls": "internal",
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "step_id",
+          "step_key",
+          "parse_flag",
+          "resolution",
+          "text",
+          "row_version"
+        ],
+        "title": "FlagResolutionOut",
         "type": "object"
       },
       "FlowOut": {
@@ -43727,6 +43919,66 @@
         "title": "ListPage[TaxReturnRowOut]",
         "type": "object"
       },
+      "ListPage_VersionActivityOut_": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "facets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Facet"
+              },
+              "type": "array"
+            },
+            "cls": "internal",
+            "title": "Facets",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/VersionActivityOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_capped": {
+            "cls": "internal",
+            "default": false,
+            "title": "Total Capped",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListPage[VersionActivityOut]",
+        "type": "object"
+      },
       "ListPage_WallEventOut_": {
         "properties": {
           "counts": {
@@ -46429,6 +46681,147 @@
           "notify_names"
         ],
         "title": "MessageTriageOut",
+        "type": "object"
+      },
+      "MethodologyImportIn": {
+        "additionalProperties": false,
+        "properties": {
+          "engagement_types": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "enum": [
+                "fs_audit",
+                "ebp_audit",
+                "review",
+                "compilation",
+                "preparation",
+                "agreed_upon_procedures",
+                "soc1",
+                "soc2",
+                "readiness",
+                "internal_audit",
+                "tax_compliance",
+                "cas_monthly_close",
+                "notice_response",
+                "advisory"
+              ],
+              "type": "string"
+            },
+            "maxItems": 5,
+            "title": "Engagement Types",
+            "type": "array"
+          },
+          "template_name": {
+            "cls": "internal",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Template Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "template_name"
+        ],
+        "title": "MethodologyImportIn",
+        "type": "object"
+      },
+      "MethodologyImportOut": {
+        "properties": {
+          "failure_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Failure Code"
+          },
+          "files": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/SourceFileOut"
+            },
+            "title": "Files",
+            "type": "array"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "pages_done": {
+            "cls": "internal",
+            "title": "Pages Done",
+            "type": "integer"
+          },
+          "pages_total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Pages Total"
+          },
+          "started_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "awaiting_files",
+              "scanning",
+              "parsing",
+              "needs_review",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "template_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Template Id",
+            "type": "string"
+          },
+          "version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Version Id"
+          }
+        },
+        "required": [
+          "id",
+          "template_id",
+          "version_id",
+          "status",
+          "pages_done",
+          "pages_total",
+          "failure_code",
+          "started_at",
+          "files"
+        ],
+        "title": "MethodologyImportOut",
         "type": "object"
       },
       "MethodologyVersionOut": {
@@ -55984,6 +56377,21 @@
           "reason_code"
         ],
         "title": "RejectProposalIn",
+        "type": "object"
+      },
+      "RejectionIssueOut": {
+        "properties": {
+          "issue_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Issue Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "issue_id"
+        ],
+        "title": "RejectionIssueOut",
         "type": "object"
       },
       "ReleaseOut": {
@@ -67192,6 +67600,70 @@
         "title": "SourceDocumentsOut",
         "type": "object"
       },
+      "SourceFileOut": {
+        "properties": {
+          "bytes": {
+            "cls": "internal",
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "filename": {
+            "cls": "internal",
+            "title": "Filename",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "media_type": {
+            "cls": "internal",
+            "title": "Media Type",
+            "type": "string"
+          },
+          "role": {
+            "cls": "internal",
+            "enum": [
+              "document_docx",
+              "document_pdf",
+              "workbook"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "scan_status": {
+            "cls": "internal",
+            "const": "clean",
+            "title": "Scan Status",
+            "type": "string"
+          },
+          "sha256": {
+            "cls": "internal",
+            "title": "Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "filename",
+          "media_type",
+          "bytes",
+          "sha256",
+          "scan_status",
+          "created_at"
+        ],
+        "title": "SourceFileOut",
+        "type": "object"
+      },
       "SourceOut": {
         "properties": {
           "box": {
@@ -69098,6 +69570,66 @@
           "current"
         ],
         "title": "StandardVersionSummaryOut",
+        "type": "object"
+      },
+      "StandardsMappingIn": {
+        "additionalProperties": false,
+        "properties": {
+          "default_for_new_engagements": {
+            "cls": "internal",
+            "title": "Default For New Engagements",
+            "type": "boolean"
+          },
+          "engagement_types": {
+            "cls": "internal",
+            "items": {
+              "pattern": "^[a-z][a-z0-9_]{0,47}$",
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Engagement Types",
+            "type": "array"
+          },
+          "quality_management_ref": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Quality Management Ref"
+          },
+          "row_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Row Version",
+            "type": "integer"
+          },
+          "standards_set_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Standards Set Id"
+          }
+        },
+        "required": [
+          "standards_set_id",
+          "engagement_types",
+          "default_for_new_engagements",
+          "row_version"
+        ],
+        "title": "StandardsMappingIn",
         "type": "object"
       },
       "StandardsSetRow": {
@@ -77522,6 +78054,78 @@
         "title": "VarianceThresholdsPayload",
         "type": "object"
       },
+      "VersionActivityOut": {
+        "properties": {
+          "actor_kind": {
+            "cls": "internal",
+            "enum": [
+              "human",
+              "agent",
+              "system"
+            ],
+            "title": "Actor Kind",
+            "type": "string"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Actor Name"
+          },
+          "actor_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Actor User Id"
+          },
+          "at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "facts": {
+            "additionalProperties": true,
+            "cls": "internal",
+            "title": "Facts",
+            "type": "object"
+          },
+          "kind": {
+            "cls": "internal",
+            "title": "Kind",
+            "type": "string"
+          },
+          "seq": {
+            "cls": "internal",
+            "title": "Seq",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "seq",
+          "kind",
+          "actor_kind",
+          "actor_user_id",
+          "actor_name",
+          "at",
+          "facts"
+        ],
+        "title": "VersionActivityOut",
+        "type": "object"
+      },
       "VersionBody": {
         "additionalProperties": false,
         "properties": {
@@ -77564,6 +78168,61 @@
           "seen_version"
         ],
         "title": "VersionBody",
+        "type": "object"
+      },
+      "VersionDiffOut": {
+        "properties": {
+          "against_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Against Label"
+          },
+          "against_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Against Version Id"
+          },
+          "rows": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/DiffRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "tiles": {
+            "$ref": "#/components/schemas/DiffTilesOut"
+          },
+          "version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version_id",
+          "against_version_id",
+          "against_label",
+          "tiles",
+          "rows"
+        ],
+        "title": "VersionDiffOut",
         "type": "object"
       },
       "VersionIn": {
@@ -77814,10 +78473,34 @@
             "title": "Label",
             "type": "string"
           },
+          "quality_management_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Quality Management Ref"
+          },
           "row_version": {
             "cls": "internal",
             "title": "Row Version",
             "type": "integer"
+          },
+          "standards_set_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Standards Set Code"
           },
           "standards_set_id": {
             "anyOf": [
@@ -77831,6 +78514,18 @@
             ],
             "cls": "internal",
             "title": "Standards Set Id"
+          },
+          "standards_set_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Standards Set Label"
           },
           "status": {
             "$ref": "#/components/schemas/MethodologyVersionStatus",
@@ -145079,6 +145774,7 @@
     },
     "/v1/firm/members/{user_id}/ero": {
       "put": {
+        "description": "A firm admin designates the firm's ERO, with fresh MFA (T-01-T37).",
         "operationId": "set_ero",
         "parameters": [
           {
@@ -145184,16 +145880,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Set Ero Route",
@@ -163004,6 +163690,607 @@
         "x-abacus-action": "budget.read"
       }
     },
+    "/v1/methodology/imports": {
+      "post": {
+        "description": "KNW-02 \"+ Upload methodology\u2026\": an import for the named template, once per\nIdempotency-Key (the same key answers the same import).",
+        "operationId": "create_import",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MethodologyImportIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MethodologyImportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Create Import Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "methodology.manage"
+      }
+    },
+    "/v1/methodology/imports/{import_id}": {
+      "get": {
+        "description": "The import, its files and its progress (KNW-02 b polls it).",
+        "operationId": "get_import",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "import_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Import Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MethodologyImportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Get Import Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "methodology.manage"
+      }
+    },
+    "/v1/methodology/imports/{import_id}/cancel": {
+      "post": {
+        "description": "Stop an import that has not finished; 409 `import_frozen` otherwise.",
+        "operationId": "cancel_import",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "import_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Import Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MethodologyImportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Cancel Import Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "methodology.manage"
+      }
+    },
+    "/v1/methodology/imports/{import_id}/files/{role}": {
+      "put": {
+        "description": "One file for a role, as the raw request body (no multipart): scanned and typed before it\nis kept, written once. 409 `import_frozen`, `file_exists`; 422 `file_too_large` and the\nupload refusals (`file_refused`, \u2026).",
+        "operationId": "upload_file",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "import_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Import Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "role",
+            "required": true,
+            "schema": {
+              "enum": [
+                "document_docx",
+                "document_pdf",
+                "workbook"
+              ],
+              "title": "Role",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filename",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Filename",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MethodologyImportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Upload File Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "methodology.manage"
+      }
+    },
+    "/v1/methodology/imports/{import_id}/start": {
+      "post": {
+        "description": "Read the files. A workbook alone lands its version in Needs review now; a document needs\nthe Methodology importer (409 `importer_not_enabled`). 409 `import_frozen`, `files_missing`.",
+        "operationId": "start_import",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "import_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Import Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MethodologyImportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Start Import Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "methodology.manage"
+      }
+    },
     "/v1/methodology/programs/{program_id}": {
       "get": {
         "description": "KNW-03 a: a program with its version context, counts and rail rows.",
@@ -163720,6 +165007,113 @@
         "x-abacus-action": "methodology.read"
       }
     },
+    "/v1/methodology/versions/{version_id}/activity": {
+      "get": {
+        "description": "KNW-02's Activity tab: every version event with its named actor and time.",
+        "operationId": "methodology_version_activity",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPage_VersionActivityOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Methodology Version Activity Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "methodology.read"
+      }
+    },
     "/v1/methodology/versions/{version_id}/approve": {
       "post": {
         "description": "KNW-02 e: a quality partner approves with an effective date (human-only, fresh MFA); a\nrefusal is audited before the flag is read. 409 `stale_version`, `version_frozen`,\n`checklist_changed`, `checklist_unmet`; 422 `effective_from_too_early`.",
@@ -163845,6 +165239,130 @@
           "methodology"
         ],
         "x-abacus-action": "methodology.approve"
+      }
+    },
+    "/v1/methodology/versions/{version_id}/diff": {
+      "get": {
+        "description": "KNW-02 c: the code-computed diff against another version of the template (default: the\nversion drafted from, else the one numbered before).",
+        "operationId": "methodology_version_diff",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "against",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Against"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionDiffOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Methodology Version Diff Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "methodology.read"
       }
     },
     "/v1/methodology/versions/{version_id}/discard": {
@@ -164321,6 +165839,125 @@
           }
         },
         "summary": "Export Version Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "methodology.read"
+      }
+    },
+    "/v1/methodology/versions/{version_id}/files/{file_id}/download": {
+      "get": {
+        "description": "The original file (audited).",
+        "operationId": "methodology_file_download",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "file_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "File Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "contentMediaType": "application/octet-stream",
+                  "title": "Response Methodology File Download",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Methodology File Download Route",
         "tags": [
           "methodology"
         ],
@@ -165056,6 +166693,133 @@
         "x-abacus-action": "methodology.manage"
       }
     },
+    "/v1/methodology/versions/{version_id}/standards-mapping": {
+      "put": {
+        "description": "KNW-02 d: the standards set (a published platform set; 422 `standards_set_invalid`), the\nQM reference, the engagement types and the default, on a draft or a version in review.",
+        "operationId": "standards_mapping",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StandardsMappingIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionStateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Standards Mapping Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "methodology.manage"
+      }
+    },
     "/v1/methodology/versions/{version_id}/state": {
       "get": {
         "description": "KNW-02: the lifecycle row, its checklist and what the viewer may do (K-01-T06).",
@@ -165439,6 +167203,143 @@
           }
         },
         "summary": "Edit Step Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "methodology.manage"
+      }
+    },
+    "/v1/methodology/versions/{version_id}/steps/{step_id}/flag-resolution": {
+      "post": {
+        "description": "KNW-02 a2: confirm the parse or edit the text (the step keeps its citation). 409\n`flag_not_open`, `stale_version`, `version_frozen`.",
+        "operationId": "flag_resolution",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "step_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Step Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlagResolutionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlagResolutionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Flag Resolution Route",
         "tags": [
           "methodology"
         ],
@@ -171508,6 +173409,115 @@
           "portal"
         ],
         "x-abacus-action": "portal_envelopes.read"
+      }
+    },
+    "/v1/portal/filed-returns/{delivery_id}/download": {
+      "get": {
+        "description": "The released client copy of a filed and accepted return, for a client whose grant covers\nit, after the portal's second step (403 `mfa_required`); audited (T-01-T41).",
+        "operationId": "filed_return_download",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "delivery_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Delivery Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "contentMediaType": "application/octet-stream",
+                  "title": "Response Filed Return Download",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Filed Return Download Route",
+        "tags": [
+          "portal"
+        ],
+        "x-abacus-action": "portal_home.read"
       }
     },
     "/v1/portal/home": {
@@ -184246,6 +186256,7 @@
     },
     "/v1/tax-returns/{return_id}/acks": {
       "post": {
+        "description": "A manual acknowledgement with its evidence upload (T-01-T37). 409 `ack_exists`,\n`import_file_unavailable`.",
         "operationId": "record_ack",
         "parameters": [
           {
@@ -184372,8 +186383,96 @@
               }
             },
             "description": "Invalid request"
+          }
+        },
+        "summary": "Record Ack Route",
+        "tags": [
+          "tax-engine"
+        ],
+        "x-abacus-action": "efile_ack.record"
+      }
+    },
+    "/v1/tax-returns/{return_id}/acks/{ack_id}/issue": {
+      "post": {
+        "description": "TAX-12e's Create issue: the rejection as an engine-diagnostic issue; the return moves\nRejected to Fixing (T-01-T37). 409 `not_rejected`.",
+        "operationId": "rejection_issue",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
           },
-          "501": {
+          {
+            "in": "path",
+            "name": "ack_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ack Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RejectionIssueOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
             "content": {
               "application/json": {
                 "schema": {
@@ -184381,10 +186480,50 @@
                 }
               }
             },
-            "description": "Contract stub: not implemented yet"
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
           }
         },
-        "summary": "Record Ack Route",
+        "summary": "Rejection Issue Route",
         "tags": [
           "tax-engine"
         ],
@@ -184529,7 +186668,7 @@
     },
     "/v1/tax-returns/{return_id}/deliverables:publish": {
       "post": {
-        "description": "Release the client copy to the portal (a person's act; the email is R-01's template).",
+        "description": "Release the accepted return's client copy to the household's portal (a person's act;\nT-01-T41). 409 `return_not_accepted`, `packet_not_approved`, `no_client_copy`.",
         "operationId": "publish_deliverable",
         "parameters": [
           {
@@ -184646,16 +186785,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Publish Deliverable Route",
@@ -184667,7 +186796,7 @@
     },
     "/v1/tax-returns/{return_id}/delivery": {
       "get": {
-        "description": "TAX-12's checklist read model: the open packet and the engine's payment figures\n(T-01-T35). The binding, transmission and acknowledgements arrive with T-01-T36/T37.",
+        "description": "TAX-12's checklist read model: the open packet and the engine's payment figures\n(T-01-T35), the 8879 binding (T-01-T36), the transmission and acknowledgements (T-01-T37).",
         "operationId": "delivery",
         "parameters": [
           {
@@ -186647,7 +188776,7 @@
     },
     "/v1/tax-returns/{return_id}/transmissions": {
       "post": {
-        "description": "The ERO's human record (never a transmission by Accrued; R-04).",
+        "description": "The designated ERO's human record of a transmission made in the engine (never a\ntransmission by Accrued; R-04; T-01-T37). 409 `signatures_incomplete`, `binding_superseded`,\n`not_synced`.",
         "operationId": "record_transmission",
         "parameters": [
           {
@@ -186774,16 +188903,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Record Transmission Route",

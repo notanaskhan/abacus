@@ -373,6 +373,18 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.shell import (
     SANDBOX_FIRM_ID,
     SANDBOX_FIRM_NAME,
 )
+from abacus_tools.synthetic.scenarios.brightwater_hale.signatures import BY_KEY as ENVELOPE_BY_KEY
+from abacus_tools.synthetic.scenarios.brightwater_hale.signatures import (
+    ERSD_BODY,
+    KOWAL_FAILURES,
+    HubEnvelope,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.signatures import NEEDS as SIGNATURES_NEEDS
+from abacus_tools.synthetic.scenarios.brightwater_hale.signatures import (
+    NUMBERS as ENVELOPE_NUMBERS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.signatures import SLICE as SIGNATURES_SLICE
+from abacus_tools.synthetic.scenarios.brightwater_hale.signatures import at as _at
 from abacus_tools.synthetic.scenarios.brightwater_hale.standards import (
     BH_TAX_02_CLIENTS,
     payload_of,
@@ -1675,6 +1687,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     TAX_BOARD_SLICE: TAX_BOARD_NEEDS,  # T-02-T11: the board sets the binders' returns
     CONSENTS_SLICE: CONSENTS_NEEDS,  # T-01-T23: the sets name the tax engagements' entities
     STANDARDS_SLICE: STANDARDS_NEEDS,  # K-02-T18: Margaret creates; each owner publishes
+    SIGNATURES_SLICE: SIGNATURES_NEEDS,  # N-02-T36: SIG-01 at E0 over the tax clients
     TAX_CONTENT_SLICE: TAX_CONTENT_NEEDS,  # T-02-T23: K-1 sets, the organizer, questions
 }
 
@@ -2847,6 +2860,191 @@ async def _acceptance_decided(conn: asyncpg.Connection, _: Scenario, event: Even
     )
 
 
+# --- N-02-T36 (`--slice signatures`): the ERSD disclosure, then SIG-01's envelopes at E0 ---------
+
+
+async def _disclosure_imported(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    async def write() -> tuple[str, str, str]:
+        disclosure = UUID(stable_id("esign-disclosure:v1"))
+        await conn.execute(
+            "INSERT INTO esign_disclosures (id, tenant_id, version_no, body, body_sha256, "
+            "imported_by, imported_at) VALUES ($1, $2, 1, $3, $4, $5, $6) "
+            "ON CONFLICT (id) DO NOTHING",
+            disclosure,
+            TENANT,
+            ERSD_BODY,
+            hashlib.sha256(ERSD_BODY.encode()).hexdigest(),
+            user_id_of(_SEATS["GH"]),
+            event.at,
+        )
+        return "esign_disclosure.imported", "esign_disclosure", str(disclosure)
+
+    await _bootstrap(conn, event, write)
+
+
+def _identity(e: HubEnvelope, firm: bool) -> str:
+    if firm:
+        return "firm_sso"
+    return "kba" if e.policy_family == "efile_authorization" else "email_code"
+
+
+async def _envelope_signer(
+    conn: asyncpg.Connection, e: HubEnvelope, client: UUID, envelope: UUID, n: int
+) -> UUID:
+    s = e.signers[n]
+    signer = UUID(stable_id(f"envelope-signer:{e.key}:{n}"))
+    contact: UUID | None = None
+    user: UUID | None = None
+    if s.firm:
+        user = user_id_of(_SEATS[s.name])
+    else:
+        contact = UUID(stable_id(f"contact:envelope:{e.scenario_client}:{s.name}"))
+        await conn.execute(
+            "INSERT INTO contacts (id, tenant_id, client_id, display_name, contact_kind) "
+            "VALUES ($1, $2, $3, $4, 'client_person') ON CONFLICT (id) DO NOTHING",
+            contact,
+            TENANT,
+            client,
+            s.name,
+        )
+    status = "signed" if s.signed else "verification_failed" if s.kba_locked else "pending"
+    first_view = _at(e.viewed, 10) if n == 0 else None
+    await conn.execute(
+        'INSERT INTO envelope_signers (id, tenant_id, envelope_id, "order", routing_group, '
+        "party_kind, contact_id, user_id, role, identity_method, status, kba_failures, "
+        "viewed_at, signed_at, signature_method) VALUES ($1, $2, $3, $4, $4, $5, $6, $7, $8, "
+        "$9, $10, $11, $12, $13, $14) ON CONFLICT (id) DO NOTHING",
+        signer,
+        TENANT,
+        envelope,
+        n + 1,
+        "user" if s.firm else "contact",
+        contact,
+        user,
+        "countersigner" if s.firm else "signer",
+        _identity(e, s.firm),
+        status,
+        3 if s.kba_locked else 0,
+        _at(s.signed_on, 10) or first_view,
+        _at(s.signed_on, 11),
+        "provider_adopted" if s.signed else None,
+    )
+    return signer
+
+
+async def _envelope_event(
+    conn: asyncpg.Connection,
+    envelope: UUID,
+    kind: str,
+    when: datetime,
+    source: str,
+    signer: UUID | None = None,
+) -> None:
+    await conn.execute(
+        "INSERT INTO envelope_events (id, tenant_id, envelope_id, signer_id, kind, source, "
+        "occurred_at) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (id) DO NOTHING",
+        UUID(stable_id(f"envelope-event:{envelope}:{kind}:{signer}:{when.isoformat()}")),
+        TENANT,
+        envelope,
+        signer,
+        kind,
+        source,
+        when,
+    )
+
+
+async def _envelope_timeline(
+    conn: asyncpg.Connection, e: HubEnvelope, envelope: UUID, signers: list[UUID]
+) -> None:
+    """The envelope's events as the provider and the firm would have written them."""
+    sent = _at(e.sent)
+    if sent is not None:
+        await _envelope_event(conn, envelope, "envelope.sent", sent, "firm")
+    viewed = _at(e.viewed, 10)
+    if viewed is not None and signers:
+        await _envelope_event(
+            conn, envelope, "signer.viewed", viewed, "provider_webhook", signers[0]
+        )
+    for n, s in enumerate(e.signers):
+        signed = _at(s.signed_on, 11)
+        if signed is not None:
+            await _envelope_event(
+                conn, envelope, "signer.signed", signed, "provider_webhook", signers[n]
+            )
+        if s.kba_locked:  # Irene Kowal, Sun Sep 13, 8:06 to 8:14 PM
+            for failed in KOWAL_FAILURES:
+                await _envelope_event(
+                    conn,
+                    envelope,
+                    "signer.verification_failed",
+                    failed,
+                    "provider_webhook",
+                    signers[n],
+                )
+    completed = _at(e.completed, 12)
+    if completed is not None:
+        await _envelope_event(conn, envelope, "envelope.completed", completed, "provider_webhook")
+    expired = _at(e.expired, 23, 59)
+    if expired is not None:
+        await _envelope_event(conn, envelope, "envelope.expired", expired, "system")
+
+
+async def _envelope_recorded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    e = ENVELOPE_BY_KEY[str(event.data["key"])]
+    client = await _client_id(conn, e.scenario_client)
+    # The client's engagement, where it has one (visible() reads an envelope through it).
+    engagement = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM engagements WHERE tenant_id = $1 AND client_id = $2 "
+        "ORDER BY created_at, id LIMIT 1",
+        TENANT,
+        client,
+    )
+    grace = user_id_of(_SEATS["GH"])
+    envelope = UUID(e.id)
+
+    async def write() -> tuple[str, str, str]:
+        number = ENVELOPE_NUMBERS[e.key]
+        agent = e.drafted_by == "agent"
+        sent_at = _at(e.sent)
+        await conn.execute(
+            "INSERT INTO envelopes (id, tenant_id, number, purpose, form_code, policy_family, "
+            "client_id, title, provider, status, signer_order, due_on, expires_at, "
+            "drafted_by_kind, drafted_by, drafted_via_run_id, sent_by, sent_at, completed_at, "
+            "created_at, updated_at, engagement_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, "
+            "'fake', $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $19, $20) "
+            "ON CONFLICT (id) DO NOTHING",
+            envelope,
+            TENANT,
+            number,
+            e.stored_purpose,
+            e.form_code,
+            e.policy_family,
+            client,
+            e.title,
+            e.status,
+            "parallel" if e.policy_family == "efile_authorization" else "sequential",
+            e.due,
+            _at(e.expired, 23, 59),
+            "agent" if agent else "human",
+            None if agent else grace,
+            UUID(stable_id(f"agent-run:{e.key}")) if agent else None,
+            None if sent_at is None else grace,
+            sent_at,
+            _at(e.completed, 12),
+            event.at,
+            engagement,
+        )
+        signers = [
+            await _envelope_signer(conn, e, client, envelope, n) for n in range(len(e.signers))
+        ]
+        await _envelope_timeline(conn, e, envelope, signers)
+        return "envelope.recorded", "envelope", str(envelope)
+
+    await _bootstrap(conn, event, write)
+
+
 Handler = Callable[[asyncpg.Connection, Scenario, Event], Awaitable[None]]
 
 # --- T-02-T23 (`--slice tax_content`): K-1 sets and POR-05's questions -----------------------
@@ -3183,6 +3381,9 @@ HANDLERS: Final[dict[str, Handler]] = {
     # T-02-T11 (`--slice tax_board`, after `binders`): each return's board state and people.
     "tax.return_board_set": _return_board_set,
     "organisations.consent_recorded": _consent_recorded,
+    # N-02-T36 (`--slice signatures`): the ERSD disclosure, then SIG-01's envelopes.
+    "signatures.disclosure_imported": _disclosure_imported,
+    "signatures.envelope_recorded": _envelope_recorded,
     "engagements.close_engagement_created": _close_engagement_created,
     "requests.binder_created": _binder_created,
     # P-06-T08 remainder: Granite Peak's agent-drafted SURL request, after its PBC list.

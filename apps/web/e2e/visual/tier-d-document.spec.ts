@@ -28,3 +28,34 @@ for (const st of ["a", "b"] as const) {
     expect((await size(frame.locator("[data-document='kv-sheet'] li").first())).height).toBe(33);
   });
 }
+
+// F-06-T22: the letter and email boards (T10c–e) and the TPL-10 specimen share the geometry; the
+// letters' structure is clause rows 34 high over the Variables fieldset.
+for (const st of ["c", "d", "e"] as const) {
+  test(`T10${st}: structure 470, paper pane 896, paper 600, header 46, clause rows 34`, async ({
+    page,
+  }) => {
+    await openGallery(page, `screens/T10?st=${st}`);
+    const frame = page.locator(`[data-artboard='${st}'] [data-template='t10']`);
+    await expect(frame).toBeVisible();
+    const panes = frame.locator("[data-shell='pane']");
+    expect((await size(panes.nth(0))).width).toBe(470);
+    expect((await size(panes.nth(1))).width).toBe(896);
+    expect((await size(panes.nth(1).locator("[data-shell='pane-header']"))).height).toBe(46);
+    expect((await size(frame.locator("[data-document='paper']"))).width).toBe(600);
+    expect((await size(frame.locator("[data-document='clauses'] li"))).height).toBe(34);
+  });
+}
+
+for (const st of ["a", "b", "c", "d"] as const) {
+  test(`TPL-10${st}: structure 470, paper pane 896, paper 600, header 46`, async ({ page }) => {
+    await openGallery(page, `screens/TPL-10?st=${st}`);
+    const frame = page.locator(`[data-artboard='${st}'] [data-template='t10']`);
+    await expect(frame).toBeVisible();
+    const panes = frame.locator("[data-shell='pane']");
+    expect((await size(panes.nth(0))).width).toBe(470);
+    expect((await size(panes.nth(1))).width).toBe(896);
+    expect((await size(panes.nth(1).locator("[data-shell='pane-header']"))).height).toBe(46);
+    expect((await size(frame.locator("[data-document='paper']"))).width).toBe(600);
+  });
+}

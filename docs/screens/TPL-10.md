@@ -60,7 +60,7 @@ Gradients, emoji, saturated blue links, heavy shadows, invented colours, lorem i
 ## Parity
 | Artboard | Tier (A/B/D) | Diff % | Notes |
 |---|---|---|---|
-| a–d | B · A strips · D | not run | spinner masked; Issues count masked; locked in F-06-T22 |
+| a–d | B (locked) · A paper header (reported, kit chrome deviation) · D (`tier-d-document.spec.ts`) | not run | spinner masked; locked at Tier B in F-06-T22 (DEC-1754); first visual run at the S22 end review |
 
 ## Open gaps
 - spec-alt.md is not read (the README names the shorter spec as the source).

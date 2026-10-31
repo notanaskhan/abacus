@@ -36,8 +36,9 @@ TRANSITIONS: Final[dict[tuple[S, str], S]] = {
 }
 # The only events a person's request may name; the rest come from the system and T-01.
 REQUESTABLE: Final = frozenset({"start_preparation", "start_review"})
-# A person's decision, never the system's (INV-1): the final approval.
-HUMAN_EVENTS: Final = frozenset({"final_approved"})
+# A person's decision or record, never the system's (INV-1): the final approval, and the ERO's
+# record of a transmission (T-01-T37; Accrued never transmits, R-04).
+HUMAN_EVENTS: Final = frozenset({"final_approved", "transmission_recorded"})
 
 
 def actor_may(event: str, actor_kind: str) -> bool:

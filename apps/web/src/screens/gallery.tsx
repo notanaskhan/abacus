@@ -129,6 +129,8 @@ import {
   type Home02State,
   STATES as HOME02_STATES,
   scenarios as home02Scenarios,
+  selectedGate as home02Gate,
+  summaryOf as home02Summary,
 } from "./HOME-02/scenarios";
 import { ProgramEditorPage } from "./KNW-03";
 import {
@@ -222,6 +224,13 @@ import {
   scenarios as aud03Scenarios,
 } from "./AUD-03/scenarios";
 import { AUD06Frame } from "./AUD-06/artboard";
+import { AUD31 } from "./AUD-31";
+import {
+  type Aud31State,
+  GRANITE_MAPPING_ENGAGEMENT,
+  STATES as AUD31_STATES,
+  scenarios as aud31Scenarios,
+} from "./AUD-31/scenarios";
 import { AUD11Frame } from "./AUD-11/artboard";
 import {
   type Aud11State,
@@ -304,7 +313,7 @@ import {
 } from "./POR-06/scenarios";
 import { PortalRoom } from "./POR-14";
 import { PortalConnections } from "./POR-16";
-import { KNW02 } from "./KNW-02";
+import { KNW02, type Knw02Search } from "./KNW-02";
 import { KNW04 } from "./KNW-04";
 import {
   type Knw04State,
@@ -380,6 +389,18 @@ import {
   scenarios as shl20Scenarios,
 } from "./SHL-20/scenarios";
 import { ApproveSheet } from "./SHL-10";
+import {
+  BulkInstructionsSheet,
+  FixInstructionsSheet,
+  IssueFixDetail,
+  NewIssueSheet,
+} from "./SHL-15";
+import {
+  OPENS as SHL15_OPENS,
+  STATES as SHL15_STATES,
+  type Shl15State,
+  scenarios as shl15Scenarios,
+} from "./SHL-15/scenarios";
 import { SignOffChips, SignOffSheet } from "./SHL-12";
 import { COPY as SHL12_COPY } from "./SHL-12/copy";
 import {
@@ -1467,7 +1488,13 @@ function Home02Frame({ state }: { state: Home02State }): JSX.Element {
   });
   return (
     <div data-artboard={state}>
-      <HOME02 toolbar={bar.toolbar} height={860} initialDone={state === "show_done"} />
+      <HOME02
+        toolbar={bar.toolbar}
+        height={860}
+        initialDone={state === "show_done"}
+        gate={home02Gate(state)}
+        summaryOf={home02Summary}
+      />
     </div>
   );
 }
@@ -1978,6 +2005,102 @@ function Shl10Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("SHL-10", { title: "Approve agent output", Component: Shl10Artboard });
+
+// SHL-15 (P-04-T54): the issue composer a, b, c, e and agents-off over an empty frame; a′, a″ and d
+// are the T9 detail block of the 18A issue.
+function Shl15Frame({ state }: { state: Shl15State }): JSX.Element {
+  const open = SHL15_OPENS[state];
+  const none = (): undefined => undefined;
+  if (open.mode === "fix" && (state === "ap" || state === "app")) {
+    return (
+      <div className="w-[912px] p-[20px]">
+        <IssueFixDetail issueId={open.issueId} />
+      </div>
+    );
+  }
+  switch (open.mode) {
+    case "fix":
+      return <FixInstructionsSheet issueId={open.issueId} open onOpenChange={none} />;
+    case "explain":
+      return (
+        <div className="w-[912px] p-[20px]">
+          <IssueFixDetail issueId={open.issueId} />
+        </div>
+      );
+    case "new":
+      return (
+        <NewIssueSheet
+          record={open.record}
+          engagementId={open.engagementId}
+          draft={open.draft}
+          meta={open.meta}
+          {...(open.context === undefined ? {} : { context: open.context })}
+          open
+          onOpenChange={none}
+        />
+      );
+    case "bulk":
+      return (
+        <BulkInstructionsSheet
+          issueIds={open.ids}
+          initialText={open.text}
+          meta={open.meta}
+          open
+          onOpenChange={none}
+        />
+      );
+  }
+}
+
+function Shl15Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Shl15State = SHL15_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      shl15Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div key={state} data-artboard={state} className="h-[900px]">
+      <Shl15Frame state={state} />
+    </div>
+  );
+}
+
+registerScreen("SHL-15", { title: "Issue composer & fix instructions", Component: Shl15Artboard });
+
+// AUD-31 (A-03-T12): Granite Peak's single-entity mapping, f at parity and the composed a′–e′, in
+// the Focus layout under the firm toolbar.
+function Aud31Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Aud31State = AUD31_STATES.find((s) => s === params.st) ?? "f";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      aud31Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div key={state} data-artboard={state} className="flex h-[860px] w-[1400px] flex-col">
+      <AUD31 engagementId={GRANITE_MAPPING_ENGAGEMENT} height={860} />
+    </div>
+  );
+}
+
+registerScreen("AUD-31", { title: "Trial balance mapping", Component: Aud31Artboard });
 
 // SHL-12 (P-04-T48): the sign-off sheet a, b, c, d, e, g, h over an empty frame; a′ is the frame
 // after signing: the sheet closed, the header's "✓ MD ✓ HL" and the toast.
@@ -2526,19 +2649,22 @@ function Por20Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
   );
 }
 
-// KNW-02 e, f (K-01-T07): the workbook slice on the T3 triad (Prepare preset), each state on its
-// version and search.
+// KNW-02 e, f (K-01-T07) and c, d and the draft review (K-01-T19): on the T3 triad (Prepare
+// preset), each state on its version and search.
 function Knw02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Knw02State = KNW02_STATES.find((s) => s === params.st) ?? "e";
   const [ready, setReady] = useState<string | null>(null);
-  const [search, setSearch] = useState<Record<string, string | undefined>>({});
+  const [search, setSearch] = useState<Knw02Search>({});
   useEffect(() => {
     const restore = installFixtureMode(
       knw02Scenarios[state],
       params.as === undefined ? {} : { persona: params.as },
     );
     const opens = KNW02_OPENS[state];
-    setSearch(opens.ov === undefined ? {} : { ov: opens.ov });
+    setSearch({
+      ...(opens.ov === undefined ? {} : { ov: opens.ov }),
+      ...(opens.tab === undefined ? {} : { tab: opens.tab }),
+    });
     setReady(state);
     return () => {
       setReady(null);

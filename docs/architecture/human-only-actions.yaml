@@ -131,6 +131,12 @@ actions:
     verb: decide  # P-04-T32 (SHL-16 c; DEC-804, 0290): restoring is a person's decision
   - action: delivery_packet.approved
     verb: approve  # the signer or a manager approves the delivery packet (T-01-T35, DEC-38)
+  - action: transmission.recorded
+    verb: confirm  # the designated ERO records a transmission made in the engine (T-01-T37, 0525)
+  - action: efile_ack.recorded
+    verb: confirm  # a person enters an acknowledgement with its evidence (T-01-T37, 0525)
+  - action: return.delivered
+    verb: release  # client service releases the filed client copy to the portal (T-01-T41, 0569)
   - action: engine_export.generated
     verb: release  # the workbook leaves for the engine after final approval (T-01-T25, 0561)
   - action: engine_export.marked_exported

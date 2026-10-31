@@ -133,6 +133,20 @@ def facts_for(found: ReturnSyncFacts, *, changed_since_sync: bool) -> ChipFacts:
     )
 
 
+async def return_synced(tenant: TenantContext, return_id: UUID) -> bool:
+    """T-01-T37: the return's chip reads Synced (the transmission record requires it)."""
+    from abacus.modules.review.api import changed_since
+
+    async with tenant_session(tenant) as session:
+        found = await sync_facts(session, return_id)
+    if found is None:
+        return False
+    changed = found.last_synced_at is not None and bool(
+        await changed_since(tenant, "tax_return", return_id, found.last_synced_at)
+    )
+    return chip_state(facts_for(found, changed_since_sync=changed)) == "synced"
+
+
 # --- C13 gate kinds -----------------------------------------------------------------------------
 
 _RETURNS = text(
