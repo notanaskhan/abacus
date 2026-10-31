@@ -313,7 +313,7 @@ import {
 } from "./POR-06/scenarios";
 import { PortalRoom } from "./POR-14";
 import { PortalConnections } from "./POR-16";
-import { KNW02 } from "./KNW-02";
+import { KNW02, type Knw02Search } from "./KNW-02";
 import { KNW04 } from "./KNW-04";
 import {
   type Knw04State,
@@ -2649,19 +2649,22 @@ function Por20Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
   );
 }
 
-// KNW-02 e, f (K-01-T07): the workbook slice on the T3 triad (Prepare preset), each state on its
-// version and search.
+// KNW-02 e, f (K-01-T07) and c, d and the draft review (K-01-T19): on the T3 triad (Prepare
+// preset), each state on its version and search.
 function Knw02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Knw02State = KNW02_STATES.find((s) => s === params.st) ?? "e";
   const [ready, setReady] = useState<string | null>(null);
-  const [search, setSearch] = useState<Record<string, string | undefined>>({});
+  const [search, setSearch] = useState<Knw02Search>({});
   useEffect(() => {
     const restore = installFixtureMode(
       knw02Scenarios[state],
       params.as === undefined ? {} : { persona: params.as },
     );
     const opens = KNW02_OPENS[state];
-    setSearch(opens.ov === undefined ? {} : { ov: opens.ov });
+    setSearch({
+      ...(opens.ov === undefined ? {} : { ov: opens.ov }),
+      ...(opens.tab === undefined ? {} : { tab: opens.tab }),
+    });
     setReady(state);
     return () => {
       setReady(null);
