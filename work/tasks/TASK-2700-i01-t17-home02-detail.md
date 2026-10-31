@@ -40,6 +40,12 @@ where allowed); live wire-up (I-01-T21); SIG-01 send host (N-02).
 
 ## Progress log
 - `2026-10-31` — built; tsc and eslint clean on the touched files. Tests run at the S22 end review.
+- `2026-10-31` — S22 end review: the detail tests now load `routes/firm/sheets` (the `?ov=` keys);
+  the queue test mounts in a memory router because the panes open layers through the URL; a test
+  takes `freshScenarios()` because Decide writes into the fixture handlers. Main's "links only"
+  test (I-01-T16) now scopes that rule to the queue pane and adds that every gate verb outside it
+  is a person's HumanAction: the detail pane decides inline by design (DEC-1750), and the stronger
+  INV-1 check replaces the old screen-wide absence.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

@@ -79,24 +79,29 @@ const decidedGate = (p: string): HumanGateOut[] =>
     .slice(0, 1)
     .map((g) => ({ ...g, state: "done" as const, created_at: DECIDED_AT }));
 
-export const scenarios = defineScenarios({
-  a: at("a", "daniel-reyes"),
-  b: at("b", "daniel-reyes", {
-    rows: afterDecision,
-    done: decidedGate,
-    clock: "2026-09-14T09:36:00-05:00",
-    decided: true,
-  }),
-  c: at("c", "daniel-reyes"),
-  d: at("d", "daniel-reyes"),
-  e: at("e", "daniel-reyes"),
-  f: at("f", "daniel-reyes", { rows: none }),
-  g: at("g", "samuel-ito"),
-  show_done: at("show_done", "daniel-reyes", { done: decidedGate, decided: true }),
-  snoozed: at("snoozed", "daniel-reyes"),
-  reassigned: at("reassigned", "samuel-ito"),
-  overdue: at("overdue", "daniel-reyes", { rows: overdue }),
-});
+/** Every state, built afresh: Decide on a writes into its handlers, so a test takes its own copy
+ * (`freshScenarios()`) and the gallery keeps the one below. */
+export const freshScenarios = () =>
+  defineScenarios({
+    a: at("a", "daniel-reyes"),
+    b: at("b", "daniel-reyes", {
+      rows: afterDecision,
+      done: decidedGate,
+      clock: "2026-09-14T09:36:00-05:00",
+      decided: true,
+    }),
+    c: at("c", "daniel-reyes"),
+    d: at("d", "daniel-reyes"),
+    e: at("e", "daniel-reyes"),
+    f: at("f", "daniel-reyes", { rows: none }),
+    g: at("g", "samuel-ito"),
+    show_done: at("show_done", "daniel-reyes", { done: decidedGate, decided: true }),
+    snoozed: at("snoozed", "daniel-reyes"),
+    reassigned: at("reassigned", "samuel-ito"),
+    overdue: at("overdue", "daniel-reyes", { rows: overdue }),
+  });
+
+export const scenarios = freshScenarios();
 
 export type Home02State = keyof typeof scenarios;
 

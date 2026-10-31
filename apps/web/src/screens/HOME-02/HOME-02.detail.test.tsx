@@ -19,9 +19,10 @@ import { type FixtureHandler, installFixtureMode, json } from "../../app-core/fi
 import { humanGateHandlers } from "../../fixtures/handlers/human-gates";
 import { getSeed } from "../../fixtures/seed";
 import { DECISION_754, FELD_PROPOSAL, M2_FIX } from "../../fixtures/seed/approvals-detail";
+import "../../routes/firm/sheets"; // registers the `?ov=` keys the detail opens
 import { newQueryClient } from "../../testing/support";
 import { HOME02 } from ".";
-import { type Home02State, scenarios, selectedGate } from "./scenarios";
+import { type Home02State, freshScenarios, selectedGate } from "./scenarios";
 
 beforeAll(() => {
   client.setConfig({ baseUrl: window.location.origin, throwOnError: true });
@@ -45,7 +46,7 @@ function show(
   gate: string | null = selectedGate(state),
 ): Seen {
   const posts: Seen["posts"] = [];
-  const scenario = scenarios[state];
+  const scenario = freshScenarios()[state]; // Decide writes into its handlers
   const handlers = Object.fromEntries(
     Object.entries({ ...scenario.handlers, ...extra }).map(([key, handler]) => [
       key,
@@ -182,7 +183,9 @@ describe("HOME-02 detail · decision (a, b)", () => {
     const seen = show("a");
     await detail("decision");
     fireEvent.click(
-      await within(footer()).findByRole("button", { name: "Request more analysis…" }),
+      await waitFor(() =>
+        within(footer()).getByRole("button", { name: "Request more analysis…" }),
+      ),
     );
     await waitFor(() => {
       expect(seen.search().ov).toBe(`decision:${DECISION_754}`);

@@ -3,6 +3,14 @@
 // review's gallery sweep; here a, f, the keyboard, `?gate=`, Show done and the read-only rule.
 import { client } from "@abacus/api-client/client";
 import { QueryClientProvider } from "@tanstack/react-query";
+import {
+  Outlet,
+  RouterProvider,
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+} from "@tanstack/react-router";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { type FixtureHandler, installFixtureMode } from "../../app-core/fixture-mode";
@@ -42,9 +50,21 @@ function show(
     ]),
   );
   restore = installFixtureMode({ ...scenario, handlers });
+  // I-01-T17: the detail and evidence panes open their layers through the URL (`?ov=`).
+  const root = createRootRoute({ component: Outlet });
+  const router = createRouter({
+    routeTree: root.addChildren([
+      createRoute({
+        getParentRoute: () => root,
+        path: "/",
+        component: () => <HOME02 {...props} />,
+      }),
+    ]),
+    history: createMemoryHistory({ initialEntries: ["/"] }),
+  });
   render(
     <QueryClientProvider client={newQueryClient()}>
-      <HOME02 {...props} />
+      <RouterProvider router={router} />
     </QueryClientProvider>,
   );
   return seen;
@@ -87,15 +107,22 @@ describe("HOME-02 queue", () => {
 
   it("a: the queue is links only: no decide, approve, sign-off or send control", async () => {
     show("a");
-    await queue();
+    const nav = await queue();
     // A row is a link to the gate's host; its title may start with a verb ("Send Form 8879-PE…"),
     // so only controls other than the rows are checked.
-    const controls = screen
+    const verbs = [/^Decide/u, /^Approve/u, /^Sign off/u, /^Send/u, /^Release/u];
+    const controls = within(nav)
       .queryAllByRole("button")
       .filter((b) => !b.hasAttribute("data-issue-row"));
-    for (const name of [/^Decide/u, /^Approve/u, /^Sign off/u, /^Send/u, /^Release/u]) {
+    for (const name of verbs) {
       expect(controls.filter((b) => name.test(b.textContent))).toEqual([]);
     }
+    // I-01-T17 (DEC-1750): the detail pane decides inline; every gate verb outside the queue is a
+    // person's HumanAction, never a plain or agent-owned control.
+    const outside = screen
+      .queryAllByRole("button")
+      .filter((b) => !nav.contains(b) && verbs.some((v) => v.test(b.textContent.trim())));
+    for (const b of outside) expect(b.getAttribute("data-human-verb")).not.toBeNull();
   });
 
   it("f: Nothing waiting on you, with Show done", async () => {
