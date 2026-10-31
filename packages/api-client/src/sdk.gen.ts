@@ -9353,6 +9353,8 @@ export const withdrawIntakeUpload = <ThrowOnError extends boolean = false>(optio
 
 /**
  * Portal Details Change Route
+ *
+ * A signed W-9 or W-8, or a structured address, for a person at the firm to decide.
  */
 export const portalDetailsChange = <ThrowOnError extends boolean = false>(options: Options<PortalDetailsChangeData, ThrowOnError>): RequestResult<PortalDetailsChangeResponses, PortalDetailsChangeErrors, ThrowOnError> => (options.client ?? client).post<PortalDetailsChangeResponses, PortalDetailsChangeErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9367,7 +9369,7 @@ export const portalDetailsChange = <ThrowOnError extends boolean = false>(option
 /**
  * Portal K1S Route
  *
- * POR-13: the recipient's own packages, released and later only.
+ * POR-13: the recipient's own packages, released and later only (T-02-T26).
  */
 export const portalK1S = <ThrowOnError extends boolean = false>(options?: Options<PortalK1sData, ThrowOnError>): RequestResult<PortalK1sResponses, PortalK1sErrors, ThrowOnError> => (options?.client ?? client).get<PortalK1sResponses, PortalK1sErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9377,6 +9379,8 @@ export const portalK1S = <ThrowOnError extends boolean = false>(options?: Option
 
 /**
  * Portal K1 Route
+ *
+ * The statement with its box lines (TRI, the second step); the first read is Viewed.
  */
 export const portalK1 = <ThrowOnError extends boolean = false>(options: Options<PortalK1Data, ThrowOnError>): RequestResult<PortalK1Responses, PortalK1Errors, ThrowOnError> => (options.client ?? client).get<PortalK1Responses, PortalK1Errors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9396,7 +9400,7 @@ export const portalK1Attachment = <ThrowOnError extends boolean = false>(options
 /**
  * Portal K1 Download Route
  *
- * A deterministic zip; an access event per download.
+ * A deterministic zip of the final documents; an access event per download.
  */
 export const portalK1Download = <ThrowOnError extends boolean = false>(options: Options<PortalK1DownloadData, ThrowOnError>): RequestResult<PortalK1DownloadResponses, PortalK1DownloadErrors, ThrowOnError> => (options.client ?? client).get<PortalK1DownloadResponses, PortalK1DownloadErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

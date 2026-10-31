@@ -530,6 +530,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.tax.k1_packages.DetailsChangeDecided
+  details_change_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.k1_portal.DetailsChangeInvalid
+    summary: A W-9 or W-8 names the uploaded file; an address its structured fields (`facts.field`).
   disclosure_outdated:
     status: 409
     raised_by:
@@ -664,6 +669,10 @@ codes:
     raised_by:
     - abacus.modules.engagements.drafts.EntityOutsideClient
     summary: The client entity is not one of the draft's client's entities.
+  envelope_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.EnvelopeExists
   envelope_not_draft:
     status: 409
     raised_by:
@@ -1102,6 +1111,10 @@ codes:
     raised_by:
     - abacus.modules.requests.service.ItemNotFulfillable
     summary: Only open or received items take new evidence by rule.
+  item_not_toggleable:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.delivery.ItemNotToggleable
   k1_document_missing:
     status: 422
     raised_by:
@@ -1235,6 +1248,10 @@ codes:
     raised_by:
     - abacus.modules.engagements.letter_flow.LetterNotWithdrawable
     summary: Only an approved or sent letter whose envelope was declined, expired or voided.
+  letter_refused:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.delivery.LetterRefused
   letter_signer_missing:
     status: 409
     raised_by:
@@ -1317,6 +1334,8 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.signatures.portal.MfaRequired
+    - abacus.modules.tax.k1_portal.K1MfaRequired
+    summary: 'K-1s carry amounts (TRI): the portal session''s second step first (DEC-34).'
   model_text_not_permitted:
     status: 409
     raised_by:
@@ -1328,6 +1347,10 @@ codes:
     - abacus.modules.assurance.trial_balance.NoAssuranceItem
     - abacus.modules.workpapers.service.NoAssuranceItem
     summary: Only an attest engagement (with its assurance work item) holds working papers.
+  no_authorization_form:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.NoAuthorizationForm
   no_connection:
     status: 409
     raised_by:
@@ -1349,11 +1372,19 @@ codes:
     raised_by:
     - abacus.modules.connections.entity.NoFailedSync
     summary: There is no failed sync to try again.
+  no_figures:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.NoFigures
   no_ledger:
     status: 409
     raised_by:
     - abacus.modules.fieldwork.service.NoLedger
     summary: No reconciled general ledger for the engagement's entity and year end.
+  no_letter_template:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.delivery.NoLetterTemplate
   no_pending_version:
     status: 409
     raised_by:
@@ -1404,9 +1435,14 @@ codes:
     raised_by:
     - abacus.modules.methodology.standards.NotDraft
     summary: 'Only a draft changes: this version is published or discarded.'
+  not_exported:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.delivery.NotExported
   not_final_approved:
     status: 409
     raised_by:
+    - abacus.modules.tax.delivery.NotFinalApproved
     - abacus.modules.tax.export.NotFinalApproved
     summary: The return has no final approval to export, or the checkpoint is not the approved one.
   not_ignored:
@@ -1587,6 +1623,18 @@ codes:
     raised_by:
     - abacus.modules.methodology.standards.OwnerNotPartner
     summary: The owner of a standard must be a partner member of the firm.
+  packet_approved:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.delivery.PacketApproved
+  packet_not_approved:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.PacketNotApproved
+  packet_not_draft:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.delivery.PacketNotDraft
   parameters_invalid:
     status: 422
     raised_by:
@@ -2163,6 +2211,7 @@ codes:
     - abacus.modules.review.gate_actions.GateStaleVersion
     - abacus.modules.signatures.builder.StaleEnvelope
     - abacus.modules.signatures.fallback.PolicyStale
+    - abacus.modules.tax.delivery.StaleVersion
     - abacus.modules.tax.engine_import.ImportStale
     - abacus.modules.tax.export.ExportStale
     - abacus.modules.tax.k1_release.K1ReleaseStale

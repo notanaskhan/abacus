@@ -15549,6 +15549,8 @@ export const withdrawIntakeUploadMutation = (options?: Partial<Options<WithdrawI
 
 /**
  * Portal Details Change Route
+ *
+ * A signed W-9 or W-8, or a structured address, for a person at the firm to decide.
  */
 export const portalDetailsChangeMutation = (options?: Partial<Options<PortalDetailsChangeData>>): UseMutationOptions<PortalDetailsChangeResponse, PortalDetailsChangeError, Options<PortalDetailsChangeData>> => {
     const mutationOptions: UseMutationOptions<PortalDetailsChangeResponse, PortalDetailsChangeError, Options<PortalDetailsChangeData>> = {
@@ -15569,7 +15571,7 @@ export const portalK1sQueryKey = (options?: Options<PortalK1sData>) => createQue
 /**
  * Portal K1S Route
  *
- * POR-13: the recipient's own packages, released and later only.
+ * POR-13: the recipient's own packages, released and later only (T-02-T26).
  */
 export const portalK1sOptions = (options?: Options<PortalK1sData>) => queryOptions<PortalK1sResponse, PortalK1sError, PortalK1sResponse, ReturnType<typeof portalK1sQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -15588,6 +15590,8 @@ export const portalK1QueryKey = (options: Options<PortalK1Data>) => createQueryK
 
 /**
  * Portal K1 Route
+ *
+ * The statement with its box lines (TRI, the second step); the first read is Viewed.
  */
 export const portalK1Options = (options: Options<PortalK1Data>) => queryOptions<PortalK1Response, PortalK1Error, PortalK1Response, ReturnType<typeof portalK1QueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -15625,7 +15629,7 @@ export const portalK1DownloadQueryKey = (options: Options<PortalK1DownloadData>)
 /**
  * Portal K1 Download Route
  *
- * A deterministic zip; an access event per download.
+ * A deterministic zip of the final documents; an access event per download.
  */
 export const portalK1DownloadOptions = (options: Options<PortalK1DownloadData>) => queryOptions<PortalK1DownloadResponse, PortalK1DownloadError, PortalK1DownloadResponse, ReturnType<typeof portalK1DownloadQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

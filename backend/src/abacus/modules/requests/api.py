@@ -145,6 +145,8 @@ from abacus.modules.requests.service import (
 )
 from abacus.modules.requests.source_documents import (
     BinderCard,
+    SourceDocumentGroup,
+    SourceDocumentRow,
     SourceDocuments,
     UploadFacts,
     binder_card,
@@ -242,6 +244,8 @@ __all__ = [
     "ReviewTarget",
     "RoomItem",
     "ScreeningSubject",
+    "SourceDocumentGroup",
+    "SourceDocumentRow",
     "SourceDocuments",
     "UploadFacts",
     "VoidedRuleLink",
