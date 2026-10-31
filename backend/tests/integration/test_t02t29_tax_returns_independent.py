@@ -37,13 +37,18 @@ from abacus.modules.tax import due_dates
 from abacus.modules.tax.api import TransitionRefused, apply_transition
 
 from . import test_t02t09_practice_board as t02t09
+from . import test_t02t10_due_date_pinning as t02t10
+from . import test_t02t18_intake as t02t18
 from .agent_tests.support import Seeder
 from .test_t02t09_practice_board import DEMO, Board, Json
-from .test_t02t10_due_date_pinning import _dates, _publish, _return
 from .test_t02t13_return_overview import manager_on
-from .test_t02t18_intake import _binder, _waiting
 
 _as = t02t09._as  # pyright: ignore[reportPrivateUsage] -- T-02-T09's HTTP helper
+_dates = t02t10._dates  # pyright: ignore[reportPrivateUsage] -- T-02-T10's due-date read
+_publish = t02t10._publish  # pyright: ignore[reportPrivateUsage] -- T-02-T10's rule set
+_return = t02t10._return  # pyright: ignore[reportPrivateUsage] -- T-02-T10's 1065 return
+_binder = t02t18._binder  # pyright: ignore[reportPrivateUsage] -- T-02-T18's Feld binder
+_waiting = t02t18._waiting  # pyright: ignore[reportPrivateUsage] -- T-02-T18's waiting file
 engines = t02t09.engines
 seed = t02t09.seed
 board = t02t09.board
