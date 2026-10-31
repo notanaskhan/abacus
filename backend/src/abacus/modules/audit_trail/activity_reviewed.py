@@ -568,5 +568,16 @@ REVIEWED_FALLBACK: Final = frozenset(
         "tax_return.approved",  # reviewed 2026-10-31 (S17-S19)
         "transcript.compared",  # reviewed 2026-10-31 (S17-S19)
         "transcript.uploaded",  # reviewed 2026-10-31 (S17-S19)
+        "population.created",  # A-03-T07, T10: reviewed 2026-10-31
+        "population.tie_recorded",  # A-03-T07, T10: reviewed 2026-10-31
+        "sample_set.created",  # A-03-T07, T10: reviewed 2026-10-31
+        "sample_set.drawn",  # A-03-T07, T10: reviewed 2026-10-31
+        "sample_set.override_requested",  # A-03-T07, T10: reviewed 2026-10-31
+        "sample_set.override_approved",  # A-03-T07, T10: reviewed 2026-10-31
+        "sample_set.approved",  # A-03-T07, T10: reviewed 2026-10-31
+        "sample_set.superseded",  # A-03-T07, T10: reviewed 2026-10-31
+        "sample_set.exported",  # A-03-T07, T10: reviewed 2026-10-31
+        "sample_set.draw_failed",  # A-03-T07, T10: reviewed 2026-10-31
+        "sample_set.draw_completed",  # A-03-T07, T10: reviewed 2026-10-31
     }
 )
