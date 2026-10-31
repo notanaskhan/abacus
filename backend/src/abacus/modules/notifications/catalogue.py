@@ -395,6 +395,14 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "checkpoint.created": Kind(
         "import_pending_approval", _import_reviewers, "checkpoint", "checkpoint_id"
     ),
+    # T-01-T27 (DEC-1463): the tax engine bridge's kinds, to the people the producer names (never
+    # the actor). `export_failed` is A-01-T22's kind; the engine adds its source.
+    "engine_sync.failed": Kind("export_failed", _listed, "tax_return", "work_item_id"),
+    "tax_return.ready_to_transmit": Kind(
+        "ready_to_transmit", _listed, "tax_return", "work_item_id"
+    ),
+    "tax_return.efile_relocked": Kind("efile_relocked", _listed, "tax_return", "work_item_id"),
+    "engine_ack.rejected": Kind("ack_rejected", _listed, "tax_return", "work_item_id"),
     # P-07-T47 (P-07 §4.8): acceptance, risk review, independence and team approval.
     "acceptance.sent_to_partner": Kind(
         "acceptance_awaiting_partner", _partners, "acceptance_record", "record_id"
@@ -527,6 +535,11 @@ TEMPLATES: Final[dict[str, str]] = {
     "sign_off.requested": "Work on {engagement} is waiting for your sign-off.",
     "issue.assigned": "An issue on {engagement} was assigned to you.",
     "checkpoint.created": "An import on {engagement} is waiting for your approval.",
+    # T-01-T27 (DEC-1463): the tax engine bridge.
+    "engine_sync.failed": "The tax engine reported errors for a return on {engagement}.",
+    "tax_return.ready_to_transmit": "A return on {engagement} reached the tax engine.",
+    "tax_return.efile_relocked": "A return on {engagement} was locked for e-file again.",
+    "engine_ack.rejected": "The e-file for a return on {engagement} was rejected.",
     "acceptance.sent_to_partner": "An acceptance on {engagement} is waiting for your decision.",
     "acceptance.review_requested": (
         "You were asked for a risk review of an acceptance on {engagement}."
@@ -678,6 +691,11 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     # export sheet (`notification.export_ready`, imported content), never to a download.
     NotificationKind("export_ready", "system", "Download"),
     NotificationKind("export_failed", "system", "Download"),
+    # T-01-T27 (DEC-1463): the engine bridge; e-file relock and acknowledgements fan out once
+    # T-02's lock and T-01-T26's report emit.
+    NotificationKind("ready_to_transmit", "approval", "Send"),
+    NotificationKind("efile_relocked", "system", "Lock"),
+    NotificationKind("ack_rejected", "system", "ShieldAlert"),
 )
 for _kind in _REGISTERED:
     register_kind(_kind)
