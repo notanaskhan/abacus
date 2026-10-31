@@ -2,7 +2,7 @@
 id: TASK-2811
 title: A-05-T05 protected bundle (glossary, status vocabulary, human-only acts)
 spec: SPEC-640
-acceptance_criteria: [AC-1]
+acceptance_criteria: [AC-3]
 risk_zone: red
 status: in-review
 epic: A-05
