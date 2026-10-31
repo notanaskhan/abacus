@@ -18,6 +18,7 @@ TABLES: frozenset[str] = frozenset(
     # T-02-T20 (0565, DEC-1471): K-1 packages.
     | {"k1_recipients", "k1_packages", "k1_package_events", "k1_documents", "k1_box_lines"}
     | {"k1_handoffs", "recipient_details_changes"}
+    | {"k1_releases", "k1_release_deliveries"}  # T-02-T21 (0566, DEC-1476): the release
     | {"delivery_packets"}  # T-01-T35 (0523, DEC-1565)
     | {"efile_amount_bindings"}  # T-01-T36 (0524, DEC-1566)
 )
@@ -138,12 +139,22 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     # T-02-T20 (0565): what a recipient, package, hand-off or details change may change.
     "k1_recipients": frozenset(
         {"display_name", "recipient_kind", "is_entity", "tin_last4", "tin_kind", "address"}
-        | {"ownership_note"}
+        | {"ownership_note", "contact_id"}  # T-02-T21 (0566): the contact delivered to
     ),
-    "k1_packages": frozenset({"status", "delivery_contact_id", "e_furnishing_consent"}),
+    "k1_packages": frozenset(
+        {"status", "delivery_contact_id", "e_furnishing_consent", "released_at"}  # + 0566
+    ),
     "k1_handoffs": frozenset(
         {"status", "replaced_at", "final_values", "target_evidence_version_id"}
         | {"target_request_item_id"}
     ),
     "recipient_details_changes": frozenset({"status", "decided_by", "decided_at", "reason"}),
+    # T-02-T21 (0566): a release changes only its status; the ledger stamps each step once.
+    "k1_releases": frozenset(
+        {"status", "undone_at", "undone_by", "started_at", "completed_at", "failure_code"}
+    ),
+    "k1_release_deliveries": frozenset(
+        {"contact_id", "access_grant_id", "invitation_id", "access_at", "released_at"}
+        | {"message_id", "emailed_at", "handoffs_at"}
+    ),
 }

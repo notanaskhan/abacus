@@ -61,6 +61,7 @@ class QuestionnaireTemplateOut(BaseModel):
     name: Annotated[str, classified("internal")]
     current_version: Annotated[int | None, classified("internal")]
     draft_version: Annotated[int | None, classified("internal")]
+    current_version_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class TemplateImportOut(BaseModel):
@@ -198,7 +199,11 @@ def _out(v: svc.QuestionnaireView) -> QuestionnaireOut:
 
 def _template_out(t: svc.TemplateView) -> QuestionnaireTemplateOut:
     return QuestionnaireTemplateOut(
-        id=t.id, name=t.name, current_version=t.current_version, draft_version=t.draft_version
+        id=t.id,
+        name=t.name,
+        current_version=t.current_version,
+        draft_version=t.draft_version,
+        current_version_id=t.current_version_id,
     )
 
 

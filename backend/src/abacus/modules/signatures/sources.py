@@ -36,6 +36,7 @@ from abacus.modules.engagements.api import (
     letter_for_envelope,
     letter_send_problems,
     recorded_letter,
+    register_letter_envelope_status,
     register_letter_sender,
     replace_gate_provider,
 )
@@ -225,3 +226,18 @@ def register_letter_source() -> None:
     )
     replace_gate_provider(LETTER_GATE, letter_gate)
     register_letter_sender(send_letter)
+    register_letter_envelope_status(envelope_status)
+
+
+async def envelope_status(tenant: TenantContext, envelope_id: UUID) -> str | None:
+    """N-02-T35: a letter envelope's C7 status; `superseded` once superseded."""
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(
+                text("SELECT status, superseded_at FROM envelopes WHERE id = :id"),
+                {"id": envelope_id},
+            )
+        ).first()
+    if row is None:
+        return None
+    return "superseded" if row.superseded_at is not None else str(row.status)
