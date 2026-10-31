@@ -105,44 +105,47 @@ function Grid({
   right?: readonly number[];
   label: string;
 }): JSX.Element {
+  // The footer (a total, a helper) sits after the table: a table holds only rows (axe).
   return (
-    <div role="table" aria-label={label}>
-      <div
-        role="row"
-        className="grid min-h-[30px] items-center gap-[12px] border-b-[0.5px] border-hair bg-nested px-[12px] text-th text-ink-2"
-        style={{ gridTemplateColumns: cols }}
-      >
-        {head.map((h, i) => (
-          <span key={h} role="columnheader" className={cn(right.includes(i) && "text-right")}>
-            {h}
-          </span>
-        ))}
-      </div>
-      {rows.map((r) => (
+    <>
+      <div role="table" aria-label={label}>
         <div
-          key={r.key}
           role="row"
-          aria-selected={r.selected === true ? true : undefined}
-          className={cn(
-            "grid min-h-[34px] items-center gap-[12px] border-b-[0.5px] border-hair px-[12px] py-[6px] text-body",
-            r.selected === true && "bg-sel-bg",
-            r.muted === true && "text-ink-2",
-          )}
+          className="grid min-h-[30px] items-center gap-[12px] border-b-[0.5px] border-hair bg-nested px-[12px] text-th text-ink-2"
           style={{ gridTemplateColumns: cols }}
         >
-          {r.cells.map((c, i) => (
-            <span
-              key={i}
-              role="cell"
-              className={cn("min-w-0", right.includes(i) && "text-right tabular-nums")}
-            >
-              {c}
+          {head.map((h, i) => (
+            <span key={h} role="columnheader" className={cn(right.includes(i) && "text-right")}>
+              {h}
             </span>
           ))}
         </div>
-      ))}
+        {rows.map((r) => (
+          <div
+            key={r.key}
+            role="row"
+            aria-selected={r.selected === true ? true : undefined}
+            className={cn(
+              "grid min-h-[34px] items-center gap-[12px] border-b-[0.5px] border-hair px-[12px] py-[6px] text-body",
+              r.selected === true && "bg-sel-bg",
+              r.muted === true && "text-ink-2",
+            )}
+            style={{ gridTemplateColumns: cols }}
+          >
+            {r.cells.map((c, i) => (
+              <span
+                key={i}
+                role="cell"
+                className={cn("min-w-0", right.includes(i) && "text-right tabular-nums")}
+              >
+                {c}
+              </span>
+            ))}
+          </div>
+        ))}
+      </div>
       {footer}
-    </div>
+    </>
   );
 }
 

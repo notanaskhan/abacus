@@ -200,6 +200,10 @@ codes:
     raised_by:
     - abacus.modules.connections.entity.AuthorizationRequired
     summary: The consent sheet's authorization toggle was not on (AC-36).
+  before_date_as_of:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.portal.BeforeDateAsOf
   below_floor:
     status: 422
     raised_by:
@@ -465,6 +469,15 @@ codes:
     raised_by:
     - abacus.modules.communications.intake_contract.DecisionRequired
     summary: An attachment in the apply has no decision, or a forced Hold was answered otherwise.
+  decline_not_withdrawable:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.portal.DeclineNotWithdrawable
+    summary: Only the signer's own portal decline, on an envelope still Declined, can be withdrawn.
+  declined:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.portal.SignerDeclined
   demo_clock_refused:
     status: 409
     raised_by:
@@ -484,6 +497,11 @@ codes:
     raised_by:
     - abacus.modules.communications.triage_apply.DestinationOutsideClient
     summary: The destination belongs to another client than the file's.
+  disclosure_outdated:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.portal.DisclosureOutdated
+    summary: The accepted disclosure is not the firm's newest (or the firm has imported none).
   discovered_in_future:
     status: 422
     raised_by:
@@ -616,6 +634,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.signatures.hub.EnvelopeNotOpen
+    - abacus.modules.signatures.portal.EnvelopeNotOpen
     summary: Only a draft or an envelope out for signature can be voided; a completed, declined, expired
       or voided one stays as it is.
   eqr_approval_required:
@@ -646,6 +665,10 @@ codes:
     - abacus.modules.engagements.team_errors.EqrOnTeam
     summary: 'The engagement quality reviewer is never on the team: pick someone who isn''t, or keep
       the EQR off the team roles.'
+  esign_consent_required:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.portal.ConsentRequired
   esign_install_exists:
     status: 409
     raised_by:
@@ -1170,6 +1193,10 @@ codes:
     raised_by:
     - abacus.modules.engagements.service.MethodologyAlreadyApplied
     summary: An engagement is pinned to one methodology version, once (SPEC-008 Q4).
+  mfa_required:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.portal.MfaRequired
   model_text_not_permitted:
     status: 409
     raised_by:
@@ -1321,6 +1348,10 @@ codes:
     raised_by:
     - abacus.modules.evidence.rule_voids.NotVoidable
     summary: Only an unaccepted rule fulfilment is voided (R-01 Story 2.2).
+  not_your_turn:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.portal.NotYourTurn
   note_cleared:
     status: 409
     raised_by:
@@ -1663,6 +1694,11 @@ codes:
     - abacus.modules.signatures.imports.RetentionFloorMissing
     summary: 'No retention floor or firm policy covers signature evidence yet: nothing is imported, because
       COMPLIANCE storage needs a retain-until date (N-02 §3.13).'
+  retention_not_extended:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.consumers.RetentionNotExtended
+    summary: '`extend_retention` only moves the date later.'
   retention_set_exists:
     status: 409
     raised_by:
@@ -1816,6 +1852,11 @@ codes:
     - abacus.modules.identity.security_policies.SessionLimitOutOfRange
     summary: A session limit under the floor (60 minutes absolute, 5 idle, 15 for the portal), which
       would leave the firm's people unable to work; `facts.field` names the field.
+  session_not_open:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.portal.SessionNotOpen
+    summary: The session was abandoned (voided, expired or replaced) or has expired before use.
   setting_invalid:
     status: 422
     raised_by:
@@ -1851,6 +1892,10 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.review.service.SignOffInvalid
+  signed_copy_not_ready:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.portal.SignedCopyNotReady
   signer_outside_client:
     status: 422
     raised_by:
@@ -1861,6 +1906,10 @@ codes:
     raised_by:
     - abacus.modules.organisations.consents.SignersMissing
     summary: The entity has no signing contact, or a joint filing unit lacks one spouse.
+  signing_refused:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.portal.SigningRefused
   signoff_invalid:
     status: 422
     raised_by:
@@ -1903,6 +1952,11 @@ codes:
     raised_by:
     - abacus.modules.signatures.builder.SourceCannotDraft
     summary: The source is registered but drafts nothing yet (the letter until N-02-T32).
+  source_contract_broken:
+    status: 422
+    raised_by:
+    - abacus.modules.signatures.consumers.SourceContractBroken
+    summary: A contracted source drafted outside its purposes or policy family.
   sso_exempt_needs_hardware_key:
     status: 409
     raised_by:
@@ -2257,6 +2311,10 @@ codes:
     raised_by:
     - abacus.modules.signatures.builder.ValidationFailed
     summary: A code-computed check failed; `facts` holds each check's result by its code.
+  verification_failed:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.portal.VerificationFailed
   version_frozen:
     status: 409
     raised_by:

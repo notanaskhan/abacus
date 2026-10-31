@@ -274,6 +274,31 @@ const completionRoute = createRoute({
 // puts it in the URL. Closing returns to the source's record; Create opens the new engagement.
 const RollForward = lazyScreen(async () => (await import("../../screens/ENG-13")).RollForwardPage);
 
+// N-02-T34: ENG-04 is ENG-02's Letter & terms tab (`engagements.letter_composer`; off, the record
+// panel), opened at its own path.
+const letterRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/engagements/$engagementId/letter",
+  component: function LetterPage(): JSX.Element {
+    const engagementId = useParam("engagementId");
+    const navigate = useNavigate();
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <EngagementRecord
+          engagementId={engagementId}
+          initialTab="letter"
+          onNavigate={(target) => {
+            if (target.screen === "ENG-01") void navigate({ to: "/engagements" });
+            else {
+              void navigate({ to: "/clients/$clientId", params: { clientId: target.clientId } });
+            }
+          }}
+        />
+      </div>
+    );
+  },
+});
+
 const rollForwardRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/engagements/$engagementId/roll-forward",
@@ -322,6 +347,7 @@ const dashboardRoute = createRoute({
 export const engagementRoutes = [
   newEngagementRoute,
   rollForwardRoute,
+  letterRoute,
   engagementRoute.addChildren([
     overviewRoute,
     boardRoute,
