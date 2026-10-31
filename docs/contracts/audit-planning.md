@@ -32,7 +32,7 @@ holds reads only through a run's task scope. The agent and the system are denied
 | Preview thresholds | `POST /materiality/preview` (no write) | `materiality.read` | team + reviewers | `assurance.materiality` |
 | Propose | `POST /materiality/proposals` | `materiality.propose` | manager, senior | `assurance.materiality` |
 | Reassess at final | `POST /materiality/reassessments` | `materiality.reassess` | manager, senior | `assurance.materiality` |
-| Decide, remind, analysis | `POST /v1/decisions/{id}/decide` · `/remind` · `/analysis-requests` (C3) | `decision.decide` (reserved EP, fresh MFA), `decision.remind` | as C3 | C3 |
+| Decide, remind, analysis, reassess | `POST /v1/decision-cards/{card_id}/decide` · `/notify` · `/analysis-requests` · `/reassess` (C3, live) | `decision.decide` (reserved EP, fresh MFA), `decision.notify` (Remind), `decision.request_analysis`, `decision.reassess` | as C3 | C3 |
 | Register | `GET /risks/register` | `risk.read` | team + reviewers | `assurance.risk_register` |
 | Linkage | `GET /risks/linkage` | `risk.read` | team + reviewers | `assurance.risk_register` |
 | Drawer | `GET /risks/{rid}` | `risk.read` | team + reviewers | `assurance.risk_register` |

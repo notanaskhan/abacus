@@ -8123,7 +8123,7 @@ export type ControlExceptionOut = {
     /**
      * Allowed Actions
      */
-    allowed_actions: Array<'materiality.propose' | 'materiality.reassess' | 'decision.decide' | 'decision.remind' | 'risk.edit' | 'risk.link' | 'risk.route_for_approval' | 'fraud_session.edit' | 'fraud_minutes.approve' | 'control.edit' | 'deficiency.propose_severity' | 'exception.route' | 'service_org.edit' | 'soc_report.evaluate' | 'workpaper.draft'>;
+    allowed_actions: Array<'materiality.propose' | 'materiality.reassess' | 'decision.decide' | 'decision.notify' | 'risk.edit' | 'risk.link' | 'risk.route_for_approval' | 'fraud_session.edit' | 'fraud_minutes.approve' | 'control.edit' | 'deficiency.propose_severity' | 'exception.route' | 'service_org.edit' | 'soc_report.evaluate' | 'workpaper.draft'>;
     /**
      * Citation Ids
      */
@@ -14861,7 +14861,7 @@ export type FraudSessionOut = {
     /**
      * Allowed Actions
      */
-    allowed_actions: Array<'materiality.propose' | 'materiality.reassess' | 'decision.decide' | 'decision.remind' | 'risk.edit' | 'risk.link' | 'risk.route_for_approval' | 'fraud_session.edit' | 'fraud_minutes.approve' | 'control.edit' | 'deficiency.propose_severity' | 'exception.route' | 'service_org.edit' | 'soc_report.evaluate' | 'workpaper.draft'>;
+    allowed_actions: Array<'materiality.propose' | 'materiality.reassess' | 'decision.decide' | 'decision.notify' | 'risk.edit' | 'risk.link' | 'risk.route_for_approval' | 'fraud_session.edit' | 'fraud_minutes.approve' | 'control.edit' | 'deficiency.propose_severity' | 'exception.route' | 'service_org.edit' | 'soc_report.evaluate' | 'workpaper.draft'>;
     /**
      * Approved At
      */
@@ -22640,7 +22640,7 @@ export type MaterialityRecordOut = {
     /**
      * Allowed Actions
      */
-    allowed_actions: Array<'materiality.propose' | 'materiality.reassess' | 'decision.decide' | 'decision.remind' | 'risk.edit' | 'risk.link' | 'risk.route_for_approval' | 'fraud_session.edit' | 'fraud_minutes.approve' | 'control.edit' | 'deficiency.propose_severity' | 'exception.route' | 'service_org.edit' | 'soc_report.evaluate' | 'workpaper.draft'>;
+    allowed_actions: Array<'materiality.propose' | 'materiality.reassess' | 'decision.decide' | 'decision.notify' | 'risk.edit' | 'risk.link' | 'risk.route_for_approval' | 'fraud_session.edit' | 'fraud_minutes.approve' | 'control.edit' | 'deficiency.propose_severity' | 'exception.route' | 'service_org.edit' | 'soc_report.evaluate' | 'workpaper.draft'>;
     /**
      * Benchmarks
      */
@@ -28001,7 +28001,7 @@ export type RegisterOut = {
     /**
      * Allowed Actions
      */
-    allowed_actions: Array<'materiality.propose' | 'materiality.reassess' | 'decision.decide' | 'decision.remind' | 'risk.edit' | 'risk.link' | 'risk.route_for_approval' | 'fraud_session.edit' | 'fraud_minutes.approve' | 'control.edit' | 'deficiency.propose_severity' | 'exception.route' | 'service_org.edit' | 'soc_report.evaluate' | 'workpaper.draft'>;
+    allowed_actions: Array<'materiality.propose' | 'materiality.reassess' | 'decision.decide' | 'decision.notify' | 'risk.edit' | 'risk.link' | 'risk.route_for_approval' | 'fraud_session.edit' | 'fraud_minutes.approve' | 'control.edit' | 'deficiency.propose_severity' | 'exception.route' | 'service_org.edit' | 'soc_report.evaluate' | 'workpaper.draft'>;
     /**
      * Approved Card Id
      */
@@ -28024,7 +28024,7 @@ export type RegisterRiskOut = {
     /**
      * Allowed Actions
      */
-    allowed_actions: Array<'materiality.propose' | 'materiality.reassess' | 'decision.decide' | 'decision.remind' | 'risk.edit' | 'risk.link' | 'risk.route_for_approval' | 'fraud_session.edit' | 'fraud_minutes.approve' | 'control.edit' | 'deficiency.propose_severity' | 'exception.route' | 'service_org.edit' | 'soc_report.evaluate' | 'workpaper.draft'>;
+    allowed_actions: Array<'materiality.propose' | 'materiality.reassess' | 'decision.decide' | 'decision.notify' | 'risk.edit' | 'risk.link' | 'risk.route_for_approval' | 'fraud_session.edit' | 'fraud_minutes.approve' | 'control.edit' | 'deficiency.propose_severity' | 'exception.route' | 'service_org.edit' | 'soc_report.evaluate' | 'workpaper.draft'>;
     /**
      * Area Key
      */
@@ -32499,7 +32499,7 @@ export type ServiceOrganizationOut = {
     /**
      * Allowed Actions
      */
-    allowed_actions: Array<'materiality.propose' | 'materiality.reassess' | 'decision.decide' | 'decision.remind' | 'risk.edit' | 'risk.link' | 'risk.route_for_approval' | 'fraud_session.edit' | 'fraud_minutes.approve' | 'control.edit' | 'deficiency.propose_severity' | 'exception.route' | 'service_org.edit' | 'soc_report.evaluate' | 'workpaper.draft'>;
+    allowed_actions: Array<'materiality.propose' | 'materiality.reassess' | 'decision.decide' | 'decision.notify' | 'risk.edit' | 'risk.link' | 'risk.route_for_approval' | 'fraud_session.edit' | 'fraud_minutes.approve' | 'control.edit' | 'deficiency.propose_severity' | 'exception.route' | 'service_org.edit' | 'soc_report.evaluate' | 'workpaper.draft'>;
     /**
      * Evidence Type
      */
@@ -33648,7 +33648,7 @@ export type SocReportOut = {
     /**
      * Allowed Actions
      */
-    allowed_actions: Array<'materiality.propose' | 'materiality.reassess' | 'decision.decide' | 'decision.remind' | 'risk.edit' | 'risk.link' | 'risk.route_for_approval' | 'fraud_session.edit' | 'fraud_minutes.approve' | 'control.edit' | 'deficiency.propose_severity' | 'exception.route' | 'service_org.edit' | 'soc_report.evaluate' | 'workpaper.draft'>;
+    allowed_actions: Array<'materiality.propose' | 'materiality.reassess' | 'decision.decide' | 'decision.notify' | 'risk.edit' | 'risk.link' | 'risk.route_for_approval' | 'fraud_session.edit' | 'fraud_minutes.approve' | 'control.edit' | 'deficiency.propose_severity' | 'exception.route' | 'service_org.edit' | 'soc_report.evaluate' | 'workpaper.draft'>;
     /**
      * Cuecs
      */

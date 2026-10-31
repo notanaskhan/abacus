@@ -92,7 +92,7 @@ PlanningAction = Literal[
     "materiality.propose",
     "materiality.reassess",
     "decision.decide",
-    "decision.remind",
+    "decision.notify",  # Remind (C3 `/v1/decision-cards/{card_id}/notify`)
     "risk.edit",
     "risk.link",
     "risk.route_for_approval",
