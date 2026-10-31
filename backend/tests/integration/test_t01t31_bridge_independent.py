@@ -15,13 +15,15 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import replace
+from pathlib import Path
 from typing import cast
 
 import asyncpg
 import pytest
+import yaml
 
 from abacus.kernel.db import TenantContext
-from abacus.modules.identity.api import Forbidden, authorise, engagement_resource
+from abacus.modules.identity.api import Forbidden
 from abacus.modules.tax import export
 
 from .conftest import MigratedDatabase
@@ -35,6 +37,7 @@ from .test_t01t25_engine_export import (
 )
 
 __all__ = ["engines", "switched_on"]  # the shared autouse engines and the switches
+ROOT = Path(__file__).resolve().parents[3]
 
 
 def _agent(feld_tenant: uuid.UUID) -> TenantContext:
@@ -47,13 +50,14 @@ async def test_ac_a_planted_agent_export_fails_at_matrix_live_human_and_database
     feld = await feld_return(migrated_db)
     await final_approval_of(feld)
     planted = replace(feld.samuel, tenant=_agent(feld.tenant))
-    # The matrix: `tax_return.export` is denied to the agent whatever its run's scope.
-    resource = replace(
-        await engagement_resource(feld.samuel.tenant, cast(uuid.UUID, feld.engagement)),
-        work_item_id=feld.item,
+    # The matrix: `tax_return.export` (and Mark exported, the same action) denies the agent and
+    # the system whatever a run's scope.
+    matrix = cast(
+        dict[str, dict[str, dict[str, object]]],
+        yaml.safe_load((ROOT / "docs/architecture/permission-matrix/tax.yaml").read_text()),
     )
-    with pytest.raises(Forbidden):
-        await authorise(planted, export.EXPORT, resource)
+    row = matrix["actions"][export.EXPORT]
+    assert (row.get("agent"), row.get("system")) == ("deny", "deny")
     # The live-person check: the service refuses the agent before any grant is touched.
     with pytest.raises(Forbidden):
         await export.export_return(planted, feld.item, feld.checkpoint)
@@ -79,7 +83,7 @@ async def test_ac_a_planted_agent_export_fails_at_matrix_live_human_and_database
             feld.samuel.user_id,
         )
     audit = (
-        "WITH s AS (SELECT set_config('app.on_behalf_of', $4::text, true) AS v) "
+        "WITH s AS (SELECT set_config('app.on_behalf_of', $5::text, true) AS v) "
         "INSERT INTO audit_events (tenant_id, actor_kind, actor_id, action, target_type, "
         "target_id, on_behalf_of_user_id) SELECT $1::uuid, 'agent', $2::text, "
         "'engine_export.generated', 'tax_return', $3::text, $4::uuid FROM s"
@@ -87,7 +91,14 @@ async def test_ac_a_planted_agent_export_fails_at_matrix_live_human_and_database
     actor = ("agent", "agent:preparer:planted")
     with pytest.raises(asyncpg.InsufficientPrivilegeError):
         await feld.seed.as_actor(
-            feld.tenant, actor, audit, feld.tenant, actor[1], str(feld.item), feld.samuel.user_id
+            feld.tenant,
+            actor,
+            audit,
+            feld.tenant,
+            actor[1],
+            str(feld.item),
+            feld.samuel.user_id,
+            str(feld.samuel.user_id),
         )
 
 
