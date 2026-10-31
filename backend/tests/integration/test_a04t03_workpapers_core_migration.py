@@ -125,7 +125,7 @@ def test_ac_0581_goes_up_down_up_and_scopes_every_row(private_db: sc.Database) -
     async def scoped() -> None:
         for table in ("workpaper_sections", "workpaper_cells", "workpaper_versions"):
             rows = await seed.rows(
-                f"SELECT engagement_id, work_item_id FROM {table} WHERE workpaper_id = $1",
+                f"SELECT engagement_id, work_item_id FROM {table} WHERE workpaper_id = $1",  # noqa: S608 -- fixed tables
                 paper.workpaper,
             )
             assert [(r["engagement_id"], r["work_item_id"]) for r in rows] == [
@@ -205,8 +205,8 @@ def test_ac_the_insert_only_tables_refuse_update_and_delete_as_the_app(
         for table in INSERT_ONLY:
             key = "id" if table == "workpapers" else "workpaper_id"
             for statement in (
-                f"UPDATE {table} SET tenant_id = tenant_id WHERE {key} = $1",
-                f"DELETE FROM {table} WHERE {key} = $1",
+                f"UPDATE {table} SET tenant_id = tenant_id WHERE {key} = $1",  # noqa: S608 -- fixed tables
+                f"DELETE FROM {table} WHERE {key} = $1",  # noqa: S608 -- fixed tables
             ):
                 with pytest.raises(asyncpg.InsufficientPrivilegeError):
                     await app.as_actor(paper.tenant, actor, statement, paper.workpaper)

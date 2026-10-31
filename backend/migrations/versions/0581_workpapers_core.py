@@ -69,7 +69,7 @@ def _scope_children() -> None:
                 f"ALTER TABLE {table} ADD COLUMN engagement_id uuid, ADD COLUMN work_item_id uuid"
             )
             op.execute(
-                f"UPDATE {table} c SET engagement_id = w.engagement_id, "
+                f"UPDATE {table} c SET engagement_id = w.engagement_id, "  # noqa: S608 -- fixed SQL
                 "work_item_id = w.work_item_id FROM workpapers w "
                 "WHERE w.tenant_id = c.tenant_id AND w.id = c.workpaper_id"
             )
@@ -227,7 +227,8 @@ def upgrade() -> None:
         """
     )
     op.execute(
-        "CREATE INDEX attention_flag_events_by_flag ON attention_flag_events (tenant_id, flag_id, at)"
+        "CREATE INDEX attention_flag_events_by_flag "
+        "ON attention_flag_events (tenant_id, flag_id, at)"
     )
     tenant_table(op, "attention_flag_events")
     insert_only(op, "attention_flag_events")
