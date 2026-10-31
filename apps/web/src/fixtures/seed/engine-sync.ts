@@ -57,6 +57,8 @@ const BASE: EngineSyncOut = {
   policy_code: "BH-TAX-02",
   draft_k1_source: null,
   synced_at: null,
+  // T-01-T33: the checkpoint Export generates from (the live read names the current one).
+  checkpoint_id: stableId("checkpoint:feld-2025-final-approval"),
 };
 
 const INFORMATIONAL = [

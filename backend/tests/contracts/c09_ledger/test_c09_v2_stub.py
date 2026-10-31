@@ -21,7 +21,7 @@ from abacus.kernel import _statuses
 from abacus.kernel._flags import LEDGER_TB_MAPPING
 from abacus.kernel.classification import unclassified_fields
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.modules.assurance import tb_mapping_contract as contract
 from abacus.modules.assurance import tb_mapping_fixtures as fx
 from abacus.modules.identity.api import AuthContext, Forbidden
@@ -48,6 +48,14 @@ V2: dict[tuple[str, str], str] = {
 LIVE = {
     ("get", "/v1/grouping-sets/catalogue"),
     ("get", "/v1/grouping-sets/{grouping_set_id}/versions/{version_no}/lines"),
+    # A-03-T08: the mapping routes are live (fixtures first for the Granite Peak ids).
+    ("get", "/v1/engagements/{engagement_id}/mapping-sets"),
+    ("post", "/v1/engagements/{engagement_id}/mapping-sets"),
+    ("get", "/v1/mapping-sets/{mapping_set_id}"),
+    ("get", "/v1/mapping-sets/{mapping_set_id}/run"),
+    ("put", "/v1/mapping-sets/{mapping_set_id}/accounts/{account_code}"),
+    ("post", "/v1/mapping-sets/{mapping_set_id}/confirm"),
+    ("get", "/v1/mapping-sets/{mapping_set_id}/trial-balance"),
 }
 V0: dict[tuple[str, str], str] = {
     ("get", "/v1/grouping-sets"): "grouping_set.import",
@@ -76,8 +84,9 @@ def test_ac16_each_v2_route_declares_its_one_action_and_documents_404_and_501(
 ) -> None:
     operation = PATHS[path][method]
     assert operation["x-abacus-action"] == V2[(method, path)]
-    expected = {"404"} if (method, path) in LIVE else {"404", "501"}
-    assert expected <= set(cast(Json, operation["responses"]))
+    responses = set(cast(Json, operation["responses"]))
+    assert "404" in responses
+    assert ("501" in responses) is ((method, path) not in LIVE)
 
 
 @pytest.mark.parametrize(("method", "path"), sorted(V0))
@@ -152,7 +161,7 @@ async def test_ac16_a_non_person_never_edits_or_confirms(monkeypatch: pytest.Mon
             await contract.firm_gate(_ctx(kind="agent"), action)
 
 
-async def test_ac16_flag_off_404_then_the_granite_peak_fixture_or_501(
+async def test_ac16_flag_off_404_then_the_granite_peak_fixture_or_the_live_service(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     state = {"on": False}
@@ -181,7 +190,21 @@ async def test_ac16_flag_off_404_then_the_granite_peak_fixture_or_501(
     assert (tallies.tb_balanced, tallies.tb_count) == (1, 1)
     run = await contract.mapping_run_route(fx.GRANITE_MAPPING, ctx)
     assert (run.run_status, run.run_done, run.run_total) == ("ready", 128, 128)
-    with pytest.raises(NotImplementedYet):
-        await contract.mapping_set_route(fx.GRANITE_MAPPING, ctx)
-    with pytest.raises(NotImplementedYet):
-        await contract.mapping_sets_route(uuid.uuid4(), ctx)
+    # Past the fixtures, A-03-T08's live service answers (no 501).
+    from abacus.modules.assurance import mapping_live
+
+    called: list[str] = []
+
+    async def live_set(*_: object, **__: object) -> object:
+        called.append("mapping_set")
+        return "live"
+
+    async def live_sets(*_: object, **__: object) -> object:
+        called.append("mapping_sets")
+        return "live"
+
+    monkeypatch.setattr(mapping_live, "mapping_set", live_set)
+    monkeypatch.setattr(mapping_live, "mapping_sets", live_sets)
+    assert await contract.mapping_set_route(fx.GRANITE_MAPPING, ctx) == "live"
+    assert await contract.mapping_sets_route(uuid.uuid4(), ctx) == "live"
+    assert called == ["mapping_set", "mapping_sets"]

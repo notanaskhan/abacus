@@ -231,6 +231,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     # N-02-T32 (0560): the lifecycle, forward only (the guard trigger); content never changes
     "engagement_letter_versions": frozenset(
         {"status", "approved_by", "approved_at", "approval_content_hash", "envelope_id"}
+        | {"approval_requested_at", "approval_requested_by", "final_document_version_id"}  # 0563
     ),
     "engagement_drafts": frozenset(  # P-07-T16 (0124): autosave, discard, create
         {"client_id", "client_entity_id", "type_code", "step", "payload"}

@@ -100,7 +100,7 @@ class Sent:
         return EnvelopeInput(str(self.tenant_id), str(self.envelope_id))
 
 
-async def _sent(net: Net, *, expires_in: timedelta = timedelta(days=20)) -> Sent:
+async def sent_8879(net: Net, *, expires_in: timedelta = timedelta(days=20)) -> Sent:
     """A two-signer Form 8879 Grace sent, as the human send leaves it (N-02-T22)."""
     seed = net.seed
     tenant = await seed.firm()
@@ -176,7 +176,7 @@ async def _sent(net: Net, *, expires_in: timedelta = timedelta(days=20)) -> Sent
     return Sent(net, tenant, grace, site, envelope, signers)
 
 
-async def _provider_id(sent: Sent) -> str:
+async def provider_id(sent: Sent) -> str:
     return cast(
         str,
         await sent.net.seed.value(
@@ -191,14 +191,14 @@ async def _provider_id(sent: Sent) -> str:
 async def test_ac_a_fake_two_signer_envelope_completes_with_both_packages_in_compliance(
     net: Net, fake: FakeEsign, raw: S3Client
 ) -> None:
-    sent = await _sent(net)
+    sent = await sent_8879(net)
     plan = await activities.envelope_send(sent.given)
     assert plan.status == "sent"
     assert plan.reminders  # "daily", under the cap
     again = await activities.envelope_send(sent.given)
     assert again.status == "sent"
     assert fake.calls.count("create_and_send") == 1  # the second send found the envelope
-    pid = await _provider_id(sent)
+    pid = await provider_id(sent)
 
     fake.sign(pid, str(sent.signers[0]), ip=IP)
     assert await activities.envelope_poll(sent.given) == "partially_signed"
@@ -242,7 +242,7 @@ async def test_ac_a_fake_two_signer_envelope_completes_with_both_packages_in_com
 async def test_a_reminder_needs_a_template_sender_and_stops_at_the_cap(
     net: Net, fake: FakeEsign
 ) -> None:
-    sent = await _sent(net)
+    sent = await sent_8879(net)
     await activities.envelope_send(sent.given)
     due = ReminderDue(str(sent.tenant_id), str(sent.envelope_id), 1)
     assert await activities.envelope_remind(due) == "skipped"
@@ -286,7 +286,7 @@ def test_reminders_fall_on_weekdays_at_nine_in_the_zone_and_before_expiry() -> N
 async def test_an_open_envelope_past_its_expiry_is_expired_and_voided(
     net: Net, fake: FakeEsign
 ) -> None:
-    sent = await _sent(net, expires_in=timedelta(seconds=-1))
+    sent = await sent_8879(net, expires_in=timedelta(seconds=-1))
     await activities.envelope_send(sent.given)
     assert await activities.envelope_expire(sent.given) == "expired"
     assert "void:expired" in fake.calls

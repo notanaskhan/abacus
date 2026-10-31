@@ -710,6 +710,56 @@ async def questionnaires_of_list(
         return [await view_of(session, h) for h in heads]
 
 
+@dataclass(frozen=True)
+class QuestionnaireSummary:
+    """TAX-03's Questions band (T-02-T18): counts and the submission, never the answers."""
+
+    id: UUID
+    kind: str
+    title: str
+    status: str
+    answered: int
+    total: int
+    submitted_at: datetime | None
+    submitted_by: UUID | None
+
+
+async def work_item_questionnaires(
+    ctx: AuthContext, engagement_id: UUID, work_item_id: UUID
+) -> list[QuestionnaireSummary]:
+    """The work item's questionnaires for a firm reader (`questionnaire.read` on it)."""
+    if ctx.client:
+        raise NotFound(SUBJECT)
+    await _engagement(ctx, engagement_id, work_item_id, READ)
+    async with tenant_session(ctx.tenant) as session:
+        heads = (
+            await session.execute(
+                text(
+                    "SELECT id, engagement_id, work_item_id, kind, title, status, due_on, "
+                    "addressed_to_contact_id, submitted_at, submitted_by FROM questionnaires "
+                    "WHERE work_item_id = :w ORDER BY created_at, id"
+                ),
+                {"w": work_item_id},
+            )
+        ).all()
+        out: list[QuestionnaireSummary] = []
+        for h in heads:
+            view = await view_of(session, h)
+            out.append(
+                QuestionnaireSummary(
+                    h.id,
+                    h.kind,
+                    h.title,
+                    h.status,
+                    view.answered,
+                    view.total,
+                    h.submitted_at,
+                    h.submitted_by,
+                )
+            )
+    return out
+
+
 __all__ = [
     "AlreadyPublished",
     "AlreadySent",
@@ -718,6 +768,7 @@ __all__ = [
     "NotPublished",
     "QuestionView",
     "QuestionnaireClosed",
+    "QuestionnaireSummary",
     "QuestionnaireView",
     "TemplateView",
     "TextRow",
@@ -732,4 +783,5 @@ __all__ = [
     "send_question",
     "templates",
     "view_of",
+    "work_item_questionnaires",
 ]

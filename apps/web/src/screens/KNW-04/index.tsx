@@ -226,7 +226,7 @@ function AjeSection({
     key: r.account_class,
     cells: [
       r.account_class,
-      r.rule === "limit" && r.limit_usd !== null ? (
+      r.rule === "limit" && r.limit_usd != null ? (
         dollars(r.limit_usd)
       ) : r.rule === "review_required" ? (
         <span className="text-amber-ink">{c.reviewRequired}</span>
