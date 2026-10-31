@@ -63,7 +63,6 @@ def _ctx(*, client: bool = False, kind: str = "human") -> AuthContext:
 
 # A-03-T07 made the population routes live and A-03-T10 the sample-set routes: they no longer
 # answer 501 (the item-request fan-out stays a stub until A-03-T13).
-SS = "/v1/sample-sets/{sample_set_id}"
 LIVE = {
     ("post", f"{WI}/populations"),
     ("get", "/v1/populations/{population_id}"),
