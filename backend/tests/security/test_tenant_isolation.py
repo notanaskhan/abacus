@@ -145,6 +145,7 @@ TABLES: tuple[str, ...] = (
     "feature_flag_states",
     "field_value_versions",
     "fieldwork_settings",
+    "filed_return_deliveries",
     "finding_communications",
     "finding_severities",
     "findings",

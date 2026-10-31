@@ -44,6 +44,8 @@ export interface GateHandlerOptions {
   rows?: (persona: string) => HumanGateOut[];
   /** The seed's today for `overdue`. */
   today?: string;
+  /** `state=done` (Show done, HOME-02 b): the persona's done rows; the open rows when absent. */
+  done?: (persona: string) => HumanGateOut[];
 }
 
 export function humanGateHandlers(
@@ -60,7 +62,11 @@ export function humanGateHandlers(
     },
     "GET /v1/human-gates": (request) => {
       const kind = request.query.get("kind");
-      const rows = mine(request);
+      const done = options.done;
+      const rows =
+        request.query.get("state") === "done" && done !== undefined
+          ? gatesFor(seed, request.persona ?? DEFAULT_PERSONA, done)
+          : mine(request);
       const counts: Record<string, number> = {};
       for (const g of rows) counts[g.kind] = (counts[g.kind] ?? 0) + 1;
       const items = rows.filter((g) => kind === null || g.kind === kind);

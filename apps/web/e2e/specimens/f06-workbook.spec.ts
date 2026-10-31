@@ -1,7 +1,7 @@
 // ac-test-author: ayushkbhatia
 // F-06-T18 (F-06.md §10 item 1, Stories 5.1 to 5.4 and 5.7; SPEC-400 AC-26 to AC-29, AC-32): the T6
 // steps of the f06-workbook walk in fixture mode on the gallery at E0, axe on each step (serious
-// and critical block). TPL-06a–e and T6d/e join with F-06-T19 and T20.
+// and critical block). F-06-T22 adds axe on T6d/e and TPL-06a–e (every state).
 // Run: `ABACUS_VISUAL=1 pnpm exec playwright test --project=chromium e2e/specimens/f06-workbook.spec.ts`.
 import { type Page, expect, test } from "@playwright/test";
 import { axeStep } from "../harness/axe";
@@ -73,3 +73,26 @@ test("test_ac26_geometry_control_bar_44_tally_52_panes_y244", async ({ page }) =
   expect(Math.round((pane?.y ?? 0) - (shell?.y ?? 0))).toBe(244);
   expect(Math.round((pane?.y ?? 0) + (pane?.height ?? 0) - (shell?.y ?? 0))).toBe(848);
 });
+
+// ---- F-06-T22: axe on every remaining state ---------------------------------------------------
+
+for (const [screen, st] of [
+  ["T6", "d"],
+  ["T6", "e"],
+  ["TPL-06", "a"],
+  ["TPL-06", "b"],
+  ["TPL-06", "c"],
+  ["TPL-06", "d"],
+  ["TPL-06", "e"],
+] as const) {
+  test(`test_t22_${screen.toLowerCase().replace("-", "")}${st}_axe_and_invariants`, async ({
+    page,
+  }) => {
+    await page.clock.setFixedTime(E0);
+    await page.goto(`/components/screens/${screen}?st=${st}&frame=1&static=1`);
+    await expect(page.locator(`[data-artboard='${st}'] [data-template='t6']`)).toBeVisible();
+    await expect(page.locator("[data-actor='agent'] [data-human-verb]")).toHaveCount(0);
+    await axeStep(page, `f06-workbook ${screen}${st}`, { include: "[data-artboard]" });
+    await assertInvariants(page, { step: `f06-workbook ${screen}${st}`, persona: SAMUEL });
+  });
+}

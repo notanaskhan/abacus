@@ -56,3 +56,10 @@ export {
 
 // F-06-T19: the calc tree beside the source-workbook grid (T6e).
 export { CalcTree, type CalcTreeProps, type CalcTreeStep } from "./CalcTree";
+export {
+  MAPPING_COLUMNS,
+  MappingTable,
+  type MappingTableGroup,
+  type MappingTableProps,
+  type MappingTableRow,
+} from "./mapping-table";
