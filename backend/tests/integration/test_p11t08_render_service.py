@@ -122,7 +122,13 @@ async def test_ac1_a_missing_variable_refuses_instead_of_a_blank(
             await c11.render(tx, _request(client, uuid.uuid4(), person))
     assert refused.value.code == "missing_variable"
     assert "notice.number" in str(refused.value)
-    assert await seed.value("SELECT count(*) FROM generated_document_versions") == 0
+    # This firm's rows only: other modules' tests share the migrated database (P-11-T11).
+    assert (
+        await seed.value(
+            "SELECT count(*) FROM generated_document_versions WHERE tenant_id = $1", tenant
+        )
+        == 0
+    )
 
 
 async def test_ac2_an_agents_render_is_always_a_draft(seed: Seeder, values: Values) -> None:
