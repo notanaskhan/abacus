@@ -185,7 +185,7 @@ async def _read_logged(ctx: AuthContext, package_id: UUID, return_id: UUID) -> N
         ACCESS_KIND,
         [
             AccessSubject(
-                "k1_package",
+                "schedule_k_package",  # digit-free, as the audit's (DEC-1471)
                 package_id,
                 client_id=client,
                 engagement_id=engagement,
