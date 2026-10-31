@@ -643,17 +643,23 @@ export function TXP12({ returnId, onReturn, onBack, opening = {} }: TXP12Props):
           onShare={(pairs) => {
             void (async () => {
               let made = 0;
-              for (const [pkg, ret] of pairs) {
-                const out = await share.mutateAsync({
-                  path: { return_id: returnId },
-                  body: { package_ids: [pkg], target_return_ids: [ret] },
-                });
-                made += out.shared;
+              try {
+                for (const [pkg, ret] of pairs) {
+                  const out = await share.mutateAsync({
+                    path: { return_id: returnId },
+                    body: { package_ids: [pkg], target_return_ids: [ret] },
+                  });
+                  made += out.shared;
+                }
+                setDialog(null);
+                setChosen(null);
+                if (made > 0) toast.show(COPY.share.done(made));
+              } catch {
+                // A refusal part-way: what was shared stays shared; the rows say which.
+                toast.show(made > 0 ? COPY.share.partial(made) : COPY.share.failed);
+              } finally {
+                refresh();
               }
-              setDialog(null);
-              setChosen(null);
-              if (made > 0) toast.show(COPY.share.done(made));
-              refresh();
             })();
           }}
         />

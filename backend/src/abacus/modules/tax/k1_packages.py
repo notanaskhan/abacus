@@ -854,9 +854,13 @@ async def packages_of(
             int(rows[0].tax_year) if rows else 0,
             list({cast(UUID, r.client_entity_id) for r in rows if r.client_entity_id}),
         )
-        contacts = await contact_facts(
+        found = await contact_facts(
             session, list({cast(UUID, r.contact) for r in rows if r.contact is not None})
         )
+    # A delivery contact is named only when its client is the issuer's or one the reader sees
+    # (walls, INV-3): a walled client's contact leaves no name behind.
+    seen = {f.client_id for f in await work_item_facts(ctx, KIND)} | {issuer.client_id}
+    contacts = {cid: c for cid, c in found.items() if c.client_id in seen}
     out: list[PackageView] = []
     counts: dict[str, int] = {}
     for r in rows:

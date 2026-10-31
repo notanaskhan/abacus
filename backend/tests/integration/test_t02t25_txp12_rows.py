@@ -141,3 +141,33 @@ async def test_the_detail_carries_the_tin_masked_and_the_check_names_the_templat
     body = cast(Json, check.json())
     assert "email_template_version_id" in body
     assert body["eligible"] is False and "not_final_approved" in cast(list[str], body["failing"])
+
+
+async def test_a_delivery_contact_is_named_only_for_a_client_the_reader_sees(board: Board) -> None:
+    ridgeline, _feld, samuel = await _drafts(board)
+    await _flag(board)
+    issuing = await board.seed.value("SELECT client_id FROM work_items WHERE id = $1", ridgeline)
+    other = await board.seed.value(
+        "INSERT INTO clients (tenant_id, name) VALUES ($1, 'Walled Partner LLC') RETURNING id",
+        board.tenant,
+    )
+    for ref, client, name in (("P01", issuing, "Owen Calder"), ("P02", other, "Hidden Person")):
+        contact = await board.seed.value(
+            "INSERT INTO contacts (tenant_id, client_id, display_name, contact_kind, "
+            "portal_state) VALUES ($1, $2, $3, 'k1_recipient', 'not_invited') RETURNING id",
+            board.tenant,
+            client,
+            name,
+        )
+        await board.seed.run(
+            "UPDATE k1_packages SET delivery_contact_id = $3 WHERE work_item_id = $1 AND "
+            "recipient_id = (SELECT id FROM k1_recipients WHERE work_item_id = $1 "
+            "AND engine_ref = $2)",
+            ridgeline,
+            ref,
+            contact,
+        )
+    jonah, meera = await _rows(board, samuel, ridgeline)
+    assert jonah["delivery_contact_name"] == "Owen Calder"
+    assert meera["delivery_contact_name"] is None
+    assert "Hidden Person" not in json.dumps([jonah, meera])
