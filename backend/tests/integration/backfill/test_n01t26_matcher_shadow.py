@@ -12,16 +12,22 @@ through `communications.triage_apply` as a signed-in member.
 from __future__ import annotations
 
 import uuid
+from collections.abc import Iterator
 from datetime import UTC, datetime
-from typing import cast
+from typing import TYPE_CHECKING, Final, cast
 
 import pytest
 
+from abacus.kernel.config import settings
+from abacus.kernel.crypto import LocalKeyService, configure_key_service, reset_key_service
 from abacus.kernel.db import TenantContext
+from abacus.kernel.flags import forget_flags
+from abacus.kernel.storage import s3_client
 from abacus.modules.agents import intake_match
 from abacus.modules.agents.shadow_score import MATCHER, shadow_score
 from abacus.modules.communications import triage_apply
 from abacus.modules.communications.intake_candidates import card_candidates
+from abacus.modules.evidence import storage
 from abacus.modules.identity.api import AuthContext, member_context
 
 from .support import Net
@@ -31,11 +37,40 @@ from .test_n01t22_intake_match import (  # T22's fake-model harness (ADR-076)
     _firm,  # pyright: ignore[reportPrivateUsage] -- T22's firm builder, shared harness
     answer,
 )
-from .test_n01t22_intake_match import raw as raw
 from .test_n01t22_intake_match import stub as stub
-from .test_n01t22_intake_match import wired as wired
+
+if TYPE_CHECKING:
+    from types_boto3_s3 import S3Client
 
 pytestmark = pytest.mark.asyncio
+EVIDENCE: Final = "n01t26-evidence"
+MASTER: Final = b"n01t26-shadow-master-key-0123456789abcd"
+
+
+@pytest.fixture(scope="module")
+def raw(s3_settings: dict[str, str]) -> Iterator[S3Client]:
+    """This suite's own bucket (T22's module creates its own)."""
+    client = s3_client(
+        endpoint_url=s3_settings["endpoint_url"],
+        access_key=s3_settings["access_key"],
+        secret_key=s3_settings["secret_key"],
+        region=s3_settings["region"],
+    )
+    client.create_bucket(Bucket=EVIDENCE, ObjectLockEnabledForBucket=True)
+    yield client
+
+
+@pytest.fixture(autouse=True)
+def wired(raw: S3Client) -> Iterator[None]:
+    settings.cache_clear()
+    forget_flags()
+    reset_key_service()
+    configure_key_service(LocalKeyService(MASTER))
+    storage.configure_storage(raw, EVIDENCE)
+    yield
+    storage.reset_storage()
+    reset_key_service()
+    forget_flags()
 
 
 @pytest.fixture
