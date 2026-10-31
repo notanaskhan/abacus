@@ -39,6 +39,10 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.service.AccountsMissing
     summary: 'SPEC-038 Q3: bank and payables accounts are confirmed before selecting.'
+  ack_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.AckExists
   action_cap:
     status: 409
     raised_by:
@@ -240,6 +244,10 @@ codes:
     raised_by:
     - abacus.modules.requests.binders.BinderNotPublished
     summary: Unpublish, mark-done and follow-ups act on a Published binder only.
+  binding_superseded:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.BindingSuperseded
   branding_not_set_up:
     status: 422
     raised_by:
@@ -656,6 +664,10 @@ codes:
     raised_by:
     - abacus.modules.engagements.drafts.EntityOutsideClient
     summary: The client entity is not one of the draft's client's entities.
+  envelope_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.EnvelopeExists
   envelope_not_draft:
     status: 409
     raised_by:
@@ -1094,6 +1106,10 @@ codes:
     raised_by:
     - abacus.modules.requests.service.ItemNotFulfillable
     summary: Only open or received items take new evidence by rule.
+  item_not_toggleable:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.delivery.ItemNotToggleable
   k1_document_missing:
     status: 422
     raised_by:
@@ -1217,6 +1233,10 @@ codes:
     raised_by:
     - abacus.modules.engagements.letter_flow.LetterNotSendable
     summary: Only a partner-approved letter is sent (N-02 §3.11).
+  letter_refused:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.delivery.LetterRefused
   letter_signer_missing:
     status: 409
     raised_by:
@@ -1310,6 +1330,10 @@ codes:
     - abacus.modules.assurance.trial_balance.NoAssuranceItem
     - abacus.modules.workpapers.service.NoAssuranceItem
     summary: Only an attest engagement (with its assurance work item) holds working papers.
+  no_authorization_form:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.NoAuthorizationForm
   no_connection:
     status: 409
     raised_by:
@@ -1331,11 +1355,19 @@ codes:
     raised_by:
     - abacus.modules.connections.entity.NoFailedSync
     summary: There is no failed sync to try again.
+  no_figures:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.NoFigures
   no_ledger:
     status: 409
     raised_by:
     - abacus.modules.fieldwork.service.NoLedger
     summary: No reconciled general ledger for the engagement's entity and year end.
+  no_letter_template:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.delivery.NoLetterTemplate
   no_pending_version:
     status: 409
     raised_by:
@@ -1386,9 +1418,14 @@ codes:
     raised_by:
     - abacus.modules.methodology.standards.NotDraft
     summary: 'Only a draft changes: this version is published or discarded.'
+  not_exported:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.delivery.NotExported
   not_final_approved:
     status: 409
     raised_by:
+    - abacus.modules.tax.delivery.NotFinalApproved
     - abacus.modules.tax.export.NotFinalApproved
     summary: The return has no final approval to export, or the checkpoint is not the approved one.
   not_ignored:
@@ -1431,6 +1468,10 @@ codes:
     raised_by:
     - abacus.modules.review.gate_actions.NotReassignable
     summary: The gate's owner registered no way to move it to someone else.
+  not_rejected:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.NotRejected
   not_self:
     status: 409
     raised_by:
@@ -1441,6 +1482,10 @@ codes:
     raised_by:
     - abacus.modules.evidence.uploads.NotStaff
     summary: Only the firm's team can add files on the client's behalf (SPEC-023 AC-1).
+  not_synced:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.NotSynced
   not_the_eqr:
     status: 409
     raised_by:
@@ -1569,6 +1614,18 @@ codes:
     raised_by:
     - abacus.modules.methodology.standards.OwnerNotPartner
     summary: The owner of a standard must be a partner member of the firm.
+  packet_approved:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.delivery.PacketApproved
+  packet_not_approved:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.PacketNotApproved
+  packet_not_draft:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.delivery.PacketNotDraft
   parameters_invalid:
     status: 422
     raised_by:
@@ -2021,6 +2078,10 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.review.service.SignOffInvalid
+  signatures_incomplete:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.SignaturesIncomplete
   signed_copy_not_ready:
     status: 409
     raised_by:
@@ -2145,6 +2206,7 @@ codes:
     - abacus.modules.review.gate_actions.GateStaleVersion
     - abacus.modules.signatures.builder.StaleEnvelope
     - abacus.modules.signatures.fallback.PolicyStale
+    - abacus.modules.tax.delivery.StaleVersion
     - abacus.modules.tax.engine_import.ImportStale
     - abacus.modules.tax.export.ExportStale
     - abacus.modules.tax.status.StaleReturn

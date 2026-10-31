@@ -2,7 +2,7 @@
 id: TASK-2523
 title: T-01-T37 Transmission record and acknowledgements
 spec: SPEC-501  # T-01 §3.13; docs/contracts/efile-record.md
-acceptance_criteria: [T-01-§3.13]
+acceptance_criteria: [AC-7]  # and T-01 §3.13
 risk_zone: red
 status: in-review
 epic: T-01
