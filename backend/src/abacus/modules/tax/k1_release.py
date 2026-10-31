@@ -816,7 +816,9 @@ async def _access_for(
     ledger is stamped in the same unit of work, so a replay never grants or invites twice."""
     async with tenant_session(tx_tenant) as session:
         person = (await contact_facts(session, [contact])).get(contact)
-    if person is None:
+    # Security review (S19 batch 5): a K-1 goes only to a contact of the issuing client; a
+    # contact of another client (a mistaken or hostile resend) is refused, never invited.
+    if person is None or person.client_id != client_id:
         raise ApplicationError("contact_missing", type="DeliveryRefused", non_retryable=True)
     email = None
     if person.user_id is None:
