@@ -81,6 +81,26 @@ export const ov = {
     key: "signoff",
     args: level === undefined ? [type, id] : [type, id, level],
   }),
+  /** SHL-14, the request composer drawer over its host (`?ov=request:<id|new>:<binderId>`). */
+  SHL14: (requestId: string, binderId: string): OverlayRef => ({
+    key: "request",
+    args: [requestId, binderId],
+  }),
+  /** SHL-15, the issue composer (P-04-T54): fix instructions on one issue (`?ov=issue:<id>`). */
+  SHL15: (issueId: string): OverlayRef => ({ key: "issue", args: [issueId] }),
+  /** SHL-15, a new issue on a record (`?ov=issue:new:<type>:<id>[:<engagementId>]`). */
+  SHL15New: (type: string, id: string, engagementId?: string): OverlayRef => ({
+    key: "issue",
+    args: engagementId === undefined ? ["new", type, id] : ["new", type, id, engagementId],
+  }),
+  /** SHL-15 e, one instruction for several issues (`?ov=issue:bulk:<type>:<id>:<id>,<id>`). */
+  SHL15Bulk: (type: string, id: string, issueIds: readonly string[]): OverlayRef => ({
+    key: "issue",
+    args: ["bulk", type, id, issueIds.join(",")],
+  }),
   /** TAX-09, a return's tax-engine sync over TAX-01 or TAX-02 (`?ov=engine-sync:<returnId>`). */
   TAX09: (returnId: string): OverlayRef => ({ key: "engine-sync", args: [returnId] }),
+  /** SIG-02, the envelope builder over its host (`?ov=envelope:<envelopeId>`; N-02-T37: ENG-04's
+   * Send opens the C7 draft it created, prefilled). */
+  SIG02: (envelopeId: string): OverlayRef => ({ key: "envelope", args: [envelopeId] }),
 } as const;

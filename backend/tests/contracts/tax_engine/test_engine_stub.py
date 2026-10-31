@@ -58,22 +58,27 @@ LIVE = [
     ("get", "/v1/engine-imports/{import_id}", "tax_return.read"),
     ("post", "/v1/engine-imports/{import_id}/approve", "engine_import.approve"),
     ("post", "/v1/engine-imports/{import_id}/reject", "engine_import.approve"),
-]
-ROUTES = [
-    ("post", "/v1/tax-returns/{return_id}/engine-exports", "tax_return.export"),
-    ("get", "/v1/engine-exports/{export_id}/file", "tax_return.export"),
-    ("post", "/v1/engine-exports/{export_id}/mark-exported", "tax_return.export"),
+    # T-01-T35 the delivery checklist and packet; T-01-T36 the 8879 envelope and its binding.
     ("get", "/v1/tax-returns/{return_id}/delivery", "tax_return.read"),
     ("post", "/v1/tax-returns/{return_id}/delivery-packet:assemble", "delivery_packet.prepare"),
     ("patch", "/v1/delivery-packets/{packet_id}", "delivery_packet.prepare"),
     ("post", "/v1/delivery-packets/{packet_id}/letter:regenerate", "delivery_packet.prepare"),
     ("post", "/v1/delivery-packets/{packet_id}/approve", "delivery_packet.approve"),
     ("post", "/v1/tax-returns/{return_id}/efile-envelope", "delivery_packet.prepare"),
-    ("post", "/v1/tax-returns/{return_id}/ero-notices", "delivery_packet.prepare"),
+    # T-01-T37 the transmission record, acks, the rejection's issue and the ERO designation.
     ("post", "/v1/tax-returns/{return_id}/transmissions", "transmission.record"),
     ("post", "/v1/tax-returns/{return_id}/acks", "efile_ack.record"),
-    ("post", "/v1/tax-returns/{return_id}/deliverables:publish", "deliverable.publish"),
+    ("post", "/v1/tax-returns/{return_id}/acks/{ack_id}/issue", "efile_ack.record"),
     ("put", "/v1/firm/members/{user_id}/ero", "member.set_ero"),
+    # T-01-T41 the client copy's release and its portal download.
+    ("post", "/v1/tax-returns/{return_id}/deliverables:publish", "deliverable.publish"),
+    ("get", "/v1/portal/filed-returns/{delivery_id}/download", "portal_home.read"),
+]
+ROUTES = [
+    ("post", "/v1/tax-returns/{return_id}/engine-exports", "tax_return.export"),
+    ("get", "/v1/engine-exports/{export_id}/file", "tax_return.export"),
+    ("post", "/v1/engine-exports/{export_id}/mark-exported", "tax_return.export"),
+    ("post", "/v1/tax-returns/{return_id}/ero-notices", "delivery_packet.prepare"),
 ]
 
 

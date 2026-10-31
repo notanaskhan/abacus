@@ -27,6 +27,7 @@ from abacus.modules.methodology.contract import (
     methodology_lifecycle_router,
     programs_router,
 )
+from abacus.modules.methodology.import_routes import methodology_import_router
 from abacus.modules.methodology.lifecycle import (
     approve_version,
     submit_version,
@@ -96,6 +97,7 @@ from abacus.modules.methodology.service import (
     version_in,
 )
 from abacus.modules.methodology.standards import (
+    attribute_sample_size,
     current_version,
     current_version_of_kind,
     policy_payload,
@@ -103,6 +105,8 @@ from abacus.modules.methodology.standards import (
 )
 from abacus.modules.methodology.standards_catalog import register_standards_providers
 from abacus.modules.methodology.standards_contract import (
+    AttributeSampleSizesPayload,
+    AttributeSize,
     ConfidenceDecision,
     EntryClassification,
     ExampleRow,
@@ -159,6 +163,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     programs_router,
     knowledge_router,
     standards_router,  # C21 part B (K-02-T08; import and export K-02-T11)
+    methodology_import_router,  # K-01-T18: import review (KNW-02 c, d)
 )
 
 __all__ = [
@@ -167,6 +172,8 @@ __all__ = [
     "AccountRule",
     "ApprovedGuidance",
     "Area",
+    "AttributeSampleSizesPayload",
+    "AttributeSize",
     "CatalogItem",
     "CatalogProvider",
     "ChangeEntry",
@@ -208,6 +215,7 @@ __all__ = [
     "Viewer",
     "approve_version",
     "area_for",
+    "attribute_sample_size",
     "classify_entry",
     "confidence_hold",
     "consent_expiry_months",

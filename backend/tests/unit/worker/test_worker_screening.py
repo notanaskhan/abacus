@@ -55,8 +55,10 @@ def test_ac14_the_worker_hosts_connections_and_agents() -> None:
         "platform",  # Q-01-T45: tenant provisioning
         "portal",  # R-01-T13: the request owner hears of a third party's upload
         "practice",  # I-01-T12 (DEC-900): Home's client-activity projector and prune
+        "reporting",  # P-11-T11: the render job and the out-of-date consumer
         "requests",  # P-06-T07: binders close on C1's terminal transitions
         "review",  # P-04-T16: the human-gate projector (C13)
+        "sampling",  # A-03-T10: the sample draw workflow
         "signatures",  # N-02-T18: an approved envelope is sent after commit
         "tax",  # T-01: consents signed on envelope completion, the return board's projections
     )
@@ -147,6 +149,10 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "sign_off.recorded",  # T-01: the return overview follows sign-offs
         "binder.published",  # T-01: the return overview follows its binder
         "mapping_set.went_stale",  # A-03: a stale mapping set is re-checked
+        # T-02-T21: a release starts its workflow; a resend gives the new contact access.
+        "schedule_k_release.requested",
+        "schedule_k_package.resend_requested",
+        "message.bounced",  # T-02-T26: a bounced "Deliverable ready" marks the K-1 Bounced
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert (

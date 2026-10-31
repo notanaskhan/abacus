@@ -53,6 +53,12 @@ from abacus.modules.platform.entitlements import (
     require_entitlement,
 )
 from abacus.modules.platform.events import TenantProvisioned
+from abacus.modules.platform.file_store import (
+    StoredFile,
+    read_stored,
+    register_file_store,
+    screen_and_store,
+)
 from abacus.modules.platform.governance_errors import DeciderMustDiffer
 from abacus.modules.platform.incident_activities import INCIDENT_ACTIVITIES
 from abacus.modules.platform.incident_routes import platform_router as incident_platform_router
@@ -334,6 +340,7 @@ __all__ = [
     "SearchDocument",
     "SpendAnomalyWorkflow",
     "StandardsSetRefused",
+    "StoredFile",
     "TenantKeyInput",
     "TenantKeyWorkflow",
     "TenantProvisioned",
@@ -377,12 +384,14 @@ __all__ = [
     "propagation_log",
     "provisioning_workflow_id",
     "pub1345_tolerances",
+    "read_stored",
     "record_incident",
     "reference_value",
     "references_in_effect",
     "register_audit_labeler",
     "register_audit_source",
     "register_audit_value_resolver",
+    "register_file_store",
     "register_home_count",
     "register_pilot_metric_source",
     "register_search_projection",
@@ -392,6 +401,7 @@ __all__ = [
     "retention_minimum",
     "router",
     "schedules",
+    "screen_and_store",
     "search_document",
     "set_pilot_mode",
     "should_page",

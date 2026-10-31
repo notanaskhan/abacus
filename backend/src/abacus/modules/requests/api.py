@@ -83,6 +83,12 @@ from abacus.modules.requests.portal_documents import (
     prior_year_link,
 )
 from abacus.modules.requests.portal_home import BinderProgress, ClientHome, client_home
+from abacus.modules.requests.portal_questionnaires import (
+    portal_questionnaire,
+)
+from abacus.modules.requests.portal_questionnaires import (
+    save_answer as save_portal_answer,
+)
 from abacus.modules.requests.portal_room import (
     DelegateUpload,
     RoomItem,
@@ -91,7 +97,21 @@ from abacus.modules.requests.portal_room import (
 )
 from abacus.modules.requests.questionnaires import (
     QuestionnaireSummary,
+    attach_organizer,
+    create_questionnaire,
+    draft_question,
+    questionnaire,
+    send_question,
     work_item_questionnaires,
+)
+from abacus.modules.requests.questionnaires import (
+    import_template as import_questionnaire_template,
+)
+from abacus.modules.requests.questionnaires import (
+    publish_version as publish_questionnaire_template,
+)
+from abacus.modules.requests.questionnaires import (
+    templates as questionnaire_templates,
 )
 from abacus.modules.requests.repository import open_requests_by_engagement
 from abacus.modules.requests.roll_forward import (
@@ -145,6 +165,8 @@ from abacus.modules.requests.service import (
 )
 from abacus.modules.requests.source_documents import (
     BinderCard,
+    SourceDocumentGroup,
+    SourceDocumentRow,
     SourceDocuments,
     UploadFacts,
     binder_card,
@@ -242,19 +264,24 @@ __all__ = [
     "ReviewTarget",
     "RoomItem",
     "ScreeningSubject",
+    "SourceDocumentGroup",
+    "SourceDocumentRow",
     "SourceDocuments",
     "UploadFacts",
     "VoidedRuleLink",
     "add_request_item",
     "apply_drafted_guidance",
+    "attach_organizer",
     "awaiting_review",
     "awaiting_review_count",
     "binder_card",
     "check_return_comment",
     "classify",
     "client_home",
+    "create_questionnaire",
     "delegate_upload",
     "document_kind",
+    "draft_question",
     "drop_binder",
     "drop_binder_open",
     "drop_items",
@@ -265,6 +292,7 @@ __all__ = [
     "fulfil_by_upload",
     "fulfilled_items",
     "fulfilled_versions",
+    "import_questionnaire_template",
     "insert_return_comment",
     "item_ref",
     "item_versions",
@@ -284,7 +312,11 @@ __all__ = [
     "portal_binder_view",
     "portal_item_binder",
     "portal_item_view",
+    "portal_questionnaire",
     "prior_year_link",
+    "publish_questionnaire_template",
+    "questionnaire",
+    "questionnaire_templates",
     "read_item",
     "read_item_versions",
     "refuse_closed_item",
@@ -302,8 +334,10 @@ __all__ = [
     "review_targets",
     "room_items",
     "router",
+    "save_portal_answer",
     "screening_subject",
     "selection_engagements",
+    "send_question",
     "source_documents",
     "third_party_consented",
     "update_item",

@@ -5,7 +5,9 @@
 // ENG-04 handoff; every money value is one the server computes from the fee terms (6,500 +
 // 12,000 = 18,500, billed 9,250 + 9,250; the engineer's 9,800 shown and never added).
 import type {
+  CompareOut,
   ComposerLetterOut,
+  LetterDocumentOut,
   SectionBlockOutput,
   LetterClause,
   LetterConsentOut,
@@ -281,10 +283,10 @@ const BASE: ComposerLetterOut = {
   version: 3,
 };
 
-export type Eng04Frame = "a" | "b" | "c";
+export type Eng04Frame = "a" | "b" | "c" | "d" | "e" | "f";
 
 /** a partner approved, b its Draft, c Sent with E13 (0 of 2 signed). */
-export const RIDGELINE_LETTERS: Readonly<Record<Eng04Frame, ComposerLetterOut>> = {
+export const RIDGELINE_LETTERS: Readonly<Record<"a" | "b" | "c", ComposerLetterOut>> = {
   a: BASE,
   b: {
     ...BASE,
@@ -303,3 +305,400 @@ export const RIDGELINE_LETTERS: Readonly<Record<Eng04Frame, ComposerLetterOut>> 
     allowed_actions: ["letter.read"],
   },
 };
+
+// --- N-02-T37: ENG-04 d, e, f and Compare to standard ----------------------------------------
+// d is Copperleaf's 2026 Close letter, signed and locked; e is Fairhaven's PY2025 EBP audit
+// letter, sent Sep 8; f is the Feld TY2025 letter with its two §7216 consents as separate
+// documents. The handoff names their status lines, signers, dates, the SSARS note, the AU-C 210
+// clauses and the fee; their paper is the firm's template bodies as Brightwater Hale imported them
+// (P-11-T13: BH CAS Engagement Letter, BH Audit Letter · EBP, BH §7216 consents), synthetic.
+
+const LETTERHEAD = {
+  firm: "Brightwater Hale LLP",
+  address: ["311 West Brannock Street, Chicago, IL"],
+};
+
+export const COPPERLEAF_ENGAGEMENT = stableId("engagement:copperleaf:2026-close");
+export const FAIRHAVEN_ENGAGEMENT = stableId("engagement:fairhaven:py2025");
+export const FELD_ENGAGEMENT = stableId("engagement:feld");
+export const E11_ENVELOPE = stableId("envelope:E11");
+
+const signature = (...lines: [string, string][]): Block => ({
+  type: "signature_block",
+  signers: lines.map(([label, key]) => ({ label, name: [v(key)] })),
+});
+
+const section = (id: string, title: string, ...blocks: Block[]): Block =>
+  clause(id, title, false, blocks);
+
+const states = (titles: readonly (readonly [string, string])[]): LetterClause[] =>
+  titles.map(([key, title]) => ({ key, title, state: "on", non_standard: false }));
+
+const AI_USE = p(
+  text(
+    "We use Accrued, a platform whose AI agents draft work under our supervision. Data stays " +
+      "in the United States, is not used to train models, and every output is reviewed and " +
+      "approved by a named Brightwater Hale professional.",
+  ),
+);
+const FEES = p(
+  text("Our fee for these services is "),
+  v("fee.total"),
+  text(", billed as set out below."),
+);
+
+const CAS_CLAUSES = [
+  ["scope", "Scope of services"],
+  ["ssars-route", "Reporting on the monthly statements"],
+  ["approver", "Approver of record"],
+  ["fees", "Fees and billing"],
+  ["technology-ai", "Use of technology and AI"],
+] as const;
+
+export const SSARS_NOTE =
+  "Monthly statements: AR-C 70 preparation with the 'No assurance is provided' legend for " +
+  "periods ending before Dec 15, 2026 (SSARS 27 not early-adopted); from the December 2026 " +
+  "period, statements prepared within this CAS engagement are outside AR-C 70 (SSARS 27).";
+
+/** d: Copperleaf's 2026 Close letter, signed Mar 2 and countersigned Mar 3, locked. */
+export const COPPERLEAF_LETTER: ComposerLetterOut = {
+  engagement_id: COPPERLEAF_ENGAGEMENT,
+  mode: "composed",
+  status: "signed",
+  version_no: 2,
+  template_version_id: stableId("report-template-version:bh-cas-engagement-letter:1"),
+  clauses: states(CAS_CLAUSES),
+  variables: [
+    fact("client.name", "Copperleaf Coffee Roasters, Inc."),
+    fact("client.signer", "Tess Moreno"),
+    fact("firm.signer", "Priya Raman, Partner"),
+    fact("approver_of_record", "Ben Ashby, Controller"),
+    fact("ske_designee", null, "attest_only"),
+    fact("ebp.limited_scope_election", null, "ebp_only"),
+    fact("ai_use.disclosure", "on"),
+  ],
+  fees: null,
+  redline_count: 0,
+  generated_document_id: stableId("generated-document:copperleaf-letter"),
+  template_name: "BH CAS Engagement Letter",
+  template_version_no: 1,
+  clause_library: "BH clauses 2026.1",
+  letterhead: LETTERHEAD,
+  paper: [
+    p(v("client.name")),
+    { type: "heading", level: 1, text: "Re: Client accounting services" },
+    section(
+      "scope",
+      "Scope of services",
+      p(
+        text(
+          "We will maintain your books, reconcile your accounts each month and prepare " +
+            "monthly financial statements from the posted ledger.",
+        ),
+      ),
+    ),
+    section(
+      "ssars-route",
+      "Reporting on the monthly statements",
+      p(
+        text(
+          "Monthly statements are prepared under AR-C 70 with the legend 'No assurance is " +
+            "provided' on each page for periods ending before December 15, 2026; from the " +
+            "December 2026 period, statements prepared within this engagement are outside " +
+            "AR-C 70 (SSARS 27).",
+        ),
+      ),
+    ),
+    section(
+      "approver",
+      "Approver of record",
+      p(text("You name an approver of record who approves each month's package.")),
+    ),
+    section("technology-ai", "Use of technology and AI", AI_USE),
+    signature(["BRIGHTWATER HALE LLP", "firm.signer"], ["ACCEPTED", "client.signer"]),
+  ],
+  signers: [
+    {
+      order: 1,
+      name: "Tess Moreno",
+      role: "client",
+      identity: "email_code",
+      signed: true,
+      signed_on: "2026-03-02",
+    },
+    {
+      order: 2,
+      name: "Priya Raman",
+      role: "firm",
+      identity: "email_code",
+      signed: true,
+      signed_on: "2026-03-03",
+    },
+  ],
+  consents: [],
+  approved_by_name: "Priya Raman",
+  approved_at: "2026-02-27T15:00:00Z",
+  approval_content_hash: "3a7f0c2e9b1d4a6f8e2c5b9d0a3f7e1c6b4d8a2f9e0c3b7d5a1f6e8c2b4d9a07",
+  envelope_id: stableId("envelope:L1"),
+  allowed_actions: ["letter.read", "letter.amend"],
+  version: 2,
+  sent_at: "2026-02-27T15:00:00Z",
+  routing_note: SSARS_NOTE,
+  documents: [],
+};
+
+const AUDIT_CLAUSES = [
+  ["objective", "Objective and scope"],
+  ["management", "Management's responsibilities"],
+  ["auditor", "Auditor's responsibilities"],
+  ["limitations", "Limitations"],
+  ["report", "Form of report"],
+  ["technology-ai", "Use of technology and AI"],
+  ["fees", "Fees ($26,500)"],
+  ["signatures", "Signatures"],
+] as const;
+
+/** e: Fairhaven's PY2025 EBP audit letter (AU-C 210), sent Sep 8, 0 of 2 signed. */
+export const FAIRHAVEN_LETTER: ComposerLetterOut = {
+  engagement_id: FAIRHAVEN_ENGAGEMENT,
+  mode: "composed",
+  status: "sent",
+  version_no: 1,
+  template_version_id: stableId("report-template-version:bh-audit-letter-ebp:3"),
+  clauses: states(AUDIT_CLAUSES),
+  variables: [
+    fact("client.name", "Fairhaven Foods 401(k) Plan"),
+    fact("client.signer", "Plan administrator"),
+    fact("firm.signer", "Margaret Okonkwo, Partner"),
+    computed("fee.summary", "$26,500"),
+    computed("fee.total", "$26,500"),
+    fact("approver_of_record", null, "cas_only"),
+    fact("ske_designee", null, "no_nonattest"),
+    fact("ebp.limited_scope_election", "Plan administrator elects (certification required)"),
+    fact("ai_use.disclosure", "on"),
+  ],
+  fees: null,
+  redline_count: 0,
+  generated_document_id: stableId("generated-document:fairhaven-letter"),
+  template_name: "BH Audit Letter · EBP",
+  template_version_no: 3,
+  clause_library: "BH clauses 2026.1",
+  letterhead: LETTERHEAD,
+  paper: [
+    p(v("client.name")),
+    { type: "heading", level: 1, text: "Re: Audit of the plan's financial statements" },
+    section(
+      "objective",
+      "Objective and scope",
+      p(text("We will audit the plan's financial statements.")),
+    ),
+    section(
+      "management",
+      "Management's responsibilities",
+      p(text("Management is responsible for the financial statements and the plan's records.")),
+    ),
+    section(
+      "auditor",
+      "Auditor's responsibilities",
+      p(text("We will conduct the audit under auditing standards generally accepted in the US.")),
+    ),
+    section("limitations", "Limitations", p(text("An audit does not detect every misstatement."))),
+    section(
+      "report",
+      "Form of report",
+      p(text("We expect to issue a written report on the audit.")),
+    ),
+    section("technology-ai", "Use of technology and AI", AI_USE),
+    section("fees", "Fees and billing", FEES),
+    signature(["BRIGHTWATER HALE LLP", "firm.signer"], ["ACCEPTED", "client.signer"]),
+  ],
+  signers: [
+    {
+      order: 1,
+      name: "Plan administrator",
+      role: "client",
+      identity: "email_code",
+      signed: false,
+    },
+    { order: 2, name: "Margaret Okonkwo", role: "firm", identity: "email_code", signed: false },
+  ],
+  consents: [],
+  approved_by_name: "Margaret Okonkwo",
+  approved_at: "2026-09-08T13:30:00Z",
+  approval_content_hash: "9e4b1f7a2c6d0e3b8f5a1c9d4e7b2a6f0c3e8d1b5a9f4c7e2d6b0a3f8e1c5d92",
+  envelope_id: E11_ENVELOPE,
+  allowed_actions: ["letter.read"],
+  version: 1,
+  sent_at: "2026-09-08T14:00:00Z",
+  routing_note: null,
+  documents: [],
+};
+
+const consentPaper = (heading: string, ask: string, recipients: string): Block[] => [
+  { type: "heading", level: 1, text: heading },
+  p(text("Taxpayer: "), v("taxpayer.name")),
+  p(text(ask)),
+  p(text(`Recipients: ${recipients}`)),
+  p(text("Tax years covered: "), v("consent.tax_years")),
+  signature(["Taxpayer", "taxpayer.name"]),
+];
+
+const FELD_SIGNERS: LetterDocumentOut["signers"] = [
+  {
+    order: 1,
+    name: "Claire Feld",
+    role: "client",
+    identity: "email_code",
+    signed: true,
+    signed_on: "2026-02-02",
+  },
+  {
+    order: 2,
+    name: "Jonah Feld",
+    role: "client",
+    identity: "email_code",
+    signed: true,
+    signed_on: "2026-02-02",
+  },
+];
+
+/** f's two documents: one purpose each, signed separately (Rev. Proc. 2013-14 §5.05). */
+export const FELD_CONSENT_DOCUMENTS: LetterDocumentOut[] = [
+  {
+    id: stableId("consent-document:feld:use"),
+    title: "Consent to use tax return information",
+    template_name: "BH §7216 Consent to Use",
+    template_version_no: 2,
+    signers: FELD_SIGNERS,
+    paper: consentPaper(
+      "Consent to use tax return information",
+      "Brightwater Hale may use the tax return information named here for the purpose stated.",
+      "Brightwater Hale LLP",
+    ),
+  },
+  {
+    id: stableId("consent-document:feld:ai-disclosure"),
+    title: "Consent to disclose tax return information to AI service providers",
+    template_name: "BH §7216 Consent to Disclose — AI sub-processors",
+    template_version_no: 2,
+    signers: FELD_SIGNERS,
+    paper: consentPaper(
+      "Consent to disclose tax return information to AI service providers",
+      "Brightwater Hale may disclose the tax return information named here to the recipients " +
+        "listed below, who process it on the firm's behalf.",
+      "Accrued Agent sub-processors (US)",
+    ),
+  },
+];
+
+/** f: the Feld TY2025 letter and its two §7216 consents, each its own signed document. */
+export const FELD_LETTER: ComposerLetterOut = {
+  ...COPPERLEAF_LETTER,
+  engagement_id: FELD_ENGAGEMENT,
+  template_version_id: stableId("report-template-version:bh-tax-advisory:4"),
+  template_name: "BH Tax Advisory Letter",
+  template_version_no: 4,
+  clauses: states([
+    ["scope", "Scope of services"],
+    ["fees", "Fees and billing"],
+    ["technology-ai", "Use of technology and AI"],
+  ]),
+  variables: [
+    fact("client.name", "Jonah & Claire Feld"),
+    fact("client.signer", "Claire Feld · Jonah Feld"),
+    fact("firm.signer", "Daniel Reyes, Partner"),
+    fact("approver_of_record", null, "cas_only"),
+    fact("ske_designee", null, "attest_only"),
+    fact("ebp.limited_scope_election", null, "ebp_only"),
+    fact("ai_use.disclosure", "on"),
+    fact("taxpayer.name", "Jonah & Claire Feld"),
+    fact("consent.tax_years", "2025"),
+  ],
+  generated_document_id: stableId("generated-document:feld-letter"),
+  paper: [
+    p(v("client.name")),
+    { type: "heading", level: 1, text: "Re: Tax advisory services" },
+    section(
+      "scope",
+      "Scope of services",
+      p(text("We will provide the tax advisory services described in this letter.")),
+    ),
+    section("technology-ai", "Use of technology and AI", AI_USE),
+    signature(["BRIGHTWATER HALE LLP", "firm.signer"], ["ACCEPTED", "client.signer"]),
+  ],
+  signers: [
+    ...FELD_SIGNERS,
+    {
+      order: 3,
+      name: "Daniel Reyes",
+      role: "firm",
+      identity: "email_code",
+      signed: true,
+      signed_on: "2026-02-02",
+    },
+  ],
+  consents: [
+    {
+      purpose: "use",
+      label: "Consent to use tax return information · Jonah & Claire Feld",
+      status: "on_file",
+      signed_on: "2026-02-02",
+      expires_on: "2026-12-31",
+    },
+    {
+      purpose: "ai_disclosure",
+      label: "Consent to disclose — AI sub-processors · Jonah & Claire Feld",
+      status: "on_file",
+      signed_on: "2026-02-02",
+      expires_on: "2026-12-31",
+    },
+  ],
+  approved_by_name: "Daniel Reyes",
+  approved_at: "2026-02-02T15:00:00Z",
+  envelope_id: stableId("envelope:feld-letter"),
+  allowed_actions: ["letter.read"],
+  routing_note: null,
+  documents: FELD_CONSENT_DOCUMENTS,
+};
+
+/** Every frame's letter. */
+export const LETTERS: Readonly<Record<Eng04Frame, ComposerLetterOut>> = {
+  ...RIDGELINE_LETTERS,
+  d: COPPERLEAF_LETTER,
+  e: FAIRHAVEN_LETTER,
+  f: FELD_LETTER,
+};
+
+/** The engagement each frame opens and its name in the breadcrumb. */
+export const ENG04_OPENS: Readonly<Record<Eng04Frame, { id: string; name: string }>> = {
+  a: { id: RIDGELINE_ENGAGEMENT, name: "Ridgeline cost segregation & §754 analysis" },
+  b: { id: RIDGELINE_ENGAGEMENT, name: "Ridgeline cost segregation & §754 analysis" },
+  c: { id: RIDGELINE_ENGAGEMENT, name: "Ridgeline cost segregation & §754 analysis" },
+  d: { id: COPPERLEAF_ENGAGEMENT, name: "2026 Close" },
+  e: { id: FAIRHAVEN_ENGAGEMENT, name: "PY2025 EBP audit · Fairhaven Foods 401(k) Plan" },
+  f: { id: FELD_ENGAGEMENT, name: "TY2025 Form 1040 · Jonah & Claire Feld" },
+};
+
+/**
+ * Compare to standard (C11 compare, word level by block and clause): Ridgeline's two non-standard
+ * clauses are its own wording over the standard library's, so their text reads as inserted; every
+ * other clause equals the standard.
+ */
+export function standardCompare(letter: ComposerLetterOut): CompareOut {
+  const blocks: CompareOut["blocks"] = [];
+  for (const block of (letter.paper ?? []) as Block[]) {
+    if (block.type !== "section") continue;
+    const inner = block.blocks.find((b) => b.type === "clause");
+    const nonStandard = inner?.type === "clause" && inner.non_standard;
+    const words = (inner?.type === "clause" ? inner.blocks : [])
+      .flatMap((b) => (b.type === "paragraph" ? b.runs : []))
+      .map((r) => (r.type === "text" ? r.text : ""))
+      .join("");
+    blocks.push({
+      block_id: block.id,
+      clause_id: inner?.type === "clause" ? inner.clause_id : null,
+      ops: [{ op: nonStandard ? "insert" : "equal", text: words }],
+    });
+  }
+  return { to: "standard", blocks };
+}

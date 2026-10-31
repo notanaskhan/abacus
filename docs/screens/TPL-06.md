@@ -63,7 +63,7 @@ Gradients, emoji, saturated blue, heavy shadows, invented colours, lorem ipsum, 
 ## Parity
 | Artboard | Tier (A/B/D) | Diff % | Notes |
 |---|---|---|---|
-| a–e | B · A strips · D | not run | Issues count region masked; spinners masked; locked in F-06-T22 |
+| a–e | B (locked) · A strips (control bar 44) · D (`tier-d-workbook.spec.ts`) | not run | tally strip and spinners masked; locked at Tier B in F-06-T22 (DEC-1754); first visual run at the S22 end review |
 
 ## Open gaps
 - None beyond the masked Issues count.

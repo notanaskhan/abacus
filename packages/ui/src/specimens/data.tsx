@@ -2,6 +2,9 @@ import type { JSX } from "react";
 import { type AccountSection, AccountTree } from "../data/account-tree";
 import { DataGrid } from "../data/data-grid";
 import { EvidenceTable } from "../data/evidence";
+import { MappingTable } from "../data/mapping-table";
+import { Icon } from "../icons";
+import { Pill } from "../components/pill";
 import { TallyStrip } from "../data/tally-strip";
 import type { TableColumn, TableRow, VarianceValue } from "../data/types";
 import { Row, Sheet } from "./frame";
@@ -309,6 +312,107 @@ export function AccountTreeSpecimen(): JSX.Element {
         <div className="w-[520px] max-w-full overflow-hidden rounded-pane bg-card shadow-e2">
           <AccountTree label={`${NORTHWIND_PLAN} accounts`} sections={ACCOUNTS} />
         </div>
+      </Row>
+    </Sheet>
+  );
+}
+
+// ---- A-03-T12: MappingTable (L2), the AUD-31 sheet ----------------------------------------------
+
+/** Harlow & Pike's six review rows and Manufacturing's PP&E group, verbatim (AUD-31 a). */
+export function MappingTableSpecimen(): JSX.Element {
+  const marker = (
+    <span title="Suggested by Accrued Agent · not yet adopted" className="text-ink-3">
+      <Icon name="atom" size={12} label="Suggested by Accrued Agent · not yet adopted" />
+    </span>
+  );
+  return (
+    <Sheet title="MappingTable" meta="L2 · AUD-31 · review band 52 · mapped rows 30 · subtotal">
+      <Row name="Needs review · mapped by FS line" meaning="Entities, reasons, a group open">
+        <MappingTable
+          className="w-[876px] max-w-full"
+          label="Trial balance mapping"
+          entities
+          selected="1460"
+          review={{
+            label: "Needs review · 6",
+            rows: [
+              {
+                id: "1460",
+                entity: "Manufacturing",
+                code: "1460",
+                name: "Tooling deposits",
+                balance: "310,000",
+                mapped: "Other assets › Deposits",
+                suggested: true,
+                marker,
+                method: "Description",
+                confidence: "Low",
+                confidenceTone: "amber",
+                reason:
+                  "No prior-year account; description 'Tooling deposits' suggests Other assets.",
+              },
+              {
+                id: "2215",
+                entity: "Distribution",
+                code: "2215",
+                name: "Customer rebates payable",
+                balance: "(145,000)",
+                balanceTone: "neg",
+                mapped: "Accrued liabilities › Customer rebates",
+                suggested: true,
+                marker,
+                method: "Description",
+                confidence: "Medium",
+                reason:
+                  "No prior-year account; dealer rebates accrued monthly are an accrued liability, not trade payables.",
+              },
+            ],
+          }}
+          mapped={{
+            label: "Mapped · 238",
+            groups: [
+              {
+                key: "ppe",
+                label: "Manufacturing › Property, plant & equipment",
+                open: true,
+                rows: [
+                  {
+                    id: "1420",
+                    entity: "Manufacturing",
+                    code: "1420",
+                    name: "Machinery and equipment",
+                    balance: "12,600,000",
+                    mapped: "PP&E › Machinery and equipment",
+                    method: "Prior-year match",
+                    confidence: "High",
+                  },
+                  {
+                    id: "1450",
+                    entity: "Manufacturing",
+                    code: "1450",
+                    name: "Accumulated depreciation",
+                    balance: "(8,100,000)",
+                    balanceTone: "neg",
+                    mapped: "PP&E › Accumulated depreciation",
+                    method: "Prior-year match",
+                    confidence: "High",
+                  },
+                ],
+                subtotal: (
+                  <span className="flex items-center gap-[8px]">
+                    Mapped 8,090,000 · interim TB line 8,400,000
+                    <Pill variant="amber" size="sm">
+                      off 310,000
+                    </Pill>
+                  </span>
+                ),
+              },
+              { key: "cash", label: "Cash", open: false, rows: [] },
+              { key: "ar", label: "Accounts receivable", open: false, rows: [] },
+            ],
+          }}
+        />
       </Row>
     </Sheet>
   );

@@ -2354,7 +2354,8 @@
       "mask": [
         "[data-spinner]"
       ],
-      "deviation": "F-06-T14 (DEC-1252): drafting draws Edit, Regenerate… and Approve… disabled, each naming the drafting as its reason (F-06 Story 4.1), where the board's header shows the spinner line alone"
+      "deviation": "F-06-T14 (DEC-1252): drafting draws Edit, Regenerate… and Approve… disabled, each naming the drafting as its reason (F-06 Story 4.1), where the board's header shows the spinner line alone",
+      "locked": true
     },
     "t10a.paper-header": {
       "page": "screens/T10?st=a",
@@ -2372,7 +2373,8 @@
       "source": "handoff/screens/T10 Document on well/screenshots/T10b.png",
       "sha256": "9e4414fcd34d7f3dcee8e3c4f970ad4a29497dabcba9c9d461a7cf6100e0da4b",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "t10b.paper-header": {
       "page": "screens/T10?st=b",
@@ -2413,7 +2415,8 @@
       "mask": [
         "[data-tally-strip]"
       ],
-      "deviation": "F-06-T18 (DEC-1450): the handoff's screenshots were captured before the tally cards' 45 ms reveal, so the strip is empty on the board; masked until F-06-T22 recaptures"
+      "deviation": "F-06-T18 (DEC-1450): the handoff's screenshots were captured before the tally cards' 45 ms reveal, so the strip is empty on the board; masked: F-06-T22 locks the frame with the strip masked and checks the strip's cards at Tier D (DEC-1754)",
+      "locked": true
     },
     "t6b.control-bar": {
       "page": "screens/T6?st=b",
@@ -2434,7 +2437,8 @@
       "mask": [
         "[data-tally-strip]"
       ],
-      "deviation": "F-06-T18 (DEC-1450): the handoff's screenshots were captured before the tally cards' 45 ms reveal, so the strip is empty on the board; masked until F-06-T22 recaptures"
+      "deviation": "F-06-T18 (DEC-1450): the handoff's screenshots were captured before the tally cards' 45 ms reveal, so the strip is empty on the board; masked: F-06-T22 locks the frame with the strip masked and checks the strip's cards at Tier D (DEC-1754)",
+      "locked": true
     },
     "t6c.control-bar": {
       "page": "screens/T6?st=c",
@@ -2457,7 +2461,8 @@
         "[data-spinner]",
         "[data-workbook='skeleton-row']"
       ],
-      "deviation": "F-06-T18 (DEC-1450): the handoff's screenshots were captured before the tally cards' 45 ms reveal, so the strip is empty on the board; masked until F-06-T22 recaptures; the running row reads \"Workbook agent is running\" (T6 contract deviation c, DEC-19), not the canvas's sentence"
+      "deviation": "F-06-T18 (DEC-1450): the handoff's screenshots were captured before the tally cards' 45 ms reveal, so the strip is empty on the board; masked: F-06-T22 locks the frame with the strip masked and checks the strip's cards at Tier D (DEC-1754); the running row reads \"Workbook agent is running\" (T6 contract deviation c, DEC-19), not the canvas's sentence",
+      "locked": true
     },
     "t16-signing-ceremony.t16b": {
       "selector": "[data-artboard=\"t16b\"] [data-shell=\"app\"]",
@@ -2768,6 +2773,314 @@
       "crop": "window",
       "tier": "C",
       "deviation": "K-02-T19: report-only (Tier C); the parity report measures it once KNW-04 leaves `planned` (DEC-195)"
+    },
+    "t6d.window": {
+      "page": "screens/T6?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T6 Workbook schedule grid/screenshots/T6d.png",
+      "sha256": "3889e9fac3085763a16f6b72a2bef79c23cf4546c7538c889ff13f83deccb56b",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-tally-strip]",
+        "[data-spinner]"
+      ]
+    },
+    "t6d.control-bar": {
+      "page": "screens/T6?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T6 Workbook schedule grid/screenshots/T6d.png",
+      "sha256": "3889e9fac3085763a16f6b72a2bef79c23cf4546c7538c889ff13f83deccb56b",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-workbook='control-bar']"
+    },
+    "t6e.window": {
+      "page": "screens/T6?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T6 Workbook schedule grid/screenshots/T6e.png",
+      "sha256": "31e57258f122d99bb800ec5cfc81078e3f427d7170671d0f2a10c3262c5b24e6",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-tally-strip]",
+        "[data-spinner]"
+      ]
+    },
+    "t6e.control-bar": {
+      "page": "screens/T6?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T6 Workbook schedule grid/screenshots/T6e.png",
+      "sha256": "31e57258f122d99bb800ec5cfc81078e3f427d7170671d0f2a10c3262c5b24e6",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-workbook='control-bar']"
+    },
+    "t10c.window": {
+      "page": "screens/T10?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T10 Document on well/screenshots/T10c.png",
+      "sha256": "aee6182b6ed6acd7a2a8a19ed1229876537a7c41782c22e3d824e7d7c1eea48a",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "t10c.paper-header": {
+      "page": "screens/T10?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T10 Document on well/screenshots/T10c.png",
+      "sha256": "aee6182b6ed6acd7a2a8a19ed1229876537a7c41782c22e3d824e7d7c1eea48a",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-template='t10'] [data-shell='pane-header']",
+      "deviation": "F-06-T13 review measured 2.26% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T15/T22 fixes the kit"
+    },
+    "t10d.window": {
+      "page": "screens/T10?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T10 Document on well/screenshots/T10d.png",
+      "sha256": "26f27e2294fc9784be26b816719b22996c0c0c10ebbcf6794145c27a37c9faf8",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "t10d.paper-header": {
+      "page": "screens/T10?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T10 Document on well/screenshots/T10d.png",
+      "sha256": "26f27e2294fc9784be26b816719b22996c0c0c10ebbcf6794145c27a37c9faf8",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-template='t10'] [data-shell='pane-header']",
+      "deviation": "F-06-T13 review measured 2.26% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T15/T22 fixes the kit"
+    },
+    "t10e.window": {
+      "page": "screens/T10?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T10 Document on well/screenshots/T10e.png",
+      "sha256": "46b2172f66c59dcd0c0906ce004b7400ebb8dd90c3e76d0d75a90121cdfb28e7",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "t10e.paper-header": {
+      "page": "screens/T10?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T10 Document on well/screenshots/T10e.png",
+      "sha256": "46b2172f66c59dcd0c0906ce004b7400ebb8dd90c3e76d0d75a90121cdfb28e7",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-template='t10'] [data-shell='pane-header']",
+      "deviation": "F-06-T13 review measured 2.26% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T15/T22 fixes the kit"
+    },
+    "tpl-06a.window": {
+      "page": "screens/TPL-06?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-06 Workbook grid specimen - Ridgeline capital accounts/screenshots/TPL-06a.png",
+      "sha256": "6efbd65dde2b8a2c5b452b91c94992af3b68f4a14365a80ca25c27523b5e4c88",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-tally-strip]",
+        "[data-spinner]"
+      ]
+    },
+    "tpl-06a.control-bar": {
+      "page": "screens/TPL-06?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-06 Workbook grid specimen - Ridgeline capital accounts/screenshots/TPL-06a.png",
+      "sha256": "6efbd65dde2b8a2c5b452b91c94992af3b68f4a14365a80ca25c27523b5e4c88",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-workbook='control-bar']"
+    },
+    "tpl-06b.window": {
+      "page": "screens/TPL-06?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-06 Workbook grid specimen - Ridgeline capital accounts/screenshots/TPL-06b.png",
+      "sha256": "2f253ebe916fc70229d9bb5f95b050ab76ce13b024339e25ce13d1a66774f3f6",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-tally-strip]",
+        "[data-spinner]"
+      ]
+    },
+    "tpl-06b.control-bar": {
+      "page": "screens/TPL-06?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-06 Workbook grid specimen - Ridgeline capital accounts/screenshots/TPL-06b.png",
+      "sha256": "2f253ebe916fc70229d9bb5f95b050ab76ce13b024339e25ce13d1a66774f3f6",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-workbook='control-bar']"
+    },
+    "tpl-06c.window": {
+      "page": "screens/TPL-06?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-06 Workbook grid specimen - Ridgeline capital accounts/screenshots/TPL-06c.png",
+      "sha256": "e945731332ba8c284582596a9a9128f82742700684078d74caf28bbe61a188ee",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-tally-strip]",
+        "[data-spinner]"
+      ]
+    },
+    "tpl-06c.control-bar": {
+      "page": "screens/TPL-06?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-06 Workbook grid specimen - Ridgeline capital accounts/screenshots/TPL-06c.png",
+      "sha256": "e945731332ba8c284582596a9a9128f82742700684078d74caf28bbe61a188ee",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-workbook='control-bar']"
+    },
+    "tpl-06d.window": {
+      "page": "screens/TPL-06?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-06 Workbook grid specimen - Ridgeline capital accounts/screenshots/TPL-06d.png",
+      "sha256": "e2f689b5cb7901bea76c06f4410eca5c7f624ce3f921b238c54f33a4f09d6ab3",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-tally-strip]",
+        "[data-spinner]"
+      ]
+    },
+    "tpl-06d.control-bar": {
+      "page": "screens/TPL-06?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-06 Workbook grid specimen - Ridgeline capital accounts/screenshots/TPL-06d.png",
+      "sha256": "e2f689b5cb7901bea76c06f4410eca5c7f624ce3f921b238c54f33a4f09d6ab3",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-workbook='control-bar']"
+    },
+    "tpl-06e.window": {
+      "page": "screens/TPL-06?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-06 Workbook grid specimen - Ridgeline capital accounts/screenshots/TPL-06e.png",
+      "sha256": "648604d5dab0f87ba8301ec0d55689184a8ec9e7866c5d2bd1fefe62f3c7516f",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-tally-strip]",
+        "[data-spinner]"
+      ]
+    },
+    "tpl-06e.control-bar": {
+      "page": "screens/TPL-06?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-06 Workbook grid specimen - Ridgeline capital accounts/screenshots/TPL-06e.png",
+      "sha256": "648604d5dab0f87ba8301ec0d55689184a8ec9e7866c5d2bd1fefe62f3c7516f",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-workbook='control-bar']"
+    },
+    "tpl-10a.window": {
+      "page": "screens/TPL-10?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-10 Document on well specimen - Ridgeline preparer memo/screenshots/TPL-10a.png",
+      "sha256": "958ecee7ff917f35abbada15f796a967eb4efe0188daf415dd0ee56ad796894d",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "tpl-10a.paper-header": {
+      "page": "screens/TPL-10?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-10 Document on well specimen - Ridgeline preparer memo/screenshots/TPL-10a.png",
+      "sha256": "958ecee7ff917f35abbada15f796a967eb4efe0188daf415dd0ee56ad796894d",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-template='t10'] [data-shell='pane-header']",
+      "deviation": "F-06-T13 review measured 2.26% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T15/T22 fixes the kit"
+    },
+    "tpl-10b.window": {
+      "page": "screens/TPL-10?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-10 Document on well specimen - Ridgeline preparer memo/screenshots/TPL-10b.png",
+      "sha256": "82eb3b257024577ecf05a1c9c65f608df31b2ec35e1934216048e4d29da4b607",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "tpl-10b.paper-header": {
+      "page": "screens/TPL-10?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-10 Document on well specimen - Ridgeline preparer memo/screenshots/TPL-10b.png",
+      "sha256": "82eb3b257024577ecf05a1c9c65f608df31b2ec35e1934216048e4d29da4b607",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-template='t10'] [data-shell='pane-header']",
+      "deviation": "F-06-T13 review measured 2.26% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T15/T22 fixes the kit"
+    },
+    "tpl-10c.window": {
+      "page": "screens/TPL-10?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-10 Document on well specimen - Ridgeline preparer memo/screenshots/TPL-10c.png",
+      "sha256": "6d9290f19028af6c405faae94e3b784f800739fcc1d6a747e65f70fa64d263e4",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "tpl-10c.paper-header": {
+      "page": "screens/TPL-10?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-10 Document on well specimen - Ridgeline preparer memo/screenshots/TPL-10c.png",
+      "sha256": "6d9290f19028af6c405faae94e3b784f800739fcc1d6a747e65f70fa64d263e4",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-template='t10'] [data-shell='pane-header']",
+      "deviation": "F-06-T13 review measured 2.26% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T15/T22 fixes the kit"
+    },
+    "tpl-10d.window": {
+      "page": "screens/TPL-10?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-10 Document on well specimen - Ridgeline preparer memo/screenshots/TPL-10d.png",
+      "sha256": "ca46fd594104ba4b9e1aa45a5038d12c816a84c6fded41c3d1a262cb6769cb6c",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "tpl-10d.paper-header": {
+      "page": "screens/TPL-10?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-10 Document on well specimen - Ridgeline preparer memo/screenshots/TPL-10d.png",
+      "sha256": "ca46fd594104ba4b9e1aa45a5038d12c816a84c6fded41c3d1a262cb6769cb6c",
+      "crop": "window",
+      "tier": "A",
+      "strip": "[data-template='t10'] [data-shell='pane-header']",
+      "deviation": "F-06-T13 review measured 2.26% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T15/T22 fixes the kit"
     },
     "KNW-01a.window": {
       "page": "screens/KNW-01?st=a",
