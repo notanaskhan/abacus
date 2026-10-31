@@ -28,7 +28,7 @@ from decimal import Decimal
 from typing import Annotated, Final, Literal, NoReturn, cast
 from uuid import UUID
 
-from fastapi import Depends, Header, Path, Query, Request
+from fastapi import Depends, Header, Path, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import TAX_DELIVERY_EFILE, TAX_ENGINE_BRIDGE
@@ -43,7 +43,7 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
 )
-from abacus.modules.tax import approval, engine_import
+from abacus.modules.tax import approval, engine_import, export
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=8, max_length=200)]
@@ -177,6 +177,8 @@ class EngineExportOut(BaseModel):
     sha256: Annotated[str, classified("internal")]
     generated_at: Annotated[datetime, classified("confidential")]
     marked_exported_at: Annotated[datetime | None, classified("confidential")]
+    # T-01-T25 (additive): the export's version, which Mark exported names as `seen_version`.
+    version: Annotated[int, classified("internal")] = 1
 
 
 class EngineExportIn(BaseModel):
@@ -566,8 +568,11 @@ async def engine_sync_route(return_id: ReturnId, ctx: Ctx) -> EngineSyncOut:
 async def export_return_route(
     return_id: ReturnId, body: EngineExportIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> EngineExportOut:
-    """Generate the workbook after final approval (consumes the write grant)."""
-    await _stub(ctx, "tax_return.export", B)
+    """Generate the workbook after final approval, consuming its grant (T-01-T25). 409
+    `export_disabled`, `not_final_approved`, `grant_refused`, `undo_window_open`. The same
+    checkpoint answers the same export."""
+    await _live(ctx, "tax_return.export", B)
+    return _export_out(await export.export_return(ctx, return_id, body.checkpoint_id))
 
 
 @engine_router.get(
@@ -576,8 +581,18 @@ async def export_return_route(
     response_model=bytes,
     errors=(501,),
 )
-async def export_file_route(export_id: Annotated[UUID, Path()], ctx: Ctx) -> bytes:
-    await _stub(ctx, "tax_return.export", B)
+async def export_file_route(export_id: Annotated[UUID, Path()], ctx: Ctx) -> Response:
+    """The workbook, fingerprint-checked; the download is audited (T-01-T25)."""
+    await _live(ctx, "tax_return.export", B)
+    name, content = await export.download(ctx, export_id)
+    return Response(
+        content,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": f'attachment; filename="{name}"',
+            "Cache-Control": "private, no-store",
+        },
+    )
 
 
 @engine_router.post(
@@ -589,8 +604,23 @@ async def export_file_route(export_id: Annotated[UUID, Path()], ctx: Ctx) -> byt
 async def mark_exported_route(
     export_id: Annotated[UUID, Path()], body: MarkExportedIn, ctx: Ctx
 ) -> EngineExportOut:
-    """A person confirms the file reached the engine."""
-    await _stub(ctx, "tax_return.export", B)
+    """A person confirms the file reached the engine; the chip reads Synced (T-01-T25). 409
+    `already_marked`, `stale_version`."""
+    await _live(ctx, "tax_return.export", B)
+    return _export_out(await export.mark_exported(ctx, export_id, body.seen_version))
+
+
+def _export_out(found: export.ExportView) -> EngineExportOut:
+    return EngineExportOut(
+        id=found.id,
+        return_id=found.return_id,
+        checkpoint_id=found.checkpoint_id,
+        file_name=found.file_name,
+        sha256=found.sha256,
+        generated_at=found.generated_at,
+        marked_exported_at=found.marked_exported_at,
+        version=found.version,
+    )
 
 
 @engine_router.post(

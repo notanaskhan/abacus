@@ -91,6 +91,11 @@ ENGAGEMENT_AGENT_ENABLED = Flag(
     kind="boolean",
     default="false",
 )
+ENGAGEMENTS_LETTER_COMPOSER = Flag(
+    name="engagements.letter_composer",
+    kind="boolean",
+    default="false",
+)
 ENGAGEMENTS_ROLL_FORWARD_V2 = Flag(
     name="engagements.roll_forward_v2",
     kind="boolean",
@@ -378,6 +383,7 @@ FLAGS: dict[str, Flag] = {
     "consents.registry": CONSENTS_REGISTRY,
     "contacts.v2": CONTACTS_V2,
     "engagement_agent.enabled": ENGAGEMENT_AGENT_ENABLED,
+    "engagements.letter_composer": ENGAGEMENTS_LETTER_COMPOSER,
     "engagements.roll_forward_v2": ENGAGEMENTS_ROLL_FORWARD_V2,
     "evidence.citations_v2": EVIDENCE_CITATIONS_V2,
     "evidence.duplicate_review": EVIDENCE_DUPLICATE_REVIEW,

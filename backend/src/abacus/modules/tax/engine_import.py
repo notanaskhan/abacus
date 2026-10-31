@@ -67,6 +67,7 @@ from abacus.modules.tax.engine_adapter import (
     typed,
 )
 from abacus.modules.tax.engine_repository import TextRow
+from abacus.modules.tax.engine_sync import EngineSyncFailed, chip_state, facts_for, sync_facts
 
 TARGET: Final = "tax_return"
 CREATE: Final = "engine_import.create"
@@ -203,10 +204,31 @@ async def import_file(
     ctx: AuthContext, return_id: UUID, kind: Kind, file_name: str, content: bytes
 ) -> ImportView:
     _person(ctx, CREATE)
-    resource, _engagement_id = await _resource(ctx, return_id)
+    resource, engagement_id = await _resource(ctx, return_id)
     await authorise(ctx, CREATE, resource)
-    if kind in ("pdfs", "acks"):
-        raise KindNotBuilt(facts={"kind": kind})
+    if kind in ("pdfs", "acks"):  # T-01-T26: the engine's PDFs and e-file status report
+        from abacus.modules.tax import engine_files
+
+        routed = await engine_files.import_other(
+            ctx, return_id, engagement_id, kind, file_name, content
+        )
+        return ImportView(routed, return_id, kind, "routed", (), datetime.min, 1, ())
+    view = await _import_parsed(ctx, return_id, engagement_id, kind, file_name, content)
+    if kind == "diagnostics":  # T-01-T26: an error raises one issue per code and field
+        from abacus.modules.tax import engine_files
+
+        await engine_files.diagnostic_issues(ctx, return_id, view.id)
+    return view
+
+
+async def _import_parsed(
+    ctx: AuthContext,
+    return_id: UUID,
+    engagement_id: UUID,
+    kind: Kind,
+    file_name: str,
+    content: bytes,
+) -> ImportView:
     screened = await screen_and_stage(ctx.tenant_id, content, file_name, None)
     parsed: ValuesFile | DiagnosticsFile = (
         await _parse(parse_values, content)
@@ -271,6 +293,15 @@ async def import_file(
                 target=Target(TARGET, return_id),
                 after=Ref(event=event_id, errors=errors, rows=len(parsed.diagnostics)),
             )
+            if errors:  # T-01-T27: `export_failed` to the person who carried the file
+                tx.emit(
+                    EngineSyncFailed(
+                        work_item_id=return_id,
+                        engagement_id=engagement_id,
+                        errors=errors,
+                        recipient_user_ids=[ctx.user_id],
+                    )
+                )
             return ImportView(
                 event_id, return_id, kind, "routed", (), datetime.min, 1, ()
             )  # the chip and history carry diagnostics; no diff to review
@@ -458,24 +489,21 @@ async def sync_view(ctx: AuthContext, return_id: UUID) -> SyncView:
     async with tenant_session(ctx.tenant) as session:
         link = await repo.link_of(session, return_id)
         events = list(await repo.events_of(session, return_id))
-        pending = await repo.pending_of(session, return_id)
         latest_diag = next((e for e in events if e.kind == "diagnostics"), None)
         diagnostics = (
             list(await repo.diagnostics_of(session, latest_diag.id)) if latest_diag else []
         )
     names = await names_of([e.actor_user_id for e in events if e.actor_user_id])
     synced = next((e for e in events if e.kind in ("import_approved", "marked_exported")), None)
-    state: SyncState
-    if pending is not None:
-        state = "import_pending_approval"
-    elif any(d.severity == "error" for d in diagnostics):
-        state = "failed"
-    elif synced is None:
-        state = "not_yet_exported"
-    elif await changed_since(ctx.tenant, TARGET, return_id, synced.at):
-        state = "out_of_sync"
-    else:
-        state = "synced"
+    # T-01-T27: the chip is `engine_sync.chip_state` over facts read in one statement.
+    async with tenant_session(ctx.tenant) as session:
+        found = await sync_facts(session, return_id)
+    if found is None:
+        raise NotFound(TARGET)
+    changed = found.last_synced_at is not None and bool(
+        await changed_since(ctx.tenant, TARGET, return_id, found.last_synced_at)
+    )
+    state: SyncState = chip_state(facts_for(found, changed_since_sync=changed))
     may = await allowed_actions(ctx, resource, [CREATE, DECIDE])
     history = tuple(
         SyncEvent(

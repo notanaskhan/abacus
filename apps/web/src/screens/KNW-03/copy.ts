@@ -33,6 +33,7 @@ export const COPY = {
     rules: "Rules",
     skill: "Skill",
     lock: "Lock",
+    remove: "Remove",
   },
   levels: {
     foundation: "Foundation",
@@ -58,4 +59,29 @@ export const COPY = {
   openStep: "Open citation…",
   exportFailed: "Couldn't download the program. Try again.",
   error: "This program couldn't load.",
+  // K-01-T15: c (a draft), d (tailored), f (Fix in Knowledge); verbatim from the KNW-03 spec.
+  draft: {
+    pill: "Draft",
+    banner: (n: number): string =>
+      `Draft v${String(n)} — changes apply to new engagements after approval in KNW-02.`,
+    submit: "Submit for approval…",
+    submitted: (n: number): string => `Draft v${String(n)} submitted for approval`,
+    submitFailed: "Couldn't submit the draft. Try again.",
+    done: "Done",
+    newStep: "New step",
+    stepLabel: (n: number): string => `Step ${String(n)} text`,
+    remove: (n: number): string => `Remove step ${String(n)}`,
+    lockTip: "Only the QM owner can remove or unlock mandatory steps.",
+    saveFailed: "Couldn't save the step. Try again.",
+  },
+  tailored: {
+    chip: (engagement: string): string => `Tailored for ${engagement}`,
+  },
+  run: {
+    failed: (agent: string, at: string): string => `${agent} run failed · ${at}`,
+    noEvidence: "no evidence written",
+    linkTemplate: "Link a template in a draft…",
+    linkHint: "The QM owner links the template in a new draft version",
+    label: "Agent run",
+  },
 } as const;

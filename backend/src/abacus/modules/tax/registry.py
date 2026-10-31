@@ -13,12 +13,16 @@ TABLES: frozenset[str] = frozenset(
     # T-01-T43 (0550, DEC-1651): CLI-05's tax profile.
     | {"tax_profile_files", "tax_authorizations", "tax_elections"}
     | {"transcripts", "transcript_lines", "transcript_comparisons"}
+    | {"write_operations", "engine_exports"}  # T-01-T25 (0561, DEC-1462)
+    | {"engine_acks"}  # T-01-T26 (0562, DEC-1464)
 )
 # T-02-T07 (0403): `tax_returns` takes updates of its v1 columns now, so it is no longer
 # insert-only; its events and engine summaries are.
 INSERT_ONLY: frozenset[str] = frozenset(
     {"tax_return_status_events", "return_engine_summaries", "engine_sync_events"}
     | {"transcripts", "transcript_lines", "transcript_comparisons"}  # T-01-T43 (0550)
+    | {"write_operations"}  # T-01-T25 (0561): one row per write, a grant consumed once
+    | {"engine_acks"}  # T-01-T26 (0562): the e-file status report, as received
 )
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "tax_returns": frozenset(
@@ -76,7 +80,21 @@ INSERT_COLUMNS["transcript_comparisons"] = frozenset(
     {"id", "tenant_id", "transcript_id", "return_id", "checkpoint_id", "result"}
     | {"difference_total", "lines", "agreeing", "engine_version", "computed_by"}
 )
+INSERT_COLUMNS["write_operations"] = frozenset(
+    {"id", "tenant_id", "capability", "subject_type", "subject_id", "grant_id"}
+    | {"payload_sha256", "performed_by"}
+)
+INSERT_COLUMNS["engine_exports"] = frozenset(
+    {"id", "tenant_id", "return_id", "checkpoint_id", "content_hash", "engine_return_id"}
+    | {"version", "file_name", "file_key", "file_version", "file_size", "sha256"}
+    | {"write_operation_id", "generated_by"}
+)
+INSERT_COLUMNS["engine_acks"] = frozenset(
+    {"tenant_id", "return_id", "sync_event_id", "jurisdiction", "submission_last4", "status"}
+    | {"status_at", "reject_code", "reject_text"}
+)
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
+    "engine_exports": frozenset({"marked_exported_at", "marked_exported_by", "row_version"}),
     "engine_return_links": frozenset({"version"}),
     "engine_import_diffs": frozenset(
         {"status", "approved_checkpoint_id", "decided_by", "decided_at", "row_version"}

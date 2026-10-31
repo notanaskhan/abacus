@@ -26,6 +26,8 @@ HUMAN_ONLY_ACTIONS: Final[frozenset[str]] = frozenset(
         "engagement.acceptance_recorded",
         "engagement.accepted",
         "engagement.letter_recorded",
+        "engine_export.generated",
+        "engine_export.marked_exported",
         "eqr.eligibility_approved",
         "evidence.accepted",
         "firm.ai_client_data_opted_in",
