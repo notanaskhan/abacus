@@ -206,8 +206,29 @@ async def import_file(
     _person(ctx, CREATE)
     resource, engagement_id = await _resource(ctx, return_id)
     await authorise(ctx, CREATE, resource)
-    if kind in ("pdfs", "acks"):
-        raise KindNotBuilt(facts={"kind": kind})
+    if kind in ("pdfs", "acks"):  # T-01-T26: the engine's PDFs and e-file status report
+        from abacus.modules.tax import engine_files
+
+        routed = await engine_files.import_other(
+            ctx, return_id, engagement_id, kind, file_name, content
+        )
+        return ImportView(routed, return_id, kind, "routed", (), datetime.min, 1, ())
+    view = await _import_parsed(ctx, return_id, engagement_id, kind, file_name, content)
+    if kind == "diagnostics":  # T-01-T26: an error raises one issue per code and field
+        from abacus.modules.tax import engine_files
+
+        await engine_files.diagnostic_issues(ctx, return_id, view.id)
+    return view
+
+
+async def _import_parsed(
+    ctx: AuthContext,
+    return_id: UUID,
+    engagement_id: UUID,
+    kind: Kind,
+    file_name: str,
+    content: bytes,
+) -> ImportView:
     screened = await screen_and_stage(ctx.tenant_id, content, file_name, None)
     parsed: ValuesFile | DiagnosticsFile = (
         await _parse(parse_values, content)

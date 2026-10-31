@@ -109,6 +109,7 @@ TABLES: tuple[str, ...] = (
     "engagement_member_events",
     "engagement_members",
     "engagements",
+    "engine_acks",
     "engine_diagnostics",
     "engine_exports",
     "engine_import_diffs",

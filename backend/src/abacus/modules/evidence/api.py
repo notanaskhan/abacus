@@ -284,6 +284,7 @@ from abacus.modules.evidence.service import (
 from abacus.modules.evidence.signed_copies import (
     SIGNED_AUTHORIZATIONS,
     ScreenedFile,
+    file_engine_copy,
     file_signed_copy,
     read_staged,
     screen_and_stage,
@@ -583,6 +584,7 @@ __all__ = [
     "export_section_csv",
     "extend_record",
     "extend_retention_for",
+    "file_engine_copy",
     "file_intake_object",
     "file_retrieved_copy",
     "file_signed_copy",
