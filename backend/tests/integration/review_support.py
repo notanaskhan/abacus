@@ -137,4 +137,9 @@ async def make_cast(dsn: str) -> Cast:
         "VALUES ($1, 'review.grammar_api', 'true', 'p04', 'TASK-1400')",
         tenant,
     )
+    await seed.run(
+        "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
+        "VALUES ($1, 'review.approve_agent_output', 'true', 'p04', 'TASK-1400')",
+        tenant,
+    )
     return Cast(seed, tenant, engagement, people)

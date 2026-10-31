@@ -222,6 +222,12 @@ import {
   scenarios as aud03Scenarios,
 } from "./AUD-03/scenarios";
 import { AUD06Frame } from "./AUD-06/artboard";
+import { AUD11Frame } from "./AUD-11/artboard";
+import {
+  type Aud11State,
+  STATES as AUD11_STATES,
+  scenarios as aud11Scenarios,
+} from "./AUD-11/scenarios";
 import {
   STATES as AUD06_STATES,
   type Aud06State,
@@ -1593,6 +1599,26 @@ function Aud06Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("AUD-06", { title: "Trial balance & leadsheets", Component: Aud06Artboard });
+
+// AUD-11 (A-03-T11): a, b, d, the picker and the C-20 states, each on its own scenario.
+function Aud11Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Aud11State = AUD11_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      aud11Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <AUD11Frame key={state} state={state} /> : null;
+}
+
+registerScreen("AUD-11", { title: "Sampling · Northwind participants", Component: Aud11Artboard });
 
 registerScreen("AUD-02", {
   title: "Audit cockpit · Overview, Source Documents, Agent",

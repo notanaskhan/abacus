@@ -1,4 +1,4 @@
-// SHL-11 · Decision card (P-04-T50): one test per frame built (a, b, c, d, f, g, h) on its fixture
+// SHL-11 · Decision card (P-04-T50, T52): one test per frame (a to h; e in InlineCard.test.tsx) on its fixture
 // scenario, and the acceptance: "SHL-11a and c match their artboards at Tier C, and Hannah
 // Leclerc's frame b offers no Decide." Tier C (pixels) is the visual suite's; here the content,
 // the reserved-person rule and the write the person's click sends.
@@ -54,8 +54,8 @@ function show(state: Shl11State, extra: Record<string, FixtureHandler> = {}): Ca
 const question = "Which planning materiality should the Northwind PY2025 audit use?";
 
 describe("SHL-11", () => {
-  it("builds a, b, c, d, f, g and h (e is P-04-T52's)", () => {
-    expect(STATES).toEqual(["a", "b", "c", "d", "f", "g", "h"]);
+  it("builds every frame, a to h (e is the inline card, P-04-T52)", () => {
+    expect(STATES).toEqual(["a", "b", "c", "d", "e", "f", "g", "h"]);
   });
 
   it("a: the question, reserved line, options with the agent's tag, factors; Decide waits", async () => {

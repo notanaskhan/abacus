@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Version | v1 |
-| Status | stub (T-02-T02, 2026-10-29): every route 501 behind `tax.k1_release` |
+| Status | T-02-T20 (2026-10-31): firm reads, share, release check, resend and details review live behind `tax.k1_release`; release and undo (T21) and the portal routes (T26) stay 501 |
 | Provider epic | T-02 |
 | Consumers | TXP-12, POR-13, TAX-03 (hand-offs), R-02 (deliverables v0; the C10 precursor) |
 | Spec | SPEC-502 AC-5; `docs/plan/epics/T-02.md` §3, §4.3 |
@@ -26,3 +26,13 @@ A recipient sees only their own packages, released and later (service; the MFA f
 
 ## 3. Classification
 Box amounts TRI; names and addresses confidential; TIN last four only.
+
+## T-02-T20 additions (DEC-1471)
+- **The K-1 set** arrives through the bridge: `POST /v1/tax-returns/{id}/engine-imports` kind `k1_set` (a person's upload, `engine_import.create`; `engine_sync_events.kind` gains `k1_set`, 0565). The manifest is JSON: `engine_return_id`, `version`, `is_final`, `form` (`1065`, `1120s`, `1041`), `tax_year`, optional `period_start`/`period_end`, and `recipients[]` (`ref`, `name`, `kind` gp/lp/shareholder/beneficiary, `is_entity`, `tin_last4`, `tin_kind`, `address{}`, `ownership_note`, `k3` included/not_required/not_included, `states[]`, `documents[]` {`kind` k1/k3/state_k1/letter, `jurisdiction` for a state K-1, `file_name` of an engine PDF already imported on this return}, `box_lines[]` {`document_kind`, `box_code`, `description`, `amount` as a decimal string, `is_total`}). 422 `k1_set_invalid` (`facts.reason`: `full_tin` when any nine-digit TIN appears, or the field at fault) and `k1_document_missing`. Engine PDF names may carry a recipient suffix (`2025P_Ridgeline_V2_k1_p01.pdf`, `k3_`, `state_k1_il_`, `letter_`), filed as the K-1 family.
+- Applying a set: recipients by `ref`; a new package version per recipient (`draft`); a newer set supersedes a draft, and after release names the released package (`supersedes_package_id`). Documents are marked `is_draft` unless the set is final.
+- `GET …/k1-packages`: `items` with `documents` (additive on `K1PackageOut`), `counts` by status (the tiles). `GET /v1/k1-packages/{pid}`: box lines only for readers of the return's content. `…/documents/{doc}`: the SHL-08 manifest.
+- `POST …/k1-packages:share-internal`: one hand-off per package and target (`draft_shared`), an `internal_handoff` evidence copy in the target's scope (Source documents), fulfilling the target's one open request titled for a K-1 from this issuer, and a `draft_k1` final-approval blocker until the release replaces the draft. The sharer must read both returns (404 otherwise); TAX-02's `k1_dependencies` shows the source only to a reader of both (DEC-88). 409 `k1_not_shareable`.
+- `GET …/k1-packages/release-check`: codes `not_final_approved`, `no_packages`, `final_k1s_missing`, `nothing_to_release`; T21 adds the firm's release condition.
+- `POST /v1/k1-packages/{pid}:resend`: a released package only (409 `k1_not_released`); records the contact and emits `schedule_k_package.resend_requested` for T21's workflow.
+- Details changes: `GET /v1/k1-recipients/{rid}/details-changes`; `:accept` / `:reject` once, by a person (0565's trigger; 409 `details_change_decided`).
+

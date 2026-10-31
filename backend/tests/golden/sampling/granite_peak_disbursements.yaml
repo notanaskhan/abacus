@@ -1,0 +1,61 @@
+# A-03-T09 (TASK-2610): AUD-11f and SHT-01 c, transcribed from the design. Granite Peak
+# Outdoor Supply FY2026, BH-FS-430: disbursements Jul 1 - Sep 18, 2026 from the NetSuite GL
+# snapshot, 1,912 payments, $38,640,200; threshold + random, seed 0x7C31B4. The 40 SURL rows
+# in draw order (stratum 1 all 24 in canonical order, then stratum 2's 16 random); the GL
+# generator places them at the ordinals v2.3 draws (inverse construction, A-03 §5.4).
+# Amounts are quoted text read as Decimal.
+source: AUD-11 f; SHT-01 c (rows SURL-01 to SURL-40); A-03 §3 F1; J22 step 2
+reviewed_by: notanaskhan
+engine_version: "2.3"
+method: threshold_random_stratified
+seed: 0x7C31B4
+seed_hex: "0x7C31B4"
+population: {generator: granite_peak_disbursements, records: 1912, total: "38640200.00"}
+strata:
+  - {position: 1, min_amount: "50000.00", max_amount: null, test_rule: all, population_count: 24, selected_count: 24, items_amount: "3286400.00"}
+  - {position: 2, min_amount: "7750.00", max_amount: "50000.00", test_rule: random, random_count: 16, population_count: 1102, selected_count: 16, items_amount: "412300.00"}
+  - {position: 3, min_amount: null, max_amount: "7750.00", test_rule: none, population_count: 786, selected_count: 0, items_amount: "0.00"}
+items_total: 40
+items_amount: "3698700.00"
+value_share_percent: "9.6"
+items:
+  - {position: 1, key: SURL-01, vendor: "Talus Climbing Gear, Inc.", paid: Jul 2, amount: "186400.00"}
+  - {position: 2, key: SURL-02, vendor: "Cascade Footwear Group", paid: Jul 6, amount: "248900.00"}
+  - {position: 3, key: SURL-03, vendor: "Mesa Packaging Supply", paid: Jul 8, amount: "57250.00"}
+  - {position: 4, key: SURL-04, vendor: "Alpine Thread Mills", paid: Jul 14, amount: "132600.00"}
+  - {position: 5, key: SURL-05, vendor: "Front Range Freight Co.", paid: Jul 22, amount: "68400.00"}
+  - {position: 6, key: SURL-06, vendor: "Peakline Apparel Co.", paid: Jul 24, amount: "214800.00"}
+  - {position: 7, key: SURL-07, vendor: "Basecamp Optics, Inc.", paid: Jul 27, amount: "96300.00"}
+  - {position: 8, key: SURL-08, vendor: "Clear Creek Properties, LLC", paid: Jul 31, amount: "74500.00"}
+  - {position: 9, key: SURL-09, vendor: "Talus Climbing Gear, Inc.", paid: Aug 4, amount: "171200.00"}
+  - {position: 10, key: SURL-10, vendor: "Front Range Freight Co.", paid: Aug 19, amount: "71900.00"}
+  - {position: 11, key: SURL-11, vendor: "Cascade Footwear Group", paid: Aug 21, amount: "305600.00"}
+  - {position: 12, key: SURL-12, vendor: "Highline Retail Systems, Inc.", paid: Aug 25, amount: "58800.00"}
+  - {position: 13, key: SURL-13, vendor: "Peakline Apparel Co.", paid: Sep 2, amount: "189700.00"}
+  - {position: 14, key: SURL-14, vendor: "Front Range Freight Co.", paid: Sep 16, amount: "66250.00"}
+  - {position: 15, key: SURL-15, vendor: "Talus Climbing Gear, Inc.", paid: Sep 16, amount: "162400.00"}
+  - {position: 16, key: SURL-16, vendor: "Alpine Thread Mills", paid: Sep 16, amount: "118300.00"}
+  - {position: 17, key: SURL-17, vendor: "Ridgeway Tent & Tarp Co.", paid: Sep 16, amount: "142600.00"}
+  - {position: 18, key: SURL-18, vendor: "Mesa Packaging Supply", paid: Sep 17, amount: "61300.00"}
+  - {position: 19, key: SURL-19, vendor: "Basecamp Optics, Inc.", paid: Sep 17, amount: "88450.00"}
+  - {position: 20, key: SURL-20, vendor: "Peakline Apparel Co.", paid: Sep 17, amount: "203900.00"}
+  - {position: 21, key: SURL-21, vendor: "Highline Retail Systems, Inc.", paid: Sep 18, amount: "52700.00"}
+  - {position: 22, key: SURL-22, vendor: "Clear Creek Properties, LLC", paid: Sep 18, amount: "74500.00"}
+  - {position: 23, key: SURL-23, vendor: "Talus Climbing Gear, Inc.", paid: Sep 18, amount: "158200.00"}
+  - {position: 24, key: SURL-24, vendor: "Cascade Footwear Group", paid: Sep 18, amount: "281450.00"}
+  - {position: 25, key: SURL-25, vendor: "Mesa Packaging Supply", paid: Jul 3, amount: "18400.00"}
+  - {position: 26, key: SURL-26, vendor: "Front Range Freight Co.", paid: Jul 9, amount: "12650.00"}
+  - {position: 27, key: SURL-27, vendor: "Basecamp Optics, Inc.", paid: Jul 15, amount: "9875.00"}
+  - {position: 28, key: SURL-28, vendor: "Granite Rock Logistics", paid: Jul 21, amount: "23940.00"}
+  - {position: 29, key: SURL-29, vendor: "Summit Signage Co.", paid: Jul 28, amount: "31200.00"}
+  - {position: 30, key: SURL-30, vendor: "Evergreen Janitorial Services", paid: Aug 3, amount: "8600.00"}
+  - {position: 31, key: SURL-31, vendor: "Ridgeway Tent & Tarp Co.", paid: Aug 7, amount: "49750.00"}
+  - {position: 32, key: SURL-32, vendor: "Alpine Thread Mills", paid: Aug 12, amount: "27300.00"}
+  - {position: 33, key: SURL-33, vendor: "Highline Retail Systems, Inc.", paid: Aug 18, amount: "15980.00"}
+  - {position: 34, key: SURL-34, vendor: "Peak Power Utilities", paid: Aug 24, amount: "21460.00"}
+  - {position: 35, key: SURL-35, vendor: "Mesa Packaging Supply", paid: Aug 28, amount: "36120.00"}
+  - {position: 36, key: SURL-36, vendor: "Front Range Freight Co.", paid: Sep 2, amount: "19875.00"}
+  - {position: 37, key: SURL-37, vendor: "Talus Climbing Gear, Inc.", paid: Sep 8, amount: "47600.00"}
+  - {position: 38, key: SURL-38, vendor: "Northgate Insurance Brokers", paid: Sep 10, amount: "12300.00"}
+  - {position: 39, key: SURL-39, vendor: "Basecamp Optics, Inc.", paid: Sep 14, amount: "28450.00"}
+  - {position: 40, key: SURL-40, vendor: "Cascade Footwear Group", paid: Sep 17, amount: "48800.00"}

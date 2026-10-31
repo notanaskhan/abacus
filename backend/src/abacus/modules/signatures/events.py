@@ -76,6 +76,8 @@ class EnvelopeSignerVerificationFailed(DomainEvent):
     engagement_id: Annotated[UUID | None, classified("internal")]
     source_kind: Annotated[str, classified("internal")]
     source_id: Annotated[UUID, classified("internal")]
+    # N-02-T27 (additive): the person who sent it, whom C16 tells (DF-11).
+    sent_by: Annotated[UUID | None, classified("internal")] = None
 
 
 class EnvelopeDeclined(DomainEvent):
