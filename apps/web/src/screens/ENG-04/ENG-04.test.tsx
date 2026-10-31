@@ -1,6 +1,7 @@
 // ENG-04 · Engagement letter composer, part 1 (N-02-T34). Acceptance: "Scenario tests for a, b and
 // c pass and switching clause 5 off strikes it and the redline pill reads 3." Each frame on its
 // fixture scenario: the structure pane, the paper, the primary, and a toggle in Draft.
+// Part 2 (N-02-T37): "Scenario tests for d, e and f pass", and Compare to standard's overlay.
 import { client } from "@abacus/api-client/client";
 import { toastStore } from "@abacus/ui";
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
@@ -12,7 +13,7 @@ import {
 } from "../../app-core/fixture-mode";
 import { renderRoutes } from "../../testing/support";
 import { LetterComposer } from ".";
-import { type Eng04State, OPENS, freshScenario } from "./scenarios";
+import { type Eng04State, OPENS_FOR, freshScenario } from "./scenarios";
 
 beforeAll(() => {
   client.setConfig({ baseUrl: window.location.origin, throwOnError: true });
@@ -32,7 +33,7 @@ interface Call {
   body: unknown;
 }
 
-function show(state: Eng04State, opened: string[] = []): Call[] {
+function show(state: Eng04State, opened: string[] = [], amended: string[] = []): Call[] {
   const calls: Call[] = [];
   const scenario: Scenario = freshScenario(state);
   const handlers = Object.fromEntries(
@@ -50,9 +51,10 @@ function show(state: Eng04State, opened: string[] = []): Call[] {
       path: "/",
       component: () => (
         <LetterComposer
-          engagementId={OPENS}
-          engagementName="Ridgeline cost segregation & §754 analysis"
+          engagementId={OPENS_FOR[state].id}
+          engagementName={OPENS_FOR[state].name}
           onOpenEnvelope={(id) => opened.push(id)}
+          onAmend={() => amended.push(state)}
           height={700}
         />
       ),
@@ -170,5 +172,115 @@ describe("ENG-04 c: sent", () => {
     }
     expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
     expect(screen.queryByText("DRAFT")).toBeNull();
+  });
+});
+
+describe("ENG-04 d: signed and locked (Copperleaf 2026 Close)", () => {
+  it("is locked with its signers and days, the approver of record and the SSARS note", async () => {
+    const amended: string[] = [];
+    show("d", [], amended);
+    expect(await screen.findByText("Signed")).toBeTruthy();
+    expect(document.querySelector("[data-locked='true']")).not.toBeNull();
+    expect(
+      screen.getByText(
+        "Signed by Tess Moreno · Mar 2, 2026 · countersigned by Priya Raman · Mar 3, 2026",
+      ),
+    ).toBeTruthy();
+    expect(screen.getByText("Ben Ashby, Controller")).toBeTruthy();
+    expect(document.querySelector("[data-routing-note]")?.textContent).toContain(
+      "outside AR-C 70 (SSARS 27)",
+    );
+    const edit = screen.getByRole<HTMLButtonElement>("button", { name: "Edit" });
+    expect(edit.disabled).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Amend… (addendum)" }));
+    expect(amended).toEqual(["d"]);
+    expect(screen.queryByRole("button", { name: "Send for signature…" })).toBeNull();
+  });
+});
+
+describe("ENG-04 e: audit variant (Fairhaven)", () => {
+  it("names its template, the sent date and the AU-C 210 clauses", async () => {
+    show("e");
+    expect(await screen.findByText("BH Audit Letter · EBP v3")).toBeTruthy();
+    expect(screen.getByText("Sent Sep 8 · 0 of 2 signed")).toBeTruthy();
+    expect(screen.getByText("Plan administrator elects (certification required)")).toBeTruthy();
+    expect(screen.getByText("no nonattest services")).toBeTruthy();
+    const clauses = within(screen.getByRole("region", { name: "Clauses" }));
+    for (const title of [
+      "Objective and scope",
+      "Management's responsibilities",
+      "Auditor's responsibilities",
+      "Limitations",
+      "Form of report",
+      "Use of technology and AI",
+      "Fees ($26,500)",
+      "Signatures",
+    ]) {
+      expect(clauses.getByRole("switch", { name: title })).toBeTruthy();
+    }
+    expect(document.querySelector("[data-section='fees']")?.textContent).toContain("$26,500");
+  });
+});
+
+describe("ENG-04 f: bundled consents (Feld)", () => {
+  it("keeps the two §7216 consents as separate documents, each signed", async () => {
+    show("f");
+    expect(
+      await screen.findByText(
+        "Use · AI disclosure — 2 separate consent documents · 2 signers (Claire Feld, Jonah Feld)",
+      ),
+    ).toBeTruthy();
+    const tabs = screen.getByRole("tablist", { name: "Documents" });
+    expect(
+      within(tabs)
+        .getAllByRole("tab")
+        .map((t) => t.textContent),
+    ).toEqual([
+      "Engagement letter",
+      "Consent to use tax return information",
+      "Consent to disclose tax return information to AI service providers",
+    ]);
+    fireEvent.click(
+      within(tabs).getByRole("tab", { name: "Consent to use tax return information" }),
+    );
+    expect(
+      await screen.findByText("BH §7216 Consent to Use v2", {
+        selector: "[data-document-template]",
+      }),
+    ).toBeTruthy();
+    expect(document.body.textContent).toContain(
+      "Brightwater Hale may use the tax return information",
+    );
+    fireEvent.click(
+      within(tabs).getByRole("tab", {
+        name: "Consent to disclose tax return information to AI service providers",
+      }),
+    );
+    expect(
+      await screen.findByText("BH §7216 Consent to Disclose — AI sub-processors v2", {
+        selector: "[data-document-template]",
+      }),
+    ).toBeTruthy();
+    // A consent is never a clause of the letter.
+    const clauses = within(screen.getByRole("region", { name: "Clauses" }));
+    expect(clauses.queryByText(/Consent to/)).toBeNull();
+  });
+});
+
+describe("ENG-04 Compare to standard", () => {
+  it("overlays C11's diff: the non-standard clauses read as inserted", async () => {
+    const calls = show("a");
+    fireEvent.click(await screen.findByRole("button", { name: "Compare to standard" }));
+    await waitFor(() => {
+      expect(document.querySelectorAll("[data-op='insert']").length).toBe(2);
+    });
+    const timing = document.querySelector("[data-section='timing-754'] [data-op='insert']");
+    expect(timing?.textContent).toContain("section 754 election");
+    expect(document.querySelector("[data-section='fees'] [data-op='insert']")).toBeNull();
+    expect(calls.some((c) => c.path.endsWith("/compare"))).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Compare to standard" }));
+    await waitFor(() => {
+      expect(document.querySelector("[data-op='insert']")).toBeNull();
+    });
   });
 });
