@@ -142,17 +142,18 @@ async def test_ac_the_live_methodology_cards_with_facet_counts(library: Library)
     assert (v1["status"], v1["version_label"]) == ("superseded", "v1")
     assert page["counts"] == {"published": 1, "draft": 0, "superseded": 1}
     facets = {f["value"]: f["n"] for f in cast(list[Json], cast(Json, page["facets"])["category"])}
-    # Only the registered categories carry a count; firm standards etc. have none (AC1.2).
-    assert facets == {"methodology": 2, "pbc_templates": 1}
+    # Only the registered categories carry a count (AC1.2). K-02-T08 registered firm standards,
+    # and this world publishes none, so that category counts 0.
+    assert facets == {"methodology": 2, "pbc_templates": 1, "firm_standards": 0}
 
 
 async def test_ac_an_unregistered_category_returns_no_count_and_no_cards(
     library: Library,
 ) -> None:
-    page = await library.get(library.daniel, f"{ITEMS}?category=firm_standards")
+    page = await library.get(library.daniel, f"{ITEMS}?category=skills")
     assert page["items"] == [] and page["total"] == 0
     facets = cast(list[Json], cast(Json, page["facets"])["category"])
-    assert "firm_standards" not in {f["value"] for f in facets}
+    assert "skills" not in {f["value"] for f in facets}
 
 
 async def test_ac_inv3_a_walled_engagement_is_never_counted(library: Library) -> None:

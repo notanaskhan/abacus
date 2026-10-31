@@ -22,7 +22,7 @@ Expand-only. RED.
 Classification: ids and times Internal; `failure_code` a code, never a value.
 
 Revision ID: 0566
-Revises: 0522
+Revises: 0524
 """
 
 from __future__ import annotations
@@ -32,7 +32,7 @@ from alembic import op
 from abacus.kernel.db.migration import tenant_table
 
 revision = "0566"
-down_revision = "0522"
+down_revision = "0524"
 branch_labels = None
 depends_on = None
 

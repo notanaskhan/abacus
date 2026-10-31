@@ -154,3 +154,21 @@ class EnvelopeStatusPollWorkflow:
             start_to_close_timeout=_SWEEP_TIMEOUT,
             retry_policy=RetryPolicy(maximum_attempts=2),
         )
+
+
+INTEGRITY_ID = "signatures-evidence-integrity"
+
+
+@workflow.defn(name="EvidenceIntegrity")
+class EvidenceIntegrityWorkflow:
+    """N-02-T38: nightly, every envelope's evidence records re-hashed against their digests
+    (`integrity.evidence_integrity_sweep`). Orchestration only."""
+
+    @workflow.run
+    async def run(self) -> int:
+        return await workflow.execute_activity(
+            "signatures.evidence_integrity_sweep",
+            result_type=int,
+            start_to_close_timeout=timedelta(hours=2),
+            retry_policy=RetryPolicy(maximum_attempts=2),
+        )

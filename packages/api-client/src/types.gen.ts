@@ -44851,10 +44851,6 @@ export type PatchPacketErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PatchPacketError = PatchPacketErrors[keyof PatchPacketErrors];
@@ -44911,10 +44907,6 @@ export type ApprovePacketErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ApprovePacketError = ApprovePacketErrors[keyof ApprovePacketErrors];
@@ -44971,10 +44963,6 @@ export type RegenerateLetterErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RegenerateLetterError = RegenerateLetterErrors[keyof RegenerateLetterErrors];
@@ -85545,10 +85533,6 @@ export type DeliveryErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DeliveryError = DeliveryErrors[keyof DeliveryErrors];
@@ -85609,10 +85593,6 @@ export type AssemblePacketErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AssemblePacketError = AssemblePacketErrors[keyof AssemblePacketErrors];
@@ -85673,10 +85653,6 @@ export type EfileEnvelopeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EfileEnvelopeError = EfileEnvelopeErrors[keyof EfileEnvelopeErrors];
