@@ -1537,7 +1537,7 @@ export type AjeThresholdRow = {
     /**
      * Limit Usd
      */
-    limit_usd: number | null;
+    limit_usd?: number | null;
     /**
      * Rule
      */

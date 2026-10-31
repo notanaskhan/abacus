@@ -97,7 +97,8 @@ class AjeThresholdRow(BaseModel):
 
     account_class: Annotated[str, Field(min_length=1, max_length=80), classified("internal")]
     rule: Annotated[Literal["limit", "review_required", "always_held"], classified("internal")]
-    limit_usd: Annotated[Usd | None, classified("internal")]
+    # K-02-T18: an empty workbook cell reads as absent, so the null limit is the default.
+    limit_usd: Annotated[Usd | None, classified("internal")] = None
     approver_level: Annotated[ApproverLevel, classified("internal")]
     batch: Annotated[bool, classified("internal")]
 
