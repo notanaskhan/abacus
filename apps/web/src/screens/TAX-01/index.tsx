@@ -27,9 +27,9 @@ import {
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { useNow } from "../../app-core/clock";
-import { useOpenHref } from "../../app-core/open";
+import { useOpenHref, useOpenOverlay } from "../../app-core/open";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
-import { hrefOf, to } from "../../routes/to";
+import { hrefOf, ov, to } from "../../routes/to";
 import { COPY } from "./copy";
 
 // TAX-01 · Tax Returns practice board (T-02-T12; docs/screens/TAX-01.md) on TPL-01's T1 grammar,
@@ -142,6 +142,7 @@ export function TAX01({
 }: TAX01Props): JSX.Element {
   const now = useNow();
   const openHref = useOpenHref();
+  const openOverlay = useOpenOverlay();
   const onOpen =
     onOpenRow ??
     ((row: TaxReturnRowOut): void => {
@@ -336,7 +337,13 @@ export function TAX01({
         r.sync === null ? null : (
           <Tooltip content={COPY.syncTip}>
             <span>
-              <SyncChip code={r.sync} />
+              <SyncChip
+                code={r.sync}
+                onClick={(e) => {
+                  e.stopPropagation(); // the chip opens TAX-09, not the row's return
+                  openOverlay(ov.TAX09(r.id));
+                }}
+              />
             </span>
           </Tooltip>
         ),

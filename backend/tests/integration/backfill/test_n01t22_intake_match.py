@@ -32,6 +32,7 @@ from abacus.kernel.crypto import LocalKeyService, configure_key_service, reset_k
 from abacus.kernel.db import TenantContext
 from abacus.kernel.flags import forget_flags
 from abacus.kernel.storage import s3_client
+from abacus.kernel.uow import OutboxEvent
 from abacus.modules.agents import inbox_match, intake_match, intake_start
 from abacus.modules.agents.activities import (
     create_intake_run_activity,
@@ -45,10 +46,12 @@ from abacus.modules.communications.api import (
     record_inbound_message,
 )
 from abacus.modules.communications.deliveries import address_hash
+from abacus.modules.communications.intake_candidates import card_candidates, on_intake_recorded
 from abacus.modules.communications.triage_classify import attachment_classified
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.api import INTAKE, UploadInput, pii_scan_upload, words_upload
 from abacus.modules.evidence.api import process_upload as extract_upload
+from abacus.modules.identity.api import AuthContext, member_context
 from abacus_tools.synthetic.documents import positioned_pdf
 
 from .support import Net, Person, Site
@@ -410,3 +413,75 @@ async def test_classifying_a_matched_attachment_announces_it(net: Net) -> None:
     assert {"attachment_id": str(attachment), "client_id": str(firm.site.client_id)} in [
         {k: p[k] for k in ("attachment_id", "client_id")} for p in payloads
     ]
+
+
+# --- N-01-T22 follow-up (DEC-1287): INB-02's candidates and `ambiguous_candidates` -------------
+
+
+def _two(request_marker: str, first: float, second: float) -> Answer:
+    """The request and the permanent file, at the confidences given, both with a real quote."""
+
+    def made(request: ModelRequest) -> dict[str, object]:
+        body = answer(request_marker, confidence=first)(request)
+        proposals = cast(list[dict[str, object]], body["proposals"])
+        proposals.append(
+            {
+                "destination": ref_of(request, "Permanent file"),
+                "confidence": second,
+                "rationale": "A standing record of coverage.",
+                "citations": [{"page": 1, "quote": QUOTE}],
+            }
+        )
+        return body
+
+    return made
+
+
+async def _member(firm: Firm, who: Person) -> AuthContext:
+    found = await member_context(firm.tenant_id, who.user_id)
+    assert found is not None
+    return found
+
+
+async def test_inb02_cards_offer_the_shown_proposals_the_reader_may_file_to(
+    net: Net, stub: Stub
+) -> None:
+    firm = await _firm(net)
+    stub.answer = _two(firm.request_marker, 0.92, 0.3)  # the second is below the spec's routing
+    attachment = await firm.receive()
+    _, status = await firm.match(attachment)
+    assert status == "completed"
+    cards = await card_candidates(await _member(firm, firm.partner), [attachment])
+    assert [(c.kind, c.label, round(c.confidence, 2)) for c in cards[attachment]] == [
+        ("request", firm.request_marker, 0.92)
+    ]  # the hidden proposal is never offered
+    walled = await net.seed.person(firm.tenant_id, "firm_admin")
+    await net.wall(firm.partner, walled, firm.site)
+    assert (await card_candidates(await _member(firm, walled), [attachment])).get(
+        attachment, []
+    ) == []
+
+
+async def test_two_close_proposals_flag_the_card_ambiguous_once(net: Net, stub: Stub) -> None:
+    firm = await _firm(net)
+    stub.answer = _two(firm.request_marker, 0.86, 0.84)
+    attachment = await firm.receive()
+    _, status = await firm.match(attachment)
+    assert status == "completed"
+    [recorded] = await net.seed.rows(
+        "SELECT payload FROM outbox WHERE tenant_id = $1 "
+        "AND event_type = 'inbox_match.intake_recorded'",
+        firm.tenant_id,
+    )
+    payload = cast(dict[str, object], json.loads(str(recorded["payload"])))
+    assert payload["attachment_id"] == str(attachment)
+    event = OutboxEvent(uuid.uuid4(), firm.tenant_id, "inbox_match.intake_recorded", payload)
+    await on_intake_recorded(event)
+    await on_intake_recorded(event)  # a redelivery adds nothing
+    flags = await net.seed.rows(
+        "SELECT facts FROM inbox_attachment_flags WHERE attachment_id = $1 "
+        "AND kind = 'ambiguous_candidates'",
+        attachment,
+    )
+    assert len(flags) == 1
+    assert json.loads(str(flags[0]["facts"])) == {"top": 86, "second": 84}

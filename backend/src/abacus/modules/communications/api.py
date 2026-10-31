@@ -63,6 +63,11 @@ from abacus.modules.communications.intake import (
     add_attachment,
     record_inbound_message,
 )
+from abacus.modules.communications.intake_candidates import (
+    IntakeCandidate,
+    on_intake_recorded,
+    register_intake_candidates,
+)
 from abacus.modules.communications.intake_contract import destinations_router, intake_router
 from abacus.modules.communications.intake_matching import (
     FolderDestination,
@@ -213,6 +218,8 @@ SUBSCRIPTIONS = {
     ClientAccessRevoked.event_type: revoke_links_on_access_revoked,  # P-08-T21: links die too
     # R-01-T27: a new domain's verification starts once its row is committed.
     SendingDomainStatusChanged.event_type: on_status_changed,
+    # N-01-T22 follow-up (DEC-1287): the matcher's intake proposals may make a card ambiguous.
+    "inbox_match.intake_recorded": on_intake_recorded,
     # N-01-T12: a received intake attachment goes through the upload steps (AttachmentTriage).
     InboxAttachmentReceived.event_type: on_attachment_received,
     PortalIntakeWithdrawn.event_type: on_withdrawn,  # N-01-T14: the upload's 30-day purge
@@ -295,6 +302,7 @@ __all__ = [
     "Inbound",
     "InboxAttachmentMatchable",
     "IntakeAttachmentFacts",
+    "IntakeCandidate",
     "IntakeDestination",
     "IntakePurgeInput",
     "IntakeWithdrawalPurgeWorkflow",
@@ -370,6 +378,7 @@ __all__ = [
     "publish_email_template",
     "record_inbound_message",
     "register_email_template",
+    "register_intake_candidates",
     "register_intake_destination",
     "register_reminder_history",
     "registered_templates",

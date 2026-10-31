@@ -197,6 +197,7 @@ from abacus.modules.evidence.records import (
     RecordClass,
     StoredRecord,
     anchor_chain,
+    extend_record,
     get_record,
     put_record,
 )
@@ -303,7 +304,7 @@ from abacus.modules.evidence.uploads import (
     upload,
     upload_preview,
 )
-from abacus.modules.evidence.viewer import readable_version, viewer_page
+from abacus.modules.evidence.viewer import readable_version, signer_page, viewer_page
 from abacus.modules.evidence.withdrawals import ACTIVITIES as WITHDRAWAL_ACTIVITIES
 from abacus.modules.evidence.withdrawals import SUBSCRIPTIONS as WITHDRAWAL_SUBSCRIPTIONS
 from abacus.modules.evidence.withdrawals import WORKFLOWS as WITHDRAWAL_WORKFLOWS
@@ -580,6 +581,7 @@ __all__ = [
     "export_manifest_json_schema",
     "export_requester",
     "export_section_csv",
+    "extend_record",
     "extend_retention_for",
     "file_intake_object",
     "file_retrieved_copy",
@@ -640,6 +642,7 @@ __all__ = [
     "screen_and_stage_detached",
     "screening_facts",
     "set_policy",
+    "signer_page",
     "stage_content",
     "stale_pdfs",
     "start_trust_layer_backfill",

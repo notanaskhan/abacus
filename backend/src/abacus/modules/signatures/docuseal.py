@@ -29,6 +29,12 @@ sealed secret holds the API key. Otherwise `ProviderUnavailable`: nothing leaves
   an isolated child (`audit_text`); a completed signer with no IP there is refused, never
   recorded without one.
 - **Void** is archive (DocuSeal has no void); the envelope's own state records the void.
+- **Signing** (N-02-T23, DEC-1283). DocuSeal's form refuses framing (`X-Frame-Options
+  SAMEORIGIN`), so the portal hands the signer a same-tab redirect to the submitter's own form
+  (`embed_src`, on DocuSeal's file host) and each submitter's `completed_redirect_url` brings
+  them back to POR-06's return route, which polls before it shows anything. The form link stays
+  valid after completion and opens the form to whoever holds it: it is fetched per signing
+  session, for the named signer's authenticated session only, and never stored or logged.
 - **Hosts.** Only DocuSeal's API host (`ALLOWED_HOSTS`) and its file hosts (`DOCUMENT_HOSTS`); a
   host elsewhere is refused before any request. Q-01's egress firewall lists both when W7 opens.
 
@@ -427,6 +433,11 @@ class DocuSealProvider:
                     "order": orders[s.signer_id],
                     "send_email": False,
                     "send_sms": False,
+                    **(
+                        {"completed_redirect_url": spec.return_url}
+                        if spec.return_url is not None
+                        else {}
+                    ),
                     "fields": [
                         {"name": d, "readonly": True, "default_value": _SIGNING_DATE}
                         for d in dates.get(s.signer_id, [])
@@ -505,6 +516,23 @@ class DocuSealProvider:
                 )
             )
         return Completed(combined, certificate, tuple(evidence))
+
+    async def signing_url(self, provider_envelope_id: str, signer_id: str) -> str:
+        """The signer's own form on DocuSeal's file host; a bearer link, never stored."""
+        submission = await self._submission(provider_envelope_id)
+        for s in cast(list[Json], submission.get("submitters") or []):
+            if str(s.get("external_id") or "") != signer_id:
+                continue
+            url = s.get("embed_src")
+            if not isinstance(url, str) or not url:
+                slug = s.get("slug")
+                url = f"https://docuseal.com/s/{slug}" if isinstance(slug, str) and slug else None
+            if url is None or urlsplit(url).scheme != "https":
+                raise DocuSealError("signing_url")
+            if _host_of(url) not in DOCUMENT_HOSTS:
+                raise HostNotAllowed(_host_of(url))
+            return url
+        raise DocuSealError("signing_url")
 
     # --- writes after create -----------------------------------------------------------------
 

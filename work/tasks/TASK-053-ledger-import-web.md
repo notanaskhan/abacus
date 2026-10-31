@@ -8,7 +8,7 @@ status: done
 branch: task-053-ledger-import-web
 worktree:
 created: 2026-10-11
-updated: 2026-10-11
+updated: 2026-10-31
 ---
 
 > **Rules for the agent working this task**
@@ -78,3 +78,6 @@ SPEC-028 AC-1, AC-2, AC-6 (the messages), AC-9; goals 5 (labels), 7, 8 and 9.
 
 ## Handoff
 Done. Next under SPEC-028: NetSuite, Sage Intacct and QuickBooks Desktop formats (Q1); a corrected re-upload after an item is received (SPEC-029).
+
+## Superseded (A-02-T38, 2026-10-31)
+Closed as superseded by A-02: POR-16 replaces this connection panel (every ledger card offers *Export instead*, ADR-108). The panel and its guided export steps stay in `apps/web/src/legacy/` (`ConnectionPanel.tsx`, `LedgerExport.tsx`) until they are retired through `ac-test-integrity`; R-01's POR-04 may restyle the steps.
