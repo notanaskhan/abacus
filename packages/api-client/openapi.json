@@ -173311,6 +173311,115 @@
         "x-abacus-action": "portal_envelopes.read"
       }
     },
+    "/v1/portal/filed-returns/{delivery_id}/download": {
+      "get": {
+        "description": "The released client copy of a filed and accepted return, for a client whose grant covers\nit, after the portal's second step (403 `mfa_required`); audited (T-01-T41).",
+        "operationId": "filed_return_download",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "delivery_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Delivery Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "contentMediaType": "application/octet-stream",
+                  "title": "Response Filed Return Download",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Filed Return Download Route",
+        "tags": [
+          "portal"
+        ],
+        "x-abacus-action": "portal_home.read"
+      }
+    },
     "/v1/portal/home": {
       "get": {
         "description": "POR-02 for one scope (default: the person's first full-client scope). A scope no grant\ncovers, or a person with no full-client grant (third party, K-1 only), answers 404 (INV-4).",
@@ -186459,7 +186568,7 @@
     },
     "/v1/tax-returns/{return_id}/deliverables:publish": {
       "post": {
-        "description": "Release the client copy to the portal (a person's act; the email is R-01's template).",
+        "description": "Release the accepted return's client copy to the household's portal (a person's act;\nT-01-T41). 409 `return_not_accepted`, `packet_not_approved`, `no_client_copy`.",
         "operationId": "publish_deliverable",
         "parameters": [
           {
@@ -186576,16 +186685,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Publish Deliverable Route",

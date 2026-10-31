@@ -24,6 +24,7 @@ Accrued records the e-file lifecycle; it **never transmits** (R-04). The ERO tra
 | Manual ack with evidence | `POST /v1/tax-returns/{id}/acks` | `efile_ack.record` |
 | A rejection as an issue; Rejected to Fixing (409 `not_rejected`; T-01-T37, DEC-1570) | `POST /v1/tax-returns/{id}/acks/{ack_id}/issue` | `efile_ack.record` |
 | Release the client copy | `POST /v1/tax-returns/{id}/deliverables:publish` | `deliverable.publish` |
+| The client copy, for the household (403 `mfa_required` before the second step; T-01-T41, DEC-1571) | `GET /v1/portal/filed-returns/{delivery_id}/download` | `portal_home.read` (`scope_only` on the return) |
 | ERO designation | `PUT /v1/firm/members/{id}/ero` | `member.set_ero` (firm admin, fresh MFA) |
 
 ## 3. Never ERO
