@@ -434,6 +434,14 @@ import {
 } from "./SHL-03/scenarios";
 import { TaxReturnsPage } from "./TAX-01";
 import { ReturnOverviewPage } from "./TAX-02";
+import { ReturnIntakePage } from "./TAX-03";
+import {
+  OPENS as TAX03_OPENS,
+  OPEN_DOCUMENT as TAX03_DOCUMENT,
+  STATES as TAX03_STATES,
+  type Tax03State,
+  scenarios as tax03Scenarios,
+} from "./TAX-03/scenarios";
 import {
   OPENS as TAX02_OPENS,
   STATES as TAX02_STATES,
@@ -1301,6 +1309,45 @@ function Tax02Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("TAX-02", { title: "Return › Overview", Component: Tax02Artboard });
+
+function Tax03Frame({ state }: { state: Tax03State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/tax-returns" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <ReturnIntakePage
+        returnId={TAX03_OPENS[state]}
+        initialDocument={TAX03_DOCUMENT[state] ?? null}
+        toolbar={bar.toolbar}
+        frame
+      />
+    </div>
+  );
+}
+
+function Tax03Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Tax03State = TAX03_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      tax03Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Tax03Frame key={state} state={state} /> : null;
+}
+
+registerScreen("TAX-03", { title: "Return › Intake", Component: Tax03Artboard });
 
 function Eng01Frame({ state }: { state: Eng01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";

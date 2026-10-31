@@ -51,6 +51,7 @@ from abacus.modules.evidence.classifier import rules as classifier_rules
 from abacus.modules.evidence.contract import withdrawal_router
 from abacus.modules.evidence.drops import drop_batch
 from abacus.modules.evidence.drops_contract import drops_router, void_router
+from abacus.modules.evidence.duplicates import PendingDuplicate, pending_duplicates
 from abacus.modules.evidence.duplicates_contract import duplicates_router
 from abacus.modules.evidence.events import (
     EvidenceVersionCreated,
@@ -533,6 +534,7 @@ __all__ = [
     "LegalHoldRelease",
     "MatchMaterial",
     "NewItem",
+    "PendingDuplicate",
     "PolicyChange",
     "PortalFile",
     "Proposal",
@@ -621,6 +623,7 @@ __all__ = [
     "normalised_text",
     "page_quote_reason",
     "pdf_text",
+    "pending_duplicates",
     "pii_scan_upload",
     "place_hold",
     "portal_files",
