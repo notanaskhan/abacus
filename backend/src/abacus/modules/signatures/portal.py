@@ -61,7 +61,14 @@ from abacus.kernel.request_context import current
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.engagements.api import contact_ids_of_user, get_ref
 from abacus.modules.evidence.api import get_record, signer_page, version_titles
-from abacus.modules.identity.api import AuthContext, Forbidden, authorise, firm_time_zone
+from abacus.modules.identity.api import (
+    AuthContext,
+    Forbidden,
+    authorise,
+    firm_time_zone,
+    portal_scopes,
+    scope_facts,
+)
 from abacus.modules.signatures import status_poll
 from abacus.modules.signatures.activities import envelope_poll
 from abacus.modules.signatures.hub import seal_ip
@@ -259,9 +266,27 @@ def _row(m: Mine) -> ListRow:
     return ListRow(m.envelope_id, m.title, m.status, m.signer_status, m.due_on)
 
 
+async def _list_check(ctx: AuthContext) -> None:
+    """The list's own check: `portal_envelopes.read` on an engagement one of the person's grants
+    covers (`scope_only`); a person no grant covers has no list (404). Each row is then checked on
+    its own engagement and work item."""
+    for grant in (await portal_scopes(ctx)).scopes:
+        facts = await scope_facts(ctx.tenant, grant.scope_kind, grant.scope_id)
+        if facts is None or facts.engagement_id is None:
+            continue
+        try:
+            engagement = await get_ref(ctx, facts.engagement_id)
+            await authorise(ctx, READ, engagement.resource())
+        except (Forbidden, NotFound):
+            continue
+        return
+    raise NotFound("portal_scope")
+
+
 async def list_mine(ctx: AuthContext, *, tab: str, cursor: str | None, limit: int) -> Page:
     """`GET /v1/portal/envelopes`: To sign or Signed, newest first, the person's rows only."""
     await _gate(ctx)
+    await _list_check(ctx)
     query = query_hash(tab=tab)
     after = (
         None

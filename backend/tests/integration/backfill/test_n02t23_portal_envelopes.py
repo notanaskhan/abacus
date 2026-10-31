@@ -246,7 +246,7 @@ async def _refused(
 ) -> tuple[int, str]:
     headers = w.net.headers(who, mfa=mfa) | {"Idempotency-Key": key or uuid.uuid4().hex}
     response = await w.net.http.post(path, headers=headers)
-    code = cast(Body, response.json()).get("code") if response.content else None
+    code = cast(Body, response.json()).get("detail") if response.content else None
     return response.status_code, str(code)
 
 
@@ -430,7 +430,7 @@ async def test_a_portal_decline_refuses_sessions_and_withdraws_but_a_provider_on
         f"{BASE}/{envelope}/decline/withdraw", headers=net.headers(owen)
     )
     assert response.status_code == 409, response.text
-    assert response.json()["code"] == "decline_not_withdrawable"
+    assert response.json()["detail"] == "decline_not_withdrawable"
     actions = await net.seed.actions(w.tenant)
     assert {"envelope.declined", "envelope.decline_withdrawn"} <= set(actions)
 
@@ -446,7 +446,7 @@ async def test_the_signed_copy_carries_the_evidence_pages_and_each_download_is_a
     envelope, (signer,) = await _send(w, [owen])
     early = await net.http.get(f"{BASE}/{envelope}/download", headers=net.headers(owen))
     assert early.status_code == 409, early.text
-    assert early.json()["code"] == "signed_copy_not_ready"
+    assert early.json()["detail"] == "signed_copy_not_ready"
 
     fake.sign(await _pid(w, envelope), str(signer))
     given = EnvelopeInput(str(w.tenant), str(envelope))
