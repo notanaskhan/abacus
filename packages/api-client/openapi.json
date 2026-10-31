@@ -133630,7 +133630,7 @@
     },
     "/v1/envelopes/remind/preview": {
       "post": {
-        "description": "Template preview, nothing sent (N-02-T14).",
+        "description": "Who would get a reminder now, under each policy's cap; nothing sent (N-02-T28).",
         "operationId": "remind_envelopes_preview",
         "parameters": [
           {
@@ -133726,16 +133726,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Remind Envelopes Preview Route",
@@ -133747,7 +133737,7 @@
     },
     "/v1/envelopes/remind/send": {
       "post": {
-        "description": "A person sends the template reminder (DEC-74; N-02-T14).",
+        "description": "A person sends the previewed `signature_reminder` version (DEC-74; N-02-T28); 409\n`stale_version` when another version is in use now.",
         "operationId": "remind_envelopes_send",
         "parameters": [
           {
@@ -133864,16 +133854,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Remind Envelopes Send Route",
@@ -134225,7 +134205,7 @@
     },
     "/v1/envelopes/{envelope_id}/countersign/session": {
       "post": {
-        "description": "The provider view for the named firm signer (N-02-T28).",
+        "description": "The provider view for the named firm signer only; any other person 403 (N-02-T28).",
         "operationId": "countersign_session",
         "parameters": [
           {
@@ -134331,16 +134311,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Countersign Session Route",

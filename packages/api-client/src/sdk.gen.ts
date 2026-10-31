@@ -5282,7 +5282,7 @@ export const stageEnvelopeImportFile = <ThrowOnError extends boolean = false>(op
 /**
  * Remind Envelopes Preview Route
  *
- * Template preview, nothing sent (N-02-T14).
+ * Who would get a reminder now, under each policy's cap; nothing sent (N-02-T28).
  */
 export const remindEnvelopesPreview = <ThrowOnError extends boolean = false>(options: Options<RemindEnvelopesPreviewData, ThrowOnError>): RequestResult<RemindEnvelopesPreviewResponses, RemindEnvelopesPreviewErrors, ThrowOnError> => (options.client ?? client).post<RemindEnvelopesPreviewResponses, RemindEnvelopesPreviewErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5297,7 +5297,8 @@ export const remindEnvelopesPreview = <ThrowOnError extends boolean = false>(opt
 /**
  * Remind Envelopes Send Route
  *
- * A person sends the template reminder (DEC-74; N-02-T14).
+ * A person sends the previewed `signature_reminder` version (DEC-74; N-02-T28); 409
+ * `stale_version` when another version is in use now.
  */
 export const remindEnvelopesSend = <ThrowOnError extends boolean = false>(options: Options<RemindEnvelopesSendData, ThrowOnError>): RequestResult<RemindEnvelopesSendResponses, RemindEnvelopesSendErrors, ThrowOnError> => (options.client ?? client).post<RemindEnvelopesSendResponses, RemindEnvelopesSendErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5350,7 +5351,7 @@ export const updateEnvelopeDraft = <ThrowOnError extends boolean = false>(option
 /**
  * Countersign Session Route
  *
- * The provider view for the named firm signer (N-02-T28).
+ * The provider view for the named firm signer only; any other person 403 (N-02-T28).
  */
 export const countersignSession = <ThrowOnError extends boolean = false>(options: Options<CountersignSessionData, ThrowOnError>): RequestResult<CountersignSessionResponses, CountersignSessionErrors, ThrowOnError> => (options.client ?? client).post<CountersignSessionResponses, CountersignSessionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

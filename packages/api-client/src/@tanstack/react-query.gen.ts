@@ -8761,7 +8761,7 @@ export const stageEnvelopeImportFileMutation = (options?: Partial<Options<StageE
 /**
  * Remind Envelopes Preview Route
  *
- * Template preview, nothing sent (N-02-T14).
+ * Who would get a reminder now, under each policy's cap; nothing sent (N-02-T28).
  */
 export const remindEnvelopesPreviewMutation = (options?: Partial<Options<RemindEnvelopesPreviewData>>): UseMutationOptions<RemindEnvelopesPreviewResponse, RemindEnvelopesPreviewError, Options<RemindEnvelopesPreviewData>> => {
     const mutationOptions: UseMutationOptions<RemindEnvelopesPreviewResponse, RemindEnvelopesPreviewError, Options<RemindEnvelopesPreviewData>> = {
@@ -8780,7 +8780,8 @@ export const remindEnvelopesPreviewMutation = (options?: Partial<Options<RemindE
 /**
  * Remind Envelopes Send Route
  *
- * A person sends the template reminder (DEC-74; N-02-T14).
+ * A person sends the previewed `signature_reminder` version (DEC-74; N-02-T28); 409
+ * `stale_version` when another version is in use now.
  */
 export const remindEnvelopesSendMutation = (options?: Partial<Options<RemindEnvelopesSendData>>): UseMutationOptions<RemindEnvelopesSendResponse, RemindEnvelopesSendError, Options<RemindEnvelopesSendData>> => {
     const mutationOptions: UseMutationOptions<RemindEnvelopesSendResponse, RemindEnvelopesSendError, Options<RemindEnvelopesSendData>> = {
@@ -8859,7 +8860,7 @@ export const updateEnvelopeDraftMutation = (options?: Partial<Options<UpdateEnve
 /**
  * Countersign Session Route
  *
- * The provider view for the named firm signer (N-02-T28).
+ * The provider view for the named firm signer only; any other person 403 (N-02-T28).
  */
 export const countersignSessionMutation = (options?: Partial<Options<CountersignSessionData>>): UseMutationOptions<CountersignSessionResponse, CountersignSessionError, Options<CountersignSessionData>> => {
     const mutationOptions: UseMutationOptions<CountersignSessionResponse, CountersignSessionError, Options<CountersignSessionData>> = {

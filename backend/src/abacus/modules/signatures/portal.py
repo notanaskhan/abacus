@@ -644,6 +644,11 @@ async def _earlier_unsigned(ctx: AuthContext, mine: Mine) -> bool:
         return found.first() is not None
 
 
+async def earlier_unsigned(ctx: AuthContext, mine: Mine) -> bool:
+    """N-02-T28: the countersign session asks the same question of the firm signer."""
+    return await _earlier_unsigned(ctx, mine)
+
+
 async def check_session(ctx: AuthContext, envelope_id: UUID) -> Mine:
     """Every refusal before a session is issued, in the contract's order."""
     mine = await signer_of(ctx, envelope_id, SIGN)
