@@ -17190,7 +17190,7 @@ export type IntakeCreatedOut = {
 /**
  * IntakeDuplicateOut
  *
- * A flagged duplicate upload on the request (T-02-T17), for Keep newer or Discard duplicate.
+ * A flagged duplicate upload on the request (T-02-T17): Keep newer or Discard duplicate.
  */
 export type IntakeDuplicateOut = {
     /**
@@ -23976,7 +23976,10 @@ export type PortalEnvelopeRow = {
  * PortalEnvelopeView
  *
  * `EnvelopeVM`: steps, documents, fields, signers, my state; `signing_session` and `outcome`
- * reserved (null in record mode and until `signatures.esign_provider`).
+ * reserved (null in record mode and until `signatures.esign_provider`). N-02-T29 (additive,
+ * DEC-1388): the envelope's policy `family`, the viewer's `identity_method`, the `signers` in
+ * order, and `signing_opens_on`, the `date_as_of` while the firm's today is before it (the
+ * session's `before_date_as_of` check), else null.
  */
 export type PortalEnvelopeView = {
     /**
@@ -23996,6 +23999,14 @@ export type PortalEnvelopeView = {
      */
     esign_consent_needed: boolean;
     /**
+     * Family
+     */
+    family: 'efile_authorization' | 'engagement_letter' | 'consent' | 'general';
+    /**
+     * Identity Method
+     */
+    identity_method: 'kba' | 'email_code' | 'in_person_id' | 'firm_sso';
+    /**
      * My Fields
      */
     my_fields: Array<FieldOut>;
@@ -24009,6 +24020,10 @@ export type PortalEnvelopeView = {
     paper_form_follows: boolean;
     row: PortalEnvelopeRow;
     /**
+     * Signers
+     */
+    signers: Array<PortalSignerOut>;
+    /**
      * Signers Signed
      */
     signers_signed: number;
@@ -24016,6 +24031,10 @@ export type PortalEnvelopeView = {
      * Signers Total
      */
     signers_total: number;
+    /**
+     * Signing Opens On
+     */
+    signing_opens_on: string | null;
     signing_session?: SigningSessionOut | null;
 };
 
@@ -25206,6 +25225,40 @@ export type PortalSignInVerifyOut = {
      * State
      */
     state: 'signed_in' | 'mfa_required' | 'mfa_setup_required';
+};
+
+/**
+ * PortalSignerOut
+ *
+ * One signer of the envelope as the portal's signing order shows them (N-02-T29, DEC-1388):
+ * the name the firm recorded, the role, the routing group and the status. No contact detail.
+ */
+export type PortalSignerOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Me
+     */
+    me: boolean;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Role
+     */
+    role: 'signer' | 'countersigner' | 'ero';
+    /**
+     * Routing Group
+     */
+    routing_group: number;
+    /**
+     * Signed At
+     */
+    signed_at: string | null;
+    status: EnvelopeSignerStatus;
 };
 
 /**

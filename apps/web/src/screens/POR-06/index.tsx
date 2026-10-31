@@ -1,4 +1,9 @@
-import type { PortalEnvelopeRow, PortalEnvelopeView, SignerDeclineIn } from "@abacus/api-client";
+import type {
+  PortalEnvelopeRow,
+  PortalEnvelopeView,
+  PortalSignerOut,
+  SignerDeclineIn,
+} from "@abacus/api-client";
 import {
   Button,
   Checkbox,
@@ -10,9 +15,13 @@ import {
   PortalLayout,
   RegistryStatus,
   SigningCeremony,
+  type SignerChipVM,
+  type SignerVM,
   type SigningOutcomeCopy,
   type SigningStepVM,
   date,
+  longDate,
+  time,
   toast,
   usePortalBrand,
 } from "@abacus/ui";
@@ -45,6 +54,12 @@ import { COPY } from "./copy";
 // A person who is not a signer gets one restricted state (every read 404, no oracle). 390 is the
 // kit's phone layout with the step control as its sticky footer. The firm's name comes from the
 // branding; the product's never shows (DEC-01).
+//
+// Part 2 (N-02-T29; DEC-1388) reads C7's additive fields: the signers in order (the signers card,
+// a joint return's chips), the viewer's identity method (an e-file authorization verifies by
+// identity questions in the provider's view: d, with the authorizing card), and the server's date
+// gate (`signing_opens_on`: f keeps "Continue to sign" off and says why). h is DF-11: the kit's
+// card replaces the page and offers nothing to retry.
 
 /** C7's decline codes for the four reasons, in order (POR-06 contract). */
 const DECLINE_CODES: Readonly<Record<string, SignerDeclineIn["reason"]>> = {
@@ -76,22 +91,45 @@ function outcomeCopy(firm: string, document: string): SigningOutcomeCopy {
 }
 
 /** Where the signer is, from the server's view and the review the screen has seen. */
-export type Phase = "review" | "consent" | "ready" | "provider" | "signed" | "declined";
+export type Phase = "review" | "consent" | "ready" | "provider" | "signed" | "declined" | "failed";
 
 export function phaseOf(view: PortalEnvelopeView, consenting: boolean): Phase {
   if (view.row.my_status === "signed") return "signed";
+  // DF-11: remote signing closed for this signer; the paper form follows and nothing reopens it.
+  if (view.row.my_status === "verification_failed" || view.paper_form_follows) return "failed";
   if (view.row.my_status === "declined" || view.outcome === "declined") return "declined";
   if (view.signing_session != null) return "provider";
   if (!view.esign_consent_needed) return "ready";
   return consenting ? "consent" : "review";
 }
 
-/** Verify identity · Review · Sign · Done for a phase (POR-06 steps pane). */
-export function stepsOf(phase: Phase, seen: number, pages: number): SigningStepVM[] {
+/** What else shapes the steps: identity questions in the provider's view (the 8879 family), and
+ * the day signing opens (a dated letter, from the server). */
+export interface StepFacts {
+  kba?: boolean;
+  opensOn?: string;
+}
+
+/** Verify identity · Review · Sign · Done for a phase (POR-06 steps pane). With identity questions
+ * the provider verifies and signs in one view: Verify is current there, and done once signed. */
+export function stepsOf(
+  phase: Phase,
+  seen: number,
+  pages: number,
+  facts: StepFacts = {},
+): SigningStepVM[] {
   const reviewing = phase === "review";
   const signing = phase === "consent" || phase === "ready" || phase === "provider";
+  const kba = facts.kba === true;
+  const signed = phase === "signed";
   return [
-    { key: "verify", state: "done", sub: COPY.stepSubs.verify },
+    kba
+      ? {
+          key: "verify",
+          state: signed ? "done" : phase === "provider" ? "current" : "todo",
+          sub: COPY.stepSubs.kba,
+        }
+      : { key: "verify", state: "done", sub: COPY.stepSubs.verify },
     {
       key: "review",
       state: reviewing ? "current" : "done",
@@ -99,7 +137,11 @@ export function stepsOf(phase: Phase, seen: number, pages: number): SigningStepV
         ? COPY.stepSubs.reviewing(Math.max(seen, 1), pages)
         : COPY.stepSubs.reviewed(pages),
     },
-    { key: "sign", state: phase === "signed" ? "done" : signing ? "current" : "todo", sub: "" },
+    {
+      key: "sign",
+      state: signed ? "done" : signing && !(kba && phase === "provider") ? "current" : "todo",
+      sub: facts.opensOn === undefined ? "" : COPY.stepSubs.opens(facts.opensOn),
+    },
     { key: "done", state: phase === "signed" ? "done" : "todo", sub: "" },
   ];
 }
@@ -123,6 +165,62 @@ function onDay(day: string): string {
 
 function isMissing(error: unknown): boolean {
   return typeof error === "object" && error !== null && "detail" in error;
+}
+
+/** A signer's line on the signers card, in client words from the server's status and role. */
+function signerDetail(s: PortalSignerOut, firm: string, now: Date): string {
+  if (s.status === "signed" && s.signed_at !== null) {
+    const at = { now, tz: DEFAULT_TZ };
+    return COPY.signer.signed(`${date(s.signed_at, at)}, ${time(s.signed_at, at)}`);
+  }
+  if (s.status === "declined") return COPY.signer.declined;
+  if (s.status === "verification_failed") return COPY.signer.paperForm;
+  if (s.role === "ero") return COPY.signer.ero(firm);
+  if (s.role === "countersigner") return COPY.signer.countersigns(firm);
+  return s.me ? COPY.signer.toSign : COPY.signer.separate;
+}
+
+function signerVM(
+  s: PortalSignerOut,
+  view: PortalEnvelopeView,
+  firm: string,
+  now: Date,
+): SignerVM {
+  return {
+    id: s.id,
+    name: s.name,
+    isViewer: s.me,
+    status: s.status,
+    // The kit knows the client's methods; another signer's isn't the viewer's to read.
+    method: s.me && view.identity_method !== "firm_sso" ? view.identity_method : "email_code",
+    detail: signerDetail(s, firm, now),
+  };
+}
+
+/** A joint return's chips: every client signer, when there is more than one (POR-06e). */
+function chipsOf(view: PortalEnvelopeView, now: Date): SignerChipVM[] {
+  const clients = view.signers.filter((s) => s.role === "signer");
+  if (clients.length < 2) return [];
+  return clients.map((s) => ({
+    signerId: s.id,
+    name: s.name.split(" ")[0] ?? s.name,
+    status: s.status,
+    ...(s.signed_at === null ? {} : { date: date(s.signed_at, { now, tz: DEFAULT_TZ }) }),
+  }));
+}
+
+/** POR-06e: another client signer in the viewer's group, still to sign with their own link. */
+function separateSigner(view: PortalEnvelopeView): string | undefined {
+  const me = view.signers.find((s) => s.me);
+  if (me === undefined || view.family !== "efile_authorization") return undefined;
+  const other = view.signers.find(
+    (s) =>
+      !s.me &&
+      s.role === "signer" &&
+      s.routing_group === me.routing_group &&
+      s.status !== "signed",
+  );
+  return other === undefined ? undefined : (other.name.split(" ")[0] ?? other.name);
 }
 
 const EMPTY: EnvelopeVM = {
@@ -219,6 +317,7 @@ function Envelope({
 }: POR06Props): JSX.Element | null {
   const brand = usePortalBrand();
   const firm = brand.portalName ?? brand.name;
+  const now = useNow();
   const bar = usePortalToolbar(null);
   const returned = session !== undefined;
   const envelope = usePortalEnvelope(envelopeId, returned);
@@ -288,22 +387,37 @@ function Envelope({
   }
 
   const phase = view === undefined ? "review" : phaseOf(view, consenting);
+  const kba = view?.identity_method === "kba";
+  const opensOn = view?.signing_opens_on == null ? undefined : longDate(view.signing_opens_on);
   const vm: EnvelopeVM =
     view === undefined
       ? EMPTY
       : (() => {
-          const signer = view.my_fields[0]?.signer_id ?? view.row.id;
+          const me = view.signers.find((s) => s.me);
+          const signer = me?.id ?? view.my_fields[0]?.signer_id ?? view.row.id;
+          const chips = chipsOf(view, now);
           const mapped = toEnvelopeVM(view, {
-            viewer: {
-              id: signer,
-              name: bar.user,
-              isViewer: true,
-              status: view.row.my_status,
-              method: "email_code",
-              detail: "",
-            },
-            steps: stepsOf(phase, seen, pages),
+            viewer:
+              me === undefined
+                ? {
+                    id: signer,
+                    name: bar.user,
+                    isViewer: true,
+                    status: view.row.my_status,
+                    method: "email_code",
+                    detail: "",
+                  }
+                : signerVM(me, view, firm, now),
+            others: view.signers.filter((s) => !s.me).map((s) => signerVM(s, view, firm, now)),
+            steps: stepsOf(phase, seen, pages, {
+              kba,
+              ...(opensOn === undefined ? {} : { opensOn }),
+            }),
             fieldLabels: COPY.fieldLabels,
+            ...(kba && phase !== "signed" ? { authorizing: COPY.kbaCard } : {}),
+            ...(chips.length === 0
+              ? {}
+              : { chips: Object.fromEntries(view.documents.map((d) => [d.id, chips])) }),
             ...(phase === "signed"
               ? {
                   evidence: [
@@ -350,22 +464,33 @@ function Envelope({
         </Button>
       );
     } else if (phase === "review") {
-      const ready = seen >= lastPage && lastPage > 0;
+      const read = seen >= lastPage && lastPage > 0;
+      // POR-06f: the server holds signing until the letter's date; reading does not open it.
+      const ready = read && opensOn === undefined;
       action = (
         <div className="flex w-full flex-col gap-[6px]">
+          {opensOn !== undefined && (
+            <p
+              id="por06-dated"
+              data-signing="dated"
+              className="rounded-nested bg-amber-tint p-[12px] text-dense text-amber-ink"
+            >
+              {COPY.datedNote(opensOn, firm)}
+            </p>
+          )}
           <Button
             variant="primary"
             size="md"
             className="w-full"
             disabled={!ready}
-            aria-describedby={ready ? undefined : "por06-continue-hint"}
+            aria-describedby={!read ? "por06-continue-hint" : ready ? undefined : "por06-dated"}
             onClick={() => {
               setConsenting(true);
             }}
           >
             {COPY.continue}
           </Button>
-          {!ready && (
+          {!read && (
             <span id="por06-continue-hint" className="text-meta text-ink-3">
               {COPY.continueHint(lastPage)}
             </span>
@@ -413,6 +538,7 @@ function Envelope({
 
   const remaining = view === undefined ? 0 : view.signers_total - view.signers_signed;
   const first = bar.user.split(" ")[0] ?? bar.user;
+  const other = view === undefined ? undefined : separateSigner(view);
   return (
     <div data-screen="POR-06" data-phase={phase} className="flex min-h-0 flex-1 flex-col">
       <SigningCeremony
@@ -426,7 +552,11 @@ function Envelope({
         copy={outcomeCopy(firm, doc?.title ?? vm.title)}
         completion={{
           title: COPY.completedTitle(first),
-          ...(remaining > 0 ? { note: COPY.waiting(remaining) } : {}),
+          ...(other !== undefined
+            ? { note: COPY.separately(other) }
+            : remaining > 0
+              ? { note: COPY.waiting(remaining) }
+              : {}),
         }}
         providerReturned={returned}
         action={action}
