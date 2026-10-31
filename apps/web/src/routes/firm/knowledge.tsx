@@ -22,7 +22,9 @@ const Knw03 = lazyScreen(async () => (await import("../../screens/KNW-03")).KNW0
 interface Knw03Search {
   segment?: "steps" | "guidance" | "pbc" | "rules" | "changes";
   step?: number;
-  from?: "citation";
+  from?: "citation" | "run";
+  /** K-01-T15 f: `?from=run:<id>`, the Fix in Knowledge arrival from a failed run. */
+  run?: string;
 }
 
 function pickKnw03(search: Record<string, unknown>): Knw03Search {
@@ -38,6 +40,9 @@ function pickKnw03(search: Record<string, unknown>): Knw03Search {
       : {}),
     ...(Number.isInteger(step) && step > 0 ? { step } : {}),
     ...(search.from === "citation" ? { from: "citation" as const } : {}),
+    ...(typeof search.from === "string" && /^run:[0-9a-f-]{36}$/u.test(search.from)
+      ? { from: "run" as const, run: search.from.slice(4) }
+      : {}),
   };
 }
 const KNW04_SECTIONS: ReadonlySet<string> = new Set([
