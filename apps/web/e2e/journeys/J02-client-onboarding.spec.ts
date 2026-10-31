@@ -6,7 +6,7 @@
 // Fairhaven Foods 401(k) Plan is created here (CLI-06 → CLI-07 → ENG-03) and CLI-01 reads 183
 // clients before and 184 after (F-04.11).
 import { DEMO_INSTANT, expect, test } from "../harness";
-import { M13 } from "../signatures/support";
+import { M13, artboard } from "../signatures/support";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -186,30 +186,22 @@ test.describe("J02-audit-core", () => {
   );
 });
 
-// N-02-T40 (N-02 §10.1): j02 4 and 4c on the harness. The fixture project walks the letter on
-// ENG-04's real route and its scenarios, the builder's artboard and POR-06 through the portal's
-// `/sign`; the hosted projects walk them with N-02-T42's M13 journeys (seeded ids, live letters).
+// N-02-T40 (N-02 §10.1): j02 4 and 4c on the harness. The fixture project walks ENG-04's
+// artboards and POR-06 through the portal's `/sign` on its own states; the hosted projects walk
+// them with N-02-T42's M13 journeys (seeded ids, live letters).
 test.describe("J02 signatures (N-02-T40)", () => {
-  const FLAGS = ["engagements.v2", "engagements.letter_composer", "signatures.envelopes"];
-
   test("j02 4: Priya approves the Copperleaf letter with approver of record Ben Ashby and sends it to Tess", async ({
     journey,
   }) => {
     test.fixme(journey.project !== "fixture", M13);
-    await journey.as("priya-raman", "/engagements/_engagementId_/letter", {
-      flags: FLAGS,
-      scenario: "ENG-04:b",
-    });
+    await journey.as("priya-raman", artboard("ENG-04", "b"));
     await journey.step(
       "j02 4: the draft letter asks for partner approval (ENG-04 b)",
       async (page) => {
         await expect(page.getByText("DRAFT").first()).toBeVisible();
       },
     );
-    await journey.as("priya-raman", "/engagements/_engagementId_/letter", {
-      flags: FLAGS,
-      scenario: "ENG-04:d",
-    });
+    await journey.as("priya-raman", artboard("ENG-04", "d"));
     await journey.step(
       "j02 4: the signed Copperleaf letter names its approver of record",
       async (page) => {

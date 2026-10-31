@@ -24,20 +24,15 @@ test.describe("J15-advisory (R-01's portal step)", () => {
   );
 });
 
-// N-02-T40 (N-02 §10.1): j15 4 on the harness: Daniel's Ridgeline letter (ENG-04 a → c on its
-// route), the builder's countersigner (SIG-02 e) and Owen's Sign area (POR-06). The hosted
+// N-02-T40 (N-02 §10.1): j15 4 on the harness: Daniel's Ridgeline letter (ENG-04 a, its
+// artboard), the builder's countersigner (SIG-02 e) and Owen's Sign area (POR-06). The hosted
 // projects walk it with N-02-T42's M13 journeys.
 test.describe("J15 signatures (N-02-T40)", () => {
-  const FLAGS = ["engagements.v2", "engagements.letter_composer", "signatures.envelopes"];
-
   test("j15 4: Daniel sends the Ridgeline letter, Owen signs and Daniel countersigns (G3)", async ({
     journey,
   }) => {
     test.fixme(journey.project !== "fixture", M13);
-    await journey.as("daniel-reyes", "/engagements/_engagementId_/letter", {
-      flags: FLAGS,
-      scenario: "ENG-04:a",
-    });
+    await journey.as("daniel-reyes", artboard("ENG-04", "a"));
     await journey.step("j15 4: the approved Ridgeline letter (ENG-04 a)", async (page) => {
       await expect(page.getByText("Partner approved").first()).toBeVisible();
     });

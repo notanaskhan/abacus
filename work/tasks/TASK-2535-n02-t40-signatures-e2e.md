@@ -24,8 +24,9 @@ staging).
 
 ## Plan (green)
 - `e2e/signatures/*.fullstack.spec.ts` on the harness (axe and INV-1 to INV-5 after each step).
-- Fixture wiring: `screen-scenarios.ts` gains ENG-04 (its real route, `/engagements/_engagementId_/
-  letter`); `install-portal.ts` gains POR-06 (`/sign` on its own states); persona `owen-calder`.
+- Fixture wiring: `install-portal.ts` gains POR-06 (`/sign` on its own states); persona
+  `owen-calder`. ENG-04, SIG-01 and SIG-02 walk their artboards (ENG-04's tab needs ENG-02's
+  record around it, which its own scenarios do not serve).
 - Journey blocks in `J02`, `J15`, `J16`.
 
 ## Notes
@@ -35,4 +36,7 @@ staging).
   list walks on the full stack too.
 
 ## Progress log
-- `2026-11-01` — Written on `s20d-n02-t40` off main; the fixture project runs in the end review.
+- `2026-11-01` — Written on `s20d-n02-t40` off main.
+- `2026-11-01` — End review: the fixture project passes (20 passed, the files' existing fixme
+  steps skipped). The SIG-02 f walk found an axe defect (a `<li role="alert">` unmade the list
+  item); the alert moved to a span inside it.
