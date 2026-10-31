@@ -35,6 +35,9 @@ export const COPY = {
   },
   /** "5 of 7" */
   progress: (done: string, total: string) => `${done} of ${total}`,
+  /** The Ferris tag, "§7216 consents 1 of 2": opens CLI-05's Consents (DEC-1288). */
+  consentsTag: (signed: number, total: number) =>
+    `§7216 consents ${String(signed)} of ${String(total)}`,
   /** "Unpublished Sep 2 by Remy Vidal — fixing 2 requests" */
   unpublished: (date: string, person: string, reason: string) =>
     `Unpublished ${date} by ${person} — ${reason}`,

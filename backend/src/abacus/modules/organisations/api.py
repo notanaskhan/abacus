@@ -26,6 +26,7 @@ from abacus.modules.organisations.conflicts_contract import (
 from abacus.modules.organisations.consent_gate import (
     TriConsentRequired,
     TriSubject,
+    consent_counts,
     consent_state,
     covering_consents,
     register_consent_gate,
@@ -313,6 +314,7 @@ __all__ = [
     "client_of_entity",
     "client_record",
     "client_with_entity",
+    "consent_counts",
     "consent_outs",
     "consent_state",
     "consent_template_versions_on",

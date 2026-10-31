@@ -109,6 +109,11 @@ class BinderRowOut(BaseModel):
     # Registered tag codes (the §7216 consents tag is P-07's / T-01's): codes, never prose.
     tags: Annotated[list[str], classified("internal")] = []
     allowed_actions: Annotated[list[str], classified("internal")] = []
+    # T-01-T14 follow-up (additive, DEC-1288): the row's client, for CLI-05's link, and the
+    # §7216 consents tag's counts ("§7216 consents 1 of 2"); null when no consent is asked for.
+    client_id: Annotated[UUID | None, classified("internal")] = None
+    consents_signed: Annotated[int | None, classified("internal")] = None
+    consents_total: Annotated[int | None, classified("internal")] = None
     # P-06-T11 (additive): the read model's facts for the chips and the status sub-lines.
     service: Annotated[str | None, classified("internal")] = None  # the Service chip's code
     season: Annotated[str | None, classified("internal")] = None  # "TY2025"

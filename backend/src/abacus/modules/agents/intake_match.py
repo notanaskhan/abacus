@@ -50,6 +50,7 @@ from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
 from abacus.modules.agents.document_citations import verify
+from abacus.modules.agents.events import IntakeProposalsRecorded
 from abacus.modules.agents.handoff import (
     DocumentCitation,
     IntakeMatchOutput,
@@ -360,6 +361,11 @@ async def _match_intake(agent: AgentContext, attachment_id: UUID) -> IntakeOutco
             },
         )
         await insert_match_proposals(tx.session, [{**r, "match_id": match_id} for r in rows])
+        tx.emit(
+            IntakeProposalsRecorded(
+                attachment_id=attachment_id, client_id=client_id, match_id=match_id
+            )
+        )
         await record_agent_classification(
             tx,
             tenant_id=agent.tenant_id,
