@@ -52,6 +52,16 @@ F6 investments and certification, F7 distributions and loans, F8 expenses and co
 participant accounts, F10 Form 5500 and schedules, F11 estimates, related parties and parties in
 interest, F12 agent drafts, F13 the agent-off path).
 
+The S23 foundation rows are numbered for their task files:
+
+| AC | Row | Given / when / then |
+|---|---|---|
+| AC-1 | A-05-T01 | The ten screen contracts (EBP-01..09, AUD-27) carry every artboard state, their deviations and the agent-off path; census PII is masked with a logged reveal (DEC-1857, DEC-1858). |
+| AC-2 | A-05-T04 | `ebp-workpapers` v1 stubs answer from fixtures behind `ebp.modules`, `ebp.form5500_tieout` and `assurance.estimates_rp` (off by default); every field is classified, only masked PII leaves; clients hold no EBP action and the agent only reads (DEC-1859). |
+| AC-3 | A-05-T05 | The glossary and status vocabulary carry the EBP words; certification, correction and sign-off acts are human-only (DEC-1860). |
+| AC-4 | A-05-T06 | Migration `ebp_core` creates the five tables with forced row-level security; checks and conflicts are insert-only and column-granted; a tenant reads only its own rows (DEC-1861). |
+| AC-5 | A-05-T07 | The Northwind PY2025 EBP slice loads as Dana Kowalski with its eight documents, and its figures foot to `tests/golden/ebp/northwind_py2025.yaml` (DEC-1862). |
+
 ## 6. Decisions
 DEC-1857 (screen contracts, deviations, the agent-off path) and DEC-1858 (census PII masking and
 logged reveal, under ADR P-12 and C4; no new ADR).
