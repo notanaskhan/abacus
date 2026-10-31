@@ -580,5 +580,9 @@ REVIEWED_FALLBACK: Final = frozenset(
         "schedule_k_release.started",
         "schedule_k_release.undone",
         "schedule_k_release.contact_resolved",
+        # T-02-T26: POR-13's recipient writes and a bounced "Deliverable ready".
+        "recipient_details_change.submitted",
+        "schedule_k_package.bounced",
+        "schedule_k_package.e_furnishing_consent_recorded",
     }
 )

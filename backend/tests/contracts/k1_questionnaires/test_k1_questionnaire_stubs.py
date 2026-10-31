@@ -93,6 +93,12 @@ LIVE = frozenset(
         # T-02-T21: the release and its Undo.
         "/v1/tax-returns/{return_id}/k1-packages:release",
         "/v1/k1-releases/{release_id}:undo",
+        # T-02-T26: POR-13's portal routes.
+        "/v1/portal/k1s",
+        "/v1/portal/k1s/{package_id}",
+        "/v1/portal/k1s/{package_id}/download",
+        "/v1/portal/k1-recipients/{recipient_id}/details-changes",
+        "/v1/portal/k1s/{package_id}/e-furnishing-consent",
     }
 )
 

@@ -284,7 +284,7 @@ async def download(ctx: AuthContext, package_id: UUID) -> Download:
     return Download(f"K-1_{view.tax_year}_{view.form}.zip", "application/zip", body)
 
 
-async def attachment(ctx: AuthContext, package_id: UUID, document_id: UUID) -> Download:
+async def one_document(ctx: AuthContext, package_id: UUID, document_id: UUID) -> Download:
     """`GET …/attachments/{doc}`: one final document, an access event."""
     return_id = await _own(ctx, package_id)
     _second_step(ctx)
@@ -405,10 +405,10 @@ __all__ = [
     "DetailsChangeInvalid",
     "Download",
     "K1MfaRequired",
-    "attachment",
     "deterministic_zip",
     "download",
     "e_furnishing",
+    "one_document",
     "package",
     "packages",
     "submit_details_change",

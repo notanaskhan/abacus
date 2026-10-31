@@ -526,7 +526,7 @@ async def portal_k1_attachment_route(
     package_id: PackageId, document_id: Annotated[UUID, Path()], ctx: Member
 ) -> Response:
     await _portal_gate(ctx)
-    return _download(await k1_portal.attachment(ctx, package_id, document_id))
+    return _download(await k1_portal.one_document(ctx, package_id, document_id))
 
 
 @portal_k1_router.post(
