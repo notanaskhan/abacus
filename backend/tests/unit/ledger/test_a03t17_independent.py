@@ -61,10 +61,10 @@ def test_granite_peak_maps_128_of_128_and_balances() -> None:
     ranges = [("1000", "1999", lines[0]), ("2000", "2999", lines[1]), ("3000", "3999", lines[2])]
     ranges.append(("4000", "9999", lines[3]))
     codes = [str(1000 + 60 * i) for i in range(128)]
-    methods = [rules.resolve_line(c, None, {}, {}, ranges)[1] for c in codes]
-    balances = (
-        allocate(D("0.00"), [D(1)] * 128) if False else [D("100.00")] * 64 + [D("-100.00")] * 64
-    )
+    methods: list[rules.Method | None] = [
+        rules.resolve_line(c, None, {}, {}, ranges)[1] for c in codes
+    ]
+    balances = [D("100.00")] * 64 + [D("-100.00")] * 64
     t = rules.tallies(methods, balances)
     assert (t.total, t.mapped, t.need_review, t.number_range) == (128, 128, 0, 128)
     assert t.tb_balanced
