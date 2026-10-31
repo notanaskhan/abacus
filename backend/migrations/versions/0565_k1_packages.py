@@ -289,8 +289,8 @@ def upgrade() -> None:
         "GRANT UPDATE (status, replaced_at, final_values, target_evidence_version_id, "
         "target_request_item_id) ON k1_handoffs TO abacus_app"
     )
+    op.execute("REVOKE UPDATE ON recipient_details_changes FROM abacus_app")
     op.execute(
-        "REVOKE UPDATE ON recipient_details_changes FROM abacus_app; "
         "GRANT UPDATE (status, decided_by, decided_at, reason) "
         "ON recipient_details_changes TO abacus_app"
     )

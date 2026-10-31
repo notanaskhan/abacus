@@ -33,6 +33,6 @@ Box amounts TRI; names and addresses confidential; TIN last four only.
 - `GET …/k1-packages`: `items` with `documents` (additive on `K1PackageOut`), `counts` by status (the tiles). `GET /v1/k1-packages/{pid}`: box lines only for readers of the return's content. `…/documents/{doc}`: the SHL-08 manifest.
 - `POST …/k1-packages:share-internal`: one hand-off per package and target (`draft_shared`), an `internal_handoff` evidence copy in the target's scope (Source documents), fulfilling the target's one open request titled for a K-1 from this issuer, and a `draft_k1` final-approval blocker until the release replaces the draft. The sharer must read both returns (404 otherwise); TAX-02's `k1_dependencies` shows the source only to a reader of both (DEC-88). 409 `k1_not_shareable`.
 - `GET …/k1-packages/release-check`: codes `not_final_approved`, `no_packages`, `final_k1s_missing`, `nothing_to_release`; T21 adds the firm's release condition.
-- `POST /v1/k1-packages/{pid}:resend`: a released package only (409 `k1_not_released`); records the contact and emits `k1_package.resend_requested` for T21's workflow.
+- `POST /v1/k1-packages/{pid}:resend`: a released package only (409 `k1_not_released`); records the contact and emits `schedule_k_package.resend_requested` for T21's workflow.
 - Details changes: `GET /v1/k1-recipients/{rid}/details-changes`; `:accept` / `:reject` once, by a person (0565's trigger; 409 `details_change_decided`).
 

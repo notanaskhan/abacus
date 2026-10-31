@@ -63,9 +63,9 @@ async def _pdf(b: Board, item: uuid.UUID, name: str) -> None:
     fingerprint = hashlib.sha256(name.encode()).hexdigest()
     version = await b.seed.value(
         "INSERT INTO evidence_versions (tenant_id, engagement_id, evidence_item_id, version_no, "
-        "fingerprint, storage_key, storage_version_id, size_bytes, media_type, source, method) "
-        "VALUES ($1, $2, $3, 1, $4, $5, 'v1', 10, 'application/pdf', 'engine_import', "
-        "'imported') RETURNING id",
+        "fingerprint, storage_key, storage_version_id, size_bytes, media_type, source, method, "
+        "pulled_at, channel) VALUES ($1, $2, $3, 1, $4, $5, 'v1', 10, 'application/pdf', "
+        "'engine_import', 'imported', now(), 'import') RETURNING id",
         b.tenant,
         row["engagement_id"],
         evidence,
@@ -146,6 +146,15 @@ async def _ridgeline_with_drafts(b: Board) -> tuple[uuid.UUID, uuid.UUID, AuthCo
         "ON CONFLICT DO NOTHING",
         b.tenant,
         feld,
+        samuel.user_id,
+    )
+    # The sharer holds a function on the issuing return (the matrix's `function_in`).
+    await b.seed.run(
+        "INSERT INTO work_item_assignments (tenant_id, work_item_id, engagement_id, user_id, "
+        "function, assigned_by) SELECT $1, $2, engagement_id, $3, 'manager_reviewer', $3 "
+        "FROM tax_returns WHERE work_item_id = $2",
+        b.tenant,
+        ridgeline,
         samuel.user_id,
     )
     for ref, *_ in RECIPIENTS:

@@ -114,7 +114,7 @@ class DetailsChangeDecided(DomainConflict):
 class K1SetImported(DomainEvent):
     """A person's K-1 set landed as packages on the issuing return."""
 
-    event_type: ClassVar[str] = "k1_set.imported"
+    event_type: ClassVar[str] = "schedule_k_set.imported"
 
     work_item_id: Annotated[UUID, classified("internal")]
     sync_event_id: Annotated[UUID, classified("internal")]
@@ -125,7 +125,7 @@ class K1SetImported(DomainEvent):
 class K1ResendRequested(DomainEvent):
     """T21's workflow sends a new invitation to the corrected contact."""
 
-    event_type: ClassVar[str] = "k1_package.resend_requested"
+    event_type: ClassVar[str] = "schedule_k_package.resend_requested"
 
     package_id: Annotated[UUID, classified("internal")]
     contact_id: Annotated[UUID, classified("internal")]
@@ -491,7 +491,7 @@ async def apply_k1_set(
         )
         made += 1
     tx.record(
-        "k1_set.imported",
+        "schedule_k_set.imported",
         target=Target(KIND, return_id),
         after=Ref(event=sync_event_id, packages=made, final=int(found.is_final)),
     )
@@ -842,9 +842,9 @@ async def share_internal(
                     tx, ctx.tenant_id, row.id, "shared_internal", ctx.user_id, {"handoff": added}
                 )
                 tx.record(
-                    "k1_package.shared_internal",
-                    target=Target("k1_package", row.id),
-                    after=Ref(handoff=cast(UUID, added), target=target_id),
+                    "schedule_k_package.shared_internal",
+                    target=Target(KIND, return_id),
+                    after=Ref(package=row.id, handoff=cast(UUID, added), target=target_id),
                 )
                 shared += 1
     return shared
@@ -929,9 +929,9 @@ async def resend(ctx: AuthContext, package_id: UUID, contact_id: UUID) -> None:
         )
         await _event(tx, ctx.tenant_id, package_id, "resend_requested", ctx.user_id)
         tx.record(
-            "k1_package.resend_requested",
-            target=Target("k1_package", package_id),
-            after=Ref(contact_id=contact_id),
+            "schedule_k_package.resend_requested",
+            target=Target(KIND, return_id),
+            after=Ref(package=package_id, contact_id=contact_id),
         )
         tx.emit(
             K1ResendRequested(package_id=package_id, contact_id=contact_id, by_user=ctx.user_id)
@@ -989,7 +989,8 @@ async def decide_details_change(
         )
     if recipient is None or ctx.client:
         raise NotFound("recipient_details_change")
-    await _issuer(ctx, await _recipient_return(ctx, cast(UUID, recipient)), REVIEW)
+    issuing = await _recipient_return(ctx, cast(UUID, recipient))
+    await _issuer(ctx, issuing, REVIEW)
     async with uow(ctx.tenant) as tx:
         changed = await tx.session.scalar(
             text(
@@ -1009,8 +1010,8 @@ async def decide_details_change(
             raise DetailsChangeDecided(facts={"change_id": str(change_id)})
         tx.record(
             "recipient_details_change.accepted" if accept else "recipient_details_change.rejected",
-            target=Target("k1_recipient", cast(UUID, recipient)),
-            after=Ref(change=change_id),
+            target=Target(KIND, issuing),
+            after=Ref(recipient=cast(UUID, recipient), change=change_id),
         )
     found = next(c for c in await details_changes(ctx, cast(UUID, recipient)) if c.id == change_id)
     return found

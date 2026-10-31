@@ -264,7 +264,7 @@ async def _named(seed: Seeder, tenant_id: uuid.UUID, name: str) -> Person:
 async def make_world(net: Net, label: str = "Northwind Robotics 401(k) Plan") -> World:
     seed = net.seed
     tenant_id = await seed.firm()
-    for flag in ("review.grammar_api", "notifications.v2"):
+    for flag in ("review.grammar_api", "review.approve_agent_output", "notifications.v2"):
         await seed.run(
             "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
             "VALUES ($1, $2, 'true', 'test-seed', 'P-04-T28')",

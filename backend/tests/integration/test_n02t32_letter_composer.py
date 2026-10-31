@@ -122,7 +122,7 @@ def fresh_registry(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(c11, "_REGISTRY", {})
 
 
-async def _ridgeline(seed: Seeder) -> tuple[AuthContext, uuid.UUID, uuid.UUID]:
+async def ridgeline(seed: Seeder) -> tuple[AuthContext, uuid.UUID, uuid.UUID]:
     tenant = await seed.firm()
     daniel = await seed.person(tenant)
     await seed.run("UPDATE users SET display_name = 'Daniel Reyes' WHERE id = $1", daniel.user_id)
@@ -180,7 +180,7 @@ async def _template(seed: Seeder, tenant: uuid.UUID, by: Person) -> uuid.UUID:
     )
 
 
-def _draft(template_version: uuid.UUID, **over: object) -> LetterDraftIn:
+def draft_of(template_version: uuid.UUID, **over: object) -> LetterDraftIn:
     base: dict[str, object] = {
         "template_version_id": template_version,
         "clause_states": {},
@@ -193,8 +193,8 @@ def _draft(template_version: uuid.UUID, **over: object) -> LetterDraftIn:
 async def test_ac1_ridgelines_fee_is_computed_and_the_engineers_is_not_added(
     seed: Seeder,
 ) -> None:
-    ctx, engagement, template_version = await _ridgeline(seed)
-    view = await letters.draft_letter(ctx, engagement, _draft(template_version), '"0"')
+    ctx, engagement, template_version = await ridgeline(seed)
+    view = await letters.draft_letter(ctx, engagement, draft_of(template_version), '"0"')
 
     assert view.fees is not None
     assert view.fees.total_cents == 18_500_00
@@ -249,10 +249,10 @@ async def test_ac1_ridgelines_fee_is_computed_and_the_engineers_is_not_added(
 async def test_ac1_an_edit_is_a_new_version_and_the_old_one_is_never_rewritten(
     seed: Seeder,
 ) -> None:
-    ctx, engagement, template_version = await _ridgeline(seed)
-    await letters.draft_letter(ctx, engagement, _draft(template_version), '"0"')
+    ctx, engagement, template_version = await ridgeline(seed)
+    await letters.draft_letter(ctx, engagement, draft_of(template_version), '"0"')
     second = await letters.draft_letter(
-        ctx, engagement, _draft(template_version, clause_states={"reliance": "off"}), '"1"'
+        ctx, engagement, draft_of(template_version, clause_states={"reliance": "off"}), '"1"'
     )
     assert second.version == 2
     assert {c.key: c.state for c in second.clauses}["reliance"] == "off"
@@ -277,33 +277,33 @@ async def test_ac1_an_edit_is_a_new_version_and_the_old_one_is_never_rewritten(
 
 
 async def test_fee_wording_is_never_a_persons_text_and_shares_must_foot(seed: Seeder) -> None:
-    ctx, engagement, template_version = await _ridgeline(seed)
+    ctx, engagement, template_version = await ridgeline(seed)
     with pytest.raises(letters.ComputedVariable):
         await letters.draft_letter(
-            ctx, engagement, _draft(template_version, variables={"fee.total": "$1"}), '"0"'
+            ctx, engagement, draft_of(template_version, variables={"fee.total": "$1"}), '"0"'
         )
     uneven = RIDGELINE_FEES.model_copy(
         update={"installments": [InstallmentIn(label="on signature", share_bp=6_000)]}
     )
     with pytest.raises(letters.FeesDoNotFoot):
-        await letters.draft_letter(ctx, engagement, _draft(template_version, fees=uneven), '"0"')
+        await letters.draft_letter(ctx, engagement, draft_of(template_version, fees=uneven), '"0"')
 
 
 async def test_unknown_parts_markup_and_stale_versions_are_refused(seed: Seeder) -> None:
-    ctx, engagement, template_version = await _ridgeline(seed)
+    ctx, engagement, template_version = await ridgeline(seed)
     with pytest.raises(letters.UnknownLetterPart):
         await letters.draft_letter(
-            ctx, engagement, _draft(template_version, clause_states={"nope": "off"}), '"0"'
+            ctx, engagement, draft_of(template_version, clause_states={"nope": "off"}), '"0"'
         )
     with pytest.raises(letters.MarkupNotAllowed):
         await letters.draft_letter(
             ctx,
             engagement,
-            _draft(template_version, section_overrides={"timing": "<b>Due</b> Sep 15"}),
+            draft_of(template_version, section_overrides={"timing": "<b>Due</b> Sep 15"}),
             '"0"',
         )
     with pytest.raises(letters.LetterStale):
-        await letters.draft_letter(ctx, engagement, _draft(template_version), '"3"')
+        await letters.draft_letter(ctx, engagement, draft_of(template_version), '"3"')
     assert (
         await seed.value(
             "SELECT count(*) FROM engagement_letter_versions WHERE engagement_id = $1", engagement
@@ -313,8 +313,8 @@ async def test_unknown_parts_markup_and_stale_versions_are_refused(seed: Seeder)
 
 
 async def test_a_sent_letter_takes_no_edit(seed: Seeder) -> None:
-    ctx, engagement, template_version = await _ridgeline(seed)
-    await letters.draft_letter(ctx, engagement, _draft(template_version), '"0"')
+    ctx, engagement, template_version = await ridgeline(seed)
+    await letters.draft_letter(ctx, engagement, draft_of(template_version), '"0"')
     hash_ = cast(
         str,
         await seed.value(
@@ -322,7 +322,10 @@ async def test_a_sent_letter_takes_no_edit(seed: Seeder) -> None:
             engagement,
         ),
     )
-    await seed.run(
+    # 0563 (N-02-T33): only the approving person's own transaction approves a version.
+    await seed.as_actor(
+        ctx.tenant_id,
+        ("human", str(ctx.user_id)),
         "UPDATE engagement_letter_versions SET status = 'partner_approved', approved_by = $1, "
         "approved_at = now(), approval_content_hash = $2 WHERE engagement_id = $3",
         ctx.user_id,
@@ -336,7 +339,7 @@ async def test_a_sent_letter_takes_no_edit(seed: Seeder) -> None:
         engagement,
     )
     with pytest.raises(letters.LetterLocked):
-        await letters.draft_letter(ctx, engagement, _draft(template_version), '"1"')
+        await letters.draft_letter(ctx, engagement, draft_of(template_version), '"1"')
     view = await letters.composed_letter(ctx, engagement)
     assert view.status == "sent"
     assert "letter.draft" not in view.allowed_actions
