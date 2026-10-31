@@ -59,17 +59,32 @@ CLAUSES: list[dict[str, object]] = [
         ("fees", "Fees and billing"),
     )
 ]
+
+
+def _clause(clause_id: str, *, non_standard: bool = False) -> dict[str, object]:
+    return {
+        "type": "clause",
+        "clause_id": clause_id,
+        "enabled": True,
+        "non_standard": non_standard,
+        "blocks": [],
+    }
+
+
 BODY = [
-    {"type": "section", "id": "scope", "blocks": [{"type": "clause", "clause_id": "scope"}]},
+    {
+        "type": "section",
+        "id": "scope",
+        "title": "1. Scope of services",
+        "blocks": [_clause("scope")],
+    },
     {
         "type": "section",
         "id": "timing",
-        "blocks": [
-            {"type": "clause", "clause_id": "timing", "enabled": True, "non_standard": True},
-            {"type": "clause", "clause_id": "reliance", "enabled": True, "non_standard": True},
-        ],
+        "title": "3. Timing and the section 754 deadline",
+        "blocks": [_clause("timing", non_standard=True), _clause("reliance", non_standard=True)],
     },
-    {"type": "section", "id": "fees", "blocks": [{"type": "clause", "clause_id": "fees"}]},
+    {"type": "section", "id": "fees", "title": "6. Fees and billing", "blocks": [_clause("fees")]},
 ]
 RIDGELINE_FEES = LetterFeesIn(
     basis="fixed",
@@ -203,6 +218,12 @@ async def test_ac1_ridgelines_fee_is_computed_and_the_engineers_is_not_added(
     assert view.status == "draft"
     assert view.version == 1
     assert view.redline_count == 2  # the two clauses the template marks non-standard
+    assert (view.template_name, view.template_version_no) == ("BH Tax Advisory Letter", 4)
+    assert [(s.order, s.name, s.role) for s in view.signers] == [
+        (1, "Owen Calder", "client"),
+        (2, "Daniel Reyes", "firm"),
+    ]
+    assert len(view.paper) == 3
 
     # Rendered through C11: the letter version names the C11 draft and its content hash.
     rows = await seed.rows(
@@ -235,6 +256,7 @@ async def test_ac1_an_edit_is_a_new_version_and_the_old_one_is_never_rewritten(
     )
     assert second.version == 2
     assert {c.key: c.state for c in second.clauses}["reliance"] == "off"
+    assert second.redline_count == 3  # a clause switched off adds to the redline
     versions = await seed.rows(
         "SELECT version_no, status FROM engagement_letter_versions WHERE engagement_id = $1 "
         "ORDER BY version_no",

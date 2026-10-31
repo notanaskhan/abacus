@@ -50,6 +50,8 @@ import {
   useRecordLetter,
   waitsOnLetter,
 } from "../../domain/engagements";
+import { useFlag } from "../../app-core/flags";
+import { LetterComposer } from "../ENG-04";
 import { ENG05, type Eng05Open } from "../ENG-05";
 import { COPY } from "./copy";
 
@@ -686,6 +688,9 @@ export function ENG02({
   );
   const staff = useStaff();
   const [recording, setRecording] = useState(false);
+  // N-02-T34: with `engagements.letter_composer` on, Letter & terms is ENG-04; off, the kept
+  // record panel (`letter.record`).
+  const composerOn = useFlag("engagements.letter_composer") === true;
 
   const initials = new Map([...staff.names].map(([id, n]) => [id, initialsOf(n)]));
 
@@ -892,6 +897,35 @@ export function ENG02({
             )}
             {workGroup}
           </>
+        )}
+      </div>
+    );
+  }
+
+  if (view === "letter" && composerOn && record !== undefined) {
+    const pane = (
+      <div data-shell="cols" className="flex min-h-0 flex-1 items-stretch pt-(--gutter-pane)">
+        <LetterComposer engagementId={record.id} engagementName={record.name} />
+      </div>
+    );
+    return (
+      <div data-screen="ENG-02" className="flex min-h-0 flex-1 flex-col">
+        {toolbar === undefined ? (
+          <div className="flex min-h-0 flex-1 flex-col">
+            {header}
+            {tabs}
+            {pane}
+          </div>
+        ) : (
+          <AppShell
+            toolbar={toolbar}
+            frame={frame}
+            {...(frame ? { height: 860 } : {})}
+            record={header}
+            tabs={tabs}
+          >
+            {pane}
+          </AppShell>
         )}
       </div>
     );

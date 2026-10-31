@@ -6590,9 +6590,17 @@ export type ComposerLetterOut = {
      */
     approved_by_name: string | null;
     /**
+     * Clause Library
+     */
+    clause_library?: string | null;
+    /**
      * Clauses
      */
     clauses: Array<LetterClause>;
+    /**
+     * Consents
+     */
+    consents?: Array<LetterConsentOut>;
     /**
      * Engagement Id
      */
@@ -6606,19 +6614,38 @@ export type ComposerLetterOut = {
      * Generated Document Id
      */
     generated_document_id?: string | null;
+    letterhead?: LetterheadOut | null;
     /**
      * Mode
      */
     mode: 'composed' | 'recorded';
     /**
+     * Paper
+     */
+    paper?: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
      * Redline Count
      */
     redline_count?: number;
+    /**
+     * Signers
+     */
+    signers?: Array<LetterSignerOut>;
     status: LetterStatus;
+    /**
+     * Template Name
+     */
+    template_name?: string | null;
     /**
      * Template Version Id
      */
     template_version_id: string | null;
+    /**
+     * Template Version No
+     */
+    template_version_no?: number | null;
     /**
      * Variables
      */
@@ -19077,6 +19104,35 @@ export type LetterCompareOut = {
 };
 
 /**
+ * LetterConsentOut
+ *
+ * N-02-T34: a §7216 consent beside the letter: always its own document, never a clause
+ * (Rev. Proc. 2013-14 §5.05; AC-15). Filled from T-01's consent sets with N-02-T33.
+ */
+export type LetterConsentOut = {
+    /**
+     * Expires On
+     */
+    expires_on?: string | null;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Purpose
+     */
+    purpose: string;
+    /**
+     * Signed On
+     */
+    signed_on?: string | null;
+    /**
+     * Status
+     */
+    status: 'on_file' | 'needed';
+};
+
+/**
  * LetterDraftIn
  *
  * `PUT …/letter/composer` (If-Match): draft edits.
@@ -19238,6 +19294,34 @@ export type LetterSendOut = {
 };
 
 /**
+ * LetterSignerOut
+ *
+ * N-02-T34: who signs, in order: the client signer, then the firm's countersignature.
+ */
+export type LetterSignerOut = {
+    /**
+     * Identity
+     */
+    identity?: 'email_code';
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Order
+     */
+    order: number;
+    /**
+     * Role
+     */
+    role: 'client' | 'firm';
+    /**
+     * Signed
+     */
+    signed?: boolean;
+};
+
+/**
  * LetterStatus
  */
 export type LetterStatus = 'not_started' | 'draft' | 'partner_approved' | 'sent' | 'signed' | 'not_required' | 'superseded';
@@ -19254,6 +19338,10 @@ export type LetterVariable = {
      */
     key: string;
     /**
+     * Label
+     */
+    label?: string | null;
+    /**
      * Reason
      */
     reason?: string | null;
@@ -19265,6 +19353,22 @@ export type LetterVariable = {
      * Value
      */
     value: string | null;
+};
+
+/**
+ * LetterheadOut
+ *
+ * N-02-T34: the firm's name and address lines over the paper (no colour, T10).
+ */
+export type LetterheadOut = {
+    /**
+     * Address
+     */
+    address?: Array<string>;
+    /**
+     * Firm
+     */
+    firm: string;
 };
 
 /**
