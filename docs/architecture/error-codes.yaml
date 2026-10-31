@@ -1334,6 +1334,10 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.tax.filing.NoAuthorizationForm
+  no_client_copy:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filed_delivery.NoClientCopy
   no_connection:
     status: 409
     raised_by:
@@ -1828,6 +1832,11 @@ codes:
     raised_by:
     - abacus.modules.assurance.release.ReleaseDateFuture
     summary: The release date is after the firm's today.
+  release_in_progress:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filed_delivery.ReleaseInProgress
+    summary: '409: another publish of the same copy committed first; read the delivery again.'
   release_mode_in_app:
     status: 409
     raised_by:
@@ -1910,6 +1919,10 @@ codes:
     raised_by:
     - abacus.modules.tax.tax_profile.ReturnMismatch
     summary: The return is not this client's for the transcript's tax year.
+  return_not_accepted:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filed_delivery.ReturnNotAccepted
   return_not_filed:
     status: 409
     raised_by:

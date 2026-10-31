@@ -2,7 +2,7 @@
 id: TASK-2524
 title: T-01-T41 Filed-return delivery
 spec: SPEC-501  # T-01 §3.14; docs/contracts/efile-record.md
-acceptance_criteria: [T-01-§3.14]
+acceptance_criteria: [AC-24]  # and T-01 §3.14
 risk_zone: amber
 status: in-review
 epic: T-01

@@ -24,11 +24,12 @@ from abacus.modules.tax import filed_delivery
 from abacus.modules.tax.engine_files import engine_documents
 from abacus_tools.fakes.cch_axcess import CchAxcessFake, Export
 
+from . import test_t01t37_transmission_acks as t01t37
 from .conftest import MigratedDatabase
 from .test_t01t25_engine_export import Feld, Json, call_as, engines, feld_return
-from .test_t01t37_transmission_acks import _member
 
 __all__ = ["engines"]
+_member = t01t37._member  # pyright: ignore[reportPrivateUsage] -- T-01-T37's staff member seed
 
 FELD = Export("2025I:FeldJ", 2025, "1040", ())
 
@@ -101,7 +102,7 @@ async def test_ac_claire_sees_her_filed_return_and_downloads_it_after_two_step(
         headers={"Idempotency-Key": str(uuid.uuid4())},
     )
     assert published.status_code == 200, published.text
-    delivery = uuid.UUID(cast(Json, published.json())["delivery_id"])
+    delivery = uuid.UUID(cast(str, cast(Json, published.json())["delivery_id"]))
     again = await call_as(grace)(
         "POST",
         f"/v1/tax-returns/{feld.item}/deliverables:publish",
@@ -113,7 +114,13 @@ async def test_ac_claire_sees_her_filed_return_and_downloads_it_after_two_step(
         "AND target_id = $1",
         str(feld.item),
     )
-    assert {(a["actor_kind"], a["actor_id"]) for a in audited} == {("human", str(grace.user_id))}
+    assert [(a["actor_kind"], a["actor_id"]) for a in audited] == [("human", str(grace.user_id))]
+    announced = await feld.seed.value(
+        "SELECT count(*) FROM outbox WHERE event_type = 'return.delivered' "
+        "AND payload ->> 'return_id' = $1",
+        str(feld.item),
+    )
+    assert announced == 1  # publishing again is the same release, announced once
 
     claire = await _client(feld, cast(uuid.UUID, feld.engagement))
     view = await home.read_home(claire, None)

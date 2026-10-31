@@ -70,13 +70,15 @@ LIVE = [
     ("post", "/v1/tax-returns/{return_id}/acks", "efile_ack.record"),
     ("post", "/v1/tax-returns/{return_id}/acks/{ack_id}/issue", "efile_ack.record"),
     ("put", "/v1/firm/members/{user_id}/ero", "member.set_ero"),
+    # T-01-T41 the client copy's release and its portal download.
+    ("post", "/v1/tax-returns/{return_id}/deliverables:publish", "deliverable.publish"),
+    ("get", "/v1/portal/filed-returns/{delivery_id}/download", "portal_home.read"),
 ]
 ROUTES = [
     ("post", "/v1/tax-returns/{return_id}/engine-exports", "tax_return.export"),
     ("get", "/v1/engine-exports/{export_id}/file", "tax_return.export"),
     ("post", "/v1/engine-exports/{export_id}/mark-exported", "tax_return.export"),
     ("post", "/v1/tax-returns/{return_id}/ero-notices", "delivery_packet.prepare"),
-    ("post", "/v1/tax-returns/{return_id}/deliverables:publish", "deliverable.publish"),
 ]
 
 

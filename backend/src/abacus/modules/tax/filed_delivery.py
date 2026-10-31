@@ -48,6 +48,12 @@ class NoClientCopy(DomainConflict):
     code = "no_client_copy"
 
 
+class ReleaseInProgress(DomainConflict):
+    """409: another publish of the same copy committed first; read the delivery again."""
+
+    code = "release_in_progress"
+
+
 class MfaRequired(DomainForbidden):
     """403: the portal's second step first (the client copy is TRI)."""
 
@@ -138,6 +144,18 @@ async def publish(ctx: AuthContext, return_id: UUID) -> Delivered:
     version_id = _client_copy_of(packet[1])
     if version_id is None:
         raise NoClientCopy(facts={"work_item_id": str(return_id)})
+    async with tenant_session(ctx.tenant) as session:
+        released = (
+            await session.execute(
+                text(
+                    "SELECT id, published_at FROM filed_return_deliveries "
+                    "WHERE return_id = :r AND evidence_version_id = :v"
+                ),
+                {"r": return_id, "v": version_id},
+            )
+        ).first()
+    if released is not None:  # released before: the same release, announced once
+        return Delivered(cast(UUID, released[0]), return_id, cast(datetime, released[1]))
     async with uow(ctx.tenant) as tx:
         row = (
             await tx.session.execute(
@@ -159,16 +177,8 @@ async def publish(ctx: AuthContext, return_id: UUID) -> Delivered:
                 },
             )
         ).first()
-        if row is None:  # released before: the same release
-            row = (
-                await tx.session.execute(
-                    text(
-                        "SELECT id, published_at FROM filed_return_deliveries "
-                        "WHERE return_id = :r AND evidence_version_id = :v"
-                    ),
-                    {"r": return_id, "v": version_id},
-                )
-            ).one()
+        if row is None:  # a concurrent publish released it first
+            raise ReleaseInProgress(facts={"work_item_id": str(return_id)})
         tx.record(
             "return.delivered",
             target=Target(TARGET, return_id),
@@ -262,6 +272,7 @@ __all__ = [
     "FiledReturn",
     "MfaRequired",
     "NoClientCopy",
+    "ReleaseInProgress",
     "ReturnDelivered",
     "ReturnNotAccepted",
     "client_copy",

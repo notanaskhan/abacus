@@ -450,6 +450,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "/v1/portal/envelopes/{envelope_id}/signing-session/{session_id}/return",
         "portal_envelopes.sign",
     ),
+    ("GET", "/v1/portal/filed-returns/{delivery_id}/download", "portal_home.read"),
     ("GET", "/v1/portal/home", "portal_home.read"),
     ("GET", "/v1/portal/intake-uploads", "portal_intake.read_own"),
     ("GET", "/v1/portal/k1s", "portal_k1.read"),
