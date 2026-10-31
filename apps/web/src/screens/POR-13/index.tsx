@@ -377,7 +377,11 @@ function PackageCard({
           </ValueRow>
           <ValueRow label={COPY.details.tin} kind="value">
             <span className="inline-flex items-center gap-[12px]">
-              {tin == null ? "—" : tin.kind === "ein" ? einMask(tin.last4) : ssnMask(tin.last4)}
+              {tin?.last4 == null
+                ? "—"
+                : tin.kind === "ein"
+                  ? einMask(tin.last4)
+                  : ssnMask(tin.last4)}
               {PLANNED_VISIBLE && (
                 <Button
                   variant="ghost"
