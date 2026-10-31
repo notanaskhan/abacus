@@ -71,25 +71,15 @@ async def test_inv1_a_non_person_and_the_database_refuse_the_approval(seed: Seed
 async def test_ac15_a_consent_inside_the_letter_is_refused(seed: Seeder) -> None:
     ctx, engagement, template = await _approvable(seed)
     base = draft_of(template)
-    section = next(iter(base.section_overrides), None)
+    # The consent rule runs before a section is looked up, so any section id shows it.
     body = LetterDraftIn.model_validate(
         {
             **base.model_dump(),
             "section_overrides": {
-                **base.section_overrides,
-                **(
-                    {section: "The client consents to the use of tax return information."}
-                    if section is not None
-                    else {}
-                ),
+                "scope": "The client consents to the use of tax return information (§7216)."
             },
         }
     )
-    if section is None:  # no overridable section: the variable path holds the same rule
-        key = next(iter(base.variables))
-        body = LetterDraftIn.model_validate(
-            {**base.model_dump(), "variables": {**base.variables, key: "Section 7216 consent"}}
-        )
     with pytest.raises(letters.ConsentInLetter):
         await letters.draft_letter(ctx, engagement, body, '"1"')
 
@@ -109,9 +99,13 @@ async def test_the_approval_is_stale_on_any_change_and_versions_are_insert_only(
         engagement,
     )
     assert [(r["version_no"], r["status"]) for r in rows] == [(1, "superseded"), (2, "draft")]
-    with pytest.raises(asyncpg.InsufficientPrivilegeError):
-        await seed.run(
-            "DELETE FROM engagement_letter_versions WHERE engagement_id = $1", engagement
+    with pytest.raises(asyncpg.InsufficientPrivilegeError):  # a version's content is fixed
+        await seed.as_actor(
+            ctx.tenant_id,
+            ("human", str(ctx.user_id)),
+            "UPDATE engagement_letter_versions SET variables = '{}'::jsonb "
+            "WHERE engagement_id = $1 AND version_no = 1",
+            engagement,
         )
 
 
