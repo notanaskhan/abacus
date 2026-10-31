@@ -351,6 +351,15 @@ class IntakeBinderOut(BaseModel):
     last_upload_at: Annotated[datetime | None, classified("internal")]
 
 
+class IntakeDuplicateOut(BaseModel):
+    """A flagged duplicate upload on the request (T-02-T17): Keep newer or Discard duplicate."""
+
+    model_config = ConfigDict(frozen=True)
+
+    version_id: Annotated[UUID, classified("internal")]
+    file_name: Annotated[str, classified("confidential")]
+
+
 class IntakeRequestOut(BaseModel):
     """T-02-T18: one request row with what answers it (file name and channel) or its asking."""
 
@@ -370,6 +379,8 @@ class IntakeRequestOut(BaseModel):
     channel: Annotated[str | None, classified("internal")]
     linked_count: Annotated[int | None, classified("internal")]
     owed_by: Annotated[str | None, classified("confidential")]
+    # T-02-T19 (TAX-03 e): the client's repeat of the filed copy, flagged and not yet resolved.
+    duplicate: Annotated[IntakeDuplicateOut | None, classified("internal")] = None
 
 
 class IntakeSuggestionOut(BaseModel):
@@ -389,6 +400,8 @@ class IntakeWaitingFileOut(BaseModel):
 
     attachment_id: Annotated[UUID, classified("internal")]
     thread_id: Annotated[UUID, classified("internal")]
+    # T-02-T19: the message the file came with, which N-01's triage apply files or ignores on.
+    message_id: Annotated[UUID, classified("internal")]
     file_name: Annotated[str, classified("confidential")]
     media_type: Annotated[str, classified("internal")]
     size_bytes: Annotated[int, classified("internal")]

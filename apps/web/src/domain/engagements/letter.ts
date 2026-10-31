@@ -8,8 +8,10 @@ import {
   draftLetterMutation,
   getLetterOptions,
   getLetterQueryKey,
+  approveLetterMutation,
   requestApprovalMutation,
   sendLetterMutation,
+  withdrawLetterEnvelopeMutation,
 } from "@abacus/api-client/query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -59,12 +61,21 @@ export function useLetterWrites(letter: ComposerLetterOut | undefined) {
   const draft = useMutation({ ...draftLetterMutation(), onSuccess: put });
   const request = useMutation({ ...requestApprovalMutation(), onSuccess: put });
   const send = useMutation(sendLetterMutation());
+  // N-02-T35: the partner's approval (fresh second factor) and the withdrawal of an ended envelope.
+  const approve = useMutation({ ...approveLetterMutation(), onSuccess: put });
+  const withdraw = useMutation({ ...withdrawLetterEnvelopeMutation(), onSuccess: put });
   return {
-    draft: (body: LetterDraftIn) =>
-      draft.mutateAsync({ ...at, body, headers: ifMatch }),
+    draft: (body: LetterDraftIn) => draft.mutateAsync({ ...at, body, headers: ifMatch }),
     // N-02-T33: the request names the version it asks about, like an edit.
     requestApproval: () => request.mutateAsync({ ...at, headers: ifMatch }),
     send: () => send.mutateAsync(at),
-    pending: draft.isPending || request.isPending || send.isPending,
+    approve: () => approve.mutateAsync({ ...at, headers: ifMatch }),
+    withdraw: () => withdraw.mutateAsync({ ...at, headers: ifMatch }),
+    pending:
+      draft.isPending ||
+      request.isPending ||
+      send.isPending ||
+      approve.isPending ||
+      withdraw.isPending,
   };
 }

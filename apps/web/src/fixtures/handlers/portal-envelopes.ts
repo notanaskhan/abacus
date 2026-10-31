@@ -3,6 +3,9 @@
 // envelope, so the writes it answers (the ERSD consent, a signing session, a decline and its
 // withdrawal) change only that scenario. The provider's return is a hint: GET …/return answers the
 // server's view, which says signed only when the scenario's provider has completed (`signs`).
+// N-02-T29: a session before the letter's date answers 409 `before_date_as_of` and a signer whose
+// identity checks failed 409 `verification_failed` (DF-11), as C7 does; the list's signed band is
+// the scenario's.
 import type {
   ListPagePortalEnvelopeRow,
   PortalEnvelopeRow,
@@ -23,6 +26,8 @@ export interface PortalEnvelopeOptions {
   signs?: boolean;
   /** The viewer is not a signer on any envelope (restricted): every read is 404 (no oracle). */
   restricted?: boolean;
+  /** The viewer's signed band in the list; default Owen's (E13's persona). */
+  signedRows?: readonly PortalEnvelopeRow[];
 }
 
 function bytesOf(dataUrl: string): ArrayBuffer {
@@ -48,6 +53,7 @@ function signed(view: PortalEnvelopeView): PortalEnvelopeView {
     ...view,
     row: { ...view.row, status: "partially_signed", my_status: "signed" },
     signers_signed: view.signers_signed + 1,
+    signers: view.signers.map((s) => (s.me ? { ...s, status: "signed" as const } : s)),
     signing_session: null,
     outcome: "signed",
   };
@@ -71,7 +77,7 @@ export function portalEnvelopeHandlers(
         } satisfies ListPagePortalEnvelopeRow);
       }
       const done = (r: PortalEnvelopeRow): boolean => r.my_status === "signed";
-      const all = [row(), ...SIGNED_ROWS];
+      const all = [row(), ...(options.signedRows ?? SIGNED_ROWS)];
       const wanted = query.get("status");
       const items =
         wanted === "signed"
@@ -110,6 +116,12 @@ export function portalEnvelopeHandlers(
     },
     "POST /v1/portal/envelopes/{envelope_id}/signing-session": ({ params }) => {
       if (!mine(params.envelope_id)) return json(NOT_FOUND, 404);
+      if (view.row.my_status === "verification_failed") {
+        return json({ detail: "verification_failed" }, 409);
+      }
+      if (view.signing_opens_on !== null) {
+        return json({ detail: "before_date_as_of", date_as_of: view.signing_opens_on }, 409);
+      }
       if (view.esign_consent_needed) return json({ detail: "esign_consent_needed" }, 409);
       view = { ...view, signing_session: E13_SESSION };
       return json(E13_SESSION satisfies SigningSessionOut);
