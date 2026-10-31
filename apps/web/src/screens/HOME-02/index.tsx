@@ -21,6 +21,7 @@ import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { useSession } from "../../app-core/session";
 import {
   type Band,
+  type EvidenceSummaryOf,
   HOME_MESSAGES,
   HOME_POLL_MS,
   HOME_SEGMENTS,
@@ -31,6 +32,7 @@ import {
 } from "../../domain/home";
 import { COPY } from "./copy";
 import { type DecisionDraft, GateDetailBody, GateDetailFooter } from "./Detail";
+import { EvidencePane } from "./Evidence";
 import { MY_WORK, openHref, openOverlayOf } from "./hosts";
 
 // HOME-02 · My approvals & review queue, the queue (I-01-T16; docs/screens/HOME-02.md) on T9
@@ -42,8 +44,9 @@ import { MY_WORK, openHref, openOverlayOf } from "./hosts";
 // selected gate by class (I-01-T17, `Detail.tsx`): the inline decision card, a sign-off blocked or
 // ready, an agent output, approvals and sends, and the generic fallback; every verb there is the
 // person's HumanAction, opening its overlay. A gate decided here stays in the detail (b) after it
-// leaves the queue, and `?gate=` on a done gate finds it among the done rows. Evidence (T18) and
-// bulk Select (T19) fill the rest later. Enter and the generic "Open" go to the gate's own host
+// leaves the queue, and `?gate=` on a done gate finds it among the done rows. The evidence pane
+// (I-01-T18, `Evidence.tsx`) shows the owner's summary and the cited sources through SHL-08's
+// viewer; bulk Select (T19) comes later. Enter and the generic "Open" go to the gate's own host
 // (`hosts.ts`), and the segmented's "My work" to HOME-01. A row is a link to where the gate is
 // decided, never a decision control (INV-1). Behind `home.approvals` (created here).
 
@@ -107,6 +110,8 @@ export interface HOME02Props {
   toolbar?: ToolbarProps;
   height?: number;
   initialDone?: boolean;
+  /** The owners' evidence summaries (I-01-T18): fixtures today, tax fixture-only until T-05. */
+  summaryOf?: EvidenceSummaryOf;
 }
 
 export function HOME02({
@@ -117,6 +122,7 @@ export function HOME02({
   toolbar,
   height,
   initialDone = false,
+  summaryOf,
 }: HOME02Props): JSX.Element {
   const now = useNow();
   const session = useSession();
@@ -336,15 +342,11 @@ export function HOME02({
             : { footer: <GateDetailFooter key={detailProps.gate.id} {...detailProps} /> }),
         }}
         evidence={[
-          <section
+          <EvidencePane
             key="evidence"
-            aria-label={COPY.evidence}
-            className="pane flex min-h-0 flex-1 flex-col"
-          >
-            <div className="flex h-(--pane-hd-h) flex-none items-center justify-center bg-card hairline-b">
-              <h2 className="text-pane font-medium tracking-[-0.012em]">{COPY.evidence}</h2>
-            </div>
-          </section>,
+            gate={selected}
+            {...(summaryOf === undefined ? {} : { summaryOf })}
+          />,
         ]}
       />
     </div>

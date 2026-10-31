@@ -7,8 +7,9 @@ import {
   freshScenarios,
   scenarios,
   selectedGate,
+  summaryOf,
 } from "../../fixtures/scenarios/HOME-02";
 
-export { type Home02State, freshScenarios, scenarios, selectedGate };
+export { type Home02State, freshScenarios, scenarios, selectedGate, summaryOf };
 
 export const STATES = Object.keys(scenarios) as Home02State[];

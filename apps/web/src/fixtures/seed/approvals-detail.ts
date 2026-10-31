@@ -38,11 +38,22 @@ const ENGAGEMENT = stableId("engagement:home:ridgeline-property-partners-lp");
 // ---- Decision 1: §754 election (a, b) -----------------------------------------------------------
 
 export const DECISION_754 = gateSubject("daniel-reyes", 1);
-const TRANSFER = id("evidence:transfer-agreement");
+/** The transfer agreement's evidence version (the card's first source; I-01-T18 seeds its pages). */
+export const TRANSFER = id("evidence:transfer-agreement");
 const BASIS = id("evidence:basis");
 const LPA = id("evidence:lpa");
 
 export const PROPOSED_754 = "2026-09-11T19:20:00Z";
+
+/** Where each citation sits on page 1 of its source (points), lit in the match purple. */
+export const CITED_RECTS: Readonly<Record<string, [number, number, number, number]>> = {
+  "transfer-1": [72, 188, 540, 228],
+  "transfer-2": [72, 120, 540, 160],
+  basis: [72, 300, 540, 330],
+  lpa: [72, 96, 540, 140],
+};
+export const matchAt = (version: string, key: string): string =>
+  `ev:${version}#p1:${(CITED_RECTS[key] ?? [0, 0, 0, 0]).map(String).join(",")}`;
 
 const cite = (
   key: string,
@@ -59,7 +70,7 @@ const cite = (
   quote: null,
   quote_state: "withheld",
   value_text: null,
-  match_id: null,
+  match_id: matchAt(version, key),
   state: "valid",
   verified: true,
   verification_reason: null,
@@ -337,12 +348,12 @@ const DECISION_BLOCK: EligibilityCheckOut = {
 };
 
 export const SECTIONS: readonly SectionFrame[] = [
-  section(4, "Summary & preparer memo", 2, null),
-  section(5, "Financials (TB → TTB)", 2, null),
-  section(6, "Schedule K", 2, null),
+  section(4, "Summary & preparer memo", 1, null),
+  section(5, "Financials (TB → TTB)", 1, null),
+  section(6, "Schedule K", 1, null),
   section(7, "Capital Accounts", 3, M2_BLOCK),
-  section(8, "Basis", 2, DECISION_BLOCK),
-  section(9, "States & PTET", 2, null),
+  section(8, "Basis", 1, DECISION_BLOCK),
+  section(9, "States & PTET", 1, null),
 ];
 
 // ---- g: Samuel Ito's agent outputs -------------------------------------------------------------
@@ -405,6 +416,7 @@ export function withDetailFacts(persona: string, gates: readonly HumanGateOut[])
         subject: { type: "return_section", id: g.subject.id },
         role: "L4_partner",
         bulk_eligible: !g.blocked,
+        allowed_actions: ["human_gate.snooze", "human_gate.reassign"],
       };
     }
     if (g.kind === "final_approval") {
