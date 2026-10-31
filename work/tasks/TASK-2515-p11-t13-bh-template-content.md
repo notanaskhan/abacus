@@ -29,11 +29,9 @@ the synthetic tenant only, and a scan finds no template text in any migration or
   `reporting.api.import_template_bundle` and `publish_template` (new re-exports of the routes'
   services). Opt-in: `make seed-demo SLICE=report_templates`.
 - Guide `docs/operations/template-import.md`.
-- **Bugs found on main and fixed (methodology/report_templates.py):** `SELECT … FOR UPDATE` on
-  `report_templates` needs UPDATE, which the app role does not have, so every import, publish
-  and deprecate failed against the real grants; now a transaction-scoped advisory lock per
-  template. The import's audit reference carried `source="import"`, a string `Ref` refuses; the
-  source stays on the version row.
+- **Bugs found on main:** `SELECT … FOR UPDATE` on `report_templates` needed an UPDATE grant the
+  app role lacks, and the import's audit reference carried a string. Main fixed both while this
+  row was in review; the rebase keeps main's fix and this row changes nothing in methodology.
 - Tests: `tests/integration/test_p11t13_template_content.py`.
 - Rollback: drop the slice from the loader table; the lock change is behaviour-preserving.
 
@@ -41,5 +39,5 @@ the synthetic tenant only, and a scan finds no template text in any migration or
 DEC-1563.
 
 ## Progress log
-- `2026-10-31` — Built on `s20b-p11-t13` off main 7d4def8e5. test_p11t13 (15), unit reporting,
+- `2026-10-31` — Built on `s20b-p11-t13` off main 7d4def8e5; rebased onto main 6ece192f6 at the end review. test_p11t13 (15), unit reporting,
   C11 contracts, P-11-T06 schema: 175 passed.
