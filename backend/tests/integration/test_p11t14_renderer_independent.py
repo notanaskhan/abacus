@@ -30,10 +30,17 @@ from abacus.kernel.uow import uow
 from abacus.modules.reporting import api as c11
 from abacus.modules.reporting import reads
 
+from . import test_p11t08_render_service as p11t08
+from . import test_p11t11_reporting_routes as p11t11
 from .agent_tests.support import Seeder
-from .test_p11t08_render_service import Values, _request, _world, engines, seed, values
-from .test_p11t11_reporting_routes import _client_ctx, _draft
-from .test_p11t11_reporting_routes import _world as _team_world
+from .test_p11t08_render_service import Values, engines, seed, values
+
+# P-11-T08's probe kind and P-11-T11's team world, served here (the independent suite's fixtures).
+_request = p11t08._request  # pyright: ignore[reportPrivateUsage] -- P-11-T08's request builder
+_world = p11t08._world  # pyright: ignore[reportPrivateUsage] -- P-11-T08's firm and client
+_client_ctx = p11t11._client_ctx  # pyright: ignore[reportPrivateUsage] -- a client principal
+_draft = p11t11._draft  # pyright: ignore[reportPrivateUsage] -- a human draft on an engagement
+_team_world = p11t11._world  # pyright: ignore[reportPrivateUsage] -- the partner's engagement
 
 __all__ = ["engines", "seed", "values"]
 
@@ -68,7 +75,7 @@ async def test_inv1_an_agent_never_holds_a_final_at_the_service_or_the_database(
     for kind in ("system",):
         with pytest.raises(c11.RenderRefused):
             async with uow(TenantContext(tenant, "system", "reporting:planted")) as tx:
-                await c11.render_final(tx, document, approval, c11.Requester(kind))  # type: ignore[arg-type]  # a planted non-person
+                await c11.render_final(tx, document, approval, c11.Requester(kind))
     with pytest.raises(asyncpg.CheckViolationError):
         await seed.run(
             "INSERT INTO generated_document_versions (tenant_id, generated_document_id, "
@@ -96,7 +103,8 @@ async def test_a_final_needs_a_persons_approval_of_this_drafts_hash(
     drafted = cast(
         str,
         await seed.value(
-            "SELECT content_hash FROM generated_document_versions WHERE generated_document_id = $1",
+            "SELECT content_hash FROM generated_document_versions "
+            "WHERE generated_document_id = $1",
             ticket.generated_document_id,
         ),
     )

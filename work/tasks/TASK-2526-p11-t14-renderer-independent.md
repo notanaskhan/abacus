@@ -34,3 +34,7 @@ session and all pass against the merged renderer."
 ## Progress log
 - `2026-10-31` — Built on `s20c-p11-t14` off main. Integration half 5 passed; the image-bound
   half runs at the end-of-batch `make golden-render`.
+- `2026-10-31` — End review: the image-bound AC-9 case found a URL named as an image asset refused
+  `unknown_block` (the block schema rejected the non-id first), not SPEC-520 AC-9's
+  `asset_not_allowed`. `render/core._blocks` now answers `asset_not_allowed` for any `asset_id`
+  that fails validation, before any engine runs; a unit test pins it. Also F4/F5 (lint, typing).
