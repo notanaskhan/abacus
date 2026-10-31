@@ -352,7 +352,7 @@ class IntakeBinderOut(BaseModel):
 
 
 class IntakeDuplicateOut(BaseModel):
-    """A flagged duplicate upload on the request (T-02-T17), for Keep newer or Discard duplicate."""
+    """A flagged duplicate upload on the request (T-02-T17): Keep newer or Discard duplicate."""
 
     model_config = ConfigDict(frozen=True)
 

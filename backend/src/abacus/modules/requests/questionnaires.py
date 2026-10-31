@@ -296,8 +296,9 @@ async def templates(ctx: AuthContext) -> list[TemplateView]:
                     "SELECT t.id, t.name, "
                     "max(v.version) FILTER (WHERE v.published_at IS NOT NULL) AS current, "
                     "max(v.version) FILTER (WHERE v.published_at IS NULL) AS draft, "
-                    "(SELECT p.id FROM questionnaire_template_versions p WHERE p.template_id = t.id "
-                    "AND p.published_at IS NOT NULL ORDER BY p.version DESC LIMIT 1) AS current_id "
+                    "(SELECT p.id FROM questionnaire_template_versions p "
+                    "WHERE p.template_id = t.id AND p.published_at IS NOT NULL "
+                    "ORDER BY p.version DESC LIMIT 1) AS current_id "
                     "FROM questionnaire_templates t LEFT JOIN questionnaire_template_versions v "
                     "ON v.template_id = t.id GROUP BY t.id, t.name ORDER BY t.name"
                 )
