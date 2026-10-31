@@ -83,6 +83,11 @@ async def _per_partner(
     ]
 
 
+def letter_gate_subject(version_id: UUID, partner_id: UUID) -> UUID:
+    """N-02-T33: one `letter_partner_approval` gate per engagement partner per draft version."""
+    return uuid.uuid5(_NAMESPACE, f"letter_partner_approval:{version_id}:{partner_id}")
+
+
 def confirmation_subject(engagement_id: UUID, user_id: UUID) -> UUID:
     """A confirmation has no id of its own (its key is the engagement and the member)."""
     return uuid.uuid5(_NAMESPACE, f"independence_confirmation:{engagement_id}:{user_id}")

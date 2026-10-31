@@ -3,8 +3,13 @@ port (`engagements.api.register_letter_renderer`), since `engagements` may not i
 
 The kind's variables provider answers what the composer resolved for the same owner in the current
 call (a context variable set around `render`); an unresolved owner gets nothing, so every
-declared key refuses with `missing_variable`. Approvals are N-02-T33's: until then the approval
-provider answers None and no letter renders final.
+declared key refuses with `missing_variable`.
+
+N-02-T33: a partner's approval renders the approved draft final (`finalise_engagement_letter`).
+The approval provider confirms only the approval the composer is recording in the same call (a
+context variable, like the values), so no other caller can render a letter final; it answers the
+approver and the content hash they approved, which C11 checks against the draft (AC-15). A
+completed envelope locks the document (`lock_engagement_letter`, C11 AC-19).
 """
 
 from __future__ import annotations
@@ -15,7 +20,7 @@ from typing import Final
 from uuid import UUID
 
 from abacus.kernel.uow import UnitOfWork
-from abacus.modules.engagements.api import LetterRenderAsk, LetterRendered
+from abacus.modules.engagements.api import LetterFinalAsk, LetterRenderAsk, LetterRendered
 
 KIND: Final = "engagement_letter"
 OWNER: Final = "engagement_letter"
@@ -34,8 +39,19 @@ async def _provider(owner: object, scope: object) -> Mapping[str, str]:
     return current.get(owner.id, {})
 
 
+_approving: ContextVar[LetterFinalAsk | None] = ContextVar("abacus_letter_approval", default=None)
+APPROVAL_KIND: Final = "letter_partner_approval"
+
+
 async def _approval(ref: object) -> tuple[UUID, str] | None:
-    return None
+    from abacus.modules.reporting.api import ApprovalRef
+
+    ask = _approving.get()
+    if ask is None or not isinstance(ref, ApprovalRef):
+        return None
+    if (ref.kind, ref.id, ref.content_hash) != (APPROVAL_KIND, ask.version_id, ask.content_hash):
+        return None
+    return ask.approver_user_id, ask.content_hash
 
 
 def ensure_kind() -> None:
@@ -87,4 +103,37 @@ async def render_engagement_letter(tx: UnitOfWork, ask: LetterRenderAsk) -> Lett
     return LetterRendered(ticket.generated_document_id, ticket.content_hash)
 
 
-__all__ = ["KIND", "ensure_kind", "render_engagement_letter"]
+async def finalise_engagement_letter(tx: UnitOfWork, ask: LetterFinalAsk) -> UUID:
+    """The approved draft rendered final, a person's, in the caller's unit of work; answers the
+    final version's id."""
+    from abacus.modules.reporting import api as c11
+    from abacus.modules.reporting import documents as docs
+
+    ensure_kind()
+    token = _approving.set(ask)
+    try:
+        ticket = await c11.render_final(
+            tx,
+            ask.generated_document_id,
+            c11.ApprovalRef(APPROVAL_KIND, ask.version_id, ask.content_hash),
+            c11.Requester("human", user_id=ask.approver_user_id),
+        )
+    finally:
+        _approving.reset(token)
+    return await docs.version_id(tx, ask.generated_document_id, ticket.version_no)
+
+
+async def lock_engagement_letter(tx: UnitOfWork, document_id: UUID, cause_ref: str) -> None:
+    from abacus.modules.reporting import api as c11
+
+    await c11.lock(tx, document_id, cause_ref)
+
+
+__all__ = [
+    "APPROVAL_KIND",
+    "KIND",
+    "ensure_kind",
+    "finalise_engagement_letter",
+    "lock_engagement_letter",
+    "render_engagement_letter",
+]

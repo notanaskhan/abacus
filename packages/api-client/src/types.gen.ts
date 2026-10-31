@@ -51724,7 +51724,11 @@ export type RecordEngagementLetterResponse = RecordEngagementLetterResponses[key
 
 export type RequestApprovalData = {
     body?: never;
-    headers?: {
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': string;
         /**
          * Authorization
          */

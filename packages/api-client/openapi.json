@@ -109237,7 +109237,7 @@
     },
     "/v1/engagements/{engagement_id}/letter/amend": {
       "post": {
-        "description": "An addendum version (N-02-T37).",
+        "description": "An addendum version amending the signed letter (N-02-T33).",
         "operationId": "amend_letter",
         "parameters": [
           {
@@ -109364,7 +109364,7 @@
     },
     "/v1/engagements/{engagement_id}/letter/approve": {
       "post": {
-        "description": "Partner, fresh MFA, against the content hash (N-02-T35).",
+        "description": "Partner, fresh MFA, against the content hash (N-02-T33).",
         "operationId": "approve_letter",
         "parameters": [
           {
@@ -110266,7 +110266,7 @@
     },
     "/v1/engagements/{engagement_id}/letter/request-approval": {
       "post": {
-        "description": "C13 `letter_partner_approval` (N-02-T35).",
+        "description": "C13 `letter_partner_approval`: the draft waits on the engagement partners (N-02-T33).",
         "operationId": "request_approval",
         "parameters": [
           {
@@ -110276,6 +110276,17 @@
             "schema": {
               "format": "uuid",
               "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "minLength": 1,
+              "title": "If-Match",
               "type": "string"
             }
           },
@@ -110393,7 +110404,7 @@
     },
     "/v1/engagements/{engagement_id}/letter/send": {
       "post": {
-        "description": "A C7 draft from the `engagement_letter` source (N-02-T35).",
+        "description": "A C7 draft from the `engagement_letter` source (N-02-T33), with `signatures.envelopes`.",
         "operationId": "send_letter",
         "parameters": [
           {
