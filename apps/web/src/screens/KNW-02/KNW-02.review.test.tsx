@@ -102,7 +102,10 @@ describe("KNW-02 c · Diff vs v2", () => {
 
   it("Compare with v2 diffs against the version picked", async () => {
     const calls = show("c");
-    fireEvent.click(await screen.findByRole("button", { name: /Compare with v2/u }));
+    // Radix opens a menu from the keyboard in jsdom (pointer events do not reach it).
+    fireEvent.keyDown(await screen.findByRole("button", { name: /Compare with v2/u }), {
+      key: "ArrowDown",
+    });
     fireEvent.click(await screen.findByRole("menuitemradio", { name: /Compare with v2/u }));
     await waitFor(() => {
       expect(calls.some((c) => c.path.endsWith("/diff") && c.query.includes(V2))).toBe(true);
