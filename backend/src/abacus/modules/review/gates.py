@@ -111,6 +111,9 @@ C13_EVENTS: Final = frozenset(
         "independence.concluded",
         "engagement_member.added",
         "eqr.eligibility_approved",
+        # N-02-T33 (engagements): the letter waits on the engagement partners' approval.
+        "letter.approval_requested",
+        "letter.approved",
     }
 )
 READ: Final = "human_gate.read"

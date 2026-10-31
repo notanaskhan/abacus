@@ -54,10 +54,16 @@ SNAPSHOTS: Final = ("E0",)
 _IDENTITY_ENV: Final = "ABACUS_IDENTITY_DATABASE_URL"  # the sign-in lookup's database
 # The slices the TS seed carries (its portal minimum, with the binders the portal needs): the
 # export is `make seed-demo` with `--slice portal`.
-SLICES: Final = ("portal", "tax_board")  # T-02-T11: the TY2025 board
+SLICES: Final = ("portal", "tax_board", "standards")  # T-02-T11 the board; K-02-T18 KNW-04
 # The flags the exported reads stand behind, on in the throwaway tenant as fixture mode has them:
 # the binders index (P-06) and the portal's sign-in and home (P-08).
-FLAGS: Final = ("binders.engine", "portal.sign_in_v2", "portal.home_v2", "tax.returns_v1")
+FLAGS: Final = (
+    "binders.engine",
+    "portal.sign_in_v2",
+    "portal.home_v2",
+    "tax.returns_v1",
+    "knowledge.firm_standards",  # K-02-T18: KNW-04's standards
+)
 # Portals are served at `<slug>.<portal_base_domain>`; the local runtime config's domain.
 PORTAL_BASE_DOMAIN: Final = "portal.localhost"
 PORTAL_HOST: Final = f"brightwaterhale.{PORTAL_BASE_DOMAIN}"
@@ -111,6 +117,8 @@ READS: Final[tuple[Read, ...]] = (
         label="GET /v1/tax-returns/summary",
     ),
     Read("tax-returns", "grace-holloway", "/v1/tax-returns", label="GET /v1/tax-returns"),
+    # K-02-T18: KNW-04's section rows as Priya Raman (a partner: she sees the 1040 v7 draft).
+    Read("standards", "priya-raman", "/v1/standards", label="GET /v1/standards"),
     Read(
         "northwind-request-items",
         "hannah-leclerc",

@@ -5,8 +5,13 @@ registers once, at import, what an envelope drafted from one of its records need
 the documents and the signers, the gate it meets, the retention record type, its own pre-send
 checks and the label a completed envelope shows. The slot fails closed: an unregistered kind
 cannot draft (`unknown_envelope_source`), and a second registration is a programming error.
-`engagement_letter` is the first source; its document and signer providers draft from the letter
-composer (N-02-T32), so until then they refuse with 501 and record mode is the way in.
+`engagement_letter` is the first source. Its record is an approved letter version (N-02-T33):
+the draft names the C11 final the approval rendered (by its content hash until the bytes land,
+P-11-T11), the client's signing officer (email code) and then the approving partner's
+countersignature (firm SSO, routing group 2); its pre-send check refuses a version that is no
+longer the current approved letter. ENG-04's Send drafts through `engagements.api`'s sender port,
+which this module fills (`send_letter`). §7216 consents travel in their own `consent_set`
+envelope (T-01), never inside the letter (AC-15).
 
 **G3.** The engagement-letter gate is met only by (a) a completed, non-superseded letter envelope
 carrying a client signature and a firm countersignature, (b) a completed, non-superseded
@@ -25,8 +30,15 @@ from uuid import UUID
 from sqlalchemy import text
 
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.errors import DomainConflict, NotImplementedYet
-from abacus.modules.engagements.api import GateFact, recorded_letter, replace_gate_provider
+from abacus.kernel.errors import DomainConflict
+from abacus.modules.engagements.api import (
+    GateFact,
+    letter_for_envelope,
+    letter_send_problems,
+    recorded_letter,
+    register_letter_sender,
+    replace_gate_provider,
+)
 from abacus.modules.identity.api import AuthContext
 
 LETTER: Final = "engagement_letter"
@@ -130,12 +142,47 @@ def registered_sources() -> frozenset[str]:
     return frozenset(_SOURCES)
 
 
-async def _letter_documents(ctx: AuthContext, engagement_id: UUID) -> Sequence[object]:
-    raise NotImplementedYet  # the letter composer drafts letters (N-02-T32)
+async def _letter_draft(ctx: AuthContext, version_id: UUID) -> SourceDraft:
+    """The approved letter version's prefill (N-02-T33)."""
+    letter = await letter_for_envelope(ctx, version_id)
+    return SourceDraft(
+        purpose=LETTER,
+        policy_family=LETTER,
+        client_id=letter.client_id,
+        title=letter.title,
+        documents=(
+            SourceDocument(
+                sha256=letter.content_hash,
+                generated_document_version_id=letter.generated_document_version_id,
+                source_ref=f"engagement_letter_version:{version_id}",
+            ),
+        ),
+        signers=(
+            SourceSigner(identity_method="email_code", contact_id=letter.client_signer_contact_id),
+            SourceSigner(
+                identity_method="firm_sso",
+                user_id=letter.countersigner_user_id,
+                role="countersigner",
+                routing_group=2,
+            ),
+        ),
+        engagement_id=letter.engagement_id,
+    )
 
 
-async def _letter_signers(ctx: AuthContext, engagement_id: UUID) -> Sequence[object]:
-    raise NotImplementedYet  # the letter composer names the signers (N-02-T32)
+async def _letter_documents(ctx: AuthContext, version_id: UUID) -> Sequence[object]:
+    return (await _letter_draft(ctx, version_id)).documents
+
+
+async def _letter_signers(ctx: AuthContext, version_id: UUID) -> Sequence[object]:
+    return (await _letter_draft(ctx, version_id)).signers
+
+
+async def send_letter(ctx: AuthContext, version_id: UUID) -> UUID:
+    """ENG-04's Send: a C7 draft from the approved letter version, for SIG-02."""
+    from abacus.modules.signatures.builder import create_draft
+
+    return await create_draft(ctx, LETTER, version_id)
 
 
 _LETTER_ENVELOPE = text(
@@ -171,7 +218,10 @@ def register_letter_source() -> None:
             signers=_letter_signers,
             retention_record_type="signature_evidence",
             gate=LETTER_GATE,
+            checks=(letter_send_problems,),
             completed_label="Signed",
+            draft=_letter_draft,
         )
     )
     replace_gate_provider(LETTER_GATE, letter_gate)
+    register_letter_sender(send_letter)

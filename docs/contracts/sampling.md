@@ -62,8 +62,10 @@ bank account) are refused at parse (422 `restricted_column`) and never copied.
 ## 5. Errors
 `completeness_tie_required`, `population_not_tied`, `override_not_acknowledged`,
 `content_changed`, `sample_not_approved` (409); `restricted_column`, `column_map_invalid`,
-`citation_unverified` (422); `seed_not_allowed`, `not_preparer_of_target` (403). Facts carry
-identifiers only.
+`citation_unverified`, `population_unreadable`, `duplicate_record_key` (422; A-03-T07, DEC-1660);
+`seed_not_allowed`, `not_preparer_of_target` (403). Facts carry identifiers only
+(`restricted_column` and `column_map_invalid` name the field: `record_key`, `name`, `date`,
+`amount`).
 
 ## 6. Human-only actions and audit events
 Human only: `sample_set.approve` (L2 through `review.api`), and every write in §2. Audit:

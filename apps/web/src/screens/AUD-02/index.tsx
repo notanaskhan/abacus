@@ -36,6 +36,7 @@ import {
 import { useFlag } from "../../app-core/flags";
 import { AgentDock } from "../../domain/agents";
 import { type TrialBalanceOptions, useTrialBalancePane } from "../AUD-06/TrialBalance";
+import { type SampleSelectionOptions, useSampleSelectionCanvas } from "../AUD-11/SampleSelection";
 import { ViewerPane } from "../SHL-08";
 import { COPY } from "./copy";
 
@@ -85,10 +86,14 @@ export interface AUD02Props {
   onOverlay?: (overlay: AuditOverlay) => void;
   /** AUD-06's "Sign off…" (A-02-T24): the host opens `?ov=signoff:trial_balance:<tb>:L2`. */
   onSignOff?: (tbId: string) => void;
+  /** What the Sample Selection row's AUD-11 canvas opens on (A-03-T11). */
+  sampleSelection?: SampleSelectionOptions;
 }
 
 /** The rail row whose canvas is AUD-06 (A-02-T09). */
 const TRIAL_BALANCE = "trial_balance";
+/** The rail row whose canvas is AUD-11 (A-03-T11). */
+const SAMPLE_SELECTION = "sample_selection";
 
 type Sort = "missing_first" | "received_first";
 
@@ -178,6 +183,7 @@ function Cockpit({
   overlay,
   onOverlay,
   onSignOff,
+  sampleSelection,
 }: Omit<AUD02Props, "auditId"> & { cockpit: AuditCockpitOut }): JSX.Element {
   // A-01-T24: "Export binder…" and the record-mode entries (DV-9, DV-4).
   const audit = useAuditActions(cockpit, overlay ?? null, onOverlay);
@@ -203,6 +209,13 @@ function Cockpit({
     },
     ...(onSignOff === undefined ? {} : { onSignOff }),
   });
+  // AUD-11 (A-03-T11): the Sample Selection row's canvas, behind `sampling.sample_sets` (C-20
+  // "not turned on" when off, drawn by the canvas itself).
+  const sampleOpen = selected === SAMPLE_SELECTION;
+  const sample = useSampleSelectionCanvas(cockpit.work_item_id, {
+    ...sampleSelection,
+    active: sampleOpen,
+  });
   const openDoc = (r: SourceDocumentRowOut): void => {
     const version = r.latest_upload?.evidence_version_id ?? null;
     if (version !== null) onDock?.("viewer", version);
@@ -211,6 +224,8 @@ function Cockpit({
   let canvas: CockpitCanvas;
   if (tbOn) {
     canvas = tb.canvas;
+  } else if (sampleOpen) {
+    canvas = sample;
   } else if (row?.section_state === "blocked_on_decision" && row.blocked_on_name != null) {
     canvas = {
       title: row.title,
@@ -396,6 +411,7 @@ export function AuditCockpitPage({
     trialBalance?: TrialBalanceOptions["initial"];
     autoMode?: AutoModeStep;
     overlay?: AuditOverlay;
+    sampleSelection?: SampleSelectionOptions;
   };
   onBack?: () => void;
 }): JSX.Element {
@@ -417,6 +433,9 @@ export function AuditCockpitPage({
       {...(initial.trialBalance === undefined ? {} : { trialBalance: initial.trialBalance })}
       {...(initial.autoMode === undefined ? {} : { autoMode: initial.autoMode })}
       {...(initial.overlay === undefined ? {} : { overlay: initial.overlay })}
+      {...(initial.sampleSelection === undefined
+        ? {}
+        : { sampleSelection: initial.sampleSelection })}
     />
   );
 }

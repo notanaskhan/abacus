@@ -1,0 +1,71 @@
+# A-03-T09 (TASK-2610): the frozen regression corpus for sampler 2.3 (A-03 §3 F1; ADR-340;
+# chapter 10 §10.9.2). Red, protected path: an entry here is never edited to make a test pass; new
+# behaviour ships only as a new SAMPLER_VERSIONS entry with its own corpus file. Each entry pins
+# (seed, population_hash, version) -> items_hash; generators are in test_a03t09_sampler_goldens.py.
+entries:
+  - case: northwind-participants-v2
+    version: "2.3"
+    generator: northwind_census_v2
+    method: attribute_statistical
+    seed: 0x5E2A91
+    size: 25
+    population_hash: "54b7858bee9108fe61975f5a759bd786a3de5808b08456033ebef1119ab56ba9"
+    items_hash: "50c118ef075f08b3306ebefbc96571af8db695e953e66e02ee5a24970a210f74"
+    items: 25
+  - case: northwind-participants-v1-seed
+    version: "2.3"
+    generator: northwind_census_v2
+    method: attribute_statistical
+    seed: 0x3C77D0
+    size: 25
+    population_hash: "54b7858bee9108fe61975f5a759bd786a3de5808b08456033ebef1119ab56ba9"
+    items_hash: "dd7d3dbd71626eaf0a658a0d9c450dc8b01dd5148c2b0f5797d441a6a553974e"
+    items: 25
+  - case: granite-peak-disbursements
+    version: "2.3"
+    generator: granite_peak_disbursements
+    method: threshold_random_stratified
+    seed: 0x7C31B4
+    population_hash: "6417bc09a38d9872ab2a5362a2e48e343868db0c62d4b532bd55ec54bb1b04ca"
+    items_hash: "8ab6e204a382c773abd8cb1f5ca043387eecc2d07fca938448ae284373e43c7c"
+    items: 40
+  - case: plain-1-of-1-seed-0
+    version: "2.3"
+    generator: plain
+    records: 1
+    method: attribute_statistical
+    seed: 0x000000
+    size: 1
+    population_hash: "64939819e1c7bfbbc4342b74c18fbbd1b5f6b6d357ceb20679b1bd4442235470"
+    items_hash: "836da968c62c08fd261d0c4b3f487145471ce225248c12aafea794e8876176d6"
+    items: 1
+  - case: plain-2-of-2-seed-max
+    version: "2.3"
+    generator: plain
+    records: 2
+    method: attribute_statistical
+    seed: 0xFFFFFF
+    size: 2
+    population_hash: "4e0481ade9e3d3ff2c8fb06b23e136a490d0414aaaccef8799812bf7c7dd4d3e"
+    items_hash: "62fed465a03b0e16578d9f208df93f35e8a66f041f3df94a5a552d4ad9f0b775"
+    items: 2
+  - case: plain-30-of-500
+    version: "2.3"
+    generator: plain
+    records: 500
+    method: attribute_statistical
+    seed: 0x123456
+    size: 30
+    population_hash: "8a6b5ea23a9b0e880df4a9b68c26829c8c1dff6826dea4b4c5153dcf0da6c5db"
+    items_hash: "73fa0a74b58ad2d2a320a4f7ef0a76aee844aecc5b4ad8813723bd1317153cb8"
+    items: 30
+  - case: plain-60-of-64
+    version: "2.3"
+    generator: plain
+    records: 64
+    method: attribute_statistical
+    seed: 0x7B13C4
+    size: 60
+    population_hash: "2bafa6f8657525e752a538bb6ef5e1d49fdce990b417e18b4ddf03aa7fa9a945"
+    items_hash: "8a7ada60496d8f65c741e27419c3fb6f43d1728bfa77096984acd3854fac23a2"
+    items: 60

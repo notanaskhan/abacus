@@ -120,6 +120,33 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+  sampler-corpus:
+    # A-03-T09 (ADR-340, A-03 R1): the sampler goldens and the frozen corpus on both supported
+    # Python minors, so a stdlib or interpreter change can never move a frozen draw unnoticed.
+    name: sampler corpus (py${{ matrix.python }})
+    needs: [changes]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.13"]
+    steps:
+      - if: needs.changes.outputs.backend != 'true'
+        run: echo "no backend paths changed (abacus_tools.ci.paths), so nothing to run"
+      - if: needs.changes.outputs.backend == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - if: needs.changes.outputs.backend == 'true'
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - if: needs.changes.outputs.backend == 'true'
+        working-directory: backend
+        run: uv run --python ${{ matrix.python }} --isolated --with-editable . pytest tests/golden/sampling -p no:randomly
+
   render-golden:
     # P-11-T02 (ADR-320): the golden letter renders byte-identically in two fresh containers of
     # the backend image (no network) and equals the recorded goldens.
