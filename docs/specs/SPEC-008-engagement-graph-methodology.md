@@ -63,6 +63,7 @@ Nothing says which accounts belong to which area, which areas have no requests, 
 - **Knowledge retrieval (pgvector):** the next spec.
 - **Methodology documents as prose:** they belong to knowledge retrieval (ADR-056).
 - **Materiality, risk assessment and procedures beyond request items.**
+  *Superseded 2026-10-31 by SPEC-620 (A-04-T02, DEC-1758): materiality, risk assessment and procedures are in scope there.*
 - **Editing templates in the UI:** a new version is a new import.
 - **Any UI:** this spec is API only.
 
