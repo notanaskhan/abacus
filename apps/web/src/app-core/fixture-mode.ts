@@ -14,6 +14,8 @@ export interface FixtureRequest {
   query: URLSearchParams;
   body: unknown;
   persona: string | undefined;
+  /** The request's headers (T-02-T24: `If-Match` for an autosave's version). */
+  headers?: Headers;
 }
 
 export type FixtureHandler = (request: FixtureRequest) => Response | Promise<Response>;
@@ -119,6 +121,7 @@ export function installFixtureMode(
       params,
       query: url.searchParams,
       body: bodyOf(await input.clone().text()),
+      headers: input.headers,
       persona,
     });
   };
