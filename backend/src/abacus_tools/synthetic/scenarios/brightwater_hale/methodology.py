@@ -43,9 +43,10 @@ EBP_PROGRAMS: Final = (110, 140, 210, 310, 410, 510, 610)
 EBP_V3: Final = (16, 8, 6, 8, 10, 7, 12)  # 67
 EBP_V2: Final = (15, 7, 6, 9, 9, 6, 12)  # 64: v3 less 110, 140, 410, 510's new steps, plus 310's
 EBP_MANDATORY: Final = (5, 3, 2, 3, 3, 2, 3)  # 21: each program's first steps
-# K-01-T18 (KNW-02 c, AC6.1): the steps v3 rewords, by program and number (AC4.3 names 110's).
+# K-01-T18 (KNW-02 c, AC6.1): the steps v3 rewords, by program and number: the seven KNW-02c draws
+# (110 steps 7, 9, 10; 140·3; 210·2; 310·1; 410·6) and two below its fold.
 EBP_V3_CHANGED: Final = frozenset(
-    {(110, 7), (110, 9), (110, 10), (140, 3), (210, 4), (310, 5), (410, 6), (510, 2), (610, 8)}
+    {(110, 7), (110, 9), (110, 10), (140, 3), (210, 2), (310, 1), (410, 6), (510, 2), (610, 8)}
 )
 PBC_REQUESTS: Final = 24
 LEVELS: Final = ("Foundation", "Planning", "Testing", "Completion")
