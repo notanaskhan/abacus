@@ -37,7 +37,16 @@ viewer's page endpoint (T20); KNW-02 UI (T19); independent ADR-078 suite (T24).
 ## Progress log
 - `2026-10-31` — built; ruff, pyright clean on the touched files; `make generate` run. Tests run at the S22 end review (with the migration applied).
 
+- `2026-10-31` — S22 end review: lint-imports and BOUND-002 refused methodology → evidence (moved
+  to a platform file-store slot); the integration suite found 0580's trigger failing every
+  `programs` write (field resolution in one IF) and an idempotent replay with no audit event; the
+  security review found the download header unsafe for quotes and non-Latin-1 names, and no role
+  check on uploads. All fixed (DEC-1759); generated security tests regenerated; `test_app_gates`
+  lists the import routes. **Made twice:** a PL/pgSQL trigger shared by several tables reading a
+  column only one has; candidate lint: a `TG_TABLE_NAME` test must guard field reads in its own IF.
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
+| DEC-1759 | end-review fixes: storage slot, trigger, replay, header, roles | No |
 | DEC-1755 | storage through evidence, trigger opening for flags in review, seed rewording | No |

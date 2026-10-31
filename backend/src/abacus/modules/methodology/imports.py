@@ -5,9 +5,10 @@ d; DEC-1755).
   template; it waits for its files (`awaiting_files`).
 - **Files** arrive one role at a time as the raw request body (no multipart, TASK-023 D3):
   `document_docx`, `document_pdf`, `workbook`. Each is scanned and typed before anything keeps
-  it, then written once to the evidence store under S3 Object Lock (`evidence.api.
-  screen_and_stage`); a refused file stores nothing. One file per role; the storage key and its
-  object version are kept and never returned.
+  it, then written once to the evidence store under S3 Object Lock (through the platform's file
+  store, which evidence registers: DEC-1759); a refused file stores nothing. A file's extension
+  names its role (`.docx`, `.pdf`, `.xlsx`; the screen checks the bytes agree, DEC-296). One
+  file per role; the storage key and its object version are kept and never returned.
 - **Start**: a workbook-only import parses deterministically into the template's next version
   (K-01-T05's import) and lands Needs review; an import with a document needs the Methodology
   importer (`methodology.importer`, K-01-T21) and answers 409 `importer_not_enabled` until it is
@@ -57,12 +58,18 @@ from abacus.modules.methodology.models import (
 )
 from abacus.modules.methodology.repository import lock_or_insert_template
 from abacus.modules.methodology.service import EngagementType, import_template
+from abacus.modules.platform.api import read_stored, screen_and_store
 
 MANAGE: Final = "methodology.manage"
 READ: Final = "methodology.read"
 SUBJECT: Final = "methodology_import"
 FileRole = Literal["document_docx", "document_pdf", "workbook"]
 DOCUMENTS: Final = frozenset({"document_docx", "document_pdf"})
+EXTENSION_OF: Final[dict[str, str]] = {
+    "document_docx": ".docx",
+    "document_pdf": ".pdf",
+    "workbook": ".xlsx",
+}
 OPEN: Final = frozenset({"awaiting_files", "scanning", "parsing"})
 DIFFED: Final = (
     "text",
@@ -124,6 +131,12 @@ class TextRequired(DomainInvalid):
     code = "text_required"
 
 
+class FileRoleMismatch(DomainInvalid):
+    """The file's extension is not its role's (`.docx`, `.pdf`, `.xlsx`)."""
+
+    code = "file_role_mismatch"
+
+
 class FlagNotOpen(DomainConflict):
     """The step has no open parse flag."""
 
@@ -131,10 +144,8 @@ class FlagNotOpen(DomainConflict):
 
 
 async def _read(tenant_id: UUID, key: str, version: str, sha256: str, size: int) -> bytes:
-    """A stored source file's verified bytes (evidence's store; imported lazily, as above)."""
-    from abacus.modules.evidence.api import read_staged
-
-    return await read_staged(tenant_id, key, version, sha256, size)
+    """A stored source file's verified bytes, through the platform's file store (DEC-1759)."""
+    return await read_stored(tenant_id, key, version, sha256, size)
 
 
 def _person(ctx: AuthContext, action: str) -> None:
@@ -242,16 +253,18 @@ async def create_import(
     _person(ctx, MANAGE)
     await authorise(ctx, MANAGE, Resource.firm(ctx.tenant_id))
     name = template_name.strip()
-    async with uow(ctx.tenant) as tx:
+    # A replay reads outside the unit of work: it changes nothing, so it records nothing.
+    async with tenant_session(ctx.tenant) as session:
         existing = (
-            await tx.session.execute(
+            await session.execute(
                 select(MethodologyImport.id).where(
                     MethodologyImport.idempotency_key == idempotency_key
                 )
             )
         ).scalar_one_or_none()
         if existing is not None:
-            return await _view(tx.session, existing)
+            return await _view(session, existing)
+    async with uow(ctx.tenant) as tx:
         template_id, _ = await lock_or_insert_template(
             tx.session,
             tenant_id=ctx.tenant_id,
@@ -302,14 +315,13 @@ async def upload_file(
     await authorise(ctx, MANAGE, Resource.firm(ctx.tenant_id))
     if len(data) > settings().methodology_max_bytes:
         raise FileTooLarge(facts={"limit": settings().methodology_max_bytes})
+    if not filename.lower().endswith(EXTENSION_OF[role]):
+        raise FileRoleMismatch(facts={"role": role})
     async with tenant_session(ctx.tenant) as session:
         row = await _import(session, import_id)
         if row.status != "awaiting_files":
             raise ImportFrozen(facts={"status": row.status})
-    # Imported here: evidence's module graph reaches back into methodology's API at import time.
-    from abacus.modules.evidence.api import screen_and_stage
-
-    screened = await screen_and_stage(ctx.tenant_id, data, filename, None)
+    screened = await screen_and_store(ctx.tenant_id, data, filename)
     sheets = _sheets(data) if role == "workbook" else None
     async with uow(ctx.tenant) as tx:
         row = await _import(tx.session, import_id, lock=True)
@@ -334,8 +346,8 @@ async def upload_file(
                     role=role,
                     filename=screened.file_name,
                     media_type=screened.media_type,
-                    storage_key=screened.stored.key,
-                    storage_version_id=screened.stored.version_id,
+                    storage_key=screened.key,
+                    storage_version_id=screened.version_id,
                     sha256=screened.sha256,
                     bytes=len(data),
                     sheet_count=sheets,

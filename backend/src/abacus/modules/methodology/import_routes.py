@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Annotated, Literal, cast
+from urllib.parse import quote
 from uuid import UUID
 
 from fastapi import Depends, Header, Path, Query, Request, Response
@@ -206,8 +207,22 @@ async def methodology_file_download_route(
     return Response(
         content=found.content,
         media_type=found.media_type,
-        headers={"Content-Disposition": f'attachment; filename="{found.filename}"'},
+        headers={
+            "Content-Disposition": _attachment(found.filename),
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
     )
+
+
+def _attachment(name: str) -> str:
+    """A person's file name as a header: an ASCII fallback with no quote or backslash, and the
+    UTF-8 name percent-encoded (RFC 6266, RFC 5987); a raw name breaks quoting or the header's
+    Latin-1 encoding."""
+    fallback = (
+        "".join(ch if 0x20 <= ord(ch) < 0x7F and ch not in '"\\' else "_" for ch in name) or "file"
+    )
+    return f"attachment; filename=\"{fallback}\"; filename*=UTF-8''{quote(name, safe='')}"
 
 
 # --- diff ----------------------------------------------------------------------------------------

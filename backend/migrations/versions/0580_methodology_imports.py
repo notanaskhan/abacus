@@ -133,17 +133,20 @@ _FROZEN = """
         -- discarded content is frozen. No state row yet: the import writing the version now.
         -- K-01-T18 (0580): in review, a person resolves a step's open parse flag: confirm it,
         -- or edit the text, the step keeping its key, origin and source. Nothing else moves.
+        -- The step's columns are read in an inner IF: the trigger also guards tables without
+        -- them (`programs`), and PL/pgSQL resolves every field an expression names.
         IF FOUND AND v_status = 'needs_review' AND TG_TABLE_NAME = 'program_steps'
-           AND TG_OP = 'UPDATE'
-           AND OLD.parse_flag IS NOT NULL AND OLD.flag_resolution IS NULL
-           AND NEW.flag_resolution IS NOT NULL
-           AND (to_jsonb(NEW) - ARRAY['text', 'flag_resolution', 'flag_resolved_by',
-                                      'flag_resolved_at', 'edited_by', 'edited_at',
-                                      'row_version'])
-             = (to_jsonb(OLD) - ARRAY['text', 'flag_resolution', 'flag_resolved_by',
-                                      'flag_resolved_at', 'edited_by', 'edited_at',
-                                      'row_version']) THEN
-            RETURN NEW;
+           AND TG_OP = 'UPDATE' THEN
+            IF OLD.parse_flag IS NOT NULL AND OLD.flag_resolution IS NULL
+               AND NEW.flag_resolution IS NOT NULL
+               AND (to_jsonb(NEW) - ARRAY['text', 'flag_resolution', 'flag_resolved_by',
+                                          'flag_resolved_at', 'edited_by', 'edited_at',
+                                          'row_version'])
+                 = (to_jsonb(OLD) - ARRAY['text', 'flag_resolution', 'flag_resolved_by',
+                                          'flag_resolved_at', 'edited_by', 'edited_at',
+                                          'row_version']) THEN
+                RETURN NEW;
+            END IF;
         END IF;
         IF FOUND AND v_status NOT IN ('draft', 'parsing') THEN
             RAISE EXCEPTION 'a methodology version''s content is frozen once it leaves draft'
