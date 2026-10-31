@@ -1443,6 +1443,9 @@ export const decisionCardReassess = <ThrowOnError extends boolean = false>(optio
 
 /**
  * Patch Packet Route
+ *
+ * Toggle the vouchers or the invoice. 409 `packet_not_draft`, `stale_version`,
+ * `item_not_toggleable`.
  */
 export const patchPacket = <ThrowOnError extends boolean = false>(options: Options<PatchPacketData, ThrowOnError>): RequestResult<PatchPacketResponses, PatchPacketErrors, ThrowOnError> => (options.client ?? client).patch<PatchPacketResponses, PatchPacketErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -1456,6 +1459,9 @@ export const patchPacket = <ThrowOnError extends boolean = false>(options: Optio
 
 /**
  * Approve Packet Route
+ *
+ * DEC-38: the return's signer or a manager; a person only. 409 `packet_not_draft`,
+ * `stale_version`.
  */
 export const approvePacket = <ThrowOnError extends boolean = false>(options: Options<ApprovePacketData, ThrowOnError>): RequestResult<ApprovePacketResponses, ApprovePacketErrors, ThrowOnError> => (options.client ?? client).post<ApprovePacketResponses, ApprovePacketErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -10571,6 +10577,9 @@ export const publishDeliverable = <ThrowOnError extends boolean = false>(options
 
 /**
  * Delivery Route
+ *
+ * TAX-12's checklist read model: the open packet and the engine's payment figures
+ * (T-01-T35). The binding, transmission and acknowledgements arrive with T-01-T36/T37.
  */
 export const delivery = <ThrowOnError extends boolean = false>(options: Options<DeliveryData, ThrowOnError>): RequestResult<DeliveryResponses, DeliveryErrors, ThrowOnError> => (options.client ?? client).get<DeliveryResponses, DeliveryErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -10580,6 +10589,9 @@ export const delivery = <ThrowOnError extends boolean = false>(options: Options<
 
 /**
  * Assemble Packet Route
+ *
+ * Assemble from the engine PDFs and the C11 letter (no model text). 409
+ * `not_final_approved`, `not_exported`, `packet_approved`, `no_letter_template`.
  */
 export const assemblePacket = <ThrowOnError extends boolean = false>(options: Options<AssemblePacketData, ThrowOnError>): RequestResult<AssemblePacketResponses, AssemblePacketErrors, ThrowOnError> => (options.client ?? client).post<AssemblePacketResponses, AssemblePacketErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

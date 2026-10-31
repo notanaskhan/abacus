@@ -43,7 +43,7 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
 )
-from abacus.modules.tax import approval, engine_import, export
+from abacus.modules.tax import approval, delivery, engine_import, export
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=8, max_length=200)]
@@ -697,14 +697,52 @@ async def reject_import_route(
     return _import_out(found)
 
 
+def _packet_out(packet: delivery.Packet) -> DeliveryPacketOut:
+    return DeliveryPacketOut(
+        id=packet.id,
+        return_id=packet.return_id,
+        version=packet.version,
+        status=packet.status,
+        items=[
+            DeliveryItemOut(
+                kind=i.kind, evidence_version_id=i.evidence_version_id, included=i.included
+            )
+            for i in packet.items
+        ],
+        letter_document_id=packet.letter_document_id,
+        approved_by_name=packet.approved_by_name,
+    )
+
+
 @engine_router.get(
     "/tax-returns/{return_id}/delivery",
     action="tax_return.read",
     response_model=DeliveryOut,
-    errors=(501,),
 )
 async def delivery_route(return_id: ReturnId, ctx: Ctx) -> DeliveryOut:
-    await _stub(ctx, "tax_return.read", D)
+    """TAX-12's checklist read model: the open packet and the engine's payment figures
+    (T-01-T35). The binding, transmission and acknowledgements arrive with T-01-T36/T37."""
+    await _live(ctx, "tax_return.read", D)
+    found = await delivery.delivery(ctx, return_id)
+    packet = found.packet
+    return DeliveryOut(
+        return_id=found.return_id,
+        packet_id=None if packet is None else packet.id,
+        packet_status=None if packet is None else packet.status,
+        items=[] if packet is None else _packet_out(packet).items,
+        payments=[
+            PaymentInstructionOut(
+                jurisdiction=p.jurisdiction, kind=p.kind, amount=p.amount, due_on=p.due_on
+            )
+            for p in found.payments
+        ],
+        envelope_id=None,
+        binding_id=None,
+        binding_superseded=False,
+        transmitted_on=None,
+        acks=[],
+        allowed_actions=list(found.allowed_actions),
+    )
 
 
 @engine_router.post(
@@ -712,49 +750,59 @@ async def delivery_route(return_id: ReturnId, ctx: Ctx) -> DeliveryOut:
     action="delivery_packet.prepare",
     response_model=DeliveryPacketOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def assemble_packet_route(
     return_id: ReturnId, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> DeliveryPacketOut:
-    await _stub(ctx, "delivery_packet.prepare", D)
+    """Assemble from the engine PDFs and the C11 letter (no model text). 409
+    `not_final_approved`, `not_exported`, `packet_approved`, `no_letter_template`."""
+    await _live(ctx, "delivery_packet.prepare", D)
+    return _packet_out(await delivery.assemble(ctx, return_id))
 
 
 @engine_router.patch(
     "/delivery-packets/{packet_id}",
     action="delivery_packet.prepare",
     response_model=DeliveryPacketOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def patch_packet_route(
     packet_id: Annotated[UUID, Path()], body: DeliveryPacketPatchIn, ctx: Ctx
 ) -> DeliveryPacketOut:
-    await _stub(ctx, "delivery_packet.prepare", D)
+    """Toggle the vouchers or the invoice. 409 `packet_not_draft`, `stale_version`,
+    `item_not_toggleable`."""
+    await _live(ctx, "delivery_packet.prepare", D)
+    return _packet_out(await delivery.toggle(ctx, packet_id, body.included, body.seen_version))
 
 
 @engine_router.post(
     "/delivery-packets/{packet_id}/letter:regenerate",
     action="delivery_packet.prepare",
     response_model=DeliveryPacketOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def regenerate_letter_route(
     packet_id: Annotated[UUID, Path()], body: SeenVersionIn, ctx: Ctx
 ) -> DeliveryPacketOut:
     """The cover letter from a template (no model text; ADR P-25 off)."""
-    await _stub(ctx, "delivery_packet.prepare", D)
+    await _live(ctx, "delivery_packet.prepare", D)
+    return _packet_out(await delivery.regenerate_letter(ctx, packet_id, body.seen_version))
 
 
 @engine_router.post(
     "/delivery-packets/{packet_id}/approve",
     action="delivery_packet.approve",
     response_model=DeliveryPacketOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def approve_packet_route(
     packet_id: Annotated[UUID, Path()], body: SeenVersionIn, ctx: Ctx
 ) -> DeliveryPacketOut:
-    await _stub(ctx, "delivery_packet.approve", D)
+    """DEC-38: the return's signer or a manager; a person only. 409 `packet_not_draft`,
+    `stale_version`."""
+    await _live(ctx, "delivery_packet.approve", D)
+    return _packet_out(await delivery.approve(ctx, packet_id, body.seen_version))
 
 
 @engine_router.post(
