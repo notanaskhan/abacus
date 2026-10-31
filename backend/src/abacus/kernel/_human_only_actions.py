@@ -66,6 +66,8 @@ HUMAN_ONLY_ACTIONS: Final[frozenset[str]] = frozenset(
         "review_decision.undone",
         "risk.approved",
         "sample.approved",
+        "schedule_k_release.requested",
+        "schedule_k_release.undone",
         "service_line_policy.updated",
         "sign_off.recorded",
         "statement.approved",

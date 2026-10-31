@@ -10,15 +10,14 @@ DEC-1570). Expand-only.
   last four is kept.
 - `memberships.ero_designated`: the firm admin's designation (fresh MFA); the app may update this
   column only.
-- `abacus_human_only_actions()`: `transmission.recorded` and `efile_ack.recorded` join the list,
-  with `delivery_packet.approved` (T-01-T35 listed it in the YAML without a migration); the
-  downgrade restores 0563's.
+- `abacus_human_only_actions()`: `transmission.recorded` and `efile_ack.recorded` join the list;
+  the downgrade restores 0566's.
 
 Classification (ADR-031): reject text TRI (client-system content, ADR-052); jurisdictions, dates
 and last four Confidential; ids Internal. Tax's tables, forced RLS.
 
-Revision ID: 0525
-Revises: 0524
+Revision ID: 0568
+Revises: 0567
 """
 
 from __future__ import annotations
@@ -27,8 +26,8 @@ from alembic import op
 
 from abacus.kernel.db.migration import insert_columns, insert_only, tenant_table
 
-revision = "0525"
-down_revision = "0524"
+revision = "0568"
+down_revision = "0567"
 branch_labels = None
 depends_on = None
 
@@ -122,6 +121,8 @@ _HUMAN_ONLY = [
     "review_decision.undone",
     "risk.approved",
     "sample.approved",
+    "schedule_k_release.requested",
+    "schedule_k_release.undone",
     "service_line_policy.updated",
     "sign_off.recorded",
     "statement.approved",
@@ -147,6 +148,7 @@ _BEFORE = [
     "contact.unlocked",
     "decision.decided",
     "decision.reassessed",
+    "delivery_packet.approved",
     "engagement.acceptance_recorded",
     "engagement.accepted",
     "engagement.letter_recorded",
@@ -188,6 +190,8 @@ _BEFORE = [
     "review_decision.undone",
     "risk.approved",
     "sample.approved",
+    "schedule_k_release.requested",
+    "schedule_k_release.undone",
     "service_line_policy.updated",
     "sign_off.recorded",
     "statement.approved",

@@ -26,7 +26,7 @@ CO, Grace Holloway and the agent are refused at every layer, and the four acks m
 to Accepted."
 
 ## Plan (red)
-- Migration 0525: `transmissions` (binding, envelope, ERO, method, jurisdictions, date,
+- Migration 0568: `transmissions` (binding, envelope, ERO, method, jurisdictions, date,
   `actor_kind = 'human'` CHECK, `recorded_by = ero_user_id`), `efile_acks` (unique on the ack's
   facts; manual needs evidence, engine file needs its `engine_acks` row),
   `memberships.ero_designated` with a column UPDATE grant, and `abacus_human_only_actions()`
@@ -42,7 +42,7 @@ to Accepted."
 - tax/engine_sync.py `return_synced`; tax/delivery.py allowed actions; engine_contract routes
   live (+ `POST …/acks/{ack_id}/issue`); registries, schema-check expectations, tenant list.
 - Tests: `test_t01t37_transmission_acks.py`.
-- Rollback: downgrade 0525 (drops both tables and the column, restores 0563's human-only list);
+- Rollback: downgrade 0568 (drops both tables and the column, restores 0566's human-only list);
   routes return to stubs by reverting the contract file.
 
 ## Notes

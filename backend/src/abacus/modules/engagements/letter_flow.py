@@ -55,7 +55,7 @@ from abacus.modules.engagements.letter_render import (
     lock_letter,
     render_letter,
 )
-from abacus.modules.engagements.letter_send import send_letter_envelope
+from abacus.modules.engagements.letter_send import letter_envelope_status, send_letter_envelope
 from abacus.modules.engagements.letters import (
     AMEND,
     APPROVE,
@@ -315,6 +315,57 @@ async def send_letter(ctx: AuthContext, engagement_id: UUID) -> UUID:
             after=Ref(envelope_id=envelope_id, version_no=cast(int, again["version_no"])),
         )
     return envelope_id
+
+
+# --- withdraw an envelope that ended unsigned (N-02-T35) -----------------------------------------
+
+ENDED: Final = frozenset({"declined", "expired", "voided"})
+
+
+class LetterNotWithdrawable(DomainConflict):
+    """Only an approved or sent letter whose envelope was declined, expired or voided."""
+
+    code = "letter_not_withdrawable"
+
+
+async def withdraw_envelope(
+    ctx: AuthContext, engagement_id: UUID, if_match: str
+) -> ComposerLetterOut:
+    """`POST …/letter/withdraw-envelope` (`letter.send`): the ended envelope is let go and the
+    letter is back at its partner approval, so a fresh Send drafts a new envelope. The approval,
+    its content hash and the final document stay as they were (0567's guard)."""
+    _person(ctx, SEND)
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        await authorise(ctx, SEND, ref.resource())
+        current = await _locked_current(tx, engagement_id)
+        _check_version(current, if_match)
+        envelope = cast(UUID | None, current["envelope_id"])
+        if current["status"] not in ("partner_approved", "sent") or envelope is None:
+            raise LetterNotWithdrawable(facts={"status": str(current["status"])})
+        ended = await letter_envelope_status(ctx.tenant, envelope)
+        if ended not in ENDED:
+            raise LetterNotWithdrawable(facts={"envelope_status": str(ended)})
+        await tx.session.execute(
+            text(
+                "UPDATE engagement_letter_versions SET status = 'partner_approved', "
+                "envelope_id = NULL WHERE id = :v"
+            ),
+            {"v": current["id"]},
+        )
+        await tx.session.execute(
+            text(
+                "UPDATE engagement_letters SET envelope_id = NULL WHERE engagement_id = :e "
+                "AND envelope_id = :env"
+            ),
+            {"e": engagement_id, "env": envelope},
+        )
+        tx.record(
+            "letter.envelope_withdrawn",
+            target=Target("engagement", engagement_id),
+            after=Ref(envelope_id=envelope, version_no=cast(int, current["version_no"])),
+        )
+    return await _composed(ctx, engagement_id)
 
 
 @dataclass(frozen=True)
@@ -609,6 +660,7 @@ __all__ = [
     "LetterNotAmendable",
     "LetterNotApprovable",
     "LetterNotSendable",
+    "LetterNotWithdrawable",
     "LetterSignerMissing",
     "amend_letter",
     "approve_letter",
@@ -618,4 +670,5 @@ __all__ = [
     "on_envelope_event",
     "request_approval",
     "send_letter",
+    "withdraw_envelope",
 ]

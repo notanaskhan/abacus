@@ -32,6 +32,7 @@ the decision for the firm to apply in CCH and stores no full TIN.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import re
 from collections.abc import Mapping, Sequence
@@ -51,14 +52,16 @@ from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.isolation import IsolationFailed, run_isolated
 from abacus.kernel.uow import DomainEvent, Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import work_item_facts
-from abacus.modules.evidence.api import file_handoff_copy, screen_and_stage
+from abacus.modules.evidence.api import file_handoff_copy, stage_content
 from abacus.modules.identity.api import (
     AuthContext,
     Forbidden,
     Resource,
+    ScopeFacts,
     allowed_actions,
     authorise,
     engagement_resource,
+    resolve_scope,
 )
 from abacus.modules.requests.api import fulfil_by_rule, k1_request_for
 from abacus.modules.tax import engine_repository as repo
@@ -510,7 +513,12 @@ async def import_k1_set(ctx: AuthContext, return_id: UUID, file_name: str, conte
     """The bridge's `k1_set` upload: parsed, stored write-once, applied; answers the sync event.
     The caller (`engine_import.import_file`) authorised `engine_import.create` on the return."""
     found = await _parsed(content)
-    screened = await screen_and_stage(ctx.tenant_id, content, file_name, None)
+    # T-02-T23 (DEC-1477): the manifest is JSON, which no upload type admits (DEC-58), so it is
+    # not screened as a client upload. It was parsed in the isolated child above against the
+    # strict schema (only its structured fields are kept, a full TIN refuses it); the bytes are
+    # stored write-once and encrypted as the record of what the engine sent.
+    stored = await stage_content(ctx.tenant_id, content)
+    name = "".join(c for c in file_name.rsplit("/", 1)[-1] if c.isprintable())[:200] or "k1_set"
     async with uow(ctx.tenant) as tx:
         link = await repo.link_of(tx.session, return_id)
         if link is not None and link.engine_return_id != found.engine_return_id:
@@ -524,11 +532,11 @@ async def import_k1_set(ctx: AuthContext, return_id: UUID, file_name: str, conte
                 "return_id": return_id,
                 "engine_return_id": found.engine_return_id,
                 "actor_user_id": ctx.user_id,
-                "file_name": screened.file_name,
-                "file_key": screened.stored.key,
-                "file_version": screened.stored.version_id,
-                "file_size": screened.stored.size,
-                "payload_sha256": screened.sha256,
+                "file_name": name,
+                "file_key": stored.key,
+                "file_version": stored.version_id,
+                "file_size": stored.size,
+                "payload_sha256": hashlib.sha256(content).hexdigest(),
                 "kind": "k1_set",
                 "version": found.version,
                 "summary": {
@@ -565,6 +573,41 @@ async def _issuer(ctx: AuthContext, return_id: UUID, action: str) -> Issuer:
     resource = replace(base, work_item_id=return_id)
     await authorise(ctx, action, resource)
     return Issuer(return_id, facts.engagement_id, facts.client_id, facts.client_name, resource)
+
+
+async def issuer_for(ctx: AuthContext, return_id: UUID, action: str) -> Issuer:
+    """The issuing return as `_issuer` reads it, for T21's release (`tax/k1_release.py`)."""
+    return await _issuer(ctx, return_id, action)
+
+
+async def record_event(
+    tx: UnitOfWork,
+    tenant_id: UUID,
+    package_id: UUID,
+    kind: str,
+    actor: UUID | None,
+    facts: Mapping[str, object] | None = None,
+) -> None:
+    """A `k1_package_events` row (T21's release writes `released` as the system)."""
+    await _event(tx, tenant_id, package_id, kind, actor, facts)
+
+
+async def package_return_scope(tenant: TenantContext, return_id: UUID) -> ScopeFacts | None:
+    """The issuing return inside its engagement and client (POR-13's access events)."""
+    return await resolve_scope(tenant, "work_item", return_id)
+
+
+async def package_scope(tenant: TenantContext, package_id: UUID) -> ScopeFacts | None:
+    """A `k1_package` grant's scope (DEC-34): the issuing return inside its engagement and
+    client. The grant reaches that one package only: the portal reads check the grant's own
+    package (own-only, T-02-T26), never the return."""
+    async with tenant_session(tenant) as session:
+        work_item = await session.scalar(
+            text("SELECT work_item_id FROM k1_packages WHERE id = :p"), {"p": package_id}
+        )
+    if work_item is None:
+        return None
+    return await resolve_scope(tenant, "work_item", cast(UUID, work_item))
 
 
 @dataclass(frozen=True)
@@ -962,7 +1005,13 @@ async def _recipient_return(ctx: AuthContext, recipient_id: UUID) -> UUID:
 
 async def details_changes(ctx: AuthContext, recipient_id: UUID) -> list[DetailsChange]:
     await _issuer(ctx, await _recipient_return(ctx, recipient_id), REVIEW)
-    async with tenant_session(ctx.tenant) as session:
+    return await details_changes_of(ctx.tenant, recipient_id)
+
+
+async def details_changes_of(tenant: TenantContext, recipient_id: UUID) -> list[DetailsChange]:
+    """A recipient's details changes, newest first, for a caller that checked its own access
+    (the firm's review above; the recipient's own package in POR-13, T-02-T26)."""
+    async with tenant_session(tenant) as session:
         rows = (
             await session.execute(
                 text(
