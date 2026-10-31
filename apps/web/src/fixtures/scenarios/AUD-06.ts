@@ -40,6 +40,7 @@ import { trustHandlers } from "../handlers/trust";
 import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";
 import { capabilitiesFor } from "../seed/shell";
+import { mappingHandlers } from "./AUD-31";
 import { DOCUMENTS } from "../seed/trust";
 import {
   GRANITE_FY2026,
@@ -262,6 +263,8 @@ const viewA = aud06a(NORTHWIND_ENGAGEMENT);
 const viewC = aud06c(NORTHWIND_ENGAGEMENT);
 const viewH = aud06h(GRANITE_ENGAGEMENT);
 const viewNewer = aud06Newer(GRANITE_ENGAGEMENT);
+/** Granite's adopted v1, unadjusted, with no newer pull (A-03-T12's FS-line grouping). */
+const graniteV1: TbLayerViewOut = { ...viewNewer, newer_snapshots: 0 };
 
 export const scenarios = defineScenarios({
   a: northwind("a", viewA),
@@ -327,6 +330,19 @@ export const scenarios = defineScenarios({
     handlers: {
       ...granite("error", "simone-baptiste", {}).handlers,
       [`GET ${P}`]: () => json({}, 500),
+    },
+  },
+  // A-03-T12: Granite Peak's mapping confirmed (AUD-31 f): the table groups by grouping › FS line.
+  fs_line: {
+    ...granite("fs_line", "hannah-leclerc", { list: graniteList(), view: graniteV1, checks: [] }),
+    handlers: {
+      ...granite("fs_line", "hannah-leclerc", { list: graniteList(), view: graniteV1, checks: [] })
+        .handlers,
+      ...mappingHandlers("f"),
+      "GET /v1/me/capabilities": ({ persona }) => {
+        const base = cockpitCapabilities(persona);
+        return json({ ...base, flags: { ...base.flags, "ledger.tb_mapping": true } });
+      },
     },
   },
   not_allowed: granite("not_allowed", "cole-hart", {
@@ -405,6 +421,12 @@ export const OPENS: Readonly<
     tab: "trial_balance",
     layer: "final",
     planned: { handOffToTax: GRANITE_HAND_OFF },
+  },
+  fs_line: {
+    engagementId: GRANITE_ENGAGEMENT,
+    tbId: GRANITE_TB,
+    tab: "trial_balance",
+    layer: "unadjusted",
   },
   empty: {
     engagementId: GRANITE_ENGAGEMENT,

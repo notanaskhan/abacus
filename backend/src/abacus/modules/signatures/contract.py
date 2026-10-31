@@ -43,7 +43,7 @@ from abacus.modules.identity.api import (
     current_context,
     current_member,
 )
-from abacus.modules.signatures import builder, fallback, hub, imports, portal
+from abacus.modules.signatures import builder, countersign, fallback, hub, imports, portal
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 Member = Annotated[AuthContext, Depends(current_member)]
@@ -821,18 +821,23 @@ def _imported_out(body: ImportRecordIn, made: imports.Imported) -> EnvelopeOut:
     )
 
 
-@router.post("/remind/preview", action="envelope.remind", response_model=RemindOut, errors=(501,))
+@router.post("/remind/preview", action="envelope.remind", response_model=RemindOut)
 async def remind_envelopes_preview_route(body: RemindIn, ctx: Ctx) -> RemindOut:
-    """Template preview, nothing sent (N-02-T14)."""
-    await _stub(ctx, "envelope.remind")
+    """Who would get a reminder now, under each policy's cap; nothing sent (N-02-T28)."""
+    plan = await countersign.remind_preview(ctx, body.envelope_ids)
+    return RemindOut(count=plan.count, skipped=list(plan.skipped))
 
 
-@router.post("/remind/send", action="envelope.remind", response_model=RemindOut, errors=(409, 501))
+@router.post("/remind/send", action="envelope.remind", response_model=RemindOut, errors=(409,))
 async def remind_envelopes_send_route(
     body: RemindIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> RemindOut:
-    """A person sends the template reminder (DEC-74; N-02-T14)."""
-    await _stub(ctx, "envelope.remind")
+    """A person sends the previewed `signature_reminder` version (DEC-74; N-02-T28); 409
+    `stale_version` when another version is in use now."""
+    plan = await countersign.remind_send(
+        ctx, body.envelope_ids, body.template_version_id, body.template_version, idempotency_key
+    )
+    return RemindOut(count=plan.count, skipped=list(plan.skipped))
 
 
 @router.get("/{envelope_id}", action="envelope.read", response_model=EnvelopeOut)
@@ -1069,11 +1074,17 @@ async def record_wet_signature_route(
     "/{envelope_id}/countersign/session",
     action="envelope.countersign",
     response_model=SigningSessionOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def countersign_session_route(envelope_id: EnvelopeId, ctx: Ctx) -> SigningSessionOut:
-    """The provider view for the named firm signer (N-02-T28)."""
-    await _stub(ctx, "envelope.countersign")
+    """The provider view for the named firm signer only; any other person 403 (N-02-T28)."""
+    made = await countersign.countersign_session(ctx, envelope_id)
+    return SigningSessionOut(
+        session_id=made.id,
+        presentation=cast(Literal["iframe", "redirect"], made.presentation),
+        url=made.url,
+        expires_at=made.expires_at,
+    )
 
 
 @policies_router.get("", action="envelope_policy.read", response_model=list[EnvelopePolicyOut])

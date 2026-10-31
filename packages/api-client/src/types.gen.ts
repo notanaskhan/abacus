@@ -6609,6 +6609,10 @@ export type ComposerLetterOut = {
      * Envelope Id
      */
     envelope_id: string | null;
+    /**
+     * Envelope Status
+     */
+    envelope_status?: string | null;
     fees?: LetterFeesOut | null;
     /**
      * Generated Document Id
@@ -17292,6 +17296,22 @@ export type IntakeCreatedOut = {
 };
 
 /**
+ * IntakeDuplicateOut
+ *
+ * A flagged duplicate upload on the request (T-02-T17): Keep newer or Discard duplicate.
+ */
+export type IntakeDuplicateOut = {
+    /**
+     * File Name
+     */
+    file_name: string;
+    /**
+     * Version Id
+     */
+    version_id: string;
+};
+
+/**
  * IntakeEntityIn
  */
 export type IntakeEntityIn = {
@@ -17428,6 +17448,7 @@ export type IntakeRequestOut = {
      * Due On
      */
     due_on: string | null;
+    duplicate?: IntakeDuplicateOut | null;
     /**
      * File Name
      */
@@ -17665,6 +17686,10 @@ export type IntakeWaitingFileOut = {
      * Media Type
      */
     media_type: string;
+    /**
+     * Message Id
+     */
+    message_id: string;
     /**
      * Received At
      */
@@ -26334,6 +26359,10 @@ export type QuestionnaireTemplateOut = {
      */
     current_version: number | null;
     /**
+     * Current Version Id
+     */
+    current_version_id?: string | null;
+    /**
      * Draft Version
      */
     draft_version: number | null;
@@ -26967,6 +26996,16 @@ export type RejectProposalIn = {
      * Seen Version
      */
     seen_version: number;
+};
+
+/**
+ * RejectionIssueOut
+ */
+export type RejectionIssueOut = {
+    /**
+     * Issue Id
+     */
+    issue_id: string;
 };
 
 /**
@@ -52516,6 +52555,70 @@ export type SendLetterResponses = {
 
 export type SendLetterResponse = SendLetterResponses[keyof SendLetterResponses];
 
+export type WithdrawLetterEnvelopeData = {
+    body?: never;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/letter/withdraw-envelope';
+};
+
+export type WithdrawLetterEnvelopeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type WithdrawLetterEnvelopeError = WithdrawLetterEnvelopeErrors[keyof WithdrawLetterEnvelopeErrors];
+
+export type WithdrawLetterEnvelopeResponses = {
+    /**
+     * Successful Response
+     */
+    200: ComposerLetterOut;
+};
+
+export type WithdrawLetterEnvelopeResponse = WithdrawLetterEnvelopeResponses[keyof WithdrawLetterEnvelopeResponses];
+
 export type MappingSetsData = {
     body?: never;
     headers?: {
@@ -62833,10 +62936,6 @@ export type RemindEnvelopesPreviewErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RemindEnvelopesPreviewError = RemindEnvelopesPreviewErrors[keyof RemindEnvelopesPreviewErrors];
@@ -62892,10 +62991,6 @@ export type RemindEnvelopesSendErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RemindEnvelopesSendError = RemindEnvelopesSendErrors[keyof RemindEnvelopesSendErrors];
@@ -63111,10 +63206,6 @@ export type CountersignSessionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CountersignSessionError = CountersignSessionErrors[keyof CountersignSessionErrors];
@@ -67882,10 +67973,6 @@ export type SetEroErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SetEroError = SetEroErrors[keyof SetEroErrors];
@@ -74703,10 +74790,6 @@ export type UndoK1ReleaseErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UndoK1ReleaseError = UndoK1ReleaseErrors[keyof UndoK1ReleaseErrors];
@@ -80788,13 +80871,13 @@ export type PortalDetailsChangeErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalDetailsChangeError = PortalDetailsChangeErrors[keyof PortalDetailsChangeErrors];
@@ -80842,10 +80925,6 @@ export type PortalK1sErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalK1sError = PortalK1sErrors[keyof PortalK1sErrors];
@@ -80897,13 +80976,13 @@ export type PortalK1Errors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalK1Error = PortalK1Errors[keyof PortalK1Errors];
@@ -80957,13 +81036,13 @@ export type PortalK1AttachmentErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalK1AttachmentError = PortalK1AttachmentErrors[keyof PortalK1AttachmentErrors];
@@ -81015,13 +81094,13 @@ export type PortalK1DownloadErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalK1DownloadError = PortalK1DownloadErrors[keyof PortalK1DownloadErrors];
@@ -81073,13 +81152,13 @@ export type PortalEFurnishingErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalEFurnishingError = PortalEFurnishingErrors[keyof PortalEFurnishingErrors];
@@ -86230,10 +86309,6 @@ export type RecordAckErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RecordAckError = RecordAckErrors[keyof RecordAckErrors];
@@ -86246,6 +86321,70 @@ export type RecordAckResponses = {
 };
 
 export type RecordAckResponse = RecordAckResponses[keyof RecordAckResponses];
+
+export type RejectionIssueData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+        /**
+         * Ack Id
+         */
+        ack_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/acks/{ack_id}/issue';
+};
+
+export type RejectionIssueErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RejectionIssueError = RejectionIssueErrors[keyof RejectionIssueErrors];
+
+export type RejectionIssueResponses = {
+    /**
+     * Successful Response
+     */
+    201: RejectionIssueOut;
+};
+
+export type RejectionIssueResponse = RejectionIssueResponses[keyof RejectionIssueResponses];
 
 export type ReturnAssignData = {
     body: AssignmentIn;
@@ -87107,10 +87246,6 @@ export type ReleaseK1Errors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ReleaseK1Error = ReleaseK1Errors[keyof ReleaseK1Errors];
@@ -87339,10 +87474,6 @@ export type RecordTransmissionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RecordTransmissionError = RecordTransmissionErrors[keyof RecordTransmissionErrors];

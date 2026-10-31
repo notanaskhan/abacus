@@ -1123,6 +1123,44 @@ async def set_seasonal_access_ends(ctx: AuthContext, on: date) -> SeasonalAccess
     return SeasonalAccessEnds(on, len(changed))
 
 
+async def set_ero(ctx: AuthContext, user_id: UUID, designated: bool) -> bool:
+    """T-01-T37: the firm admin designates (or clears) an active staff member as the firm's ERO
+    for the transmission record (`member.set_ero`, fresh MFA; T-01 §3.13). Answers the value."""
+    await authorise(ctx, "member.set_ero", Resource.firm(ctx.tenant_id))
+    if ctx.tenant.actor_kind != "human" or ctx.client or ctx.is_support:
+        raise Forbidden("member.set_ero", "role")
+    async with uow(ctx.tenant) as tx:
+        member = await repo.staff_row(tx.session, user_id)
+        if member is None or member["status"] != "active":
+            raise NotFound("staff_member")
+        await tx.session.execute(
+            text(
+                "UPDATE memberships SET ero_designated = :d, version = version + 1 "
+                "WHERE user_id = :u AND kind = 'staff'"
+            ),
+            {"d": designated, "u": user_id},
+        )
+        tx.record(
+            "member.ero_designated",
+            target=Target("user", user_id),
+            after=Ref(designated=int(designated)),
+        )
+    return designated
+
+
+async def ero_designated(tenant: TenantContext, user_id: UUID) -> bool:
+    """Whether the person holds the firm's ERO designation (an active staff member only)."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text(
+                "SELECT ero_designated FROM memberships WHERE user_id = :u AND kind = 'staff' "
+                "AND status = 'active'"
+            ),
+            {"u": user_id},
+        )
+    return bool(found)
+
+
 async def staff_holding_line(session: AsyncSession, line: str) -> list[UUID]:
     """Staff whose service lines include `line` (a team taking the line re-derives theirs)."""
     rows = await session.execute(

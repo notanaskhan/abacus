@@ -116,7 +116,10 @@ from abacus.modules.engagements.letter_render import (
     register_letter_locker,
     register_letter_renderer,
 )
-from abacus.modules.engagements.letter_send import register_letter_sender
+from abacus.modules.engagements.letter_send import (
+    register_letter_envelope_status,
+    register_letter_sender,
+)
 from abacus.modules.engagements.pilot_w4 import w4_portal_activation
 from abacus.modules.engagements.roll_forward import (
     PriorItem,
@@ -530,6 +533,7 @@ __all__ = [
     "register_evidence_readable",
     "register_gate_provider",
     "register_judgment_source",
+    "register_letter_envelope_status",
     "register_letter_finaliser",
     "register_letter_locker",
     "register_letter_renderer",

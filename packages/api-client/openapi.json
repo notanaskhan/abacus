@@ -14411,6 +14411,18 @@
             "cls": "internal",
             "title": "Envelope Id"
           },
+          "envelope_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Envelope Status"
+          },
           "fees": {
             "anyOf": [
               {
@@ -36553,6 +36565,28 @@
         "title": "IntakeCreatedOut",
         "type": "object"
       },
+      "IntakeDuplicateOut": {
+        "description": "A flagged duplicate upload on the request (T-02-T17): Keep newer or Discard duplicate.",
+        "properties": {
+          "file_name": {
+            "cls": "confidential",
+            "title": "File Name",
+            "type": "string"
+          },
+          "version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version_id",
+          "file_name"
+        ],
+        "title": "IntakeDuplicateOut",
+        "type": "object"
+      },
       "IntakeEntityIn": {
         "additionalProperties": false,
         "properties": {
@@ -36820,6 +36854,17 @@
             ],
             "cls": "internal",
             "title": "Due On"
+          },
+          "duplicate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IntakeDuplicateOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
           },
           "file_name": {
             "anyOf": [
@@ -37287,6 +37332,12 @@
             "title": "Media Type",
             "type": "string"
           },
+          "message_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Message Id",
+            "type": "string"
+          },
           "received_at": {
             "cls": "internal",
             "format": "date-time",
@@ -37346,6 +37397,7 @@
         "required": [
           "attachment_id",
           "thread_id",
+          "message_id",
           "file_name",
           "media_type",
           "size_bytes",
@@ -54919,6 +54971,19 @@
             "cls": "internal",
             "title": "Current Version"
           },
+          "current_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Current Version Id"
+          },
           "draft_version": {
             "anyOf": [
               {
@@ -56212,6 +56277,21 @@
           "reason_code"
         ],
         "title": "RejectProposalIn",
+        "type": "object"
+      },
+      "RejectionIssueOut": {
+        "properties": {
+          "issue_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Issue Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "issue_id"
+        ],
+        "title": "RejectionIssueOut",
         "type": "object"
       },
       "ReleaseOut": {
@@ -111950,6 +112030,144 @@
         "x-abacus-action": "letter.send"
       }
     },
+    "/v1/engagements/{engagement_id}/letter/withdraw-envelope": {
+      "post": {
+        "description": "N-02-T35: a declined, expired or voided letter envelope is let go; the letter is back at\nits partner approval and Send drafts a new envelope.",
+        "operationId": "withdraw_letter_envelope",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "minLength": 1,
+              "title": "If-Match",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComposerLetterOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Withdraw Letter Envelope Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "letter.send"
+      }
+    },
     "/v1/engagements/{engagement_id}/mapping-sets": {
       "get": {
         "description": "One mapping set per trial balance of record (ADR-341 \u00a74).",
@@ -134421,7 +134639,7 @@
     },
     "/v1/envelopes/remind/preview": {
       "post": {
-        "description": "Template preview, nothing sent (N-02-T14).",
+        "description": "Who would get a reminder now, under each policy's cap; nothing sent (N-02-T28).",
         "operationId": "remind_envelopes_preview",
         "parameters": [
           {
@@ -134517,16 +134735,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Remind Envelopes Preview Route",
@@ -134538,7 +134746,7 @@
     },
     "/v1/envelopes/remind/send": {
       "post": {
-        "description": "A person sends the template reminder (DEC-74; N-02-T14).",
+        "description": "A person sends the previewed `signature_reminder` version (DEC-74; N-02-T28); 409\n`stale_version` when another version is in use now.",
         "operationId": "remind_envelopes_send",
         "parameters": [
           {
@@ -134655,16 +134863,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Remind Envelopes Send Route",
@@ -135016,7 +135214,7 @@
     },
     "/v1/envelopes/{envelope_id}/countersign/session": {
       "post": {
-        "description": "The provider view for the named firm signer (N-02-T28).",
+        "description": "The provider view for the named firm signer only; any other person 403 (N-02-T28).",
         "operationId": "countersign_session",
         "parameters": [
           {
@@ -135122,16 +135320,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Countersign Session Route",
@@ -145486,6 +145674,7 @@
     },
     "/v1/firm/members/{user_id}/ero": {
       "put": {
+        "description": "A firm admin designates the firm's ERO, with fresh MFA (T-01-T37).",
         "operationId": "set_ero",
         "parameters": [
           {
@@ -145591,16 +145780,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Set Ero Route",
@@ -160623,16 +160802,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Undo K1 Release Route",
@@ -173830,6 +173999,7 @@
     },
     "/v1/portal/k1-recipients/{recipient_id}/details-changes": {
       "post": {
+        "description": "A signed W-9 or W-8, or a structured address, for a person at the firm to decide.",
         "operationId": "portal_details_change",
         "parameters": [
           {
@@ -173926,6 +174096,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -173935,16 +174115,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal Details Change Route",
@@ -173956,7 +174126,7 @@
     },
     "/v1/portal/k1s": {
       "get": {
-        "description": "POR-13: the recipient's own packages, released and later only.",
+        "description": "POR-13: the recipient's own packages, released and later only (T-02-T26).",
         "operationId": "portal_k1s",
         "parameters": [
           {
@@ -174046,16 +174216,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal K1S Route",
@@ -174067,6 +174227,7 @@
     },
     "/v1/portal/k1s/{package_id}": {
       "get": {
+        "description": "The statement with its box lines (TRI, the second step); the first read is Viewed.",
         "operationId": "portal_k1",
         "parameters": [
           {
@@ -174153,6 +174314,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -174162,16 +174333,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal K1 Route",
@@ -174281,6 +174442,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -174290,16 +174461,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal K1 Attachment Route",
@@ -174311,7 +174472,7 @@
     },
     "/v1/portal/k1s/{package_id}/download": {
       "get": {
-        "description": "A deterministic zip; an access event per download.",
+        "description": "A deterministic zip of the final documents; an access event per download.",
         "operationId": "portal_k1_download",
         "parameters": [
           {
@@ -174400,6 +174561,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -174409,16 +174580,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal K1 Download Route",
@@ -174526,6 +174687,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -174535,16 +174706,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal E Furnishing Route",
@@ -185886,6 +186047,7 @@
     },
     "/v1/tax-returns/{return_id}/acks": {
       "post": {
+        "description": "A manual acknowledgement with its evidence upload (T-01-T37). 409 `ack_exists`,\n`import_file_unavailable`.",
         "operationId": "record_ack",
         "parameters": [
           {
@@ -186012,8 +186174,96 @@
               }
             },
             "description": "Invalid request"
+          }
+        },
+        "summary": "Record Ack Route",
+        "tags": [
+          "tax-engine"
+        ],
+        "x-abacus-action": "efile_ack.record"
+      }
+    },
+    "/v1/tax-returns/{return_id}/acks/{ack_id}/issue": {
+      "post": {
+        "description": "TAX-12e's Create issue: the rejection as an engine-diagnostic issue; the return moves\nRejected to Fixing (T-01-T37). 409 `not_rejected`.",
+        "operationId": "rejection_issue",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
           },
-          "501": {
+          {
+            "in": "path",
+            "name": "ack_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ack Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RejectionIssueOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
             "content": {
               "application/json": {
                 "schema": {
@@ -186021,10 +186271,50 @@
                 }
               }
             },
-            "description": "Contract stub: not implemented yet"
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
           }
         },
-        "summary": "Record Ack Route",
+        "summary": "Rejection Issue Route",
         "tags": [
           "tax-engine"
         ],
@@ -186307,7 +186597,7 @@
     },
     "/v1/tax-returns/{return_id}/delivery": {
       "get": {
-        "description": "TAX-12's checklist read model: the open packet and the engine's payment figures\n(T-01-T35). The binding, transmission and acknowledgements arrive with T-01-T36/T37.",
+        "description": "TAX-12's checklist read model: the open packet and the engine's payment figures\n(T-01-T35), the 8879 binding (T-01-T36), the transmission and acknowledgements (T-01-T37).",
         "operationId": "delivery",
         "parameters": [
           {
@@ -187778,6 +188068,7 @@
     },
     "/v1/tax-returns/{return_id}/k1-packages:release": {
       "post": {
+        "description": "T-02-T21: a single-use grant held 10 s for Undo; then `K1ReleaseWorkflow` delivers.",
         "operationId": "release_k1",
         "parameters": [
           {
@@ -187904,16 +188195,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Release K1 Route",
@@ -188296,7 +188577,7 @@
     },
     "/v1/tax-returns/{return_id}/transmissions": {
       "post": {
-        "description": "The ERO's human record (never a transmission by Accrued; R-04).",
+        "description": "The designated ERO's human record of a transmission made in the engine (never a\ntransmission by Accrued; R-04; T-01-T37). 409 `signatures_incomplete`, `binding_superseded`,\n`not_synced`.",
         "operationId": "record_transmission",
         "parameters": [
           {
@@ -188423,16 +188704,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Record Transmission Route",
