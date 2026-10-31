@@ -33154,7 +33154,7 @@ export type StandardsMappingIn = {
     /**
      * Engagement Types
      */
-    engagement_types: Array<'fs_audit' | 'ebp_audit' | 'review' | 'compilation' | 'preparation' | 'agreed_upon_procedures' | 'soc1' | 'soc2' | 'readiness' | 'internal_audit' | 'tax_compliance' | 'cas_monthly_close' | 'notice_response' | 'advisory'>;
+    engagement_types: Array<string>;
     /**
      * Quality Management Ref
      */

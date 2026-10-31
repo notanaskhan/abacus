@@ -282,6 +282,11 @@ async def methodology_version_diff_route(
 # --- standards mapping ---------------------------------------------------------------------------
 
 
+# An engagement type code the version serves (the EBP subtypes as well as the SPEC-024 types;
+# K-01 AC6.2 names three EBP types).
+EngagementTypeCode = Annotated[str, Field(pattern=r"^[a-z][a-z0-9_]{0,47}$")]
+
+
 class StandardsMappingIn(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -289,7 +294,9 @@ class StandardsMappingIn(BaseModel):
     quality_management_ref: Annotated[
         SingleLineText | None, Field(max_length=120), classified("internal")
     ] = None
-    engagement_types: Annotated[list[EngagementType], Field(max_length=5), classified("internal")]
+    engagement_types: Annotated[
+        list[EngagementTypeCode], Field(max_length=10), classified("internal")
+    ]
     default_for_new_engagements: Annotated[bool, classified("internal")]
     row_version: Annotated[int, Field(ge=1), classified("internal")]
 
