@@ -2987,9 +2987,9 @@ async def _k1_shared(conn: asyncpg.Connection, _: Scenario, event: Event) -> Non
     )
     if package is None:
         raise LookupError(f"no draft K-1 for {event.data['ref']}")
-    # The sharer is the issuing return's manager: team membership is scenario structure, seeded
-    # as the tax board seeds its preparer and reviewer (`k1_package.share_internal` is a
-    # manager's or partner's).
+    # The sharer is the issuing return's manager reviewer: team membership and functions are
+    # scenario structure, seeded as the tax board seeds its preparer and reviewer
+    # (`k1_package.share_internal` is a manager's or partner's, with one of its functions).
     ret = next(r for r in RETURN_BY_LABEL.values() if r.client == k1_set.client)
     async with as_tenant(conn, TENANT):
         await conn.execute(
@@ -2997,6 +2997,16 @@ async def _k1_shared(conn: asyncpg.Connection, _: Scenario, event: Event) -> Non
             "VALUES ($1, $2, $3, 'manager') ON CONFLICT (tenant_id, engagement_id, user_id) "
             "DO UPDATE SET role = 'manager'",  # the board seeded him as the reviewer
             TENANT,
+            UUID(ENGAGEMENT_BY_LABEL[ret.engagement].id),
+            user_id_of(_SEATS[event.actor]),
+        )
+        await conn.execute(
+            "INSERT INTO work_item_assignments (tenant_id, work_item_id, engagement_id, "
+            "user_id, function, assigned_by) SELECT $1, $2, $3, $4, 'manager_reviewer', $4 "
+            "WHERE NOT EXISTS (SELECT 1 FROM work_item_assignments WHERE tenant_id = $1 "
+            "AND work_item_id = $2 AND function = 'manager_reviewer' AND removed_at IS NULL)",
+            TENANT,
+            item,
             UUID(ENGAGEMENT_BY_LABEL[ret.engagement].id),
             user_id_of(_SEATS[event.actor]),
         )
