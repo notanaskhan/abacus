@@ -42,4 +42,20 @@ test.describe("J10", () => {
       });
     },
   );
+
+  // K-02-T19: J10 thresholds, how BH AJE thresholds v2 sorted Copperleaf's August entries (KNW-04 a).
+  test("j10 thresholds: BH AJE thresholds v2 sorts Copperleaf's August entries", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", "KNW-04 examples are fixture-only until C-01");
+    await journey.as("priya-raman", "/knowledge/standards?section=aje_thresholds", {
+      scenario: "KNW-04:a",
+      flags: ["knowledge.firm_standards"],
+    });
+    await journey.step("J10 thresholds: 4 within (20,020) and 1 held (14,900)", async (page) => {
+      await expect(
+        page.getByText("4 within threshold · 20,020 · approved as one batch by Raj Malhotra"),
+      ).toBeVisible();
+    });
+  });
 });
