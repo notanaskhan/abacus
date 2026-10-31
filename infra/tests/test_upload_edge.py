@@ -1,4 +1,4 @@
-"""N-01-T24 (pen-test delta #1 readiness): the WAF's file-route rules, checked offline.
+"""N-01-T24 and R-01-T35 (pen-test delta #1 readiness): the WAF's file-route rules, checked offline.
 
 - Rule 21's body-size block exempts every file route, so a staff-logged intake file and a raw-body
   import (both well over the common rule set's 8 KB body inspection) reach the API, which caps each
@@ -46,6 +46,7 @@ SCANNER_STREAM_MAX = 60 * 1024 * 1024  # backend kernel.scanning.STREAM_MAX_BYTE
         "/v1/questionnaire-templates:import",
         "/v1/report-templates/import",
         "/v1/envelopes/import/files",
+        "/v1/portal/binders/3f9a5e62-1c4d-4b8e-9f20-7a6b5c4d3e21/drops",  # R-01-T35
     ],
 )
 def test_file_routes_are_file_routes(path: str) -> None:
@@ -61,6 +62,8 @@ def test_file_routes_are_file_routes(path: str) -> None:
         "/v1/auth/sign-in",
         "/v1/inbox/intake/3f9a5e62/files/extra",
         "/v1/inbox/intake",
+        "/v1/portal/drops/3f9a5e62-1c4d-4b8e-9f20-7a6b5c4d3e21",  # the drop poll: JSON
+        "/v1/portal/room/suggest",
     ],
 )
 def test_other_routes_keep_the_body_size_block(path: str) -> None:
