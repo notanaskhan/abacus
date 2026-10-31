@@ -45,6 +45,8 @@ interface Row {
   /** The preparer's initials (a seat holder). */
   prep: string;
   part?: number;
+  /** T-01's §7216 consents tag (DEC-1288): in force and asked for ("§7216 consents 1 of 2"). */
+  consents?: readonly [number, number];
 }
 
 /** Noon CT (CDT) on a calendar day. */
@@ -152,6 +154,7 @@ export const BINDER_ROWS: readonly Row[] = [
     status: "published",
     activity: noon("2026-09-09"),
     prep: "DS",
+    consents: [1, 2], // spec.md: the Ferris tag "§7216 consents 1 of 2" (Morgan ✓, Kai ○)
   },
   {
     name: "2025 Binder",
@@ -278,6 +281,9 @@ export function toBinderRow(seed: Seed, row: Row): BinderRowOut {
     ...unpublished,
     tags: [],
     allowed_actions: [...BINDER_ACTIONS],
+    client_id: seed.clientIds[slug] ?? stableId(`client:${slug}`),
+    consents_signed: row.consents?.[0] ?? null,
+    consents_total: row.consents?.[1] ?? null,
   };
 }
 

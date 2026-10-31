@@ -117,10 +117,11 @@ def choose_tenant(signed_in: SignedIn, requested: str | None) -> AuthContext:
 
 
 def portal_member_context(
-    user_id: UUID, membership: MembershipRecord, session_id: UUID
+    user_id: UUID, membership: MembershipRecord, session_id: UUID, *, second_step: bool = False
 ) -> AuthContext:
     """P-08-T10 (ADR-168): a portal person's context from their validated, active client
-    membership in the firm their session is pinned to. No second step yet (P-08-T17)."""
+    membership in the firm their session is pinned to; `second_step` when the session passed the
+    second step or started on a trusted device (P-08-T17; N-02-T23 signing needs it)."""
     return AuthContext(
         tenant=TenantContext(membership.tenant_id, "human", str(user_id)),
         user_id=user_id,
@@ -129,6 +130,7 @@ def portal_member_context(
         mfa_at=None,
         client=True,
         portal_session_id=session_id,
+        portal_second_step=second_step,
     )
 
 
