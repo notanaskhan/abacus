@@ -266,6 +266,7 @@ from abacus.modules.identity.routing import (
     OWN,
     PORTAL_PUBLIC,
     PRE_SESSION,
+    PROVIDER_WEBHOOK,
     SELF,
     STAFF,
     AbacusRoute,
@@ -496,6 +497,7 @@ __all__ = [
     "PARTNER_ROLES",
     "PORTAL_PUBLIC",
     "PRE_SESSION",
+    "PROVIDER_WEBHOOK",
     "ROLE_LABELS",
     "ROUTERS",
     "RULES",  # the parsed matrix, for the generated security tests (Q-02-T13)

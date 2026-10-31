@@ -185,7 +185,7 @@ async def matches_of(ctx: AuthContext, engagement_id: UUID) -> list[FileMatchVie
     none_fit: dict[UUID, bool] = {}
     for match_run, proposal in results:
         none_fit[match_run.agent_run_id] = match_run.none_fit
-        if proposal is not None:
+        if proposal is not None and proposal.request_item_id is not None:
             by_run.setdefault(match_run.agent_run_id, []).append(
                 ProposalView(
                     proposal.request_item_id,

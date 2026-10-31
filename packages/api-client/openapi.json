@@ -74635,6 +74635,12 @@
         "title": "WallV2Out",
         "type": "object"
       },
+      "WebhookAcceptedOut": {
+        "description": "Nothing: a delivery is acknowledged with an empty body (ADR-152).",
+        "properties": {},
+        "title": "WebhookAcceptedOut",
+        "type": "object"
+      },
       "WetSignatureIn": {
         "additionalProperties": false,
         "description": "DF-11: the hand-signed form, uploaded and attested.",
@@ -180907,6 +180913,100 @@
           "identity"
         ],
         "x-abacus-action": "wall.remove"
+      }
+    },
+    "/v1/webhooks/docuseal/{tenant_id}/{install_id}": {
+      "post": {
+        "operationId": "docuseal_webhook",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tenant Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "install_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Install Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookAcceptedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "The file is too large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Docuseal Webhook Route",
+        "tags": [
+          "webhooks"
+        ],
+        "x-abacus-action": "provider_webhook"
       }
     },
     "/v1/work-items": {

@@ -108,3 +108,15 @@ async def esign_install_secret(tenant: TenantContext) -> bytes | None:
     if install is None:
         return None
     return await open_secret(tenant, install)
+
+
+async def esign_webhook_secret(tenant: TenantContext, install_id: UUID) -> bytes | None:
+    """ADR-152 (DEC-1281): the opened secret of exactly this install, for the DocuSeal webhook
+    receiver to verify a delivery, only when W7 is enabled and this is the firm's connected
+    DocuSeal install; None otherwise (the receiver then answers 401 and writes nothing)."""
+    entry = write_capability(ESIGN_W7)
+    if entry is None or not entry.enabled:
+        return None
+    if await connected_integration(tenant, ESIGN_CATALOG) != install_id:
+        return None
+    return await open_secret(tenant, install_id)

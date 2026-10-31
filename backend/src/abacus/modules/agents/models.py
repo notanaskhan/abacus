@@ -26,6 +26,7 @@ class AgentRun(Base):
     methodology_version_id: Mapped[UUID | None]  # a firm-level run's template version
     evidence_version_id: Mapped[UUID | None]
     inbox_file_id: Mapped[UUID | None]  # SPEC-033 (TASK-066): a matcher run's file
+    inbox_attachment_id: Mapped[UUID | None]  # N-01-T22: an intake-mode run's attachment
     shadow: Mapped[bool] = mapped_column(server_default=FetchedValue())  # SPEC-036: never shown
     initiator_user_id: Mapped[UUID]
     source_event_id: Mapped[UUID | None]
@@ -281,14 +282,17 @@ class UploadReviewFlag(Base):
 
 
 class InboxMatchRun(Base):
-    """One matcher run's proposals for an inbox file (SPEC-033; TASK-065). Insert-only."""
+    """One matcher run's proposals for an inbox file (SPEC-033; TASK-065) or, in intake mode, an
+    intake attachment of a matched client (N-01-T22). Insert-only."""
 
     __tablename__ = "inbox_match_runs"
 
     id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
     tenant_id: Mapped[UUID]
-    engagement_id: Mapped[UUID]
-    inbox_file_id: Mapped[UUID]
+    engagement_id: Mapped[UUID | None]  # None in intake mode
+    inbox_file_id: Mapped[UUID | None]  # engagement mode
+    inbox_attachment_id: Mapped[UUID | None]  # intake mode (N-01-T22)
+    client_id: Mapped[UUID | None]  # intake mode: the matched client
     agent_run_id: Mapped[UUID]
     prompt_ref: Mapped[str]
     none_fit: Mapped[bool]
@@ -297,14 +301,18 @@ class InboxMatchRun(Base):
 
 
 class InboxMatchProposal(Base):
-    """A proposed request for an inbox file, with code-verified citations. Insert-only."""
+    """A proposed request for an inbox file, or a proposed destination for an intake attachment
+    (N-01-T22), with code-verified citations. Insert-only."""
 
     __tablename__ = "inbox_match_proposals"
 
     tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
     match_id: Mapped[UUID] = mapped_column(primary_key=True)
     rank: Mapped[int] = mapped_column(primary_key=True)
-    request_item_id: Mapped[UUID]
+    request_item_id: Mapped[UUID | None]  # a request destination
+    inbox_attachment_id: Mapped[UUID | None]  # intake mode
+    destination_kind: Mapped[str | None]  # intake mode: INB-02's picker kind
+    destination_id: Mapped[UUID | None]
     confidence: Mapped[Decimal] = mapped_column(Numeric(4, 3))
     rationale: Mapped[str]
     citations: Mapped[list[dict[str, object]]] = mapped_column(JSONB)

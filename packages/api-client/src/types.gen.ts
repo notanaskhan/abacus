@@ -35575,6 +35575,15 @@ export type WallV2Out = {
 };
 
 /**
+ * WebhookAcceptedOut
+ *
+ * Nothing: a delivery is acknowledged with an empty body (ADR-152).
+ */
+export type WebhookAcceptedOut = {
+    [key: string]: unknown;
+};
+
+/**
  * WetSignatureIn
  *
  * DF-11: the hand-signed form, uploaded and attested.
@@ -36312,6 +36321,15 @@ export type AbacusModulesReportingContractApprovalOut = {
  */
 export type RiskPartnerReviewCompleteInWritable = {
     [key: string]: never;
+};
+
+/**
+ * WebhookAcceptedOut
+ *
+ * Nothing: a delivery is acknowledged with an empty body (ADR-152).
+ */
+export type WebhookAcceptedOutWritable = {
+    [key: string]: unknown;
 };
 
 export type AgentRunData = {
@@ -83828,6 +83846,56 @@ export type RemoveWallResponses = {
 };
 
 export type RemoveWallResponse = RemoveWallResponses[keyof RemoveWallResponses];
+
+export type DocusealWebhookData = {
+    body?: never;
+    path: {
+        /**
+         * Tenant Id
+         */
+        tenant_id: string;
+        /**
+         * Install Id
+         */
+        install_id: string;
+    };
+    query?: never;
+    url: '/v1/webhooks/docuseal/{tenant_id}/{install_id}';
+};
+
+export type DocusealWebhookErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * The file is too large
+     */
+    413: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type DocusealWebhookError = DocusealWebhookErrors[keyof DocusealWebhookErrors];
+
+export type DocusealWebhookResponses = {
+    /**
+     * Successful Response
+     */
+    202: WebhookAcceptedOut;
+};
+
+export type DocusealWebhookResponse = DocusealWebhookResponses[keyof DocusealWebhookResponses];
 
 export type ListWorkItemsData = {
     body?: never;
