@@ -1,0 +1,11 @@
+# Protected evaluation cost baselines (Q-02-T06; ADR-069/070; SPEC-033 Q5). PROTECTED: a change
+# is a reviewed policy change, never a regeneration.
+#
+# `<agent>: {<tier>: "<USD per file>"}`. The gate (`abacus_tools.evals.gate`) fails a real-model
+# run whose median per-file cost is more than 10 % over its baseline (COST_TOLERANCE); a
+# real-model run with no baseline fails as `cost_regression:no_baseline`.
+#
+# evidence.matcher v3 (N-01-T26; N-01 OQ-11; DEC-1380): intake mode's budget is $0.015 a file on
+# the small tier (v2's engagement mode was $0.01), so the gate fails above $0.0165 a file.
+evidence.matcher:
+  small: "0.015"
