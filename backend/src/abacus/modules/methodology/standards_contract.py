@@ -45,7 +45,11 @@ FirmStandardKind = Literal[
     "review_checklist", "review_levels", "return_approval_policy", "ssars_cas_settings"
 ]
 ThresholdPolicyKind = Literal[
-    "aje_thresholds", "variance_thresholds", "materiality_ranges", "document_confidence"
+    "aje_thresholds",
+    "variance_thresholds",
+    "materiality_ranges",
+    "document_confidence",
+    "attribute_sample_sizes",  # A-03-T10 (ADR-340 §6): the firm's attribute sample size table
 ]
 StandardKind = Literal[
     "review_checklist",
@@ -56,6 +60,7 @@ StandardKind = Literal[
     "variance_thresholds",
     "materiality_ranges",
     "document_confidence",
+    "attribute_sample_sizes",
 ]
 # KNW-04's sections (`?section=`), in the section list's order; `deadline_rules` is section j,
 # composed over the platform reference sets (DF-10).
@@ -247,11 +252,41 @@ class SsarsCasSettingsPayload(BaseModel):
     early_adopt_ssars27: Annotated[bool, classified("internal")]
 
 
+Rmm = Literal["low", "moderate", "high"]
+
+
+class AttributeSizeRow(BaseModel):
+    """One row of the size table: the sample size for a risk of material misstatement and a
+    tolerable and expected deviation rate, at the table's confidence."""
+
+    model_config = _frozen()
+
+    rmm: Annotated[Rmm, classified("internal")]
+    tolerable_pct: Annotated[Pct, classified("internal")]
+    expected_pct: Annotated[Pct, classified("internal")]
+    size: Annotated[int, Field(ge=1, le=10_000), classified("internal")]
+
+
+class AttributeSampleSizesPayload(BaseModel):
+    """A-03-T10 (ADR-340 §6; A-03 §4.1): the firm's attribute sample sizes ("BH-EBP-210 Table
+    2"). Firm content, loaded through the import; sampling reads it through `methodology.api`
+    and computes the statistical cross-check beside it."""
+
+    model_config = _frozen()
+
+    kind: Annotated[Literal["attribute_sample_sizes"], classified("internal")]
+    confidence_pct: Annotated[Pct, classified("internal")]
+    rows: Annotated[
+        list[AttributeSizeRow], Field(min_length=1, max_length=200), classified("internal")
+    ]
+
+
 StandardPayload = Annotated[
     AjeThresholdsPayload
     | VarianceThresholdsPayload
     | MaterialityRangesPayload
     | DocumentConfidencePayload
+    | AttributeSampleSizesPayload
     | ReviewChecklistPayload
     | ReviewLevelsPayload
     | ReturnApprovalPolicyPayload
@@ -547,6 +582,15 @@ class SsarsFramework:
 
 
 @dataclass(frozen=True)
+class AttributeSize:
+    """A-03-T10: the size the firm's table gives, with the version it came from (the citation)."""
+
+    size: int
+    confidence_pct: Decimal
+    policy: PolicyRef
+
+
+@dataclass(frozen=True)
 class ExampleRow:
     client_id: UUID | None
     client_name: str | None
@@ -719,3 +763,27 @@ def ssars_framework_for(
     adopted it early: then a CAS by-product, before it AR-C 70 preparation."""
     after = payload.early_adopt_ssars27 or period_end >= SSARS27_BOUNDARY
     return SsarsFramework("cas_by_product" if after else "ar_c_70_preparation", policy)
+
+
+def attribute_sample_size(
+    payload: AttributeSampleSizesPayload,
+    policy: PolicyRef,
+    *,
+    rmm: Rmm,
+    tolerable_pct: Decimal,
+    expected_pct: Decimal,
+    confidence_pct: Decimal,
+) -> AttributeSize:
+    """A-03-T10 (ADR-340 §6): the table's size for the RMM and rates, at the table's confidence.
+    A confidence the table is not written at, or a combination it has no row for, is a question
+    the firm's standard does not answer (`standard_row_missing`); sampling never guesses one."""
+    if confidence_pct != payload.confidence_pct:
+        raise StandardRowMissing(facts={"missing": f"attribute_size:confidence:{confidence_pct}"})
+    row = _row_for(
+        payload.rows,
+        lambda r: (
+            r.rmm == rmm and r.tolerable_pct == tolerable_pct and r.expected_pct == expected_pct
+        ),
+        f"attribute_size:{rmm}:{tolerable_pct}:{expected_pct}",
+    )
+    return AttributeSize(row.size, payload.confidence_pct, policy)

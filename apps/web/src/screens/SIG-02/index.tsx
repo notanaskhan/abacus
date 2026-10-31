@@ -390,13 +390,12 @@ function Builder({
                     </li>
                   ))}
                   {missingEmail.map((s) => (
-                    <li
-                      key={s.id}
-                      role="alert"
-                      className="flex items-start gap-[8px] text-body text-red-ink"
-                    >
-                      <StatusDisc state="fail" />
-                      {COPY.noEmail(s.name)}
+                    <li key={s.id} className="text-body text-red-ink">
+                      {/* The alert role on the item would unmake it a list item (axe: list). */}
+                      <span role="alert" className="flex items-start gap-[8px]">
+                        <StatusDisc state="fail" />
+                        {COPY.noEmail(s.name)}
+                      </span>
                     </li>
                   ))}
                 </ul>

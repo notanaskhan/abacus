@@ -501,6 +501,11 @@ objects:
       failed:         {label: "Failed", variant: red-tint, terminal: true, derived: false}
       cancelled:      {label: "Cancelled", variant: muted, terminal: true, derived: false}
 
+  methodology_source_file:   # methodology_source_files.scan_status (K-01-T18); a file is kept only once it scans clean. Label not verbatim: no screen word yet
+    source: "K-01 section 4.2 (migration C); SourceFileOut.scan_status"
+    codes:
+      clean:          {label: "Scanned", variant: muted, terminal: true, derived: false}
+
   knowledge_item:   # a KNW-01 catalog card's state, from its provider
     source: "KNW-01 handoff (Published green-tint · Draft neutral · Superseded soon)"
     codes:

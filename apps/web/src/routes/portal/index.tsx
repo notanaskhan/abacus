@@ -59,6 +59,10 @@ const SignScreen = lazy(async () => ({
 const QuestionsScreen = lazy(async () => ({
   default: (await import("../../screens/POR-05")).POR05,
 }));
+// POR-13 (T-02-T27): My K-1s, its own chunk.
+const K1sScreen = lazy(async () => ({
+  default: (await import("../../screens/POR-13")).POR13,
+}));
 // POR-04 (R-01-T12): the request sheet over Documents, its own chunk.
 const RequestSheetScreen = lazy(async () => ({
   default: (await import("../../screens/POR-04")).POR04,
@@ -70,6 +74,7 @@ export const AREA_PATHS: Readonly<Record<string, string>> = {
   Documents: "/documents",
   Sign: "/sign",
   Questions: "/questions",
+  "My K-1s": "/k1s",
 };
 
 function Root(): JSX.Element {
@@ -187,6 +192,7 @@ function Area({ area }: { area: string }): JSX.Element | null {
   if (area === "Connections") return <ConnectionsPage />;
   if (area === "Sign") return <SignPage />;
   if (area === "Questions") return <QuestionsPage />;
+  if (area === "K1s") return <K1sPage />;
   return <Shell area={area} />;
 }
 
@@ -352,6 +358,14 @@ function QuestionsPage(): JSX.Element {
   );
 }
 
+/** POR-13 (T-02-T27; docs/screens/POR-13.md): a recipient's K-1s at `/k1s`, the reduced shell for
+ * a K-1-only person and inside the full shell for a role union (DV-11). */
+function K1sPage(): JSX.Element {
+  const mobile = useMobileViewport();
+  const navigateTo = useAreaNavigate();
+  return <K1sScreen mobile={mobile} onNavigate={navigateTo} />;
+}
+
 /** The portal's 390 layout (T7-M, DEC-45) below 768 px wide (DEC-346). */
 export const PORTAL_MOBILE_QUERY = "(max-width: 767px)";
 
@@ -410,7 +424,7 @@ export const portalTree = rootRoute.addChildren([
   page("/questions", () => <Area area="Questions" />), // POR-05 (T-02-T24)
   page("/sign/$envelopeId", () => <Area area="Sign" />),
   page("/sign/$envelopeId/return", () => <Area area="Sign" />),
-  page("/k1s", NotBuilt),
+  page("/k1s", () => <Area area="K1s" />), // POR-13 (T-02-T27)
   page("/governance", NotBuilt),
   page("/intake", NotBuilt),
   page("/component-room", NotBuilt),
