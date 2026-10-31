@@ -39,6 +39,7 @@ LIVE = {
     "/v1/tax-returns/{return_id}",
     "/v1/tax-returns/{return_id}/overview",
     "/v1/tax-returns/{return_id}/transitions",
+    "/v1/tax-returns/{return_id}/intake",  # T-02-T18 (DEC-1470)
 }
 
 

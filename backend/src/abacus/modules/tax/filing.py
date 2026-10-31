@@ -879,7 +879,9 @@ async def settle(tenant_id: UUID, return_id: UUID) -> str | None:
     acks = await acks_of(system, return_id)
     federal = [a for a in acks if a.jurisdiction == FEDERAL and a.status == "accepted"]
     if federal:
-        until = kept_until(federal[0].received_at.date().isoformat())
+        # Pub 1345: three years from the IRS received date (the latest accepted federal ack).
+        received = max(a.received_at for a in federal)
+        until = kept_until(received.date().isoformat())
         gate = await efile_gate(system, return_id)
         if until is not None and gate is not None:
             await extend_retention(system, gate[0], until)
