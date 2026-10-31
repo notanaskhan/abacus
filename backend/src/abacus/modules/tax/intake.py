@@ -39,7 +39,7 @@ from abacus.kernel.errors import NotFound
 from abacus.modules.agents.api import MATCHER, stage_for
 from abacus.modules.communications.api import WaitingAttachment, card_candidates
 from abacus.modules.communications.api import waiting_for_client as inbox_waiting_for
-from abacus.modules.evidence.api import attachment_tax_years
+from abacus.modules.evidence.api import PendingDuplicate, attachment_tax_years, pending_duplicates
 from abacus.modules.identity.api import (
     AuthContext,
     Forbidden,
@@ -52,6 +52,8 @@ from abacus.modules.identity.api import (
 from abacus.modules.organisations.api import tri_consent_verdict
 from abacus.modules.requests.api import (
     BinderCard,
+    SourceDocumentGroup,
+    SourceDocumentRow,
     SourceDocuments,
     binder_card,
     source_documents,
@@ -62,6 +64,7 @@ from abacus.modules.tax.overview import Loaded, load_return, return_resource
 from abacus.modules.tax.returns_contract import (
     IntakeBinderOut,
     IntakeCategoryOut,
+    IntakeDuplicateOut,
     IntakeQuestionnaireOut,
     IntakeRequestOut,
     IntakeSuggestionOut,
@@ -87,6 +90,44 @@ def _key(category_id: UUID | None, label: str) -> str:
     return str(category_id) if category_id is not None else label.lower().replace(" ", "_")
 
 
+def _row(
+    g: SourceDocumentGroup, r: SourceDocumentRow, repeats: dict[UUID, PendingDuplicate]
+) -> IntakeRequestOut:
+    upload = r.latest_upload
+    dup = repeats.get(upload.evidence_version_id) if upload is not None else None
+    return IntakeRequestOut(
+        id=r.request_item_id,
+        binder_id=r.binder_id,
+        category=_key(g.category_id, g.label),
+        title=r.title,
+        status=r.status,
+        overdue=r.overdue,
+        requested_at=r.requested_at,
+        due_on=r.due_on,
+        latest_version_id=(
+            None
+            if upload is None
+            else dup.original_version_id
+            if dup is not None
+            else upload.evidence_version_id
+        ),
+        file_name=(
+            None
+            if upload is None
+            else dup.original_file_name
+            if dup is not None
+            else upload.path_label
+        ),
+        uploaded_on=upload.uploaded_on if upload else None,
+        channel=upload.uploader_kind if upload else None,
+        linked_count=r.linked_count,
+        owed_by=r.owed_by.display if r.owed_by else None,
+        duplicate=None
+        if dup is None
+        else IntakeDuplicateOut(version_id=dup.version_id, file_name=dup.file_name),
+    )
+
+
 async def _requests(
     ctx: AuthContext, work_item_id: UUID
 ) -> tuple[list[IntakeCategoryOut], list[IntakeRequestOut], int, int]:
@@ -103,26 +144,15 @@ async def _requests(
         )
         for g in found.groups
     ]
-    rows = [
-        IntakeRequestOut(
-            id=r.request_item_id,
-            binder_id=r.binder_id,
-            category=_key(g.category_id, g.label),
-            title=r.title,
-            status=r.status,
-            overdue=r.overdue,
-            requested_at=r.requested_at,
-            due_on=r.due_on,
-            latest_version_id=r.latest_upload.evidence_version_id if r.latest_upload else None,
-            file_name=r.latest_upload.path_label if r.latest_upload else None,
-            uploaded_on=r.latest_upload.uploaded_on if r.latest_upload else None,
-            channel=r.latest_upload.uploader_kind if r.latest_upload else None,
-            linked_count=r.linked_count,
-            owed_by=r.owed_by.display if r.owed_by else None,
-        )
+    latest = [
+        r.latest_upload.evidence_version_id
         for g in found.groups
         for r in g.rows
+        if r.latest_upload
     ]
+    # TAX-03 e: a flagged repeat shows under the copy it repeats, which the row keeps naming.
+    repeats = await pending_duplicates(ctx.tenant, latest) if latest else {}
+    rows = [_row(g, r, repeats) for g in found.groups for r in g.rows]
     return categories, rows, found.total, found.received
 
 
@@ -187,6 +217,7 @@ async def _waiting(
             IntakeWaitingFileOut(
                 attachment_id=f.id,
                 thread_id=f.thread_id,
+                message_id=f.message_id,
                 file_name=f.file_name,
                 media_type=f.media_type,
                 size_bytes=f.size_bytes,

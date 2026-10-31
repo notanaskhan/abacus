@@ -43,7 +43,7 @@ from abacus.modules.identity.api import (
     current_context,
     current_member,
 )
-from abacus.modules.signatures import builder, fallback, hub, imports, portal
+from abacus.modules.signatures import builder, countersign, fallback, hub, imports, portal
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 Member = Annotated[AuthContext, Depends(current_member)]
@@ -821,18 +821,23 @@ def _imported_out(body: ImportRecordIn, made: imports.Imported) -> EnvelopeOut:
     )
 
 
-@router.post("/remind/preview", action="envelope.remind", response_model=RemindOut, errors=(501,))
+@router.post("/remind/preview", action="envelope.remind", response_model=RemindOut)
 async def remind_envelopes_preview_route(body: RemindIn, ctx: Ctx) -> RemindOut:
-    """Template preview, nothing sent (N-02-T14)."""
-    await _stub(ctx, "envelope.remind")
+    """Who would get a reminder now, under each policy's cap; nothing sent (N-02-T28)."""
+    plan = await countersign.remind_preview(ctx, body.envelope_ids)
+    return RemindOut(count=plan.count, skipped=list(plan.skipped))
 
 
-@router.post("/remind/send", action="envelope.remind", response_model=RemindOut, errors=(409, 501))
+@router.post("/remind/send", action="envelope.remind", response_model=RemindOut, errors=(409,))
 async def remind_envelopes_send_route(
     body: RemindIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> RemindOut:
-    """A person sends the template reminder (DEC-74; N-02-T14)."""
-    await _stub(ctx, "envelope.remind")
+    """A person sends the previewed `signature_reminder` version (DEC-74; N-02-T28); 409
+    `stale_version` when another version is in use now."""
+    plan = await countersign.remind_send(
+        ctx, body.envelope_ids, body.template_version_id, body.template_version, idempotency_key
+    )
+    return RemindOut(count=plan.count, skipped=list(plan.skipped))
 
 
 @router.get("/{envelope_id}", action="envelope.read", response_model=EnvelopeOut)
@@ -1069,11 +1074,17 @@ async def record_wet_signature_route(
     "/{envelope_id}/countersign/session",
     action="envelope.countersign",
     response_model=SigningSessionOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def countersign_session_route(envelope_id: EnvelopeId, ctx: Ctx) -> SigningSessionOut:
-    """The provider view for the named firm signer (N-02-T28)."""
-    await _stub(ctx, "envelope.countersign")
+    """The provider view for the named firm signer only; any other person 403 (N-02-T28)."""
+    made = await countersign.countersign_session(ctx, envelope_id)
+    return SigningSessionOut(
+        session_id=made.id,
+        presentation=cast(Literal["iframe", "redirect"], made.presentation),
+        url=made.url,
+        expires_at=made.expires_at,
+    )
 
 
 @policies_router.get("", action="envelope_policy.read", response_model=list[EnvelopePolicyOut])
@@ -1142,9 +1153,27 @@ class PortalEnvelopeRow(BaseModel):
     due_on: Annotated[date | None, classified("internal")]
 
 
+class PortalSignerOut(BaseModel):
+    """One signer of the envelope as the portal's signing order shows them (N-02-T29, DEC-1388):
+    the name the firm recorded, the role, the routing group and the status. No contact detail."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    name: Annotated[str, classified("confidential")]
+    role: Annotated[SignerRole, classified("internal")]
+    routing_group: Annotated[int, classified("internal")]
+    status: Annotated[EnvelopeSignerStatus, classified("internal")]
+    signed_at: Annotated[datetime | None, classified("internal")]
+    me: Annotated[bool, classified("internal")]
+
+
 class PortalEnvelopeView(BaseModel):
     """`EnvelopeVM`: steps, documents, fields, signers, my state; `signing_session` and `outcome`
-    reserved (null in record mode and until `signatures.esign_provider`)."""
+    reserved (null in record mode and until `signatures.esign_provider`). N-02-T29 (additive,
+    DEC-1388): the envelope's policy `family`, the viewer's `identity_method`, the `signers` in
+    order, and `signing_opens_on`, the `date_as_of` while the firm's today is before it (the
+    session's `before_date_as_of` check), else null."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -1161,6 +1190,10 @@ class PortalEnvelopeView(BaseModel):
     outcome: Annotated[
         Literal["signed", "declined", "abandoned"] | None, classified("internal")
     ] = None
+    family: Annotated[PolicyFamily, classified("internal")]
+    identity_method: Annotated[IdentityMethod, classified("internal")]
+    signers: Annotated[list[PortalSignerOut], classified("confidential")]
+    signing_opens_on: Annotated[date | None, classified("internal")]
 
 
 class ConsentIn(BaseModel):
@@ -1240,6 +1273,21 @@ def _portal_view(v: portal.View) -> PortalEnvelopeView:
         date_as_of=v.date_as_of,
         paper_form_follows=v.paper_form_follows,
         outcome=cast(Literal["signed", "declined", "abandoned"] | None, v.outcome),
+        family=cast(PolicyFamily, v.family),
+        identity_method=cast(IdentityMethod, v.identity_method),
+        signers=[
+            PortalSignerOut(
+                id=p.id,
+                name=p.name,
+                role=cast(SignerRole, p.role),
+                routing_group=p.routing_group,
+                status=cast(EnvelopeSignerStatus, p.status),
+                signed_at=p.signed_at,
+                me=p.id == v.signer_id,
+            )
+            for p in v.signers
+        ],
+        signing_opens_on=v.signing_opens_on,
     )
 
 

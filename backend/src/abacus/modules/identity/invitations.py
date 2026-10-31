@@ -343,6 +343,60 @@ async def create_invitation(
     return invitation_id
 
 
+async def create_release_invitation(
+    tx: UnitOfWork,
+    *,
+    tenant_id: UUID,
+    engagement_id: UUID,
+    email: str,
+    contact_id: UUID,
+    grant_ids: Sequence[UUID],
+    invited_by: UUID,
+) -> UUID:
+    """T-02-T21: a K-1 release's contact invitation carrying the pending grants it made, in the
+    delivery's unit of work and attributed to the person who released. Their decision was
+    authorised when they released (fresh second factor, the approval grant the workflow consumed),
+    so nothing is re-asked here; acceptance re-checks the inviter as for every contact invitation
+    (DEC-277). A pending invitation for the same address and engagement is replaced."""
+    email = email.strip()
+    if not 3 <= len(email) <= 320 or "@" not in email:
+        raise InvitationInvalid("email")
+    if not 1 <= len(grant_ids) <= 200:
+        raise InvitationInvalid("grant_ids")
+    replaced = await pending_invitation_for(tx.session, engagement_id, email)
+    if replaced is not None:
+        await set_invitation_status(tx.session, replaced, "revoked")
+        await set_token_hash(tx.session, replaced, None)
+        tx.record("client_invitation.revoked", target=Target("client_invitation", replaced))
+        await _close_contact_grants(tx, replaced)
+    invitation_id = uuid4()
+    await insert_invitation(
+        tx.session,
+        {
+            "id": invitation_id,
+            "tenant_id": tenant_id,
+            "engagement_id": engagement_id,
+            "email": email,
+            "role": "client_contributor",
+            "invited_by": invited_by,
+            "days": INVITATION_DAYS,
+            "kind": "firm_invite",
+            "contact_id": contact_id,
+            "grant_template": None,
+            "terms_version": None,
+            "terms_url": None,
+            "grant_ids": [str(g) for g in grant_ids],
+        },
+    )
+    tx.record(
+        "client_invitation.created",
+        target=Target("client_invitation", invitation_id),
+        after=Ref(engagement_id=engagement_id, email=_digest(email.casefold())),
+    )
+    tx.emit(ClientInvitationIssued(invitation_id=invitation_id))
+    return invitation_id
+
+
 async def revoke_invitations_by(
     tx: UnitOfWork, user_id: UUID, engagement_id: UUID | None = None
 ) -> list[UUID]:
