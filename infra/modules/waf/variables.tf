@@ -55,9 +55,9 @@ variable "auth_rate_limit_paths" {
 }
 
 variable "upload_path_regex" {
-  description = "File routes (lower-cased path): exempt from rule 21's body-size block, rate-limited by rule 3 and capped by rule 22. Evidence and portal uploads, staff-logged intake files and every raw-body import (N-01-T24)."
+  description = "File routes (lower-cased path): exempt from rule 21's body-size block, rate-limited by rule 3 and capped by rule 22. Evidence and portal uploads, staff-logged intake files, every raw-body import (N-01-T24) and portal drops (R-01-T35)."
   type        = string
-  default     = "^/v1/(?:.*upload|.*import|inbox/intake/[^/]+/files$)"
+  default     = "^/v1/(?:.*upload|.*import|inbox/intake/[^/]+/files$|portal/binders/[^/]+/drops$)"
 }
 
 variable "upload_rate_limit" {
