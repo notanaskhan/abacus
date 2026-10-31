@@ -1,0 +1,510 @@
+{
+  "scenario": "bh-2026.10.3",
+  "slice": "signatures",
+  "snapshot": "E0",
+  "out": [
+    {
+      "key": "E3",
+      "title": "Form 8879-PE · TY2025 · Kestrel Ventures Fund I, LP",
+      "client": "Kestrel Ventures Fund I, LP",
+      "purpose": "form_8879",
+      "signers": [
+        {
+          "name": "GP officer",
+          "signed": false
+        }
+      ],
+      "sent": "2026-09-11",
+      "viewed": null,
+      "due": "2026-09-15",
+      "workItem": "TY2025 Form 1065 · Kestrel",
+      "status": "sent"
+    },
+    {
+      "key": "E7",
+      "title": "Form 8879-S · TY2025 · Larkspur Floral, Inc.",
+      "client": "Larkspur Floral, Inc.",
+      "purpose": "form_8879",
+      "signers": [
+        {
+          "name": "President",
+          "signed": false
+        }
+      ],
+      "sent": "2026-09-11",
+      "viewed": "2026-09-12",
+      "due": "2026-09-15",
+      "workItem": "TY2025 Form 1120-S · Larkspur",
+      "status": "viewed"
+    },
+    {
+      "key": "E14",
+      "title": "Engagement letter · FY2026 FS audit · Granite Peak Outdoor Supply",
+      "client": "Granite Peak Outdoor Supply",
+      "purpose": "engagement_letter",
+      "signers": [
+        {
+          "name": "Luis Ferrante",
+          "signed": true
+        },
+        {
+          "name": "MO",
+          "signed": false
+        }
+      ],
+      "sent": "2026-09-02",
+      "viewed": "2026-09-03",
+      "due": "2026-09-16",
+      "workItem": "FY2026 FS audit · Granite Peak",
+      "status": "partially_signed"
+    },
+    {
+      "key": "E11",
+      "title": "Engagement letter · PY2025 EBP audit · Fairhaven Foods 401(k) Plan",
+      "client": "Fairhaven Foods 401(k) Plan",
+      "purpose": "engagement_letter",
+      "signers": [
+        {
+          "name": "Plan administrator",
+          "signed": false
+        },
+        {
+          "name": "MO",
+          "signed": false
+        }
+      ],
+      "sent": "2026-09-08",
+      "viewed": null,
+      "due": "2026-09-18",
+      "workItem": "PY2025 EBP audit · Fairhaven",
+      "status": "sent"
+    },
+    {
+      "key": "E17",
+      "title": "§7216 consents (use · AI disclosure — 2 documents) · Morgan & Kai Ferris",
+      "client": "Morgan & Kai Ferris",
+      "purpose": "consent_7216",
+      "signers": [
+        {
+          "name": "Morgan",
+          "signed": true
+        },
+        {
+          "name": "Kai",
+          "signed": false
+        }
+      ],
+      "sent": "2026-09-09",
+      "viewed": "2026-09-09",
+      "due": "2026-09-23",
+      "workItem": "TY2025 Form 1040 · Ferris",
+      "status": "partially_signed"
+    },
+    {
+      "key": "E13",
+      "title": "Engagement letter · Ridgeline cost segregation & §754 analysis",
+      "client": "Ridgeline",
+      "purpose": "engagement_letter",
+      "signers": [
+        {
+          "name": "Owen Calder",
+          "signed": false
+        },
+        {
+          "name": "DR",
+          "signed": false
+        }
+      ],
+      "sent": "2026-09-14",
+      "viewed": null,
+      "due": "2026-09-24",
+      "workItem": "Advisory project · Ridgeline",
+      "status": "sent"
+    },
+    {
+      "key": "E12",
+      "title": "Engagement letter · 2026 Close (from Oct) · Bluestem Analytics",
+      "client": "Bluestem Analytics",
+      "purpose": "engagement_letter",
+      "signers": [
+        {
+          "name": "Arjun Mehta",
+          "signed": false
+        },
+        {
+          "name": "PR",
+          "signed": false
+        }
+      ],
+      "sent": "2026-09-11",
+      "viewed": "2026-09-12",
+      "due": "2026-09-25",
+      "workItem": "2026 Close · Bluestem",
+      "status": "viewed"
+    },
+    {
+      "key": "E4",
+      "title": "Form 8879-F · TY2025 · Pryor Irrevocable Trust",
+      "client": "Pryor Irrevocable Trust",
+      "purpose": "form_8879",
+      "signers": [
+        {
+          "name": "Trustee",
+          "signed": false
+        }
+      ],
+      "sent": "2026-09-10",
+      "viewed": "2026-09-11",
+      "due": "2026-09-28",
+      "workItem": "TY2025 Form 1041 · Pryor",
+      "status": "viewed"
+    },
+    {
+      "key": "E1",
+      "title": "Form 8879 · TY2025 · Elena Varga",
+      "client": "Elena Varga",
+      "purpose": "form_8879",
+      "signers": [
+        {
+          "name": "Elena",
+          "signed": false
+        }
+      ],
+      "sent": "2026-09-09",
+      "viewed": "2026-09-10",
+      "due": "2026-10-01",
+      "workItem": "TY2025 Form 1040 · Varga",
+      "status": "viewed"
+    },
+    {
+      "key": "E2",
+      "title": "Form 8879 · TY2025 · Thomas & Irene Kowal",
+      "client": "Thomas & Irene Kowal",
+      "purpose": "form_8879",
+      "signers": [
+        {
+          "name": "Thomas",
+          "signed": true
+        },
+        {
+          "name": "Irene",
+          "signed": false
+        }
+      ],
+      "sent": "2026-09-10",
+      "viewed": "2026-09-13",
+      "due": "2026-10-01",
+      "workItem": "TY2025 Form 1040 · Kowal",
+      "status": "partially_signed"
+    },
+    {
+      "key": "E5",
+      "title": "Form 8879 · TY2025 · Corinne Abbott",
+      "client": "Corinne Abbott",
+      "purpose": "form_8879",
+      "signers": [
+        {
+          "name": "Corinne",
+          "signed": false
+        }
+      ],
+      "sent": "2026-09-12",
+      "viewed": null,
+      "due": "2026-10-05",
+      "workItem": "TY2025 Form 1040 · Abbott",
+      "status": "sent"
+    },
+    {
+      "key": "E6",
+      "title": "Form 8879 · TY2025 · Dev & Mira Kapoor",
+      "client": "Dev & Mira Kapoor",
+      "purpose": "form_8879",
+      "signers": [
+        {
+          "name": "Dev",
+          "signed": true
+        },
+        {
+          "name": "Mira",
+          "signed": false
+        }
+      ],
+      "sent": "2026-09-08",
+      "viewed": "2026-09-08",
+      "due": "2026-10-05",
+      "workItem": "TY2025 Form 1040 · Kapoor",
+      "status": "partially_signed"
+    },
+    {
+      "key": "E8",
+      "title": "Form 8879 · TY2025 · Hugo Brandvold",
+      "client": "Hugo Brandvold",
+      "purpose": "form_8879",
+      "signers": [
+        {
+          "name": "Hugo",
+          "signed": false
+        }
+      ],
+      "sent": "2026-09-13",
+      "viewed": null,
+      "due": "2026-10-05",
+      "workItem": "TY2025 Form 1040 · Brandvold",
+      "status": "sent"
+    },
+    {
+      "key": "E9",
+      "title": "Form 8879 · TY2025 · Noor & Adam Farouk",
+      "client": "Noor & Adam Farouk",
+      "purpose": "form_8879",
+      "signers": [
+        {
+          "name": "Noor",
+          "signed": false
+        },
+        {
+          "name": "Adam",
+          "signed": false
+        }
+      ],
+      "sent": "2026-09-13",
+      "viewed": null,
+      "due": "2026-10-05",
+      "workItem": "TY2025 Form 1040 · Farouk",
+      "status": "sent"
+    },
+    {
+      "key": "E10",
+      "title": "Form 8879-C · TY2025 · Brightline Optics, Inc.",
+      "client": "Brightline Optics, Inc.",
+      "purpose": "form_8879",
+      "signers": [
+        {
+          "name": "CFO",
+          "signed": false
+        }
+      ],
+      "sent": "2026-09-12",
+      "viewed": null,
+      "due": "2026-10-08",
+      "workItem": "TY2025 Form 1120 · Brightline",
+      "status": "sent"
+    },
+    {
+      "key": "E15",
+      "title": "Rep letter · PY2025 EBP audit · Cobalt Ridge Manufacturing 401(k) Plan",
+      "client": "Cobalt Ridge Manufacturing 401(k) Plan",
+      "purpose": "rep_letter",
+      "signers": [
+        {
+          "name": "Plan administrator",
+          "signed": false
+        }
+      ],
+      "sent": "2026-09-11",
+      "viewed": null,
+      "due": null,
+      "workItem": "PY2025 EBP audit · Cobalt Ridge",
+      "status": "sent"
+    },
+    {
+      "key": "E16",
+      "title": "Rep letter · PY2025 EBP audit · Halden Health 403(b) Plan",
+      "client": "Halden Health 403(b) Plan",
+      "purpose": "rep_letter",
+      "signers": [
+        {
+          "name": "Plan administrator",
+          "signed": false
+        }
+      ],
+      "sent": "2026-09-12",
+      "viewed": "2026-09-13",
+      "due": null,
+      "workItem": "PY2025 EBP audit · Halden",
+      "status": "viewed"
+    }
+  ],
+  "toSend": [
+    {
+      "key": "E18",
+      "title": "Form 8879-PE · TY2025 · Harborview Dental Properties, LP",
+      "client": "Harborview Dental Properties, LP",
+      "purpose": "form_8879",
+      "signers": [
+        {
+          "name": "Dr. Sofia Lindqvist",
+          "signed": false
+        }
+      ],
+      "sent": null,
+      "viewed": null,
+      "due": "2026-09-15",
+      "workItem": "TY2025 Form 1065 · Harborview",
+      "status": "draft"
+    },
+    {
+      "key": "D2",
+      "title": "Form 2848 · Aurelio Santos · IRS CP14 TY2024",
+      "client": "Aurelio Santos",
+      "purpose": "form_2848",
+      "signers": [
+        {
+          "name": "Aurelio Santos",
+          "signed": false
+        },
+        {
+          "name": "DR",
+          "signed": false
+        }
+      ],
+      "sent": null,
+      "viewed": null,
+      "due": null,
+      "workItem": "IRS CP14 TY2024 · Santos",
+      "status": "draft"
+    }
+  ],
+  "completed": [
+    {
+      "key": "C1",
+      "title": "Form 8879 · Sunil & Asha Rao",
+      "client": "Sunil & Asha Rao",
+      "purpose": "form_8879",
+      "signers": [
+        {
+          "name": "Sunil",
+          "signed": true
+        },
+        {
+          "name": "Asha",
+          "signed": true
+        }
+      ],
+      "sent": "2026-09-10",
+      "viewed": null,
+      "due": null,
+      "workItem": "TY2025 Form 1040 · Rao",
+      "status": "completed",
+      "outcome": "Filed Sep 11"
+    },
+    {
+      "key": "C2",
+      "title": "Form 8879-S · Summit Line Logistics, Inc.",
+      "client": "Summit Line Logistics, Inc.",
+      "purpose": "form_8879",
+      "signers": [
+        {
+          "name": "President",
+          "signed": true
+        }
+      ],
+      "sent": "2026-09-11",
+      "viewed": null,
+      "due": null,
+      "workItem": "TY2025 Form 1120-S · Summit Line",
+      "status": "completed",
+      "outcome": "Filed Sep 12"
+    },
+    {
+      "key": "C3",
+      "title": "Form 8879-PE · Vantage Point Realty, LLC",
+      "client": "Vantage Point Realty, LLC",
+      "purpose": "form_8879",
+      "signers": [],
+      "sent": "2026-09-04",
+      "viewed": null,
+      "due": null,
+      "workItem": "TY2025 Form 1065 · Vantage Point",
+      "status": "completed",
+      "outcome": "Accepted"
+    },
+    {
+      "key": "C4",
+      "title": "Form 8879-PE · Cedar Hollow Farms, LLC",
+      "client": "Cedar Hollow Farms, LLC",
+      "purpose": "form_8879",
+      "signers": [],
+      "sent": "2026-09-02",
+      "viewed": null,
+      "due": null,
+      "workItem": "TY2025 Form 1065 · Cedar Hollow",
+      "status": "completed",
+      "outcome": "Accepted"
+    },
+    {
+      "key": "C5",
+      "title": "Engagement letter · 2025 Form 990 (FYE Jun 30, 2026) · Lakeshore Literacy Alliance",
+      "client": "Lakeshore Literacy Alliance",
+      "purpose": "engagement_letter",
+      "signers": [
+        {
+          "name": "Monica Hale-Ruiz",
+          "signed": true
+        },
+        {
+          "name": "CM",
+          "signed": true
+        }
+      ],
+      "sent": "2026-08-28",
+      "viewed": null,
+      "due": null,
+      "workItem": "2025 Form 990 · Lakeshore",
+      "status": "completed"
+    },
+    {
+      "key": "C6",
+      "title": "Form 8879-S · Two Rivers Brewing Co.",
+      "client": "Two Rivers Brewing Co.",
+      "purpose": "form_8879",
+      "signers": [],
+      "sent": "2026-08-27",
+      "viewed": null,
+      "due": null,
+      "workItem": "TY2025 Form 1120-S · Two Rivers",
+      "status": "completed",
+      "outcome": "Accepted"
+    }
+  ],
+  "expired": [
+    {
+      "key": "X1",
+      "title": "§7216 consent (disclosure to offshore preparers) · Sunil & Asha Rao",
+      "client": "Sunil & Asha Rao",
+      "purpose": "consent_7216",
+      "signers": [
+        {
+          "name": "Sunil",
+          "signed": false
+        },
+        {
+          "name": "Asha",
+          "signed": false
+        }
+      ],
+      "sent": "2026-08-16",
+      "viewed": null,
+      "due": "2026-08-30",
+      "workItem": "TY2025 Form 1040 · Rao",
+      "status": "expired"
+    }
+  ],
+  "counts": {
+    "toSend": 2,
+    "out": 17,
+    "expired": 1,
+    "tiles": {
+      "sent": 8,
+      "viewed": 5,
+      "partially_signed": 4,
+      "dueWithin7": 4
+    },
+    "byType": {
+      "efile": 10,
+      "letters": 4,
+      "rep": 2,
+      "consents": 1
+    }
+  }
+}
