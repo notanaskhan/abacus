@@ -43,10 +43,10 @@ from abacus.modules.engagements.api import service_line_of
 from abacus.modules.evidence.api import (
     file_signed_copy,
     put_record,
-    retain_until_for,
     screen_and_stage,
 )
 from abacus.modules.identity.api import consumed_grant_approver, firm_time_zone
+from abacus.modules.signatures import integrity
 from abacus.modules.signatures.events import (
     EnvelopeCompleted,
     EnvelopeDeclined,
@@ -524,16 +524,43 @@ async def envelope_complete(given: EnvelopeInput) -> str:
         await service_line_of(tenant, env.engagement_id) if env.engagement_id is not None else None
     ) or "any"
     completed_at: datetime = env.completed_at or system_now()
-    keep = await retain_until_for(tenant, RECORD_TYPE, line, completed_at)
+    # N-02-T38: the purpose's retention record type (a consent: `consent_evidence`), else the
+    # signature evidence's; an e-file authorization is extended at the IRS received date.
+    keep = await integrity.retain_until(tenant, str(env.purpose), line, completed_at)
     if keep is None:
         raise RetentionFloorMissing
     document = await put_record(tenant.tenant_id, RECORD_TYPE, got.combined_document, keep)
     certificate = await put_record(tenant.tenant_id, RECORD_TYPE, got.certificate, keep)
     documents = [document.sha256, certificate.sha256]
+    images = [
+        await put_record(tenant.tenant_id, RECORD_TYPE, item.signed_image, keep)
+        for item in got.signers
+    ]
+    # N-02-T38: the legible reproduction, a page the renderer draws from the stored evidence.
+    legible = integrity.legible_page(
+        str(env.title),
+        [
+            {
+                "signed_at": item.signed_at.isoformat(),
+                "ip_masked": mask_ip(item.ip),
+                "login_ref": item.login_ref or "",
+                "identity_result": item.identity_result or "",
+                "signature_method": item.signature_method or "",
+                "device_label": item.device_label or "",
+                "signed_image_sha256": image.sha256,
+            }
+            for item, image in zip(got.signers, images, strict=True)
+        ],
+        documents,
+        completed_at,
+    )
+    if legible is not None:
+        documents.append((await put_record(tenant.tenant_id, RECORD_TYPE, legible, keep)).sha256)
+    else:
+        await integrity.record_legible_failure(tenant, envelope_id)
     rows: list[dict[str, object]] = []
     packages: list[str] = []
-    for item in got.signers:
-        image = await put_record(tenant.tenant_id, RECORD_TYPE, item.signed_image, keep)
+    for item, image in zip(got.signers, images, strict=True):
         sealed = await seal_ip(tenant.tenant_id, UUID(item.signer_id), item.ip)
         masked = mask_ip(item.ip)
         body = _package(
