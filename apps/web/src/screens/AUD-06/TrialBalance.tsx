@@ -9,6 +9,8 @@
 // (the "no browser sums" test reads this source).
 
 import type {
+  MappingSetOut,
+  TbGroupOut,
   TbLayerLineOut,
   TbLayerViewOut,
   TbLeadsheetAreaOut,
@@ -18,6 +20,8 @@ import type {
 } from "@abacus/api-client";
 import {
   getCitationOptions,
+  mappingSetOptions,
+  mappingSetsOptions,
   tbLayerViewOptions,
   tbLeadsheetAreaOptions,
   tieOutChecksOptions,
@@ -41,6 +45,7 @@ import {
 } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, type ReactNode, Suspense, lazy, useState } from "react";
+import { useFlag } from "../../app-core/flags";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { isNotFound } from "../../domain/audits";
 import type { EvidenceViewerTarget } from "../SHL-08";
@@ -494,6 +499,67 @@ function Caption({ view }: { view: TbLayerViewOut }): JSX.Element {
   );
 }
 
+// ---- Group by FS line (A-03-T12) ----------------------------------------------------------------
+
+/** The trial balance's lines regrouped by the confirmed mapping's grouping › FS line, under the
+ * server's grouping subtotals (C9 v2 `group_by=fs_line`). Nothing is summed here: each group's
+ * figure is the mapping's subtotal, each line keeps its own figures, and a line the mapping does
+ * not name stays in its original group after the mapped ones. */
+export function byFsLine(view: TbLayerViewOut, mapping: MappingSetOut): TbLayerViewOut {
+  const lines = view.groups.flatMap((g) => g.lines);
+  const rowOf = new Map(mapping.rows.map((r) => [r.account_code, r]));
+  const placed = new Set<string>();
+  const groups: TbGroupOut[] = mapping.subtotals.flatMap((g) => {
+    const mine = lines.filter(
+      (l) => rowOf.get(l.account_code)?.grouping_label === g.grouping_label,
+    );
+    if (mine.length === 0) return [];
+    for (const l of mine) placed.add(l.account_code);
+    return [
+      {
+        key: `fs:${g.grouping_key}`,
+        label: g.grouping_label,
+        boy: null,
+        eoy: g.subtotal,
+        lines: mine,
+      },
+    ];
+  });
+  const rest = view.groups
+    .map((g) => ({ ...g, lines: g.lines.filter((l) => !placed.has(l.account_code)) }))
+    .filter((g) => g.lines.length > 0);
+  return { ...view, groups: [...groups, ...rest] };
+}
+
+/** The engagement's confirmed mapping for this trial balance, read by FS line; undefined while
+ * the flag is off, nothing is confirmed, or the read has not answered. */
+function useFsLineMapping(
+  engagementId: string,
+  view: TbLayerViewOut | undefined,
+  enabled: boolean,
+): MappingSetOut | undefined {
+  const on = useFlag("ledger.tb_mapping") === true && enabled;
+  const sets = useQuery({
+    ...mappingSetsOptions({ path: { engagement_id: engagementId } }),
+    enabled: on && view !== undefined,
+    retry: false,
+  });
+  const set = sets.data?.items.find(
+    (m) =>
+      m.trial_balance_id === view?.trial_balance_id &&
+      (m.status === "prepared" || m.status === "reviewed"),
+  );
+  const mapping = useQuery({
+    ...mappingSetOptions({
+      path: { mapping_set_id: set?.id ?? "" },
+      query: { group_by: "fs_line" },
+    }),
+    enabled: on && set !== undefined,
+    retry: false,
+  });
+  return set === undefined ? undefined : mapping.data;
+}
+
 // ---- Leadsheets --------------------------------------------------------------------------------
 
 /** The audit areas the server names on the lines, in the view's order, each once. */
@@ -645,7 +711,9 @@ export function useTrialBalancePane(
     enabled: enabled && tb !== undefined,
     retry: false,
   });
-  const v = view.data;
+  const fsLine = useFsLineMapping(engagementId, view.data, enabled);
+  const v =
+    view.data === undefined || fsLine === undefined ? view.data : byFsLine(view.data, fsLine);
   const line = v?.groups.flatMap((g) => g.lines).find((l) => l.account_code === selected);
   const citationId = line === undefined ? null : citationOf(line);
   const citation = useQuery({
