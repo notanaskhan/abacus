@@ -186,6 +186,11 @@ LEDGER_IMPORT = Flag(
     kind="boolean",
     default="false",
 )
+LEDGER_TB_MAPPING = Flag(
+    name="ledger.tb_mapping",
+    kind="boolean",
+    default="false",
+)
 LEDGER_TB_WORKPAPER = Flag(
     name="ledger.tb_workpaper",
     kind="boolean",
@@ -299,6 +304,11 @@ RULES_REFERENCE_SETS = Flag(
     kind="boolean",
     default="false",
 )
+SAMPLING_SAMPLE_SETS = Flag(
+    name="sampling.sample_sets",
+    kind="boolean",
+    default="false",
+)
 SCREENING_CARD = Flag(
     name="screening.card",
     kind="boolean",
@@ -387,6 +397,7 @@ FLAGS: dict[str, Flag] = {
     "knowledge.firm_standards": KNOWLEDGE_FIRM_STANDARDS,
     "ledger.gl_import": LEDGER_GL_IMPORT,
     "ledger.import": LEDGER_IMPORT,
+    "ledger.tb_mapping": LEDGER_TB_MAPPING,
     "ledger.tb_workpaper": LEDGER_TB_WORKPAPER,
     "matching.enabled": MATCHING_ENABLED,
     "matching.firm_intake": MATCHING_FIRM_INTAKE,
@@ -409,6 +420,7 @@ FLAGS: dict[str, Flag] = {
     "review.checkpoints": REVIEW_CHECKPOINTS,
     "review.grammar_api": REVIEW_GRAMMAR_API,
     "rules.reference_sets": RULES_REFERENCE_SETS,
+    "sampling.sample_sets": SAMPLING_SAMPLE_SETS,
     "screening.card": SCREENING_CARD,
     "security_center.v1": SECURITY_CENTER_V1,
     "signatures.envelopes": SIGNATURES_ENVELOPES,

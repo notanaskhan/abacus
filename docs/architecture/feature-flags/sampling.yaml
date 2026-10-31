@@ -1,0 +1,12 @@
+# The sampling module's flags (ADR-089; P-39, F-03-T07). Compiled with every other module's
+# file into kernel/_flags.py by `make regenerate`.
+
+flags:
+  - name: sampling.sample_sets
+    description: 'A-03 sampling engine (ADR-340): every /v1/populations*, /v1/sample-sets* and /v1/work-items/{wid}/sample-sets route, the AUD-11 route, SHL-14''s "Sample" wave and the AUD-02 rail row. Off: 404 and the screens show the C-20 "not turned on" state. On for Dev and the synthetic firm on staging once the stubs go live; per pilot firm after the audit CPA signs the sampler review (A-03 §0). A-03-T01, DEC-1550.'
+    owner: ayushkbhatia
+    created: 2026-10-30
+    expires: 2027-04-28
+    override: DEC-137
+    kind: boolean
+    default: false
