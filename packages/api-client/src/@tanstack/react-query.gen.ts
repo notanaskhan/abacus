@@ -17740,6 +17740,8 @@ export const k1ReleaseCheckOptions = (options: Options<K1ReleaseCheckData>) => q
 
 /**
  * Release K1 Route
+ *
+ * T-02-T21: a single-use grant held 10 s for Undo; then `K1ReleaseWorkflow` delivers.
  */
 export const releaseK1Mutation = (options?: Partial<Options<ReleaseK1Data>>): UseMutationOptions<ReleaseK1Response, ReleaseK1Error, Options<ReleaseK1Data>> => {
     const mutationOptions: UseMutationOptions<ReleaseK1Response, ReleaseK1Error, Options<ReleaseK1Data>> = {

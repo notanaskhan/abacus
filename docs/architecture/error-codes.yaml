@@ -599,6 +599,7 @@ codes:
     - abacus.modules.evidence.exports.ExportEffectStarted
     - abacus.modules.requests.binders.EffectStarted
     - abacus.modules.signatures.builder.EffectStarted
+    - abacus.modules.tax.k1_release.K1EffectStarted
     summary: 'The publish''s delivery has started (its grant was consumed): it can no longer be undone.'
   effective_from_backdated:
     status: 422
@@ -1117,6 +1118,11 @@ codes:
     raised_by:
     - abacus.modules.tax.k1_packages.K1NotShareable
     summary: Only this return's own draft or released packages are shared, to another tax return.
+  k1_release_ineligible:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.k1_release.K1ReleaseIneligible
+    summary: The release check fails, or the packages asked are not its ready ones (`facts.failing`).
   k1_set_invalid:
     status: 422
     raised_by:
@@ -2189,6 +2195,7 @@ codes:
     - abacus.modules.tax.delivery.StaleVersion
     - abacus.modules.tax.engine_import.ImportStale
     - abacus.modules.tax.export.ExportStale
+    - abacus.modules.tax.k1_release.K1ReleaseStale
     - abacus.modules.tax.status.StaleReturn
     - abacus.modules.tax.tax_profile.TaxProfileStale
     summary: 'The record changed since it was read: read it again (409).'
@@ -2397,6 +2404,7 @@ codes:
     - abacus.modules.evidence.service.UndoWindowClosed
     - abacus.modules.requests.binders.UndoWindowClosed
     - abacus.modules.signatures.builder.UndoWindowClosed
+    - abacus.modules.tax.k1_release.K1UndoClosed
     summary: Undo is possible for 10 seconds after a publish, and only once.
   undo_window_open:
     status: 409

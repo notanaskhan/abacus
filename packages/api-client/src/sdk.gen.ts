@@ -10721,6 +10721,8 @@ export const k1ReleaseCheck = <ThrowOnError extends boolean = false>(options: Op
 
 /**
  * Release K1 Route
+ *
+ * T-02-T21: a single-use grant held 10 s for Undo; then `K1ReleaseWorkflow` delivers.
  */
 export const releaseK1 = <ThrowOnError extends boolean = false>(options: Options<ReleaseK1Data, ThrowOnError>): RequestResult<ReleaseK1Responses, ReleaseK1Errors, ThrowOnError> => (options.client ?? client).post<ReleaseK1Responses, ReleaseK1Errors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

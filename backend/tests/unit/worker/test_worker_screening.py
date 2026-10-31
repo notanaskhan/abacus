@@ -147,6 +147,9 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "sign_off.recorded",  # T-01: the return overview follows sign-offs
         "binder.published",  # T-01: the return overview follows its binder
         "mapping_set.went_stale",  # A-03: a stale mapping set is re-checked
+        # T-02-T21: a release starts its workflow; a resend gives the new contact access.
+        "schedule_k_release.requested",
+        "schedule_k_package.resend_requested",
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert (
