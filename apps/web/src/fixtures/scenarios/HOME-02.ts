@@ -3,7 +3,8 @@
 // Daniel Reyes and Samuel Ito. Rows are seed/home.ts's through handlers/human-gates.ts (the one
 // count source), enriched with the facts the owner's resolver adds for the detail (I-01-T17); the
 // per-class details (the §754 card, the section sign-offs, Samuel's agent outputs) are
-// seed/approvals-detail.ts's through handlers/approvals.ts.
+// seed/approvals-detail.ts's through handlers/approvals.ts; the evidence summaries (I-01-T18) are
+// seed/approvals-evidence.ts's, handed to the screen as `summaryOf` (fixture-only, DV-4).
 //
 //   a  Decision 1 selected   b  decision decided   c  sign-off blocked   d  sign-off ready
 //   e  bulk select           f  empty              g  manager (Samuel Ito)
@@ -11,10 +12,12 @@ import type { HumanGateOut } from "@abacus/api-client";
 import { type Scenario, defineScenarios, json } from "../../app-core/fixture-mode";
 import { approvalsDetailHandlers } from "../handlers/approvals";
 import { humanGateHandlers } from "../handlers/human-gates";
+import { trustHandlers } from "../handlers/trust";
 import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";
 import { APPROVALS_CLOCK } from "../seed/approvals";
-import { DECIDED_AT, withDetailFacts } from "../seed/approvals-detail";
+import { DECIDED_AT, TRANSFER, withDetailFacts } from "../seed/approvals-detail";
+import { TRANSFER_DOCUMENT, evidenceSummaryOf } from "../seed/approvals-evidence";
 import { HOME_TODAY, homeGates } from "../seed/home";
 import { capabilitiesFor } from "../seed/shell";
 
@@ -43,6 +46,8 @@ function at(state: string, persona: string, options: At = {}): Scenario {
         today: HOME_TODAY,
         ...(options.done === undefined ? {} : { done: options.done }),
       }),
+      // I-01-T18: the transfer agreement's page for the viewer; the detail's C3/C4 reads after.
+      ...trustHandlers({ citations: [], documents: { [TRANSFER]: TRANSFER_DOCUMENT } }),
       ...approvalsDetailHandlers({ decided: options.decided === true }),
       // I-01-T16 creates `home.approvals`; every artboard runs with it on.
       "GET /v1/me/capabilities": ({ persona: who }) => {
@@ -119,3 +124,6 @@ export function selectedGate(state: Home02State): string | null {
   const at = SELECTED[state];
   return at === undefined ? null : (homeGates(at.persona)[at.n - 1]?.id ?? null);
 }
+
+/** The evidence summaries the artboards show (I-01-T18; tax fixture-only until T-05, DV-4). */
+export const summaryOf = evidenceSummaryOf;

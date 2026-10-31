@@ -1,15 +1,10 @@
 import type {
   AgentProposalOut,
-  CitationV2Out,
   EligibilityCheckOut,
   HumanGateOut,
   TeamRosterMemberOut,
 } from "@abacus/api-client";
-import {
-  humanGateCountsQueryKey,
-  humanGateListQueryKey,
-  listCitationsOptions,
-} from "@abacus/api-client/query";
+import { humanGateCountsQueryKey, humanGateListQueryKey } from "@abacus/api-client/query";
 import {
   type Actor,
   AgentMonogram,
@@ -23,10 +18,11 @@ import {
   date as formatDate,
   time,
 } from "@abacus/ui";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { type JSX, type ReactNode, useId } from "react";
 import { useNow } from "../../app-core/clock";
 import { useOpenOverlay } from "../../app-core/open";
+import { useOpenSourceViewer } from "../../app-core/overlay-host";
 import type { OverlayRef } from "../../app-core/overlays";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { useSession } from "../../app-core/session";
@@ -42,6 +38,7 @@ import {
 } from "../../domain/review";
 import { ov } from "../../routes/to";
 import { COPY } from "./copy";
+import { type GateSource, classOf, useGateSources } from "./sources";
 
 // HOME-02's detail pane per gate class (I-01-T17; docs/screens/HOME-02.md; the handoff's a–d and
 // g frames), on the owners' C3 reads (P-04): the class decides the body, the owner's projection
@@ -82,21 +79,6 @@ export interface DetailProps {
   href: string | undefined;
   draft: DecisionDraft;
   onDraft: (draft: DecisionDraft) => void;
-}
-
-type GateClass = "decision" | "sign_off" | "proposal" | "approval";
-
-/** The gate's class (DF-25 kinds): a decision card, a sign-off, an agent output, or the rest. */
-export function classOf(gate: HumanGateOut): GateClass {
-  if (
-    gate.kind === "decision" &&
-    (gate.overlay === "decision_card" || gate.subject.type === "decision_card")
-  ) {
-    return "decision";
-  }
-  if (gate.kind === "sign_off_request") return "sign_off";
-  if (gate.kind === "proposal") return "proposal";
-  return "approval";
 }
 
 /** The person whose act this is: the session's, never the agent (HumanAction draws nothing else). */
@@ -154,17 +136,36 @@ function ProposedBy({ by, on }: { by: string; on: string }): JSX.Element {
   );
 }
 
-function SourceRow({ title, n }: { title: string; n: number }): JSX.Element {
+/** One cited source: "<title> · n citations". It opens SHL-08 on the cited region (AC7.7). */
+function SourceRow({
+  source,
+  engagementId,
+}: {
+  source: GateSource;
+  engagementId: string | null;
+}): JSX.Element {
+  const openViewer = useOpenSourceViewer();
   return (
-    <li
-      data-home02="source"
-      className="flex min-h-[46px] items-center gap-[10px] px-[14px] py-[8px] hairline-b"
-    >
-      <Icon name="file" size={15} className="flex-none text-ink-3" />
-      <span className="min-w-0 flex-1 truncate">
-        <span className="text-nav font-medium">{title}</span>
-        <span className="text-meta text-ink-3"> · {COPY.detailPane.citations(n)}</span>
-      </span>
+    <li className="flex">
+      <button
+        type="button"
+        data-home02="source"
+        aria-haspopup="dialog"
+        onClick={() => {
+          openViewer({
+            evidenceVersionId: source.versionId,
+            matchId: source.matchId,
+            engagementId,
+          });
+        }}
+        className="flex min-h-[46px] w-full items-center gap-[10px] px-[14px] py-[8px] text-left hairline-b hover:bg-nav-fill"
+      >
+        <Icon name="file" size={15} className="flex-none text-ink-3" />
+        <span className="min-w-0 flex-1 truncate">
+          <span className="text-nav font-medium">{source.title}</span>
+          <span className="text-meta text-ink-3"> · {COPY.detailPane.citations(source.n)}</span>
+        </span>
+      </button>
     </li>
   );
 }
@@ -190,19 +191,29 @@ function Footer({ children, line }: { children: ReactNode; line?: string }): JSX
 const roleOf = (role: string): { line: string; value: string } =>
   COPY.roles[role] ?? { line: role, value: role };
 
-// ---- Decision -------------------------------------------------------------------------------
-
-/** The card's citations grouped by source document, in first-cited order. */
-function groupSources(citations: readonly CitationV2Out[]): { title: string; n: number }[] {
-  const groups = new Map<string, { title: string; n: number }>();
-  for (const c of citations) {
-    const key = c.source.evidence_version_id ?? c.source.id;
-    const found = groups.get(key);
-    if (found === undefined) groups.set(key, { title: c.title, n: 1 });
-    else found.n += 1;
-  }
-  return [...groups.values()];
+/** Reassign… and Snooze until…, where the gate allows them (I-01-T19 wires the picker and menu). */
+function GateMoves({ gate }: { gate: HumanGateOut }): JSX.Element | null {
+  const allowed = gate.allowed_actions ?? [];
+  const reassign = allowed.includes("human_gate.reassign");
+  const snooze = allowed.includes("human_gate.snooze");
+  if (!PLANNED_VISIBLE || (!reassign && !snooze)) return null;
+  return (
+    <span className="flex justify-center gap-[16px]">
+      {reassign && (
+        <Button variant="ghost" size="sm" opensDialog disabled>
+          {COPY.detailPane.reassign}
+        </Button>
+      )}
+      {snooze && (
+        <Button variant="ghost" size="sm" opensDialog disabled>
+          {COPY.detailPane.snooze}
+        </Button>
+      )}
+    </span>
+  );
 }
+
+// ---- Decision -------------------------------------------------------------------------------
 
 function DecisionBody({ gate, draft, onDraft }: DetailProps): JSX.Element {
   const ids = useId();
@@ -210,9 +221,7 @@ function DecisionBody({ gate, draft, onDraft }: DetailProps): JSX.Element {
   const name = useNames(gate.engagement_id);
   const cardId = gate.subject.id;
   const query = useDecisionCard(cardId);
-  const citations = useQuery(
-    listCitationsOptions({ query: { anchor_type: "decision_card", anchor_id: cardId } }),
-  );
+  const sources = useGateSources(gate);
   const card = query.data;
   if (card === undefined) return <Loading failed={query.isError} />;
 
@@ -229,7 +238,6 @@ function DecisionBody({ gate, draft, onDraft }: DetailProps): JSX.Element {
   const shown =
     decided === null ? card.options : card.options.filter((o) => o.key === decided.option_key);
   const chosen = decided?.option_key ?? draft.option;
-  const sources = groupSources(citations.data?.items ?? []);
 
   return (
     <div data-home02-detail="decision" data-status={head.status} className="flex flex-col">
@@ -307,7 +315,7 @@ function DecisionBody({ gate, draft, onDraft }: DetailProps): JSX.Element {
           <Band>{COPY.detailPane.evidence}</Band>
           <ul aria-label={COPY.detailPane.evidence}>
             {sources.map((s) => (
-              <SourceRow key={s.title} title={s.title} n={s.n} />
+              <SourceRow key={s.versionId} source={s} engagementId={gate.engagement_id} />
             ))}
           </ul>
         </>
@@ -362,7 +370,6 @@ function DecisionFooter({ gate, draft, onDraft }: DetailProps): JSX.Element | nu
   const reservedHere = head.allowed_actions.includes("decision.decide");
   // DV-1 (AC7.1): an option and a rationale, whichever option is chosen.
   const ready = draft.option !== undefined && draft.words.trim() !== "" && decide.phase !== "busy";
-  const allowed = gate.allowed_actions ?? [];
   return (
     <Footer line={COPY.detailPane.reservedLine(roleOf(head.reserved_role).line)}>
       {decide.blocked !== null && (
@@ -397,22 +404,7 @@ function DecisionFooter({ gate, draft, onDraft }: DetailProps): JSX.Element | nu
           {COPY.detailPane.requestMore}
         </Button>
       )}
-      {PLANNED_VISIBLE &&
-        (allowed.includes("human_gate.reassign") || allowed.includes("human_gate.snooze")) && (
-          // I-01-T19 wires the person picker and the snooze menu.
-          <span className="flex justify-center gap-[16px]">
-            {allowed.includes("human_gate.reassign") && (
-              <Button variant="ghost" size="sm" opensDialog disabled>
-                {COPY.detailPane.reassign}
-              </Button>
-            )}
-            {allowed.includes("human_gate.snooze") && (
-              <Button variant="ghost" size="sm" opensDialog disabled>
-                {COPY.detailPane.snooze}
-              </Button>
-            )}
-          </span>
-        )}
+      <GateMoves gate={gate} />
     </Footer>
   );
 }
@@ -472,7 +464,9 @@ function SignOffBody({ gate }: DetailProps): JSX.Element {
     >
       <TitleBand title={COPY.detailPane.title(t.label, t.context_label)} />
       <dl>
-        <Kv label={COPY.detailPane.workpaper}>{COPY.detailPane.version(t.label, t.version_no)}</Kv>
+        <Kv label={COPY.detailPane.workpaper}>
+          {t.version_no > 1 ? COPY.detailPane.version(t.label, t.version_no) : t.label}
+        </Kv>
         <Kv label={COPY.detailPane.level}>{COPY.levels[level] ?? level}</Kv>
         {initials("L1_preparer") !== "" && (
           <Kv label={COPY.detailPane.prepared}>
@@ -534,6 +528,7 @@ function SignOffFooter({ gate }: DetailProps): JSX.Element | null {
           {COPY.detailPane.openProposal}
         </Button>
       )}
+      <GateMoves gate={gate} />
     </Footer>
   );
 }
@@ -542,6 +537,7 @@ function SignOffFooter({ gate }: DetailProps): JSX.Element | null {
 
 function ProposalBody({ gate }: DetailProps): JSX.Element {
   const now = useNow();
+  const sources = useGateSources(gate);
   const name = useNames(gate.engagement_id);
   const query = useProposal(gate.subject.id);
   const proposal: AgentProposalOut | undefined = query.data;
@@ -567,12 +563,12 @@ function ProposalBody({ gate }: DetailProps): JSX.Element {
         <h4 className="text-section font-medium">{COPY.detailPane.reasoning}</h4>
         <AgentText text={proposal.reasoning} className="text-para text-ink-2" />
       </section>
-      {proposal.evidence.length > 0 && (
+      {sources.length > 0 && (
         <>
           <Band>{COPY.detailPane.source}</Band>
           <ul aria-label={COPY.detailPane.source}>
-            {proposal.evidence.map((e) => (
-              <SourceRow key={e.evidence_version_id} title={e.label} n={e.citation_count} />
+            {sources.map((s) => (
+              <SourceRow key={s.versionId} source={s} engagementId={gate.engagement_id} />
             ))}
           </ul>
         </>

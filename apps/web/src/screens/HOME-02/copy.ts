@@ -72,6 +72,10 @@ export const COPY = {
     blockedOther: "Cannot sign off yet: a check is open.", // (undesigned)
     title: (section: string, work: string): string => `${section} — ${work}`,
   },
+  evidencePane: {
+    sources: "Evidence sources",
+    openSource: "Open source",
+  },
   /** The reserved role in a sentence ("the engagement partner") and as a value. */
   roles: {
     engagement_partner: { line: "engagement partner", value: "Engagement partner" },
