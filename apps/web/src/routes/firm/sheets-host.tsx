@@ -3,7 +3,7 @@ import { FeatureGate } from "../../app-core/flags";
 import type { OverlayRenderProps } from "../../app-core/overlays";
 
 // The sheets `sheets.tsx` registers, loaded when one opens: each behind its flag
-// (`review.grammar_api` for SHL-10 and SHL-12, `review.checkpoints` for SHL-16, `signatures.envelopes` for
+// (`review.grammar_api` for SHL-10, SHL-11 and SHL-12, `review.checkpoints` for SHL-16, `signatures.envelopes` for
 // SIG-02) and its own screen chunk.
 
 const ApproveSheet = lazy(async () => ({
@@ -14,6 +14,9 @@ const CheckpointDrawer = lazy(async () => ({
 }));
 const SignOffSheet = lazy(async () => ({
   default: (await import("../../screens/SHL-12")).SignOffSheet,
+}));
+const DecisionSheet = lazy(async () => ({
+  default: (await import("../../screens/SHL-11")).DecisionSheet,
 }));
 const EnvelopeBuilder = lazy(async () => ({
   default: (await import("../../screens/SIG-02")).EnvelopeBuilder,
@@ -49,6 +52,15 @@ export default function SheetsHost({ ref, close }: OverlayRenderProps): JSX.Elem
             open
             onOpenChange={onOpenChange}
           />
+        </Suspense>
+      </FeatureGate>
+    );
+  }
+  if (ref.key === "decision") {
+    return (
+      <FeatureGate flag="review.grammar_api">
+        <Suspense fallback={null}>
+          <DecisionSheet cardId={id} open onOpenChange={onOpenChange} />
         </Suspense>
       </FeatureGate>
     );
