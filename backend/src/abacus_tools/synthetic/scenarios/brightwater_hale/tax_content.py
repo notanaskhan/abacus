@@ -7,8 +7,8 @@ one per recipient: `2025P_Ridgeline_V2_k1_p01.pdf` …), then its K-1 set throug
 `k1_set` engine import (T-02-T20), a person's upload either way:
 - Ridgeline Property Partners, LP (1065, five partners: Ridgeline GP LLC, Meera Shah, Pell Street
   Ventures LLC, Pell Street II LLC, Jonah Feld), drafts, with Jonah Feld's box lines as TXP-12's
-  expanded row gives them; Meera's and Jonah's drafts are shared with their 1040s on Sep 10
-  (the hand-offs that block those returns' final approval, TAX-03's Ridgeline row);
+  expanded row gives them; Olivia Brandt shares Jonah's draft with the Feld 1040 on Sep 10 (the
+  hand-off that blocks its final approval, TAX-03's Ridgeline row);
 - Bluestem Analytics, LLC (1120-S, Arjun Mehta 70% and Sunita Rao 30%), the final set, with
   ordinary income, interest, nondeductible expenses and distributions (TXP-12 C);
 - Calloway Family Trust (1041, Nora and Theo Calloway), drafts with boxes 1, 2a and 2b (TXP-12 D).
@@ -285,11 +285,12 @@ K1_SETS: Final = (
         ),
     ),
 )
-# Ridgeline's drafts shared with the partners' own 1040s (TXP-12 A, Sep 10) by Samuel Ito, whom
-# Daniel Reyes adds to Ridgeline's team as manager first (`k1_package.share_internal` is a
-# manager's or partner's; the sharer reads both returns, DEC-88: Samuel reviews both 1040s).
-SHARER: Final = "SI"
-SHARES: Final = (("P02", "Meera Shah"), ("P05", "Jonah & Claire Feld"))
+# Olivia Brandt, Ridgeline's preparer (TAX-03's "handed off from 2025 Form 1065 (Olivia Brandt)"),
+# shares Jonah Feld's draft with the Feld 1040, a return she also works on (the sharer reads both,
+# DEC-88). Meera Shah's share waits: no seeded person both holds the share on Ridgeline and reads
+# her 1040, so TXP-12 A's second hand-off is not loaded (DEC-1477).
+SHARES: Final = (("P05", "Jonah & Claire Feld"),)
+SHARER: Final = "OB"
 SHARED_AT: Final = _at(9, 10, 14)
 # POR-13's portal people: their contacts are active, so a release grants them at once.
 PORTAL_RECIPIENTS: Final = (
@@ -586,17 +587,6 @@ def tax_content_events() -> list[Event]:
                 client=k1_set.client,
             )
         )
-    events.append(
-        Event(
-            "k1-team:ridgeline:SI",
-            SHARED_AT - timedelta(hours=1),
-            "tax.k1_team_member_added",
-            "DR",
-            SLICE,
-            {"client": RIDGELINE, "member": SHARER, "role": "manager"},
-            client=RIDGELINE,
-        )
-    )
     for ref, target in SHARES:
         events.append(
             Event(
