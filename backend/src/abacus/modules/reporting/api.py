@@ -35,10 +35,12 @@ from abacus.modules.reporting.contract import (
     templates_router,
 )
 from abacus.modules.reporting.engagement_letters import render_engagement_letter
+from abacus.modules.reporting.render.core import DocxRenderOutput as DocxRenderOutput
 
 # T-01-T10's consumer API (re-exported).
 from abacus.modules.reporting.render.core import RenderInput as RenderInput
 from abacus.modules.reporting.render.core import RenderOutput as RenderOutput
+from abacus.modules.reporting.render.core import render_docx as render_docx
 from abacus.modules.reporting.render.core import render_isolated as render_isolated
 from abacus.modules.reporting.render.head import RenderRefused as _RenderingRefused
 
