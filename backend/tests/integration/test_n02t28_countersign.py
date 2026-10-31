@@ -79,8 +79,9 @@ async def _out_for_signature(seed: Seeder) -> tuple[AuthContext, uuid.UUID, uuid
     # As the provider leaves it once sent (the send path is N-02-T20's).
     await seed.run(
         "UPDATE envelopes SET status = 'sent', provider = 'docuseal', "
-        "provider_envelope_id = 'ds-1', sent_at = clock_timestamp() WHERE id = $1",
+        "provider_envelope_id = 'ds-1', sent_at = clock_timestamp(), sent_by = $2 WHERE id = $1",
         envelope,
+        ctx.user_id,
     )
     return ctx, engagement, envelope
 
