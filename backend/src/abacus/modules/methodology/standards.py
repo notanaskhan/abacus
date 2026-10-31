@@ -41,7 +41,8 @@ import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from datetime import date, datetime
-from typing import Final, cast, get_args
+from decimal import Decimal
+from typing import Final, Literal, cast, get_args
 from uuid import UUID, uuid4
 
 from pydantic import TypeAdapter, ValidationError
@@ -72,6 +73,8 @@ from abacus.modules.methodology.models import (
 )
 from abacus.modules.methodology.standards_contract import (
     AjeThresholdsPayload,
+    AttributeSampleSizesPayload,
+    AttributeSize,
     ExampleRow,
     ExamplesProvider,
     FirmStandardKind,
@@ -90,6 +93,9 @@ from abacus.modules.methodology.standards_contract import (
     StandardVersionDiffOut,
     StandardVersionOut,
     StandardVersionSummaryOut,
+)
+from abacus.modules.methodology.standards_contract import (
+    attribute_sample_size as size_from_table,
 )
 
 READ: Final = "firm_standard.read"
@@ -1125,3 +1131,34 @@ async def policy_payload(
             )
         ).scalar_one()
     return dict(payload)
+
+
+_HUNDRED: Final = Decimal(100)
+
+
+async def attribute_sample_size(
+    tenant_id: UUID,
+    *,
+    rmm: Literal["low", "moderate", "high"],
+    tolerable_rate: Decimal,
+    expected_rate: Decimal,
+    confidence: Decimal,
+    as_of: date,
+) -> AttributeSize:
+    """A-03-T10 (C21 part B; ADR-340 §6): the attribute sample size from the firm's size table in
+    effect on `as_of` (rates as fractions: 0.10 is 10%). No table in effect: `LookupError`; no
+    row for the parameters: `standard_row_missing`."""
+    policy = await current_version_of_kind(tenant_id, "attribute_sample_sizes", as_of)
+    if policy is None:
+        raise LookupError("attribute_sample_sizes")
+    payload = AttributeSampleSizesPayload.model_validate(
+        await policy_payload(tenant_id, policy, "attribute_sample_sizes")
+    )
+    return size_from_table(
+        payload,
+        policy,
+        rmm=rmm,
+        tolerable_pct=tolerable_rate * _HUNDRED,
+        expected_pct=expected_rate * _HUNDRED,
+        confidence_pct=confidence * _HUNDRED,
+    )

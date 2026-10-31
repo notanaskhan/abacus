@@ -4533,6 +4533,189 @@
         "title": "AttestBody",
         "type": "object"
       },
+      "AttributeSampleSizesPayload-Input": {
+        "additionalProperties": false,
+        "description": "A-03-T10 (ADR-340 \u00a76; A-03 \u00a74.1): the firm's attribute sample sizes (\"BH-EBP-210 Table\n2\"). Firm content, loaded through the import; sampling reads it through `methodology.api`\nand computes the statistical cross-check beside it.",
+        "properties": {
+          "confidence_pct": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Confidence Pct"
+          },
+          "kind": {
+            "cls": "internal",
+            "const": "attribute_sample_sizes",
+            "title": "Kind",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/AttributeSizeRow-Input"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "confidence_pct",
+          "rows"
+        ],
+        "title": "AttributeSampleSizesPayload",
+        "type": "object"
+      },
+      "AttributeSampleSizesPayload-Output": {
+        "additionalProperties": false,
+        "description": "A-03-T10 (ADR-340 \u00a76; A-03 \u00a74.1): the firm's attribute sample sizes (\"BH-EBP-210 Table\n2\"). Firm content, loaded through the import; sampling reads it through `methodology.api`\nand computes the statistical cross-check beside it.",
+        "properties": {
+          "confidence_pct": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+            "title": "Confidence Pct",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "const": "attribute_sample_sizes",
+            "title": "Kind",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/AttributeSizeRow-Output"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "confidence_pct",
+          "rows"
+        ],
+        "title": "AttributeSampleSizesPayload",
+        "type": "object"
+      },
+      "AttributeSizeRow-Input": {
+        "additionalProperties": false,
+        "description": "One row of the size table: the sample size for a risk of material misstatement and a\ntolerable and expected deviation rate, at the table's confidence.",
+        "properties": {
+          "expected_pct": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Expected Pct"
+          },
+          "rmm": {
+            "cls": "internal",
+            "enum": [
+              "low",
+              "moderate",
+              "high"
+            ],
+            "title": "Rmm",
+            "type": "string"
+          },
+          "size": {
+            "cls": "internal",
+            "maximum": 10000.0,
+            "minimum": 1.0,
+            "title": "Size",
+            "type": "integer"
+          },
+          "tolerable_pct": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Tolerable Pct"
+          }
+        },
+        "required": [
+          "rmm",
+          "tolerable_pct",
+          "expected_pct",
+          "size"
+        ],
+        "title": "AttributeSizeRow",
+        "type": "object"
+      },
+      "AttributeSizeRow-Output": {
+        "additionalProperties": false,
+        "description": "One row of the size table: the sample size for a risk of material misstatement and a\ntolerable and expected deviation rate, at the table's confidence.",
+        "properties": {
+          "expected_pct": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+            "title": "Expected Pct",
+            "type": "string"
+          },
+          "rmm": {
+            "cls": "internal",
+            "enum": [
+              "low",
+              "moderate",
+              "high"
+            ],
+            "title": "Rmm",
+            "type": "string"
+          },
+          "size": {
+            "cls": "internal",
+            "maximum": 10000.0,
+            "minimum": 1.0,
+            "title": "Size",
+            "type": "integer"
+          },
+          "tolerable_pct": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+            "title": "Tolerable Pct",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rmm",
+          "tolerable_pct",
+          "expected_pct",
+          "size"
+        ],
+        "title": "AttributeSizeRow",
+        "type": "object"
+      },
       "AuditActorOut": {
         "description": "The actor grammar's facts (INV-5): `person` and `support` name `person`; `via_agent` names\n`on_behalf_of` (and the agent by id only); `policy` names `policy_ref`; `system` names\nnothing.",
         "properties": {
@@ -66613,6 +66796,56 @@
         "title": "SampleItemOut",
         "type": "object"
       },
+      "SampleSetCreatedOut": {
+        "description": "`POST /v1/work-items/{wid}/sample-sets`: the new set, before its first draw (DEC-1662).",
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "program_step_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Program Step Key"
+          },
+          "purpose": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Purpose"
+          },
+          "title": {
+            "cls": "confidential",
+            "maxLength": 120,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "purpose",
+          "program_step_key"
+        ],
+        "title": "SampleSetCreatedOut",
+        "type": "object"
+      },
       "SampleSetIn": {
         "additionalProperties": false,
         "properties": {
@@ -73266,7 +73499,8 @@
               "aje_thresholds",
               "variance_thresholds",
               "materiality_ranges",
-              "document_confidence"
+              "document_confidence",
+              "attribute_sample_sizes"
             ],
             "title": "Kind",
             "type": "string"
@@ -73358,6 +73592,7 @@
             "discriminator": {
               "mapping": {
                 "aje_thresholds": "#/components/schemas/AjeThresholdsPayload",
+                "attribute_sample_sizes": "#/components/schemas/AttributeSampleSizesPayload-Input",
                 "document_confidence": "#/components/schemas/DocumentConfidencePayload-Input",
                 "materiality_ranges": "#/components/schemas/MaterialityRangesPayload-Input",
                 "return_approval_policy": "#/components/schemas/ReturnApprovalPolicyPayload",
@@ -73380,6 +73615,9 @@
               },
               {
                 "$ref": "#/components/schemas/DocumentConfidencePayload-Input"
+              },
+              {
+                "$ref": "#/components/schemas/AttributeSampleSizesPayload-Input"
               },
               {
                 "$ref": "#/components/schemas/ReviewChecklistPayload"
@@ -73706,7 +73944,8 @@
               "aje_thresholds",
               "variance_thresholds",
               "materiality_ranges",
-              "document_confidence"
+              "document_confidence",
+              "attribute_sample_sizes"
             ],
             "title": "Kind",
             "type": "string"
@@ -73960,6 +74199,7 @@
             "discriminator": {
               "mapping": {
                 "aje_thresholds": "#/components/schemas/AjeThresholdsPayload",
+                "attribute_sample_sizes": "#/components/schemas/AttributeSampleSizesPayload-Output",
                 "document_confidence": "#/components/schemas/DocumentConfidencePayload-Output",
                 "materiality_ranges": "#/components/schemas/MaterialityRangesPayload-Output",
                 "return_approval_policy": "#/components/schemas/ReturnApprovalPolicyPayload",
@@ -73982,6 +74222,9 @@
               },
               {
                 "$ref": "#/components/schemas/DocumentConfidencePayload-Output"
+              },
+              {
+                "$ref": "#/components/schemas/AttributeSampleSizesPayload-Output"
               },
               {
                 "$ref": "#/components/schemas/ReviewChecklistPayload"
@@ -193165,16 +193408,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Sample Set Route",
@@ -193313,16 +193546,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Sample Version Create Route",
@@ -193459,16 +193682,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Sample Set Approve Route",
@@ -193584,16 +193797,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Sample Draw Progress Route",
@@ -193703,6 +193906,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -193712,16 +193925,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Sample Set Export Route",
@@ -194175,16 +194378,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Sample Items Route",
@@ -195071,7 +195264,8 @@
                     "aje_thresholds",
                     "variance_thresholds",
                     "materiality_ranges",
-                    "document_confidence"
+                    "document_confidence",
+                    "attribute_sample_sizes"
                   ],
                   "type": "string"
                 },
@@ -202995,16 +203189,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Sample Sets List Route",
@@ -203075,7 +203259,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SampleSetSummaryOut"
+                  "$ref": "#/components/schemas/SampleSetCreatedOut"
                 }
               }
             },
@@ -203120,16 +203304,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Sample Set Create Route",

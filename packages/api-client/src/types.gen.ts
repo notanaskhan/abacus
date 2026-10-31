@@ -2162,6 +2162,100 @@ export type AttestBody = {
 };
 
 /**
+ * AttributeSampleSizesPayload
+ *
+ * A-03-T10 (ADR-340 §6; A-03 §4.1): the firm's attribute sample sizes ("BH-EBP-210 Table
+ * 2"). Firm content, loaded through the import; sampling reads it through `methodology.api`
+ * and computes the statistical cross-check beside it.
+ */
+export type AttributeSampleSizesPayloadInput = {
+    /**
+     * Confidence Pct
+     */
+    confidence_pct: number | string;
+    /**
+     * Kind
+     */
+    kind: 'attribute_sample_sizes';
+    /**
+     * Rows
+     */
+    rows: Array<AttributeSizeRowInput>;
+};
+
+/**
+ * AttributeSampleSizesPayload
+ *
+ * A-03-T10 (ADR-340 §6; A-03 §4.1): the firm's attribute sample sizes ("BH-EBP-210 Table
+ * 2"). Firm content, loaded through the import; sampling reads it through `methodology.api`
+ * and computes the statistical cross-check beside it.
+ */
+export type AttributeSampleSizesPayloadOutput = {
+    /**
+     * Confidence Pct
+     */
+    confidence_pct: string;
+    /**
+     * Kind
+     */
+    kind: 'attribute_sample_sizes';
+    /**
+     * Rows
+     */
+    rows: Array<AttributeSizeRowOutput>;
+};
+
+/**
+ * AttributeSizeRow
+ *
+ * One row of the size table: the sample size for a risk of material misstatement and a
+ * tolerable and expected deviation rate, at the table's confidence.
+ */
+export type AttributeSizeRowInput = {
+    /**
+     * Expected Pct
+     */
+    expected_pct: number | string;
+    /**
+     * Rmm
+     */
+    rmm: 'low' | 'moderate' | 'high';
+    /**
+     * Size
+     */
+    size: number;
+    /**
+     * Tolerable Pct
+     */
+    tolerable_pct: number | string;
+};
+
+/**
+ * AttributeSizeRow
+ *
+ * One row of the size table: the sample size for a risk of material misstatement and a
+ * tolerable and expected deviation rate, at the table's confidence.
+ */
+export type AttributeSizeRowOutput = {
+    /**
+     * Expected Pct
+     */
+    expected_pct: string;
+    /**
+     * Rmm
+     */
+    rmm: 'low' | 'moderate' | 'high';
+    /**
+     * Size
+     */
+    size: number;
+    /**
+     * Tolerable Pct
+     */
+    tolerable_pct: string;
+};
+
+/**
  * AuditActorOut
  *
  * The actor grammar's facts (INV-5): `person` and `support` name `person`; `via_agent` names
@@ -31709,6 +31803,30 @@ export type SampleItemOut = {
 };
 
 /**
+ * SampleSetCreatedOut
+ *
+ * `POST /v1/work-items/{wid}/sample-sets`: the new set, before its first draw (DEC-1662).
+ */
+export type SampleSetCreatedOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Program Step Key
+     */
+    program_step_key: string | null;
+    /**
+     * Purpose
+     */
+    purpose: string | null;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * SampleSetIn
  */
 export type SampleSetIn = {
@@ -34863,7 +34981,7 @@ export type StandardCreateIn = {
     /**
      * Kind
      */
-    kind: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence';
+    kind: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence' | 'attribute_sample_sizes';
     /**
      * Name
      */
@@ -34914,6 +35032,8 @@ export type StandardDraftPatchIn = {
     } & MaterialityRangesPayloadInput) | ({
         kind: 'document_confidence';
     } & DocumentConfidencePayloadInput) | ({
+        kind: 'attribute_sample_sizes';
+    } & AttributeSampleSizesPayloadInput) | ({
         kind: 'review_checklist';
     } & ReviewChecklistPayload) | ({
         kind: 'review_levels';
@@ -35067,7 +35187,7 @@ export type StandardOut = {
     /**
      * Kind
      */
-    kind: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence';
+    kind: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence' | 'attribute_sample_sizes';
     /**
      * Name
      */
@@ -35200,6 +35320,8 @@ export type StandardVersionOut = {
     } & MaterialityRangesPayloadOutput) | ({
         kind: 'document_confidence';
     } & DocumentConfidencePayloadOutput) | ({
+        kind: 'attribute_sample_sizes';
+    } & AttributeSampleSizesPayloadOutput) | ({
         kind: 'review_checklist';
     } & ReviewChecklistPayload) | ({
         kind: 'review_levels';
@@ -89483,10 +89605,6 @@ export type SampleSetErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SampleSetError = SampleSetErrors[keyof SampleSetErrors];
@@ -89547,10 +89665,6 @@ export type SampleVersionCreateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SampleVersionCreateError = SampleVersionCreateErrors[keyof SampleVersionCreateErrors];
@@ -89611,10 +89725,6 @@ export type SampleSetApproveErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SampleSetApproveError = SampleSetApproveErrors[keyof SampleSetApproveErrors];
@@ -89671,10 +89781,6 @@ export type SampleDrawProgressErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SampleDrawProgressError = SampleDrawProgressErrors[keyof SampleDrawProgressErrors];
@@ -89728,13 +89834,13 @@ export type SampleSetExportErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SampleSetExportError = SampleSetExportErrors[keyof SampleSetExportErrors];
@@ -89934,10 +90040,6 @@ export type SampleItemsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SampleItemsError = SampleItemsErrors[keyof SampleItemsErrors];
@@ -90352,7 +90454,7 @@ export type ListStandardsData = {
         /**
          * Kind
          */
-        kind?: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence' | null;
+        kind?: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence' | 'attribute_sample_sizes' | null;
     };
     url: '/v1/standards';
 };
@@ -93920,10 +94022,6 @@ export type SampleSetsListErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SampleSetsListError = SampleSetsListErrors[keyof SampleSetsListErrors];
@@ -93976,10 +94074,6 @@ export type SampleSetCreateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SampleSetCreateError = SampleSetCreateErrors[keyof SampleSetCreateErrors];
@@ -93988,7 +94082,7 @@ export type SampleSetCreateResponses = {
     /**
      * Successful Response
      */
-    201: SampleSetSummaryOut;
+    201: SampleSetCreatedOut;
 };
 
 export type SampleSetCreateResponse = SampleSetCreateResponses[keyof SampleSetCreateResponses];
