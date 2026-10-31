@@ -1,8 +1,8 @@
 ---
 id: TASK-2617
 title: P-11-T17 document-services runbook part 1, reporting README, skill section, flag owner and expiry
-spec: SPEC-000  # P-11 §4.10, R4; ADR-320
-acceptance_criteria: []
+spec: SPEC-520
+acceptance_criteria: [AC-4, AC-30]
 risk_zone: amber
 status: in-review
 epic: P-11
