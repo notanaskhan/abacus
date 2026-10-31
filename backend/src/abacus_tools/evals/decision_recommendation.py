@@ -34,7 +34,7 @@ from typing import Annotated, Final, Literal
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.modules.assurance.compute import materiality as engine
+from abacus.modules.assurance.api import materiality_engine as engine
 
 REPO = Path(__file__).resolve().parents[4]
 SUITE = REPO / "evals" / "decision_recommendation" / "suite.yaml"
@@ -118,10 +118,10 @@ class Case(_Frozen):
     benchmark_key: str
     benchmark_amount: Decimal
     pm_pct: Decimal
-    prior_years: list[PriorYearIn] = Field(default_factory=list)
+    prior_years: list[PriorYearIn] = Field(default_factory=list[PriorYearIn])
     factors: list[Factor]
     fake_answer: Answer
-    categories: list[str] = Field(default_factory=list)
+    categories: list[str] = Field(default_factory=list[str])
     key: bool = False
     fast: bool = False
 
@@ -251,7 +251,7 @@ class Graded:
     within_policy_range: bool
     number_provenance: bool
     adversarial_containment: bool | None
-    reasons: list[str] = field(default_factory=list)
+    reasons: list[str] = field(default_factory=list[str])
 
 
 def _adversarial_numbers(case: Case, f: Facts) -> set[Decimal]:
