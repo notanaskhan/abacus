@@ -26,3 +26,11 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: ledger.tb_mapping
+    description: 'C9 v2 taxonomy and mapping (A-03, ADR-341): the /v1/grouping-sets* catalogue and picker reads, /v1/engagements/{eid}/mapping-sets*, /v1/mapping-sets*, /v1/account-mappings*, the AUD-31 route, the group_by=fs_line option on the trial balance view and the trial_balance.version_created subscriber. Off: those answer 404 and AUD-31 shows the C-20 state; the live SPEC-316 mapping routes stay as they are until A-03-T08 swaps them. A-03-T01, DEC-1550.'
+    owner: ayushkbhatia
+    created: 2026-10-30
+    expires: 2027-04-28
+    override: DEC-137
+    kind: boolean
+    default: false

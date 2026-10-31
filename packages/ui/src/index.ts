@@ -387,6 +387,8 @@ export * from "./signing";
 export * from "./attribution";
 // P-04-T40: the E7 human-gate kit.
 export * from "./gates";
+// F-06-T20 (C-25 presentational): the sign-off chips that hand off to SHL-12.
+export * from "./signoff";
 
 // C-16 Request kit, portal variant (F-05-T36).
 export * from "./requests";
