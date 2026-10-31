@@ -100,4 +100,7 @@ export const ov = {
   }),
   /** TAX-09, a return's tax-engine sync over TAX-01 or TAX-02 (`?ov=engine-sync:<returnId>`). */
   TAX09: (returnId: string): OverlayRef => ({ key: "engine-sync", args: [returnId] }),
+  /** SIG-02, the envelope builder over its host (`?ov=envelope:<envelopeId>`; N-02-T37: ENG-04's
+   * Send opens the C7 draft it created, prefilled). */
+  SIG02: (envelopeId: string): OverlayRef => ({ key: "envelope", args: [envelopeId] }),
 } as const;

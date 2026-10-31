@@ -5,6 +5,7 @@
 
 import type { ComposerLetterOut, LetterDraftIn, LetterFeesIn } from "@abacus/api-client";
 import {
+  compareGeneratedDocumentOptions,
   draftLetterMutation,
   getLetterOptions,
   getLetterQueryKey,
@@ -17,6 +18,20 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useComposedLetter(engagementId: string) {
   return useQuery(getLetterOptions({ path: { engagement_id: engagementId } }));
+}
+
+/** N-02-T37: Compare to standard, C11's word-level diff of the letter's generated version by
+ * block and clause; read only while the overlay is on. */
+export function useLetterCompare(letter: ComposerLetterOut | undefined, on: boolean) {
+  const document = letter?.generated_document_id ?? null;
+  const version = letter?.version_no ?? null;
+  return useQuery({
+    ...compareGeneratedDocumentOptions({
+      path: { document_id: document ?? "", version_no: version ?? 1 },
+      query: { to: "standard" },
+    }),
+    enabled: on && document !== null && version !== null,
+  });
 }
 
 /** The fee terms the letter was composed with, as a draft edit sends them back. */

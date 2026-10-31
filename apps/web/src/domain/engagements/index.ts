@@ -1,6 +1,12 @@
 // The engagements domain's public entry (P-07 §5): what screens import.
 export { GATE_NAMES, GateBlock, type GateBlockProps, gateLine } from "./GateBlock";
-export { feesIn, useComposedLetter, useLetterWrites, withClause } from "./letter";
+export {
+  feesIn,
+  useComposedLetter,
+  useLetterCompare,
+  useLetterWrites,
+  withClause,
+} from "./letter";
 export {
   allows,
   bandRows,
