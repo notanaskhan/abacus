@@ -19,6 +19,7 @@ import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { type FixtureHandler, installFixtureMode } from "../../app-core/fixture-mode";
 import { BULK_IDS, BULK_TEXT } from "../../fixtures/seed/issues-shl15";
 import { DANA, INSTRUCTIONS, SUGGESTION, WORDING, k1 } from "../../fixtures/seed/review";
+import "../../routes/firm/sheets"; // registers the `?ov=` keys (Accept opens `approve`)
 import { newQueryClient } from "../../testing/support";
 import { BulkInstructionsSheet, FixInstructionsSheet, IssueFixDetail, NewIssueSheet } from ".";
 import { OPENS, STATES, type Shl15State, scenarios } from "./scenarios";
